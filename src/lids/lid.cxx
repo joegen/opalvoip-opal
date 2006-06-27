@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2014  2004/10/06 13:03:41  rjongbloed
+ * Revision 1.2015  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.13  2004/10/06 13:03:41  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -412,7 +416,7 @@ static OpalLIDRegistration * RegisteredLIDsListHead;
 
 #if PTRACING
 static const char * const CallProgressTonesNames[] = {
-  "DialTone", "RingTone", "BusyTone", "ClearTone", "CNGTone"
+  "DialTone", "RingTone", "BusyTone", "FastBusyTone", "ClearTone", "CNGTone", "MwiTone"
 };
 
 ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
@@ -432,11 +436,13 @@ ostream & operator<<(ostream & o, OpalLineInterfaceDevice::CallProgressTones t)
 
 OpalLineInterfaceDevice::OpalLineInterfaceDevice()
 {
-  os_handle = -1;
-  osError = 0;
+  setOsHandle(-1);
+  setOsError(0);
   countryCode = UnknownCountry;
-  readDeblockingOffset = P_MAX_INDEX;
-  writeDeblockingOffset = 0;
+  setReadDeblockingOffset(P_MAX_INDEX);
+  setWriteDeblockingOffset(0);
+  setCardNumber(1);
+  setDialToneTimeout(DIAL_TONE_TIMEOUT);
 }
 
 
@@ -556,14 +562,14 @@ BOOL OpalLineInterfaceDevice::SetRawCodec(unsigned line)
 
 BOOL OpalLineInterfaceDevice::StopReadCodec(unsigned)
 {
-  readDeblockingOffset = P_MAX_INDEX;
+  m_readDeblockingOffset = P_MAX_INDEX;
   return TRUE;
 }
 
 
 BOOL OpalLineInterfaceDevice::StopWriteCodec(unsigned)
 {
-  writeDeblockingOffset = 0;
+  m_writeDeblockingOffset = 0;
   return TRUE;
 }
 
@@ -596,20 +602,20 @@ BOOL OpalLineInterfaceDevice::ReadBlock(unsigned line, void * buffer, PINDEX len
 
   PINDEX readBytes;
   while (length > 0) {
-    if (readDeblockingOffset < frameSize) {
-      PINDEX left = frameSize - readDeblockingOffset;
+    if (m_readDeblockingOffset < frameSize) {
+      PINDEX left = frameSize - m_readDeblockingOffset;
       if (left > length)
         left = length;
-      memcpy(bufferPtr, &readDeblockingBuffer[readDeblockingOffset], left);
-      readDeblockingOffset += left;
+      memcpy(bufferPtr, &m_readDeblockingBuffer[m_readDeblockingOffset], left);
+      m_readDeblockingOffset += left;
       bufferPtr += left;
       length -= left;
     }
     else if (length < frameSize) {
-      BYTE * deblockPtr = readDeblockingBuffer.GetPointer(frameSize);
+      BYTE * deblockPtr = m_readDeblockingBuffer.GetPointer(frameSize);
       if (!ReadFrame(line, deblockPtr, readBytes))
         return FALSE;
-      readDeblockingOffset = 0;
+      m_readDeblockingOffset = 0;
     }
     else {
       if (!ReadFrame(line, bufferPtr, readBytes))
@@ -629,14 +635,14 @@ BOOL OpalLineInterfaceDevice::WriteBlock(unsigned line, const void * buffer, PIN
   PINDEX written;
 
   // If zero length then flush any remaining data
-  if (length == 0 && writeDeblockingOffset != 0) {
-    SetWriteFrameSize(line, writeDeblockingOffset);
+  if (length == 0 && m_writeDeblockingOffset != 0) {
+    SetWriteFrameSize(line, m_writeDeblockingOffset);
     BOOL ok = WriteFrame(line,
-                         writeDeblockingBuffer.GetPointer(),
+                         m_writeDeblockingBuffer.GetPointer(),
                          GetWriteFrameSize(line),
                          written);
     SetWriteFrameSize(line, frameSize);
-    writeDeblockingOffset = 0;
+    m_writeDeblockingOffset = 0;
     return ok;
   }
 
@@ -645,20 +651,20 @@ BOOL OpalLineInterfaceDevice::WriteBlock(unsigned line, const void * buffer, PIN
   while (length > 0) {
     // If have enough data and nothing in the reblocking buffer, just send it
     // straight on to the device.
-    if (writeDeblockingOffset == 0 && length >= frameSize) {
+    if (m_writeDeblockingOffset == 0 && length >= frameSize) {
       if (!WriteFrame(line, bufferPtr, frameSize, written))
         return FALSE;
       bufferPtr += written;
       length -= written;
     }
     else {
-      BYTE * savedFramePtr = writeDeblockingBuffer.GetPointer(frameSize);
+      BYTE * savedFramePtr = m_writeDeblockingBuffer.GetPointer(frameSize);
 
       // See if new chunk gives us enough for one frames worth
-      if ((writeDeblockingOffset + length) < frameSize) {
+      if ((m_writeDeblockingOffset + length) < frameSize) {
         // Nope, just copy bytes into buffer and return
-        memcpy(savedFramePtr + writeDeblockingOffset, bufferPtr, length);
-        writeDeblockingOffset += length;
+        memcpy(savedFramePtr + m_writeDeblockingOffset, bufferPtr, length);
+        m_writeDeblockingOffset += length;
         return TRUE;
       }
 
@@ -667,9 +673,9 @@ BOOL OpalLineInterfaceDevice::WriteBlock(unsigned line, const void * buffer, PIN
          means the lastWriteCount is set to the correct amount of buffer we are
          grabbing this time around.
        */
-      PINDEX left = frameSize - writeDeblockingOffset;
-      memcpy(savedFramePtr + writeDeblockingOffset, bufferPtr, left);
-      writeDeblockingOffset = 0;
+      PINDEX left = frameSize - m_writeDeblockingOffset;
+      memcpy(savedFramePtr + m_writeDeblockingOffset, bufferPtr, left);
+      m_writeDeblockingOffset = 0;
 
       // Write the saved frame out
       if (!WriteFrame(line, savedFramePtr, frameSize, written))
@@ -806,15 +812,15 @@ BOOL OpalLineInterfaceDevice::SetRemoveDTMF(unsigned, BOOL)
 }
 
 
-unsigned OpalLineInterfaceDevice::IsToneDetected(unsigned)
+OpalLineInterfaceDevice::CallProgressTones OpalLineInterfaceDevice::IsToneDetected(unsigned)
 {
   return NoTone;
 }
 
 
-unsigned OpalLineInterfaceDevice::WaitForToneDetect(unsigned line, unsigned timeout)
+OpalLineInterfaceDevice::CallProgressTones OpalLineInterfaceDevice::WaitForToneDetect(unsigned line, unsigned timeout)
 {
-  PTRACE(2, "LID\tWaitForToneDetect");
+  PTRACE(3, "LID\tWaitForToneDetect line = " << line << ", timeout = " << timeout);
 
   static const unsigned sampleRate = 25;
 
@@ -822,9 +828,9 @@ unsigned OpalLineInterfaceDevice::WaitForToneDetect(unsigned line, unsigned time
 
   unsigned retry = 0;
   do {
-    unsigned tones = IsToneDetected(line);
+    CallProgressTones tones = IsToneDetected(line);
     if (tones != NoTone) {
-      PTRACE(2, "LID\tTone " << tones << " detected after " << (retry*sampleRate) << " ms");
+      PTRACE(3, "LID\tTone " << tones << " detected after " << (retry*sampleRate) << " ms");
       return tones;
     }
 
@@ -942,26 +948,50 @@ BOOL OpalLineInterfaceDevice::StopAudio(unsigned /*line*/)
   return FALSE;
 }
 	
+BOOL OpalLineInterfaceDevice::RecordAudioStart(unsigned line, const PString & fn)
+{
+  PTRACE(1, "LID\tRecordAudioStart KO, must be implemented in concrete class");
+  return FALSE;
+}
+
+BOOL OpalLineInterfaceDevice::RecordAudioStop(unsigned line)
+{
+  PTRACE(1, "LID\tRecordAudioStop KO, must be implemented in concrete class");
+  return FALSE;
+}
 
 OpalLineInterfaceDevice::CallProgressTones
                 OpalLineInterfaceDevice::DialOut(unsigned line,
                                                  const PString & number,
-                                                 BOOL requireTone)
+                                                 BOOL requireTone,
+                                                 unsigned uiDialDelay)
 {
-  PTRACE(3, "LID\tDialOut to " << number);
+  PTRACE(3, "LID\tDialOut to " << number << ", line = " << line << ", requireTone = " << requireTone);
 
-  if (IsLineTerminal(line))
+  if (IsLineTerminal(line)){
+    PTRACE(1, "LID\tDialOut line is a terminal, do nothing");
     return NoTone;
 
-  if (!SetLineOffHook(line))
+  }
+  if (!SetLineOffHook(line)){
+    PTRACE(1, "LID\tDialOut cannot set the line off hook");
     return NoTone;
+  }  
 
-  // Should get dial tone within 2 seconds of going off hook
-  if (!WaitForTone(line, DialTone, 2000)) {
+  /* Wait for dial tone or Message waiting tone */
+  CallProgressTones tone;
+  tone = WaitForToneDetect(line, m_uiDialToneTimeout);
+  if((tone != DialTone)  && 
+     (tone != MwiTone)){
+    PTRACE(3, "LID\tDialOut dial tone or mwi tone not detected");
     if (requireTone)
-      return DialTone;
+      return tone;
   }
 
+  /* wait before dialing*/
+  PTRACE(3, "LID\tDialOut wait " << uiDialDelay << "msec before dialing");
+  PThread::Current()->Sleep(uiDialDelay);
+  
   // Dial the string
   PINDEX lastPos = 0;
   PINDEX nextPos;
@@ -990,17 +1020,19 @@ OpalLineInterfaceDevice::CallProgressTones
   PlayDTMF(line, number.Mid(lastPos));
 
   // Wait for busy or ring back
-  unsigned tones;
-  while ((tones = WaitForToneDetect(line, 5000)) != NoTone) {
-    if (tones & BusyTone)
+  while ((tone = WaitForToneDetect(line, 25000)) != NoTone) {
+    if (tone & BusyTone)
       return BusyTone;
-    else if (tones & RingTone)
+    else if (tone & RingTone)
       break;
   }
 
+  /* TODO find out why this !!*/
+#if 0
   if (requireTone)
     return NoTone;
 
+#endif
   return RingTone;
 }
 
@@ -1286,7 +1318,7 @@ static PCaselessString DeSpaced(const PString & orig)
 
 BOOL OpalLineInterfaceDevice::SetCountryCodeName(const PString & countryName)
 {
-  PTRACE(4, "IXJ\tSetting country code name to " << countryName);
+  PTRACE(4, "LID\tSetting country code name to " << countryName);
   PCaselessString spacelessAndCaseless = DeSpaced(countryName);
   if (spacelessAndCaseless.IsEmpty())
     return FALSE;
@@ -1380,7 +1412,7 @@ PStringList OpalLineInterfaceDevice::GetAllDevices()
 OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * descript)
   : device(dev),
     lineNumber(num),
-    token(device.GetDeviceType() + ": " + device.GetDeviceName()),
+    token(device.GetDeviceType() + ":" + device.GetDeviceName()),
     ringStoppedTime(0, 10),     // 10 seconds
     ringInterCadenceTime(0, 4)  // 4 seconds
 {
@@ -1390,6 +1422,10 @@ OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * des
   else
     description = descript;
 
+  
+  PTRACE(3, "LID\tOpalLine::OpalLine device name " << dev.GetDeviceName() << " num = " << num << 
+            ", descript = " << description);
+  
   ringCount = 0;
 }
 

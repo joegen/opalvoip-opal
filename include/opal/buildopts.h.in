@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.15  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
  * Revision 1.14  2006/05/30 18:17:43  hfriederich
  * Allow compilation of H.460 support
  *
@@ -94,6 +98,7 @@
 #undef  OPAL_IAX2
 #undef	OPAL_SIP
 #undef	OPAL_H323
+#undef  OPAL_LID
 #undef  OPAL_H224
 
 #undef  H323_H460
@@ -213,6 +218,7 @@
 
 #undef	HAS_IXJ
 #undef  HAS_VBLASTER
+#undef  HAS_LID
 
 
 #endif // _OPAL_BUILDOPTS_H

@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2012  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2013  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.11  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.10  2004/10/06 13:03:41  rjongbloed
@@ -834,22 +838,24 @@ class OpalLineInterfaceDevice : public PObject
       DialTone  = 0x01,   // Dial tone
       RingTone  = 0x02,   // Ring indication tone
       BusyTone  = 0x04,   // Line engaged tone
-      ClearTone = 0x08,   // Call failed/cleared tone (often same as busy tone)
-      CNGTone   = 0x10,   // Fax CNG tone
-      AllTones  = 0x1f
+      FastBusyTone  = 0x08,   // fast busy tone
+      ClearTone = 0x10,   // Call failed/cleared tone (often same as busy tone)
+      CNGTone   = 0x20,   // Fax CNG tone
+      MwiTone   = 0x40,   // Message Waiting Tone
+      AllTones  = 0x4f
     };
 
     /**See if any tone is detected.
       */
-    virtual unsigned IsToneDetected(
-      unsigned line   ///<  Number of line
+    virtual CallProgressTones IsToneDetected(
+      unsigned line   ///< Number of line
     );
 
     /**See if any tone is detected.
       */
-    virtual unsigned WaitForToneDetect(
-      unsigned line,          ///<  Number of line
-      unsigned timeout = 3000 ///<  Milliseconds to wait for
+    virtual CallProgressTones WaitForToneDetect(
+      unsigned line,          ///< Number of line
+      unsigned timeout = 3000 ///< Milliseconds to wait for
     );
 
     /**See if a specific tone is detected.
@@ -928,6 +934,22 @@ class OpalLineInterfaceDevice : public PObject
     );
 
 
+    /**
+      * start recording audio
+      */
+    virtual BOOL RecordAudioStart(
+      unsigned line,            /// line
+      const PString & filename  /// File Name
+                            );
+    
+    /**
+     * stop recording audio
+     */
+        
+    virtual BOOL RecordAudioStop(
+      unsigned line            /// line
+                                 );
+    
     /**Dial a number on network line.
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.
@@ -944,9 +966,10 @@ class OpalLineInterfaceDevice : public PObject
           NoTone    There was an internal error making the call
       */
     virtual CallProgressTones DialOut(
-      unsigned line,                ///<  Number of line
-      const PString & number,       ///<  Number to dial
-      BOOL requireTones = FALSE     ///<  Require dial/ring tone to be detected
+      unsigned line,                ///< Number of line
+      const PString & number,       ///< Number to dial
+      BOOL requireTones = FALSE,    ///< Require dial/ring tone to be detected
+      unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
     );
 
 
@@ -1048,13 +1071,37 @@ class OpalLineInterfaceDevice : public PObject
       */
     static PStringList GetAllDevices();
 
+    
+    enum { DIAL_TONE_TIMEOUT = 10000 };
+    
   protected:
+    int    getOsHandle() const {return os_handle;};
+    void   setOsHandle(int os_handleToSet) {os_handle = os_handleToSet;};
+    
+    int    getOsError() const {return osError;};
+    void   setOsError(int osErrorToSet) {osError = osErrorToSet;};
+    
+    const PBYTEArray& getReadDeblockingBuffer(){return m_readDeblockingBuffer;};
+    const PBYTEArray& getWriteDeblockingBuffer(){return m_writeDeblockingBuffer;};
+    PINDEX getReadDeblockingOffset() const {return m_readDeblockingOffset;};
+    void   setReadDeblockingOffset(PINDEX readDeblockingOffset) {m_readDeblockingOffset = readDeblockingOffset;};
+    
+    PINDEX getWriteDeblockingOffset() const {return m_writeDeblockingOffset;};
+    void   setWriteDeblockingOffset(PINDEX writeDeblockingOffset) {m_writeDeblockingOffset = writeDeblockingOffset;};
+    
+    unsigned int getCardNumber() const {return m_uiCardNumber;};
+    void   setCardNumber(unsigned int uiCardNumber) {m_uiCardNumber = uiCardNumber;};
+        
+    unsigned int getDialToneTimeout() const {return m_uiDialToneTimeout;};
+    void   setDialToneTimeout(unsigned int uiDialToneTimeout) {m_uiDialToneTimeout = uiDialToneTimeout;};
+        
     int             os_handle;
     int             osError;
     T35CountryCodes countryCode;
-    PBYTEArray      readDeblockingBuffer, writeDeblockingBuffer;
-    PINDEX          readDeblockingOffset, writeDeblockingOffset;
-
+    PBYTEArray      m_readDeblockingBuffer, m_writeDeblockingBuffer;
+    PINDEX          m_readDeblockingOffset, m_writeDeblockingOffset;
+    unsigned int    m_uiCardNumber;
+    unsigned int    m_uiDialToneTimeout;
 #if PTRACING
     friend ostream & operator<<(ostream & o, CallProgressTones t);
 #endif
@@ -1123,14 +1170,12 @@ class OpalLine : public PObject
        a standard telephone handset. The hook state is determined by external
        hardware and cannot be changed by the software.
       */
-    virtual BOOL SetOffHook(
-      BOOL newState = TRUE  ///<  New state to set
-    ) { return device.SetLineOffHook(lineNumber, newState); }
+    virtual BOOL SetOffHook() { return device.SetLineOffHook(lineNumber, TRUE); }
 
     /**Set the hook state of the line.
        This is the complement of SetLineOffHook().
       */
-    virtual BOOL SetOnHook() { return SetOffHook(FALSE); }
+    virtual BOOL SetOnHook() { return device.SetLineOffHook(lineNumber, FALSE); }
 
     /**Set the hook state off then straight back on again.
        This will only operate if the line is currently off hook.
@@ -1470,8 +1515,8 @@ class OpalLine : public PObject
 
     /**See if any tone is detected.
       */
-    virtual unsigned WaitForToneDetect(
-      unsigned timeout = 3000 ///<  Milliseconds to wait for
+    virtual OpalLineInterfaceDevice::CallProgressTones WaitForToneDetect(
+      unsigned timeout = 3000 ///< Milliseconds to wait for
     ) { return device.WaitForToneDetect(lineNumber, timeout); }
 
     /**See if a specific tone is detected.
@@ -1512,9 +1557,10 @@ class OpalLine : public PObject
           NoTone    There was an internal error making the call
       */
     virtual OpalLineInterfaceDevice::CallProgressTones DialOut(
-      const PString & number,       ///<  Number to dial
-      BOOL requireTones = FALSE     ///<  Require dial/ring tone to be detected
-    ) { return device.DialOut(lineNumber, number, requireTones); }
+      const PString & number,       ///< Number to dial
+      BOOL requireTones = FALSE,    ///< Require dial/ring tone to be detected
+      unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
+    ) { return device.DialOut(lineNumber, number, requireTones, uiDialDelay); }
   //@}
 
   /**@name Member variable access */
