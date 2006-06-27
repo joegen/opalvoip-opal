@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2011  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2012  2006/06/27 12:54:35  csoutheren
+ * Patch 1374489 - h450.7 message center support
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.10  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.9  2005/07/12 12:34:37  csoutheren
@@ -108,6 +112,7 @@
 #include <asn/h4501.h>
 #include <asn/h4502.h>
 
+#include <asn/h4507.h>
 
 class H323EndPoint;
 class H323Connection;
@@ -141,6 +146,11 @@ class H450ServiceAPDU : public X880_ROS
                                 const PString & callIdentity);
 
     void BuildCallWaiting(int invokeId, int numCallsWaiting);
+    void BuildMessageWaiting(int invokeId, 
+                             H4507_H323_MWI_Operations  &mwiOp, 
+                             PASN_Sequence &argument);
+    void BuildInterrogateResult(int invokeId, 
+                                H4507_MWIInterrogateRes &interrogateResult);
     
     void BuildCallIntrusionForcedRelease(int invokeId, int CICL);
     X880_ReturnResult& BuildCallIntrusionForcedReleaseResult(int invokeId);
@@ -695,6 +705,62 @@ class H4506Handler : public H450xHandler
 
   protected:
     State cwState;  // Call Waiting state of this connection
+};
+
+/**
+ * @class H4507Handler Message Waiting
+ */
+class H4507Handler : public H450xHandler
+{
+    PCLASSINFO(H4507Handler, H450xHandler);
+  public:
+    H4507Handler(
+      H323Connection & connection,
+      H450xDispatcher & dispatcher
+    );
+
+    virtual BOOL OnReceivedInvoke(
+      int opcode,
+      int invokeId,                           /// InvokeId of operation (used in response)
+      int linkedId,                           /// InvokeId of associated operation (if any)
+      PASN_OctetString * argument             /// Parameters for the initiate operation
+    );
+    
+    
+    /**Handle an incoming Message Waiting Interrogate PDU
+    */
+    virtual void OnReceivedMwiInterrogate(
+      int linkedId,
+      int invokeId,
+      PASN_OctetString *argument
+    );
+    
+    
+    /**Attach a message waiting APDU to the passed in Setup PDU. 
+      */
+
+    virtual void AttachToSetup(H323SignalPDU & setupPDU,
+                               H4507_H323_MWI_Operations  &mwiOp, 
+                               PASN_Sequence &argument);
+    
+    /**Attach a message waiting Interrogate return result APDU to the passed PDU. 
+     */    
+    virtual void AttachInterrogateResultToPdu(H323SignalPDU & pdu,
+                                              H4507_MWIInterrogateRes &interrogateResult);
+    virtual void AttachErrorToPdu(H323SignalPDU & pdu,
+                                        H4507_MessageWaitingIndicationErrors error);
+    /**Sub-state for message waiting.
+      */
+    enum State {
+      e_mwi_Idle,
+      e_mwi_Invoked
+    };
+
+    State GetState() const { return mwiState; }
+
+
+  protected:
+    State mwiState;  // Message waiting state of this connection
 };
 
 
