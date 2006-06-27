@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2013  2006/04/30 14:34:42  csoutheren
+ * Revision 1.2014  2006/06/27 13:14:17  csoutheren
+ * Patch 1353831 - Fixed ivr with h323 faststart
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.12  2006/04/30 14:34:42  csoutheren
  * Backport of IVR updates from PluginBranch
  *
  * Revision 2.11.4.1  2006/04/30 13:49:35  csoutheren
@@ -214,13 +218,13 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 {
   phase = SetUpPhase;
 
-  PTRACE(3, "IVR\tCreated connection.");
+  PTRACE(3, "IVR\tInitiateCall ctor.");
 }
 
 
 OpalIVRConnection::~OpalIVRConnection()
 {
-  PTRACE(3, "IVR\tDeleted connection.");
+  PTRACE(3, "IVR\t~InitiateCall.");
 }
 
 
@@ -230,17 +234,20 @@ BOOL OpalIVRConnection::SetUpConnection()
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
 
+  // load the vxml file before calling OnAlerting() in case of h323 is used with faststart,
+  // in this case, the media will be opened ealier and the vxml file needs to be already loaded 
+  if (!StartVXML()) {
+    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
+    Release(EndedByLocalUser);
+    return FALSE;
+  }
+
   phase = AlertingPhase;
   OnAlerting();
 
   phase = ConnectedPhase;
   OnConnected();
 
-  if (!StartVXML()) {
-    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-    Release(EndedByLocalUser);
-    return FALSE;
-  }
 
   if (!mediaStreams.IsEmpty()) {
     phase = EstablishedPhase;
@@ -344,6 +351,7 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 
 void OpalIVRConnection::InitiateCall()
 {
+  PTRACE(3, "IVR\tInitiateCall");
   phase = SetUpPhase;
   if (!OnIncomingConnection())
     Release(EndedByCallerAbort);
@@ -364,11 +372,13 @@ OpalIVRMediaStream::OpalIVRMediaStream(const OpalMediaFormat & mediaFormat,
   : OpalRawMediaStream(mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
     vxmlSession(vxml)
 {
+  PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
 }
 
 
 BOOL OpalIVRMediaStream::Open()
 {
+  PTRACE(3, "IVR\tOpen");
   if (isOpen)
     return TRUE;
 
