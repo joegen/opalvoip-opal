@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2028  2006/03/08 10:38:01  csoutheren
+ * Revision 1.2029  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.27  2006/03/08 10:38:01  csoutheren
  * Applied patch #1441139 - virtualise LID functions and kill monitorlines correctly
  * Thanks to Martin Yarwood
  *
@@ -147,6 +151,7 @@ OpalLIDEndPoint::OpalLIDEndPoint(OpalManager & mgr,
   : OpalEndPoint(mgr, prefix, attributes),
     defaultLine("*")
 {
+  PTRACE(3, "LID EP\tOpalLIDEndPoint " << prefix);
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::LowPriority,
@@ -163,6 +168,13 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
      monitorThread->WaitForTermination();
      delete monitorThread;
      monitorThread = NULL;
+
+     /* remove all lines which has been added with AddLine or AddLinesFromDevice
+        RemoveAllLines can be invoked only after the monitorThread has been destroyed,
+        indeed, the monitor thread may called some function such as vpb_get_event_ch_async which may
+        throw an exception if the line handle is no longer valid
+     */
+     RemoveAllLines();
   }
 }
 
@@ -171,35 +183,46 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
                                      void * userData)
 {
+  PTRACE(3, "LID EP\tMakeConnection remoteParty " << remoteParty << ", prefix "<< GetPrefixName());  
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
-  if (remoteParty.Find(GetPrefixName()+":") == 0)
-    prefixLength = GetPrefixName().GetLength()+1;
+  PINDEX colonIndex = remoteParty.Find(":");
+  if ((remoteParty.Find(GetPrefixName()) == 0) && (colonIndex != P_MAX_INDEX)){
+    /* the remote party contains the prefix and ':' */
+    prefixLength = colonIndex;
+  }
 
-  // Then see if there is a specific line mentioned
+  // Then see if there is a specific line mentioned in the prefix, e.g vpb@1/2:123456
   PString number, lineName;
-  PINDEX at = remoteParty.Find('@', prefixLength);
+  PINDEX at = remoteParty.Left(prefixLength).Find('@');
   if (at != P_MAX_INDEX) {
-    number = remoteParty(prefixLength, at);
-    lineName = remoteParty.Mid(at+1);
+    number = remoteParty.Right(remoteParty.GetLength() - prefixLength - 1);
+    lineName = remoteParty(GetPrefixName().GetLength() + 1, prefixLength - 1);
   }
   else {
     if (HasAttribute(CanTerminateCall))
       lineName = remoteParty.Mid(prefixLength);
     else
-      number = remoteParty.Mid(prefixLength);
+      number = remoteParty.Mid(prefixLength + 1);
   }
 
   if (lineName.IsEmpty())
     lineName = '*';
 
+  
+  PTRACE(3,"LID EP\tMakeConnection line = " << lineName << ", number = " << number);
+  
   // Locate a line
   OpalLine * line = GetLine(lineName, TRUE);
-  if (line == NULL)
+  if (line == NULL){
+    PTRACE(1,"LID EP\tMakeConnection cannot find the line " << lineName);
     line = GetLine(defaultLine, TRUE);
-  if (line == NULL)
+  }  
+  if (line == NULL){
+    PTRACE(1,"LID EP\tMakeConnection cannot find the default line " << defaultLine);
     return FALSE;
 
+  }
   OpalLineConnection * connection = CreateConnection(call, *line, userData, number);
   connectionsActive.SetAt(connection->GetToken(), connection);
 
@@ -235,12 +258,14 @@ OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
                                                        void * /*userData*/,
                                                        const PString & number)
 {
+  PTRACE(3, "LID EP\tCreateConnection call = " << call << " line = " << line << " number = " << number);
   return new OpalLineConnection(call, *this, line, number);
 }
 
 
 static void InitialiseLine(OpalLine * line)
 {
+  PTRACE(3, "LID EP\tInitialiseLine " << *line);
   line->Ring(0);
   line->StopTone();
   line->StopRawCodec();
@@ -301,19 +326,24 @@ void OpalLIDEndPoint::RemoveAllLines()
   lines.RemoveAll();
   devices.RemoveAll();
   linesMutex.Signal();
-}
-
-
+}   
+    
 BOOL OpalLIDEndPoint::AddLinesFromDevice(OpalLineInterfaceDevice & device)
 {
-  if (!device.IsOpen())
+  if (!device.IsOpen()){
+    PTRACE(1, "LID EP\tAddLinesFromDevice device " << device.GetDeviceName() << "is not opened");
     return FALSE;
+  }  
 
   BOOL atLeastOne = FALSE;
 
   linesMutex.Wait();
 
+  
+  PTRACE(3, "LID EP\tAddLinesFromDevice device " << device.GetDeviceName() << 
+      " has " << device.GetLineCount() << " lines, CanTerminateCall = " << HasAttribute(CanTerminateCall));
   for (unsigned line = 0; line < device.GetLineCount(); line++) {
+    PTRACE(3, "LID EP\tAddLinesFromDevice line  " << line << ", terminal = " << device.IsLineTerminal(line));
     if (device.IsLineTerminal(line) == HasAttribute(CanTerminateCall)) {
       OpalLine * newLine = new OpalLine(device, line);
       InitialiseLine(newLine);
@@ -412,10 +442,20 @@ OpalLine * OpalLIDEndPoint::GetLine(const PString & lineName, BOOL enableAudio) 
 {
   PWaitAndSignal mutex(linesMutex);
 
+  PTRACE(3, "LID EP\tGetLine " << lineName << ", enableAudio = " << enableAudio);
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    if ((lineName == "*" || lines[i].GetDescription() == lineName) &&
-        (!enableAudio || lines[i].EnableAudio()))
+    PTRACE(3, "LID EP\tGetLine line " << i << ", description = " << lines[i].GetDescription() <<
+        ", enableAudio = " << lines[i].EnableAudio());
+    PString lineDescription = lines[i].GetDescription();
+    /* if the line description contains the endpoint prefix, strip it*/
+    if(lineDescription.Find(GetPrefixName()) == 0){
+      lineDescription.Delete(0, GetPrefixName().GetLength() + 1);
+    }
+    if ((lineName == defaultLine ||  lineDescription == lineName) &&
+         (!enableAudio || lines[i].EnableAudio())){
+      PTRACE(3, "LID EP\tGetLine found the line");
       return &lines[i];
+    }  
   }
 
   return NULL;
@@ -424,6 +464,7 @@ OpalLine * OpalLIDEndPoint::GetLine(const PString & lineName, BOOL enableAudio) 
 
 void OpalLIDEndPoint::SetDefaultLine(const PString & lineName)
 {
+  PTRACE(3, "LID EP\tSetDefaultLine " << lineName);
   linesMutex.Wait();
   defaultLine = lineName;
   linesMutex.Signal();
@@ -490,6 +531,13 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
 }
 
 
+#if 1
+BOOL OpalLIDEndPoint::OnSetUpConnection(OpalLineConnection &connection)
+{
+  PTRACE(3, "LID EP\tOnSetUpConnection" << connection);
+  return TRUE;
+}
+#endif
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineConnection::OpalLineConnection(OpalCall & call,
@@ -500,7 +548,7 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
     endpoint(ep),
     line(ln)
 {
-  remotePartyNumber = number;
+  remotePartyNumber = number.Right(number.Find(':'));
   silenceDetector = new OpalLineSilenceDetector(line);
 
   answerRingCount = 3;
@@ -508,7 +556,10 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   wasOffHook = FALSE;
   handlerThread = NULL;
 
-  PTRACE(3, "LID Con\tConnection " << callToken << " created");
+  m_uiDialDelay = 0;
+  PTRACE(3, "LID Con\tConnection " << callToken << " created to " << number << 
+            " remotePartyNumber = " << remotePartyNumber);
+  
 }
 
 
@@ -541,6 +592,11 @@ PString OpalLineConnection::GetDestinationAddress()
   return ReadUserInput();
 }
 
+BOOL OpalLineConnection::OnSetUpConnection()
+{
+  PTRACE(3, "LID Con\tOnSetUpConnection");
+  return endpoint.OnSetUpConnection(*this);
+}
 
 BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 {
@@ -737,11 +793,15 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
 BOOL OpalLineConnection::SetUpConnection()
 {
-  PTRACE(3, "LID Con\tHandling outgoing call on " << *this);
+  PTRACE(3, "LID Con\tSetUpConnection call on " << *this << "dial: " << remotePartyNumber);
 
   phase = SetUpPhase;
   originating = TRUE;
 
+  
+  /* callback for the lid endpoint  */
+  OnSetUpConnection();
+  
   if (line.IsTerminal()) {
     line.SetCallerID(remotePartyNumber);
     line.Ring(TRUE);
@@ -749,9 +809,9 @@ BOOL OpalLineConnection::SetUpConnection()
     OnAlerting();
   }
   else {
-    switch (line.DialOut(remotePartyNumber, requireTonesForDial)) {
+    switch (line.DialOut(remotePartyNumber, requireTonesForDial, getDialDelay())) {
       case OpalLineInterfaceDevice::DialTone :
-        PTRACE(3, "LID Con\tNo dial tone on " << line);
+        PTRACE(3, "LID Con\tdial tone on " << line);
         return FALSE;
 
       case OpalLineInterfaceDevice::RingTone :

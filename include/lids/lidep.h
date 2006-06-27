@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2020  2006/03/08 10:38:01  csoutheren
+ * Revision 1.2021  2006/06/27 13:50:24  csoutheren
+ * Patch 1375137 - Voicetronix patches and lid enhancements
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.19  2006/03/08 10:38:01  csoutheren
  * Applied patch #1441139 - virtualise LID functions and kill monitorlines correctly
  * Thanks to Martin Yarwood
  *
@@ -170,11 +174,16 @@ class OpalLIDEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party,  ///<  Remote party to call
-      void * userData = NULL  ///<  Arbitrary data to pass to connection
+      OpalCall & call,        ///< Owner of connection
+      const PString & party,  ///< Remote party to call
+      void * userData = NULL  ///< Arbitrary data to pass to connection
     );
 
+    /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
+       This function allows the application to set up some parameters or to log some messages
+      */
+    virtual BOOL OnSetUpConnection(OpalLineConnection &connection);
+    
     /**Get the data formats this endpoint is capable of operating.
        This provides a list of media data format names that may be used by an
        OpalMediaStream may be created by a connection from this endpoint.
@@ -226,6 +235,13 @@ class OpalLIDEndPoint : public OpalEndPoint
       OpalLine * line
     );
 
+    
+    /**
+     * get all lines of the endpopint 
+     * @return the constant list of all lines belonged to the endpoint 
+     */
+    const PList<OpalLine> & GetLines() const { return lines;};
+    
     /**Remove a line from the endpoint.
        The line is removed from the endpoints processing and deleted.
       */
@@ -406,6 +422,10 @@ class OpalLineConnection : public OpalConnection
        The default behaviour does.
       */
     virtual BOOL SetUpConnection();
+    /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
+       This function allows the application to set up some parameters or to log some messages
+      */
+    virtual BOOL OnSetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -547,12 +567,24 @@ class OpalLineConnection : public OpalConnection
   //@}
 
 
+    /** delay in msec to wait between the dial tone detection and dialing the dtmf 
+      * @param uiDial the dial delay to set
+     */
+    void setDialDelay(unsigned int uiDialDelay){ m_uiDialDelay = uiDialDelay;};
+    
+    /** delay in msec to wait between the dial tone detection and dialing the dtmf 
+     * @return uiDialDelay the dial delay to get
+     */
+    unsigned int getDialDelay() const { return m_uiDialDelay;};
+        
   protected:
     OpalLIDEndPoint & endpoint;
     OpalLine        & line;
     BOOL              wasOffHook;
     unsigned          answerRingCount;
     BOOL              requireTonesForDial;
+    /* time in msec to wait between the dial tone detection and dialing the dtmf */
+    unsigned          m_uiDialDelay; 
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
     PThread         * handlerThread;
