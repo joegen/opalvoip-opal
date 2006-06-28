@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vblasterlid.cxx,v $
- * Revision 1.2009  2006/06/25 12:32:17  csoutheren
+ * Revision 1.2010  2006/06/28 03:47:01  csoutheren
+ * Fixed compile problems on Windows
+ *
+ * Revision 2.8  2006/06/25 12:32:17  csoutheren
  * Fix compile problems under VS 2005
  *
  * Revision 2.7  2004/10/06 13:03:42  rjongbloed
@@ -935,9 +938,9 @@ BOOL OpalVoipBlasterDevice::SetRemoveDTMF(unsigned, BOOL /*state*/)
 }
 
 
-unsigned OpalVoipBlasterDevice::IsToneDetected(unsigned /*line*/)
+OpalLineInterfaceDevice::CallProgressTones OpalVoipBlasterDevice::IsToneDetected(unsigned /*line*/)
 {
-  return FALSE;
+  return NoTone;
 }
 
 
