@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2031  2006/06/21 04:54:15  csoutheren
+ * Revision 1.2032  2006/06/28 11:35:23  csoutheren
+ * Patch 1494944 - added missing null pointer check
+ * Thanks to mturconi
+ *
+ * Revision 2.30  2006/06/21 04:54:15  csoutheren
  * Fixed build with latest PWLib
  *
  * Revision 2.29  2005/12/29 16:23:09  dsandras
@@ -375,9 +379,15 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 BOOL OpalPCSSConnection::SetUpConnection()
 {
-  remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
-  remotePartyAddress = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyAddress();
-  remoteApplication = ownerCall.GetOtherPartyConnection(*this)->GetRemoteApplication();
+  {
+    PSafePtr<OpalConnection> otherConn = ownerCall.GetOtherPartyConnection(*this);
+    if (otherConn == NULL)
+      return FALSE;
+
+    remotePartyName    = otherConn->GetRemotePartyName();
+    remotePartyAddress = otherConn->GetRemotePartyAddress();
+    remoteApplication  = otherConn->GetRemoteApplication();
+  }
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
   phase = AlertingPhase;
