@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2015  2006/06/27 13:50:24  csoutheren
+ * Revision 1.2016  2006/06/28 03:46:59  csoutheren
+ * Fixed compile problems on Windows
+ *
+ * Revision 2.14  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -1931,25 +1934,28 @@ OpalLineInterfaceDevice::CallProgressTones OpalIxJDevice::IsToneDetected(unsigne
   if (!EnableAudio(line, TRUE))
     return NoTone;
 
-  int tones = NoTone;
+  OpalLineInterfaceDevice::CallProgressTones tone = NoTone;
 
   DWORD dwReturn = 0;
   if (IoControl(IOCTL_Filter_IsToneCadenceValid, 0, &dwReturn) && dwReturn != 0) 
-    tones |= DialTone;
+    tone = DialTone;
+	else {
+		dwReturn = 0;
+		if (IoControl(IOCTL_Filter_IsToneCadenceValid, 1, &dwReturn) && dwReturn != 0) 
+			tone = RingTone;
+		else {
+		  dwReturn = 0;
+			if (IoControl(IOCTL_Filter_IsToneCadenceValid, 2, &dwReturn) && dwReturn != 0) 
+				tone = BusyTone;
+			else {
+			  dwReturn = 0;
+				if (IoControl(IOCTL_Filter_IsToneCadenceValid, 3, &dwReturn) && dwReturn != 0) 
+				tone = CNGTone;
+			}
+		}
+	}
 
-  dwReturn = 0;
-  if (IoControl(IOCTL_Filter_IsToneCadenceValid, 1, &dwReturn) && dwReturn != 0) 
-    tones |= RingTone;
-
-  dwReturn = 0;
-  if (IoControl(IOCTL_Filter_IsToneCadenceValid, 2, &dwReturn) && dwReturn != 0) 
-    tones |= BusyTone;
-
-  dwReturn = 0;
-  if (IoControl(IOCTL_Filter_IsToneCadenceValid, 3, &dwReturn) && dwReturn != 0) 
-    tones |= CNGTone;
-
-  return tones;
+  return tone;
 }
 
 
