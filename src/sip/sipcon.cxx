@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2157  2006/06/27 13:50:25  csoutheren
+ * Revision 1.2158  2006/06/28 11:29:08  csoutheren
+ * Patch 1456858 - Add mutex to transaction dictionary and other stability patches
+ * Thanks to drosario
+ *
+ * Revision 2.156  2006/06/27 13:50:25  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -800,9 +804,12 @@ void SIPConnection::OnReleased()
         std::vector<BOOL> statuses;
         statuses.resize(invitations.GetSize());
         PINDEX i;
-        for (i = 0; i < invitations.GetSize(); i++) {
-          PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
-          statuses[i] = invitations[i].SendCANCEL();
+        {
+          PWaitAndSignal m(transactionsMutex);
+          for (i = 0; i < invitations.GetSize(); i++) {
+            PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
+            statuses[i] = invitations[i].SendCANCEL();
+          }
         }
         for (i = 0; i < invitations.GetSize(); i++) {
           if (statuses[i]) {
@@ -841,7 +848,10 @@ void SIPConnection::OnReleased()
   OpalConnection::OnReleased();
   
   // Remove all INVITEs
-  invitations.RemoveAll();
+  {
+    PWaitAndSignal m(transactionsMutex); 
+    invitations.RemoveAll();
+  }
 }
 
 
@@ -1226,6 +1236,7 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
   SIPTransaction * invite = new SIPInvite(connection, transport);
   if (invite->Start()) {
+    PWaitAndSignal m(connection.transactionsMutex); 
     connection.invitations.Append(invite);
     return TRUE;
   }
@@ -1287,8 +1298,10 @@ void SIPConnection::HoldConnection()
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
-    invitations.Append(invite);
-    
+    {
+      PWaitAndSignal m(transactionsMutex); 
+      invitations.Append(invite);
+    }
     // Pause the media streams
     PauseMediaStreams(TRUE);
     
@@ -1312,7 +1325,10 @@ void SIPConnection::RetrieveConnection()
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
-    invitations.Append(invite);
+    {
+      PWaitAndSignal m(transactionsMutex); 
+      invitations.Append(invite);
+    }
     
     // Un-Pause the media streams
     PauseMediaStreams(FALSE);
@@ -1460,9 +1476,12 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
 
-  for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-    if (!invitations[i].IsFailed())
-      return;
+  {
+    PWaitAndSignal m(transactionsMutex); 
+    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+      if (!invitations[i].IsFailed())
+        return;
+    }
   }
 
   // All invitations failed, die now
@@ -1577,9 +1596,12 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
     // Have a response to the INVITE, so CANCEL all the other invitations sent.
-    for (i = 0; i < invitations.GetSize(); i++) {
-      if (&invitations[i] != &transaction)
-        invitations[i].SendCANCEL();
+    {
+      PWaitAndSignal m(transactionsMutex); 
+      for (i = 0; i < invitations.GetSize(); i++) {
+        if (&invitations[i] != &transaction)
+          invitations[i].SendCANCEL();
+      }
     }
 
     // Save the sessions etc we are actually using
@@ -2202,7 +2224,10 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
+  {
+    PWaitAndSignal m(transactionsMutex); 
     invitations.Append(invite);
+  }
   else {
     delete invite;
     PTRACE(1, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
@@ -2327,10 +2352,13 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
     PTRACE(4, "SIP\tAwaiting next PDU.");
     pduSemaphore.Wait();
 
-    if (!LockReadOnly())
+    if (!LockReadWrite())
       break;
 
     SIP_PDU * pdu = pduQueue.Dequeue();
+    
+    LockReadOnly();
+    UnlockReadWrite();
     if (pdu != NULL) {
       OnReceivedPDU(*pdu);
       delete pdu;
