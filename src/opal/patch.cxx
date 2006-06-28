@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2027  2006/06/27 12:08:01  csoutheren
+ * Revision 1.2028  2006/06/28 11:29:07  csoutheren
+ * Patch 1456858 - Add mutex to transaction dictionary and other stability patches
+ * Thanks to drosario
+ *
+ * Revision 2.26  2006/06/27 12:08:01  csoutheren
  * Patch 1455568 - RFC2833 patch
  * Thanks to Boris Pavacic
  *
@@ -136,7 +140,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
-  : PThread(10000,
+  : PThread(65536,  //16*4kpage size
             NoAutoDeleteThread,
             HighestPriority,
             "Media Patch:%x"),
@@ -148,6 +152,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 
 OpalMediaPatch::~OpalMediaPatch()
 {
+  inUse.Wait();
   PTRACE(3, "Patch\tMedia patch thread " << *this << " destroyed.");
 }
 
@@ -174,7 +179,7 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
     }
 
     inUse.Signal();
-  }
+  } 
 }
 
 

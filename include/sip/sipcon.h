@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2047  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2048  2006/06/28 11:29:07  csoutheren
+ * Patch 1456858 - Add mutex to transaction dictionary and other stability patches
+ * Thanks to drosario
+ *
+ * Revision 2.46  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -555,11 +559,11 @@ class SIPConnection : public OpalConnection
 
     void AddTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
 
     void RemoveTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
+    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
@@ -636,6 +640,7 @@ class SIPConnection : public OpalConnection
     PSemaphore    pduSemaphore;
     PThread     * pduHandler;
 
+    PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
     SIPTransactionList invitations;
     SIPTransactionDict transactions;
