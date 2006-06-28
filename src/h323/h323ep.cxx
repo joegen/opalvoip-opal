@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2054  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2055  2006/06/28 11:21:09  csoutheren
+ * Removed warning on gcc
+ *
+ * Revision 2.53  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -809,6 +812,7 @@ WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Com
 
 H323EndPoint::H323EndPoint(OpalManager & manager)
   : OpalEndPoint(manager, "h323", CanTerminateCall),
+    m_bH245Disabled(FALSE),
     signallingChannelCallTimeout(0, 0, 1),  // Minutes
     controlChannelStartTimeout(0, 0, 2),    // Minutes
     endSessionTimeout(0, 10),               // Seconds
@@ -830,8 +834,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
     callIntrusionT6(0,10),                  // Seconds
-    nextH450CallIdentity(0),
-    m_bH245Disabled(FALSE)
+    nextH450CallIdentity(0)
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = DefaultTcpPort;
