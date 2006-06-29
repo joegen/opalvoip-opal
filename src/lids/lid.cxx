@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2015  2006/06/27 13:50:24  csoutheren
+ * Revision 1.2016  2006/06/29 08:47:20  csoutheren
+ * Removed compiler warning
+ *
+ * Revision 2.14  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -948,13 +951,13 @@ BOOL OpalLineInterfaceDevice::StopAudio(unsigned /*line*/)
   return FALSE;
 }
 	
-BOOL OpalLineInterfaceDevice::RecordAudioStart(unsigned line, const PString & fn)
+BOOL OpalLineInterfaceDevice::RecordAudioStart(unsigned /*line*/, const PString & /*fn*/)
 {
   PTRACE(1, "LID\tRecordAudioStart KO, must be implemented in concrete class");
   return FALSE;
 }
 
-BOOL OpalLineInterfaceDevice::RecordAudioStop(unsigned line)
+BOOL OpalLineInterfaceDevice::RecordAudioStop(unsigned /*line*/)
 {
   PTRACE(1, "LID\tRecordAudioStop KO, must be implemented in concrete class");
   return FALSE;
