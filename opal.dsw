@@ -56,6 +56,12 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name Console
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name Console Components
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -105,7 +111,7 @@ Package=<4>
     Project_Dep_Name OPAL_lib
     End Project Dependency
     Begin Project Dependency
-    Project_Dep_Name PTLib
+    Project_Dep_Name Console
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name Console Components

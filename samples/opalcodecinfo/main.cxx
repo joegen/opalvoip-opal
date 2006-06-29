@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2  2006/06/29 08:47:20  csoutheren
+ * Removed compiler warning
+ *
  * Revision 1.1  2006/03/13 06:56:37  csoutheren
  * Initial version
  *
@@ -30,7 +33,7 @@
 #include <ptlib.h>
 
 #include <codec/allcodecs.h>
-#include <codec/opalplugin.h>
+//#include <codec/opalplugin.h>
 #include <opal/transcoders.h>
 
 class OpalCodecInfo : public PProcess
