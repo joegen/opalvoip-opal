@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2032  2006/06/30 07:36:37  csoutheren
+ * Revision 1.2033  2006/06/30 09:20:37  dsandras
+ * Fixed wrong assertion triggering.
+ *
+ * Revision 2.31  2006/06/30 07:36:37  csoutheren
  * Applied 1495026 - Avoid deadlock if mediaPatchThread has never been started
  * Thanks to mturconi
  *
@@ -269,8 +272,7 @@ void OpalMediaPatch::Close()
 
   PTRACE(3, "Patch\tWaiting for media patch thread to stop " << *this);
   if (!IsSuspended()) {
-    BOOL stat = WaitForTermination(10000);
-    PAssert(!stat, "Media patch thread not terminated.");
+    PAssert(WaitForTermination(10000), "Media patch thread not terminated.");
   }
 }
 
