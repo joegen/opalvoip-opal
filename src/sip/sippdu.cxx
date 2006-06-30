@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2096  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2097  2006/06/30 01:05:18  csoutheren
+ * Minor cleanups
+ *
+ * Revision 2.95  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -2003,7 +2006,7 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     retryTimer = endpoint.GetRetryTimeoutMax();
     completionTimer = endpoint.GetNonInviteTimeout();
   }
-  else {
+   else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
 
     if (state < Completed && connection != NULL)
@@ -2109,7 +2112,7 @@ void SIPTransaction::SetTerminated(States newState)
            << " but already terminated ( " << StateNames[state] << ')');
     return;
   }
-
+  
   States oldState = state;
   
   state = newState;
@@ -2152,7 +2155,7 @@ void SIPTransaction::SetTerminated(States newState)
     }
   }
 
-  if(oldState != Completed) {
+  if (oldState != Completed) {
     finished.Signal();
   }
 }
