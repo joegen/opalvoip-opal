@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2158  2006/06/28 11:29:08  csoutheren
+ * Revision 1.2159  2006/06/30 01:42:39  csoutheren
+ * Applied 1509216 - SIPConnection::OnReceivedOK fix
+ * Thanks to Boris Pavacic
+ *
+ * Revision 2.157  2006/06/28 11:29:08  csoutheren
  * Patch 1456858 - Add mutex to transaction dictionary and other stability patches
  * Thanks to drosario
  *
@@ -2246,13 +2250,13 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnReceivedSDP(response);
 
+  releaseMethod = ReleaseWithBYE;
   if (phase == EstablishedPhase)
     return;
   
   connectedTime = PTime ();
   OnConnected();                        // start media streams
 
-  releaseMethod = ReleaseWithBYE;
   phase = EstablishedPhase;
   OnEstablished();
 }
