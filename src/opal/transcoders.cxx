@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2021  2006/04/09 12:12:54  rjongbloed
+ * Revision 1.2022  2006/06/30 06:49:02  csoutheren
+ * Applied 1494416 - Add check for sessionID in transcoder selection
+ * Thanks to mturconi
+ *
+ * Revision 2.20  2006/04/09 12:12:54  rjongbloed
  * Changed the media format option merging to include the transcoder formats.
  *
  * Revision 2.19  2006/02/08 04:00:19  csoutheren
@@ -235,28 +239,32 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
   // Search for a single transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    for (s = 0; s < srcFormats.GetSize(); s++) {
-      srcFormat = srcFormats[s];
-      OpalMediaFormatPair search(srcFormat, dstFormat);
-      OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-      for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-        if (search == *i)
-          return srcFormat.Merge(i->GetInputFormat()) &&
-                 dstFormat.Merge(i->GetOutputFormat()) &&
-                 srcFormat.Merge(dstFormat);
-      }
-    }
+		if (dstFormat.GetDefaultSessionID() == sessionID) {
+			for (s = 0; s < srcFormats.GetSize(); s++) {
+				srcFormat = srcFormats[s];
+				OpalMediaFormatPair search(srcFormat, dstFormat);
+				OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+				for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+					if (search == *i)
+						return srcFormat.Merge(i->GetInputFormat()) &&
+									 dstFormat.Merge(i->GetOutputFormat()) &&
+									 srcFormat.Merge(dstFormat);
+				}
+			}
+		}
   }
 
   // Last gasp search for a double transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    for (s = 0; s < srcFormats.GetSize(); s++) {
-      srcFormat = srcFormats[s];
-      OpalMediaFormat intermediateFormat;
-      if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-        return TRUE;
-    }
+		if (dstFormat.GetDefaultSessionID() == sessionID) {
+			for (s = 0; s < srcFormats.GetSize(); s++) {
+				srcFormat = srcFormats[s];
+				OpalMediaFormat intermediateFormat;
+				if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
+					return TRUE;
+			}
+		}
   }
 
   return FALSE;
