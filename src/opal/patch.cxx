@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2031  2006/06/30 05:33:26  csoutheren
+ * Revision 1.2032  2006/06/30 07:36:37  csoutheren
+ * Applied 1495026 - Avoid deadlock if mediaPatchThread has never been started
+ * Thanks to mturconi
+ *
+ * Revision 2.30  2006/06/30 05:33:26  csoutheren
  * Applied 1509251 - Locking rearrangement in OpalMediaPatch::Main
  * Thanks to Borko Jandras
  *
@@ -220,7 +224,7 @@ void OpalMediaPatch::Main()
 
     inUse.Wait();
 
-	PINDEX len = sinks.GetSize();
+    PINDEX len = sinks.GetSize();
     for (i = 0; i < len; i++)
       sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
 
@@ -264,7 +268,10 @@ void OpalMediaPatch::Close()
   inUse.Signal();
 
   PTRACE(3, "Patch\tWaiting for media patch thread to stop " << *this);
-  PAssert(WaitForTermination(10000), "Media patch thread not terminated.");
+  if (!IsSuspended()) {
+    BOOL stat = WaitForTermination(10000);
+    PAssert(!stat, "Media patch thread not terminated.");
+  }
 }
 
 
