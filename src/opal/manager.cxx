@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2059  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2060  2006/06/30 01:05:51  csoutheren
+ * Applied 1509203 - Fix compilation when video is disabled
+ * Thanks to Boris Pavacic
+ *
+ * Revision 2.58  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.57  2006/03/20 10:37:47  csoutheren
@@ -327,7 +331,11 @@ OpalManager::OpalManager()
   minAudioJitterDelay = 50;  // milliseconds
   maxAudioJitterDelay = 250; // milliseconds
 
-  PStringList devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
+  PStringList devices;
+  
+#if HAS_VIDEO
+  devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
+#endif
   if (devices.GetSize() > 0) {
     videoInputDevice.deviceName = devices[0];
     if (devices.GetSize() > 1 && (videoInputDevice.deviceName *= "fake"))
@@ -335,7 +343,9 @@ OpalManager::OpalManager()
   }
   autoStartTransmitVideo = !(videoInputDevice.deviceName *= "fake");
 
+#if HAS_VIDEO
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
+#endif
   if (devices.GetSize() > 0) {
     videoOutputDevice.deviceName = devices[0];
     if (devices.GetSize() > 1 && (videoOutputDevice.deviceName *= "null"))
@@ -725,6 +735,7 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
                                          PVideoInputDevice * & device,
                                          BOOL & autoDelete)
 {
+#if HAS_VIDEO
   autoDelete = TRUE;
   device = PVideoInputDevice::CreateDeviceByName(videoInputDevice.deviceName);
 
@@ -736,6 +747,7 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
 
     delete device;
   }
+#endif
 
   return FALSE;
 }
@@ -747,6 +759,7 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
                                           PVideoOutputDevice * & device,
                                           BOOL & autoDelete)
 {
+#if HAS_VIDEO
   const PVideoDevice::OpenArgs & args = preview ? videoPreviewDevice : videoOutputDevice;
   autoDelete = TRUE;
   device = PVideoOutputDevice::CreateDeviceByName(args.deviceName);
@@ -758,6 +771,7 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
 
     delete device;
   }
+#endif
 
   return FALSE;
 }
@@ -1137,6 +1151,7 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
 {
+#if HAS_VIDEO
   PStringList drivers = PVideoInputDevice::GetDriverNames();
   for (PINDEX i = 0; i < drivers.GetSize(); i++) {
     PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[i]);
@@ -1155,6 +1170,7 @@ BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
       }
     }
   }
+#endif
 
   return FALSE;
 }
