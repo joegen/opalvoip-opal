@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2029  2006/06/30 01:33:43  csoutheren
+ * Revision 1.2030  2006/06/30 05:23:47  csoutheren
+ * Applied 1509246 - Fix sleeping in OpalMediaPatch::Main
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.28  2006/06/30 01:33:43  csoutheren
  * Add function to get patch sink media format
  *
  * Revision 2.27  2006/06/28 11:29:07  csoutheren
@@ -192,10 +196,12 @@ void OpalMediaPatch::Main()
   PINDEX i;
 
   inUse.Wait();
+  BOOL isSynchronous = source.IsSynchronous();
   if (!source.IsSynchronous()) {
     for (i = 0; i < sinks.GetSize(); i++) {
       if (sinks[i].stream->IsSynchronous()) {
         source.EnableJitterBuffer();
+        isSynchronous = TRUE;
         break;
       }
     }
@@ -203,6 +209,8 @@ void OpalMediaPatch::Main()
 
   inUse.Signal();
   RTP_DataFrame sourceFrame(source.GetDataSize());
+  RTP_DataFrame emptyFrame(source.GetDataSize());
+
   while (source.ReadPacket(sourceFrame)) {
     inUse.Wait();
     FilterFrame(sourceFrame, source.GetMediaFormat());
@@ -212,12 +220,21 @@ void OpalMediaPatch::Main()
 
     PINDEX len = sinks.GetSize();
     inUse.Signal();
-    Sleep(5); // Permit to another thread to take the mutex
+
+#if !defined(WIN32)
+    // Don't starve the CPU, if not in synchronous mode on non-Win32 platforms
+    if (!isSynchronous || !sourceFrame.GetPayloadSize())
+      Yield();
+#else
+    // Don't starve the CPU at any time on Win32 platforms
+    Yield();
+#endif
+
     if (len == 0)
       break;
 
     // make a new, clean frame, so that silence frame won't confuse RFC2833 handler
-    sourceFrame = RTP_DataFrame(source.GetDataSize());
+    sourceFrame = emptyFrame;
   }
 
   PTRACE(3, "Patch\tThread ended for " << *this);
