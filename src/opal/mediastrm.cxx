@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2041  2006/06/21 04:54:15  csoutheren
+ * Revision 1.2042  2006/06/30 04:49:54  csoutheren
+ * Applied 1509240 -  Fix for OpalMediaStream::Close deadlock
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.40  2006/06/21 04:54:15  csoutheren
  * Fixed build with latest PWLib
  *
  * Revision 2.39  2005/12/30 14:30:02  dsandras
@@ -311,13 +315,16 @@ BOOL OpalMediaStream::Close()
 
     if (IsSink())
       patch->RemoveSink(this);
-    else {
+	
+    patchMutex.Signal();
+
+    if (IsSource()) {
       patch->Close();
       delete patch;
     }
   }
-
-  patchMutex.Signal();
+  else
+    patchMutex.Signal();
 
   isOpen = FALSE;
   return TRUE;
