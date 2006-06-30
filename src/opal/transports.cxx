@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2061  2006/06/30 05:30:41  csoutheren
+ * Revision 1.2062  2006/06/30 07:38:59  csoutheren
+ * Applied 1490817 - Fix lastReceivedAddress for OpalTransportUDP
+ * Thanks to Dave Moss
+ *
+ * Revision 2.60  2006/06/30 05:30:41  csoutheren
  * Applied 1509269 - Fix OpalTransportUDP::Read-channelPointer
  * Thanks to Borko Jandras
  *
@@ -2050,7 +2054,7 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     WORD port;
 
     socket->GetLastReceiveAddress(address, port);
-    lastReceivedAddress = OpalTransportAddress(address, port);
+    lastReceivedAddress = OpalTransportAddress(address, port, UdpPrefix);
 
     switch (promiscuousReads) {
       case AcceptFromRemoteOnly :
