@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2034  2006/06/22 22:44:24  csoutheren
+ * Revision 1.2035  2006/06/30 05:26:13  csoutheren
+ * Applied 1509255 - Checking whether SetSize succeeds in GkClient
+ * Borko Jandras
+ *
+ * Revision 2.33  2006/06/22 22:44:24  csoutheren
  * Fix compile problem when H.460 is disabled
  *
  * Revision 2.32  2006/06/07 23:41:57  csoutheren
@@ -1996,7 +2000,8 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   irr.IncludeOptionalField(H225_InfoRequestResponse::e_perCallInfo);
 
   PINDEX sz = irr.m_perCallInfo.GetSize();
-  irr.m_perCallInfo.SetSize(sz+1);
+  if (!irr.m_perCallInfo.SetSize(sz+1))
+    return;
 
   H225_InfoRequestResponse_perCallInfo_subtype & info = irr.m_perCallInfo[sz];
 
