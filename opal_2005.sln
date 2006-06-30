@@ -1,9 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console", "..\pwlib\src\ptlib\msos\Console_2005.vcproj", "{9913F247-3768-4F0A-815D-BA9EBDF3F3BB}"
-	ProjectSection(ProjectDependencies) = postProject
-		{BF191D4E-B4A8-49A4-986D-B562166AED39} = {BF191D4E-B4A8-49A4-986D-B562166AED39}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console Components", "..\pwlib\src\ptlib\msos\Console Components_2005.vcproj", "{BF191D4E-B4A8-49A4-986D-B562166AED39}"
 EndProject
