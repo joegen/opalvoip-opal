@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2025  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2026  2006/06/30 00:49:06  csoutheren
+ * Applied 1469865 - remove connection from call's connection list
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.24  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.23  2005/10/22 12:16:05  dsandras
@@ -444,7 +448,11 @@ class OpalCall : public PSafeObject
 
     PSyncPoint * endCallSyncPoint;
 
+    
+  //use to add the connection to the call's connection list
   friend OpalConnection::OpalConnection(OpalCall & call, OpalEndPoint & ep, const PString & token);
+  //use to remove the connection from the call's connection list
+  friend OpalConnection::~OpalConnection();
 };
 
 
