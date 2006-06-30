@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="SimpleOPAL"
+	ProjectGUID="{780468A8-2135-4ADE-9E05-E245B36A4791}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
