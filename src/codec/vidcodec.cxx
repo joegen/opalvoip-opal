@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2014  2006/06/30 01:05:50  csoutheren
+ * Revision 1.2015  2006/06/30 06:49:31  csoutheren
+ * Fixed disable of video code to use correct #define
+ *
+ * Revision 2.13  2006/06/30 01:05:50  csoutheren
  * Applied 1509203 - Fix compilation when video is disabled
  * Thanks to Boris Pavacic
  *
@@ -229,7 +232,7 @@ OpalUncompVideoTranscoder::~OpalUncompVideoTranscoder()
 
 PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
 {
-#if HAS_VIDEO
+#ifndef NO_OPAL_VIDEO
   PINDEX frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, GetOutputFormat());
   if (!input && frameBytes > maxOutputSize)
     frameBytes = maxOutputSize;
@@ -244,7 +247,7 @@ PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
 BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                               RTP_DataFrameList & output)
 {
-#if HAS_VIDEO
+#ifndef NO_OPAL_VIDEO
   output.RemoveAll();
 
   const FrameHeader * srcHeader = (const FrameHeader *)input.GetPayloadPtr();
