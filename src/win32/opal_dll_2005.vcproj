@@ -79,7 +79,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ptclib.lib ptlib.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
 				OutputFile="..\..\lib\opaln.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -172,7 +172,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ptclibd.lib ptlibd.lib mpr.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="mpr.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
 				OutputFile="..\..\lib\opald.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -274,7 +274,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="ptclib.lib ptlib.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
 				OutputFile="..\..\lib\opal.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
