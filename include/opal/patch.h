@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2012  2006/02/02 07:02:57  csoutheren
+ * Revision 1.2013  2006/06/30 01:33:43  csoutheren
+ * Add function to get patch sink media format
+ *
+ * Revision 2.11  2006/02/02 07:02:57  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -158,6 +161,10 @@ class OpalMediaPatch : public PThread
     /**Get the current source stream for patch.
       */
     OpalMediaStream & GetSource() const { return source; }
+
+    /**Get the mediaformat for a sink stream
+      */
+    OpalMediaFormat GetSinkFormat(PINDEX i = 0) const;
 
     /**Add a filter to the media pipeline.
        Use PDECLARE_NOTIFIER(RTP_DataFrame, YourClass, YourFunction) for the
