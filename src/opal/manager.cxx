@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2060  2006/06/30 01:05:51  csoutheren
+ * Revision 1.2061  2006/06/30 06:49:31  csoutheren
+ * Fixed disable of video code to use correct #define
+ *
+ * Revision 2.59  2006/06/30 01:05:51  csoutheren
  * Applied 1509203 - Fix compilation when video is disabled
  * Thanks to Boris Pavacic
  *
@@ -333,7 +336,7 @@ OpalManager::OpalManager()
 
   PStringList devices;
   
-#if HAS_VIDEO
+#ifndef NO_OPAL_VIDEO
   devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
 #endif
   if (devices.GetSize() > 0) {
@@ -343,7 +346,7 @@ OpalManager::OpalManager()
   }
   autoStartTransmitVideo = !(videoInputDevice.deviceName *= "fake");
 
-#if HAS_VIDEO
+#ifndef NO_OPAL_VIDEO
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
 #endif
   if (devices.GetSize() > 0) {
@@ -735,7 +738,7 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
                                          PVideoInputDevice * & device,
                                          BOOL & autoDelete)
 {
-#if HAS_VIDEO
+#ifndef ON_OPAL_VIDEO
   autoDelete = TRUE;
   device = PVideoInputDevice::CreateDeviceByName(videoInputDevice.deviceName);
 
@@ -759,7 +762,7 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
                                           PVideoOutputDevice * & device,
                                           BOOL & autoDelete)
 {
-#if HAS_VIDEO
+#ifndef NO_OPAL_VIDEO
   const PVideoDevice::OpenArgs & args = preview ? videoPreviewDevice : videoOutputDevice;
   autoDelete = TRUE;
   device = PVideoOutputDevice::CreateDeviceByName(args.deviceName);
@@ -1151,7 +1154,7 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
 {
-#if HAS_VIDEO
+#ifndef NO_OPAL_VIDEO
   PStringList drivers = PVideoInputDevice::GetDriverNames();
   for (PINDEX i = 0; i < drivers.GetSize(); i++) {
     PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[i]);
