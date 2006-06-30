@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2038  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2039  2006/06/30 06:59:21  csoutheren
+ * Applied 1494417 - Add check for ContentLength tag
+ * Thanks to mturconi
+ *
+ * Revision 2.37  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -350,6 +354,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
+		BOOL IsContentLengthPresent() const;
 
     PString GetCSeq() const;
     void SetCSeq(const PString & v);

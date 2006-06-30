@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2097  2006/06/30 01:05:18  csoutheren
+ * Revision 1.2098  2006/06/30 06:59:21  csoutheren
+ * Applied 1494417 - Add check for ContentLength tag
+ * Thanks to mturconi
+ *
+ * Revision 2.96  2006/06/30 01:05:18  csoutheren
  * Minor cleanups
  *
  * Revision 2.95  2006/05/30 04:58:06  csoutheren
@@ -677,6 +681,11 @@ PINDEX SIPMIMEInfo::GetContentLength() const
   if (len.IsEmpty())
     return 0; //P_MAX_INDEX;
   return len.AsInteger();
+}
+
+BOOL SIPMIMEInfo::IsContentLengthPresent() const
+{
+	return !GetFullOrCompact("Content-Length", 'l').IsEmpty();
 }
 
 
@@ -1746,10 +1755,37 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     return FALSE;
   }
 
-  // get the SDP content
-  PINDEX contentLength = mime.GetContentLength();
-  if (contentLength > 0)
-    transport.read(entityBody.GetPointer(contentLength+1), contentLength);
+  // get the SDP content body
+	// if a content length is specified, read that length
+	// if no content length is specified (which is not the same as zero length)
+	// then read until plausible end of header marker
+	PINDEX contentLength = mime.GetContentLength();
+	if (contentLength > 0)
+		transport.read(entityBody.GetPointer(contentLength+1), contentLength);
+
+	else if (!mime.IsContentLengthPresent()) {
+		PBYTEArray pp;
+
+#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300)
+		transport.rdbuf()->pubseekoff(0, ios_base::cur);
+#else
+		transport.rdbuf()->seekoff(0, ios::cur, ios::in);
+#endif 
+
+		//store in pp ALL the PDU (from beginning)
+		transport.read((char*)pp.GetPointer(transport.GetLastReadCount()),transport.GetLastReadCount());
+		PINDEX pos = 3;
+		while(++pos < pp.GetSize() && !(pp[pos]=='\n' && pp[pos-1]=='\r' && pp[pos-2]=='\n' && pp[pos-3]=='\r'))
+			; //end of header is marked by "\r\n\r\n"
+
+		if (pos<pp.GetSize())
+			pos++;
+		contentLength = pp.GetSize() - pos;
+		if(contentLength > 0)
+			memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,	contentLength);
+	}
+
+	////////////////
   entityBody[contentLength] = '\0';
 
   BOOL removeSDP = TRUE;
