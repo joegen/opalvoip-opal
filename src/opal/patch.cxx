@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2028  2006/06/28 11:29:07  csoutheren
+ * Revision 1.2029  2006/06/30 01:33:43  csoutheren
+ * Add function to get patch sink media format
+ *
+ * Revision 2.27  2006/06/28 11:29:07  csoutheren
  * Patch 1456858 - Add mutex to transaction dictionary and other stability patches
  * Thanks to drosario
  *
@@ -341,6 +344,24 @@ void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
   }
 }
 
+OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
+{
+	OpalMediaFormat fmt;
+
+  PWaitAndSignal mutex(inUse);
+
+	if (i >= sinks.GetSize())
+		return fmt;
+
+	Sink & sink = sinks[i];
+	if (sink.secondaryCodec != NULL) 
+		return sink.secondaryCodec->GetOutputFormat();
+
+	if (sink.primaryCodec != NULL)
+		return sink.primaryCodec->GetOutputFormat();
+
+	return fmt;
+}
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
   : patch(p)
