@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2065  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2066  2006/06/30 00:49:07  csoutheren
+ * Applied 1469865 - remove connection from call's connection list
+ * Thanks to Frederich Heem
+ *
+ * Revision 2.64  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -414,6 +418,7 @@ OpalConnection::~OpalConnection()
   delete t38handler;
   delete h224Handler;
 
+  ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
 
   PTRACE(3, "OpalCon\tConnection " << *this << " destroyed.");
