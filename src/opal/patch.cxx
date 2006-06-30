@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2030  2006/06/30 05:23:47  csoutheren
+ * Revision 1.2031  2006/06/30 05:33:26  csoutheren
+ * Applied 1509251 - Locking rearrangement in OpalMediaPatch::Main
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.29  2006/06/30 05:23:47  csoutheren
  * Applied 1509246 - Fix sleeping in OpalMediaPatch::Main
  * Thanks to Borko Jandras
  *
@@ -212,13 +216,14 @@ void OpalMediaPatch::Main()
   RTP_DataFrame emptyFrame(source.GetDataSize());
 
   while (source.ReadPacket(sourceFrame)) {
-    inUse.Wait();
     FilterFrame(sourceFrame, source.GetMediaFormat());
 
-    for (i = 0; i < sinks.GetSize(); i++)
+    inUse.Wait();
+
+	PINDEX len = sinks.GetSize();
+    for (i = 0; i < len; i++)
       sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
 
-    PINDEX len = sinks.GetSize();
     inUse.Signal();
 
 #if !defined(WIN32)
