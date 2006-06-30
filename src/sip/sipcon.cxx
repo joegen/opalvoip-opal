@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2159  2006/06/30 01:42:39  csoutheren
+ * Revision 1.2160  2006/06/30 14:55:53  dsandras
+ * Reverted broken patch. Reinvites can have different branch ID's.
+ *
+ * Revision 2.158  2006/06/30 01:42:39  csoutheren
  * Applied 1509216 - SIPConnection::OnReceivedOK fix
  * Thanks to Boris Pavacic
  *
@@ -1757,12 +1760,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     // Ignore duplicate INVITEs
     if (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq()) {
       PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
-      return;
-    }
-
-    // Ignore INVITEs that arrive via a different branch
-    if (originalInvite->GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
-      PTRACE(2, "SIP\tIgnoring duplicate INVITE arrived by different branch from " << request.GetURI());
       return;
     }
   }
