@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2112  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2113  2006/06/30 01:39:58  csoutheren
+ * Applied 1509222 - H323Connection-gk-deadlock
+ * Thanks to Boris Pavacic
+ *
+ * Revision 2.111  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -3089,7 +3093,13 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     response.aliasAddresses = &newAliasAddresses;
     if (!gkAccessTokenOID)
       response.accessTokenData = &gkAccessTokenData;
-    while (!gatekeeper->AdmissionRequest(*this, response, alias.IsEmpty())) {
+    for (;;) {
+      safeLock.Unlock();
+      BOOL ok = gatekeeper->AdmissionRequest(*this, response, alias.IsEmpty());
+      if (!safeLock.Lock())
+        return EndedByCallerAbort;
+      if (ok)
+        break;
       PTRACE(1, "H225\tGatekeeper refused admission: "
              << (response.rejectReason == UINT_MAX
                   ? PString("Transport error")
