@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2060  2006/06/20 05:22:30  csoutheren
+ * Revision 1.2061  2006/06/30 05:30:41  csoutheren
+ * Applied 1509269 - Fix OpalTransportUDP::Read-channelPointer
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.59  2006/06/20 05:22:30  csoutheren
  * Remove bogus warning at run-time about converting "0.0.0.0"
  *
  * Revision 2.58  2006/02/18 19:00:38  dsandras
@@ -2035,7 +2039,12 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     if (!OpalTransportIP::Read(buffer, length))
       return FALSE;
 
+    PReadWaitAndSignal mutex(channelPointerMutex);
     PUDPSocket * socket = (PUDPSocket *)GetReadChannel();
+    if (socket == NULL) {
+      PTRACE(1, "UDP\tSocket closed");
+      return FALSE;
+    }
 
     PIPSocket::Address address;
     WORD port;
