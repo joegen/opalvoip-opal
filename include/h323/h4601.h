@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.8  2006/07/01 05:31:36  shorne
+* added building featureset from generic data field
+*
 * Revision 1.7  2006/06/21 04:54:14  csoutheren
 * Fixed build with latest PWLib
 *
@@ -998,6 +1001,10 @@ class H460_FeatureSet : public PObject
 	/** Build a Feature Set from the contents of a Feature Set PDU
 	 */
 	H460_FeatureSet(const H225_FeatureSet & fs);
+
+    /** Build a FeatureSet from the contents of a generic data field.
+	 */
+	H460_FeatureSet(const H225_ArrayOf_GenericData & generic);
 
     /** Derive new Feature Set based on this Feature Set ie Clone this FeatureSet
 	  */
