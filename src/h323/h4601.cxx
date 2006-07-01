@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h4601.cxx,v $
+ * Revision 1.8  2006/07/01 05:31:36  shorne
+ * added building featureset from generic data field
+ *
  * Revision 1.7  2006/06/15 15:34:25  shorne
  * More updates
  *
@@ -151,7 +154,7 @@ PString H460_FeatureID::IDString() const
 {
 	if (GetFeatureType() == H225_GenericIdentifier::e_standard) {
 		    const PASN_Integer & jint = *this;
-			return "Std " + jint;
+			return "Std " + PString(jint);
 	}
 	
 	if (GetFeatureType() == H225_GenericIdentifier::e_oid) {
@@ -164,7 +167,7 @@ PString H460_FeatureID::IDString() const
 			return "NonStd " + gui.AsString();
 	}
 
-	return PString();
+	return PString("unknown");
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -968,6 +971,17 @@ H460_FeatureSet::H460_FeatureSet(const H225_FeatureSet & fs)
 	CreateFeatureSet(fs);
 }
 
+H460_FeatureSet::H460_FeatureSet(const H225_ArrayOf_GenericData & generic)
+{
+	Features.DisallowDeleteObjects();   // Built FeatureSet should not delete Objects.
+	ep = NULL;
+	baseSet = NULL;
+
+    for (PINDEX i=0; i < generic.GetSize(); i++) {
+	   AddFeature((H460_Feature *)&generic[i]);
+	}
+}
+
 BOOL H460_FeatureSet::ProcessFirstPDU(const H225_FeatureSet & fs)
 {
   
@@ -1481,6 +1495,7 @@ BOOL H460_FeatureSet::SendFeature(unsigned id, H225_FeatureSet & Message)
 
 void H460_FeatureSet::AttachEndPoint(H323EndPoint * _ep) 
 {
+   PTRACE(4,"H460\tEndpoint Attached");
    ep = _ep;
 }
 
