@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2067  2006/06/26 02:03:07  csoutheren
+ * Revision 1.2068  2006/07/03 03:28:44  dereksmithies
+ * Fix arg handling on disableui, and look for args to srcep, not srcEp
+ *
+ * Revision 2.66  2006/06/26 02:03:07  csoutheren
  * Fixed problem when no TTS code installed
  *
  * Revision 2.65  2006/06/05 05:26:39  csoutheren
@@ -347,7 +350,7 @@ void SimpleOpalProcess::Main()
              "b-bandwidth:"
              "D-disable:"
              "d-dial-peer:"
-             "-disableui:"
+             "-disableui."
              "e-silence."
              "f-fast-disable."
              "g-gatekeeper:"
@@ -1024,8 +1027,7 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 #endif
 
-  srcEP = args.GetOptionString("srcEp", "pc:*");
-
+  srcEP = args.GetOptionString("srcep", "pc:*");
   return TRUE;
 }
 
@@ -1109,7 +1111,7 @@ void MyManager::Main(PArgList & args)
   }
 
   if (args.HasOption("disableui")) {
-    while (FindCallWithLock(currentCallToken) != NULL)
+    while (FindCallWithLock(currentCallToken) != NULL) 
       PThread::Sleep(1000);
   }
   else {
