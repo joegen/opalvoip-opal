@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2033  2006/06/30 09:20:37  dsandras
+ * Revision 1.2034  2006/07/04 00:48:14  csoutheren
+ * New version of patch 1509246
+ *
+ * Revision 2.32  2006/06/30 09:20:37  dsandras
  * Fixed wrong assertion triggering.
  *
  * Revision 2.31  2006/06/30 07:36:37  csoutheren
@@ -233,13 +236,11 @@ void OpalMediaPatch::Main()
 
     inUse.Signal();
 
-#if !defined(WIN32)
-    // Don't starve the CPU, if not in synchronous mode on non-Win32 platforms
     if (!isSynchronous || !sourceFrame.GetPayloadSize())
-      Yield();
-#else
-    // Don't starve the CPU at any time on Win32 platforms
-    Yield();
+      Sleep(5); // Don't starve the CPU
+#if !defined(WIN32)
+    else
+      Sleep(5); // Permit to another thread to take the mutex
 #endif
 
     if (len == 0)
