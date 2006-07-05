@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2048  2006/06/28 11:29:07  csoutheren
+ * Revision 1.2049  2006/07/05 04:29:14  csoutheren
+ * Applied 1495008 - Add a callback: OnCreatingINVITE
+ * Thanks to mturconi
+ *
+ * Revision 2.47  2006/06/28 11:29:07  csoutheren
  * Patch 1456858 - Add mutex to transaction dictionary and other stability patches
  * Thanks to drosario
  *
@@ -480,6 +484,10 @@ class SIPConnection : public OpalConnection
       SIP_PDU & response
     );
   
+    /**Handle a sending INVITE request
+      */
+    virtual void OnCreatingINVITE(SIP_PDU & pdu);
+
     /**Queue a PDU for the PDU handler thread to handle.
        Any listener threads on the endpoint upon receiving a PDU and
        determining the SIPConnection to use from the Call-ID field queues up
