@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2160  2006/06/30 14:55:53  dsandras
+ * Revision 1.2161  2006/07/05 04:29:14  csoutheren
+ * Applied 1495008 - Add a callback: OnCreatingINVITE
+ * Thanks to mturconi
+ *
+ * Revision 2.159  2006/06/30 14:55:53  dsandras
  * Reverted broken patch. Reinvites can have different branch ID's.
  *
  * Revision 2.158  2006/06/30 01:42:39  csoutheren
@@ -2316,6 +2320,12 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   }
 
   return TRUE;
+}
+
+
+void SIPConnection::OnCreatingINVITE(SIP_PDU & /*request*/)
+{
+  PTRACE(2, "SIP\tCreating INVITE request");
 }
 
 

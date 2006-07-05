@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2098  2006/06/30 06:59:21  csoutheren
+ * Revision 1.2099  2006/07/05 04:29:14  csoutheren
+ * Applied 1495008 - Add a callback: OnCreatingINVITE
+ * Thanks to mturconi
+ *
+ * Revision 2.97  2006/06/30 06:59:21  csoutheren
  * Applied 1494417 - Add check for ContentLength tag
  * Thanks to mturconi
  *
@@ -2209,6 +2213,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+  connection.OnCreatingINVITE(*this);
 }
 
 
@@ -2223,6 +2228,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+  connection.OnCreatingINVITE(*this);
 }
 
 
