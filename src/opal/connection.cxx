@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2066  2006/06/30 00:49:07  csoutheren
+ * Revision 1.2067  2006/07/05 05:09:12  csoutheren
+ * Applied 1494937 - Allow re-opening of mediastrams
+ * Thanks to mturconi
+ *
+ * Revision 2.65  2006/06/30 00:49:07  csoutheren
  * Applied 1469865 - remove connection from call's connection list
  * Thanks to Frederich Heem
  *
@@ -584,7 +588,9 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
                                            unsigned sessionID)
 {
   // See if already opened
-  if (GetMediaStream(sessionID, TRUE) != NULL) {
+  OpalMediaStream * stream = GetMediaStream(sessionID, TRUE);
+
+  if (stream != NULL && stream->IsOpen()) {
     PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
            << sessionID << " on " << *this);
     return TRUE;
@@ -607,7 +613,9 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
   PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
   
-  OpalMediaStream *stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
+  if (stream == NULL)
+    stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
+
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
            << sessionID << " on " << *this);
@@ -690,8 +698,10 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 void OpalConnection::StartMediaStreams()
 {
   PWaitAndSignal mutex(mediaStreamMutex);
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
-    mediaStreams[i].Start();
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
+    if (mediaStreams[i].IsOpen())
+      mediaStreams[i].Start();
+  }
   PTRACE(2, "OpalCon\tMedia stream threads started.");
 }
 
@@ -762,7 +772,8 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
 
     {
       PWaitAndSignal m(mediaStreamMutex);
-      mediaStreams.Append(&stream);
+      if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
+        mediaStreams.Append(&stream);
     }
 
   if (phase == ConnectedPhase) {
