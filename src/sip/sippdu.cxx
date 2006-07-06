@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2099  2006/07/05 04:29:14  csoutheren
+ * Revision 1.2100  2006/07/06 20:37:58  dsandras
+ * Applied patch from Brian Lu <brian lu sun com> to fix compilation on opensolaris. thanks!
+ *
+ * Revision 2.98  2006/07/05 04:29:14  csoutheren
  * Applied 1495008 - Add a callback: OnCreatingINVITE
  * Thanks to mturconi
  *
@@ -1770,7 +1773,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 	else if (!mime.IsContentLengthPresent()) {
 		PBYTEArray pp;
 
-#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300)
+#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
 		transport.rdbuf()->pubseekoff(0, ios_base::cur);
 #else
 		transport.rdbuf()->seekoff(0, ios::cur, ios::in);
