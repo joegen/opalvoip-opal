@@ -33,6 +33,13 @@ AC_SUBST(LIBDIR)
 
 dnl ########################################################################
 dnl extract the OPAL version
+
+dnl MSWIN_DISPLAY version,Version
+dnl MSWIN_VERSION version,OPAL_MAJOR=MAJOR_VERSION
+dnl MSWIN_VERSION version,OPAL_MINOR=MINOR_VERSION
+dnl MSWIN_VERSION version,OPAL_BUILD=BUILD_NUMBER
+dnl MSWIN_VERSION version,OPAL_VERSION=VERSION
+
 MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
 MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
 BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
