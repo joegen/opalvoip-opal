@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2163  2006/07/09 10:18:28  csoutheren
+ * Revision 1.2164  2006/07/09 12:47:23  dsandras
+ * Added clear cause for EndedByNoAnswer.
+ *
+ * Revision 2.162  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -761,7 +764,8 @@ static struct CallEndReasonMapEntry {
   { OpalConnection::EndedByLocalBusy,          SIP_PDU::Failure_BusyHere },             // 486
   { OpalConnection::EndedByCallerAbort,        SIP_PDU::Failure_RequestTerminated },    // 487
   { OpalConnection::EndedByCapabilityExchange, SIP_PDU::Failure_UnsupportedMediaType }, // 415
-  { OpalConnection::EndedByCallForwarded,      SIP_PDU::Redirection_MovedTemporarily }  // 302
+  { OpalConnection::EndedByCallForwarded,      SIP_PDU::Redirection_MovedTemporarily },  // 302
+  { OpalConnection::EndedByNoAnswer,           SIP_PDU::Failure_TemporarilyUnavailable } // 480
 };
 
 #define NUM_CALL_END_REASON_MAP_ENTRIES (sizeof(EndReasonToSIPCode) / sizeof(EndReasonToSIPCode[0]))
@@ -1221,7 +1225,6 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 
   if (rtpSessions.GetSession(sessionID) == NULL)
     return NULL;
-
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
 				endpoint.GetManager().GetMinAudioJitterDelay(),
@@ -1882,8 +1885,20 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
           endpoint.OnHold(*this);
         }
       }
-
+    }
+    
+    // If it is a RE-INVITE that doesn't correspond to a HOLD, then
+    // Close all media streams, they will be reopened.
+    if (!IsConnectionOnHold()) {
+      PWaitAndSignal m(streamsMutex);
+      GetCall().RemoveMediaStreams();
+      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID);
+      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID);
+    }
+ 
+    if (originalInvite->HasSDP()) {
       // Try to send SDP media description for audio and video
+      SDPSessionDescription & sdpIn = originalInvite->GetSDP();
       sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
       sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
       sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
@@ -1900,13 +1915,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
     }
 
-    // If it is a RE-INVITE that doesn't correspond to a HOLD, then
-    // Close all media streams, they will be reopened.
-    if (!IsConnectionOnHold()) {
-      PWaitAndSignal m(streamsMutex);
-      GetCall().RemoveMediaStreams();
-    }
-
+  
     // send the 200 OK response
     SendInviteOK(sdpOut);
 
