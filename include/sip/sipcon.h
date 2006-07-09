@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2049  2006/07/05 04:29:14  csoutheren
+ * Revision 1.2050  2006/07/09 10:03:28  csoutheren
+ * Applied 1518681 - Refactoring boilerplate code
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.48  2006/07/05 04:29:14  csoutheren
  * Applied 1495008 - Add a callback: OnCreatingINVITE
  * Thanks to mturconi
  *
@@ -550,6 +554,19 @@ class SIPConnection : public OpalConnection
       */
     BOOL SendUserInputTone(char tone, unsigned duration);
     
+    /**Send a "200 OK" response for the received INVITE message.
+     */
+    virtual BOOL SendInviteOK(const SDPSessionDescription & sdp);
+
+    /**Send a response for the received INVITE message.
+     */
+    virtual BOOL SendInviteResponse(
+      SIP_PDU::StatusCodes code,
+      const char * contact = NULL,
+      const char * extra = NULL,
+      const SDPSessionDescription * sdp = NULL
+    );
+	
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
      */
