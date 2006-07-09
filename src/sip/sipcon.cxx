@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2161  2006/07/05 04:29:14  csoutheren
+ * Revision 1.2162  2006/07/09 10:03:29  csoutheren
+ * Applied 1518681 - Refactoring boilerplate code
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.160  2006/07/05 04:29:14  csoutheren
  * Applied 1495008 - Add a callback: OnCreatingINVITE
  * Thanks to mturconi
  *
@@ -796,11 +800,9 @@ void SIPConnection::OnReleased()
 
         // EndedByCallForwarded is a special case because it needs different paramaters
         if (callEndReason == (int)EndedByCallForwarded) {
-          SIP_PDU response(*originalInvite, sipCode, NULL, forwardParty);
-          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          SendInviteResponse(sipCode, NULL, forwardParty);
         } else {
-          SIP_PDU response(*originalInvite, sipCode);
-          SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          SendInviteResponse(sipCode);
         }
       }
       break;
@@ -888,8 +890,7 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   if (phase != SetUpPhase) 
     return FALSE;
 
-  SIP_PDU response(*originalInvite, SIP_PDU::Information_Ringing);
-  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+  SendInviteResponse(SIP_PDU::Information_Ringing);
   phase = AlertingPhase;
 
   return TRUE;
@@ -939,11 +940,7 @@ BOOL SIPConnection::SetConnected()
   }
 
   // send the 200 OK response
-  PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-  SIPURL contact = endpoint.GetLocalURL(*transport, userName);
-  SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString());
-  response.SetSDP(sdpOut);
-  SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
+  SendInviteOK(sdpOut);
 
   // init DTMF handler
   InitRFC2833Handler();
@@ -1808,8 +1805,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
   // send trying with To: tag
-  SIP_PDU response(*originalInvite, SIP_PDU::Information_Trying);
-  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+  SendInviteResponse(SIP_PDU::Information_Trying);
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) {
@@ -1864,11 +1860,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
 
     // send the 200 OK response
-    PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-    SIPURL contact = endpoint.GetLocalURL(*transport, userName);
-    SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
-    response.SetSDP(sdpOut);
-    SendPDU(response, originalInvite->GetViaAddress(endpoint));
+    SendInviteOK(sdpOut);
 
     return;
   }
@@ -2394,6 +2386,25 @@ BOOL SIPConnection::ForwardCall (const PString & fwdParty)
   Release(EndedByCallForwarded);
 
   return TRUE;
+}
+
+
+BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
+{
+  PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
+  SIPURL contact = endpoint.GetLocalURL(*transport, userName);
+
+  return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
+}
+
+BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
+{
+  if (NULL == originalInvite) return FALSE;
+	
+  SIP_PDU response(*originalInvite, code, contact, extra);
+  if (NULL != sdp) response.SetSDP(*sdp);
+  
+  return SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
 }
 
 
