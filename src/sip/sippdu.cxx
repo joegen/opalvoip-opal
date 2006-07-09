@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2100  2006/07/06 20:37:58  dsandras
+ * Revision 1.2101  2006/07/09 10:18:29  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.99  2006/07/06 20:37:58  dsandras
  * Applied patch from Brian Lu <brian lu sun com> to fix compilation on opensolaris. thanks!
  *
  * Revision 2.98  2006/07/05 04:29:14  csoutheren
@@ -2234,6 +2238,14 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   connection.OnCreatingINVITE(*this);
 }
 
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsigned rtpSessionId)
+  : SIPTransaction(connection, transport, Method_INVITE)
+{
+  mime.SetDate() ;                             // now
+  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+
+  connection.BuildSDP(sdp, rtpSessions, rtpSessionId);
+}
 
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
