@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2042  2006/06/30 04:49:54  csoutheren
+ * Revision 1.2043  2006/07/09 10:18:28  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.41  2006/06/30 04:49:54  csoutheren
  * Applied 1509240 -  Fix for OpalMediaStream::Close deadlock
  * Thanks to Borko Jandras
  *
@@ -186,7 +190,7 @@
 #include <codec/vidcodec.h>
 #include <lids/lid.h>
 #include <rtp/rtp.h>
-
+#include <opal/transports.h>
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10
 
@@ -943,5 +947,70 @@ BOOL OpalVideoMediaStream::IsSynchronous() const
   return IsSource();
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+OpalUDPMediaStream::OpalUDPMediaStream(const OpalMediaFormat & mediaFormat,
+                                       unsigned sessionID,
+                                       BOOL isSource,
+                                       OpalTransportUDP & transport)
+  : OpalMediaStream(mediaFormat, sessionID, isSource),
+    udpTransport(transport)
+{}
+
+BOOL OpalUDPMediaStream::ReadPacket(RTP_DataFrame & Packet)
+{
+  Packet.SetPayloadType(mediaFormat.GetPayloadType());
+  Packet.SetPayloadSize(0);
+
+  if (IsSink()) {
+    PTRACE(1, "Media\tTried to read from sink media stream");
+    return FALSE;
+  }
+
+  PBYTEArray rawData;
+  if (!udpTransport.ReadPDU(rawData)) {
+    PTRACE(3, "Read on UDP transport failed: "
+       << udpTransport.GetErrorText() << " transport: " << udpTransport);
+    return FALSE;
+  }
+
+  if (rawData.GetSize() > 0) {
+    Packet.SetPayloadSize(rawData.GetSize());
+    memcpy(Packet.GetPayloadPtr(), rawData.GetPointer(), rawData.GetSize());
+  }
+
+  return TRUE;
+}
+
+BOOL OpalUDPMediaStream::WritePacket(RTP_DataFrame & Packet)
+{
+  if (IsSource()) {
+    PTRACE(1, "Media\tTried to write to source media stream");
+    return FALSE;
+  }
+
+  if (Packet.GetPayloadSize() > 0) {
+    if (!udpTransport.Write(Packet.GetPayloadPtr(), Packet.GetPayloadSize())) {
+      PTRACE(3, "Media\tWrite on UDP transport failed: "
+         << udpTransport.GetErrorText() << " transport: " << udpTransport);
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+BOOL OpalUDPMediaStream::IsSynchronous() const
+{
+  return FALSE;
+}
+
+BOOL OpalUDPMediaStream::Close()
+{
+  if (!OpalMediaStream::Close())
+    return FALSE;
+
+  return udpTransport.Close();
+}
 
 // End of file ////////////////////////////////////////////////////////////////
