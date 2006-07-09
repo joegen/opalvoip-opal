@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2050  2006/07/09 10:03:28  csoutheren
+ * Revision 1.2051  2006/07/09 10:18:28  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.49  2006/07/09 10:03:28  csoutheren
  * Applied 1518681 - Refactoring boilerplate code
  * Thanks to Borko Jandras
  *
@@ -644,6 +648,9 @@ class SIPConnection : public OpalConnection
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
     void InitRFC2833Handler();
+
+    OpalTransportUDP & GetUDPTransport();
+    OpalTransportUDP * udpTransport;
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;

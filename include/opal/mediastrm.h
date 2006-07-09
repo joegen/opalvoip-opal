@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2030  2006/06/21 04:54:15  csoutheren
+ * Revision 1.2031  2006/07/09 10:18:28  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.29  2006/06/21 04:54:15  csoutheren
  * Fixed build with latest PWLib
  *
  * Revision 2.28  2005/11/30 13:35:26  csoutheren
@@ -755,7 +759,58 @@ class OpalVideoMediaStream : public OpalMediaStream
     PTimeInterval        lastGrabTime;
 };
 
+class OpalTransportUDP;
 
+/** Media stream that uses UDP.
+ */
+class OpalUDPMediaStream : public OpalMediaStream
+{
+    PCLASSINFO(OpalUDPMediaStream, OpalMediaStream);
+  public:
+  /**@name Construction */
+  //@{
+    /**Construct a new media stream for channel.
+      */
+    OpalUDPMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      BOOL isSource,                       ///<  Is a source stream
+      OpalTransportUDP & transport         ///<  UDP transport instance
+    );
+  //@}
+
+  /**@name Overrides of OpalMediaStream class */
+  //@{
+
+    /**Read an RTP frame of data from the source media stream.
+       The new behaviour simply calls OpalTransportUDP::ReadPDU().
+      */
+    virtual BOOL ReadPacket(
+      RTP_DataFrame & packet
+    );
+
+    /**Write an RTP frame of data to the sink media stream.
+       The new behaviour simply calls OpalTransportUDP::Write().
+      */
+    virtual BOOL WritePacket(
+      RTP_DataFrame & packet
+    );
+
+    /**Indicate if the media stream is synchronous.
+       Returns FALSE.
+      */
+    virtual BOOL IsSynchronous() const;
+
+    /**Close the media stream.
+       Closes the associated OpalTransportUDP.
+      */
+    virtual BOOL Close();
+
+  //@}
+
+  private:
+    OpalTransportUDP & udpTransport;
+};
 
 #endif //__OPAL_MEDIASTRM_H
 

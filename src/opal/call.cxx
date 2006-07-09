@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2044  2006/03/29 23:53:03  csoutheren
+ * Revision 1.2045  2006/07/09 10:18:28  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.43  2006/03/29 23:53:03  csoutheren
  * Added call to OpalCall::OnSetUpConnection
  *
  * Revision 2.42  2006/03/20 10:37:47  csoutheren
@@ -371,6 +375,8 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
     if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
       createdOne = TRUE;
     if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+      createdOne = TRUE;
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
       createdOne = TRUE;
   }
 
