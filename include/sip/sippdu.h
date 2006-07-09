@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2039  2006/06/30 06:59:21  csoutheren
+ * Revision 1.2040  2006/07/09 10:18:28  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.38  2006/06/30 06:59:21  csoutheren
  * Applied 1494417 - Add check for ContentLength tag
  * Thanks to mturconi
  *
@@ -171,7 +175,7 @@
 #include <ptclib/url.h>
 #include <sip/sdp.h>
 
-
+ 
 class OpalTransport;
 class OpalTransportAddress;
 
@@ -823,6 +827,11 @@ class SIPInvite : public SIPTransaction
       SIPConnection & connection,
       OpalTransport & transport,
       RTP_SessionManager & sm
+    );
+    SIPInvite(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      unsigned rtpSessionId
     );
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
