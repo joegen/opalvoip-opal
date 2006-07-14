@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2040  2006/04/20 16:52:22  hfriederich
+ * Revision 1.2041  2006/07/14 04:22:42  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.39  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
  *
  * Revision 2.38  2006/04/09 12:01:43  rjongbloed
@@ -645,6 +649,11 @@ class OpalMediaFormat : public PCaselessString
       const PString & wildcard  ///<  Wildcard name to search for
     );
 
+    OpalMediaFormat & operator=(
+      const OpalMediaFormat &format
+    );
+
+
     /**Search for the specified format type.
        This is equivalent to going fmt = OpalMediaFormat(rtpPayloadType);
       */
@@ -898,6 +907,7 @@ class OpalMediaFormat : public PCaselessString
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     const char *                 rtpEncodingName;
     unsigned                     defaultSessionID;
+    PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
 
   friend class OpalMediaFormatList;
