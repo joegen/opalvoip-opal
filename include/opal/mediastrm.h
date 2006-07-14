@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2032  2006/07/14 04:22:42  csoutheren
+ * Revision 1.2033  2006/07/14 05:24:49  csoutheren
+ * Applied 1509232 - Fix for a bug in OpalMediaPatch::Close method
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.31  2006/07/14 04:22:42  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -389,6 +393,10 @@ class OpalMediaStream : public PObject
     OpalMediaPatch * GetPatch() const { return patchThread; }
   //@}
 
+    /**Get the mutex that prevents the destructor from completing.
+      */
+    PMutex &  GetDeleteMutex() const { return deleteMutex; }
+
   protected:
     OpalMediaFormat mediaFormat;
     unsigned        sessionID;
@@ -403,6 +411,8 @@ class OpalMediaStream : public PObject
     OpalMediaPatch * patchThread;
     PMutex           patchMutex;
     PNotifier        commandNotifier;
+
+    mutable PMutex  deleteMutex;
 };
 
 PLIST(OpalMediaStreamList, OpalMediaStream);
