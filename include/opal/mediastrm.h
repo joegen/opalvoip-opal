@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2031  2006/07/09 10:18:28  csoutheren
+ * Revision 1.2032  2006/07/14 04:22:42  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.30  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -580,6 +584,7 @@ class OpalRawMediaStream : public OpalMediaStream
 
   protected:
     PChannel * channel;
+    PMutex     channel_mutex;
     BOOL       autoDelete;
 };
 
