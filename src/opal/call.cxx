@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2045  2006/07/09 10:18:28  csoutheren
+ * Revision 1.2046  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.44  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -608,11 +612,13 @@ void OpalCall::OnReleased(OpalConnection & connection)
   connectionsActive.Remove(&connection);
 
   // A call will evaporate when one connection left, at some point this is
-  // to be changes so can have "parked" connections.
-  PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
-  if (last != NULL && connectionsActive.GetSize() == 1)
-    last->Release(connection.GetCallEndReason());
-
+  // to be changes so can have "parked" connections. 
+  if(connectionsActive.GetSize() == 1)
+  {
+    PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
+    if (last != NULL)
+      last->Release(connection.GetCallEndReason());
+  }
   if (connectionsActive.IsEmpty()) {
     OnCleared();
     manager.activeCalls.RemoveAt(GetToken());

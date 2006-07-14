@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2126  2006/06/10 15:37:33  dsandras
+ * Revision 1.2127  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.125  2006/06/10 15:37:33  dsandras
  * Look for the expires field in the PDU if not present in the contact header.
  *
  * Revision 2.124  2006/05/30 04:58:06  csoutheren
@@ -964,10 +968,8 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     pdu->AdjustVia(transport);
 
   // Find a corresponding connection
-  connectionsActiveInUse.Wait();
   PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
   if (connection != NULL) {
-    connectionsActiveInUse.Signal();
     SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
     if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
       // Have a response to the INVITE, so end Connect mode on the transport
@@ -976,9 +978,6 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     connection->QueuePDU(pdu);
     return TRUE;
   }
-
-  if (pdu->GetMethod() != SIP_PDU::Method_INVITE)
-    connectionsActiveInUse.Signal();
 
   // PDUs outside of connection context
   if (!transport.IsReliable()) {
@@ -1127,7 +1126,6 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
   // add the connection to the endpoint list
   connectionsActive.SetAt(connection->GetToken(), connection);
-  connectionsActiveInUse.Signal();
   
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);

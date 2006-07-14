@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2164  2006/07/09 12:47:23  dsandras
+ * Revision 1.2165  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.163  2006/07/09 12:47:23  dsandras
  * Added clear cause for EndedByNoAnswer.
  *
  * Revision 2.162  2006/07/09 10:18:28  csoutheren
@@ -880,13 +884,13 @@ void SIPConnection::OnReleased()
 }
 
 
-void SIPConnection::TransferConnection(const PString & remoteParty, const PString & /*callIdentity*/)
+void SIPConnection::TransferConnection(const PString & remoteParty, const PString & callIdentity)
 {
   // There is still an ongoing REFER transaction 
   if (referTransaction != NULL) 
     return;
  
-  referTransaction = new SIPRefer(*this, *transport, remoteParty);
+  referTransaction = new SIPRefer(*this, *transport, remoteParty, callIdentity);
   referTransaction->Start ();
 }
 
@@ -1652,8 +1656,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   PINDEX i;
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-    // Have a response to the INVITE, so CANCEL all the other invitations sent.
+	if(phase < EstablishedPhase)
     {
+      // Have a response to the INVITE, so CANCEL all the other invitations sent.
       PWaitAndSignal m(transactionsMutex); 
       for (i = 0; i < invitations.GetSize(); i++) {
         if (&invitations[i] != &transaction)
@@ -2058,8 +2063,11 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
     referTransaction = NULL;
 
     // Release the connection
-    releaseMethod = ReleaseWithBYE;
-    Release(OpalConnection::EndedByCallForwarded);
+    if (phase < ReleasingPhase) 
+    {
+      releaseMethod = ReleaseWithBYE;
+      Release(OpalConnection::EndedByCallForwarded);
+    }
   }
 
   // The REFER is not over yet, ignore the state of the REFER for now
@@ -2099,6 +2107,11 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   PTRACE(2, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   SendPDU(response, request.GetViaAddress(endpoint));
+  
+  if (phase >= ReleasingPhase) {
+    PTRACE(3, "SIP\tAlready released " << *this);
+    return;
+  }
   releaseMethod = ReleaseWithNothing;
   
   remotePartyAddress = request.GetMIME().GetFrom();
@@ -2217,6 +2230,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 				     ? "Proxy-Authenticate"
 				     : "WWW-Authenticate"),
 		  isProxy)) {
+    releaseMethod = ReleaseWithNothing;
     Release(EndedBySecurityDenial);
     return;
   }
@@ -2234,6 +2248,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
       authentication.SetPassword(endpoint.GetProxy().GetPassword());
     }
     else {
+      releaseMethod = ReleaseWithNothing;
       Release(EndedBySecurityDenial);
       return;
     }
@@ -2243,6 +2258,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 					       ? "Proxy-Authenticate"
 					       : "WWW-Authenticate"),
 			    isProxy)) {
+    releaseMethod = ReleaseWithNothing;
     Release(EndedBySecurityDenial);
     return;
   }
@@ -2253,6 +2269,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 	  && lastNonce    == authentication.GetNonce ())) {
 
     PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
+    releaseMethod = ReleaseWithNothing;    
     Release(EndedBySecurityDenial);
     return;
   }
@@ -2281,6 +2298,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   else {
     delete invite;
     PTRACE(1, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
+    releaseMethod = ReleaseWithNothing;    
+    Release(EndedBySecurityDenial);
   }
 }
 
@@ -2405,7 +2424,15 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
 
   if (phase >= ReleasingPhase && pduHandler == NULL) {
     // don't create another handler thread while releasing!
-    PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
+    if(pdu->GetMethod() != SIP_PDU::NumMethods)
+    {
+      PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
+    }
+    else
+    {
+      PTRACE(4, "SIP\tProcessing PDU: " << *pdu);
+      OnReceivedPDU(*pdu);
+    }
     delete pdu;
   }
   else {
@@ -2489,8 +2516,8 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
   SIPURL hosturl;
 
+  PWaitAndSignal m(transportMutex); 
   if (transport) {
-    
     if (lastTransportAddress != address) {
 
       // skip transport identifier
@@ -2511,7 +2538,6 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 #endif
 	lastTransportAddress = hosturl.GetHostAddress();
 
-      PWaitAndSignal m(transportMutex);
       PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
       transport->SetRemoteAddress(lastTransportAddress);
     }

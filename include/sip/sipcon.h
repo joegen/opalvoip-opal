@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2051  2006/07/09 10:18:28  csoutheren
+ * Revision 1.2052  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.50  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -570,21 +574,21 @@ class SIPConnection : public OpalConnection
       const char * extra = NULL,
       const SDPSessionDescription * sdp = NULL
     );
-	
+
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
      */
     BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
-    unsigned GetNextCSeq() { return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
 
     BOOL BuildSDP(
-      SDPSessionDescription * &,			     
+      SDPSessionDescription * &,     
       RTP_SessionManager & rtpSessions,
       unsigned rtpSessionId
     );
 
-    SIPTransaction * GetTransaction (PString transactionID) { return transactions.GetAt(transactionID); }
+    SIPTransaction * GetTransaction (const PString & transactionID) { return transactions.GetAt(transactionID); }
 
     void AddTransaction(
       SIPTransaction * transaction
@@ -603,7 +607,7 @@ class SIPConnection : public OpalConnection
 
     /** Create full SIPURI - with display name, URL in <> and tag, suitable for From:
       */
-    void SetLocalPartyAddress();
+    virtual void SetLocalPartyAddress();
     void SetLocalPartyAddress(
       const PString & addr
     ) { localPartyAddress = addr; }
@@ -656,12 +660,12 @@ class SIPConnection : public OpalConnection
     OpalTransport       * transport;
     OpalTransportAddress  lastTransportAddress;
 
-    PMutex		  transportMutex;
+    PMutex                transportMutex;
     PMutex                streamsMutex;
-    BOOL	          local_hold;
-    BOOL	          remote_hold;
+    BOOL                  local_hold;
+    BOOL                  remote_hold;
     PString               localPartyAddress;
-    PString	          forwardParty;
+    PString               forwardParty;
     SIP_PDU             * originalInvite;
     SDPSessionDescription remoteSDP;
     PStringList           routeSet;
@@ -674,6 +678,7 @@ class SIPConnection : public OpalConnection
 
     PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
+    PMutex             invitationsMutex;
     SIPTransactionList invitations;
     SIPTransactionDict transactions;
     unsigned           lastSentCSeq;

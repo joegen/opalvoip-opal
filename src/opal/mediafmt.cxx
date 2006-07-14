@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2045  2006/04/09 12:01:44  rjongbloed
+ * Revision 1.2046  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.44  2006/04/09 12:01:44  rjongbloed
  * Added missing Clone() functions so media options propagate correctly.
  *
  * Revision 2.43  2006/03/20 10:37:47  csoutheren
@@ -660,6 +664,18 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   registeredFormats.OpalMediaFormatBaseList::Append(this);
 }
 
+OpalMediaFormat & OpalMediaFormat::operator=(const OpalMediaFormat &format)
+{
+  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m2(format.media_format_mutex);
+  *static_cast<PCaselessString *>(this) = *static_cast<const PCaselessString *>(&format);
+  options = format.options;
+  options.MakeUnique();
+  rtpPayloadType = format.rtpPayloadType;
+  rtpEncodingName = format.rtpEncodingName;
+  defaultSessionID = format.defaultSessionID;
+  return *this;  
+}
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 {
@@ -704,7 +720,8 @@ PObject * OpalMediaFormat::Clone() const
 
 bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 {
-  PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
+  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m2(mediaFormat.media_format_mutex);
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
     if (option != NULL && !options[i].Merge(*option))
@@ -717,6 +734,7 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 
 bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) const
 {
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return false;
@@ -728,6 +746,7 @@ bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) cons
 
 bool OpalMediaFormat::SetOptionValue(const PString & name, const PString & value)
 {
+  PWaitAndSignal m(media_format_mutex);
   options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
@@ -740,6 +759,7 @@ bool OpalMediaFormat::SetOptionValue(const PString & name, const PString & value
 
 bool OpalMediaFormat::GetOptionBoolean(const PString & name, bool dflt) const
 {
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return dflt;
@@ -750,6 +770,7 @@ bool OpalMediaFormat::GetOptionBoolean(const PString & name, bool dflt) const
 
 bool OpalMediaFormat::SetOptionBoolean(const PString & name, bool value)
 {
+  PWaitAndSignal m(media_format_mutex);
   options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
@@ -763,6 +784,7 @@ bool OpalMediaFormat::SetOptionBoolean(const PString & name, bool value)
 
 int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
 {
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return dflt;
@@ -773,6 +795,7 @@ int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
 
 bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
 {
+  PWaitAndSignal m(media_format_mutex);
   options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
@@ -786,6 +809,7 @@ bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
 
 double OpalMediaFormat::GetOptionReal(const PString & name, double dflt) const
 {
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return dflt;
@@ -796,6 +820,7 @@ double OpalMediaFormat::GetOptionReal(const PString & name, double dflt) const
 
 bool OpalMediaFormat::SetOptionReal(const PString & name, double value)
 {
+  PWaitAndSignal m(media_format_mutex);
   options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
@@ -809,6 +834,7 @@ bool OpalMediaFormat::SetOptionReal(const PString & name, double value)
 
 PINDEX OpalMediaFormat::GetOptionEnum(const PString & name, PINDEX dflt) const
 {
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return dflt;
@@ -819,6 +845,7 @@ PINDEX OpalMediaFormat::GetOptionEnum(const PString & name, PINDEX dflt) const
 
 bool OpalMediaFormat::SetOptionEnum(const PString & name, PINDEX value)
 {
+  PWaitAndSignal m(media_format_mutex);
   options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
@@ -832,6 +859,7 @@ bool OpalMediaFormat::SetOptionEnum(const PString & name, PINDEX value)
 
 PString OpalMediaFormat::GetOptionString(const PString & name, const PString & dflt) const
 {
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOption * option = FindOption(name);
   if (option == NULL)
     return dflt;
@@ -842,6 +870,7 @@ PString OpalMediaFormat::GetOptionString(const PString & name, const PString & d
 
 bool OpalMediaFormat::SetOptionString(const PString & name, const PString & value)
 {
+  PWaitAndSignal m(media_format_mutex);
   options.MakeUnique();
 
   OpalMediaOption * option = FindOption(name);
@@ -855,7 +884,7 @@ bool OpalMediaFormat::SetOptionString(const PString & name, const PString & valu
 
 bool OpalMediaFormat::AddOption(OpalMediaOption * option)
 {
-  PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
+  PWaitAndSignal m(media_format_mutex);
   if (PAssertNULL(option) == NULL)
     return false;
 
@@ -871,7 +900,7 @@ bool OpalMediaFormat::AddOption(OpalMediaOption * option)
 
 OpalMediaOption * OpalMediaFormat::FindOption(const PString & name) const
 {
-  PWaitAndSignal auto_signal(GetMediaFormatsListMutex());
+  PWaitAndSignal m(media_format_mutex);
   OpalMediaOptionString search(name, false);
   PINDEX index = options.GetValuesIndex(search);
   if (index == P_MAX_INDEX)

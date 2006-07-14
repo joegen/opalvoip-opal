@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2059  2006/04/30 17:24:39  dsandras
+ * Revision 1.2060  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.58  2006/04/30 17:24:39  dsandras
  * Various clean ups.
  *
  * Revision 2.57  2006/04/11 21:58:25  dsandras
@@ -773,7 +777,7 @@ class SIPEndPoint : public OpalEndPoint
     
     /**Return the next CSEQ for the next transaction.
      */
-    unsigned GetNextCSeq() { return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
 
     
     /**Return the SIPAuthentication for a specific realm.
