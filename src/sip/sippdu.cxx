@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2104  2006/07/14 06:57:40  csoutheren
+ * Revision 1.2105  2006/07/14 07:37:21  csoutheren
+ * Implement qop authentication.
+ *
+ * Revision 2.103  2006/07/14 06:57:40  csoutheren
  * Fixed problem with opaque authentication
  *
  * Revision 2.102  2006/07/14 04:22:43  csoutheren
@@ -1252,9 +1255,14 @@ static PString GetAuthParam(const PString & auth, const char * name)
 
 BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 {
-  authRealm.Empty();
-  nonce.Empty();
+  authRealm.MakeEmpty();
+  nonce.MakeEmpty();
+	opaque.MakeEmpty();
   algorithm = NumAlgorithms;
+
+	qopAuth = qopAuthInt = FALSE;
+	cnonce.MakeEmpty();
+	nonceCount = 1;
 
   if (auth.Find("digest") != 0) {
     PTRACE(1, "SIP\tUnknown authentication type");
@@ -1287,6 +1295,15 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
   if (!opaque.IsEmpty()) {
     PTRACE(1, "SIP\tAuthentication contains opaque data");
   }
+
+	PString qopStr = GetAuthParam(auth, "qop-options");
+	if (!qopStr.IsEmpty()) {
+		PTRACE(1, "SIP\tAuthentication contains qop-options " << qopStr);
+		PStringList options = qopStr.Tokenise(',', TRUE);
+		qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
+		qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
+		cnonce = OpalGloballyUniqueID().AsString();
+	}
 
   isProxy = proxy;
   return TRUE;
@@ -1338,24 +1355,55 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Process(MethodNames[pdu.GetMethod()]);
   digestor.Process(":");
   digestor.Process(uriText);
+	if (qopAuthInt) {
+	  digestor.Process(":");
+		digestor.Process(pdu.GetEntityBody());
+	}
   digestor.Complete(a2);
 
-  digestor.Start();
-  digestor.Process(AsHex(a1));
-  digestor.Process(":");
-  digestor.Process(nonce);
-  digestor.Process(":");
-  digestor.Process(AsHex(a2));
-  digestor.Complete(response);
-
   PStringStream auth;
-  auth << "Digest "
-          "username=\"" << username << "\", "
-          "realm=\"" << authRealm << "\", "
-          "nonce=\"" << nonce << "\", "
-          "uri=\"" << uriText << "\", "
-          "response=\"" << AsHex(response) << "\", "
-          "algorithm=" << AlgorithmNames[algorithm];
+	auth << "Digest "
+					"username=\"" << username << "\", "
+					"realm=\"" << authRealm << "\", "
+					"nonce=\"" << nonce << "\", "
+					"uri=\"" << uriText << "\", "
+					"response=\"" << AsHex(response) << "\", "
+					"algorithm=" << AlgorithmNames[algorithm];
+
+  digestor.Start();
+	digestor.Process(AsHex(a1));
+	digestor.Process(":");
+	digestor.Process(nonce);
+	digestor.Process(":");
+
+	if (qopAuthInt || qopAuth) {
+		PString nc(psprintf("%08i", nonceCount));
+		++nonceCount;
+		PString qop;
+		if (qopAuthInt)
+			qop = "auth-int";
+		else
+			qop = "auth";
+		digestor.Process(nc);
+		digestor.Process(":");
+		digestor.Process(cnonce);
+		digestor.Process(":");
+		digestor.Process(qop);
+		digestor.Process(":");
+		digestor.Process(AsHex(a2));
+		digestor.Complete(response);
+		auth << "\", "
+			   << "response=\"" << AsHex(response) << "\""
+			   << "cnonce=\"" << cnonce << "\", "
+				 << "nonce-count=\"" << nc << "\", "
+				 << "qop=\"" << qop << "\"";
+	}
+	else {
+		digestor.Process(AsHex(a2));
+		digestor.Complete(response);
+		auth << "\", response=\"" << AsHex(response) << "\"";
+	}
+
 	if (!opaque.IsEmpty())
 		auth << ", opaque=\"" << opaque << "\"";
 
@@ -2359,7 +2407,7 @@ SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const 
 }
 
 
-void SIPRefer::Construct(SIPConnection & connection, OpalTransport & transport, const PString & refer, const PString & referred_by)
+void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const PString & refer, const PString & referred_by)
 {
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
   mime.SetReferTo(refer);
