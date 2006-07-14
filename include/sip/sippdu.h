@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2042  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2043  2006/07/14 07:37:21  csoutheren
+ * Implement qop authentication.
+ *
+ * Revision 2.41  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -502,6 +505,11 @@ class SIPAuthentication : public PObject
     PString   nonce;
     Algorithm algorithm;
 		PString   opaque;
+
+		BOOL qopAuth;
+		BOOL qopAuthInt;
+		PString cnonce;
+		mutable PAtomicInteger nonceCount;
 };
 
 
