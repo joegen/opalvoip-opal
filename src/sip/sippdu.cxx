@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2103  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2104  2006/07/14 06:57:40  csoutheren
+ * Fixed problem with opaque authentication
+ *
+ * Revision 2.102  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -1283,7 +1286,6 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
   opaque = GetAuthParam(auth, "opaque");
   if (!opaque.IsEmpty()) {
     PTRACE(1, "SIP\tAuthentication contains opaque data");
-    return FALSE;
   }
 
   isProxy = proxy;
