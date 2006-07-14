@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2044  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2045  2006/07/14 05:24:50  csoutheren
+ * Applied 1509232 - Fix for a bug in OpalMediaPatch::Close method
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.43  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -229,6 +233,7 @@ OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL 
 OpalMediaStream::~OpalMediaStream()
 {
   Close();
+  PWaitAndSignal deleteLock(deleteMutex);
 }
 
 
