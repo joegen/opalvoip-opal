@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2035  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2036  2006/07/14 05:24:50  csoutheren
+ * Applied 1509232 - Fix for a bug in OpalMediaPatch::Close method
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.34  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -274,12 +278,14 @@ void OpalMediaPatch::Close()
   filters.RemoveAll();
   source.Close();
 
-  // This relies on the channel close doing a RemoveSink() call
   while (sinks.GetSize() > 0) {
     OpalMediaStream * stream = sinks[0].stream;
+    stream->GetDeleteMutex().Wait();
     inUse.Signal();
-    stream->Close();
+    stream->SetPatch(NULL);
     inUse.Wait();
+    stream->GetDeleteMutex().Signal();
+    RemoveSink(stream);
   }
   inUse.Signal();
 
