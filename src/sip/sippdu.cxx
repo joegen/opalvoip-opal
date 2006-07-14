@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2101  2006/07/09 10:18:29  csoutheren
+ * Revision 1.2102  2006/07/14 01:15:51  csoutheren
+ * Add support for "opaque" attribute in SIP authentication
+ *
+ * Revision 2.100  2006/07/09 10:18:29  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -1263,6 +1266,12 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
     return FALSE;
   }
 
+  opaque = GetAuthParam(auth, "opaque");
+  if (!opaque.IsEmpty()) {
+    PTRACE(1, "SIP\tAuthentication contains opaque data");
+    return FALSE;
+  }
+
   isProxy = proxy;
   return TRUE;
 }
@@ -1331,6 +1340,8 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
           "uri=\"" << uriText << "\", "
           "response=\"" << AsHex(response) << "\", "
           "algorithm=" << AlgorithmNames[algorithm];
+	if (!opaque.IsEmpty())
+		auth << ", opaque=\"" << opaque << "\"";
 
   pdu.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
   return TRUE;

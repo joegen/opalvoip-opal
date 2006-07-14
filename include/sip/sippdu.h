@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2040  2006/07/09 10:18:28  csoutheren
+ * Revision 1.2041  2006/07/14 01:15:51  csoutheren
+ * Add support for "opaque" attribute in SIP authentication
+ *
+ * Revision 2.39  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -478,6 +481,7 @@ class SIPAuthentication : public PObject
     const PString & GetPassword() const    { return password; }
     const PString & GetNonce() const       { return nonce; }
     Algorithm GetAlgorithm() const         { return algorithm; }
+    const PString & GetOpaque() const      { return opaque; }
 
     void SetUsername(const PString & user) { username = user; }
     void SetPassword(const PString & pass) { password = pass; }
@@ -490,6 +494,7 @@ class SIPAuthentication : public PObject
     PString   password;
     PString   nonce;
     Algorithm algorithm;
+		PString   opaque;
 };
 
 
