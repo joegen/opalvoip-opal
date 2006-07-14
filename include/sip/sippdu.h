@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2041  2006/07/14 01:15:51  csoutheren
+ * Revision 1.2042  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.40  2006/07/14 01:15:51  csoutheren
  * Add support for "opaque" attribute in SIP authentication
  *
  * Revision 2.39  2006/07/09 10:18:28  csoutheren
@@ -358,6 +362,9 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetReferTo() const;
     void SetReferTo(const PString & r);
+
+    PString GetReferredBy() const;
+    void SetReferredBy(const PString & r);
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
@@ -759,6 +766,7 @@ class SIPTransaction : public SIP_PDU
     BOOL IsInProgress() const { return state == Trying && state == Proceeding; }
     BOOL IsFailed() const { return state > Terminated_Success; }
     BOOL IsFinished()     { return finished.Wait(0); }
+    BOOL IsCanceled() const {return state == Terminated_Cancelled;}
     void Wait();
     BOOL SendCANCEL();
 
@@ -790,7 +798,7 @@ class SIPTransaction : public SIP_PDU
       Terminated_Cancelled,
       NumStates
     };
-    void SetTerminated(States newState);
+    virtual void SetTerminated(States newState);
 
     SIPEndPoint   & endpoint;
     OpalTransport & transport;
@@ -896,12 +904,25 @@ class SIPMWISubscribe : public SIPTransaction
 
 class SIPRefer : public SIPTransaction
 {
-    PCLASSINFO(SIPRefer, SIPTransaction);
+  PCLASSINFO(SIPRefer, SIPTransaction);
   public:
     SIPRefer(
       SIPConnection & connection,
       OpalTransport & transport,
       const PString & refer
+    );
+    SIPRefer(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      const PString & refer,
+      const PString & referred_by
+    );
+  protected:
+    void Construct(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      const PString & refer,
+      const PString & referred_by = PString::Empty()
     );
 };
 
