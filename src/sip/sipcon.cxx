@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2165  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2166  2006/07/14 13:45:01  csoutheren
+ * Applied 1522528 - fixes a crash on SIP call release
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.164  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -701,6 +705,7 @@ SIPConnection::~SIPConnection()
   delete transport;
   delete referTransaction;
 
+  if (pduHandler) delete pduHandler;
   if (udpTransport) delete udpTransport;
 
   PTRACE(3, "SIP\tDeleted connection.");
@@ -867,8 +872,6 @@ void SIPConnection::OnReleased()
   if (pduHandler != NULL) {
     pduSemaphore.Signal();
     pduHandler->WaitForTermination();
-    delete pduHandler;
-    pduHandler = NULL;  // clear pointer to deleted object
   }
 
   if (transport != NULL)
@@ -2422,8 +2425,7 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return;
 
-  if (phase >= ReleasingPhase && pduHandler == NULL) {
-    // don't create another handler thread while releasing!
+  if (phase >= ReleasedPhase) {
     if(pdu->GetMethod() != SIP_PDU::NumMethods)
     {
       PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
