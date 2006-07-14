@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2034  2006/07/04 00:48:14  csoutheren
+ * Revision 1.2035  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.33  2006/07/04 00:48:14  csoutheren
  * New version of patch 1509246
  *
  * Revision 2.32  2006/06/30 09:20:37  dsandras
@@ -225,10 +229,18 @@ void OpalMediaPatch::Main()
   RTP_DataFrame sourceFrame(source.GetDataSize());
   RTP_DataFrame emptyFrame(source.GetDataSize());
 
-  while (source.ReadPacket(sourceFrame)) {
-    FilterFrame(sourceFrame, source.GetMediaFormat());
-
+  while (source.IsOpen()) {
     inUse.Wait();
+    
+    if(!source.IsOpen() ||
+        sinks.GetSize() == 0 ||       
+       !source.ReadPacket(sourceFrame))
+    {
+      inUse.Signal();
+      break;
+    }
+
+    FilterFrame(sourceFrame, source.GetMediaFormat());    
 
     PINDEX len = sinks.GetSize();
     for (i = 0; i < len; i++)
@@ -258,10 +270,10 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
+  inUse.Wait();
   filters.RemoveAll();
   source.Close();
 
-  inUse.Wait();
   // This relies on the channel close doing a RemoveSink() call
   while (sinks.GetSize() > 0) {
     OpalMediaStream * stream = sinks[0].stream;

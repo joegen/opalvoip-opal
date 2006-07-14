@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2043  2006/07/09 10:18:28  csoutheren
+ * Revision 1.2044  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.42  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
  *
@@ -312,6 +316,8 @@ BOOL OpalMediaStream::Close()
 
   patchMutex.Wait();
 
+  isOpen = FALSE;
+
   if (patchThread != NULL) {
     PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *patchThread);
     OpalMediaPatch * patch = patchThread;
@@ -330,7 +336,6 @@ BOOL OpalMediaStream::Close()
   else
     patchMutex.Signal();
 
-  isOpen = FALSE;
   return TRUE;
 }
 
@@ -647,8 +652,10 @@ OpalRawMediaStream::OpalRawMediaStream(const OpalMediaFormat & mediaFormat,
 
 OpalRawMediaStream::~OpalRawMediaStream()
 {
+  PWaitAndSignal m(channel_mutex);
   if (autoDelete)
     delete channel;
+  channel = NULL;
 }
 
 
@@ -661,7 +668,9 @@ BOOL OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     return FALSE;
   }
 
-  if (channel == NULL)
+  PWaitAndSignal m(channel_mutex);
+  if (!IsOpen() ||
+      channel == NULL)
     return FALSE;
 
   if (!channel->Read(buffer, size))
@@ -680,8 +689,10 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
     PTRACE(1, "Media\tTried to write to source media stream");
     return FALSE;
   }
-
-  if (channel == NULL)
+  
+  PWaitAndSignal m(channel_mutex);
+  if (!IsOpen() ||
+      channel == NULL)
     return FALSE;
 
   if (buffer != NULL && length != 0) {
@@ -705,6 +716,7 @@ BOOL OpalRawMediaStream::Close()
   if (!OpalMediaStream::Close())
     return FALSE;
 
+  PWaitAndSignal m(channel_mutex);
   if (channel == NULL)
     return FALSE;
 

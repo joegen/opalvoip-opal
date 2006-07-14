@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2102  2006/07/14 01:15:51  csoutheren
+ * Revision 1.2103  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.101  2006/07/14 01:15:51  csoutheren
  * Add support for "opaque" attribute in SIP authentication
  *
  * Revision 2.100  2006/07/09 10:18:29  csoutheren
@@ -842,6 +846,16 @@ void SIPMIMEInfo::SetReferTo(const PString & r)
   SetAt(compactForm ? "r" : "Refer-To",  r);
 }
 
+PString SIPMIMEInfo::GetReferredBy() const
+{
+  return GetFullOrCompact("Referred-By", 'b');
+}
+
+
+void SIPMIMEInfo::SetReferredBy(const PString & r)
+{
+  SetAt(compactForm ? "b" : "Referred-By",  r);
+}
 
 void SIPMIMEInfo::SetContentLength(PINDEX v)
 {
@@ -1717,7 +1731,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   // get the message from transport into cmd and parse MIME
   transport.clear();
-  PString cmd;
+  PString cmd(512);
   if (!transport.bad() && !transport.eof()) {
     transport.SetReadTimeout(3000);
     transport >> cmd >> mime;
@@ -2330,11 +2344,25 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
+SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer, const PString & referred_by)
+  : SIPTransaction(connection, transport, Method_REFER)
+{
+  Construct(connection, transport, refer, referred_by);
+}
+
 SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer)
   : SIPTransaction(connection, transport, Method_REFER)
 {
+  Construct(connection, transport, refer, PString::Empty());
+}
+
+
+void SIPRefer::Construct(SIPConnection & connection, OpalTransport & transport, const PString & refer, const PString & referred_by)
+{
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
   mime.SetReferTo(refer);
+  if(!referred_by.IsEmpty())
+    mime.SetReferredBy(referred_by);
 }
 
 
