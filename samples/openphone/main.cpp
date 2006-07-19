@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cpp,v $
+ * Revision 1.37  2006/07/19 10:41:51  dereksmithies
+ * First steps towards having a unix compiled openphone.
+ *
  * Revision 1.36  2006/04/30 10:36:24  rjongbloed
  * Added icons to speed dial list.
  *
@@ -130,12 +133,12 @@
 #include "version.h"
 
 #include <wx/config.h>
-#include <wx/splitter.h>
-#include <wx/listctrl.h>
-#include <wx/image.h>
-#include <wx/valgen.h>
 #include <wx/filesys.h>
-
+#include <wx/gdicmn.h>     //Required for icons on linux. 
+#include <wx/image.h>
+#include <wx/listctrl.h>
+#include <wx/splitter.h>
+#include <wx/valgen.h>
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 
@@ -152,8 +155,8 @@
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
+#define DEF_FIELD(name) static const char name##Key[] = #name
 
-#define DEF_FIELD(name) static const char name##Key[] = #name;
 
 static const char AppearanceGroup[] = "/Appearance";
 DEF_FIELD(MainFrameX);
@@ -356,17 +359,19 @@ MyManager::MyManager()
 #endif
     m_callState(IdleState)
 {
+
   // Give it an icon
-  SetIcon(wxICON(AppIcon));
+    SetIcon(wxIcon("AppIcon", wxBITMAP_TYPE_ICO));
 
   // Make an image list containing large icons
   m_imageListNormal = new wxImageList(32, 32, true);
-  m_imageListNormal->Add(wxICON(OtherPhone)); // Order here is important!!
-  m_imageListNormal->Add(wxICON(H323Phone));
-  m_imageListNormal->Add(wxICON(SIPPhone));
+ // Order here is important!!
+  m_imageListNormal->Add(wxIcon("OtherPhone", wxBITMAP_TYPE_ICO));
+  m_imageListNormal->Add(wxIcon("H323Phone", wxBITMAP_TYPE_ICO));
+  m_imageListNormal->Add(wxIcon("SIPPhone", wxBITMAP_TYPE_ICO));
 
   m_imageListSmall = new wxImageList(16, 16, true);
-  m_imageListSmall->Add(wxICON(SmallPhone));
+  m_imageListSmall->Add(wxIcon("SmallPhone", wxBITMAP_TYPE_ICO));
 }
 
 
@@ -559,7 +564,7 @@ bool MyManager::Initialise()
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs videoArgs = GetVideoInputDevice();
   if (config->Read(VideoGrabberKey, &str))
-    videoArgs.deviceName = (PString)str;
+    videoArgs.deviceName = (PString)PString(str.c_str());
   if (config->Read(VideoGrabFormatKey, &value1) && value1 >= 0 && value1 < PVideoDevice::NumVideoFormats)
     videoArgs.videoFormat = (PVideoDevice::VideoFormat)value1;
   if (config->Read(VideoGrabSourceKey, &value1))
@@ -1264,9 +1269,16 @@ BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
   device = PVideoOutputDevice::CreateDevice("Window");
   if (device != NULL) {
     autoDelete = TRUE;
-    if (device->Open(psprintf("MSWIN STYLE=0x%08X TITLE=\"%s\"",
+    BOOL goodOpen;
+#if defined(__WXMSW__)
+    goodOpen = device->Open(psprintf("MSWIN STYLE=0x%08X TITLE=\"%s\"",
                               WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION,
-                              preview ? "Local" : (const char *)connection.GetRemotePartyName())))
+				    preview ? "Local" : (const char *)connection.GetRemotePartyName()));
+#else
+    goodOpen = device->Open(psprintf("TITLE=\"%s\"",
+				    preview ? "Local" : (const char *)connection.GetRemotePartyName()));
+#endif
+    if (goodOpen)
       return TRUE;
 
     delete device;
@@ -1730,7 +1742,11 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString));
+#if defined (__WXMSW__)
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString)); 
+#else
+#warning - the above msw line does not compile on linux. Fix me XXXXXXXXXXXXXXX
+#endif
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
@@ -1766,7 +1782,12 @@ bool OptionsDialog::TransferDataFromWindow()
       wxString groupName;
       groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
-      config->Write(CodecNameKey, mm->mediaFormat);
+      wxString codecNameKeyCopy(CodecNameKey);
+#if defined(__WXMSW__)
+      config->Write(codecNameKeyCopy, mm->mediaFormat);
+#else
+#warning the above lines does not compile on linux - FIXME PLEASE XXXXXXXXXXXXXXXXXXXxx
+#endif
       for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
         const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
         if (!option.IsReadOnly())
