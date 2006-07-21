@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2067  2006/07/05 05:09:12  csoutheren
+ * Revision 1.2068  2006/07/21 00:42:08  csoutheren
+ * Applied 1525040 - More locking when changing connection's phase
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.66  2006/07/05 05:09:12  csoutheren
  * Applied 1494937 - Allow re-opening of mediastrams
  * Thanks to mturconi
  *
@@ -776,9 +780,12 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
         mediaStreams.Append(&stream);
     }
 
-  if (phase == ConnectedPhase) {
-    SetPhase(EstablishedPhase);
-    OnEstablished();
+  if (LockReadWrite()) {
+    if (GetPhase() == ConnectedPhase) {
+      SetPhase(EstablishedPhase);
+      OnEstablished();
+    }
+    UnlockReadWrite();
   }
 
   return TRUE;
