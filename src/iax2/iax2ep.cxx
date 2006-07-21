@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.9  2006/07/21 00:44:14  csoutheren
+ * Applied 1483216 - Opal IAX sends 2 new call messages on outbound call
+ * Thanks to Mike T
+ *
  * Revision 1.8  2005/11/15 19:45:20  dereksmithies
  * Add fix from  Vyacheslav Frolov, to resolve a private variable access problem.
  *
@@ -328,7 +332,11 @@ BOOL IAX2EndPoint::MakeConnection(
     return FALSE;
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  connection->SetUpConnection();
+  // If we are the A-party then need to initiate a call now in this thread. If
+  // we are the B-Party then SetUpConnection() gets called in the context of
+  // the A-party thread.
+  if (call.GetConnection(0) == (OpalConnection*)connection)
+	  connection->SetUpConnection();
 
   return TRUE;
 }
