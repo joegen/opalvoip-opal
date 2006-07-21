@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2068  2006/07/03 03:28:44  dereksmithies
+ * Revision 1.2069  2006/07/21 00:38:31  csoutheren
+ * Applied 1483215 - Opal simpleOPAL deadlock patch & DTMF support
+ * Thanks to Mike T
+ *
+ * Revision 2.67  2006/07/03 03:28:44  dereksmithies
  * Fix arg handling on disableui, and look for args to srcep, not srcEp
  *
  * Revision 2.66  2006/06/26 02:03:07  csoutheren
@@ -1044,16 +1048,18 @@ OpalConnection::AnswerCallResponse
 
 void MyManager::AnswerCall(OpalConnection::AnswerCallResponse response)
 {
-  PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
-  if (call == NULL) {
-    cout << "Could not find call for " << currentCallToken << " to answer" << endl;
-    return;
-  }
+  {
+	PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
+	if (call == NULL) {
+		cout << "Could not find call for " << currentCallToken << " to answer" << endl;
+		return;
+	}
 
-  if (response != OpalConnection::AnswerCallNow) {
-    cout << "Clearing call " << *call << endl;
-    call->Clear();
-    return;
+	if (response != OpalConnection::AnswerCallNow) {
+		cout << "Clearing call " << *call << endl;
+		call->Clear();
+		return;
+	}
   }
 
   if (pcssEP != NULL && !pcssEP->incomingConnectionToken) 
@@ -1206,9 +1212,15 @@ void MyManager::Main(PArgList & args)
         }
         break;
 
-      default:;
+      default:
+        if (ch >= '0' || ch <= '9' || ch == '*' || ch == '#') {
+          if (currentCallToken.IsEmpty())
+            cout << "Cannot send a digit while no call in progress\n";
+          else
+            SendTone(ch);
+        }
+        break;
       }
-       
     }
   endSimpleOPAL:
     if (!currentCallToken.IsEmpty())
@@ -1248,6 +1260,24 @@ void MyManager::SendMessageToRemoteNode(const PString & ostr)
       if (conn != NULL) {
 	conn->SendUserInputString(str);
 	cout << "Send \"" << str << "\" to " << res[j] << endl;
+      }
+    }
+  }
+  return;
+}
+
+void MyManager::SendTone(const char tone)
+{
+  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
+    PStringList res = endpoints[i].GetAllConnections();
+    if (res.GetSize() == 0)
+      continue;
+
+    for(PINDEX j  = 0; j < res.GetSize(); j++) {
+      PSafePtr< OpalConnection >  conn = endpoints[i].GetConnectionWithLock (res[j]);
+      if (conn != NULL) {
+	conn->SendUserInputTone(tone, 0);
+	cout << "Send \"" << tone << "\" to " << res[j] << endl;
       }
     }
   }

@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2021  2006/04/30 14:36:54  csoutheren
+ * Revision 1.2022  2006/07/21 00:38:31  csoutheren
+ * Applied 1483215 - Opal simpleOPAL deadlock patch & DTMF support
+ * Thanks to Mike T
+ *
+ * Revision 2.20  2006/04/30 14:36:54  csoutheren
  * backports from PLuginBranch
  *
  * Revision 2.18.2.2  2006/04/30 14:28:25  csoutheren
@@ -205,6 +209,7 @@ class MyManager : public OpalManager
     void AnswerCall(OpalConnection::AnswerCallResponse response);
     void NewSpeedDial(const PString & ostr);
     void SendMessageToRemoteNode(const PString & ostr);
+    void SendTone(const char tone);
 };
 
 
