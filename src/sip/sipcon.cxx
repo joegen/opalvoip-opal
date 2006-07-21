@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2166  2006/07/14 13:45:01  csoutheren
+ * Revision 1.2167  2006/07/21 00:42:08  csoutheren
+ * Applied 1525040 - More locking when changing connection's phase
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.165  2006/07/14 13:45:01  csoutheren
  * Applied 1522528 - fixes a crash on SIP call release
  * Thanks to Drazen Dimoti
  *
@@ -904,6 +908,10 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
     return TRUE;
   }
 
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
   PTRACE(2, "SIP\tSetAlerting");
 
   if (phase != SetUpPhase) 
@@ -925,6 +933,15 @@ BOOL SIPConnection::SetConnected()
     return TRUE;
   }
 
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
+  if (GetPhase() >= ConnectedPhase) {
+    PTRACE(2, "SIP\tSetConnected ignored on already connected call.");
+    return FALSE;
+  }
+  
   PTRACE(2, "SIP\tSetConnected");
 
   SDPSessionDescription sdpOut(GetLocalAddress());
