@@ -1,0 +1,7 @@
+obj_*_*_d Debug
+obj_*_*_r Release
+NoTrace
+*.plg *.ncb *.opt *.Tags.WW
+config.log config.status
+release
+debug
