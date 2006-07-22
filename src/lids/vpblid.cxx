@@ -26,7 +26,10 @@
  * Changed so only BUSY tone reports line hangup/busy.
  *
  * $Log: vpblid.cxx,v $
- * Revision 1.2011  2006/06/27 13:50:24  csoutheren
+ * Revision 1.2012  2006/07/22 13:22:47  rjongbloed
+ * Fixed various compilation issues
+ *
+ * Revision 2.10  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -180,7 +183,7 @@ BOOL OpalVpbDevice::Open(const PString & device)
     for(unsigned uiLineCount = 0; uiLineCount < m_uiLineCount; uiLineCount++){
       lineState[uiLineCount].Open(getCardNumber(), uiLineCount);
     }
-  } catch (VpbException v) {
+  } catch (VpbException PTRACE_PARAM(v)) {
     PTRACE(1, "VPB\tOpalVpbDevice::Open Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function);
   }
     
@@ -230,7 +233,7 @@ BOOL OpalVpbDevice::Close()
       PTRACE(3, "VPB\tOpalVpbDevice::Close() handle = " << lineState[line].handle); 
       vpb_close(lineState[line].handle);
     }  
-  } catch (VpbException v) {
+  } catch (VpbException PTRACE_PARAM(v)) {
     PTRACE(1, "VPB\tOpalVpbDevice::Close Error code = " << v.code << 
               ", s = " << v.s << ", api func = " << v.api_function);
   }
@@ -288,7 +291,7 @@ unsigned OpalVpbDevice::GetLineCount()
       PTRACE(1, "VPB\tOpalVpbDevice::GetLineCount() line count is out of range");
       m_uiLineCount = 0;
     }
-  } catch (VpbException v) {
+  } catch (VpbException PTRACE_PARAM(v)) {
     PTRACE(1, "VPB\tOpalVpbDevice::GetLineCount Error code = "  << v.code << 
               ", s = " << v.s << " api func = " << v.api_function);
   }
@@ -341,7 +344,7 @@ BOOL OpalVpbDevice::LineState::SetLineOffHook(BOOL newState)
     vpb_flush_digits(handle);   
     while (vpb_get_event_ch_async(handle, &event) == VPB_OK);
 
-  } catch (VpbException v) {
+  } catch (VpbException PTRACE_PARAM(v)) {
     PTRACE(1, "VPB\tSetLineOffHook " << v.code << 
         ", s = " << v.s << ", api func = " << v.api_function);
     setHookOK = FALSE;
@@ -645,7 +648,7 @@ BOOL OpalVpbDevice::PlayDTMF(unsigned line, const char * digits, DWORD, DWORD)
   try {
     vpb_dial_sync(lineState[line].handle, (char *)digits);
     vpb_dial_sync(lineState[line].handle, ",");
-  } catch(VpbException v) {
+  } catch(VpbException PTRACE_PARAM(v)) {
     PTRACE(1, "VPB\tPlayDTMF Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function);
     return FALSE;
   }
@@ -671,7 +674,7 @@ OpalLineInterfaceDevice::CallProgressTones OpalVpbDevice::IsToneDetected(unsigne
       PTRACE(6, "VPB\tTone Detect no events on line " << line << " in  tone detected");    
       return NoTone;
     }
-  } catch (VpbException v) {
+  } catch (VpbException PTRACE_PARAM(v)) {
     PTRACE(1, "VPB\tOpalVpbDevice::Open Error code = "  << v.code << ", s = " << v.s << " api func = " << v.api_function);
     return NoTone;
   }
@@ -698,17 +701,19 @@ OpalLineInterfaceDevice::CallProgressTones OpalVpbDevice::IsToneDetected(unsigne
     case VPB_BUSY :
       tone = BusyTone;
       break;
+#ifdef VPB_FASTBUSY
     case VPB_FASTBUSY :
       tone = FastBusyTone;
       break;
+#endif
     case VPB_GRUNT :
       PTRACE(3, "VPB\tTone Detect: Grunt tone.");
       break;
-      
+#ifdef VPB_MWI
     case VPB_MWI :
       tone = MwiTone;
       break;
-      
+#endif
     default:
       PTRACE(1, "VPB\tTone Detect: no a known tone." << event.data);
       break;

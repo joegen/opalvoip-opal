@@ -26,6 +26,7 @@
 
 /**** Open H323 Start ****/
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
 /**** Open H323 End ****/
 
 
