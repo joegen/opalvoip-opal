@@ -41,7 +41,10 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
- * Revision 1.2003  2005/08/31 13:16:01  rjongbloed
+ * Revision 1.2004  2006/07/22 13:17:49  rjongbloed
+ * Eliminate need for linking winsock just for ntohl() function.
+ *
+ * Revision 2.2  2005/08/31 13:16:01  rjongbloed
  * Ported video fast update from OpenH323
  *
  * Revision 2.1  2003/03/15 23:42:59  robertj
@@ -939,8 +942,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   
   // set the H.261 header (32 bits) bits that we know now
   h261hdr |= ((8 - sbit_) & 7) << 26; //EBIT = 8 - SBIT for next packet
-  h261hdr = htonl(h261hdr);
-  *(h261hdr_t*)buffer = h261hdr;
+  SWAP32(buffer, &h261hdr);
   memcpy(buffer+sizeof(h261hdr), gData+gDbase, gNbytes);
   length = gNbytes+sizeof(h261hdr);
 
