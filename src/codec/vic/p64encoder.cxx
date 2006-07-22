@@ -12,7 +12,10 @@
 /************ Change log
  *
  * $Log: p64encoder.cxx,v $
- * Revision 1.2003  2005/08/31 13:16:02  rjongbloed
+ * Revision 1.2004  2006/07/22 13:17:49  rjongbloed
+ * Eliminate need for linking winsock just for ntohl() function.
+ *
+ * Revision 2.2  2005/08/31 13:16:02  rjongbloed
  * Ported video fast update from OpenH323
  *
  * Revision 2.1  2003/03/15 23:43:00  robertj
@@ -129,8 +132,7 @@ void P64Encoder::ReadOnePacket(
  trans->GetNextPacket(&h_ptr, &b_ptr, len_head, len_buff);
  length=len_head+len_buff;
  if(length!=0) {                          //Check to see if a packet was read.
-    long int h261_hdr=*(long int *)h_ptr;   
-    *(long int *)buffer= htonl(h261_hdr);
+   SWAP32(buffer, h_ptr);
     memcpy(buffer+len_head,b_ptr,len_buff);
  }
 }
