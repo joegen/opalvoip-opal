@@ -54,7 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2008  2006/01/12 17:56:37  dsandras
+ * Revision 1.2009  2006/07/22 13:17:49  rjongbloed
+ * Eliminate need for linking winsock just for ntohl() function.
+ *
+ * Revision 2.7  2006/01/12 17:56:37  dsandras
  * Added initialization as in Mimas branch of openh323.
  *
  * Revision 2.6  2005/11/25 00:14:29  csoutheren
@@ -1126,7 +1129,7 @@ BOOL P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
     return FALSE;
 
   // get 32 bit H261 header
-  h261hdr = ntohl(*(u_int*)hdrPtr);
+  SWAP32(&h261hdr, hdrPtr);
   // decode values we need from the RTP H261 header
   sbit  = (h261hdr >> 29) & 0x07;
   ebit  = (h261hdr >> 26) & 0x07;
