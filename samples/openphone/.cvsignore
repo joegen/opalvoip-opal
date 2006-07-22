@@ -4,3 +4,4 @@ NoTrace notrace
 *.plg *.opt *.ncb *.Tags.WW
 openphone.xrc
 resource.cpp
+openphone.cxx
