@@ -10231,7 +10231,8 @@ PObject * H225_CircuitInfo::Clone() const
 H225_GatekeeperRequest::H225_GatekeeperRequest(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Sequence(tag, tagClass, 4, TRUE, 12)
 {
-  IncludeOptionalField(e_supportsAssignedGK);
+//  Removed for backwards interoperabililty. Problems with the messages being parsed on previous versions
+//  IncludeOptionalField(e_supportsAssignedGK);
 }
 
 
@@ -10432,7 +10433,8 @@ H225_RegistrationRequest::H225_RegistrationRequest(unsigned tag, PASN_Object::Ta
   IncludeOptionalField(e_keepAlive);
   IncludeOptionalField(e_willSupplyUUIEs);
   IncludeOptionalField(e_maintainConnection);
-  IncludeOptionalField(e_supportsAssignedGK);
+//  Removed for backwards interoperabililty. Problems with the messages being parsed on previous versions
+//  IncludeOptionalField(e_supportsAssignedGK);
 }
 
 
