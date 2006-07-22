@@ -22,13 +22,22 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
+# Revision 1.2  2006/07/22 00:24:55  dereksmithies
+# Add linux magic so it compiles and runs on linux.
+# Add the command wxrc to turn the openphone.xrc file into openphone.cxx
+# Compile openphone.cxx, which defines the function InitXmlResource();
+# Since openphone.cxx is an auto generated file, get cvs to ignore this file.
+#
 # Revision 1.1  2006/07/19 10:41:51  dereksmithies
 # First steps towards having a unix compiled openphone.
 #
 #
 
 PROG		= openphone
-SOURCES		:= main.cxx
+SOURCES		:= main.cxx openphone.cxx
+
+openphone.cxx : openphone.xrc
+	wxrc openphone.xrc -c -o openphone.cxx
 
 VERSION_FILE =  ../../version.h
 
