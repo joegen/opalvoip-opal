@@ -30,10 +30,8 @@
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\..\..\lib\NoTrace/opal_dll.pch"
-				AssemblerListingLocation=".\..\..\lib\NoTrace/"
-				ObjectFile=".\..\..\lib\NoTrace/"
-				ProgramDataBaseFileName="..\..\lib\opaln.pdb"
+				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"/>
@@ -45,13 +43,13 @@
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile="..\..\lib\opaln.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\..\lib\NoTrace\opaln.def"
-				DelayLoadDLLs="setupapi.dll"
-				ProgramDatabaseFile=".\..\..\lib/opaln.pdb"
+				DelayLoadDLLs=""
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\lib/opaln.lib"
 				TargetMachine="1"/>
@@ -97,10 +95,8 @@
 				PreprocessorDefinitions="_DEBUG"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
-				PrecompiledHeaderFile=".\..\..\lib\Debug/opal_dll.pch"
-				AssemblerListingLocation=".\..\..\lib\Debug/"
-				ObjectFile=".\..\..\lib\Debug/"
-				ProgramDataBaseFileName="..\..\lib\opald.pdb"
+				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"/>
@@ -108,14 +104,14 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="ptlibd.lib"
 				OutputFile="..\..\lib\opald.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\..\lib\Debug\opald.def"
-				DelayLoadDLLs="setupapi.dll"
+				DelayLoadDLLs=""
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\..\..\lib/opald.pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\lib/opald.lib"
 				TargetMachine="1"/>
@@ -166,10 +162,8 @@
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\..\..\lib\Release/opal_dll.pch"
-				AssemblerListingLocation=".\..\..\lib\Release/"
-				ObjectFile=".\..\..\lib\Release/"
-				ProgramDataBaseFileName="..\..\lib\opal.pdb"
+				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="2"/>
@@ -181,13 +175,14 @@
 				Outputs="$(OutDir)\$(TargetName).dbg"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile="..\..\lib\opal.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ModuleDefinitionFile="..\..\lib\Release\opal.def"
-				DelayLoadDLLs="setupapi.dll"
+				DelayLoadDLLs=""
 				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\lib/opal.lib"
 				TargetMachine="1"/>
@@ -222,6 +217,9 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{0C3AF508-06FF-47EF-BE5A-F72F41759246}"
+			Name="OPAL_lib"/>
 	</References>
 	<Files>
 		<File
