@@ -1,7 +1,10 @@
 /************ Change log
  *
  * $Log: config.h,v $
- * Revision 1.2003  2006/07/22 13:17:49  rjongbloed
+ * Revision 1.2004  2006/07/23 04:44:39  csoutheren
+ * Fixed gcc implementation of SWAP32
+ *
+ * Revision 2.2  2006/07/22 13:17:49  rjongbloed
  * Eliminate need for linking winsock just for ntohl() function.
  *
  * Revision 2.1  2003/03/15 23:42:59  robertj
@@ -84,7 +87,7 @@ typedef unsigned char BYTE;
     #define INT_64 long long
   #endif
 
-  #define SWAP32(left,right) (left) = ntohl(right)
+  #define SWAP32(left,right) (*left) = ntohl(*right)
 
 #endif
 
