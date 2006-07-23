@@ -168,7 +168,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlibs.lib wsock32.lib"
+				AdditionalDependencies="opals.lib ptlibs.lib wsock32.lib"
 				OutputFile="Release/simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -261,7 +261,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib "
+				AdditionalDependencies="opalsd.lib ptlibsd.lib "
 				OutputFile="Debug/simpleOPAL.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
