@@ -144,6 +144,9 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{0BF5DA42-4607-485F-9342-51FD28854F3B}"
+			Name="OPAL_dll"/>
 	</References>
 	<Files>
 		<Filter

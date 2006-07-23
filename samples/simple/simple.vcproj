@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="SimpleOPAL"
+	Name="Simple OPAL Static"
 	ProjectGUID="{780468A8-2135-4ADE-9E05-E245B36A4791}"
 	SccProjectName=""
 	SccLocalPath="">
@@ -13,8 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="No Trace|Win32"
-			OutputDirectory=".\NoTrace"
-			IntermediateDirectory=".\NoTrace"
+			OutputDirectory=".\NoTrace\Static"
+			IntermediateDirectory=".\NoTrace\Static"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -29,21 +29,19 @@
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\NoTrace/simple.pch"
-				AssemblerListingLocation=".\NoTrace/"
-				ObjectFile=".\NoTrace/"
-				ProgramDataBaseFileName=".\NoTrace/"
+				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsn.lib ptclib.lib ptlib.lib wsock32.lib"
-				OutputFile="NoTrace/simpleOPAL.exe"
+				AdditionalDependencies="opalsn.lib ptlibs.lib"
+				OutputFile="$(OutDir)\simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\NoTrace/simpleOPAL.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
@@ -77,8 +75,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			OutputDirectory=".\Release\Static"
+			IntermediateDirectory=".\Release\Static"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -93,21 +91,19 @@
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\Release/simple.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib wsock32.lib"
-				OutputFile="Release/simpleOPAL.exe"
+				AdditionalDependencies="opals.lib ptlibs.lib"
+				OutputFile="$(OutDir)\simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ProgramDatabaseFile=".\Release/simpleOPAL.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
@@ -141,8 +137,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory=".\Debug\Static"
+			IntermediateDirectory=".\Debug\Static"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -155,10 +151,8 @@
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="3"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\Debug/simple.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
+				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"/>
@@ -166,12 +160,12 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib wsock32.lib"
-				OutputFile="Debug/simpleOPAL.exe"
+				AdditionalDependencies="opalsd.lib ptlibsd.lib"
+				OutputFile="$(OutDir)\simpleOPAL.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/simpleOPAL.pdb"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
@@ -205,6 +199,9 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{0C3AF508-06FF-47EF-BE5A-F72F41759246}"
+			Name="OPAL_lib"/>
 	</References>
 	<Files>
 		<Filter
@@ -273,10 +270,6 @@
 			<File
 				RelativePath="version.h">
 			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe">
 		</Filter>
 	</Files>
 	<Globals>
