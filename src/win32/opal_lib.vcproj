@@ -1889,7 +1889,8 @@
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
 						CommandLine="cd ..\..
-.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS"
+.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS
+"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"/>
 				</FileConfiguration>
@@ -7628,6 +7629,9 @@
 				</File>
 			</Filter>
 		</Filter>
+		<File
+			RelativePath="..\..\configure.ac">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
