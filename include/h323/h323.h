@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2008  2004/03/11 06:54:26  csoutheren
+ * Revision 1.2009  2006/07/24 14:03:38  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.7.4.1  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.7  2004/03/11 06:54:26  csoutheren
  * Added ability to disable SIP or H.323 stacks
  *
  * Revision 2.6  2004/02/19 10:46:43  rjongbloed
@@ -475,18 +481,6 @@
 #include <h323/h323con.h>
 #include <h323/gkclient.h>
 #include <opal/buildopts.h>
-
-#ifndef NO_H323_AUDIO_CODECS
-#include <codec/gsmcodec.h>
-#include <codec/mscodecs.h>
-#include <codec/lpc10codec.h>
-#include <codec/g729codec.h>
-#include <codec/g726codec.h>
-#ifndef NO_SPEEX
-#include <codec/speexcodec.h>
-#endif
-#include <codec/ilbccodec.h>
-#endif // NO_H323_AUDIO_CODECS
 
 #ifndef NO_OPAL_VIDEO
 #include <codec/h261codec.h>
