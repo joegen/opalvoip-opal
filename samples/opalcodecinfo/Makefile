@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
+# Revision 1.2  2006/07/24 14:03:39  csoutheren
+# Merged in audio and video plugins from CVS branch PluginBranch
+#
 # Revision 1.1  2006/03/13 06:56:37  csoutheren
 # Initial version
 #
@@ -34,10 +37,10 @@ PROG		= codecinfo
 SOURCES		:= main.cxx
 
 ifndef OPENH323DIR
-OPENH323DIR=$(CURDIR)/../..
+OPALDIR=$(CURDIR)/../..
 endif
 
-VERSION_FILE := $(OPENH323DIR)/version.h
+VERSION_FILE := $(OPALDIR)/version.h
 
-include $(OPENH323DIR)/openh323u.mak
+include $(OPALDIR)/opal_inc.mak
 

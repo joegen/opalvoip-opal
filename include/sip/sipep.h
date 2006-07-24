@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2060  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2061  2006/07/24 14:03:39  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.59  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -67,6 +70,46 @@
  * Revision 2.49  2006/03/06 12:56:02  csoutheren
  * Added experimental support for SIP SRV lookups
  *
+=======
+ * Revision 2.48.2.2  2006/04/06 05:33:07  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.48.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.56  2006/03/27 20:28:18  dsandras
+ * Added mutex to fix concurrency issues between OnReceivedPDU which checks
+ * if a connection is in the list, and OnReceivedINVITE, which adds it to the
+ * list. Fixes Ekiga report #334847. Thanks Robert for your input on this!
+ *
+ * Revision 2.55  2006/03/19 18:57:06  dsandras
+ * More work on Ekiga report #334999.
+ *
+ * Revision 2.54  2006/03/19 17:26:15  dsandras
+ * Fixed FindSIPInfoByDomain so that it doesn't return unregistered accounts.
+ * Fixes Ekiga report #335006.
+ *
+ * Revision 2.53  2006/03/19 12:32:05  dsandras
+ * RFC3261 says that "CANCEL messages "SHOULD NOT" be sent for anything but INVITE
+ * requests". Fixes Ekiga report #334985.
+ *
+ * Revision 2.52  2006/03/19 11:45:47  dsandras
+ * The remote address of the registrar transport might have changed due
+ * to the Via field. This affected unregistering which was reusing
+ * the exact same transport to unregister. Fixed Ekiga report #334999.
+ *
+ * Revision 2.51  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.50  2006/03/06 19:01:30  dsandras
+ * Allow registering several accounts with the same realm but different
+ * user names to the same provider. Fixed possible crash due to transport
+ * deletion before the transaction is over.
+ *
+ * Revision 2.49  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+>>>>>>> 2.48.2.2
  * Revision 2.48  2006/02/19 11:51:46  dsandras
  * Fixed FindSIPInfoByDomain.
  *
@@ -934,8 +977,8 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
-			return info;
+                if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
+                  return info;
 	      }
 	      return NULL;
 	    }

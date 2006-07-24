@@ -24,7 +24,17 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2015  2006/06/30 06:49:31  csoutheren
+ * Revision 1.2016  2006/07/24 14:03:39  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.11.4.2  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
+ * Revision 2.11.4.1  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
+ * Revision 2.14  2006/06/30 06:49:31  csoutheren
  * Fixed disable of video code to use correct #define
  *
  * Revision 2.13  2006/06/30 01:05:50  csoutheren
@@ -80,6 +90,10 @@
 #pragma implementation "vidcodec.h"
 #endif
 
+#include <opal/buildopts.h>
+
+#if OPAL_VIDEO
+
 #include <codec/vidcodec.h>
 
 #include <ptlib/videoio.h>
@@ -131,7 +145,6 @@ const OpalVideoFormat & GetOpalYUV420P()
 
 #define new PNEW
 
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
@@ -140,7 +153,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
 {
   UpdateOutputMediaFormat(outputMediaFormat);
   fillLevel = 5;
-  updatePicture = false;
+  updatePictureCount = 0;
 }
 
 
@@ -164,7 +177,7 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
 BOOL OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    updatePicture = true;
+    ++updatePictureCount;
     return TRUE;
   }
 
@@ -190,12 +203,11 @@ PString OpalTemporalSpatialTradeOff::GetName() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef NO_H323
+#if OPAL_H323
 
-H323_UncompVideoCapability::H323_UncompVideoCapability(const H323EndPoint & endpoint,
+H323_UncompVideoCapability::H323_UncompVideoCapability(const H323EndPoint & /*endpoint*/,
                                                        const PString & colourFmt)
-  : H323NonStandardVideoCapability(endpoint,
-                                   (const BYTE *)(const char *)colourFmt,
+  : H323NonStandardVideoCapability((const BYTE *)(const char *)colourFmt,
                                    colourFmt.GetLength()),
     colourFormat(colourFmt)
 {
@@ -213,7 +225,7 @@ PString H323_UncompVideoCapability::GetFormatName() const
   return colourFormat;
 }
 
-#endif // ifndef NO_H323
+#endif // OPAL_H323
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -293,5 +305,6 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
 #endif
 }
 
+#endif // OPAL_VIDEO
 
 /////////////////////////////////////////////////////////////////////////////
