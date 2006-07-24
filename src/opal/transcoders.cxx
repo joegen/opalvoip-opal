@@ -24,12 +24,30 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2022  2006/06/30 06:49:02  csoutheren
+ * Revision 1.2023  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.21  2006/06/30 06:49:02  csoutheren
  * Applied 1494416 - Add check for sessionID in transcoder selection
  * Thanks to mturconi
  *
  * Revision 2.20  2006/04/09 12:12:54  rjongbloed
  * Changed the media format option merging to include the transcoder formats.
+ *
+ * Revision 2.19.2.5  2006/04/24 01:50:00  csoutheren
+ * Fixed problem with selecting codecs from wrong sessions
+ *
+ * Revision 2.19.2.4  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.19.2.3  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.19.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.19.2.1  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
  *
  * Revision 2.19  2006/02/08 04:00:19  csoutheren
  * Fixed for G.726 codec
@@ -239,32 +257,37 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
   // Search for a single transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-		if (dstFormat.GetDefaultSessionID() == sessionID) {
-			for (s = 0; s < srcFormats.GetSize(); s++) {
-				srcFormat = srcFormats[s];
-				OpalMediaFormatPair search(srcFormat, dstFormat);
-				OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
-				for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-					if (search == *i)
-						return srcFormat.Merge(i->GetInputFormat()) &&
-									 dstFormat.Merge(i->GetOutputFormat()) &&
-									 srcFormat.Merge(dstFormat);
-				}
-			}
-		}
+    if (dstFormat.GetDefaultSessionID() == sessionID) {
+      for (s = 0; s < srcFormats.GetSize(); s++) {
+        srcFormat = srcFormats[s];
+        if (srcFormat.GetDefaultSessionID() == sessionID) {
+          OpalMediaFormatPair search(srcFormat, dstFormat);
+          OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
+          for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
+            OpalMediaFormatPair & target = *i;
+            if (search == target)
+              return srcFormat.Merge(target.GetInputFormat()) &&
+                     dstFormat.Merge(target.GetOutputFormat()) &&
+                     srcFormat.Merge(dstFormat);
+          }
+        }
+      }
+    }
   }
 
   // Last gasp search for a double transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-		if (dstFormat.GetDefaultSessionID() == sessionID) {
-			for (s = 0; s < srcFormats.GetSize(); s++) {
-				srcFormat = srcFormats[s];
-				OpalMediaFormat intermediateFormat;
-				if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-					return TRUE;
-			}
-		}
+    if (dstFormat.GetDefaultSessionID() == sessionID) {
+      for (s = 0; s < srcFormats.GetSize(); s++) {
+        srcFormat = srcFormats[s];
+        if (srcFormat.GetDefaultSessionID() == sessionID) {
+          OpalMediaFormat intermediateFormat;
+          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
+            return TRUE;
+        }
+      }
+    }
   }
 
   return FALSE;
@@ -316,6 +339,8 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
 
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find = availableTranscoders.begin(); find != availableTranscoders.end(); ++find) {
+    PString s = find->GetInputFormat();
+    PString d = find->GetOutputFormat();
     if (find->GetOutputFormat() == dstFormat)
       list += find->GetInputFormat();
   }

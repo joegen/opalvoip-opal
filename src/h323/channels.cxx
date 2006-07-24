@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2033  2006/04/10 05:16:09  csoutheren
+ * Revision 1.2034  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.32  2006/04/10 05:16:09  csoutheren
  * Populate media stream info even when OLCack only contains media control information
  *
  * Revision 2.31  2006/03/29 23:57:52  csoutheren
@@ -874,7 +877,7 @@ BOOL H323UnidirectionalChannel::Start()
   if (!mediaStream->Start())
     return FALSE;
 
-  mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+  //mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));  // TODO: HERE
 
   paused = FALSE;
   return TRUE;

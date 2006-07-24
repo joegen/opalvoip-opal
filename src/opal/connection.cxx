@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2068  2006/07/21 00:42:08  csoutheren
+ * Revision 1.2069  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.67  2006/07/21 00:42:08  csoutheren
  * Applied 1525040 - More locking when changing connection's phase
  * Thanks to Borko Jandras
  *
@@ -55,6 +58,29 @@
  *
  * Revision 2.60  2006/04/20 16:52:22  hfriederich
  * Adding support for H.224/H.281
+ *
+ * Revision 2.59  2006/04/09 12:12:54  rjongbloed
+ * Changed the media format option merging to include the transcoder formats.
+ *
+ * Revision 2.58  2006/03/29 23:57:52  csoutheren
+ * Added patches from Paul Caswell to provide correct operation when using
+ * external RTP with H.323
+ *
+ * Revision 2.57  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.56.2.4  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.56.2.3  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.56.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.56.2.1  2006/04/06 05:33:08  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.59  2006/04/09 12:12:54  rjongbloed
  * Changed the media format option merging to include the transcoder formats.
@@ -588,8 +614,7 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 }
 
 
-BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
-                                           unsigned sessionID)
+BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
 {
   // See if already opened
   OpalMediaStream * stream = GetMediaStream(sessionID, TRUE);
@@ -774,11 +799,11 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   if (!endpoint.OnOpenMediaStream(*this, stream))
     return FALSE;
 
-    {
-      PWaitAndSignal m(mediaStreamMutex);
-      if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
-        mediaStreams.Append(&stream);
-    }
+  {
+    PWaitAndSignal m(mediaStreamMutex);
+    if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
+      mediaStreams.Append(&stream);
+  }
 
   if (LockReadWrite()) {
     if (GetPhase() == ConnectedPhase) {
@@ -942,8 +967,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
 
 BOOL OpalConnection::SetBandwidthAvailable(unsigned newBandwidth, BOOL force)
 {
-  PTRACE(3, "OpalCon\tSetting bandwidth to "
-         << newBandwidth << "00b/s on connection " << *this);
+  PTRACE(3, "OpalCon\tSetting bandwidth to " << newBandwidth << "00b/s on connection " << *this);
 
   unsigned used = GetBandwidthUsed();
   if (used > newBandwidth) {

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2036  2006/07/14 05:24:50  csoutheren
+ * Revision 1.2037  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.35  2006/07/14 05:24:50  csoutheren
  * Applied 1509232 - Fix for a bug in OpalMediaPatch::Close method
  * Thanks to Borko Jandras
  *
@@ -313,6 +316,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
+
 #if PTRACING
   ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
   traceStream << "Patch\tAdded sink\n  from " << sourceFormat << '\n';
@@ -321,13 +325,12 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
   }
   traceStream << "    to " << destinationFormat << '\n';
-  for (PINDEX j = 0; j < destinationFormat.GetOptionCount(); j++) {
-    const OpalMediaOption & option = destinationFormat.GetOption(j);
+  for (PINDEX i = 0; i < destinationFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = destinationFormat.GetOption(i);
     traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
   }
   traceStream << PTrace::End;
 #endif
-
 
   if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);

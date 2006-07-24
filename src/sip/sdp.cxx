@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2037  2006/04/30 09:58:44  csoutheren
+ * Revision 1.2038  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.36  2006/04/30 09:58:44  csoutheren
  * Added IPV6 handlng to SDP
  *
  * Revision 2.35  2006/04/23 20:12:52  dsandras
@@ -37,6 +40,38 @@
  *
  * Revision 2.33  2006/04/21 14:36:51  hfriederich
  * Adding ability to parse and transmit simple bandwidth information
+ *
+ * Revision 2.32  2006/03/29 23:53:54  csoutheren
+ * Make sure OpalTransportAddresses that are parsed from SDP are always udp$ and not
+ *  tcp$
+ *
+ * Revision 2.31  2006/03/20 00:41:43  csoutheren
+ * Fixed typo in last submit
+ *
+ * Revision 2.30  2006/03/20 00:20:15  csoutheren
+ * Fixed problem with output empty image media formats
+ *
+ * Revision 2.29  2006/03/08 10:59:03  csoutheren
+ * Applied patch #1444783 - Add 'image' SDP meda type and 'udptl' transport protocol
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.28.2.6  2006/04/30 13:54:14  csoutheren
+ * Added handling for IPV6
+ *
+ * Revision 2.28.2.5  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.28.2.4  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
+ * Revision 2.28.2.3  2006/04/06 05:33:09  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.28.2.2  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.28.2.1  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
  *
  * Revision 2.32  2006/03/29 23:53:54  csoutheren
  * Make sure OpalTransportAddresses that are parsed from SDP are always udp$ and not
@@ -174,13 +209,15 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
 {
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
-      if ((tokens[offset+1] *= "IP4") 
+      if (
+        (tokens[offset+1] *= "IP4")
 #if P_HAS_IPV6
         || (tokens[offset+1] *= "IP6")
 #endif
         )
         return OpalTransportAddress(tokens[offset+2], 0, "udp");
-      else {
+      else
+      {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
       }
     }
@@ -615,7 +652,8 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
     if (opalFormat.IsEmpty())
       PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
     else {
-      if (opalFormat.GetDefaultSessionID() == sessionID) {
+      if (opalFormat.GetDefaultSessionID() == sessionID && 
+          opalFormat.GetEncodingName() != NULL) {
         PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
 	      list += opalFormat;
       }
@@ -651,6 +689,9 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
 {
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
+  if (encodingName == NULL)
+    return;
+
   unsigned clockRate = mediaFormat.GetClockRate();
 
   RTP_DataFrame::PayloadMapType payloadTypeMap = map;
@@ -666,8 +707,8 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
-        (strcasecmp(formats[i].GetEncodingName(), encodingName) == 0 
-	 && formats[i].GetClockRate() == clockRate))
+        ((formats[i].GetEncodingName() *= encodingName) && formats[i].GetClockRate() == clockRate)
+        )
       return;
   }
 
@@ -680,6 +721,7 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = mediaFormats[i];
     if (mediaFormat.GetDefaultSessionID() == session &&
+        mediaFormat.GetEncodingName() != NULL &&
         mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
       AddMediaFormat(mediaFormat, map);
   }
@@ -861,15 +903,15 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'r' : // zero or more repeat times
               break;
             case 'a' : // zero or more session attribute lines
-	      if (value *= "sendonly")
-		SetDirection (SDPMediaDescription::SendOnly);
-	      else if (value *= "recvonly")
-		SetDirection (SDPMediaDescription::RecvOnly);
-	      else if (value *= "sendrecv")
-		SetDirection (SDPMediaDescription::SendRecv);
-	      else if (value *= "inactive")
-		SetDirection (SDPMediaDescription::Inactive);
-	      break;
+              if (value *= "sendonly")
+		            SetDirection (SDPMediaDescription::SendOnly);
+	            else if (value *= "recvonly")
+		            SetDirection (SDPMediaDescription::RecvOnly);
+	            else if (value *= "sendrecv")
+		            SetDirection (SDPMediaDescription::SendRecv);
+	            else if (value *= "inactive")
+		            SetDirection (SDPMediaDescription::Inactive);
+	            break;
 
             default:
               PTRACE(1, "SDP\tUnknown session information key " << key[0]);
