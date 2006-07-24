@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2069  2006/07/21 00:38:31  csoutheren
+ * Revision 1.2070  2006/07/24 14:03:39  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.68  2006/07/21 00:38:31  csoutheren
  * Applied 1483215 - Opal simpleOPAL deadlock patch & DTMF support
  * Thanks to Mike T
  *
@@ -49,6 +52,11 @@
  *
  * Revision 2.60.2.3  2006/04/30 13:50:29  csoutheren
  * Add ability to set TextToSpeech algorithm
+ * Revision 2.60.2.2  2006/04/10 08:54:11  csoutheren
+ * Fix problem when H323 disabled
+ *
+ * Revision 2.60.2.1  2006/03/20 02:25:26  csoutheren
+ * Backports from CVS head
  *
  * Revision 2.61  2006/03/07 11:24:15  csoutheren
  * Add --disable-grq flag
@@ -988,9 +996,6 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*           = sip:<da>");
       AddRouteEntry("pc:.*             = sip:<da>");
     }
-#if OPAL_H323
-    else
-#endif
 #endif
 
 #if OPAL_H323
