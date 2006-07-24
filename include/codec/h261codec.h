@@ -25,7 +25,14 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261codec.h,v $
- * Revision 1.2020  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2021  2006/07/24 14:03:38  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.19.4.1  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
+ * Revision 2.19  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.18  2005/09/16 07:08:22  dsandras
@@ -364,11 +371,14 @@ class H323_H261Capability : public H323VideoCapability
     BOOL     stillImageTransmission;    // Annex D of H.261
 };
 
+#define DECLARE_H261_CAP(prefix, fmt, val1, val2) \
+  H323_DECLARE_CAPABILITY_CLASS(prefix##_Capability, H323_H261Capability) \
+    : H323_H261Capability(val1, val2) { } }; \
+  H323_REGISTER_CAPABILITY(prefix##_Capability, fmt) \
+
 #define OPAL_REGISTER_H261_H323 \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_CIF, OPAL_H261_CIF, H323_NO_EP_VAR) \
-    { return new H323_H261Capability(0, 1); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H261_QCIF, OPAL_H261_QCIF, H323_NO_EP_VAR) \
-    { return new H323_H261Capability(1, 0); }
+  DECLARE_H261_CAP(H323_H261_CIF,  OPAL_H261_CIF,  0, 1) \
+  DECLARE_H261_CAP(H323_H261_QCIF, OPAL_H261_QCIF, 1, 0) \
 
 #else // ifndef NO_H323
 

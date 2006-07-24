@@ -25,7 +25,14 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *
  * $Log: h263codec.h,v $
- * Revision 1.2003  2006/02/13 03:46:16  csoutheren
+ * Revision 1.2004  2006/07/24 14:03:38  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.2.2.1  2006/03/23 07:55:18  csoutheren
+ * Audio plugin H.323 capability merging completed.
+ * GSM, LBC, G.711 working. Speex and LPC-10 are not
+ *
+ * Revision 2.2  2006/02/13 03:46:16  csoutheren
  * Added initialisation stuff to make sure that everything works OK
  *
  * Revision 2.1  2006/01/01 19:19:33  dsandras
@@ -298,15 +305,17 @@ protected:
 
 /** Capability registration functions (no need for an Endpoint to get NonStandardInfo from).
  */
+
+#define DECLARE_H263_CAP(cls, fmt, val1, val2, val3) \
+  H323_DECLARE_CAPABILITY_CLASS(cls, H323_H263Capability) \
+    : H323_H263Capability(val1, val2, val3, 0, 0, 6217) { } }; \
+  H323_REGISTER_CAPABILITY(cls, fmt) \
+
 #define OPAL_REGISTER_H263_H323 \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H263_SQCIF_QCIF_CIF_Capability, OPAL_H263, H323_NO_EP_VAR) \
-    { return new H323_H263Capability(1, 1, 2, 0, 0, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H263_SQCIF_Capability, OPAL_H263_SQCIF, H323_NO_EP_VAR) \
-    { return new H323_H263Capability(1, 0, 0, 0, 0, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H263_QCIF_Capability, OPAL_H263_QCIF, H323_NO_EP_VAR) \
-    { return new H323_H263Capability(0, 1, 0, 0, 0, 6217); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_H263_CIF_Capability, OPAL_H263_CIF, H323_NO_EP_VAR) \
-    { return new H323_H263Capability(0, 0, 2, 0, 0, 6217); }
+  DECLARE_H263_CAP(H323_H263_SQCIF_QCIF_CIF_Capability, OPAL_H263,       1, 1, 2) \
+  DECLARE_H263_CAP(H323_H263_SQCIF_Capability,          OPAL_H263_SQCIF, 1, 0, 0) \
+  DECLARE_H263_CAP(H323_H263_QCIF_Capability,           OPAL_H263_QCIF,  0, 1, 0) \
+  DECLARE_H263_CAP(H323_H263_CIF_Capability,            OPAL_H263_CIF,   0, 0, 2) \
 
 #else // ifndef NO_H323
 

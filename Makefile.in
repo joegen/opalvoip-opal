@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.34  2006/07/24 14:03:38  csoutheren
+# Merged in audio and video plugins from CVS branch PluginBranch
+#
 # Revision 1.33  2006/06/08 07:03:16  csoutheren
 # Changed to force docs to build even when docs directory exists
 #
@@ -38,6 +41,9 @@
 #
 # Revision 1.29  2006/04/17 00:06:26  csoutheren
 # Allow ILBC codec to be disabled and detect if not present
+#
+# Revision 1.28.2.1  2006/05/16 07:03:09  csoutheren
+# Fixed Linux compile system
 #
 # Revision 1.28  2006/02/01 22:42:55  dominance
 # ensure we have the full disctinct SONAME instead of just the major number version.
@@ -310,6 +316,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/transcoders.cxx \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
+	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
            $(OPAL_SRCDIR)/opal/pcss.cxx \
            $(OPAL_SRCDIR)/opal/ivr.cxx \
            $(OPAL_SRCDIR)/opal/opalvxml.cxx \
@@ -470,233 +477,75 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/vidcodec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
 	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
-	   $(OPAL_SRCDIR)/codec/echocancel.cxx
-
-
-# G.726
-
-G726_DIR = g726
-
-SOURCES  += $(OPAL_SRCDIR)/codec/g726codec.cxx \
-            $(G726_DIR)/g72x.c \
-            $(G726_DIR)/g726_16.c \
-            $(G726_DIR)/g726_24.c \
-            $(G726_DIR)/g726_32.c \
-            $(G726_DIR)/g726_40.c
-
-
-# GSM06.10
-
-GSM_DIR 	= $(OPAL_SRCDIR)/codec/gsm
-GSM_SRCDIR	= $(GSM_DIR)/src
-GSM_INCDIR	= $(GSM_DIR)/inc
-
-SOURCES += $(OPAL_SRCDIR)/codec/gsmcodec.cxx \
-           $(GSM_SRCDIR)/gsm_create.c \
-           $(GSM_SRCDIR)/gsm_destroy.c \
-           $(GSM_SRCDIR)/gsm_decode.c \
-           $(GSM_SRCDIR)/gsm_encode.c \
-           $(GSM_SRCDIR)/gsm_option.c \
-           $(GSM_SRCDIR)/code.c \
-           $(GSM_SRCDIR)/decode.c \
-           $(GSM_SRCDIR)/add.c \
-           $(GSM_SRCDIR)/gsm_lpc.c \
-           $(GSM_SRCDIR)/rpe.c \
-           $(GSM_SRCDIR)/preprocess.c \
-           $(GSM_SRCDIR)/long_term.c \
-           $(GSM_SRCDIR)/short_term.c \
-           $(GSM_SRCDIR)/table.c
-
-
-SOURCES += $(OPAL_SRCDIR)/codec/mscodecs.cxx
-
-
-# LPC-10
-
-LPC10_DIR 	= $(OPAL_SRCDIR)/codec/lpc10
-LPC10_INCDIR	= $(LPC10_DIR)
-LPC10_SRCDIR	= $(LPC10_DIR)/src
-
-SOURCES += $(OPAL_SRCDIR)/codec/lpc10codec.cxx \
-           $(LPC10_SRCDIR)/f2clib.c \
-           $(LPC10_SRCDIR)/analys.c \
-           $(LPC10_SRCDIR)/bsynz.c \
-           $(LPC10_SRCDIR)/chanwr.c \
-           $(LPC10_SRCDIR)/dcbias.c \
-           $(LPC10_SRCDIR)/decode_.c \
-           $(LPC10_SRCDIR)/deemp.c \
-           $(LPC10_SRCDIR)/difmag.c \
-           $(LPC10_SRCDIR)/dyptrk.c \
-           $(LPC10_SRCDIR)/encode_.c \
-           $(LPC10_SRCDIR)/energy.c \
-           $(LPC10_SRCDIR)/ham84.c \
-           $(LPC10_SRCDIR)/hp100.c \
-           $(LPC10_SRCDIR)/invert.c \
-           $(LPC10_SRCDIR)/irc2pc.c \
-           $(LPC10_SRCDIR)/ivfilt.c \
-           $(LPC10_SRCDIR)/lpcdec.c \
-           $(LPC10_SRCDIR)/lpcenc.c \
-           $(LPC10_SRCDIR)/lpcini.c \
-           $(LPC10_SRCDIR)/lpfilt.c \
-           $(LPC10_SRCDIR)/median.c \
-           $(LPC10_SRCDIR)/mload.c \
-           $(LPC10_SRCDIR)/onset.c \
-           $(LPC10_SRCDIR)/pitsyn.c \
-           $(LPC10_SRCDIR)/placea.c \
-           $(LPC10_SRCDIR)/placev.c \
-           $(LPC10_SRCDIR)/preemp.c \
-           $(LPC10_SRCDIR)/prepro.c \
-           $(LPC10_SRCDIR)/random.c \
-           $(LPC10_SRCDIR)/rcchk.c \
-           $(LPC10_SRCDIR)/synths.c \
-           $(LPC10_SRCDIR)/tbdm.c \
-           $(LPC10_SRCDIR)/voicin.c \
-           $(LPC10_SRCDIR)/vparms.c \
-
-# Speex
+	   $(OPAL_SRCDIR)/codec/echocancel.cxx \
+	   $(OPAL_SRCDIR)/codec/opalpluginmgr.cxx
 
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
 
-HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h 
+#HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h
 
-SOURCES 	+= $(OPAL_SRCDIR)/codec/speexcodec.cxx 
+#SOURCES        += $(OPAL_SRCDIR)/codec/speexcodec.cxx
 
 ifdef OPAL_SYSTEM_SPEEX
 
-ENDLDLIBS    	:= -lspeex $(ENDLDLIBS)
+ENDLDLIBS       := -lspeex $(ENDLDLIBS)
 
 else
 
 SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
 SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
 
-VPATH_C		+= $(SPEEX_SRCDIR)
-VPATH_CXX	+= $(SPEEX_SRCDIR)
+VPATH_C         += $(SPEEX_SRCDIR)
+VPATH_CXX       += $(SPEEX_SRCDIR)
 
 HEADER_FILES    += $(SPEEX_INCDIR)/speex.h \
-                   $(SPEEX_INCDIR)/speex_bits.h \
-                   $(SPEEX_INCDIR)/speex_header.h \
-                   $(SPEEX_INCDIR)/speex_callbacks.h \
-                   $(SPEEX_INCDIR)/speex_config_types.h \
-                   $(SPEEX_INCDIR)/speex_preprocess.h \
-                   $(SPEEX_INCDIR)/speex_stereo.h \
-                   $(SPEEX_INCDIR)/speex_types.h \
-                   $(SPEEX_INCDIR)/speex_jitter.h \
-                   $(SPEEX_INCDIR)/speex_echo.h 
+		   $(SPEEX_INCDIR)/speex_bits.h \
+		   $(SPEEX_INCDIR)/speex_header.h \
+		   $(SPEEX_INCDIR)/speex_callbacks.h \
+		   $(SPEEX_INCDIR)/speex_config_types.h \
+		   $(SPEEX_INCDIR)/speex_preprocess.h \
+		   $(SPEEX_INCDIR)/speex_stereo.h \
+		   $(SPEEX_INCDIR)/speex_types.h \
+		   $(SPEEX_INCDIR)/speex_jitter.h \
+		   $(SPEEX_INCDIR)/speex_echo.h
 
-SOURCES 	+= $(SPEEX_SRCDIR)/nb_celp.c \
-                   $(SPEEX_SRCDIR)/sb_celp.c \
-                   $(SPEEX_SRCDIR)/lpc.c \
-                   $(SPEEX_SRCDIR)/ltp.c \
-                   $(SPEEX_SRCDIR)/lsp.c \
-                   $(SPEEX_SRCDIR)/quant_lsp.c \
-                   $(SPEEX_SRCDIR)/lsp_tables_nb.c \
-                   $(SPEEX_SRCDIR)/gain_table.c \
-                   $(SPEEX_SRCDIR)/gain_table_lbr.c \
-                   $(SPEEX_SRCDIR)/cb_search.c \
-                   $(SPEEX_SRCDIR)/filters.c \
-                   $(SPEEX_SRCDIR)/bits.c \
-                   $(SPEEX_SRCDIR)/modes.c \
-                   $(SPEEX_SRCDIR)/vq.c \
-                   $(SPEEX_SRCDIR)/high_lsp_tables.c \
-                   $(SPEEX_SRCDIR)/vbr.c \
-                   $(SPEEX_SRCDIR)/hexc_table.c \
-                   $(SPEEX_SRCDIR)/exc_5_256_table.c \
-                   $(SPEEX_SRCDIR)/exc_5_64_table.c \
-                   $(SPEEX_SRCDIR)/exc_8_128_table.c \
-                   $(SPEEX_SRCDIR)/exc_10_32_table.c \
-                   $(SPEEX_SRCDIR)/exc_10_16_table.c \
-                   $(SPEEX_SRCDIR)/exc_20_32_table.c \
-                   $(SPEEX_SRCDIR)/math_approx.c \
-                   $(SPEEX_SRCDIR)/kiss_fft.c \
-                   $(SPEEX_SRCDIR)/kiss_fftr.c \
-                   $(SPEEX_SRCDIR)/fftwrap.c \
-                   $(SPEEX_SRCDIR)/hexc_10_32_table.c \
-                   $(SPEEX_SRCDIR)/mdf.c \
-                   $(SPEEX_SRCDIR)/misc.c \
-                   $(SPEEX_SRCDIR)/smallft.c \
-                   $(SPEEX_SRCDIR)/speex.c \
-                   $(SPEEX_SRCDIR)/speex_header.c \
-                   $(SPEEX_SRCDIR)/speex_callbacks.c \
-                   $(SPEEX_SRCDIR)/speex_preprocess.c 
+SOURCES         += $(SPEEX_SRCDIR)/nb_celp.c \
+		   $(SPEEX_SRCDIR)/sb_celp.c \
+		   $(SPEEX_SRCDIR)/lpc.c \
+		   $(SPEEX_SRCDIR)/ltp.c \
+		   $(SPEEX_SRCDIR)/lsp.c \
+		   $(SPEEX_SRCDIR)/quant_lsp.c \
+		   $(SPEEX_SRCDIR)/lsp_tables_nb.c \
+		   $(SPEEX_SRCDIR)/gain_table.c \
+		   $(SPEEX_SRCDIR)/gain_table_lbr.c \
+		   $(SPEEX_SRCDIR)/cb_search.c \
+		   $(SPEEX_SRCDIR)/filters.c \
+		   $(SPEEX_SRCDIR)/bits.c \
+		   $(SPEEX_SRCDIR)/modes.c \
+		   $(SPEEX_SRCDIR)/vq.c \
+		   $(SPEEX_SRCDIR)/high_lsp_tables.c \
+		   $(SPEEX_SRCDIR)/vbr.c \
+		   $(SPEEX_SRCDIR)/hexc_table.c \
+		   $(SPEEX_SRCDIR)/exc_5_256_table.c \
+		   $(SPEEX_SRCDIR)/exc_5_64_table.c \
+		   $(SPEEX_SRCDIR)/exc_8_128_table.c \
+		   $(SPEEX_SRCDIR)/exc_10_32_table.c \
+		   $(SPEEX_SRCDIR)/exc_10_16_table.c \
+		   $(SPEEX_SRCDIR)/exc_20_32_table.c \
+		   $(SPEEX_SRCDIR)/math_approx.c \
+		   $(SPEEX_SRCDIR)/kiss_fft.c \
+		   $(SPEEX_SRCDIR)/kiss_fftr.c \
+		   $(SPEEX_SRCDIR)/fftwrap.c \
+		   $(SPEEX_SRCDIR)/hexc_10_32_table.c \
+		   $(SPEEX_SRCDIR)/mdf.c \
+		   $(SPEEX_SRCDIR)/misc.c \
+		   $(SPEEX_SRCDIR)/smallft.c \
+		   $(SPEEX_SRCDIR)/speex.c \
+		   $(SPEEX_SRCDIR)/speex_header.c \
+		   $(SPEEX_SRCDIR)/speex_callbacks.c \
+		   $(SPEEX_SRCDIR)/speex_preprocess.c
 
 endif # OPAL_SYSTEM_SPEEX
-
-
-ifdef OPAL_ILBC
-# iLBC
-
-ILBC_DIR 	= $(OPAL_SRCDIR)/codec/iLBC
-
-VPATH_C		+= $(ILBC_DIR)
-VPATH_CXX	+= $(ILBC_DIR)
-
-HEADER_FILES	+= $(OPAL_INCDIR)/codec/ilbccodec.h
-SOURCES	+= $(OPAL_SRCDIR)/codec/ilbccodec.cxx
-
-HEADER_FILES	+= $(ILBC_DIR)/iLBC_define.h
-HEADER_FILES	+= $(ILBC_DIR)/iLBC_decode.h
-SOURCES		+= $(ILBC_DIR)/iLBC_decode.c
-HEADER_FILES	+= $(ILBC_DIR)/iLBC_encode.h
-SOURCES		+= $(ILBC_DIR)/iLBC_encode.c
-HEADER_FILES	+= $(ILBC_DIR)/FrameClassify.h
-SOURCES		+= $(ILBC_DIR)/FrameClassify.c
-HEADER_FILES	+= $(ILBC_DIR)/LPCdecode.h
-SOURCES		+= $(ILBC_DIR)/LPCdecode.c
-HEADER_FILES	+= $(ILBC_DIR)/LPCencode.h
-SOURCES		+= $(ILBC_DIR)/LPCencode.c
-HEADER_FILES	+= $(ILBC_DIR)/StateConstructW.h
-SOURCES		+= $(ILBC_DIR)/StateConstructW.c
-HEADER_FILES	+= $(ILBC_DIR)/StateSearchW.h
-SOURCES		+= $(ILBC_DIR)/StateSearchW.c
-HEADER_FILES	+= $(ILBC_DIR)/anaFilter.h
-SOURCES		+= $(ILBC_DIR)/anaFilter.c
-HEADER_FILES	+= $(ILBC_DIR)/constants.h
-SOURCES		+= $(ILBC_DIR)/constants.c
-HEADER_FILES	+= $(ILBC_DIR)/createCB.h
-SOURCES		+= $(ILBC_DIR)/createCB.c
-HEADER_FILES	+= $(ILBC_DIR)/doCPLC.h
-SOURCES		+= $(ILBC_DIR)/doCPLC.c
-HEADER_FILES	+= $(ILBC_DIR)/enhancer.h
-SOURCES		+= $(ILBC_DIR)/enhancer.c
-HEADER_FILES	+= $(ILBC_DIR)/filter.h
-SOURCES		+= $(ILBC_DIR)/filter.c
-HEADER_FILES	+= $(ILBC_DIR)/gainquant.h
-SOURCES		+= $(ILBC_DIR)/gainquant.c
-HEADER_FILES	+= $(ILBC_DIR)/getCBvec.h
-SOURCES		+= $(ILBC_DIR)/getCBvec.c
-HEADER_FILES	+= $(ILBC_DIR)/helpfun.h
-SOURCES		+= $(ILBC_DIR)/helpfun.c
-HEADER_FILES	+= $(ILBC_DIR)/hpInput.h
-SOURCES		+= $(ILBC_DIR)/hpInput.c
-HEADER_FILES	+= $(ILBC_DIR)/hpOutput.h
-SOURCES		+= $(ILBC_DIR)/hpOutput.c
-HEADER_FILES	+= $(ILBC_DIR)/iCBConstruct.h
-SOURCES		+= $(ILBC_DIR)/iCBConstruct.c
-HEADER_FILES	+= $(ILBC_DIR)/iCBSearch.h
-SOURCES		+= $(ILBC_DIR)/iCBSearch.c
-HEADER_FILES	+= $(ILBC_DIR)/lsf.h
-SOURCES		+= $(ILBC_DIR)/lsf.c
-HEADER_FILES	+= $(ILBC_DIR)/packing.h
-SOURCES		+= $(ILBC_DIR)/packing.c
-HEADER_FILES	+= $(ILBC_DIR)/syntFilter.h
-SOURCES		+= $(ILBC_DIR)/syntFilter.c
-
-endif  # OPAL_ILBC
-
-
-VIC_DIR = $(OPAL_SRCDIR)/codec/vic
-
-SOURCES += $(OPAL_SRCDIR)/codec/h261codec.c \
-           $(VIC_DIR)/dct.cxx \
-           $(VIC_DIR)/p64.cxx \
-           $(VIC_DIR)/huffcode.c \
-           $(VIC_DIR)/bv.c \
-           $(VIC_DIR)/encoder-h261.cxx \
-           $(VIC_DIR)/p64encoder.cxx \
-           $(VIC_DIR)/transmitter.cxx \
-           $(VIC_DIR)/vid_coder.cxx \
-	   $(OPAL_SRCDIR)/codec/h263codec.c 
 
 #
 # Files to be cleaned during make clean
@@ -817,63 +666,6 @@ endif
 
 notrace::
 	$(MAKE) NOTRACE=1 opt
-
-# Build rules for VIC codecs
-
-$(OPAL_OBJDIR)/%.o : $(VIC_DIR)/%.cxx
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(OPAL_OBJDIR)/%.o : $(VIC_DIR)/%.c
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) -I$(VIC_DIR) $(STDCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(DEPDIR)/%.dep : $(VIC_DIR)/%.c
-	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS:-g=) $(CFLAGS) -M $< >> $@
-
-$(DEPDIR)/%.dep : $(VIC_DIR)/%.cxx
-	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CPLUS) -I$(VIC_DIR) $(STDCCFLAGS:-g=) $(CFLAGS) -M $< >> $@
-
-
-# Build rules for the GSM codec
-
-$(OPAL_OBJDIR)/%.o : $(GSM_SRCDIR)/%.c
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) $(STDCCFLAGS) $(ANSI_FLAG) -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(DEPDIR)/%.dep : $(GSM_SRCDIR)/%.c
-	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CC) $(ANSI_FLAG) -I$(GSM_INCDIR) -DWAV49 -DNeedFunctionPrototypes=1 $(CFLAGS) -M $< >> $@
-
-
-# Build rules for the G.726 codec
-
-$(OPAL_OBJDIR)/%.o : $(G726_DIR)/%.c
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) $(STDCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(DEPDIR)/%.dep : $(G726_DIR)/%.c
-	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CC) $(CFLAGS) -M $< >> $@
-
-
-# Build rules for the LPC10 codec
-
-$(OPAL_OBJDIR)/%.o : $(LPC10_SRCDIR)/%.c
-	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
-	$(CC) $(STDCCFLAGS) -I$(LPC10_INCDIR) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(DEPDIR)/%.dep : $(LPC10_SRCDIR)/%.c
-	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
-	@printf %s $(OPAL_OBJDIR)/ > $@
-	$(CC) -I$(LPC10_INCDIR) $(CFLAGS) -M $< >> $@
-
 
 # Build rules for the Speex codec
 
