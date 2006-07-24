@@ -25,13 +25,35 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2046  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2047  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.45  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
  * Revision 2.44  2006/07/09 10:18:28  csoutheren
  * Applied 1517393 - Opal T.38
  * Thanks to Drazen Dimoti
+ *
+ * Revision 2.43  2006/03/29 23:53:03  csoutheren
+ * Added call to OpalCall::OnSetUpConnection
+ *
+ * Revision 2.42  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.41.2.4  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.41.2.3  2006/04/11 05:12:25  csoutheren
+ * Updated to current OpalMediaFormat changes
+ *
+ * Revision 2.41.2.2  2006/04/07 07:57:20  csoutheren
+ * Halfway through media format changes - not working, but closer
+ *
+ * Revision 2.41.2.1  2006/04/06 05:33:08  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
  *
  * Revision 2.43  2006/03/29 23:53:03  csoutheren
  * Added call to OpalCall::OnSetUpConnection
@@ -369,23 +391,25 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   BOOL createdOne = FALSE;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (conn->SetConnected())
-        ok = TRUE;
-    }
+  {
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        if (conn->SetConnected())
+          ok = TRUE;
+      }
 
-    OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
-      createdOne = TRUE;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
-      createdOne = TRUE;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
-      createdOne = TRUE;
+      OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
+      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
+        createdOne = TRUE;
+      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+        createdOne = TRUE;
+      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
+        createdOne = TRUE;
+    }
   }
 
   if (ok && createdOne) {
-    for (PSafePtr<OpalConnection> conn = connectionsActive; conn != NULL; ++conn)
+    for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
 

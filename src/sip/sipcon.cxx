@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2167  2006/07/21 00:42:08  csoutheren
+ * Revision 1.2168  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.166  2006/07/21 00:42:08  csoutheren
  * Applied 1525040 - More locking when changing connection's phase
  * Thanks to Borko Jandras
  *
@@ -109,6 +112,63 @@
  * Revision 2.144  2006/04/22 10:48:14  dsandras
  * Added support for SDP offers in the OK response, and SDP answer in the ACK
  * request.
+ *
+ * Revision 2.143  2006/04/10 05:18:41  csoutheren
+ * Fix problem where reverse channel is opened using wrong media format list
+ *
+ * Revision 2.142  2006/04/06 20:39:41  dsandras
+ * Keep the same From header when sending authenticated requests than in the
+ * original request. Fixes Ekiga report #336762.
+ *
+ * Revision 2.141  2006/03/23 00:24:49  csoutheren
+ * Detect if ClearCall is used within OnIncomingConnection
+ *
+ * Revision 2.140  2006/03/19 17:18:46  dsandras
+ * Fixed SRV handling.
+ *
+ * Revision 2.139  2006/03/19 16:59:00  dsandras
+ * Removed cout again.
+ *
+ * Revision 2.138  2006/03/19 16:58:19  dsandras
+ * Do not release a call we are originating when receiving CANCEL.
+ *
+ * Revision 2.137  2006/03/19 16:05:00  dsandras
+ * Improved CANCEL handling. Ignore missing transport type.
+ *
+ * Revision 2.136  2006/03/18 21:45:28  dsandras
+ * Do an SRV lookup when creating the connection. Some domains to which
+ * INVITEs are sent do not have an A record, which makes the transport creation
+ * and the connection fail. Fixes Ekiga report #334994.
+ *
+ * Revision 2.135  2006/03/08 18:34:41  dsandras
+ * Added DNS SRV lookup.
+ *
+ * Revision 2.134  2006/03/06 22:52:59  csoutheren
+ * Reverted experimental SRV patch due to unintended side effects
+ *
+ * Revision 2.133  2006/03/06 12:56:02  csoutheren
+ * Added experimental support for SIP SRV lookups
+ *
+ * Revision 2.132.2.7  2006/04/25 01:06:22  csoutheren
+ * Allow SIP-only codecs
+ *
+ * Revision 2.132.2.6  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.132.2.5  2006/04/10 05:24:42  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.132.2.4  2006/04/06 05:34:16  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.132.2.3  2006/04/06 05:33:09  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.132.2.2  2006/04/06 01:21:21  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.132.2.1  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
  *
  * Revision 2.143  2006/04/10 05:18:41  csoutheren
  * Fix problem where reverse channel is opened using wrong media format list
@@ -1140,9 +1200,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
 BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteFormatList, unsigned sessionId, SDPMediaDescription *localMedia)
 {
   BOOL reverseStreamsFailed = TRUE;
-  
-  PWaitAndSignal m(streamsMutex);
-  ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
+
+  {
+    PWaitAndSignal m(streamsMutex);
+    ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
+  }
 
   OpalMediaFormatList otherList;
   {
@@ -1317,6 +1379,7 @@ BOOL SIPConnection::SetUpConnection()
   SIPURL transportAddress = targetAddress;
 
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
+
   // Do a DNS SRV lookup
 #if P_DNS
     PIPSocketAddressAndPortVector addrs;
@@ -1948,7 +2011,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
   
   
-  // indicate the other is to start ringing
+  // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection()) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
@@ -2538,7 +2601,6 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
   PWaitAndSignal m(transportMutex); 
   if (transport) {
     if (lastTransportAddress != address) {
-
       // skip transport identifier
       PINDEX pos = address.Find('$');
       if (pos != P_MAX_INDEX)

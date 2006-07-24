@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2038  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2039  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.37  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -35,6 +38,18 @@
  *
  * Revision 2.35  2006/03/12 06:36:57  rjongbloed
  * Fixed DevStudio warning
+ *
+ * Revision 2.34.2.4  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.34.2.3  2006/03/20 05:01:47  csoutheren
+ * Removed change markers
+ *
+ * Revision 2.34.2.2  2006/03/20 02:25:27  csoutheren
+ * Backports from CVS head
+ *
+ * Revision 2.34.2.1  2006/03/16 07:07:24  csoutheren
+ * Removed warning on Windows
  *
  * Revision 2.34  2006/02/22 10:45:11  csoutheren
  * Added patch #1375116 from Frederic Heem
@@ -173,7 +188,7 @@
 // TODO find the correct value, usually the bandwidth for pure audio call is 1280 kb/sec 
 // Set the bandwidth to 10Mbits, as setting the bandwith to UINT_MAX causes problems with cisco gatekeepers 
 //
-#define BANDWITH_DEFAULT_INITIAL 10000
+#define BANDWITH_DEFAULT_INITIAL 100000
 
 #define new PNEW
 
