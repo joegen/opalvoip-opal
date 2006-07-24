@@ -22,6 +22,27 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.3  2006/07/24 14:03:39  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 1.1.2.6  2006/04/26 05:09:57  csoutheren
+ * Cleanup bit rate settings
+ *
+ * Revision 1.1.2.5  2006/04/19 07:52:30  csoutheren
+ * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
+ *
+ * Revision 1.1.2.4  2006/04/06 01:21:18  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 1.1.2.3  2006/03/23 07:55:54  csoutheren
+ * Added in options for capability handling
+ *
+ * Revision 1.1.2.2  2006/03/20 05:04:54  csoutheren
+ * Add check to ensure codec can be instantiated
+ *
+ * Revision 1.1.2.1  2006/03/16 07:06:27  csoutheren
+ * Update for new code
+ *
  * Revision 1.2  2006/06/29 08:47:20  csoutheren
  * Removed compiler warning
  *
@@ -33,7 +54,8 @@
 #include <ptlib.h>
 
 #include <codec/allcodecs.h>
-//#include <codec/opalplugin.h>
+#include <codec/opalplugin.h>
+#include <codec/opalpluginmgr.h>
 #include <opal/transcoders.h>
 
 class OpalCodecInfo : public PProcess
@@ -77,6 +99,9 @@ PString DisplayLicenseType(int type)
       break;
     case PluginCodec_License_BSD:
       str = "BSD";
+      break;
+    case PluginCodec_License_LGPL:
+      str = "LGPL";
       break;
     default:
       if (type <= PluginCodec_License_NoRoyalties)
@@ -126,6 +151,8 @@ PString DisplayLicenseInfo(PluginCodec_information * info)
 
 void DisplayCodecDefn(PluginCodec_Definition & defn)
 {
+  BOOL isVideo = FALSE;
+
   cout << "  Version:             " << defn.version << endl
        << DisplayLicenseInfo(defn.info)
        << "  Flags:               ";
@@ -135,6 +162,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
       break;
     case PluginCodec_MediaTypeVideo:
       cout << "Video";
+      isVideo = TRUE;
       break;
     case PluginCodec_MediaTypeAudioStreamed:
       cout << "Streamed audio (" << ((defn.flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos) << " bits per sample)";
@@ -154,12 +182,20 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
        << "  Userdata:            " << (void *)defn.userData << endl
        << "  Sample rate:         " << defn.sampleRate << endl
        << "  Bits/sec:            " << defn.bitsPerSec << endl
-       << "  Ns/frame:            " << defn.nsPerFrame << endl
-       << "  Samples/frame:       " << defn.samplesPerFrame << endl
-       << "  Bytes/frame:         " << defn.bytesPerFrame << endl
-       << "  Frames/packet:       " << defn.recommendedFramesPerPacket << endl
-       << "  Frames/packet (max): " << defn.maxFramesPerPacket << endl
-       << "  RTP payload:         ";
+       << "  Ns/frame:            " << defn.nsPerFrame << endl;
+  if (!isVideo) {
+    cout << "  Samples/frame:       " << defn.samplesPerFrame << endl
+         << "  Bytes/frame:         " << defn.bytesPerFrame << endl
+         << "  Frames/packet:       " << defn.recommendedFramesPerPacket << endl
+         << "  Frames/packet (max): " << defn.maxFramesPerPacket << endl;
+  }
+  else {
+    cout << "  Frame width:         " << defn.samplesPerFrame << endl
+         << "  Frame height:        " << defn.bytesPerFrame << endl
+         << "  Frame rate:          " << defn.recommendedFramesPerPacket << endl
+         << "  Frame rate (max):    " << defn.maxFramesPerPacket << endl;
+  }
+  cout << "  RTP payload:         ";
 
   if (defn.flags & PluginCodec_RTPTypeExplicit)
     cout << (int)defn.rtpPayload << endl;
@@ -289,7 +325,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
       if (defn.h323CapabilityData == NULL)
         cout << ", no data" << endl;
       else 
-        cout << "not displayed" << endl;
+        cout << ", not supported" << endl;
       break;
 
     case PluginCodec_H323AudioCodec_gsmFullRate:
@@ -306,16 +342,24 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
       break;
 
     case PluginCodec_H323VideoCodec_h261:
-    case PluginCodec_H323VideoCodec_h262:
     case PluginCodec_H323VideoCodec_h263:
+      if (defn.h323CapabilityData != NULL)
+        cout << ", warning-non-NULL h323capData";
+      cout << ", TODO: adding in codec control here" << endl;
+      break;
+
+    case PluginCodec_H323VideoCodec_h262:
     case PluginCodec_H323VideoCodec_is11172:
-      if (defn.h323CapabilityData == NULL)
-        cout << ", no data" << endl;
-      else 
-        cout << "not displayed" << endl;
+      if (defn.h323CapabilityData != NULL)
+        cout << ", warning-non-NULL h323capData" << endl;
+      break;
+
+    case PluginCodec_H323Codec_NoH323:
+      cout << "H323 capability not created" << endl;
       break;
 
     default:
+      cout << " unknown code (" << (int)defn.h323CapabilityType << endl;
       break;
   }
 }
@@ -335,10 +379,10 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
     cout << setw(max_len+2) << fmt << "  ";
     switch (fmt.GetDefaultSessionID()) {
       case OpalMediaFormat::DefaultAudioSessionID:
-        cout << "audio, rate=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
+        cout << "audio, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
         break;
       case OpalMediaFormat::DefaultVideoSessionID:
-        cout << "video, rate=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
+        cout << "video, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
         break;
       case OpalMediaFormat::DefaultDataSessionID:
         cout << "data" << endl;;
@@ -364,55 +408,53 @@ void OpalCodecInfo::Main()
              "o-output:"
              "m-mediaformats."
              "T-trancoders."
+             "p-pluginlist."
+             "c-codecs."
+             "i-info:"
 
              "h-help."
 
-             //"c-codecs."
-             //"i-info:"
-             //"p-pluginlist."
-             //"a-capabilities:"
-             //"C-caps:"
-             //"f-factory"
+             "a-capabilities:"
+             "C-caps:"
              , FALSE);
 
   PTrace::Initialise(args.GetOptionCount('t'),
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 
-  OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  OpalPluginCodecManager & codecMgr = *(OpalPluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("OpalPluginCodecManager");
+  PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
 
-  //H323PluginCodecManager & codecMgr = *(H323PluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("H323PluginCodecManager");
-  //PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
-  //OpalMediaFormat::List stdCodecList = H323PluginCodecManager::GetMediaFormats();
-  //H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
+  if (args.HasOption('a')) {
+    H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
+    cout << "Registered capabilities:" << endl
+         << setfill(',') << PStringArray(keyList) << setfill(' ')
+         << endl;
+    return;
+  }
 
-  //if (args.HasOption('a')) {
-  //  cout << "Registered capabilities:" << endl
-  //       << setfill(',') << PStringArray(keyList) << setfill(' ')
-  //       << endl;
-  //  return;
-  //}
+  if (args.HasOption('C')) {
+    PString spec = args.GetOptionString('C');
+    OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
+    H323Capabilities caps;
+    caps.AddAllCapabilities(0, 0, spec);
+    cout << "Standard capability set:" << caps << endl;
+    for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
+      PString fmt = stdCodecList[i];
+      caps.FindCapability(fmt);
+    }
+    return;
+  }
 
-  //if (args.HasOption('C')) {
-  //  PString spec = args.GetOptionString('C');
-  //  H323Capabilities caps;
-  //  caps.AddAllCapabilities(0, 0, spec);
-  //  cout << "Standard capability set:" << caps << endl;
-  //  for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
-  //    PString fmt = stdCodecList[i];
-  //    caps.FindCapability(fmt);
-  //  }
-  //  return;
-  //}
-
-
-  //if (args.HasOption('c')) {
-  //  cout << "Standard codecs:" << endl;
-  //  DisplayMediaFormats(stdCodecList);
-  //  return;
-  //}
+  if (args.HasOption('c')) {
+    OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
+    cout << "Standard codecs:" << endl;
+    DisplayMediaFormats(stdCodecList);
+    return;
+  }
 
   if (args.HasOption('m')) {
+    OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
     cout << "Registered media formats:" << endl;
     DisplayMediaFormats(mediaList);
     return;
@@ -426,23 +468,31 @@ void OpalCodecInfo::Main()
       cout << "Name: " << transcoder << "\n"
            << "  Input:  " << transcoder.GetInputFormat() << "\n"
            << "  Output: " << transcoder.GetOutputFormat() << "\n";
+
+      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder.GetInputFormat(), transcoder.GetOutputFormat());
+      if (xcoder == NULL)
+        cout << "  CANNOT BE INSTANTIATED\n";
+      else
+        delete xcoder;
     }
     return;
   }
 
-  //if (args.HasOption('p')) {
-  //  cout << "Plugin codecs:" << endl;
-  //  for (int i = 0; i < pluginList.GetSize(); i++) {
-  //    cout << "   " << pluginList.GetKeyAt(i) << endl;
-  //  }
-  //  return;
-  //}
+  if (args.HasOption('p')) {
+    cout << "Plugin codecs:" << endl;
+    for (int i = 0; i < pluginList.GetSize(); i++) {
+      cout << "   " << pluginList.GetKeyAt(i) << endl;
+    }
+    return;
+  }
 
-#if 0
   if (args.HasOption('i')) {
     PString name = args.GetOptionString('i');
     if (name.IsEmpty()) {
-      cout << "error: -i must specify name of plugin" << endl;
+      cout << "error: -i must specify name of plugin" << endl
+           << "specify one of :\n"
+           << setfill('\n') << pluginList << setfill(' ')<< endl;
+
       return;
     }
     for (int i = 0; i < pluginList.GetSize(); i++) {
@@ -454,7 +504,7 @@ void OpalCodecInfo::Main()
           return;
         }
         unsigned int count;
-        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION);
+        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_VIDEO);
         if (codecs == NULL || count == 0) {
           cout << "error: " << name << " does not define any codecs for this version of the plugin API" << endl;
           return;
@@ -471,18 +521,6 @@ void OpalCodecInfo::Main()
     cout << "error: plugin \"" << name << "\" not found" << endl;
     return;
   }
-#endif
-
-#if 0
-  if (args.HasOption('f')) {
-    PFactory<OpalFactoryCodec>::KeyList_T list = PFactory<OpalFactoryCodec>::GetKeyList();
-    cout << "Codec factories:" << endl;
-    for (PFactory<OpalFactoryCodec>::KeyList_T::const_iterator r = list.begin(); r != list.end(); ++r)
-      cout << *r << endl;
-    PFactory<OpalFactoryCodec>::CreateInstance("G.711-uLaw-64k|L16");
-    return;
-  }
-#endif
 
   cout << "available options:" << endl
        << "  -c --codecs         display standard codecs\n"
@@ -491,6 +529,6 @@ void OpalCodecInfo::Main()
        << "  -m --mediaformats   display media formats\n"
        << "  -p --pluginlist     display codec plugins\n"
        << "  -C --caps spec      display capabilities that match the specification\n"
-       << "  -f --factory        display codec conversion factories\n"
+       //<< "  -f --factory        display codec conversion factories\n"
   ;
 }
