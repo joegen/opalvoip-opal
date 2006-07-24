@@ -23,8 +23,21 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: allcodecs.h,v $
- * Revision 1.2011  2006/04/17 00:06:27  csoutheren
+ * Revision 1.2012  2006/07/24 14:03:38  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.10  2006/04/17 00:06:27  csoutheren
  * Allow ILBC codec to be disabled and detect if not present
+ *
+ * Revision 2.9.4.3  2006/04/19 04:58:55  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.9.4.2  2006/04/06 01:21:16  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.9.4.1  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
  *
  * Revision 2.9  2006/01/01 19:19:32  dsandras
  * Added RFC2190 H.263 codec thanks to Salyens. Many thanks!
@@ -60,45 +73,6 @@
 #define __CODEC_ALLCODECS_H
 
 #include <opal/buildopts.h>
-
-#include <codec/g711codec.h>
-OPAL_REGISTER_G711();
-
-#if VOICE_AGE_G729A
-#include <codec/g729codec.h>
-OPAL_REGISTER_G729();
-#endif
-
-#include <codec/gsmcodec.h>
-OPAL_REGISTER_GSM0610();
-
-#include <codec/g726codec.h>
-OPAL_REGISTER_G726();
-
-#include <codec/mscodecs.h>
-OPAL_REGISTER_MSCODECS();
-
-#include <codec/lpc10codec.h>
-OPAL_REGISTER_LPC10();
-
-#include <codec/speexcodec.h>
-OPAL_REGISTER_SPEEX();
-
-#ifdef OPAL_ILBC
-#include <codec/ilbccodec.h>
-OPAL_REGISTER_iLBC();
-#endif
-
-#include <codec/vidcodec.h>
-OPAL_REGISTER_UNCOMPRESSED_VIDEO();
-
-#include <codec/h261codec.h>
-OPAL_REGISTER_H261();
-
-#ifdef RFC2190_AVCODEC
-#include <codec/h263codec.h>
-OPAL_REGISTER_H263();
-#endif // RFC2190_AVCODEC
 
 #endif // __CODEC_ALLCODECS_H
 

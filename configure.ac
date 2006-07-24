@@ -6,7 +6,7 @@ AC_PROG_CXX
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
 REQUIRED_PWLIB_MAJOR=1
-REQUIRED_PWLIB_MINOR=10
+REQUIRED_PWLIB_MINOR=11
 REQUIRED_PWLIB_BUILD=0
 
 dnl ########################################################################
@@ -98,6 +98,7 @@ fi
 if test "x$PWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/local/share/pwlib/"
 fi
+AC_SUBST(PWLIBDIR)
 
 echo "PWLib prefix set to.... $PWLIBDIR"
 
@@ -158,40 +159,6 @@ if test x$GXX = xyes ; then
   else
     AC_MSG_RESULT(yes)
   fi
-fi
-
-
-dnl ########################################################################
-dnl Look for H263 codec
-AC_ARG_ENABLE(h263avcodec,
-		[  --enable-h263avcodec    specify RFC 2190 compatible avcodec
-		headers],
-		RFC2190_AVCODEC_DIR=$enableval)
-
-if test "${RFC2190_AVCODEC_DIR}x" = "x" ; then
-	AC_MSG_NOTICE(Skipping tests for RFC 2190 H.263 support)
-else
-	AC_MSG_NOTICE(Searching for standard RFC2190 compliant H.263 codec)
-
-	dnl ################################################################
-	dnl look for avcodec compatible with RFC 2190
-
-	dnl MSWIN_DISPLAY    h263avcodec,ffmpeg RFC2190 Library
-	dnl MSWIN_CHECK_FILE h263avcodec,avcodec_rfc2190.h,RFC2190_AVCODEC=1
-	dnl MSWIN_DIR_SYMBOL h263avcodec,RFC2190_AVCODEC_DIR
-	dnl MSWIN_CHECK_DIR  h263avcodec,..\ffmpeg\libavcodec\
-	dnl MSWIN_CHECK_DIR  h263avcodec,..\external\ffmpeg\libavcodec\
-	dnl MSWIN_CHECK_DIR  h263avcodec,\ffmpeg\libavcodec\
-	dnl MSWIN_CHECK_DIR  h263avcodec,c:\ffmpeg\libavcodec\
-
-	AC_CHECK_HEADER(${RFC2190_AVCODEC_DIR}/avcodec.h, RFC2190_AVCODEC=1)
-	if test "${RFC2190_AVCODEC}" == "1" ; then
-		AC_SUBST(RFC2190_AVCODEC, 1)
-		AC_DEFINE(RFC2190_AVCODEC, 1, "FFMPEG standard, RFC2190 compliant H.263 codec found")
-		AC_SUBST(RFC2190_AVCODEC_DIR, ${RFC2190_AVCODEC_DIR})
-		STDCCFLAGS="${STDCCFLAGS} -I${RFC2190_AVCODEC_DIR}"
-	fi
-	AC_SUBST(RFC2190_AVCODEC)
 fi
 
 
@@ -340,34 +307,6 @@ fi
 AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 
 dnl ########################################################################
-dnl
-dnl Allow iLBC to be disabled for Debian compatibility
-dnl
-dnl MSWIN_DISPLAY ilbc,iLBC support
-dnl MSWIN_DEFINE  ilbc,OPAL_ILBC
-
-ilbc=yes
-AC_ARG_ENABLE(ilbc,
-       [  --disable-ilbc          disable iLBC codec support],
-       ilbc=$enableval)
-AC_MSG_CHECKING(iLBC codec)
-if test "$ilbc" != "yes" ; then
-  ilbc=no
-  AC_MSG_RESULT(disabled)
-elif test -f src/codec/ilbccodec.cxx && test -f src/codec/iLBC/iLBC_encode.c ; then
-  ilbc=yes
-  AC_MSG_RESULT(enabled)
-else
-  ilbc=no
-  AC_MSG_RESULT(not present)
-fi
-
-if test "$ilbc" = "yes" ; then
-  AC_SUBST(OPAL_ILBC, 1)
-  AC_DEFINE(OPAL_ILBC)
-fi
-
-dnl ########################################################################
 dnl enable audio, video, T.38
 
 dnl MSWIN_DISPLAY audio,Audio
@@ -382,6 +321,17 @@ AC_DEFINE(OPAL_VIDEO)
 
 dnl ########################################################################
 dnl check if SIP, H.323, IAX2 and T.38 are enabled
+dnl enable audio, video, T.38
+
+dnl MSWIN_DISPLAY audio,Audio
+dnl MSWIN_DEFINE  audio,OPAL_AUDIO
+AC_SUBST(OPAL_AUDIO, 1)
+AC_DEFINE(OPAL_AUDIO)
+
+dnl MSWIN_DISPLAY video,Video
+dnl MSWIN_DEFINE  video,OPAL_VIDEO
+AC_SUBST(OPAL_VIDEO, 1)
+AC_DEFINE(OPAL_VIDEO)
 
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
@@ -401,6 +351,12 @@ fi
 
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
+dnl MSWIN_DEFINE  t38,OPAL_T38FAX
+dnl MSWIN_IF_FEATURE t38,h323
+
+dnl MSWIN_DISPLAY    t38,T.38
+dnl MSWIN_DEFINE     t38,OPAL_T38FAX
+dnl MSWIN_IF_FEATURE t38,h323
 
 dnl MSWIN_DISPLAY    t38,T.38
 dnl MSWIN_DEFINE     t38,OPAL_T38FAX
@@ -417,6 +373,7 @@ if test "$h323" = "yes" ; then
   AC_DEFINE(OPAL_H323)
   AC_MSG_RESULT(enabled)
 else
+  AC_SUBST(OPAL_H323, 0)
   AC_MSG_RESULT(disabled (T.38 also disabled))
   t38=no
 fi

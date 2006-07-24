@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2041  2006/07/14 04:22:42  csoutheren
+ * Revision 1.2042  2006/07/24 14:03:38  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.40  2006/07/14 04:22:42  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -34,6 +37,39 @@
  *
  * Revision 2.38  2006/04/09 12:01:43  rjongbloed
  * Added missing Clone() functions so media options propagate correctly.
+ *
+ * Revision 2.37.4.6  2006/04/26 05:05:59  csoutheren
+ * H.263 decoding working via codec plugin
+ *
+ * Revision 2.37.4.5  2006/04/19 04:58:56  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.37.4.4  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
+ *
+ * Revision 2.37.4.3  2006/04/06 01:21:17  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.37.4.2  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
+ * Added OpalMediaFormat clone function
+ *
+ * $Log: mediafmt.h,v $
+ * Revision 1.2042  2006/07/24 14:03:38  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.37.4.6  2006/04/26 05:05:59  csoutheren
+ * H.263 decoding working via codec plugin
+ *
+ * Revision 2.37.4.5  2006/04/19 04:58:56  csoutheren
+ * Debugging and testing of new video plugins
+ * H.261 working in both CIF and QCIF modes in H.323
+ *
+ * Revision 2.37.4.4  2006/04/10 06:24:30  csoutheren
+ * Backport from CVS head up to Plugin_Merge3
  *
  * Revision 2.37  2005/12/27 20:46:09  dsandras
  * Added clockRate to the media format. Added "AlwaysMerge" method for merging
@@ -247,7 +283,7 @@ PLIST(OpalMediaFormatBaseList, OpalMediaFormat);
   */
 class OpalMediaFormatList : public OpalMediaFormatBaseList
 {
-    PCLASSINFO(OpalMediaFormatList, OpalMediaFormatBaseList);
+  PCLASSINFO(OpalMediaFormatList, OpalMediaFormatBaseList);
   public:
   /**@name Construction */
   //@{
@@ -568,6 +604,7 @@ class OpalMediaOptionString : public OpalMediaOption
   */
 class OpalMediaFormat : public PCaselessString
 {
+  friend class OpalPluginCodecManager;
   PCLASSINFO(OpalMediaFormat, PCaselessString);
 
   public:
@@ -589,15 +626,16 @@ class OpalMediaFormat : public PCaselessString
        long. If zero then there is no intrinsic maximum, eg G.711.
       */
     OpalMediaFormat(
-      const char * fullName,  ///<  Full name of media format
+      const char * fullName,      ///<  Full name of media format
       unsigned defaultSessionID,  ///<  Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const char * encodingName, ///<  RTP encoding name
-      BOOL     needsJitter,   ///<  Indicate format requires a jitter buffer
-      unsigned bandwidth,     ///<  Bandwidth in bits/second
-      PINDEX   frameSize, ///<  Size of frame in bytes (if applicable)
-      unsigned frameTime, ///<  Time for frame in RTP units (if applicable)
-      unsigned clockRate  ///<  Clock rate for data (if applicable)
+      const char * encodingName,  ///<  RTP encoding name
+      BOOL     needsJitter,       ///<  Indicate format requires a jitter buffer
+      unsigned bandwidth,         ///<  Bandwidth in bits/second
+      PINDEX   frameSize,         ///<  Size of frame in bytes (if applicable)
+      unsigned frameTime,         ///<  Time for frame in RTP units (if applicable)
+      unsigned clockRate,         ///<  Clock rate for data (if applicable)
+      time_t timeStamp = 0        ///<  timestamp (for versioning)
     );
 
     /**Construct a media format, searching database for information.
@@ -649,10 +687,17 @@ class OpalMediaFormat : public PCaselessString
       const PString & wildcard  ///<  Wildcard name to search for
     );
 
-    OpalMediaFormat & operator=(
-      const OpalMediaFormat &format
-    );
+    /**Return TRUE if media format info is valid. This may be used if the
+       single string constructor is used to check that it matched something
+       in the registered media formats database.
+      */
+    virtual BOOL IsValid() const { return rtpPayloadType <= RTP_DataFrame::MaxPayloadType; }
 
+    /**Copy a media format
+      */
+    OpalMediaFormat & operator=(
+      const OpalMediaFormat & fmt ///<  other media format
+    );
 
     /**Search for the specified format type.
        This is equivalent to going fmt = OpalMediaFormat(rtpPayloadType);
@@ -762,7 +807,7 @@ class OpalMediaFormat : public PCaselessString
       */
     const OpalMediaOption & GetOption(
       PINDEX index   ///<  Index of option in list to get
-    ) { return options[index]; }
+    ) const { return options[index]; }
 
     /**Get the option value of the specified name as a string.
 
@@ -895,11 +940,17 @@ class OpalMediaFormat : public PCaselessString
       const OpalMediaFormat & mediaFormat  ///<  Media format to copy to master list
     );
 
-  protected:
+    /**
+      * Add a new option to this media format
+      */
     bool AddOption(
       OpalMediaOption * option
     );
 
+    bool HasOption(const PString & name) const
+    { return FindOption(name) != NULL; }
+
+  protected:
     OpalMediaOption * FindOption(
       const PString & name
     ) const;
@@ -909,8 +960,9 @@ class OpalMediaFormat : public PCaselessString
     unsigned                     defaultSessionID;
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
+    time_t codecBaseTime;
 
-  friend class OpalMediaFormatList;
+    friend class OpalMediaFormatList;
 };
 
 
@@ -925,9 +977,10 @@ const class name##_Class : public OpalMediaFormat \
 name##_Class::name##_Class() \
       : OpalMediaFormat(fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
 
-
+#if OPAL_AUDIO
 class OpalAudioFormat : public OpalMediaFormat
 {
+  friend class OpalPluginCodecManager;
     PCLASSINFO(OpalAudioFormat, OpalMediaFormat);
   public:
     OpalAudioFormat(
@@ -939,16 +992,19 @@ class OpalAudioFormat : public OpalMediaFormat
       unsigned rxFrames,        ///<  Maximum number of frames per packet we can receive
       unsigned txFrames,        ///<  Desired number of frames per packet we transmit
       unsigned maxFrames = 256, ///<  Maximum possible frames per packet
-      unsigned clockRate = 8000 ///<  Clock Rate 
+      unsigned clockRate = 8000, ///<  Clock Rate 
+      time_t timeStamp = 0       ///<  timestamp (for versioning)
     );
 
     static const char * const RxFramesPerPacketOption;
     static const char * const TxFramesPerPacketOption;
 };
+#endif
 
-
+#if OPAL_VIDEO
 class OpalVideoFormat : public OpalMediaFormat
 {
+  friend class OpalPluginCodecManager;
     PCLASSINFO(OpalVideoFormat, OpalMediaFormat);
   public:
     OpalVideoFormat(
@@ -958,7 +1014,8 @@ class OpalVideoFormat : public OpalMediaFormat
       unsigned frameWidth,      ///<  Width of video frame
       unsigned frameHeight,     ///<  Height of video frame
       unsigned frameRate,       ///<  Number of frames per second
-      unsigned bitRate          ///<  Maximum bits per second
+      unsigned bitRate,         ///<  Maximum bits per second
+      time_t timeStamp = 0        ///<  timestamp (for versioning)
     );
 
     virtual PObject * Clone() const;
@@ -972,7 +1029,7 @@ class OpalVideoFormat : public OpalMediaFormat
     static const char * const DynamicVideoQualityOption;
     static const char * const AdaptivePacketDelayOption;
 };
-
+#endif
 
 // List of known media formats
 
@@ -1032,6 +1089,9 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
+
+
+typedef PFactory<OpalMediaFormat> OpalMediaFormatFactory;
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300
