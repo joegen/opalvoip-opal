@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2106  2006/07/14 13:44:22  csoutheren
+ * Revision 1.2107  2006/07/24 09:03:00  csoutheren
+ * Removed suprious "response" clause in authentication response
+ *
+ * Revision 2.105  2006/07/14 13:44:22  csoutheren
  * Fix formatting
  * Fix compile warning on Linux
  *
@@ -1369,7 +1372,6 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
           "realm=\"" << authRealm << "\", "
           "nonce=\"" << nonce << "\", "
           "uri=\"" << uriText << "\", "
-          "response=\"" << AsHex(response) << "\", "
           "algorithm=" << AlgorithmNames[algorithm];
 
   digestor.Start();
