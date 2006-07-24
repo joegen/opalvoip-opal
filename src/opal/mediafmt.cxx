@@ -24,9 +24,31 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2046  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2047  2006/07/24 14:03:40  csoutheren
+ * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.45  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
+ *
+ * Revision 2.44  2006/04/09 12:01:44  rjongbloed
+ * Added missing Clone() functions so media options propagate correctly.
+ *
+ * Revision 2.43  2006/03/20 10:37:47  csoutheren
+ * Applied patch #1453753 - added locking on media stream manipulation
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.42.2.4  2006/04/06 05:33:08  csoutheren
+ * Backports from CVS head up to Plugin_Merge2
+ *
+ * Revision 2.42.2.3  2006/04/06 01:21:20  csoutheren
+ * More implementation of video codec plugins
+ *
+ * Revision 2.42.2.2  2006/03/16 07:06:00  csoutheren
+ * Initial support for audio plugins
+ *
+ * Revision 2.42.2.1  2006/03/13 07:20:28  csoutheren
+ * Added OpalMediaFormat clone function
  *
  * Revision 2.44  2006/04/09 12:01:44  rjongbloed
  * Added missing Clone() functions so media options propagate correctly.
@@ -236,23 +258,18 @@
 #define new PNEW
 
 namespace PWLibStupidLinkerHacks {
-  int h323Loader;
-};
+extern int opalLoader;
 
-static class PMediaFormatInstantiateMe
+static class InstantiateMe
 {
   public:
-    PMediaFormatInstantiateMe()
+    InstantiateMe()
     { 
-      PWLibStupidLinkerHacks::h323Loader = 1; 
-      PWLibStupidLinkerHacks::opalwavfileLoader =1;
-#ifndef NO_OPAL_VIDEO
-#ifdef RFC2190_AVCODEC
-      PWLibStupidLinkerHacks::rfc2190h263Loader =1;
-#endif
-#endif
+      opalLoader = 1; 
     }
 } instance;
+
+}; // namespace PWLibStupidLinkerHacks
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -602,9 +619,12 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned bw,
                                  PINDEX   fs,
                                  unsigned ft,
-                                 unsigned cr)
+                                 unsigned cr,
+                                 time_t ts)
   : PCaselessString(fullName)
 {
+  codecBaseTime = ts;
+
   PINDEX i;
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
@@ -961,7 +981,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  unsigned rxFrames,
                                  unsigned txFrames,
                                  unsigned maxFrames,
-				 unsigned clockRate)
+				                         unsigned clockRate,
+                                   time_t timeStamp)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultAudioSessionID,
                     rtpPayloadType,
@@ -970,7 +991,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     8*frameSize*clockRate/frameTime,
                     frameSize,
                     frameTime,
-                    clockRate)
+                    clockRate,
+                    timeStamp)
 {
   AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
   AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
@@ -992,7 +1014,8 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  unsigned frameWidth,
                                  unsigned frameHeight,
                                  unsigned frameRate,
-                                 unsigned bitRate)
+                                 unsigned bitRate,
+                                   time_t timeStamp)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultVideoSessionID,
                     rtpPayloadType,
@@ -1001,7 +1024,8 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     bitRate,
                     0,
                     OpalMediaFormat::VideoClockRate/frameRate,
-                    OpalMediaFormat::VideoClockRate)
+                    OpalMediaFormat::VideoClockRate,
+                    timeStamp)
 {
   AddOption(new OpalMediaOptionInteger(FrameWidthOption,          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
   AddOption(new OpalMediaOptionInteger(FrameHeightOption,         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
@@ -1108,15 +1132,17 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
   for (PINDEX idx = 0; idx < GetSize(); idx++) {
     OpalMediaFormat & mediaFormat = (*this)[idx];
 
-    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
-      return idx;
+    if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
+      continue;
 
+    const char * otherName = mediaFormat.GetEncodingName();
     if (name != NULL && *name != '\0') {
-      const char * otherName = mediaFormat.GetEncodingName();
-      if (otherName != NULL && strcasecmp(otherName, name) == 0
-	  && mediaFormat.GetClockRate() == clockRate)
-        return idx;
+      if (otherName == NULL || otherName[0] == '\0' || strcasecmp(otherName, name) != 0)
+        continue;
     }
+
+    if (RTP_DataFrame::IllegalPayloadType == pt || mediaFormat.GetPayloadType() == pt)
+      return idx;
   }
 
   return P_MAX_INDEX;
