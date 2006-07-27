@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2029  2006/06/27 13:50:24  csoutheren
+ * Revision 1.2030  2006/07/27 22:34:21  rjongbloed
+ * Fixed compiler warning
+ *
+ * Revision 2.28  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -532,7 +535,7 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
 
 
 #if 1
-BOOL OpalLIDEndPoint::OnSetUpConnection(OpalLineConnection &connection)
+BOOL OpalLIDEndPoint::OnSetUpConnection(OpalLineConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "LID EP\tOnSetUpConnection" << connection);
   return TRUE;
