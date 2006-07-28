@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.10  2006/07/28 10:41:50  rjongbloed
+ * Fixed DevStudio 2005 warnings on time_t conversions.
+ *
  * Revision 1.9  2006/07/21 00:44:14  csoutheren
  * Applied 1483216 - Opal IAX sends 2 new call messages on outbound call
  * Thanks to Mike T
@@ -377,7 +380,7 @@ BOOL IAX2EndPoint::Initialise()
 
   PTRACE(6, "IAX2EndPoint\tInitialise()");
   PRandom rand;
-  rand.SetSeed(PTime().GetTimeInSeconds() + 1);
+  rand.SetSeed((DWORD)(PTime().GetTimeInSeconds() + 1));
   callnumbs = PRandom::Number() % 32000;
   
   sock = new PUDPSocket(ListenPortNumber());
