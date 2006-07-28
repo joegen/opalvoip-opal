@@ -307,31 +307,19 @@ fi
 AC_SUBST(OPAL_HAVE_SPEEX_SPEEX_H)
 
 dnl ########################################################################
-dnl enable audio, video, T.38
+dnl enable audio, video, SIP, H.323 and IAX
 
 dnl MSWIN_DISPLAY audio,Audio
 dnl MSWIN_DEFINE  audio,OPAL_AUDIO
 AC_SUBST(OPAL_AUDIO, 1)
 AC_DEFINE(OPAL_AUDIO)
 
-dnl MSWIN_DISPLAY video,Video
-dnl MSWIN_DEFINE  video,OPAL_VIDEO
-AC_SUBST(OPAL_VIDEO, 1)
-AC_DEFINE(OPAL_VIDEO)
-
-dnl ########################################################################
-dnl check if SIP, H.323, IAX2 and T.38 are enabled
-dnl enable audio, video, T.38
-
-dnl MSWIN_DISPLAY audio,Audio
-dnl MSWIN_DEFINE  audio,OPAL_AUDIO
-AC_SUBST(OPAL_AUDIO, 1)
-AC_DEFINE(OPAL_AUDIO)
 
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
 AC_SUBST(OPAL_VIDEO, 1)
 AC_DEFINE(OPAL_VIDEO)
+
 
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
@@ -349,21 +337,11 @@ else
   AC_MSG_RESULT(disabled)
 fi
 
+
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
-dnl MSWIN_DEFINE  t38,OPAL_T38FAX
-dnl MSWIN_IF_FEATURE t38,h323
-
-dnl MSWIN_DISPLAY    t38,T.38
-dnl MSWIN_DEFINE     t38,OPAL_T38FAX
-dnl MSWIN_IF_FEATURE t38,h323
-
-dnl MSWIN_DISPLAY    t38,T.38
-dnl MSWIN_DEFINE     t38,OPAL_T38FAX
-dnl MSWIN_IF_FEATURE t38,h323
 
 h323=yes
-t38=yes
 AC_ARG_ENABLE(h323,
        [  --disable-h323          disable H.323 protocol support],
        h323=$enableval)
@@ -379,19 +357,6 @@ else
 fi
 AC_SUBST(OPAL_H323, $OPAL_H323)
 
-if test "$t38" = "yes" ; then
-  AC_ARG_ENABLE(t38,
-         [  --disable-t38           disable T.38 protocol support],
-         t38=$enableval)
-  AC_MSG_CHECKING(T.38 protocol)
-  if test "$t38" = "yes" ; then
-    AC_SUBST(OPAL_T38FAX, 1)
-    AC_DEFINE(OPAL_T38FAX)
-    AC_MSG_RESULT(enabled)
-  else
-    AC_MSG_RESULT(disabled)
-  fi
-fi
 
 dnl MSWIN_DISPLAY iax2,IAX2 support
 dnl MSWIN_DEFINE  iax2,OPAL_IAX2
@@ -427,8 +392,32 @@ fi
 
 dnl ########################################################################
 dnl
-dnl H.460
+dnl T.38
+
+dnl MSWIN_DISPLAY    t38,T.38
+dnl MSWIN_DEFINE     t38,OPAL_T38FAX
+dnl MSWIN_IF_FEATURE t38,h323
+
+t38=yes
+if test "$t38" = "yes" ; then
+  AC_ARG_ENABLE(t38,
+         [  --disable-t38           disable T.38 protocol support],
+         t38=$enableval)
+  AC_MSG_CHECKING(T.38 protocol)
+  if test "$t38" = "yes" ; then
+    AC_SUBST(OPAL_T38FAX, 1)
+    AC_DEFINE(OPAL_T38FAX)
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+
+
+dnl ########################################################################
 dnl
+dnl H.460
+
 dnl MSWIN_DISPLAY h460,H.460
 dnl MSWIN_DEFINE  h460,H323_H460
 
