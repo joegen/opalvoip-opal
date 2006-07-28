@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2033  2006/06/22 00:26:26  csoutheren
+ * Revision 1.2034  2006/07/28 10:41:51  rjongbloed
+ * Fixed DevStudio 2005 warnings on time_t conversions.
+ *
+ * Revision 2.32  2006/06/22 00:26:26  csoutheren
  * Fix formatting
  *
  * Revision 2.31  2006/06/05 20:12:48  dsandras
@@ -1223,7 +1226,7 @@ BOOL RTP_Session::SendReport()
       (RTP_ControlFrame::SenderReport *)report.GetPayloadPtr();
     sender->ssrc = syncSourceOut;
     PTime now;
-    sender->ntp_sec = now.GetTimeInSeconds()+SecondsFrom1900to1970; // Convert from 1970 to 1900
+    sender->ntp_sec = (DWORD)(now.GetTimeInSeconds()+SecondsFrom1900to1970); // Convert from 1970 to 1900
     sender->ntp_frac = now.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
     sender->rtp_ts = lastSentTimestamp;
     sender->psent = packetsSent;
