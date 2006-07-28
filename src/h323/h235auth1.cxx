@@ -24,7 +24,10 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2011  2006/02/13 11:09:56  csoutheren
+ * Revision 1.2012  2006/07/28 10:41:50  rjongbloed
+ * Fixed DevStudio 2005 warnings on time_t conversions.
+ *
+ * Revision 2.10  2006/02/13 11:09:56  csoutheren
  * Multiple fixes for H235 authenticators
  *
  * Revision 2.9  2006/02/13 03:46:17  csoutheren
@@ -424,7 +427,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
   
   //first verify the timestamp
   PTime now;
-  int deltaTime = now.GetTimeInSeconds() - crHashed.m_hashedVals.m_timeStamp;
+  int deltaTime = (int)now.GetTimeInSeconds() - crHashed.m_hashedVals.m_timeStamp;
   if (PABS(deltaTime) > timestampGracePeriod) {
     PTRACE(1, "H235RAS\tInvalid timestamp ABS(" << now.GetTimeInSeconds() << '-' 
            << (int)crHashed.m_hashedVals.m_timeStamp << ") > " << timestampGracePeriod);
