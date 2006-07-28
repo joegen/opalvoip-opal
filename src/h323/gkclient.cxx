@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2035  2006/06/30 05:26:13  csoutheren
+ * Revision 1.2036  2006/07/28 10:41:50  rjongbloed
+ * Fixed DevStudio 2005 warnings on time_t conversions.
+ *
+ * Revision 2.34  2006/06/30 05:26:13  csoutheren
  * Applied 1509255 - Checking whether SetSize succeeds in GkClient
  * Borko Jandras
  *
@@ -1766,22 +1769,22 @@ BOOL H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & arj)
 static void SetRasUsageInformation(const H323Connection & connection, 
                                    H225_RasUsageInformation & usage)
 {
-  unsigned time = connection.GetAlertingTime().GetTimeInSeconds();
+  time_t time = connection.GetAlertingTime().GetTimeInSeconds();
   if (time != 0) {
     usage.IncludeOptionalField(H225_RasUsageInformation::e_alertingTime);
-    usage.m_alertingTime = time;
+    usage.m_alertingTime = (unsigned)time;
   }
 
   time = connection.GetConnectionStartTime().GetTimeInSeconds();
   if (time != 0) {
     usage.IncludeOptionalField(H225_RasUsageInformation::e_connectTime);
-    usage.m_connectTime = time;
+    usage.m_connectTime = (unsigned)time;
   }
 
   time = connection.GetConnectionEndTime().GetTimeInSeconds();
   if (time != 0) {
     usage.IncludeOptionalField(H225_RasUsageInformation::e_endTime);
-    usage.m_endTime = time;
+    usage.m_endTime = (unsigned)time;
   }
 }
 
