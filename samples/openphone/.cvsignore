@@ -1,0 +1,7 @@
+obj_*_*_d Debug debug
+obj_*_*_r Release release
+NoTrace notrace
+*.plg *.opt *.ncb *.Tags.WW *.vcproj.*.user
+openphone.xrc
+resource.cpp
+openphone.cxx
