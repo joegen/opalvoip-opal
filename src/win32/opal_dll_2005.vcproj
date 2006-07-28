@@ -58,10 +58,7 @@
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\..\..\lib\NoTrace/opal_dll.pch"
-				AssemblerListingLocation=".\..\..\lib\NoTrace/"
-				ObjectFile=".\..\..\lib\NoTrace/"
-				ProgramDataBaseFileName="..\..\lib\opaln.pdb"
+				ProgramDataBaseFileName="$(TargetDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -79,13 +76,13 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile="..\..\lib\opaln.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile="..\..\lib\NoTrace\opaln.def"
-				DelayLoadDLLs="setupapi.dll"
-				ProgramDatabaseFile=".\..\..\lib/opaln.pdb"
+				ModuleDefinitionFile="$(IntDir)\opaln.def"
+				DelayLoadDLLs=""
+				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\lib/opaln.lib"
 				TargetMachine="1"
@@ -151,10 +148,7 @@
 				PreprocessorDefinitions="_DEBUG"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
-				PrecompiledHeaderFile=".\..\..\lib\Debug/opal_dll.pch"
-				AssemblerListingLocation=".\..\..\lib\Debug/"
-				ObjectFile=".\..\..\lib\Debug/"
-				ProgramDataBaseFileName="..\..\lib\opald.pdb"
+				ProgramDataBaseFileName="$(TargetDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -172,14 +166,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mpr.lib setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="ptlibd.lib"
 				OutputFile="..\..\lib\opald.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile="..\..\lib\Debug\opald.def"
-				DelayLoadDLLs="setupapi.dll"
+				ModuleDefinitionFile="$(IntDir)\opald.def"
+				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\..\..\lib/opald.pdb"
+				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\lib/opald.lib"
 				TargetMachine="1"
@@ -253,10 +247,7 @@
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
-				PrecompiledHeaderFile=".\..\..\lib\Release/opal_dll.pch"
-				AssemblerListingLocation=".\..\..\lib\Release/"
-				ObjectFile=".\..\..\lib\Release/"
-				ProgramDataBaseFileName="..\..\lib\opal.pdb"
+				ProgramDataBaseFileName="$(TargetDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="1"
@@ -274,13 +265,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="setupapi.lib Delayimp.lib winmm.lib msacm32.lib wsock32.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile="..\..\lib\opal.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ModuleDefinitionFile="..\..\lib\Release\opal.def"
-				DelayLoadDLLs="setupapi.dll"
+				ModuleDefinitionFile="$(IntDir)\opal.def"
+				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
 				SubSystem="2"
 				ImportLibrary=".\..\..\lib/opal.lib"
 				TargetMachine="1"
@@ -312,6 +304,10 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+			RelativePathToProject=".\src\win32\opal_lib_2005.vcproj"
+		/>
 	</References>
 	<Files>
 		<File
@@ -380,7 +376,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="opal_2003.dtf"
+			RelativePath="opal_2005.dtf"
 			>
 			<FileConfiguration
 				Name="No Trace|Win32"
@@ -404,7 +400,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlib_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -439,7 +435,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="opald_2003.dtf"
+			RelativePath="opald_2005.dtf"
 			>
 			<FileConfiguration
 				Name="No Trace|Win32"
@@ -447,6 +443,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
+					AdditionalDependencies=""
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -455,7 +452,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlibd_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlibd_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -466,6 +463,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
+					AdditionalDependencies=""
 				/>
 			</FileConfiguration>
 		</File>
@@ -498,7 +496,7 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="opaln_2003.dtf"
+			RelativePath="opaln_2005.dtf"
 			>
 			<FileConfiguration
 				Name="No Trace|Win32"
@@ -506,7 +504,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlib_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>

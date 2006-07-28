@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="OPAL_lib"
 	ProjectGUID="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+	RootNamespace="OPAL_lib"
 	>
 	<Platforms>
 		<Platform
@@ -1540,6 +1541,27 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="Release|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
+							/>
+						</FileConfiguration>
+						<FileConfiguration
+							Name="No Trace|Win32"
+							>
+							<Tool
+								Name="VCCLCompilerTool"
+								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
@@ -1552,6 +1574,7 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1560,6 +1583,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1568,6 +1593,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
@@ -1580,6 +1607,7 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1588,6 +1616,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1596,6 +1626,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
@@ -1608,6 +1640,7 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1616,6 +1649,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1624,6 +1659,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
@@ -1636,6 +1673,7 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1644,6 +1682,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1652,6 +1692,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
@@ -1664,6 +1706,7 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1672,6 +1715,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1680,6 +1725,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
@@ -1692,6 +1739,7 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1700,6 +1748,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 						<FileConfiguration
@@ -1708,6 +1758,8 @@
 							<Tool
 								Name="VCCLCompilerTool"
 								UsePrecompiledHeader="0"
+								PrecompiledHeaderFile=""
+								WarningLevel="1"
 							/>
 						</FileConfiguration>
 					</File>
