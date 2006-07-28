@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2038  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2039  2006/07/28 10:41:51  rjongbloed
+ * Fixed DevStudio 2005 warnings on time_t conversions.
+ *
+ * Revision 2.37  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.36  2006/04/30 09:58:44  csoutheren
@@ -740,7 +743,7 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
     defaultConnectAddress(address)
 {
   protocolVersion  = 0;
-  ownerSessionId  = ownerVersion = PTime().GetTimeInSeconds();
+  ownerSessionId  = ownerVersion = (unsigned)PTime().GetTimeInSeconds();
   direction = SDPMediaDescription::Undefined;
   
   bandwidthModifier = "";
