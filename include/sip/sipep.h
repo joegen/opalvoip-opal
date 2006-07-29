@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2061  2006/07/24 14:03:39  csoutheren
+ * Revision 1.2062  2006/07/29 08:49:25  hfriederich
+ * Abort the authentication process after a given number of unsuccessful authentication attempts to prevent infinite authentication attempts. Use not UINT_MAX as GetExpires() default to fix incorrect detection of registration/unregistration
+ *
+ * Revision 2.60  2006/07/24 14:03:39  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.59  2006/07/14 04:22:43  csoutheren
@@ -371,6 +374,9 @@ class SIPInfo : public PSafeObject
     virtual void OnFailed(
       SIP_PDU::StatusCodes
     ) = 0;
+	
+	int GetAuthenticationAttempts() { return authenticationAttempts; };
+	void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
 
     protected:
       SIPEndPoint      & ep;
@@ -388,6 +394,7 @@ class SIPInfo : public PSafeObject
       PString 	         password;
       PString		 body;
       PMutex             transportMutex;
+      unsigned           authenticationAttempts;
     
     private:
 };
