@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2  2006/07/29 13:42:20  rjongbloed
+ * Fixed compiler warning
+ *
  * Revision 1.1  2006/06/19 09:32:09  dereksmithies
  * Initial cut of a program to test the jitter buffer in OPAL.
  *
@@ -78,7 +81,7 @@ BOOL JestRTP_Session::ReadData(
 
     readCount++;
     PTimeInterval delta = PTime() - startJester;
-    int delay = delta.GetMilliSeconds() - (readCount * 30);
+    PInt64 delay = delta.GetMilliSeconds() - (readCount * 30);
 
     if (delay < 0) {
 	delay = 0 - delay;
@@ -114,7 +117,7 @@ BOOL JestRTP_Session::WriteData(
 }
 
 BOOL JestRTP_Session::WriteControl(
-    RTP_ControlFrame & frame 
+    RTP_ControlFrame & /*frame*/
     )
 {
     PTRACE(4, "WriteControl has a frame");
