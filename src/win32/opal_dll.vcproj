@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="OPAL_dll"
+	Name="OPAL DLL"
 	ProjectGUID="{0BF5DA42-4607-485F-9342-51FD28854F3B}"
-	RootNamespace="OPAL_dll"
+	RootNamespace="OPAL DLL"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>

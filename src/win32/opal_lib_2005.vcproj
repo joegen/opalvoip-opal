@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="OPAL_lib"
+	Name="OPAL Static"
 	ProjectGUID="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
 	RootNamespace="OPAL_lib"
 	>
@@ -2587,38 +2587,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\codec\g726codec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\g729codec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\gsmcodec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\h261codec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\h263codec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\ilbccodec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\lpc10codec.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\mscodecs.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\codec\opalpluginmgr.h"
 					>
 				</File>
@@ -2632,10 +2600,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\silencedetect.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\codec\speexcodec.h"
 					>
 				</File>
 				<File
