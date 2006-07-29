@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="Jester"
+	ProjectGUID="{04AB38FF-0E5D-464B-883A-1C96419E7E9C}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
@@ -38,7 +39,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsn.lib ptclib.lib ptlib.lib wsock32.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile="NoTrace/jester.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -102,7 +103,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib wsock32.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile="Release/jester.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -165,7 +166,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib wsock32.lib"
+				AdditionalDependencies="ptlibd.lib"
 				OutputFile="Debug/jester.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -204,6 +205,9 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{0BF5DA42-4607-485F-9342-51FD28854F3B}"
+			Name="OPAL DLL"/>
 	</References>
 	<Files>
 		<Filter
