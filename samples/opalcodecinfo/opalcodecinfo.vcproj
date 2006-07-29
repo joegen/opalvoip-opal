@@ -39,7 +39,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openh323.lib ptclib.lib ptlib.lib wsock32.lib mpr.lib"
 				OutputFile=".\Release/opalcodecinfo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -103,7 +102,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="openh323n.lib ptclib.lib ptlib.lib wsock32.lib mpr.lib"
 				OutputFile=".\NoTrace/opalcodecinfo.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -166,7 +164,6 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="wsock32.lib mpr.lib"
 				OutputFile=".\Debug/opalcodecinfo.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -205,6 +202,9 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{0BF5DA42-4607-485F-9342-51FD28854F3B}"
+			Name="OPAL DLL"/>
 	</References>
 	<Files>
 		<Filter

@@ -40,7 +40,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opald.lib ptlibd.lib"
+				AdditionalDependencies="ptlibd.lib"
 				OutputFile=".\Debug/mfc.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
@@ -106,7 +106,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opal.lib ptlib.lib"
+				AdditionalDependencies="ptlib.lib"
 				OutputFile=".\Release/mfc.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
