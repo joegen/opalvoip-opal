@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2168  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2169  2006/07/30 11:36:09  hfriederich
+ * Fixes problems with empty SDPMediaDescriptions
+ *
+ * Revision 2.167  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.166  2006/07/21 00:42:08  csoutheren
@@ -2451,7 +2454,12 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
     // When receiving an answer SDP, keep the remote SDP media formats order
     // but remove the media formats we do not support.
-    remoteFormatList += mediaDescription->GetMediaFormats(rtpSessionId);
+    OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats(rtpSessionId);
+    if(mediaFormatList.GetSize() == 0) {
+      PTRACE(1, "SIP\tEmpty SDP media description for " << mediaType);
+      return FALSE;
+    }
+    remoteFormatList += mediaFormatList;
     remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
     // create map for RTP payloads
