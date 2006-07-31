@@ -22,6 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile,v $
+# Revision 1.3  2006/07/31 07:39:21  rjongbloed
+# Fixed default target to be PWlib one, not just to build opephone.cxx
+# Added OPAL directory default (no OPALDIR env var) to be ../.. before
+#   searhcing for $(HOME) and /usr/local/opal
+#
 # Revision 1.2  2006/07/22 00:24:55  dereksmithies
 # Add linux magic so it compiles and runs on linux.
 # Add the command wxrc to turn the openphone.xrc file into openphone.cxx
@@ -33,19 +38,18 @@
 #
 #
 
-PROG		= openphone
+PROG		:= openphone
 SOURCES		:= main.cxx openphone.cxx
 
-openphone.cxx : openphone.xrc
-	wxrc openphone.xrc -c -o openphone.cxx
+VERSION_FILE	= $(OPALDIR)/version.h
 
-VERSION_FILE =  ../../version.h
-
-STDCCFLAGS += `wx-config --cxxflags`
-
-LDFLAGS += `wx-config  --libs`
+STDCCFLAGS	+= `wx-config --cxxflags`
+LDFLAGS		+= `wx-config --libs`
 
 ifndef OPALDIR
+ifneq (,$(wildcard ../../version.h))
+OPALDIR=$(wildcard ../..)
+else
 ifneq (,$(wildcard $(HOME)/opal))
 OPALDIR=$(HOME)/opal
 else
@@ -58,8 +62,12 @@ default_target :
 endif
 endif
 endif
+endif
 
 ifdef OPALDIR
 include $(OPALDIR)/opal_inc.mak
 endif
+
+openphone.cxx : openphone.xrc
+	wxrc openphone.xrc -c -o openphone.cxx
 
