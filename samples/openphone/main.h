@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.28  2006/07/31 10:57:52  rjongbloed
+ * Added play of WAV file on incoming calls.
+ *
  * Revision 1.27  2006/04/30 10:36:24  rjongbloed
  * Added icons to speed dial list.
  *
@@ -312,6 +315,7 @@ class OptionsDialog : public wxDialog
     // General fields
     PwxString m_Username;
     PwxString m_DisplayName;
+    PwxString m_RingSoundDeviceName;
     PwxString m_RingSoundFileName;
     bool      m_AutoAnswer;
 #if P_EXPAT
@@ -629,6 +633,13 @@ class MyManager : public wxFrame, public OpalManager
 
     PString m_currentConnectionToken;
     PString m_currentCallToken;
+
+    PwxString     m_RingSoundDeviceName;
+    PwxString     m_RingSoundFileName;
+    PSoundChannel m_RingSoundChannel;
+    PTimer        m_RingSoundTimer;
+    PDECLARE_NOTIFIER(PTimer, MyManager, OnRingSoundAgain);
+    void StopRingSound();
 
     DECLARE_EVENT_TABLE()
 
