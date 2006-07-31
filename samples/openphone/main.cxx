@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.3  2006/07/31 08:05:24  rjongbloed
+ * Fixed unix version of icons.
+ * Fixed some GNU compiler compatibility issues.
+ *
  * Revision 1.2  2006/07/21 23:41:28  dereksmithies
  * Move main.cpp contents to main.cxx. This fixes many issues under linux.
  *
@@ -153,6 +157,19 @@
 #define H323_STATIC_LIB
 #include <codec/allcodecs.h>
 #include <lids/alllids.h>
+#endif
+
+#if defined(__WXGTK__)   || \
+    defined(__WXMOTIF__) || \
+    defined(__WXX11__)   || \
+    defined(__WXMAC__)   || \
+    defined(__WXMGL__)   || \
+    defined(__WXCOCOA__)
+#include "openphone.xpm"
+#include "h323phone.xpm"
+#include "sipphone.xpm"
+#include "otherphone.xpm"
+#include "smallphone.xpm"
 #endif
 
 
@@ -364,17 +381,17 @@ MyManager::MyManager()
 {
 
   // Give it an icon
-    SetIcon(wxIcon("AppIcon", wxBITMAP_TYPE_ICO));
+    SetIcon(wxICON(AppIcon));
 
   // Make an image list containing large icons
   m_imageListNormal = new wxImageList(32, 32, true);
  // Order here is important!!
-  m_imageListNormal->Add(wxIcon("OtherPhone", wxBITMAP_TYPE_ICO));
-  m_imageListNormal->Add(wxIcon("H323Phone", wxBITMAP_TYPE_ICO));
-  m_imageListNormal->Add(wxIcon("SIPPhone", wxBITMAP_TYPE_ICO));
+  m_imageListNormal->Add(wxICON(OtherPhone));
+  m_imageListNormal->Add(wxICON(H323Phone));
+  m_imageListNormal->Add(wxICON(SIPPhone));
 
   m_imageListSmall = new wxImageList(16, 16, true);
-  m_imageListSmall->Add(wxIcon("SmallPhone", wxBITMAP_TYPE_ICO));
+  m_imageListSmall->Add(wxICON(SmallPhone));
 }
 
 
@@ -789,7 +806,7 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
                                wxDefaultPosition, wxDefaultSize,
                                ListCtrlStyle[view] | wxLC_EDIT_LABELS | wxSUNKEN_BORDER);
 
-  if (view != e_DescriptionColumn) {
+  if (view != e_ViewDetails) {
     m_speedDials->SetImageList(m_imageListNormal, wxIMAGE_LIST_NORMAL);
     m_speedDials->SetImageList(m_imageListSmall, wxIMAGE_LIST_SMALL);
   }
@@ -1272,16 +1289,14 @@ BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
   device = PVideoOutputDevice::CreateDevice("Window");
   if (device != NULL) {
     autoDelete = TRUE;
-    BOOL goodOpen;
+    PString name;
 #if defined(__WXMSW__)
-    goodOpen = device->Open(psprintf("MSWIN STYLE=0x%08X TITLE=\"%s\"",
-                              WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION,
-				    preview ? "Local" : (const char *)connection.GetRemotePartyName()));
-#else
-    goodOpen = device->Open(psprintf("TITLE=\"%s\"",
-				    preview ? "Local" : (const char *)connection.GetRemotePartyName()));
+    name.sprintf("MSWIN STYLE=0x%08X ", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
 #endif
-    if (goodOpen)
+    name += "TITLE=\"";
+    name += preview ? "Local" : (const char *)connection.GetRemotePartyName();
+    name += '"';
+    if (device->Open(name))
       return TRUE;
 
     delete device;
@@ -1745,11 +1760,7 @@ bool OptionsDialog::TransferDataFromWindow()
   // Video fields
   config->SetPath(VideoGroup);
   PVideoDevice::OpenArgs grabber = m_manager.GetVideoInputDevice();
-#if defined (__WXMSW__)
-  SAVE_FIELD(VideoGrabber, grabber.deviceName = (PString)); 
-#else
-#warning - the above msw line does not compile on linux. Fix me XXXXXXXXXXXXXXX
-#endif
+  SAVE_FIELD(VideoGrabber, grabber.deviceName = (const char *));
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
@@ -1785,12 +1796,7 @@ bool OptionsDialog::TransferDataFromWindow()
       wxString groupName;
       groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
-      wxString codecNameKeyCopy(CodecNameKey);
-#if defined(__WXMSW__)
-      config->Write(codecNameKeyCopy, mm->mediaFormat);
-#else
-#warning the above lines does not compile on linux - FIXME PLEASE XXXXXXXXXXXXXXXXXXXxx
-#endif
+      config->Write(CodecNameKey, mm->mediaFormat);
       for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
         const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
         if (!option.IsReadOnly())
