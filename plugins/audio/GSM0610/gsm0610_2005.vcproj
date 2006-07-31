@@ -1,134 +1,196 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="8.00"
 	Name="gsm0610"
 	ProjectGUID="{E6897206-9765-4B73-9A98-DAC5787814CE}"
-	SccProjectName=""
-	SccLocalPath="">
+	>
 	<Platforms>
 		<Platform
-			Name="Win32"/>
+			Name="Win32"
+		/>
 	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
 			IntermediateDirectory="..\..\Release\GSM"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\..\Release/gsm0610.tlb"
+				HeaderFileName=""
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
-				StringPooling="TRUE"
+				StringPooling="true"
 				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="TRUE"
-				RuntimeTypeInfo="TRUE"
+				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="true"
 				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"/>
+				SuppressStartupBanner="true"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				IgnoreImportLibrary="TRUE"
-				OutputFile="../../Release/gsm0610_pwplugin.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				ImportLibrary="$(IntDir)/$(TargetName).lib"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\..\Release/gsm0610.tlb"
-				HeaderFileName=""/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="NDEBUG"
-				Culture="3081"/>
+				Culture="3081"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="true"
+				OutputFile="../../Release/gsm0610_pwplugin.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
 			IntermediateDirectory="..\..\Debug\GSM"
 			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\..\Debug/gsm0610.tlb"
+				HeaderFileName=""
+			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				RuntimeTypeInfo="TRUE"
+				RuntimeTypeInfo="true"
 				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
 				WarningLevel="4"
-				SuppressStartupBanner="TRUE"
-				DebugInformationFormat="3"/>
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
 			<Tool
-				Name="VCCustomBuildTool"/>
-			<Tool
-				Name="VCLinkerTool"
-				IgnoreImportLibrary="TRUE"
-				OutputFile="../../Debug/gsm0610_pwplugin.dll"
-				LinkIncremental="1"
-				SuppressStartupBanner="TRUE"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
-				ImportLibrary="$(IntDir)/$(TargetName).lib"
-				TargetMachine="1"/>
-			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\..\Debug/gsm0610.tlb"
-				HeaderFileName=""/>
-			<Tool
-				Name="VCPostBuildEventTool"/>
-			<Tool
-				Name="VCPreBuildEventTool"/>
-			<Tool
-				Name="VCPreLinkEventTool"/>
+				Name="VCManagedResourceCompilerTool"
+			/>
 			<Tool
 				Name="VCResourceCompilerTool"
 				PreprocessorDefinitions="_DEBUG"
-				Culture="3081"/>
+				Culture="3081"
+			/>
 			<Tool
-				Name="VCWebServiceProxyGeneratorTool"/>
+				Name="VCPreLinkEventTool"
+			/>
 			<Tool
-				Name="VCXMLDataGeneratorTool"/>
+				Name="VCLinkerTool"
+				IgnoreImportLibrary="true"
+				OutputFile="../../Debug/gsm0610_pwplugin.dll"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
+				TargetMachine="1"
+			/>
 			<Tool
-				Name="VCWebDeploymentTool"/>
+				Name="VCALinkTool"
+			/>
 			<Tool
-				Name="VCManagedWrapperGeneratorTool"/>
+				Name="VCManifestTool"
+			/>
 			<Tool
-				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
 		</Configuration>
 	</Configurations>
 	<References>
@@ -136,46 +198,57 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+			>
 			<File
-				RelativePath="gsm06_10_codec.c">
+				RelativePath="gsm06_10_codec.c"
+				>
 				<FileConfiguration
-					Name="Release|Win32">
+					Name="Release|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="2"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"/>
+						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"
+					/>
 				</FileConfiguration>
 				<FileConfiguration
-					Name="Debug|Win32">
+					Name="Debug|Win32"
+					>
 					<Tool
 						Name="VCCLCompilerTool"
 						Optimization="0"
 						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"
-						BasicRuntimeChecks="3"/>
+						BasicRuntimeChecks="3"
+					/>
 				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
 			Name="GSM Files"
-			Filter=".c">
+			Filter=".c"
+			>
 			<Filter
 				Name="GSM Source"
-				Filter="">
+				>
 				<File
-					RelativePath="src\add.c">
+					RelativePath="src\add.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -183,23 +256,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\code.c">
+					RelativePath="src\code.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -207,23 +285,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\decode.c">
+					RelativePath="src\decode.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -231,23 +314,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\gsm_create.c">
+					RelativePath="src\gsm_create.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -255,23 +343,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\gsm_decode.c">
+					RelativePath="src\gsm_decode.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -279,23 +372,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\gsm_destroy.c">
+					RelativePath="src\gsm_destroy.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -303,23 +401,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\gsm_encode.c">
+					RelativePath="src\gsm_encode.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -327,23 +430,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\gsm_lpc.c">
+					RelativePath="src\gsm_lpc.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -351,23 +459,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\gsm_option.c">
+					RelativePath="src\gsm_option.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -375,23 +488,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\long_term.c">
+					RelativePath="src\long_term.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -399,23 +517,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\preprocess.c">
+					RelativePath="src\preprocess.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -423,23 +546,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\rpe.c">
+					RelativePath="src\rpe.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -447,23 +575,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\short_term.c">
+					RelativePath="src\short_term.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -471,23 +604,28 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="src\table.c">
+					RelativePath="src\table.c"
+					>
 					<FileConfiguration
-						Name="Release|Win32">
+						Name="Release|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="2"
 							AdditionalIncludeDirectories="./inc"
 							PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 					<FileConfiguration
-						Name="Debug|Win32">
+						Name="Debug|Win32"
+						>
 						<Tool
 							Name="VCCLCompilerTool"
 							Optimization="0"
@@ -495,27 +633,33 @@
 							PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;NeedFunctionPrototypes=1;WAV49;$(NoInherit)"
 							BasicRuntimeChecks="3"
 							WarningLevel="0"
-							CompileAs="0"/>
+							CompileAs="0"
+						/>
 					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
 				Name="GSM Headers"
-				Filter="">
+				>
 				<File
-					RelativePath="src\gsm\inc\config.h">
+					RelativePath="src\gsm\inc\config.h"
+					>
 				</File>
 				<File
-					RelativePath="src\gsm\inc\gsm.h">
+					RelativePath="src\gsm\inc\gsm.h"
+					>
 				</File>
 				<File
-					RelativePath="src\gsm\inc\private.h">
+					RelativePath="src\gsm\inc\private.h"
+					>
 				</File>
 				<File
-					RelativePath="src\gsm\inc\proto.h">
+					RelativePath="src\gsm\inc\proto.h"
+					>
 				</File>
 				<File
-					RelativePath="src\gsm\inc\unproto.h">
+					RelativePath="src\gsm\inc\unproto.h"
+					>
 				</File>
 			</Filter>
 		</Filter>
