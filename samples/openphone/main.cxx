@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.4  2006/07/31 10:57:52  rjongbloed
+ * Added play of WAV file on incoming calls.
+ *
  * Revision 1.3  2006/07/31 08:05:24  rjongbloed
  * Fixed unix version of icons.
  * Fixed some GNU compiler compatibility issues.
@@ -149,13 +152,13 @@
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 
+#include <opal/transcoders.h>
 #include <opal/ivr.h>
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
 
 #ifdef OPAL_STATIC_LINK
 #define H323_STATIC_LIB
-#include <codec/allcodecs.h>
 #include <lids/alllids.h>
 #endif
 
@@ -175,8 +178,9 @@
 
 extern void InitXmlResource(); // From resource.cpp whichis compiled openphone.xrc
 
-#define DEF_FIELD(name) static const char name##Key[] = #name
+// Definitions of the configuration file section and key names
 
+#define DEF_FIELD(name) static const char name##Key[] = #name
 
 static const char AppearanceGroup[] = "/Appearance";
 DEF_FIELD(MainFrameX);
@@ -189,6 +193,7 @@ DEF_FIELD(ActiveView);
 static const char GeneralGroup[] = "/General";
 DEF_FIELD(Username);
 DEF_FIELD(DisplayName);
+DEF_FIELD(RingSoundDeviceName);
 DEF_FIELD(RingSoundFileName);
 DEF_FIELD(AutoAnswer);
 DEF_FIELD(IVRScript);
@@ -333,7 +338,10 @@ bool OpenPhoneApp::OnInit()
   // Create the main frame window
   MyManager * main = new MyManager();
   SetTopWindow(main);
-  return main->Initialise();
+  wxBeginBusyCursor();
+  bool ok = main->Initialise();
+  wxEndBusyCursor();
+  return ok;
 }
 
 
@@ -392,6 +400,8 @@ MyManager::MyManager()
 
   m_imageListSmall = new wxImageList(16, 16, true);
   m_imageListSmall->Add(wxICON(SmallPhone));
+
+  m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
 }
 
 
@@ -434,9 +444,10 @@ bool MyManager::Initialise()
   if (config->Read(MainFrameWidthKey, &w) && config->Read(MainFrameHeightKey, &h))
     SetSize(w, h);
 
-  // Make the content of the main window, speed dial and log panes
+  // Make the content of the main window, speed dial and log panes inside a splitter
   m_splitter = new wxSplitterWindow(this, SplitterID, wxDefaultPosition, wxDefaultSize, wxSP_3D);
 
+  // Log window - gets informative text
   m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString,
                                wxDefaultPosition, wxDefaultSize,
                                wxTE_MULTILINE | wxSUNKEN_BORDER);
@@ -444,6 +455,7 @@ bool MyManager::Initialise()
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
+  // Speed dial window - icons for each speed dial
   int i;
   if (!config->Read(ActiveViewKey, &i) || i < 0 || i >= e_NumViews)
   {
@@ -455,12 +467,15 @@ bool MyManager::Initialise()
   menubar->Check(XRCID(ViewMenuNames[i]), true);
   RecreateSpeedDials((SpeedDialViews)i);
 
+  // Speed dial panel switches to answer panel on ring
   m_answerPanel = new AnswerPanel(*this, m_splitter);
   m_answerPanel->Show(false);
 
+  // Speed dial panel switches to calling panel on dial
   m_callingPanel = new CallingPanel(*this, m_splitter);
   m_callingPanel->Show(false);
 
+  // Speed dial/Answer/Calling panel switches to "in call" panel on successful call establishment
   m_inCallPanel = new InCallPanel(*this, m_splitter);
   m_inCallPanel->Show(false);
 
@@ -520,6 +535,11 @@ bool MyManager::Initialise()
     SetDefaultUserName(str);
   if (config->Read(DisplayNameKey, &str) && !str.IsEmpty())
     SetDefaultDisplayName(str);
+
+  if (!config->Read(RingSoundDeviceNameKey, &m_RingSoundDeviceName))
+    m_RingSoundDeviceName = PSoundChannel::GetDefaultDevice(PSoundChannel::Player);
+  config->Read(RingSoundFileNameKey, &m_RingSoundFileName);
+
   config->Read(AutoAnswerKey, &m_autoAnswer);
 #if P_EXPAT
   if (config->Read(IVRScriptKey, &str))
@@ -539,8 +559,10 @@ bool MyManager::Initialise()
     SetRtpIpTypeofService(value1);
   if (config->Read(NATRouterKey, &str))
     SetTranslationAddress(str);
-  if (config->Read(STUNServerKey, &str) && !str.IsEmpty())
+  if (config->Read(STUNServerKey, &str) && !str.IsEmpty()) {
+    LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
     LogWindow << "STUN server \"" << str << "\" replies " << SetSTUNServer(str) << endl;
+  }
 
   ////////////////////////////////////////
   // Sound fields
@@ -863,6 +885,8 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
 
 void MyManager::OnClose(wxCloseEvent& /*event*/)
 {
+  ::wxBeginBusyCursor();
+
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
 
@@ -1125,6 +1149,7 @@ void MyManager::AnswerCall()
   if (m_callState != RingingState)
     return;
 
+  StopRingSound();
   SetState(AnsweringState);
   pcssEP->AcceptIncomingConnection(m_currentConnectionToken);
 }
@@ -1162,8 +1187,28 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
     PTime now;
     LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
               << " from " << connection.GetRemotePartyName() << endl;
+
+    if (!m_RingSoundFileName.empty()) {
+      m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
+      m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
+      m_RingSoundTimer.RunContinuous(5000);
+    }
+
     SetState(RingingState);
   }
+}
+
+
+void MyManager::OnRingSoundAgain(PTimer &, INT)
+{
+  m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
+}
+
+
+void MyManager::StopRingSound()
+{
+  m_RingSoundTimer.Stop();
+  m_RingSoundChannel.Close();
 }
 
 
@@ -1177,6 +1222,8 @@ void MyManager::OnEstablishedCall(OpalCall & call)
 
 void MyManager::OnClearedCall(OpalCall & call)
 {
+  StopRingSound();
+
   PString remoteName = '"' + call.GetPartyB() + '"';
   switch (call.GetCallEndReason()) {
     case OpalConnection::EndedByRemoteUser :
@@ -1427,6 +1474,8 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Codec fields
+  EVT_BUTTON(XRCID("BrowseSoundFile"), OptionsDialog::BrowseSoundFile)
+  EVT_BUTTON(XRCID("PlaySoundFile"), OptionsDialog::PlaySoundFile)
   EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
   EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
   EVT_BUTTON(XRCID("MoveUpCodec"), OptionsDialog::MoveUpCodec)
@@ -1464,7 +1513,15 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // General fields
   INIT_FIELD(Username, m_manager.GetDefaultUserName());
   INIT_FIELD(DisplayName, m_manager.GetDefaultDisplayName());
-  INIT_FIELD(RingSoundFileName, "");
+
+  PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
+  wxComboBox * combo = (wxComboBox *)FindWindowByName(RingSoundDeviceNameKey);
+  combo->SetValidator(wxGenericValidator(&m_RingSoundDeviceName));
+  for (i = 0; i < devices.GetSize(); i++)
+    combo->Append((const char *)devices[i]);
+  m_RingSoundDeviceName = m_manager.m_RingSoundDeviceName;
+  INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
+
   INIT_FIELD(AutoAnswer, m_manager.m_autoAnswer);
 #if P_EXPAT
   INIT_FIELD(IVRScript, m_manager.ivrEP->GetDefaultVXML());
@@ -1497,9 +1554,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SilenceDeadband, m_manager.GetSilenceDetectParams().m_silenceDeadband/8);
 
   // Fill sound player combo box with available devices and set selection
-  wxComboBox * combo = (wxComboBox *)FindWindowByName(SoundPlayerKey);
+  combo = (wxComboBox *)FindWindowByName(SoundPlayerKey);
   combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
-  PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
   for (i = 0; i < devices.GetSize(); i++)
     combo->Append((const char *)devices[i]);
   m_SoundPlayer = m_manager.pcssEP->GetSoundChannelPlayDevice();
@@ -1708,6 +1764,8 @@ bool OptionsDialog::TransferDataFromWindow()
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
+  ::wxBeginBusyCursor();
+
   wxConfigBase * config = wxConfig::Get();
 
   ////////////////////////////////////////
@@ -1715,6 +1773,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, m_manager.SetDefaultUserName);
   SAVE_FIELD(DisplayName, m_manager.SetDefaultDisplayName);
+  SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
 #if P_EXPAT
   SAVE_FIELD(IVRScript, m_manager.ivrEP->SetDefaultVXML);
@@ -1905,6 +1964,8 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.m_traceFileName = m_TraceFileName;
 #endif // PTRACING
 
+  ::wxEndBusyCursor();
+
   return true;
 }
 
@@ -1914,11 +1975,23 @@ bool OptionsDialog::TransferDataFromWindow()
 
 void OptionsDialog::BrowseSoundFile(wxCommandEvent & /*event*/)
 {
+  wxString newFile = wxFileSelector("Sound file to play on incoming calls",
+                                    "",
+                                    m_RingSoundFileName,
+                                    ".wav",
+                                    "WAV files (*.wav)|*.wav",
+                                    wxOPEN|wxFILE_MUST_EXIST);
+  if (!newFile.empty()) {
+    m_RingSoundFileName = newFile;
+    TransferDataToWindow();
+  }
 }
 
 
 void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 {
+  PSoundChannel speaker(m_manager.m_RingSoundDeviceName, PSoundChannel::Player);
+  speaker.PlayFile(m_RingSoundFileName.c_str());
 }
 
 
