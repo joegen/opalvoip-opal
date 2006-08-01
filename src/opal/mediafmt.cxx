@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2047  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2048  2006/08/01 12:46:32  rjongbloed
+ * Added build solution for plug ins
+ * Removed now redundent code due to plug ins addition
+ *
+ * Revision 2.46  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.45  2006/07/14 04:22:43  csoutheren
@@ -253,7 +257,6 @@
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 #include <codec/opalwavfile.h>
-#include <codec/h263codec.h>
 
 #define new PNEW
 

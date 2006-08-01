@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2070  2006/07/24 14:03:39  csoutheren
+ * Revision 1.2071  2006/08/01 12:46:32  rjongbloed
+ * Added build solution for plug ins
+ * Removed now redundent code due to plug ins addition
+ *
+ * Revision 2.69  2006/07/24 14:03:39  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.68  2006/07/21 00:38:31  csoutheren
@@ -318,6 +322,7 @@
 #include <h323/gkclient.h>
 #endif
 
+#include <opal/transcoders.h>
 #include <lids/lidep.h>
 #include <lids/ixjlid.h>
 #include <ptclib/pstun.h>
@@ -328,7 +333,6 @@
 
 #ifdef OPAL_STATIC_LINK
 #define H323_STATIC_LIB
-#include <codec/allcodecs.h>
 #include <lids/alllids.h>
 #endif
 
