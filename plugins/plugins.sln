@@ -19,6 +19,30 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h263ffmpeg", "video\H.263-f
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "g7231acm", "audio\G7231ACM\g7231acm.vcproj", "{9CA0A670-9867-453B-A1D7-0FC9377D0740}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "G726", "audio\G726\G726.vcproj", "{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gsmamr", "audio\gsm-amr\gsmamr.vcproj", "{92E9FA1E-2925-42FD-8226-A07CBD237E18}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IMA_ADPCM", "audio\IMA_ADPCM\IMA_ADPCM.vcproj", "{25F0AA82-0186-45AD-92C3-EE1F9282A038}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LPC_10", "audio\LPC_10\LPC_10.vcproj", "{9481B85A-4166-4607-ADC4-0C19D2753EB7}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VoiceAgeG729", "audio\VoiceAgeG729\VoiceAgeG729.vcproj", "{3F038BF6-B7B9-4941-AF57-8D539FC05781}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -45,6 +69,30 @@ Global
 		{E6897206-9765-4B73-9A98-DAC5787814CE}.Debug.Build.0 = Debug|Win32
 		{E6897206-9765-4B73-9A98-DAC5787814CE}.Release.ActiveCfg = Release|Win32
 		{E6897206-9765-4B73-9A98-DAC5787814CE}.Release.Build.0 = Release|Win32
+		{9CA0A670-9867-453B-A1D7-0FC9377D0740}.Debug.ActiveCfg = Debug|Win32
+		{9CA0A670-9867-453B-A1D7-0FC9377D0740}.Debug.Build.0 = Debug|Win32
+		{9CA0A670-9867-453B-A1D7-0FC9377D0740}.Release.ActiveCfg = Release|Win32
+		{9CA0A670-9867-453B-A1D7-0FC9377D0740}.Release.Build.0 = Release|Win32
+		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Debug.ActiveCfg = Debug|Win32
+		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Debug.Build.0 = Debug|Win32
+		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Release.ActiveCfg = Release|Win32
+		{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}.Release.Build.0 = Release|Win32
+		{92E9FA1E-2925-42FD-8226-A07CBD237E18}.Debug.ActiveCfg = Debug|Win32
+		{92E9FA1E-2925-42FD-8226-A07CBD237E18}.Debug.Build.0 = Debug|Win32
+		{92E9FA1E-2925-42FD-8226-A07CBD237E18}.Release.ActiveCfg = Release|Win32
+		{92E9FA1E-2925-42FD-8226-A07CBD237E18}.Release.Build.0 = Release|Win32
+		{25F0AA82-0186-45AD-92C3-EE1F9282A038}.Debug.ActiveCfg = Debug|Win32
+		{25F0AA82-0186-45AD-92C3-EE1F9282A038}.Debug.Build.0 = Debug|Win32
+		{25F0AA82-0186-45AD-92C3-EE1F9282A038}.Release.ActiveCfg = Release|Win32
+		{25F0AA82-0186-45AD-92C3-EE1F9282A038}.Release.Build.0 = Release|Win32
+		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Debug.ActiveCfg = Debug|Win32
+		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Debug.Build.0 = Debug|Win32
+		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Release.ActiveCfg = Release|Win32
+		{9481B85A-4166-4607-ADC4-0C19D2753EB7}.Release.Build.0 = Release|Win32
+		{3F038BF6-B7B9-4941-AF57-8D539FC05781}.Debug.ActiveCfg = Debug|Win32
+		{3F038BF6-B7B9-4941-AF57-8D539FC05781}.Debug.Build.0 = Debug|Win32
+		{3F038BF6-B7B9-4941-AF57-8D539FC05781}.Release.ActiveCfg = Release|Win32
+		{3F038BF6-B7B9-4941-AF57-8D539FC05781}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
