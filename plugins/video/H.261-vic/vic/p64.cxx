@@ -54,6 +54,9 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
+ * Revision 1.3  2006/08/01 13:02:40  rjongbloed
+ * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
+ *
  * Revision 1.2  2006/07/31 09:09:22  csoutheren
  * Checkin of validated codec used during development
  *
@@ -81,6 +84,16 @@
  *
  * Revision 2.1  2003/03/15 23:43:00  robertj
  * Update to OpenH323 v1.11.7
+ *
+ * Revision 1.16  2006/07/22 13:15:31  rjongbloed
+ * Eliminate need for linking winsock just for ntohl() function.
+ *
+ * Revision 1.15  2005/12/04 22:33:35  csoutheren
+ * Removed warning
+ *
+ * Revision 1.14  2005/11/25 00:10:23  csoutheren
+ * Applied patch #1303543 from Hannes Friederich
+ * Added guard to weird conditions in H261 codec
  *
  * Revision 1.13  2005/02/25 01:21:12  dominance
  * fixed building on amd64 with gcc-4.0 according to
@@ -1143,7 +1156,7 @@ bool P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
     return false;
 
   // get 32 bit H261 header
-  h261hdr = ntohl(*(u_int*)hdrPtr);
+  SWAP32(&h261hdr, hdrPtr);
   // decode values we need from the RTP H261 header
   sbit  = (h261hdr >> 29) & 0x07;
   ebit  = (h261hdr >> 26) & 0x07;
