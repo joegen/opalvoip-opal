@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2009  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2010  2006/08/01 12:46:32  rjongbloed
+ * Added build solution for plug ins
+ * Removed now redundent code due to plug ins addition
+ *
+ * Revision 2.8  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.7.4.1  2006/03/16 07:06:00  csoutheren
@@ -481,14 +485,6 @@
 #include <h323/h323con.h>
 #include <h323/gkclient.h>
 #include <opal/buildopts.h>
-
-#ifndef NO_OPAL_VIDEO
-#include <codec/h261codec.h>
-#ifdef HAS_CU30
-#include <codec/cu30codec.h>
-#endif
-#endif // NO_OPAL_VIDEO
-
 
 PString  OpalGetVersion();
 unsigned OpalGetMajorVersion();
