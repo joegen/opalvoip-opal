@@ -1,6 +1,9 @@
 /************ Change log
  *
  * $Log: config.h,v $
+ * Revision 1.3  2006/08/01 13:02:40  rjongbloed
+ * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
+ *
  * Revision 1.2  2006/07/31 09:09:21  csoutheren
  * Checkin of validated codec used during development
  *
@@ -9,6 +12,11 @@
  *
  * Revision 2.1  2003/03/15 23:42:59  robertj
  * Update to OpenH323 v1.11.7
+ * Revision 1.13  2006/07/23 05:13:27  csoutheren
+ * Fixed gcc implementation of SWAP32
+ *
+ * Revision 1.12  2006/07/22 13:25:01  rjongbloed
+ * Eliminate need for linking winsock just for ntohl() function.
  *
  * Revision 1.11  2002/10/10 05:40:11  robertj
  * VxWorks port, thanks Martijn Roest
@@ -74,11 +82,27 @@ typedef unsigned long u_long;
 
 
 #if defined(_MSC_VER)
-//#define INT_64 __int64 // uncomment for 64 bit word machines
+
+  #define INT_64 __int64 // uncomment for 64 bit word machines
+
+  #if PBYTE_ORDER == PLITTLE_ENDIAN
+    #define SWAP32(left,right) \
+        ((char*)(left))[0] = ((const char*)(right))[3], \
+        ((char*)(left))[1] = ((const char*)(right))[2], \
+        ((char*)(left))[2] = ((const char*)(right))[1], \
+        ((char*)(left))[3] = ((const char*)(right))[0]
+  #else
+    #define SWAP32(left,right) *(long*)(left)=*(const long*)(right)
+  #endif
+
 #elif defined(__GNUC__)
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-// only use the 64 bit h.261 codec on little endian machines
-#define INT_64 long long
-#endif
+
+  #if PBYTE_ORDER == PLITTLE_ENDIAN
+    // only use the 64 bit h.261 codec on little endian machines
+    #define INT_64 long long
+  #endif
+
+  #define SWAP32(left,right) (*left) = ntohl(*right)
+
 #endif
 
