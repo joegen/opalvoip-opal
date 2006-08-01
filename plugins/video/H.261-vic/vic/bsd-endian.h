@@ -36,6 +36,9 @@
 /************ Change log
  *
  * $Log: bsd-endian.h,v $
+ * Revision 1.3  2006/08/01 13:02:40  rjongbloed
+ * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
+ *
  * Revision 1.2  2006/07/31 09:09:21  csoutheren
  * Checkin of validated codec used during development
  *
@@ -90,7 +93,7 @@
 #ifndef BYTE_ORDER
 #define LITTLE_ENDIAN 1234
 #define BIG_ENDIAN 4321
-#if defined(ultrix) || defined(__alpha) || defined(__i386__) || defined (i386) || defined(__i486__) || defined(_X86_) || defined(_ARM_) 
+#if defined(ultrix) || defined(__alpha) || defined(__i386__) || defined(__i486__) || defined(_X86_) || defined(_ARM_) 
 #define BYTE_ORDER LITTLE_ENDIAN
 #else
 #define BYTE_ORDER BIG_ENDIAN

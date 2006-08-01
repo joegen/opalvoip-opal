@@ -41,6 +41,9 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
+ * Revision 1.3  2006/08/01 13:02:40  rjongbloed
+ * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
+ *
  * Revision 1.2  2006/07/31 09:09:21  csoutheren
  * Checkin of validated codec used during development
  *
@@ -947,8 +950,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   
   // set the H.261 header (32 bits) bits that we know now
   h261hdr |= ((8 - sbit_) & 7) << 26; //EBIT = 8 - SBIT for next packet
-  h261hdr = htonl(h261hdr);
-  *(h261hdr_t*)buffer = h261hdr;
+  SWAP32(buffer, &h261hdr);
   memcpy(buffer+sizeof(h261hdr), gData+gDbase, gNbytes);
   length = gNbytes+sizeof(h261hdr);
 
