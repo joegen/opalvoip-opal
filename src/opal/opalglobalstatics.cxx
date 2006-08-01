@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2002  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2003  2006/08/01 12:46:32  rjongbloed
+ * Added build solution for plug ins
+ * Removed now redundent code due to plug ins addition
+ *
+ * Revision 2.1  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 1.1.2.1  2006/04/08 04:35:15  csoutheren
@@ -37,7 +41,6 @@
 
 #include <opal/mediafmt.h>
 #include <codec/opalwavfile.h>
-#include <codec/h263codec.h>
 
 #include <codec/opalpluginmgr.h>
 
