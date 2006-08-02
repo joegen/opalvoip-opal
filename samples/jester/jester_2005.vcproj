@@ -74,7 +74,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsn.lib ptclib.lib ptlib.lib wsock32.lib"
+				AdditionalDependencies="opaln.lib ptlib.lib"
 				OutputFile="NoTrace/jester.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -168,7 +168,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opals.lib ptclib.lib ptlib.lib wsock32.lib"
+				AdditionalDependencies="opal.lib ptlib.lib"
 				OutputFile="Release/jester.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -261,7 +261,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opalsd.lib ptclibd.lib ptlibsd.lib wsock32.lib"
+				AdditionalDependencies="opald.lib ptlibd.lib"
 				OutputFile="Debug/jester.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
