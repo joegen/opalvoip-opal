@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2034  2006/07/28 10:41:51  rjongbloed
+ * Revision 1.2035  2006/08/03 04:57:12  csoutheren
+ * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.33  2006/07/28 10:41:51  rjongbloed
  * Fixed DevStudio 2005 warnings on time_t conversions.
  *
  * Revision 2.32  2006/06/22 00:26:26  csoutheren
@@ -1595,10 +1598,11 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
 }
 
 
-RTP_UDP::RTP_UDP(unsigned id)
+RTP_UDP::RTP_UDP(unsigned id, BOOL _remoteIsNAT)
   : RTP_Session(id),
     remoteAddress(0),
-    remoteTransmitAddress(0)
+    remoteTransmitAddress(0),
+    remoteIsNAT(_remoteIsNAT)
 {
   remoteDataPort = 0;
   remoteControlPort = 0;
@@ -1774,6 +1778,11 @@ PString RTP_UDP::GetLocalHostName()
 
 BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL isDataPort)
 {
+  if (remoteIsNAT) {
+    PTRACE(3, "RTP_UDP\tIgnoring remote socket info as remote is behind NAT");
+    return TRUE;
+  }
+
   PTRACE(3, "RTP_UDP\tSetRemoteSocketInfo: session=" << sessionID << ' '
          << (isDataPort ? "data" : "control") << " channel, "
             "new=" << address << ':' << port << ", "

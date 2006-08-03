@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2051  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2052  2006/08/03 04:57:12  csoutheren
+ * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.50  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -1993,10 +1996,6 @@ class H323Connection : public OpalConnection
       unsigned sessionID
     ) const;
 
-    /** Return TRUE if the remote appears to be behind a NAT firewall
-    */
-    BOOL IsBehindNAT() const
-    { return remoteIsNAT; }
   //@}
 
   /**@name Request Mode Changes */
