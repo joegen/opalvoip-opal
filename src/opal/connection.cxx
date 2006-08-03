@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2068  2006/07/21 00:42:08  csoutheren
+ * Revision 1.2068.2.1  2006/08/03 08:01:15  csoutheren
+ * Added additional locking for media stream list to remove crashes in very busy applications
+ *
+ * Revision 2.67  2006/07/21 00:42:08  csoutheren
  * Applied 1525040 - More locking when changing connection's phase
  * Thanks to Borko Jandras
  *
@@ -419,6 +422,11 @@ OpalConnection::OpalConnection(OpalCall & call,
 
 OpalConnection::~OpalConnection()
 {
+  {
+    PWaitAndSignal mutex(mediaStreamMutex);
+    mediaStreams.RemoveAll();
+  }
+
   delete silenceDetector;
   delete echoCanceler;
   delete rfc2833Handler;
@@ -703,8 +711,10 @@ void OpalConnection::StartMediaStreams()
 {
   PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    if (mediaStreams[i].IsOpen())
-      mediaStreams[i].Start();
+    if (mediaStreams[i].IsOpen()) {
+      OpalMediaStream & strm = mediaStreams[i];
+      strm.Start();
+    }
   }
   PTRACE(2, "OpalCon\tMedia stream threads started.");
 }
@@ -733,6 +743,26 @@ void OpalConnection::RemoveMediaStreams()
   PTRACE(2, "OpalCon\tMedia stream threads removed from session.");
 }
 
+BOOL OpalConnection::RemoveMediaStream(OpalMediaStream * mediaStream)
+{
+  PWaitAndSignal mutex(mediaStreamMutex);
+  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
+    OpalMediaStream & strm = mediaStreams[i];
+    if (&strm == mediaStream) {
+      if (strm.IsOpen()) {
+        OnClosedMediaStream(strm);
+        strm.Close();
+      }
+      mediaStreams.RemoveAt(i);
+      return TRUE;
+    }
+  }
+  delete mediaStream;
+  if (mediaStreams.GetSize() > 0) {
+    PTRACE(3, "Attempt to remove stream failed");
+  }
+  return FALSE;
+}
 
 void OpalConnection::PauseMediaStreams(BOOL paused)
 {
@@ -774,19 +804,20 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   if (!endpoint.OnOpenMediaStream(*this, stream))
     return FALSE;
 
-    {
-      PWaitAndSignal m(mediaStreamMutex);
-      if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
-        mediaStreams.Append(&stream);
-    }
+  if (!LockReadWrite())
+    return FALSE;
 
-  if (LockReadWrite()) {
-    if (GetPhase() == ConnectedPhase) {
-      SetPhase(EstablishedPhase);
-      OnEstablished();
-    }
-    UnlockReadWrite();
+  {
+    PWaitAndSignal m(mediaStreamMutex);
+    if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
+      mediaStreams.Append(&stream);
   }
+
+  if (GetPhase() == ConnectedPhase) {
+    SetPhase(EstablishedPhase);
+    OnEstablished();
+  }
+  UnlockReadWrite();
 
   return TRUE;
 }

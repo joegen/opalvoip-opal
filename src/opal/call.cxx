@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2046  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2046.2.1  2006/08/03 08:01:15  csoutheren
+ * Added additional locking for media stream list to remove crashes in very busy applications
+ *
+ * Revision 2.45  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -369,6 +372,9 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   BOOL createdOne = FALSE;
 
+  if (!LockReadWrite())
+    return FALSE;
+
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       if (conn->SetConnected())
@@ -388,6 +394,8 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
     for (PSafePtr<OpalConnection> conn = connectionsActive; conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
+
+  UnlockReadWrite();
 
   return ok;
 }
