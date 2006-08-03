@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2068.2.1  2006/08/03 08:01:15  csoutheren
+ * Revision 1.2068.2.2  2006/08/03 08:09:20  csoutheren
+ * Removed old code
+ *
+ * Revision 2.67.2.1  2006/08/03 08:01:15  csoutheren
  * Added additional locking for media stream list to remove crashes in very busy applications
  *
  * Revision 2.67  2006/07/21 00:42:08  csoutheren
@@ -741,27 +744,6 @@ void OpalConnection::RemoveMediaStreams()
   mediaStreams.RemoveAll();
   
   PTRACE(2, "OpalCon\tMedia stream threads removed from session.");
-}
-
-BOOL OpalConnection::RemoveMediaStream(OpalMediaStream * mediaStream)
-{
-  PWaitAndSignal mutex(mediaStreamMutex);
-  for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    OpalMediaStream & strm = mediaStreams[i];
-    if (&strm == mediaStream) {
-      if (strm.IsOpen()) {
-        OnClosedMediaStream(strm);
-        strm.Close();
-      }
-      mediaStreams.RemoveAt(i);
-      return TRUE;
-    }
-  }
-  delete mediaStream;
-  if (mediaStreams.GetSize() > 0) {
-    PTRACE(3, "Attempt to remove stream failed");
-  }
-  return FALSE;
 }
 
 void OpalConnection::PauseMediaStreams(BOOL paused)
