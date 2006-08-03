@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2113  2006/06/30 01:39:58  csoutheren
+ * Revision 1.2114  2006/08/03 04:57:12  csoutheren
+ * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.112  2006/06/30 01:39:58  csoutheren
  * Applied 1509222 - H323Connection-gk-deadlock
  * Thanks to Boris Pavacic
  *
@@ -1727,7 +1730,6 @@ H323Connection::H323Connection(OpalCall & call,
   h4507handler = new H4507Handler(*this, *h450dispatcher);
   h45011handler = new H45011Handler(*this, *h450dispatcher);
 
-  remoteIsNAT = FALSE;
   alertDone   = FALSE;
   
 #ifdef H323_H460
@@ -2291,12 +2293,21 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
     H323TransportAddress sourceAddress(setup.m_sourceCallSignalAddress);
 
-    // if the source address is different from the peer address, then the remote endpoint is most likely behind a NAT
-    // but make sure we don't have an external address set before enabling it
+    //
+    // two condition for detecting remote is behind a NAT
+    //   1. the signalling address is not private, but the TCP source address is
+    //   2. the signalling and TCP source address are both private, but not the same
+    //
+    // but don't enable NAT usage if local endpoint is configured to be behind a NAT
+    //
     PIPSocket::Address srcAddr, sigAddr;
     sourceAddress.GetIpAddress(srcAddr);
     signallingChannel->GetRemoteAddress().GetIpAddress(sigAddr);
-    if (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) {
+    if (
+        (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
+        ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
+        )  
+    {
       PIPSocket::Address localAddress = signallingChannel->GetLocalAddress();
       PIPSocket::Address ourAddress = localAddress;
       endpoint.TranslateTCPAddress(localAddress, sigAddr);
