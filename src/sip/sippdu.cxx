@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2107  2006/07/24 09:03:00  csoutheren
+ * Revision 1.2107.2.1  2006/08/03 08:07:35  csoutheren
+ * Backport from CVS head
+ *
+ * Revision 2.107  2006/07/29 08:31:19  hfriederich
+ * Removing invalid quotation mark after algorithm=md5. Fixes problems with registration on certain servers
+ *
+ * Revision 2.106  2006/07/24 09:03:00  csoutheren
  * Removed suprious "response" clause in authentication response
  *
  * Revision 2.105  2006/07/14 13:44:22  csoutheren
@@ -1396,7 +1402,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
     digestor.Process(":");
     digestor.Process(AsHex(a2));
     digestor.Complete(response);
-    auth << "\", "
+    auth << ", "
          << "response=\"" << AsHex(response) << "\""
          << "cnonce=\"" << cnonce << "\", "
          << "nonce-count=\"" << nc << "\", "
@@ -1405,7 +1411,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   else {
     digestor.Process(AsHex(a2));
     digestor.Complete(response);
-    auth << "\", response=\"" << AsHex(response) << "\"";
+    auth << ", response=\"" << AsHex(response) << "\"";
   }
 
   if (!opaque.IsEmpty())
