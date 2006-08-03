@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2069  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2070  2006/08/03 04:57:12  csoutheren
+ * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.68  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.67  2006/07/21 00:42:08  csoutheren
@@ -416,6 +419,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token),
+    remoteIsNAT(FALSE),
     q931Cause(0x100)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
@@ -942,7 +946,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   PSTUNClient * stun = manager.GetSTUN(remoteAddress);
 
   // create an RTP session
-  RTP_UDP * rtpSession = new RTP_UDP(sessionID);
+  RTP_UDP * rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;

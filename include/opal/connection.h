@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2057  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2058  2006/08/03 04:57:12  csoutheren
+ * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.56  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -1197,6 +1200,11 @@ class OpalConnection : public PSafeObject
 
     PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
 
+    /** Return TRUE if the remote appears to be behind a NAT firewall
+    */
+    BOOL RemoteIsNAT() const
+    { return remoteIsNAT; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1223,6 +1231,7 @@ class OpalConnection : public PSafeObject
     CallEndReason        callEndReason;
     PString              calledDestinationNumber;
     PString              calledDestinationName;
+    BOOL                 remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;

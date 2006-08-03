@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2023  2006/02/02 07:02:57  csoutheren
+ * Revision 1.2024  2006/08/03 04:57:12  csoutheren
+ * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.22  2006/02/02 07:02:57  csoutheren
  * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
  * to change the payload type used for outgoing RTP.
  *
@@ -1053,7 +1056,8 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
-      unsigned id  ///<  Session ID for RTP channel
+      unsigned id,       ///<  Session ID for RTP channel
+      BOOL remoteIsNAT   ///<  TRUE is remote is behind NAT
     );
 
     /// Destroy the RTP
@@ -1192,6 +1196,7 @@ class RTP_UDP : public RTP_Session
     PUDPSocket * controlSocket;
 
     BOOL appliedQOS;
+    BOOL remoteIsNAT;
 };
 
 
