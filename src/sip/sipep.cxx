@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.22  2006/06/10 15:40:05  dsandras
+ * Revision 1.2098.2.23  2006/08/07 19:46:19  dsandras
+ * Backported fix from HEAD to abort registration after a given amount of failures.
+ *
+ * Revision 2.97.2.22  2006/06/10 15:40:05  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.125  2006/06/10 15:37:33  dsandras
@@ -582,6 +585,8 @@ SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, c
     expire = ep.GetRegistrarTimeToLive().GetSeconds();
   password = pass;
   authUser = authName;
+  
+  authenticationAttempts = 0;
 }
 
 
@@ -1260,6 +1265,19 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
+  
+  // Abort after some unsuccesful authentication attempts. This is required since
+  // some implementations return "401 Unauthorized" with a different nonce at every
+  // time.
+  unsigned authenticationAttempts = callid_info->GetAuthenticationAttempts();
+  if(authenticationAttempts < 10) {
+    authenticationAttempts++;
+    callid_info->SetAuthenticationAttempts(authenticationAttempts);
+  } else {
+    PTRACE(1, "SIP\tAborting after " << authenticationAttempts << " attempts to REGISTER/SUBSCRIBE");
+    callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
 
   // Restart the transaction with new authentication info
   request = callid_info->CreateTransaction(transaction.GetTransport(), 
@@ -1297,6 +1315,9 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
   if (info == NULL) 
     return;
   
+  // reset the number of unsuccesful authentication attempts
+  info->SetAuthenticationAttempts(0);
+  
   // We were registering, update the expire field
   if (info->GetExpire() > 0) {
 
@@ -1306,7 +1327,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
       if (response.GetMIME().HasFieldParameter("expires", contact))
         sec = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
       else
-        sec = response.GetMIME().GetExpires ();
+        sec = response.GetMIME().GetExpires(3600);
     }
     if (!sec)
       sec = 3600;
