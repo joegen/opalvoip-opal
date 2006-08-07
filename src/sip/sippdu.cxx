@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.7  2006/05/06 16:05:13  dsandras
+ * Revision 1.2084.2.8  2006/08/07 19:53:31  dsandras
+ * Backported fix from HEAD to add support for the opaque attribute when
+ * authenticating.
+ *
+ * Revision 2.83.2.7  2006/05/06 16:05:13  dsandras
  * Another backport from HEAD.
  *
  * Revision 2.94  2006/05/06 16:04:16  dsandras
@@ -1245,6 +1249,11 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
     return FALSE;
   }
 
+  opaque = GetAuthParam(auth, "opaque");
+  if (!opaque.IsEmpty()) {
+    PTRACE(1, "SIP\tAuthentication contains opaque data");
+  }
+
   isProxy = proxy;
   return TRUE;
 }
@@ -1313,6 +1322,8 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
           "uri=\"" << uriText << "\", "
           "response=\"" << AsHex(response) << "\", "
           "algorithm=" << AlgorithmNames[algorithm];
+	if (!opaque.IsEmpty())
+		auth << ", opaque=\"" << opaque << "\"";
 
   pdu.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
   return TRUE;
