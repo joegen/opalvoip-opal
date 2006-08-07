@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037  2006/01/02 11:28:07  dsandras
+ * Revision 1.2037.2.1  2006/08/07 19:54:36  dsandras
+ * Backported fix from HEAD to add support for the opaque attribute when
+ * authenticating.
+ *
+ * Revision 2.36  2006/01/02 11:28:07  dsandras
  * Some documentation. Various code cleanups to prevent duplicate code.
  *
  * Revision 2.35  2005/12/04 15:02:00  dsandras
@@ -464,6 +468,7 @@ class SIPAuthentication : public PObject
     const PString & GetPassword() const    { return password; }
     const PString & GetNonce() const       { return nonce; }
     Algorithm GetAlgorithm() const         { return algorithm; }
+    const PString & GetOpaque() const      { return opaque; }
 
     void SetUsername(const PString & user) { username = user; }
     void SetPassword(const PString & pass) { password = pass; }
@@ -476,6 +481,7 @@ class SIPAuthentication : public PObject
     PString   password;
     PString   nonce;
     Algorithm algorithm;
+		PString   opaque;
 };
 
 
