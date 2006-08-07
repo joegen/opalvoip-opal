@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2169  2006/07/30 11:36:09  hfriederich
+ * Revision 1.2170  2006/08/07 19:46:24  hfriederich
+ * Ensuring that no INVITE is sent if connection is already in releasing phase
+ *
+ * Revision 2.168  2006/07/30 11:36:09  hfriederich
  * Fixes problems with empty SDPMediaDescriptions
  *
  * Revision 2.167  2006/07/24 14:03:40  csoutheren
@@ -1366,6 +1369,17 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   connection.SetLocalPartyAddress();
 
   SIPTransaction * invite = new SIPInvite(connection, transport);
+  
+  // It may happen that constructing the INVITE causes the connection
+  // to be released (e.g. there are no UDP ports available for the RTP sessions)
+  // Since the connection is released immediately, a INVITE must not be
+  // sent out.
+  if (connection.GetPhase() >= OpalConnection::ReleasingPhase) {
+	PTRACE(2, "SIP\tAborting INVITE transaction since connection is in releasing phase");
+	delete invite; // at this point, the INVITE is not yet added to the transactions
+	return FALSE;
+  }
+  
   if (invite->Start()) {
     PWaitAndSignal m(connection.transactionsMutex); 
     connection.invitations.Append(invite);
