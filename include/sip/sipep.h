@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.8  2006/04/30 17:26:22  dsandras
+ * Revision 1.2047.2.9  2006/08/07 19:46:19  dsandras
+ * Backported fix from HEAD to abort registration after a given amount of failures.
+ *
+ * Revision 2.46.2.8  2006/04/30 17:26:22  dsandras
  * Backported various HEAD cleanups.
  *
  * Revision 2.58  2006/04/30 17:24:39  dsandras
@@ -341,6 +344,9 @@ class SIPInfo : public PSafeObject
     virtual void OnFailed(
       SIP_PDU::StatusCodes
     ) = 0;
+	
+	int GetAuthenticationAttempts() { return authenticationAttempts; };
+	void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
 
     protected:
       SIPEndPoint      & ep;
@@ -358,6 +364,7 @@ class SIPInfo : public PSafeObject
       PString 	         password;
       PString		 body;
       PMutex             transportMutex;
+      unsigned           authenticationAttempts;
     
     private:
 };
