@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037.2.2  2006/08/07 20:08:54  dsandras
+ * Revision 1.2037.2.3  2006/08/07 20:47:37  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.36.2.2  2006/08/07 20:08:54  dsandras
  * Backported qop support from HEAD.
  *
  * Revision 2.36.2.1  2006/08/07 19:54:36  dsandras
@@ -352,6 +355,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
+		BOOL IsContentLengthPresent() const;
 
     PString GetCSeq() const;
     void SetCSeq(const PString & v);
