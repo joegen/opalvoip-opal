@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.4  2006/05/07 15:34:49  dsandras
+ * Revision 1.2020.2.5  2006/08/07 20:18:25  dsandras
+ * Backported various patches from HEAD.
+ *
+ * Revision 2.19.2.4  2006/05/07 15:34:49  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.24  2006/05/07 15:33:54  dsandras
@@ -219,21 +222,27 @@ void OpalMediaPatch::Close()
 {
   PTRACE(3, "Patch\tClosing media patch " << *this);
 
+  inUse.Wait();
+
   filters.RemoveAll();
   source.Close();
 
-  inUse.Wait();
   // This relies on the channel close doing a RemoveSink() call
   while (sinks.GetSize() > 0) {
     OpalMediaStream * stream = sinks[0].stream;
+    stream->GetDeleteMutex().Wait();
     inUse.Signal();
-    stream->Close();
+    stream->SetPatch(NULL);
     inUse.Wait();
+    stream->GetDeleteMutex().Signal();
+    RemoveSink(stream);
   }
   inUse.Signal();
 
   PTRACE(3, "Patch\tWaiting for media patch thread to stop " << *this);
-  PAssert(WaitForTermination(10000), "Media patch thread not terminated.");
+  if (!IsSuspended()) {
+    PAssert(WaitForTermination(10000), "Media patch thread not terminated.");
+  }
 }
 
 
