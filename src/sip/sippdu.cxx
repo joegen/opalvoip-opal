@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.8  2006/08/07 19:53:31  dsandras
+ * Revision 1.2084.2.9  2006/08/07 20:07:46  dsandras
+ * Backported qop support from HEAD.
+ *
+ * Revision 2.83.2.8  2006/08/07 19:53:31  dsandras
  * Backported fix from HEAD to add support for the opaque attribute when
  * authenticating.
  *
@@ -382,8 +385,8 @@
 #include <ptclib/cypher.h>
 
 
-#define	SIP_VER_MAJOR	2
-#define	SIP_VER_MINOR	0
+#define  SIP_VER_MAJOR  2
+#define  SIP_VER_MINOR  0
 
 
 #define new PNEW
@@ -477,7 +480,7 @@ const char * SIP_PDU::GetStatusCodeDescription (int code)
   unsigned i;
   for (i = 0; sipErrorDescriptions[i].code != 0; i++) {
     if (sipErrorDescriptions[i].code == code)
-	  return sipErrorDescriptions[i].desc;
+      return sipErrorDescriptions[i].desc;
   }
   return 0;
 }
@@ -518,8 +521,8 @@ SIPURL::SIPURL(const PString & name,
     WORD port;
     if (address.GetIpAndPort(ip, port)) {
       PStringStream s;
-	    s << "sip:" << name << '@';
-	    if (ip.GetVersion() == 6)
+      s << "sip:" << name << '@';
+      if (ip.GetVersion() == 6)
         s << '[' << ip << ']';
       else
         s << ip;
@@ -574,20 +577,19 @@ BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
       
       // See if there is something before the <
       if (start != P_MAX_INDEX && start > 0)
-	displayName = str.Left(start).Trim();
+        displayName = str.Left(start).Trim();
       else { // Use the url as display name
+        end = str.FindLast('>');
+        if (end != P_MAX_INDEX)
+          str = displayName.Mid ((start == P_MAX_INDEX) ? 0:start+1, end-1);
 
-	end = str.FindLast('>');
-	if (end != P_MAX_INDEX)
-	  str = displayName.Mid ((start == P_MAX_INDEX) ? 0:start+1, end-1);
+        /* Remove the tag from the display name, if any */
+        end = str.Find (';');
+        if (end != P_MAX_INDEX)
+          str = str.Left (end);
 
-	/* Remove the tag from the display name, if any */
-	end = str.Find (';');
-	if (end != P_MAX_INDEX)
-	  str = str.Left (end);
-
-	displayName = str;
-	displayName.Replace  ("sip:", "");
+        displayName = str;
+        displayName.Replace  ("sip:", "");
       }
     }
     else if (start != P_MAX_INDEX && end != P_MAX_INDEX) {
@@ -683,6 +685,11 @@ PINDEX SIPMIMEInfo::GetContentLength() const
   if (len.IsEmpty())
     return 0; //P_MAX_INDEX;
   return len.AsInteger();
+}
+
+BOOL SIPMIMEInfo::IsContentLengthPresent() const
+{
+  return !GetFullOrCompact("Content-Length", 'l').IsEmpty();
 }
 
 
@@ -1102,8 +1109,8 @@ void SIPMIMEInfo::SetWWWAuthenticate(const PString & v)
 
 
 void SIPMIMEInfo::SetFieldParameter(const PString & param,
-				    PString & field,
-				    const PString & value)
+                                          PString & field,
+                                    const PString & value)
 {
   PStringStream s;
   
@@ -1130,7 +1137,7 @@ void SIPMIMEInfo::SetFieldParameter(const PString & param,
 
 
 PString SIPMIMEInfo::GetFieldParameter(const PString & param,
-				       const PString & field)
+                                       const PString & field)
 {
   PINDEX j = 0;
   
@@ -1154,13 +1161,12 @@ PString SIPMIMEInfo::GetFieldParameter(const PString & param,
   }
   else
     val = "";
-	
+
   return val;
 }
 
 
-BOOL SIPMIMEInfo::HasFieldParameter(const PString & param,
-				    const PString & field)
+BOOL SIPMIMEInfo::HasFieldParameter(const PString & param, const PString & field)
 {
   PCaselessString val = field;
   
@@ -1218,9 +1224,14 @@ static PString GetAuthParam(const PString & auth, const char * name)
 
 BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 {
-  authRealm.Empty();
-  nonce.Empty();
+  authRealm.MakeEmpty();
+  nonce.MakeEmpty();
+  opaque.MakeEmpty();
   algorithm = NumAlgorithms;
+
+  qopAuth = qopAuthInt = FALSE;
+  cnonce.MakeEmpty();
+  nonceCount = 1;
 
   if (auth.Find("digest") != 0) {
     PTRACE(1, "SIP\tUnknown authentication type");
@@ -1252,6 +1263,15 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
   opaque = GetAuthParam(auth, "opaque");
   if (!opaque.IsEmpty()) {
     PTRACE(1, "SIP\tAuthentication contains opaque data");
+  }
+
+  PString qopStr = GetAuthParam(auth, "qop-options");
+  if (!qopStr.IsEmpty()) {
+    PTRACE(1, "SIP\tAuthentication contains qop-options " << qopStr);
+    PStringList options = qopStr.Tokenise(',', TRUE);
+    qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
+    qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
+    cnonce = OpalGloballyUniqueID().AsString();
   }
 
   isProxy = proxy;
@@ -1304,15 +1324,11 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Process(MethodNames[pdu.GetMethod()]);
   digestor.Process(":");
   digestor.Process(uriText);
+  if (qopAuthInt) {
+    digestor.Process(":");
+    digestor.Process(pdu.GetEntityBody());
+  }
   digestor.Complete(a2);
-
-  digestor.Start();
-  digestor.Process(AsHex(a1));
-  digestor.Process(":");
-  digestor.Process(nonce);
-  digestor.Process(":");
-  digestor.Process(AsHex(a2));
-  digestor.Complete(response);
 
   PStringStream auth;
   auth << "Digest "
@@ -1320,10 +1336,44 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
           "realm=\"" << authRealm << "\", "
           "nonce=\"" << nonce << "\", "
           "uri=\"" << uriText << "\", "
-          "response=\"" << AsHex(response) << "\", "
           "algorithm=" << AlgorithmNames[algorithm];
-	if (!opaque.IsEmpty())
-		auth << ", opaque=\"" << opaque << "\"";
+
+  digestor.Start();
+  digestor.Process(AsHex(a1));
+  digestor.Process(":");
+  digestor.Process(nonce);
+  digestor.Process(":");
+
+  if (qopAuthInt || qopAuth) {
+    PString nc(psprintf("%08i", (unsigned int)nonceCount));
+    ++nonceCount;
+    PString qop;
+    if (qopAuthInt)
+      qop = "auth-int";
+    else
+      qop = "auth";
+    digestor.Process(nc);
+    digestor.Process(":");
+    digestor.Process(cnonce);
+    digestor.Process(":");
+    digestor.Process(qop);
+    digestor.Process(":");
+    digestor.Process(AsHex(a2));
+    digestor.Complete(response);
+    auth << ", "
+         << "response=\"" << AsHex(response) << "\""
+         << "cnonce=\"" << cnonce << "\", "
+         << "nonce-count=\"" << nc << "\", "
+         << "qop=\"" << qop << "\"";
+  }
+  else {
+    digestor.Process(AsHex(a2));
+    digestor.Complete(response);
+    auth << ", response=\"" << AsHex(response) << "\"";
+  }
+
+  if (!opaque.IsEmpty())
+    auth << ", opaque=\"" << opaque << "\"";
 
   pdu.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
   return TRUE;
@@ -1359,9 +1409,9 @@ SIP_PDU::SIP_PDU(Methods method,
 
 
 SIP_PDU::SIP_PDU(const SIP_PDU & request, 
-		 StatusCodes code, 
-		 const char * contact,
-		 const char * extra)
+     StatusCodes code, 
+     const char * contact,
+     const char * extra)
 {
   char *extraInfo = NULL;
  
@@ -1760,10 +1810,37 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     return FALSE;
   }
 
-  // get the SDP content
+  // get the SDP content body
+  // if a content length is specified, read that length
+  // if no content length is specified (which is not the same as zero length)
+  // then read until plausible end of header marker
   PINDEX contentLength = mime.GetContentLength();
   if (contentLength > 0)
     transport.read(entityBody.GetPointer(contentLength+1), contentLength);
+
+  else if (!mime.IsContentLengthPresent()) {
+    PBYTEArray pp;
+
+#if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
+    transport.rdbuf()->pubseekoff(0, ios_base::cur);
+#else
+    transport.rdbuf()->seekoff(0, ios::cur, ios::in);
+#endif 
+
+    //store in pp ALL the PDU (from beginning)
+    transport.read((char*)pp.GetPointer(transport.GetLastReadCount()),transport.GetLastReadCount());
+    PINDEX pos = 3;
+    while(++pos < pp.GetSize() && !(pp[pos]=='\n' && pp[pos-1]=='\r' && pp[pos-2]=='\n' && pp[pos-3]=='\r'))
+      ; //end of header is marked by "\r\n\r\n"
+
+    if (pos<pp.GetSize())
+      pos++;
+    contentLength = pp.GetSize() - pos;
+    if(contentLength > 0)
+      memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
+  }
+
+  ////////////////
   entityBody[contentLength] = '\0';
 
   BOOL removeSDP = TRUE;
@@ -1959,12 +2036,12 @@ BOOL SIPTransaction::SendCANCEL()
 BOOL SIPTransaction::ResendCANCEL()
 {
   SIP_PDU cancel(Method_CANCEL,
-		 uri,
-		 mime.GetTo(),
-		 mime.GetFrom(),
-		 mime.GetCallID(),
-		 mime.GetCSeqIndex(),
-		 localAddress);
+     uri,
+     mime.GetTo(),
+     mime.GetFrom(),
+     mime.GetCallID(),
+     mime.GetCSeqIndex(),
+     localAddress);
   // Use the topmost via header from the INVITE we cancel as per 9.1. 
   PStringList viaList = mime.GetViaList();
   cancel.GetMIME().SetVia(viaList[0]);
@@ -2150,18 +2227,16 @@ void SIPTransaction::SetTerminated(States newState)
       // skip transport identifier
       PINDEX pos = url.GetHostName().Find('$');
       if (pos != P_MAX_INDEX)
-	hosturl = url.GetHostName().Mid(pos+1);
+        hosturl = url.GetHostName().Mid(pos+1);
       else
-	hosturl = url.GetHostName();
+        hosturl = url.GetHostName();
       endpoint.OnRegistrationFailed(hosturl, 
-				    url.GetUserName(),
-				    SIP_PDU::Failure_RequestTimeout,
-				    (GetMIME().GetExpires(0) > 0));
+            url.GetUserName(),
+            SIP_PDU::Failure_RequestTimeout,
+            (GetMIME().GetExpires(0) > 0));
     }
     else if (GetMethod() == SIP_PDU::Method_MESSAGE) {
-
       SIPURL url (GetMIME().GetTo ());
-
       endpoint.OnMessageFailed(url, SIP_PDU::Failure_RequestTimeout);
     }
   }
@@ -2244,10 +2319,10 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
 
 
 SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
-				 OpalTransport & trans,
-				 const SIPURL & address,
-				 const PString & id,
-				 unsigned expires)
+         OpalTransport & trans,
+         const SIPURL & address,
+         const PString & id,
+         unsigned expires)
   : SIPTransaction(ep, trans)
 {
   PString addrStr = address.AsQuotedString();
@@ -2287,8 +2362,7 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & trans
   PStringStream str;
   
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
-  mime.SetSubscriptionState("terminated;reason=noresource"); // Do not keep
-  							     // an internal state
+  mime.SetSubscriptionState("terminated;reason=noresource"); // Do not keep an internal state
   mime.SetEvent("refer");
   mime.SetContentType("message/sipfrag;version=2.0");
 
@@ -2301,9 +2375,9 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & trans
 /////////////////////////////////////////////////////////////////////////
 
 SIPMessage::SIPMessage(SIPEndPoint & ep,
-		       OpalTransport & trans,
-		       const SIPURL & address,
-		       const PString & body)
+                     OpalTransport & trans,
+                      const SIPURL & address,
+                     const PString & body)
   : SIPTransaction(ep, trans)
 {
   PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
@@ -2331,15 +2405,15 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
 /////////////////////////////////////////////////////////////////////////
 
 SIPAck::SIPAck(SIPEndPoint & ep,
-	       SIPTransaction & invite,
-	       SIP_PDU & response)
+            SIPTransaction & invite,
+                   SIP_PDU & response)
   : SIP_PDU (SIP_PDU::Method_ACK,
-	     invite.GetURI(),
-	     response.GetMIME().GetTo(),
-	     invite.GetMIME().GetFrom(),
-	     invite.GetMIME().GetCallID(),
-	     invite.GetMIME().GetCSeqIndex(),
-	     ep.GetLocalURL(invite.GetTransport()).GetHostAddress()),
+             invite.GetURI(),
+             response.GetMIME().GetTo(),
+             invite.GetMIME().GetFrom(),
+             invite.GetMIME().GetCallID(),
+             invite.GetMIME().GetCSeqIndex(),
+             ep.GetLocalURL(invite.GetTransport()).GetHostAddress()),
   transaction(invite)
 {
   Construct();
@@ -2351,8 +2425,8 @@ SIPAck::SIPAck(SIPEndPoint & ep,
 
 SIPAck::SIPAck(SIPTransaction & invite)
   : SIP_PDU (SIP_PDU::Method_ACK,
-	     *invite.GetConnection(),
-	     invite.GetTransport()),
+             *invite.GetConnection(),
+             invite.GetTransport()),
   transaction(invite)
 {
   mime.SetCSeq(PString(invite.GetMIME().GetCSeqIndex()) & MethodNames[Method_ACK]);
@@ -2374,8 +2448,8 @@ void SIPAck::Construct()
 /////////////////////////////////////////////////////////////////////////
 
 SIPOptions::SIPOptions(SIPEndPoint & ep,
-		       OpalTransport & trans,
-		       const SIPURL & address)
+                       OpalTransport & trans,
+                       const SIPURL & address)
   : SIPTransaction(ep, trans)
 {
   PString requestURI;
@@ -2392,7 +2466,7 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
   requestURI = "sip:" + address.AsQuotedString();
   
   SIP_PDU::Construct(Method_OPTIONS,
-		     requestURI,
+                     requestURI,
                      address.AsQuotedString(),
                      myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
