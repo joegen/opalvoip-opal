@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037.2.1  2006/08/07 19:54:36  dsandras
+ * Revision 1.2037.2.2  2006/08/07 20:08:54  dsandras
+ * Backported qop support from HEAD.
+ *
+ * Revision 2.36.2.1  2006/08/07 19:54:36  dsandras
  * Backported fix from HEAD to add support for the opaque attribute when
  * authenticating.
  *
@@ -482,6 +485,11 @@ class SIPAuthentication : public PObject
     PString   nonce;
     Algorithm algorithm;
 		PString   opaque;
+
+		BOOL qopAuth;
+		BOOL qopAuthInt;
+		PString cnonce;
+		mutable PAtomicInteger nonceCount;
 };
 
 
