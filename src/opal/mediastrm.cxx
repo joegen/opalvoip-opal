@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2040  2005/12/30 14:30:02  dsandras
+ * Revision 1.2040.2.1  2006/08/07 20:18:25  dsandras
+ * Backported various patches from HEAD.
+ *
+ * Revision 2.39  2005/12/30 14:30:02  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.38  2005/09/06 12:44:49  rjongbloed
@@ -213,6 +216,7 @@ OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL 
 OpalMediaStream::~OpalMediaStream()
 {
   Close();
+  PWaitAndSignal deleteLock(deleteMutex);
 }
 
 
@@ -307,13 +311,16 @@ BOOL OpalMediaStream::Close()
 
     if (IsSink())
       patch->RemoveSink(this);
-    else {
+	
+    patchMutex.Signal();
+
+    if (IsSource()) {
       patch->Close();
       delete patch;
     }
   }
-
-  patchMutex.Signal();
+  else
+    patchMutex.Signal();
 
   isOpen = FALSE;
   return TRUE;
