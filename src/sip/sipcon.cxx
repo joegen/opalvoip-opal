@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.17  2006/08/07 19:13:28  dsandras
+ * Revision 1.2121.2.18  2006/08/07 19:15:42  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.120.2.17  2006/08/07 19:13:28  dsandras
  * Backported fix from CVS HEAD to fix possible crash on call release.
  *
  * Revision 2.120.2.16  2006/05/01 09:53:58  dsandras
@@ -2061,13 +2064,13 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   OnReceivedSDP(response);
 
+  releaseMethod = ReleaseWithBYE;
   if (phase == EstablishedPhase)
     return;
   
   connectedTime = PTime ();
   OnConnected();                        // start media streams
 
-  releaseMethod = ReleaseWithBYE;
   phase = EstablishedPhase;
   OnEstablished();
 }
