@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2029  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2029.2.1  2006/08/07 20:26:27  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.28  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.27  2005/09/04 06:23:38  rjongbloed
@@ -378,6 +381,10 @@ class OpalMediaStream : public PObject
     OpalMediaPatch * GetPatch() const { return patchThread; }
   //@}
 
+    /**Get the mutex that prevents the destructor from completing.
+      */
+    PMutex &  GetDeleteMutex() const { return deleteMutex; }
+
   protected:
     OpalMediaFormat mediaFormat;
     unsigned        sessionID;
@@ -392,6 +399,8 @@ class OpalMediaStream : public PObject
     OpalMediaPatch * patchThread;
     PMutex           patchMutex;
     PNotifier        commandNotifier;
+
+    mutable PMutex  deleteMutex;
 };
 
 PLIST(OpalMediaStreamList, OpalMediaStream);
