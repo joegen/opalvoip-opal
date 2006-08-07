@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.16  2006/05/01 09:53:58  dsandras
+ * Revision 1.2121.2.17  2006/08/07 19:13:28  dsandras
+ * Backported fix from CVS HEAD to fix possible crash on call release.
+ *
+ * Revision 2.120.2.16  2006/05/01 09:53:58  dsandras
  * Backported change from HEAD.
  *
  * Revision 2.120.2.15  2006/04/27 20:22:26  dsandras
@@ -667,6 +670,8 @@ SIPConnection::~SIPConnection()
   delete transport;
   delete referTransaction;
 
+  if (pduHandler) delete pduHandler;
+
   PTRACE(3, "SIP\tDeleted connection.");
 }
 
@@ -766,8 +771,6 @@ void SIPConnection::OnReleased()
   if (pduHandler != NULL) {
     pduSemaphore.Signal();
     pduHandler->WaitForTermination();
-    delete pduHandler;
-    pduHandler = NULL;  // clear pointer to deleted object
   }
 
   if (transport != NULL)
@@ -2135,8 +2138,7 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return;
 
-  if (phase >= ReleasingPhase && pduHandler == NULL) {
-    // don't create another handler thread while releasing!
+  if (phase >= ReleasedPhase) {
     PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
     delete pdu;
   }
