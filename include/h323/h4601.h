@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
 * $Log: h4601.h,v $
+* Revision 1.9  2006/08/08 08:33:26  rjongbloed
+* Fixed GNU warning on what very much looks like incorrect code. Goes to
+*   prove you should not ignore warnings!
+*
 * Revision 1.8  2006/07/01 05:31:36  shorne
 * added building featureset from generic data field
 *
@@ -291,7 +295,7 @@ class H460_FeatureContent : public H460<H225_Content>
 	operator H460_FeatureID () const { return *(H225_GenericIdentifier *)choice; };
 	operator H225_AliasAddress () const { return *(H225_AliasAddress *)choice; };
 	operator H323TransportAddress () const { return H323TransportAddress(*(H225_TransportAddress *)choice); };
-	operator H460_FeatureTable *() { return (H460_FeatureTable *)&choice; };
+	operator H460_FeatureTable *() { return (H460_FeatureTable *)choice; };
 	operator H460_Feature *() { return (H460_Feature *)choice; };
 
  //@} 
