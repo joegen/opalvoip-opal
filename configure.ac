@@ -542,6 +542,11 @@ AC_SUBST(ENDLDLIBS)
 AC_PROG_INSTALL
 
 dnl ########################################################################
+dnl Output configured files
+
+AC_CONFIG_SUBDIRS(plugins)
+
+dnl ########################################################################
 dnl output header file
 
 AC_CONFIG_FILES(opal_inc.mak)
