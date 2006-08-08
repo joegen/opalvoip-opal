@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.36  2006/08/08 09:16:47  rjongbloed
+# Fixed building of audio plugins on linux
+#
 # Revision 1.35  2006/08/03 12:43:52  csoutheren
 # Fixed compilation on Linux
 #
@@ -241,7 +244,7 @@ default :: optshared
 
 all :: bothdepend both
 
-SUBDIRS := 
+SUBDIRS := plugins samples/simple
 
 LIBRARY_MAKEFILE:=1
 
@@ -656,8 +659,8 @@ $(DEPDIR)/%.dep : $(SPEEX_SRCDIR)/%.c
 
 ###############################################################################
 #### Subdirectories
-$(STANDARD_TARGETS) ::
-	set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
+$(subst tagbuild,,$(STANDARD_TARGETS)) ::
+	@set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
 
 
 test:
@@ -720,6 +723,7 @@ install:
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/t38 ; \
 	done)
 	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
+	$(MAKE) -C plugins install
 
 uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
@@ -729,7 +733,8 @@ uninstall:
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
- 
+	$(MAKE) -C plugins uninstall
+
 docs: FORCE
 	doxygen opal_cfg.dxy
 
