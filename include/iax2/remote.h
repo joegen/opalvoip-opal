@@ -26,6 +26,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.6  2006/08/09 03:46:40  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.5  2005/08/28 23:51:29  dereksmithies
  *  Improve test for massaging timestamps in fullframes. Thanks to Adrian Sietsma
  *
@@ -110,7 +115,7 @@ class IAX2Remote : public PObject
   /**Set the remote address as used by this class */
   void SetRemoteAddress(int newVal) { remoteAddress = newVal; }
   
-  /**Set the remote port, as used bye this class */
+  /**Set the remote port, as used by this class */
   void SetRemotePort (PINDEX newVal) { remotePort = newVal; }
   
   /**Set the Source Call Number, as used by this class */
@@ -222,8 +227,8 @@ class IAX2PacketIdList : public PSortedList
  protected:
   /**Remove all the contiguous oldest values, which is used for
      determining the correct iseqno.  This endpoints iseqno is
-     determined from::: iseqno is always
-     highest_contiguously_recieved_oseq+1 
+     determined from::: iseqno isï¿½always
+     highest_contiguously_recieved_oseq+1ï¿½
   */
   void RemoveOldContiguousValues();
 };
