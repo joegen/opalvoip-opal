@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2033  2006/04/10 05:16:09  csoutheren
+ * Revision 1.2033.2.1  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
+ * Revision 2.32  2006/04/10 05:16:09  csoutheren
  * Populate media stream info even when OLCack only contains media control information
  *
  * Revision 2.31  2006/03/29 23:57:52  csoutheren
@@ -824,10 +827,12 @@ H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
   mediaStream = NULL;
 }
 
-
 H323UnidirectionalChannel::~H323UnidirectionalChannel()
 {
-  delete mediaStream;
+  if (!connection.RemoveMediaStream(mediaStream)) {
+    delete mediaStream;
+    mediaStream = NULL;
+  }
 }
 
 
@@ -972,9 +977,13 @@ void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command, INT)
 }
 
 
-OpalMediaStream * H323UnidirectionalChannel::GetMediaStream() const
+OpalMediaStream * H323UnidirectionalChannel::GetMediaStream(BOOL deleted) const
 {
-  return mediaStream;
+  PMutex m(connection.GetMediaStreamMutex());
+  OpalMediaStream * t = mediaStream;
+  if (deleted)
+    mediaStream = NULL;
+  return t;
 }
 
 
@@ -1236,7 +1245,6 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
 {
   Construct(id);
 }
-
 
 void H323_ExternalRTPChannel::Construct(unsigned id)
 {

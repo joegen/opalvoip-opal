@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2113  2006/06/30 01:39:58  csoutheren
+ * Revision 1.2113.2.1  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
+ * Revision 2.112  2006/06/30 01:39:58  csoutheren
  * Applied 1509222 - H323Connection-gk-deadlock
  * Thanks to Boris Pavacic
  *
@@ -3552,22 +3555,25 @@ BOOL H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & ar
 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
-  for (i = 0; i < fastStartChannels.GetSize(); i++) {
-    if (fastStartChannels[i].IsOpen())
-      logicalChannels->Add(fastStartChannels[i]);
-    else
-      fastStartChannels.RemoveAt(i--);
-  }
+  {
+    PWaitAndSignal m(this->GetMediaStreamMutex());
+    for (i = 0; i < fastStartChannels.GetSize(); i++) {
+      if (fastStartChannels[i].IsOpen())
+        logicalChannels->Add(fastStartChannels[i]);
+      else
+        fastStartChannels.RemoveAt(i--);
+    }
 
-  // None left, so didn't open any channels fast
-  if (fastStartChannels.IsEmpty()) {
-    fastStartState = FastStartDisabled;
-    return FALSE;
-  }
+    // None left, so didn't open any channels fast
+    if (fastStartChannels.IsEmpty()) {
+      fastStartState = FastStartDisabled;
+      return FALSE;
+    }
 
-  // The channels we just transferred to the logical channels dictionary
-  // should not be deleted via this structure now.
-  fastStartChannels.DisallowDeleteObjects();
+    // The channels we just transferred to the logical channels dictionary
+    // should not be deleted via this structure now.
+    fastStartChannels.DisallowDeleteObjects();
+  }
 
   PTRACE(3, "H225\tAccepting fastStart for " << fastStartChannels.GetSize() << " channels");
 
@@ -3787,7 +3793,12 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
   if (param == 0) {
     // If H.245 channel failed to connect and have no media (no fast start)
     // then clear the call as it is useless.
-    if (mediaStreams.IsEmpty())
+    BOOL release;
+    {
+      PWaitAndSignal mutex(mediaStreamMutex);
+      release = mediaStreams.IsEmpty();
+    }
+    if (release)
       Release(EndedByTransportFail);
     return;
   }
@@ -4451,7 +4462,7 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
           chan2->SetPause(IsLocalHold());
-	  stream->SetPaused(IsLocalHold());
+	        stream->SetPaused(IsLocalHold());
         }
       }
       else {
@@ -4812,7 +4823,6 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFo
   PTRACE(1, "H323\tOpenSourceMediaStream called: session " << sessionID);
   return TRUE;
 }
-
 
 OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                     unsigned sessionID,
@@ -5192,13 +5202,20 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 							                         const H245_H2250LogicalChannelParameters * param,
                                                                         RTP_QOS * rtpqos)
 {
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-    MediaInformation info;
+  {
+    PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    if ((otherParty == NULL) || !otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+    if (otherParty == NULL) {
+      PTRACE(2, "H323\tRefusing to create an RTP channel with only one connection");
       return NULL;
+    }
 
-    return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
+    if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
+      MediaInformation info;
+      if (!otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+        return NULL;
+      return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
+    }
   }
 
   RTP_Session * session;
@@ -5326,7 +5343,10 @@ BOOL H323Connection::OnClosingLogicalChannel(H323Channel & /*channel*/)
 
 void H323Connection::OnClosedLogicalChannel(const H323Channel & channel)
 {
-  mediaStreams.Remove(channel.GetMediaStream());
+  {
+    PWaitAndSignal m(mediaStreamMutex);
+    mediaStreams.Remove(channel.GetMediaStream(TRUE));
+  }
   endpoint.OnClosedLogicalChannel(*this, channel);
 }
 
