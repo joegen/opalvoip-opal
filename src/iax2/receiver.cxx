@@ -26,6 +26,11 @@
  *
  *
  *  $Log: receiver.cxx,v $
+ *  Revision 1.4  2006/08/09 03:46:39  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.3  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -101,7 +106,7 @@ void IAX2Receiver::Main()
     for(;;) {
       IAX2Frame *frame     = (IAX2Frame *)fromNetworkFrames.GetLastFrame();
       if (frame == NULL)
-	break;
+        break;
       
       endpoint.IncomingEthernetFrame(frame);
     }

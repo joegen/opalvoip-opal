@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.7  2006/08/09 03:46:39  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.6  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -71,6 +76,7 @@ class IAX2FullFrameVideo;
 class IAX2FullFrameVoice;
 class IAX2EndPoint;
 class IAX2Processor;
+class IAX2CallProcessor;
 class IAX2IeList;
 class IAX2MiniFrame;
 class IAX2Transmitter;
@@ -403,6 +409,21 @@ class IAX2FullFrame : public IAX2Frame
 
   /**Return True if this is a VNAK frame */
   BOOL IsVNakFrame();
+  
+  /**Return True if this is a REGREQ frame */
+  BOOL IsRegReqFrame();
+  
+  /**Return True if this is a REGAUTH frame */
+  BOOL IsRegAuthFrame();
+  
+  /**Return True if this is a REGACK frame */
+  BOOL IsRegAckFrame();  
+  
+  /**Return True if this is a REGREL frame */
+  BOOL IsRegRelFrame();
+  
+  /**Return True if this is a REGREJ frame */
+  BOOL IsRegRejFrame();
 
   /**Return True if this FullFrame is of a type that increments the InSeqNo */
   BOOL FrameIncrementsInSeqNo();
@@ -437,7 +458,7 @@ class IAX2FullFrame : public IAX2Frame
   /**Number of bytes in the media section of this packet. */
   virtual PINDEX GetMediaDataSize();
   
-  /**Deteremine the current value of the subClass variable */
+  /**Determine the current value of the subClass variable */
   PINDEX GetSubClass() const { return subClass; }
   
   /**Dry the current value of the subClass variable */
@@ -650,7 +671,7 @@ class IAX2FullFrameVoice : public IAX2FullFrame
      specified timeStamp == 0, the timeStamp will be calculated from when the
      call started.
   */
-  IAX2FullFrameVoice(IAX2Processor *processor, PBYTEArray &sound, 
+  IAX2FullFrameVoice(IAX2CallProcessor *processor, PBYTEArray &sound, 
 		 PINDEX usersTimeStamp = 0);
   
   /**Declare an empty destructor */
@@ -862,8 +883,8 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
     cmdInval     =  10,      /*!< Destroy this call immediatly    */
     cmdLagRq     =  11,      /*!< Initial message, used to measure the round trip time    */
     cmdLagRp     =  12,      /*!< Reply to cmdLagrq, which tells us the round trip time    */
-    cmdRegReq    =  13,      /*!< Request fore Registration    */
-    cmdRegAuth   =  14,      /*!< Registration is required for  authentication    */
+    cmdRegReq    =  13,      /*!< Request for Registration    */
+    cmdRegAuth   =  14,      /*!< Registration requires for authentication    */
     cmdRegAck    =  15,      /*!< Registration has been accepted    */
     cmdRegRej    =  16,      /*!< Registration has been rejected    */
     cmdRegRel    =  17,      /*!< Force the release of the current registration    */
@@ -1152,7 +1173,7 @@ class IAX2FrameList : public IAX2Frame *
 
 #endif // FRAME_H
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
 
 /*
  * Local Variables:

@@ -26,6 +26,11 @@
  *
  *
  *  $Log: transmit.cxx,v $
+ *  Revision 1.3  2006/08/09 03:46:39  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -94,7 +99,7 @@ void IAX2Transmit::PurgeMatchingFullFrames(IAX2Frame *newFrame)
   if (!PIsDescendant(newFrame, IAX2FullFrame))
     return;
   
-  PTRACE(4, "Purge frames matching  received " << newFrame->IdString());
+  PTRACE(4, "Purge frames matching received " << newFrame->IdString());
   ackingFrames.DeleteMatchingSendFrame((IAX2FullFrame *)newFrame);
 }
 
@@ -191,7 +196,7 @@ void IAX2Transmit::ProcessSendList()
 }
 
 /* The comment below is magic for those who use emacs to edit this file. */
-/* With the comment below, the tab key does auto indent to 4 spaces.     */
+/* With the comment below, the tab key does auto indent to 2 spaces.     */
 
 /*
  * Local Variables:
