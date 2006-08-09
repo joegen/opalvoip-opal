@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.h,v $
+ * Revision 1.2.2.1  2006/08/09 12:49:20  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
  * Revision 1.2  2006/04/30 09:25:08  csoutheren
  * Remove warning about missing newline
  *
@@ -109,7 +112,7 @@ public:
   virtual BOOL SetDynamicRTPPayloadType(int newType);
   RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
 	
-  virtual OpalMediaStream * GetMediaStream() const;
+  virtual OpalMediaStream * GetMediaStream(BOOL deleted = FALSE) const;
 	
   OpalH224Handler * GetHandler() const { return h224Handler; }
 	
