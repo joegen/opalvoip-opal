@@ -22,6 +22,11 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.37  2006/08/09 23:14:00  dereksmithies
+# Add fix for compiling new iax processing files.
+# Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+# Thanks also for the Google Summer of Code.
+#
 # Revision 1.36  2006/08/08 09:16:47  rjongbloed
 # Fixed building of audio plugins on linux
 #
@@ -414,6 +419,7 @@ ifeq ($(OPAL_IAX2),1)
 ifdef IAX2_AVAIL
 
 SOURCES += \
+           $(OPAL_SRCDIR)/iax2/callprocessor.cxx\
            $(OPAL_SRCDIR)/iax2/frame.cxx \
            $(OPAL_SRCDIR)/iax2/iax2con.cxx \
            $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
@@ -422,6 +428,7 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/ies.cxx \
            $(OPAL_SRCDIR)/iax2/processor.cxx \
            $(OPAL_SRCDIR)/iax2/receiver.cxx \
+           $(OPAL_SRCDIR)/iax2/regprocessor.cxx\
            $(OPAL_SRCDIR)/iax2/remote.cxx \
            $(OPAL_SRCDIR)/iax2/safestrings.cxx \
            $(OPAL_SRCDIR)/iax2/sound.cxx \
