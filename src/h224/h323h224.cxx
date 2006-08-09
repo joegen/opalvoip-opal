@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.4.2.1  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
  * Revision 1.4  2006/06/07 08:02:22  hfriederich
  * Fixing crashes when creating the RTP session failed
  *
@@ -445,7 +448,7 @@ BOOL H323_H224Channel::SetDynamicRTPPayloadType(int newType)
   return TRUE;
 }
 
-OpalMediaStream * H323_H224Channel::GetMediaStream() const
+OpalMediaStream * H323_H224Channel::GetMediaStream(BOOL) const
 {
   // implemented since declared as an abstract method in H323Channel
   return NULL;

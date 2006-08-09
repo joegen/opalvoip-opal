@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2057  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2057.2.1  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
+ * Revision 2.56  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -742,6 +745,18 @@ class OpalConnection : public PSafeObject
       unsigned sessionId,  ///<  Session ID to search for.
       BOOL source          ///<  Indicates the direction of stream.
     ) const;
+
+    /**
+      Remove the specified media stream from the list of streams for this channel.
+      This will automatically delete the stream if the stream was found in the
+      stream list.
+
+      Returns TRUE if the media stream was removed the list and deleted, else
+      returns FALSE if the media stream was unchanged
+      */
+    BOOL RemoveMediaStream(
+      OpalMediaStream * strm     // media stream to remove
+    );
 
     /**See if the media can bypass the local host.
 

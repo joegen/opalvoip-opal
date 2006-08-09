@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2068.2.2  2006/08/03 08:09:20  csoutheren
+ * Revision 1.2068.2.3  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
+ * Revision 2.67.2.2  2006/08/03 08:09:20  csoutheren
  * Removed old code
  *
  * Revision 2.67.2.1  2006/08/03 08:01:15  csoutheren
@@ -422,7 +425,6 @@ OpalConnection::OpalConnection(OpalCall & call,
   h224Handler = NULL;
 }
 
-
 OpalConnection::~OpalConnection()
 {
   {
@@ -507,20 +509,23 @@ void OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 
 void OpalConnection::Release(CallEndReason reason)
 {
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked() || phase >= ReleasingPhase) {
-    PTRACE(3, "OpalCon\tAlready released " << *this);
-    return;
+  {
+    PSafeLockReadWrite safeLock(*this);
+    if (!safeLock.IsLocked() || phase >= ReleasingPhase) {
+      PTRACE(3, "OpalCon\tAlready released " << *this);
+      return;
+    }
+
+    PTRACE(3, "OpalCon\tReleasing " << *this);
+
+    // Now set reason for the connection close
+    SetCallEndReason(reason);
+    SetPhase(ReleasingPhase);
+
+    // Add a reference for the thread we are about to start
+    SafeReference();
   }
 
-  PTRACE(3, "OpalCon\tReleasing " << *this);
-
-  // Now set reason for the connection close
-  SetCallEndReason(reason);
-  SetPhase(ReleasingPhase);
-
-  // Add a reference for the thread we are about to start
-  SafeReference();
   PThread::Create(PCREATE_NOTIFIER(OnReleaseThreadMain), 0,
                   PThread::AutoDeleteThread,
                   PThread::NormalPriority,
@@ -598,55 +603,60 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
   endpoint.AdjustMediaFormats(*this, mediaFormats);
 }
 
-
 BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                            unsigned sessionID)
 {
-  // See if already opened
-  OpalMediaStream * stream = GetMediaStream(sessionID, TRUE);
+  {
+    PWaitAndSignal m(mediaStreamMutex);
 
-  if (stream != NULL && stream->IsOpen()) {
-    PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
-           << sessionID << " on " << *this);
-    return TRUE;
-  }
+    // See if already opened
+    OpalMediaStream * stream = GetMediaStream(sessionID, TRUE);
 
-  PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
-
-  OpalMediaFormat sourceFormat, destinationFormat;
-  if (!OpalTranscoder::SelectFormats(sessionID,
-                                     GetMediaFormats(),
-                                     mediaFormats,
-                                     sourceFormat,
-                                     destinationFormat)) {
-    PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
-           << ", could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
-              "   sink  formats=" << mediaFormats << setfill(' '));
-    return FALSE;
-  }
-
-  PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
-  
-  if (stream == NULL)
-    stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
-
-  if (stream == NULL) {
-    PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
-           << sessionID << " on " << *this);
-    return FALSE;
-  }
-
-  if (stream->Open()) {
-    if (OnOpenMediaStream(*stream))
+    if (stream != NULL && stream->IsOpen()) {
+      PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
+             << sessionID << " on " << *this);
       return TRUE;
-    PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
-  }
-  else {
-    PTRACE(2, "OpalCon\tSource media stream open of " << sourceFormat << " failed.");
+    }
+
+    PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
+
+    OpalMediaFormat sourceFormat, destinationFormat;
+    if (!OpalTranscoder::SelectFormats(sessionID,
+                                      GetMediaFormats(),
+                                      mediaFormats,
+                                      sourceFormat,
+                                      destinationFormat)) {
+      PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+            << ", could not find compatible media format:\n"
+                "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
+                "   sink  formats=" << mediaFormats << setfill(' '));
+      return FALSE;
+    }
+
+    PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
+    
+    if (stream == NULL)
+      stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
+
+    if (stream == NULL) {
+      PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
+            << sessionID << " on " << *this);
+      return FALSE;
+    }
+
+    if (stream->Open()) {
+      if (OnOpenMediaStream(*stream))
+        return TRUE;
+      PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
+    }
+    else {
+      PTRACE(2, "OpalCon\tSource media stream open of " << sourceFormat << " failed.");
+    }
+
+    if (!RemoveMediaStream(stream))
+      delete stream;
   }
 
-  delete stream;
   return FALSE;
 }
 
@@ -671,41 +681,40 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
     if (otherStream != NULL)
       order += otherStream->GetMediaFormat();
     destinationFormats.Reorder(order);
+
+    OpalMediaFormat destinationFormat;
+    if (!OpalTranscoder::SelectFormats(sessionID,
+                                      sourceFormat, // Only use selected format on source
+                                      destinationFormats,
+                                      sourceFormat,
+                                      destinationFormat)) {
+      PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
+                "  source formats=" << setfill(',') << sourceFormat << "\n"
+                "   sink  formats=" << destinationFormats << setfill(' '));
+      return NULL;
+    }
+
+    PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
+
+    OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
+    if (stream == NULL) {
+      PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
+      return NULL;
+    }
+
+    if (stream->Open()) {
+      if (OnOpenMediaStream(*stream))
+        return stream;
+      PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
+    }
+    else {
+      PTRACE(2, "OpalCon\tSink media stream open of " << destinationFormat << " failed.");
+    }
+
+    if (!RemoveMediaStream(stream))
+      delete stream;
   }
 
-  OpalMediaFormat destinationFormat;
-  if (!OpalTranscoder::SelectFormats(sessionID,
-                                     sourceFormat, // Only use selected format on source
-                                     destinationFormats,
-                                     sourceFormat,
-                                     destinationFormat)) {
-    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
-              "  source formats=" << setfill(',') << sourceFormat << "\n"
-              "   sink  formats=" << destinationFormats << setfill(' '));
-    return NULL;
-  }
-
-  /*
-   */
-
-  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
-
-  OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
-  if (stream == NULL) {
-    PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
-    return NULL;
-  }
-
-  if (stream->Open()) {
-    if (OnOpenMediaStream(*stream))
-      return stream;
-    PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
-  }
-  else {
-    PTRACE(2, "OpalCon\tSink media stream open of " << destinationFormat << " failed.");
-  }
-
-  delete stream;
   return NULL;
 }
 
@@ -727,9 +736,10 @@ void OpalConnection::CloseMediaStreams()
 {
   PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    if (mediaStreams[i].IsOpen()) {
-      OnClosedMediaStream(mediaStreams[i]);
-      mediaStreams[i].Close();
+    OpalMediaStream & strm = mediaStreams[i];
+    if (strm.IsOpen()) {
+      OnClosedMediaStream(strm);
+      strm.Close();
     }
   }
   
@@ -739,8 +749,8 @@ void OpalConnection::CloseMediaStreams()
 
 void OpalConnection::RemoveMediaStreams()
 {
-  CloseMediaStreams();
   PWaitAndSignal mutex(mediaStreamMutex);
+  CloseMediaStreams();
   mediaStreams.RemoveAll();
   
   PTRACE(2, "OpalCon\tMedia stream threads removed from session.");
@@ -828,6 +838,24 @@ OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source
 
   return NULL;
 }
+
+BOOL OpalConnection::RemoveMediaStream(OpalMediaStream * strm)
+{
+  PWaitAndSignal mutex(mediaStreamMutex);
+  PINDEX index = mediaStreams.GetObjectsIndex(strm);
+  if (index == P_MAX_INDEX) 
+    return FALSE;
+
+  OpalMediaStream & s = mediaStreams[index];
+  if (s.IsOpen()) {
+    OnClosedMediaStream(s);
+    s.Close();
+  }
+  mediaStreams.RemoveAt(index);
+
+  return TRUE;
+}
+
 
 
 BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
