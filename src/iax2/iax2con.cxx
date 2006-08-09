@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.9  2006/08/09 03:46:39  dereksmithies
+ * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ * into a callProcessor and a regProcessor class.
+ * Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  * Revision 1.8  2006/06/16 01:47:08  dereksmithies
  * Get the OnHold features of IAX2 to work correctly.
  * Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -90,13 +95,21 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 			       IAX2EndPoint &ep, 
 			     const PString & token,         /* Token to identify the connection */
 			     void * /*userData */,
-			     const PString & remoteParty)
+			     const PString & inRemoteParty,
+           const PString & inRemotePartyName)
   : OpalConnection(call, ep, token), 
      endpoint(ep)
 {  
-  remotePartyName = remoteParty;
+  remotePartyAddress = inRemoteParty;
+  if (inRemotePartyName.IsEmpty())
+    remotePartyName = inRemoteParty;
+  else
+    remotePartyName = inRemotePartyName;
+    
+  PStringList res = IAX2EndPoint::DissectRemoteParty(inRemoteParty);
+  remotePartyNumber = res[IAX2EndPoint::extensionIndex];
   
-  iax2Processor = new IAX2Processor(ep);
+  iax2Processor = new IAX2CallProcessor(ep);
   iax2Processor->AssignConnection(this);
   SetCallToken(token);
   originating = FALSE;
@@ -108,6 +121,9 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   for (PINDEX i = 0; i < localMediaFormats.GetSize(); i++) {
     PTRACE(3, "Local ordered codecs are " << localMediaFormats[i]);
   }
+  
+  local_hold = FALSE;
+  remote_hold = FALSE;
 
   phase = SetUpPhase;
 }
@@ -156,23 +172,6 @@ void IAX2Connection::OnReleased()
   
 }
 
-void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
-{
-  PTRACE(3, "IAX2Con\tIncomingEthernetFrame(IAX2Frame *frame)" << frame->IdString());
-
-  if (iax2Processor->IsCallTerminating()) { 
-    PTRACE(3, "IAX2Con\t***** incoming frame during termination " << frame->IdString());
-     // snuck in here during termination. may be an ack for hangup or other re-transmitted frames
-     IAX2Frame *af = frame->BuildAppropriateFrameType(iax2Processor->GetEncryptionInfo());
-     if (af != NULL) {
-       endpoint.transmitter->PurgeMatchingFullFrames(af);
-       delete af;
-     }
-   }
-   else
-     iax2Processor->IncomingEthernetFrame(frame);
-} 
-
 void IAX2Connection::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 {
   endpoint.transmitter->SendFrame(src);
@@ -210,7 +209,6 @@ BOOL IAX2Connection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedi
  return TRUE;
 }
 
-
 BOOL IAX2Connection::SetConnected()
 {
   PTRACE(3, "IAX2Con\tSetConnected " << *this);
@@ -230,7 +228,6 @@ BOOL IAX2Connection::SetConnected()
 
   return TRUE;
 }
-
 
 void IAX2Connection::OnConnected()
 {
@@ -259,7 +256,6 @@ BOOL IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ )
   return TRUE;
 }
 
-
 void IAX2Connection::OnEstablished()
 {
   phase = EstablishedPhase;
@@ -286,17 +282,19 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
                                  *this);
 }
 
-
 void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
 {
   iax2Processor->PutSoundPacketToNetwork(sound);
 } 
 
-
 BOOL IAX2Connection::SetUpConnection() 
 {
   PTRACE(3, "IAX2Con\tSetUpConnection() ");
   PTRACE(3, "IAX2Con\tWe are making a call");
+  
+  iax2Processor->SetUserName(userName);
+  iax2Processor->SetPassword(password);
+  
   originating = TRUE;
   return iax2Processor->SetUpConnection(); 
 }
@@ -308,8 +306,6 @@ void IAX2Connection::SetCallToken(PString newToken)
   callToken = newToken;
   iax2Processor->SetCallToken(newToken);
 }
-
-
 
 PINDEX IAX2Connection::GetSupportedCodecs() 
 { 
@@ -407,7 +403,7 @@ unsigned int IAX2Connection::ChooseCodec()
 }
 
 BOOL IAX2Connection::IsConnectionOnHold()
-{  
+{
   return (local_hold || remote_hold);
 }
 
@@ -452,7 +448,6 @@ void IAX2Connection::RemoteRetrieveConnection()
   remote_hold = FALSE;    
   endpoint.OnHold(*this);
 }
-
 
 
 /* The comment below is magic for those who use emacs to edit this file. */
