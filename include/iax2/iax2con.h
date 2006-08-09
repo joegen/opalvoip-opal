@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.8  2006/08/09 03:46:39  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.7  2006/06/16 01:47:08  dereksmithies
  *  Get the OnHold features of IAX2 to work correctly.
  *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -67,6 +72,7 @@
 #include <iax2/frame.h>
 #include <iax2/iedata.h>
 #include <iax2/processor.h>
+#include <iax2/callprocessor.h>
 #include <iax2/safestrings.h>
 #include <iax2/sound.h>
 
@@ -91,11 +97,12 @@ class IAX2Connection : public OpalConnection
   /**Construct a connection given the endpoint. 
    */
   IAX2Connection(
-    OpalCall & call,             /*!< Owner call for connection             */
-    IAX2EndPoint & endpoint,      /*!< Owner iax endpoint for connection     */
-    const PString & token,       /*!< Token to identify the connection      */	 	  
-    void *userData,              /*!< Specific user data for this call      */
-    const PString & remoteParty  /*!< Person we are calling                 */
+    OpalCall & call,             ///Owner call for connection
+    IAX2EndPoint & endpoint,     ///Owner iax endpoint for connection
+    const PString & token,       ///Token to identify the connection
+    void *userData,              ///Specific user data for this call
+    const PString & remoteParty, ///Url we are calling or getting called by
+    const PString & remotePartyName = PString::Empty() ///The name of the remote party
   );
   
   /**Destroy this connection, but do it nicely and let attached sound objects
@@ -108,11 +115,11 @@ class IAX2Connection : public OpalConnection
   //@{
   
   /**Handle a received IAX frame. This may be a mini frame or full frame */
-  void IncomingEthernetFrame (IAX2Frame *frame);
+  //void IncomingEthernetFrame (IAX2Frame *frame);
   
   /**Test to see if it is a status query type iax frame (eg lagrq) and handle it. If the frame
      is a status query, and it is handled, return TRUE */
-  static BOOL IsStatusQueryEthernetFrame(IAX2Frame *frame);
+  //static BOOL IsStatusQueryEthernetFrame(IAX2Frame *frame);
     
   /**Return reference to the endpoint class */
   IAX2EndPoint & GetEndPoint() { return endpoint; }
@@ -239,7 +246,7 @@ class IAX2Connection : public OpalConnection
 
   /**Handle a sound packet received from the network.
      Return the media frame (IAX2MiniFrame or IAX2FullFrame) to the audio play stream */
-  IAX2Frame *GetSoundPacketFromNetwork() { return iax2Processor->GetSoundPacketFromNetwork(); }
+  IAX2Frame *GetSoundPacketFromNetwork(DWORD minBuffer, DWORD maxBuffer) { return iax2Processor->GetSoundPacketFromNetwork(minBuffer, maxBuffer); }
 
   /**Get information on Remote class (remote node address & port + source & dest call number.) */
   IAX2Remote & GetRemoteInfo() { return iax2Processor->GetRemoteInfo(); }
@@ -379,7 +386,7 @@ class IAX2Connection : public OpalConnection
       to use for this connection. The selected codec is in the binary
       value defined by FullFrameVoice::AudioSc */
   unsigned int ChooseCodec();
-
+  
   /**Return TRUE if the current connection is on hold.*/
   virtual BOOL IsConnectionOnHold();
   
@@ -394,8 +401,38 @@ class IAX2Connection : public OpalConnection
   
   /**Signal that the remote side has retrieved the connection*/
   void RemoteRetrieveConnection();
+  
+  IAX2CallProcessor * GetCallProcessor() { return iax2Processor; }
+  
+  /**Set the username for when we connect to a remote node
+     we use it as authentication.  Note this must only be
+     used before SetUpConnection is ran.  This is optional
+     because some servers do not required authentication, also
+     if it is not set then the default iax2Ep username 
+     will be used instead.*/
+  void SetUserName(PString & inUserName) { userName = inUserName; };
+  
+  /**Get the username*/
+  PString GetUserName() const { return userName; };
+  
+  /**Set the password for when we connect to a remote node
+     we use it as authentication.  Note this must only be
+     used before SetUpConnection is ran.  This is optional
+     because some servers do not required authentication, also
+     if it is not set then the default iax2Ep password 
+     will be used instead.*/
+  void SetPassword(PString & inPassword) { password = inPassword; };
+  
+  /**Get the password*/
+  PString GetPassword() const { return password; };
 
  protected:
+  
+  /**Username for the iax2CallProcessor*/
+  PString userName;
+  
+  /**Password for the iax2CallProcessor*/
+  PString password;
   
   /**@name Internal, protected methods, which are invoked only by this
      thread*/
@@ -413,13 +450,14 @@ class IAX2Connection : public OpalConnection
   OpalMediaFormatList localMediaFormats;
     
   /**The thread that processes the list of pending frames on this class */
-  IAX2Processor * iax2Processor;
+  IAX2CallProcessor * iax2Processor;
   
   /**Whether the connection is on hold locally */
   BOOL            local_hold;
   
   /**Whether the connection is on hold remotely */
   BOOL            remote_hold;
+
   //@}
 };
 

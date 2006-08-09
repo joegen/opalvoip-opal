@@ -27,6 +27,11 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.5  2006/08/09 03:46:39  dereksmithies
+ * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ * into a callProcessor and a regProcessor class.
+ * Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  * Revision 1.4  2005/08/26 03:26:51  dereksmithies
  * Add some tidyups from Adrian Sietsma.  Many thanks..
  *
@@ -141,11 +146,11 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
       memcpy(buffer, pendingData.GetPointer(), pendingSize);
       length += pendingSize;
       pendingData.SetSize(0);
-      PTRACE(6, "Media\tPick up "<< pendingSize << " from the pending data in our quest to reead " << size);
+      PTRACE(6, "Media\tPick up "<< pendingSize << " from the pending data in our quest to read " << size);
     }
   }
   
-  IAX2Frame *res = connection.GetSoundPacketFromNetwork();
+  IAX2Frame *res = connection.GetSoundPacketFromNetwork(minAudioJitterDelay, maxAudioJitterDelay);
   if ((res == NULL) && (length > 0)) {
     PTRACE(3, "Finished getting media data. Send " << length);
     return TRUE;
@@ -154,19 +159,19 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
   if (res == NULL) {
     do {
       if (connection.GetPhase() == OpalConnection::ReleasedPhase) {
-	PTRACE(3, "Media\tExit now from opal media stream" << *this);
-	return FALSE;
+        PTRACE(3, "Media\tExit now from opal media stream" << *this);
+        return FALSE;
       }
-
+      
       PThread::Sleep(10); //Under windows may not be 10ms..
       PTRACE(6, "Media\tJust slept another 10ms cause read nothing in last iteration ");
-      res = connection.GetSoundPacketFromNetwork();
+      res = connection.GetSoundPacketFromNetwork(minAudioJitterDelay, maxAudioJitterDelay);
       if (res != NULL) {
-	PTRACE(6, "Media\tNow we have data to process " << res->IdString());
+        PTRACE(6, "Media\tNow we have data to process " << res->IdString());
       }
     } while ((res == NULL) && isOpen);
   }
-
+  
   if (res == NULL) {
     PTRACE(3, "Media\tWe have looped and looped, but still have a null");
     return FALSE;
@@ -187,7 +192,7 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
   memcpy(pendingData.GetPointer(), res->GetMediaDataPointer() + bytesToCopy, pendingData.GetSize());
   length = size;
   delete res;
-
+  cout << "done iteration " << PTimer::Tick() << endl;
   PTRACE(3, "Media\tOk, we have to save some to pending... ");
   return TRUE;
 }

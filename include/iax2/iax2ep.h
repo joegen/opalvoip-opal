@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.5  2006/08/09 03:46:39  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.4  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -56,9 +61,12 @@
 
 #include <opal/endpoint.h>
 #include <iax2/iax2con.h>
+#include <iax2/processor.h>
+#include <iax2/regprocessor.h>
 
 class IAX2Receiver;
 class IAX2Transmit;
+class IAX2Processor;
 
 /** A class to take frames from the transmitter, and disperse them to
     the appropriate IAX2Connection class.  This class calls a method in
@@ -173,7 +181,8 @@ class IAX2EndPoint : public OpalEndPoint
 					   OpalCall & call,            /// Owner of connection
 					   const PString & token,      /// token used to identify connection
 					   void * userData,             /// User data for connection
-					   const PString & remoteParty /// Person we are calling.
+					   const PString & remoteParty, /// Url to call or is calling.
+             const PString & remotePartyName = PString::Empty() /// Name to call or is calling.
 					   );
   //@}
   
@@ -193,13 +202,25 @@ class IAX2EndPoint : public OpalEndPoint
      packet is sent (which is after the connections has died. */
   BOOL ConectionForFrameIsAlive(IAX2Frame *f);
   
-  /**Request a new src call number, one that is different to all other src
-     call numbers for this invocation of the program.*/
-  int NextSrcCallNumber();
+  /**Request a new source call number, one that is different to 
+     all other source call numbers for this program.  This method
+     will return -1 if there is no available call number.
+     */
+  int NextSrcCallNumber(IAX2Processor * processor);
+  
+  /**Release a src call so it can be used by new processors so no
+     packets get directed there.*/
+  void ReleaseSrcCallNumber(IAX2Processor * processor);
     
   /**Write the token of all connections in the connectionsActive
      structure to the trace file */
   void ReportStoredConnections();
+  
+  /**Register that the processor has a new destination call number*/
+  void RegisterDestCallNumber(IAX2Processor * processor);
+
+  /**Release a processor's destination call number*/
+  void ReleaseDestCallNumber(IAX2Processor * processor);
 
   /**Report the port in use for IAX calls */
   WORD ListenPortNumber()  { return 4569; }
@@ -231,7 +252,7 @@ class IAX2EndPoint : public OpalEndPoint
   /**Return True if a connection (which matches this Frame ) can be
      found. This check is called prior to transmission of this
      frame. */
-  BOOL ConnectionForFrameIsAlive(IAX2Frame *f);
+  BOOL ProcessorForFrameIsAlive(IAX2Frame *f);
   
   /**Get out sequence number to use on status query frames*/
   PINDEX GetOutSequenceNumberForStatusQuery();
@@ -316,7 +337,67 @@ class IAX2EndPoint : public OpalEndPoint
 
   /**Copy to the supplied OpalMediaList the media formats we support*/
   void CopyLocalMediaFormats(OpalMediaFormatList & list);
-    
+  
+  /**Register with a remote iax2 server.  The host can either be a 
+     hostname or ip address.  The password is optional as some servers
+     may not require it to register.  The requested refresh time is the
+     time that the registration should be refreshed in seconds.  The time
+     must be more than 10 seconds.*/
+  void Register(
+      const PString & host,
+      const PString & username,
+      const PString & password = PString::Empty(),
+      PINDEX requestedRefreshTime = 60
+    );
+  
+  enum RegisteredError {
+    RegisteredFailureUnknown
+  };
+  
+  /**This is a call back if an event related to registration occurs.
+     This callback should return as soon as possible.*/
+  virtual void OnRegistered(
+      const PString & host,
+      const PString & userName,
+      BOOL isFailure,
+      RegisteredError reason = RegisteredFailureUnknown);
+   
+   /**Unregister from a registrar. This function is synchronous so it
+      will block.*/
+  void Unregister(
+      const PString & host,
+      const PString & username);
+      
+  enum UnregisteredError {
+    UnregisteredFailureUnknown
+  };
+      
+  /**This is a call back if an event related to unregistration occurs.
+     This callback should return as soon as possible.  Generally even if
+     a failure occurs when unregistering it should be ignored because it
+     does not matter to much that it couldn't unregister.*/
+  virtual void OnUnregistered(
+      const PString & host,
+      const PString & userName,
+      BOOL isFailure,
+      UnregisteredError reason = UnregisteredFailureUnknown);
+      
+  
+  /**Check if an account is registered or being registered*/
+  BOOL IsRegistered(const PString & host, const PString & username);
+  
+  /**Get the number of accounts that are being registered*/
+  PINDEX GetRegistrationsCount();
+  
+  /**Builds a url*/
+  PString BuildUrl(
+    const PString & host,
+    const PString & userName = PString::Empty(),
+    const PString & extension = PString::Empty(),
+    const PString & context = PString::Empty(),
+    const PString & transport = PString::Empty()
+  );
+  
   //@}
   
  protected:
@@ -361,7 +442,7 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**Pointer to the Processor class which handles special packets (eg lagrq) that have no 
      destination call to handle them. */
-  IAX2Processor * specialPacketHandler;
+  IAX2CallProcessor * specialPacketHandler;
     
   /**For the supplied IAX2Frame, pass it to a connection in the connectionsActive structure.
      If no matching connection is found, return FALSE;
@@ -369,7 +450,7 @@ class IAX2EndPoint : public OpalEndPoint
      If a matching connections is found, give the frame to the
      connection (for the connection to process) and return TRUE;
   */
-  BOOL ProcessInMatchingConnection(IAX2Frame *f);  
+  BOOL ProcessInMatchingProcessor(IAX2Frame *f);  
   
   /**The TokenTranslationDict may need a new entry. Examine
      the list of active connections, to see if any match this frame.
@@ -403,6 +484,39 @@ class IAX2EndPoint : public OpalEndPoint
 
   /**Local copy of the media types we can handle*/
   OpalMediaFormatList localMediaFormats;
+  
+   /**A mutex to protect the registerProcessors collection*/
+  PMutex regProcessorsMutex;
+  
+  /**An array of register processors.  These are created when
+     another class calls register and deleted when another class
+     calls unregister or class destructor is called.  This collection
+     must be protected by the regProcessorsMutex*/
+  PArrayObjects regProcessors;
+  
+  /**This is a mutex guarding srcProcessors.
+     When ever processors is used this mutex should be locked
+     and unlocked when it has finished being used. */
+  PMutex srcProcessorsMutex;
+  
+  /**This is a PDictionary of procssors.  It uses the source
+     call number as the key to find a processor.  The processors
+     contained in this PDictionary are deleted by the IAX2EndPoint
+     or by the a IA2Connection so they must never be deleted directly
+     from inside this PDictionary.*/
+  PDictionary<POrdinalKey, IAX2Processor> srcProcessors;
+  
+  /**This is a mutex guarding destProcessors.
+     When ever destProcessors is used this mutex should be locked
+     and unlocked when it has finished being used. */
+  PMutex destProcessorsMutex;
+  
+  /**This is a PDictionary of procssors.  It uses the destination
+     call number as the key to find a processor.  The processors
+     contained in this PDictionary are deleted by the IAX2EndPoint
+     or by the a IA2Connection so they must never be deleted directly
+     from inside this PDictionary.*/
+  PDictionary<POrdinalKey, IAX2Processor> destProcessors;
 };
 
 #endif // IAX_ENDPOINT_H

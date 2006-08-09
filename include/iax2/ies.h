@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.6  2006/08/09 03:46:39  dereksmithies
+ *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
+ *  into a callProcessor and a regProcessor class.
+ *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
+ *
  *  Revision 1.5  2006/06/16 01:47:08  dereksmithies
  *  Get the OnHold features of IAX2 to work correctly.
  *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -1196,6 +1201,9 @@ class IAX2IeRefresh : public IAX2IeShort
       
   Contents are undefined if the network data is bogus/invalid */
   IAX2IeRefresh(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
+  
+  /** Constructor for an outgoing refresh information element */
+  IAX2IeRefresh(short refreshTime) : IAX2IeShort(refreshTime) { };
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
