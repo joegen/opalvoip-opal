@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2170  2006/08/07 19:46:24  hfriederich
+ * Revision 1.2171  2006/08/10 04:21:40  csoutheren
+ * Applied 1532444 - Small fix for SIPConnection::OnReceivedPDU
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.169  2006/08/07 19:46:24  hfriederich
  * Ensuring that no INVITE is sent if connection is already in releasing phase
  *
  * Revision 2.168  2006/07/30 11:36:09  hfriederich
@@ -1652,9 +1656,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
 void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 {
-  SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
-  PTRACE(4, "SIP\tHandling PDU " << pdu << " (" <<
-            (transaction != NULL ? "with" : "no") << " transaction)");
+  PTRACE(4, "SIP\tHandling PDU " << pdu);
 
   switch (pdu.GetMethod()) {
     case SIP_PDU::Method_INVITE :
@@ -1687,8 +1689,12 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       // Shouldn't have got this!
       break;
     case SIP_PDU::NumMethods :  // if no method, must be response
-      if (transaction != NULL)
-        transaction->OnReceivedResponse(pdu);
+      {
+        PWaitAndSignal m(transactionsMutex);
+        SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
+        if (transaction != NULL)
+          transaction->OnReceivedResponse(pdu);
+      }
       break;
   }
 }
