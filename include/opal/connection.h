@@ -25,8 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2058  2006/08/03 04:57:12  csoutheren
+ * Revision 1.2059  2006/08/10 05:10:30  csoutheren
+ * Various H.323 stability patches merged in from DeimosPrePLuginBranch
+ *
+ * Revision 2.57  2006/08/03 04:57:12  csoutheren
  * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
+ *
+ * Revision 2.56.2.1  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
  *
  * Revision 2.56  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
@@ -745,6 +751,18 @@ class OpalConnection : public PSafeObject
       unsigned sessionId,  ///<  Session ID to search for.
       BOOL source          ///<  Indicates the direction of stream.
     ) const;
+
+    /**
+      Remove the specified media stream from the list of streams for this channel.
+      This will automatically delete the stream if the stream was found in the
+      stream list.
+
+      Returns TRUE if the media stream was removed the list and deleted, else
+      returns FALSE if the media stream was unchanged
+      */
+    BOOL RemoveMediaStream(
+      OpalMediaStream * strm     // media stream to remove
+    );
 
     /**See if the media can bypass the local host.
 
