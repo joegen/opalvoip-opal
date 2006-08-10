@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2070  2006/08/03 04:57:12  csoutheren
+ * Revision 1.2071  2006/08/10 04:26:36  csoutheren
+ * Applied 1534434 - OpalConnection::SetAudioJitterDelay - checking of values
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.69  2006/08/03 04:57:12  csoutheren
  * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
  *
  * Revision 2.68  2006/07/24 14:03:40  csoutheren
@@ -1201,14 +1205,13 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
-  PAssert(minDelay <= 1000 && maxDelay <= 1000, PInvalidParameter);
-
-  if (minDelay < 10)
-    minDelay = 10;
-  minAudioJitterDelay = minDelay;
+  maxDelay = PMAX(10, PMIN(maxDelay, 999));
+  minDelay = PMAX(10, PMIN(minDelay, 999));
 
   if (maxDelay < minDelay)
     maxDelay = minDelay;
+
+  minAudioJitterDelay = minDelay;
   maxAudioJitterDelay = maxDelay;
 }
 
