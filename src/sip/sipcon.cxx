@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2171  2006/08/10 04:21:40  csoutheren
+ * Revision 1.2172  2006/08/10 04:31:59  csoutheren
+ * Applied 1534444 - Lock to streamsMutex in SIPConnection::InitRFC2833Handler
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.170  2006/08/10 04:21:40  csoutheren
  * Applied 1532444 - Small fix for SIPConnection::OnReceivedPDU
  * Thanks to Borko Jandras
  *
@@ -1330,6 +1334,7 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 
 void SIPConnection::InitRFC2833Handler()
 {
+  PWaitAndSignal m(streamsMutex);
   if (rfc2833Handler != NULL) {
     for (int i = 0; i < mediaStreams.GetSize(); i++) {
       OpalMediaStream & mediaStream = mediaStreams[i];
@@ -1344,7 +1349,7 @@ void SIPConnection::InitRFC2833Handler()
 	  }
 	}
       }
-	}
+    }
   }
 }
 
