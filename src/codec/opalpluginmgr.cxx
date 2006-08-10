@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2002  2006/07/24 14:03:39  csoutheren
+ * Revision 1.2003  2006/08/10 06:05:32  csoutheren
+ * Fix problem with key type in plugin factory
+ *
+ * Revision 2.1  2006/07/24 14:03:39  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 1.1.2.15  2006/05/16 07:03:09  csoutheren
@@ -349,11 +352,11 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     , encoderCodec(_encoderCodec)
     {
       // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(*this, this);
+      OpalMediaFormatFactory::Register(PString(*this), this);
     }
     ~OpalPluginAudioMediaFormat()
     {
-      OpalMediaFormatFactory::Unregister(*this);
+      OpalMediaFormatFactory::Unregister(PString(*this));
     }
     PluginCodec_Definition * encoderCodec;
 };
@@ -411,11 +414,11 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
       PopulateMediaFormatOptions(_encoderCodec, *this);
 
       // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(*this, this);
+      OpalMediaFormatFactory::Register(PString(*this), this);
     }
     ~OpalPluginVideoMediaFormat()
     {
-      OpalMediaFormatFactory::Unregister(*this);
+      OpalMediaFormatFactory::Unregister(PString(*this));
     }
     PluginCodec_Definition * encoderCodec;
 };
