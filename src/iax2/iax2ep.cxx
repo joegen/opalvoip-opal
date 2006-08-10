@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.12  2006/08/10 04:44:03  csoutheren
+ * Added new IAX2 files to VC 2005 project
+ * Fixed compile warning on Windows
+ *
  * Revision 1.11  2006/08/09 03:46:39  dereksmithies
  * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  * into a callProcessor and a regProcessor class.
@@ -493,7 +497,7 @@ BOOL IAX2EndPoint::Initialise()
 
   PTRACE(6, "IAX2EndPoint\tInitialise()");
   PRandom rand;
-  rand.SetSeed(PTime().GetTimeInSeconds() + 1);
+  rand.SetSeed((DWORD)(PTime().GetTimeInSeconds() + 1));
   callnumbs = PRandom::Number() % 32000;
   
   sock = new PUDPSocket(ListenPortNumber());
@@ -748,19 +752,19 @@ void IAX2EndPoint::Register(
 }
 
 void IAX2EndPoint::OnRegistered(
-      const PString & host,
-      const PString & username,
-      BOOL isFailure,
-      RegisteredError reason)
+      const PString & /*host*/,
+      const PString & /*username*/,
+      BOOL /*isFailure*/,
+      RegisteredError /*reason*/)
 {
   PTRACE(2, "registration event occured");
 }
 
 void IAX2EndPoint::OnUnregistered(
-      const PString & host,
-      const PString & username,
-      BOOL isFailure,
-      UnregisteredError reason)
+      const PString & /*host*/,
+      const PString & /*username*/,
+      BOOL /*isFailure*/,
+      UnregisteredError /*reason*/)
 {
   PTRACE(2, "unregistration event occured");
 }

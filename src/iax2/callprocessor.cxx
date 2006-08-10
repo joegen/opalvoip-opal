@@ -27,6 +27,10 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.2  2006/08/10 04:44:03  csoutheren
+ * Added new IAX2 files to VC 2005 project
+ * Fixed compile warning on Windows
+ *
  * Revision 1.1  2006/08/09 03:46:39  dereksmithies
  * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  * into a callProcessor and a regProcessor class.
@@ -1264,7 +1268,7 @@ IAX2Frame * IAX2CallProcessor::GetSoundPacketFromNetwork(DWORD minBuffer, DWORD 
   IAX2Frame * mostRecentSound = (IAX2Frame*)soundReadFromEthernet.GetAt(soundReadFromEthernet.GetSize() - 1);
   DWORD mostRecentTimeStamp = mostRecentSound->GetTimeStamp();
   
-  while (true) {
+  for (;;) {
     //get the oldest packet
     IAX2Frame * newSound = soundReadFromEthernet.GetLastFrame();        
     DWORD checkTimeStamp = newSound->GetTimeStamp();
