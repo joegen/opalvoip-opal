@@ -25,8 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2047  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2048  2006/08/10 05:10:31  csoutheren
+ * Various H.323 stability patches merged in from DeimosPrePLuginBranch
+ *
+ * Revision 2.46  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
+ *
+ * Revision 2.45.2.1  2006/08/03 08:01:15  csoutheren
+ * Added additional locking for media stream list to remove crashes in very busy applications
  *
  * Revision 2.45  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
@@ -391,27 +397,30 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   BOOL createdOne = FALSE;
 
-  {
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (conn != &connection) {
-        if (conn->SetConnected())
-          ok = TRUE;
-      }
+  if (!LockReadWrite())
+    return FALSE;
 
-      OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
-      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
-        createdOne = TRUE;
-      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
-        createdOne = TRUE;
-      if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
-        createdOne = TRUE;
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      if (conn->SetConnected())
+        ok = TRUE;
     }
+
+    OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
+      createdOne = TRUE;
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+      createdOne = TRUE;
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
+      createdOne = TRUE;
   }
 
   if (ok && createdOne) {
     for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
+
+  UnlockReadWrite();
 
   return ok;
 }
