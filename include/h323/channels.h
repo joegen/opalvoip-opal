@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2015  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2016  2006/08/10 05:10:30  csoutheren
+ * Various H.323 stability patches merged in from DeimosPrePLuginBranch
+ *
+ * Revision 2.14.6.1  2006/08/09 12:49:21  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
+ * Revision 2.14  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.13  2005/09/04 06:23:38  rjongbloed
@@ -362,9 +368,16 @@ class H323Channel : public PObject
     BOOL IsOpen() const { return opened && !terminating; }
 
     /**Get the media stream associated with this logical channel.
+
+       If the argument is set to TRUE, the mediaStream is about to be deleted
+       so all internal references to the mediaStream must be removed.
+
        The default behaviour returns NULL.
       */
-    virtual OpalMediaStream * GetMediaStream() const = 0;
+    virtual OpalMediaStream * GetMediaStream(
+      BOOL deleted = FALSE
+    ) const = 0;
+
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
@@ -578,14 +591,14 @@ class H323UnidirectionalChannel : public H323Channel
     /**Get the media stream associated with this logical channel.
        The default behaviour returns NULL.
       */
-    virtual OpalMediaStream * GetMediaStream() const;
+    virtual OpalMediaStream * GetMediaStream(BOOL deleted = FALSE) const;
   //@}
 
   protected:
     PDECLARE_NOTIFIER(OpalMediaCommand, H323UnidirectionalChannel, OnMediaCommand);
 
     BOOL              receiver;
-    OpalMediaStream * mediaStream;
+    mutable OpalMediaStream * mediaStream;
 };
 
 
