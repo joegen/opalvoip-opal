@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2061  2006/06/30 06:49:31  csoutheren
+ * Revision 1.2062  2006/08/10 05:10:33  csoutheren
+ * Various H.323 stability patches merged in from DeimosPrePLuginBranch
+ *
+ * Revision 2.60.2.1  2006/08/09 12:49:22  csoutheren
+ * Improve stablity under heavy H.323 load
+ *
+ * Revision 2.60  2006/06/30 06:49:31  csoutheren
  * Fixed disable of video code to use correct #define
  *
  * Revision 2.59  2006/06/30 01:05:51  csoutheren
@@ -493,7 +499,7 @@ BOOL OpalManager::ClearCall(const PString & token,
 
   {
     // Find the call by token, callid or conferenceid
-    PSafePtr<OpalCall> call = activeCalls.FindWithLock(token);
+    PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
     if (call == NULL)
       return FALSE;
 
