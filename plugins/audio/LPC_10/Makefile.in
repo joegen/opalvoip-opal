@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2006/08/10 04:10:20  csoutheren
+# Applied 1537305 - fixed build problems on 64 bit machines
+# Thanks to Stanislav Brabec
+#
 # Revision 1.2  2006/08/01 13:06:49  rjongbloed
 # Added a raft of unvalidated audio codecs from OpenH323 tree
 #
@@ -40,7 +44,7 @@
 # Added LPC10 codec
 #
 #
-STDCCFLAGS += -fPIC
+STDCCFLAGS += -fPIC $(OPTCCFLAGS)
 
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
