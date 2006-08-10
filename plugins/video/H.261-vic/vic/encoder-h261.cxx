@@ -41,6 +41,9 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
+ * Revision 1.4  2006/08/10 07:05:46  csoutheren
+ * Fixed compile warnings on VC 2005
+ *
  * Revision 1.3  2006/08/01 13:02:40  rjongbloed
  * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
  *
@@ -332,12 +335,12 @@ H261Encoder::make_level_map(int q, u_int fthresh)
 		if (q)
 			l /= q;
 		lm[i] = l;
-		lm[-i & 0xfff] = -l;
+		lm[-i & 0xfff] = -(int)l;
 
 		if (l <= fthresh)
 			l = 0;
 		flm[i] = l;
-		flm[-i & 0xfff] = -l;
+		flm[-i & 0xfff] = -(int)l;
 	}
 	return (lm);
 }

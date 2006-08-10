@@ -28,6 +28,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.3  2006/08/10 07:05:46  csoutheren
+ * Fixed compile warnings on VC 2005
+ *
  * Revision 1.2  2006/07/31 09:09:23  csoutheren
  * Checkin of validated codec used during development
  *
@@ -65,7 +68,11 @@ PLUGIN_CODEC_IMPLEMENT(FFMPEG_H263)
 #ifdef _WIN32
 #include <windows.h>
 #include <malloc.h>
+#define STRCMPI  _strcmpi
+#else
+#define STRCMPI  strcmpi
 #endif
+
 #include <string.h>
 
 extern "C" {
@@ -1365,7 +1372,7 @@ static int decoder_set_options(
     int i;
     int frameWidth = 0;
     for (i = 0; options[i] != NULL; i += 2) {
-      if (strcmpi(options[i], "Frame Width") == 0)
+      if (STRCMPI(options[i], "Frame Width") == 0)
         frameWidth = atoi(options[i+1]);
     }
     //context->videoDecoder->fmt_ = (frameWidth == QCIF_WIDTH) ? IT_QCIF : IT_CIF;

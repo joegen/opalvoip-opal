@@ -34,6 +34,9 @@
 /************ Change log
  *
  * $Log: dct.cxx,v $
+ * Revision 1.3  2006/08/10 07:05:46  csoutheren
+ * Fixed compile warnings on VC 2005
+ *
  * Revision 1.2  2006/07/31 09:09:21  csoutheren
  * Checkin of validated codec used during development
  *
@@ -362,7 +365,7 @@ void fdct_fold_q(const int* in, float* out)
 		double v = first_stage[i >> 3];
 		v *= first_stage[i & 7];
 		double q = double(in[i]);
-		out[i] = v / q;
+		out[i] = (float)(v / q);
 	}
 }
 
