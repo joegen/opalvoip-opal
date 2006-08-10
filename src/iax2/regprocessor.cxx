@@ -103,7 +103,7 @@ void IAX2RegProcessor::ProcessLists()
   }  
 }
 
-void IAX2RegProcessor::ProcessNetworkFrame(IAX2MiniFrame * src)
+void IAX2RegProcessor::ProcessNetworkFrame(IAX2MiniFrame * /*src*/)
 {
   PTRACE(1, "unexpected Mini Frame");
 }
@@ -179,7 +179,7 @@ void IAX2RegProcessor::ProcessIaxCmdRegAuth(IAX2FullFrameProtocol * /*src*/)
 
   f->AppendIe(new IAX2IeUserName(userName));
   Authenticate(f, password); 
-  f->AppendIe(new IAX2IeRefresh(registrationRefreshTime));
+  f->AppendIe(new IAX2IeRefresh((short)registrationRefreshTime));
   
   TransmitFrameToRemoteEndpoint(f);
   
@@ -228,7 +228,7 @@ void IAX2RegProcessor::ProcessIaxCmdRegRej(IAX2FullFrameProtocol * src)
   SendAckFrame(src);
 }
 
-void IAX2RegProcessor::ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol * src)
+void IAX2RegProcessor::ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol * /*src*/)
 {
   PTRACE(3, "ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol * src)");
   
@@ -256,7 +256,7 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegAck(IAX2FullFrameProtocol * src)
   Terminate();
 }
 
-void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol * src)
+void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol * /*src*/)
 {
   PTRACE(3, "ProcessIaxCmdRej(IAX2FullFrameProtocol * src)");
   
