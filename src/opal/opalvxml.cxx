@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2012  2004/07/17 09:45:06  rjongbloed
+ * Revision 1.2013  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.11  2004/07/17 09:45:06  rjongbloed
  * Fixed problem if Close() is called before Open(), would shut down connection.
  *
  * Revision 2.10  2004/06/30 12:48:23  rjongbloed
@@ -153,7 +158,7 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
   if (tts == NULL) {
     PFactory<PTextToSpeech>::KeyList_T engines = PFactory<PTextToSpeech>::GetKeyList();
     if (engines.size() != 0) {
-    PString name;
+      PFactory<PTextToSpeech>::Key_T name;
 #ifdef _WIN32
       name = "Microsoft SAPI";
       if (std::find(engines.begin(), engines.end(), name) == engines.end())

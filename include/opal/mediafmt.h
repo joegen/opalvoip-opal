@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2042  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2043  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.41  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.40  2006/07/14 04:22:42  csoutheren
@@ -58,7 +63,12 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2042  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2043  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.41  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.37.4.6  2006/04/26 05:05:59  csoutheren
@@ -1091,7 +1101,7 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
 
-typedef PFactory<OpalMediaFormat> OpalMediaFormatFactory;
+typedef PFactory<OpalMediaFormat, std::string> OpalMediaFormatFactory;
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300
