@@ -20,6 +20,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.3  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
  * Revision 1.2  2006/07/31 09:09:17  csoutheren
  * Checkin of validated codec used during development
  *
@@ -207,13 +212,18 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   float floatData[WIDE_SAMPLES_PER_FRAME];
   short * sampleBuffer = (short *)to;
 
+  if (*toLen != codec->samplesPerFrame*2)
+    return 0;
+
+  int status = 0;
+
   // if this is a packet loss concealment frame, generate interpolated data
   // else decode the real data
   if (*flag & PluginCodec_CoderSilenceFrame)
-    speex_decode(context->coderState, NULL, floatData);
+    status = speex_decode(context->coderState, NULL, floatData);
   else {
     speex_bits_read_from(context->bits, (char *)from, *fromLen); 
-    speex_decode(context->coderState, context->bits, floatData);     
+    status = speex_decode(context->coderState, context->bits, floatData);     
   }
 
   // convert float to PCM

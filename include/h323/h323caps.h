@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2017  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2018  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.16  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.15.4.3  2006/04/10 06:24:29  csoutheren
@@ -2483,67 +2488,9 @@ class H323Capabilities : public PObject
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if 0
-
-/**Registration of a capability name.
-   Exactly one static instance of this class is created so that the system can
-   create the approriate H323Capability descendant given a string name.
-  */
-
-class H323CapabilityRegistration : public PCaselessString
-{
-    PCLASSINFO(H323CapabilityRegistration, PCaselessString);
-  public:
-    H323CapabilityRegistration(
-      const char * name
-    );
-    virtual H323Capability * Create(const H323EndPoint & ep) const = 0;
-
-  protected:
-    static PMutex & GetMutex();
-    static H323CapabilityRegistration * registeredCapabilitiesListHead;
-
-    H323CapabilityRegistration * link;
-
-  friend class H323Capability;
-  friend class H323Capabilities;
-  friend class OpalDynaCodecDLL;
-};
-
-/*
-Old capability registration macros based on list
-*/
-
-#define H323_REGISTER_CAPABILITY_FUNCTION(cls, name, epvar) \
-class cls##_Registration : public H323CapabilityRegistration { \
-  public: \
-    cls##_Registration() : H323CapabilityRegistration(name) { } \
-    H323Capability * Create(const H323EndPoint & ep) const; \
-} cls##_Registration_Instance; \
-H323Capability * cls##_Registration::Create(const H323EndPoint & epvar) const
-
-#define H323_NO_EP_VAR
-
-#define H323_REGISTER_CAPABILITY(cls, name) \
-  H323_REGISTER_CAPABILITY_FUNCTION(cls, name, H323_NO_EP_VAR) \
-  { return new cls; }
-
-#define H323_REGISTER_CAPABILITY_EP(cls, name) \
-  H323_REGISTER_CAPABILITY_FUNCTION(cls, name, ep) \
-  { return new cls(ep); }
-
-
-#define H323_STATIC_LOAD_REGISTER_CAPABILITY(cls) \
-  class cls##_Registration; \
-  extern cls##_Registration cls##_Registration_Instance; \
-  static cls##_Registration * cls##_Registration_Static_Library_Loader = &cls##_Registration_Instance
-
-#endif  // 0
-
-/*
-New capability registration macros based on abstract factories
-*/
-typedef PFactory<H323Capability> H323CapabilityFactory;
+/* New capability registration macros based on abstract factories
+ */
+typedef PFactory<H323Capability, std::string> H323CapabilityFactory;
 
 #define H323_REGISTER_CAPABILITY(cls, capName)   static H323CapabilityFactory::Worker<cls> cls##Factory(capName, true); \
 
@@ -2552,31 +2499,6 @@ typedef PFactory<H323Capability> H323CapabilityFactory;
   { \
     public: \
       cls() \
-
-
-/*
-
-#define H323_DEFINE_CAPABILITY(cls, capName, fmtName) \
-class cls : public H323Capability { \
-  public: \
-    cls() : H323Capability() { } \
-    PString GetFormatName() const \
-    { return fmtName; } \
-}; \
-H323_REGISTER_CAPABILITY(cls, capName) \
-
-#define H323_DEFINE_CAPABILITY_FROM(cls, ancestor, capName, fmtName) \
-class cls : public ancestor { \
-  public: \
-    cls() : ancestor() { } \
-    PString GetFormatName() const \
-    { return fmtName; } \
-}; \
-H323_REGISTER_CAPABILITY(cls, capName) \
-
-*/
-
-
 
 #endif // __OPAL_H323CAPS_H
 

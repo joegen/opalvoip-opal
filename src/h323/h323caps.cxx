@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2026  2006/08/10 06:30:53  csoutheren
+ * Revision 1.2027  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.25  2006/08/10 06:30:53  csoutheren
  * Fix problem with key type in plugin factory
  *
  * Revision 2.24  2006/07/24 14:03:40  csoutheren
@@ -500,7 +505,7 @@ H323Capability * H323Capability::Create(const PString & name)
   return NULL;
 */
 
-  H323Capability * cap = H323CapabilityFactory::CreateInstance(PString(name));
+  H323Capability * cap = H323CapabilityFactory::CreateInstance(name);
   if (cap == NULL)
     return NULL;
 

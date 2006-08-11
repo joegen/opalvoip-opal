@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2003  2006/08/10 06:05:32  csoutheren
+ * Revision 1.2004  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.2  2006/08/10 06:05:32  csoutheren
  * Fix problem with key type in plugin factory
  *
  * Revision 2.1  2006/07/24 14:03:39  csoutheren
@@ -352,11 +357,11 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     , encoderCodec(_encoderCodec)
     {
       // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(PString(*this), this);
+      OpalMediaFormatFactory::Register(*this, this);
     }
     ~OpalPluginAudioMediaFormat()
     {
-      OpalMediaFormatFactory::Unregister(PString(*this));
+      OpalMediaFormatFactory::Unregister(*this);
     }
     PluginCodec_Definition * encoderCodec;
 };
@@ -414,11 +419,11 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
       PopulateMediaFormatOptions(_encoderCodec, *this);
 
       // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(PString(*this), this);
+      OpalMediaFormatFactory::Register(*this, this);
     }
     ~OpalPluginVideoMediaFormat()
     {
-      OpalMediaFormatFactory::Unregister(PString(*this));
+      OpalMediaFormatFactory::Unregister(*this);
     }
     PluginCodec_Definition * encoderCodec;
 };
@@ -596,7 +601,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
       // for a decoder, this mean that we need to create a silence frame
       // which is easy - ask the decoder, or just create silence
       if (!isEncoder) {
-        unsigned int length = codec->bytesPerFrame;
+        unsigned int length = codec->samplesPerFrame*2;
         if ((codec->flags & PluginCodec_DecodeSilence) == 0)
           memset(buffer, 0, length); 
         else {
@@ -611,7 +616,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
       // for an encoder, we encode silence but set the flag so it can do something special if need be
       else {
         unsigned int length = codec->bytesPerFrame;
-        if ((codec->flags & PluginCodec_DecodeSilence) == 0) {
+        if ((codec->flags & PluginCodec_EncodeSilence) == 0) {
           PShortArray silence(codec->samplesPerFrame);
           memset(silence.GetPointer(), 0, codec->samplesPerFrame*sizeof(short));
           unsigned silenceLen = codec->samplesPerFrame * sizeof(short);
@@ -1352,6 +1357,7 @@ class H323H263PluginCapability : public H323VideoPluginCapability
 
 /////////////////////////////////////////////////////////////////////////////
 
+/*
 class H323StaticPluginCodec
 {
   public:
@@ -1359,6 +1365,7 @@ class H323StaticPluginCodec
     virtual PluginCodec_GetAPIVersionFunction Get_GetAPIFn() = 0;
     virtual PluginCodec_GetCodecFunction Get_GetCodecFn() = 0;
 };
+*/
 
 PMutex & OpalPluginCodecManager::GetMediaFormatMutex()
 {
@@ -1385,8 +1392,8 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
 
   // instantiate all of the static codecs
   {
-    PFactory<H323StaticPluginCodec>::KeyList_T keyList = PFactory<H323StaticPluginCodec>::GetKeyList();
-    PFactory<H323StaticPluginCodec>::KeyList_T::const_iterator r;
+    H323StaticPluginCodecFactory::KeyList_T keyList = H323StaticPluginCodecFactory::GetKeyList();
+    H323StaticPluginCodecFactory::KeyList_T::const_iterator r;
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       H323StaticPluginCodec * instance = PFactory<H323StaticPluginCodec>::CreateInstance(*r);
       if (instance == NULL) {
@@ -1452,7 +1459,7 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
 }
 
 void OpalPluginCodecManager::RegisterStaticCodec(
-      const char * PTRACE_PARAM(name),
+      const H323StaticPluginCodecFactory::Key_T & PTRACE_PARAM(name),
       PluginCodec_GetAPIVersionFunction /*getApiVerFn*/,
       PluginCodec_GetCodecFunction getCodecFn)
 {
@@ -2556,7 +2563,7 @@ class H323StaticPluginCodec_##name : public H323StaticPluginCodec \
     PluginCodec_GetCodecFunction Get_GetCodecFn() \
     { return &Opal_StaticCodec_##name##_GetCodecs; } \
 }; \
-static PFactory<H323StaticPluginCodec>::Worker<H323StaticPluginCodec_##name > static##name##CodecFactory( #name ); \
+static H323StaticPluginCodecFactory::Worker<H323StaticPluginCodec_##name > static##name##CodecFactory( #name ); \
 
 #ifdef H323_EMBEDDED_GSM
 
