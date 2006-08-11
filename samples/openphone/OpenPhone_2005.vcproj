@@ -79,7 +79,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opal.lib ptlib.lib wxmsw26_xrc.lib wxmsw26_html.lib wxmsw26_adv.lib wxmsw26_core.lib wxbase26_xml.lib wxbase26.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wxexpat.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="opals.lib ptlibs.lib wxmsw26_xrc.lib wxmsw26_html.lib wxmsw26_adv.lib wxmsw26_core.lib wxbase26_xml.lib wxbase26.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib user32.lib ole32.lib advapi32.lib shell32.lib"
 				OutputFile=".\Release/OpenPhone.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -177,7 +177,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="opald.lib ptlibd.lib wxmsw26d_xrc.lib wxmsw26d_html.lib wxmsw26d_adv.lib wxmsw26d_core.lib wxbase26d_xml.lib wxbase26d.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wxexpatd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib"
+				AdditionalDependencies="opalsd.lib ptlibsd.lib wxmsw26d_xrc.lib wxmsw26d_html.lib wxmsw26d_adv.lib wxmsw26d_core.lib wxbase26d_xml.lib wxbase26d.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib oleaut32.lib"
 				OutputFile=".\Debug/OpenPhone.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
@@ -216,11 +216,9 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
-			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 	</References>
 	<Files>
