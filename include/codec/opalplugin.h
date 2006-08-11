@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2002  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2003  2006/08/11 07:52:00  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.1  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 1.1.2.4  2006/04/24 09:09:37  csoutheren
@@ -207,6 +212,10 @@ enum PluginCodec_Flags {
   PluginCodec_DecodeSilenceMask      = 0x0100,
   PluginCodec_NoDecodeSilence        = 0x0000,
   PluginCodec_DecodeSilence          = 0x0100,
+
+  PluginCodec_EncodeSilenceMask      = 0x0200,
+  PluginCodec_NoEncodeSilence        = 0x0000,
+  PluginCodec_EncodeSilence          = 0x0200,
 
   PluginCodec_BitsPerSamplePos       = 12,
   PluginCodec_BitsPerSampleMask      = 0xf000,
