@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2002  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2003  2006/08/11 07:52:01  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.1  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 1.1.2.3  2006/04/06 01:21:16  csoutheren
@@ -59,6 +64,16 @@
 
 class H323Capability;
 
+class H323StaticPluginCodec
+{
+  public:
+    virtual ~H323StaticPluginCodec() { }
+    virtual PluginCodec_GetAPIVersionFunction Get_GetAPIFn() = 0;
+    virtual PluginCodec_GetCodecFunction Get_GetCodecFn() = 0;
+};
+
+typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
+
 class OpalPluginCodecManager : public PPluginModuleManager
 {
   PCLASSINFO(OpalPluginCodecManager, PPluginModuleManager);
@@ -66,7 +81,7 @@ class OpalPluginCodecManager : public PPluginModuleManager
     OpalPluginCodecManager(PPluginManager * pluginMgr = NULL);
     ~OpalPluginCodecManager();
 
-    void RegisterStaticCodec(const char * name,
+    void RegisterStaticCodec(const H323StaticPluginCodecFactory::Key_T & name,
                              PluginCodec_GetAPIVersionFunction getApiVerFn,
                              PluginCodec_GetCodecFunction getCodecFn);
 
