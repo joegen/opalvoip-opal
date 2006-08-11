@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2023  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2024  2006/08/11 07:52:02  csoutheren
+ * Fix problem with media format factory in VC 2005
+ * Fixing problems with Speex codec
+ * Remove non-portable usages of PFactory code
+ *
+ * Revision 2.22  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.21  2006/06/30 06:49:02  csoutheren
@@ -403,7 +408,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   output.SetPayloadSize(inputLength/inputBytesPerFrame*outputBytesPerFrame);
 
   while (inputLength > 0) {
-    PINDEX consumed = inputBytesPerFrame;
+    PINDEX consumed = PMIN(inputBytesPerFrame, inputLength);
     PINDEX created  = outputBytesPerFrame;
 
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
