@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.29  2006/08/11 07:19:37  rjongbloed
+ * Fixed DevStudio 2005 warning
+ *
  * Revision 1.28  2006/07/31 10:57:52  rjongbloed
  * Added play of WAV file on incoming calls.
  *
@@ -463,6 +466,12 @@ class OptionsDialog : public wxDialog
 class MyMedia
 {
 public:
+  MyMedia()
+    : sourceProtocol(NULL),
+      preferenceOrder(-1), // -1 indicates disabled
+      dirty(false)
+  { }
+
   MyMedia(
     const char * source,
     const PString & format
