@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.18  2006/08/07 19:15:42  dsandras
+ * Revision 1.2121.2.19  2006/08/11 07:30:27  dsandras
+ * Backported patch from HEAD.
+ *
+ * Revision 2.120.2.18  2006/08/07 19:15:42  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.120.2.17  2006/08/07 19:13:28  dsandras
@@ -1105,7 +1108,6 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   if (rtpSessions.GetSession(sessionID) == NULL)
     return NULL;
 
-
   return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
 				endpoint.GetManager().GetMinAudioJitterDelay(),
 				endpoint.GetManager().GetMaxAudioJitterDelay());
@@ -1404,9 +1406,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
 void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
 {
-  SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
-  PTRACE(4, "SIP\tHandling PDU " << pdu << " (" <<
-            (transaction != NULL ? "with" : "no") << " transaction)");
+  PTRACE(4, "SIP\tHandling PDU " << pdu);
 
   switch (pdu.GetMethod()) {
     case SIP_PDU::Method_INVITE :
@@ -1436,8 +1436,11 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       // Shouldn't have got this!
       break;
     case SIP_PDU::NumMethods :  // if no method, must be response
-      if (transaction != NULL)
-        transaction->OnReceivedResponse(pdu);
+      {
+        SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
+        if (transaction != NULL)
+          transaction->OnReceivedResponse(pdu);
+      }
       break;
   }
 }
@@ -1660,8 +1663,20 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
           endpoint.OnHold(*this);
         }
       }
-
+    }
+    
+    // If it is a RE-INVITE that doesn't correspond to a HOLD, then
+    // Close all media streams, they will be reopened.
+    if (!IsConnectionOnHold()) {
+      PWaitAndSignal m(streamsMutex);
+      GetCall().RemoveMediaStreams();
+      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID);
+      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID);
+    }
+ 
+    if (originalInvite->HasSDP()) {
       // Try to send SDP media description for audio and video
+      SDPSessionDescription & sdpIn = originalInvite->GetSDP();
       sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
       sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
     }
@@ -1676,13 +1691,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
     }
 
-    // If it is a RE-INVITE that doesn't correspond to a HOLD, then
-    // Close all media streams, they will be reopened.
-    if (!IsConnectionOnHold()) {
-      PWaitAndSignal m(streamsMutex);
-      GetCall().RemoveMediaStreams();
-    }
-
+  
     // send the 200 OK response
     PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
     SIPURL contact = endpoint.GetLocalURL(*transport, userName);
