@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2024  2006/08/11 07:52:02  csoutheren
+ * Revision 1.2025  2006/08/11 08:09:24  csoutheren
+ * Fix incorrect handling of variable output frame sizes - Speex plugin now works :)
+ *
+ * Revision 2.23  2006/08/11 07:52:02  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -405,7 +408,10 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
     return ConvertSilentFrame (outputPtr);
   }
 
-  output.SetPayloadSize(inputLength/inputBytesPerFrame*outputBytesPerFrame);
+  // set maximum output payload size
+  output.SetPayloadSize((inputLength + inputBytesPerFrame - 1)/inputBytesPerFrame*outputBytesPerFrame);
+
+  PINDEX outLen = 0;
 
   while (inputLength > 0) {
     PINDEX consumed = PMIN(inputBytesPerFrame, inputLength);
@@ -415,10 +421,13 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
       return FALSE;
 
     outputPtr   += created;
+    outLen      += created;
     inputPtr    += consumed;
     inputLength -= consumed;
   }
 
+  // set actual output payload size
+  output.SetPayloadSize(outLen);
 
   return TRUE;
 }
