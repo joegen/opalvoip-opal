@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2129  2006/08/12 04:09:24  csoutheren
+ * Revision 1.2130  2006/08/12 04:20:39  csoutheren
+ * Removed Windows warning and fixed timeout in SIP PING code
+ *
+ * Revision 2.128  2006/08/12 04:09:24  csoutheren
  * Applied 1538497 - Add the PING method
  * Thanks to Paul Rolland
  *
@@ -649,12 +652,12 @@ void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
   ep.OnMessageFailed(registrationAddress, reason);
 }
 
-SIPPingInfo::SIPPingInfo (SIPEndPoint & endpoint, const PString & name, const PString & b)
-  :SIPInfo(endpoint, name)
+SIPPingInfo::SIPPingInfo (SIPEndPoint & endpoint, const PString & name, int exp)
+  : SIPInfo(endpoint, name)
 {
-  expire = 500;
-  body = PString::Empty();
-  SetRegistered(TRUE);
+  expire = exp;
+  if (expire == 0)
+    expire = ep.GetNotifierTimeToLive().GetSeconds();
 }
 
 SIPTransaction * SIPPingInfo::CreateTransaction(OpalTransport &t, BOOL /*unregister*/)
