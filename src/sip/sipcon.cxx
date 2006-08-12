@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2172  2006/08/10 04:31:59  csoutheren
+ * Revision 1.2173  2006/08/12 03:23:33  csoutheren
+ * Fixed sending SIP INFO application/dtmf
+ *
+ * Revision 2.171  2006/08/10 04:31:59  csoutheren
  * Applied 1534444 - Lock to streamsMutex in SIPConnection::InitRFC2833Handler
  * Thanks to Drazen Dimoti
  *
@@ -2684,6 +2687,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
   SIP_PDU::StatusCodes status = SIP_PDU::Failure_UnsupportedMediaType;
   SIPMIMEInfo & mimeInfo = pdu.GetMIME();
   PString contentType = mimeInfo.GetContentType();
+
   if (contentType *= ApplicationDTMFRelayKey) {
     PStringArray lines = pdu.GetEntityBody().Lines();
     PINDEX i;
@@ -2705,7 +2709,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
       OnUserInputTone(tone, duration == 0 ? 100 : tone);
     status = SIP_PDU::Successful_OK;
   }
-  else if (contentType *= ApplicationDTMFRelayKey) {
+  else if (contentType *= ApplicationDTMFKey) {
     OnUserInputString(pdu.GetEntityBody().Trim());
     status = SIP_PDU::Successful_OK;
   }
