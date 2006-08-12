@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2109  2006/08/03 08:09:52  csoutheren
+ * Revision 1.2110  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.108  2006/08/03 08:09:52  csoutheren
  * Removed another incorrect double quote
  *
  * Revision 2.107  2006/07/29 08:31:19  hfriederich
@@ -436,7 +440,8 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "NOTIFY",
   "REFER",
   "MESSAGE",
-  "INFO"
+  "INFO",
+  "PING"
 };
 
 static struct {
@@ -2463,6 +2468,36 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      address.AsQuotedString(),
                      myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
+                     id,
+                     endpoint.GetNextCSeq(),
+                     viaAddress);
+  mime.SetContentType("text/plain;charset=UTF-8");
+
+  entityBody = body;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+SIPPing::SIPPing(SIPEndPoint & ep,
+                 OpalTransport & trans,
+                 const SIPURL & address,
+                 const PString & body)
+  : SIPTransaction(ep, trans)
+{
+  PString id = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
+  OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
+    
+  // Build the correct From field
+  PString displayName = ep.GetDefaultDisplayName();
+  PString partyName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).AsString(); 
+
+  SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
+  
+  SIP_PDU::Construct(Method_PING,
+                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
+                     address.AsQuotedString(),
+                     // myAddress.AsQuotedString()+";tag="+OpalGloballyUniqueID().AsString(),
+                     "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      id,
                      endpoint.GetNextCSeq(),
                      viaAddress);

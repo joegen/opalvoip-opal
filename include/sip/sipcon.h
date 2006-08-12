@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2052  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2053  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.51  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -449,6 +453,10 @@ class SIPConnection : public OpalConnection
     /**Handle an incoming INFO PDU
       */
     virtual void OnReceivedINFO(SIP_PDU & pdu);
+
+    /**Handle an incoming PING PDU
+      */
+    virtual void OnReceivedPING(SIP_PDU & pdu);
 
     /**Handle an incoming BYE PDU
       */

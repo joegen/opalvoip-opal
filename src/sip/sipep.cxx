@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2128  2006/07/29 08:47:34  hfriederich
+ * Revision 1.2129  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.127  2006/07/29 08:47:34  hfriederich
  * Abort the authentication process after a given number of unsuccessful authentication attempts to prevent infinite authentication attempts. Use not UINT_MAX as GetExpires() default to fix incorrect detection of registration/unregistration
  *
  * Revision 2.126  2006/07/14 04:22:43  csoutheren
@@ -642,6 +646,30 @@ void SIPMessageInfo::OnSuccess()
 
 void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
 { 
+  ep.OnMessageFailed(registrationAddress, reason);
+}
+
+SIPPingInfo::SIPPingInfo (SIPEndPoint & endpoint, const PString & name, const PString & b)
+  :SIPInfo(endpoint, name)
+{
+  expire = 500;
+  body = PString::Empty();
+  SetRegistered(TRUE);
+}
+
+SIPTransaction * SIPPingInfo::CreateTransaction(OpalTransport &t, BOOL /*unregister*/)
+{
+  SIPPing * message = new SIPPing(ep, t, registrationAddress, body);
+  registrationID = message->GetMIME().GetCallID();
+  return message;
+}
+
+void SIPPingInfo::OnSuccess()
+{
+}
+
+void SIPPingInfo::OnFailed(SIP_PDU::StatusCodes reason)
+{
   ep.OnMessageFailed(registrationAddress, reason);
 }
 
@@ -1538,7 +1566,6 @@ BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
   return TRUE;
 }
 
-
 BOOL SIPEndPoint::Register(const PString & host,
                            const PString & username,
 			   const PString & authName,
@@ -1549,6 +1576,18 @@ BOOL SIPEndPoint::Register(const PString & host,
   if (timeout == 0)
     timeout = GetRegistrarTimeToLive().GetSeconds(); 
   return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
+}
+
+BOOL SIPEndPoint::Ping(const PString & host,
+                           const PString & username,
+                          const PString & authName,
+                           const PString & password,
+                          const PString & realm,
+                          int timeout)
+{
+  if (timeout == 0)
+    timeout = GetRegistrarTimeToLive().GetSeconds(); 
+  return TransmitSIPInfo(SIP_PDU::Method_PING, host, username, authName, password, realm, PString::Empty(), timeout);
 }
 
 
@@ -1572,7 +1611,6 @@ BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, i
     timeout = GetNotifierTimeToLive().GetSeconds(); 
   return TransmitSIPInfo (SIP_PDU::Method_SUBSCRIBE, host, username, timeout);
 }
-
 
 BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
 				  const PString & host,
@@ -1642,18 +1680,25 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
       info->SetBody(body);         // Adjust the body if required 
     info->SetExpire(timeout);      // Adjust the expire field
   } 
+
   // otherwise create a new request with this method type
   else {
-    if (m == SIP_PDU::Method_REGISTER)
-      info = new SIPRegisterInfo(*this, adjustedUsername, authName, password, timeout);
-    else if (m == SIP_PDU::Method_SUBSCRIBE) {
-      info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
-    }
-    else if (m == SIP_PDU::Method_MESSAGE)
-      info = new SIPMessageInfo(*this, adjustedUsername, body);
-    if (info == NULL) {
-      PTRACE(1, "SIP\tUnknown SIP request method " << m);
-      return FALSE;
+    switch (m) {
+      case SIP_PDU::Method_REGISTER:
+        info = new SIPRegisterInfo(*this, adjustedUsername, authName, password, timeout);
+        break;
+      case SIP_PDU::Method_SUBSCRIBE:
+        info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
+        break;
+      case SIP_PDU::Method_PING:
+        info = new SIPPingInfo(*this, adjustedUsername, timeout);
+        break;
+      case SIP_PDU::Method_MESSAGE:
+        info = new SIPMessageInfo(*this, adjustedUsername, body);
+        break;
+      default:
+        PTRACE(1, "SIP\tUnknown SIP request method " << m);
+        return FALSE;
     }
     activeSIPInfo.Append(info);
   }
