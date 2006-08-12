@@ -5,7 +5,7 @@ SUBDIRS = audio/GSM0610 \
 	  audio/G726 \
 	  audio/IMA_ADPCM \
 	  audio/gsm-amr \
-#	  video/H.261-vic \
+	  video/H.261-vic \
 #	  video/H.263-ffmpeg
 
 all debug opt both \
