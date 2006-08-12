@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.4  2006/08/12 10:59:14  rjongbloed
+ * Added Linux build for H.261 plug-in.
+ *
  * Revision 1.3  2006/08/10 07:05:45  csoutheren
  * Fixed compile warnings on VC 2005
  *
@@ -88,11 +91,11 @@ PLUGIN_CODEC_IMPLEMENT(VIC_H261)
 
 #include <stdlib.h>
 #ifdef _WIN32
-//#include <windows.h>
-#include <malloc.h>
-#define STRCMPI  _strcmpi
+  #include <malloc.h>
+  #define STRCMPI  _strcmpi
 #else
-#define STRCMPI  strcmpi
+  #include <semaphore.h>
+  #define STRCMPI  strcasecmp
 #endif
 #include <string.h>
 
@@ -220,10 +223,10 @@ class RTPFrame
     inline void SetLong(int offs, unsigned long n)
     {
       if (offs + 4 <= packetLen) {
-        packet[offs + 0] = (BYTE)((n >> 24) & 0xff);
-        packet[offs + 1] = (BYTE)((n >> 16) & 0xff);
-        packet[offs + 2] = (BYTE)((n >> 8) & 0xff);
-        packet[offs + 3] = (BYTE)(n & 0xff);
+        packet[offs + 0] = (u_char)((n >> 24) & 0xff);
+        packet[offs + 1] = (u_char)((n >> 16) & 0xff);
+        packet[offs + 2] = (u_char)((n >> 8) & 0xff);
+        packet[offs + 3] = (u_char)(n & 0xff);
       }
     }
 
@@ -237,16 +240,16 @@ class RTPFrame
     inline void SetShort(int offs, unsigned short n) 
     { 
       if (offs + 2 <= packetLen) {
-        packet[offs + 0] = (BYTE)((n >> 8) & 0xff);
-        packet[offs + 1] = (BYTE)(n & 0xff);
+        packet[offs + 0] = (u_char)((n >> 8) & 0xff);
+        packet[offs + 1] = (u_char)(n & 0xff);
       }
     }
 
     inline int GetPacketLen() const                    { return packetLen; }
     inline unsigned GetVersion() const                 { return (packetLen < 1) ? 0 : (packet[0]>>6)&3; }
     inline bool GetExtension() const                   { return (packetLen < 1) ? 0 : (packet[0]&0x10) != 0; }
-    inline bool GetMarker()  const                     { return (packetLen < 2) ? FALSE : ((packet[1]&0x80) != 0); }
-    inline unsigned char GetPayloadType() const        { return (packetLen < 2) ? FALSE : (packet[1] & 0x7f);  }
+    inline bool GetMarker()  const                     { return (packetLen < 2) ? 0 : ((packet[1]&0x80) != 0); }
+    inline unsigned char GetPayloadType() const        { return (packetLen < 2) ? 0 : (packet[1] & 0x7f);  }
     inline unsigned short GetSequenceNumber() const    { return GetShort(2); }
     inline unsigned long GetTimestamp() const          { return GetLong(4); }
     inline unsigned long GetSyncSource() const         { return GetLong(8); }
@@ -363,7 +366,7 @@ class H261EncoderContext
       frameWidth = frameHeight = 0;
       maxOutputSize = 0;
       videoEncoder = new P64Encoder(BEST_ENCODER_QUALITY, DEFAULT_FILL_LEVEL);
-      forceIFrame = FALSE;
+      forceIFrame = false;
       videoQuality = 10;
     }
 
@@ -380,7 +383,7 @@ class H261EncoderContext
       maxOutputSize = (frameWidth * frameHeight * 12) / 8;
     }
 
-    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
+    int EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
     {
       WaitAndSignal m(mutex);
 
@@ -440,7 +443,7 @@ class H261EncoderContext
       // force I-frame, if requested
       if (forceIFrame || (flags & PluginCodec_CoderForceIFrame) != 0) {
         videoEncoder->FastUpdatePicture();
-        forceIFrame = FALSE;
+        forceIFrame = false;
       }
 
       // preprocess the data
@@ -509,7 +512,7 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
                                    unsigned int * flag)
 {
   H261EncoderContext * context = (H261EncoderContext *)_context;
-  return context->EncodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
+  return context->EncodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
 }
 
 static int encoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
@@ -545,8 +548,8 @@ class H261DecoderContext
 {
   public:
     P64Decoder * videoDecoder;
-    WORD expectedSequenceNumber;
-    BYTE * rvts;
+    u_short expectedSequenceNumber;
+    u_char * rvts;
     int ndblk, nblk;
     int now;
     bool packetReceived;
@@ -562,7 +565,7 @@ class H261DecoderContext
       nblk = ndblk = 0;
       rvts = NULL;
       now = 1;
-      packetReceived = FALSE;
+      packetReceived = false;
       frameWidth = frameHeight = 0;
 
       // Create the actual decoder
@@ -577,7 +580,7 @@ class H261DecoderContext
       delete videoDecoder;
     }
 
-    int DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags)
+    int DecodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
     {
       WaitAndSignal mutex(mutex);
 
@@ -590,14 +593,14 @@ class H261DecoderContext
       flags = 0;
 
       // Check for lost packets to help decoder
-      bool lostPreviousPacket = FALSE;
+      bool lostPreviousPacket = false;
       if (expectedSequenceNumber != 0 && expectedSequenceNumber != srcRTP.GetSequenceNumber()) {
-        lostPreviousPacket = TRUE;
+        lostPreviousPacket = true;
         //PTRACE(3,"H261\tDetected loss of one video packet. "
         //      << expectedSequenceNumber << " != "
         //      << src.GetSequenceNumber() << " Will recover.");
       }
-      expectedSequenceNumber = (WORD)(srcRTP.GetSequenceNumber()+1);
+      expectedSequenceNumber = (u_short)(srcRTP.GetSequenceNumber()+1);
 
       videoDecoder->mark(now);
       if (!videoDecoder->decode(srcRTP.GetPayloadPtr(), srcRTP.GetPayloadSize(), lostPreviousPacket)) {
@@ -614,7 +617,7 @@ class H261DecoderContext
 
         nblk = (frameWidth * frameHeight) / 64;
         delete [] rvts;
-        rvts = new BYTE[nblk];
+        rvts = new u_char[nblk];
         memset(rvts, 0, nblk);
         videoDecoder->marks(rvts);
       }
@@ -627,11 +630,11 @@ class H261DecoderContext
       ndblk = videoDecoder->ndblk();
 
       int wraptime = now ^ 0x80;
-      BYTE * ts = rvts;
+      u_char * ts = rvts;
       int k;
       for (k = nblk; --k >= 0; ++ts) {
         if (*ts == wraptime)
-          *ts = (BYTE)now;
+          *ts = (u_char)now;
       }
 
       now = (now + 1) & 0xff;
@@ -703,7 +706,7 @@ static int codec_decoder(const struct PluginCodec_Definition *,
                                    unsigned int * flag)
 {
   H261DecoderContext * context = (H261DecoderContext *)_context;
-  return context->DecodeFrames((const BYTE *)from, *fromLen, (BYTE *)to, *toLen, *flag);
+  return context->DecodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
 }
 
 static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
