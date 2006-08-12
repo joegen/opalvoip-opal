@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2052  2006/08/03 04:57:12  csoutheren
+ * Revision 1.2053  2006/08/12 03:55:39  csoutheren
+ * Applied 1538066 - Make H323 StartControlNegotiations virtual
+ * Thanks to Adam Butcher
+ *
+ * Revision 2.51  2006/08/03 04:57:12  csoutheren
  * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
  *
  * Revision 2.50  2006/06/27 13:07:37  csoutheren
@@ -1347,13 +1351,13 @@ class H323Connection : public OpalConnection
        If there is no control channel open then this will tunnel the PDU
        into the signalling channel.
       */
-    BOOL WriteControlPDU(
+    virtual BOOL WriteControlPDU(
       const H323ControlPDU & pdu
     );
 
     /**Start control channel negotiations.
       */
-    BOOL StartControlNegotiations();
+    virtual BOOL StartControlNegotiations();
 
     /**Handle reading data on the control channel.
      */
