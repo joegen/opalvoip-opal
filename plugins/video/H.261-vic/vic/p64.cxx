@@ -54,6 +54,9 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
+ * Revision 1.4  2006/08/12 10:59:14  rjongbloed
+ * Added Linux build for H.261 plug-in.
+ *
  * Revision 1.3  2006/08/01 13:02:40  rjongbloed
  * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
  *
@@ -1199,7 +1202,7 @@ bool P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
 
   if (gob > 12) {
     //count(STAT_BAD_HEADER);
-    return FALSE; // bad header value, what to do?
+    return false; // bad header value, what to do?
   }
   /*XXX don't rely on this*/
   if (gob != 0) {
@@ -1219,16 +1222,16 @@ bool P64Decoder::decode(const unsigned char *hdrPtr, int buffLen,
 		if (v != SYM_STARTCODE) {
 			err("expected GOB startcode");
 			++bad_bits_;
-			return (FALSE);
+			return (false);
 		}
 		gob = parse_gob_hdr(ebit);
 		if (gob < 0) {
 			/*XXX*/
 			++bad_bits_;
-			return (FALSE);
+			return (false);
 		}
 	}
-	return (TRUE);
+	return (true);
 }
 
 FullP64Decoder::FullP64Decoder()

@@ -41,6 +41,9 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
+ * Revision 1.5  2006/08/12 10:59:14  rjongbloed
+ * Added Linux build for H.261 plug-in.
+ *
  * Revision 1.4  2006/08/10 07:05:46  csoutheren
  * Fixed compile warnings on VC 2005
  *
@@ -119,7 +122,7 @@
 
 H261Encoder::H261Encoder(Transmitter *T) : Encoder(T),
         bs_(0), bc_(0), ngob_(12),
-        gDone(TRUE) // must initialize to TRUE
+        gDone(true) // must initialize to true
 {
  	for (int q = 0; q < 32; ++q) {
 		llm_[q] = 0;
@@ -783,7 +786,7 @@ int H261PixelEncoder::PreIncEncodeSetup(const VideoFrame *vf)
   if (!SameSize(vf))
     SetSize(vf->width, vf->height);
   gVf = vf;
-  gPicture = TRUE; //if TRUE, send picture layer header
+  gPicture = true; //if true, send picture layer header
   gNbytes = 0;  //number of bytes in previous packet
   gDbase = 0; //offset from gData where valid data starts
   nbb_ = 0; //# of valid bits in bb_
@@ -792,16 +795,16 @@ int H261PixelEncoder::PreIncEncodeSetup(const VideoFrame *vf)
   gStep = cif_ ? 1 : 2; //Macro Block step size
   gGobMax = cif_ ? 12 : 5; //how many GOB per frame
   sbit_ = 0;
-  gSendGOBhdr = TRUE; //must send GOB hdr before sending MB
-  gGOBhdrNxt = TRUE; //will start out with GOB header
-  //because gGOBhdrNxt == TRUE, no need to initialize the following 2 header variables:
+  gSendGOBhdr = true; //must send GOB hdr before sending MB
+  gGOBhdrNxt = true; //will start out with GOB header
+  //because gGOBhdrNxt == true, no need to initialize the following 2 header variables:
   //gHdrGOBN; // next GOB number for last encoded MB
   //gHdrMBAP; // address of last macroblock encoded in previous packet 1..32
   //mba_= 0; // should not be necessary to initialize this
   gHdrQUANT = lq_; // QUANT in effect for next MB to be encoded
   gNxtMBA = 1; // address of next macroblock to be considered for encoding 1..33
   gNxtGOB = 1; // start encoding at GOB 1
-  gDone = FALSE;
+  gDone = false;
   return 1;
 } 
 
@@ -820,7 +823,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
   // TESTING
   if (!gGOBhdrNxt && ((33 <= gHdrMBAP) || (0 >= gHdrMBAP))) {
     //cerr << __FILE__<< "(" << __LINE__ << ") " <<
-    //  "illegal gHdrMBAP value when gGOBhdrNxt is FALSE = " << gHdrMBAP << endl;
+    //  "illegal gHdrMBAP value when gGOBhdrNxt is false = " << gHdrMBAP << endl;
     gHdrMBAP = 1;
   }
   //  unsigned t1 = sbit_ << 29;
@@ -865,7 +868,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
     gcoff = coff_[0];
     gblkno = blkno_[0];
     gline = 11;
-    gPicture = FALSE;
+    gPicture = false;
   }
   unsigned bitLimit = 8*(RTP_MTU - sizeof(h261hdr));
   u_char* bbase = gData + gDbase;
@@ -889,7 +892,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
         mquant_ = lq_;
         PUT_BITS(mquant_ << 1, 6, nbb_, bb_, bc_);
         mba_= 0;
-        gSendGOBhdr = FALSE;
+        gSendGOBhdr = false;
       }
       /** If the conditional replenishment algorithm
       * has decided to send any of the blocks of
@@ -909,11 +912,11 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
       if (gNxtMBA > 33) {
         gNxtGOB += gStep;
         if (gNxtGOB > gGobMax) {
-          gDone = TRUE;
+          gDone = true;
           break; // out of while(), done encoding frame
         }
         gNxtMBA = 1;
-        gSendGOBhdr = TRUE; // must send GOB hdr before sending MB
+        gSendGOBhdr = true; // must send GOB hdr before sending MB
         gloff = loff_[gNxtGOB-1];
         gcoff = coff_[gNxtGOB-1];
         gblkno = blkno_[gNxtGOB-1];
@@ -933,7 +936,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
     }
   }
   else 
-    gDone = TRUE;
+    gDone = true;
   // have full packet now, finish & set up for next packet
   // break packet at end of previous MB unless this is end of frame
   // flush bits from bb_
@@ -944,7 +947,7 @@ void H261PixelEncoder::IncEncodeAndGetPacket(
       previousBitCount = totalBits;
     }
     else { // need another packet to finish frame
-      gDone = FALSE;
+      gDone = false;
     }
   }
   gNbytes = previousBitCount / 8;
