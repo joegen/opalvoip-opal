@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2173  2006/08/12 03:23:33  csoutheren
+ * Revision 1.2174  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.172  2006/08/12 03:23:33  csoutheren
  * Fixed sending SIP INFO application/dtmf
  *
  * Revision 2.171  2006/08/10 04:31:59  csoutheren
@@ -1691,6 +1695,9 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_INFO :
       OnReceivedINFO(pdu);
       break;
+    case SIP_PDU::Method_PING :
+      OnReceivedPING(pdu);
+      break;
     case SIP_PDU::Method_MESSAGE :
     case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_REGISTER :
@@ -2719,6 +2726,15 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
   SIP_PDU response(pdu, status);
   SendPDU(response, pdu.GetViaAddress(endpoint));
 }
+
+
+void SIPConnection::OnReceivedPING(SIP_PDU & pdu)
+{
+  PTRACE(1, "SIP\tReceived PING");
+  SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+  SendPDU(response, pdu.GetViaAddress(endpoint));
+}
+
 
 OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() const
 {
