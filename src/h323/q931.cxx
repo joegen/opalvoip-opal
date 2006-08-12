@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2012  2004/11/07 12:45:50  rjongbloed
+ * Revision 1.2013  2006/08/12 04:00:28  csoutheren
+ * Added additional Q.931 message types
+ * Thanks to ii7@bk.ru
+ *
+ * Revision 2.11  2004/11/07 12:45:50  rjongbloed
  * Minor change to parsing of bearer capabilities, thanks Michal Zygmuntowicz
  *
  * Revision 2.10  2004/11/07 12:22:14  rjongbloed
@@ -698,6 +702,34 @@ PString Q931::GetMessageTypeName() const
       return "Information";
     case NationalEscapeMsg :
       return "Escape";
+    case NotifyMsg :
+      return "NotifyMsg";
+    case ResumeMsg :
+      return "ResumeMsg";
+    case ResumeAckMsg :
+      return "ResumeAckMsg";
+    case ResumeRejectMsg :
+      return "ResumeRejectMsg";
+    case SuspendMsg :
+      return "SuspendMsg";
+    case SuspendAckMsg :
+      return "SuspendAckMsg";
+    case SuspendRejectMsg :
+      return "SuspendRejectMsg";
+    case UserInformationMsg :
+      return "UserInformationMsg";
+    case DisconnectMsg :
+      return "DisconnectMsg";
+    case ReleaseMsg :
+      return "ReleaseMsg";
+    case RestartMsg :
+      return "RestartMsg";
+    case RestartAckMsg :
+      return "RestartAckMsg";
+    case SegmentMsg :
+      return "SegmentMsg";
+    case CongestionCtrlMsg :
+      return "CongestionCtrlMsg";
     default :
       break;
   }
