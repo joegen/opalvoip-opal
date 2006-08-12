@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2043  2006/07/14 07:37:21  csoutheren
+ * Revision 1.2044  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.42  2006/07/14 07:37:21  csoutheren
  * Implement qop authentication.
  *
  * Revision 2.41  2006/07/14 04:22:43  csoutheren
@@ -537,6 +541,7 @@ class SIP_PDU : public PObject
       Method_REFER,
       Method_MESSAGE,
       Method_INFO,
+      Method_PING,
       NumMethods
     };
 
@@ -1006,10 +1011,28 @@ class SIPOptions : public SIPTransaction
     
   public:
     SIPOptions(
-      SIPEndPoint & ep,
+        SIPEndPoint & ep,
       OpalTransport & trans,
-      const SIPURL & address
+       const SIPURL & address
     );
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+/* This is a PING PDU, with a body
+ */
+class SIPPing : public SIPTransaction
+{
+  PCLASSINFO(SIPPing, SIPTransaction);
+
+  public:
+    SIPPing(
+               SIPEndPoint & ep,
+             OpalTransport & trans,
+              const SIPURL & address,
+              const PString & body = PString::Empty()
+   );
 };
 
 

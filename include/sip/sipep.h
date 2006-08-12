@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2062  2006/07/29 08:49:25  hfriederich
+ * Revision 1.2063  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.61  2006/07/29 08:49:25  hfriederich
  * Abort the authentication process after a given number of unsuccessful authentication attempts to prevent infinite authentication attempts. Use not UINT_MAX as GetExpires() default to fix incorrect detection of registration/unregistration
  *
  * Revision 2.60  2006/07/24 14:03:39  csoutheren
@@ -438,6 +442,17 @@ class SIPMessageInfo : public SIPInfo
     virtual void OnFailed (SIP_PDU::StatusCodes);
 };
 
+class SIPPingInfo : public SIPInfo
+{
+  PCLASSINFO(SIPPingInfo, SIPInfo);
+  public:
+    SIPPingInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & body);
+    virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
+    virtual SIP_PDU::Methods GetMethod ()
+    { return SIP_PDU::Method_MESSAGE; }
+    virtual void OnSuccess ();
+    virtual void OnFailed (SIP_PDU::StatusCodes);
+};
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -659,7 +674,7 @@ class SIPEndPoint : public OpalEndPoint
     virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
 
 
-    /**Callback called when MWI is received
+    /**Callback for SIP message received
      */
     virtual void OnMessageReceived (const SIPURL & from,
 				    const PString & body);
@@ -678,6 +693,17 @@ class SIPEndPoint : public OpalEndPoint
      * occur with the "best guess" of authentication parameters.
      */
     BOOL Register(
+      const PString & host,
+      const PString & username = PString::Empty(),
+      const PString & autName = PString::Empty(),
+      const PString & password = PString::Empty(),
+      const PString & authRealm = PString::Empty(),
+      int timeout = 0
+    );
+
+    /** Send a SIP PING to the remote host
+      */
+    BOOL Ping(
       const PString & host,
       const PString & username = PString::Empty(),
       const PString & autName = PString::Empty(),
