@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2063  2006/08/12 04:09:24  csoutheren
+ * Revision 1.2064  2006/08/12 04:20:39  csoutheren
+ * Removed Windows warning and fixed timeout in SIP PING code
+ *
+ * Revision 2.62  2006/08/12 04:09:24  csoutheren
  * Applied 1538497 - Add the PING method
  * Thanks to Paul Rolland
  *
@@ -446,7 +449,7 @@ class SIPPingInfo : public SIPInfo
 {
   PCLASSINFO(SIPPingInfo, SIPInfo);
   public:
-    SIPPingInfo (SIPEndPoint & ep, const PString & adjustedUsername, const PString & body);
+    SIPPingInfo (SIPEndPoint & ep, const PString & adjustedUsername, int expire);
     virtual SIPTransaction * CreateTransaction (OpalTransport &, BOOL);
     virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
