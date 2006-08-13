@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.13  2006/08/13 02:59:47  rjongbloed
+ * Fixed warning on no trace build
+ *
  * Revision 1.12  2006/08/10 04:44:03  csoutheren
  * Added new IAX2 files to VC 2005 project
  * Fixed compile warning on Windows
@@ -267,8 +270,9 @@ int IAX2EndPoint::NextSrcCallNumber(IAX2Processor * processor)
 void IAX2EndPoint::ReleaseSrcCallNumber(IAX2Processor * processor)
 {
   PWaitAndSignal m(srcProcessorsMutex);
-  if (!srcProcessors.RemoveAt(processor->GetRemoteInfo().SourceCallNumber()))
+  if (!srcProcessors.RemoveAt(processor->GetRemoteInfo().SourceCallNumber())) {
     PTRACE(1, "OnProcessorSourceCallEnd could not remove the processor from the dictionary");
+  }
 }
 
 void IAX2EndPoint::RegisterDestCallNumber(IAX2Processor * processor)
