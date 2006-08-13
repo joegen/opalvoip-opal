@@ -1766,6 +1766,9 @@
 				Name="IAX2 Sources"
 				Filter="">
 				<File
+					RelativePath="..\iax2\callprocessor.cxx">
+				</File>
+				<File
 					RelativePath="..\iax2\frame.cxx">
 				</File>
 				<File
@@ -1788,6 +1791,9 @@
 				</File>
 				<File
 					RelativePath="..\iax2\receiver.cxx">
+				</File>
+				<File
+					RelativePath="..\iax2\regprocessor.cxx">
 				</File>
 				<File
 					RelativePath="..\iax2\remote.cxx">
@@ -2077,6 +2083,9 @@
 				Name="IAX2 Headers"
 				Filter="">
 				<File
+					RelativePath="..\..\include\iax2\callprocessor.h">
+				</File>
+				<File
 					RelativePath="..\..\include\iax2\causecode.h">
 				</File>
 				<File
@@ -2101,10 +2110,16 @@
 					RelativePath="..\..\include\iax2\ies.h">
 				</File>
 				<File
+					RelativePath="..\..\include\iax2\overview.h">
+				</File>
+				<File
 					RelativePath="..\..\include\iax2\processor.h">
 				</File>
 				<File
 					RelativePath="..\..\include\iax2\receiver.h">
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\regprocessor.h">
 				</File>
 				<File
 					RelativePath="..\..\include\iax2\remote.h">
