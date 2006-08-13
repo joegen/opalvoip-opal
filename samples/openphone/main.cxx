@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.5  2006/08/13 04:41:39  rjongbloed
+ * Fixed saving of ring device name
+ *
  * Revision 1.4  2006/07/31 10:57:52  rjongbloed
  * Added play of WAV file on incoming calls.
  *
@@ -1773,6 +1776,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(GeneralGroup);
   SAVE_FIELD(Username, m_manager.SetDefaultUserName);
   SAVE_FIELD(DisplayName, m_manager.SetDefaultDisplayName);
+  SAVE_FIELD(RingSoundDeviceName, m_manager.m_RingSoundDeviceName = );
   SAVE_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName = );
   SAVE_FIELD(AutoAnswer, m_manager.m_autoAnswer = );
 #if P_EXPAT
