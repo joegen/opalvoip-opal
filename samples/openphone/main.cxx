@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.6  2006/08/13 08:33:36  rjongbloed
+ * Completed bandwidth configuration from options dialog.
+ *
  * Revision 1.5  2006/08/13 04:41:39  rjongbloed
  * Fixed saving of ring device name
  *
@@ -552,6 +555,8 @@ bool MyManager::Initialise()
   ////////////////////////////////////////
   // Networking fields
   config->SetPath(NetworkingGroup);
+  if (config->Read(BandwidthKey, &value1))
+    h323EP->SetInitialBandwidth(value1);
   if (config->Read(TCPPortBaseKey, &value1) && config->Read(TCPPortMaxKey, &value2))
     SetTCPPorts(value1, value2);
   if (config->Read(UDPPortBaseKey, &value1) && config->Read(UDPPortMaxKey, &value2))
@@ -1471,6 +1476,8 @@ void MyManager::OnOptions(wxCommandEvent& /*event*/)
 }
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+  EVT_CHOICE(XRCID("BandwidthClass"), OptionsDialog::BandwidthClass)
+
   ////////////////////////////////////////
   // Audio fields
   EVT_COMBOBOX(XRCID(LineInterfaceDeviceKey), OptionsDialog::SelectedLID)
@@ -1532,7 +1539,24 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // Networking fields
-  INIT_FIELD(Bandwidth, m_manager.h323EP->GetInitialBandwidth());
+  int bandwidth = m_manager.h323EP->GetInitialBandwidth();
+  m_Bandwidth.sprintf(bandwidth%10 == 0 ? "%u" : "%u.%u", bandwidth/10, bandwidth%10);
+  FindWindowByName(BandwidthKey)->SetValidator(wxTextValidator(wxFILTER_NUMERIC, &m_Bandwidth));
+  int bandwidthClass;
+  if (bandwidth <= 144)
+    bandwidthClass = 0;
+  else if (bandwidth <= 288)
+    bandwidthClass = 1;
+  else if (bandwidth <= 640)
+    bandwidthClass = 2;
+  else if (bandwidth <= 1280)
+    bandwidthClass = 3;
+  else if (bandwidth <= 15000)
+    bandwidthClass = 4;
+  else
+    bandwidthClass = 5;
+  ((wxChoice *)FindWindowByName("BandwidthClass"))->SetSelection(bandwidthClass);
+
   INIT_FIELD(TCPPortBase, m_manager.GetTCPPortBase());
   INIT_FIELD(TCPPortMax, m_manager.GetTCPPortMax());
   INIT_FIELD(UDPPortBase, m_manager.GetUDPPortBase());
@@ -1767,6 +1791,10 @@ bool OptionsDialog::TransferDataFromWindow()
   if (!wxDialog::TransferDataFromWindow())
     return false;
 
+  double floatBandwidth;
+  if (!m_Bandwidth.ToDouble(&floatBandwidth) || floatBandwidth < 10)
+    return false;
+
   ::wxBeginBusyCursor();
 
   wxConfigBase * config = wxConfig::Get();
@@ -1786,7 +1814,9 @@ bool OptionsDialog::TransferDataFromWindow()
   ////////////////////////////////////////
   // Networking fields
   config->SetPath(NetworkingGroup);
-  SAVE_FIELD(Bandwidth, m_manager.h323EP->SetInitialBandwidth);
+  int adjustedBandwidth = (int)(floatBandwidth*10);
+  m_manager.h323EP->SetInitialBandwidth(adjustedBandwidth);
+  config->Write(BandwidthKey, adjustedBandwidth);
   SAVE_FIELD2(TCPPortBase, TCPPortMax, m_manager.SetTCPPorts);
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
@@ -2002,8 +2032,14 @@ void OptionsDialog::PlaySoundFile(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // Networking fields
 
-void OptionsDialog::BandwidthClass(wxCommandEvent & /*event*/)
+void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 {
+  static const char * bandwidthClasses[] = {
+    "14.4", "28.8", "64.0", "128", "1500", "10000"
+  };
+
+  m_Bandwidth = bandwidthClasses[event.GetSelection()];
+  TransferDataToWindow();
 }
 
 

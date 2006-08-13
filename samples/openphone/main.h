@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.30  2006/08/13 08:33:36  rjongbloed
+ * Completed bandwidth configuration from options dialog.
+ *
  * Revision 1.29  2006/08/11 07:19:37  rjongbloed
  * Fixed DevStudio 2005 warning
  *
@@ -330,7 +333,7 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Networking fields
-    int       m_Bandwidth;
+    wxString  m_Bandwidth;
     int       m_TCPPortBase;
     int       m_TCPPortMax;
     int       m_UDPPortBase;
