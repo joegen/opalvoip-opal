@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="h261vic"
-	ProjectGUID="{E6897206-9765-4B73-9A98-DAC5787814CE}"
+	ProjectGUID="{E3B2ADAC-1BD0-45B6-A00E-DE010CB75903}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
