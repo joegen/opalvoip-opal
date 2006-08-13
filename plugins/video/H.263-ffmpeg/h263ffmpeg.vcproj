@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="7.10"
 	Name="h263ffmpeg"
-	ProjectGUID="{E6897206-9765-4B73-9A98-DAC5787814CE}"
+	ProjectGUID="{4D3EE295-5953-498D-AEDF-9C8792AB5723}"
 	SccProjectName=""
 	SccLocalPath="">
 	<Platforms>
