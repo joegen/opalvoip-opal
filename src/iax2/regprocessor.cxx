@@ -33,8 +33,9 @@ IAX2RegProcessor::IAX2RegProcessor(
   registrationState = registrationStart;
   
   PIPSocket::Address ip;
-  if (!PIPSocket::GetHostAddress(host, ip))
+  if (!PIPSocket::GetHostAddress(host, ip)) {
      PTRACE(0, "Failed to lookup " << host);
+  }
 
   remote.SetRemoteAddress(ip);
   
