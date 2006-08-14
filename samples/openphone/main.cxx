@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.7  2006/08/14 22:39:27  rjongbloed
+ * Added aslias to config dialog
+ *
  * Revision 1.6  2006/08/13 08:33:36  rjongbloed
  * Completed bandwidth configuration from options dialog.
  *
@@ -245,6 +248,7 @@ static const char CodecsGroup[] = "/Codecs";
 static const char CodecNameKey[] = "Name";
 
 static const char H323Group[] = "/H.323";
+static const char H323AliasesGroup[] = "/H.323/Aliases";
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
 DEF_FIELD(GatekeeperIdentifier);
@@ -721,6 +725,17 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // H.323 fields
+  config->SetPath(H323AliasesGroup);
+  wxString entryName;
+  long entryIndex;
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      wxString alias;
+      if (config->Read(entryName, &alias) && !alias.empty())
+        h323EP->AddAliasName(alias.c_str());
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
+
   config->SetPath(H323Group);
   if (config->Read(DTMFSendModeKey, &value1) && value1 >= 0 && value1 < H323Connection::NumSendUserInputModes)
     h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)value1);
@@ -1504,6 +1519,13 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_LIST_ITEM_DESELECTED(XRCID("Routes"), OptionsDialog::DeselectedRoute)
   EVT_TEXT(XRCID("RoutePattern"), OptionsDialog::ChangedRouteInfo)
   EVT_TEXT(XRCID("RouteDestination"), OptionsDialog::ChangedRouteInfo)
+
+  ////////////////////////////////////////
+  // H.323 fields
+  EVT_LISTBOX(XRCID("Aliases"), OptionsDialog::SelectedAlias)
+  EVT_BUTTON(XRCID("AddAlias"), OptionsDialog::AddAlias)
+  EVT_BUTTON(XRCID("RemoveAlias"), OptionsDialog::RemoveAlias)
+  EVT_TEXT(XRCID("NewAlias"), OptionsDialog::ChangedNewAlias)
 END_EVENT_TABLE()
 
 
@@ -1688,6 +1710,16 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   ////////////////////////////////////////
   // H.323 fields
+  m_AddAlias = (wxButton *)FindWindowByName("AddAlias");
+  m_AddAlias->Disable();
+  m_RemoveAlias = (wxButton *)FindWindowByName("RemoveAlias");
+  m_RemoveAlias->Disable();
+  m_NewAlias = (wxTextCtrl *)FindWindowByName("NewAlias");
+  m_Aliases = (wxListBox *)FindWindowByName("Aliases");
+  PStringList aliases = m_manager.h323EP->GetAliasNames();
+  for (i = 1; i < aliases.GetSize(); i++)
+    m_Aliases->Append((const char *)aliases[i]);
+
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
   INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != FALSE);
@@ -1905,6 +1937,17 @@ bool OptionsDialog::TransferDataFromWindow()
 
   ////////////////////////////////////////
   // H.323 fields
+  config->SetPath(H323AliasesGroup);
+  m_manager.h323EP->SetLocalUserName(m_Username);
+  PStringList aliases = m_manager.h323EP->GetAliasNames();
+  for (int i = 0; i < m_Aliases->GetCount(); i++) {
+    wxString alias = m_Aliases->GetString(i);
+    m_manager.h323EP->AddAliasName(alias.c_str());
+    wxString key;
+    key.sprintf("%u", i+1);
+    config->Write(key, alias);
+  }
+
   config->SetPath(H323Group);
   m_manager.h323EP->SetSendUserInputMode((H323Connection::SendUserInputModes)m_DTMFSendMode);
   config->Write(DTMFSendModeKey, m_DTMFSendMode);
@@ -2231,13 +2274,30 @@ void OptionsDialog::ChangedCodecOptionValue(wxCommandEvent & /*event*/)
 ////////////////////////////////////////
 // H.323 fields
 
+void OptionsDialog::SelectedAlias(wxCommandEvent & /*event*/)
+{
+  m_RemoveAlias->Enable(m_Aliases->GetSelection() != wxNOT_FOUND);
+}
+
+
+void OptionsDialog::ChangedNewAlias(wxCommandEvent & /*event*/)
+{
+
+  m_AddAlias->Enable(!m_NewAlias->GetValue().IsEmpty());
+}
+
+
 void OptionsDialog::AddAlias(wxCommandEvent & /*event*/)
 {
+  m_Aliases->Append(m_NewAlias->GetValue());
 }
 
 
 void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 {
+  m_NewAlias->SetValue(m_Aliases->GetStringSelection());
+  m_Aliases->Delete(m_Aliases->GetSelection());
+  m_RemoveAlias->Disable();
 }
 
 

@@ -1648,7 +1648,6 @@
                                 <border>8</border>
                                 <object class="wxStaticBoxSizer">
                                     <orient>wxHORIZONTAL</orient>
-                                    <label>Aliases</label>
                                     <object class="sizeritem">
                                         <option>1</option>
                                         <object class="wxBoxSizer">
