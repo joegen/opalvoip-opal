@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.31  2006/08/14 22:39:27  rjongbloed
+ * Added aslias to config dialog
+ *
  * Revision 1.30  2006/08/13 08:33:36  rjongbloed
  * Completed bandwidth configuration from options dialog.
  *
@@ -404,18 +407,24 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // H.323 fields
-    int       m_GatekeeperMode;
-    PwxString m_GatekeeperAddress;
-    PwxString m_GatekeeperIdentifier;
-    int       m_GatekeeperTTL;
-    PwxString m_GatekeeperLogin;
-    PwxString m_GatekeeperPassword;
-    int       m_DTMFSendMode;
-    int       m_CallIntrusionProtectionLevel;
-    bool      m_DisableFastStart;
-    bool      m_DisableH245Tunneling;
-    bool      m_DisableH245inSETUP;
+    int          m_GatekeeperMode;
+    PwxString    m_GatekeeperAddress;
+    PwxString    m_GatekeeperIdentifier;
+    int          m_GatekeeperTTL;
+    PwxString    m_GatekeeperLogin;
+    PwxString    m_GatekeeperPassword;
+    int          m_DTMFSendMode;
+    int          m_CallIntrusionProtectionLevel;
+    bool         m_DisableFastStart;
+    bool         m_DisableH245Tunneling;
+    bool         m_DisableH245inSETUP;
+    wxButton   * m_AddAlias;
+    wxButton   * m_RemoveAlias;
+    wxListBox  * m_Aliases;
+    wxTextCtrl * m_NewAlias;
 
+    void SelectedAlias(wxCommandEvent & event);
+    void ChangedNewAlias(wxCommandEvent & event);
     void AddAlias(wxCommandEvent & event);
     void RemoveAlias(wxCommandEvent & event);
 
