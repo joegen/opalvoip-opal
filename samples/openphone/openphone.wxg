@@ -1416,7 +1416,6 @@
                                 <option>0</option>
                                 <object class="wxStaticBoxSizer" name="sizer_28" base="EditStaticBoxSizer">
                                     <orient>wxHORIZONTAL</orient>
-                                    <label>Aliases</label>
                                     <object class="sizeritem">
                                         <border>0</border>
                                         <option>1</option>
