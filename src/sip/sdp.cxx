@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2039  2006/07/28 10:41:51  rjongbloed
+ * Revision 1.2040  2006/08/15 23:52:55  csoutheren
+ * Ensure codecs with same name but different clock rate get different payload types
+ *
+ * Revision 2.38  2006/07/28 10:41:51  rjongbloed
  * Fixed DevStudio 2005 warnings on time_t conversions.
  *
  * Revision 2.37  2006/07/24 14:03:40  csoutheren
@@ -715,7 +718,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
       return;
   }
 
-  AddSDPMediaFormat(new SDPMediaFormat(payloadType, encodingName, mediaFormat.GetClockRate()));
+  AddSDPMediaFormat(new SDPMediaFormat(payloadType, encodingName, clockRate));
 }
 
 

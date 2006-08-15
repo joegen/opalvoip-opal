@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2004  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2005  2006/08/15 23:52:55  csoutheren
+ * Ensure codecs with same name but different clock rate get different payload types
+ *
+ * Revision 2.3  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -1625,8 +1628,8 @@ void OpalPluginCodecManager::RegisterPluginPair(
           break;
       }
       // if the codec has been flagged to use a shared RTP payload type, then find a codec with the same SDP name
-      // and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from consuming
-      // dozens of dynamic RTP types
+      // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
+      // consuming dozens of dynamic RTP types
       if ((encoderCodec->flags & PluginCodec_RTPTypeShared) != 0 && (encoderCodec->sdpFormat != NULL)) {
         PWaitAndSignal m(OpalPluginCodecManager::GetMediaFormatMutex());
         OpalMediaFormatList & list = OpalPluginCodecManager::GetMediaFormatList();
@@ -1637,6 +1640,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
             OpalPluginAudioMediaFormat * fmt = dynamic_cast<OpalPluginAudioMediaFormat *>(opalFmt);
             if (
                 (fmt != NULL) && 
+                (encoderCodec->sampleRate == fmt->encoderCodec->sampleRate) &&
                 (fmt->encoderCodec->sdpFormat != NULL) &&
                 (strcasecmp(encoderCodec->sdpFormat, fmt->encoderCodec->sdpFormat) == 0)
                 ) {
@@ -1650,6 +1654,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
             OpalPluginVideoMediaFormat * fmt = dynamic_cast<OpalPluginVideoMediaFormat *>(opalFmt);
             if (
                 (fmt != NULL) && 
+                (encoderCodec->sampleRate == fmt->encoderCodec->sampleRate) &&
                 (fmt->encoderCodec->sdpFormat != NULL) &&
                 (strcasecmp(encoderCodec->sdpFormat, fmt->encoderCodec->sdpFormat) == 0)
                 ) {
