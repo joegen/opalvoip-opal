@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.8  2006/08/15 12:10:01  rjongbloed
+ * Added local interfaces to config dialog
+ *
  * Revision 1.7  2006/08/14 22:39:27  rjongbloed
  * Added aslias to config dialog
  *
@@ -219,6 +222,8 @@ DEF_FIELD(RTPTOS);
 DEF_FIELD(STUNServer);
 DEF_FIELD(NATRouter);
 
+static const char LocalInterfacesGroup[] = "/Networking/Interfaces";
+
 static const char AudioGroup[] = "/Audio";
 DEF_FIELD(SoundPlayer);
 DEF_FIELD(SoundRecorder);
@@ -248,7 +253,6 @@ static const char CodecsGroup[] = "/Codecs";
 static const char CodecNameKey[] = "Name";
 
 static const char H323Group[] = "/H.323";
-static const char H323AliasesGroup[] = "/H.323/Aliases";
 DEF_FIELD(GatekeeperMode);
 DEF_FIELD(GatekeeperAddress);
 DEF_FIELD(GatekeeperIdentifier);
@@ -260,6 +264,8 @@ DEF_FIELD(CallIntrusionProtectionLevel);
 DEF_FIELD(DisableFastStart);
 DEF_FIELD(DisableH245Tunneling);
 DEF_FIELD(DisableH245inSETUP);
+
+static const char H323AliasesGroup[] = "/H.323/Aliases";
 
 static const char SIPGroup[] = "/SIP";
 DEF_FIELD(SIPProxyUsed);
@@ -515,16 +521,10 @@ bool MyManager::Initialise()
   // Creating the endpoints
 #if OPAL_H323
   h323EP = new MyH323EndPoint(*this);
-
-  if (h323EP->StartListeners(PStringArray()))
-    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
 #endif
 
 #if OPAL_SIP
   sipEP = new MySIPEndPoint(*this);
-
-  if (sipEP->StartListeners(PStringArray()))
-    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
 #endif
 
 #if P_EXPAT
@@ -575,6 +575,19 @@ bool MyManager::Initialise()
     LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
     LogWindow << "STUN server \"" << str << "\" replies " << SetSTUNServer(str) << endl;
   }
+
+  config->SetPath(LocalInterfacesGroup);
+  wxString entryName;
+  long entryIndex;
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      wxString localInterface;
+      if (config->Read(entryName, &localInterface) && !localInterface.empty())
+        m_LocalInterfaces.AppendString(localInterface.c_str());
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
+
+  StartAllListeners();
 
   ////////////////////////////////////////
   // Sound fields
@@ -726,8 +739,6 @@ bool MyManager::Initialise()
   ////////////////////////////////////////
   // H.323 fields
   config->SetPath(H323AliasesGroup);
-  wxString entryName;
-  long entryIndex;
   if (config->GetFirstEntry(entryName, entryIndex)) {
     do {
       wxString alias;
@@ -831,6 +842,34 @@ bool MyManager::Initialise()
   }
 
   return true;
+}
+
+
+void MyManager::StartAllListeners()
+{
+#if OPAL_H323
+  h323EP->RemoveListener(NULL);
+  if (h323EP->StartListeners(m_LocalInterfaces))
+    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
+  else {
+    LogWindow << "H.323 listen failed";
+    if (!m_LocalInterfaces.IsEmpty())
+      LogWindow << " with interfaces" << setfill(',') << m_LocalInterfaces << setfill(' ');
+    LogWindow << endl;
+  }
+#endif
+
+#if OPAL_SIP
+  sipEP->RemoveListener(NULL);
+  if (sipEP->StartListeners(m_LocalInterfaces))
+    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
+  else {
+    LogWindow << "SIP listen failed";
+    if (!m_LocalInterfaces.IsEmpty())
+      LogWindow << " with interfaces" << setfill(',') << m_LocalInterfaces << setfill(' ');
+    LogWindow << endl;
+  }
+#endif
 }
 
 
@@ -1491,7 +1530,13 @@ void MyManager::OnOptions(wxCommandEvent& /*event*/)
 }
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
+  ////////////////////////////////////////
+  // Networking fields
   EVT_CHOICE(XRCID("BandwidthClass"), OptionsDialog::BandwidthClass)
+  EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
+  EVT_TEXT(XRCID("InterfaceToAdd"), OptionsDialog::ChangedInterfaceToAdd)
+  EVT_BUTTON(XRCID("AddInterface"), OptionsDialog::AddInterface)
+  EVT_BUTTON(XRCID("RemoveInterface"), OptionsDialog::RemoveInterface)
 
   ////////////////////////////////////////
   // Audio fields
@@ -1591,6 +1636,15 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   if (m_manager.GetTranslationAddress().IsValid())
     natRouter = m_manager.GetTranslationAddress().AsString();
   INIT_FIELD(NATRouter, natRouter);
+
+  m_AddInterface = (wxButton *)FindWindowByName("AddInterface");
+  m_AddInterface->Disable();
+  m_RemoveInterface = (wxButton *)FindWindowByName("RemoveInterface");
+  m_RemoveInterface->Disable();
+  m_InterfaceToAdd = (wxTextCtrl *)FindWindowByName("InterfaceToAdd");
+  m_LocalInterfaces = (wxListBox *)FindWindowByName("LocalInterfaces");
+  for (i = 0; i < m_manager.m_LocalInterfaces.GetSize(); i++)
+    m_LocalInterfaces->Append((const char *)m_manager.m_LocalInterfaces[i]);
 
   ////////////////////////////////////////
   // Sound fields
@@ -1856,6 +1910,23 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(STUNServer, m_manager.SetSTUNServer);
   SAVE_FIELD(NATRouter, m_manager.SetTranslationAddress);
 
+  config->DeleteGroup(LocalInterfacesGroup);
+  config->SetPath(LocalInterfacesGroup);
+  PStringArray newInterfaces(m_LocalInterfaces->GetCount());
+  bool changed = m_manager.m_LocalInterfaces.GetSize() != newInterfaces.GetSize();
+  for (int i = 0; i < newInterfaces.GetSize(); i++) {
+    newInterfaces[i] = m_LocalInterfaces->GetString(i);
+    if (newInterfaces[i] != m_manager.m_LocalInterfaces)
+      changed = true;
+    wxString key;
+    key.sprintf("%u", i+1);
+    config->Write(key, newInterfaces[i]);
+  }
+  if (changed) {
+    m_manager.m_LocalInterfaces = newInterfaces;
+    m_manager.StartAllListeners();
+  }
+
   ////////////////////////////////////////
   // Sound fields
   config->SetPath(AudioGroup);
@@ -1937,6 +2008,7 @@ bool OptionsDialog::TransferDataFromWindow()
 
   ////////////////////////////////////////
   // H.323 fields
+  config->DeleteGroup(H323AliasesGroup);
   config->SetPath(H323AliasesGroup);
   m_manager.h323EP->SetLocalUserName(m_Username);
   PStringList aliases = m_manager.h323EP->GetAliasNames();
@@ -1969,9 +2041,8 @@ bool OptionsDialog::TransferDataFromWindow()
     SAVE_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier = );
     SAVE_FIELD2(GatekeeperPassword, GatekeeperLogin, m_manager.h323EP->SetGatekeeperPassword);
 
-    if (!m_manager.StartGatekeeper()) {
-      // exit app
-    }
+    if (!m_manager.StartGatekeeper())
+      m_manager.Close();
   }
 
   ////////////////////////////////////////
@@ -2088,16 +2159,27 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 
 void OptionsDialog::SelectedLocalInterface(wxCommandEvent & /*event*/)
 {
+  m_RemoveInterface->Enable(m_LocalInterfaces->GetSelection() != wxNOT_FOUND);
+}
+
+
+void OptionsDialog::ChangedInterfaceToAdd(wxCommandEvent & /*event*/)
+{
+  m_AddInterface->Enable(!m_InterfaceToAdd->GetValue().IsEmpty());
 }
 
 
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
 {
+  m_LocalInterfaces->Append(m_InterfaceToAdd->GetValue());
 }
 
 
 void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 {
+  m_InterfaceToAdd->SetValue(m_LocalInterfaces->GetStringSelection());
+  m_LocalInterfaces->Delete(m_LocalInterfaces->GetSelection());
+  m_RemoveInterface->Disable();
 }
 
 
