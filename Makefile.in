@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.38  2006/08/15 19:41:38  dsandras
+# Only build plugins when building the library.
+#
 # Revision 1.37  2006/08/09 23:14:00  dereksmithies
 # Add fix for compiling new iax processing files.
 # Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -249,7 +252,7 @@ default :: optshared
 
 all :: bothdepend both
 
-SUBDIRS := plugins samples/simple
+SUBDIRS := plugins 
 
 LIBRARY_MAKEFILE:=1
 
