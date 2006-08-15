@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.32  2006/08/15 12:10:01  rjongbloed
+ * Added local interfaces to config dialog
+ *
  * Revision 1.31  2006/08/14 22:39:27  rjongbloed
  * Added aslias to config dialog
  *
@@ -336,19 +339,23 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Networking fields
-    wxString  m_Bandwidth;
-    int       m_TCPPortBase;
-    int       m_TCPPortMax;
-    int       m_UDPPortBase;
-    int       m_UDPPortMax;
-    int       m_RTPPortBase;
-    int       m_RTPPortMax;
-    int       m_RTPTOS;
-    PwxString m_STUNServer;
-    PwxString m_NATRouter;
-    PwxString m_InterfaceToAdd;
+    wxString     m_Bandwidth;
+    int          m_TCPPortBase;
+    int          m_TCPPortMax;
+    int          m_UDPPortBase;
+    int          m_UDPPortMax;
+    int          m_RTPPortBase;
+    int          m_RTPPortMax;
+    int          m_RTPTOS;
+    PwxString    m_STUNServer;
+    PwxString    m_NATRouter;
+    wxListBox  * m_LocalInterfaces;
+    wxTextCtrl * m_InterfaceToAdd;
+    wxButton   * m_AddInterface;
+    wxButton   * m_RemoveInterface;
     void BandwidthClass(wxCommandEvent & event);
     void SelectedLocalInterface(wxCommandEvent & event);
+    void ChangedInterfaceToAdd(wxCommandEvent & event);
     void AddInterface(wxCommandEvent & event);
     void RemoveInterface(wxCommandEvent & event);
 
@@ -418,10 +425,10 @@ class OptionsDialog : public wxDialog
     bool         m_DisableFastStart;
     bool         m_DisableH245Tunneling;
     bool         m_DisableH245inSETUP;
-    wxButton   * m_AddAlias;
-    wxButton   * m_RemoveAlias;
     wxListBox  * m_Aliases;
     wxTextCtrl * m_NewAlias;
+    wxButton   * m_AddAlias;
+    wxButton   * m_RemoveAlias;
 
     void SelectedAlias(wxCommandEvent & event);
     void ChangedNewAlias(wxCommandEvent & event);
@@ -608,6 +615,9 @@ class MyManager : public wxFrame, public OpalManager
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
+
+    PStringArray     m_LocalInterfaces;
+    void StartAllListeners();
 
 #if OPAL_H323
     MyH323EndPoint * h323EP;
