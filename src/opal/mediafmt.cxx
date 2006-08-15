@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2048  2006/08/01 12:46:32  rjongbloed
+ * Revision 1.2049  2006/08/15 23:35:36  csoutheren
+ * Fixed problem with OpalMediaFormat compare which stopped RTP payload map from working
+ *   which disabled iLBC codec on SIP
+ *
+ * Revision 2.47  2006/08/01 12:46:32  rjongbloed
  * Added build solution for plug ins
  * Removed now redundent code due to plug ins addition
  *
@@ -1138,10 +1142,21 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
     if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
       continue;
 
+    /*
     const char * otherName = mediaFormat.GetEncodingName();
     if (name != NULL && *name != '\0') {
       if (otherName == NULL || otherName[0] == '\0' || strcasecmp(otherName, name) != 0)
         continue;
+    }
+    */
+
+    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
+      return idx;
+
+    if (name != NULL && *name != '\0') {
+      const char * otherName = mediaFormat.GetEncodingName();
+      if (otherName != NULL && strcasecmp(otherName, name) == 0)
+        return idx;
     }
 
     if (RTP_DataFrame::IllegalPayloadType == pt || mediaFormat.GetPayloadType() == pt)
