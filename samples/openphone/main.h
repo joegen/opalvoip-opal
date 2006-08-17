@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.33  2006/08/17 23:09:03  rjongbloed
+ * Added volume controls
+ *
  * Revision 1.32  2006/08/15 12:10:01  rjongbloed
  * Added local interfaces to config dialog
  *
@@ -282,6 +285,11 @@ class InCallPanel : public wxPanel
     void OnUserInputStar(wxCommandEvent & event);
     void OnUserInputHash(wxCommandEvent & event);
     void OnUserInputFlash(wxCommandEvent & event);
+
+    void SpeakerVolume(wxScrollEvent & event);
+    void MicrophoneVolume(wxScrollEvent & event);
+
+    void SetVolume(bool microphone, wxScrollEvent & event);
 
     MyManager & m_manager;
 
@@ -662,7 +670,7 @@ class MyManager : public wxFrame, public OpalManager
     } m_callState;
     void SetState(CallState newState);
 
-    PString m_currentConnectionToken;
+    PString m_ringingConnectionToken;
     PString m_currentCallToken;
 
     PwxString     m_RingSoundDeviceName;

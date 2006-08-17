@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2059  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2060  2006/08/17 23:09:03  rjongbloed
+ * Added volume controls
+ *
+ * Revision 2.58  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.57  2006/08/03 04:57:12  csoutheren
@@ -820,6 +823,13 @@ class OpalConnection : public PSafeObject
       BOOL preview,                         ///<  Flag indicating is a preview output
       PVideoOutputDevice * & device,        ///<  Created device
       BOOL & autoDelete                     ///<  Flag for auto delete device
+    );
+
+    /**Set  the volume (gain) for the audio media channel to the specified percentage.
+      */
+    virtual BOOL SetAudioVolume(
+      BOOL source,                  ///< true for source (microphone), false for sink (speaker)
+      unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
   //@}
 
