@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2021  2006/06/27 13:50:24  csoutheren
+ * Revision 1.2022  2006/08/17 23:09:03  rjongbloed
+ * Added volume controls
+ *
+ * Revision 2.20  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -520,6 +523,13 @@ class OpalLineConnection : public OpalConnection
       OpalMediaStream & stream    ///<  New media stream being opened
     );
 
+    /**Set  the volume (gain) for the audio media channel to the specified percentage.
+      */
+    virtual BOOL SetAudioVolume(
+      BOOL source,                  ///< true for source (microphone), false for sink (speaker)
+      unsigned percentage           ///< Gain, 0=silent, 100=maximun
+    );
+
     /**Send a user input indication to the remote endpoint.
        This sends an arbitrary string as a user indication. If DTMF tones in
        particular are required to be sent then the SendIndicationTone()
@@ -647,6 +657,13 @@ class OpalLineMediaStream : public OpalMediaStream
        Returns TRUE for LID streams.
       */
     virtual BOOL IsSynchronous() const;
+  //@}
+
+  /**@name Member variable access */
+  //@{
+    /**Get the line being used by this media stream.
+      */
+    OpalLine & GetLine() { return line; }
   //@}
 
   protected:

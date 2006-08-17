@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.9  2006/08/17 23:09:03  rjongbloed
+ * Added volume controls
+ *
  * Revision 1.8  2006/08/15 12:10:01  rjongbloed
  * Added local interfaces to config dialog
  *
@@ -209,6 +212,8 @@ DEF_FIELD(RingSoundDeviceName);
 DEF_FIELD(RingSoundFileName);
 DEF_FIELD(AutoAnswer);
 DEF_FIELD(IVRScript);
+DEF_FIELD(SpeakerVolume);
+DEF_FIELD(MicrophoneVolume);
 
 static const char NetworkingGroup[] = "/Networking";
 DEF_FIELD(Bandwidth);
@@ -1213,7 +1218,7 @@ void MyManager::AnswerCall()
 
   StopRingSound();
   SetState(AnsweringState);
-  pcssEP->AcceptIncomingConnection(m_currentConnectionToken);
+  pcssEP->AcceptIncomingConnection(m_ringingConnectionToken);
 }
 
 
@@ -1240,7 +1245,7 @@ void MyManager::HangUpCall()
 
 void MyManager::OnRinging(const OpalPCSSConnection & connection)
 {
-  m_currentConnectionToken = connection.GetToken();
+  m_ringingConnectionToken = connection.GetToken();
   m_currentCallToken = connection.GetCall().GetToken();
 
   if (m_autoAnswer)
@@ -2510,12 +2515,20 @@ BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_BUTTON(XRCID("InputStar"), InCallPanel::OnUserInputStar)
   EVT_BUTTON(XRCID("InputHash"), InCallPanel::OnUserInputHash)
   EVT_BUTTON(XRCID("InputFlash"), InCallPanel::OnUserInputFlash)
+
+  EVT_COMMAND_SCROLL(XRCID("SpeakerVolume"), InCallPanel::SpeakerVolume)
+  EVT_COMMAND_SCROLL(XRCID("MicrophoneVolume"), InCallPanel::MicrophoneVolume)
 END_EVENT_TABLE()
 
 InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
+
+  //wxScrollBar * bar = (wxScrollBar *)FindWindowByName("SpeakerVolume");
+  //bar->SetThumbPosition(50);
+  //bar = (wxScrollBar *)FindWindowByName("MicrophoneVolume");
+  //bar->SetThumbPosition(50);
 }
 
 
@@ -2541,6 +2554,40 @@ ON_USER_INPUT_HANDLER(0,'0')
 ON_USER_INPUT_HANDLER(Star,'*')
 ON_USER_INPUT_HANDLER(Hash,'#')
 ON_USER_INPUT_HANDLER(Flash,'!')
+
+
+void InCallPanel::SpeakerVolume(wxScrollEvent & event)
+{
+  SetVolume(false, event);
+  if (event.GetEventType() == wxEVT_SCROLL_THUMBRELEASE || event.GetEventType() == wxEVT_SCROLL_CHANGED) {
+    wxConfigBase * config = wxConfig::Get();
+    config->Write(SpeakerVolumeKey, event.GetPosition());
+  }
+}
+
+
+void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
+{
+  SetVolume(true, event);
+  if (event.GetEventType() == wxEVT_SCROLL_THUMBRELEASE || event.GetEventType() == wxEVT_SCROLL_CHANGED) {
+    wxConfigBase * config = wxConfig::Get();
+    config->Write(MicrophoneVolumeKey, event.GetPosition());
+  }
+}
+
+
+void InCallPanel::SetVolume(bool microphone, wxScrollEvent & event)
+{
+  PSafePtr<OpalCall> call = m_manager.GetCall();
+  if (call != NULL) {
+    PSafePtr<OpalConnection> connection = call->GetConnection(1);
+    if (connection != NULL) {
+      if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection))
+        connection = call->GetConnection(0);
+      connection->SetAudioVolume(microphone, event.GetPosition());
+    }
+  }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////
