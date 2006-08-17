@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2030  2006/07/27 22:34:21  rjongbloed
+ * Revision 1.2031  2006/08/17 23:09:04  rjongbloed
+ * Added volume controls
+ *
+ * Revision 2.29  2006/07/27 22:34:21  rjongbloed
  * Fixed compiler warning
  *
  * Revision 2.28  2006/06/27 13:50:24  csoutheren
@@ -675,6 +678,17 @@ BOOL OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
   }
 
   return TRUE;
+}
+
+
+BOOL OpalLineConnection::SetAudioVolume(BOOL source, unsigned percentage)
+{
+  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  if (stream == NULL)
+    return FALSE;
+
+  OpalLine & line = stream->GetLine();
+  return source ? line.SetRecordVolume(percentage) : line.SetPlayVolume(percentage);
 }
 
 

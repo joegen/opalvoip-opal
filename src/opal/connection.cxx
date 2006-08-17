@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2072  2006/08/10 05:10:33  csoutheren
+ * Revision 1.2073  2006/08/17 23:09:04  rjongbloed
+ * Added volume controls
+ *
+ * Revision 2.71  2006/08/10 05:10:33  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.70  2006/08/10 04:26:36  csoutheren
@@ -948,6 +951,12 @@ BOOL OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat
                                              BOOL & autoDelete)
 {
   return endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview, device, autoDelete);
+}
+
+
+BOOL OpalConnection::SetAudioVolume(BOOL /*source*/, unsigned /*percentage*/)
+{
+  return FALSE;
 }
 
 

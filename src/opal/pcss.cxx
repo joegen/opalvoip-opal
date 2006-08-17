@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2032  2006/06/28 11:35:23  csoutheren
+ * Revision 1.2033  2006/08/17 23:09:04  rjongbloed
+ * Added volume controls
+ *
+ * Revision 2.31  2006/06/28 11:35:23  csoutheren
  * Patch 1494944 - added missing null pointer check
  * Thanks to mturconi
  *
@@ -492,6 +495,20 @@ OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & sour
     return NULL;
 
   return OpalConnection::OpenSinkMediaStream(source);
+}
+
+
+BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
+{
+  OpalAudioMediaStream * stream = PDownCast(OpalAudioMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  if (stream == NULL)
+    return FALSE;
+
+  PSoundChannel * channel = PDownCast(PSoundChannel, stream->GetChannel());
+  if (channel == NULL)
+    return FALSE;
+
+  return channel->SetVolume(percentage);
 }
 
 
