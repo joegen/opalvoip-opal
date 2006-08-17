@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2021  2006/06/21 04:54:15  csoutheren
+ * Revision 1.2022  2006/08/17 23:09:03  rjongbloed
+ * Added volume controls
+ *
+ * Revision 2.20  2006/06/21 04:54:15  csoutheren
  * Fixed build with latest PWLib
  *
  * Revision 2.19  2005/12/28 20:03:00  dsandras
@@ -430,6 +433,13 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual OpalMediaStream * OpenSinkMediaStream(
       OpalMediaStream & source    ///<  Source media sink format to open to
+    );
+
+    /**Set  the volume (gain) for the audio media channel to the specified percentage.
+      */
+    virtual BOOL SetAudioVolume(
+      BOOL source,                  ///< true for source (microphone), false for sink (speaker)
+      unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
 
     /**Send a user input indication to the remote endpoint.
