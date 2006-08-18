@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2063  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2063.2.1  2006/08/18 07:32:08  csoutheren
+ * Refuse to create RTP sessions when only one connection in a call
+ *
+ * Revision 2.62  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -1788,6 +1791,8 @@ BOOL OpalTransportUDP::Close()
 {
   PTRACE(4, "OpalUDP\tClose");
   PReadWaitAndSignal mutex(channelPointerMutex);
+
+  iostream::clear(badbit);
 
   if (socketOwnedByListener) {
     channelPointerMutex.StartWrite();
