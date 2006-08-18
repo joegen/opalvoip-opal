@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2113.2.1  2006/08/09 12:49:21  csoutheren
+ * Revision 1.2113.2.2  2006/08/18 07:32:08  csoutheren
+ * Refuse to create RTP sessions when only one connection in a call
+ *
+ * Revision 2.112.2.1  2006/08/09 12:49:21  csoutheren
  * Improve stablity under heavy H.323 load
  *
  * Revision 2.112  2006/06/30 01:39:58  csoutheren
@@ -5206,7 +5209,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty == NULL) {
-      PTRACE(2, "H323\tRefusing to create an RTP channel with only one connection");
+      PTRACE(2, "H323\tCowardly refusing to create an RTP channel with only one connection");
       return NULL;
     }
 
