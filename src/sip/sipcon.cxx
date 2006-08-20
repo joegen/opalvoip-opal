@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2174  2006/08/12 04:09:24  csoutheren
+ * Revision 1.2175  2006/08/20 13:35:56  csoutheren
+ * Backported changes to protect against rare error conditions
+ *
+ * Revision 2.173  2006/08/12 04:09:24  csoutheren
  * Applied 1538497 - Add the PING method
  * Thanks to Paul Rolland
  *
@@ -1078,34 +1081,43 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
   RTP_UDP *rtpSession = NULL;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
 
-  // if doing media bypass, we need to set the local address
-  // otherwise create an RTP session
-  if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
-      MediaInformation info;
-      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
-        localAddress = info.data;
-        ntePayloadCode = info.rfc2833;
-      }
-    }
-    mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(mediaAddress));
-  }
-  else {
-    // create an RTP session
-    rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
-    if (rtpSession == NULL) {
+  {
+    PSafeLockReadOnly m(ownerCall);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+    if (otherParty == NULL) {
+      PTRACE(2, "H323\tCorwardly fefusing to create an RTP channel with only one connection");
       return NULL;
+     }
+
+    // if doing media bypass, we need to set the local address
+    // otherwise create an RTP session
+    if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
+      OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+      if (otherParty != NULL) {
+        MediaInformation info;
+        if (otherParty->GetMediaInformation(rtpSessionId, info)) {
+          localAddress = info.data;
+          ntePayloadCode = info.rfc2833;
+        }
+      }
+      mediaTransportAddresses.SetAt(rtpSessionId, new OpalTransportAddress(mediaAddress));
     }
-    
-    // Set user data
-    if (rtpSession->GetUserData() == NULL)
-      rtpSession->SetUserData(new SIP_RTP_Session(*this));
-
-    // Local Address of the session
-    localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
+    else {
+      // create an RTP session
+      rtpSession = (RTP_UDP *)UseSession(GetTransport(), rtpSessionId, NULL);
+      if (rtpSession == NULL) {
+        return NULL;
+      }
+      
+      // Set user data
+      if (rtpSession->GetUserData() == NULL)
+        rtpSession->SetUserData(new SIP_RTP_Session(*this));
+  
+      // Local Address of the session
+      localAddress = GetLocalAddress(rtpSession->GetLocalDataPort());
+    }
   }
-
+  
   return rtpSession;
 }
 
