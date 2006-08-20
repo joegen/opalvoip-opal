@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.4  2006/08/20 03:55:07  csoutheren
+ * Add SIP specific codec
+ *
  * Revision 1.3  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
@@ -104,11 +107,19 @@ PLUGIN_CODEC_IMPLEMENT("Speex")
 
 #include "libspeex/speex.h" 
 
+#ifdef _WIN32
+  #define _CRT_SECURE_NO_DEPRECATE
+  #include <malloc.h>
+  #define STRCMPI  _strcmpi
+#else
+  #include <semaphore.h>
+  #define STRCMPI  strcasecmp
+#endif
+
 #define NARROW_SAMPLES_PER_FRAME       160
 #define WIDE_SAMPLES_PER_FRAME         320
 
-#define NARROW_NS_PER_FRAME            20000
-#define WIDE_NS_PER_FRAME              20000
+#define NS_PER_FRAME                   20000
 
 const float MaxSampleValue   = 32767.0;
 const float MinSampleValue   = -32767.0;
@@ -252,15 +263,131 @@ static void destroy_decoder(const struct PluginCodec_Definition * codec, void * 
   free(context);
 }
 
+static const char * default_sip_options[][3] = {
+  { "h323_cifMPI",                               "<4" ,      "i" },
+  { "h323_qcifMPI",                              "<2" ,      "i" },
+//  { "Max Bit Rate",                              "<621700" , "i" },
+  { NULL, NULL, NULL }
+};
+
+static int encoder_get_options(
+      const PluginCodec_Definition * , 
+      void * context , 
+      const char * , 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char **))
+    return 0;
+
+  const char ***options = (const char ***)parm;
+
+  return 0;
+}
+
+static int valid_for_sip(
+      const PluginCodec_Definition * , 
+      void * context , 
+      const char * , 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+}
+
+static int valid_for_h323(
+      const PluginCodec_Definition * , 
+      void * , 
+      const char * , 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "h.323") == 0 ||
+          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
+}
+
+static const char * default_narrow_sip_options[][3] = {
+  { "fmtp",                       "sr=8000,mode=any" ,      "s" },
+  { NULL, NULL, NULL }
+};
+
+static const char * default_wide_sip_options[][3] = {
+  { "fmtp",                       "sr=16000,mode=any" ,     "s" },
+  { NULL, NULL, NULL }
+};
+
+static int get_codec_options(void * context, void * parm, unsigned * parmLen, const char ** default_parms)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char **))
+    return 0;
+
+  const char ***options = (const char ***)parm;
+
+  if (context == NULL) {
+    *options = default_parms;
+    return 1;
+  }
+
+  return 0;
+}
+
+static int coder_get_sip_options(
+      const PluginCodec_Definition * codec, 
+      void * context , 
+      const char * , 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (codec->sampleRate == 8000)
+    return get_codec_options(context, parm, parmLen, &default_narrow_sip_options[0][0]);
+  else
+    return get_codec_options(context, parm, parmLen, &default_wide_sip_options[0][0]);
+}
+
+static PluginCodec_ControlDefn sipEncoderControls[] = {
+  { "valid_for_protocol",       valid_for_sip },
+  { "get_codec_options",        coder_get_sip_options },
+  //{ "set_codec_options",      encoder_set_options },
+  { NULL }
+};
+
+static PluginCodec_ControlDefn sipDecoderControls[] = {
+  { "valid_for_protocol",       valid_for_sip },
+  { "get_codec_options",        coder_get_sip_options },
+  //{ "set_codec_options",      decoder_set_options },
+  { NULL }
+};
+
+static PluginCodec_ControlDefn h323EncoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
+  //{ "get_codec_options",      encoder_get_options },
+  //{ "set_codec_options",      encoder_set_options },
+  { NULL }
+};
+
+static PluginCodec_ControlDefn h323DecoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
+  //{ "get_codec_options",      decoder_get_options },
+  //{ "set_codec_options",      decoder_set_options },
+  { NULL }
+};
+
 /////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_information licenseInfo = {
   //1081075346,                          // Sun 04 Apr 2004 10:42:26 AM UTC
   //1087351735,                          // Wed 16 Jun 2004 02:08:55 AM UTC
-  1101695533,                            // Mon 29 Nov 2004 12:32:13 PM EST
+  //1101695533,                          // Mon 29 Nov 2004 12:32:13 PM EST
+  1156040055,                            //Sun 20 Aug 2006 02:14:15 AM UTC  
 
   "Craig Southeren, Post Increment",                           // source code author
-  "3.1",                                                       // source code version
+  "3.2",                                                       // source code version
   "craigs@postincrement.com",                                  // source code email
   "http://www.postincrement.com",                              // source code URL
   "Copyright (C) 2004 by Post Increment, All Rights Reserved", // source code copyright
@@ -354,7 +481,7 @@ static struct PluginCodec_H323NonStandardCodecData speex##suffix##Cap = \
 CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
 
 
-#define DECLARE_NARROW_SPEEX_CODEC(prefix, suffix, ordinal, bitsPerFrame) \
+#define DECLARE_H323_NARROW_SPEEX_CODEC(prefix, suffix, ordinal, bitsPerFrame) \
 /* Original OpenH323 capability */ \
 { \
   /* encoder */ \
@@ -372,17 +499,17 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   (void *)ordinal,                    /* user data */ \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
-  NARROW_NS_PER_FRAME,                /* nanoseconds per frame */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
   NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
   (bitsPerFrame + 7) / 8,             /* bytes per frame */ \
   1,                                  /* recommended number of frames per packet */ \
   1,                                  /* maximum number of frames per packet  */ \
   0,                                  /* IANA RTP payload code */ \
-  sdpSpeex,                           /* RTP payload name */ \
+  sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  NULL,                               /* codec controls */ \
+  h323EncoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 }, \
@@ -402,17 +529,17 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   (void *)ordinal,                    /* user data */ \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
-  NARROW_NS_PER_FRAME,                /* nanoseconds per frame */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
   NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
   (bitsPerFrame+7)/8,                 /* bytes per frame */ \
   1,                                  /* recommended number of frames per packet */ \
   1,                                  /* maximum number of frames per packet */ \
   0,                                  /* IANA RTP payload code */ \
-  sdpSpeex,                           /* RTP payload name */ \
+  sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  NULL,                               /* codec controls */ \
+  h323DecoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 } \
@@ -438,7 +565,7 @@ static struct PluginCodec_H323NonStandardCodecData speex##suffix##Cap = \
 }; \
 CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
 
-#define DECLARE_WIDE_SPEEX_CODEC(prefix, suffix, ordinal, bitsPerFrame) \
+#define DECLARE_H323_WIDE_SPEEX_CODEC(prefix, suffix, ordinal, bitsPerFrame) \
 /* Original OpenH323 capability */ \
 { \
   /* encoder */ \
@@ -456,17 +583,17 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   (void *)ordinal,                    /* user data */ \
   16000,                              /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
-  WIDE_NS_PER_FRAME,                  /* nanoseconds per frame */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
   WIDE_SAMPLES_PER_FRAME,             /* samples per frame */ \
   (bitsPerFrame+7)/8,                 /* bytes per frame */ \
   1,                                  /* recommended number of frames per packet */ \
   1,                                  /* maximum number of frames per packet  */ \
   0,                                  /* IANA RTP payload code */ \
-  sdpSpeex,                           /* RTP payload name */ \
+  sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  NULL,                               /* codec controls */ \
+  h323EncoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 }, \
@@ -486,17 +613,17 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   (void *)ordinal,                    /* user data */ \
   16000,                              /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
-  WIDE_NS_PER_FRAME,                  /* nanoseconds per frame */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
   WIDE_SAMPLES_PER_FRAME,             /* samples per frame */ \
   (bitsPerFrame+7)/8,                 /* bytes per frame */ \
   1,                                  /* recommended number of frames per packet */ \
   1,                                  /* maximum number of frames per packet */ \
   0,                                  /* IANA RTP payload code */ \
-  sdpSpeex,                           /* RTP payload name */ \
+  sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  NULL,                               /* codec controls */ \
+  h323DecoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 } \
@@ -517,7 +644,7 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   NULL \
 }; \
 
-#define DECLARE_NARROW_SPEEXW_CODEC(suffix, ordinal, bitsPerFrame) \
+#define DECLARE_H323_NARROW_SPEEXW_CODEC(suffix, ordinal, bitsPerFrame) \
 /* SpeexW OpenH323 capability */ \
 { \
   /* encoder */ \
@@ -535,17 +662,17 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   (void *)ordinal,                    /* user data */ \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
-  NARROW_NS_PER_FRAME,                /* nanoseconds per frame */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
   NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
   (bitsPerFrame+7)/8,                 /* bytes per frame */ \
   1,                                  /* recommended number of frames per packet */ \
   1,                                  /* maximum number of frames per packet  */ \
   0,                                  /* IANA RTP payload code */ \
-  NULL,                               /* RTP payload name */ \
+  sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  NULL,                               /* codec controls */ \
+  h323EncoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &speexW##suffix##Cap                /* h323CapabilityData */ \
 }, \
@@ -564,22 +691,86 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   (void *)ordinal,                    /* user data */ \
   8000,                               /* samples per second */ \
   bitsPerFrame*50,                    /* raw bits per second */ \
-  NARROW_NS_PER_FRAME,                /* nanoseconds per frame */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
   NARROW_SAMPLES_PER_FRAME,           /* samples per frame */ \
   (bitsPerFrame+7)/8,                 /* bytes per frame */ \
   1,                                  /* recommended number of frames per packet */ \
   1,                                  /* maximum number of frames per packet */ \
   0,                                  /* IANA RTP payload code */ \
-  NULL,                               /* RTP payload name */ \
+  sdpSpeex,                           /* RTP payload name (used to reduce payload code usage) */ \
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  NULL,                               /* codec controls */ \
+  h323DecoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &speexW##suffix##Cap                /* h323CapabilityData */ \
 } \
 
 CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define DECLARE_SIP_SPEEX_CODEC(name, clockRate, suffix, ordinal, bitsPerFrame, samplesPerFrame) \
+{ \
+  /* encoder */ \
+  PLUGIN_CODEC_VERSION,               /* codec API version */ \
+  &licenseInfo,                       /* license information */ \
+  PluginCodec_MediaTypeAudio |        /* audio codec */ \
+  PluginCodec_InputTypeRaw |          /* raw input data */ \
+  PluginCodec_OutputTypeRaw |         /* raw output data */ \
+  PluginCodec_RTPTypeShared |         /* share RTP code */ \
+  PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
+  PluginCodec_DecodeSilence,          /* can encode silence frames */ \
+  name,                               /* text decription */ \
+  L16Desc,                            /* source format */ \
+  name,                               /* destination format */ \
+  (void *)ordinal,                    /* user data */ \
+  clockRate,                          /* samples per second */ \
+  bitsPerFrame*50,                    /* raw bits per second */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
+  samplesPerFrame,                    /* samples per frame */ \
+  (bitsPerFrame + 7) / 8,             /* bytes per frame */ \
+  1,                                  /* recommended number of frames per packet */ \
+  1,                                  /* maximum number of frames per packet  */ \
+  0,                                  /* IANA RTP payload code */ \
+  sdpSpeex,                           /* RTP payload name */ \
+  create_encoder,                     /* create codec function */ \
+  destroy_encoder,                    /* destroy codec */ \
+  codec_encoder,                      /* encode/decode */ \
+  sipEncoderControls,                 /* codec controls */ \
+  PluginCodec_H323Codec_NoH323,       /* h323CapabilityType */ \
+  NULL                                /* h323CapabilityData */ \
+}, \
+{  \
+  /* decoder */ \
+  PLUGIN_CODEC_VERSION,               /* codec API version */ \
+  &licenseInfo,                       /* license information */ \
+  PluginCodec_MediaTypeAudio |        /* audio codec */ \
+  PluginCodec_InputTypeRaw |          /* raw input data */ \
+  PluginCodec_OutputTypeRaw |         /* raw output data */ \
+  PluginCodec_RTPTypeShared |         /* share RTP code */ \
+  PluginCodec_RTPTypeDynamic |        /* dynamic RTP type */ \
+  PluginCodec_DecodeSilence,          /* can encode silence frames */ \
+  name,                               /* text decription */ \
+  name,                               /* source format */ \
+  L16Desc,                            /* destination format */ \
+  (void *)ordinal,                    /* user data */ \
+  clockRate,                          /* samples per second */ \
+  bitsPerFrame*50,                    /* raw bits per second */ \
+  NS_PER_FRAME,                       /* nanoseconds per frame */ \
+  samplesPerFrame,                    /* samples per frame */ \
+  (bitsPerFrame+7)/8,                 /* bytes per frame */ \
+  1,                                  /* recommended number of frames per packet */ \
+  1,                                  /* maximum number of frames per packet */ \
+  0,                                  /* IANA RTP payload code */ \
+  sdpSpeex,                           /* RTP payload name */ \
+  create_decoder,                     /* create codec function */ \
+  destroy_decoder,                    /* destroy codec */ \
+  codec_decoder,                      /* encode/decode */ \
+  sipDecoderControls,                 /* codec controls */ \
+  PluginCodec_H323Codec_NoH323,       /* h323CapabilityType */ \
+  NULL                                /* h323CapabilityData */ \
+} \
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -595,22 +786,25 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
 #define WIDE_BITSPERFRAME_MODE4    (NARROW_BITSPERFRAME_MODE4 + 352)     // 28600
 
 static struct PluginCodec_Definition ver1SpeexCodecDefn[] = {
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
 
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
+#ifdef INCLUDE_DEPRECATED_SPEEX_CODECS
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
+#endif
+
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
 
   //DECLARE_SPEEXW_CODEC(Narrow5k95,  2),   // does not work
-  DECLARE_NARROW_SPEEXW_CODEC(Narrow8k,   3,   NARROW_BITSPERFRAME_MODE3),
+  DECLARE_H323_NARROW_SPEEXW_CODEC(Narrow8k,   3,   NARROW_BITSPERFRAME_MODE3),
   //DECLARE_SPEEX_CODEC(Narrow11k,   4),    // does not work
   //DECLARE_SPEEX_CODEC(Narrow15k,   5),    // does not work
   //DECLARE_SPEEX_CODEC(Narrow18k2,  6),    // does not work
@@ -620,34 +814,42 @@ static struct PluginCodec_Definition ver1SpeexCodecDefn[] = {
 #define NUM_VER1_DEFNS   (sizeof(ver1SpeexCodecDefn) / sizeof(struct PluginCodec_Definition))
 
 static struct PluginCodec_Definition ver2SpeexCodecDefn[] = {
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
-  DECLARE_NARROW_SPEEX_CODEC(speex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
 
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
-  DECLARE_NARROW_SPEEX_CODEC(ietfSpeex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
+#ifdef INCLUDE_DEPRECATED_SPEEX_CODECS
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
+  DECLARE_H323_NARROW_SPEEX_CODEC(speex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
+#endif
+
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow5k95,  2,   NARROW_BITSPERFRAME_MODE2),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow8k,    3,   NARROW_BITSPERFRAME_MODE3),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow11k,   4,   NARROW_BITSPERFRAME_MODE4),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow15k,   5,   NARROW_BITSPERFRAME_MODE5),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
+  DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
 
   //DECLARE_SPEEXW_CODEC(Narrow5k95,  2),   // does not work
-  DECLARE_NARROW_SPEEXW_CODEC(Narrow8k,    3,  NARROW_BITSPERFRAME_MODE3),
+  DECLARE_H323_NARROW_SPEEXW_CODEC(Narrow8k,    3,  NARROW_BITSPERFRAME_MODE3),
   //DECLARE_SPEEX_CODEC(Narrow11k,   4),    // does not work
   //DECLARE_SPEEX_CODEC(Narrow15k,   5),    // does not work
   //DECLARE_SPEEX_CODEC(Narrow18k2,  6),    // does not work
   //DECLARE_SPEEX_CODEC(Narrow24k6,  7)     // does not work
 
-  DECLARE_WIDE_SPEEX_CODEC(speex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
-  DECLARE_WIDE_SPEEX_CODEC(speex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
-  DECLARE_WIDE_SPEEX_CODEC(speex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+#ifdef INCLUDE_DEPRECATED_SPEEX_CODECS
+  DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
+  DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
+  DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+#endif
 
-  DECLARE_WIDE_SPEEX_CODEC(ietfSpeex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
-  DECLARE_WIDE_SPEEX_CODEC(ietfSpeex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
-  DECLARE_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
+  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
+  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+
+  DECLARE_SIP_SPEEX_CODEC("SpeexNB",  8000, Narrow8k, 3, NARROW_BITSPERFRAME_MODE3, NARROW_SAMPLES_PER_FRAME),
+  DECLARE_SIP_SPEEX_CODEC("SpeexWB", 16000, Wide17k6, 3, WIDE_BITSPERFRAME_MODE3,   WIDE_SAMPLES_PER_FRAME)
 };
 
 #define NUM_VER2_DEFNS   (sizeof(ver2SpeexCodecDefn) / sizeof(struct PluginCodec_Definition))
