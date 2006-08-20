@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2005  2006/08/15 23:52:55  csoutheren
+ * Revision 1.2006  2006/08/20 03:56:57  csoutheren
+ * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
+ * rather than relying on the presence of the IANA rtp encoding name field
+ *
+ * Revision 2.4  2006/08/15 23:52:55  csoutheren
  * Ensure codecs with same name but different clock rate get different payload types
  *
  * Revision 2.3  2006/08/11 07:52:01  csoutheren
@@ -359,6 +363,8 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     )
     , encoderCodec(_encoderCodec)
     {
+      PopulateMediaFormatOptions(_encoderCodec, *this);
+
       // manually register the new singleton type, as we do not have a concrete type
       OpalMediaFormatFactory::Register(*this, this);
     }
@@ -366,6 +372,16 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     {
       OpalMediaFormatFactory::Unregister(*this);
     }
+
+    bool IsValidForProtocol(const PString & protocol) const
+    {
+      int retVal;
+      unsigned int parmLen = sizeof(const char *);
+      if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
+        return retVal != 0;
+      return OpalMediaFormat::IsValidForProtocol(protocol);
+    }
+
     PluginCodec_Definition * encoderCodec;
 };
 
@@ -428,6 +444,16 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
     {
       OpalMediaFormatFactory::Unregister(*this);
     }
+
+    bool IsValidForProtocol(const PString & protocol) const
+    {
+      int retVal;
+      unsigned int parmLen = sizeof(const char *);
+      if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
+        return retVal != 0;
+      return OpalMediaFormat::IsValidForProtocol(protocol);
+    }
+
     PluginCodec_Definition * encoderCodec;
 };
 
@@ -1663,16 +1689,6 @@ void OpalPluginCodecManager::RegisterPluginPair(
             }
           }
 #endif
-          {
-            char fmtpBuffer[1024];
-            fmtpBuffer[0] = '\0';
-            unsigned int len = sizeof(fmtpBuffer)-1;
-            int retVal = 0;
-            if (CallCodecControl(encoderCodec, NULL, "get_fmtp", fmtpBuffer, &len, retVal)) {
-              if (retVal > 0 && (strlen(fmtpBuffer) > 0))
-                mediaFormat->SetOptionString("fmtp", fmtpBuffer);
-            }
-          }
         }
       }
 
@@ -1706,7 +1722,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
       break;
   }
 
-  if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323) {
+  int retVal;
+  unsigned int parmLen = sizeof(const char *);
+  BOOL hasCodecControl = CallCodecControl(encoderCodec, NULL, "valid_for_protocol", "h323", &parmLen, retVal);
+  if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
+      (hasCodecControl && (retVal == 0))
+       ) {
     PTRACE(3, "H323PLUGIN\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
     return;
   }
