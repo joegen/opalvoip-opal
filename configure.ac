@@ -478,8 +478,7 @@ dnl ########################################################################
 dnl
 dnl VoiceTronics VPB card
 dnl 
-dnl MSWIN_DISPLAY     vpb,VoiceTronics VPB
-dnl MSWIN_DISPLAY     vpb,Voicetrnix vpb support
+dnl MSWIN_DISPLAY     vpb,Voicetronix vpb support
 dnl MSWIN_CHECK_FILE  vpb,src\vpbapi.h,HAS_VPB=1
 dnl MSWIN_DIR_SYMBOL  vpb,VPB_DIR
 dnl MSWIN_CHECK_DIR   vpb,..\vpb-driver\
