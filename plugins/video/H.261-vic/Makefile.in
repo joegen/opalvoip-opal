@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2006/08/20 00:32:25  csoutheren
+# Added missing files to Makefile
+#
 # Revision 1.2  2006/08/12 10:59:14  rjongbloed
 # Added Linux build for H.261 plug-in.
 #
@@ -44,6 +47,10 @@ SONAME	= h261-vic
 SRCDIR	= ./vic
 OBJDIR	= ./obj
 
+vpath	%.cxx $(SRCDIR)
+vpath	%.c   $(SRCDIR)
+vpath	%.o   $(OBJDIR)
+
 SRCS	+= h261vic.cxx \
            $(SRCDIR)/encoder-h261.cxx \
 	   $(SRCDIR)/transmitter.cxx \
@@ -51,20 +58,21 @@ SRCS	+= h261vic.cxx \
 	   $(SRCDIR)/p64encoder.cxx \
            $(SRCDIR)/p64.cxx \
            $(SRCDIR)/dct.cxx \
-
-
-vpath	%.o $(OBJDIR)
-vpath	%.cxx .
-vpath	%.cxx $(SRCDIR)
+           $(SRCDIR)/huffcode.c \
+           $(SRCDIR)/bv.c \
 
 $(OBJDIR)/%.o : %.cxx
+	@mkdir -p $(OBJDIR) >/dev/null 2>&1
+	$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+
+$(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(SONAME)_video_pwplugin.so
 STATIC	= ./lib$(SONAME)_video_s.a
 
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO)$(SONAME) -o $@ $^
