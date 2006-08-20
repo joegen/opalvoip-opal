@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2043  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2044  2006/08/20 03:45:54  csoutheren
+ * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
+ * rather than relying on the presence of the IANA rtp encoding name field
+ *
+ * Revision 2.42  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -63,7 +67,11 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2043  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2044  2006/08/20 03:45:54  csoutheren
+ * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
+ * rather than relying on the presence of the IANA rtp encoding name field
+ *
+ * Revision 2.42  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -959,6 +967,13 @@ class OpalMediaFormat : public PCaselessString
 
     bool HasOption(const PString & name) const
     { return FindOption(name) != NULL; }
+
+    /** Returns TRUE if the media format is valid for the protocol specified
+        This allow plugin codecs to customise which protocols they are valid for
+        The default implementation returns true unless the protocol is H.323
+        and the rtpEncodingName is NULL
+      */
+    virtual bool IsValidForProtocol(const PString & protocol) const;
 
   protected:
     OpalMediaOption * FindOption(

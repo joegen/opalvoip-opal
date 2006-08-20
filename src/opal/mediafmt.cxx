@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2049  2006/08/15 23:35:36  csoutheren
+ * Revision 1.2050  2006/08/20 03:45:54  csoutheren
+ * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
+ * rather than relying on the presence of the IANA rtp encoding name field
+ *
+ * Revision 2.48  2006/08/15 23:35:36  csoutheren
  * Fixed problem with OpalMediaFormat compare which stopped RTP payload map from working
  *   which disabled iLBC codec on SIP
  *
@@ -974,6 +978,10 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
   return false;
 }
 
+bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
+{
+  return (rtpEncodingName != NULL) || (protocol != "h.323") || (protocol != "h323");
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1066,7 +1074,6 @@ bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
 
   return true;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
