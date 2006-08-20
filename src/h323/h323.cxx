@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2115  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2116  2006/08/20 13:35:55  csoutheren
+ * Backported changes to protect against rare error conditions
+ *
+ * Revision 2.114  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.113  2006/08/03 04:57:12  csoutheren
@@ -5220,7 +5223,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty == NULL) {
-      PTRACE(2, "H323\tRefusing to create an RTP channel with only one connection");
+      PTRACE(2, "H323\tCowardly refusing to create an RTP channel with only one connection");
       return NULL;
     }
 
