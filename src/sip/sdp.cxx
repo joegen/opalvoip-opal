@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2040  2006/08/15 23:52:55  csoutheren
+ * Revision 1.2041  2006/08/20 03:45:55  csoutheren
+ * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
+ * rather than relying on the presence of the IANA rtp encoding name field
+ *
+ * Revision 2.39  2006/08/15 23:52:55  csoutheren
  * Ensure codecs with same name but different clock rate get different payload types
  *
  * Revision 2.38  2006/07/28 10:41:51  rjongbloed
@@ -695,7 +699,8 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
 {
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
-  if (encodingName == NULL)
+
+  if (!mediaFormat.IsValidForProtocol("sip") || encodingName == NULL)
     return;
 
   unsigned clockRate = mediaFormat.GetClockRate();
@@ -718,14 +723,18 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
       return;
   }
 
-  AddSDPMediaFormat(new SDPMediaFormat(payloadType, encodingName, clockRate));
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(payloadType, encodingName, clockRate);
+  PString fmtp = mediaFormat.GetOptionString("fmtp");
+  if (!fmtp.IsEmpty())
+    sdpFormat->SetFMTP(fmtp);
+  AddSDPMediaFormat(sdpFormat);
 }
 
 
 void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    OpalMediaFormat mediaFormat = mediaFormats[i];
+    OpalMediaFormat & mediaFormat = mediaFormats[i];
     if (mediaFormat.GetDefaultSessionID() == session &&
         mediaFormat.GetEncodingName() != NULL &&
         mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
