@@ -531,6 +531,18 @@ AC_SUBST(HAS_SANGOMA)
 
 CPPFLAGS=$OLD_CPPFLAGS
 
+dnl ########################################################################
+dnl
+dnl Cisco libSRTP
+dnl 
+
+dnl MSWIN_DISPLAY     srtp,SRTP support
+dnl MSWIN_CHECK_FILE  srtp,include\srtp.h,HAS_SRTP=1
+dnl MSWIN_DIR_SYMBOL  srtp,SRTP_DIR
+dnl MSWIN_CHECK_DIR   srtp,.\srtp
+dnl MSWIN_CHECK_DIR   srtp,..\external\srtp
+dnl MSWIN_CHECK_DIR   srtp,c:\libs
+
 
 dnl ########################################################################
 dnl output make directives
