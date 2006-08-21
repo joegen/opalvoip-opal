@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2018  2006/06/27 12:54:35  csoutheren
+ * Revision 1.2019  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.17  2006/06/27 12:54:35  csoutheren
  * Patch 1374489 - h450.7 message center support
  * Thanks to Frederich Heem
  *
@@ -1079,7 +1083,7 @@ void H4502Handler::OnReceivedCallTransferIdentify(int /*linkedId*/)
 
   aliasAddress[0].SetTag(H225_AliasAddress::e_transportID);
   H225_TransportAddress& cPartyTransport = (H225_TransportAddress&) aliasAddress[0];
-  address.SetPDU(cPartyTransport);
+  address.SetPDU(cPartyTransport, endpoint.GetDefaultSignalPort());
 
   PPER_Stream resultStream;
   ctIdentifyResult.Encode(resultStream);

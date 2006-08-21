@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2033  2006/05/30 04:58:06  csoutheren
+ * Revision 1.2034  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.32  2006/05/30 04:58:06  csoutheren
  * Added suport for SIP INFO message (untested as yet)
  * Fixed some issues with SIP state machine on answering calls
  * Fixed some formatting issues
@@ -743,6 +747,11 @@ class OpalEndPoint : public PObject
     void SetSendUserInputMode(OpalConnection::SendUserInputModes mode) { defaultSendUserInputMode = mode; }
   //@}
 
+    virtual PString GetDefaultTransport() const;
+
+#if P_SSL
+    PString GetSSLCertificate() const;
+#endif
 
   protected:
     OpalManager   & manager;

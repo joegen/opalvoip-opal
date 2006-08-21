@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2055  2006/06/28 11:21:09  csoutheren
+ * Revision 1.2056  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.54  2006/06/28 11:21:09  csoutheren
  * Removed warning on gcc
  *
  * Revision 2.53  2006/06/27 13:07:37  csoutheren
@@ -810,8 +814,8 @@ WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Com
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323EndPoint::H323EndPoint(OpalManager & manager)
-  : OpalEndPoint(manager, "h323", CanTerminateCall),
+H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _defaultSignalPort)
+  : OpalEndPoint(manager, _prefix, CanTerminateCall),
     m_bH245Disabled(FALSE),
     signallingChannelCallTimeout(0, 0, 1),  // Minutes
     controlChannelStartTimeout(0, 0, 2),    // Minutes
@@ -837,7 +841,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
     nextH450CallIdentity(0)
 {
   // Set port in OpalEndPoint class
-  defaultSignalPort = DefaultTcpPort;
+  defaultSignalPort = _defaultSignalPort;
 
   localAliasNames.AppendString(defaultLocalPartyName);
 
@@ -1485,28 +1489,28 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
     PINDEX i;
     for (i = 0; i < e164.GetLength(); ++i)
       if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
-	break;
+      	break;
     if (i >= e164.GetLength()) {
       PString str;
       if (PDNS::ENUMLookup(e164, "E2U+h323", str)) {
-	PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
-	remoteParty = str;
+        PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
+        remoteParty = str;
       }
       else
-	return FALSE;
+        return FALSE;
     }
   }
 #endif
 
-  PURL url(remoteParty, "h323");
+  PURL url(remoteParty, GetPrefixName());
 
   // Special adjustment if 
   if (remoteParty.Find('@') == P_MAX_INDEX &&
       remoteParty.NumCompare(url.GetScheme()) != EqualTo) {
     if (gatekeeper == NULL)
-      url.Parse("h323:@" + remoteParty);
+      url.Parse(GetPrefixName() + ":@" + remoteParty);
     else
-      url.Parse("h323:" + remoteParty);
+      url.Parse(GetPrefixName() + ":" + remoteParty);
   }
 
   alias = url.GetUserName();
@@ -1628,7 +1632,7 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
     // If URL did not have a host, but user said to use gw, or we do not have
     // a gk to do a lookup so we MUST have a host, use alias must be host
     if (address.IsEmpty()) {
-      address = alias;
+      address = H323TransportAddress(alias, GetDefaultSignalPort(), GetDefaultTransport());
       alias = PString::Empty();
     }
     return TRUE;
