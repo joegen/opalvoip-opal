@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2014  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2015  2006/08/21 04:51:51  csoutheren
+ * Fixed formatting
+ *
+ * Revision 2.13  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.12  2005/11/30 13:35:26  csoutheren
@@ -534,10 +537,10 @@ class H323Gatekeeper : public H225_RAS
     RegistrationFailReasons registrationFailReason;
 
     class AlternateInfo : public PObject {
-        PCLASSINFO(AlternateInfo, PObject);
+      PCLASSINFO(AlternateInfo, PObject);
       public:
         AlternateInfo(H225_AlternateGK & alt);
-	~AlternateInfo();
+        ~AlternateInfo();
         Comparison Compare(const PObject & obj);
         void PrintOn(ostream & strm) const;
 
