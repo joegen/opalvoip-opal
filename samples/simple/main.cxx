@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2071  2006/08/01 12:46:32  rjongbloed
+ * Revision 1.2072  2006/08/21 05:30:48  csoutheren
+ * Add support for sh323
+ *
+ * Revision 2.70  2006/08/01 12:46:32  rjongbloed
  * Added build solution for plug ins
  * Removed now redundent code due to plug ins addition
  *
@@ -375,6 +378,10 @@ void SimpleOpalProcess::Main()
              "-disable-grq."
              "h-help."
              "H-no-h323."
+#if P_SSL
+             "-no-sh323."
+             "-sh323-listen:"
+#endif
              "-h323-listen:"
              "I-no-sip."
              "j-jitter:"
@@ -489,8 +496,14 @@ void SimpleOpalProcess::Main()
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
             "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
+#if P_SSL
+            "     --sh323-listen iface : Interface/port(s) to listen for secure H.323 requests\n"
+#endif
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
             " --disable-grq            : Do not send GRQ when registering with GK\n"
+#if P_SSL
+            " --no-sh323               : Do not creat secure H.323 endpoint\n"
+#endif
 #endif
 
             "\n"
@@ -618,6 +631,9 @@ MyManager::MyManager()
 
 #if OPAL_H323
   h323EP = NULL;
+#if P_SSL
+  sh323EP = NULL;
+#endif
 #endif
 #if OPAL_SIP
   sipEP  = NULL;
@@ -802,92 +818,17 @@ BOOL MyManager::Initialise(PArgList & args)
 
   ///////////////////////////////////////
   // Create H.323 protocol handler
-
   if (!args.HasOption("no-h323")) {
     h323EP = new H323EndPoint(*this);
-
-    h323EP->DisableFastStart(args.HasOption('f'));
-    h323EP->DisableH245Tunneling(args.HasOption('T'));
-    h323EP->SetSendGRQ(!args.HasOption("disable-grq"));
-
-    // Get local username, multiple uses of -u indicates additional aliases
-    if (args.HasOption('u')) {
-      PStringArray aliases = args.GetOptionString('u').Lines();
-      h323EP->SetLocalUserName(aliases[0]);
-      for (PINDEX i = 1; i < aliases.GetSize(); i++)
-        h323EP->AddAliasName(aliases[i]);
-    }
-
-    if (args.HasOption('b')) {
-      unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
-      if (initialBandwidth == 0) {
-        cerr << "Illegal bandwidth specified." << endl;
-        return FALSE;
-      }
-      h323EP->SetInitialBandwidth(initialBandwidth);
-    }
-
-    h323EP->SetGkAccessTokenOID(args.GetOptionString("gk-token"));
-
-    cout << "H.323 Local username: " << h323EP->GetLocalUserName() << "\n"
-         << "H.323 FastConnect is " << (h323EP->IsFastStartDisabled() ? "off" : "on") << "\n"
-         << "H.323 H245Tunnelling is " << (h323EP->IsH245TunnelingDisabled() ? "off" : "on") << "\n"
-         << "H.323 gk Token OID is " << h323EP->GetGkAccessTokenOID() << endl;
-
-
-    // Start the listener thread for incoming calls.
-    PStringArray listeners = args.GetOptionString("h323-listen").Lines();
-    if (!h323EP->StartListeners(listeners)) {
-      cerr <<  "Could not open any H.323 listener from "
-           << setfill(',') << listeners << endl;
+    if (!InitialiseH323EP(args, "h323-listen", h323EP))
       return FALSE;
+#if P_SSL
+    if (!args.HasOption("no-sh323")) {
+      sh323EP = new H323SecureEndPoint(*this);
+      if (!InitialiseH323EP(args, "sh323-listen", sh323EP))
+        return FALSE;
     }
-    cout << "H.323 listeners: " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
-
-
-    if (args.HasOption('p'))
-      h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
-
-    // Establish link with gatekeeper if required.
-    if (!args.HasOption('n')) {
-      PString gkHost      = args.GetOptionString('g');
-      PString gkIdentifer = args.GetOptionString('G');
-      PString gkInterface = args.GetOptionString("h323-listen");
-      cout << "Gatekeeper: " << flush;
-      if (h323EP->UseGatekeeper(gkHost, gkIdentifer, gkInterface))
-        cout << *h323EP->GetGatekeeper() << endl;
-      else {
-        cout << "none." << endl;
-        cerr << "Could not register with gatekeeper";
-        if (!gkIdentifer)
-          cerr << " id \"" << gkIdentifer << '"';
-        if (!gkHost)
-          cerr << " at \"" << gkHost << '"';
-        if (!gkInterface)
-          cerr << " on interface \"" << gkInterface << '"';
-        if (h323EP->GetGatekeeper() != NULL) {
-          switch (h323EP->GetGatekeeper()->GetRegistrationFailReason()) {
-            case H323Gatekeeper::InvalidListener :
-              cerr << " - Invalid listener";
-              break;
-            case H323Gatekeeper::DuplicateAlias :
-              cerr << " - Duplicate alias";
-              break;
-            case H323Gatekeeper::SecurityDenied :
-              cerr << " - Security denied";
-              break;
-            case H323Gatekeeper::TransportError :
-              cerr << " - Transport error";
-              break;
-            default :
-              cerr << " - Error code " << h323EP->GetGatekeeper()->GetRegistrationFailReason();
-          }
-        }
-        cerr << '.' << endl;
-        if (args.HasOption("require-gatekeeper")) 
-          return FALSE;
-      }
-    }
+#endif
   }
 
 #endif
@@ -1007,6 +948,13 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
+#if P_SSL
+      if (sh323EP != NULL) {
+        AddRouteEntry("pots:.*\\*.*\\*.* = sh323:<dn2ip>");
+        AddRouteEntry("pots:.*           = sh323:<da>");
+        AddRouteEntry("pc:.*             = sh323:<da>");
+      }
+#endif
     }
 #endif
 
@@ -1018,6 +966,10 @@ BOOL MyManager::Initialise(PArgList & args)
     if (potsEP != NULL) {
 #if OPAL_H323
       AddRouteEntry("h323:.* = pots:<da>");
+#if P_SSL
+      if (sh323EP != NULL) 
+        AddRouteEntry("sh323:.* = pots:<da>");
+#endif
 #endif
 #if OPAL_SIP
       AddRouteEntry("sip:.*  = pots:<da>");
@@ -1026,6 +978,10 @@ BOOL MyManager::Initialise(PArgList & args)
     else if (pcssEP != NULL) {
 #if OPAL_H323
       AddRouteEntry("h323:.* = pc:<da>");
+#if P_SSL
+      if (sh323EP != NULL) 
+        AddRouteEntry("sh323:.* = pc:<da>");
+#endif
 #endif
 #if OPAL_SIP
       AddRouteEntry("sip:.*  = pc:<da>");
@@ -1044,6 +1000,99 @@ BOOL MyManager::Initialise(PArgList & args)
   return TRUE;
 }
 
+#if OPAL_H323
+
+BOOL MyManager::InitialiseH323EP(PArgList & args, const PString & listenOption, H323EndPoint * h323EP)
+{
+  h323EP->DisableFastStart(args.HasOption('f'));
+  h323EP->DisableH245Tunneling(args.HasOption('T'));
+  h323EP->SetSendGRQ(!args.HasOption("disable-grq"));
+
+
+  // Get local username, multiple uses of -u indicates additional aliases
+  if (args.HasOption('u')) {
+    PStringArray aliases = args.GetOptionString('u').Lines();
+    h323EP->SetLocalUserName(aliases[0]);
+    for (PINDEX i = 1; i < aliases.GetSize(); i++)
+      h323EP->AddAliasName(aliases[i]);
+  }
+
+  if (args.HasOption('b')) {
+    unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
+    if (initialBandwidth == 0) {
+      cerr << "Illegal bandwidth specified." << endl;
+      return FALSE;
+    }
+    h323EP->SetInitialBandwidth(initialBandwidth);
+  }
+
+  h323EP->SetGkAccessTokenOID(args.GetOptionString("gk-token"));
+
+  PString prefix = h323EP->GetPrefixName();
+
+  cout << prefix << " Local username: " << h323EP->GetLocalUserName() << "\n"
+       << prefix << " FastConnect is " << (h323EP->IsFastStartDisabled() ? "off" : "on") << "\n"
+       << prefix << " H245Tunnelling is " << (h323EP->IsH245TunnelingDisabled() ? "off" : "on") << "\n"
+       << prefix << " gk Token OID is " << h323EP->GetGkAccessTokenOID() << endl;
+
+
+  // Start the listener thread for incoming calls.
+  PStringArray listeners = args.GetOptionString(listenOption).Lines();
+  if (!h323EP->StartListeners(listeners)) {
+    cerr <<  "Could not open any " << prefix << " listener from "
+         << setfill(',') << listeners << endl;
+    return FALSE;
+  }
+  cout << prefix << " listeners: " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
+
+
+  if (args.HasOption('p'))
+    h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
+
+  // Establish link with gatekeeper if required.
+  if (!args.HasOption('n')) {
+    PString gkHost      = args.GetOptionString('g');
+    PString gkIdentifer = args.GetOptionString('G');
+    PString gkInterface = args.GetOptionString("h323-listen");
+    cout << "Gatekeeper: " << flush;
+    if (h323EP->UseGatekeeper(gkHost, gkIdentifer, gkInterface))
+      cout << *h323EP->GetGatekeeper() << endl;
+    else {
+      cout << "none." << endl;
+      cerr << "Could not register with gatekeeper";
+      if (!gkIdentifer)
+        cerr << " id \"" << gkIdentifer << '"';
+      if (!gkHost)
+        cerr << " at \"" << gkHost << '"';
+      if (!gkInterface)
+        cerr << " on interface \"" << gkInterface << '"';
+      if (h323EP->GetGatekeeper() != NULL) {
+        switch (h323EP->GetGatekeeper()->GetRegistrationFailReason()) {
+          case H323Gatekeeper::InvalidListener :
+            cerr << " - Invalid listener";
+            break;
+          case H323Gatekeeper::DuplicateAlias :
+            cerr << " - Duplicate alias";
+            break;
+          case H323Gatekeeper::SecurityDenied :
+            cerr << " - Security denied";
+            break;
+          case H323Gatekeeper::TransportError :
+            cerr << " - Transport error";
+            break;
+          default :
+            cerr << " - Error code " << h323EP->GetGatekeeper()->GetRegistrationFailReason();
+        }
+      }
+      cerr << '.' << endl;
+      if (args.HasOption("require-gatekeeper")) 
+        return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+#endif  //OPAL_H323
 
 OpalConnection::AnswerCallResponse
        MyManager::OnAnswerCall(OpalConnection & connection,
