@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.h,v $
- * Revision 1.2008  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2009  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.7  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.6  2004/02/19 10:46:44  rjongbloed
@@ -112,8 +116,8 @@ class H323TransportAddress : public OpalTransportAddress
       H225_ArrayOf_TransportAddress & pdu,  ///<  List of transport addresses listening on
       const OpalTransport & associatedTransport ///<  Associated transport for precendence and translation
     );
-    BOOL SetPDU(H225_TransportAddress & pdu) const;
-    BOOL SetPDU(H245_TransportAddress & pdu) const;
+    BOOL SetPDU(H225_TransportAddress & pdu, WORD defPort = 0) const;
+    BOOL SetPDU(H245_TransportAddress & pdu, WORD defPort = 0) const;
 };
 
 

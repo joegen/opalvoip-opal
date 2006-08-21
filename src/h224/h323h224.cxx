@@ -20,6 +20,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.6  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
  * Revision 1.5  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
@@ -319,13 +323,13 @@ BOOL H323_H224Channel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) 
   // unicast must have mediaControlChannel
   H323TransportAddress mediaControlAddress(rtpSession.GetLocalAddress(), rtpSession.GetLocalControlPort());
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel);
-  mediaControlAddress.SetPDU(param.m_mediaControlChannel);
+  mediaControlAddress.SetPDU(param.m_mediaControlChannel, endpoint.GetDefaultSignalPort());
 	
   if (direction == H323Channel::IsReceiver) {
     // set mediaChannel
     H323TransportAddress mediaAddress(rtpSession.GetLocalAddress(), rtpSession.GetLocalDataPort());
     param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
-    mediaAddress.SetPDU(param.m_mediaChannel);
+    mediaAddress.SetPDU(param.m_mediaChannel, endpoint.GetDefaultSignalPort());
 	
   }	else{
 
@@ -347,12 +351,12 @@ void H323_H224Channel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & par
   // set mediaControlChannel
   H323TransportAddress mediaControlAddress(rtpSession.GetLocalAddress(), rtpSession.GetLocalControlPort());
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel);
-  mediaControlAddress.SetPDU(param.m_mediaControlChannel);
+  mediaControlAddress.SetPDU(param.m_mediaControlChannel, endpoint.GetDefaultSignalPort());
 	
   // set mediaChannel
   H323TransportAddress mediaAddress(rtpSession.GetLocalAddress(), rtpSession.GetLocalDataPort());
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel);
-  mediaAddress.SetPDU(param.m_mediaChannel);
+  mediaAddress.SetPDU(param.m_mediaChannel, endpoint.GetDefaultSignalPort());
 	
   // Set dynamic payload type, if is one
   int rtpPayloadType = GetDynamicRTPPayloadType();

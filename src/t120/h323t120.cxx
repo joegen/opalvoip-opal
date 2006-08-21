@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2012  2005/02/21 12:20:06  rjongbloed
+ * Revision 1.2013  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.11  2005/02/21 12:20:06  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.10  2002/11/10 11:33:20  robertj
@@ -261,7 +265,7 @@ BOOL H323_T120Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
   open.m_separateStack.m_networkAddress.SetTag(H245_NetworkAccessParameters_networkAddress::e_localAreaAddress);
   H245_TransportAddress & h245addr = open.m_separateStack.m_networkAddress;
   H323TransportAddress h323addr = listener->GetLocalAddress(connection.GetControlChannel().GetLocalAddress());
-  return h323addr.SetPDU(h245addr);
+  return h323addr.SetPDU(h245addr, endpoint.GetDefaultSignalPort());
 }
 
 
@@ -282,7 +286,7 @@ void H323_T120Channel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
       h323addr = listener->GetLocalAddress(connection.GetControlChannel().GetLocalAddress());
     else
       h323addr = transport->GetLocalAddress();
-    h323addr.SetPDU(h245addr);
+    h323addr.SetPDU(h245addr, endpoint.GetDefaultSignalPort());
   }
 }
 

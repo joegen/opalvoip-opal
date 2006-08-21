@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2020  2006/04/25 07:48:07  rjongbloed
+ * Revision 1.2021  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.19  2006/04/25 07:48:07  rjongbloed
  * Ported changes from OpenH323 gatekeeper server to OPAL code base.
  *
  * Revision 2.18  2006/02/13 11:09:56  csoutheren
@@ -4088,7 +4092,7 @@ BOOL H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_Alias
 
   H323TransportAddress aliasAsTransport = aliasString;
   PIPSocket::Address ip;
-  WORD port = H323EndPoint::DefaultTcpPort;
+  WORD port = H323EndPoint::DefaultTcpSignalPort;
   if (!aliasAsTransport.GetIpAndPort(ip, port)) {
     PTRACE(4, "RAS\tCould not translate " << aliasString << " as host name.");
     return FALSE;

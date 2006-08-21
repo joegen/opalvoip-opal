@@ -7,6 +7,7 @@
  * Formally known as the Open H323 project.
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
+ * Portions Copyright (C) 2006 by Post Increment
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -22,10 +23,17 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2020  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2021  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.19  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.18  2005/09/19 20:48:23  dsandras
@@ -1107,6 +1115,192 @@ class OpalTransportUDP : public OpalTransportIP
     PSocketList          connectSockets;
     BOOL 		 reuseAddressFlag;
 };
+
+////////////////////////////////////////////////////////////////
+
+class OpalInternalTransport : public PObject
+{
+    PCLASSINFO(OpalInternalTransport, PObject);
+  public:
+    virtual PString GetHostName(
+      const OpalTransportAddress & address
+    ) const;
+
+    virtual BOOL GetIpAndPort(
+      const OpalTransportAddress & address,
+      PIPSocket::Address & ip,
+      WORD & port
+    ) const;
+
+    virtual OpalListener * CreateListener(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const  = 0;
+
+    virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const = 0;
+};
+
+
+////////////////////////////////////////////////////////////////
+
+class OpalInternalIPTransport : public OpalInternalTransport
+{
+    PCLASSINFO(OpalInternalIPTransport, OpalInternalTransport);
+  public:
+    virtual PString GetHostName(
+      const OpalTransportAddress & address
+    ) const;
+    virtual BOOL GetIpAndPort(
+      const OpalTransportAddress & address,
+      PIPSocket::Address & ip,
+      WORD & port
+    ) const;
+
+    static BOOL GetAdjustedIpAndPort(const OpalTransportAddress & address,
+                                     OpalEndPoint & endpoint,
+                                     OpalTransportAddress::BindOptions option,
+                                     PIPSocket::Address & ip,
+                                     WORD & port,
+                                     BOOL & reuseAddr);
+};
+
+template <class ListenerType, class TransportType>
+class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
+{
+  public:
+    OpalListener * CreateListener(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const
+    {
+      PIPSocket::Address ip;
+      WORD port;
+      BOOL reuseAddr;
+      if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr))
+        return new ListenerType(endpoint, ip, port, reuseAddr);
+      return NULL;
+    }
+
+    OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const
+    {
+      PIPSocket::Address ip;
+      WORD port;
+      BOOL reuseAddr;
+      if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr)) 
+        return new TransportType(endpoint, ip, 0, reuseAddr);
+      return NULL;
+    }
+};
+
+typedef OpalInternalIPTransportTemplate<OpalListenerTCP, OpalTransportTCP> OpalInternalTCPTransport;
+typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP> OpalInternalUDPTransport;
+
+#if P_SSL
+
+class PSSLContext;
+
+class OpalListenerSTCP : public OpalListenerTCP
+{
+  PCLASSINFO(OpalListenerSTCP, OpalListenerTCP);
+  public:
+    OpalListenerSTCP(
+      OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
+      PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
+      WORD port = 0,                           ///<  TCP port to listen for connections
+      BOOL exclusive = TRUE
+    );
+
+    /** Destroy the listener thread.
+      */
+    ~OpalListenerSTCP();
+
+    OpalTransport * Accept(const PTimeInterval & timeout);
+    const char * GetProtoPrefix() const;
+
+    protected:
+      PSSLContext * sslContext;
+};
+
+class OpalTransportSTCP : public OpalTransportTCP
+{
+  PCLASSINFO(OpalTransportSTCP, OpalTransportTCP);
+    public:
+      OpalTransportSTCP(
+        OpalEndPoint & endpoint,    ///<  Endpoint object
+        PIPSocket::Address binding = INADDR_ANY, ///<  Local interface to use
+        WORD port = 0,              ///<  Local port to bind to
+        BOOL reuseAddr = FALSE      ///<  Flag for binding to already bound interface
+      );
+      OpalTransportSTCP(
+        OpalEndPoint & endpoint,    ///<  Endpoint object
+        PTCPSocket * socket         ///<  Socket to use
+      );
+
+      /// Destroy the STCP channel
+      ~OpalTransportSTCP();
+
+      BOOL IsCompatibleTransport(const OpalTransportAddress & address) const;
+      BOOL Connect();
+      BOOL OnOpen();
+      const char * GetProtoPrefix() const;
+
+    protected:
+      PSSLContext * sslContext;
+};
+
+typedef OpalInternalIPTransportTemplate<OpalListenerSTCP, OpalTransportSTCP> OpalInternalSTCPTransport;
+
+#endif
+
+////////////////////////////////////////////////////////////////
+
+#if 0
+
+class OpalInternalTCPTransport : public OpalInternalIPTransport
+{
+    PCLASSINFO(OpalInternalTCPTransport, OpalInternalIPTransport);
+  public:
+    virtual OpalListener * CreateListener(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const;
+    virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const;
+};
+
+////////////////////////////////////////////////////////////////
+
+class OpalInternalUDPTransport : public OpalInternalIPTransport
+{
+    PCLASSINFO(OpalInternalUDPTransport, OpalInternalIPTransport);
+  public:
+    virtual OpalListener * CreateListener(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const;
+    virtual OpalTransport * CreateTransport(
+      const OpalTransportAddress & address,
+      OpalEndPoint & endpoint,
+      OpalTransportAddress::BindOptions options
+    ) const;
+};
+
+#endif
 
 
 #endif  // __OPAL_TRANSPORT_H

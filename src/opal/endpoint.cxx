@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2039  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2040  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.38  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.37  2006/05/30 04:58:06  csoutheren
@@ -241,7 +245,7 @@ BOOL OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
   BOOL startedOne = FALSE;
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-    OpalTransportAddress iface(interfaces[i], defaultSignalPort);
+    OpalTransportAddress iface(interfaces[i], defaultSignalPort, GetDefaultTransport());
     if (StartListener(iface))
       startedOne = TRUE;
   }
@@ -294,12 +298,16 @@ BOOL OpalEndPoint::StartListener(OpalListener * listener)
   return TRUE;
 }
 
+PString OpalEndPoint::GetDefaultTransport() const
+{
+  return "tcp$";
+}
 
 PStringArray OpalEndPoint::GetDefaultListeners() const
 {
   PStringArray listenerAddresses;
-  if (defaultSignalPort != 0)
-    listenerAddresses.AppendString(psprintf("tcp$*:%u", defaultSignalPort));
+  if (defaultSignalPort != 0) 
+    listenerAddresses.AppendString(GetDefaultTransport() + psprintf("*:%u", defaultSignalPort));
   return listenerAddresses;
 }
 
@@ -545,5 +553,13 @@ OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224
 {
   return manager.CreateH281ProtocolHandler(h224Handler);
 }
+
+#if P_SSL
+PString OpalEndPoint::GetSSLCertificate() const
+{
+  return "server.pem";
+}
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
