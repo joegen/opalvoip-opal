@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2035  2006/08/03 04:57:12  csoutheren
+ * Revision 1.2036  2006/08/21 05:24:36  csoutheren
+ * Add extra trace log to allow tracking of NAT detection
+ *
+ * Revision 2.34  2006/08/03 04:57:12  csoutheren
  * Port additional NAT handling logic from OpenH323 and extend into OpalConnection class
  *
  * Revision 2.33  2006/07/28 10:41:51  rjongbloed
@@ -1604,6 +1607,7 @@ RTP_UDP::RTP_UDP(unsigned id, BOOL _remoteIsNAT)
     remoteTransmitAddress(0),
     remoteIsNAT(_remoteIsNAT)
 {
+  PTRACE(4, "RTP_UDP\tRTP session created with NAT flag set to " << remoteIsNAT);
   remoteDataPort = 0;
   remoteControlPort = 0;
   shutdownRead = FALSE;
@@ -1683,14 +1687,14 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
     else {
       PTRACE(1, "RTP\tSTUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
       if (stun->CreateSocket(dataSocket)) {
-	dataSocket->GetLocalAddress(localAddress, localDataPort);
+        dataSocket->GetLocalAddress(localAddress, localDataPort);
       }
       else {
-	PTRACE(1, "RTP\tSTUN could not create RTP socket either.");
-	return FALSE;
+        PTRACE(1, "RTP\tSTUN could not create RTP socket either.");
+        return FALSE;
       }
       if (stun->CreateSocket(controlSocket)) {
-	controlSocket->GetLocalAddress(localAddress, localControlPort);
+        controlSocket->GetLocalAddress(localAddress, localControlPort);
       }
     }
   }
