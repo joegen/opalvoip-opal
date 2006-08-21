@@ -7,6 +7,7 @@
  * Formally known as the Open H323 project.
  *
  * Copyright (c) 2001 Equivalence Pty. Ltd.
+ * Portions Copyright (C) 2006 by Post Increment
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -22,10 +23,17 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2063  2006/07/14 04:22:43  csoutheren
+ * Revision 1.2064  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.62  2006/07/14 04:22:43  csoutheren
  * Applied 1517397 - More Phobos stability fix
  * Thanks to Dinis Rosario
  *
@@ -510,102 +518,27 @@
 #include <ptclib/pstun.h>
 
 
-static const char IpPrefix[] = "ip$"; // For backward compatibility with OpenH323
+static const char IpPrefix[]  = "ip$";   // For backward compatibility with OpenH323
 static const char TcpPrefix[] = "tcp$";
 static const char UdpPrefix[] = "udp$";
 
 #include <ptclib/pstun.h>
 
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(TcpPrefix);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport>  opalInternalIPTransportFactory(IpPrefix);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(UdpPrefix);
 
-////////////////////////////////////////////////////////////////
+#define P_SSL 1
+#include <ptclib/pssl.h>
 
-class OpalInternalTransport : public PObject
-{
-    PCLASSINFO(OpalInternalTransport, PObject);
-  public:
-    virtual PString GetHostName(
-      const OpalTransportAddress & address
-    ) const;
-
-    virtual BOOL GetIpAndPort(
-      const OpalTransportAddress & address,
-      PIPSocket::Address & ip,
-      WORD & port
-    ) const;
-
-    virtual OpalListener * CreateListener(
-      const OpalTransportAddress & address,
-      OpalEndPoint & endpoint,
-      OpalTransportAddress::BindOptions options
-    ) const  = 0;
-
-    virtual OpalTransport * CreateTransport(
-      const OpalTransportAddress & address,
-      OpalEndPoint & endpoint,
-      OpalTransportAddress::BindOptions options
-    ) const = 0;
-};
-
-
-////////////////////////////////////////////////////////////////
-
-class OpalInternalIPTransport : public OpalInternalTransport
-{
-    PCLASSINFO(OpalInternalIPTransport, OpalInternalTransport);
-  public:
-    virtual PString GetHostName(
-      const OpalTransportAddress & address
-    ) const;
-    virtual BOOL GetIpAndPort(
-      const OpalTransportAddress & address,
-      PIPSocket::Address & ip,
-      WORD & port
-    ) const;
-};
-
-
-////////////////////////////////////////////////////////////////
-
-static class OpalInternalTCPTransport : public OpalInternalIPTransport
-{
-    PCLASSINFO(OpalInternalTCPTransport, OpalInternalIPTransport);
-  public:
-    virtual OpalListener * CreateListener(
-      const OpalTransportAddress & address,
-      OpalEndPoint & endpoint,
-      OpalTransportAddress::BindOptions options
-    ) const;
-    virtual OpalTransport * CreateTransport(
-      const OpalTransportAddress & address,
-      OpalEndPoint & endpoint,
-      OpalTransportAddress::BindOptions options
-    ) const;
-} internalTCPTransport;
-
-
-////////////////////////////////////////////////////////////////
-
-static class OpalInternalUDPTransport : public OpalInternalIPTransport
-{
-    PCLASSINFO(OpalInternalUDPTransport, OpalInternalIPTransport);
-  public:
-    virtual OpalListener * CreateListener(
-      const OpalTransportAddress & address,
-      OpalEndPoint & endpoint,
-      OpalTransportAddress::BindOptions options
-    ) const;
-    virtual OpalTransport * CreateTransport(
-      const OpalTransportAddress & address,
-      OpalEndPoint & endpoint,
-      OpalTransportAddress::BindOptions options
-    ) const;
-} internalUDPTransport;
-
+#if P_SSL
+static const char StcpPrefix[] = "stcp$";
+static PFactory<OpalInternalTransport>::Worker<OpalInternalSTCPTransport> opalInternalSTCPTransportFactory(StcpPrefix);
+#endif
 
 /////////////////////////////////////////////////////////////////
 
 #define new PNEW
-
 
 /////////////////////////////////////////////////////////////////
 
@@ -724,12 +657,19 @@ void OpalTransportAddress::SetInternalTransport(WORD port, const char * proto)
 
   PCaselessString type = Left(dollar+1);
 
+#if 0
   // look for known transport types, note that "ip$" == "tcp$"
   if ((type == IpPrefix) || (type == TcpPrefix))
     transport = &internalTCPTransport;
   else if (type == UdpPrefix)
     transport = &internalUDPTransport;
   else
+    return;
+#endif
+
+  // use factory to create transport types
+  transport = PFactory<OpalInternalTransport>::CreateInstance(type);
+  if (transport == NULL)
     return;
 
   if (port != 0 && Find(':', dollar) == P_MAX_INDEX)
@@ -875,7 +815,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
 
 //////////////////////////////////////////////////////////////////////////
 
-static BOOL GetAdjustedIpAndPort(const OpalTransportAddress & address,
+BOOL OpalInternalIPTransport::GetAdjustedIpAndPort(const OpalTransportAddress & address,
                                  OpalEndPoint & endpoint,
                                  OpalTransportAddress::BindOptions option,
                                  PIPSocket::Address & ip,
@@ -900,6 +840,7 @@ static BOOL GetAdjustedIpAndPort(const OpalTransportAddress & address,
   }
 }
 
+#if 0
 
 OpalListener * OpalInternalTCPTransport::CreateListener(const OpalTransportAddress & address,
                                                         OpalEndPoint & endpoint,
@@ -966,6 +907,8 @@ OpalTransport * OpalInternalUDPTransport::CreateTransport(const OpalTransportAdd
 
 
 //////////////////////////////////////////////////////////////////////////
+
+#endif
 
 OpalListener::OpalListener(OpalEndPoint & ep)
   : endpoint(ep)
@@ -2149,3 +2092,240 @@ const char * OpalTransportUDP::GetProtoPrefix() const
 
 
 //////////////////////////////////////////////////////////////////////////
+
+#if P_SSL
+
+#include <ptclib/pssl.h>
+
+static BOOL SetSSLCertificate(PSSLContext & sslContext,
+                             const PFilePath & certificateFile,
+                                        BOOL create,
+                                   const char * dn = NULL)
+{
+  if (create && !PFile::Exists(certificateFile)) {
+    PSSLPrivateKey key(1024);
+    PSSLCertificate certificate;
+    PStringStream name;
+    if (dn != NULL)
+      name << dn;
+    else {
+      name << "/O=" << PProcess::Current().GetManufacturer()
+           << "/CN=" << PProcess::Current().GetName() << '@' << PIPSocket::GetHostName();
+    }
+    if (!certificate.CreateRoot(name, key)) {
+      PTRACE(0, "MTGW\tCould not create certificate");
+      return FALSE;
+    }
+    certificate.Save(certificateFile);
+    key.Save(certificateFile, TRUE);
+  }
+
+  return sslContext.UseCertificate(certificateFile) &&
+         sslContext.UsePrivateKey(certificateFile);
+}
+
+OpalTransportSTCP::OpalTransportSTCP(OpalEndPoint & ep,
+                                     PIPSocket::Address binding,
+                                     WORD port,
+                                     BOOL reuseAddr)
+  : OpalTransportTCP(ep, binding, port)
+{
+  reuseAddressFlag = reuseAddr;
+  sslContext = new PSSLContext;
+}
+
+
+OpalTransportSTCP::OpalTransportSTCP(OpalEndPoint & ep, PTCPSocket * socket)
+  : OpalTransportTCP(ep, INADDR_ANY, 0)
+{
+  sslContext = new PSSLContext;
+  PSSLChannel * sslChannel = new PSSLChannel(sslContext);
+  if (!sslChannel->Open(socket))
+    delete sslChannel;
+  else
+    Open(sslChannel);
+}
+
+
+OpalTransportSTCP::~OpalTransportSTCP()
+{
+  CloseWait();
+  delete sslContext;
+  PTRACE(4,"Opal\tDeleted transport " << *this);
+}
+
+
+BOOL OpalTransportSTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
+{
+  return address.Left(strlen(StcpPrefix)) *= StcpPrefix;
+}
+
+
+BOOL OpalTransportSTCP::Connect()
+{
+  if (IsOpen())
+    return TRUE;
+
+  PTCPSocket * socket = new PTCPSocket(remotePort);
+
+  PReadWaitAndSignal mutex(channelPointerMutex);
+
+  socket->SetReadTimeout(10000);
+
+  OpalManager & manager = endpoint.GetManager();
+  localPort = manager.GetNextTCPPort();
+  WORD firstPort = localPort;
+  for (;;) {
+    PTRACE(4, "OpalSTCP\tConnecting to "
+           << remoteAddress << ':' << remotePort
+           << " (local port=" << localPort << ')');
+    if (socket->Connect(localPort, remoteAddress))
+      break;
+
+    int errnum = socket->GetErrorNumber();
+    if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
+      PTRACE(1, "OpalSTCP\tCould not connect to "
+                << remoteAddress << ':' << remotePort
+                << " (local port=" << localPort << ") - "
+                << socket->GetErrorText() << '(' << errnum << ')');
+      return SetErrorValues(socket->GetErrorCode(), errnum);
+    }
+
+    localPort = manager.GetNextTCPPort();
+    if (localPort == firstPort) {
+      PTRACE(1, "OpalTCP\tCould not bind to any port in range " <<
+                manager.GetTCPPortBase() << " to " << manager.GetTCPPortMax());
+      return SetErrorValues(socket->GetErrorCode(), errnum);
+    }
+  }
+
+  socket->SetReadTimeout(PMaxTimeInterval);
+
+  PString certificateFile = endpoint.GetSSLCertificate();
+  if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
+    PTRACE(1, "OpalSTCP\tCould not load certificate \"" << certificateFile << '"');
+    return FALSE;
+  }
+
+  PSSLChannel * sslChannel = new PSSLChannel(sslContext);
+  if (!sslChannel->Connect(socket)) {
+    delete sslChannel;
+    return FALSE;
+  }
+
+  return Open(sslChannel);
+}
+
+BOOL OpalTransportSTCP::OnOpen()
+{
+  PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(GetReadChannel());
+  if (sslChannel == NULL)
+    return FALSE;
+
+  PIPSocket * socket = dynamic_cast<PIPSocket *>(sslChannel->GetReadChannel());
+
+  // Get name of the remote computer for information purposes
+  if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
+    PTRACE(1, "OpalSTCP\tGetPeerAddress() failed: " << socket->GetErrorText());
+    return FALSE;
+  }
+
+  // get local address of incoming socket to ensure that multi-homed machines
+  // use a NIC address that is guaranteed to be addressable to destination
+  if (!socket->GetLocalAddress(localAddress, localPort)) {
+    PTRACE(1, "OpalSTCP\tGetLocalAddress() failed: " << socket->GetErrorText());
+    return FALSE;
+  }
+
+#ifndef __BEOS__
+  if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
+    PTRACE(1, "OpalSTCP\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
+  }
+
+  // make sure do not lose outgoing packets on close
+  const linger ling = { 1, 3 };
+  if (!socket->SetOption(SO_LINGER, &ling, sizeof(ling))) {
+    PTRACE(1, "OpalTCP\tSetOption(SO_LINGER) failed: " << socket->GetErrorText());
+    return FALSE;
+  }
+#endif
+
+  PTRACE(1, "OpalSTCP\tStarted connection to "
+         << remoteAddress << ':' << remotePort
+         << " (if=" << localAddress << ':' << localPort << ')');
+
+  return TRUE;
+}
+
+
+const char * OpalTransportSTCP::GetProtoPrefix() const
+{
+  return StcpPrefix;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+OpalListenerSTCP::OpalListenerSTCP(OpalEndPoint & ep,
+                                 PIPSocket::Address binding,
+                                 WORD port,
+                                 BOOL exclusive)
+  : OpalListenerTCP(ep, binding, port, exclusive)
+{
+  listenerPort = port;
+  sslContext = new PSSLContext();
+  PString certificateFile = endpoint.GetSSLCertificate();
+  if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
+    PTRACE(1, "OpalSTCP\tCould not load certificate \"" << certificateFile << '"');
+  }
+}
+
+OpalListenerSTCP::~OpalListenerSTCP()
+{
+  delete sslContext;
+}
+
+OpalTransport * OpalListenerSTCP::Accept(const PTimeInterval & timeout)
+{
+  if (!listener.IsOpen())
+    return NULL;
+
+  listener.SetReadTimeout(timeout); // Wait for remote connect
+
+  PTRACE(4, "STCP\tWaiting on socket accept on " << GetLocalAddress());
+  PTCPSocket * socket = new PTCPSocket;
+  if (!socket->Accept(listener)) {
+    if (socket->GetErrorCode() != PChannel::Interrupted) {
+      PTRACE(1, "Listen\tAccept error:" << socket->GetErrorText());
+      listener.Close();
+    }
+    delete socket;
+    return NULL;
+  }
+
+  OpalTransportSTCP * transport = new OpalTransportSTCP(endpoint);
+  PSSLChannel * ssl = new PSSLChannel(sslContext);
+  if (!ssl->Accept(socket)) {
+    PTRACE(1, "STCP\tAccept failed: " << ssl->GetErrorText());
+    delete transport;
+    delete ssl;
+    delete socket;
+    return NULL;
+  }
+
+  if (transport->Open(ssl))
+    return transport;
+
+  PTRACE(1, "STCP\tFailed to open transport, connection not started.");
+  delete transport;
+  delete ssl;
+  delete socket;
+  return NULL;
+}
+
+const char * OpalListenerSTCP::GetProtoPrefix() const
+{
+  return StcpPrefix;
+}
+
+
+#endif

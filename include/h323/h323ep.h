@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2040  2006/06/27 13:07:37  csoutheren
+ * Revision 1.2041  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.39  2006/06/27 13:07:37  csoutheren
  * Patch 1374533 - add h323 Progress handling
  * Thanks to Frederich Heem
  *
@@ -414,7 +418,7 @@ class H323EndPoint : public OpalEndPoint
 
   public:
     enum {
-      DefaultTcpPort = 1720
+      DefaultTcpSignalPort = 1720
     };
 
   /**@name Construction */
@@ -422,7 +426,9 @@ class H323EndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     H323EndPoint(
-      OpalManager & manager
+      OpalManager & manager,
+      const char * prefix = "h323",
+      WORD defaultSignalPort = DefaultTcpSignalPort
     );
 
     /**Destroy endpoint.
@@ -1729,6 +1735,28 @@ class H323EndPoint : public OpalEndPoint
 
 };
 
+
+#if P_SSL
+
+class H323SecureEndPoint : public H323EndPoint
+{
+  PCLASSINFO(H323SecureEndPoint, H323EndPoint);
+  public:
+    enum {
+      DefaultTcpSignalPort = 1300
+    };
+
+    H323SecureEndPoint(OpalManager & _manager)
+      : H323EndPoint(_manager, "sh323", DefaultTcpSignalPort)
+    {
+    }
+
+    PString GetDefaultTransport() const
+    {  return "stcp$"; }
+  //@}
+};
+
+#endif // P_SSL
 
 #endif // __OPAL_H323EP_H
 

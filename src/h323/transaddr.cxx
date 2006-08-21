@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2010  2005/01/16 23:07:34  csoutheren
+ * Revision 1.2011  2006/08/21 05:29:25  csoutheren
+ * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
+ * and secure H.323 signalling via the sh323 URL scheme
+ *
+ * Revision 2.9  2005/01/16 23:07:34  csoutheren
  * Fixed problem with IPv6 INADDR_ANY
  *
  * Revision 2.8  2004/04/07 08:21:10  rjongbloed
@@ -173,7 +177,7 @@ static void AppendTransportAddress(OpalManager & manager,
 
   H323TransportAddress transAddr(addr, port);
   H225_TransportAddress pduAddr;
-  transAddr.SetPDU(pduAddr);
+  transAddr.SetPDU(pduAddr, associatedTransport.GetEndPoint().GetDefaultSignalPort());
 
   PINDEX lastPos = pdu.GetSize();
 
@@ -195,7 +199,7 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
   OpalManager & manager = associatedTransport.GetEndPoint().GetManager();
 
   PIPSocket::Address ip;
-  WORD port = H323EndPoint::DefaultTcpPort;
+  WORD port = associatedTransport.GetEndPoint().GetDefaultSignalPort(); //H323EndPoint::DefaultTcpPort;
   if (!GetIpAndPort(ip, port))
     return FALSE;
 
@@ -233,10 +237,10 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
 }
 
 
-BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu) const
+BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort) const
 {
   PIPSocket::Address ip;
-  WORD port = H323EndPoint::DefaultTcpPort;
+  WORD port = defPort;
   if (GetIpAndPort(ip, port)) {
 #if P_HAS_IPV6
     if (ip.GetVersion() == 6) {
@@ -248,6 +252,8 @@ BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu) const
       return TRUE;
     }
 #endif
+
+    PAssert(port != 0, "Attempt to set transport address with empty port");
 
     pdu.SetTag(H225_TransportAddress::e_ipAddress);
     H225_TransportAddress_ipAddress & addr = pdu;
@@ -261,10 +267,13 @@ BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu) const
 }
 
 
-BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu) const
+BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort) const
 {
+  WORD port = defPort;
+  if (defPort == 0)
+    defPort = H323EndPoint::DefaultTcpSignalPort;
+
   PIPSocket::Address ip;
-  WORD port = 0;
   if (GetIpAndPort(ip, port)) {
     pdu.SetTag(H245_TransportAddress::e_unicastAddress);
 
@@ -352,7 +361,7 @@ void H323SetTransportAddresses(const H323Transport & associatedTransport,
     }
 
     H225_TransportAddress pduAddr;
-    addr.SetPDU(pduAddr);
+    addr.SetPDU(pduAddr, associatedTransport.GetEndPoint().GetDefaultSignalPort());
 
     PINDEX lastPos = pdu.GetSize();
 
