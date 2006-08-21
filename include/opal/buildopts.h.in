@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.17  2006/08/21 06:19:28  csoutheren
+ * Added placeholders for SRTP implementation
+ *
  * Revision 1.16  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
@@ -169,6 +172,25 @@
 //
 #undef HAS_SANGOMA
 
+/////////////////////////////////////////////////
+//
+// SRTP support
+//
+#undef HAS_SRTP
+
+#if HAS_SRTP
+#if defined(_MSC_VER)
+
+#pragma include_alias(<srtp/include/srtp.h>, <@SRTP_DIR@/include/srtp.h>)
+#pragma include_alias("crypto_kernel.h",     "@SRTP_DIR@/crypto/include/crypto_kernel.h")
+#pragma include_alias("rdbx.h",              "@SRTP_DIR@/crypto/include/rdbx.h")
+#pragma include_alias("rdb.h",               "@SRTP_DIR@/crypto/include/rdb.h")
+#pragma include_alias("integers.h",          "@SRTP_DIR@/crypto/include/integers.h")
+
+#define SRTP_LIBRARY "@SRTP_DIR@/lib/libsrtp.lib"
+
+#endif
+#endif
 
 /////////////////////////////////////////////////
 // Various other Line Interface Devices
