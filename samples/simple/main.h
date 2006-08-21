@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2022  2006/07/21 00:38:31  csoutheren
+ * Revision 1.2023  2006/08/21 05:30:48  csoutheren
+ * Add support for sh323
+ *
+ * Revision 2.21  2006/07/21 00:38:31  csoutheren
  * Applied 1483215 - Opal simpleOPAL deadlock patch & DTMF support
  * Thanks to Mike T
  *
@@ -130,6 +133,7 @@
 class MyManager;
 class SIPEndPoint;
 class H323EndPoint;
+class H323SEndPoint;
 class IAX2EndPoint;
 
 class MyPCSSEndPoint : public OpalPCSSEndPoint
@@ -183,12 +187,17 @@ class MyManager : public OpalManager
 		   const PString & caller);
 
   protected:
+    BOOL InitialiseH323EP(PArgList & args, const PString & listenOption, H323EndPoint * h323EP);
+
     PString currentCallToken;
 
     OpalPOTSEndPoint * potsEP;
     MyPCSSEndPoint   * pcssEP;
 #if OPAL_H323
     H323EndPoint     * h323EP;
+#if P_SSL
+    H323SecureEndPoint    * sh323EP;
+#endif
 #endif
 #if OPAL_SIP
     SIPEndPoint      * sipEP;
