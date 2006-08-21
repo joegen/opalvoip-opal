@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2016  2006/04/25 07:48:07  rjongbloed
+ * Revision 1.2017  2006/08/21 04:52:40  csoutheren
+ * Fixed spelling error in documentation
+ *
+ * Revision 2.15  2006/04/25 07:48:07  rjongbloed
  * Ported changes from OpenH323 gatekeeper server to OPAL code base.
  *
  * Revision 2.14  2006/01/02 15:51:44  dsandras
@@ -1517,7 +1520,7 @@ class H323GatekeeperServer : public H323TransactionServer
        The user woiuld not usually use this function as it is used internally
        by the server when new registration requests (RRQ) are received.
 
-       Note that a registered endpoint has no realationship in this software
+       Note that a registered endpoint has no relationship in this software
        to a H323EndPoint class.
       */
     virtual void AddEndPoint(
