@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2064  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2065  2006/08/22 09:02:41  csoutheren
+ * Removed left over debug code
+ *
+ * Revision 2.63  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -514,6 +517,7 @@
 #include <opal/manager.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
+#include <opal/buildopts.h>
 
 #include <ptclib/pstun.h>
 
@@ -528,10 +532,8 @@ static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInt
 static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport>  opalInternalIPTransportFactory(IpPrefix);
 static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(UdpPrefix);
 
-#define P_SSL 1
-#include <ptclib/pssl.h>
-
 #if P_SSL
+#include <ptclib/pssl.h>
 static const char StcpPrefix[] = "stcp$";
 static PFactory<OpalInternalTransport>::Worker<OpalInternalSTCPTransport> opalInternalSTCPTransportFactory(StcpPrefix);
 #endif
