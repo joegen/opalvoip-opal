@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2053  2006/08/12 03:55:39  csoutheren
+ * Revision 1.2054  2006/08/22 08:55:46  csoutheren
+ * Removed duplicate declaration of remoteIsNAT that was hiding variable of same name in the ancestor
+ *
+ * Revision 2.52  2006/08/12 03:55:39  csoutheren
  * Applied 1538066 - Make H323 StartControlNegotiations virtual
  * Thanks to Adam Butcher
  *
@@ -2380,9 +2383,6 @@ class H323Connection : public OpalConnection
     H4507Handler                     * h4507handler;
     H45011Handler                    * h45011handler;
 
-    // used to detect remote NAT endpoints
-    BOOL remoteIsNAT;
-	
 #ifdef H323_H460
 	H460_FeatureSet & features;
 #endif
