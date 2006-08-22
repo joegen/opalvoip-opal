@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2006  2006/08/20 03:56:57  csoutheren
+ * Revision 1.2007  2006/08/22 03:08:42  csoutheren
+ * Fixed compile error on gcc 4.1
+ *
+ * Revision 2.5  2006/08/20 03:56:57  csoutheren
  * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
  * rather than relying on the presence of the IANA rtp encoding name field
  *
@@ -1724,7 +1727,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   int retVal;
   unsigned int parmLen = sizeof(const char *);
-  BOOL hasCodecControl = CallCodecControl(encoderCodec, NULL, "valid_for_protocol", "h323", &parmLen, retVal);
+  BOOL hasCodecControl = CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)"h323", &parmLen, retVal);
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
       (hasCodecControl && (retVal == 0))
        ) {
