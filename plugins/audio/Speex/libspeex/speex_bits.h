@@ -40,16 +40,13 @@
 extern "C" {
 #endif
 
-/** Maximum size of the bit-stream (for fixed-size allocation) */
-#define MAX_BYTES_PER_FRAME 2000
-
 /** Bit-packing data structure representing (part of) a bit-stream. */
 typedef struct SpeexBits {
-   char *bytes;   /**< "raw" data */
+   char *chars;   /**< "raw" data */
    int   nbBits;  /**< Total number of bits stored in the stream*/
-   int   bytePtr; /**< Position of the byte "cursor" */
-   int   bitPtr;  /**< Position of the bit "cursor" within the current byte */
-   int   owner;   /**< Does the struct "own" the "raw" buffer (member "bytes") */
+   int   charPtr; /**< Position of the byte "cursor" */
+   int   bitPtr;  /**< Position of the bit "cursor" within the current char */
+   int   owner;   /**< Does the struct "own" the "raw" buffer (member "chars") */
    int   overflow;/**< Set to one if we try to read past the valid data */
    int   buf_size;/**< Allocated size for buffer */
    int   reserved1; /**< Reserved for future use */
@@ -139,6 +136,13 @@ void speex_bits_advance(SpeexBits *bits, int n);
  * @param bits Bit-stream to operate on
  */
 int speex_bits_remaining(SpeexBits *bits);
+
+/** Insert a terminator so that the data can be sent as a packet while auto-detecting 
+ * the number of frames in each packet 
+ *
+ * @param bits Bit-stream to operate on
+ */
+void speex_bits_insert_terminator(SpeexBits *bits);
 
 #ifdef __cplusplus
 }

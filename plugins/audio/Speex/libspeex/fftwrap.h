@@ -1,9 +1,8 @@
-/* Copyright (C) 2002 Jean-Marc Valin */
-/**
-   @file vbr.h
-   @brief Variable Bit-Rate (VBR) related routines
-*/
-/*
+/* Copyright (C) 2005 Jean-Marc Valin 
+   File: fftwrap.h
+
+   Wrapper for various FFTs 
+
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,38 +32,27 @@
 
 */
 
-
-#ifndef VBR_H
-#define VBR_H
+#ifndef FFTWRAP_H
+#define FFTWRAP_H
 
 #include "misc.h"
 
-#define VBR_MEMORY_SIZE 5
+/** Compute tables for an FFT */
+void *spx_fft_init(int size);
 
-extern const float vbr_nb_thresh[9][11];
-extern const float vbr_hb_thresh[5][11];
-extern const float vbr_uhb_thresh[2][11];
+/** Destroy tables for an FFT */
+void spx_fft_destroy(void *table);
 
-/** VBR state. */
-typedef struct VBRState {
-   float energy_alpha;
-   float average_energy;
-   float last_energy;
-   float last_log_energy[VBR_MEMORY_SIZE];
-   float accum_sum;
-   float last_pitch_coef;
-   float soft_pitch;
-   float last_quality;
-   float noise_level;
-   float noise_accum;
-   float noise_accum_count;
-   int   consec_noise;
-} VBRState;
+/** Forward (real to half-complex) transform */
+void spx_fft(void *table, spx_word16_t *in, spx_word16_t *out);
 
-void vbr_init(VBRState *vbr);
+/** Backward (half-complex to real) transform */
+void spx_ifft(void *table, spx_word16_t *in, spx_word16_t *out);
 
-float vbr_analysis(VBRState *vbr, spx_word16_t *sig, int len, int pitch, float pitch_coef);
+/** Forward (real to half-complex) transform of float data */
+void spx_fft_float(void *table, float *in, float *out);
 
-void vbr_destroy(VBRState *vbr);
+/** Backward (half-complex to real) transform of float data */
+void spx_ifft_float(void *table, float *in, float *out);
 
 #endif
