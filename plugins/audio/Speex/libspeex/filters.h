@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: filters.h
-   Various analysis/synthesis filters
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file filters.h
+   @brief Various analysis/synthesis filters
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,45 +35,56 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
+#include "misc.h"
 
-typedef struct CombFilterMem {
+spx_word16_t compute_rms(const spx_sig_t *x, int len);
+void signal_mul(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
+void signal_div(const spx_sig_t *x, spx_sig_t *y, spx_word32_t scale, int len);
+
+#ifdef FIXED_POINT
+
+int normalize16(const spx_sig_t *x, spx_word16_t *y, spx_sig_t max_scale, int len);
+
+#endif
+
+/** Combined filter memory. */
+typedef struct {
    int   last_pitch;
-   float last_pitch_gain[3];
-   float smooth_gain;
+   spx_word16_t last_pitch_gain[3];
+   spx_word16_t smooth_gain;
 } CombFilterMem;
 
 
-void qmf_decomp(float *xx, float *aa, float *y1, float *y2, int N, int M, float *mem, char *stack);
-void fir_mem_up(float *x, float *a, float *y, int N, int M, float *mem, char *stack);
+void qmf_decomp(const spx_word16_t *xx, const spx_word16_t *aa, spx_sig_t *, spx_sig_t *y2, int N, int M, spx_word16_t *mem, char *stack);
+void fir_mem_up(const spx_sig_t *x, const spx_word16_t *a, spx_sig_t *y, int N, int M, spx_word32_t *mem, char *stack);
 
 
-void filter_mem2(float *x, float *num, float *den, float *y, int N, int ord, float *mem);
-void fir_mem2(float *x, float *num, float *y, int N, int ord, float *mem);
-void iir_mem2(float *x, float *den, float *y, int N, int ord, float *mem);
+void filter_mem2(const spx_sig_t *x, const spx_coef_t *num, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void fir_mem2(const spx_sig_t *x, const spx_coef_t *num, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
+void iir_mem2(const spx_sig_t *x, const spx_coef_t *den, spx_sig_t *y, int N, int ord, spx_mem_t *mem);
 
 /* Apply bandwidth expansion on LPC coef */
-void bw_lpc(float gamma, float *lpc_in, float *lpc_out, int order);
+void bw_lpc(spx_word16_t , const spx_coef_t *lpc_in, spx_coef_t *lpc_out, int order);
 
 
 
-/* FIR filter */
-void fir_decim_mem(float *x, float *a, float *y, int N, int M, float *mem);
+void syn_percep_zero(const spx_sig_t *x, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
-void syn_percep_zero(float *x, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack);
+void residue_percep_zero(const spx_sig_t *xx, const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_sig_t *y, int N, int ord, char *stack);
 
-void residue_percep_zero(float *xx, float *ak, float *awk1, float *awk2, float *y, int N, int ord, char *stack);
+void compute_impulse_response(const spx_coef_t *ak, const spx_coef_t *awk1, const spx_coef_t *awk2, spx_word16_t *y, int N, int ord, char *stack);
 
-void comp_filter_mem_init (CombFilterMem *mem);
+void comb_filter_mem_init (CombFilterMem *mem);
 
 void comb_filter(
-float *exc,          /*decoded excitation*/
-float *new_exc,      /*enhanced excitation*/
-float *ak,           /*LPC filter coefs*/
+spx_sig_t *exc,          /*decoded excitation*/
+spx_sig_t *new_exc,      /*enhanced excitation*/
+spx_coef_t *ak,           /*LPC filter coefs*/
 int p,               /*LPC order*/
 int nsf,             /*sub-frame size*/
 int pitch,           /*pitch period*/
-float *pitch_gain,   /*pitch gain (3-tap)*/
-float  comb_gain,    /*gain of comb filter*/
+spx_word16_t *pitch_gain,   /*pitch gain (3-tap)*/
+spx_word16_t  comb_gain,    /*gain of comb filter*/
 CombFilterMem *mem
 );
 
