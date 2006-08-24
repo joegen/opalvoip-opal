@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin
-   File: vq.h
-   Vector quantization
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file vq.h
+   @brief Vector quantization
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,10 +35,21 @@
 #ifndef VQ_H
 #define VQ_H
 
-int vq_index(float *in, float *codebook, int len, int entries);
+#include "misc.h"
 
-void vq_nbest(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
+int scal_quant(spx_word16_t in, const spx_word16_t *boundary, int entries);
+int scal_quant32(spx_word32_t in, const spx_word32_t *boundary, int entries);
 
-void vq_nbest_sign(float *in, float *codebook, int len, int entries, float *E, int N, int *nbest, float *best_dist);
+int vq_index(float *in, const float *codebook, int len, int entries);
+#ifdef _USE_SSE
+#include <xmmintrin.h>
+void vq_nbest(spx_word16_t *in, const __m128 *codebook, int len, int entries, __m128 *E, int N, int *nbest, spx_word32_t *best_dist, char *stack);
+
+void vq_nbest_sign(spx_word16_t *in, const __m128 *codebook, int len, int entries, __m128 *E, int N, int *nbest, spx_word32_t *best_dist, char *stack);
+#else
+void vq_nbest(spx_word16_t *in, const spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist, char *stack);
+
+void vq_nbest_sign(spx_word16_t *in, const spx_word16_t *codebook, int len, int entries, spx_word32_t *E, int N, int *nbest, spx_word32_t *best_dist, char *stack);
+#endif
 
 #endif

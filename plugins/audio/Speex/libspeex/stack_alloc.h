@@ -1,8 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: stack_alloc.h
-   
-   Temporary memory allocation on stack
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file stack_alloc.h
+   @brief Temporary memory allocation on stack
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -34,29 +35,86 @@
 #ifndef STACK_ALLOC_H
 #define STACK_ALLOC_H
 
-#if 0
+#ifdef USE_ALLOCA
+#include <alloca.h>
+#endif
 
-/*Aligns the stack to a 'size' boundary */
-#define ALIGN(stack, size) (stack=(void*)((((int)stack)+((size)-1)) & (-(size))))
-/*Aligns the stack to a 'size' boundary minus k */
-#define ALIGN_1(stack, size, k) (stack=(void*)(((((int)stack)+((size)-1+(k))) & (-(size)))-(k)))
+/**
+ * @def ALIGN(stack, size)
+ *
+ * Aligns the stack to a 'size' boundary
+ *
+ * @param stack Stack
+ * @param size  New size boundary
+ */
 
-/* Allocates 'size' elements of type 'type' on the stack */
-#define PUSH(stack, size, type) (ALIGN(stack,sizeof(type)),stack=(void*)(((int)stack)+((size)*sizeof(type))),(type*)(((int)stack)-((size)*sizeof(type))))
+/**
+ * @def PUSH(stack, size, type)
+ *
+ * Allocates 'size' elements of type 'type' on the stack
+ *
+ * @param stack Stack
+ * @param size  Number of elements
+ * @param type  Type of element
+ */
 
+/**
+ * @def PUSHS(stack, type)
+ *
+ * Allocates a struct stack 
+ *
+ * @param stack Stack
+ * @param type  Struct type
+ */
+
+/**
+ * @def VARDECL(var)
+ *
+ * Declare variable on stack
+ *
+ * @param var Variable to declare
+ */
+
+/**
+ * @def ALLOC(var, size, type)
+ *
+ * Allocate 'size' elements of 'type' on stack
+ *
+ * @param var  Name of variable to allocate
+ * @param size Number of elements
+ * @param type Type of element
+ */
+
+#ifdef ENABLE_VALGRIND
+
+#include <valgrind/memcheck.h>
+
+#define ALIGN(stack, size) ((stack) += ((size) - (long)(stack)) & ((size) - 1))
+
+#define PUSH(stack, size, type) (VALGRIND_MAKE_NOACCESS(stack, 1000),ALIGN((stack),sizeof(type)),VALGRIND_MAKE_WRITABLE(stack, ((size)*sizeof(type))),(stack)+=((size)*sizeof(type)),(type*)((stack)-((size)*sizeof(type))))
+
+#define PUSHS(stack, type) (VALGRIND_MAKE_NOACCESS(stack, 1000),ALIGN((stack),sizeof(long)),VALGRIND_MAKE_WRITABLE(stack, (sizeof(type))),(stack)+=(sizeof(type)),(type*)((stack)-(sizeof(type))))
 
 #else
 
-/*Aligns the stack to a 'size' boundary */
-#define ALIGN(stack, size) ((stack) += ((size) - (int)(stack)) & ((size) - 1))
+#define ALIGN(stack, size) ((stack) += ((size) - (long)(stack)) & ((size) - 1))
 
-/* Allocates 'size' elements of type 'type' on the stack */
 #define PUSH(stack, size, type) (ALIGN((stack),sizeof(type)),(stack)+=((size)*sizeof(type)),(type*)((stack)-((size)*sizeof(type))))
 
-/* Allocates a struct stack */
 #define PUSHS(stack, type) (ALIGN((stack),sizeof(long)),(stack)+=(sizeof(type)),(type*)((stack)-(sizeof(type))))
 
-
 #endif
+
+#if defined(VAR_ARRAYS)
+#define VARDECL(var) 
+#define ALLOC(var, size, type) type var[size]
+#elif defined(USE_ALLOCA)
+#define VARDECL(var) var
+#define ALLOC(var, size, type) var = alloca(sizeof(type)*size)
+#else
+#define VARDECL(var) var
+#define ALLOC(var, size, type) var = PUSH(stack, size, type)
+#endif
+
 
 #endif
