@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2050  2006/08/20 03:45:54  csoutheren
+ * Revision 1.2051  2006/08/24 02:19:56  csoutheren
+ * Fix problem with calculating the bandwidth of wide-band codecs
+ *
+ * Revision 2.49  2006/08/20 03:45:54  csoutheren
  * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
  * rather than relying on the presence of the IANA rtp encoding name field
  *
@@ -1003,7 +1006,7 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     rtpPayloadType,
                     encodingName,
                     TRUE,
-                    8*frameSize*clockRate/frameTime,
+                    8*frameSize*AudioClockRate/frameTime,  // bits per second = 8*frameSize * framesPerSecond
                     frameSize,
                     frameTime,
                     clockRate,
