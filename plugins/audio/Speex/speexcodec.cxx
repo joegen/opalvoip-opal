@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.5  2006/08/24 00:35:12  csoutheren
+ * Changed WB mode to 6
+ *
  * Revision 1.4  2006/08/20 03:55:07  csoutheren
  * Add SIP specific codec
  *
@@ -129,6 +132,24 @@ struct PluginSpeexContext {
   void      * coderState;
   unsigned  encoderFrameSize;
 };
+
+static int Speex_Bits_Per_Second(int mode, int sampleRate) {
+    void *tmp_coder_state;
+    int bitrate;
+    if (sampleRate == 8000)
+      tmp_coder_state = speex_encoder_init(&speex_nb_mode);
+    else
+      tmp_coder_state = speex_encoder_init(&speex_wb_mode);
+    speex_encoder_ctl(tmp_coder_state, SPEEX_SET_MODE, &mode);
+    speex_encoder_ctl(tmp_coder_state, SPEEX_GET_BITRATE, &bitrate);
+    speex_encoder_destroy(tmp_coder_state); 
+    return bitrate;
+}
+
+static int Speex_Bytes_Per_Frame(int mode, int sampleRate) {
+    int bits_per_frame = Speex_Bits_Per_Second(mode, sampleRate) / 50; // (20ms frame size)
+    return ((bits_per_frame+7)/8); // round up
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -628,9 +649,10 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 } \
 
-CREATE_WIDE_SPEEX_CAP_DATA(Wide-11.55k, Wide11k5,  2)
-CREATE_WIDE_SPEEX_CAP_DATA(Wide-17.6k,  Wide17k6,  3)
-CREATE_WIDE_SPEEX_CAP_DATA(Wide-28.6k,  Wide28k6,  4)
+//CREATE_WIDE_SPEEX_CAP_DATA(Wide-11.55k, Wide11k5,  2)
+//CREATE_WIDE_SPEEX_CAP_DATA(Wide-17.6k,  Wide17k6,  3)
+//CREATE_WIDE_SPEEX_CAP_DATA(Wide-28.6k,  Wide28k6,  4)
+CREATE_WIDE_SPEEX_CAP_DATA(Wide-20.6k,  Wide20k6,  6)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -774,16 +796,18 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define NARROW_BITSPERFRAME_MODE2    119             // 5950
-#define NARROW_BITSPERFRAME_MODE3    160             // 8000
-#define NARROW_BITSPERFRAME_MODE4    220             // 11000 
-#define NARROW_BITSPERFRAME_MODE5    300             // 15000
-#define NARROW_BITSPERFRAME_MODE6    364             // 18200
-#define NARROW_BITSPERFRAME_MODE7    492             // 26400
+#define NARROW_BITSPERFRAME_MODE2    (Speex_Bits_Per_Second(2, 8000)/50) // 119             // 5950
+#define NARROW_BITSPERFRAME_MODE3    (Speex_Bits_Per_Second(3, 8000)/50) // 160             // 8000
+#define NARROW_BITSPERFRAME_MODE4    (Speex_Bits_Per_Second(4, 8000)/50) // 220             // 11000 
+#define NARROW_BITSPERFRAME_MODE5    (Speex_Bits_Per_Second(5, 8000)/50) // 300             // 15000
+#define NARROW_BITSPERFRAME_MODE6    (Speex_Bits_Per_Second(6, 8000)/50) // 364             // 18200
+#define NARROW_BITSPERFRAME_MODE7    (Speex_Bits_Per_Second(7, 8000)/50) // 492             // 26400
 
-#define WIDE_BITSPERFRAME_MODE2    (NARROW_BITSPERFRAME_MODE2 + 112)     // 11550
-#define WIDE_BITSPERFRAME_MODE3    (NARROW_BITSPERFRAME_MODE3 + 192)     // 17600
-#define WIDE_BITSPERFRAME_MODE4    (NARROW_BITSPERFRAME_MODE4 + 352)     // 28600
+//#define WIDE_BITSPERFRAME_MODE2    ((Speex_Bytes_Per_Frame(2, 16000)/50) // NARROW_BITSPERFRAME_MODE2 + 112)     // 11550
+//#define WIDE_BITSPERFRAME_MODE3    ((Speex_Bytes_Per_Frame(3, 16000)/50)     // 17600
+//#define WIDE_BITSPERFRAME_MODE4    ((Speex_Bytes_Per_Frame(4, 16000)/50)     // 28600
+//#define WIDE_BITSPERFRAME_MODE5    ((Speex_Bytes_Per_Frame(5, 16000)/50)     // 28600
+#define WIDE_BITSPERFRAME_MODE6    (Speex_Bits_Per_Second(6, 16000)/50)     // 28600
 
 static struct PluginCodec_Definition ver1SpeexCodecDefn[] = {
 
@@ -844,12 +868,14 @@ static struct PluginCodec_Definition ver2SpeexCodecDefn[] = {
   DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
 #endif
 
-  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
-  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
-  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   5,  WIDE_BITSPERFRAME_MODE6),
+  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide20k6,   6,  WIDE_BITSPERFRAME_MODE6),
 
   DECLARE_SIP_SPEEX_CODEC("SpeexNB",  8000, Narrow8k, 3, NARROW_BITSPERFRAME_MODE3, NARROW_SAMPLES_PER_FRAME),
-  DECLARE_SIP_SPEEX_CODEC("SpeexWB", 16000, Wide17k6, 3, WIDE_BITSPERFRAME_MODE3,   WIDE_SAMPLES_PER_FRAME)
+  DECLARE_SIP_SPEEX_CODEC("SpeexWB", 16000, Wide20k6, 6, WIDE_BITSPERFRAME_MODE6,   WIDE_SAMPLES_PER_FRAME)
 };
 
 #define NUM_VER2_DEFNS   (sizeof(ver2SpeexCodecDefn) / sizeof(struct PluginCodec_Definition))
