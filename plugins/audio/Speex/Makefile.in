@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2006/08/24 02:20:35  csoutheren
+# Fixed compile problems on Linux
+#
 # Revision 1.2  2006/07/31 09:09:17  csoutheren
 # Checkin of validated codec used during development
 #
@@ -76,13 +79,46 @@ SRCDIR	= ./libspeex
 SRCS	= speexcodec.cxx 
 
 ifndef H323_SYSTEM_SPEEX
-SRCS   += $(SRCDIR)/nb_celp.c $(SRCDIR)/sb_celp.c $(SRCDIR)/lpc.c $(SRCDIR)/ltp.c $(SRCDIR)/lsp.c \
-	  $(SRCDIR)/quant_lsp.c $(SRCDIR)/lsp_tables_nb.c $(SRCDIR)/gain_table.c $(SRCDIR)/gain_table_lbr.c \
-          $(SRCDIR)/cb_search.c $(SRCDIR)/filters.c $(SRCDIR)/bits.c $(SRCDIR)/modes.c $(SRCDIR)/vq.c \
-	  $(SRCDIR)/high_lsp_tables.c $(SRCDIR)/vbr.c $(SRCDIR)/hexc_table.c $(SRCDIR)/exc_5_256_table.c \
-	  $(SRCDIR)/exc_5_64_table.c $(SRCDIR)/exc_8_128_table.c $(SRCDIR)/exc_20_32_table.c \
-	  $(SRCDIR)/exc_10_32_table.c $(SRCDIR)/exc_10_16_table.c $(SRCDIR)/hexc_10_32_table.c $(SRCDIR)/misc.c \
-	  $(SRCDIR)/speex_header.c $(SRCDIR)/speex_callbacks.c
+SRCS   += $(SRCDIR)/bits.c \
+          $(SRCDIR)/cb_search.c \
+          $(SRCDIR)/exc_10_16_table.c \
+          $(SRCDIR)/exc_10_32_table.c \
+          $(SRCDIR)/exc_20_32_table.c \
+          $(SRCDIR)/exc_5_256_table.c \
+          $(SRCDIR)/exc_5_64_table.c \
+          $(SRCDIR)/exc_8_128_table.c \
+          $(SRCDIR)/fftwrap.c \
+          $(SRCDIR)/filters.c \
+          $(SRCDIR)/gain_table.c \
+          $(SRCDIR)/gain_table_lbr.c \
+          $(SRCDIR)/hexc_10_32_table.c \
+          $(SRCDIR)/hexc_table.c \
+          $(SRCDIR)/high_lsp_tables.c \
+          $(SRCDIR)/kiss_fft.c \
+          $(SRCDIR)/kiss_fftr.c \
+          $(SRCDIR)/lbr_48k_tables.c \
+          $(SRCDIR)/lpc.c \
+          $(SRCDIR)/lsp.c \
+          $(SRCDIR)/lsp_tables_nb.c \
+          $(SRCDIR)/ltp.c \
+          $(SRCDIR)/math_approx.c \
+          $(SRCDIR)/mdf.c \
+          $(SRCDIR)/medfilter.c \
+          $(SRCDIR)/misc.c \
+          $(SRCDIR)/modes.c \
+          $(SRCDIR)/nb_celp.c \
+          $(SRCDIR)/pcm_wrapper.c \
+          $(SRCDIR)/quant_lsp.c \
+          $(SRCDIR)/sb_celp.c \
+          $(SRCDIR)/smallft.c \
+          $(SRCDIR)/speex.c \
+          $(SRCDIR)/speex_callbacks.c \
+          $(SRCDIR)/speex_header.c \
+          $(SRCDIR)/speex_preprocess.c \
+          $(SRCDIR)/vbr.c \
+          $(SRCDIR)/vorbis_psy.c \
+          $(SRCDIR)/vq.c \
+
 EXTRALIBS =
 else
 EXTRALIBS = -lspeex
