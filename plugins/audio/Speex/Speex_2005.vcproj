@@ -828,6 +828,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\libspeex\speex.c"
+				>
+			</File>
+			<File
 				RelativePath="libspeex\speex_callbacks.c"
 				>
 				<FileConfiguration
@@ -854,31 +858,6 @@
 			</File>
 			<File
 				RelativePath="libspeex\speex_header.c"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"
-						WarningLevel="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"
-						BasicRuntimeChecks="3"
-						WarningLevel="1"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath="libspeex\stereo.c"
 				>
 				<FileConfiguration
 					Name="Release|Win32"

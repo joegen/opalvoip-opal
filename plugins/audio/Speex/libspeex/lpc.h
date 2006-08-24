@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: lpc.h
-   Functions for LPC (Linear Prediction Coefficients) analysis
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file lpc.h
+   @brief Functions for LPC (Linear Prediction Coefficients) analysis
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,16 +35,17 @@
 #ifndef LPC_H
 #define LPC_H
 
+#include "misc.h"
+
 void _spx_autocorr(
-              const float * x,   /*  in: [0...n-1] samples x   */
-              float *ac,   /* out: [0...lag-1] ac values */
+              const spx_word16_t * x,   /*  in: [0...n-1] samples x   */
+              spx_word16_t *ac,   /* out: [0...lag-1] ac values */
               int lag, int   n);
 
-float                      /* returns minimum mean square error    */
-wld(
-    float       * lpc, /*      [0...p-1] LPC coefficients      */
-    const float * ac,  /*  in: [0...p] autocorrelation values  */
-    float       * ref, /* out: [0...p-1] reflection coef's     */
+spx_word32_t                      /* returns minimum mean square error    */
+_spx_lpc(
+    spx_coef_t       * lpc, /*      [0...p-1] LPC coefficients      */
+    const spx_word16_t * ac,  /*  in: [0...p] autocorrelation values  */
     int p
     );
 
