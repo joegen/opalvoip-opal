@@ -1,7 +1,9 @@
-/* Copyright (C) 2002 Jean-Marc Valin 
-   File: math_approx.c
-   Various math approximation functions for Speex
-
+/* Copyright (C) 2002 Jean-Marc Valin */
+/**
+   @file math_approx.h
+   @brief Various math approximation functions for Speex
+*/
+/*
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions
    are met:
@@ -33,7 +35,16 @@
 #ifndef MATH_APPROX_H
 #define MATH_APPROX_H
 
-float speex_cos(float x);
+#include "misc.h"
 
+spx_word16_t spx_cos(spx_word16_t x);
+
+#ifdef FIXED_POINT
+spx_word16_t spx_sqrt(spx_word32_t x);
+spx_word16_t spx_acos(spx_word16_t x);
+#else
+#define spx_sqrt sqrt
+#define spx_acos acos
+#endif
 
 #endif

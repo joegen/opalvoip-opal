@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.6  2006/08/24 01:32:34  csoutheren
+ * Updated Speex library to 1.1.11.1
+ *
  * Revision 1.5  2006/08/24 00:35:12  csoutheren
  * Changed WB mode to 6
  *
@@ -417,7 +420,7 @@ static struct PluginCodec_information licenseInfo = {
 
   "Speex",                                                     // codec description
   "Jean-Marc Valin, Xiph Foundation.",                         // codec author
-  "1.0.3",                                                     // codec version
+  "1.1.11.1",                                                  // codec version
   "jean-marc.valin@hermes.usherb.ca",                          // codec email
   "http://www.speex.org",                                      // codec URL
   "(C) 2003 Xiph.Org Foundation, All Rights Reserved",         // codec copyright information
@@ -807,7 +810,7 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
 //#define WIDE_BITSPERFRAME_MODE3    ((Speex_Bytes_Per_Frame(3, 16000)/50)     // 17600
 //#define WIDE_BITSPERFRAME_MODE4    ((Speex_Bytes_Per_Frame(4, 16000)/50)     // 28600
 //#define WIDE_BITSPERFRAME_MODE5    ((Speex_Bytes_Per_Frame(5, 16000)/50)     // 28600
-#define WIDE_BITSPERFRAME_MODE6    (Speex_Bits_Per_Second(6, 16000)/50)     // 28600
+#define WIDE_BITSPERFRAME_MODE6    (Speex_Bits_Per_Second(6, 16000)/50)     // 20600
 
 static struct PluginCodec_Definition ver1SpeexCodecDefn[] = {
 
@@ -884,8 +887,19 @@ static struct PluginCodec_Definition ver2SpeexCodecDefn[] = {
 
 extern "C" {
 
+void OutputInfo(int mode, int rate)
+{
+  int bps = Speex_Bits_Per_Second(mode, rate);
+  //printf("mode = %i, rate = %i, bps = %i\n", mode, rate, bps);
+}
+
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
+  OutputInfo(2, 8000);
+  OutputInfo(3, 8000);
+  OutputInfo(4, 8000);
+  OutputInfo(6, 16000);
+
   if (version == 1) {
     *count = NUM_VER1_DEFNS;
     return ver1SpeexCodecDefn;
