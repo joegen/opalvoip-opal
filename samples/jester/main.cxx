@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.3  2006/08/25 06:04:44  dereksmithies
+ * Add to the docs on the functions.  Add a new thread to generate the frames,
+ * which helps make the operation of the jitterbuffer clearer.
+ *
  * Revision 1.2  2006/07/29 13:42:20  rjongbloed
  * Fixed compiler warning
  *
@@ -34,6 +38,7 @@
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
+#include <rtp/rtp.h>
 
 #include "main.h"
 #include "../../version.h"
@@ -51,6 +56,8 @@
 
 PCREATE_PROCESS(JesterProcess);
 
+PSyncPoint newDataReady;
+RTP_DataFrame *dataFrame;
 
 ///////////////////////////////////////////////////////////////
 
@@ -68,35 +75,11 @@ BOOL JestRTP_Session::ReadData(
     RTP_DataFrame & frame   ///<  Frame read from the RTP session
     )
 {
-    if (closedDown) {
-	PTRACE(3, "No more reading of data, we have to close down ");
-	return FALSE;
-    }
+    newDataReady.Wait();
+    frame = *dataFrame;
+    dataFrame = NULL;
 
-    frame.SetSize(100);
-    frame.SetPayloadType(RTP_DataFrame::GSM);
-    frame.SetTimestamp(psuedoTimestamp);
-    frame.SetSequenceNumber(psuedoSequenceNo);
-    frame.SetSyncSource(123456789);
-
-    readCount++;
-    PTimeInterval delta = PTime() - startJester;
-    PInt64 delay = delta.GetMilliSeconds() - (readCount * 30);
-
-    if (delay < 0) {
-	delay = 0 - delay;
-	PINDEX perturbation = variation.Number() % 20;
-	if (delay > 20) 
-	    delay = delay - perturbation;
-//	PTRACE(3, "Delay is randomized to " << delay);
-	PThread::Sleep(delay);
-    }
-    PTRACE(3, "Supply a frame of timestamp " 
-	   << ::setw(7) << (psuedoTimestamp >> 3) 
-	   << "    reality is " << (readCount * 30));
-    psuedoTimestamp += 240;
-    psuedoSequenceNo++;
-			
+    PTRACE(4, "ReadData has a frame of time " << (frame.GetTimestamp() >> 3));
     return TRUE;
 }
 
@@ -181,15 +164,20 @@ void JesterProcess::Main()
                      PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
 #endif
 
-  JestRTP_Session testSession;
   testSession.SetJitterBufferSize(8 * 100,8 * 1000);
+
+  iterations = 80;
+  PThread * writer = PThread::Create(PCREATE_NOTIFIER(GenerateUdpPackets), 0,
+				     PThread::NoAutoDeleteThread,
+				     PThread::NormalPriority);
+
   PThread::Sleep(50);
 
   RTP_DataFrame readFrame;
   DWORD readTimestamp = 480;
   PAdaptiveDelay readDelay;
 
-  PINDEX iterations = 40;
+
   if (args.HasOption('i'))
       iterations = args.GetOptionString('i').AsInteger();
 
@@ -197,17 +185,35 @@ void JesterProcess::Main()
 
   for(PINDEX i = 0; i < iterations; i++) {
       testSession.ReadBufferedData(readTimestamp, readFrame);
-      readDelay.Delay(30);
+      readDelay.Delay(40);
       PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " has given us " << (readFrame.GetTimestamp() >> 3));
       
-      readTimestamp += 240;
+      readTimestamp += 480;
   }
 
   cout << "Finished experiment" << endl;
   testSession.Close(TRUE);
-
-  PThread::Sleep(1000);
+  writer->WaitForTermination();
 }
 
+void JesterProcess::GenerateUdpPackets(PThread &, INT )
+{
+    for(PINDEX i = 0; i < iterations; i++) {
+	RTP_DataFrame *frame = new RTP_DataFrame;
+	
+	frame->SetPayloadType(RTP_DataFrame::GSM);
+	frame->SetSyncSource(0x12345678);
+	frame->SetSequenceNumber(i + 100);
+	frame->SetPayloadSize(66);
 
+	frame->SetTimestamp( (i + 100) * 8 * 20);
+
+	PTRACE(3, "Send a new frame at iteration " << i);
+	PTRACE(3, "The pin is " << ::hex << dataFrame << ::dec);
+	dataFrame = frame;
+	newDataReady.Signal();
+
+	PThread::Sleep(35 + ((i % 4) * 5));
+    }
+}
 // End of File ///////////////////////////////////////////////////////////////
