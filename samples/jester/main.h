@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.2  2006/08/25 06:04:44  dereksmithies
+ * Add to the docs on the functions.  Add a new thread to generate the frames,
+ * which helps make the operation of the jitterbuffer clearer.
+ *
  * Revision 1.1  2006/06/19 09:32:09  dereksmithies
  * Initial cut of a program to test the jitter buffer in OPAL.
  *
@@ -37,6 +41,8 @@
 #include <ptclib/delaychan.h>
 #include <ptclib/random.h>
 
+
+/////////////////////////////////////////////////////////////////////////////
 /**Simulate an RTP_Session - this class will make up data received from the
    network */
 class JestRTP_Session: public RTP_Session
@@ -50,6 +56,8 @@ class JestRTP_Session: public RTP_Session
        Any control frames received are dispatched to callbacks and are not
        returned by this function. It will block until a data frame is
        available or an error occurs.
+
+       The thread which is inside the jitter buffer will call this method.
       */
     virtual BOOL ReadData(
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
@@ -69,7 +77,7 @@ class JestRTP_Session: public RTP_Session
 
     /**Write the RTCP reports.
       */
-    virtual BOOL SendReport() { PTRACE(4, "Send report has been quashed"); return TRUE; }
+//    virtual BOOL SendReport() { PTRACE(4, "Send report has been quashed"); return TRUE; }
 
     /**Close down the RTP session.
       */
@@ -112,7 +120,7 @@ class JestRTP_Session: public RTP_Session
     PRandom variation;
 };
 
-
+/** The main class that is instantiated to do things */
 class JesterProcess : public PProcess
 {
   PCLASSINFO(JesterProcess, PProcess)
@@ -124,6 +132,18 @@ class JesterProcess : public PProcess
 
   protected:
 
+#ifdef DOC_PLUS_PLUS
+    /**Generate the Udp packets that we could have read from the internet */
+    virtual void GenerateUdpPackets(PThread &, INT);
+#else
+    PDECLARE_NOTIFIER(PThread, JesterProcess, GenerateUdpPackets);
+#endif
+
+    /**The rtp session that we use to jitter buffer the code in */
+    JestRTP_Session testSession;    
+
+    /**The number of iterations we run for */
+    PINDEX iterations;
 };
 
 
