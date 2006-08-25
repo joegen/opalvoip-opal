@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2065  2006/08/22 09:02:41  csoutheren
+ * Revision 1.2066  2006/08/25 06:15:59  csoutheren
+ * Fix problem with establishing media channels with secure transport
+ *
+ * Revision 2.64  2006/08/22 09:02:41  csoutheren
  * Removed left over debug code
  *
  * Revision 2.63  2006/08/21 05:29:25  csoutheren
@@ -2159,7 +2162,9 @@ OpalTransportSTCP::~OpalTransportSTCP()
 
 BOOL OpalTransportSTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return address.Left(strlen(StcpPrefix)) *= StcpPrefix;
+  return (address.Left(strlen(TcpPrefix)) *= TcpPrefix) ||
+         (address.Left(sizeof(IpPrefix)-1) *= IpPrefix) ||
+         (address.Left(strlen(StcpPrefix)) *= StcpPrefix);
 }
 
 
