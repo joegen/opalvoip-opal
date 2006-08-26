@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2033  2006/07/14 05:24:49  csoutheren
+ * Revision 1.2034  2006/08/26 08:19:52  hfriederich
+ * Add getter method for the RTP Session
+ *
+ * Revision 2.32  2006/07/14 05:24:49  csoutheren
  * Applied 1509232 - Fix for a bug in OpalMediaPatch::Close method
  * Thanks to Borko Jandras
  *
@@ -515,6 +518,8 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual BOOL WritePacket(
       RTP_DataFrame & packet
     );
+	
+	RTP_Session & GetRtpSession() const { return rtpSession; }
 
     /**Indicate if the media stream is synchronous.
        Returns FALSE for RTP streams.
