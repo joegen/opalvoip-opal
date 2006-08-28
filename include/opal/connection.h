@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2060  2006/08/17 23:09:03  rjongbloed
+ * Revision 1.2061  2006/08/28 00:07:43  csoutheren
+ * Applied 1545125 - SetPhase mutex protection and transition control
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.59  2006/08/17 23:09:03  rjongbloed
  * Added volume controls
  *
  * Revision 2.58  2006/08/10 05:10:30  csoutheren
@@ -1242,7 +1246,9 @@ class OpalConnection : public PSafeObject
     OpalCall             & ownerCall;
     OpalEndPoint         & endpoint;
 
+    PMutex               phaseMutex;
     Phases               phase;
+
     PString              callToken;
     OpalGloballyUniqueID callIdentifier;
     BOOL                 originating;
