@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2045  2006/07/14 05:24:50  csoutheren
+ * Revision 1.2046  2006/08/28 00:06:10  csoutheren
+ * Applied 1545107 - MediaStream - safe access to patch for adding a filter
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.44  2006/07/14 05:24:50  csoutheren
  * Applied 1509232 - Fix for a bug in OpalMediaPatch::Close method
  * Thanks to Borko Jandras
  *
@@ -515,6 +519,22 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
   patchMutex.Signal();
 }
 
+
+void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+{
+  PWaitAndSignal Lock(patchMutex);
+  if (patchThread != NULL) patchThread->AddFilter(Filter, Stage);
+}
+
+
+BOOL OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+{
+  PWaitAndSignal Lock(patchMutex);
+
+  if (patchThread != NULL) return patchThread->RemoveFilter(Filter, Stage);
+
+  return FALSE;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2175  2006/08/20 13:35:56  csoutheren
+ * Revision 1.2176  2006/08/28 00:06:10  csoutheren
+ * Applied 1545107 - MediaStream - safe access to patch for adding a filter
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.174  2006/08/20 13:35:56  csoutheren
  * Backported changes to protect against rare error conditions
  *
  * Revision 2.173  2006/08/12 04:09:24  csoutheren
@@ -1358,15 +1362,12 @@ void SIPConnection::InitRFC2833Handler()
     for (int i = 0; i < mediaStreams.GetSize(); i++) {
       OpalMediaStream & mediaStream = mediaStreams[i];
       if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-	OpalMediaPatch * patch = mediaStream.GetPatch();
-	if (patch != NULL) {
-	  if (mediaStream.IsSource()) {
-	    patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-	  }
-	  else {
-	    patch->AddFilter(rfc2833Handler->GetTransmitHandler());
-	  }
-	}
+        if (mediaStream.IsSource()) {
+          mediaStream.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+        }
+        else {
+          mediaStream.AddFilter(rfc2833Handler->GetTransmitHandler());
+        }
       }
     }
   }
