@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2036  2006/08/21 05:24:36  csoutheren
+ * Revision 1.2037  2006/08/28 00:03:00  csoutheren
+ * Applied 1545095 - RTP destructors patch
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.35  2006/08/21 05:24:36  csoutheren
  * Add extra trace log to allow tracking of NAT detection
  *
  * Revision 2.34  2006/08/03 04:57:12  csoutheren
@@ -846,9 +850,9 @@ RTP_Session::~RTP_Session()
 	    "    averageJitter     = " << (jitterLevel >> 7) << "\n"
 	    "    maximumJitter     = " << (maximumJitterLevel >> 7)
 	   );
+  delete jitter;
   if (autoDeleteUserData)
     delete userData;
-  delete jitter;
 }
 
 
@@ -1623,6 +1627,12 @@ RTP_UDP::~RTP_UDP()
   Close(TRUE);
   Close(FALSE);
 
+  // We need to do this to make sure that the sockets are not
+  // deleted before select decides there is no more data coming
+  // over them and exits the reading thread.
+  if (jitter)
+    PAssert(jitter->WaitForTermination(10000), "Jitter buffer thread did not terminate");
+  
   delete dataSocket;
   delete controlSocket;
 }
