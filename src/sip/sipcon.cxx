@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2178  2006/08/28 00:35:57  csoutheren
+ * Revision 1.2179  2006/08/28 00:53:52  csoutheren
+ * Applied 1546613 - Transport check in SIPConnection::SetConnected
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.177  2006/08/28 00:35:57  csoutheren
  * Applied 1545205 - Usage of SetPhase in SIPConnection
  * Thanks to Drazen Dimoti
  *
@@ -1022,6 +1026,11 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
 
 BOOL SIPConnection::SetConnected()
 {
+  if (transport == NULL) {
+    Release(EndedByTransportFail);
+    return FALSE;
+  }
+
   BOOL sdpFailure = TRUE;
 
   if (IsOriginating()) {
