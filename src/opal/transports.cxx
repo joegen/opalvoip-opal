@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2066  2006/08/25 06:15:59  csoutheren
+ * Revision 1.2067  2006/08/28 00:51:13  csoutheren
+ * Applied 1545808 - OpalTransportUDP connectSockets protection
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.65  2006/08/25 06:15:59  csoutheren
  * Fix problem with establishing media channels with secure transport
  *
  * Revision 2.64  2006/08/22 09:02:41  csoutheren
@@ -1735,7 +1739,7 @@ OpalTransportUDP::~OpalTransportUDP()
 BOOL OpalTransportUDP::Close()
 {
   PTRACE(4, "OpalUDP\tClose");
-  PReadWaitAndSignal mutex(channelPointerMutex);
+  PWaitAndSignal lock(connectSocketsMutex);
 
   if (socketOwnedByListener) {
     channelPointerMutex.StartWrite();
@@ -1778,7 +1782,6 @@ BOOL OpalTransportUDP::IsCompatibleTransport(const OpalTransportAddress & addres
 
 BOOL OpalTransportUDP::Connect()
 {	
-  PReadWaitAndSignal mutex(channelPointerMutex);
   if (remotePort == 0)
     return FALSE;
 
@@ -1797,11 +1800,14 @@ BOOL OpalTransportUDP::Connect()
     PUDPSocket * socket;
     if (stun->CreateSocket(socket)) {
       PIndirectChannel::Close();	//closing the channel and opening it with the new socket
+      channelPointerMutex.StartWrite();
       readAutoDelete = writeAutoDelete = FALSE;
+      channelPointerMutex.EndWrite();
       Open(socket);
       socket->GetLocalAddress(localAddress, localPort);
       socket->SetSendAddress(remoteAddress, remotePort);
       PTRACE(4, "OpalUDP\tSTUN created socket: " << localAddress << ':' << localPort);
+      PWaitAndSignal lock (connectSocketsMutex);
       connectSockets.Append(socket);
       return true;
     }
@@ -1868,9 +1874,10 @@ BOOL OpalTransportUDP::Connect()
 
     socket->GetLocalAddress(localAddress, localPort);
     socket->SetSendAddress(remoteAddress, remotePort);
-    channelPointerMutex.StartWrite();
+
+    connectSocketsMutex.Wait();
     connectSockets.Append(socket);
-    channelPointerMutex.EndWrite();
+    connectSocketsMutex.Signal();
   }
   
   readAutoDelete = writeAutoDelete = FALSE;
@@ -1887,10 +1894,9 @@ BOOL OpalTransportUDP::Connect()
 void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 {
   PAssert(theLocalAddress.GetIpAndPort(localAddress, localPort), PInvalidParameter);
-  PReadWaitAndSignal mutex(channelPointerMutex);
+  PWaitAndSignal lock(connectSocketsMutex);
 
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
-    PWriteWaitAndSignal m(channelPointerMutex);
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address addr;
     WORD port;
@@ -1899,17 +1905,23 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
       connectSockets.DisallowDeleteObjects();
       connectSockets.RemoveAt(i);
       connectSockets.AllowDeleteObjects();
+
+      // We need to protect this because it is still possible that someone
+      // is using the socket we want to delete.
+      channelPointerMutex.StartWrite();
+
       readChannel = NULL;
       writeChannel = NULL;
+
+      channelPointerMutex.EndWrite();
+
       socket->SetOption(SO_BROADCAST, 0);
       PAssert(Open(socket), PLogicError);
       break;
     }
   }
 
-  channelPointerMutex.StartWrite();
   connectSockets.RemoveAll();
-  channelPointerMutex.EndWrite();
 
   OpalTransport::EndConnect(theLocalAddress);
 }
@@ -1927,12 +1939,15 @@ BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddr
   if (!newLocalAddress.GetIpAndPort(localAddress, localPort))
     return FALSE;
 
+  PWaitAndSignal lock(connectSocketsMutex);
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address ip;
     WORD port = 0;
     if (socket->GetLocalAddress(ip, port) && ip == localAddress && port == localPort) {
+      channelPointerMutex.StartWrite();
       writeChannel = &connectSockets[i];
+      channelPointerMutex.EndWrite();
       return TRUE;
     }
   }
@@ -1970,23 +1985,20 @@ OpalTransportAddress OpalTransportUDP::GetLastReceivedAddress() const
 
 BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
 {
-  channelPointerMutex.StartRead();
   if (!connectSockets.IsEmpty()) {
     PSocket::SelectList selection;
 
     PINDEX i;
+    connectSocketsMutex.Wait();
     for (i = 0; i < connectSockets.GetSize(); i++)
       selection += connectSockets[i];
-
-    channelPointerMutex.EndRead();
+    connectSocketsMutex.Signal();
 
     if (PSocket::Select(selection, GetReadTimeout()) != PChannel::NoError) {
       PTRACE(1, "OpalUDP\tError on connection read select.");
       return FALSE;
     }
     
-    channelPointerMutex.StartRead();
-
     if (selection.IsEmpty()) {
       PTRACE(2, "OpalUDP\tTimeout on connection read select.");
       return FALSE;
@@ -1994,7 +2006,6 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
 
     PUDPSocket & socket = (PUDPSocket &)selection[0];
     if (!socket.IsOpen()) {
-      channelPointerMutex.EndRead();
       PTRACE(2, "OpalUDP\tSocket closed in connection read select.");
       return FALSE;
     }
@@ -2078,10 +2089,13 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * userDa
   BOOL ok = FALSE;
 
   PINDEX i;
+  PWaitAndSignal lock(connectSocketsMutex);
   for (i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket & socket = (PUDPSocket &)connectSockets[i];
     socket.GetLocalAddress(localAddress, localPort);
+    channelPointerMutex.StartWrite();
     writeChannel = &socket;
+    channelPointerMutex.EndWrite();
     if (function(*this, userData))
       ok = TRUE;
   }
