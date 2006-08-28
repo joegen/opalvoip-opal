@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.c,v $
+ * Revision 1.3  2006/08/28 01:21:54  csoutheren
+ * Disable 15k for SIP
+ *
  * Revision 1.2  2006/07/31 09:09:19  csoutheren
  * Checkin of validated codec used during development
  *
@@ -59,7 +62,11 @@ PLUGIN_CODEC_IMPLEMENT("iLBC")
 
 #include <stdlib.h>
 #ifdef _WIN32
-#include <malloc.h>
+  #define _CRT_SECURE_NO_DEPRECATE
+  #include <malloc.h>
+  #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  strcasecmp
 #endif
 
 #include "iLBC/iLBC_encode.h" 
@@ -157,6 +164,51 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   return 1;
 }
 
+static int valid_for_h323(
+      const struct PluginCodec_Definition * codec, 
+      void * context , 
+      const char * key, 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "h.323") == 0 ||
+          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
+
+}
+
+static int valid_for_sip_or_h323(
+      const struct PluginCodec_Definition * codec, 
+      void * context , 
+      const char * key, 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "sip") == 0 ||
+          STRCMPI((const char *)parm, "h.323") == 0 ||
+          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
+}
+
+static struct PluginCodec_ControlDefn h323CoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
+  //{ "get_codec_options",      encoder_get_options },
+  //{ "set_codec_options",      encoder_set_options },
+  { NULL }
+};
+
+static struct PluginCodec_ControlDefn h323AndSIPCoderControls[] = {
+  { "valid_for_protocol",       valid_for_sip_or_h323 },
+  //{ "get_codec_options",      decoder_get_options },
+  //{ "set_codec_options",      decoder_set_options },
+  { NULL }
+};
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_information licenseInfo = {
@@ -244,7 +296,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
   create_encoder,                     // create codec function
   destroy_context,                    // destroy codec
   codec_encoder,                      // encode/decode
-  NULL,                               // codec controls
+  h323AndSIPCoderControls,            // codec controls
 
   PluginCodec_H323Codec_nonStandard,  // h323CapabilityType
   &ilbc13k3Cap                        // h323CapabilityData
@@ -280,7 +332,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
   create_decoder,                     // create codec function
   destroy_context,                    // destroy codec
   codec_decoder,                      // encode/decode
-  NULL,                                // codec controls
+  h323AndSIPCoderControls,            // codec controls
 
   PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
   &ilbc13k3Cap                        // h323CapabilityData
@@ -316,7 +368,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
   create_encoder,                     // create codec function
   destroy_context,                    // destroy codec
   codec_encoder,                      // encode/decode
-  NULL,                                // codec controls
+  h323CoderControls,                  // codec controls
 
   PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
   &ilbc15k2Cap                        // h323CapabilityData
@@ -352,7 +404,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
   create_decoder,                     // create codec function
   destroy_context,                    // destroy codec
   codec_decoder,                      // encode/decode
-  NULL,                                // codec controls
+  h323CoderControls,                  // codec controls
 
   PluginCodec_H323Codec_nonStandard,  // h323CapabilityType 
   &ilbc15k2Cap                        // h323CapabilityData
