@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.c,v $
+ * Revision 1.5  2006/08/28 01:37:36  csoutheren
+ * Normalised case of SDP names
+ *
  * Revision 1.4  2006/08/28 01:19:22  csoutheren
  * Changed payload types and SDP names
  *
@@ -178,9 +181,9 @@ static struct PluginCodec_information licenseInfo = {
 static const char L16Desc[]  = { "L16" };
 
 static const char sdpG726_16[]  = { "G726-16" };
-static const char sdpG726_24[]  = { "g726-24" };
-static const char sdpG726_32[]  = { "g726-32" };
-static const char sdpG726_40[]  = { "g726-40" };
+static const char sdpG726_24[]  = { "G726-24" };
+static const char sdpG726_32[]  = { "G726-32" };
+static const char sdpG726_40[]  = { "G726-40" };
 
 static const char g726_40[] = "G.726-40k";
 static const char g726_32[] = "G.726-32k";
