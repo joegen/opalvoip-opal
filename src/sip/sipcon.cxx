@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2176  2006/08/28 00:06:10  csoutheren
+ * Revision 1.2177  2006/08/28 00:32:16  csoutheren
+ * Applied 1545191 - SIPConnection invitationsMutex fix
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.175  2006/08/28 00:06:10  csoutheren
  * Applied 1545107 - MediaStream - safe access to patch for adding a filter
  * Thanks to Drazen Dimoti
  *
@@ -931,7 +935,7 @@ void SIPConnection::OnReleased()
         statuses.resize(invitations.GetSize());
         PINDEX i;
         {
-          PWaitAndSignal m(transactionsMutex);
+          PWaitAndSignal m(invitationsMutex);
           for (i = 0; i < invitations.GetSize(); i++) {
             PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
             statuses[i] = invitations[i].SendCANCEL();
@@ -973,7 +977,7 @@ void SIPConnection::OnReleased()
   
   // Remove all INVITEs
   {
-    PWaitAndSignal m(transactionsMutex); 
+    PWaitAndSignal m(invitationsMutex); 
     invitations.RemoveAll();
   }
 }
@@ -1410,7 +1414,7 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   }
   
   if (invite->Start()) {
-    PWaitAndSignal m(connection.transactionsMutex); 
+    PWaitAndSignal m(connection.invitationsMutex); 
     connection.invitations.Append(invite);
     return TRUE;
   }
@@ -1474,7 +1478,7 @@ void SIPConnection::HoldConnection()
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
     {
-      PWaitAndSignal m(transactionsMutex); 
+      PWaitAndSignal m(invitationsMutex); 
       invitations.Append(invite);
     }
     // Pause the media streams
@@ -1501,7 +1505,7 @@ void SIPConnection::RetrieveConnection()
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
     {
-      PWaitAndSignal m(transactionsMutex); 
+      PWaitAndSignal m(invitationsMutex); 
       invitations.Append(invite);
     }
     
@@ -1666,8 +1670,13 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
 
+  // If we are releasing then I can safely ignore failed
+  // transactions - otherwise I'll deadlock.
+  if (phase >= ReleasingPhase)
+    return;
+
   {
-    PWaitAndSignal m(transactionsMutex); 
+    PWaitAndSignal m(invitationsMutex); 
     for (PINDEX i = 0; i < invitations.GetSize(); i++) {
       if (!invitations[i].IsFailed())
         return;
@@ -1790,10 +1799,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   PINDEX i;
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-	if(phase < EstablishedPhase)
-    {
+    if (phase < EstablishedPhase) {
       // Have a response to the INVITE, so CANCEL all the other invitations sent.
-      PWaitAndSignal m(transactionsMutex); 
+      PWaitAndSignal m(invitationsMutex); 
       for (i = 0; i < invitations.GetSize(); i++) {
         if (&invitations[i] != &transaction)
           invitations[i].SendCANCEL();
@@ -2426,7 +2434,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   SIPTransaction * invite = new SIPInvite(*this, *transport);
   if (invite->Start())
   {
-    PWaitAndSignal m(transactionsMutex); 
+    PWaitAndSignal m(invitationsMutex); 
     invitations.Append(invite);
   }
   else {
@@ -2654,7 +2662,6 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
   SIPURL hosturl;
 
-  PWaitAndSignal m(transportMutex); 
   if (transport) {
     if (lastTransportAddress != address) {
       // skip transport identifier
@@ -2676,6 +2683,7 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 	lastTransportAddress = hosturl.GetHostAddress();
 
       PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
+      PWaitAndSignal m(transportMutex); 
       transport->SetRemoteAddress(lastTransportAddress);
     }
     
