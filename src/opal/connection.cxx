@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2073  2006/08/17 23:09:04  rjongbloed
+ * Revision 1.2074  2006/08/28 00:07:43  csoutheren
+ * Applied 1545125 - SetPhase mutex protection and transition control
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.72  2006/08/17 23:09:04  rjongbloed
  * Added volume controls
  *
  * Revision 2.71  2006/08/10 05:10:33  csoutheren
@@ -1271,7 +1275,17 @@ void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 void OpalConnection::SetPhase(Phases phaseToSet)
 {
-    PTRACE(3, "OpalCon\tSetPhase from " << phase << " to " << phaseToSet);
+  PTRACE(3, "OpalCon\tSetPhase from " << phase << " to " << phaseToSet);
+
+  PWaitAndSignal m(phaseMutex);
+
+  // With next few lines we will prevent phase to ever go down when it
+  // reaches ReleasingPhase - end result - once you call Release you never
+  // go back.
+  if (phase < ReleasingPhase) {
     phase = phaseToSet;
+  } else if (phase == ReleasingPhase && phaseToSet == ReleasedPhase) {
+    phase = phaseToSet;
+  }
 }
 /////////////////////////////////////////////////////////////////////////////
