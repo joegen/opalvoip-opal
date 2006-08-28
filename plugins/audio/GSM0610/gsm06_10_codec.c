@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsm06_10_codec.c,v $
+ * Revision 1.4  2006/08/28 08:07:51  csoutheren
+ * Make GSM decode adaptive
+ *
  * Revision 1.3  2006/08/28 01:20:02  csoutheren
  * Disable msgsm for SIP
  *
@@ -154,13 +157,36 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  struct gsm_state * context = (struct gsm_state *)_context;
   if (*fromLen < BYTES_PER_FRAME)
     return 0;
 
-  gsm_decode(context, (void *)from, to);
+  struct gsm_state * context = (struct gsm_state *)_context;
 
-  *toLen = SAMPLES_PER_FRAME * 2;
+  // Unless the packet is 65 bytes long, it must be normal GSM
+  if (inputLength != 65) {
+    if (*toLen < SAMPLES_PER_FRAME * 2)
+      return 0;
+    {
+      int opt = 0;
+      gsm_option(context, GSM_OPT_WAV49, &opt);
+    }
+    gsm_decode(context, (void *)from, to);
+    *toLen = SAMPLES_PER_FRAME * 2;
+    return 1;
+  }
+
+  // MS-GSM packets are always 65 bytes long, and consists of two GSM packets
+  if (*toLen < MSGSM_SAMPLES_PER_FRAME * 2)
+    return 0;
+  {
+    int opt = 1;
+    gsm_option(context, GSM_OPT_WAV49, &opt);
+  }
+
+  gsm_decode(context, (unsigned char *)from,      (short *)to);
+  gsm_decode(context, ((unsigned char *)from)+33, ((short *)to)+160);
+
+  *toLen = MSGSM_SAMPLES_PER_FRAME * 2;
 
   return 1;
 }
