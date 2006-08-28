@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.7  2006/08/28 01:21:18  csoutheren
+ * Change case of SDP name because RFC specifies "Speex" even though SDP names are case insignificant
+ *
  * Revision 1.6  2006/08/24 01:32:34  csoutheren
  * Updated Speex library to 1.1.11.1
  *
@@ -287,13 +290,6 @@ static void destroy_decoder(const struct PluginCodec_Definition * codec, void * 
   free(context);
 }
 
-static const char * default_sip_options[][3] = {
-  { "h323_cifMPI",                               "<4" ,      "i" },
-  { "h323_qcifMPI",                              "<2" ,      "i" },
-//  { "Max Bit Rate",                              "<621700" , "i" },
-  { NULL, NULL, NULL }
-};
-
 static int encoder_get_options(
       const PluginCodec_Definition * , 
       void * context , 
@@ -374,33 +370,20 @@ static int coder_get_sip_options(
     return get_codec_options(context, parm, parmLen, &default_wide_sip_options[0][0]);
 }
 
-static PluginCodec_ControlDefn sipEncoderControls[] = {
-  { "valid_for_protocol",       valid_for_sip },
-  { "get_codec_options",        coder_get_sip_options },
-  //{ "set_codec_options",      encoder_set_options },
-  { NULL }
-};
-
-static PluginCodec_ControlDefn sipDecoderControls[] = {
+static PluginCodec_ControlDefn sipCoderControls[] = {
   { "valid_for_protocol",       valid_for_sip },
   { "get_codec_options",        coder_get_sip_options },
   //{ "set_codec_options",      decoder_set_options },
   { NULL }
 };
 
-static PluginCodec_ControlDefn h323EncoderControls[] = {
+static PluginCodec_ControlDefn h323CoderControls[] = {
   { "valid_for_protocol",       valid_for_h323 },
   //{ "get_codec_options",      encoder_get_options },
   //{ "set_codec_options",      encoder_set_options },
   { NULL }
 };
 
-static PluginCodec_ControlDefn h323DecoderControls[] = {
-  { "valid_for_protocol",       valid_for_h323 },
-  //{ "get_codec_options",      decoder_get_options },
-  //{ "set_codec_options",      decoder_set_options },
-  { NULL }
-};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -430,7 +413,7 @@ static struct PluginCodec_information licenseInfo = {
 
 static const char L16Desc[]  = { "L16" };
 
-static const char sdpSpeex[]  = { "speex" };
+static const char sdpSpeex[]  = { "Speex" };
 
 #define	EQUIVALENCE_COUNTRY_CODE            9
 #define	EQUIVALENCE_EXTENSION_CODE          0
@@ -533,7 +516,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  h323EncoderControls,                /* codec controls */ \
+  h323CoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 }, \
@@ -563,7 +546,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 8000) \
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  h323DecoderControls,                /* codec controls */ \
+  h323CoderControls,                /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 } \
@@ -617,7 +600,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  h323EncoderControls,                /* codec controls */ \
+  h323CoderControls,                  /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 }, \
@@ -647,7 +630,7 @@ CREATE_IETFSPEEX_CAP_DATA(desc, suffix, ordinal, 16000)
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  h323DecoderControls,                /* codec controls */ \
+  h323CoderControls,                  /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &prefix##suffix##Cap                /* h323CapabilityData */ \
 } \
@@ -697,7 +680,7 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  h323EncoderControls,                /* codec controls */ \
+  h323CoderControls,                  /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &speexW##suffix##Cap                /* h323CapabilityData */ \
 }, \
@@ -726,7 +709,7 @@ static struct PluginCodec_H323NonStandardCodecData speexW##suffix##Cap = \
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  h323DecoderControls,                /* codec controls */ \
+  h323CoderControls,                  /* codec controls */ \
   PluginCodec_H323Codec_nonStandard,  /* h323CapabilityType */ \
   &speexW##suffix##Cap                /* h323CapabilityData */ \
 } \
@@ -762,7 +745,7 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
   create_encoder,                     /* create codec function */ \
   destroy_encoder,                    /* destroy codec */ \
   codec_encoder,                      /* encode/decode */ \
-  sipEncoderControls,                 /* codec controls */ \
+  sipCoderControls,                   /* codec controls */ \
   PluginCodec_H323Codec_NoH323,       /* h323CapabilityType */ \
   NULL                                /* h323CapabilityData */ \
 }, \
@@ -792,7 +775,7 @@ CREATE_NARROW_SPEEXW_CAP_DATA(Narrow-8k,    Narrow8k,    3)
   create_decoder,                     /* create codec function */ \
   destroy_decoder,                    /* destroy codec */ \
   codec_decoder,                      /* encode/decode */ \
-  sipDecoderControls,                 /* codec controls */ \
+  sipCoderControls,                   /* codec controls */ \
   PluginCodec_H323Codec_NoH323,       /* h323CapabilityType */ \
   NULL                                /* h323CapabilityData */ \
 } \
