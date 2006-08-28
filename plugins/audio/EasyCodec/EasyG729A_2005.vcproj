@@ -168,7 +168,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="ptclib.lib ptlibs.lib odbc32.lib odbccp32.lib"
+				AdditionalDependencies="ptlibs.lib odbc32.lib odbccp32.lib"
 				OutputFile="../../Debug/EasyG729A_pwplugin.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
