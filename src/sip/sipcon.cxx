@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2177  2006/08/28 00:32:16  csoutheren
+ * Revision 1.2178  2006/08/28 00:35:57  csoutheren
+ * Applied 1545205 - Usage of SetPhase in SIPConnection
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.176  2006/08/28 00:32:16  csoutheren
  * Applied 1545191 - SIPConnection invitationsMutex fix
  * Thanks to Drazen Dimoti
  *
@@ -1010,7 +1014,7 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
     return FALSE;
 
   SendInviteResponse(SIP_PDU::Information_Ringing);
-  phase = AlertingPhase;
+  SetPhase(AlertingPhase);
 
   return TRUE;
 }
@@ -1077,7 +1081,7 @@ BOOL SIPConnection::SetConnected()
   InitRFC2833Handler();
 
   // switch phase 
-  phase = ConnectedPhase;
+  SetPhase(ConnectedPhase);
   connectedTime = PTime ();
   
   return TRUE;
@@ -2078,7 +2082,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
 
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
-  phase = SetUpPhase;
+  SetPhase(SetUpPhase);
 
   ownerCall.OnSetUp(*this);
 
@@ -2157,7 +2161,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     return;
   
   releaseMethod = ReleaseWithBYE;
-  phase = EstablishedPhase;
+  SetPhase(EstablishedPhase);
   OnEstablished();
 
   // HACK HACK HACK: this is a work-around for a deadlock that can occur
@@ -2311,7 +2315,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & /*response*/)
 
   if (phase < AlertingPhase)
   {
-    phase = AlertingPhase;
+    SetPhase(AlertingPhase);
     OnAlerting();
   }
 }
@@ -2325,7 +2329,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 
   if (phase < AlertingPhase)
   {
-    phase = AlertingPhase;
+    SetPhase(AlertingPhase);
     OnAlerting();
   }
 
@@ -2465,7 +2469,7 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   if (phase == EstablishedPhase)
     return;
 
-  phase = EstablishedPhase;
+  SetPhase(EstablishedPhase);
   OnEstablished();
 }
 
