@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2048  2006/08/10 05:10:31  csoutheren
+ * Revision 1.2049  2006/08/28 00:10:55  csoutheren
+ * Applied 1545126 - Deadlock fix in OpalCall
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.47  2006/08/10 05:10:31  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.46  2006/07/24 14:03:40  csoutheren
@@ -440,7 +444,7 @@ BOOL OpalCall::OnEstablished(OpalConnection & PTRACE_PARAM(connection))
   if (connectionsActive.GetSize() < 2)
     return FALSE;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (conn->GetPhase() != OpalConnection::EstablishedPhase)
       return FALSE;
   }
