@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2110  2006/08/12 04:09:24  csoutheren
+ * Revision 1.2111  2006/08/28 00:42:25  csoutheren
+ * Applied 1545201 - SIPTransaction - control of access to SIPConnection
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.109  2006/08/12 04:09:24  csoutheren
  * Applied 1538497 - Add the PING method
  * Thanks to Paul Rolland
  *
@@ -2008,14 +2012,12 @@ SIPTransaction::~SIPTransaction()
 
   if (state > NotStarted && state < Terminated_Success) 
     finished.Signal();
-  
-  PWaitAndSignal m(mutex);
-  
+
   if (connection != NULL && state > NotStarted && state < Terminated_Success) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);
   }
-  
+
   PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
@@ -2109,12 +2111,12 @@ BOOL SIPTransaction::ResendCANCEL()
 
 BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
-  PWaitAndSignal m(mutex);
-
   PString cseq = response.GetMIME().GetCSeq();
 
   // If is the response to a CANCEl we sent, then just ignore it
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
+    // Lock only if we have not already locked it in SIPInvite::OnReceivedResponse
+    PWaitAndSignal m(mutex, method != Method_INVITE);
     SetTerminated(Terminated_Cancelled);
     return FALSE;
   }
@@ -2125,6 +2127,10 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return FALSE;
   }
 
+  if (method != Method_INVITE) mutex.Wait();
+
+  BOOL notCompletedFlag = state < Completed;
+
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
@@ -2133,32 +2139,39 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   if (response.GetStatusCode()/100 == 1) {
     PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
 
-    if (connection != NULL)
-      connection->OnReceivedResponse(*this, response);
-    else
-      endpoint.OnReceivedResponse(*this, response);
-
     state = Proceeding;
     retry = 0;
     retryTimer = endpoint.GetRetryTimeoutMax();
     completionTimer = endpoint.GetNonInviteTimeout();
+
+    mutex.Signal();
+
+    if (connection != NULL)
+      connection->OnReceivedResponse(*this, response);
+    else
+      endpoint.OnReceivedResponse(*this, response);
   }
    else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
 
-    if (state < Completed && connection != NULL)
+    state = Completed;
+    finished.Signal();
+    retryTimer.Stop();
+    completionTimer = endpoint.GetPduCleanUpTimeout();
+
+    mutex.Signal();
+
+    if (notCompletedFlag && connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
       endpoint.OnReceivedResponse(*this, response);
 
     if (!OnCompleted(response))
       return FALSE;
-
-    state = Completed;
-    finished.Signal();
-    retryTimer.Stop();
-    completionTimer = endpoint.GetPduCleanUpTimeout();
   }
+
+  // If this is invite then we need to lock it again
+  if (method == Method_INVITE) mutex.Wait();
 
   return TRUE;
 }
@@ -2255,17 +2268,6 @@ void SIPTransaction::SetTerminated(States newState)
   state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
-  if (connection != NULL) {
-    if (state != Terminated_Success)
-      connection->OnTransactionFailed(*this);
-
-    connection->RemoveTransaction(this);
-  }
-  else {
-    endpoint.RemoveTransaction(this);
-  }
-    
-
   // REGISTER or MESSAGE Failed, tell the endpoint
   if (state != Terminated_Success) {
     
@@ -2293,6 +2295,20 @@ void SIPTransaction::SetTerminated(States newState)
   if (oldState != Completed) {
     finished.Signal();
   }
+
+  if (connection != NULL) {
+    if (state != Terminated_Success) {
+      mutex.Signal();
+
+      connection->OnTransactionFailed(*this);
+
+      mutex.Wait();
+    }
+  }
+  else {
+    endpoint.RemoveTransaction(this);
+  }
+    
 }
 
 
@@ -2337,6 +2353,8 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsi
 
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
+  PWaitAndSignal m(mutex);
+
   if (!SIPTransaction::OnReceivedResponse(response))
     return FALSE;
 
