@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2021  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2022  2006/08/28 00:51:12  csoutheren
+ * Applied 1545808 - OpalTransportUDP connectSockets protection
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.20  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -1112,6 +1116,7 @@ class OpalTransportUDP : public OpalTransportIP
     OpalTransportAddress lastReceivedAddress;
     BOOL                 socketOwnedByListener;
     PBYTEArray           preReadPacket;
+    PMutex               connectSocketsMutex;
     PSocketList          connectSockets;
     BOOL 		 reuseAddressFlag;
 };
