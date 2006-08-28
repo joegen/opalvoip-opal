@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g726codec.c,v $
+ * Revision 1.4  2006/08/28 01:19:22  csoutheren
+ * Changed payload types and SDP names
+ *
  * Revision 1.3  2006/08/28 01:17:15  csoutheren
  * Changed payload types and SDP names
  *
@@ -242,7 +245,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (5 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // specified RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_40,                              // text decription
   L16Desc,                              // source format
@@ -278,7 +281,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (5 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // dynamic RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_40,                              // text decription
   g726_40,                              // source format
@@ -316,7 +319,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // specified RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_32,                              // text decription
   L16Desc,                              // source format
@@ -352,7 +355,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (4 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // dynamic RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_32,                              // text decription
   g726_32,                              // source format
@@ -390,7 +393,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (3 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // specified RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_24,                              // text decription
   L16Desc,                              // source format
@@ -426,7 +429,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (3 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // dynamic RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_24,                              // text decription
   g726_24,                              // source format
@@ -464,7 +467,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (2 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // specified RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_16,                              // text decription
   L16Desc,                              // source format
@@ -500,7 +503,7 @@ static struct PluginCodec_Definition g726CodecDefn[] = {
   (2 << PluginCodec_BitsPerSamplePos) | // bits per sample
   PluginCodec_InputTypeRaw |            // raw input data
   PluginCodec_OutputTypeRaw |           // raw output data
-  PluginCodec_RTPTypeExplicit,          // dynamic RTP type
+  PluginCodec_RTPTypeDynamic,           // dynamic RTP type
 
   g726_16,                              // text decription
   g726_16,                              // source format
