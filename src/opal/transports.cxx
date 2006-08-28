@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2067  2006/08/28 00:51:13  csoutheren
+ * Revision 1.2068  2006/08/28 08:07:29  csoutheren
+ * Remove incorrect patch
+ *
+ * Revision 2.66  2006/08/28 00:51:13  csoutheren
  * Applied 1545808 - OpalTransportUDP connectSockets protection
  * Thanks to Drazen Dimoti
  *
@@ -2014,7 +2017,6 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     readChannel = &socket;
     channelPointerMutex.EndWrite();
   }
-  channelPointerMutex.EndRead();
 
   for (;;) {
     PReadWaitAndSignal mutex(channelPointerMutex);
