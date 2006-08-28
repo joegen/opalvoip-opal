@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2034  2006/08/26 08:19:52  hfriederich
+ * Revision 1.2035  2006/08/28 00:06:10  csoutheren
+ * Applied 1545107 - MediaStream - safe access to patch for adding a filter
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.33  2006/08/26 08:19:52  hfriederich
  * Add getter method for the RTP Session
  *
  * Revision 2.32  2006/07/14 05:24:49  csoutheren
@@ -394,6 +398,15 @@ class OpalMediaStream : public PObject
     /**Get the patch thread that is using the stream.
       */
     OpalMediaPatch * GetPatch() const { return patchThread; }
+
+    /**Add a filter to the owning patch safely.
+      */
+    void AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage =  OpalMediaFormat());
+
+    /**Remove a filter from the owning patch safely.
+      */
+    BOOL RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage);
+
   //@}
 
     /**Get the mutex that prevents the destructor from completing.
