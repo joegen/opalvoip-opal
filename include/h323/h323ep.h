@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2041  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2042  2006/08/29 01:37:11  csoutheren
+ * Change secure URLs to use h323s and tcps to be inline with sips
+ *
+ * Revision 2.40  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -1747,12 +1750,12 @@ class H323SecureEndPoint : public H323EndPoint
     };
 
     H323SecureEndPoint(OpalManager & _manager)
-      : H323EndPoint(_manager, "sh323", DefaultTcpSignalPort)
+      : H323EndPoint(_manager, "h323s", DefaultTcpSignalPort)
     {
     }
 
     PString GetDefaultTransport() const
-    {  return "stcp$"; }
+    {  return "tcps$"; }
   //@}
 };
 

@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2023  2006/08/29 00:55:04  csoutheren
+ * Revision 1.2024  2006/08/29 01:37:11  csoutheren
+ * Change secure URLs to use h323s and tcps to be inline with sips
+ *
+ * Revision 2.22  2006/08/29 00:55:04  csoutheren
  * Fix problem with creating TCP transports associated with UDP tranports
  *
  * Revision 2.21  2006/08/28 00:51:12  csoutheren
@@ -1221,11 +1224,11 @@ typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP, OpalT
 
 class PSSLContext;
 
-class OpalListenerSTCP : public OpalListenerTCP
+class OpalListenerTCPS : public OpalListenerTCP
 {
-  PCLASSINFO(OpalListenerSTCP, OpalListenerTCP);
+  PCLASSINFO(OpalListenerTCPS, OpalListenerTCP);
   public:
-    OpalListenerSTCP(
+    OpalListenerTCPS(
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
@@ -1234,7 +1237,7 @@ class OpalListenerSTCP : public OpalListenerTCP
 
     /** Destroy the listener thread.
       */
-    ~OpalListenerSTCP();
+    ~OpalListenerTCPS();
 
     OpalTransport * Accept(const PTimeInterval & timeout);
     const char * GetProtoPrefix() const;
@@ -1243,23 +1246,23 @@ class OpalListenerSTCP : public OpalListenerTCP
       PSSLContext * sslContext;
 };
 
-class OpalTransportSTCP : public OpalTransportTCP
+class OpalTransportTCPS : public OpalTransportTCP
 {
-  PCLASSINFO(OpalTransportSTCP, OpalTransportTCP);
+  PCLASSINFO(OpalTransportTCPS, OpalTransportTCP);
     public:
-      OpalTransportSTCP(
+      OpalTransportTCPS(
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PIPSocket::Address binding = INADDR_ANY, ///<  Local interface to use
         WORD port = 0,              ///<  Local port to bind to
         BOOL reuseAddr = FALSE      ///<  Flag for binding to already bound interface
       );
-      OpalTransportSTCP(
+      OpalTransportTCPS(
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PTCPSocket * socket         ///<  Socket to use
       );
 
-      /// Destroy the STCP channel
-      ~OpalTransportSTCP();
+      /// Destroy the TCPS channel
+      ~OpalTransportTCPS();
 
       BOOL IsCompatibleTransport(const OpalTransportAddress & address) const;
       BOOL Connect();
@@ -1270,7 +1273,7 @@ class OpalTransportSTCP : public OpalTransportTCP
       PSSLContext * sslContext;
 };
 
-typedef OpalInternalIPTransportTemplate<OpalListenerSTCP, OpalTransportSTCP, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalSTCPTransport;
+typedef OpalInternalIPTransportTemplate<OpalListenerTCPS, OpalTransportTCPS, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTCPSTransport;
 
 #endif
 

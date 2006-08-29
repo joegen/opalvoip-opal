@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2072  2006/08/21 05:30:48  csoutheren
+ * Revision 1.2073  2006/08/29 01:37:11  csoutheren
+ * Change secure URLs to use h323s and tcps to be inline with sips
+ *
+ * Revision 2.71  2006/08/21 05:30:48  csoutheren
  * Add support for sh323
  *
  * Revision 2.70  2006/08/01 12:46:32  rjongbloed
@@ -379,8 +382,8 @@ void SimpleOpalProcess::Main()
              "h-help."
              "H-no-h323."
 #if P_SSL
-             "-no-sh323."
-             "-sh323-listen:"
+             "-no-h323s."
+             "-h323s-listen:"
 #endif
              "-h323-listen:"
              "I-no-sip."
@@ -497,12 +500,12 @@ void SimpleOpalProcess::Main()
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
             "     --h323-listen iface  : Interface/port(s) to listen for H.323 requests\n"
 #if P_SSL
-            "     --sh323-listen iface : Interface/port(s) to listen for secure H.323 requests\n"
+            "     --h323s-listen iface : Interface/port(s) to listen for secure H.323 requests\n"
 #endif
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
             " --disable-grq            : Do not send GRQ when registering with GK\n"
 #if P_SSL
-            " --no-sh323               : Do not creat secure H.323 endpoint\n"
+            " --no-h323s               : Do not creat secure H.323 endpoint\n"
 #endif
 #endif
 
@@ -632,7 +635,7 @@ MyManager::MyManager()
 #if OPAL_H323
   h323EP = NULL;
 #if P_SSL
-  sh323EP = NULL;
+  h323sEP = NULL;
 #endif
 #endif
 #if OPAL_SIP
@@ -823,9 +826,9 @@ BOOL MyManager::Initialise(PArgList & args)
     if (!InitialiseH323EP(args, "h323-listen", h323EP))
       return FALSE;
 #if P_SSL
-    if (!args.HasOption("no-sh323")) {
-      sh323EP = new H323SecureEndPoint(*this);
-      if (!InitialiseH323EP(args, "sh323-listen", sh323EP))
+    if (!args.HasOption("no-h323s")) {
+      h323sEP = new H323SecureEndPoint(*this);
+      if (!InitialiseH323EP(args, "h323s-listen", h323sEP))
         return FALSE;
     }
 #endif
@@ -949,10 +952,10 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
 #if P_SSL
-      if (sh323EP != NULL) {
-        AddRouteEntry("pots:.*\\*.*\\*.* = sh323:<dn2ip>");
-        AddRouteEntry("pots:.*           = sh323:<da>");
-        AddRouteEntry("pc:.*             = sh323:<da>");
+      if (h323sEP != NULL) {
+        AddRouteEntry("pots:.*\\*.*\\*.* = h323s:<dn2ip>");
+        AddRouteEntry("pots:.*           = h323s:<da>");
+        AddRouteEntry("pc:.*             = h323s:<da>");
       }
 #endif
     }
@@ -967,8 +970,8 @@ BOOL MyManager::Initialise(PArgList & args)
 #if OPAL_H323
       AddRouteEntry("h323:.* = pots:<da>");
 #if P_SSL
-      if (sh323EP != NULL) 
-        AddRouteEntry("sh323:.* = pots:<da>");
+      if (h323sEP != NULL) 
+        AddRouteEntry("h323s:.* = pots:<da>");
 #endif
 #endif
 #if OPAL_SIP
@@ -979,8 +982,8 @@ BOOL MyManager::Initialise(PArgList & args)
 #if OPAL_H323
       AddRouteEntry("h323:.* = pc:<da>");
 #if P_SSL
-      if (sh323EP != NULL) 
-        AddRouteEntry("sh323:.* = pc:<da>");
+      if (h323sEP != NULL) 
+        AddRouteEntry("h323s:.* = pc:<da>");
 #endif
 #endif
 #if OPAL_SIP
