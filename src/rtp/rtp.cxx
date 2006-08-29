@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2037  2006/08/28 00:03:00  csoutheren
+ * Revision 1.2038  2006/08/29 18:39:21  dsandras
+ * Added function to better deal with reinvites.
+ *
+ * Revision 2.36  2006/08/28 00:03:00  csoutheren
  * Applied 1545095 - RTP destructors patch
  * Thanks to Drazen Dimoti
  *
@@ -790,6 +793,7 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data, BOOL autoDelete)
 
   ignoreOtherSources = TRUE;
   ignoreOutOfOrderPackets = TRUE;
+  ignorePayloadTypeChanges = TRUE;
   syncSourceOut = PRandom::Number();
   syncSourceIn = 0;
   allowSyncSourceInChange = FALSE;
@@ -827,6 +831,8 @@ RTP_Session::RTP_Session(unsigned id, RTP_UserData * data, BOOL autoDelete)
   minimumReceiveTimeAccum = 0xffffffff;
   packetsLostSinceLastRR = 0;
   lastTransitTime = 0;
+
+  lastReceivedPayloadType = RTP_DataFrame::MaxPayloadType;
 }
 
 
@@ -1056,12 +1062,21 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
-
 RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & frame)
 {
   // Check that the PDU is the right version
   if (frame.GetVersion() != RTP_DataFrame::ProtocolVersion)
     return e_IgnorePacket; // Non fatal error, just ignore
+
+  // Check if expected payload type
+  if (lastReceivedPayloadType == RTP_DataFrame::MaxPayloadType)
+    lastReceivedPayloadType = frame.GetPayloadType();
+
+  if (lastReceivedPayloadType != frame.GetPayloadType() && !ignorePayloadTypeChanges) {
+
+    PTRACE(4, "RTP\tReceived payload type " << frame.GetPayloadType() << ", but was expecting " << lastReceivedPayloadType);
+    return e_IgnorePacket;
+  }
 
   // Check for if a control packet rather than data packet.
   if (frame.GetPayloadType() > RTP_DataFrame::MaxPayloadType)
@@ -1540,7 +1555,7 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID)
 
   mutex.Wait();
 
-  if (sessions.Contains(sessionID)) {
+  while (sessions.Contains(sessionID)) {
     if (sessions[sessionID].DecrementReference()) {
       PTRACE(3, "RTP\tDeleting session " << sessionID);
       sessions[sessionID].SetJitterBufferSize(0, 0);
@@ -1748,6 +1763,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
   
+
   return TRUE;
 }
 
@@ -1825,7 +1841,7 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
 
   if (!appliedQOS)
       ApplyQOS(remoteAddress);
-
+  
   return remoteAddress != 0 && port != 0;
 }
 
