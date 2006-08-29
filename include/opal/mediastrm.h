@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2035  2006/08/28 00:06:10  csoutheren
+ * Revision 1.2036  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.34  2006/08/28 00:06:10  csoutheren
  * Applied 1545107 - MediaStream - safe access to patch for adding a filter
  * Thanks to Drazen Dimoti
  *
@@ -602,18 +606,25 @@ class OpalRawMediaStream : public OpalMediaStream
      */
     PChannel * GetChannel() { return channel; }
     
-
     /**Close the media stream.
 
        Closes the associated PChannel.
       */
     virtual BOOL Close();
+
+    /**Get average signal level in last frame.
+      */
+    virtual unsigned GetAverageSignalLevel();
   //@}
 
   protected:
     PChannel * channel;
     PMutex     channel_mutex;
     BOOL       autoDelete;
+
+    PUInt64    averageSignalSum;
+    unsigned   averageSignalSamples;
+    void CollectAverage(const BYTE * buffer, PINDEX size);
 };
 
 
