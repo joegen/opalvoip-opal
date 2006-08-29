@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2023  2006/08/21 05:30:48  csoutheren
+ * Revision 1.2024  2006/08/29 01:37:11  csoutheren
+ * Change secure URLs to use h323s and tcps to be inline with sips
+ *
+ * Revision 2.22  2006/08/21 05:30:48  csoutheren
  * Add support for sh323
  *
  * Revision 2.21  2006/07/21 00:38:31  csoutheren
@@ -196,7 +199,7 @@ class MyManager : public OpalManager
 #if OPAL_H323
     H323EndPoint     * h323EP;
 #if P_SSL
-    H323SecureEndPoint    * sh323EP;
+    H323SecureEndPoint    * h323sEP;
 #endif
 #endif
 #if OPAL_SIP

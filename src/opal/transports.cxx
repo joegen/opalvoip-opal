@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2068  2006/08/28 08:07:29  csoutheren
+ * Revision 1.2069  2006/08/29 01:37:11  csoutheren
+ * Change secure URLs to use h323s and tcps to be inline with sips
+ *
+ * Revision 2.67  2006/08/28 08:07:29  csoutheren
  * Remove incorrect patch
  *
  * Revision 2.66  2006/08/28 00:51:13  csoutheren
@@ -544,8 +547,8 @@ static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInt
 
 #if P_SSL
 #include <ptclib/pssl.h>
-static const char StcpPrefix[] = "stcp$";
-static PFactory<OpalInternalTransport>::Worker<OpalInternalSTCPTransport> opalInternalSTCPTransportFactory(StcpPrefix);
+static const char TcpsPrefix[] = "tcps$";
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPSTransport> opalInternalTCPSTransportFactory(TcpsPrefix);
 #endif
 
 /////////////////////////////////////////////////////////////////
@@ -2145,7 +2148,7 @@ static BOOL SetSSLCertificate(PSSLContext & sslContext,
          sslContext.UsePrivateKey(certificateFile);
 }
 
-OpalTransportSTCP::OpalTransportSTCP(OpalEndPoint & ep,
+OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep,
                                      PIPSocket::Address binding,
                                      WORD port,
                                      BOOL reuseAddr)
@@ -2156,7 +2159,7 @@ OpalTransportSTCP::OpalTransportSTCP(OpalEndPoint & ep,
 }
 
 
-OpalTransportSTCP::OpalTransportSTCP(OpalEndPoint & ep, PTCPSocket * socket)
+OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep, PTCPSocket * socket)
   : OpalTransportTCP(ep, INADDR_ANY, 0)
 {
   sslContext = new PSSLContext;
@@ -2168,7 +2171,7 @@ OpalTransportSTCP::OpalTransportSTCP(OpalEndPoint & ep, PTCPSocket * socket)
 }
 
 
-OpalTransportSTCP::~OpalTransportSTCP()
+OpalTransportTCPS::~OpalTransportTCPS()
 {
   CloseWait();
   delete sslContext;
@@ -2176,15 +2179,15 @@ OpalTransportSTCP::~OpalTransportSTCP()
 }
 
 
-BOOL OpalTransportSTCP::IsCompatibleTransport(const OpalTransportAddress & address) const
+BOOL OpalTransportTCPS::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
   return (address.Left(strlen(TcpPrefix)) *= TcpPrefix) ||
          (address.Left(sizeof(IpPrefix)-1) *= IpPrefix) ||
-         (address.Left(strlen(StcpPrefix)) *= StcpPrefix);
+         (address.Left(strlen(TcpsPrefix)) *= TcpsPrefix);
 }
 
 
-BOOL OpalTransportSTCP::Connect()
+BOOL OpalTransportTCPS::Connect()
 {
   if (IsOpen())
     return TRUE;
@@ -2199,7 +2202,7 @@ BOOL OpalTransportSTCP::Connect()
   localPort = manager.GetNextTCPPort();
   WORD firstPort = localPort;
   for (;;) {
-    PTRACE(4, "OpalSTCP\tConnecting to "
+    PTRACE(4, "OpalTCPS\tConnecting to "
            << remoteAddress << ':' << remotePort
            << " (local port=" << localPort << ')');
     if (socket->Connect(localPort, remoteAddress))
@@ -2207,7 +2210,7 @@ BOOL OpalTransportSTCP::Connect()
 
     int errnum = socket->GetErrorNumber();
     if (localPort == 0 || (errnum != EADDRINUSE && errnum != EADDRNOTAVAIL)) {
-      PTRACE(1, "OpalSTCP\tCould not connect to "
+      PTRACE(1, "OpalTCPS\tCould not connect to "
                 << remoteAddress << ':' << remotePort
                 << " (local port=" << localPort << ") - "
                 << socket->GetErrorText() << '(' << errnum << ')');
@@ -2226,7 +2229,7 @@ BOOL OpalTransportSTCP::Connect()
 
   PString certificateFile = endpoint.GetSSLCertificate();
   if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
-    PTRACE(1, "OpalSTCP\tCould not load certificate \"" << certificateFile << '"');
+    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
     return FALSE;
   }
 
@@ -2239,7 +2242,7 @@ BOOL OpalTransportSTCP::Connect()
   return Open(sslChannel);
 }
 
-BOOL OpalTransportSTCP::OnOpen()
+BOOL OpalTransportTCPS::OnOpen()
 {
   PSSLChannel * sslChannel = dynamic_cast<PSSLChannel *>(GetReadChannel());
   if (sslChannel == NULL)
@@ -2249,20 +2252,20 @@ BOOL OpalTransportSTCP::OnOpen()
 
   // Get name of the remote computer for information purposes
   if (!socket->GetPeerAddress(remoteAddress, remotePort)) {
-    PTRACE(1, "OpalSTCP\tGetPeerAddress() failed: " << socket->GetErrorText());
+    PTRACE(1, "OpalTCPS\tGetPeerAddress() failed: " << socket->GetErrorText());
     return FALSE;
   }
 
   // get local address of incoming socket to ensure that multi-homed machines
   // use a NIC address that is guaranteed to be addressable to destination
   if (!socket->GetLocalAddress(localAddress, localPort)) {
-    PTRACE(1, "OpalSTCP\tGetLocalAddress() failed: " << socket->GetErrorText());
+    PTRACE(1, "OpalTCPS\tGetLocalAddress() failed: " << socket->GetErrorText());
     return FALSE;
   }
 
 #ifndef __BEOS__
   if (!socket->SetOption(TCP_NODELAY, 1, IPPROTO_TCP)) {
-    PTRACE(1, "OpalSTCP\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
+    PTRACE(1, "OpalTCPS\tSetOption(TCP_NODELAY) failed: " << socket->GetErrorText());
   }
 
   // make sure do not lose outgoing packets on close
@@ -2273,7 +2276,7 @@ BOOL OpalTransportSTCP::OnOpen()
   }
 #endif
 
-  PTRACE(1, "OpalSTCP\tStarted connection to "
+  PTRACE(1, "OpalTCPS\tStarted connection to "
          << remoteAddress << ':' << remotePort
          << " (if=" << localAddress << ':' << localPort << ')');
 
@@ -2281,14 +2284,14 @@ BOOL OpalTransportSTCP::OnOpen()
 }
 
 
-const char * OpalTransportSTCP::GetProtoPrefix() const
+const char * OpalTransportTCPS::GetProtoPrefix() const
 {
-  return StcpPrefix;
+  return TcpsPrefix;
 }
 
 //////////////////////////////////////////////////////////////////////////
 
-OpalListenerSTCP::OpalListenerSTCP(OpalEndPoint & ep,
+OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
                                  PIPSocket::Address binding,
                                  WORD port,
                                  BOOL exclusive)
@@ -2298,23 +2301,23 @@ OpalListenerSTCP::OpalListenerSTCP(OpalEndPoint & ep,
   sslContext = new PSSLContext();
   PString certificateFile = endpoint.GetSSLCertificate();
   if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
-    PTRACE(1, "OpalSTCP\tCould not load certificate \"" << certificateFile << '"');
+    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
   }
 }
 
-OpalListenerSTCP::~OpalListenerSTCP()
+OpalListenerTCPS::~OpalListenerTCPS()
 {
   delete sslContext;
 }
 
-OpalTransport * OpalListenerSTCP::Accept(const PTimeInterval & timeout)
+OpalTransport * OpalListenerTCPS::Accept(const PTimeInterval & timeout)
 {
   if (!listener.IsOpen())
     return NULL;
 
   listener.SetReadTimeout(timeout); // Wait for remote connect
 
-  PTRACE(4, "STCP\tWaiting on socket accept on " << GetLocalAddress());
+  PTRACE(4, "TCPS\tWaiting on socket accept on " << GetLocalAddress());
   PTCPSocket * socket = new PTCPSocket;
   if (!socket->Accept(listener)) {
     if (socket->GetErrorCode() != PChannel::Interrupted) {
@@ -2325,10 +2328,10 @@ OpalTransport * OpalListenerSTCP::Accept(const PTimeInterval & timeout)
     return NULL;
   }
 
-  OpalTransportSTCP * transport = new OpalTransportSTCP(endpoint);
+  OpalTransportTCPS * transport = new OpalTransportTCPS(endpoint);
   PSSLChannel * ssl = new PSSLChannel(sslContext);
   if (!ssl->Accept(socket)) {
-    PTRACE(1, "STCP\tAccept failed: " << ssl->GetErrorText());
+    PTRACE(1, "TCPS\tAccept failed: " << ssl->GetErrorText());
     delete transport;
     delete ssl;
     delete socket;
@@ -2338,16 +2341,16 @@ OpalTransport * OpalListenerSTCP::Accept(const PTimeInterval & timeout)
   if (transport->Open(ssl))
     return transport;
 
-  PTRACE(1, "STCP\tFailed to open transport, connection not started.");
+  PTRACE(1, "TCPS\tFailed to open transport, connection not started.");
   delete transport;
   delete ssl;
   delete socket;
   return NULL;
 }
 
-const char * OpalListenerSTCP::GetProtoPrefix() const
+const char * OpalListenerTCPS::GetProtoPrefix() const
 {
-  return StcpPrefix;
+  return TcpsPrefix;
 }
 
 
