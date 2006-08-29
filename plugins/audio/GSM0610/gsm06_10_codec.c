@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsm06_10_codec.c,v $
+ * Revision 1.5  2006/08/29 00:10:02  csoutheren
+ * Fixed problem
+ *
  * Revision 1.4  2006/08/28 08:07:51  csoutheren
  * Make GSM decode adaptive
  *
@@ -163,7 +166,7 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   struct gsm_state * context = (struct gsm_state *)_context;
 
   // Unless the packet is 65 bytes long, it must be normal GSM
-  if (inputLength != 65) {
+  if (*fromLen != 65) {
     if (*toLen < SAMPLES_PER_FRAME * 2)
       return 0;
     {
