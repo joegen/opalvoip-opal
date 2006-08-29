@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2022  2006/08/17 23:09:03  rjongbloed
+ * Revision 1.2023  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.21  2006/08/17 23:09:03  rjongbloed
  * Added volume controls
  *
  * Revision 2.20  2006/06/27 13:50:24  csoutheren
@@ -528,6 +532,13 @@ class OpalLineConnection : public OpalConnection
     virtual BOOL SetAudioVolume(
       BOOL source,                  ///< true for source (microphone), false for sink (speaker)
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
+    );
+
+    /**Get the average signal level (0..32767) for the audio media channel.
+       A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
+      */
+    virtual unsigned GetAudioSignalLevel(
+      BOOL source                   ///< true for source (microphone), false for sink (speaker)
     );
 
     /**Send a user input indication to the remote endpoint.

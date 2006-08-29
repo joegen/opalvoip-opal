@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2074  2006/08/28 00:07:43  csoutheren
+ * Revision 1.2075  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.73  2006/08/28 00:07:43  csoutheren
  * Applied 1545125 - SetPhase mutex protection and transition control
  * Thanks to Drazen Dimoti
  *
@@ -961,6 +965,12 @@ BOOL OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat
 BOOL OpalConnection::SetAudioVolume(BOOL /*source*/, unsigned /*percentage*/)
 {
   return FALSE;
+}
+
+
+unsigned OpalConnection::GetAudioSignalLevel(BOOL /*source*/)
+{
+    return UINT_MAX;
 }
 
 
