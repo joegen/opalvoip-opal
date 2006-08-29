@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2022.2.1  2006/02/06 04:38:37  csoutheren
+ * Revision 1.2022.2.2  2006/08/29 18:38:27  dsandras
+ * Added function to better deal with reinvites.
+ *
+ * Revision 2.21.2.1  2006/02/06 04:38:37  csoutheren
  * Backported RTP payload mapping fixes from CVS head
  *
  * Revision 2.22  2006/02/02 07:02:57  csoutheren
@@ -771,6 +774,12 @@ class RTP_Session : public PObject
       BOOL ignore   ///<  Flag for ignore out of order packets
     ) { ignoreOutOfOrderPackets = ignore; }
 
+    /**Indicate if will ignore rtp payload type changes in received packets.
+     */
+    void SetIgnorePayloadTypeChanges(
+      BOOL ignore   ///<  Flag to ignore payload type changes
+    ) { ignorePayloadTypeChanges = ignore; }
+
     /**Get the time interval for sending RTCP reports in the session.
       */
     const PTimeInterval & GetReportTimeInterval() { return reportTimeInterval; }
@@ -933,6 +942,9 @@ class RTP_Session : public PObject
     DWORD    minimumReceiveTimeAccum;
     DWORD    packetsLostSinceLastRR;
     DWORD    lastTransitTime;
+    
+    RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
+    BOOL ignorePayloadTypeChanges;
 
     PMutex reportMutex;
     PTimer reportTimer;
