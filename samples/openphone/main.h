@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.34  2006/08/29 08:54:36  rjongbloed
+ * Added VU meters
+ *
  * Revision 1.33  2006/08/17 23:09:03  rjongbloed
  * Added volume controls
  *
@@ -269,6 +272,7 @@ class InCallPanel : public wxPanel
 {
   public:
     InCallPanel(MyManager & manager, wxWindow * parent);
+    virtual bool Show(bool show = true);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -288,10 +292,16 @@ class InCallPanel : public wxPanel
 
     void SpeakerVolume(wxScrollEvent & event);
     void MicrophoneVolume(wxScrollEvent & event);
-
-    void SetVolume(bool microphone, wxScrollEvent & event);
+    void SetVolume(bool microphone, int value);
+    PDECLARE_NOTIFIER(PTimer, InCallPanel, UpdateVU);
 
     MyManager & m_manager;
+    wxSlider  * m_SpeakerVolume;
+    wxSlider  * m_MicrophoneVolume;
+    wxGauge   * m_vuSpeaker;
+    wxGauge   * m_vuMicrophone;
+    PTimer      m_vuTimer;
+    bool        m_FirstTime;
 
     DECLARE_EVENT_TABLE()
 };
@@ -538,6 +548,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnRinging(const OpalPCSSConnection & connection);
 
     PSafePtr<OpalCall> GetCall() { return FindCallWithLock(m_currentCallToken); }
+    PSafePtr<OpalConnection> GetUserConnection();
 
   private:
     // Controls on main frame
