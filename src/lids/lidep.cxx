@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2031  2006/08/17 23:09:04  rjongbloed
+ * Revision 1.2032  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.30  2006/08/17 23:09:04  rjongbloed
  * Added volume controls
  *
  * Revision 2.29  2006/07/27 22:34:21  rjongbloed
@@ -689,6 +693,17 @@ BOOL OpalLineConnection::SetAudioVolume(BOOL source, unsigned percentage)
 
   OpalLine & line = stream->GetLine();
   return source ? line.SetRecordVolume(percentage) : line.SetPlayVolume(percentage);
+}
+
+
+unsigned OpalLineConnection::GetAudioSignalLevel(BOOL source)
+{
+  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  if (stream == NULL)
+    return UINT_MAX;
+
+  OpalLine & line = stream->GetLine();
+  return line.GetAverageSignalLevel(!source);
 }
 
 

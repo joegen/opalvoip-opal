@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2046  2006/08/28 00:06:10  csoutheren
+ * Revision 1.2047  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.45  2006/08/28 00:06:10  csoutheren
  * Applied 1545107 - MediaStream - safe access to patch for adding a filter
  * Thanks to Drazen Dimoti
  *
@@ -672,6 +676,8 @@ OpalRawMediaStream::OpalRawMediaStream(const OpalMediaFormat & mediaFormat,
 {
   channel = chan;
   autoDelete = autoDel;
+  averageSignalSum = 0;
+  averageSignalSamples = 0;
 }
 
 
@@ -702,6 +708,7 @@ BOOL OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     return FALSE;
 
   length = channel->GetLastReadCount();
+  CollectAverage(buffer, length);
   return TRUE;
 }
 
@@ -723,14 +730,17 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
   if (buffer != NULL && length != 0) {
     if (!channel->Write(buffer, length))
       return FALSE;
+    written = channel->GetLastWriteCount();
+    CollectAverage(buffer, written);
   }
   else {
     PBYTEArray silence(defaultDataSize);
     if (!channel->Write(silence, defaultDataSize))
       return FALSE;
+    written = channel->GetLastWriteCount();
+    CollectAverage(silence, written);
   }
 
-  written = channel->GetLastWriteCount();
   return TRUE;
 }
 
@@ -746,6 +756,32 @@ BOOL OpalRawMediaStream::Close()
     return FALSE;
 
   return channel->Close();
+}
+
+
+unsigned OpalRawMediaStream::GetAverageSignalLevel()
+{
+  PWaitAndSignal m(channel_mutex);
+
+  if (averageSignalSamples == 0)
+    return UINT_MAX;
+
+  unsigned average = (unsigned)(averageSignalSum/averageSignalSamples);
+  averageSignalSum = average;
+  averageSignalSamples = 1;
+  return average;
+}
+
+
+void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
+{
+  size = size/2;
+  averageSignalSamples += size;
+  const short * pcm = (const short *)buffer;
+  while (size-- > 0) {
+    averageSignalSum += PABS(*pcm);
+    pcm++;
+  }
 }
 
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2033  2006/08/17 23:09:04  rjongbloed
+ * Revision 1.2034  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.32  2006/08/17 23:09:04  rjongbloed
  * Added volume controls
  *
  * Revision 2.31  2006/06/28 11:35:23  csoutheren
@@ -509,6 +513,16 @@ BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
     return FALSE;
 
   return channel->SetVolume(percentage);
+}
+
+
+unsigned OpalPCSSConnection::GetAudioSignalLevel(BOOL source)
+{
+  OpalAudioMediaStream * stream = PDownCast(OpalAudioMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  if (stream == NULL)
+    return UINT_MAX;
+
+  return stream->GetAverageSignalLevel();
 }
 
 

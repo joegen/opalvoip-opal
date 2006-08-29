@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2061  2006/08/28 00:07:43  csoutheren
+ * Revision 1.2062  2006/08/29 08:47:43  rjongbloed
+ * Added functions to get average audio signal level from audio streams in
+ *   suitable connection types.
+ *
+ * Revision 2.60  2006/08/28 00:07:43  csoutheren
  * Applied 1545125 - SetPhase mutex protection and transition control
  * Thanks to Drazen Dimoti
  *
@@ -829,11 +833,18 @@ class OpalConnection : public PSafeObject
       BOOL & autoDelete                     ///<  Flag for auto delete device
     );
 
-    /**Set  the volume (gain) for the audio media channel to the specified percentage.
+    /**Set the volume (gain) for the audio media channel to the specified percentage.
       */
     virtual BOOL SetAudioVolume(
       BOOL source,                  ///< true for source (microphone), false for sink (speaker)
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
+    );
+
+    /**Get the average signal level (0..32767) for the audio media channel.
+       A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
+      */
+    virtual unsigned GetAudioSignalLevel(
+      BOOL source                   ///< true for source (microphone), false for sink (speaker)
     );
   //@}
 
