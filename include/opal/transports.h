@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2022  2006/08/28 00:51:12  csoutheren
+ * Revision 1.2023  2006/08/29 00:55:04  csoutheren
+ * Fix problem with creating TCP transports associated with UDP tranports
+ *
+ * Revision 2.21  2006/08/28 00:51:12  csoutheren
  * Applied 1545808 - OpalTransportUDP connectSockets protection
  * Thanks to Drazen Dimoti
  *
@@ -1174,7 +1177,7 @@ class OpalInternalIPTransport : public OpalInternalTransport
                                      BOOL & reuseAddr);
 };
 
-template <class ListenerType, class TransportType>
+template <class ListenerType, class TransportType, unsigned AltTypeOption, class AltTypeClass>
 class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
 {
   public:
@@ -1201,14 +1204,18 @@ class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
       PIPSocket::Address ip;
       WORD port;
       BOOL reuseAddr;
-      if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr)) 
-        return new TransportType(endpoint, ip, 0, reuseAddr);
+      if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr)) {
+        if (options == AltTypeOption)
+          return new AltTypeClass(endpoint, ip, 0, reuseAddr);
+        else
+          return new TransportType(endpoint, ip, 0, reuseAddr);
+      }
       return NULL;
     }
 };
 
-typedef OpalInternalIPTransportTemplate<OpalListenerTCP, OpalTransportTCP> OpalInternalTCPTransport;
-typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP> OpalInternalUDPTransport;
+typedef OpalInternalIPTransportTemplate<OpalListenerTCP, OpalTransportTCP, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalTCPTransport;
+typedef OpalInternalIPTransportTemplate<OpalListenerUDP, OpalTransportUDP, OpalTransportAddress::Streamed, OpalTransportTCP> OpalInternalUDPTransport;
 
 #if P_SSL
 
@@ -1263,7 +1270,7 @@ class OpalTransportSTCP : public OpalTransportTCP
       PSSLContext * sslContext;
 };
 
-typedef OpalInternalIPTransportTemplate<OpalListenerSTCP, OpalTransportSTCP> OpalInternalSTCPTransport;
+typedef OpalInternalIPTransportTemplate<OpalListenerSTCP, OpalTransportSTCP, OpalTransportAddress::Datagram, OpalTransportUDP> OpalInternalSTCPTransport;
 
 #endif
 
