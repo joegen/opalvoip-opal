@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2056  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2057  2006/08/29 00:55:51  csoutheren
+ * Fixed problem with parsing aliases when using GKs
+ *
+ * Revision 2.55  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -1643,15 +1646,11 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
     return TRUE;
 
   // We have a gk and user did not explicitly supply a host, so lets
-  // do a check to see if it is an IP address or hostname
-  if (alias.FindOneOf("$.:[") != P_MAX_INDEX) {
-    H323TransportAddress test = alias;
-    PIPSocket::Address ip;
-    if (test.GetIpAddress(ip) && ip.IsValid()) {
-      // The alias was a valid internet address, use it as such
-      alias = PString::Empty();
-      address = test;
-    }
+  // do a check to see if it is an IP address 
+  PIPSocket::Address ip(alias);
+  if (ip.IsValid()) {
+    alias = PString::Empty();
+    address = H323TransportAddress(ip, GetDefaultSignalPort());
   }
 
   return TRUE;
