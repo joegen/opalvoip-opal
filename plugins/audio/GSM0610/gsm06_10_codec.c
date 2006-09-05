@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsm06_10_codec.c,v $
+ * Revision 1.6  2006/09/05 06:19:21  csoutheren
+ * msgsm should not appear in SIP
+ *
  * Revision 1.5  2006/08/29 00:10:02  csoutheren
  * Fixed problem
  *
@@ -467,7 +470,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] = {
   1,                                  // recommended number of frames per packet
   1,                                  // maximum number of frames per packe
   0,                                  // IANA RTP payload code
-  sdpMSGSM,                           // RTP payload name
+  NULL,                               // RTP payload name
 
   create_codec,                       // create codec function
   destroy_codec,                      // destroy codec
@@ -502,7 +505,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] = {
   1,                                  // recommended number of frames per packet
   1,                                  // maximum number of frames per packe
   0,                                  // IANA RTP payload code
-  sdpMSGSM,                           // RTP payload name
+  NULL,                               // RTP payload name
 
   create_codec,                       // create codec function
   destroy_codec,                      // destroy codec
