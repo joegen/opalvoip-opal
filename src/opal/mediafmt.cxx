@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2052  2006/09/05 06:21:07  csoutheren
+ * Revision 1.2053  2006/09/05 22:50:05  csoutheren
+ * Make sure codecs match full name if specified, or not at all
+ *
+ * Revision 2.51  2006/09/05 06:21:07  csoutheren
  * Add useful comment
  *
  * Revision 2.50  2006/08/24 02:19:56  csoutheren
@@ -1153,28 +1156,26 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
   for (PINDEX idx = 0; idx < GetSize(); idx++) {
     OpalMediaFormat & mediaFormat = (*this)[idx];
 
+    // clock rates must always match
     if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
       continue;
 
-    /*
-    const char * otherName = mediaFormat.GetEncodingName();
-    if (name != NULL && *name != '\0') {
-      if (otherName == NULL || otherName[0] == '\0' || strcasecmp(otherName, name) != 0)
-        continue;
-    }
-    */
-
-    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
-      return idx;
-
+    // if an encoding name is specified, and it matches exactly, then use it
+    // regardless of payload code. This allows the payload code mapping in SIP to work
+    // if it doesn't match, then don't bother comparing payload codes
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
       if (otherName != NULL && strcasecmp(otherName, name) == 0)
         return idx;
+      continue;
     }
 
-    if (RTP_DataFrame::IllegalPayloadType == pt || mediaFormat.GetPayloadType() == pt)
+    // if the payload type is not dynamic, and matches, then this is a match
+    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
       return idx;
+
+    //if (RTP_DataFrame::IllegalPayloadType == pt)
+    //  return idx;
   }
 
   return P_MAX_INDEX;
