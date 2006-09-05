@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.4  2006/09/05 22:50:57  csoutheren
+ * Show protocol valid for status
+ *
  * Revision 1.3  2006/07/24 14:03:39  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
@@ -376,13 +379,17 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
 
   for (i = 0; i < mediaList.GetSize(); i++) {
     OpalMediaFormat & fmt = mediaList[i];
+    PString str = " ,h323=";
+    str += fmt.IsValidForProtocol("h.323") ? "yes" : "no";
+    str += " ,sip=";
+    str += fmt.IsValidForProtocol("sip") ? "yes" : "no";
     cout << setw(max_len+2) << fmt << "  ";
     switch (fmt.GetDefaultSessionID()) {
       case OpalMediaFormat::DefaultAudioSessionID:
-        cout << "audio, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
+        cout << "audio, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << str << endl;
         break;
       case OpalMediaFormat::DefaultVideoSessionID:
-        cout << "video, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << endl;
+        cout << "video, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << str << endl;
         break;
       case OpalMediaFormat::DefaultDataSessionID:
         cout << "data" << endl;;
