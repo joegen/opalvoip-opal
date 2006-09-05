@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2038  2006/08/29 18:39:21  dsandras
+ * Revision 1.2039  2006/09/05 06:18:23  csoutheren
+ * Start bringing in SRTP code for libSRTP
+ *
+ * Revision 2.37  2006/08/29 18:39:21  dsandras
  * Added function to better deal with reinvites.
  *
  * Revision 2.36  2006/08/28 00:03:00  csoutheren
@@ -1062,7 +1065,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
-RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(const RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
 {
   // Check that the PDU is the right version
   if (frame.GetVersion() != RTP_DataFrame::ProtocolVersion)
