@@ -536,12 +536,12 @@ dnl
 dnl Cisco libSRTP
 dnl 
 
-dnl MSWIN_DISPLAY     srtp,SRTP support
-dnl MSWIN_CHECK_FILE  srtp,include\srtp.h,HAS_SRTP=1
-dnl MSWIN_DIR_SYMBOL  srtp,SRTP_DIR
-dnl MSWIN_CHECK_DIR   srtp,.\srtp
-dnl MSWIN_CHECK_DIR   srtp,..\external\srtp
-dnl MSWIN_CHECK_DIR   srtp,c:\libs
+dnl MSWIN_DISPLAY     libsrtp,Cisco libSRTP support
+dnl MSWIN_CHECK_FILE  libsrtp,include\srtp.h,HAS_LIBSRTP=1
+dnl MSWIN_DIR_SYMBOL  libsrtp,LIBSRTP_DIR
+dnl MSWIN_CHECK_DIR   libsrtp,.\srtp
+dnl MSWIN_CHECK_DIR   libsrtp,..\external\srtp
+dnl MSWIN_CHECK_DIR   libsrtp,c:\libs
 
 
 dnl ########################################################################

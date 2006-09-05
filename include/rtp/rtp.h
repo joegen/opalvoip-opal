@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2025  2006/08/29 18:39:21  dsandras
+ * Revision 1.2026  2006/09/05 06:18:22  csoutheren
+ * Start bringing in SRTP code for libSRTP
+ *
+ * Revision 2.24  2006/08/29 18:39:21  dsandras
  * Added function to better deal with reinvites.
  *
  * Revision 2.23  2006/08/03 04:57:12  csoutheren
@@ -656,7 +659,7 @@ class RTP_Session : public PObject
       e_AbortTransport
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(const RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     class ReceiverReport : public PObject  {
