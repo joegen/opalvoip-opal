@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2051  2006/08/24 02:19:56  csoutheren
+ * Revision 1.2052  2006/09/05 06:21:07  csoutheren
+ * Add useful comment
+ *
+ * Revision 2.50  2006/08/24 02:19:56  csoutheren
  * Fix problem with calculating the bandwidth of wide-band codecs
  *
  * Revision 2.49  2006/08/20 03:45:54  csoutheren
@@ -983,6 +986,7 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 
 bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
+  // For backwards compatibility, if the RTP name is NULL, the protocol is not valid for H.323.
   return (rtpEncodingName != NULL) || (protocol != "h.323") || (protocol != "h323");
 }
 
