@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2007  2006/08/22 03:08:42  csoutheren
+ * Revision 1.2008  2006/09/06 22:36:11  csoutheren
+ * Fix problem with IsValidForProtocol on video codecs
+ *
+ * Revision 2.6  2006/08/22 03:08:42  csoutheren
  * Fixed compile error on gcc 4.1
  *
  * Revision 2.5  2006/08/20 03:56:57  csoutheren
@@ -338,6 +341,20 @@ static void PopulateMediaFormatOptions(PluginCodec_Definition * _encoderCodec, O
   }
 }
 
+static bool IsValidForProtocol(PluginCodec_Definition * encoderCodec, const PString & protocol) 
+{
+  int retVal;
+  unsigned int parmLen = sizeof(const char *);
+  if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
+    return retVal != 0;
+  if (protocol == "h.323" || protocol == "h323")
+    return (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_undefined) &&
+           (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_NoH323);
+  if (protocol == "sip") 
+    return encoderCodec->sdpFormat != NULL;
+  return FALSE;
+}
+
 #if OPAL_AUDIO
 
 class OpalPluginAudioMediaFormat : public OpalAudioFormat
@@ -378,11 +395,7 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
 
     bool IsValidForProtocol(const PString & protocol) const
     {
-      int retVal;
-      unsigned int parmLen = sizeof(const char *);
-      if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
-        return retVal != 0;
-      return OpalMediaFormat::IsValidForProtocol(protocol);
+      return ::IsValidForProtocol(encoderCodec, protocol);
     }
 
     PluginCodec_Definition * encoderCodec;
@@ -450,11 +463,7 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
 
     bool IsValidForProtocol(const PString & protocol) const
     {
-      int retVal;
-      unsigned int parmLen = sizeof(const char *);
-      if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
-        return retVal != 0;
-      return OpalMediaFormat::IsValidForProtocol(protocol);
+      return ::IsValidForProtocol(encoderCodec, protocol);
     }
 
     PluginCodec_Definition * encoderCodec;
