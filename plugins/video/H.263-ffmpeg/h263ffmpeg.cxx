@@ -28,6 +28,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.4  2006/09/06 23:09:21  csoutheren
+ * Add Makefile and more implementation for Linux H.263
+ *
  * Revision 1.3  2006/08/10 07:05:46  csoutheren
  * Fixed compile warnings on VC 2005
  *
@@ -70,7 +73,14 @@ PLUGIN_CODEC_IMPLEMENT(FFMPEG_H263)
 #include <malloc.h>
 #define STRCMPI  _strcmpi
 #else
-#define STRCMPI  strcmpi
+#include <semaphore.h>
+#include <dlfcn.h>
+#define STRCMPI  strcasecmp
+typedef unsigned char BYTE;
+typedef bool BOOL;
+#define FALSE false
+#define TRUE  true
+
 #endif
 
 #include <string.h>
@@ -194,61 +204,54 @@ class DynaLink
     typedef void (*Function)();
 
     DynaLink()
-#ifdef _WIN32
     { _hDLL = NULL; }
-#else
-      ;
-#endif // _WIN32
 
     ~DynaLink()
-#ifdef _WIN32
     { Close(); }
-#else
-      ;
-#endif // _WIN32
 
     virtual bool Open(const char *name)
-#ifdef _WIN32
     {
+#ifdef _WIN32
 # ifdef UNICODE
       USES_CONVERSION;
       _hDLL = LoadLibrary(A2T(name));
 # else
       _hDLL = LoadLibrary(name);
 # endif // UNICODE
+#else
+      _hDLL = dlopen((const char *)name, RTLD_NOW);
+      if (_hDLL == NULL) {
+        fprintf(stderr, "error loading %s", name);
+        char * err = dlerror();
+        if (err != NULL)
+          fprintf(stderr, " - %s", err);
+        fprintf(stderr, "\n");
+      }
+#endif // _WIN32
       return _hDLL != NULL;
     }
-#else
-      ;
-#endif // _WIN32
-
 
     virtual void Close()
-#ifdef _WIN32
     {
       if (_hDLL != NULL) {
+#ifdef _WIN32
         FreeLibrary(_hDLL);
+#else
+        dlclose(_hDLL);
+#endif // _WIN32
         _hDLL = NULL;
       }
     }
-#else
-      ;
-#endif // _WIN32
 
 
     virtual bool IsLoaded() const
-#ifdef _WIN32
     { return _hDLL != NULL; }
-#else
-      ;
-#endif // _WIN32
-
 
     bool GetFunction(const char * name, Function & func)
-#ifdef _WIN32
     {
       if (_hDLL == NULL)
         return FALSE;
+#ifdef _WIN32
 
 # ifdef UNICODE
       USES_CONVERSION;
@@ -261,14 +264,20 @@ class DynaLink
 
       func = (Function)p;
       return TRUE;
-    }
 #else
-      ;
+      void * p = dlsym(_hDLL, (const char *)name);
+      if (p == NULL)
+        return FALSE;
+      func = (Function &)p;
+      return TRUE;
 #endif // _WIN32
+    }
 
-#if defined(_WIN32)
   protected:
+#if defined(_WIN32)
     HINSTANCE _hDLL;
+#else
+    void * _hDLL;
 #endif // _WIN32
 };
 
