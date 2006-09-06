@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.5  2006/09/06 22:36:11  csoutheren
+ * Fix problem with IsValidForProtocol on video codecs
+ *
  * Revision 1.4  2006/09/05 22:50:57  csoutheren
  * Show protocol valid for status
  *
@@ -379,9 +382,9 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
 
   for (i = 0; i < mediaList.GetSize(); i++) {
     OpalMediaFormat & fmt = mediaList[i];
-    PString str = " ,h323=";
+    PString str = ", h323=";
     str += fmt.IsValidForProtocol("h.323") ? "yes" : "no";
-    str += " ,sip=";
+    str += ", sip=";
     str += fmt.IsValidForProtocol("sip") ? "yes" : "no";
     cout << setw(max_len+2) << fmt << "  ";
     switch (fmt.GetDefaultSessionID()) {
