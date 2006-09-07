@@ -349,7 +349,8 @@ class H235_AuthenticationMechanism : public PASN_Choice
       e_ipsec,
       e_tls,
       e_nonStandard,
-      e_authenticationBES
+      e_authenticationBES,
+      e_keyExch
     };
 
 #if defined(__GNUC__) && __GNUC__ <= 2 && __GNUC_MINOR__ < 9
@@ -364,6 +365,31 @@ class H235_AuthenticationMechanism : public PASN_Choice
     operator H235_AuthenticationBES &();
     operator const H235_AuthenticationBES &() const;
 #endif
+
+    BOOL CreateObject();
+    PObject * Clone() const;
+};
+
+
+//
+// Element
+//
+
+class H235_Element : public PASN_Choice
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H235_Element, PASN_Choice);
+#endif
+  public:
+    H235_Element(unsigned tag = 0, TagClass tagClass = UniversalTagClass);
+
+    enum Choices {
+      e_octets,
+      e_integer,
+      e_bits,
+      e_name,
+      e_flag
+    };
 
     BOOL CreateObject();
     PObject * Clone() const;
@@ -569,7 +595,8 @@ class H235_V3KeySyncMaterial : public PASN_Sequence
       e_encryptedSaltingKey,
       e_clearSaltingKey,
       e_paramSsalt,
-      e_keyDerivationOID
+      e_keyDerivationOID,
+      e_genericKeyMaterial
     };
 
     H235_Identifier m_generalID;
@@ -580,6 +607,7 @@ class H235_V3KeySyncMaterial : public PASN_Sequence
     PASN_OctetString m_clearSaltingKey;
     H235_Params m_paramSsalt;
     PASN_ObjectId m_keyDerivationOID;
+    PASN_OctetString m_genericKeyMaterial;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -638,6 +666,58 @@ class H235_ECKASDH_eckasdh2 : public PASN_Sequence
     H235_ECpoint m_base;
     PASN_BitString m_weierstrassA;
     PASN_BitString m_weierstrassB;
+
+    PINDEX GetDataLength() const;
+    BOOL Decode(PASN_Stream & strm);
+    void Encode(PASN_Stream & strm) const;
+#ifndef PASN_NOPRINTON
+    void PrintOn(ostream & strm) const;
+#endif
+    Comparison Compare(const PObject & obj) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ArrayOf_ProfileElement
+//
+
+class H235_ProfileElement;
+
+class H235_ArrayOf_ProfileElement : public PASN_Array
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H235_ArrayOf_ProfileElement, PASN_Array);
+#endif
+  public:
+    H235_ArrayOf_ProfileElement(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    PASN_Object * CreateObject() const;
+    H235_ProfileElement & operator[](PINDEX i) const;
+    PObject * Clone() const;
+};
+
+
+//
+// ProfileElement
+//
+
+class H235_ProfileElement : public PASN_Sequence
+{
+#ifndef PASN_LEANANDMEAN
+    PCLASSINFO(H235_ProfileElement, PASN_Sequence);
+#endif
+  public:
+    H235_ProfileElement(unsigned tag = UniversalSequence, TagClass tagClass = UniversalTagClass);
+
+    enum OptionalFields {
+      e_paramS,
+      e_element
+    };
+
+    PASN_Integer m_elementID;
+    H235_Params m_paramS;
+    H235_Element m_element;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
@@ -895,7 +975,8 @@ class H235_ClearToken : public PASN_Sequence
       e_nonStandard,
       e_eckasdhkey,
       e_sendersID,
-      e_h235Key
+      e_h235Key,
+      e_profileInfo
     };
 
     PASN_ObjectId m_tokenOID;
@@ -910,6 +991,7 @@ class H235_ClearToken : public PASN_Sequence
     H235_ECKASDH m_eckasdhkey;
     H235_Identifier m_sendersID;
     H235_H235Key m_h235Key;
+    H235_ArrayOf_ProfileElement m_profileInfo;
 
     PINDEX GetDataLength() const;
     BOOL Decode(PASN_Stream & strm);
