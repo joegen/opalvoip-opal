@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.11  2006/09/07 10:09:24  rjongbloed
+ * Linux/GNU compiler compatibility
+ *
  * Revision 1.10  2006/08/29 08:54:36  rjongbloed
  * Added VU meters
  *
@@ -1956,7 +1959,7 @@ bool OptionsDialog::TransferDataFromWindow()
       changed = true;
     wxString key;
     key.sprintf("%u", i+1);
-    config->Write(key, newInterfaces[i]);
+    config->Write(key, (const char *)newInterfaces[i]);
   }
   if (changed) {
     m_manager.m_LocalInterfaces = newInterfaces;
@@ -2028,7 +2031,7 @@ bool OptionsDialog::TransferDataFromWindow()
       wxString groupName;
       groupName.sprintf("%s/%04u", CodecsGroup, mm->preferenceOrder);
       config->SetPath(groupName);
-      config->Write(CodecNameKey, mm->mediaFormat);
+      config->Write(CodecNameKey, (const char *)mm->mediaFormat);
       for (PINDEX i = 0; i < mm->mediaFormat.GetOptionCount(); i++) {
         const OpalMediaOption & option = mm->mediaFormat.GetOption(i);
         if (!option.IsReadOnly())
