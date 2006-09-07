@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.39  2006/09/07 10:05:55  rjongbloed
+# Added "make update" target to do cvs update and rebuild
+#
 # Revision 1.38  2006/08/15 19:41:38  dsandras
 # Only build plugins when building the library.
 #
@@ -251,6 +254,11 @@ INSTALL=@INSTALL@
 default :: optshared
 
 all :: bothdepend both
+
+update:
+	cvs -q update
+	$(MAKE) all
+
 
 SUBDIRS := plugins 
 
