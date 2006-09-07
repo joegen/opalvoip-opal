@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2008  2006/09/06 22:36:11  csoutheren
+ * Revision 1.2009  2006/09/07 09:05:44  csoutheren
+ * Fix case significance in IsValidForProtocol
+ *
+ * Revision 2.7  2006/09/06 22:36:11  csoutheren
  * Fix problem with IsValidForProtocol on video codecs
  *
  * Revision 2.6  2006/08/22 03:08:42  csoutheren
@@ -341,8 +344,9 @@ static void PopulateMediaFormatOptions(PluginCodec_Definition * _encoderCodec, O
   }
 }
 
-static bool IsValidForProtocol(PluginCodec_Definition * encoderCodec, const PString & protocol) 
+static bool IsValidForProtocol(PluginCodec_Definition * encoderCodec, const PString & _protocol) 
 {
+  PString protocol(_protocol.ToLower());
   int retVal;
   unsigned int parmLen = sizeof(const char *);
   if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
