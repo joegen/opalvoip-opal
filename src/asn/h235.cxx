@@ -5,7 +5,7 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "h235.h"
+#pragma implementation "asn/h235.h"
 #endif
 
 #include <ptlib.h>
@@ -833,6 +833,7 @@ const static PASN_Names Names_H235_AuthenticationMechanism[]={
      ,{"tls",5}
      ,{"nonStandard",6}
      ,{"authenticationBES",7}
+     ,{"keyExch",8}
 };
 #endif
 //
@@ -842,7 +843,7 @@ const static PASN_Names Names_H235_AuthenticationMechanism[]={
 H235_AuthenticationMechanism::H235_AuthenticationMechanism(unsigned tag, PASN_Object::TagClass tagClass)
   : PASN_Choice(tag, tagClass, 7, TRUE
 #ifndef PASN_NOPRINTON
-    ,(const PASN_Names *)Names_H235_AuthenticationMechanism,8
+    ,(const PASN_Names *)Names_H235_AuthenticationMechanism,9
 #endif
 )
 {
@@ -910,6 +911,9 @@ BOOL H235_AuthenticationMechanism::CreateObject()
     case e_authenticationBES :
       choice = new H235_AuthenticationBES();
       return TRUE;
+    case e_keyExch :
+      choice = new PASN_ObjectId();
+      return TRUE;
   }
 
   choice = NULL;
@@ -923,6 +927,64 @@ PObject * H235_AuthenticationMechanism::Clone() const
   PAssert(IsClass(H235_AuthenticationMechanism::Class()), PInvalidCast);
 #endif
   return new H235_AuthenticationMechanism(*this);
+}
+
+
+
+#ifndef PASN_NOPRINTON
+const static PASN_Names Names_H235_Element[]={
+      {"octets",0}
+     ,{"integer",1}
+     ,{"bits",2}
+     ,{"name",3}
+     ,{"flag",4}
+};
+#endif
+//
+// Element
+//
+
+H235_Element::H235_Element(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Choice(tag, tagClass, 5, TRUE
+#ifndef PASN_NOPRINTON
+    ,(const PASN_Names *)Names_H235_Element,5
+#endif
+)
+{
+}
+
+
+BOOL H235_Element::CreateObject()
+{
+  switch (tag) {
+    case e_octets :
+      choice = new PASN_OctetString();
+      return TRUE;
+    case e_integer :
+      choice = new PASN_Integer();
+      return TRUE;
+    case e_bits :
+      choice = new PASN_BitString();
+      return TRUE;
+    case e_name :
+      choice = new PASN_BMPString();
+      return TRUE;
+    case e_flag :
+      choice = new PASN_Boolean();
+      return TRUE;
+  }
+
+  choice = NULL;
+  return FALSE;
+}
+
+
+PObject * H235_Element::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H235_Element::Class()), PInvalidCast);
+#endif
+  return new H235_Element(*this);
 }
 
 
@@ -1377,7 +1439,7 @@ PObject * H235_EncodedKeySyncMaterial::Clone() const
 //
 
 H235_V3KeySyncMaterial::H235_V3KeySyncMaterial(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 7, TRUE, 1)
 {
 }
 
@@ -1402,6 +1464,8 @@ void H235_V3KeySyncMaterial::PrintOn(ostream & strm) const
     strm << setw(indent+13) << "paramSsalt = " << setprecision(indent) << m_paramSsalt << '\n';
   if (HasOptionalField(e_keyDerivationOID))
     strm << setw(indent+19) << "keyDerivationOID = " << setprecision(indent) << m_keyDerivationOID << '\n';
+  if (HasOptionalField(e_genericKeyMaterial))
+    strm << setw(indent+21) << "genericKeyMaterial = " << setprecision(indent) << m_genericKeyMaterial << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -1480,6 +1544,8 @@ BOOL H235_V3KeySyncMaterial::Decode(PASN_Stream & strm)
     return FALSE;
   if (HasOptionalField(e_keyDerivationOID) && !m_keyDerivationOID.Decode(strm))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_genericKeyMaterial, m_genericKeyMaterial))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1504,6 +1570,7 @@ void H235_V3KeySyncMaterial::Encode(PASN_Stream & strm) const
     m_paramSsalt.Encode(strm);
   if (HasOptionalField(e_keyDerivationOID))
     m_keyDerivationOID.Encode(strm);
+  KnownExtensionEncode(strm, e_genericKeyMaterial, m_genericKeyMaterial);
 
   UnknownExtensionsEncode(strm);
 }
@@ -1729,6 +1796,134 @@ PObject * H235_ECKASDH_eckasdh2::Clone() const
   PAssert(IsClass(H235_ECKASDH_eckasdh2::Class()), PInvalidCast);
 #endif
   return new H235_ECKASDH_eckasdh2(*this);
+}
+
+
+//
+// ArrayOf_ProfileElement
+//
+
+H235_ArrayOf_ProfileElement::H235_ArrayOf_ProfileElement(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Array(tag, tagClass)
+{
+}
+
+
+PASN_Object * H235_ArrayOf_ProfileElement::CreateObject() const
+{
+  return new H235_ProfileElement;
+}
+
+
+H235_ProfileElement & H235_ArrayOf_ProfileElement::operator[](PINDEX i) const
+{
+  return (H235_ProfileElement &)array[i];
+}
+
+
+PObject * H235_ArrayOf_ProfileElement::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H235_ArrayOf_ProfileElement::Class()), PInvalidCast);
+#endif
+  return new H235_ArrayOf_ProfileElement(*this);
+}
+
+
+//
+// ProfileElement
+//
+
+H235_ProfileElement::H235_ProfileElement(unsigned tag, PASN_Object::TagClass tagClass)
+  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+{
+  m_elementID.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
+}
+
+
+#ifndef PASN_NOPRINTON
+void H235_ProfileElement::PrintOn(ostream & strm) const
+{
+  int indent = strm.precision() + 2;
+  strm << "{\n";
+  strm << setw(indent+12) << "elementID = " << setprecision(indent) << m_elementID << '\n';
+  if (HasOptionalField(e_paramS))
+    strm << setw(indent+9) << "paramS = " << setprecision(indent) << m_paramS << '\n';
+  if (HasOptionalField(e_element))
+    strm << setw(indent+10) << "element = " << setprecision(indent) << m_element << '\n';
+  strm << setw(indent-1) << setprecision(indent-2) << "}";
+}
+#endif
+
+
+PObject::Comparison H235_ProfileElement::Compare(const PObject & obj) const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(PIsDescendant(&obj, H235_ProfileElement), PInvalidCast);
+#endif
+  const H235_ProfileElement & other = (const H235_ProfileElement &)obj;
+
+  Comparison result;
+
+  if ((result = m_elementID.Compare(other.m_elementID)) != EqualTo)
+    return result;
+  if ((result = m_paramS.Compare(other.m_paramS)) != EqualTo)
+    return result;
+  if ((result = m_element.Compare(other.m_element)) != EqualTo)
+    return result;
+
+  return PASN_Sequence::Compare(other);
+}
+
+
+PINDEX H235_ProfileElement::GetDataLength() const
+{
+  PINDEX length = 0;
+  length += m_elementID.GetObjectLength();
+  if (HasOptionalField(e_paramS))
+    length += m_paramS.GetObjectLength();
+  if (HasOptionalField(e_element))
+    length += m_element.GetObjectLength();
+  return length;
+}
+
+
+BOOL H235_ProfileElement::Decode(PASN_Stream & strm)
+{
+  if (!PreambleDecode(strm))
+    return FALSE;
+
+  if (!m_elementID.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_paramS) && !m_paramS.Decode(strm))
+    return FALSE;
+  if (HasOptionalField(e_element) && !m_element.Decode(strm))
+    return FALSE;
+
+  return UnknownExtensionsDecode(strm);
+}
+
+
+void H235_ProfileElement::Encode(PASN_Stream & strm) const
+{
+  PreambleEncode(strm);
+
+  m_elementID.Encode(strm);
+  if (HasOptionalField(e_paramS))
+    m_paramS.Encode(strm);
+  if (HasOptionalField(e_element))
+    m_element.Encode(strm);
+
+  UnknownExtensionsEncode(strm);
+}
+
+
+PObject * H235_ProfileElement::Clone() const
+{
+#ifndef PASN_LEANANDMEAN
+  PAssert(IsClass(H235_ProfileElement::Class()), PInvalidCast);
+#endif
+  return new H235_ProfileElement(*this);
 }
 
 
@@ -2108,7 +2303,7 @@ PObject * H235_H235Key::Clone() const
 //
 
 H235_ClearToken::H235_ClearToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 8, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 8, TRUE, 4)
 {
 }
 
@@ -2141,6 +2336,8 @@ void H235_ClearToken::PrintOn(ostream & strm) const
     strm << setw(indent+12) << "sendersID = " << setprecision(indent) << m_sendersID << '\n';
   if (HasOptionalField(e_h235Key))
     strm << setw(indent+10) << "h235Key = " << setprecision(indent) << m_h235Key << '\n';
+  if (HasOptionalField(e_profileInfo))
+    strm << setw(indent+14) << "profileInfo = " << setprecision(indent) << m_profileInfo << '\n';
   strm << setw(indent-1) << setprecision(indent-2) << "}";
 }
 #endif
@@ -2231,6 +2428,8 @@ BOOL H235_ClearToken::Decode(PASN_Stream & strm)
     return FALSE;
   if (!KnownExtensionDecode(strm, e_h235Key, m_h235Key))
     return FALSE;
+  if (!KnownExtensionDecode(strm, e_profileInfo, m_profileInfo))
+    return FALSE;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2260,6 +2459,7 @@ void H235_ClearToken::Encode(PASN_Stream & strm) const
   KnownExtensionEncode(strm, e_eckasdhkey, m_eckasdhkey);
   KnownExtensionEncode(strm, e_sendersID, m_sendersID);
   KnownExtensionEncode(strm, e_h235Key, m_h235Key);
+  KnownExtensionEncode(strm, e_profileInfo, m_profileInfo);
 
   UnknownExtensionsEncode(strm);
 }
