@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2054  2006/09/06 22:36:11  csoutheren
+ * Revision 1.2055  2006/09/07 09:05:44  csoutheren
+ * Fix case significance in IsValidForProtocol
+ *
+ * Revision 2.53  2006/09/06 22:36:11  csoutheren
  * Fix problem with IsValidForProtocol on video codecs
  *
  * Revision 2.52  2006/09/05 22:50:05  csoutheren
@@ -993,7 +996,7 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
   // the protocol is only valid for H.323 if the RTP name is NULL
-  if ((protocol == "h.323") || (protocol == "h323"))
+  if ((protocol *= "h.323") || (protocol *= "h323"))
     return rtpEncodingName == NULL;
 
   return TRUE;
