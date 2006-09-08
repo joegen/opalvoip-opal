@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2039  2006/09/05 06:18:23  csoutheren
+ * Revision 1.2040  2006/09/08 05:12:26  csoutheren
+ * Reverted previous patch as this breaks H.323 calls
+ *
+ * Revision 2.38  2006/09/05 06:18:23  csoutheren
  * Start bringing in SRTP code for libSRTP
  *
  * Revision 2.37  2006/08/29 18:39:21  dsandras
@@ -1558,7 +1561,7 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID)
 
   mutex.Wait();
 
-  while (sessions.Contains(sessionID)) {
+  if (sessions.Contains(sessionID)) {
     if (sessions[sessionID].DecrementReference()) {
       PTRACE(3, "RTP\tDeleting session " << sessionID);
       sessions[sessionID].SetJitterBufferSize(0, 0);
