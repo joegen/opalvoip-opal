@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2016  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2016.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.15  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.14.6.1  2006/08/09 12:49:21  csoutheren
@@ -222,7 +227,7 @@
 
 #include <rtp/rtp.h>
 #include <h323/transaddr.h>
-
+#include <opal/buildopts.h>
 
 class OpalMediaStream;
 class OpalMediaCommand;
@@ -362,6 +367,9 @@ class H323Channel : public PObject
     /**This is called to clean up any threads on connection termination.
      */
     virtual void Close();
+
+    H323Connection & GetConnection() const
+    { return connection; }
 
     /**Indicate if has been opened.
      */
@@ -742,11 +750,19 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
       int newType  ///<  New RTP payload type number
     );
 
+#if OPAL_SRTP
+    virtual BOOL OnSendSRTPOffer(H245_OpenLogicalChannel & /*open*/) const
+    { return TRUE; }
+#endif
+
     RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
+
+    RTP_DataFrame::PayloadTypes GetTransmittedRTPPayloadType() const { return transmittedPayloadType; }
   //@}
 
   protected:
     RTP_DataFrame::PayloadTypes rtpPayloadType;
+    RTP_DataFrame::PayloadTypes transmittedPayloadType;
 };
 
 
@@ -818,6 +834,11 @@ class H323_RTPChannel : public H323_RealTimeChannel
     virtual BOOL OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
+
+#if OPAL_SRTP
+    virtual BOOL OnSendSRTPOffer(H245_OpenLogicalChannel & open) const;
+#endif
+
   //@}
 
   protected:

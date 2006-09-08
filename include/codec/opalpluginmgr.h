@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2003  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2003.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.2  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -114,6 +119,18 @@ class OpalPluginCodecManager : public PPluginModuleManager
 
     void RegisterCodecPlugins  (unsigned int count, void * codecList);
     void UnregisterCodecPlugins(unsigned int count, void * codecList);
+
+#if OPAL_H323
+    void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);
+    struct CapabilityListCreateEntry {
+      CapabilityListCreateEntry(PluginCodec_Definition * e, PluginCodec_Definition * d)
+        : encoderCodec(e), decoderCodec(d) { }
+      PluginCodec_Definition * encoderCodec;
+      PluginCodec_Definition * decoderCodec;
+    };
+    typedef vector<CapabilityListCreateEntry> CapabilityCreateListType;
+    CapabilityCreateListType capabilityCreateList;
+#endif
 };
 
 class OPALDynaLink : public PDynaLink

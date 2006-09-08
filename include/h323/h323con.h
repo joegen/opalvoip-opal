@@ -24,10 +24,18 @@
  * Portions of this code were written with the assisance of funding from
  * Vovida Networks, Inc. http://www.vovida.com.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: h323con.h,v $
- * Revision 1.2054  2006/08/22 08:55:46  csoutheren
+ * Revision 1.2054.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.53  2006/08/22 08:55:46  csoutheren
  * Removed duplicate declaration of remoteIsNAT that was hiding variable of same name in the ancestor
  *
  * Revision 2.52  2006/08/12 03:55:39  csoutheren
@@ -466,6 +474,7 @@ class H225_ArrayOf_PASN_OctetString;
 class H225_ProtocolIdentifier;
 class H225_AdmissionRequest;
 class H225_FeatureSet;
+class H225_ArrayOf_ClearToken;
 
 class H245_TerminalCapabilitySet;
 class H245_TerminalCapabilitySetReject;
@@ -2263,6 +2272,12 @@ class H323Connection : public OpalConnection
      * @return a reference to the  H4507 handler
      */
     H4507Handler&  getH4507handler(){return *h4507handler;};
+
+    virtual void OnOutgoingClearToken(H225_ArrayOf_ClearToken & tokens, H323SignalPDU & pdu);
+
+#if OPAL_SRTP
+    virtual BOOL OnSendSRTPOffer(const H323_RTPChannel & channel,H245_OpenLogicalChannel & param);
+#endif
     
   protected:
     /**Internal function to check if call established.
@@ -2277,7 +2292,6 @@ class H323Connection : public OpalConnection
     PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
-
 
     H323EndPoint & endpoint;
 
