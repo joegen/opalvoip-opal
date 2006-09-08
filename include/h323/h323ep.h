@@ -24,10 +24,18 @@
  * Portions of this code were written with the assisance of funding from
  * Vovida Networks, Inc. http://www.vovida.com.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: h323ep.h,v $
- * Revision 1.2042  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2042.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.41  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.40  2006/08/21 05:29:25  csoutheren
@@ -1648,6 +1656,12 @@ class H323EndPoint : public OpalEndPoint
     static BYTE defaultT35Extension;
     static WORD defaultManufacturerCode;
 
+    virtual void OnOutgoingClearToken(H323Connection & conn, H225_ArrayOf_ClearToken & tokens, H323SignalPDU & pdu);
+
+#if OPAL_SRTP
+    virtual BOOL OnSendSRTPOffer(H323Connection & conn, const H323_RTPChannel & channel,H245_OpenLogicalChannel & param);
+#endif
+
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
@@ -1756,6 +1770,10 @@ class H323SecureEndPoint : public H323EndPoint
 
     PString GetDefaultTransport() const
     {  return "tcps$"; }
+
+#if OPAL_SRTP
+    BOOL OnSendSRTPOffer(H323Connection & conn, const H323_RTPChannel & channel,H245_OpenLogicalChannel & param);
+#endif
   //@}
 };
 

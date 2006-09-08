@@ -22,10 +22,18 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2062  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2062.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.61  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -258,6 +266,10 @@
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
+
+#if OPAL_SRTP
+#include <rtp/srtp.h>
+#endif
 
 class OpalEndPoint;
 class OpalCall;
@@ -1248,6 +1260,26 @@ class OpalConnection : public PSafeObject
     BOOL RemoteIsNAT() const
     { return remoteIsNAT; }
 
+#if OPAL_SRTP
+    virtual void SetSRTPMode(const PString & v)
+    { srtpMode = v; }
+
+    virtual PString GetSRTPMode() const 
+    { return srtpMode; }
+
+    virtual void SetSRTPMasterKey(const PBYTEArray & v)
+    { srtpMasterKey = v; }
+
+    virtual void SetSRTPSalt(const PBYTEArray & v)
+    { srtpSalt = v; }
+
+    virtual void GetSRTPMasterKey(PBYTEArray & v)
+    { v = srtpMasterKey; }
+
+    virtual void GetSRTPSalt(PBYTEArray & v)
+    { v = srtpSalt; }
+#endif
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1305,6 +1337,12 @@ class OpalConnection : public PSafeObject
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
     PDTMFDecoder        dtmfDecoder;
+
+#if OPAL_SRTP
+    PString srtpMode;
+    PBYTEArray srtpMasterKey;
+    PBYTEArray srtpSalt;
+#endif
 
     /**Set the phase of the connection.
        @param phaseToSet the phase to set

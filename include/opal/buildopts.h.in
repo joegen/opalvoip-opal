@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.18.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
  * Revision 1.18  2006/09/05 06:18:22  csoutheren
  * Start bringing in SRTP code for libSRTP
  *
@@ -193,6 +198,12 @@
 #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/lib/libsrtp.lib"
 
 #endif
+#endif
+
+#if HAS_LIBSRTP
+#define OPAL_SRTP  1
+#else
+#define H323_DISABLE_H235_SRTP
 #endif
 
 /////////////////////////////////////////////////

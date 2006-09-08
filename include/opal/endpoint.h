@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2034  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2034.2.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.33  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -749,8 +754,18 @@ class OpalEndPoint : public PObject
 
     virtual PString GetDefaultTransport() const;
 
+    virtual void OnNewConnection(OpalCall & call, OpalConnection & conn);
+
 #if P_SSL
     PString GetSSLCertificate() const;
+#endif
+
+#if OPAL_SRTP
+    virtual void SetDefaultSRTPMode(const PString & v)
+    { defaultSRTPMode = v; }
+
+    virtual PString GetDefaultSRTPMode() const 
+    { return defaultSRTPMode; }
 #endif
 
   protected:
@@ -773,6 +788,10 @@ class OpalEndPoint : public PObject
     } connectionsActive;
 
     PMutex inUseFlag;
+
+#if OPAL_SRTP
+    PString defaultSRTPMode; 
+#endif
 
   friend void OpalManager::GarbageCollection();
   friend void OpalConnection::Release(CallEndReason reason);

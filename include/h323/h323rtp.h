@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.h,v $
- * Revision 1.2007  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2007.8.1  2006/09/08 06:23:27  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.6  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.5  2004/02/24 11:28:45  rjongbloed
@@ -93,7 +98,7 @@
 #pragma interface
 #endif
 
-
+#include <opal/buildopts.h>
 #include <rtp/rtp.h>
 
 
@@ -105,7 +110,7 @@ class H245_H2250LogicalChannelAckParameters;
 
 class H323Connection;
 class H323_RTPChannel;
-
+class H245_OpenLogicalChannel;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -183,8 +188,18 @@ class H323_RTP_Session : public RTP_UserData
     virtual void OnSendRasInfo(
       H225_RTPSession & info  ///<  RTP session info PDU
     ) = 0;
-  //@}
 
+#if OPAL_SRTP
+    /** Fill out the EncryptionSync for the particular channel type.
+      * Return FALSE if no EncryptionSync element is required
+     */
+    virtual BOOL OnSendSRTPOffer(
+      const H323_RTPChannel & channel,
+      H245_OpenLogicalChannel & param
+    ) const = 0;
+#endif
+
+  //@}
 
   protected:
   /**@name Construction */
@@ -267,6 +282,17 @@ class H323_RTP_UDP : public H323_RTP_Session
       H225_RTPSession & info  ///<  RTP session info PDU
     );
   //@}
+
+#if OPAL_SRTP
+  //@{
+    /** Fill out the EncryptionSync for the particular channel type.
+      * Return FALSE if no EncryptionSync element is required
+     */
+    virtual BOOL OnSendSRTPOffer(
+      const H323_RTPChannel & channel,
+      H245_OpenLogicalChannel & param
+    ) const;
+#endif
 
   protected:
     virtual BOOL ExtractTransport(
