@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2032  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2032.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.31  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -269,7 +274,10 @@ OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
                                                        const PString & number)
 {
   PTRACE(3, "LID EP\tCreateConnection call = " << call << " line = " << line << " number = " << number);
-  return new OpalLineConnection(call, *this, line, number);
+  OpalLineConnection * conn = new OpalLineConnection(call, *this, line, number);
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 

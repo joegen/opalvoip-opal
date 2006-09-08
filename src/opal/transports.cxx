@@ -29,7 +29,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2069  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2069.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.68  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.67  2006/08/28 08:07:29  csoutheren
@@ -1746,6 +1751,9 @@ BOOL OpalTransportUDP::Close()
 {
   PTRACE(4, "OpalUDP\tClose");
   PWaitAndSignal lock(connectSocketsMutex);
+
+  // make sure iostream reads and write fail from now on
+  clear(badbit);
 
   if (socketOwnedByListener) {
     channelPointerMutex.StartWrite();

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2075  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2075.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.74  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -338,6 +343,10 @@
 #include <t38/t38proto.h>
 #include <h224/h224handler.h>
 
+#if OPAL_SRTP
+#include <rtp/srtp.h>
+#endif
+
 #define new PNEW
 
 
@@ -471,6 +480,10 @@ OpalConnection::OpalConnection(OpalCall & call,
   t120handler = NULL;
   t38handler = NULL;
   h224Handler = NULL;
+
+#if OPAL_SRTP
+  srtpMode = ep.GetDefaultSRTPMode();
+#endif
 }
 
 OpalConnection::~OpalConnection()
@@ -1002,7 +1015,8 @@ void OpalConnection::ReleaseSession(unsigned sessionID)
 
 RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
                                             unsigned sessionID,
-                                            RTP_QOS * rtpqos)
+                                            RTP_QOS * rtpqos
+                                            )
 {
   // We only support RTP over UDP at this point in time ...
   if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
@@ -1017,8 +1031,33 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   transport.GetRemoteAddress().GetIpAddress(remoteAddress);
   PSTUNClient * stun = manager.GetSTUN(remoteAddress);
 
-  // create an RTP session
-  RTP_UDP * rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
+  // create an RTP session or an SRTP session as appropriate
+  RTP_UDP * rtpSession = NULL;
+
+#if OPAL_SRTP
+  if (!srtpMode.IsEmpty()) {
+    OpalSRTPParms * parms = PFactory<OpalSRTPParms>::CreateInstance(srtpMode);
+    if (parms == NULL) {
+      PTRACE(1, "OpalCon\tCannot create SRTP parms for SRTP mode " << srtpMode);
+      return NULL;
+    }
+    if (!parms->SetKey(srtpMasterKey, srtpSalt)) {
+      PTRACE(1, "OpalCon\tCannot apply master/salt to SRTP parms for SRTP mode " << srtpMode);
+      delete parms;
+      return NULL;
+    }
+    rtpSession = parms->CreateSRTPSession(sessionID, remoteIsNAT);
+    if (rtpSession != NULL) {
+      PTRACE(1, "OpalCon\tCannot create RTP session for SRTP mode " << srtpMode);
+      delete parms;
+      return NULL;
+    }
+  }
+  else
+#endif
+  {
+    rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
+  }
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;

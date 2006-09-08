@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.13.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
  * Revision 1.13  2006/08/13 02:59:47  rjongbloed
  * Fixed warning on no trace build
  *
@@ -474,7 +479,10 @@ IAX2Connection * IAX2EndPoint::CreateConnection(
       const PString & remoteParty,
       const PString & remotePartyName)
 {
-  return new IAX2Connection(call, *this, token, userData, remoteParty, remotePartyName); 
+  IAX2Connection * conn = new IAX2Connection(call, *this, token, userData, remoteParty, remotePartyName); 
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 OpalMediaFormatList IAX2EndPoint::GetMediaFormats() const

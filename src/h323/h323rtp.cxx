@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013  2005/03/03 18:31:23  dsandras
+ * Revision 1.2013.8.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.12  2005/03/03 18:31:23  dsandras
  * Fixed silence detection definition in the logical channel parameters.
  *
  * Revision 2.11  2004/02/24 11:28:46  rjongbloed
@@ -169,6 +174,10 @@
 #include <asn/h225.h>
 #include <asn/h245.h>
 
+#if OPAL_SRTP
+#include <asn/h235.h>
+#include <asn/h235_srtp.h>
+#endif
 
 #define new PNEW
 
@@ -243,6 +252,15 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
   return TRUE;
 }
 
+#if OPAL_SRTP
+
+BOOL H323_RTP_UDP::OnSendSRTPOffer(const H323_RTPChannel & channel,H245_OpenLogicalChannel & param) const
+{
+  H323Connection & conn = channel.GetConnection();
+  return conn.OnSendSRTPOffer(channel, param);
+}
+
+#endif
 
 void H323_RTP_UDP::OnSendingAckPDU(const H323_RTPChannel & channel,
                                    H245_H2250LogicalChannelAckParameters & param) const

@@ -22,7 +22,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2024  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2024.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.23  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.22  2006/08/21 05:30:48  csoutheren
@@ -214,6 +219,11 @@ class MyManager : public OpalManager
 
     BOOL pauseBeforeDialing;
     PString srcEP;
+
+#if OPAL_SRTP
+    void OnNewConnection(OpalConnection & conn);
+    PBYTEArray srtpMasterKey;
+#endif
 
     void HangupCurrentCall();
     void ListSpeedDials();
