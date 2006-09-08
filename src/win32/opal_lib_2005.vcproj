@@ -1990,6 +1990,18 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="..\rtp\srtp.cxx"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories="../../srtp/crypto/include"
+						/>
+					</FileConfiguration>
+				</File>
 			</Filter>
 			<Filter
 				Name="T.120 Sources"
@@ -2644,6 +2656,10 @@
 					RelativePath="..\..\include\rtp\rtp.h"
 					>
 				</File>
+				<File
+					RelativePath="..\..\include\rtp\srtp.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="T120 Headers"
@@ -2910,6 +2926,10 @@
 						Outputs=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\asn\h235_srtp.asn"
+				>
 			</File>
 			<File
 				RelativePath="..\asn\h245.asn"
@@ -3539,6 +3559,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\asn\h235_srtp.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\asn\h245.h"
 					>
 				</File>
@@ -3697,6 +3721,10 @@
 							CompileAs="0"
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\asn\h235_srtp.cxx"
+					>
 				</File>
 				<File
 					RelativePath="..\asn\h245_1.cxx"
