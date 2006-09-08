@@ -21,10 +21,18 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: h323.cxx,v $
- * Revision 1.2117  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2117.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.116  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -1791,13 +1799,13 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
       oid1 = gkAccessTokenOID.Left(comma);
       oid2 = gkAccessTokenOID.Mid(comma+1);
     }
-    setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
     PINDEX last = setup.m_tokens.GetSize();
     setup.m_tokens.SetSize(last+1);
     setup.m_tokens[last].m_tokenOID = oid1;
     setup.m_tokens[last].IncludeOptionalField(H235_ClearToken::e_nonStandard);
     setup.m_tokens[last].m_nonStandard.m_nonStandardIdentifier = oid2;
     setup.m_tokens[last].m_nonStandard.m_data = gkAccessTokenData;
+    setup.IncludeOptionalField(H225_Setup_UUIE::e_tokens);
   }
 
   if (!signallingChannel->SetRemoteAddress(gatekeeperRoute)) {
@@ -4459,6 +4467,11 @@ void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & 
   endpoint.OnReceiveFeatureSet(code, features);
 }
 
+void H323Connection::OnOutgoingClearToken(H225_ArrayOf_ClearToken & tokens, H323SignalPDU & pdu)
+{
+  return ((H323EndPoint &)endpoint).OnOutgoingClearToken(*this, tokens, pdu);
+}
+
 #ifdef H323_H460
 H460_FeatureSet * H323Connection::GetFeatureSet()
 {
@@ -4466,5 +4479,11 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
 }
 #endif
 
+#if OPAL_SRTP
+BOOL H323Connection::OnSendSRTPOffer(const H323_RTPChannel & channel,H245_OpenLogicalChannel & param)
+{
+  return ((H323EndPoint &)endpoint).OnSendSRTPOffer(*this, channel, param);
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////

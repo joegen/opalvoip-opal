@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2013  2006/06/27 12:08:01  csoutheren
+ * Revision 1.2013.4.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.12  2006/06/27 12:08:01  csoutheren
  * Patch 1455568 - RFC2833 patch
  * Thanks to Boris Pavacic
  *
@@ -418,7 +423,7 @@ void RTP_JitterBuffer::Main()
       // We have a full jitter buffer, need a new frame so take the oldest one
       currentReadFrame = oldestFrame;
       if (oldestFrame != NULL)
-	oldestFrame = oldestFrame->next;
+	      oldestFrame = oldestFrame->next;
       if (oldestFrame != NULL)
         oldestFrame->prev = NULL;
       currentDepth--;
@@ -449,7 +454,7 @@ void RTP_JitterBuffer::Main()
     // Keep reading from the RTP transport frames
     if (!session.ReadData(*currentReadFrame)) {
       if (currentReadFrame != NULL)
-	delete currentReadFrame;  // Destructor won't delete this one, so do it here.
+	      delete currentReadFrame;  // Destructor won't delete this one, so do it here.
       shuttingDown = TRUE; // Flag to stop the reading side thread
       PTRACE(3, "RTP\tJitter RTP receive thread ended");
       return;

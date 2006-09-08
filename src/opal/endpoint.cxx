@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2040  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2040.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.39  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -552,6 +557,11 @@ OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & conne
 OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
 {
   return manager.CreateH281ProtocolHandler(h224Handler);
+}
+
+void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
+{
+  call.GetManager().OnNewConnection(conn);
 }
 
 #if P_SSL

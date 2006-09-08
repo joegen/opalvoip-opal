@@ -27,6 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.2.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
  * Revision 1.2  2006/09/05 06:18:23  csoutheren
  * Start bringing in SRTP code for libSRTP
  *
@@ -42,7 +47,25 @@
 #pragma implementation "srtp.h"
 #endif
 
-#include "rtp/srtp.h"
+#include <rtp/srtp.h>
+
+////////////////////////////////////////////////////////////////////
+//
+//  this class implements SRTP over UDP
+//
+
+OpalSRTP_UDP::OpalSRTP_UDP(
+     unsigned id,               ///<  Session ID for RTP channel
+      BOOL remoteIsNAT,         ///<  TRUE is remote is behind NAT
+      OpalSRTPParms * _srtpParms ///<  Paramaters to use for SRTP
+) : RTP_UDP(id, remoteIsNAT), srtpParms(_srtpParms)
+{
+}
+
+OpalSRTP_UDP::~OpalSRTP_UDP()
+{
+  delete srtpParms;
+}
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -50,10 +73,35 @@
 //  See http://srtp.sourceforge.net/srtp.html
 //
 
-#if defined(HAS_LIBSRTP)
+////////////////////////////////////////////////////////////////////
+//
+//  implement SRTP via libSRTP
+//
+
+#if defined(HAS_LIBSRTP) 
 
 #pragma comment(lib, LIBSRTP_LIBRARY)
 
+#define NO_64BIT_MATH
+#include <srtp/include/srtp.h>
+
+class LibSRTP_UDP : public OpalSRTP_UDP
+{
+  PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
+  public:
+    LibSRTP_UDP(
+      unsigned id,          ///<  Session ID for RTP channel
+      BOOL remoteIsNAT,     ///<  TRUE is remote is behind NAT
+      OpalSRTPParms * srtpParms ///<  Paramaters to use for SRTP
+    );
+
+    ~LibSRTP_UDP();
+
+    virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+};
+
+///////////////////////////////////////////////////////
 
 class StaticInitializer
 {
@@ -66,32 +114,47 @@ static StaticInitializer initializer;
 
 ///////////////////////////////////////////////////////
 
-PStringList LibSRTPParms::GetAvailableCrypto() const
+class LibSRTPParm_Base : public OpalSRTPParms
 {
-  return PStringList();
-}
+  PCLASSINFO(LibSRTPParm_Base, OpalSRTPParms);
+  public:
+    OpalSRTP_UDP * CreateSRTPSession(
+      unsigned id,          ///<  Session ID for RTP channel
+      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+    );
 
-PStringList LibSRTPParms::GetAvailableHash() const
-{
-  return PStringList();
-}
+    BOOL SetKey(const PBYTEArray & key);
+    BOOL SetKey(const PBYTEArray & key, const PBYTEArray & salt);
 
-LibSRTPParms::LibSRTPParms()
+    BOOL SetSSRC(DWORD ssrc);
+    BOOL GetSSRC(DWORD & ssrc) const;
+
+  protected:
+    void Init();
+    BOOL ssrcSet;
+    BOOL masterKeySet;
+    PBYTEArray masterKey;
+    srtp_policy_t inboundPolicy;
+    srtp_policy_t outboundPolicy;
+};
+
+void LibSRTPParm_Base::Init()
 {
   masterKeySet = ssrcSet = FALSE;
 
-  crypto_policy_set_rtp_default(&inboundPolicy.rtp);
-  crypto_policy_set_rtcp_default(&inboundPolicy.rtcp);
   inboundPolicy.ssrc.type  = ssrc_any_inbound;
   inboundPolicy.next       = NULL;
-
-  crypto_policy_set_rtp_default(&outboundPolicy.rtp);
-  crypto_policy_set_rtcp_default(&outboundPolicy.rtcp);
   outboundPolicy.ssrc.type = ssrc_any_outbound;
-  outboundPolicy.next       = NULL;
+  outboundPolicy.next      = NULL;
 }
 
-BOOL LibSRTPParms::SetSSRC(DWORD ssrc)
+
+OpalSRTP_UDP * LibSRTPParm_Base::CreateSRTPSession(unsigned id, BOOL remoteIsNAT)
+{
+  return new LibSRTP_UDP(id, remoteIsNAT, this);
+}
+
+BOOL LibSRTPParm_Base::SetSSRC(DWORD ssrc)
 {
   ssrcSet = TRUE;
   inboundPolicy.ssrc.type  = ssrc_specific;
@@ -103,7 +166,7 @@ BOOL LibSRTPParms::SetSSRC(DWORD ssrc)
   return TRUE;
 }
 
-BOOL LibSRTPParms::GetSSRC(DWORD & ssrc) const
+BOOL LibSRTPParm_Base::GetSSRC(DWORD & ssrc) const
 {
   if (!ssrcSet)
     return FALSE;
@@ -113,45 +176,18 @@ BOOL LibSRTPParms::GetSSRC(DWORD & ssrc) const
   return TRUE;
 }
 
-struct AlgMapEntry {
-  const char * alg;
-  int mode;
-};
-
-static AlgMapEntry CryptoAlgMap[] = {
-  { "NULL",        NULL_CIPHER },
-  { "AES_128_ICM", AES_128_ICM },
-  { "SEAL",        SEAL },
-  { "AES_128_CBC", AES_128_CBC },
-  { "STRONGHOLD",  STRONGHOLD_CIPHER },
-  { NULL }
-};
-
-static AlgMapEntry HashAlgMap[] = {
-  { "NULL",              NULL_AUTH },
-  { "UST_TMMHv2",        UST_TMMHv2 },
-  { "UST_AES_128_XMAC",  UST_AES_128_XMAC },
-  { "SHA1",              HMAC_SHA1 },
-  { "STRONGHOLD",        STRONGHOLD_AUTH },
-  { NULL }
-};
-
-static int MapAlgToMode(AlgMapEntry * entry, const PString & alg)
+BOOL LibSRTPParm_Base::SetKey(const PBYTEArray & k, const PBYTEArray & s)
 {
-  while (entry->alg != NULL) {
-    if (alg *= entry->alg)
-      return entry->mode;
-    ++entry;
+  PBYTEArray key(k);
+  if (s.GetSize() > 0) {
+    key.MakeUnique();
+    PINDEX l = key.GetSize();
+    memcpy(key.GetPointer(l + s.GetSize()) + l, (const BYTE *)s, s.GetSize());
   }
-  return -1;
+  return SetKey(key);
 }
 
-BOOL LibSRTPParms::SetCrypto(
-          const PBYTEArray & key, 
-          const PBYTEArray & /*salt*/,
-          const PString & cryptoAlg, 
-          const PString & hashAlg 
-      )
+BOOL LibSRTPParm_Base::SetKey(const PBYTEArray & key)
 {
   if (key.GetSize() != SRTP_MASTER_KEY_LEN)
     return FALSE;
@@ -159,55 +195,49 @@ BOOL LibSRTPParms::SetCrypto(
   masterKey = key;
   masterKey.MakeUnique();
 
-  inboundPolicy.key = (uint8_t *)masterKey.GetPointer();
-  inboundPolicy.key = outboundPolicy.key;
-
-  int cryptoMode;
-  if (cryptoAlg.IsEmpty())
-    cryptoMode = STRONGHOLD_CIPHER;
-  else
-    cryptoMode = MapAlgToMode(CryptoAlgMap, cryptoAlg);
-  if (cryptoMode < 0)
-    return FALSE;
-
-  inboundPolicy.rtp.cipher_type       = 
-    inboundPolicy.rtcp.cipher_type    = 
-    outboundPolicy.rtp.cipher_type    = 
-      outboundPolicy.rtcp.cipher_type = cryptoMode;
-
-  int hashMode;
-  if (hashAlg.IsEmpty())
-    hashMode = STRONGHOLD_CIPHER;
-  else
-    hashMode = MapAlgToMode(HashAlgMap, hashAlg);
-  if (hashMode < 0)
-    return FALSE;
-
-  inboundPolicy.rtp.auth_type       =
-      inboundPolicy.rtcp.auth_type  =
-      outboundPolicy.rtp.auth_type  = 
-      outboundPolicy.rtcp.auth_type = hashMode;
-
   return TRUE;
 }
 
+
+#define DECLARE_LIBSRTP_CRYPTO_ALG(name, policy_fn) \
+class LibSRTPParm_##name : public LibSRTPParm_Base \
+{ \
+  public: \
+  LibSRTPParm_##name() \
+    { \
+      policy_fn(&inboundPolicy.rtp); \
+      policy_fn(&inboundPolicy.rtcp); \
+      policy_fn(&outboundPolicy.rtp); \
+      policy_fn(&outboundPolicy.rtcp); \
+      Init(); \
+    } \
+}; \
+static PFactory<OpalSRTPParms>::Worker<LibSRTPParm_##name> factoryLibSRTPParm_##name(#name); \
+
+DECLARE_LIBSRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_80,  crypto_policy_set_aes_cm_128_hmac_sha1_80);
+DECLARE_LIBSRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_32,  crypto_policy_set_aes_cm_128_hmac_sha1_32);
+DECLARE_LIBSRTP_CRYPTO_ALG(AES_CM_128_NULL_AUTH,     crypto_policy_set_aes_cm_128_null_auth);
+DECLARE_LIBSRTP_CRYPTO_ALG(NULL_CIPHER_HMAC_SHA1_80, crypto_policy_set_null_cipher_hmac_sha1_80);
+
+DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_128_hmac_sha1_80);
+
 ///////////////////////////////////////////////////////
 
-SRTP_UDP::SRTP_UDP(unsigned sessionId, BOOL remoteIsNAT)
-  : RTP_UDP(sessionId, remoteIsNAT)
+LibSRTP_UDP::LibSRTP_UDP(unsigned _sessionId, BOOL _remoteIsNAT, OpalSRTPParms * _srtpParms)
+  : OpalSRTP_UDP(_sessionId, _remoteIsNAT, _srtpParms)
 {
 }
 
-SRTP_UDP::~SRTP_UDP()
+LibSRTP_UDP::~LibSRTP_UDP()
 {
 }
 
-RTP_UDP::SendReceiveStatus SRTP_UDP::OnSendData(RTP_DataFrame & frame)
+RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
 {
   return RTP_UDP::OnSendData(frame);
 }
 
-RTP_UDP::SendReceiveStatus SRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
+RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
 {
   return RTP_UDP::OnReceiveData(frame);
 }

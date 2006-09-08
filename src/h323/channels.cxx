@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2035  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2035.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.34  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.33  2006/07/24 14:03:40  csoutheren
@@ -1039,7 +1044,13 @@ BOOL H323_RealTimeChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
                 H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
                     ::e_h2250LogicalChannelParameters);
 
-    return OnSendingPDU(open.m_reverseLogicalChannelParameters.m_multiplexParameters);
+    if (!OnSendingPDU(open.m_reverseLogicalChannelParameters.m_multiplexParameters))
+      return FALSE;
+#if OPAL_SRTP
+    if (!OnSendSRTPOffer(open))
+      return FALSE;
+#endif
+    return TRUE;
   }
   else {
     // Set the communications information for unicast IPv4
@@ -1171,6 +1182,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
                                        endpoint.GetManager().GetMaxAudioJitterDelay());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
+
+  transmittedPayloadType = capability->GetMediaFormat().GetPayloadType();
 }
 
 
@@ -1193,6 +1206,12 @@ BOOL H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) c
   return rtpCallbacks.OnSendingPDU(*this, param);
 }
 
+#if OPAL_SRTP
+BOOL H323_RTPChannel::OnSendSRTPOffer(H245_OpenLogicalChannel & param) const
+{
+  return rtpCallbacks.OnSendSRTPOffer(*this, param);
+}
+#endif
 
 void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const
 {

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2179  2006/08/28 00:53:52  csoutheren
+ * Revision 1.2179.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.178  2006/08/28 00:53:52  csoutheren
  * Applied 1546613 - Transport check in SIPConnection::SetConnected
  * Thanks to Drazen Dimoti
  *
@@ -2618,12 +2623,14 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
     PTRACE(4, "SIP\tAwaiting next PDU.");
     pduSemaphore.Wait();
 
-    if (!LockReadWrite())
+    LockReadOnly();
+    if (!LockReadWrite()) {
+      UnlockReadOnly();
       break;
+    }
 
     SIP_PDU * pdu = pduQueue.Dequeue();
     
-    LockReadOnly();
     UnlockReadWrite();
     if (pdu != NULL) {
       OnReceivedPDU(*pdu);

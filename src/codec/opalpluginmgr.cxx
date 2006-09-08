@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2009  2006/09/07 09:05:44  csoutheren
+ * Revision 1.2009.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.8  2006/09/07 09:05:44  csoutheren
  * Fix case significance in IsValidForProtocol
  *
  * Revision 2.7  2006/09/06 22:36:11  csoutheren
@@ -1452,6 +1457,15 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
 
   // cause the plugin manager to load all dynamic plugins
   pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), TRUE);
+
+#if OPAL_H323
+  // register the capabilities
+  while (capabilityCreateList.size() > 0) {
+    CapabilityCreateListType::iterator r = capabilityCreateList.begin();
+    RegisterCapability(r->encoderCodec, r->decoderCodec);
+    capabilityCreateList.erase(r);
+  }
+#endif
 }
 
 OpalPluginCodecManager::~OpalPluginCodecManager()
@@ -1749,7 +1763,14 @@ void OpalPluginCodecManager::RegisterPluginPair(
   }
 
 #if OPAL_H323
+  capabilityCreateList.push_back(CapabilityListCreateEntry(encoderCodec, decoderCodec));
+#endif
+}
 
+#if OPAL_H323
+
+void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec)
+{
   // add the capability
   H323CodecPluginCapabilityMapEntry * map = NULL;
 
@@ -1807,8 +1828,8 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
     }
   }
-#endif // OPAL_H323
 }
+#endif // OPAL_H323
 
 void OpalPluginCodecManager::AddFormat(const OpalMediaFormat & fmt)
 {

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2062  2006/08/10 05:10:33  csoutheren
+ * Revision 1.2062.2.1  2006/09/08 06:23:31  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.61  2006/08/10 05:10:33  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.60.2.1  2006/08/09 12:49:22  csoutheren
@@ -1234,6 +1239,10 @@ void OpalManager::GarbageMain(PThread &, INT)
 {
   while (!garbageCollectExit.Wait(1000))
       GarbageCollection();
+}
+
+void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////
