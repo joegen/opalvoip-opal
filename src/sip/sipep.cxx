@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2130  2006/08/12 04:20:39  csoutheren
+ * Revision 1.2130.2.1  2006/09/08 06:23:32  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.129  2006/08/12 04:20:39  csoutheren
  * Removed Windows warning and fixed timeout in SIP PING code
  *
  * Revision 2.128  2006/08/12 04:09:24  csoutheren
@@ -930,7 +935,10 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               OpalTransport * transport,
                                               SIP_PDU * /*invite*/)
 {
-  return new SIPConnection(call, *this, token, destination, transport);
+  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport);
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 
