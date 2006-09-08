@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2049  2006/06/21 23:43:27  csoutheren
+ * Revision 1.2049.4.1  2006/09/08 06:23:28  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.48  2006/06/21 23:43:27  csoutheren
  * Fixed comment on OpalManager::SetTranslationAddress
  *
  * Revision 2.47  2006/06/21 04:54:15  csoutheren
@@ -1148,6 +1153,8 @@ class OpalManager : public PObject
 
     // needs to be public for gcc 3.4
     void GarbageCollection();
+
+    virtual void OnNewConnection(OpalConnection & conn);
 
   protected:
     // Configuration variables

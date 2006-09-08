@@ -12,6 +12,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\pwlib\sr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\pwlib\src\ptlib\msos\PTLib_2005.vcproj", "{0A6A5647-DC2C-4D35-997D-0E53AE3930D8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libsrtp", "..\libs\srtp\libsrtp.vcproj", "{C95ADB1B-1092-4DBE-8929-E70C506B1856}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalcodecinfo", "samples\opalcodecinfo\opalcodecinfo_2005.vcproj", "{7FF55F1C-87EB-4087-8814-FD494BE49170}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -55,6 +59,18 @@ Global
 		{0A6A5647-DC2C-4D35-997D-0E53AE3930D8}.No Trace|Win32.Build.0 = Release|Win32
 		{0A6A5647-DC2C-4D35-997D-0E53AE3930D8}.Release|Win32.ActiveCfg = Release|Win32
 		{0A6A5647-DC2C-4D35-997D-0E53AE3930D8}.Release|Win32.Build.0 = Release|Win32
+		{C95ADB1B-1092-4DBE-8929-E70C506B1856}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C95ADB1B-1092-4DBE-8929-E70C506B1856}.Debug|Win32.Build.0 = Debug|Win32
+		{C95ADB1B-1092-4DBE-8929-E70C506B1856}.No Trace|Win32.ActiveCfg = Release|Win32
+		{C95ADB1B-1092-4DBE-8929-E70C506B1856}.No Trace|Win32.Build.0 = Release|Win32
+		{C95ADB1B-1092-4DBE-8929-E70C506B1856}.Release|Win32.ActiveCfg = Release|Win32
+		{C95ADB1B-1092-4DBE-8929-E70C506B1856}.Release|Win32.Build.0 = Release|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug|Win32.Build.0 = Debug|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.No Trace|Win32.ActiveCfg = No Trace|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.No Trace|Win32.Build.0 = No Trace|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|Win32.ActiveCfg = Release|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

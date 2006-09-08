@@ -22,7 +22,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2073  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2073.2.1  2006/09/08 06:23:28  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
+ * Revision 2.72  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.71  2006/08/21 05:30:48  csoutheren
@@ -440,6 +445,9 @@ void SimpleOpalProcess::Main()
 #if OPAL_IAX2
 	     "X-no-iax2."
 #endif
+#if OPAL_SRTP
+       "-srtp:"
+#endif
           , FALSE);
 
 
@@ -662,6 +670,21 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
+#if OPAL_SRTP
+  {
+    PString hex(args.GetOptionString("srtp"));
+    if (!hex.IsEmpty()) {
+      PINDEX i;
+      srtpMasterKey.SetSize(hex.GetLength()/2);
+      i = 0;
+      while (i < hex.GetLength()) {
+        srtpMasterKey[i/2] = (BYTE)hex.Mid(i, 2).AsInteger(16);
+        i+= 2;
+      }
+    }
+  }
+#endif
+
   // Set the various global options
   if (args.HasOption("rx-video"))
     autoStartReceiveVideo = TRUE;
@@ -797,7 +820,6 @@ BOOL MyManager::Initialise(PArgList & args)
 
   if (!args.HasOption('S')) {
     pcssEP = new MyPCSSEndPoint(*this);
-
     pcssEP->autoAnswer = args.HasOption('a');
     cout << "Auto answer is " << (pcssEP->autoAnswer ? "on" : "off") << "\n";
           
@@ -1290,6 +1312,18 @@ void MyManager::Main(PArgList & args)
 
    cout << "Console finished " << endl;
 }
+
+#if OPAL_SRTP
+void MyManager::OnNewConnection(OpalConnection & conn)
+{
+  if (srtpMasterKey.GetSize() == 0)
+    return;
+
+  if (PIsDescendant(&conn, H323Connection) || PIsDescendant(&conn, SIPConnection)) {
+    conn.SetSRTPMasterKey(srtpMasterKey);
+  }
+}
+#endif
 
 void MyManager::HangupCurrentCall()
 {
