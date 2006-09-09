@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.5  2006/09/09 18:04:58  dsandras
+ * Fixed crash when starting to decode H.261 on Linux.
+ *
  * Revision 1.4  2006/08/12 10:59:14  rjongbloed
  * Added Linux build for H.261 plug-in.
  *
@@ -582,7 +585,7 @@ class H261DecoderContext
 
     int DecodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
     {
-      WaitAndSignal mutex(mutex);
+      WaitAndSignal m(mutex);
 
       // create RTP frame from source buffer
       RTPFrame srcRTP(src, srcLen);
