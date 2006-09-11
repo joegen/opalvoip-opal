@@ -346,6 +346,17 @@ void IAX2Processor::SendAckFrame(IAX2FullFrame *inReplyTo)
   PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
 }
 
+void IAX2Processor::SendUnsupportedFrame(IAX2FullFrame *inReplyTo)
+{
+  PTRACE(3, "Processor\tSend an unsupported frame in reply" );
+  PTRACE(3, "Processor\tIn reply to " << *inReplyTo);
+  
+  IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdUnsupport, inReplyTo, 
+    IAX2FullFrame::callIrrelevant);
+  f->AppendIe(new IAX2IeIaxUnknown(inReplyTo->GetSubClass()));
+  TransmitFrameToRemoteEndpoint(f);
+}
+
 BOOL IAX2Processor::ProcessCommonNetworkFrame(IAX2FullFrameProtocol * src)
 {
   switch(src->GetSubClass()) {
@@ -400,5 +411,5 @@ void IAX2Processor::ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)
 
 void IAX2Processor::ProcessIaxCmdVnak(IAX2FullFrameProtocol * /*src*/)
 {
-  PTRACE(3, "ProcessIaxCmdVnak(IAX2FullFrameProtocol *src)");
+  PTRACE(1, "Frames recieved out of order.  We should resend them but this is not implemented");
 }

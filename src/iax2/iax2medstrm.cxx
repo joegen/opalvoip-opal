@@ -27,6 +27,11 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.6  2006/09/11 03:08:50  dereksmithies
+ * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ * improve call handling. Notably, IAX2 call transfer. Many thanks.
+ * Thanks also to the Google summer of code for sponsoring this work.
+ *
  * Revision 1.5  2006/08/09 03:46:39  dereksmithies
  * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  * into a callProcessor and a regProcessor class.
@@ -86,6 +91,17 @@ OpalIAX2MediaStream::OpalIAX2MediaStream(const OpalMediaFormat & mediaFormat,
     maxAudioJitterDelay(maxJitterDelay)
 {
   PTRACE(3, "Media\tCREATE an opal iax media audio stream ");
+  
+  //change the jitter settings if user does not have sane settings
+  if (minJitterDelay < 20) {
+    cerr << "Changed minJitterDelay to something more sane" << endl;
+    minJitterDelay = 20;
+  }
+  
+  if (maxJitterDelay < 60) {
+    cerr << "Changed maxJitterDelay to something more sane" << endl;
+    maxJitterDelay = 60;
+  }
 }
  
  
