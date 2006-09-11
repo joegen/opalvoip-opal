@@ -27,6 +27,11 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.3  2006/09/11 03:08:50  dereksmithies
+ * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ * improve call handling. Notably, IAX2 call transfer. Many thanks.
+ * Thanks also to the Google summer of code for sponsoring this work.
+ *
  * Revision 1.2  2006/08/10 04:44:03  csoutheren
  * Added new IAX2 files to VC 2005 project
  * Fixed compile warning on Windows
@@ -95,7 +100,7 @@
 #include <typeinfo>
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "processor.h"
+#pragma implementation "callprocessor.h"
 #endif
 
 #include <iax2/causecode.h>
@@ -146,6 +151,8 @@ IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   
   holdCall = FALSE;
   holdReleaseCall = FALSE;
+  
+  doTransfer = FALSE;
   
   statusCheckTimer.SetNotifier(PCREATE_NOTIFIER(OnStatusCheck));
   statusCheckOtherEnd = FALSE;
@@ -427,6 +434,9 @@ void IAX2CallProcessor::ProcessLists()
    for (PINDEX i = 0; i < sendList.GetSize(); i++)
      SendTextMessage(sendList[i]);    
    }
+   
+  //This method will send a transfer message if it has been requested
+  SendTransferMessage();   
 
   if (answerCallNow)
     SendAnswerMessageToRemoteNode();
@@ -539,11 +549,42 @@ void IAX2CallProcessor::SendHoldRelease()
   holdReleaseCall = TRUE;
 }
 
+void IAX2CallProcessor::SendTransfer(
+  const PString & calledNumber,
+  const PString & calledContext)
+{
+  {
+    PWaitAndSignal m(transferMutex);
+    doTransfer = TRUE;
+    transferCalledNumber = calledNumber;
+    transferCalledContext = calledContext;
+  }
+  
+  activate.Signal();
+}
+
+
 void IAX2CallProcessor::SendDtmfMessage(char  message)
 {
   IAX2FullFrameDtmf *f = new IAX2FullFrameDtmf(this, message);
   TransmitFrameToRemoteEndpoint(f);
 }
+
+void IAX2CallProcessor::SendTransferMessage()
+{
+  PWaitAndSignal m(transferMutex);
+  if (doTransfer) {
+    IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdTransfer);
+    f->AppendIe(new IAX2IeCalledNumber(transferCalledNumber));
+    
+    if (!transferCalledContext.IsEmpty());
+      f->AppendIe(new IAX2IeCalledContext(transferCalledContext));
+    TransmitFrameToRemoteEndpoint(f);
+    
+    doTransfer = FALSE;
+  }
+}
+
 
 void IAX2CallProcessor::SendTextMessage(PString & message)
 {
@@ -796,7 +837,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   case IAX2FullFrameProtocol::cmdDial:
     ProcessIaxCmdDial(src);
     break;
-  case IAX2FullFrameProtocol::cmdTxreq:
+  /*case IAX2FullFrameProtocol::cmdTxreq:
     ProcessIaxCmdTxreq(src);
     break;
   case IAX2FullFrameProtocol::cmdTxcnt:
@@ -813,19 +854,16 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     break;
   case IAX2FullFrameProtocol::cmdTxrej:
     ProcessIaxCmdTxrej(src);
-    break;
+    break;*/
   case IAX2FullFrameProtocol::cmdQuelch:
     ProcessIaxCmdQuelch(src);
     break;
   case IAX2FullFrameProtocol::cmdUnquelch:
     ProcessIaxCmdUnquelch(src);
     break;
-  case IAX2FullFrameProtocol::cmdPoke:
-    ProcessIaxCmdPoke(src);
-    break;
   case IAX2FullFrameProtocol::cmdPage:
     ProcessIaxCmdPage(src);
-    break;
+    break;/*
   case IAX2FullFrameProtocol::cmdMwi:
     ProcessIaxCmdMwi(src);
     break;
@@ -843,7 +881,10 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     break;
   case IAX2FullFrameProtocol::cmdFwData:
     ProcessIaxCmdFwData(src);
-    break;
+    break;*/
+  default:
+    PTRACE(1, "Process Full Frame Protocol, Type not expected");
+    SendUnsupportedFrame(src);   
   };
   
   delete src;
@@ -1181,11 +1222,6 @@ void IAX2CallProcessor::ProcessIaxCmdQuelch(IAX2FullFrameProtocol * /*src*/)
 void IAX2CallProcessor::ProcessIaxCmdUnquelch(IAX2FullFrameProtocol * /*src*/)
 {
   PTRACE(3, "ProcessIaxCmdUnquelch(IAX2FullFrameProtocol */*src*/)");
-}
-
-void IAX2CallProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol * /*src*/)
-{
-  PTRACE(3, "ProcessIaxCmdPoke(IAX2FullFrameProtocol *src)");
 }
 
 void IAX2CallProcessor::ProcessIaxCmdPage(IAX2FullFrameProtocol * /*src*/)
