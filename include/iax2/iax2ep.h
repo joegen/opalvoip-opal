@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.6  2006/09/11 03:08:51  dereksmithies
+ *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ *  improve call handling. Notably, IAX2 call transfer. Many thanks.
+ *  Thanks also to the Google summer of code for sponsoring this work.
+ *
  *  Revision 1.5  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -63,6 +68,7 @@
 #include <iax2/iax2con.h>
 #include <iax2/processor.h>
 #include <iax2/regprocessor.h>
+#include <iax2/specialprocessor.h>
 
 class IAX2Receiver;
 class IAX2Transmit;
@@ -269,9 +275,10 @@ class IAX2EndPoint : public OpalEndPoint
     deleted by the caller. FALSE indicates that something else (eg the
     connection) has taken over responsibility for deleting the transport.
     
-    Well, that is true of Opal. In iax2, we do all the work of creating a new connection etc.
-    The transport arguement is ignore. In Iax2, this method is void, as no value is returned.
-    Further, in iax2, we process the incoming frame.
+    Well, that is true of Opal. In iax2, we do all the work of creating a new
+    connection etc.  The transport arguement is ignore. In Iax2, this method
+    is void, as no value is returned.  Further, in iax2, we process the
+    incoming frame.
     */
   void NewIncomingConnection(IAX2Frame *f  /// Frame carrying the new request.
 			     );
@@ -281,8 +288,8 @@ class IAX2EndPoint : public OpalEndPoint
      the first media packet) */
   void OnEstablished(OpalConnection & con);
 
-   /**Get the data formats this endpoint is capable of operating.
-       This provides a list of media data format names that may be used by an
+   /**Get the data formats this endpoint is capable of operating.  This
+       provides a list of media data format names that may be used by an
        OpalMediaStream may be created by a connection from this endpoint.
 
        Note that a specific connection may not actually support all of the
@@ -442,7 +449,7 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**Pointer to the Processor class which handles special packets (eg lagrq) that have no 
      destination call to handle them. */
-  IAX2CallProcessor * specialPacketHandler;
+  IAX2SpecialProcessor * specialPacketHandler;
     
   /**For the supplied IAX2Frame, pass it to a connection in the connectionsActive structure.
      If no matching connection is found, return FALSE;
