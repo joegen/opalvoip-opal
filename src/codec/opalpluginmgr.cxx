@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2009  2006/09/07 09:05:44  csoutheren
+ * Revision 1.2010  2006/09/11 04:48:55  csoutheren
+ * Fixed problem with cloning plugin media formats
+ *
+ * Revision 2.8  2006/09/07 09:05:44  csoutheren
  * Fix case significance in IsValidForProtocol
  *
  * Revision 2.7  2006/09/06 22:36:11  csoutheren
@@ -402,6 +405,9 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
       return ::IsValidForProtocol(encoderCodec, protocol);
     }
 
+    PObject * Clone() const
+    { return new OpalPluginAudioMediaFormat(*this); }
+
     PluginCodec_Definition * encoderCodec;
 };
 
@@ -464,6 +470,9 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
     {
       OpalMediaFormatFactory::Unregister(*this);
     }
+
+    PObject * Clone() const
+    { return new OpalPluginVideoMediaFormat(*this); }
 
     bool IsValidForProtocol(const PString & protocol) const
     {
@@ -1106,9 +1115,7 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
 				   const PluginCodec_H323GenericCodecData * data );
 
     virtual PObject * Clone() const
-    {
-      return new H323CodecPluginGenericAudioCapability(*this);
-    }
+    { return new H323CodecPluginGenericAudioCapability(*this); }
 
     virtual PString GetFormatName() const
     { return H323PluginCapabilityInfo::GetFormatName();}
@@ -1148,9 +1155,7 @@ class H323PluginG7231Capability : public H323AudioPluginCapability
     }
 
     virtual PObject * Clone() const
-    { 
-      return new H323PluginG7231Capability(*this);
-    }
+    { return new H323PluginG7231Capability(*this); }
 
     virtual BOOL OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
     {
@@ -1194,9 +1199,7 @@ class H323GSMPluginCapability : public H323AudioPluginCapability
     Comparison Compare(const PObject & obj) const;
 
     virtual PObject * Clone() const
-    {
-      return new H323GSMPluginCapability(*this);
-    }
+    { return new H323GSMPluginCapability(*this); }
 
     virtual BOOL OnSendingPDU(
       H245_AudioCapability & pdu,  /// PDU to set information on
@@ -1376,9 +1379,7 @@ class H323H263PluginCapability : public H323VideoPluginCapability
     Comparison Compare(const PObject & obj) const;
 
     virtual PObject * Clone() const
-    { 
-      return new H323H263PluginCapability(*this); 
-    }
+    { return new H323H263PluginCapability(*this); }
 
     virtual BOOL OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
