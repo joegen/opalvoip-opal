@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2055  2006/09/07 09:05:44  csoutheren
+ * Revision 1.2056  2006/09/11 04:48:55  csoutheren
+ * Fixed problem with cloning plugin media formats
+ *
+ * Revision 2.54  2006/09/07 09:05:44  csoutheren
  * Fix case significance in IsValidForProtocol
  *
  * Revision 2.53  2006/09/06 22:36:11  csoutheren
@@ -995,9 +998,9 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 
 bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
-  // the protocol is only valid for H.323 if the RTP name is NULL
-  if ((protocol *= "h.323") || (protocol *= "h323"))
-    return rtpEncodingName == NULL;
+  // the protocol is only valid for SIP if the RTP name is not NULL
+  if (protocol *= "sip")
+    return rtpEncodingName != NULL;
 
   return TRUE;
 }
