@@ -1,4 +1,37 @@
- #include <ptlib.h>
+/*
+ * Inter Asterisk Exchange 2
+ * 
+ * The entity which receives all manages weirdo iax2 packets that are 
+ * sent outside of a regular call.
+ * 
+ * Open Phone Abstraction Library (OPAL)
+ *
+ * Copyright (c) 2006 Stephen Cook 
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Open Phone Abstraction Library.
+ *
+ * The Initial Developer of the Original Code is Indranet Technologies Ltd
+ *
+ * The author of this code is Stephen Cook
+ *
+ *  $Log: specialprocessor.cxx,v $
+ *  Revision 1.2  2006/09/11 03:12:51  dereksmithies
+ *  Add logging and MPL license statements.
+ *
+ *
+ */
+
+#include <ptlib.h>
 #include <typeinfo>
 
 #ifdef P_USE_PRAGMA
