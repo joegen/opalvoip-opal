@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.40  2006/09/11 20:13:36  dsandras
+# Fixed IAX2 build thanks to Stephen Cook <siti orcon net nz>.
+#
 # Revision 1.39  2006/09/07 10:05:55  rjongbloed
 # Added "make update" target to do cvs update and rebuild
 #
@@ -431,6 +434,7 @@ ifdef IAX2_AVAIL
 
 SOURCES += \
            $(OPAL_SRCDIR)/iax2/callprocessor.cxx\
+	   $(OPAL_SRCDIR)/iax2/specialprocessor.cxx\
            $(OPAL_SRCDIR)/iax2/frame.cxx \
            $(OPAL_SRCDIR)/iax2/iax2con.cxx \
            $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
