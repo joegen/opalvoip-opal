@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.7  2006/09/11 03:08:51  dereksmithies
+ *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ *  improve call handling. Notably, IAX2 call transfer. Many thanks.
+ *  Thanks also to the Google summer of code for sponsoring this work.
+ *
  *  Revision 1.6  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -1302,6 +1307,9 @@ class IAX2IeIaxUnknown : public IAX2IeByte
       
   Contents are undefined if the network data is bogus/invalid */
   IAX2IeIaxUnknown(BYTE length, BYTE *srcData) : IAX2IeByte(length, srcData) { };
+  
+  /**Constructor when sending an unknown message*/
+  IAX2IeIaxUnknown(BYTE newValue) : IAX2IeByte(newValue) { }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;

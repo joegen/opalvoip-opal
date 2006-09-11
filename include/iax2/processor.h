@@ -24,13 +24,18 @@
  *
  * The author of this code is Derek J Smithies
  *
- *
+ * 
  *  $Log: processor.h,v $
+ *  Revision 1.10  2006/09/11 03:08:51  dereksmithies
+ *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ *  improve call handling. Notably, IAX2 call transfer. Many thanks.
+ *  Thanks also to the Google summer of code for sponsoring this work.
+ *
  *  Revision 1.9  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
  *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
+ * 
  *  Revision 1.8  2006/06/16 01:47:08  dereksmithies
  *  Get the OnHold features of IAX2 to work correctly.
  *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -83,6 +88,7 @@
 
 class IAX2EndPoint;
 class IAX2Connection;
+class IAX2ThreadHelper;
 
 ////////////////////////////////////////////////////////////////////////////////
 /**This class defines what the processor is to do on receiving an ack
@@ -152,18 +158,19 @@ class IAX2WaitingForAck : public PObject
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-
 /** This class is an abstract base class for iax2 processors.  This class is
-   responsible for handling all the iax2 protocol command messages.
-
-   It provides the base structure for two different processor classes,
-   a)registration type commands and b)commands specific to one call.
-
-   The unique source and destination call number (which are in the IAX2 frames)
-   are used to determine which processor will handle which incoming packet.
-
-   Each processor runs in its own thread so as to process incoming packets in a timely fashion.
-*/
+    responsible for handling all the iax2 protocol command messages.
+ 
+    It provides the base structure for two different processor classes,
+    a)registration type commands and b)commands specific to one call.
+ 
+    The unique source and destination call number (which are in the IAX2
+    frames) are used to determine which processor will handle which incoming
+    packet.
+ 
+    Each processor runs in its own thread so as to process incoming packets in
+    a timely fashion.
+ */
 class IAX2Processor : public PThread
 {
   PCLASSINFO(IAX2Processor, PObject);
@@ -178,10 +185,10 @@ class IAX2Processor : public PThread
   /**Get the sequence number info (inSeqNo and outSeqNo) */
   IAX2SequenceNumbers & GetSequenceInfo() { return sequence; }
   
-  /**Get the iax2 encryption info */
+  /**Get the IAX2 encryption info */
   IAX2Encryption & GetEncryptionInfo() { return encryption; }
   
-  /**Handle a received IAX frame. This may be a mini frame or full frame */
+  /**Handle a received IAX2 frame. This may be a mini frame or full frame */
   void IncomingEthernetFrame (IAX2Frame *frame);
   
   /**A method to cause some of the values in this class to be formatted
@@ -216,7 +223,7 @@ class IAX2Processor : public PThread
   */
   void Main();
   
-  /**Test to see if it is a status query type iax frame (eg lagrq) and handle it. If the frame
+  /**Test to see if it is a status query type IAX2 frame (eg lagrq) and handle it. If the frame
      is a status query, and it is handled, return TRUE */
   BOOL IsStatusQueryEthernetFrame(IAX2Frame *frame);
   
@@ -372,8 +379,11 @@ class IAX2Processor : public PThread
   /**Hold each of the possible values from an Ie class */
   IAX2IeData ieData;
   
-  /**Transmit an iax protocol frame with subclass type ack immediately to remote endpoint */
+  /**Transmit an IAX2 protocol frame with subclass type ack immediately to remote endpoint */
   void SendAckFrame(IAX2FullFrame *inReplyTo);
+  
+  /**Transmit an unsupported frame to the remote endpoint*/
+  void SendUnsupportedFrame(IAX2FullFrame *inReplyTo);
   
  private:
 #ifdef DOC_PLUS_PLUS
