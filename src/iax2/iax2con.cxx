@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.10  2006/09/11 03:08:50  dereksmithies
+ * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ * improve call handling. Notably, IAX2 call transfer. Many thanks.
+ * Thanks also to the Google summer of code for sponsoring this work.
+ *
  * Revision 1.9  2006/08/09 03:46:39  dereksmithies
  * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  * into a callProcessor and a regProcessor class.
@@ -100,7 +105,7 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   : OpalConnection(call, ep, token), 
      endpoint(ep)
 {  
-  remotePartyAddress = inRemoteParty;
+  remotePartyAddress = "iax2:" + inRemoteParty;
   if (inRemotePartyName.IsEmpty())
     remotePartyName = inRemoteParty;
   else
@@ -449,6 +454,33 @@ void IAX2Connection::RemoteRetrieveConnection()
   endpoint.OnHold(*this);
 }
 
+void IAX2Connection::TransferConnection(
+  const PString & remoteParty, 
+  const PString & callIdentity)
+{
+  //The call identity is not used because we do not handle supervised transfers yet.  
+  PTRACE(3, "Transfer call to " + remoteParty);
+  
+  PStringList rpList = IAX2EndPoint::DissectRemoteParty(remoteParty);
+  PString remoteAddress = GetRemoteInfo().RemoteAddress();
+  
+  if (rpList[IAX2EndPoint::addressIndex] == remoteAddress || 
+      rpList[IAX2EndPoint::addressIndex].IsEmpty()) {
+        
+    iax2Processor->SendTransfer(
+        rpList[IAX2EndPoint::extensionIndex],
+        rpList[IAX2EndPoint::contextIndex]);
+  } else {
+    PTRACE(1, "Cannot transfer call, hosts do not match");
+  }
+}
+    
+BOOL IAX2Connection::ForwardCall(const PString & forwardParty)
+{
+  PTRACE(3, "Forward call to " + forwardParty);
+  //we can not currently forward calls that have not been accepted.
+  return FALSE;
+}
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */

@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.14  2006/09/11 03:08:50  dereksmithies
+ * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ * improve call handling. Notably, IAX2 call transfer. Many thanks.
+ * Thanks also to the Google summer of code for sponsoring this work.
+ *
  * Revision 1.13  2006/08/13 02:59:47  rjongbloed
  * Fixed warning on no trace build
  *
@@ -85,8 +90,7 @@
 #include <iax2/iax2ep.h>
 #include <iax2/receiver.h>
 #include <iax2/transmit.h>
-#include <iax2/regprocessor.h>
-
+#include <iax2/specialprocessor.h>
 
 #define new PNEW
 
@@ -101,9 +105,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   localNumber   = "1234";
   
   statusQueryCounter = 1;
-  specialPacketHandler = new IAX2CallProcessor(*this);
-  specialPacketHandler->SetSpecialPackets(TRUE);
-  specialPacketHandler->SetCallToken("Special packet handler");
+  specialPacketHandler = new IAX2SpecialProcessor(*this);
   
   transmitter = NULL;
   receiver = NULL;
@@ -190,15 +192,12 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   {    
     IAX2RegProcessor *regProcessor = NULL;
     
-    cout << "host is: " << host << endl;
-    
     PWaitAndSignal m(regProcessorsMutex);
     
     PINDEX size = regProcessors.GetSize();
     for (PINDEX i = 0; i < size; i++) {
       regProcessor = (IAX2RegProcessor*)regProcessors.GetAt(i);
       
-      cout << "reg compare " << regProcessor->GetHost() << endl;
       if (regProcessor->GetHost() == host) {
         userName = regProcessor->GetUserName();
         break;
