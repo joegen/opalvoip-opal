@@ -25,11 +25,16 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.9  2006/09/11 03:08:51  dereksmithies
+ *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ *  improve call handling. Notably, IAX2 call transfer. Many thanks.
+ *  Thanks also to the Google summer of code for sponsoring this work.
+ *
  *  Revision 1.8  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
  *  Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
+ * 
  *  Revision 1.7  2006/06/16 01:47:08  dereksmithies
  *  Get the OnHold features of IAX2 to work correctly.
  *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -246,7 +251,8 @@ class IAX2Connection : public OpalConnection
 
   /**Handle a sound packet received from the network.
      Return the media frame (IAX2MiniFrame or IAX2FullFrame) to the audio play stream */
-  IAX2Frame *GetSoundPacketFromNetwork(DWORD minBuffer, DWORD maxBuffer) { return iax2Processor->GetSoundPacketFromNetwork(minBuffer, maxBuffer); }
+  IAX2Frame *GetSoundPacketFromNetwork(DWORD minBuffer, DWORD maxBuffer) 
+    { return iax2Processor->GetSoundPacketFromNetwork(minBuffer, maxBuffer); }
 
   /**Get information on Remote class (remote node address & port + source & dest call number.) */
   IAX2Remote & GetRemoteInfo() { return iax2Processor->GetRemoteInfo(); }
@@ -425,6 +431,27 @@ class IAX2Connection : public OpalConnection
   
   /**Get the password*/
   PString GetPassword() const { return password; };
+  
+  /**Initiate the transfer of an existing call (connection) to a new remote 
+     party.
+  */
+  virtual void TransferConnection(
+    const PString & remoteParty,   ///<  Remote party to transfer the existing call to
+    const PString & callIdentity = PString::Empty() ///<  Call Identity of secondary call if present
+    );
+    
+    /**Forward incoming call to specified address.
+       This would typically be called from within the OnIncomingCall()
+       function when an application wishes to redirct an unwanted incoming
+       call.
+
+       The return value is TRUE if the call is to be forwarded, FALSE
+       otherwise. Note that if the call is forwarded the current connection is
+       cleared with teh ended call code of EndedByCallForwarded.
+      */
+  virtual BOOL ForwardCall(
+    const PString & forwardParty   ///<  Party to forward call to.
+  );
 
  protected:
   

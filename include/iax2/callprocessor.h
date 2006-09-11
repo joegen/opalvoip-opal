@@ -26,6 +26,11 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.2  2006/09/11 03:08:51  dereksmithies
+ *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
+ *  improve call handling. Notably, IAX2 call transfer. Many thanks.
+ *  Thanks also to the Google summer of code for sponsoring this work.
+ *
  *  Revision 1.1  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -82,8 +87,7 @@ class IAX2Connection;
 
 /**This class does the work of processing the lists of IAX packets (in and out) 
    that are associated with each call. There is one IAX2CallProcessor per connection.
-   There is a special processor which is created to handle the weirdo iax2 packets that are sent outside of a particular call. 
-   Examples of weirdo packets are the ping/pong/lagrq/lagrp. */
+   */
 class IAX2CallProcessor : public IAX2Processor
 {
   PCLASSINFO(IAX2CallProcessor, IAX2Processor);
@@ -223,6 +227,11 @@ class IAX2CallProcessor : public IAX2Processor
   /**Get the password*/
   PString GetPassword() const { return password; };
   
+  /**Send a transfer request, to transfer the remote party to the specified
+     number and optionally with a context*/
+  void SendTransfer(
+    const PString & calledNumber,
+    const PString & calledContext = PString::Empty());  
   
  protected:
   
@@ -296,6 +305,9 @@ class IAX2CallProcessor : public IAX2Processor
   /**Cause a sound frame (which is full or mini) to be sent. 
      The data in the array is already compressed. */
   void SendSoundMessage(PBYTEArray *sound);
+  
+  /**Sends a transfer message ONLY if doTransfer is TRUE*/
+  void SendTransferMessage();
   
   /**Send a message to put the remote connection on hold*/
   void SendQuelchMessage();
@@ -394,9 +406,6 @@ class IAX2CallProcessor : public IAX2Processor
   
   /** Process a FullFrameProtocol class, where the sub Class value is Resume audio/video transmission    */
   void ProcessIaxCmdUnquelch(IAX2FullFrameProtocol *src);
-  
-  /** Process a FullFrameProtocol class, where the sub Class value is Like ping, but does not require an open connection    */
-  void ProcessIaxCmdPoke(IAX2FullFrameProtocol *src);
   
   /** Process a FullFrameProtocol class, where the sub Class value is Paging description    */
   void ProcessIaxCmdPage(IAX2FullFrameProtocol *src);
@@ -652,6 +661,18 @@ class IAX2CallProcessor : public IAX2Processor
      we use it as authentication.  Note this must only be
      set before the main thread is started.*/
   PString password;
+  
+  /**A mutex to make the transfer related fields atomic*/
+  PMutex transferMutex;
+  
+  /**Whether we want a transfer event to occur or not*/
+  BOOL doTransfer;
+  
+  /**The number to call for a transfer*/
+  PString transferCalledNumber;
+  
+  /**The context to call for a transfer -- this is optional*/
+  PString transferCalledContext;  
 };
 
 
