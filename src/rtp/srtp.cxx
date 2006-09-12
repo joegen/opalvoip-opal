@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.2.2.3  2006/09/12 07:47:15  csoutheren
+ * Changed to use seperate incoming and outgoing keys
+ *
  * Revision 1.2.2.2  2006/09/12 07:06:58  csoutheren
  * More implementation of SRTP and general call security
  *
@@ -131,28 +134,20 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
       BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     );
 
-    BOOL SetKey(const PBYTEArray & key);
-    BOOL SetKey(const PBYTEArray & key, const PBYTEArray & salt);
+    BOOL SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return TRUE; }
+    BOOL GetOutgoingKey(KeySalt & key) const  { key = outgoingKey; return TRUE; }
+    BOOL SetOutgoingSSRC(DWORD ssrc);
+    BOOL GetOutgoingSSRC(DWORD & ssrc) const;
 
-    BOOL GetKey(PBYTEArray & key)
-    { 
-      PBYTEArray salt; 
-      if (GetKey(key, salt)) 
-        return FALSE; 
-      PINDEX len = key.GetSize();
-      memcpy(key.GetPointer(len + salt.GetSize()), salt.GetPointer(), salt.GetSize());
-      return TRUE;
-    }
-    BOOL GetKey(PBYTEArray & _key, PBYTEArray & _salt)
-    { _key = masterKey; _salt = salt; return TRUE; }
-
-    BOOL SetSSRC(DWORD ssrc);
-    BOOL GetSSRC(DWORD & ssrc) const;
+    BOOL SetIncomingKey(const KeySalt & key)  { incomingKey = key; return TRUE; }
+    BOOL GetIncomingKey(KeySalt & key) const  { key = incomingKey; return TRUE; } ;
+    BOOL SetIncomingSSRC(DWORD ssrc);
+    BOOL GetIncomingSSRC(DWORD & ssrc) const;
 
   protected:
     void Init();
-    PBYTEArray masterKey;
-    PBYTEArray salt;
+    KeySalt incomingKey;
+    KeySalt outgoingKey;
     srtp_policy_t inboundPolicy;
     srtp_policy_t outboundPolicy;
 };
@@ -164,7 +159,7 @@ void LibSRTPSecurityMode_Base::Init()
   outboundPolicy.ssrc.type = ssrc_any_outbound;
   outboundPolicy.next      = NULL;
 
-  crypto_get_random(masterKey.GetPointer(SRTP_MASTER_KEY_LEN), sizeof(SRTP_MASTER_KEY_LEN));
+  crypto_get_random(outgoingKey.key.GetPointer(SRTP_MASTER_KEY_LEN), SRTP_MASTER_KEY_LEN);
 }
 
 
@@ -173,45 +168,32 @@ OpalSRTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(unsigned id, BOOL remo
   return new LibSRTP_UDP(id, remoteIsNAT, this);
 }
 
-BOOL LibSRTPSecurityMode_Base::SetSSRC(DWORD ssrc)
+BOOL LibSRTPSecurityMode_Base::SetIncomingSSRC(DWORD ssrc)
 {
   inboundPolicy.ssrc.type  = ssrc_specific;
   inboundPolicy.ssrc.value = ssrc;
+  return TRUE;
+}
 
+BOOL LibSRTPSecurityMode_Base::SetOutgoingSSRC(DWORD ssrc)
+{
   outboundPolicy.ssrc.type = ssrc_specific;
   outboundPolicy.ssrc.value = ssrc;
 
   return TRUE;
 }
 
-BOOL LibSRTPSecurityMode_Base::GetSSRC(DWORD & ssrc) const
+BOOL LibSRTPSecurityMode_Base::GetOutgoingSSRC(DWORD & ssrc) const
 {
   ssrc = outboundPolicy.ssrc.value;
   return TRUE;
 }
 
-BOOL LibSRTPSecurityMode_Base::SetKey(const PBYTEArray & k, const PBYTEArray & s)
+BOOL LibSRTPSecurityMode_Base::GetIncomingSSRC(DWORD & ssrc) const
 {
-  PBYTEArray key(k);
-  if (s.GetSize() > 0) {
-    key.MakeUnique();
-    PINDEX l = key.GetSize();
-    memcpy(key.GetPointer(l + s.GetSize()) + l, (const BYTE *)s, s.GetSize());
-  }
-  return SetKey(key);
-}
-
-BOOL LibSRTPSecurityMode_Base::SetKey(const PBYTEArray & key)
-{
-  if (key.GetSize() != SRTP_MASTER_KEY_LEN)
-    return FALSE;
-
-  masterKey = key;
-  masterKey.MakeUnique();
-
+  ssrc = inboundPolicy.ssrc.value;
   return TRUE;
 }
-
 
 #define DECLARE_LIBSRTP_CRYPTO_ALG(name, policy_fn) \
 class LibSRTPSecurityMode_##name : public LibSRTPSecurityMode_Base \

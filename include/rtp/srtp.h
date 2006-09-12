@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.2.2.3  2006/09/12 07:47:15  csoutheren
+ * Changed to use seperate incoming and outgoing keys
+ *
  * Revision 1.2.2.2  2006/09/12 07:06:58  csoutheren
  * More implementation of SRTP and general call security
  *
@@ -81,14 +84,19 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
 {
   PCLASSINFO(OpalSRTPSecurityMode, OpalSecurityMode);
   public:
-    virtual BOOL SetKey(const PBYTEArray & key) = 0;
-    virtual BOOL SetKey(const PBYTEArray & key, const PBYTEArray & salt) = 0;
+    struct KeySalt {
+      PBYTEArray key;
+      PBYTEArray salt;
+    };
+    virtual BOOL SetOutgoingKey(const KeySalt & key) = 0;
+    virtual BOOL GetOutgoingKey(KeySalt & key) const = 0;
+    virtual BOOL SetOutgoingSSRC(DWORD ssrc) = 0;
+    virtual BOOL GetOutgoingSSRC(DWORD & ssrc) const = 0;
 
-    virtual BOOL GetKey(PBYTEArray & key) = 0;
-    virtual BOOL GetKey(PBYTEArray & key, PBYTEArray & salt) = 0;
-
-    virtual BOOL SetSSRC(DWORD ssrc) = 0;
-    virtual BOOL GetSSRC(DWORD & ssrc) const = 0;
+    virtual BOOL SetIncomingKey(const KeySalt & key) = 0;
+    virtual BOOL GetIncomingKey(KeySalt & key) const = 0;
+    virtual BOOL SetIncomingSSRC(DWORD ssrc) = 0;
+    virtual BOOL GetIncomingSSRC(DWORD & ssrc) const = 0;
 
     virtual OpalSRTP_UDP * CreateRTPSession(
       unsigned id,          ///<  Session ID for RTP channel
