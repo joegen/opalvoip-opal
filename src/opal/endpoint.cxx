@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2040.2.1  2006/09/08 06:23:31  csoutheren
+ * Revision 1.2040.2.2  2006/09/12 08:08:38  csoutheren
+ * Add manager default value for security mode
+ *
+ * Revision 2.39.2.1  2006/09/08 06:23:31  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -223,6 +226,8 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
   PTRACE(3, "OpalEP\tCreated endpoint: " << prefixName);
+
+  defaultSecurityMode = mgr.GetDefaultSecurityMode();
 }
 
 

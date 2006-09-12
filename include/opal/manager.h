@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2049.4.1  2006/09/08 06:23:28  csoutheren
+ * Revision 1.2049.4.2  2006/09/12 08:08:38  csoutheren
+ * Add manager default value for security mode
+ *
+ * Revision 2.48.4.1  2006/09/08 06:23:28  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -1156,6 +1159,12 @@ class OpalManager : public PObject
 
     virtual void OnNewConnection(OpalConnection & conn);
 
+    virtual void SetDefaultSecurityMode(const PString & v)
+    { defaultSecurityMode = v; }
+
+    virtual PString GetDefaultSecurityMode() const 
+    { return defaultSecurityMode; }
+
   protected:
     // Configuration variables
     PString       defaultUserName;
@@ -1221,6 +1230,8 @@ class OpalManager : public PObject
     PThread    * garbageCollector;
     PSyncPoint   garbageCollectExit;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
+
+    PString defaultSecurityMode;
 
   friend OpalCall::OpalCall(OpalManager & mgr);
   friend void OpalCall::OnReleased(OpalConnection & connection);
