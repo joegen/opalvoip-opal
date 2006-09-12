@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2075.2.1  2006/09/08 06:23:31  csoutheren
+ * Revision 1.2075.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.74.2.1  2006/09/08 06:23:31  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -479,11 +482,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   t120handler = NULL;
   t38handler = NULL;
+
   h224Handler = NULL;
 
-#if OPAL_SRTP
-  srtpMode = ep.GetDefaultSRTPMode();
-#endif
+  securityMode = ep.GetDefaultSecurityMode();
 }
 
 OpalConnection::~OpalConnection()
@@ -1034,27 +1036,20 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   // create an RTP session or an SRTP session as appropriate
   RTP_UDP * rtpSession = NULL;
 
-#if OPAL_SRTP
-  if (!srtpMode.IsEmpty()) {
-    OpalSRTPParms * parms = PFactory<OpalSRTPParms>::CreateInstance(srtpMode);
+  if (!securityMode.IsEmpty()) {
+    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
     if (parms == NULL) {
-      PTRACE(1, "OpalCon\tCannot create SRTP parms for SRTP mode " << srtpMode);
+      PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
       return NULL;
     }
-    if (!parms->SetKey(srtpMasterKey, srtpSalt)) {
-      PTRACE(1, "OpalCon\tCannot apply master/salt to SRTP parms for SRTP mode " << srtpMode);
-      delete parms;
-      return NULL;
-    }
-    rtpSession = parms->CreateSRTPSession(sessionID, remoteIsNAT);
-    if (rtpSession != NULL) {
-      PTRACE(1, "OpalCon\tCannot create RTP session for SRTP mode " << srtpMode);
+    rtpSession = parms->CreateRTPSession(sessionID, remoteIsNAT);
+    if (rtpSession == NULL) {
+      PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
       delete parms;
       return NULL;
     }
   }
   else
-#endif
   {
     rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
   }
@@ -1337,4 +1332,5 @@ void OpalConnection::SetPhase(Phases phaseToSet)
     phase = phaseToSet;
   }
 }
+
 /////////////////////////////////////////////////////////////////////////////

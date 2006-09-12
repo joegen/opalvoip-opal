@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2016.2.1  2006/09/08 06:23:27  csoutheren
+ * Revision 1.2016.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.15.2.1  2006/09/08 06:23:27  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -834,6 +837,9 @@ class H323_RTPChannel : public H323_RealTimeChannel
     virtual BOOL OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
+
+    virtual RTP_Session & GetRTPSession() const
+    { return rtpSession; }
 
 #if OPAL_SRTP
     virtual BOOL OnSendSRTPOffer(H245_OpenLogicalChannel & open) const;

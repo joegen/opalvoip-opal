@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.2.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
  * Revision 1.2.2.1  2006/09/08 06:23:28  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
@@ -50,8 +53,13 @@
 #include <ptlib.h>
 #include <opal/buildopts.h>
 #include <rtp/rtp.h>
+#include <opal/connection.h>
 
 #if OPAL_SRTP
+
+namespace PWLibStupidLinkerHacks {
+  extern int libSRTPLoader;
+};
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -69,22 +77,23 @@
 
 class OpalSRTP_UDP;
 
-class OpalSRTPParms : public PObject
+class OpalSRTPSecurityMode : public OpalSecurityMode
 {
-  PCLASSINFO(OpalSRTPParms, PObject);
+  PCLASSINFO(OpalSRTPSecurityMode, OpalSecurityMode);
   public:
     virtual BOOL SetKey(const PBYTEArray & key) = 0;
     virtual BOOL SetKey(const PBYTEArray & key, const PBYTEArray & salt) = 0;
 
+    virtual BOOL GetKey(PBYTEArray & key) = 0;
+    virtual BOOL GetKey(PBYTEArray & key, PBYTEArray & salt) = 0;
+
     virtual BOOL SetSSRC(DWORD ssrc) = 0;
     virtual BOOL GetSSRC(DWORD & ssrc) const = 0;
 
-    virtual OpalSRTP_UDP * CreateSRTPSession(
+    virtual OpalSRTP_UDP * CreateRTPSession(
       unsigned id,          ///<  Session ID for RTP channel
       BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     ) = 0;
-
-    static PFactory<OpalSRTPParms>::KeyList_T GetCryptoList();
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -97,9 +106,9 @@ class OpalSRTP_UDP : public RTP_UDP
   PCLASSINFO(OpalSRTP_UDP, RTP_UDP);
   public:
     OpalSRTP_UDP(
-     unsigned id,               ///<  Session ID for RTP channel
-      BOOL remoteIsNAT,         ///<  TRUE is remote is behind NAT
-      OpalSRTPParms * srtpParms ///<  Paramaters to use for SRTP
+     unsigned id,                  ///<  Session ID for RTP channel
+      BOOL remoteIsNAT,            ///<  TRUE is remote is behind NAT
+      OpalSecurityMode * srtpParms ///<  Paramaters to use for SRTP
     );
 
     ~OpalSRTP_UDP();
@@ -107,8 +116,11 @@ class OpalSRTP_UDP : public RTP_UDP
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame) = 0;
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame) = 0;
 
+    virtual OpalSRTPSecurityMode * GetSRTPParms() const
+    { return srtpParms; }
+
   protected:
-    OpalSRTPParms * srtpParms;
+    OpalSRTPSecurityMode * srtpParms;
 };
 
 #endif // OPAL_SRTP
