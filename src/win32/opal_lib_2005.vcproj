@@ -2347,6 +2347,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\iax2\specialprocessor.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\iax2\transmit.cxx"
 					>
 				</File>
@@ -2762,6 +2766,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\iax2\sound.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\iax2\specialprocessor.h"
 					>
 				</File>
 				<File
