@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2003  2006/08/01 12:46:32  rjongbloed
+ * Revision 1.2003.2.1  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.2  2006/08/01 12:46:32  rjongbloed
  * Added build solution for plug ins
  * Removed now redundent code due to plug ins addition
  *
@@ -39,10 +42,16 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #include <opal/mediafmt.h>
 #include <codec/opalwavfile.h>
 
 #include <codec/opalpluginmgr.h>
+
+#if HAS_LIBSRTP
+#include <rtp/srtp.h>
+#endif
 
 #if defined(P_HAS_PLUGINS)
 class PluginLoader : public PProcessStartup
@@ -52,11 +61,9 @@ class PluginLoader : public PProcessStartup
     void OnStartup()
     { 
       OpalPluginCodecManager::Bootstrap(); 
-      PWLibStupidLinkerHacks::opalwavfileLoader =1;
-#ifndef NO_OPAL_VIDEO
-#ifdef RFC2190_AVCODEC
-      //PWLibStupidLinkerHacks::rfc2190h263Loader =1;
-#endif
+      PWLibStupidLinkerHacks::opalwavfileLoader = 1;
+#if HAS_LIBSRTP
+      PWLibStupidLinkerHacks::libSRTPLoader = 1;
 #endif
     }
 };
@@ -77,6 +84,10 @@ extern int rfc2190h263Loader;
 
 #ifdef P_WAVFILE
 extern int opalwavfileLoader;
+#endif
+
+#ifdef HAS_LIBSRTP
+extern int libSRTPLoader;
 #endif
 
 }; // namespace PWLibStupidLinkerHacks

@@ -30,7 +30,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2057.2.1  2006/09/08 06:23:31  csoutheren
+ * Revision 1.2057.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.56.2.1  2006/09/08 06:23:31  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -128,6 +131,7 @@ WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Com
 
 #if OPAL_SRTP
 #include <asn/h235_srtp.h>
+#include <rtp/srtp.h>
 static const char * H235_ClearToken_V3 = "0.0.8.235.0.3.24";
 static const char * H235_SRTP_ObjectId  = "0.0.8.235.0.4.90";
 #endif
@@ -1347,12 +1351,20 @@ void H323EndPoint::OnReceiveFeatureSet(unsigned, const H225_FeatureSet & feature
 {
 }
 
+// see if the current security mode for this connection is to use SRTP
+static BOOL SecurityModeIsSRTP(H323Connection & conn)
+{
+  PString securityMode(conn.GetSecurityMode());
+  PINDEX pos = securityMode.Find('|');
+  if (pos != P_MAX_INDEX)
+    securityMode = securityMode.Left(pos);
+  return securityMode *= "srtp";
+}
+
 void H323EndPoint::OnOutgoingClearToken(H323Connection & conn, H225_ArrayOf_ClearToken & tokens, H323SignalPDU & pdu)
 {
 #if OPAL_SRTP
-  PBYTEArray masterKey;
-  conn.GetSRTPMasterKey(masterKey);
-  if (masterKey.GetSize() == 0)
+  if (!SecurityModeIsSRTP(conn))
     return;
 
   PINDEX last = tokens.GetSize();
@@ -1363,15 +1375,14 @@ void H323EndPoint::OnOutgoingClearToken(H323Connection & conn, H225_ArrayOf_Clea
 
 #if OPAL_SRTP
 
-static BOOL BuildH235SRTPKey(H323Connection & conn, PBYTEArray & opaque)
+static BOOL BuildH235SRTPKey(H323Connection & conn, OpalSRTPSecurityMode & srtpMode, PBYTEArray & opaque)
 {
-  PBYTEArray masterKey;
-  conn.GetSRTPMasterKey(masterKey);
-  if (masterKey.GetSize() == 0)
-    return FALSE;
+  if (!SecurityModeIsSRTP(conn))
+    return TRUE;
 
-  PBYTEArray salt;
-  conn.GetSRTPSalt(salt);
+  PBYTEArray masterKey, salt;
+  if (!srtpMode.GetKey(masterKey, salt) || (masterKey.GetSize() == 0))
+    return FALSE;
 
   // build array of one SRTP key
   H235_SRTP_SrtpKeys srtpKeys;
@@ -1395,9 +1406,18 @@ static BOOL BuildH235SRTPKey(H323Connection & conn, PBYTEArray & opaque)
 
 BOOL H323EndPoint::OnSendSRTPOffer(H323Connection & conn, const H323_RTPChannel & channel,H245_OpenLogicalChannel & param)
 {
+  // see if the current security mode for this connection is to use SRTP
+  if (!SecurityModeIsSRTP(conn))
+    return TRUE;
+
+  OpalSRTP_UDP & srtpUDP = (OpalSRTP_UDP & )channel.GetRTPSession();
+  OpalSRTPSecurityMode * srtpParms = srtpUDP.GetSRTPParms();
+  if (srtpParms == NULL)
+    return TRUE;
+
   // build the H235_SRTPKeys structure
   PBYTEArray srtpKeys;
-  if (!BuildH235SRTPKey(conn, srtpKeys))
+  if (!BuildH235SRTPKey(conn, *srtpParms, srtpKeys))
     return TRUE;
 
   // build H235Key container

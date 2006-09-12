@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2062.2.1  2006/09/08 06:23:27  csoutheren
+ * Revision 1.2062.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.61.2.1  2006/09/08 06:23:27  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -266,10 +269,6 @@
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
-
-#if OPAL_SRTP
-#include <rtp/srtp.h>
-#endif
 
 class OpalEndPoint;
 class OpalCall;
@@ -1260,25 +1259,11 @@ class OpalConnection : public PSafeObject
     BOOL RemoteIsNAT() const
     { return remoteIsNAT; }
 
-#if OPAL_SRTP
-    virtual void SetSRTPMode(const PString & v)
-    { srtpMode = v; }
+    virtual void SetSecurityMode(const PString & v)
+    { securityMode = v; }
 
-    virtual PString GetSRTPMode() const 
-    { return srtpMode; }
-
-    virtual void SetSRTPMasterKey(const PBYTEArray & v)
-    { srtpMasterKey = v; }
-
-    virtual void SetSRTPSalt(const PBYTEArray & v)
-    { srtpSalt = v; }
-
-    virtual void GetSRTPMasterKey(PBYTEArray & v)
-    { v = srtpMasterKey; }
-
-    virtual void GetSRTPSalt(PBYTEArray & v)
-    { v = srtpSalt; }
-#endif
+    virtual PString GetSecurityMode() const 
+    { return securityMode; }
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
@@ -1338,11 +1323,7 @@ class OpalConnection : public PSafeObject
     // added to the audio channel.
     PDTMFDecoder        dtmfDecoder;
 
-#if OPAL_SRTP
-    PString srtpMode;
-    PBYTEArray srtpMasterKey;
-    PBYTEArray srtpSalt;
-#endif
+    PString securityMode;
 
     /**Set the phase of the connection.
        @param phaseToSet the phase to set
@@ -1352,6 +1333,18 @@ class OpalConnection : public PSafeObject
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
+};
+
+class OpalSRTP_UDP;
+
+class OpalSecurityMode : public PObject
+{
+  PCLASSINFO(OpalSecurityMode, PObject);
+  public:
+    virtual OpalSRTP_UDP * CreateRTPSession(
+      unsigned id,          ///<  Session ID for RTP channel
+      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+    ) = 0;
 };
 
 

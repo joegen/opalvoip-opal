@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2073.2.1  2006/09/08 06:23:28  csoutheren
+ * Revision 1.2073.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.72.2.1  2006/09/08 06:23:28  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -446,7 +449,7 @@ void SimpleOpalProcess::Main()
 	     "X-no-iax2."
 #endif
 #if OPAL_SRTP
-       "-srtp:"
+       "-securitymode:"
 #endif
           , FALSE);
 
@@ -670,21 +673,6 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
-#if OPAL_SRTP
-  {
-    PString hex(args.GetOptionString("srtp"));
-    if (!hex.IsEmpty()) {
-      PINDEX i;
-      srtpMasterKey.SetSize(hex.GetLength()/2);
-      i = 0;
-      while (i < hex.GetLength()) {
-        srtpMasterKey[i/2] = (BYTE)hex.Mid(i, 2).AsInteger(16);
-        i+= 2;
-      }
-    }
-  }
-#endif
-
   // Set the various global options
   if (args.HasOption("rx-video"))
     autoStartReceiveVideo = TRUE;
@@ -847,11 +835,13 @@ BOOL MyManager::Initialise(PArgList & args)
     h323EP = new H323EndPoint(*this);
     if (!InitialiseH323EP(args, "h323-listen", h323EP))
       return FALSE;
+    h323EP->SetDefaultSecurityMode(args.GetOptionString("securitymode"));
 #if P_SSL
     if (!args.HasOption("no-h323s")) {
       h323sEP = new H323SecureEndPoint(*this);
       if (!InitialiseH323EP(args, "h323s-listen", h323sEP))
         return FALSE;
+      h323sEP->SetDefaultSecurityMode(args.GetOptionString("securitymode"));
     }
 #endif
   }
@@ -1316,12 +1306,6 @@ void MyManager::Main(PArgList & args)
 #if OPAL_SRTP
 void MyManager::OnNewConnection(OpalConnection & conn)
 {
-  if (srtpMasterKey.GetSize() == 0)
-    return;
-
-  if (PIsDescendant(&conn, H323Connection) || PIsDescendant(&conn, SIPConnection)) {
-    conn.SetSRTPMasterKey(srtpMasterKey);
-  }
 }
 #endif
 

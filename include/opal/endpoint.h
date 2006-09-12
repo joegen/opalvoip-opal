@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2034.2.1  2006/09/08 06:23:27  csoutheren
+ * Revision 1.2034.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 2.33.2.1  2006/09/08 06:23:27  csoutheren
  * Implement initial support for SRTP media encryption and H.235-SRTP support
  * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
  * yet populate capabilities or respond to negotiations. This code to follow
@@ -760,13 +763,11 @@ class OpalEndPoint : public PObject
     PString GetSSLCertificate() const;
 #endif
 
-#if OPAL_SRTP
-    virtual void SetDefaultSRTPMode(const PString & v)
-    { defaultSRTPMode = v; }
+    virtual void SetDefaultSecurityMode(const PString & v)
+    { defaultSecurityMode = v; }
 
-    virtual PString GetDefaultSRTPMode() const 
-    { return defaultSRTPMode; }
-#endif
+    virtual PString GetDefaultSecurityMode() const 
+    { return defaultSecurityMode; }
 
   protected:
     OpalManager   & manager;
@@ -789,9 +790,7 @@ class OpalEndPoint : public PObject
 
     PMutex inUseFlag;
 
-#if OPAL_SRTP
-    PString defaultSRTPMode; 
-#endif
+    PString defaultSecurityMode; 
 
   friend void OpalManager::GarbageCollection();
   friend void OpalConnection::Release(CallEndReason reason);
