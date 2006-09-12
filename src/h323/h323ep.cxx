@@ -30,7 +30,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2057.2.2  2006/09/12 07:06:58  csoutheren
+ * Revision 1.2057.2.3  2006/09/12 07:47:15  csoutheren
+ * Changed to use seperate incoming and outgoing keys
+ *
+ * Revision 2.56.2.2  2006/09/12 07:06:58  csoutheren
  * More implementation of SRTP and general call security
  *
  * Revision 2.56.2.1  2006/09/08 06:23:31  csoutheren
@@ -1380,16 +1383,16 @@ static BOOL BuildH235SRTPKey(H323Connection & conn, OpalSRTPSecurityMode & srtpM
   if (!SecurityModeIsSRTP(conn))
     return TRUE;
 
-  PBYTEArray masterKey, salt;
-  if (!srtpMode.GetKey(masterKey, salt) || (masterKey.GetSize() == 0))
+  OpalSRTPSecurityMode::KeySalt key;
+  if (!srtpMode.GetOutgoingKey(key) || (key.key.GetSize() == 0))
     return FALSE;
 
   // build array of one SRTP key
   H235_SRTP_SrtpKeys srtpKeys;
   srtpKeys.SetSize(1);
   H235_SRTP_SrtpKeyParameters & keyParameters = srtpKeys[0];
-  keyParameters.m_masterKey.SetValue(masterKey);
-  keyParameters.m_masterSalt.SetValue(salt);
+  keyParameters.m_masterKey.SetValue(key.key);
+  keyParameters.m_masterSalt.SetValue(key.salt);
   keyParameters.RemoveOptionalField(H235_SRTP_SrtpKeyParameters::e_lifetime);
   keyParameters.RemoveOptionalField(H235_SRTP_SrtpKeyParameters::e_mki);
 
