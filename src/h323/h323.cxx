@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2117  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2118  2006/09/12 18:35:59  dsandras
+ * Disallow forbidden media formats. Thanks Craig!
+ *
+ * Revision 2.116  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -3227,6 +3230,8 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
 
     if (!remoteCapabilities.Merge(remoteCaps))
       return FALSE;
+
+    remoteCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
 
     if (transmitterSidePaused) {
       transmitterSidePaused = FALSE;
