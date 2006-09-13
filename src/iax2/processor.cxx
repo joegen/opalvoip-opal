@@ -353,7 +353,7 @@ void IAX2Processor::SendUnsupportedFrame(IAX2FullFrame *inReplyTo)
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdUnsupport, inReplyTo, 
     IAX2FullFrame::callIrrelevant);
-  f->AppendIe(new IAX2IeIaxUnknown(inReplyTo->GetSubClass()));
+  f->AppendIe(new IAX2IeIaxUnknown((BYTE)inReplyTo->GetSubClass()));
   TransmitFrameToRemoteEndpoint(f);
 }
 
