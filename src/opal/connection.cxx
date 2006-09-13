@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2075  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2076  2006/09/13 00:22:53  csoutheren
+ * Fix reentrancy problems in Release
+ *
+ * Revision 2.74  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -558,8 +561,17 @@ void OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty
 void OpalConnection::Release(CallEndReason reason)
 {
   {
+    PWaitAndSignal m(phaseMutex);
+    if (phase >= ReleasingPhase) {
+      PTRACE(3, "OpalCon\tAlready released " << *this);
+      return;
+    }
+    SetPhase(ReleasingPhase);
+  }
+
+  {
     PSafeLockReadWrite safeLock(*this);
-    if (!safeLock.IsLocked() || phase >= ReleasingPhase) {
+    if (!safeLock.IsLocked()) {
       PTRACE(3, "OpalCon\tAlready released " << *this);
       return;
     }
@@ -568,7 +580,6 @@ void OpalConnection::Release(CallEndReason reason)
 
     // Now set reason for the connection close
     SetCallEndReason(reason);
-    SetPhase(ReleasingPhase);
 
     // Add a reference for the thread we are about to start
     SafeReference();
