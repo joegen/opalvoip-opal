@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.11  2006/09/13 00:20:12  csoutheren
+ * Fixed warnings under VS.net
+ *
  * Revision 1.10  2006/09/11 03:08:50  dereksmithies
  * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  * improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -456,7 +459,7 @@ void IAX2Connection::RemoteRetrieveConnection()
 
 void IAX2Connection::TransferConnection(
   const PString & remoteParty, 
-  const PString & callIdentity)
+  const PString & /*callIdentity*/)
 {
   //The call identity is not used because we do not handle supervised transfers yet.  
   PTRACE(3, "Transfer call to " + remoteParty);
