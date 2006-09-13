@@ -25,6 +25,9 @@
  * The author of this code is Stephen Cook
  *
  *  $Log: specialprocessor.cxx,v $
+ *  Revision 1.3  2006/09/13 00:20:12  csoutheren
+ *  Fixed warnings under VS.net
+ *
  *  Revision 1.2  2006/09/11 03:12:51  dereksmithies
  *  Add logging and MPL license statements.
  *
@@ -114,7 +117,7 @@ void IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   delete src;
 }
 
-void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol * src)
+void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol * /*src*/)
 {
   PTRACE(3, "ProcessIaxCmdPoke(IAX2FullFrameProtocol * src)");
   

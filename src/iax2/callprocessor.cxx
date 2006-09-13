@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.4  2006/09/13 00:20:12  csoutheren
+ * Fixed warnings under VS.net
+ *
  * Revision 1.3  2006/09/11 03:08:50  dereksmithies
  * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  * improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -577,7 +580,7 @@ void IAX2CallProcessor::SendTransferMessage()
     IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdTransfer);
     f->AppendIe(new IAX2IeCalledNumber(transferCalledNumber));
     
-    if (!transferCalledContext.IsEmpty());
+    if (!transferCalledContext.IsEmpty())
       f->AppendIe(new IAX2IeCalledContext(transferCalledContext));
     TransmitFrameToRemoteEndpoint(f);
     
