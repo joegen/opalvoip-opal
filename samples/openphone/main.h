@@ -25,6 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.35  2006/09/16 04:20:36  rjongbloed
+ * Fixed crash when entering opetions dialog.
+ * Added recent calls list to Call dialog.
+ * Added "no trace" version.
+ *
  * Revision 1.34  2006/08/29 08:54:36  rjongbloed
  * Added VU meters
  *
@@ -230,6 +235,7 @@ class CallDialog : public wxDialog
     PwxString m_Address;
 
   private:
+    void OnOK(wxCommandEvent & event);
     void OnAddressChange(wxCommandEvent & event);
 
     wxComboBox * m_AddressCtrl;
@@ -393,8 +399,8 @@ class OptionsDialog : public wxDialog
     int       m_SilenceDeadband;
 
     wxComboBox * m_selectedLID;
-    wxComboBox * m_selectedAEC;
-    wxTextCtrl * m_selectedCountry;
+    wxChoice   * m_selectedAEC;
+    wxComboBox * m_selectedCountry;
     void SelectedLID(wxCommandEvent & event);
 
     ////////////////////////////////////////
