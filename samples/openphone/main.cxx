@@ -25,6 +25,11 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.12  2006/09/16 04:20:36  rjongbloed
+ * Fixed crash when entering opetions dialog.
+ * Added recent calls list to Call dialog.
+ * Added "no trace" version.
+ *
  * Revision 1.11  2006/09/07 10:09:24  rjongbloed
  * Linux/GNU compiler compatibility
  *
@@ -310,6 +315,9 @@ static const char SpeedDialsGroup[] = "/Speed Dials";
 static const char SpeedDialAddressKey[] = "Address";
 static const char SpeedDialNumberKey[] = "Number";
 static const char SpeedDialDescriptionKey[] = "Description";
+
+static const char RecentCallsGroup[] = "/Recent Calls";
+static const int  MaxSavedRecentCalls = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1631,10 +1639,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(DisplayName, m_manager.GetDefaultDisplayName());
 
   PStringList devices = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
-  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, RingSoundDeviceNameKey);
-  combo->SetValidator(wxGenericValidator(&m_RingSoundDeviceName));
+  wxChoice * choice = FindWindowByNameAs<wxChoice>(this, RingSoundDeviceNameKey);
+  choice->SetValidator(wxGenericValidator(&m_RingSoundDeviceName));
   for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+    choice->Append((const char *)devices[i]);
   m_RingSoundDeviceName = m_manager.m_RingSoundDeviceName;
   INIT_FIELD(RingSoundFileName, m_manager.m_RingSoundFileName);
 
@@ -1696,7 +1704,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SilenceDeadband, m_manager.GetSilenceDetectParams().m_silenceDeadband/8);
 
   // Fill sound player combo box with available devices and set selection
-  combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
+  wxComboBox * combo = FindWindowByNameAs<wxComboBox>(this, SoundPlayerKey);
   combo->SetValidator(wxGenericValidator(&m_SoundPlayer));
   for (i = 0; i < devices.GetSize(); i++)
     combo->Append((const char *)devices[i]);
@@ -1711,8 +1719,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_SoundRecorder = m_manager.pcssEP->GetSoundChannelRecordDevice();
 
   // Fill line interface combo box with available devices and set selection
-  m_selectedAEC = FindWindowByNameAs<wxComboBox>(this, AECKey);
-  m_selectedCountry = FindWindowByNameAs<wxTextCtrl>(this, CountryKey);
+  m_selectedAEC = FindWindowByNameAs<wxChoice>(this, AECKey);
+  m_selectedCountry = FindWindowByNameAs<wxComboBox>(this, CountryKey);
   m_selectedLID = FindWindowByNameAs<wxComboBox>(this, LineInterfaceDeviceKey);
   m_selectedLID->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
   devices = OpalLineInterfaceDevice::GetAllDevices();
@@ -1766,10 +1774,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != FALSE);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != FALSE);
 
-  combo = FindWindowByNameAs<wxComboBox>(this, "VideoGrabber");
+  choice = FindWindowByNameAs<wxChoice>(this, "VideoGrabber");
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (i = 0; i < devices.GetSize(); i++)
-    combo->Append((const char *)devices[i]);
+    choice->Append((const char *)devices[i]);
 
   ////////////////////////////////////////
   // Codec fields
@@ -1898,6 +1906,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(TraceThreadName, (PTrace::GetOptions()&PTrace::Thread) != 0);
   INIT_FIELD(TraceThreadAddress, (PTrace::GetOptions()&PTrace::ThreadAddress) != 0);
   INIT_FIELD(TraceFileName, m_manager.m_traceFileName);
+#else
+  wxNotebook * book = FindWindowByNameAs<wxNotebook>(this, "OptionsNotebook");
+  book->DeletePage(book->GetPageCount()-1);
 #endif // PTRACING
 }
 
@@ -2462,6 +2473,7 @@ void OptionsDialog::ChangedRouteInfo(wxCommandEvent & /*event*/)
 ///////////////////////////////////////////////////////////////////////////////
 
 BEGIN_EVENT_TABLE(CallDialog, wxDialog)
+  EVT_BUTTON(XRCID("wxID_OK"), CallDialog::OnOK)
   EVT_TEXT(XRCID("Address"), CallDialog::OnAddressChange)
 END_EVENT_TABLE()
 
@@ -2475,15 +2487,57 @@ CallDialog::CallDialog(wxFrame * parent)
   m_AddressCtrl = FindWindowByNameAs<wxComboBox>(this, "Address");
   m_AddressCtrl->SetValidator(wxGenericValidator(&m_Address));
 
-  // Temprary, must get from config
-  m_AddressCtrl->Append("h323:h323.voxgratia.org");
-  m_AddressCtrl->Append("sip:gw.voxgratia.org");
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(RecentCallsGroup);
+  wxString entryName;
+  long entryIndex;
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      wxString address;
+      if (config->Read(entryName, &address))
+        m_AddressCtrl->AppendString(address);
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
+}
+
+
+void CallDialog::OnOK(wxCommandEvent & event)
+{
+  wxDialog::OnOK(event);
+
+  bool addNewEntry = true;
+
+  wxConfigBase * config = wxConfig::Get();
+  config->DeleteGroup(RecentCallsGroup);
+  config->SetPath(RecentCallsGroup);
+
+  int index;
+  for (index = 0; index < m_AddressCtrl->GetCount(); ++index) {
+    wxString entry = m_AddressCtrl->GetString(index);
+
+    wxString key;
+    key.sprintf("%u", index+1);
+    config->Write(key, entry);
+
+    if (m_Address == entry)
+      addNewEntry = false;
+
+    if (index >= MaxSavedRecentCalls-(addNewEntry?1:0))
+      break;
+  }
+
+  if (addNewEntry) {
+    wxString key;
+    key.sprintf("%u", index+1);
+    config->Write(key, m_Address);
+  }
 }
 
 
 void CallDialog::OnAddressChange(wxCommandEvent & WXUNUSED(event))
 {
-  m_ok->Enable(!m_AddressCtrl->GetValue().IsEmpty());
+  TransferDataFromWindow();
+  m_ok->Enable(!m_Address.IsEmpty());
 }
 
 
@@ -2561,8 +2615,8 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 
   m_SpeakerVolume = FindWindowByNameAs<wxSlider>(this, "SpeakerVolume");
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, "MicrophoneVolume");
-  m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGuage");
-  m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, "MicrophoneGuage");
+  m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGauge");
+  m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, "MicrophoneGauge");
 
   m_vuTimer.SetNotifier(PCREATE_NOTIFIER(UpdateVU));
 
@@ -2573,6 +2627,8 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 bool InCallPanel::Show(bool show)
 {
   wxConfigBase * config = wxConfig::Get();
+  config->SetPath(AudioGroup);
+
   if (show || m_FirstTime) {
     m_FirstTime = false;
 
