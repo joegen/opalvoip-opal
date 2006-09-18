@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.42  2006/09/18 08:41:53  rjongbloed
+# Added simple OPAL sample to default build.
+# Added check that Makefile may need to be rebuilt from configure script.
+#
 # Revision 1.41  2006/09/11 20:44:17  dereksmithies
 # Fix spacing at end of line for two iax files.
 #
@@ -266,7 +270,7 @@ update:
 	$(MAKE) all
 
 
-SUBDIRS := plugins 
+SUBDIRS := plugins samples/simple
 
 LIBRARY_MAKEFILE:=1
 
@@ -687,6 +691,15 @@ $(DEPDIR)/%.dep : $(SPEEX_SRCDIR)/%.c
 $(subst tagbuild,,$(STANDARD_TARGETS)) ::
 	@set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
 
+
+$(STANDARD_TARGETS) :: Makefile
+
+Makefile: Makefile.in configure
+	@echo
+	@echo "*******************************************************"
+	@echo Makefile is not up to date, is a ./configure necessary?
+	@echo "*******************************************************"
+	@false
 
 test:
 	@echo $(ASN_CXX_FILES)
