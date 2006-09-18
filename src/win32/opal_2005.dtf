@@ -1360,6 +1360,8 @@ EXPORTS
     ??0H235AuthProcedure1@@QAE@XZ @1293 NONAME
     ??0H235AuthSimpleMD5@@QAE@ABV0@@Z @1294 NONAME
     ??0H235AuthSimpleMD5@@QAE@XZ @1295 NONAME
+    ??0H235_ArrayOf_ProfileElement@@QAE@ABV0@@Z @40085 NONAME
+    ??0H235_ArrayOf_ProfileElement@@QAE@IW4TagClass@PASN_Object@@@Z @40086 NONAME
     ??0H235_AuthenticationBES@@QAE@ABV0@@Z @1296 NONAME
     ??0H235_AuthenticationBES@@QAE@IW4TagClass@PASN_Object@@@Z @1297 NONAME
     ??0H235_AuthenticationMechanism@@QAE@ABV0@@Z @1298 NONAME
@@ -1391,6 +1393,8 @@ EXPORTS
     ??0H235_ECKASDH_eckasdhp@@QAE@IW4TagClass@PASN_Object@@@Z @1324 NONAME
     ??0H235_ECpoint@@QAE@ABV0@@Z @1325 NONAME
     ??0H235_ECpoint@@QAE@IW4TagClass@PASN_Object@@@Z @1326 NONAME
+    ??0H235_Element@@QAE@ABV0@@Z @40087 NONAME
+    ??0H235_Element@@QAE@IW4TagClass@PASN_Object@@@Z @40088 NONAME
     ??0H235_EncodedGeneralToken@@QAE@ABV0@@Z @1327 NONAME
     ??0H235_EncodedGeneralToken@@QAE@IW4TagClass@PASN_Object@@@Z @1328 NONAME
     ??0H235_EncodedKeySignedMaterial@@QAE@ABV0@@Z @1329 NONAME
@@ -1429,6 +1433,8 @@ EXPORTS
     ??0H235_Params@@QAE@IW4TagClass@PASN_Object@@@Z @1362 NONAME
     ??0H235_Password@@QAE@ABV0@@Z @1363 NONAME
     ??0H235_Password@@QAE@IW4TagClass@PASN_Object@@@Z @1364 NONAME
+    ??0H235_ProfileElement@@QAE@ABV0@@Z @40089 NONAME
+    ??0H235_ProfileElement@@QAE@IW4TagClass@PASN_Object@@@Z @40090 NONAME
     ??0H235_PwdCertToken@@QAE@ABV0@@Z @1365 NONAME
     ??0H235_PwdCertToken@@QAE@IW4TagClass@PASN_Object@@@Z @1366 NONAME
     ??0H235_RandomVal@@QAE@ABV0@@Z @1367 NONAME
@@ -3689,6 +3695,7 @@ EXPORTS
     ??0IAX2IeFormat@@QAE@I@Z @3621 NONAME
     ??0IAX2IeFwBlockData@@QAE@EPAE@Z @3622 NONAME
     ??0IAX2IeFwBlockDesc@@QAE@EPAE@Z @3623 NONAME
+    ??0IAX2IeIaxUnknown@@QAE@E@Z @40091 NONAME
     ??0IAX2IeIaxUnknown@@QAE@EPAE@Z @3624 NONAME
     ??0IAX2IeInt@@QAE@EPAE@Z @3625 NONAME
     ??0IAX2IeInvalidElement@@QAE@XZ @3626 NONAME
@@ -3750,6 +3757,7 @@ EXPORTS
     ??0IAX2SequenceNumbers@@QAE@XZ @3679 NONAME
     ??0IAX2SoundList@@IAE@HPBV0@@Z @3680 NONAME
     ??0IAX2SoundList@@QAE@XZ @3681 NONAME
+    ??0IAX2SpecialProcessor@@QAE@AAVIAX2EndPoint@@@Z @40092 NONAME
     ??0IAX2Transmit@@QAE@AAVIAX2EndPoint@@AAVPUDPSocket@@@Z @3682 NONAME
     ??0IAX2WaitingForAck@@QAE@XZ @3683 NONAME
     ??0Info@RTP_JitterBufferAnalyser@@QAE@XZ @3684 NONAME
@@ -3947,6 +3955,7 @@ EXPORTS
     ??0OnTransmissionTimeout_PNotifier@IAX2FullFrame@@QAE@PAV1@@Z @3873 NONAME
     ??0OnUserInputInBandDTMF_PNotifier@OpalConnection@@QAE@PAV1@@Z @3874 NONAME
     ??0OnUserInputInlineRFC2833_PNotifier@OpalConnection@@QAE@PAV1@@Z @3875 NONAME
+    ??0OpalAudioFormat@@QAE@ABV0@@Z @40093 NONAME
     ??0OpalAudioFormat@@QAE@PBDW4PayloadTypes@RTP_DataFrame@@0HIIIII_J@Z @3876 NONAME
     ??0OpalAudioMediaStream@@QAE@ABVOpalMediaFormat@@IHHABVPString@@@Z @3877 NONAME
     ??0OpalAudioMediaStream@@QAE@ABVOpalMediaFormat@@IHHPAVPSoundChannel@@H@Z @3878 NONAME
@@ -4014,12 +4023,14 @@ EXPORTS
     ??0OpalPCM16SilenceDetector@@QAE@XZ @3941 NONAME
     ??0OpalPCSSConnection@@QAE@AAVOpalCall@@AAVOpalPCSSEndPoint@@ABVPString@@2@Z @3942 NONAME
     ??0OpalPCSSEndPoint@@QAE@AAVOpalManager@@PBD@Z @3943 NONAME
+    ??0OpalPluginAudioMediaFormat@@QAE@ABV0@@Z @40094 NONAME
     ??0OpalPluginAudioMediaFormat@@QAE@PAUPluginCodec_Definition@@PBDII_J@Z @3944 NONAME
     ??0OpalPluginCodecManager@@QAE@PAVPPluginManager@@@Z @3945 NONAME
     ??0OpalPluginFramedAudioTranscoder@@QAE@PAUPluginCodec_Definition@@H@Z @3946 NONAME
     ??0OpalPluginStreamedAudioDecoder@@QAE@PAUPluginCodec_Definition@@H@Z @3947 NONAME
     ??0OpalPluginStreamedAudioEncoder@@QAE@PAUPluginCodec_Definition@@H@Z @3948 NONAME
     ??0OpalPluginStreamedAudioTranscoder@@QAE@PAUPluginCodec_Definition@@IIH@Z @3949 NONAME
+    ??0OpalPluginVideoMediaFormat@@QAE@ABV0@@Z @40095 NONAME
     ??0OpalPluginVideoMediaFormat@@QAE@PAUPluginCodec_Definition@@PBD_J@Z @3950 NONAME
     ??0OpalPluginVideoTranscoder@@QAE@PAUPluginCodec_Definition@@H@Z @3951 NONAME
     ??0OpalRawMediaStream@@IAE@ABVOpalMediaFormat@@IHPAVPChannel@@H@Z @3952 NONAME
@@ -4832,6 +4843,7 @@ EXPORTS
     ??1H235Authenticators@@UAE@XZ @4741 NONAME
     ??1H235AuthProcedure1@@UAE@XZ @4742 NONAME
     ??1H235AuthSimpleMD5@@UAE@XZ @4743 NONAME
+    ??1H235_ArrayOf_ProfileElement@@UAE@XZ @40096 NONAME
     ??1H235_AuthenticationBES@@UAE@XZ @4744 NONAME
     ??1H235_AuthenticationMechanism@@UAE@XZ @4745 NONAME
     ??1H235_ChallengeString@@UAE@XZ @4746 NONAME
@@ -4846,6 +4858,7 @@ EXPORTS
     ??1H235_ECKASDH_eckasdh2@@UAE@XZ @4755 NONAME
     ??1H235_ECKASDH_eckasdhp@@UAE@XZ @4756 NONAME
     ??1H235_ECpoint@@UAE@XZ @4757 NONAME
+    ??1H235_Element@@UAE@XZ @40097 NONAME
     ??1H235_EncodedGeneralToken@@UAE@XZ @4758 NONAME
     ??1H235_EncodedKeySignedMaterial@@UAE@XZ @4759 NONAME
     ??1H235_EncodedKeySyncMaterial@@UAE@XZ @4760 NONAME
@@ -4862,6 +4875,7 @@ EXPORTS
     ??1H235_NonStandardParameter@@UAE@XZ @4771 NONAME
     ??1H235_Params@@UAE@XZ @4772 NONAME
     ??1H235_Password@@UAE@XZ @4773 NONAME
+    ??1H235_ProfileElement@@UAE@XZ @40098 NONAME
     ??1H235_PwdCertToken@@UAE@XZ @4774 NONAME
     ??1H235_RandomVal@@UAE@XZ @4775 NONAME
     ??1H235_ReturnSig@@UAE@XZ @4776 NONAME
@@ -6018,6 +6032,7 @@ EXPORTS
     ??1IAX2Remote@@UAE@XZ @5925 NONAME
     ??1IAX2SequenceNumbers@@UAE@XZ @5926 NONAME
     ??1IAX2SoundList@@UAE@XZ @5927 NONAME
+    ??1IAX2SpecialProcessor@@UAE@XZ @40099 NONAME
     ??1IAX2Transmit@@UAE@XZ @5928 NONAME
     ??1IAX2WaitingForAck@@UAE@XZ @5929 NONAME
     ??1Info@RTP_JitterBufferAnalyser@@QAE@XZ @5930 NONAME
@@ -6489,6 +6504,7 @@ EXPORTS
     ??4H225_UnregRequestReason@@QAEAAV0@ABV0@@Z @6392 NONAME
     ??4H225_VendorIdentifier@@QAEAAV0@ABV0@@Z @6393 NONAME
     ??4H235Authenticators@@QAEAAV0@ABV0@@Z @6394 NONAME
+    ??4H235_ArrayOf_ProfileElement@@QAEAAV0@ABV0@@Z @40100 NONAME
     ??4H235_AuthenticationMechanism@@QAEAAV0@ABV0@@Z @6395 NONAME
     ??4H235_ChallengeString@@QAEAAV0@ABV0@@Z @6396 NONAME
     ??4H235_ChallengeString@@QAEAAV0@ABVPBYTEArray@@@Z @6397 NONAME
@@ -6940,6 +6956,7 @@ EXPORTS
     ??AH225_RTPSession_associatedSessionIds@@QBEAAVPASN_Integer@@H@Z @6838 NONAME
     ??AH225_Setup_UUIE_language@@QBEAAVPASN_IA5String@@H@Z @6839 NONAME
     ??AH225_TransportAddress_ipSourceRoute_route@@QBEAAVPASN_OctetString@@H@Z @6840 NONAME
+    ??AH235_ArrayOf_ProfileElement@@QBEAAVH235_ProfileElement@@H@Z @40101 NONAME
     ??AH245_AlternativeCapabilitySet@@QBEAAVH245_CapabilityTableEntryNumber@@H@Z @6841 NONAME
     ??AH245_ArrayOf_AlternativeCapabilitySet@@QBEAAVH245_AlternativeCapabilitySet@@H@Z @6842 NONAME
     ??AH245_ArrayOf_BEnhancementParameters@@QBEAAVH245_BEnhancementParameters@@H@Z @6843 NONAME
@@ -9403,6 +9420,7 @@ EXPORTS
     ??_7H235Authenticators@@6B@ @9281 NONAME
     ??_7H235AuthProcedure1@@6B@ @9282 NONAME
     ??_7H235AuthSimpleMD5@@6B@ @9283 NONAME
+    ??_7H235_ArrayOf_ProfileElement@@6B@ @40102 NONAME
     ??_7H235_AuthenticationBES@@6B@ @9284 NONAME
     ??_7H235_AuthenticationMechanism@@6B@ @9285 NONAME
     ??_7H235_ChallengeString@@6B@ @9286 NONAME
@@ -9417,6 +9435,7 @@ EXPORTS
     ??_7H235_ECKASDH_eckasdh2@@6B@ @9295 NONAME
     ??_7H235_ECKASDH_eckasdhp@@6B@ @9296 NONAME
     ??_7H235_ECpoint@@6B@ @9297 NONAME
+    ??_7H235_Element@@6B@ @40103 NONAME
     ??_7H235_EncodedGeneralToken@@6B@ @9298 NONAME
     ??_7H235_EncodedKeySignedMaterial@@6B@ @9299 NONAME
     ??_7H235_EncodedKeySyncMaterial@@6B@ @9300 NONAME
@@ -9433,6 +9452,7 @@ EXPORTS
     ??_7H235_NonStandardParameter@@6B@ @9311 NONAME
     ??_7H235_Params@@6B@ @9312 NONAME
     ??_7H235_Password@@6B@ @9313 NONAME
+    ??_7H235_ProfileElement@@6B@ @40104 NONAME
     ??_7H235_PwdCertToken@@6B@ @9314 NONAME
     ??_7H235_RandomVal@@6B@ @9315 NONAME
     ??_7H235_ReturnSig@@6B@ @9316 NONAME
@@ -10601,6 +10621,7 @@ EXPORTS
     ??_7IAX2Remote@@6B@ @10477 NONAME
     ??_7IAX2SequenceNumbers@@6B@ @10478 NONAME
     ??_7IAX2SoundList@@6B@ @10479 NONAME
+    ??_7IAX2SpecialProcessor@@6B@ @40105 NONAME
     ??_7IAX2Transmit@@6B@ @10480 NONAME
     ??_7IAX2WaitingForAck@@6B@ @10481 NONAME
     ??_7ListenerCallback_PNotifier@OpalEndPoint@@6B@ @10482 NONAME
@@ -11487,6 +11508,7 @@ EXPORTS
     ??_R0?AVH235Authenticators@@@8 @11348 NONAME
     ??_R0?AVH235AuthProcedure1@@@8 @11349 NONAME
     ??_R0?AVH235AuthSimpleMD5@@@8 @11350 NONAME
+    ??_R0?AVH235_ArrayOf_ProfileElement@@@8 @40106 NONAME
     ??_R0?AVH235_AuthenticationBES@@@8 @11351 NONAME
     ??_R0?AVH235_AuthenticationMechanism@@@8 @11352 NONAME
     ??_R0?AVH235_ChallengeString@@@8 @11353 NONAME
@@ -11501,6 +11523,7 @@ EXPORTS
     ??_R0?AVH235_ECKASDH_eckasdh2@@@8 @11362 NONAME
     ??_R0?AVH235_ECKASDH_eckasdhp@@@8 @11363 NONAME
     ??_R0?AVH235_ECpoint@@@8 @11364 NONAME
+    ??_R0?AVH235_Element@@@8 @40107 NONAME
     ??_R0?AVH235_EncodedGeneralToken@@@8 @11365 NONAME
     ??_R0?AVH235_EncodedKeySignedMaterial@@@8 @11366 NONAME
     ??_R0?AVH235_EncodedKeySyncMaterial@@@8 @11367 NONAME
@@ -11517,6 +11540,7 @@ EXPORTS
     ??_R0?AVH235_NonStandardParameter@@@8 @11378 NONAME
     ??_R0?AVH235_Params@@@8 @11379 NONAME
     ??_R0?AVH235_Password@@@8 @11380 NONAME
+    ??_R0?AVH235_ProfileElement@@@8 @40108 NONAME
     ??_R0?AVH235_PwdCertToken@@@8 @11381 NONAME
     ??_R0?AVH235_RandomVal@@@8 @11382 NONAME
     ??_R0?AVH235_ReturnSig@@@8 @11383 NONAME
@@ -12673,6 +12697,7 @@ EXPORTS
     ??_R0?AVIAX2Remote@@@8 @12532 NONAME
     ??_R0?AVIAX2SequenceNumbers@@@8 @12533 NONAME
     ??_R0?AVIAX2SoundList@@@8 @12534 NONAME
+    ??_R0?AVIAX2SpecialProcessor@@@8 @40109 NONAME
     ??_R0?AVIAX2Transmit@@@8 @12535 NONAME
     ??_R0?AVIAX2WaitingForAck@@@8 @12536 NONAME
     ??_R0?AVListenerCallback_PNotifier@OpalEndPoint@@@8 @12537 NONAME
@@ -13530,6 +13555,7 @@ EXPORTS
     ??_R1A@?0A@EA@H235Authenticators@@8 @13378 NONAME
     ??_R1A@?0A@EA@H235AuthProcedure1@@8 @13379 NONAME
     ??_R1A@?0A@EA@H235AuthSimpleMD5@@8 @13380 NONAME
+    ??_R1A@?0A@EA@H235_ArrayOf_ProfileElement@@8 @40110 NONAME
     ??_R1A@?0A@EA@H235_AuthenticationBES@@8 @13381 NONAME
     ??_R1A@?0A@EA@H235_AuthenticationMechanism@@8 @13382 NONAME
     ??_R1A@?0A@EA@H235_ChallengeString@@8 @13383 NONAME
@@ -13544,6 +13570,7 @@ EXPORTS
     ??_R1A@?0A@EA@H235_ECKASDH_eckasdh2@@8 @13392 NONAME
     ??_R1A@?0A@EA@H235_ECKASDH_eckasdhp@@8 @13393 NONAME
     ??_R1A@?0A@EA@H235_ECpoint@@8 @13394 NONAME
+    ??_R1A@?0A@EA@H235_Element@@8 @40111 NONAME
     ??_R1A@?0A@EA@H235_EncodedGeneralToken@@8 @13395 NONAME
     ??_R1A@?0A@EA@H235_EncodedKeySignedMaterial@@8 @13396 NONAME
     ??_R1A@?0A@EA@H235_EncodedKeySyncMaterial@@8 @13397 NONAME
@@ -13560,6 +13587,7 @@ EXPORTS
     ??_R1A@?0A@EA@H235_NonStandardParameter@@8 @13408 NONAME
     ??_R1A@?0A@EA@H235_Params@@8 @13409 NONAME
     ??_R1A@?0A@EA@H235_Password@@8 @13410 NONAME
+    ??_R1A@?0A@EA@H235_ProfileElement@@8 @40112 NONAME
     ??_R1A@?0A@EA@H235_PwdCertToken@@8 @13411 NONAME
     ??_R1A@?0A@EA@H235_RandomVal@@8 @13412 NONAME
     ??_R1A@?0A@EA@H235_ReturnSig@@8 @13413 NONAME
@@ -14716,6 +14744,7 @@ EXPORTS
     ??_R1A@?0A@EA@IAX2Remote@@8 @14562 NONAME
     ??_R1A@?0A@EA@IAX2SequenceNumbers@@8 @14563 NONAME
     ??_R1A@?0A@EA@IAX2SoundList@@8 @14564 NONAME
+    ??_R1A@?0A@EA@IAX2SpecialProcessor@@8 @40113 NONAME
     ??_R1A@?0A@EA@IAX2Transmit@@8 @14565 NONAME
     ??_R1A@?0A@EA@IAX2WaitingForAck@@8 @14566 NONAME
     ??_R1A@?0A@EA@ListenerCallback_PNotifier@OpalEndPoint@@8 @14567 NONAME
@@ -15585,6 +15614,7 @@ EXPORTS
     ??_R2H235Authenticators@@8 @15419 NONAME
     ??_R2H235AuthProcedure1@@8 @15420 NONAME
     ??_R2H235AuthSimpleMD5@@8 @15421 NONAME
+    ??_R2H235_ArrayOf_ProfileElement@@8 @40114 NONAME
     ??_R2H235_AuthenticationBES@@8 @15422 NONAME
     ??_R2H235_AuthenticationMechanism@@8 @15423 NONAME
     ??_R2H235_ChallengeString@@8 @15424 NONAME
@@ -15599,6 +15629,7 @@ EXPORTS
     ??_R2H235_ECKASDH_eckasdh2@@8 @15433 NONAME
     ??_R2H235_ECKASDH_eckasdhp@@8 @15434 NONAME
     ??_R2H235_ECpoint@@8 @15435 NONAME
+    ??_R2H235_Element@@8 @40115 NONAME
     ??_R2H235_EncodedGeneralToken@@8 @15436 NONAME
     ??_R2H235_EncodedKeySignedMaterial@@8 @15437 NONAME
     ??_R2H235_EncodedKeySyncMaterial@@8 @15438 NONAME
@@ -15615,6 +15646,7 @@ EXPORTS
     ??_R2H235_NonStandardParameter@@8 @15449 NONAME
     ??_R2H235_Params@@8 @15450 NONAME
     ??_R2H235_Password@@8 @15451 NONAME
+    ??_R2H235_ProfileElement@@8 @40116 NONAME
     ??_R2H235_PwdCertToken@@8 @15452 NONAME
     ??_R2H235_RandomVal@@8 @15453 NONAME
     ??_R2H235_ReturnSig@@8 @15454 NONAME
@@ -16771,6 +16803,7 @@ EXPORTS
     ??_R2IAX2Remote@@8 @16603 NONAME
     ??_R2IAX2SequenceNumbers@@8 @16604 NONAME
     ??_R2IAX2SoundList@@8 @16605 NONAME
+    ??_R2IAX2SpecialProcessor@@8 @40117 NONAME
     ??_R2IAX2Transmit@@8 @16606 NONAME
     ??_R2IAX2WaitingForAck@@8 @16607 NONAME
     ??_R2ListenerCallback_PNotifier@OpalEndPoint@@8 @16608 NONAME
@@ -17628,6 +17661,7 @@ EXPORTS
     ??_R3H235Authenticators@@8 @17449 NONAME
     ??_R3H235AuthProcedure1@@8 @17450 NONAME
     ??_R3H235AuthSimpleMD5@@8 @17451 NONAME
+    ??_R3H235_ArrayOf_ProfileElement@@8 @40118 NONAME
     ??_R3H235_AuthenticationBES@@8 @17452 NONAME
     ??_R3H235_AuthenticationMechanism@@8 @17453 NONAME
     ??_R3H235_ChallengeString@@8 @17454 NONAME
@@ -17642,6 +17676,7 @@ EXPORTS
     ??_R3H235_ECKASDH_eckasdh2@@8 @17463 NONAME
     ??_R3H235_ECKASDH_eckasdhp@@8 @17464 NONAME
     ??_R3H235_ECpoint@@8 @17465 NONAME
+    ??_R3H235_Element@@8 @40119 NONAME
     ??_R3H235_EncodedGeneralToken@@8 @17466 NONAME
     ??_R3H235_EncodedKeySignedMaterial@@8 @17467 NONAME
     ??_R3H235_EncodedKeySyncMaterial@@8 @17468 NONAME
@@ -17658,6 +17693,7 @@ EXPORTS
     ??_R3H235_NonStandardParameter@@8 @17479 NONAME
     ??_R3H235_Params@@8 @17480 NONAME
     ??_R3H235_Password@@8 @17481 NONAME
+    ??_R3H235_ProfileElement@@8 @40120 NONAME
     ??_R3H235_PwdCertToken@@8 @17482 NONAME
     ??_R3H235_RandomVal@@8 @17483 NONAME
     ??_R3H235_ReturnSig@@8 @17484 NONAME
@@ -18814,6 +18850,7 @@ EXPORTS
     ??_R3IAX2Remote@@8 @18633 NONAME
     ??_R3IAX2SequenceNumbers@@8 @18634 NONAME
     ??_R3IAX2SoundList@@8 @18635 NONAME
+    ??_R3IAX2SpecialProcessor@@8 @40121 NONAME
     ??_R3IAX2Transmit@@8 @18636 NONAME
     ??_R3IAX2WaitingForAck@@8 @18637 NONAME
     ??_R3ListenerCallback_PNotifier@OpalEndPoint@@8 @18638 NONAME
@@ -19671,6 +19708,7 @@ EXPORTS
     ??_R4H235Authenticators@@6B@ @19479 NONAME
     ??_R4H235AuthProcedure1@@6B@ @19480 NONAME
     ??_R4H235AuthSimpleMD5@@6B@ @19481 NONAME
+    ??_R4H235_ArrayOf_ProfileElement@@6B@ @40122 NONAME
     ??_R4H235_AuthenticationBES@@6B@ @19482 NONAME
     ??_R4H235_AuthenticationMechanism@@6B@ @19483 NONAME
     ??_R4H235_ChallengeString@@6B@ @19484 NONAME
@@ -19685,6 +19723,7 @@ EXPORTS
     ??_R4H235_ECKASDH_eckasdh2@@6B@ @19493 NONAME
     ??_R4H235_ECKASDH_eckasdhp@@6B@ @19494 NONAME
     ??_R4H235_ECpoint@@6B@ @19495 NONAME
+    ??_R4H235_Element@@6B@ @40123 NONAME
     ??_R4H235_EncodedGeneralToken@@6B@ @19496 NONAME
     ??_R4H235_EncodedKeySignedMaterial@@6B@ @19497 NONAME
     ??_R4H235_EncodedKeySyncMaterial@@6B@ @19498 NONAME
@@ -19701,6 +19740,7 @@ EXPORTS
     ??_R4H235_NonStandardParameter@@6B@ @19509 NONAME
     ??_R4H235_Params@@6B@ @19510 NONAME
     ??_R4H235_Password@@6B@ @19511 NONAME
+    ??_R4H235_ProfileElement@@6B@ @40124 NONAME
     ??_R4H235_PwdCertToken@@6B@ @19512 NONAME
     ??_R4H235_RandomVal@@6B@ @19513 NONAME
     ??_R4H235_ReturnSig@@6B@ @19514 NONAME
@@ -20869,6 +20909,7 @@ EXPORTS
     ??_R4IAX2Remote@@6B@ @20675 NONAME
     ??_R4IAX2SequenceNumbers@@6B@ @20676 NONAME
     ??_R4IAX2SoundList@@6B@ @20677 NONAME
+    ??_R4IAX2SpecialProcessor@@6B@ @40125 NONAME
     ??_R4IAX2Transmit@@6B@ @20678 NONAME
     ??_R4IAX2WaitingForAck@@6B@ @20679 NONAME
     ??_R4ListenerCallback_PNotifier@OpalEndPoint@@6B@ @20680 NONAME
@@ -22107,6 +22148,7 @@ EXPORTS
     ?Class@H235Authenticators@@SAPBDXZ @21899 NONAME
     ?Class@H235AuthProcedure1@@SAPBDXZ @21900 NONAME
     ?Class@H235AuthSimpleMD5@@SAPBDXZ @21901 NONAME
+    ?Class@H235_ArrayOf_ProfileElement@@SAPBDXZ @40126 NONAME
     ?Class@H235_AuthenticationBES@@SAPBDXZ @21902 NONAME
     ?Class@H235_AuthenticationMechanism@@SAPBDXZ @21903 NONAME
     ?Class@H235_ChallengeString@@SAPBDXZ @21904 NONAME
@@ -22121,6 +22163,7 @@ EXPORTS
     ?Class@H235_ECKASDH_eckasdh2@@SAPBDXZ @21913 NONAME
     ?Class@H235_ECKASDH_eckasdhp@@SAPBDXZ @21914 NONAME
     ?Class@H235_ECpoint@@SAPBDXZ @21915 NONAME
+    ?Class@H235_Element@@SAPBDXZ @40127 NONAME
     ?Class@H235_EncodedGeneralToken@@SAPBDXZ @21916 NONAME
     ?Class@H235_EncodedKeySignedMaterial@@SAPBDXZ @21917 NONAME
     ?Class@H235_EncodedKeySyncMaterial@@SAPBDXZ @21918 NONAME
@@ -22137,6 +22180,7 @@ EXPORTS
     ?Class@H235_NonStandardParameter@@SAPBDXZ @21929 NONAME
     ?Class@H235_Params@@SAPBDXZ @21930 NONAME
     ?Class@H235_Password@@SAPBDXZ @21931 NONAME
+    ?Class@H235_ProfileElement@@SAPBDXZ @40128 NONAME
     ?Class@H235_PwdCertToken@@SAPBDXZ @21932 NONAME
     ?Class@H235_RandomVal@@SAPBDXZ @21933 NONAME
     ?Class@H235_ReturnSig@@SAPBDXZ @21934 NONAME
@@ -23270,6 +23314,7 @@ EXPORTS
     ?Class@IAX2RegProcessor@@SAPBDXZ @39214 NONAME
     ?Class@IAX2Remote@@SAPBDXZ @23061 NONAME
     ?Class@IAX2SoundList@@SAPBDXZ @23062 NONAME
+    ?Class@IAX2SpecialProcessor@@SAPBDXZ @40129 NONAME
     ?Class@IAX2Transmit@@SAPBDXZ @23063 NONAME
     ?Class@IAX2WaitingForAck@@SAPBDXZ @23064 NONAME
     ?Class@MCS_ArrayOf_ChannelAttributes@@SAPBDXZ @23065 NONAME
@@ -24017,6 +24062,7 @@ EXPORTS
     ?Clone@H235Authenticators@@UBEPAVPObject@@XZ @23803 NONAME
     ?Clone@H235AuthProcedure1@@UBEPAVPObject@@XZ @23804 NONAME
     ?Clone@H235AuthSimpleMD5@@UBEPAVPObject@@XZ @23805 NONAME
+    ?Clone@H235_ArrayOf_ProfileElement@@UBEPAVPObject@@XZ @40130 NONAME
     ?Clone@H235_AuthenticationBES@@UBEPAVPObject@@XZ @23806 NONAME
     ?Clone@H235_AuthenticationMechanism@@UBEPAVPObject@@XZ @23807 NONAME
     ?Clone@H235_ChallengeString@@UBEPAVPObject@@XZ @23808 NONAME
@@ -24031,6 +24077,7 @@ EXPORTS
     ?Clone@H235_ECKASDH_eckasdh2@@UBEPAVPObject@@XZ @23817 NONAME
     ?Clone@H235_ECKASDH_eckasdhp@@UBEPAVPObject@@XZ @23818 NONAME
     ?Clone@H235_ECpoint@@UBEPAVPObject@@XZ @23819 NONAME
+    ?Clone@H235_Element@@UBEPAVPObject@@XZ @40131 NONAME
     ?Clone@H235_EncodedGeneralToken@@UBEPAVPObject@@XZ @23820 NONAME
     ?Clone@H235_EncodedKeySignedMaterial@@UBEPAVPObject@@XZ @23821 NONAME
     ?Clone@H235_EncodedKeySyncMaterial@@UBEPAVPObject@@XZ @23822 NONAME
@@ -24047,6 +24094,7 @@ EXPORTS
     ?Clone@H235_NonStandardParameter@@UBEPAVPObject@@XZ @23833 NONAME
     ?Clone@H235_Params@@UBEPAVPObject@@XZ @23834 NONAME
     ?Clone@H235_Password@@UBEPAVPObject@@XZ @23835 NONAME
+    ?Clone@H235_ProfileElement@@UBEPAVPObject@@XZ @40132 NONAME
     ?Clone@H235_PwdCertToken@@UBEPAVPObject@@XZ @23836 NONAME
     ?Clone@H235_RandomVal@@UBEPAVPObject@@XZ @23837 NONAME
     ?Clone@H235_ReturnSig@@UBEPAVPObject@@XZ @23838 NONAME
@@ -25097,6 +25145,8 @@ EXPORTS
     ?Clone@OpalMediaFormat@@UBEPAVPObject@@XZ @24883 NONAME
     ?Clone@OpalMediaOptionEnum@@UBEPAVPObject@@XZ @24884 NONAME
     ?Clone@OpalMediaOptionString@@UBEPAVPObject@@XZ @24885 NONAME
+    ?Clone@OpalPluginAudioMediaFormat@@UBEPAVPObject@@XZ @40133 NONAME
+    ?Clone@OpalPluginVideoMediaFormat@@UBEPAVPObject@@XZ @40134 NONAME
     ?Clone@OpalTransportAddressArray@@UBEPAVPObject@@XZ @24886 NONAME
     ?Clone@OpalVideoFormat@@UBEPAVPObject@@XZ @24887 NONAME
     ?Clone@T38_ArrayOf_PASN_OctetString@@UBEPAVPObject@@XZ @24888 NONAME
@@ -25399,6 +25449,7 @@ EXPORTS
     ?Compare@H235_KeySyncMaterial@@UBE?AW4Comparison@PObject@@ABV3@@Z @25184 NONAME
     ?Compare@H235_NonStandardParameter@@UBE?AW4Comparison@PObject@@ABV3@@Z @25185 NONAME
     ?Compare@H235_Params@@UBE?AW4Comparison@PObject@@ABV3@@Z @25186 NONAME
+    ?Compare@H235_ProfileElement@@UBE?AW4Comparison@PObject@@ABV3@@Z @40135 NONAME
     ?Compare@H235_ReturnSig@@UBE?AW4Comparison@PObject@@ABV3@@Z @25187 NONAME
     ?Compare@H235_TypedCertificate@@UBE?AW4Comparison@PObject@@ABV3@@Z @25188 NONAME
     ?Compare@H235_V3KeySyncMaterial@@UBE?AW4Comparison@PObject@@ABV3@@Z @25189 NONAME
@@ -26458,6 +26509,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H235Authenticators@@UBE?AW4Comparison@PObject@@ABV3@@Z @26243 NONAME
     ?CompareObjectMemoryDirect@H235AuthProcedure1@@UBE?AW4Comparison@PObject@@ABV3@@Z @26244 NONAME
     ?CompareObjectMemoryDirect@H235AuthSimpleMD5@@UBE?AW4Comparison@PObject@@ABV3@@Z @26245 NONAME
+    ?CompareObjectMemoryDirect@H235_ArrayOf_ProfileElement@@UBE?AW4Comparison@PObject@@ABV3@@Z @40136 NONAME
     ?CompareObjectMemoryDirect@H235_AuthenticationBES@@UBE?AW4Comparison@PObject@@ABV3@@Z @26246 NONAME
     ?CompareObjectMemoryDirect@H235_AuthenticationMechanism@@UBE?AW4Comparison@PObject@@ABV3@@Z @26247 NONAME
     ?CompareObjectMemoryDirect@H235_ChallengeString@@UBE?AW4Comparison@PObject@@ABV3@@Z @26248 NONAME
@@ -26472,6 +26524,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H235_ECKASDH_eckasdh2@@UBE?AW4Comparison@PObject@@ABV3@@Z @26257 NONAME
     ?CompareObjectMemoryDirect@H235_ECKASDH_eckasdhp@@UBE?AW4Comparison@PObject@@ABV3@@Z @26258 NONAME
     ?CompareObjectMemoryDirect@H235_ECpoint@@UBE?AW4Comparison@PObject@@ABV3@@Z @26259 NONAME
+    ?CompareObjectMemoryDirect@H235_Element@@UBE?AW4Comparison@PObject@@ABV3@@Z @40137 NONAME
     ?CompareObjectMemoryDirect@H235_EncodedGeneralToken@@UBE?AW4Comparison@PObject@@ABV3@@Z @26260 NONAME
     ?CompareObjectMemoryDirect@H235_EncodedKeySignedMaterial@@UBE?AW4Comparison@PObject@@ABV3@@Z @26261 NONAME
     ?CompareObjectMemoryDirect@H235_EncodedKeySyncMaterial@@UBE?AW4Comparison@PObject@@ABV3@@Z @26262 NONAME
@@ -26488,6 +26541,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@H235_NonStandardParameter@@UBE?AW4Comparison@PObject@@ABV3@@Z @26273 NONAME
     ?CompareObjectMemoryDirect@H235_Params@@UBE?AW4Comparison@PObject@@ABV3@@Z @26274 NONAME
     ?CompareObjectMemoryDirect@H235_Password@@UBE?AW4Comparison@PObject@@ABV3@@Z @26275 NONAME
+    ?CompareObjectMemoryDirect@H235_ProfileElement@@UBE?AW4Comparison@PObject@@ABV3@@Z @40138 NONAME
     ?CompareObjectMemoryDirect@H235_PwdCertToken@@UBE?AW4Comparison@PObject@@ABV3@@Z @26276 NONAME
     ?CompareObjectMemoryDirect@H235_RandomVal@@UBE?AW4Comparison@PObject@@ABV3@@Z @26277 NONAME
     ?CompareObjectMemoryDirect@H235_ReturnSig@@UBE?AW4Comparison@PObject@@ABV3@@Z @26278 NONAME
@@ -27621,6 +27675,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@IAX2RegProcessor@@UBE?AW4Comparison@PObject@@ABV3@@Z @39219 NONAME
     ?CompareObjectMemoryDirect@IAX2Remote@@UBE?AW4Comparison@PObject@@ABV3@@Z @27405 NONAME
     ?CompareObjectMemoryDirect@IAX2SoundList@@UBE?AW4Comparison@PObject@@ABV3@@Z @27406 NONAME
+    ?CompareObjectMemoryDirect@IAX2SpecialProcessor@@UBE?AW4Comparison@PObject@@ABV3@@Z @40139 NONAME
     ?CompareObjectMemoryDirect@IAX2Transmit@@UBE?AW4Comparison@PObject@@ABV3@@Z @27407 NONAME
     ?CompareObjectMemoryDirect@IAX2WaitingForAck@@UBE?AW4Comparison@PObject@@ABV3@@Z @27408 NONAME
     ?CompareObjectMemoryDirect@MCS_ArrayOf_ChannelAttributes@@UBE?AW4Comparison@PObject@@ABV3@@Z @27409 NONAME
@@ -28200,10 +28255,12 @@ EXPORTS
     ?CreateObject@H225_UnregRejectReason@@UAEHXZ @27970 NONAME
     ?CreateObject@H225_UnregRequestReason@@UAEHXZ @27971 NONAME
     ?CreateObject@H225_UseSpecifiedTransport@@UAEHXZ @27972 NONAME
+    ?CreateObject@H235_ArrayOf_ProfileElement@@UBEPAVPASN_Object@@XZ @40140 NONAME
     ?CreateObject@H235_AuthenticationBES@@UAEHXZ @27973 NONAME
     ?CreateObject@H235_AuthenticationMechanism@@UAEHXZ @27974 NONAME
     ?CreateObject@H235_CryptoToken@@UAEHXZ @27975 NONAME
     ?CreateObject@H235_ECKASDH@@UAEHXZ @27976 NONAME
+    ?CreateObject@H235_Element@@UAEHXZ @40141 NONAME
     ?CreateObject@H235_H235Key@@UAEHXZ @27977 NONAME
     ?CreateObject@H245_AlternativeCapabilitySet@@UBEPAVPASN_Object@@XZ @27978 NONAME
     ?CreateObject@H245_ArrayOf_AlternativeCapabilitySet@@UBEPAVPASN_Object@@XZ @27979 NONAME
@@ -28879,6 +28936,7 @@ EXPORTS
     ?Decode@H235_KeySyncMaterial@@UAEHAAVPASN_Stream@@@Z @28645 NONAME
     ?Decode@H235_NonStandardParameter@@UAEHAAVPASN_Stream@@@Z @28646 NONAME
     ?Decode@H235_Params@@UAEHAAVPASN_Stream@@@Z @28647 NONAME
+    ?Decode@H235_ProfileElement@@UAEHAAVPASN_Stream@@@Z @40142 NONAME
     ?Decode@H235_ReturnSig@@UAEHAAVPASN_Stream@@@Z @28648 NONAME
     ?Decode@H235_TypedCertificate@@UAEHAAVPASN_Stream@@@Z @28649 NONAME
     ?Decode@H235_V3KeySyncMaterial@@UAEHAAVPASN_Stream@@@Z @28650 NONAME
@@ -29734,6 +29792,7 @@ EXPORTS
     ?Encode@H235_KeySyncMaterial@@UBEXAAVPASN_Stream@@@Z @29497 NONAME
     ?Encode@H235_NonStandardParameter@@UBEXAAVPASN_Stream@@@Z @29498 NONAME
     ?Encode@H235_Params@@UBEXAAVPASN_Stream@@@Z @29499 NONAME
+    ?Encode@H235_ProfileElement@@UBEXAAVPASN_Stream@@@Z @40143 NONAME
     ?Encode@H235_ReturnSig@@UBEXAAVPASN_Stream@@@Z @29500 NONAME
     ?Encode@H235_TypedCertificate@@UBEXAAVPASN_Stream@@@Z @29501 NONAME
     ?Encode@H235_V3KeySyncMaterial@@UBEXAAVPASN_Stream@@@Z @29502 NONAME
@@ -30399,6 +30458,7 @@ EXPORTS
     ?First@RTP_SessionManager@@QAEPAVRTP_Session@@XZ @30156 NONAME
     ?Flush@VoipBlasterInterface@@QAEXVPTimeInterval@@@Z @30157 NONAME
     ?ForwardCall@H323Connection@@UAEHABVPString@@@Z @30158 NONAME
+    ?ForwardCall@IAX2Connection@@UAEHABVPString@@@Z @40144 NONAME
     ?ForwardCall@OpalConnection@@UAEHABVPString@@@Z @30159 NONAME
     ?ForwardCall@SIPConnection@@UAEHABVPString@@@Z @30160 NONAME
     ?ForwardConnection@H323EndPoint@@UAEHAAVH323Connection@@ABVPString@@ABVH323SignalPDU@@@Z @30161 NONAME
@@ -31048,6 +31108,7 @@ EXPORTS
     ?GetClass@H235Authenticators@@UBEPBDI@Z @30797 NONAME
     ?GetClass@H235AuthProcedure1@@UBEPBDI@Z @30798 NONAME
     ?GetClass@H235AuthSimpleMD5@@UBEPBDI@Z @30799 NONAME
+    ?GetClass@H235_ArrayOf_ProfileElement@@UBEPBDI@Z @40145 NONAME
     ?GetClass@H235_AuthenticationBES@@UBEPBDI@Z @30800 NONAME
     ?GetClass@H235_AuthenticationMechanism@@UBEPBDI@Z @30801 NONAME
     ?GetClass@H235_ChallengeString@@UBEPBDI@Z @30802 NONAME
@@ -31062,6 +31123,7 @@ EXPORTS
     ?GetClass@H235_ECKASDH_eckasdh2@@UBEPBDI@Z @30811 NONAME
     ?GetClass@H235_ECKASDH_eckasdhp@@UBEPBDI@Z @30812 NONAME
     ?GetClass@H235_ECpoint@@UBEPBDI@Z @30813 NONAME
+    ?GetClass@H235_Element@@UBEPBDI@Z @40146 NONAME
     ?GetClass@H235_EncodedGeneralToken@@UBEPBDI@Z @30814 NONAME
     ?GetClass@H235_EncodedKeySignedMaterial@@UBEPBDI@Z @30815 NONAME
     ?GetClass@H235_EncodedKeySyncMaterial@@UBEPBDI@Z @30816 NONAME
@@ -31078,6 +31140,7 @@ EXPORTS
     ?GetClass@H235_NonStandardParameter@@UBEPBDI@Z @30827 NONAME
     ?GetClass@H235_Params@@UBEPBDI@Z @30828 NONAME
     ?GetClass@H235_Password@@UBEPBDI@Z @30829 NONAME
+    ?GetClass@H235_ProfileElement@@UBEPBDI@Z @40147 NONAME
     ?GetClass@H235_PwdCertToken@@UBEPBDI@Z @30830 NONAME
     ?GetClass@H235_RandomVal@@UBEPBDI@Z @30831 NONAME
     ?GetClass@H235_ReturnSig@@UBEPBDI@Z @30832 NONAME
@@ -32211,6 +32274,7 @@ EXPORTS
     ?GetClass@IAX2RegProcessor@@UBEPBDI@Z @39228 NONAME
     ?GetClass@IAX2Remote@@UBEPBDI@Z @31959 NONAME
     ?GetClass@IAX2SoundList@@UBEPBDI@Z @31960 NONAME
+    ?GetClass@IAX2SpecialProcessor@@UBEPBDI@Z @40148 NONAME
     ?GetClass@IAX2Transmit@@UBEPBDI@Z @31961 NONAME
     ?GetClass@IAX2WaitingForAck@@UBEPBDI@Z @31962 NONAME
     ?GetClass@MCS_ArrayOf_ChannelAttributes@@UBEPBDI@Z @31963 NONAME
@@ -32729,6 +32793,7 @@ EXPORTS
     ?GetDataLength@H235_KeySyncMaterial@@UBEHXZ @32474 NONAME
     ?GetDataLength@H235_NonStandardParameter@@UBEHXZ @32475 NONAME
     ?GetDataLength@H235_Params@@UBEHXZ @32476 NONAME
+    ?GetDataLength@H235_ProfileElement@@UBEHXZ @40149 NONAME
     ?GetDataLength@H235_ReturnSig@@UBEHXZ @32477 NONAME
     ?GetDataLength@H235_TypedCertificate@@UBEHXZ @32478 NONAME
     ?GetDataLength@H235_V3KeySyncMaterial@@UBEHXZ @32479 NONAME
@@ -33612,6 +33677,7 @@ EXPORTS
     ?GetMainType@H323DataCapability@@UBE?AW4MainTypes@H323Capability@@XZ @33353 NONAME
     ?GetMainType@H323VideoCapability@@UBE?AW4MainTypes@H323Capability@@XZ @33354 NONAME
     ?GetMainType@H323_UserInputCapability@@UBE?AW4MainTypes@H323Capability@@XZ @33355 NONAME
+    ?GetManager@OpalCall@@QBEAAVOpalManager@@XZ @40150 NONAME
     ?GetManager@OpalEndPoint@@QBEAAVOpalManager@@XZ @33356 NONAME
     ?GetMarker@RTP_DataFrame@@QBEHXZ @33357 NONAME
     ?GetMasterSlaveDeterminationRetries@H323EndPoint@@QBEIXZ @33358 NONAME
@@ -33861,6 +33927,7 @@ EXPORTS
     ?GetRemoteControlPort@RTP_UDP@@QBEGXZ @33596 NONAME
     ?GetRemoteDataPort@RTP_UDP@@QBEGXZ @33597 NONAME
     ?GetRemoteId@H235Authenticator@@QBEABVPString@@XZ @33598 NONAME
+    ?GetRemoteInfo@IAX2Connection@@QAEAAVIAX2Remote@@XZ @40151 NONAME
     ?GetRemoteInfo@IAX2Frame@@QAEAAVIAX2Remote@@XZ @33600 NONAME
     ?GetRemoteInfo@IAX2Processor@@QAEAAVIAX2Remote@@XZ @33601 NONAME
     ?GetRemotePartyAddress@OpalConnection@@QBEABVPString@@XZ @33602 NONAME
@@ -34764,6 +34831,7 @@ EXPORTS
     ?InternalIsDescendant@H235Authenticators@@UBEHPBD@Z @34495 NONAME
     ?InternalIsDescendant@H235AuthProcedure1@@UBEHPBD@Z @34496 NONAME
     ?InternalIsDescendant@H235AuthSimpleMD5@@UBEHPBD@Z @34497 NONAME
+    ?InternalIsDescendant@H235_ArrayOf_ProfileElement@@UBEHPBD@Z @40152 NONAME
     ?InternalIsDescendant@H235_AuthenticationBES@@UBEHPBD@Z @34498 NONAME
     ?InternalIsDescendant@H235_AuthenticationMechanism@@UBEHPBD@Z @34499 NONAME
     ?InternalIsDescendant@H235_ChallengeString@@UBEHPBD@Z @34500 NONAME
@@ -34778,6 +34846,7 @@ EXPORTS
     ?InternalIsDescendant@H235_ECKASDH_eckasdh2@@UBEHPBD@Z @34509 NONAME
     ?InternalIsDescendant@H235_ECKASDH_eckasdhp@@UBEHPBD@Z @34510 NONAME
     ?InternalIsDescendant@H235_ECpoint@@UBEHPBD@Z @34511 NONAME
+    ?InternalIsDescendant@H235_Element@@UBEHPBD@Z @40153 NONAME
     ?InternalIsDescendant@H235_EncodedGeneralToken@@UBEHPBD@Z @34512 NONAME
     ?InternalIsDescendant@H235_EncodedKeySignedMaterial@@UBEHPBD@Z @34513 NONAME
     ?InternalIsDescendant@H235_EncodedKeySyncMaterial@@UBEHPBD@Z @34514 NONAME
@@ -34794,6 +34863,7 @@ EXPORTS
     ?InternalIsDescendant@H235_NonStandardParameter@@UBEHPBD@Z @34525 NONAME
     ?InternalIsDescendant@H235_Params@@UBEHPBD@Z @34526 NONAME
     ?InternalIsDescendant@H235_Password@@UBEHPBD@Z @34527 NONAME
+    ?InternalIsDescendant@H235_ProfileElement@@UBEHPBD@Z @40154 NONAME
     ?InternalIsDescendant@H235_PwdCertToken@@UBEHPBD@Z @34528 NONAME
     ?InternalIsDescendant@H235_RandomVal@@UBEHPBD@Z @34529 NONAME
     ?InternalIsDescendant@H235_ReturnSig@@UBEHPBD@Z @34530 NONAME
@@ -35927,6 +35997,7 @@ EXPORTS
     ?InternalIsDescendant@IAX2RegProcessor@@UBEHPBD@Z @39246 NONAME
     ?InternalIsDescendant@IAX2Remote@@UBEHPBD@Z @35657 NONAME
     ?InternalIsDescendant@IAX2SoundList@@UBEHPBD@Z @35658 NONAME
+    ?InternalIsDescendant@IAX2SpecialProcessor@@UBEHPBD@Z @40155 NONAME
     ?InternalIsDescendant@IAX2Transmit@@UBEHPBD@Z @35659 NONAME
     ?InternalIsDescendant@IAX2WaitingForAck@@UBEHPBD@Z @35660 NONAME
     ?InternalIsDescendant@MCS_ArrayOf_ChannelAttributes@@UBEHPBD@Z @35661 NONAME
@@ -36605,6 +36676,7 @@ EXPORTS
     ?OnNewDescriptor@H323PeerElement@@UAEXABVH323PeerElementDescriptor@@@Z @36315 NONAME
     ?OnNoResponseTimeout@IAX2CallProcessor@@MAEXXZ @39259 NONAME
     ?OnNoResponseTimeout@IAX2RegProcessor@@MAEXXZ @39260 NONAME
+    ?OnNoResponseTimeout@IAX2SpecialProcessor@@MAEXXZ @40156 NONAME
     ?OnNoResponseTimeoutStart@IAX2Processor@@EAEXAAVPTimer@@H@Z @39261 NONAME
     ?OnOpen@OpalTransportTCP@@MAEHXZ @36317 NONAME
     ?OnOpen@OpalTransportTCPS@@UAEHXZ @40084 NONAME
@@ -36668,7 +36740,7 @@ EXPORTS
     ?OnReceivedAckPDU@H323_T120Channel@@UAEHABVH245_OpenLogicalChannelAck@@@Z @36375 NONAME
     ?onReceivedAdmissionReject@H4502Handler@@UAEXH@Z @36376 NONAME
     ?OnReceivedAlerting@H323Connection@@UAEHABVH323SignalPDU@@@Z @36377 NONAME
-    ?OnReceiveData@RTP_Session@@UAE?AW4SendReceiveStatus@1@ABVRTP_DataFrame@@@Z @36378 NONAME
+    ?OnReceiveData@RTP_Session@@UAE?AW4SendReceiveStatus@1@AAVRTP_DataFrame@@@Z @40157 NONAME
     ?OnReceivedAuthenticationRequired@SIPConnection@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36379 NONAME
     ?OnReceivedAuthenticationRequired@SIPEndPoint@@UAEXAAVSIPTransaction@@AAVSIP_PDU@@@Z @36380 NONAME
     ?OnReceivedBYE@SIPConnection@@UAEXAAVSIP_PDU@@@Z @36381 NONAME
@@ -37524,6 +37596,7 @@ EXPORTS
     ?PrintOn@H235_KeySyncMaterial@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37226 NONAME
     ?PrintOn@H235_NonStandardParameter@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37227 NONAME
     ?PrintOn@H235_Params@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37228 NONAME
+    ?PrintOn@H235_ProfileElement@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @40158 NONAME
     ?PrintOn@H235_ReturnSig@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37229 NONAME
     ?PrintOn@H235_TypedCertificate@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37230 NONAME
     ?PrintOn@H235_V3KeySyncMaterial@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37231 NONAME
@@ -38088,6 +38161,7 @@ EXPORTS
     ?PrintOn@IAX2RegProcessor@@MBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @39267 NONAME
     ?PrintOn@IAX2Remote@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37790 NONAME
     ?PrintOn@IAX2SequenceNumbers@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37791 NONAME
+    ?PrintOn@IAX2SpecialProcessor@@MBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @40159 NONAME
     ?PrintOn@IAX2WaitingForAck@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37792 NONAME
     ?PrintOn@MCS_AUcf@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37793 NONAME
     ?PrintOn@MCS_AUrq@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @37794 NONAME
@@ -38190,6 +38264,7 @@ EXPORTS
     ?ProcessFirstPDU@H460_FeatureSet@@QAEHABVH225_FeatureSet@@@Z @37890 NONAME
     ?ProcessFullFrame@IAX2CallProcessor@@MAEXAAVIAX2FullFrame@@@Z @39269 NONAME
     ?ProcessFullFrame@IAX2RegProcessor@@MAEXAAVIAX2FullFrame@@@Z @39270 NONAME
+    ?ProcessFullFrame@IAX2SpecialProcessor@@MAEXAAVIAX2FullFrame@@@Z @40160 NONAME
     ?ProcessIaxCmdAccept@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39271 NONAME
     ?ProcessIaxCmdAck@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39272 NONAME
     ?ProcessIaxCmdAuthRep@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39273 NONAME
@@ -38207,7 +38282,7 @@ EXPORTS
     ?ProcessIaxCmdNew@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39285 NONAME
     ?ProcessIaxCmdPage@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39286 NONAME
     ?ProcessIaxCmdPing@IAX2Processor@@MAEXPAVIAX2FullFrameProtocol@@@Z @39287 NONAME
-    ?ProcessIaxCmdPoke@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39288 NONAME
+    ?ProcessIaxCmdPoke@IAX2SpecialProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @40161 NONAME
     ?ProcessIaxCmdPong@IAX2Processor@@MAEXPAVIAX2FullFrameProtocol@@@Z @39289 NONAME
     ?ProcessIaxCmdProvision@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39290 NONAME
     ?ProcessIaxCmdQuelch@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39291 NONAME
@@ -38234,6 +38309,7 @@ EXPORTS
     ?ProcessList@IAX2IncomingEthernetFrames@@QAEXXZ @37931 NONAME
     ?ProcessLists@IAX2CallProcessor@@MAEXXZ @39312 NONAME
     ?ProcessLists@IAX2RegProcessor@@MAEXXZ @39313 NONAME
+    ?ProcessLists@IAX2SpecialProcessor@@MAEXXZ @40162 NONAME
     ?ProcessLists@IAX2Transmit@@QAEXXZ @37933 NONAME
     ?ProcessNetworkFrame@IAX2CallProcessor@@IAEXPAVIAX2Frame@@@Z @39314 NONAME
     ?ProcessNetworkFrame@IAX2CallProcessor@@IAEXPAVIAX2FullFrame@@@Z @39315 NONAME
@@ -38250,6 +38326,8 @@ EXPORTS
     ?ProcessNetworkFrame@IAX2CallProcessor@@MAEXPAVIAX2MiniFrame@@@Z @39326 NONAME
     ?ProcessNetworkFrame@IAX2RegProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @39327 NONAME
     ?ProcessNetworkFrame@IAX2RegProcessor@@MAEXPAVIAX2MiniFrame@@@Z @39328 NONAME
+    ?ProcessNetworkFrame@IAX2SpecialProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @40163 NONAME
+    ?ProcessNetworkFrame@IAX2SpecialProcessor@@MAEXPAVIAX2MiniFrame@@@Z @40164 NONAME
     ?ProcessNetworkPacket@IAX2Frame@@UAEHXZ @37947 NONAME
     ?ProcessNetworkPacket@IAX2FullFrame@@UAEHXZ @37948 NONAME
     ?ProcessNetworkPacket@IAX2MiniFrame@@UAEHXZ @37949 NONAME
@@ -38540,8 +38618,11 @@ EXPORTS
     ?SendText@IAX2CallProcessor@@QAEXABVPString@@@Z @39353 NONAME
     ?SendTextMessage@IAX2CallProcessor@@IAEXAAVPString@@@Z @39354 NONAME
     ?SendTone@OpalRFC2833Proto@@UAEHDI@Z @38224 NONAME
+    ?SendTransfer@IAX2CallProcessor@@QAEXABVPString@@0@Z @40165 NONAME
+    ?SendTransferMessage@IAX2CallProcessor@@IAEXXZ @40166 NONAME
     ?SendUnQuelchMessage@IAX2CallProcessor@@IAEXXZ @39355 NONAME
     ?SendUnsolicitedIRR@H323Gatekeeper@@IAEHAAVH225_InfoRequestResponse@@AAVH323RasPDU@@@Z @38226 NONAME
+    ?SendUnsupportedFrame@IAX2Processor@@IAEXPAVIAX2FullFrame@@@Z @40167 NONAME
     ?SendUpdateDescriptor@H323PeerElement@@IAE?AW4Error@1@AAVH501PDU@@ABVH323TransportAddress@@PAVH323PeerElementDescriptor@@W4Choices@H501_UpdateInformation_updateType@@@Z @38227 NONAME
     ?SendUpdateDescriptorByAddr@H323PeerElement@@QAE?AW4Error@1@ABVH323TransportAddress@@PAVH323PeerElementDescriptor@@W4Choices@H501_UpdateInformation_updateType@@@Z @38228 NONAME
     ?SendUpdateDescriptorByID@H323PeerElement@@QAE?AW4Error@1@ABVOpalGloballyUniqueID@@PAVH323PeerElementDescriptor@@W4Choices@H501_UpdateInformation_updateType@@@Z @38229 NONAME
@@ -38931,7 +39012,6 @@ EXPORTS
     ?SetSoundChannelRecordDevice@OpalPCSSEndPoint@@UAEHABVPString@@@Z @38606 NONAME
     ?SetSourceCallNumber@IAX2Remote@@QAEXH@Z @38607 NONAME
     ?SetSourceTerminalAddress@H224_Frame@@QAEXG@Z @38608 NONAME
-    ?SetSpecialPackets@IAX2Processor@@QAEXH@Z @38609 NONAME
     ?SetSTUNServer@OpalManager@@QAE?AW4NatTypes@PSTUNClient@@ABVPString@@@Z @38610 NONAME
     ?SetSubClass@IAX2FullFrame@@QAEXH@Z @38611 NONAME
     ?SetSubject@SIPMIMEInfo@@QAEXABVPString@@@Z @38612 NONAME
@@ -39155,6 +39235,7 @@ EXPORTS
     ?TransferCall@H323EndPoint@@QAEXABVPString@@00@Z @38826 NONAME
     ?TransferCall@H4502Handler@@QAEXABVPString@@0@Z @38827 NONAME
     ?TransferConnection@H323Connection@@UAEXABVPString@@0@Z @38828 NONAME
+    ?TransferConnection@IAX2Connection@@UAEXABVPString@@0@Z @40168 NONAME
     ?TransferConnection@OpalConnection@@UAEXABVPString@@0@Z @38829 NONAME
     ?TransferConnection@SIPConnection@@UAEXABVPString@@0@Z @38830 NONAME
     ?TranslateAliasAddress@H323GatekeeperCall@@UAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@AAH@Z @38831 NONAME
