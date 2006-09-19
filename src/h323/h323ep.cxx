@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2057  2006/08/29 00:55:51  csoutheren
+ * Revision 1.2058  2006/09/19 01:52:17  csoutheren
+ * Fixed parsing for explicit address and ports when using a GK
+ *
+ * Revision 2.56  2006/08/29 00:55:51  csoutheren
  * Fixed problem with parsing aliases when using GKs
  *
  * Revision 2.55  2006/08/21 05:29:25  csoutheren
@@ -1647,10 +1650,18 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
 
   // We have a gk and user did not explicitly supply a host, so lets
   // do a check to see if it is an IP address 
-  PIPSocket::Address ip(alias);
-  if (ip.IsValid()) {
-    alias = PString::Empty();
-    address = H323TransportAddress(ip, GetDefaultSignalPort());
+  if (alias.FindRegEx("^[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*\\.[0-9][0-9]*") != P_MAX_INDEX) {
+    PINDEX colon = alias.Find(':');
+    WORD port = GetDefaultSignalPort();
+    if (colon != P_MAX_INDEX) {
+      port = (WORD)alias.Mid(colon+1).AsInteger();
+      alias = alias.Left(colon);
+    }
+    PIPSocket::Address ip(alias);
+    if (ip.IsValid()) {
+      alias = PString::Empty();
+      address = H323TransportAddress(ip, port);
+    }
   }
 
   return TRUE;
