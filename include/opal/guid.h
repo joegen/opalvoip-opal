@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.h,v $
- * Revision 1.2006  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2007  2006/09/20 05:07:22  csoutheren
+ * Changed to use PGloballyUniqueID
+ *
+ * Revision 2.5  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.4  2004/03/11 06:54:27  csoutheren
@@ -65,96 +68,9 @@
 #pragma interface
 #endif
 
-#include <opal/buildopts.h>
+#include <ptclib/guid.h>
 
-class PASN_OctetString;
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-/**Globally unique ID definition.
-   This implements a 128 bit globally unique ID as required by many protocols
-   and software systems. The value is constructed in such a way as to make a
-   duplicate anywhere in the world highly unlikely.
- */
-class OpalGloballyUniqueID : public PBYTEArray
-{
-    PCLASSINFO(OpalGloballyUniqueID, PBYTEArray);
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new ID.
-       The ID created with this will be initialised to a globally unique ID
-       as per specification.
-     */
-    OpalGloballyUniqueID();
-
-    /**Create an ID from a C string of hex (as produced by AsString()).
-       A useful construct is to construct a OpalGloballyUniqueID() with
-       NULL which produces an all zero GUID, etectable with the isNULL()
-       function.
-     */
-    OpalGloballyUniqueID(
-      const char * cstr    ///<  C string to convert
-    );
-    /**Create an ID from a PString of hex (as produced by AsString()).
-     */
-    OpalGloballyUniqueID(
-      const PString & str  ///<  String of hex to convert
-    );
-    /**Create an ID from an octet string in an ASN PDU.
-     */
-    OpalGloballyUniqueID(
-      const PASN_OctetString & ostr  ///<  Octet string from ASN to convert
-    );
-  //@}
-
-  /**@name Overrides from PObject */
-  //@{
-    /**Standard stream print function.
-       The PObject class has a << operator defined that calls this function
-       polymorphically.
-      */
-    virtual void PrintOn(
-      ostream & strm    ///<  Stream to output text representation
-    ) const;
-
-    /**Standard stream read function.
-       The PObject class has a >> operator defined that calls this function
-       polymorphically.
-      */
-    virtual void ReadFrom(
-      istream & strm    ///<  Stream to output text representation
-    );
-
-    /**Create a clone of the ID.
-       The duplicate ID has the same value as the source. Required for having
-       this object as a key in dictionaries.
-      */
-    virtual PObject * Clone() const;
-
-    /**Get the hash value for the ID.
-       Creates a number based on the ID value for use in the hash table of
-       a dictionary. Required for having this object as a key in dictionaries.
-      */
-    virtual PINDEX HashFunction() const;
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Convert the ID to human readable string.
-      */
-    PString AsString() const;
-
-    /**Test if the GUID is null, ie consists of all zeros.
-      */
-    BOOL IsNULL() const;
-
-    BOOL operator!() const { return !IsNULL(); }
-  //@}
-};
-
+#define OpalGloballyUniqueID PGloballyUniqueID
 
 #endif // __OPAL_GUID_H
 
