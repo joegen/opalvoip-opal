@@ -5,7 +5,7 @@
 //
 
 #ifdef P_USE_PRAGMA
-#pragma implementation "asn/h235.h"
+#pragma implementation "h235.h"
 #endif
 
 #include <ptlib.h>
