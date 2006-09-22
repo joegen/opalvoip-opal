@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2016  2006/07/24 14:03:39  csoutheren
+ * Revision 1.2017  2006/09/22 00:58:41  csoutheren
+ * Fix usages of PAtomicInteger
+ *
+ * Revision 2.15  2006/07/24 14:03:39  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.11.4.2  2006/04/19 07:52:30  csoutheren
@@ -153,7 +156,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
 {
   UpdateOutputMediaFormat(outputMediaFormat);
   fillLevel = 5;
-  updatePictureCount = 0;
+  updatePictureCount.SetValue(0);
 }
 
 
