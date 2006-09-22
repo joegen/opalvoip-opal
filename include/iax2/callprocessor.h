@@ -26,6 +26,9 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.3  2006/09/22 00:33:19  csoutheren
+ *  Changed PAtomicInteger to BOOL
+ *
  *  Revision 1.2  2006/09/11 03:08:51  dereksmithies
  *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  *  improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -460,10 +463,10 @@ class IAX2CallProcessor : public IAX2Processor
   SafeStrings hangList;
   
   /**Flag to indicate we have to send hold call*/
-  PAtomicInteger holdCall;
+  BOOL holdCall;
   
   /**Flag to indicate we have to send hold release*/
-  PAtomicInteger holdReleaseCall;
+  BOOL holdReleaseCall;
   
   /**Array of sound packets read from the audio device, and is about
      to be transmitted to the remote node */

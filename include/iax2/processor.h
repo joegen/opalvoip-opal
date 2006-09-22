@@ -26,6 +26,9 @@
  *
  * 
  *  $Log: processor.h,v $
+ *  Revision 1.11  2006/09/22 00:33:19  csoutheren
+ *  Changed PAtomicInteger to BOOL
+ *
  *  Revision 1.10  2006/09/11 03:08:51  dereksmithies
  *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  *  improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -272,7 +275,7 @@ class IAX2Processor : public PThread
   PSyncPoint activate;
   
   /**Flag to indicate, end this thread */
-  PAtomicInteger endThread;
+  BOOL endThread;
   
   /**Status of encryption for this processor - by default, no encryption */
   IAX2Encryption encryption;
