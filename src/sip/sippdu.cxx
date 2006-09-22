@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2111  2006/08/28 00:42:25  csoutheren
+ * Revision 1.2112  2006/09/22 00:58:41  csoutheren
+ * Fix usages of PAtomicInteger
+ *
+ * Revision 2.110  2006/08/28 00:42:25  csoutheren
  * Applied 1545201 - SIPTransaction - control of access to SIPConnection
  * Thanks to Drazen Dimoti
  *
@@ -1282,7 +1285,7 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 
   qopAuth = qopAuthInt = FALSE;
   cnonce.MakeEmpty();
-  nonceCount = 1;
+  nonceCount.SetValue(1);
 
   if (auth.Find("digest") != 0) {
     PTRACE(1, "SIP\tUnknown authentication type");
