@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2044  2006/08/12 04:09:24  csoutheren
+ * Revision 1.2045  2006/09/22 00:58:40  csoutheren
+ * Fix usages of PAtomicInteger
+ *
+ * Revision 2.43  2006/08/12 04:09:24  csoutheren
  * Applied 1538497 - Add the PING method
  * Thanks to Paul Rolland
  *
@@ -473,6 +476,24 @@ class SIPAuthentication : public PObject
       const PString & password = PString::Empty()
     );
 
+    SIPAuthentication & operator =(const SIPAuthentication & auth)
+    {
+      isProxy   = auth.isProxy;
+      authRealm = auth.authRealm;
+      username  = auth.username;
+      password  = auth.password;
+      nonce     = auth.nonce;
+      algorithm = auth.algorithm;
+		  opaque    = auth.opaque;
+              
+		  qopAuth    = auth.qopAuth;
+		  qopAuthInt = auth.qopAuthInt;
+		  cnonce     = auth.cnonce;
+		  nonceCount.SetValue(auth.nonceCount);
+
+      return *this;
+    }
+
     BOOL Parse(
       const PCaselessString & auth,
       BOOL proxy
@@ -508,12 +529,12 @@ class SIPAuthentication : public PObject
     PString   password;
     PString   nonce;
     Algorithm algorithm;
-		PString   opaque;
+    PString   opaque;
 
-		BOOL qopAuth;
-		BOOL qopAuthInt;
-		PString cnonce;
-		mutable PAtomicInteger nonceCount;
+    BOOL qopAuth;
+    BOOL qopAuthInt;
+    PString cnonce;
+    mutable PAtomicInteger nonceCount;
 };
 
 
