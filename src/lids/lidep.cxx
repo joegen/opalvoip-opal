@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2032  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2033  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.31  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -269,7 +272,10 @@ OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
                                                        const PString & number)
 {
   PTRACE(3, "LID EP\tCreateConnection call = " << call << " line = " << line << " number = " << number);
-  return new OpalLineConnection(call, *this, line, number);
+  OpalLineConnection * conn = new OpalLineConnection(call, *this, line, number);
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 

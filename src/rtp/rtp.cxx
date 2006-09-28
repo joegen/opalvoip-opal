@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2040  2006/09/08 05:12:26  csoutheren
+ * Revision 1.2041  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.39  2006/09/08 05:12:26  csoutheren
  * Reverted previous patch as this breaks H.323 calls
  *
  * Revision 2.38  2006/09/05 06:18:23  csoutheren
@@ -491,6 +494,19 @@ const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
 
 #define MIN_HEADER_SIZE 12
 
+namespace PWLibStupidLinkerHacks {
+extern int opalLoader;
+
+static class InstantiateMe
+{
+  public:
+    InstantiateMe()
+    { 
+      opalLoader = 1; 
+    }
+} instance;
+
+}; // namespace PWLibStupidLinkerHacks
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2040  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2041  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.39  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -218,6 +221,8 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
   PTRACE(3, "OpalEP\tCreated endpoint: " << prefixName);
+
+  defaultSecurityMode = mgr.GetDefaultSecurityMode();
 }
 
 
@@ -552,6 +557,11 @@ OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & conne
 OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
 {
   return manager.CreateH281ProtocolHandler(h224Handler);
+}
+
+void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
+{
+  call.GetManager().OnNewConnection(conn);
 }
 
 #if P_SSL

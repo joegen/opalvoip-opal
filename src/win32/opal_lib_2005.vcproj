@@ -1990,6 +1990,10 @@
 						/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="..\rtp\srtp.cxx"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="T.120 Sources"
@@ -2646,6 +2650,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\rtp\rtp.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\rtp\srtp.h"
 					>
 				</File>
 			</Filter>

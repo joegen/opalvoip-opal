@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2069  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2070  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.68  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.67  2006/08/28 08:07:29  csoutheren
@@ -1746,6 +1749,9 @@ BOOL OpalTransportUDP::Close()
 {
   PTRACE(4, "OpalUDP\tClose");
   PWaitAndSignal lock(connectSocketsMutex);
+
+  // make sure iostream reads and write fail from now on
+  clear(badbit);
 
   if (socketOwnedByListener) {
     channelPointerMutex.StartWrite();

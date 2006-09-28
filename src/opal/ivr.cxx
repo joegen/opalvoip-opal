@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2014  2006/06/27 13:14:17  csoutheren
+ * Revision 1.2015  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.13  2006/06/27 13:14:17  csoutheren
  * Patch 1353831 - Fixed ivr with h323 faststart
  * Thanks to Frederich Heem
  *
@@ -163,7 +166,10 @@ OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
                                                       void * userData,
                                                       const PString & vxml)
 {
-  return new OpalIVRConnection(call, *this, token, userData, vxml);
+  OpalIVRConnection * conn = new OpalIVRConnection(call, *this, token, userData, vxml);
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 
