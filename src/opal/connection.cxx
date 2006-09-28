@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2076  2006/09/13 00:22:53  csoutheren
+ * Revision 1.2077  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.75  2006/09/13 00:22:53  csoutheren
  * Fix reentrancy problems in Release
  *
  * Revision 2.74  2006/08/29 08:47:43  rjongbloed
@@ -473,7 +476,10 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   t120handler = NULL;
   t38handler = NULL;
+
   h224Handler = NULL;
+
+  securityMode = ep.GetDefaultSecurityMode();
 }
 
 OpalConnection::~OpalConnection()
@@ -1028,8 +1034,26 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   transport.GetRemoteAddress().GetIpAddress(remoteAddress);
   PSTUNClient * stun = manager.GetSTUN(remoteAddress);
 
-  // create an RTP session
-  RTP_UDP * rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
+  // create an RTP session or an SRTP session as appropriate
+  RTP_UDP * rtpSession = NULL;
+
+  if (!securityMode.IsEmpty()) {
+    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
+    if (parms == NULL) {
+      PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
+      return NULL;
+    }
+    rtpSession = parms->CreateRTPSession(sessionID, remoteIsNAT);
+    if (rtpSession == NULL) {
+      PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
+      delete parms;
+      return NULL;
+    }
+  }
+  else
+  {
+    rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
+  }
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
