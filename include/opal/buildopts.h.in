@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.19  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
  * Revision 1.18  2006/09/05 06:18:22  csoutheren
  * Start bringing in SRTP code for libSRTP
  *
@@ -193,6 +196,10 @@
 #define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/lib/libsrtp.lib"
 
 #endif
+#endif
+
+#if HAS_LIBSRTP
+#define OPAL_SRTP  1
 #endif
 
 /////////////////////////////////////////////////

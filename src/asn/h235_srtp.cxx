@@ -9,7 +9,7 @@
 #endif
 
 #include <ptlib.h>
-#include "h235_srtp.h"
+#include "asn/h235_srtp.h"
 
 #define new PNEW
 
@@ -307,13 +307,13 @@ H235_SRTP_ArrayOf_GenericData::H235_SRTP_ArrayOf_GenericData(unsigned tag, PASN_
 
 PASN_Object * H235_SRTP_ArrayOf_GenericData::CreateObject() const
 {
-  return new GenericData;
+  return new H225_GenericData;
 }
 
 
-GenericData & H235_SRTP_ArrayOf_GenericData::operator[](PINDEX i) const
+H225_GenericData & H235_SRTP_ArrayOf_GenericData::operator[](PINDEX i) const
 {
-  return (GenericData &)array[i];
+  return (H225_GenericData &)array[i];
 }
 
 

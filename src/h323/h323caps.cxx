@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2027  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2028  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.26  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -389,46 +392,6 @@ DEFINE_G711_CAPABILITY(H323_G711ALaw64Capability, H323_G711Capability::ALaw, Opa
 DEFINE_G711_CAPABILITY(H323_G711uLaw64Capability, H323_G711Capability::muLaw, OpalG711_ULAW_64K)
 
 #endif
-
-#if 0
-
-H323_REGISTER_CAPABILITY(H323_G728Capability, OPAL_G728);
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_G729Capability, OPAL_G729)
-{
-  return new H323_G729Capability(H323_G729Capability::e_Normal);
-}
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_G729CapabilityA, OPAL_G729A)
-{
-  return new H323_G729Capability(H323_G729Capability::e_AnnexA);
-}
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_G729CapabilityB, OPAL_G729B)
-{
-  return new H323_G729Capability(H323_G729Capability::e_AnnexB);
-}
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_G729CapabilityAB, OPAL_G729AB)
-{
-  return new H323_G729Capability(H323_G729Capability::e_AnnexA_AnnexB);
-}
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_G7231Capability_6k3, OPAL_G7231_6k3)
-{
-  return new H323_G7231Capability();
-}
-
-H323_REGISTER_CAPABILITY_FUNCTION(H323_G7231Capability_5k3, OPAL_G7231_5k3)
-{
-  return new H323_G7231Capability();
-}
-
-H323_REGISTER_CAPABILITY(H323_GSM0610Capability, OPAL_GSM0610);
-
-#endif
-
-#define new PNEW
 
 
 #if PTRACING
@@ -1781,9 +1744,12 @@ const char * const H323_UserInputCapability::SubTypeNames[NumSubTypes] = {
 };
 
 #define DECLARE_USER_INPUT_CLASS(type) \
-  H323_DECLARE_CAPABILITY_CLASS(H323_UserInputCapability_##type, H323_UserInputCapability) \
+class H323_UserInputCapability_##type : public H323_UserInputCapability \
+{ \
+  public: \
+    H323_UserInputCapability_##type() \
     : H323_UserInputCapability(H323_UserInputCapability::type) { } \
-  };\
+};\
 
 #define DEFINE_USER_INPUT(type) \
   DECLARE_USER_INPUT_CLASS(type) \
@@ -2515,8 +2481,10 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
   // Set the table of capabilities
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityTable);
 
+  // encode the capabilities
   PINDEX count = 0;
-  for (PINDEX i = 0; i < tableSize; i++) {
+  PINDEX i;
+  for (i = 0; i < tableSize; i++) {
     H323Capability & capability = table[i];
     if (capability.IsUsable(connection)) {
       pdu.m_capabilityTable.SetSize(count+1);

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2049  2006/06/21 23:43:27  csoutheren
+ * Revision 1.2050  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.48  2006/06/21 23:43:27  csoutheren
  * Fixed comment on OpalManager::SetTranslationAddress
  *
  * Revision 2.47  2006/06/21 04:54:15  csoutheren
@@ -1149,6 +1152,14 @@ class OpalManager : public PObject
     // needs to be public for gcc 3.4
     void GarbageCollection();
 
+    virtual void OnNewConnection(OpalConnection & conn);
+
+    virtual void SetDefaultSecurityMode(const PString & v)
+    { defaultSecurityMode = v; }
+
+    virtual PString GetDefaultSecurityMode() const 
+    { return defaultSecurityMode; }
+
   protected:
     // Configuration variables
     PString       defaultUserName;
@@ -1214,6 +1225,8 @@ class OpalManager : public PObject
     PThread    * garbageCollector;
     PSyncPoint   garbageCollectExit;
     PDECLARE_NOTIFIER(PThread, OpalManager, GarbageMain);
+
+    PString defaultSecurityMode;
 
   friend OpalCall::OpalCall(OpalManager & mgr);
   friend void OpalCall::OnReleased(OpalConnection & connection);

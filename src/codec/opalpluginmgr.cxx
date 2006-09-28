@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2010  2006/09/11 04:48:55  csoutheren
+ * Revision 1.2011  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.9  2006/09/11 04:48:55  csoutheren
  * Fixed problem with cloning plugin media formats
  *
  * Revision 2.8  2006/09/07 09:05:44  csoutheren
@@ -1453,6 +1456,15 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
 
   // cause the plugin manager to load all dynamic plugins
   pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), TRUE);
+
+#if OPAL_H323
+  // register the capabilities
+  while (capabilityCreateList.size() > 0) {
+    CapabilityCreateListType::iterator r = capabilityCreateList.begin();
+    RegisterCapability(r->encoderCodec, r->decoderCodec);
+    capabilityCreateList.erase(r);
+  }
+#endif
 }
 
 OpalPluginCodecManager::~OpalPluginCodecManager()
@@ -1750,7 +1762,14 @@ void OpalPluginCodecManager::RegisterPluginPair(
   }
 
 #if OPAL_H323
+  capabilityCreateList.push_back(CapabilityListCreateEntry(encoderCodec, decoderCodec));
+#endif
+}
 
+#if OPAL_H323
+
+void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec)
+{
   // add the capability
   H323CodecPluginCapabilityMapEntry * map = NULL;
 
@@ -1808,8 +1827,8 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
     }
   }
-#endif // OPAL_H323
 }
+#endif // OPAL_H323
 
 void OpalPluginCodecManager::AddFormat(const OpalMediaFormat & fmt)
 {
@@ -2561,34 +2580,6 @@ void OpalPluginCodecManager::Bootstrap()
 {
   if (++bootStrapCount != 1)
     return;
-
-#if defined(OPAL_AUDIO) || defined(OPAL_VIDEO)
-//  OpalMediaFormatList & mediaFormatList = OpalPluginCodecManager::GetMediaFormatList();
-#endif
-
-#if OPAL_AUDIO
-
-  //mediaFormatList += OpalMediaFormat(OpalG711uLaw);
-  //mediaFormatList += OpalMediaFormat(OpalG711ALaw);
-
-  //new OpalFixedCodecFactory<OpalG711ALaw64k_Encoder>::Worker(OpalG711ALaw64k_Encoder::GetFactoryName());
-  //new OpalFixedCodecFactory<OpalG711ALaw64k_Decoder>::Worker(OpalG711ALaw64k_Decoder::GetFactoryName());
-
-  //new OpalFixedCodecFactory<OpalG711uLaw64k_Encoder>::Worker(OpalG711uLaw64k_Encoder::GetFactoryName());
-  //new OpalFixedCodecFactory<OpalG711uLaw64k_Decoder>::Worker(OpalG711uLaw64k_Decoder::GetFactoryName());
-
-#endif // OPAL_AUDIO
-
-#if 0 //OPAL_VIDEO
-  // H.323 require an endpoint to have H.261 if it supports video
-  //mediaFormatList += OpalMediaFormat("H.261");
-
-#if RFC2190_AVCODEC
-  // only have H.263 if RFC2190 is loaded
-  //if (OpenH323_IsRFC2190Loaded())
-  //  mediaFormatList += OpalMediaFormat("RFC2190 H.263");
-#endif  // RFC2190_AVCODEC
-#endif  // OPAL_VIDEO
 }
 
 /////////////////////////////////////////////////////////////////////////////
