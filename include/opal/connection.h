@@ -22,10 +22,16 @@
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
- * Contributor(s): ______________________________________.
+ * Contributor(s): Post Increment
+ *     Portions of this code were written with the assistance of funding from
+ *     US Joint Forces Command Joint Concept Development & Experimentation (J9)
+ *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2062  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2063  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.61  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -1248,6 +1254,12 @@ class OpalConnection : public PSafeObject
     BOOL RemoteIsNAT() const
     { return remoteIsNAT; }
 
+    virtual void SetSecurityMode(const PString & v)
+    { securityMode = v; }
+
+    virtual PString GetSecurityMode() const 
+    { return securityMode; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1306,6 +1318,8 @@ class OpalConnection : public PSafeObject
     // added to the audio channel.
     PDTMFDecoder        dtmfDecoder;
 
+    PString securityMode;
+
     /**Set the phase of the connection.
        @param phaseToSet the phase to set
       */
@@ -1314,6 +1328,18 @@ class OpalConnection : public PSafeObject
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
+};
+
+class RTP_UDP;
+
+class OpalSecurityMode : public PObject
+{
+  PCLASSINFO(OpalSecurityMode, PObject);
+  public:
+    virtual RTP_UDP * CreateRTPSession(
+      unsigned id,          ///<  Session ID for RTP channel
+      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+    ) = 0;
 };
 
 

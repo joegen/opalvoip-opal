@@ -27,6 +27,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.3  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 1.2.2.3  2006/09/12 07:47:15  csoutheren
+ * Changed to use seperate incoming and outgoing keys
+ *
+ * Revision 1.2.2.2  2006/09/12 07:06:58  csoutheren
+ * More implementation of SRTP and general call security
+ *
+ * Revision 1.2.2.1  2006/09/08 06:23:28  csoutheren
+ * Implement initial support for SRTP media encryption and H.235-SRTP support
+ * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
+ * yet populate capabilities or respond to negotiations. This code to follow
+ *
  * Revision 1.2  2006/09/05 06:18:23  csoutheren
  * Start bringing in SRTP code for libSRTP
  *
@@ -43,107 +57,88 @@
 #endif
 
 #include <ptlib.h>
+#include <opal/buildopts.h>
 #include <rtp/rtp.h>
+#include <opal/connection.h>
+
+#if OPAL_SRTP
+
+namespace PWLibStupidLinkerHacks {
+  extern int libSRTPLoader;
+};
 
 ////////////////////////////////////////////////////////////////////
 //
 //  this class holds the parameters required for an SRTP session
 //
-//  Crypto functons are identified by key strings that may be elements
-//  PFactory<PCypher>. The following crypto functions will usually be implemented
-//        NULL, AES_128_ICM, AES_128_CBC
-//  The special string STRONGHOLD maps to the strongest cypher available
+//  Crypto modes are identified by key strings that are contained in PFactory<OpalSRTPParms>
+//  The following strings should be implemented:
 //
-//  Hash functons are identified by keys that may be elements
-//  PFactory<PMessageDigest>. The following hash functions will usually be implemented
-//        NULL, SHA1
-//  The special string STRONGHOLD maps to the strongest hash available
+//     AES_CM_128_HMAC_SHA1_80,
+//     AES_CM_128_HMAC_SHA1_32,
+//     AES_CM_128_NULL_AUTH,   
+//     NULL_CIPHER_HMAC_SHA1_80
+//     STRONGHOLD
 //
 
-class SRTPParms : public PObject
+class OpalSRTP_UDP;
+
+class OpalSRTPSecurityMode : public OpalSecurityMode
 {
-  PCLASSINFO(SRTPParms, PObject);
+  PCLASSINFO(OpalSRTPSecurityMode, OpalSecurityMode);
   public:
-    SRTPParms();
+    struct KeySalt {
+      KeySalt()                                                       { }
+      KeySalt(const BYTE * data, PINDEX dataLen) : key(data, dataLen) { }
+      PBYTEArray key;
+      PBYTEArray salt;
+    };
+    virtual BOOL SetOutgoingKey(const KeySalt & key) = 0;
+    virtual BOOL GetOutgoingKey(KeySalt & key) const = 0;
+    virtual BOOL SetOutgoingSSRC(DWORD ssrc) = 0;
+    virtual BOOL GetOutgoingSSRC(DWORD & ssrc) const = 0;
 
-    virtual BOOL SetSSRC(DWORD ssrc) = 0;
-    virtual BOOL GetSSRC(DWORD & ssrc) const = 0;
+    virtual BOOL SetIncomingKey(const KeySalt & key) = 0;
+    virtual BOOL GetIncomingKey(KeySalt & key) const = 0;
+    virtual BOOL SetIncomingSSRC(DWORD ssrc) = 0;
+    virtual BOOL GetIncomingSSRC(DWORD & ssrc) const = 0;
 
-    virtual BOOL SetCrypto(
-          const PBYTEArray & key, 
-          const PBYTEArray & salt
-    )
-    {
-      return SetCrypto(key, salt, "STRONGHOLD", "STRONGHOLD");
-    }
-    virtual BOOL SetCrypto(
-          const PBYTEArray & key, 
-          const PBYTEArray & salt,
-          const PString & cryptoAlg, 
-          const PString & hashAlg 
+    virtual RTP_UDP * CreateRTPSession(
+      unsigned id,          ///<  Session ID for RTP channel
+      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     ) = 0;
 
-    virtual PStringList GetAvailableCrypto() const = 0;
-    virtual PStringList GetAvailableHash() const = 0;
+    virtual BOOL Open() = 0;
+
 };
-
-////////////////////////////////////////////////////////////////////
-//
-//  implement SRTP via libSRTP
-//
-
-#if defined(HAS_LIBSRTP) 
-
-#define NO_64BIT_MATH
-#include <srtp/include/srtp.h>
-
-class LibSRTPParms : public SRTPParms
-{
-  PCLASSINFO(LibSRTPParms, SRTPParms);
-  public:
-    LibSRTPParms();
-
-    BOOL SetSSRC(DWORD ssrc);
-    BOOL GetSSRC(DWORD & ssrc) const;
-
-    BOOL SetCrypto(
-          const PBYTEArray & key, 
-          const PBYTEArray & salt,
-          const PString & cryptoAlg, 
-          const PString & hashAlg 
-    );
-
-    PStringList GetAvailableCrypto() const;
-    PStringList GetAvailableHash() const;
-
-  protected:
-    BOOL ssrcSet;
-    BOOL masterKeySet;
-    PBYTEArray masterKey;
-    srtp_policy_t inboundPolicy;
-    srtp_policy_t outboundPolicy;
-};
-
-#endif // defined(HAS_LIBSRTP)
 
 ////////////////////////////////////////////////////////////////////
 //
 //  this class implements SRTP over UDP
 //
 
-class SRTP_UDP : public RTP_UDP
+class OpalSRTP_UDP : public RTP_UDP
 {
-  PCLASSINFO(SRTP_UDP, RTP_UDP);
+  PCLASSINFO(OpalSRTP_UDP, RTP_UDP);
   public:
-    SRTP_UDP(
-     unsigned id,        ///<  Session ID for RTP channel
-      BOOL remoteIsNAT   ///<  TRUE is remote is behind NAT
+    OpalSRTP_UDP(
+     unsigned id,                  ///<  Session ID for RTP channel
+      BOOL remoteIsNAT,            ///<  TRUE is remote is behind NAT
+      OpalSecurityMode * srtpParms ///<  Paramaters to use for SRTP
     );
 
-    ~SRTP_UDP();
+    ~OpalSRTP_UDP();
 
-    virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame) = 0;
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame) = 0;
+
+    virtual OpalSRTPSecurityMode * GetSRTPParms() const
+    { return srtpParms; }
+
+  protected:
+    OpalSRTPSecurityMode * srtpParms;
 };
+
+#endif // OPAL_SRTP
 
 #endif // __OPAL_SRTP_H
