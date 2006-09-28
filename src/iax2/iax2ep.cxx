@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.15  2006/09/28 07:42:17  csoutheren
+ * Merge of useful SRTP implementation
+ *
  * Revision 1.14  2006/09/11 03:08:50  dereksmithies
  * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  * improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -473,7 +476,10 @@ IAX2Connection * IAX2EndPoint::CreateConnection(
       const PString & remoteParty,
       const PString & remotePartyName)
 {
-  return new IAX2Connection(call, *this, token, userData, remoteParty, remotePartyName); 
+  IAX2Connection * conn = new IAX2Connection(call, *this, token, userData, remoteParty, remotePartyName); 
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 OpalMediaFormatList IAX2EndPoint::GetMediaFormats() const
