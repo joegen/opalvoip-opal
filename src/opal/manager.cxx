@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2062  2006/08/10 05:10:33  csoutheren
+ * Revision 1.2063  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.61  2006/08/10 05:10:33  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.60.2.1  2006/08/09 12:49:22  csoutheren
@@ -1234,6 +1237,10 @@ void OpalManager::GarbageMain(PThread &, INT)
 {
   while (!garbageCollectExit.Wait(1000))
       GarbageCollection();
+}
+
+void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2130  2006/08/12 04:20:39  csoutheren
+ * Revision 1.2131  2006/09/28 07:42:18  csoutheren
+ * Merge of useful SRTP implementation
+ *
+ * Revision 2.129  2006/08/12 04:20:39  csoutheren
  * Removed Windows warning and fixed timeout in SIP PING code
  *
  * Revision 2.128  2006/08/12 04:09:24  csoutheren
@@ -930,7 +933,10 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               OpalTransport * transport,
                                               SIP_PDU * /*invite*/)
 {
-  return new SIPConnection(call, *this, token, destination, transport);
+  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport);
+  if (conn != NULL)
+    OnNewConnection(call, *conn);
+  return conn;
 }
 
 
