@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2179  2006/08/28 00:53:52  csoutheren
+ * Revision 1.2180  2006/10/01 17:16:32  hfriederich
+ * Ensures that an ACK is sent out for every final response to INVITE
+ *
+ * Revision 2.178  2006/08/28 00:53:52  csoutheren
  * Applied 1546613 - Transport check in SIPConnection::SetConnected
  * Thanks to Drazen Dimoti
  *
@@ -866,6 +869,7 @@ static SIP_PDU::StatusCodes RFC3398_MapQ931ToSIPCode(unsigned q931Cause)
     if (Q931ReasonToSIPCode[i].q931Cause == q931Cause)
       return (SIP_PDU::StatusCodes)Q931ReasonToSIPCode[i].sipCode;
 
+  cout << "RETURNING BAD GATEWAY: " << q931Cause << endl;
   return SIP_PDU::Failure_BadGateway;
 }
 
@@ -1858,19 +1862,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     // Send the ack
     if (response.GetStatusCode()/100 != 1) {
-      SIP_PDU ack;
-
-      // ACK Constructed following 17.1.1.3
-      if (response.GetStatusCode()/100 != 2) 
-        ack = SIPAck(endpoint, transaction, response);
-      else 
-        ack = SIPAck(transaction);
-
-      // Send the PDU using the connection transport
-      if (!SendPDU(ack, ack.GetSendAddress(*this))) {
-        Release(EndedByTransportFail);
-        return;
-      }
+      SendACK(transaction, response);
     }
   }
 
@@ -2658,6 +2650,29 @@ BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
   SIPURL contact = endpoint.GetLocalURL(*transport, userName);
 
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
+}
+
+BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
+{
+  if (invite.GetMethod() != SIP_PDU::Method_INVITE) { // Sanity check
+    return FALSE;
+  }
+
+  SIP_PDU ack;
+  // ACK Constructed following 17.1.1.3
+  if (response.GetStatusCode()/100 != 2) {
+    ack = SIPAck(endpoint, invite, response);
+  } else { 
+    ack = SIPAck(invite);
+  }
+
+  // Send the PDU using the connection transport
+  if (!SendPDU(ack, ack.GetSendAddress(*this))) {
+    Release(EndedByTransportFail);
+    return FALSE;
+  }
+	
+  return TRUE;
 }
 
 BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)

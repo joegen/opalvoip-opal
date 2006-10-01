@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2053  2006/08/12 04:09:24  csoutheren
+ * Revision 1.2054  2006/10/01 17:16:32  hfriederich
+ * Ensures that an ACK is sent out for every final response to INVITE
+ *
+ * Revision 2.52  2006/08/12 04:09:24  csoutheren
  * Applied 1538497 - Add the PING method
  * Thanks to Paul Rolland
  *
@@ -573,6 +576,8 @@ class SIPConnection : public OpalConnection
     /**Send a "200 OK" response for the received INVITE message.
      */
     virtual BOOL SendInviteOK(const SDPSessionDescription & sdp);
+	
+	virtual BOOL SendACK(SIPTransaction & invite, SIP_PDU & response);
 
     /**Send a response for the received INVITE message.
      */

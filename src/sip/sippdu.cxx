@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2112  2006/09/22 00:58:41  csoutheren
+ * Revision 1.2113  2006/10/01 17:16:32  hfriederich
+ * Ensures that an ACK is sent out for every final response to INVITE
+ *
+ * Revision 2.111  2006/09/22 00:58:41  csoutheren
  * Fix usages of PAtomicInteger
  *
  * Revision 2.110  2006/08/28 00:42:25  csoutheren
@@ -2357,6 +2360,8 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsi
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   PWaitAndSignal m(mutex);
+	
+  States originalState = state;
 
   if (!SIPTransaction::OnReceivedResponse(response))
     return FALSE;
@@ -2364,9 +2369,16 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
   if (response.GetStatusCode()/100 == 1) {
     retryTimer.Stop();
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  }
-  else
+  } 
+  else {
     completionTimer = endpoint.GetAckTimeout();
+
+    // If the state was already 'Completed', ensure that still an
+    // ACK is sent
+    if (originalState >= Completed) {
+      connection->SendACK(*this, response);
+    }
+  }
 
   /* Handle response to outgoing call cancellation */
   if (response.GetStatusCode() == Failure_RequestTerminated)
