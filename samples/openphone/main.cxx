@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.13  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
  * Revision 1.12  2006/09/16 04:20:36  rjongbloed
  * Fixed crash when entering opetions dialog.
  * Added recent calls list to Call dialog.
@@ -183,10 +186,6 @@
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
 
-#ifdef OPAL_STATIC_LINK
-#define H323_STATIC_LIB
-#include <lids/alllids.h>
-#endif
 
 #if defined(__WXGTK__)   || \
     defined(__WXMOTIF__) || \

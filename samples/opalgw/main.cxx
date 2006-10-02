@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.5  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
  * Revision 1.4  2004/03/16 11:06:28  rjongbloed
  * Changed proxy to URL
  *
@@ -54,13 +57,6 @@
 #endif
 
 #include <lids/lidep.h>
-
-#ifdef OPAL_STATIC_LINK
-#define H323_STATIC_LIB
-#include <codec/allcodecs.h>
-#include <lids/alllids.h>
-#endif
-
 
 #if P_EXPAT
 #include <opal/ivr.h>
