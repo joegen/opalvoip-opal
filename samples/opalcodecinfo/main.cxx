@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.6  2006/10/02 22:04:19  rjongbloed
+ * Added LID plug ins
+ *
  * Revision 1.5  2006/09/06 22:36:11  csoutheren
  * Fix problem with IsValidForProtocol on video codecs
  *
@@ -59,7 +62,6 @@
 
 #include <ptlib.h>
 
-#include <codec/allcodecs.h>
 #include <codec/opalplugin.h>
 #include <codec/opalpluginmgr.h>
 #include <opal/transcoders.h>
