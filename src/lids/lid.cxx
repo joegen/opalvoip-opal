@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2016  2006/06/29 08:47:20  csoutheren
+ * Revision 1.2017  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.15  2006/06/29 08:47:20  csoutheren
  * Removed compiler warning
  *
  * Revision 2.14  2006/06/27 13:50:24  csoutheren
@@ -465,12 +468,6 @@ BOOL OpalLineInterfaceDevice::Close()
 }
 
 
-BOOL OpalLineInterfaceDevice::IsLineTerminal(unsigned)
-{
-  return FALSE;
-}
-
-
 BOOL OpalLineInterfaceDevice::IsLinePresent(unsigned, BOOL)
 {
   return TRUE;
@@ -503,12 +500,6 @@ BOOL OpalLineInterfaceDevice::IsLineRinging(unsigned, DWORD *)
 }
 
 
-BOOL OpalLineInterfaceDevice::RingLine(unsigned, DWORD)
-{
-  return FALSE;
-}
-
-
 BOOL OpalLineInterfaceDevice::RingLine(unsigned, PINDEX, unsigned *)
 {
   return FALSE;
@@ -536,51 +527,17 @@ BOOL OpalLineInterfaceDevice::IsLineToLineDirect(unsigned, unsigned)
 }
 
 
-BOOL OpalLineInterfaceDevice::SetReadCodec(unsigned line,
-                                           RTP_DataFrame::PayloadTypes codec)
-{
-  return SetReadFormat(line, OpalMediaFormat(codec));
-}
-
-
-BOOL OpalLineInterfaceDevice::SetWriteCodec(unsigned line,
-                                            RTP_DataFrame::PayloadTypes codec)
-{
-  return SetWriteFormat(line, OpalMediaFormat(codec));
-}
-
-
-BOOL OpalLineInterfaceDevice::SetRawCodec(unsigned line)
-{
-  if (!SetReadFormat(line, OpalPCM16))
-    return FALSE;
-
-  if (SetWriteFormat(line, OpalPCM16))
-    return TRUE;
-
-  StopReadCodec(line);
-  return FALSE;
-}
-
-
-BOOL OpalLineInterfaceDevice::StopReadCodec(unsigned)
+BOOL OpalLineInterfaceDevice::StopReading(unsigned)
 {
   m_readDeblockingOffset = P_MAX_INDEX;
   return TRUE;
 }
 
 
-BOOL OpalLineInterfaceDevice::StopWriteCodec(unsigned)
+BOOL OpalLineInterfaceDevice::StopWriting(unsigned)
 {
   m_writeDeblockingOffset = 0;
   return TRUE;
-}
-
-
-BOOL OpalLineInterfaceDevice::StopRawCodec(unsigned line)
-{
-  BOOL ok = StopReadCodec(line);
-  return StopWriteCodec(line) && ok;
 }
 
 
@@ -1476,6 +1433,25 @@ OpalLIDRegistration::OpalLIDRegistration(const char * name)
 
   link = RegisteredLIDsListHead;
   RegisteredLIDsListHead = this;
+}
+
+
+OpalLIDRegistration::~OpalLIDRegistration()
+{
+  if (PAssertNULL(RegisteredLIDsListHead) == NULL)
+    return;
+
+  if (this == RegisteredLIDsListHead)
+    RegisteredLIDsListHead = link;
+  else {
+    OpalLIDRegistration * previous = RegisteredLIDsListHead;
+    while (this != previous->link) {
+      previous = previous->link;
+      if (PAssertNULL(previous) == NULL)
+        return;
+    }
+    previous->link = link;
+  }
 }
 
 

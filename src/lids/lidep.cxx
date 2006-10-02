@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2033  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2034  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.32  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.31  2006/08/29 08:47:43  rjongbloed
@@ -282,11 +285,10 @@ OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
 static void InitialiseLine(OpalLine * line)
 {
   PTRACE(3, "LID EP\tInitialiseLine " << *line);
-  line->Ring(0);
+  line->Ring(0, NULL);
   line->StopTone();
-  line->StopRawCodec();
-  line->StopReadCodec();
-  line->StopWriteCodec();
+  line->StopReading();
+  line->StopWriting();
   line->DisableAudio();
 
   for (unsigned lnum = 0; lnum < line->GetDevice().GetLineCount(); lnum++) {
@@ -594,7 +596,7 @@ void OpalLineConnection::OnReleased()
 
   PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
   line.PlayTone(OpalLineInterfaceDevice::ClearTone);
-  line.Ring(FALSE);
+  line.Ring(0, NULL);
   line.SetOnHook();
 
   phase = ReleasedPhase;
@@ -842,7 +844,7 @@ BOOL OpalLineConnection::SetUpConnection()
   
   if (line.IsTerminal()) {
     line.SetCallerID(remotePartyNumber);
-    line.Ring(TRUE);
+    line.Ring(1, NULL);
     phase = AlertingPhase;
     OnAlerting();
   }
@@ -912,9 +914,9 @@ BOOL OpalLineMediaStream::Open()
 BOOL OpalLineMediaStream::Close()
 {
   if (IsSource())
-    line.StopReadCodec();
+    line.StopReading();
   else
-    line.StopWriteCodec();
+    line.StopWriting();
 
   return OpalMediaStream::Close();
 }
