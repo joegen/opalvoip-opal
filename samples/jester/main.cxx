@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.4  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
  * Revision 1.3  2006/08/25 06:04:44  dereksmithies
  * Add to the docs on the functions.  Add a new thread to generate the frames,
  * which helps make the operation of the jitterbuffer clearer.
@@ -42,13 +45,6 @@
 
 #include "main.h"
 #include "../../version.h"
-
-
-#ifdef OPAL_STATIC_LINK
-#define H323_STATIC_LIB
-#include <codec/allcodecs.h>
-#include <lids/alllids.h>
-#endif
 
 
 #define new PNEW
@@ -203,7 +199,7 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 	
 	frame->SetPayloadType(RTP_DataFrame::GSM);
 	frame->SetSyncSource(0x12345678);
-	frame->SetSequenceNumber(i + 100);
+	frame->SetSequenceNumber((WORD)(i + 100));
 	frame->SetPayloadSize(66);
 
 	frame->SetTimestamp( (i + 100) * 8 * 20);

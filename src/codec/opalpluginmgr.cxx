@@ -1,11 +1,12 @@
 /*
- * h323plugins.cxx
+ * opalplugins.cxx
  *
  * OPAL codec plugins handler
  *
- * OPAL Library
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
  *
- * Copyright (C) 2005 Post Increment
+ * Copyright (C) 2005-2006 Post Increment
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -17,14 +18,17 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Open H323 Library.
+ * The Original Code is Open Phone Abstraction Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2011  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2012  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.10  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.9  2006/09/11 04:48:55  csoutheren
@@ -1423,7 +1427,7 @@ PMutex & OpalPluginCodecManager::GetMediaFormatMutex()
 }
 
 OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
- : PPluginModuleManager(PLUGIN_CODEC_GET_CODEC_FN_STR, _pluginMgr)
+  : PPluginModuleManager(PLUGIN_CODEC_GET_CODEC_FN_STR, _pluginMgr)
 {
   // instantiate all of the media formats
   {

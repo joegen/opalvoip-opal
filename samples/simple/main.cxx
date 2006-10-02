@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2073  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2074  2006/10/02 13:30:51  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.72  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.71  2006/08/21 05:30:48  csoutheren
@@ -330,17 +333,10 @@
 
 #include <opal/transcoders.h>
 #include <lids/lidep.h>
-#include <lids/ixjlid.h>
 #include <ptclib/pstun.h>
 
 #include "main.h"
 #include "../../version.h"
-
-
-#ifdef OPAL_STATIC_LINK
-#define H323_STATIC_LIB
-#include <lids/alllids.h>
-#endif
 
 
 #define new PNEW
@@ -389,6 +385,8 @@ void SimpleOpalProcess::Main()
              "I-no-sip."
              "j-jitter:"
              "l-listen."
+             "L-no-lid."
+             "-lid:"
              "n-no-gatekeeper."
              "-no-std-dial-peer."
 #if PTRACING
@@ -398,8 +396,6 @@ void SimpleOpalProcess::Main()
              "p-password:"
              "-portbase:"
              "-portmax:"
-             "q-quicknet:"
-             "Q-no-quicknet."
              "R-require-gatekeeper."
              "r-register-sip:"
              "-rtp-base:"
@@ -510,12 +506,10 @@ void SimpleOpalProcess::Main()
 #endif
 
             "\n"
-#if HAS_IXJ
-            "Quicknet options:\n"
-            "  -Q --no-quicknet        : Do not use Quicknet xJACK device.\n"
-            "  -q --quicknet device    : Select Quicknet xJACK device (default ALL).\n"
+            "Line Interface options:\n"
+            "  -L --no-lid             : Do not use line interface device.\n"
+            "     --lid device         : Select line interface device (eg Quicknet:013A17C2, default *:*).\n"
             "\n"
-#endif
             "Sound card options:\n"
             "  -S --no-sound           : Do not use sound input/output device.\n"
             "  -s --sound device       : Select sound input/output device.\n"
@@ -769,27 +763,26 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
 
-#if HAS_IXJ
-  if (!args.HasOption('Q')) {
-    PStringArray devices = args.GetOptionString('q').Lines();
-    if (devices.IsEmpty() || devices[0] == "ALL")
-      devices = OpalIxJDevice::GetDeviceNames();
+  if (!args.HasOption('L')) {
+    PStringArray devices = args.GetOptionString("lid").Lines();
+    if (devices.IsEmpty() || devices[0] == "*" || devices[0] == "*:*")
+      devices = OpalLineInterfaceDevice::GetAllDevices();
     for (PINDEX d = 0; d < devices.GetSize(); d++) {
-      OpalIxJDevice * ixj = new OpalIxJDevice;
-      if (ixj->Open(devices[d])) {
+      PINDEX colon = devices[d].Find(':');
+      OpalLineInterfaceDevice * lid = OpalLineInterfaceDevice::Create(devices[d].Left(colon));
+      if (lid->Open(devices[d].Mid(colon+1))) {
         // Create LID protocol handler, automatically adds to manager
         if (potsEP == NULL)
           potsEP = new OpalPOTSEndPoint(*this);
-        if (potsEP->AddDevice(ixj))
-          cout << "Quicknet device \"" << devices[d] << "\" added." << endl;
+        if (potsEP->AddDevice(lid))
+          cout << "Line interface device \"" << devices[d] << "\" added." << endl;
       }
       else {
         cerr << "Could not open device \"" << devices[d] << '"' << endl;
-        delete ixj;
+        delete lid;
       }
     }
   }
-#endif
 
 
   ///////////////////////////////////////

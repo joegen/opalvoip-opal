@@ -35,7 +35,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VoiceAgeG729", "audio\Voice
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Install", "Install.vdproj", "{A0E82686-4717-4827-8A12-D3D9127C25DF}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OPAL Plug Ins", "Install.vdproj", "{A0E82686-4717-4827-8A12-D3D9127C25DF}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -44,6 +44,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h261vic", "video\H.261-vic\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "h263ffmpeg", "video\H.263-ffmpeg\h263ffmpeg.vcproj", "{4D3EE295-5953-498D-AEDF-9C8792AB5723}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IxJ", "LID\IxJ\IxJ_2003.vcproj", "{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "USB", "LID\USB\USB_2003.vcproj", "{B28C1159-B360-4CAD-809E-187E267E59EC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VPB", "LID\VPB\VPB_2003.vcproj", "{B8F15B37-DE93-4D2E-9063-34B7920E9E90}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
@@ -100,6 +112,18 @@ Global
 		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Debug.Build.0 = Debug|Win32
 		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Release.ActiveCfg = Release|Win32
 		{4D3EE295-5953-498D-AEDF-9C8792AB5723}.Release.Build.0 = Release|Win32
+		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.Debug.ActiveCfg = Debug|Win32
+		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.Debug.Build.0 = Debug|Win32
+		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.Release.ActiveCfg = Release|Win32
+		{DA4001E4-1B19-4A2E-A6B4-795AB65C41BF}.Release.Build.0 = Release|Win32
+		{B28C1159-B360-4CAD-809E-187E267E59EC}.Debug.ActiveCfg = Debug|Win32
+		{B28C1159-B360-4CAD-809E-187E267E59EC}.Debug.Build.0 = Debug|Win32
+		{B28C1159-B360-4CAD-809E-187E267E59EC}.Release.ActiveCfg = Release|Win32
+		{B28C1159-B360-4CAD-809E-187E267E59EC}.Release.Build.0 = Release|Win32
+		{B8F15B37-DE93-4D2E-9063-34B7920E9E90}.Debug.ActiveCfg = Debug|Win32
+		{B8F15B37-DE93-4D2E-9063-34B7920E9E90}.Debug.Build.0 = Debug|Win32
+		{B8F15B37-DE93-4D2E-9063-34B7920E9E90}.Release.ActiveCfg = Release|Win32
+		{B8F15B37-DE93-4D2E-9063-34B7920E9E90}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
