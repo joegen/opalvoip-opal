@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2013  2006/06/27 13:50:24  csoutheren
+ * Revision 1.2014  2006/10/02 13:30:50  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.12  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *
@@ -334,7 +337,7 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual BOOL IsLineTerminal(
       unsigned line   ///<  Number of line
-    );
+    ) = 0;
 
 
     /**Determine if a physical line is present on the logical line.
@@ -400,26 +403,11 @@ class OpalLineInterfaceDevice : public PObject
     );
 
     /**Begin ringing local phone set with specified cadence.
-       If cadence is zero then stops ringing.
-
-       Note that not be possible on a given line, for example on a PSTN line
-       the ring state is determined by external hardware and cannot be
-       changed by the software.
-
-       Also note that the cadence may be ignored by particular hardware driver
-       so that only the zero or non-zero values are significant.
-      */
-    virtual BOOL RingLine(
-      unsigned line,    ///<  Number of line
-      DWORD cadence     ///<  Cadence bit map for ring pattern
-    );
-
-    /**Begin ringing local phone set with specified cadence.
        If nCadence is zero then stops ringing.
 
-       Note that not be possible on a given line, for example on a PSTN line
-       the ring state is determined by external hardware and cannot be
-       changed by the software.
+       Note that this may not be possible on a given line, for example on a
+       PSTN line the ring state is determined by external hardware and cannot
+       be changed by the software.
 
        Also note that the cadence may be ignored by particular hardware driver
        so that only the zero or non-zero values are significant.
@@ -427,6 +415,9 @@ class OpalLineInterfaceDevice : public PObject
        The ring pattern is an array of millisecond times for on and off parts
        of the cadence. Thus the Australian ring cadence would be represented
        by the array   unsigned AusRing[] = { 400, 200, 400, 2000 }
+
+       If the nCadence in non-zero and the pattern parameter is NULL, then
+       the standard ring pattern for the selected country is used.
       */
     virtual BOOL RingLine(
       unsigned line,     ///<  Number of line
@@ -493,58 +484,15 @@ class OpalLineInterfaceDevice : public PObject
       unsigned line    ///<  Number of line
     ) = 0;
 
-    /**Set the line codec for reading.
-       Note this function is now deprecated as it could not distinguish between
-       some codec subtypes (eg G.729 and G.729B) or non standard formats. Use
-       the SetReadFormat function instead.
-
-       The default behaviour now finds the first OpalMediaFormat with the
-       payload type and uses that.
-      */
-    virtual BOOL SetReadCodec(
-      unsigned line,    ///<  Number of line
-      RTP_DataFrame::PayloadTypes codec   ///<  Codec type
-    );
-
-    /**Set the line codec for writing.
-       Note this function is now deprecated as it could not distinguish between
-       some codec subtypes (eg G.729 and G.729B) or non standard formats. Use
-       the SetReadFormat function instead.
-      */
-    virtual BOOL SetWriteCodec(
-      unsigned line,    ///<  Number of line
-      RTP_DataFrame::PayloadTypes codec   ///<  Codec type
-    );
-
-    /**Set the line codec for reading/writing raw PCM data.
-       A descendent may use this to do anything special to the device before
-       beginning special PCM output. For example disabling AEC and set
-       volume levels to standard values. This can then be used for generating
-       standard tones using PCM if the driver is not capable of generating or
-       detecting them directly.
-
-       The default behaviour simply does a SetReadCodec and SetWriteCodec for
-       PCM data.
-      */
-    virtual BOOL SetRawCodec(
-      unsigned line    ///<  Number of line
-    );
-
     /**Stop the read codec.
       */
-    virtual BOOL StopReadCodec(
+    virtual BOOL StopReading(
       unsigned line   ///<  Number of line
     );
 
     /**Stop the write codec.
       */
-    virtual BOOL StopWriteCodec(
-      unsigned line   ///<  Number of line
-    );
-
-    /**Stop the raw PCM mode codec.
-      */
-    virtual BOOL StopRawCodec(
+    virtual BOOL StopWriting(
       unsigned line   ///<  Number of line
     );
 
@@ -707,21 +655,6 @@ class OpalLineInterfaceDevice : public PObject
     virtual BOOL SetAEC(
       unsigned line,    ///<  Number of line
       AECLevels level   ///<  AEC level
-    );
-
-    /**Get wink detect minimum duration.
-       This is the signal used by telcos to end PSTN call.
-      */
-    virtual unsigned GetWinkDuration(
-      unsigned line    ///<  Number of line
-    );
-
-    /**Set wink detect minimum duration.
-       This is the signal used by telcos to end PSTN call.
-      */
-    virtual BOOL SetWinkDuration(
-      unsigned line,        ///<  Number of line
-      unsigned winkDuration ///<  New minimum duration
     );
 
     /**Get voice activity detection.
@@ -920,36 +853,9 @@ class OpalLineInterfaceDevice : public PObject
       unsigned line   ///<  Number of line
     );
 
-    /**Play a wav file
-      */
-    virtual BOOL PlayAudio(
-      unsigned line,            ///<  Number of line
-      const PString & filename  ///<  File Name
-    );
-    
-    /**Stop playing the Wave File
-      */
-    virtual BOOL StopAudio(
-      unsigned line   ///Number of line
-    );
 
+    enum { DIAL_TONE_TIMEOUT = 10000 };
 
-    /**
-      * start recording audio
-      */
-    virtual BOOL RecordAudioStart(
-      unsigned line,            /// line
-      const PString & filename  /// File Name
-                            );
-    
-    /**
-     * stop recording audio
-     */
-        
-    virtual BOOL RecordAudioStop(
-      unsigned line            /// line
-                                 );
-    
     /**Dial a number on network line.
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.
@@ -970,6 +876,22 @@ class OpalLineInterfaceDevice : public PObject
       const PString & number,       ///< Number to dial
       BOOL requireTones = FALSE,    ///< Require dial/ring tone to be detected
       unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
+    );
+
+
+    /**Get wink detect minimum duration.
+       This is the signal used by telcos to end PSTN call.
+      */
+    virtual unsigned GetWinkDuration(
+      unsigned line    ///<  Number of line
+    );
+
+    /**Set wink detect minimum duration.
+       This is the signal used by telcos to end PSTN call.
+      */
+    virtual BOOL SetWinkDuration(
+      unsigned line,        ///<  Number of line
+      unsigned winkDuration ///<  New minimum duration
     );
 
 
@@ -1042,6 +964,37 @@ class OpalLineInterfaceDevice : public PObject
     virtual PStringList GetCountryCodeNameList() const;
 
 
+    /**Play a wav file
+      */
+    virtual BOOL PlayAudio(
+      unsigned line,            ///<  Number of line
+      const PString & filename  ///<  File Name
+    );
+    
+    /**Stop playing the Wave File
+      */
+    virtual BOOL StopAudio(
+      unsigned line   ///Number of line
+    );
+
+
+    /**
+      * start recording audio
+      */
+    virtual BOOL RecordAudioStart(
+      unsigned line,            /// line
+      const PString & filename  /// File Name
+    );
+    
+    /**
+     * stop recording audio
+     */
+        
+    virtual BOOL RecordAudioStop(
+      unsigned line            /// line
+    );
+    
+
     /**Return number for last error.
       */
     int GetErrorNumber() const { return osError; }
@@ -1071,9 +1024,7 @@ class OpalLineInterfaceDevice : public PObject
       */
     static PStringList GetAllDevices();
 
-    
-    enum { DIAL_TONE_TIMEOUT = 10000 };
-    
+        
   protected:
     int    getOsHandle() const {return os_handle;};
     void   setOsHandle(int os_handleToSet) {os_handle = os_handleToSet;};
@@ -1096,7 +1047,7 @@ class OpalLineInterfaceDevice : public PObject
     void   setDialToneTimeout(unsigned int uiDialToneTimeout) {m_uiDialToneTimeout = uiDialToneTimeout;};
         
     int             os_handle;
-    int             osError;
+    mutable int     osError;
     T35CountryCodes countryCode;
     PBYTEArray      m_readDeblockingBuffer, m_writeDeblockingBuffer;
     PINDEX          m_readDeblockingOffset, m_writeDeblockingOffset;
@@ -1211,25 +1162,11 @@ class OpalLine : public PObject
     );
 
     /**Begin ringing local phone set with specified cadence.
-       If cadence is zero then stops ringing.
-
-       Note that not be possible on a given line, for example on a PSTN line
-       the ring state is determined by external hardware and cannot be
-       changed by the software.
-
-       Also note that the cadence may be ignored by particular hardware driver
-       so that only the zero or non-zero values are significant.
-      */
-    virtual BOOL Ring(
-      DWORD cadence     ///<  Cadence bit map for ring pattern
-    ) { return device.RingLine(lineNumber, cadence); }
-
-    /**Begin ringing local phone set with specified cadence.
        If nCadence is zero then stops ringing.
 
-       Note that not be possible on a given line, for example on a PSTN line
-       the ring state is determined by external hardware and cannot be
-       changed by the software.
+       Note that this may not be possible on a given line, for example on a
+       PSTN line the ring state is determined by external hardware and cannot
+       be changed by the software.
 
        Also note that the cadence may be ignored by particular hardware driver
        so that only the zero or non-zero values are significant.
@@ -1237,6 +1174,9 @@ class OpalLine : public PObject
        The ring pattern is an array of millisecond times for on and off parts
        of the cadence. Thus the Australian ring cadence would be represented
        by the array   unsigned AusRing[] = { 400, 200, 400, 2000 }
+
+       If the nCadence in non-zero and the pattern parameter is NULL, then
+       the standard ring pattern for the selected country is used.
       */
     virtual BOOL Ring(
       PINDEX nCadence,   ///<  Number of entries in cadence array
@@ -1269,29 +1209,13 @@ class OpalLine : public PObject
       */
     virtual OpalMediaFormat GetWriteFormat() { return device.GetWriteFormat(lineNumber); }
 
-    /**Set the line codec for reading/writing raw PCM data.
-       A descendent may use this to do anything special to the device before
-       beginning special PCM output. For example disabling AEC and set
-       volume levels to standard values. This can then be used for generating
-       standard tones using PCM if the driver is not capable of generating or
-       detecting them directly.
-
-       The default behaviour simply does a SetReadCodec and SetWriteCodec for
-       PCM data.
-      */
-    virtual BOOL SetRawCodec() { return device.SetRawCodec(lineNumber); }
-
     /**Stop the read codec.
       */
-    virtual BOOL StopReadCodec() { return device.StopReadCodec(lineNumber); }
+    virtual BOOL StopReading() { return device.StopReading(lineNumber); }
 
     /**Stop the write codec.
       */
-    virtual BOOL StopWriteCodec() { return device.StopWriteCodec(lineNumber); }
-
-    /**Stop the raw PCM mode codec.
-      */
-    virtual BOOL StopRawCodec() { return device.StopRawCodec(lineNumber); }
+    virtual BOOL StopWriting() { return device.StopWriting(lineNumber); }
 
     /**Set the read frame size in bytes.
        Note that a LID may ignore this value so always use GetReadFrameSize()
@@ -1609,11 +1533,15 @@ class OpalLIDRegistration : public PCaselessString
   public:
   /**@name Construction */
   //@{
-    /**Create a new transcoder registration.
+    /**Create a new LID registration.
      */
     OpalLIDRegistration(
       const char * name  ///<  Line Interface Device type name
     );
+
+    /**Destroy and remove LID registration.
+     */
+    ~OpalLIDRegistration();
   //@}
 
   /**@name Operations */

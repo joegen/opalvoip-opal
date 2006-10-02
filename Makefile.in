@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.43  2006/10/02 13:30:50  rjongbloed
+# Added LID plug ins
+#
 # Revision 1.42  2006/09/18 08:41:53  rjongbloed
 # Added simple OPAL sample to default build.
 # Added check that Makefile may need to be rebuilt from configure script.
@@ -489,18 +492,7 @@ endif
 
 SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
            $(OPAL_SRCDIR)/lids/lidep.cxx \
-
-ifdef HAS_IXJ
-SOURCES += $(OPAL_SRCDIR)/lids/ixjunix.cxx
-endif
-
-ifdef HAS_VPB
-SOURCES += $(OPAL_SRCDIR)/lids/vpblid.cxx
-endif
-
-ifdef HAS_SANGOMA
-SOURCES += $(OPAL_SRCDIR)/lids/sangomalid.cxx
-endif
+           $(OPAL_SRCDIR)/lids/lidpluginmgr.cxx \
 
 
 ##################

@@ -1,11 +1,12 @@
 /*
- * h323plugins.h
+ * opalplugins.h
  *
- * H.323 codec plugins handler
+ * OPAL codec plugins handler
  *
- * Open H323 Library
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
  *
- * Copyright (C) 2004 Post Increment
+ * Copyright (C) 2004-2006 Post Increment
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -17,14 +18,17 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Open H323 Library.
+ * The Original Code is Open Phone Abstraction Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2003  2006/08/11 07:52:00  csoutheren
+ * Revision 1.2004  2006/10/02 13:30:50  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.2  2006/08/11 07:52:00  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -109,8 +113,8 @@
  *
  */
 
-#ifndef __OPAL_H323PLUGIN_H
-#define __OPAL_H323PLUGIN_H
+#ifndef __OPAL_CODECPLUGIN_H
+#define __OPAL_CODECPLUGIN_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -497,137 +501,5 @@ PLUGIN_CODEC_DLL_API unsigned int PLUGIN_CODEC_API_VER_FN() \
 };
 #endif
 
-////////////////////////////////////////////////////////////////////////////////
-//
-//  LID/HID Plugins
 
-#ifdef _WIN32   // Only Support Win32 at the moment
-
-// Harware Input Device
-#define PLUGIN_HID_GET_DEVICE_FN	OpalHIDPlugin_GetDevice
-#define PLUGIN_HID_GET_DEVICE_FN_STR "OpalHIDPlugin_GetDevice"
-
-#define	PLUGIN_HID_VERSION		         1    // initial version
-
-#  define PLUGIN_HID_IMPLEMENT(name) \
-PLUGIN_CODEC_DLL_API unsigned int PLUGIN_CODEC_API_VER_FN() \
-{ return PWLIB_PLUGIN_API_VERSION; } \
-
-
-struct PluginHID_information {
-  // start of version 1 fields
-  time_t timestamp;                     // codec creation time and date - obtain with command: date -u "+%c = %s"
-
-  const char * sourceAuthor;            // source code author
-  const char * sourceVersion;           // source code version
-  const char * sourceEmail;             // source code email contact information
-  const char * sourceURL;               // source code web site
-  const char * sourceCopyright;         // source code copyright
-  const char * sourceLicense;           // source code license
-  unsigned char sourceLicenseCode;      // source code license
-
-  const char * HIDDescription;          // HID description
-  const char * HIDManufacturer;         // HID Manufacturer
-  const char * HIDModel;                // HID Model
-  const char * HIDEmail;				// HID email contact information
-  const char * HIDURL;                  // HID Manufacturer web site
-
-  // end of version 1 fields
-
-};
-
-enum PluginHID_Flags {
-  PluginHID_TypeMask				= 0x000f,
-  PluginHID_TypeUSBAudio			= 0x0000,	// USB Audio device
-  PluginHID_TypePCIAudio			= 0x0001,	// PCI Audio device
-
-  PluginHID_ToneMask				= 0x0010,
-  PluginHID_NoTone				= 0x0000,
-  PluginHID_Tone				= 0x0010,	// Audio device needs a Tone generator
-
-  PluginHID_GatewayMask				= 0x0020,
-  PluginHID_NoPSTN				= 0x0000,
-  PluginHID_PSTN				= 0x0020,	// Audio device with PSTN interoperability
-
-  PluginHID_DeviceTypeMask			= 0x0040,
-  PluginHID_DevicePOTS				= 0x0000,   // Operate like traditional Phone
-  PluginHID_DeviceCell				= 0x0040,   // Operate Like a Cell Phone
-
-  PluginHID_DeviceSoundMask			= 0x0080,
-  PluginHID_DeviceInternal			= 0x0000,
-  PluginHID_DeviceSound				= 0x0080	// is regular PC sound device
-};
-
-// Key Input Mask
-enum PluginHID_Input {
-	PluginHID_None				= 0x0000,
-	PluginHID_KeyPadMask			= 0x0010,
-	PluginHID_Key0				= 0x0010,
-	PluginHID_Key1				= 0x0011,
-	PluginHID_Key2				= 0x0012,
-	PluginHID_Key3				= 0x0013,
-	PluginHID_Key4				= 0x0014,
-	PluginHID_Key5				= 0x0015,
-	PluginHID_Key6				= 0x0016,
-	PluginHID_Key7				= 0x0017,
-	PluginHID_Key8				= 0x0018,
-	PluginHID_Key9				= 0x0019,
-	PluginHID_KeyStar			= 0x001a,   // '*' character
-	PluginHID_KeyHash			= 0x001b,   // '#' character
-	PluginHID_KeyA				= 0x001c,   // (USB) Dial Button 
-	PluginHID_KeyB				= 0x001d,   // (USB) End Call Button 
-	PluginHID_KeyC				= 0x001e,   // (USB) Left Menu Navigator key 
-	PluginHID_KeyD				= 0x001f,   // (USB) Right Menu Navigator key 
-
-	PluginHID_HookMask			= 0x0020,
-	PluginHID_OffHook			= 0x0021,   // Hook State (OffHook) N/A for Cell Type
-	PluginHID_OnHook			= 0x0022,   // Hook State (OnHook) N/A for Cell Type
-
-	PluginHID_RingMask			= 0x0030,
-	PluginHID_StartRing			= 0x0031,   // Start Ringing the device
-	PluginHID_StopRing			= 0x0032,   // Stop Ringing the device
-
-	PluginHID_VolumeMask			= 0x0040,
-	PluginHID_VolumeUp			= 0x0040,   // Volume Up Key pressed
-	PluginHID_VolumeDown		        = 0x0041,   // Volume Down key presses
-	PluginHID_SetRecVol			= 0x0042,	// Set the Record Volume 
-	PluginHID_GetRecVol			= 0x0043,	// Get Record Volume 
-	PluginHID_SetPlayVol                    = 0x0044,   // Set Play Volume
-	PluginHID_GetPlayVol	                = 0x0045,   // Get Play Volume
-
-	PluginHID_StateMask			= 0x0050,
-	PluginHID_PluggedIn			= 0x0050,   // Device is pluggedIn
-	PluginHID_Unplugged			= 0x0051,   // Device is unplugged
-
-	PluginHID_FunctionMask      = 0x0060,   // Special Function Mark
-	PluginHID_ClearDisplay      = 0x0061,	// Clear the digit buffer
-
-};
-
-struct PluginHID_Definition {
-  unsigned int version;			               // codec structure version
-
-  // start of version 1 fields
-  struct PluginHID_information * info;   // license information
-
-  unsigned int flags;                      // PluginHID_Flags,        
-
-  const char * descr;    		               // text decription
-  const char * sound;						   // sound device name
-
-  void * (*createHID)(const struct PluginHID_Definition * def);	 // create HID 
-  void (*destroyHID) (const struct PluginHID_Definition * def);  // destroy HID
-  unsigned int (*HIDFunction) (const struct PluginHID_Definition * def, 
-	  unsigned int * InputMask, unsigned int * newVal);   // do HID function (Polling Function)
-  void (*displayHID) (const struct PluginHID_Definition * def, const char * display);   // LCD display
-
-
-  // end of version 1 fields
-};
-
-typedef struct PluginHID_Definition * (* PluginHID_GetHIDFunction)(unsigned int *, unsigned int);
-typedef unsigned (* PluginHID_GetAPIVersionFunction)();
-
-#endif  // LID Plugins
-
-#endif
+#endif // __OPAL_CODECPLUGIN_H

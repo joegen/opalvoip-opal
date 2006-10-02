@@ -5,7 +5,7 @@
  *
  * OPAL Library
  *
- * Copyright (C) 2005 Post Increment
+ * Copyright (C) 2005-2006 Post Increment
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -17,14 +17,17 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Open H323 Library.
+ * The Original Code is Open Phone Abstraction Library.
  *
  * The Initial Developer of the Original Code is Post Increment
  *
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2004  2006/09/28 07:42:14  csoutheren
+ * Revision 1.2005  2006/10/02 13:30:50  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.3  2006/09/28 07:42:14  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.2  2006/08/11 07:52:01  csoutheren
