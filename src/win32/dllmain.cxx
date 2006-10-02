@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2006  2003/03/24 07:18:30  robertj
+ * Revision 1.2007  2006/10/02 13:30:52  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.5  2003/03/24 07:18:30  robertj
  * Added registration system for LIDs so can work with various LID types by
  *   name instead of class instance.
  *
@@ -55,12 +58,6 @@
  */
 
 #include <ptlib.h>
-
-#define OPAL_STATIC_LINK
-#define H323_STATIC_LIB
-#include <codec/allcodecs.h>
-#include <lids/alllids.h>
-
 
 ///////////////////////////////////////////////////////////////////////////////
 

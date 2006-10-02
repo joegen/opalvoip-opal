@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2004  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2005  2006/10/02 13:30:52  rjongbloed
+ * Added LID plug ins
+ *
+ * Revision 2.3  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.2  2006/08/01 12:46:32  rjongbloed
@@ -46,7 +49,9 @@
 #include <codec/opalwavfile.h>
 
 #include <codec/opalpluginmgr.h>
+#include <lids/lidpluginmgr.h>
 #include <rtp/srtp.h>
+
 
 #if defined(P_HAS_PLUGINS)
 class PluginLoader : public PProcessStartup
@@ -64,6 +69,7 @@ class PluginLoader : public PProcessStartup
 };
 
 static PFactory<PPluginModuleManager>::Worker<OpalPluginCodecManager> opalPluginCodecManagerFactory("OpalPluginCodecManager", true);
+static PFactory<PPluginModuleManager>::Worker<OpalPluginLIDManager> opalPluginLIDManagerFactory("OpalPluginLIDManager", true);
 static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
 
 #endif // P_HAS_PLUGINS
