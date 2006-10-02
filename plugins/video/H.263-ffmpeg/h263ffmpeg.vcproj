@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="h263ffmpeg"
+	Name="ffmpeg H.263 Video Codec"
 	ProjectGUID="{4D3EE295-5953-498D-AEDF-9C8792AB5723}"
 	SccProjectName=""
 	SccLocalPath="">
@@ -14,7 +14,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\GSM"
+			IntermediateDirectory="..\..\Release\H263ffmpeg"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -23,14 +23,16 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="../../../include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"/>
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
@@ -39,6 +41,7 @@
 				OutputFile="../../Release/h263ffmpeg_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
+				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"/>
 			<Tool
@@ -73,7 +76,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\H261-vic"
+			IntermediateDirectory="..\..\Debug\H263ffmpeg"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -81,11 +84,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="../../../include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"/>
@@ -99,7 +103,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"/>
 			<Tool
@@ -135,13 +139,9 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-			<File
-				RelativePath=".\h263ffmpeg.cxx">
-			</File>
-		</Filter>
+		<File
+			RelativePath=".\h263ffmpeg.cxx">
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
