@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="gsmamr"
+	Name="GSM-AMR Audio Codec"
 	ProjectGUID="{92E9FA1E-2925-42FD-8226-A07CBD237E18}"
 	SccProjectName=""
 	SccLocalPath="">
@@ -23,24 +23,27 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="../../../include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"/>
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="TRUE"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/gsmamr_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
+				ImportLibrary="$(IntDir)\gsmamr.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -82,12 +85,13 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="../../../include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"/>
@@ -96,12 +100,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="FALSE"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/gsmamr_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				ImportLibrary="$(IntDir)\gsmamr.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -136,28 +140,6 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat">
-			<File
-				RelativePath="amrcodec.c">
-				<FileConfiguration
-					Name="Release|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="2"
-						PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32">
-					<Tool
-						Name="VCCLCompilerTool"
-						Optimization="0"
-						PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"
-						BasicRuntimeChecks="3"/>
-				</FileConfiguration>
-			</File>
-		</Filter>
 		<Filter
 			Name="AMR Files"
 			Filter=".c">
@@ -274,6 +256,24 @@
 				</File>
 			</Filter>
 		</Filter>
+		<File
+			RelativePath="amrcodec.c">
+			<FileConfiguration
+				Name="Release|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="0"
+					PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"
+					BasicRuntimeChecks="3"/>
+			</FileConfiguration>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

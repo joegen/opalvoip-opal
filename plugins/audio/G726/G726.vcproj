@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="G726"
+	Name="G.726 Audio Codec"
 	ProjectGUID="{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}"
 	SccProjectName=""
 	SccLocalPath="">
@@ -23,22 +23,25 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="../../../include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;G726_EXPORTS"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="3"
-				SuppressStartupBanner="TRUE"/>
+				SuppressStartupBanner="TRUE"
+				CompileAs="0"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/G726_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ProgramDatabaseFile="$(IntDir)\$(TargetName).pdb"
+				ImportLibrary="$(IntDir)\g726.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
@@ -80,11 +83,12 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
+				AdditionalIncludeDirectories="../../../include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;G726_EXPORTS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"/>
@@ -93,12 +97,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="FALSE"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/G726_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
+				ImportLibrary="$(IntDir)\g726.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"

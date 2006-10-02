@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsm06_10_codec.c,v $
+ * Revision 1.7  2006/10/02 13:32:28  rjongbloed
+ * Plug in build files clean up
+ *
  * Revision 1.6  2006/09/05 06:19:21  csoutheren
  * msgsm should not appear in SIP
  *
@@ -104,7 +107,7 @@ PLUGIN_CODEC_IMPLEMENT(GSM_0610)
 #endif
 #include <string.h>
 
-#include "inc/gsm.h"
+#include "./inc/gsm.h"
 
 #define	BITS_PER_SECOND         13200
 
@@ -163,10 +166,10 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
+  gsm context = (gsm)_context;
+
   if (*fromLen < BYTES_PER_FRAME)
     return 0;
-
-  struct gsm_state * context = (struct gsm_state *)_context;
 
   // Unless the packet is 65 bytes long, it must be normal GSM
   if (*fromLen != 65) {
