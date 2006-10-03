@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.2  2006/10/03 09:42:03  rjongbloed
+# Start of unix support for LID plug ins
+#
 # Revision 1.1  2006/10/02 13:30:52  rjongbloed
 # Added LID plug ins
 #
@@ -43,18 +46,18 @@ SONAME	= ixj
 
 OBJDIR	= ./obj
 
-SRCS	+= ixj.c
+SRCS	+= ixj_unix.cxx
 
 vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
+vpath	%.cxx $(SRCDIR)
 
-$(OBJDIR)/%.o : %.c
+$(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./ixj_lid_pwplugin.so
 
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
