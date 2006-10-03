@@ -1763,38 +1763,6 @@
 				Name="LID Sources"
 				>
 				<File
-					RelativePath="..\lids\ixjwin32.cxx"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
 					RelativePath="..\lids\lid.cxx"
 					>
 					<FileConfiguration
@@ -1859,68 +1827,8 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\lids\vblasterlid.cxx"
+					RelativePath="..\lids\lidpluginmgr.cxx"
 					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\lids\vpblid.cxx"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="0"
-							PreprocessorDefinitions=""
-							BrowseInformation="1"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="2"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="No Trace|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							Optimization="1"
-							PreprocessorDefinitions=""
-						/>
-					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
@@ -2621,10 +2529,6 @@
 				Name="LID Headers"
 				>
 				<File
-					RelativePath="..\..\include\lids\ixjlid.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\lids\lid.h"
 					>
 				</File>
@@ -2633,11 +2537,11 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\lids\vblasterlid.h"
+					RelativePath="..\..\include\lids\lidplugin.h"
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\lids\vpblid.h"
+					RelativePath="..\..\include\lids\lidpluginmgr.h"
 					>
 				</File>
 			</Filter>
