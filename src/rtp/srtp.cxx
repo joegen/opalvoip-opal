@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.4  2006/10/03 01:00:53  rjongbloed
+ * Fixed ability to compile without SRTP support.
+ *
  * Revision 1.3  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
@@ -56,10 +59,13 @@
 #pragma implementation "srtp.h"
 #endif
 
+#if defined(OPAL_SRTP)
+
 #include <rtp/srtp.h>
 #include <opal/connection.h>
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
+
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -79,6 +85,7 @@ OpalSRTP_UDP::~OpalSRTP_UDP()
 {
   delete srtpParms;
 }
+
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -284,3 +291,4 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
 
 #endif // OPAL_HAS_LIBSRTP
 
+#endif // OPAL_SRTP
