@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2025  2006/08/11 08:09:24  csoutheren
+ * Revision 1.2026  2006/10/03 01:06:35  rjongbloed
+ * Fixed GNU compiler compatibility.
+ *
+ * Revision 2.24  2006/08/11 08:09:24  csoutheren
  * Fix incorrect handling of variable output frame sizes - Speex plugin now works :)
  *
  * Revision 2.23  2006/08/11 07:52:02  csoutheren
@@ -137,10 +140,6 @@
 
 #ifdef __GNUC__
 #pragma implementation "transcoders.h"
-#endif
-
-#ifndef _MSC_VER
-#include <codec/allcodecs.h>
 #endif
 
 #include <opal/transcoders.h>

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2002  2006/10/02 13:30:51  rjongbloed
+ * Revision 1.2003  2006/10/03 01:06:35  rjongbloed
+ * Fixed GNU compiler compatibility.
+ *
+ * Revision 2.1  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
  */
@@ -164,8 +167,8 @@ bool OpalPluginLID::CheckError(int error, const char * fnName, int ignoredError)
   return FALSE;
 }
 
-#define CHECK_FN(fn)                  CheckContextAndFunction(m_definition.fn, #fn)
-#define CHECK_FN_ARG(fn, args)       (CheckContextAndFunction(m_definition.fn, #fn) && CheckError(m_definition.fn args, #fn))
+#define CHECK_FN(fn)                  CheckContextAndFunction((void *)m_definition.fn, #fn)
+#define CHECK_FN_ARG(fn, args)       (CheckContextAndFunction((void *)m_definition.fn, #fn) && CheckError(m_definition.fn args, #fn))
 
 #else // PTRACING
 
@@ -305,7 +308,7 @@ BOOL OpalPluginLID::IsLineRinging(unsigned line, DWORD * cadence)
   if (cadence == NULL)
     cadence = &localCadence;
 
-  if (CHECK_FN_ARG(IsLineRinging, (m_context, line, cadence)))
+  if (CHECK_FN_ARG(IsLineRinging, (m_context, line, (unsigned long *)cadence)))
     return *cadence != 0;
 
   return FALSE;
