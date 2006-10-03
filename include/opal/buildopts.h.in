@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.20  2006/10/03 09:42:03  rjongbloed
+ * Start of unix support for LID plug ins
+ *
  * Revision 1.19  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
@@ -201,14 +204,6 @@
 #if HAS_LIBSRTP
 #define OPAL_SRTP  1
 #endif
-
-/////////////////////////////////////////////////
-// Various other Line Interface Devices
-
-#undef	HAS_IXJ
-#undef  HAS_VBLASTER
-#undef  HAS_LID
-
 
 #endif // _OPAL_BUILDOPTS_H
 

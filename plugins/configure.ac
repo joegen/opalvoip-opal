@@ -187,6 +187,86 @@ P_FILE
 fi
 
 dnl ########################################################################
+dnl
+dnl ffmpeg for H.263
+dnl 
+
+HAS_FFMPEG=0
+AC_SUBST(HAS_FFMPEG)
+
+
+dnl ########################################################################
+dnl
+dnl Quicknet xJACK cards
+dnl 
+
+HAS_IXJ=0
+AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/telephony.h, HAS_IXJ=1)
+if test "x$HAS_IXJ" != "x" ; then
+  AC_MSG_CHECKING(if ixjuser.h actually compiles)
+  AC_TRY_COMPILE([#include <linux/ixjuser.h>],
+                 [int main(int ac,char **av) { return 0; }], HAS_IXJ=1, HAS_IXJ=)
+  if test "x$HAS_IXJ" != "x" ; then
+    AC_MSG_RESULT(yes)
+    HAS_IXJ=1
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+AC_SUBST(HAS_IXJ)
+
+
+dnl ########################################################################
+dnl
+dnl VoiceTronics VPB card
+dnl 
+
+HAS_VPB=0
+vpb=yes
+AC_ARG_ENABLE(vpb,
+       [  --enable-vpb            enable voicetronix vpb],
+       vpb=$enableval)
+AC_MSG_CHECKING(Voicetronix vpb)
+if test "$vpb" = "yes" ; then
+  HAS_VPB=1
+  AC_MSG_RESULT(enabled)
+else
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(HAS_VPB)
+
+
+dnl ########################################################################
+dnl
+dnl Sangoma libraries
+dnl 
+
+OLD_CPPFLAGS=$CPPFLAGS
+CPPFLAGS=-D__LINUX__
+
+HAS_SANGOMA=
+AC_CHECK_HEADERS(/usr/local/include/libpri.h, HAS_SANGOMA=1)
+if test "x$HAS_SANGOMA" != "x" ; then
+  AC_CHECK_HEADERS(/usr/local/include/libsangoma.h, HAS_SANGOMA=1)
+  if test "x$HAS_SANGOMA" != "x" ; then
+    AC_CHECK_LIB(pri, pri_new_cb, HAS_SANGOMA=1)
+    if test "x$HAS_SANGOMA" = "x" ; then
+      AC_MSG_NOTICE(*** If the latest libri is installed in /usr/local/lib, ensure it is not obscured by an older version in /usr/lib)
+    else
+      AC_CHECK_LIB(sangoma, sangoma_create_socket, HAS_SANGOMA=1)
+      if test "x$HAS_SANGOMA" != "x" ; then
+        AC_DEFINE(HAS_SANGOMA, 1)
+        HAS_SANGOMA=1
+      fi
+    fi
+  fi
+fi
+AC_SUBST(HAS_SANGOMA)
+
+CPPFLAGS=$OLD_CPPFLAGS
+
+
+dnl ########################################################################
 
 AC_CONFIG_FILES(audio/gsm-amr/Makefile)
 AC_CONFIG_FILES(audio/GSM0610/Makefile)
@@ -197,6 +277,9 @@ AC_CONFIG_FILES(audio/G726/Makefile)
 AC_CONFIG_FILES(audio/IMA_ADPCM/Makefile)
 AC_CONFIG_FILES(video/H.261-vic/Makefile)
 AC_CONFIG_FILES(video/H.263-ffmpeg/Makefile)
+AC_CONFIG_FILES(LID/IxJ/Makefile)
+AC_CONFIG_FILES(LID/VPB/Makefile)
+AC_CONFIG_FILES(Makefile)
 
 dnl ########################################################################
 dnl Header file

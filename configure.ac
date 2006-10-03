@@ -435,101 +435,18 @@ else
 fi
 AC_SUBST(H323_H460)
 
-dnl ########################################################################
-dnl
-dnl Quicknet xJACK cards
-dnl 
-dnl MSWIN_DISPLAY ixj,Quicknet Internet xJACK cards
-dnl MSWIN_DEFINE  ixj,HAS_IXJ
-
-HAS_IXJ=
-AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/telephony.h, HAS_IXJ=1)
-if test "x$HAS_IXJ" != "x" ; then
-  AC_MSG_CHECKING(if ixjuser.h actually compiles)
-  AC_TRY_COMPILE([#include <linux/ixjuser.h>],
-                 [int main(int ac,char **av) { return 0; }], HAS_IXJ=1, HAS_IXJ=)
-  if test "x$HAS_IXJ" != "x" ; then
-    AC_MSG_RESULT(yes)
-    AC_DEFINE(HAS_IXJ, 1)
-    HAS_IXJ=1
-  else
-    AC_MSG_RESULT(no)
-  fi
-fi
-AC_SUBST(HAS_IXJ)
-
-
-dnl ########################################################################
-dnl
-dnl VoiceBlaster
-dnl 
-dnl MSWIN_DISPLAY vblaster,Voice Blaster
-dnl MSWIN_DEFINE  vblaster,HAS_VBLASTER
 
 dnl ########################################################################
 dnl
 dnl LID, used for vpb, dialogic etc ...
 
+dnl MSWIN_DISPLAY lids,Line Interface Device
+dnl MSWIN_DEFINE  lids,OPAL_LID
+
 AC_DEFINE(OPAL_LID, 1)
 OPAL_LID=1
 AC_SUBST(OPAL_LID)
 
-dnl ########################################################################
-dnl
-dnl VoiceTronics VPB card
-dnl 
-dnl MSWIN_DISPLAY     vpb,Voicetronix vpb support
-dnl MSWIN_CHECK_FILE  vpb,src\vpbapi.h,HAS_VPB=1
-dnl MSWIN_DIR_SYMBOL  vpb,VPB_DIR
-dnl MSWIN_CHECK_DIR   vpb,..\vpb-driver\
-dnl MSWIN_CHECK_DIR   vpb,..\external\vpb-driver
-dnl MSWIN_CHECK_DIR   vpb,\vpb-driver
-dnl MSWIN_CHECK_DIR   vpb,c:\vpb-driver
-
-vpb=no
-AC_ARG_ENABLE(vpb,
-       [  --enable-vpb            enable voicetronix vpb],
-       vpb=$enableval)
-AC_MSG_CHECKING(Voicetronix vpb)
-if test "$vpb" = "yes" ; then
-  AC_SUBST(HAS_VPB, 1)
-  AC_DEFINE(HAS_VPB)
-  AC_MSG_RESULT(enabled)
-  AC_SUBST(OPAL_LID, 1)
-  AC_DEFINE(OPAL_LID)
-else
-  AC_SUBST(HAS_VPB, 0)
-  AC_MSG_RESULT(disabled)
-fi
-
-dnl ########################################################################
-dnl
-dnl Sangoma libraries
-dnl 
-
-OLD_CPPFLAGS=$CPPFLAGS
-CPPFLAGS=-D__LINUX__
-
-HAS_SANGOMA=
-AC_CHECK_HEADERS(/usr/local/include/libpri.h, HAS_SANGOMA=1)
-if test "x$HAS_SANGOMA" != "x" ; then
-  AC_CHECK_HEADERS(/usr/local/include/libsangoma.h, HAS_SANGOMA=1)
-  if test "x$HAS_SANGOMA" != "x" ; then
-    AC_CHECK_LIB(pri, pri_new_cb, HAS_SANGOMA=1)
-    if test "x$HAS_SANGOMA" = "x" ; then
-      AC_MSG_NOTICE(*** If the latest libri is installed in /usr/local/lib, ensure it is not obscured by an older version in /usr/lib)
-    else
-      AC_CHECK_LIB(sangoma, sangoma_create_socket, HAS_SANGOMA=1)
-      if test "x$HAS_SANGOMA" != "x" ; then
-        AC_DEFINE(HAS_SANGOMA, 1)
-        HAS_SANGOMA=1
-      fi
-    fi
-  fi
-fi
-AC_SUBST(HAS_SANGOMA)
-
-CPPFLAGS=$OLD_CPPFLAGS
 
 dnl ########################################################################
 dnl
