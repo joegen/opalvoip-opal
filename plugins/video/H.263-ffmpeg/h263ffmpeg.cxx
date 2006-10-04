@@ -28,6 +28,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.5  2006/10/04 08:44:14  csoutheren
+ * Fixed loading problems on Linux
+ *
  * Revision 1.4  2006/09/06 23:09:21  csoutheren
  * Add Makefile and more implementation for Linux H.263
  *
@@ -89,14 +92,22 @@ extern "C" {
 #include "ffmpeg/avcodec.h"
 };
 
+#  ifdef  _WIN32
+#    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
+#    define DIR_SEPERATOR "\\"
+#    define DIR_TOKENISER ";"
+#  else
+#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/pwlib"
+#    define DIR_SEPERATOR "/"
+#    define DIR_TOKENISER ":"
+#  endif
+
 #include <vector>
 
 // if defined, the FFMPEG code is access via another DLL
 // otherwise, the FFMPEG code is assumed to be statically linked into this plugin
 
-#ifdef _WIN32
 #define USE_DLL_AVCODEC   1
-#endif // _WIN32
 
 #define RTP_RFC2190_PAYLOAD  34
 #define RTP_DYNAMIC_PAYLOAD  96
@@ -167,6 +178,8 @@ class CriticalSection
     }
 
   private:
+    CriticalSection(const CriticalSection &)
+    { }
     CriticalSection & operator=(const CriticalSection &) { return *this; }
 #ifdef _WIN32
     mutable CRITICAL_SECTION criticalSection; 
@@ -211,17 +224,41 @@ class DynaLink
 
     virtual bool Open(const char *name)
     {
+      char * env = ::getenv("PWLIBPLUGINDIR");
+      if (env != NULL) 
+        return InternalOpen(env, name);
+
+      const char * token = strtok(env, DIR_TOKENISER);
+      while (token != NULL) {
+        if (InternalOpen(token, name))
+          return true;
+        token = strtok(NULL, DIR_TOKENISER);
+      }
+      return false;
+    }
+
+  // split into directories on correct seperator
+
+    bool InternalOpen(const char * dir, const char *name)
+    {
+      char path[1024];
+      memset(path, 0, sizeof(path));
+      strcpy(path, dir);
+      if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
+        strcat(path, DIR_SEPERATOR);
+      strcat(path, name);
+
 #ifdef _WIN32
 # ifdef UNICODE
       USES_CONVERSION;
-      _hDLL = LoadLibrary(A2T(name));
+      _hDLL = LoadLibrary(A2T(path));
 # else
       _hDLL = LoadLibrary(name);
 # endif // UNICODE
 #else
-      _hDLL = dlopen((const char *)name, RTLD_NOW);
+      _hDLL = dlopen((const char *)path, RTLD_NOW);
       if (_hDLL == NULL) {
-        fprintf(stderr, "error loading %s", name);
+        fprintf(stderr, "error loading %s", path);
         char * err = dlerror();
         if (err != NULL)
           fprintf(stderr, " - %s", err);
@@ -538,8 +575,6 @@ void FFMPEGLibrary::AvcodecFree(void * ptr)
 
 bool FFMPEGLibrary::IsLoaded()
 {
-  WaitAndSignal m(processLock);
-
   return isLoadedOK;
 }
 
