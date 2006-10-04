@@ -460,6 +460,22 @@ dnl MSWIN_CHECK_DIR   libsrtp,.\srtp
 dnl MSWIN_CHECK_DIR   libsrtp,..\external\srtp
 dnl MSWIN_CHECK_DIR   libsrtp,c:\libs
 
+HAS_LIBSRTP=
+AC_MSG_CHECKING(for libSRTP)
+AC_TRY_COMPILE([#include "srtp/srtp.h"],
+ [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
+ HAS_LIBSRTP=1)
+if test "${HAS_LIBSRTP}" = "1" ; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAS_LIBSRTP, 1)
+  HAS_LIBSRTP=1
+  OPAL_SRTP=1
+else
+  AC_MSG_RESULT(no)
+fi
+AC_SUBST(OPAL_SRTP)
+AC_SUBST(HAS_LIBSRTP)
+
 
 dnl ########################################################################
 dnl output make directives
