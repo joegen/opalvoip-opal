@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.8  2006/10/04 06:33:19  csoutheren
+ * Add compliant handling for multiples speex frames per packet
+ *
  * Revision 1.7  2006/08/28 01:21:18  csoutheren
  * Change case of SDP name because RFC specifies "Speex" even though SDP names are case insignificant
  *
@@ -134,7 +137,7 @@ const float MaxSampleValue   = 32767.0;
 const float MinSampleValue   = -32767.0;
 
 struct PluginSpeexContext {
-  struct SpeexBits * bits;
+  SpeexBits speexBits;
   void      * coderState;
   unsigned  encoderFrameSize;
 };
@@ -164,8 +167,6 @@ static void * create_encoder(const struct PluginCodec_Definition * codec)
   int mode = (int)(long)(codec->userData);
 
   struct PluginSpeexContext * context = new PluginSpeexContext;
-  context->bits = new SpeexBits;
-  speex_bits_init(context->bits);
 
   if (codec->sampleRate == 16000)
     context->coderState = speex_encoder_init(&speex_wb_mode);
@@ -188,22 +189,24 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
 {
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
-  if (*fromLen != codec->samplesPerFrame*2)
-    return 0;
+  speex_bits_init(&context->speexBits);
 
   short * sampleBuffer = (short *)from;
 
-  // convert PCM to float
-  float floatData[WIDE_SAMPLES_PER_FRAME];
-  int i;
-  for (i = 0; i < codec->samplesPerFrame; i++)
-    floatData[i] = sampleBuffer[i];
-
   // encode PCM data in sampleBuffer to buffer
-  speex_bits_reset(context->bits); 
-  speex_encode(context->coderState, floatData, context->bits); 
+  int i = 0;
+  int frameLen = codec->samplesPerFrame*2;
+  while ((*fromLen >= frameLen) && (((i+1)*codec->bytesPerFrame) <= *toLen) ) {
+    speex_encode_int(context->coderState, sampleBuffer + i*frameLen, &context->speexBits); 
+    *fromLen -= frameLen;
+    ++i;
+  }
 
-  *toLen = speex_bits_write(context->bits, (char *)to, context->encoderFrameSize); 
+  // add in terminator
+  speex_bits_insert_terminator(&context->speexBits);
+
+  // finish writing the data
+  *toLen = speex_bits_write(&context->speexBits, (char *)to, *toLen); 
 
   return 1; 
 }
@@ -212,9 +215,7 @@ static void destroy_encoder(const struct PluginCodec_Definition * codec, void * 
 {
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
-  speex_bits_destroy(context->bits);
-  free(context->bits);
-
+  speex_bits_destroy(&context->speexBits);
   speex_encoder_destroy(context->coderState); 
   free(context);
 }
@@ -224,8 +225,6 @@ static void * create_decoder(const struct PluginCodec_Definition * codec)
   int tmp = 1;
 
   PluginSpeexContext * context = new PluginSpeexContext;
-  context->bits = new SpeexBits;
-  speex_bits_init(context->bits);
 
   if (codec->sampleRate == 16000)
     context->coderState = speex_decoder_init(&speex_wb_mode);
@@ -247,34 +246,31 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
 {
   struct PluginSpeexContext * context = (struct PluginSpeexContext *)_context;
 
-  float floatData[WIDE_SAMPLES_PER_FRAME];
   short * sampleBuffer = (short *)to;
 
-  if (*toLen != codec->samplesPerFrame*2)
+  speex_bits_init(&context->speexBits);
+
+  if (*toLen < codec->samplesPerFrame*2)
     return 0;
 
   int status = 0;
 
   // if this is a packet loss concealment frame, generate interpolated data
   // else decode the real data
-  if (*flag & PluginCodec_CoderSilenceFrame)
-    status = speex_decode(context->coderState, NULL, floatData);
+  if (*flag & PluginCodec_CoderSilenceFrame) {
+    status = speex_decode_int(context->coderState, NULL, sampleBuffer);
+  }
   else {
-    speex_bits_read_from(context->bits, (char *)from, *fromLen); 
-    status = speex_decode(context->coderState, context->bits, floatData);     
+    speex_bits_read_from(&context->speexBits, (char *)from, *fromLen); 
+    int i = 0;
+    while (((i+1)*codec->samplesPerFrame*2) <= *toLen)  {
+      int stat = speex_decode_int(context->coderState, &context->speexBits, sampleBuffer + i*codec->samplesPerFrame);
+      ++i;
+      if (stat == -1 || stat == -2 || speex_bits_remaining(&context->speexBits) < 0)
+        break;
+    }
+    *toLen = i*codec->samplesPerFrame*2;
   }
-
-  // convert float to PCM
-  int i;
-  for (i = 0; i < codec->samplesPerFrame; i++) {
-    float sample = floatData[i];
-    if (sample < MinSampleValue)
-      sample = MinSampleValue;
-    else if (sample > MaxSampleValue)
-      sample = MaxSampleValue;
-    sampleBuffer[i] = (short)sample;
-  }
-
 
   return 1;
 }
@@ -283,9 +279,7 @@ static void destroy_decoder(const struct PluginCodec_Definition * codec, void * 
 {
   struct PluginSpeexContext * context = (struct PluginSpeexContext *)_context;
 
-  speex_bits_destroy(context->bits);
-  free(context->bits);
-
+  speex_bits_destroy(&context->speexBits);
   speex_decoder_destroy(context->coderState); 
   free(context);
 }
