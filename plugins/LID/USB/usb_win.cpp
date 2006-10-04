@@ -17,9 +17,14 @@
  *
  * The Initial Developer of the Original Code is Post Increment
  *
+ * Based on code by Simon Horne of ISVO (Asia) Pte Ltd.
+ *
  * Contributor(s): ______________________________________.
  *
  * $Log: usb_win.cpp,v $
+ * Revision 1.2  2006/10/04 22:30:23  rjongbloed
+ * Fixed background thread start up and shut down
+ *
  * Revision 1.1  2006/10/02 13:30:53  rjongbloed
  * Added LID plug ins
  *
@@ -179,7 +184,7 @@ class Context
       if (m_hThread == NULL)
         return PluginLID_DeviceOpenFailed;
 
-      if (WaitForSingleObject(m_hStartedEvent, 2000) == WAIT_OBJECT_0)
+      if (WaitForSingleObject(m_hStartedEvent, 5000) == WAIT_OBJECT_0)
         return PluginLID_NoError;
 
       Close();
@@ -190,8 +195,9 @@ class Context
     PLUGIN_FUNCTION_ARG0(Close)
     {
       if (m_hThread != NULL) {
-        PostThreadMessage(m_threadId, WM_HID_SHUTDOWN, 0, 0);
-        WaitForSingleObject(m_hThread, 2000);
+        SendMessage(m_hWnd, WM_HID_SHUTDOWN, 0, 0);
+        if (WaitForSingleObject(m_hThread, 5000) == WAIT_TIMEOUT)
+          TerminateThread(m_hThread, -1);
       }
 
       if (m_hStartedEvent != NULL)
@@ -657,10 +663,14 @@ class Context
       SetEvent(m_hStartedEvent);
 
       MSG msg;
-      while (GetMessage(&msg, m_hWnd, 0, 0)) {
-        if (msg.message != WM_QUIT) {
-          TranslateMessage(&msg);
-          DispatchMessage(&msg);
+      for (;;) {
+        switch (GetMessage(&msg, NULL, 0, 0)) {
+          case -1 :
+          case 0 :
+            return;
+          default :
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
         }
       }
     }
@@ -771,7 +781,7 @@ class Context
           break;
 
         case WM_DESTROY :
-          PostMessage(NULL, WM_QUIT, 0, 0);
+          PostQuitMessage(0);
           break;
       }
     }
@@ -872,6 +882,14 @@ static struct PluginLID_Definition definition[1] =
 
 
 PLUGIN_LID_IMPLEMENTATION(definition);
+
+
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
+{
+  if (fdwReason == DLL_PROCESS_ATTACH)
+    g_hInstance = hinstDLL;
+  return TRUE;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
