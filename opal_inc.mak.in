@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.12  2006/10/04 06:19:08  csoutheren
+# Fixed SRTP configuration for Linux
+#
 # Revision 1.11  2006/06/27 13:50:23  csoutheren
 # Patch 1375137 - Voicetronix patches and lid enhancements
 # Thanks to Frederich Heem
@@ -73,15 +76,10 @@
 # Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
 #
 
-HAS_IXJ=@HAS_IXJ@
-HAS_SANGOMA=@HAS_SANGOMA@
-HAS_VPB=@HAS_VPB@
-
 OPALDIR=@OPALDIR@
 PWLIBDIR=@PWLIBDIR@
 
 LIBDIRS += $(OPALDIR)
-
 
 ifdef LIBRARY_MAKEFILE
 include $(PWLIBDIR)/make/unix.mak
@@ -91,8 +89,6 @@ OBJDIR_SUFFIX := n
 endif
 include $(PWLIBDIR)/make/ptlib.mak
 endif
-
-
 
 OPAL_SRCDIR = $(OPALDIR)/src
 OPAL_INCDIR = $(OPALDIR)/include
@@ -104,7 +100,8 @@ OPAL_IAX2         = @OPAL_IAX2@
 OPAL_LID	  = @OPAL_LID@
 OPAL_H224         = @OPAL_H224@
 OPAL_SYSTEM_SPEEX = @OPAL_SYSTEM_SPEEX@
-OPAL_ILBC	  = @OPAL_ILBC@
+OPAL_SRTP	  = @OPAL_SRTP@
+HAS_LIBSRTP	  = @HAS_LIBSRTP@
 
 H323_H460         = @H323_H460@
 
@@ -126,8 +123,8 @@ LDLIBS	    := -l$(OPAL_BASE)$(LIB_TYPE) $(LDLIBS)
 
 STDCCFLAGS  += -I$(OPAL_INCDIR)
 
-ifeq ($(HAS_VPB),1)
-LDLIBS += -lvpb
+ifeq ($(HAS_LIBSRTP), 1)
+ENDLDLIBS       += -lsrtp
 endif
 
 $(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
