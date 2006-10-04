@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2026  2006/10/03 01:06:35  rjongbloed
+ * Revision 1.2027  2006/10/04 06:33:20  csoutheren
+ * Add compliant handling for multiples speex frames per packet
+ *
+ * Revision 2.25  2006/10/03 01:06:35  rjongbloed
  * Fixed GNU compiler compatibility.
  *
  * Revision 2.24  2006/08/11 08:09:24  csoutheren
@@ -413,8 +416,8 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   PINDEX outLen = 0;
 
   while (inputLength > 0) {
-    PINDEX consumed = PMIN(inputBytesPerFrame, inputLength);
-    PINDEX created  = outputBytesPerFrame;
+    PINDEX consumed = inputLength; // PMIN(inputBytesPerFrame, inputLength);
+    PINDEX created  = output.GetPayloadSize() - outLen;
 
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
       return FALSE;
