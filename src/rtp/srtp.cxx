@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.6  2006/10/04 06:19:08  csoutheren
+ * Fixed SRTP configuration for Linux
+ *
  * Revision 1.5  2006/10/04 03:45:43  csoutheren
  * Fixed SRTP transmission
  *
@@ -57,10 +60,6 @@
 
 #include <ptlib.h>
 #include <opal/buildopts.h>
-
-#ifdef __GNUC__
-#pragma implementation "srtp.h"
-#endif
 
 #if defined(OPAL_SRTP)
 
@@ -107,9 +106,11 @@ namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
 };
 
+#ifdef WIN32
 #pragma comment(lib, LIBSRTP_LIBRARY)
+#endif
 
-#include <srtp/include/srtp.h>
+#include "srtp/srtp.h"
 
 class OpalSRTPSecurityMode;
 
