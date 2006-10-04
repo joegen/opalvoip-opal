@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.2  2006/10/04 04:21:16  rjongbloed
+# Fixed VPB plug in build under linux
+#
 # Revision 1.1  2006/10/02 13:30:53  rjongbloed
 # Added LID plug ins
 #
@@ -43,18 +46,18 @@ SONAME	= vpb
 
 OBJDIR	= ./obj
 
-SRCS	+= vpb.c
+SRCS	+= vpb.cpp
 
 vpath	%.o $(OBJDIR)
-vpath	%.c $(SRCDIR)
+vpath	%.cpp $(SRCDIR)
 
-$(OBJDIR)/%.o : %.c
+$(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -I../../../include $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./vpb_lid_pwplugin.so
 
-OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
+OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.cpp,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)

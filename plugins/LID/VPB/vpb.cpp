@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpb.cpp,v $
+ * Revision 1.2  2006/10/04 04:21:16  rjongbloed
+ * Fixed VPB plug in build under linux
+ *
  * Revision 1.1  2006/10/02 13:30:53  rjongbloed
  * Added LID plug ins
  *
@@ -125,7 +128,7 @@ class Context
           int lineCount = vpb_get_ports_per_card(/*getCardNumber()*/);
           vpb_close(iHandle);
           if (lineCount > 0) {
-            _snprintf(name, size, "%u", index);
+            snprintf(name, size, "%u", index);
             return PluginLID_NoError;
           }
         }
@@ -315,7 +318,7 @@ class Context
         return PluginLID_NoSuchLine;
 
       for (int i = 0; i < sizeof(CodecInfo)/sizeof(CodecInfo); i++) {
-        if (stricmp(mediaFormat, CodecInfo[i].mediaFormat) == 0) {
+        if (strcmp(mediaFormat, CodecInfo[i].mediaFormat) == 0) {
           if (vpb_record_buf_start(lineState[line].handle, CodecInfo[i].mode) < 0)
             return PluginLID_InternalError;
           lineState[line].readFormat = CodecInfo[i].mediaFormat;
@@ -339,7 +342,7 @@ class Context
         return PluginLID_NoSuchLine;
 
       for (int i = 0; i < sizeof(CodecInfo)/sizeof(CodecInfo); i++) {
-        if (stricmp(mediaFormat, CodecInfo[i].mediaFormat) == 0) {
+        if (strcmp(mediaFormat, CodecInfo[i].mediaFormat) == 0) {
           if (vpb_play_buf_start(lineState[line].handle, CodecInfo[i].mode) < 0)
             return PluginLID_InternalError;
           lineState[line].writeFormat = CodecInfo[i].mediaFormat;
