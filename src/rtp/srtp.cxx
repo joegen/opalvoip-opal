@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.5  2006/10/04 03:45:43  csoutheren
+ * Fixed SRTP transmission
+ *
  * Revision 1.4  2006/10/03 01:00:53  rjongbloed
  * Fixed ability to compile without SRTP support.
  *
@@ -108,14 +111,16 @@ namespace PWLibStupidLinkerHacks {
 
 #include <srtp/include/srtp.h>
 
+class OpalSRTPSecurityMode;
+
 class LibSRTP_UDP : public OpalSRTP_UDP
 {
   PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
   public:
     LibSRTP_UDP(
-      unsigned int id,             ///<  Session ID for RTP channel
-      BOOL remoteIsNAT,            ///<  TRUE is remote is behind NAT
-      OpalSecurityMode * srtpParms ///<  Paramaters to use for SRTP
+      unsigned int id,                 ///<  Session ID for RTP channel
+      BOOL remoteIsNAT,                ///<  TRUE is remote is behind NAT
+      OpalSRTPSecurityMode * srtpParms ///<  Paramaters to use for SRTP
     );
 
     ~LibSRTP_UDP();
@@ -252,9 +257,10 @@ DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_12
 
 ///////////////////////////////////////////////////////
 
-LibSRTP_UDP::LibSRTP_UDP(unsigned _sessionId, BOOL _remoteIsNAT, OpalSecurityMode * _srtpParms)
+LibSRTP_UDP::LibSRTP_UDP(unsigned _sessionId, BOOL _remoteIsNAT, OpalSRTPSecurityMode * _srtpParms)
   : OpalSRTP_UDP(_sessionId, _remoteIsNAT, _srtpParms)
 {
+  _srtpParms->GetOutgoingSSRC(syncSourceOut);
 }
 
 LibSRTP_UDP::~LibSRTP_UDP()
@@ -263,6 +269,10 @@ LibSRTP_UDP::~LibSRTP_UDP()
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
 {
+  SendReceiveStatus stat = RTP_UDP::OnSendData(frame);
+  if (stat != e_ProcessPacket)
+    return stat;
+
   LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
 
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
@@ -270,8 +280,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
   if (err != err_status_ok)
     return RTP_Session::e_IgnorePacket;
   frame.SetPayloadSize(len - frame.GetHeaderSize());
-
-  return RTP_UDP::OnSendData(frame);
+  return e_ProcessPacket;
 }
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
