@@ -857,6 +857,7 @@ Optional Features:
   --disable-h224          disable H.224 protocol support
   --disable-t38           disable T.38 protocol support
   --disable-h460          disable H.460
+  --disable-lid           disable LID support
 
 Some influential environment variables:
   CC          C compiler command
@@ -5856,12 +5857,29 @@ fi
 
 
 
-cat >>confdefs.h <<\_ACEOF
+OPAL_LID=
+lid=yes
+if test "$lid" = "yes" ; then
+  # Check whether --enable-lid or --disable-lid was given.
+if test "${enable_lid+set}" = set; then
+  enableval="$enable_lid"
+  lid=$enableval
+fi;
+  echo "$as_me:$LINENO: checking LID support" >&5
+echo $ECHO_N "checking LID support... $ECHO_C" >&6
+  if test "$lid" = "yes" ; then
+    cat >>confdefs.h <<\_ACEOF
 #define OPAL_LID 1
 _ACEOF
 
-OPAL_LID=1
-
+    OPAL_LID=1
+    echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+  else
+    echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+  fi
+fi
 
 
 

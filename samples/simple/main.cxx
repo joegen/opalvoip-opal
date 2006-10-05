@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2074  2006/10/02 13:30:51  rjongbloed
+ * Revision 1.2075  2006/10/05 07:11:49  csoutheren
+ * Add --disable-lid option
+ *
+ * Revision 2.73  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.72  2006/08/29 01:37:11  csoutheren
@@ -385,8 +388,10 @@ void SimpleOpalProcess::Main()
              "I-no-sip."
              "j-jitter:"
              "l-listen."
+#if OPAL_LID
              "L-no-lid."
              "-lid:"
+#endif
              "n-no-gatekeeper."
              "-no-std-dial-peer."
 #if PTRACING
@@ -506,10 +511,12 @@ void SimpleOpalProcess::Main()
 #endif
 
             "\n"
+#if OPAL_LID
             "Line Interface options:\n"
             "  -L --no-lid             : Do not use line interface device.\n"
             "     --lid device         : Select line interface device (eg Quicknet:013A17C2, default *:*).\n"
             "\n"
+#endif
             "Sound card options:\n"
             "  -S --no-sound           : Do not use sound input/output device.\n"
             "  -s --sound device       : Select sound input/output device.\n"
@@ -623,7 +630,9 @@ void SimpleOpalProcess::Main()
 
 MyManager::MyManager()
 {
+#if OPAL_LID
   potsEP = NULL;
+#endif
   pcssEP = NULL;
 
 #if OPAL_H323
@@ -648,9 +657,11 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
+#if OPAL_LID
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
+#endif
 }
 
 
@@ -669,13 +680,20 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
     video.deviceName = args.GetOptionString("grabber");
-    SetVideoInputDevice(video);
+    if (!SetVideoInputDevice(video)) {
+      cerr << "error: cannot set video input device " << video.deviceName 
+           << "options are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
+    }
   }
 
   if (args.HasOption("display")) {
     PVideoDevice::OpenArgs video = GetVideoOutputDevice();
     video.deviceName = args.GetOptionString("display");
-    SetVideoOutputDevice(video);
+    if (!SetVideoOutputDevice(video)) {
+      cerr << "error: cannot set video output device " << video.deviceName
+           << "options are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
+      return FALSE;
+    }
   }
 
   if (args.HasOption('j')) {
@@ -762,7 +780,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
-
+#if OPAL_LID
   if (!args.HasOption('L')) {
     PStringArray devices = args.GetOptionString("lid").Lines();
     if (devices.IsEmpty() || devices[0] == "*" || devices[0] == "*:*")
@@ -783,7 +801,7 @@ BOOL MyManager::Initialise(PArgList & args)
       }
     }
   }
-
+#endif
 
   ///////////////////////////////////////
   // Create PC Sound System handler
@@ -959,6 +977,7 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
 #endif
 
+#if OPAL_LID
     if (potsEP != NULL) {
 #if OPAL_H323
       AddRouteEntry("h323:.* = pots:<da>");
@@ -971,7 +990,9 @@ BOOL MyManager::Initialise(PArgList & args)
       AddRouteEntry("sip:.*  = pots:<da>");
 #endif
     }
-    else if (pcssEP != NULL) {
+    else
+#endif // OPAL_LID
+    if (pcssEP != NULL) {
 #if OPAL_H323
       AddRouteEntry("h323:.* = pc:<da>");
 #if P_SSL
@@ -1158,8 +1179,10 @@ void MyManager::Main(PArgList & args)
       cout << "Initiating call to \"" << args[0] << "\"\n";
       if (!srcEP.IsEmpty())
         SetUpCall(srcEP, args[0], currentCallToken);
+#if OPAL_LID
       else if (potsEP != NULL)
         SetUpCall("pots:*", args[0], currentCallToken);
+#endif
       else
         SetUpCall("pc:*", args[0], currentCallToken);
       break;
