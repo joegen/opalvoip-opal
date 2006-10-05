@@ -443,10 +443,22 @@ dnl LID, used for vpb, dialogic etc ...
 dnl MSWIN_DISPLAY lids,Line Interface Device
 dnl MSWIN_DEFINE  lids,OPAL_LID
 
-AC_DEFINE(OPAL_LID, 1)
-OPAL_LID=1
+OPAL_LID=
+lid=yes
+if test "$lid" = "yes" ; then
+  AC_ARG_ENABLE(lid,
+         [  --disable-lid           disable LID support],
+         lid=$enableval)
+  AC_MSG_CHECKING(LID support)
+  if test "$lid" = "yes" ; then
+    AC_DEFINE(OPAL_LID, 1)
+    OPAL_LID=1
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
 AC_SUBST(OPAL_LID)
-
 
 dnl ########################################################################
 dnl

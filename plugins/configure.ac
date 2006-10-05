@@ -191,7 +191,7 @@ dnl
 dnl ffmpeg for H.263
 dnl 
 
-HAS_FFMPEG=0
+HAS_FFMPEG=1
 AC_SUBST(HAS_FFMPEG)
 
 
