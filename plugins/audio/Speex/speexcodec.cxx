@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.10  2006/10/05 07:02:18  csoutheren
+ * Fixed multiple frame problem again
+ *
  * Revision 1.9  2006/10/05 06:13:25  csoutheren
  * Fixed multiple frame problem
  *
@@ -200,7 +203,7 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
   int i = 0;
   int frameLen = codec->samplesPerFrame*2;
   while ((*fromLen >= frameLen) && (((i+1)*codec->bytesPerFrame) <= *toLen) ) {
-    speex_encode_int(context->coderState, sampleBuffer + i*frameLen, &context->speexBits); 
+    speex_encode_int(context->coderState, sampleBuffer + i*codec->samplesPerFrame, &context->speexBits); 
     ++i;
   }
   *fromLen = i*frameLen;
