@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2005  2006/10/02 13:30:52  rjongbloed
+ * Revision 1.2006  2006/10/05 07:11:49  csoutheren
+ * Add --disable-lid option
+ *
+ * Revision 2.4  2006/10/02 13:30:52  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.3  2006/09/28 07:42:18  csoutheren
@@ -69,7 +72,11 @@ class PluginLoader : public PProcessStartup
 };
 
 static PFactory<PPluginModuleManager>::Worker<OpalPluginCodecManager> opalPluginCodecManagerFactory("OpalPluginCodecManager", true);
+
+#if OPAL_LID
 static PFactory<PPluginModuleManager>::Worker<OpalPluginLIDManager> opalPluginLIDManagerFactory("OpalPluginLIDManager", true);
+#endif
+
 static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
 
 #endif // P_HAS_PLUGINS

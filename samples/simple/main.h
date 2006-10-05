@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2024  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2025  2006/10/05 07:11:49  csoutheren
+ * Add --disable-lid option
+ *
+ * Revision 2.23  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.22  2006/08/21 05:30:48  csoutheren
@@ -194,7 +197,9 @@ class MyManager : public OpalManager
 
     PString currentCallToken;
 
+#if OPAL_LID
     OpalPOTSEndPoint * potsEP;
+#endif
     MyPCSSEndPoint   * pcssEP;
 #if OPAL_H323
     H323EndPoint     * h323EP;
