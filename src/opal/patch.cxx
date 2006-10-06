@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.5  2006/08/07 20:18:25  dsandras
+ * Revision 1.2020.2.6  2006/10/06 08:18:16  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.19.2.5  2006/08/07 20:18:25  dsandras
  * Backported various patches from HEAD.
  *
  * Revision 2.19.2.4  2006/05/07 15:34:49  dsandras
@@ -351,9 +354,15 @@ OpalMediaPatch::Sink::~Sink()
 
 void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage)
 {
-  inUse.Wait();
+   PWaitAndSignal mutex(inUse);
+      
+   // ensures that a filter is added only once
+   for (PINDEX i = 0; i < filters.GetSize(); i++) {
+     if (filters[i].notifier == filter && filters[i].stage == stage) {
+       return;
+     }
+   }
   filters.Append(new Filter(filter, stage));
-  inUse.Signal();
 }
 
 
