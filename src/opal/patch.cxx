@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2037  2006/07/24 14:03:40  csoutheren
+ * Revision 1.2038  2006/10/06 05:33:12  hfriederich
+ * Fix RFC2833 for SIP connections
+ *
+ * Revision 2.36  2006/07/24 14:03:40  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.35  2006/07/14 05:24:50  csoutheren
@@ -437,9 +440,15 @@ OpalMediaPatch::Sink::~Sink()
 
 void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat & stage)
 {
-  inUse.Wait();
+  PWaitAndSignal mutex(inUse);
+  
+  // ensures that a filter is added only once
+  for (PINDEX i = 0; i < filters.GetSize(); i++) {
+    if (filters[i].notifier == filter && filters[i].stage == stage) {
+	  return;
+    }
+  }
   filters.Append(new Filter(filter, stage));
-  inUse.Signal();
 }
 
 

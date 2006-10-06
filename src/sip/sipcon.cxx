@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2180  2006/10/01 17:16:32  hfriederich
+ * Revision 1.2181  2006/10/06 05:33:12  hfriederich
+ * Fix RFC2833 for SIP connections
+ *
+ * Revision 2.179  2006/10/01 17:16:32  hfriederich
  * Ensures that an ACK is sent out for every final response to INVITE
  *
  * Revision 2.178  2006/08/28 00:53:52  csoutheren
@@ -1387,7 +1390,7 @@ void SIPConnection::InitRFC2833Handler()
           mediaStream.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
         }
         else {
-          mediaStream.AddFilter(rfc2833Handler->GetTransmitHandler());
+          mediaStream.AddFilter(rfc2833Handler->GetTransmitHandler(), mediaStream.GetMediaFormat());
         }
       }
     }
