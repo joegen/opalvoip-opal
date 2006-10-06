@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.23  2006/08/07 19:46:19  dsandras
+ * Revision 1.2098.2.24  2006/10/06 09:09:50  dsandras
+ * Added autodetection of the realm from the challenge response.
+ *
+ * Revision 2.97.2.23  2006/08/07 19:46:19  dsandras
  * Backported fix from HEAD to abort registration after a given amount of failures.
  *
  * Revision 2.97.2.22  2006/06/10 15:40:05  dsandras
@@ -1234,8 +1237,12 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
   // No authentication information found for the realm, 
   // use what we have for the given CallID
-  if (realm_info == NULL)
+  // and update the realm
+  if (realm_info == NULL) {
     realm_info = callid_info;
+    realm_info->SetAuthRealm(auth.GetAuthRealm());
+    PTRACE(2, "SIP\tUpdated realm to " << auth.GetAuthRealm());
+  }
   
   // No realm info, weird
   if (realm_info == NULL) {
