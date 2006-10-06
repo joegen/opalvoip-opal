@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.19  2006/08/11 07:30:27  dsandras
+ * Revision 1.2121.2.20  2006/10/06 08:16:51  dsandras
+ * Backported fix from HEAD for RFC2833 support.
+ *
+ * Revision 2.120.2.19  2006/08/11 07:30:27  dsandras
  * Backported patch from HEAD.
  *
  * Revision 2.120.2.18  2006/08/07 19:15:42  dsandras
@@ -1126,7 +1129,7 @@ void SIPConnection::InitRFC2833Handler()
 	    patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
 	  }
 	  else {
-	    patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+	    patch->AddFilter(rfc2833Handler->GetTransmitHandler(), mediaStream.GetMediaFormat());
 	  }
 	}
       }
