@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2131  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2132  2006/10/06 09:08:32  dsandras
+ * Added autodetection of the realm from the challenge response.
+ *
+ * Revision 2.130  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.129  2006/08/12 04:20:39  csoutheren
@@ -1222,8 +1225,12 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
   // No authentication information found for the realm, 
   // use what we have for the given CallID
-  if (realm_info == NULL)
+  // and update the realm
+  if (realm_info == NULL) {
     realm_info = callid_info;
+    realm_info->SetAuthRealm(auth.GetAuthRealm());
+    PTRACE(2, "SIP\tUpdated realm to " << auth.GetAuthRealm());
+  }
   
   // No realm info, weird
   if (realm_info == NULL) {
