@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.24  2006/10/06 09:09:50  dsandras
+ * Revision 1.2098.2.25  2006/10/08 13:25:47  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.97.2.24  2006/10/06 09:09:50  dsandras
  * Added autodetection of the realm from the challenge response.
  *
  * Revision 2.97.2.23  2006/08/07 19:46:19  dsandras
@@ -1339,6 +1342,9 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     if (!sec)
       sec = 3600;
     info->SetExpire(sec*9/10);
+
+    if (info->GetAuthRealm().IsEmpty())
+      SetAuthRealm(transaction.GetURI().GetHostName());
   }
   else 
     activeSIPInfo.Remove(info);
