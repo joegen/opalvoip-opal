@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.9  2006/08/07 19:46:19  dsandras
+ * Revision 1.2047.2.10  2006/10/08 13:25:48  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.46.2.9  2006/08/07 19:46:19  dsandras
  * Backported fix from HEAD to abort registration after a given amount of failures.
  *
  * Revision 2.46.2.8  2006/04/30 17:26:22  dsandras
@@ -327,7 +330,7 @@ class SIPInfo : public PSafeObject
     { password = p;}
     
     virtual void SetAuthRealm(const PString & r)
-    { authRealm = r;}
+    { authRealm = r; authentication.SetAuthRealm(r);}
     
     virtual void SetBody(const PString & b)
     { body = b;}
