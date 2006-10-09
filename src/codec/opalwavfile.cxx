@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.cxx,v $
- * Revision 1.2005  2006/02/13 03:46:17  csoutheren
+ * Revision 1.2006  2006/10/09 07:21:47  csoutheren
+ * Fix problem with reading last block of uLaw/ALaw files
+ *
+ * Revision 2.4  2006/02/13 03:46:17  csoutheren
  * Added initialisation stuff to make sure that everything works OK
  *
  * Revision 2.3  2004/07/15 12:19:23  rjongbloed
@@ -139,6 +142,8 @@ BOOL PWAVFileConverterXLaw::Read(PWAVFile & file, void * buf, PINDEX len)
   if (!file.PFile::Read(xlaw.GetPointer(samples), samples))
     return FALSE;
 
+  samples = PMIN(samples, file.PFile::GetLastReadCount());
+
   // convert to PCM
   PINDEX i;
   short * pcmPtr = (short *)buf;
@@ -146,7 +151,7 @@ BOOL PWAVFileConverterXLaw::Read(PWAVFile & file, void * buf, PINDEX len)
     *pcmPtr++ = DecodeSample(xlaw[i]);
 
   // fake the lastReadCount
-  file.SetLastReadCount(len);
+  file.SetLastReadCount(samples * 2);
 
   return TRUE;
 }
