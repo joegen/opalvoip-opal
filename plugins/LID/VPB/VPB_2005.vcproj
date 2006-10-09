@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="VPB LID"
+	ProjectGUID="{EE028C0B-AF72-499F-A778-82C3645A90DB}"
 	>
 	<Platforms>
 		<Platform
