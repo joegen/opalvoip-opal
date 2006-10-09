@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="LPC_10"
+	Name="LPC-10 Audio Codec"
 	ProjectGUID="{9481B85A-4166-4607-ADC4-0C19D2753EB7}"
 	RootNamespace="LPC_10"
 	>
@@ -71,12 +71,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/LPC_10_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -161,10 +161,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/LPC_10_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool

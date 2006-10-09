@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="IMA_ADPCM"
+	Name="IMA ADPCM Audio Codec"
 	ProjectGUID="{25F0AA82-0186-45AD-92C3-EE1F9282A038}"
 	RootNamespace="IMA_ADPCM"
 	>
@@ -71,12 +71,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/IMA_ADPCM_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -161,10 +161,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/IMA_ADPCM_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool

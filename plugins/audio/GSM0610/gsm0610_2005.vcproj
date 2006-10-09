@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="gsm0610"
+	Name="GSM 06.10 Audio Codec"
 	ProjectGUID="{E6897206-9765-4B73-9A98-DAC5787814CE}"
 	>
 	<Platforms>
