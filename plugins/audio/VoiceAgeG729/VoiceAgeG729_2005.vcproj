@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="VoiceAgeG729"
+	Name="Voice Age G.729 Audio Codec"
 	ProjectGUID="{3F038BF6-B7B9-4941-AF57-8D539FC05781}"
 	RootNamespace="VoiceAgeG729"
 	>
@@ -72,12 +72,12 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
 				AdditionalDependencies="va_g729/va_g729a.lib"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/VoiceAgeG729_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -163,10 +163,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="va_g729/va_g729a.lib"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/VoiceAgeG729_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
