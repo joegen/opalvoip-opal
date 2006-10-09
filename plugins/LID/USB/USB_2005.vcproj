@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="USB HID LID"
+	ProjectGUID="{3FCBA070-C605-4EE5-B078-E2461F792B36}"
 	>
 	<Platforms>
 		<Platform
@@ -68,6 +69,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
+				AdditionalDependencies="CM_HID.lib winmm.lib"
 				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -157,6 +159,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="CM_HID.lib winmm.lib"
 				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
