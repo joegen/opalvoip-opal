@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="G726"
+	Name="G.726 Audio Codec"
 	ProjectGUID="{269DA9EF-526D-46DE-AA69-D39EFBCB29C0}"
 	>
 	<Platforms>
@@ -70,10 +70,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/G726_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -158,12 +158,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
-				OutputFile="$(OutDir)/$(ProjectName)_pwplugin.dll"
+				OutputFile="$(OutDir)/G726_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
-				ImportLibrary="$(IntDir)\$(ProjectName).lib"
+				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
 			<Tool
