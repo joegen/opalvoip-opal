@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="Speex"
+	Name="Speex Audio Codec"
 	ProjectGUID="{02AFB070-A9D5-4FB7-A041-311722C9F8D4}"
 	>
 	<Platforms>
@@ -70,7 +70,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../Release/speex_pwplugin.dll"
+				OutputFile="$(OutDir)/speex_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
@@ -157,7 +157,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="../../Debug/speex_pwplugin.dll"
+				OutputFile="$(OutDir)/speex_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
