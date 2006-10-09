@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="h261vic"
+	Name="Vic H.261 Video Codec"
 	ProjectGUID="{4A1B92CB-CA8E-4511-A1D5-B0A322FDE67C}"
 	>
 	<Platforms>
@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="../../Release/h261vic_pwplugin.dll"
+				OutputFile="$(OutDir)/h261vic_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
@@ -160,11 +160,11 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="wsock32.lib"
-				OutputFile="../../Debug/h261vic_pwplugin.dll"
+				OutputFile="$(OutDir)/h261vic_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
