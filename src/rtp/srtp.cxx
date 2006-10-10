@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.7  2006/10/10 10:59:17  csoutheren
+ * Fix SRTP compilation on old compilers
+ *
  * Revision 1.6  2006/10/04 06:19:08  csoutheren
  * Fixed SRTP configuration for Linux
  *
@@ -59,6 +62,11 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "srtp.h"
+#endif
+
 #include <opal/buildopts.h>
 
 #if defined(OPAL_SRTP)
