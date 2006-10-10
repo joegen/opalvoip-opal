@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.47  2006/10/10 10:12:34  csoutheren
+# Allow correct operation if subdirs are missing
+#
 # Revision 1.46  2006/10/10 07:18:17  csoutheren
 # Allow compilation with and without various options
 #
@@ -712,7 +715,7 @@ $(DEPDIR)/%.dep : $(SPEEX_SRCDIR)/%.c
 ###############################################################################
 #### Subdirectories
 $(subst tagbuild,,$(STANDARD_TARGETS)) ::
-	@set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@;)
+	@set -e; $(foreach dir,$(SUBDIRS),if test -e $(dir) ; then $(MAKE) -C $(dir) $@; fi ;)
 
 
 $(STANDARD_TARGETS) :: Makefile
