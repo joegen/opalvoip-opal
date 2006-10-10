@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all plugins"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX H323_H460 OPAL_LID OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR PTLIB_CONFIG PWLIBDIR CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX H323_H460 OPAL_LID OPAL_IVR OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -851,6 +851,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-versioncheck    disable PWLib version check
   --enable-localspeex     use local version of Speex library rather than system version
+  --disable-audio         disable audio codec support
+  --disable-video         disable video codec support
   --disable-sip           disable SIP protocol support
   --disable-h323          disable H.323 protocol support
   --disable-iax           disable IAX2 protocol support
@@ -858,6 +860,7 @@ Optional Features:
   --disable-t38           disable T.38 protocol support
   --disable-h460          disable H.460
   --disable-lid           disable LID support
+  --disable-ivr           disable IVR support
 
 Some influential environment variables:
   CC          C compiler command
@@ -5689,20 +5692,52 @@ fi
 
 
 
-OPAL_AUDIO=1
 
-cat >>confdefs.h <<\_ACEOF
+audio=yes
+# Check whether --enable-audio or --disable-audio was given.
+if test "${enable_audio+set}" = set; then
+  enableval="$enable_audio"
+  audio=$enableval
+fi;
+echo "$as_me:$LINENO: checking audio codec support" >&5
+echo $ECHO_N "checking audio codec support... $ECHO_C" >&6
+if test "$audio" = "yes" ; then
+  OPAL_AUDIO=1
+
+  cat >>confdefs.h <<\_ACEOF
 #define OPAL_AUDIO 1
 _ACEOF
 
+  echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+else
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+fi
 
 
-OPAL_VIDEO=1
 
-cat >>confdefs.h <<\_ACEOF
+video=yes
+# Check whether --enable-video or --disable-video was given.
+if test "${enable_video+set}" = set; then
+  enableval="$enable_video"
+  video=$enableval
+fi;
+echo "$as_me:$LINENO: checking video device support" >&5
+echo $ECHO_N "checking video device support... $ECHO_C" >&6
+if test "$video" = "yes" ; then
+  OPAL_VIDEO=1
+
+  cat >>confdefs.h <<\_ACEOF
 #define OPAL_VIDEO 1
 _ACEOF
 
+  echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+else
+  echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+fi
 
 
 
@@ -5731,6 +5766,9 @@ fi
 
 
 h323=yes
+t38=yes
+h224=yes
+h460=yes
 # Check whether --enable-h323 or --disable-h323 was given.
 if test "${enable_h323+set}" = set; then
   enableval="$enable_h323"
@@ -5750,9 +5788,11 @@ echo "${ECHO_T}enabled" >&6
 else
   OPAL_H323=0
 
-  echo "$as_me:$LINENO: result: disabled (T.38 also disabled)" >&5
-echo "${ECHO_T}disabled (T.38 also disabled)" >&6
+  echo "$as_me:$LINENO: result: disabled (T.38, H.224, H.460 also disabled)" >&5
+echo "${ECHO_T}disabled (T.38, H.224, H.460 also disabled)" >&6
   t38=no
+  h224=no
+  h460=no
 fi
 OPAL_H323=$OPAL_H323
 
@@ -5782,7 +5822,6 @@ echo "${ECHO_T}disabled" >&6
 fi
 
 
-h224=yes
 # Check whether --enable-h224 or --disable-h224 was given.
 if test "${enable_h224+set}" = set; then
   enableval="$enable_h224"
@@ -5806,7 +5845,6 @@ fi
 
 
 
-t38=yes
 if test "$t38" = "yes" ; then
   # Check whether --enable-t38 or --disable-t38 was given.
 if test "${enable_t38+set}" = set; then
@@ -5833,26 +5871,29 @@ fi
 
 
 
-# Check whether --enable-h460 or --disable-h460 was given.
+H323_460=
+if test "$h460" = "yes" ; then
+  # Check whether --enable-h460 or --disable-h460 was given.
 if test "${enable_h460+set}" = set; then
   enableval="$enable_h460"
-
+  h460=$enableval
 fi;
-if test "${enable_h460}x" = "x" ; then
-  enable_h460=yes
-fi
-if test "$enable_h460" == "yes" ; then
-  H323_H460=1
-  cat >>confdefs.h <<\_ACEOF
+  echo "$as_me:$LINENO: checking H.460 support" >&5
+echo $ECHO_N "checking H.460 support... $ECHO_C" >&6
+  if test "$h460" = "yes" ; then
+    H323_H460=1
+
+    cat >>confdefs.h <<\_ACEOF
 #define H323_H460 1
 _ACEOF
 
-else
-  H323_H460=
-  { echo "$as_me:$LINENO: Disabling H.460" >&5
-echo "$as_me: Disabling H.460" >&6;}
+    echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+  else
+    echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+  fi
 fi
-
 
 
 
@@ -5880,6 +5921,34 @@ echo "${ECHO_T}enabled" >&6
 echo "${ECHO_T}disabled" >&6
   fi
 fi
+
+
+
+
+OPAL_ivr=
+ivr=yes
+if test "$ivr" = "yes" ; then
+  # Check whether --enable-ivr or --disable-ivr was given.
+if test "${enable_ivr+set}" = set; then
+  enableval="$enable_ivr"
+  ivr=$enableval
+fi;
+  echo "$as_me:$LINENO: checking IVR support" >&5
+echo $ECHO_N "checking IVR support... $ECHO_C" >&6
+  if test "$ivr" = "yes" ; then
+    cat >>confdefs.h <<\_ACEOF
+#define OPAL_IVR 1
+_ACEOF
+
+    OPAL_IVR=1
+    echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+  else
+    echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+  fi
+fi
+
 
 
 
@@ -6715,6 +6784,7 @@ s,@OPAL_H224@,$OPAL_H224,;t t
 s,@OPAL_T38FAX@,$OPAL_T38FAX,;t t
 s,@H323_H460@,$H323_H460,;t t
 s,@OPAL_LID@,$OPAL_LID,;t t
+s,@OPAL_IVR@,$OPAL_IVR,;t t
 s,@OPAL_SRTP@,$OPAL_SRTP,;t t
 s,@HAS_LIBSRTP@,$HAS_LIBSRTP,;t t
 s,@STDCCFLAGS@,$STDCCFLAGS,;t t
