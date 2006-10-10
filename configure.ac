@@ -311,14 +311,36 @@ dnl enable audio, video, SIP, H.323 and IAX
 
 dnl MSWIN_DISPLAY audio,Audio
 dnl MSWIN_DEFINE  audio,OPAL_AUDIO
-AC_SUBST(OPAL_AUDIO, 1)
-AC_DEFINE(OPAL_AUDIO)
+
+audio=yes
+AC_ARG_ENABLE(audio,
+       [  --disable-audio         disable audio codec support],
+       audio=$enableval)
+AC_MSG_CHECKING(audio codec support)
+if test "$audio" = "yes" ; then
+  AC_SUBST(OPAL_AUDIO, 1)
+  AC_DEFINE(OPAL_AUDIO)
+  AC_MSG_RESULT(enabled)
+else
+  AC_MSG_RESULT(disabled)
+fi
 
 
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
-AC_SUBST(OPAL_VIDEO, 1)
-AC_DEFINE(OPAL_VIDEO)
+
+video=yes
+AC_ARG_ENABLE(video,
+       [  --disable-video         disable video codec support],
+       video=$enableval)
+AC_MSG_CHECKING(video device support)
+if test "$video" = "yes" ; then
+  AC_SUBST(OPAL_VIDEO, 1)
+  AC_DEFINE(OPAL_VIDEO)
+  AC_MSG_RESULT(enabled)
+else
+  AC_MSG_RESULT(disabled)
+fi
 
 
 dnl MSWIN_DISPLAY sip,SIP support
@@ -342,6 +364,9 @@ dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
 
 h323=yes
+t38=yes
+h224=yes
+h460=yes
 AC_ARG_ENABLE(h323,
        [  --disable-h323          disable H.323 protocol support],
        h323=$enableval)
@@ -352,8 +377,10 @@ if test "$h323" = "yes" ; then
   AC_MSG_RESULT(enabled)
 else
   AC_SUBST(OPAL_H323, 0)
-  AC_MSG_RESULT(disabled (T.38 also disabled))
+  AC_MSG_RESULT(disabled (T.38, H.224, H.460 also disabled))
   t38=no
+  h224=no
+  h460=no
 fi
 AC_SUBST(OPAL_H323, $OPAL_H323)
 
@@ -377,7 +404,6 @@ fi
 dnl MSWIN_DISPLAY h224,H.224 support
 dnl MSWIN_DEFINE  h224,OPAL_H224
 
-h224=yes
 AC_ARG_ENABLE(h224,
 		[  --disable-h224          disable H.224 protocol support],
 		h224=$enableval)
@@ -398,7 +424,6 @@ dnl MSWIN_DISPLAY    t38,T.38
 dnl MSWIN_DEFINE     t38,OPAL_T38FAX
 dnl MSWIN_IF_FEATURE t38,h323
 
-t38=yes
 if test "$t38" = "yes" ; then
   AC_ARG_ENABLE(t38,
          [  --disable-t38           disable T.38 protocol support],
@@ -421,19 +446,20 @@ dnl H.460
 dnl MSWIN_DISPLAY h460,H.460
 dnl MSWIN_DEFINE  h460,H323_H460
 
-AC_ARG_ENABLE(h460,
-       [  --disable-h460          disable H.460])
-if test "${enable_h460}x" = "x" ; then
-  enable_h460=yes
+H323_460=
+if test "$h460" = "yes" ; then
+  AC_ARG_ENABLE(h460,
+         [  --disable-h460          disable H.460],
+         h460=$enableval)
+  AC_MSG_CHECKING(H.460 support)
+  if test "$h460" = "yes" ; then
+    AC_SUBST(H323_H460, 1)
+    AC_DEFINE(H323_H460)
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
 fi
-if test "$enable_h460" == "yes" ; then
-  H323_H460=1
-  AC_DEFINE(H323_H460, 1)
-else
-  H323_H460=
-  AC_MSG_NOTICE(Disabling H.460)
-fi
-AC_SUBST(H323_H460)
 
 
 dnl ########################################################################
@@ -459,6 +485,31 @@ if test "$lid" = "yes" ; then
   fi
 fi
 AC_SUBST(OPAL_LID)
+
+dnl ########################################################################
+dnl
+dnl IVR
+
+dnl MSWIN_DISPLAY ivr,IVR support
+dnl MSWIN_DEFINE  ivr,OPAL_IVR
+
+OPAL_ivr=
+ivr=yes
+if test "$ivr" = "yes" ; then
+  AC_ARG_ENABLE(ivr,
+         [  --disable-ivr           disable IVR support],
+         ivr=$enableval)
+  AC_MSG_CHECKING(IVR support)
+  if test "$ivr" = "yes" ; then
+    AC_DEFINE(OPAL_IVR, 1)
+    OPAL_IVR=1
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+AC_SUBST(OPAL_IVR)
+
 
 dnl ########################################################################
 dnl

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2056  2006/09/11 04:48:55  csoutheren
+ * Revision 1.2057  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.55  2006/09/11 04:48:55  csoutheren
  * Fixed problem with cloning plugin media formats
  *
  * Revision 2.54  2006/09/07 09:05:44  csoutheren
@@ -1038,6 +1041,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_VIDEO
+
 const char * const OpalVideoFormat::FrameWidthOption = "Frame Width";
 const char * const OpalVideoFormat::FrameHeightOption = "Frame Height";
 const char * const OpalVideoFormat::EncodingQualityOption = "Encoding Quality";
@@ -1096,6 +1101,8 @@ bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
 
   return true;
 }
+
+#endif // OPAL_VIDEO
 
 ///////////////////////////////////////////////////////////////////////////////
 

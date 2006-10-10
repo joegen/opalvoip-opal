@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2036  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2037  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.35  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -669,6 +672,8 @@ class OpalFileMediaStream : public OpalRawMediaStream
     PFile file;
 };
 
+#if OPAL_AUDIO
+#if P_AUDIO
 
 /**This class describes a media stream that transfers data to/from a audio
    PSoundChannel.
@@ -724,6 +729,11 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     PINDEX soundChannelBuffers;
 };
 
+#endif
+
+#endif // OPAL_AUDIO
+
+#if OPAL_VIDEO
 
 /**This class describes a media stream that transfers data to/from a
    PVideoDevice.
@@ -802,6 +812,8 @@ class OpalVideoMediaStream : public OpalMediaStream
     BOOL                 autoDelete;
     PTimeInterval        lastGrabTime;
 };
+
+#endif // OPAL_VIDEO
 
 class OpalTransportUDP;
 
