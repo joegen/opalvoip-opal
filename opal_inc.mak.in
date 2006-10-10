@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.13  2006/10/10 07:18:18  csoutheren
+# Allow compilation with and without various options
+#
 # Revision 1.12  2006/10/04 06:19:08  csoutheren
 # Fixed SRTP configuration for Linux
 #
@@ -98,6 +101,7 @@ OPAL_SIP          = @OPAL_SIP@
 OPAL_H323         = @OPAL_H323@
 OPAL_IAX2         = @OPAL_IAX2@
 OPAL_LID	  = @OPAL_LID@
+OPAL_IVR	  = @OPAL_IVR@
 OPAL_H224         = @OPAL_H224@
 OPAL_SYSTEM_SPEEX = @OPAL_SYSTEM_SPEEX@
 OPAL_SRTP	  = @OPAL_SRTP@

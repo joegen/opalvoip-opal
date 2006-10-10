@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2035  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2036  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.34  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.33  2006/08/21 05:29:25  csoutheren
@@ -582,6 +585,7 @@ class OpalEndPoint : public PObject
       const OpalMediaStream & stream     ///<  Media stream being closed
     );
 
+#if OPAL_VIDEO
     /**Add video media formats available on a connection.
 
        The default behaviour calls the OpalEndPoint function of the same name.
@@ -610,6 +614,7 @@ class OpalEndPoint : public PObject
       PVideoOutputDevice * & device,        ///<  Created device
       BOOL & autoDelete                     ///<  Flag for auto delete device
     );
+#endif
   //@}
 
   /**@name User indications */

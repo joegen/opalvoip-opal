@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2063  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2064  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.62  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.61  2006/08/29 08:47:43  rjongbloed
@@ -813,6 +816,8 @@ class OpalConnection : public PSafeObject
       MediaInformation & info ///<  Information on media channel
     ) const;
 
+#if OPAL_VIDEO
+
     /**Add video media formats available on a connection.
 
        The default behaviour calls the OpalEndPoint function of the same name.
@@ -838,6 +843,7 @@ class OpalConnection : public PSafeObject
       PVideoOutputDevice * & device,        ///<  Created device
       BOOL & autoDelete                     ///<  Flag for auto delete device
     );
+#endif 
 
     /**Set the volume (gain) for the audio media channel to the specified percentage.
       */

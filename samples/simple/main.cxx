@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2075  2006/10/05 07:11:49  csoutheren
+ * Revision 1.2076  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.74  2006/10/05 07:11:49  csoutheren
  * Add --disable-lid option
  *
  * Revision 2.73  2006/10/02 13:30:51  rjongbloed
@@ -337,6 +340,7 @@
 #include <opal/transcoders.h>
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
+#include <ptlib/config.h>
 
 #include "main.h"
 #include "../../version.h"
@@ -667,6 +671,7 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
+#if OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
     autoStartReceiveVideo = TRUE;
@@ -695,6 +700,7 @@ BOOL MyManager::Initialise(PArgList & args)
       return FALSE;
     }
   }
+#endif
 
   if (args.HasOption('j')) {
     unsigned minJitter;
@@ -823,8 +829,10 @@ BOOL MyManager::Initialise(PArgList & args)
 
     cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
             "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << "\"\n"
+#if OPAL_VIDEO
             "Video output device: \"" << GetVideoOutputDevice().deviceName << "\"\n"
             "Video  input device: \"" << GetVideoInputDevice().deviceName << "\"\n"
+#endif
             "Available codecs: " << setfill(',') << OpalTranscoder::GetPossibleFormats(pcssEP->GetMediaFormats()) << setfill(' ') << endl;
   }
 
