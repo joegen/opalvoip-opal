@@ -144,6 +144,7 @@ static int pcm_decoder_ctl(void *state, int request, void *ptr)
 }
 
 typedef struct {
+ int dummy;
 } PCMMode;
 
 static PCMMode pcmmode;
