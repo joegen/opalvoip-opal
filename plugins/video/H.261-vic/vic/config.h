@@ -1,6 +1,10 @@
 /************ Change log
  *
  * $Log: config.h,v $
+ * Revision 1.4  2006/10/10 01:42:55  csoutheren
+ * Applied patches from Ekiga bug 360869 - fix OpenSolaris build problems
+ * Thanks to Boying Lu
+ *
  * Revision 1.3  2006/08/01 13:02:40  rjongbloed
  * Merged changes from OpenH323 on removing need to winsock (ntohl function reference)
  *
@@ -95,7 +99,7 @@ typedef unsigned long u_long;
     #define SWAP32(left,right) *(long*)(left)=*(const long*)(right)
   #endif
 
-#elif defined(__GNUC__)
+#elif defined(__GNUC__) || defined (sun)
 
   #if PBYTE_ORDER == PLITTLE_ENDIAN
     // only use the 64 bit h.261 codec on little endian machines
