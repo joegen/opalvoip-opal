@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.46  2006/10/10 07:18:17  csoutheren
+# Allow compilation with and without various options
+#
 # Revision 1.45  2006/10/05 07:11:49  csoutheren
 # Add --disable-lid option
 #
@@ -358,11 +361,17 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/transports.cxx \
            $(OPAL_SRCDIR)/opal/guid.cxx \
 	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
-           $(OPAL_SRCDIR)/opal/pcss.cxx \
-           $(OPAL_SRCDIR)/opal/ivr.cxx \
-           $(OPAL_SRCDIR)/opal/opalvxml.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
+
+ifeq ($(HAS_AUDIO),1)
+SOURCES += $(OPAL_SRCDIR)/opal/pcss.cxx 
+endif
+
+ifeq ($(OPAL_IVR), 1)
+SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
+           $(OPAL_SRCDIR)/opal/opalvxml.cxx 
+endif
 
 ########################################
 
@@ -520,11 +529,14 @@ endif
 SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
            $(OPAL_SRCDIR)/codec/g711.c \
            $(OPAL_SRCDIR)/codec/rfc2833.cxx \
-           $(OPAL_SRCDIR)/codec/vidcodec.cxx \
            $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
 	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
 	   $(OPAL_SRCDIR)/codec/echocancel.cxx \
 	   $(OPAL_SRCDIR)/codec/opalpluginmgr.cxx
+
+ifeq ($(HAS_VIDEO), 1)
+SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx 
+endif
 
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
 
