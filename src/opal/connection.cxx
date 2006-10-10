@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2077  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2078  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.76  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.75  2006/09/13 00:22:53  csoutheren
@@ -832,6 +835,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionID,
                                                     BOOL isSource)
 {
+#if OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
@@ -850,6 +854,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
         return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice, autoDelete);
     }
   }
+#endif
 
   return NULL;
 }
@@ -955,6 +960,7 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
   return TRUE;
 }
 
+#if OPAL_VIDEO
 
 void OpalConnection::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats) const
 {
@@ -977,6 +983,8 @@ BOOL OpalConnection::CreateVideoOutputDevice(const OpalMediaFormat & mediaFormat
 {
   return endpoint.CreateVideoOutputDevice(*this, mediaFormat, preview, device, autoDelete);
 }
+
+#endif // OPAL_VIDEO
 
 
 BOOL OpalConnection::SetAudioVolume(BOOL /*source*/, unsigned /*percentage*/)

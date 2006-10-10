@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2023  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2024  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.22  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -110,6 +113,12 @@
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
+
+#include <ptbuildopts.h>
+
+#ifndef P_AUDIO
+#warning "PTLib soundcard support not available"
+#else
 
 #include <ptlib/sound.h>
 #include <opal/buildopts.h>
@@ -510,6 +519,7 @@ class OpalPCSSConnection : public OpalConnection
     unsigned           soundChannelBuffers;
 };
 
+#endif // P_AUDIO
 
 #endif // __OPAL_PCSS_H
 

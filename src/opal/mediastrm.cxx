@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2047  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2048  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.46  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -198,12 +201,17 @@
 #pragma implementation "mediastrm.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/mediastrm.h>
 
+#if OPAL_VIDEO
 #include <ptlib/videoio.h>
+#include <codec/vidcodec.h>
+#endif
+
 #include <ptlib/sound.h>
 #include <opal/patch.h>
-#include <codec/vidcodec.h>
 #include <lids/lid.h>
 #include <rtp/rtp.h>
 #include <opal/transports.h>
@@ -816,6 +824,9 @@ BOOL OpalFileMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_AUDIO
+#if P_AUDIO
+
 OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
                                            BOOL isSource,
@@ -858,8 +869,13 @@ BOOL OpalAudioMediaStream::IsSynchronous() const
   return TRUE;
 }
 
+#endif // P_AUDIO
+
+#endif // OPAL_AUDIO
 
 ///////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_VIDEO
 
 OpalVideoMediaStream::OpalVideoMediaStream(const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
@@ -1019,6 +1035,8 @@ BOOL OpalVideoMediaStream::IsSynchronous() const
 {
   return IsSource();
 }
+
+#endif // OPAL_VIDEO
 
 ///////////////////////////////////////////////////////////////////////////////
 

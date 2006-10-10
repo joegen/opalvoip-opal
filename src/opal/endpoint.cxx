@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2041  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2042  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.40  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.39  2006/08/21 05:29:25  csoutheren
@@ -493,7 +496,7 @@ void OpalEndPoint::OnClosedMediaStream(const OpalMediaStream & stream)
   manager.OnClosedMediaStream(stream);
 }
 
-
+#if OPAL_VIDEO
 void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
                                         const OpalConnection * connection) const
 {
@@ -509,7 +512,6 @@ BOOL OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
   return manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
 }
 
-
 BOOL OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
                                            const OpalMediaFormat & mediaFormat,
                                            BOOL preview,
@@ -518,6 +520,7 @@ BOOL OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
 {
   return manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
 }
+#endif
 
 
 void OpalEndPoint::OnUserInputString(OpalConnection & connection,

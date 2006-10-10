@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2050  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2051  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.49  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.48  2006/06/21 23:43:27  csoutheren
@@ -204,7 +207,10 @@
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
+
+#if OPAL_VIDEO
 #include <ptlib/videoio.h>
+#endif
 
 class OpalEndPoint;
 class OpalMediaPatch;
@@ -663,6 +669,8 @@ class OpalManager : public PObject
       const OpalMediaStream & stream     ///<  Stream being closed
     );
 
+#if OPAL_VIDEO
+
     /**Add video media formats available on a connection.
 
        The default behaviour calls the OpalEndPoint function of the same name.
@@ -691,6 +699,7 @@ class OpalManager : public PObject
       PVideoOutputDevice * & device,        ///<  Created device
       BOOL & autoDelete                     ///<  Flag for auto delete device
     );
+#endif
 
     /**Create a OpalMediaPatch instance.
        This function allows an application to have the system create descendant
@@ -898,6 +907,8 @@ class OpalManager : public PObject
       const PString & name
     ) { defaultDisplayName = name; }
 
+#if OPAL_VIDEO
+
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return autoStartReceiveVideo; }
@@ -913,6 +924,8 @@ class OpalManager : public PObject
     /**Set if should auto-start transmit video channels on connection.
      */
     void SetAutoStartTransmitVideo(BOOL can) { autoStartTransmitVideo = can; }
+
+#endif
 
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
@@ -1071,6 +1084,8 @@ class OpalManager : public PObject
      */
     const OpalEchoCanceler::Params & GetEchoCancelParams() const { return echoCancelParams; }
 
+#if OPAL_VIDEO
+
     /**Set the parameters for the video device to be used for input.
        If the name is not suitable for use with the PVideoInputDevice class
        then the function will return FALSE and not change the device.
@@ -1119,6 +1134,8 @@ class OpalManager : public PObject
      */
     const PVideoDevice::OpenArgs & GetVideoOutputDevice() const { return videoOutputDevice; }
 
+#endif
+
     BOOL DetectInBandDTMFDisabled() const
       { return disableDetectInBandDTMF; }
 
@@ -1164,8 +1181,12 @@ class OpalManager : public PObject
     // Configuration variables
     PString       defaultUserName;
     PString       defaultDisplayName;
+
+#if OPAL_VIDEO
     BOOL          autoStartReceiveVideo;
     BOOL          autoStartTransmitVideo;
+#endif
+
     BYTE          rtpIpTypeofService;
     unsigned      minAudioJitterDelay;
     unsigned      maxAudioJitterDelay;
@@ -1178,9 +1199,11 @@ class OpalManager : public PObject
     OpalSilenceDetector::Params silenceDetectParams;
     OpalEchoCanceler::Params echoCancelParams;
 
+#if OPAL_VIDEO
     PVideoDevice::OpenArgs videoInputDevice;
     PVideoDevice::OpenArgs videoPreviewDevice;
     PVideoDevice::OpenArgs videoOutputDevice;
+#endif
 
     struct PortInfo {
       void Set(

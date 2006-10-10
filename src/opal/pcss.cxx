@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2034  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2035  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.33  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -153,13 +156,17 @@
 #pragma implementation "pcss.h"
 #endif
 
+#include <opal/buildopts.h>
 #include <opal/pcss.h>
 
+#if OPAL_VIDEO
 #include <ptlib/videoio.h>
+#include <codec/vidcodec.h>
+#endif
+
 #include <ptlib/sound.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
-#include <codec/vidcodec.h>
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <opal/manager.h>
@@ -276,7 +283,9 @@ OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
 
   formats += OpalPCM16; // Sound card can only do 16 bit PCM
 
+#if OPAL_VIDEO
   AddVideoMediaFormats(formats);
+#endif
 
   return formats;
 }
@@ -442,7 +451,9 @@ OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
 
   formats += OpalPCM16; // Sound card can only do 16 bit PCM
 
+#if OPAL_VIDEO
   AddVideoMediaFormats(formats);
+#endif
 
   return formats;
 }
@@ -486,8 +497,10 @@ void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
 BOOL OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
 					       unsigned sessionID)
 {
+#if OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
     return FALSE;
+#endif
 
   return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
 }
@@ -495,8 +508,10 @@ BOOL OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & media
 
 OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
+#if OPAL_VIDEO
   if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
     return NULL;
+#endif
 
   return OpalConnection::OpenSinkMediaStream(source);
 }

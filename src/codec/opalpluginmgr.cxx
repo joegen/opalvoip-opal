@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2012  2006/10/02 13:30:51  rjongbloed
+ * Revision 1.2013  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
+ * Revision 2.11  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.10  2006/09/28 07:42:17  csoutheren
@@ -273,10 +276,14 @@ static PString CreateCodecName(PluginCodec_Definition * codec, BOOL /*addSW*/)
   return str;
 }
 
+#if OPAL_H323
+
 static PString CreateCodecName(const PString & baseName, BOOL /*addSW*/)
 {
   return baseName;
 }
+
+#endif // OPAL_H323
 
 
 static void PopulateMediaFormatOptions(PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format)
@@ -418,6 +425,8 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     PluginCodec_Definition * encoderCodec;
 };
 
+#if OPAL_H323
+
 static H323Capability * CreateG7231Cap(
   PluginCodec_Definition * encoderCodec, 
   PluginCodec_Definition * decoderCodec,
@@ -441,6 +450,8 @@ static H323Capability * CreateGSMCap(
   PluginCodec_Definition * decoderCodec,
   int subType
 );
+
+#endif // OPAL_H323
 
 #endif // OPAL_AUDIO
 
@@ -489,6 +500,8 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
     PluginCodec_Definition * encoderCodec;
 };
 
+#if OPAL_H323
+
 static H323Capability * CreateNonStandardVideoCap(
   PluginCodec_Definition * encoderCodec, 
   PluginCodec_Definition * decoderCodec,
@@ -512,6 +525,8 @@ static H323Capability * CreateH263Cap(
   PluginCodec_Definition * decoderCodec,
   int subType
 );
+
+#endif // OPAL_H323
 
 #endif // OPAL_VIDEO
 
@@ -1844,20 +1859,6 @@ void OpalPluginCodecManager::AddFormat(const OpalMediaFormat & fmt)
 /////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_H323
-
-/*
-H323Capability * OpalPluginCodecManager::CreateCapability(
-          const PString & _mediaFormat, 
-          const PString & _baseName,
-                 unsigned maxFramesPerPacket, 
-                 unsigned recommendedFramesPerPacket,
-                 unsigned _pluginSubType
-  )
-{
-  return new H323PluginCapability(_mediaFormat, _baseName,
-                                  maxFramesPerPacket, recommendedFramesPerPacket, _pluginSubType);
-}
-*/
 
 #if OPAL_AUDIO
 

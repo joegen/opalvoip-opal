@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.22  2006/10/10 07:18:18  csoutheren
+ * Allow compilation with and without various options
+ *
  * Revision 1.21  2006/10/04 07:05:05  csoutheren
  * Fix build problem on Windows
  *
@@ -126,6 +129,7 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 #undef  OPAL_LID
+#undef  OPAL_IVR
 #undef  OPAL_H224
 
 #undef  H323_H460
