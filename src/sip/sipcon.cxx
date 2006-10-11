@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2181  2006/10/06 05:33:12  hfriederich
+ * Revision 1.2182  2006/10/11 00:40:07  csoutheren
+ * Fix problem introduced in v1.162 that prevent external RTP from working properly
+ *
+ * Revision 2.180  2006/10/06 05:33:12  hfriederich
  * Fix RFC2833 for SIP connections
  *
  * Revision 2.179  2006/10/01 17:16:32  hfriederich
@@ -1565,7 +1568,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     }
   }
 
-  if (localAddress.IsEmpty() && rtpSessionId != OpalMediaFormat::DefaultDataSessionID) {
+  if (localAddress.IsEmpty() && (rtpSessionId != OpalMediaFormat::DefaultDataSessionID)) {
     /* We are not doing media bypass, so must have an RTP session.
        Due to the possibility of several INVITEs going out, all with different
        transport requirements, we actually need to use an rtpSession dictionary
@@ -1588,8 +1591,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     }
 
     localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
-  } else localAddress = GetUDPTransport().GetLocalAddress();
-
+  } 
 
   if (sdp == NULL)
     sdp = new SDPSessionDescription(localAddress);
