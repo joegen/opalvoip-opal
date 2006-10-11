@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2037  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2038  2006/10/11 01:15:15  csoutheren
+ * Applied 1552449 - Always use max RTP buffer size
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.36  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.35  2006/08/29 08:47:43  rjongbloed
@@ -538,8 +542,12 @@ class OpalRTPMediaStream : public OpalMediaStream
     virtual BOOL WritePacket(
       RTP_DataFrame & packet
     );
-	
-	RTP_Session & GetRtpSession() const { return rtpSession; }
+
+    /**Set the data size in bytes that is expected to be used.
+      */
+    virtual BOOL SetDataSize(
+      PINDEX dataSize  ///<  New data size
+    );
 
     /**Indicate if the media stream is synchronous.
        Returns FALSE for RTP streams.
@@ -551,6 +559,12 @@ class OpalRTPMediaStream : public OpalMediaStream
        The default behaviour does nothing.
       */
     virtual void EnableJitterBuffer() const;
+
+    /** Return current RTP session
+      */
+    virtual RTP_Session & GetRtpSession() const
+    { return rtpSession; }
+
   //@}
 
   protected:
