@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2182  2006/10/11 00:40:07  csoutheren
+ * Revision 1.2183  2006/10/11 01:22:51  csoutheren
+ * Applied 1565585 - SIP changed codec order (compatibility to Mediatrix)
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.181  2006/10/11 00:40:07  csoutheren
  * Fix problem introduced in v1.162 that prevent external RTP from working properly
  *
  * Revision 2.180  2006/10/06 05:33:12  hfriederich
@@ -748,10 +752,10 @@ static const char ApplicationDTMFKey[]      = "application/dtmf";
 ////////////////////////////////////////////////////////////////////////////
 
 SIPConnection::SIPConnection(OpalCall & call,
-			     SIPEndPoint & ep,
-			     const PString & token,
-			     const SIPURL & destination,
-			     OpalTransport * inviteTransport)
+                             SIPEndPoint & ep,
+                             const PString & token,
+                             const SIPURL & destination,
+                             OpalTransport * inviteTransport)
   : OpalConnection(call, ep, token),
     endpoint(ep),
     pduSemaphore(0, P_MAX_INDEX)
@@ -1377,8 +1381,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
     return NULL;
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
-				endpoint.GetManager().GetMinAudioJitterDelay(),
-				endpoint.GetManager().GetMaxAudioJitterDelay());
+                                endpoint.GetManager().GetMinAudioJitterDelay(),
+                                endpoint.GetManager().GetMaxAudioJitterDelay());
 }
 
 
@@ -1431,9 +1435,9 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   // Since the connection is released immediately, a INVITE must not be
   // sent out.
   if (connection.GetPhase() >= OpalConnection::ReleasingPhase) {
-	PTRACE(2, "SIP\tAborting INVITE transaction since connection is in releasing phase");
-	delete invite; // at this point, the INVITE is not yet added to the transactions
-	return FALSE;
+    PTRACE(2, "SIP\tAborting INVITE transaction since connection is in releasing phase");
+    delete invite; // at this point, the INVITE is not yet added to the transactions
+    return FALSE;
   }
   
   if (invite->Start()) {
@@ -1548,8 +1552,8 @@ BOOL SIPConnection::IsConnectionOnHold()
 
 
 BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp, 
-			     RTP_SessionManager & rtpSessions,
-			     unsigned rtpSessionId)
+                                  RTP_SessionManager & rtpSessions,
+                                              unsigned rtpSessionId)
 {
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
@@ -1580,8 +1584,8 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       // Not already there, so create one
       rtpSession = CreateSession(GetTransport(), rtpSessionId, NULL);
       if (rtpSession == NULL) {
-	      Release(OpalConnection::EndedByTransportFail);
-	      return FALSE;
+        Release(OpalConnection::EndedByTransportFail);
+        return FALSE;
       }
 
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
@@ -1612,6 +1616,11 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       break;
   }
 
+  // add media formats first, as Mediatrix gateways barf if RFC2833 is first
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+  AdjustMediaFormats(formats);
+  localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
+
   // Set format if we have an RTP payload type for RFC2833
   if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) {
 
@@ -1622,29 +1631,23 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     else {
       ntePayloadCode = rfc2833Handler->GetPayloadType();
       if (ntePayloadCode == RTP_DataFrame::IllegalPayloadType) {
-	      ntePayloadCode = OpalRFC2833.GetPayloadType();
+        ntePayloadCode = OpalRFC2833.GetPayloadType();
       }
 
       if (ntePayloadCode != RTP_DataFrame::IllegalPayloadType) {
-	      PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
+        PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
 
-	      // create and add the NTE media format
-	      localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
+        // create and add the NTE media format
+        localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", ntePayloadCode));
       }
       else {
-      	PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
+        PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
       }
     }
 
     rfc2833Handler->SetPayloadType(ntePayloadCode);
   }
   
-  // add the formats
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
-  AdjustMediaFormats(formats);
-
-  localMedia->AddMediaFormats(formats, rtpSessionId, rtpPayloadMap);
-
   localMedia->SetDirection(GetDirection(rtpSessionId));
   sdp->AddMediaDescription(localMedia);
   return TRUE;
@@ -1974,7 +1977,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Is Re-INVITE?
   if (phase == EstablishedPhase 
       && ((!IsOriginating() && originalInvite != NULL)
-	  || (IsOriginating()))) {
+         || (IsOriginating()))) {
     PTRACE(2, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
     isReinvite = TRUE;
   }
@@ -2242,9 +2245,9 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   releaseMethod = ReleaseWithNothing;
 
   endpoint.SetupTransfer(GetToken(),  
-			 PString (), 
-			 referto,  
-			 NULL);
+                         PString (), 
+                         referto,  
+                         NULL);
   
   // Send a Final NOTIFY,
   notifyTransaction = 
@@ -2379,9 +2382,9 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   // Received authentication required response, try to find authentication
   // for the given realm if no proxy
   if (!auth.Parse(response.GetMIME()(isProxy 
-				     ? "Proxy-Authenticate"
-				     : "WWW-Authenticate"),
-		  isProxy)) {
+                                     ? "Proxy-Authenticate"
+                                     : "WWW-Authenticate"),
+                                     isProxy)) {
     releaseMethod = ReleaseWithNothing;
     Release(EndedBySecurityDenial);
     return;
@@ -2407,9 +2410,9 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
 
   if (!authentication.Parse(response.GetMIME()(isProxy 
-					       ? "Proxy-Authenticate"
-					       : "WWW-Authenticate"),
-			    isProxy)) {
+                                             ? "Proxy-Authenticate"
+                                             : "WWW-Authenticate"),
+                                               isProxy)) {
     releaseMethod = ReleaseWithNothing;
     Release(EndedBySecurityDenial);
     return;
@@ -2417,8 +2420,8 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   
   if (!authentication.IsValid() 
       || (authentication.IsValid()
-	  && lastUsername == authentication.GetUsername ()
-	  && lastNonce    == authentication.GetNonce ())) {
+      && lastUsername == authentication.GetUsername ()
+      && lastNonce    == authentication.GetNonce ())) {
 
     PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
     releaseMethod = ReleaseWithNothing;    
@@ -2676,14 +2679,15 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
     Release(EndedByTransportFail);
     return FALSE;
   }
-	
+
   return TRUE;
 }
 
 BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
 {
-  if (NULL == originalInvite) return FALSE;
-	
+  if (NULL == originalInvite)
+    return FALSE;
+
   SIP_PDU response(*originalInvite, code, contact, extra);
   if (NULL != sdp) response.SetSDP(*sdp);
   
@@ -2700,9 +2704,9 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
       // skip transport identifier
       PINDEX pos = address.Find('$');
       if (pos != P_MAX_INDEX)
-	hosturl = address.Mid(pos+1);
+        hosturl = address.Mid(pos+1);
       else
-	hosturl = address;
+        hosturl = address;
 
       hosturl = address.Mid(pos+1);
 
@@ -2710,10 +2714,10 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 #if P_DNS
       PIPSocketAddressAndPortVector addrs;
       if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
-	lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
+        lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
       else  
 #endif
-	lastTransportAddress = hosturl.GetHostAddress();
+        lastTransportAddress = hosturl.GetHostAddress();
 
       PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
       PWaitAndSignal m(transportMutex); 
