@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2048  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2049  2006/10/11 01:15:15  csoutheren
+ * Applied 1552449 - Always use max RTP buffer size
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.47  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.46  2006/08/29 08:47:43  rjongbloed
@@ -234,9 +238,9 @@ OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL 
   // Set default frame size to 50ms of audio, otherwise just one frame
   unsigned frameTime = mediaFormat.GetFrameTime();
   if (frameTime != 0 && mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
-    defaultDataSize = ((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize();
+    SetDataSize(((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize());
   else
-    defaultDataSize = mediaFormat.GetFrameSize();
+    SetDataSize(mediaFormat.GetFrameSize());
 
   timestamp = 0;
   marker = TRUE;
@@ -594,12 +598,6 @@ OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
-  /* If we are a source then we should set our buffer size to the max
-     practical UDP packet size. This means we have a buffer that can accept
-     whatever the RTP sender throws at us. For sink, we just clamp it to that
-     maximum size. */
-  if (isSource || defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
-    defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
 }
 
 
@@ -658,6 +656,22 @@ BOOL OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   return rtpSession.WriteData(packet);
 }
 
+BOOL OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
+{
+  if (dataSize <= 0)
+    return FALSE;
+
+  defaultDataSize = dataSize;
+
+  /* If we are a source then we should set our buffer size to the max
+     practical UDP packet size. This means we have a buffer that can accept
+     whatever the RTP sender throws at us. For sink, we just clamp it to that
+     maximum size. */
+  if (IsSource() || defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
+    defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
+
+  return TRUE;
+}
 
 BOOL OpalRTPMediaStream::IsSynchronous() const
 {
