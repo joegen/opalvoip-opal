@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.11  2006/10/11 04:54:34  csoutheren
+ * Fix double delete in Speex codec
+ *
  * Revision 1.10  2006/10/05 07:02:18  csoutheren
  * Fixed multiple frame problem again
  *
@@ -222,7 +225,7 @@ static void destroy_encoder(const struct PluginCodec_Definition * codec, void * 
 {
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
-  speex_bits_destroy(&context->speexBits);
+  //speex_bits_destroy(&context->speexBits);  // speex_encoder_destroy does this
   speex_encoder_destroy(context->coderState); 
   free(context);
 }
@@ -286,7 +289,7 @@ static void destroy_decoder(const struct PluginCodec_Definition * codec, void * 
 {
   struct PluginSpeexContext * context = (struct PluginSpeexContext *)_context;
 
-  speex_bits_destroy(&context->speexBits);
+  //speex_bits_destroy(&context->speexBits);  // speex_decoder_destroy does this
   speex_decoder_destroy(context->coderState); 
   free(context);
 }
