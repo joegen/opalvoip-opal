@@ -1452,6 +1452,9 @@
 							PreprocessorDefinitions=""/>
 					</FileConfiguration>
 				</File>
+				<File
+					RelativePath="..\rtp\srtp.cxx">
+				</File>
 			</Filter>
 			<Filter
 				Name="T.120 Sources"
@@ -1770,7 +1773,7 @@
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
 						CommandLine="cd ..\..
-.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTONS%
+.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%
 "
 						AdditionalDependencies="..\..\configure.ac;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"/>
@@ -1781,7 +1784,7 @@
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
 						CommandLine="cd ..\..
-.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTONS%
+.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%
 "
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"/>
@@ -1792,7 +1795,7 @@
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
 						CommandLine="cd ..\..
-.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTONS%
+.\configure --exclude-env=VSNET_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%
 "
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"/>
@@ -1960,6 +1963,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\rtp\rtp.h">
+				</File>
+				<File
+					RelativePath="..\..\include\rtp\srtp.h">
 				</File>
 			</Filter>
 			<Filter
