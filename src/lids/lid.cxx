@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2017  2006/10/02 13:30:51  rjongbloed
+ * Revision 1.2018  2006/10/15 06:27:16  rjongbloed
+ * Fixed problem with duplicate registrations of LID plug ins.
+ * Added code to remember if line audio was enabled/disabled, helps with LID endpoint logic.
+ *
+ * Revision 2.16  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.15  2006/06/29 08:47:20  csoutheren
@@ -447,7 +451,6 @@ OpalLineInterfaceDevice::OpalLineInterfaceDevice()
   countryCode = UnknownCountry;
   setReadDeblockingOffset(P_MAX_INDEX);
   setWriteDeblockingOffset(0);
-  setCardNumber(1);
   setDialToneTimeout(DIAL_TONE_TIMEOUT);
 }
 
@@ -658,13 +661,18 @@ unsigned OpalLineInterfaceDevice::GetAverageSignalLevel(unsigned, BOOL)
 
 BOOL OpalLineInterfaceDevice::EnableAudio(unsigned line, BOOL enabled)
 {
-  return line < GetLineCount() && enabled;
+  m_LineAudioEnabled.resize(GetLineCount());
+  if (line >= m_LineAudioEnabled.size())
+    return false;
+
+  m_LineAudioEnabled[line] = enabled;
+  return true;
 }
 
 
 BOOL OpalLineInterfaceDevice::IsAudioEnabled(unsigned line)
 {
-  return line < GetLineCount();
+  return line < GetLineCount() && m_LineAudioEnabled[line];
 }
 
 
@@ -1426,18 +1434,24 @@ OpalLIDRegistration::OpalLIDRegistration(const char * name)
 {
   OpalLIDRegistration * test = RegisteredLIDsListHead;
   while (test != NULL) {
-    if (*test == *this)
+    if (*test == *this) {
+      duplicate = true;
       return;
+    }
     test = test->link;
   }
 
   link = RegisteredLIDsListHead;
   RegisteredLIDsListHead = this;
+  duplicate = false;
 }
 
 
 OpalLIDRegistration::~OpalLIDRegistration()
 {
+  if (duplicate)
+    return;
+
   if (PAssertNULL(RegisteredLIDsListHead) == NULL)
     return;
 

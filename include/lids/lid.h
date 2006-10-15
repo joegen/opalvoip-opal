@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2014  2006/10/02 13:30:50  rjongbloed
+ * Revision 1.2015  2006/10/15 06:27:16  rjongbloed
+ * Fixed problem with duplicate registrations of LID plug ins.
+ * Added code to remember if line audio was enabled/disabled, helps with LID endpoint logic.
+ *
+ * Revision 2.13  2006/10/02 13:30:50  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.12  2006/06/27 13:50:24  csoutheren
@@ -1040,9 +1044,6 @@ class OpalLineInterfaceDevice : public PObject
     PINDEX getWriteDeblockingOffset() const {return m_writeDeblockingOffset;};
     void   setWriteDeblockingOffset(PINDEX writeDeblockingOffset) {m_writeDeblockingOffset = writeDeblockingOffset;};
     
-    unsigned int getCardNumber() const {return m_uiCardNumber;};
-    void   setCardNumber(unsigned int uiCardNumber) {m_uiCardNumber = uiCardNumber;};
-        
     unsigned int getDialToneTimeout() const {return m_uiDialToneTimeout;};
     void   setDialToneTimeout(unsigned int uiDialToneTimeout) {m_uiDialToneTimeout = uiDialToneTimeout;};
         
@@ -1053,6 +1054,7 @@ class OpalLineInterfaceDevice : public PObject
     PINDEX          m_readDeblockingOffset, m_writeDeblockingOffset;
     unsigned int    m_uiCardNumber;
     unsigned int    m_uiDialToneTimeout;
+    std::vector<bool> m_LineAudioEnabled;
 #if PTRACING
     friend ostream & operator<<(ostream & o, CallProgressTones t);
 #endif
@@ -1555,6 +1557,7 @@ class OpalLIDRegistration : public PCaselessString
 
   protected:
     OpalLIDRegistration * link;
+    bool                  duplicate;
 
   friend class OpalLineInterfaceDevice;
 };
