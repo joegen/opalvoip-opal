@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpb.cpp,v $
+ * Revision 1.3  2006/10/15 06:15:42  rjongbloed
+ * Fixed windows/unix compatibility issue.
+ *
  * Revision 1.2  2006/10/04 04:21:16  rjongbloed
  * Fixed VPB plug in build under linux
  *
@@ -119,16 +122,19 @@ class Context
 
     PLUGIN_FUNCTION_ARG3(GetDeviceName,unsigned,index, char *,name, unsigned,size)
     {
-      if (name == NULL || size < 2)
+      if (name == NULL || size < 3)
         return PluginLID_InvalidParameter;
+
+      if (index > 99) // So sprintf later cannot possibly overflow buffer
+        return PluginLID_NoMoreNames;
 
       try {
         int iHandle = vpb_open(index, 1 /* 0 for driver 3.01*/);
         if (iHandle >= 0) {
-          int lineCount = vpb_get_ports_per_card(/*getCardNumber()*/);
+          int lineCount = vpb_get_ports_per_card(/*index*/);
           vpb_close(iHandle);
           if (lineCount > 0) {
-            snprintf(name, size, "%u", index);
+            sprintf(name, "%u", index);
             return PluginLID_NoError;
           }
         }
