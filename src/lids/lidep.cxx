@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2034  2006/10/02 13:30:51  rjongbloed
+ * Revision 1.2035  2006/10/15 06:23:35  rjongbloed
+ * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
+ *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
+ *
+ * Revision 2.33  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.32  2006/09/28 07:42:18  csoutheren
@@ -217,7 +221,7 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
   }
   else {
     if (HasAttribute(CanTerminateCall))
-      lineName = remoteParty.Mid(prefixLength);
+      lineName = remoteParty.Mid(prefixLength + 1);
     else
       number = remoteParty.Mid(prefixLength + 1);
   }
@@ -226,12 +230,12 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
     lineName = '*';
 
   
-  PTRACE(3,"LID EP\tMakeConnection line = " << lineName << ", number = " << number);
+  PTRACE(3,"LID EP\tMakeConnection line = \"" << lineName << "\", number = \"" << number << '"');
   
   // Locate a line
   OpalLine * line = GetLine(lineName, TRUE);
   if (line == NULL){
-    PTRACE(1,"LID EP\tMakeConnection cannot find the line " << lineName);
+    PTRACE(1,"LID EP\tMakeConnection cannot find the line \"" << lineName << '"');
     line = GetLine(defaultLine, TRUE);
   }  
   if (line == NULL){
@@ -241,12 +245,6 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
   }
   OpalLineConnection * connection = CreateConnection(call, *line, userData, number);
   connectionsActive.SetAt(connection->GetToken(), connection);
-
-  // If we are the A-party then need to initiate a call now in this thread. If
-  // we are the B-Party then SetUpConnection() gets called in the context of
-  // the A-party thread.
-  if (call.GetConnection(0) == (OpalConnection*)connection)
-    connection->SetUpConnection();
 
   return TRUE;
 }
@@ -462,8 +460,8 @@ OpalLine * OpalLIDEndPoint::GetLine(const PString & lineName, BOOL enableAudio) 
 
   PTRACE(3, "LID EP\tGetLine " << lineName << ", enableAudio = " << enableAudio);
   for (PINDEX i = 0; i < lines.GetSize(); i++) {
-    PTRACE(3, "LID EP\tGetLine line " << i << ", description = " << lines[i].GetDescription() <<
-        ", enableAudio = " << lines[i].EnableAudio());
+    PTRACE(3, "LID EP\tGetLine line " << i << ", description = \"" << lines[i].GetDescription() <<
+        "\", enableAudio = " << lines[i].EnableAudio());
     PString lineDescription = lines[i].GetDescription();
     /* if the line description contains the endpoint prefix, strip it*/
     if(lineDescription.Find(GetPrefixName()) == 0){
@@ -471,7 +469,7 @@ OpalLine * OpalLIDEndPoint::GetLine(const PString & lineName, BOOL enableAudio) 
     }
     if ((lineName == defaultLine ||  lineDescription == lineName) &&
          (!enableAudio || lines[i].EnableAudio())){
-      PTRACE(3, "LID EP\tGetLine found the line");
+      PTRACE(3, "LID EP\tGetLine found the line \"" << lineName << '"');
       return &lines[i];
     }  
   }
@@ -753,26 +751,45 @@ void OpalLineConnection::StartIncoming()
 
 void OpalLineConnection::Monitor(BOOL offHook)
 {
-  if (offHook) {
-    PTRACE_IF(3, !wasOffHook, "LID Con\tConnection " << callToken << " off hook: phase=" << phase);
+  if (wasOffHook != offHook) {
+    wasOffHook = offHook;
+    PTRACE(3, "LID Con\tConnection " << callToken << " " << (offHook ? "off" : "on") << " hook: phase=" << phase);
 
-    if(IsOriginating()){ 
-       if (phase == AlertingPhase) {
-         phase = ConnectedPhase;
-         OnConnected();
-       }
+    if (!offHook) {
+      Release(EndedByRemoteUser);
+      return;
     }
 
+    if (IsOriginating()) {
+      // Ok, they went off hook, stop ringing
+      line.Ring(0, NULL);
+
+      // If we are in alerting state then we are B-Party
+      if (phase == AlertingPhase) {
+        phase = ConnectedPhase;
+        OnConnected();
+      }
+      else {
+        // Otherwise we are A-Party
+        if (!OnIncomingConnection()) {
+          Release(EndedByCallerAbort);
+          return;
+        }
+
+        PTRACE(2, "LID Con\tOutgoing connection " << *this << " routed to \"" << ownerCall.GetPartyB() << '"');
+        if (!ownerCall.OnSetUp(*this)) {
+          Release(EndedByNoAccept);
+          return;
+        }
+      }
+    }
+  }
+
+  // If we are off hook, we continually suck out DTMF tones and pass them up
+  if (offHook) {
     char tone;
     while ((tone = line.ReadDTMF()) != '\0')
       OnUserInputTone(tone, 180);
-
-    wasOffHook = TRUE;
-  }
-  else if (wasOffHook) {
-    PTRACE(3, "LID Con\tConnection " << callToken << " on hook: phase=" << phase);
-    Release(EndedByRemoteUser);
-    wasOffHook = FALSE;
   }
 }
 
@@ -833,20 +850,19 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
 BOOL OpalLineConnection::SetUpConnection()
 {
-  PTRACE(3, "LID Con\tSetUpConnection call on " << *this << "dial: " << remotePartyNumber);
+  PTRACE(3, "LID Con\tSetUpConnection call on " << *this << " to \"" << remotePartyNumber << '"');
 
   phase = SetUpPhase;
   originating = TRUE;
 
-  
-  /* callback for the lid endpoint  */
-  OnSetUpConnection();
-  
   if (line.IsTerminal()) {
     line.SetCallerID(remotePartyNumber);
     line.Ring(1, NULL);
-    phase = AlertingPhase;
-    OnAlerting();
+    if (ownerCall.GetConnection(0) != this) {
+      // Are B-Party, so move to alerting state
+      phase = AlertingPhase;
+      OnAlerting();
+    }
   }
   else {
     switch (line.DialOut(remotePartyNumber, requireTonesForDial, getDialDelay())) {
