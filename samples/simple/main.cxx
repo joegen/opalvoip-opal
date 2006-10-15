@@ -22,7 +22,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2076  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2077  2006/10/15 06:12:48  rjongbloed
+ * Fixed correct local A-Party endpoint type depending on compiler flags and command line arguments.
+ * Fixed being able to select IVR via wildcard (routing table order) on source endpoint type.
+ * Fixed correctly trimming spaces from POTS device name.
+ *
+ * Revision 2.75  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.74  2006/10/05 07:11:49  csoutheren
@@ -794,7 +799,7 @@ BOOL MyManager::Initialise(PArgList & args)
     for (PINDEX d = 0; d < devices.GetSize(); d++) {
       PINDEX colon = devices[d].Find(':');
       OpalLineInterfaceDevice * lid = OpalLineInterfaceDevice::Create(devices[d].Left(colon));
-      if (lid->Open(devices[d].Mid(colon+1))) {
+      if (lid->Open(devices[d].Mid(colon+1).Trim())) {
         // Create LID protocol handler, automatically adds to manager
         if (potsEP == NULL)
           potsEP = new OpalPOTSEndPoint(*this);
@@ -957,6 +962,13 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 
   if (!args.HasOption("no-std-dial-peer")) {
+#if P_EXPAT
+    // Need to make sure wildcard on source ep type is first or it won't be
+    // selected in preference to the specific entries below
+    if (ivrEP != NULL)
+      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
+#endif
+
 #if OPAL_SIP
     if (sipEP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
@@ -978,11 +990,6 @@ BOOL MyManager::Initialise(PArgList & args)
       }
 #endif
     }
-#endif
-
-#if P_EXPAT
-    if (ivrEP != NULL)
-      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
 #endif
 
 #if OPAL_LID
@@ -1021,7 +1028,20 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 #endif
 
-  srcEP = args.GetOptionString("srcep", "pc:*");
+  srcEP = args.GetOptionString("srcep", pcssEP != NULL ? "pc:*"
+                                    #if OPAL_LID
+                                      : potsEP != NULL ? "pots:*"
+                                    #endif
+                                    #if P_EXPAT
+                                      : ivrEP != NULL ? "ivr:#"
+                                    #endif
+                                    #if OPAL_SIP
+                                      : sipEP != NULL ? "sip:localhost"
+                                    #endif
+                                    #if OPAL_H323
+                                      : h323EP != NULL ? "sip:localhost"
+                                    #endif
+                                      : "");
   return TRUE;
 }
 
@@ -1185,14 +1205,7 @@ void MyManager::Main(PArgList & args)
       }
 
       cout << "Initiating call to \"" << args[0] << "\"\n";
-      if (!srcEP.IsEmpty())
-        SetUpCall(srcEP, args[0], currentCallToken);
-#if OPAL_LID
-      else if (potsEP != NULL)
-        SetUpCall("pots:*", args[0], currentCallToken);
-#endif
-      else
-        SetUpCall("pc:*", args[0], currentCallToken);
+      SetUpCall(srcEP, args[0], currentCallToken);
       break;
 
     default :
