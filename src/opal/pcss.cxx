@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2035  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2036  2006/10/15 06:23:35  rjongbloed
+ * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
+ *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
+ *
+ * Revision 2.34  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.33  2006/08/29 08:47:43  rjongbloed
@@ -266,13 +270,6 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  // If we are the A-party then need to initiate a call now in this thread and
-  // go through the routing engine via OnIncomingConnection. If we are the
-  // B-Party then SetUpConnection() gets called in the context of the A-party
-  // thread.
-  if (call.GetConnection(0) == connection)
-    connection->InitiateCall();
-
   return TRUE;
 }
 
@@ -395,6 +392,23 @@ OpalPCSSConnection::~OpalPCSSConnection()
 
 BOOL OpalPCSSConnection::SetUpConnection()
 {
+  // Check if we are A-Party in thsi call, so need to do things differently
+  if (ownerCall.GetConnection(0) == this) {
+    phase = SetUpPhase;
+    if (!OnIncomingConnection()) {
+      Release(EndedByCallerAbort);
+      return FALSE;
+    }
+
+    PTRACE(2, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    if (!ownerCall.OnSetUp(*this)) {
+      Release(EndedByNoAccept);
+      return FALSE;
+    }
+
+    return TRUE;
+  }
+
   {
     PSafePtr<OpalConnection> otherConn = ownerCall.GetOtherPartyConnection(*this);
     if (otherConn == NULL)
@@ -551,19 +565,6 @@ BOOL OpalPCSSConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "PCSS\tSendUserInputString(" << value << ')');
   return endpoint.OnShowUserInput(*this, value);
-}
-
-
-void OpalPCSSConnection::InitiateCall()
-{
-  phase = SetUpPhase;
-  if (!OnIncomingConnection())
-    Release(EndedByCallerAbort);
-  else {
-    PTRACE(2, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this))
-      Release(EndedByNoAccept);
-  }
 }
 
 
