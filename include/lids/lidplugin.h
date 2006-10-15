@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidplugin.h,v $
- * Revision 1.2002  2006/10/02 13:30:50  rjongbloed
+ * Revision 1.2003  2006/10/15 06:29:12  rjongbloed
+ * Added more error codes
+ *
+ * Revision 2.1  2006/10/02 13:30:50  rjongbloed
  * Added LID plug ins
  *
  */
@@ -81,10 +84,12 @@ typedef enum PluginLID_Errors {
   PluginLID_NoSuchLine,
   PluginLID_OperationNotAllowed,
   PluginLID_NoMoreNames,
+  PluginLID_BufferTooSmall,
   PluginLID_UnsupportedMediaFormat,
   PluginLID_NoDialTone,
   PluginLID_LineBusy,
   PluginLID_NoAnswer,
+  PluginLID_Aborted,
   PluginLID_InternalError,
   PluginLID_NumErrors
 } PluginLID_Errors;
