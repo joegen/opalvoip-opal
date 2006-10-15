@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2024  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2025  2006/10/15 06:23:35  rjongbloed
+ * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
+ *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
+ *
+ * Revision 2.23  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.22  2006/08/29 08:47:43  rjongbloed
@@ -476,10 +480,6 @@ class OpalPCSSConnection : public OpalConnection
 
   /**@name New operations */
   //@{
-    /**Call is initiated as the A-Party.
-      */
-    virtual void InitiateCall();
-
     /**Accept the incoming connection.
       */
     virtual void AcceptIncoming();

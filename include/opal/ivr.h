@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2011  2006/04/30 14:34:42  csoutheren
+ * Revision 1.2012  2006/10/15 06:23:35  rjongbloed
+ * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
+ *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
+ *
+ * Revision 2.10  2006/04/30 14:34:42  csoutheren
  * Backport of IVR updates from PluginBranch
  *
  * Revision 2.9.4.1  2006/04/30 13:49:34  csoutheren
@@ -310,10 +314,6 @@ class OpalIVRConnection : public OpalConnection
       const PString & value                   ///<  String value of indication
     );
   //@}
-
-    /**Call is initiated as the A-Party.
-      */
-    virtual void InitiateCall();
 
     /** Called when a call needs to start the outgoing VXML.
         This can be used to do different behaviour

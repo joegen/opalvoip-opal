@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2015  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2016  2006/10/15 06:23:35  rjongbloed
+ * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
+ *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
+ *
+ * Revision 2.14  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.13  2006/06/27 13:14:17  csoutheren
@@ -143,13 +147,6 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
 
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  // If we are the A-party then need to initiate a call now in this thread and
-  // go through the routing engine via OnIncomingConnection. If we are the
-  // B-Party then SetUpConnection() gets called in the context of the A-party
-  // thread.
-  if (call.GetConnection(0, PSafeReference) == connection)
-    connection->InitiateCall();
-
   return TRUE;
 }
 
@@ -224,18 +221,35 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 {
   phase = SetUpPhase;
 
-  PTRACE(3, "IVR\tInitiateCall ctor.");
+  PTRACE(3, "IVR\tConstructed");
 }
 
 
 OpalIVRConnection::~OpalIVRConnection()
 {
-  PTRACE(3, "IVR\t~InitiateCall.");
+  PTRACE(3, "IVR\tDestroyed.");
 }
 
 
 BOOL OpalIVRConnection::SetUpConnection()
 {
+  // Check if we are A-Party in thsi call, so need to do things differently
+  if (ownerCall.GetConnection(0) == this) {
+    phase = SetUpPhase;
+    if (!OnIncomingConnection()) {
+      Release(EndedByCallerAbort);
+      return FALSE;
+    }
+
+    PTRACE(2, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    if (!ownerCall.OnSetUp(*this)) {
+      Release(EndedByNoAccept);
+      return FALSE;
+    }
+
+    return TRUE;
+  }
+
   remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
 
   PTRACE(3, "IVR\tSetUpConnection(" << remotePartyName << ')');
@@ -352,20 +366,6 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
     vxmlSession.OnUserInput(value[i]);
 
   return TRUE;
-}
-
-
-void OpalIVRConnection::InitiateCall()
-{
-  PTRACE(3, "IVR\tInitiateCall");
-  phase = SetUpPhase;
-  if (!OnIncomingConnection())
-    Release(EndedByCallerAbort);
-  else {
-    PTRACE(2, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
-    if (!ownerCall.OnSetUp(*this))
-      Release(EndedByNoAccept);
-  }
 }
 
 

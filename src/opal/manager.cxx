@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2064  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2065  2006/10/15 06:23:35  rjongbloed
+ * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
+ *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
+ *
+ * Revision 2.63  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.62  2006/09/28 07:42:18  csoutheren
@@ -462,8 +466,12 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 
   call->SetPartyB(partyB);
 
-  if (MakeConnection(*call, partyA, userData)) {
-    PTRACE(1, "SetUpCall succeeded");
+  // If we are the A-party then need to initiate a call now in this thread and
+  // go through the routing engine via OnIncomingConnection. If we were the
+  // B-Party then SetUpConnection() gets called in the context of the A-party
+  // thread.
+  if (MakeConnection(*call, partyA, userData) && call->GetConnection(0)->SetUpConnection()) {
+    PTRACE(1, "SetUpCall succeeded, call=" << *call);
     return TRUE;
   }
 
@@ -472,6 +480,8 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   if (!activeCalls.RemoveAt(token)) {
     PTRACE(1, "SetUpCall could not remove call from active call list");
   }
+
+  token.MakeEmpty();
 
   return FALSE;
 }
@@ -584,7 +594,7 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
-  if (endpoints.IsEmpty())
+  if (remoteParty.IsEmpty() || endpoints.IsEmpty())
     return FALSE;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
@@ -609,36 +619,34 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
 
   OpalCall & call = connection.GetCall();
+
+  // See if we already have a B-Party in the call. If not, make one.
   if (call.GetOtherPartyConnection(connection) != NULL)
     return TRUE;
 
-  // See if have pre-allocated B party address, otherwise use routing algorithm
-  PString destinationAddress = call.GetPartyB();
-  if (destinationAddress.IsEmpty())
-    destinationAddress = OnRouteConnection(connection);
-
-  // Nowhere to go
-  if (destinationAddress.IsEmpty())
-    return FALSE;
-
-  return MakeConnection(call, destinationAddress);
+  // Use a routing algorithm to figure out who the B-Party is, then make a connection
+  return MakeConnection(call, OnRouteConnection(connection));
 }
 
 
 PString OpalManager::OnRouteConnection(OpalConnection & connection)
 {
-  PString addr = connection.GetDestinationAddress();
+  // See if have pre-allocated B party address, otherwise use routing algorithm
+  PString addr = connection.GetCall().GetPartyB();
+  if (addr.IsEmpty()) {
+    addr = connection.GetDestinationAddress();
 
-  // No address, fail call
-  if (addr.IsEmpty())
-    return PString::Empty();
+    // No address, fail call
+    if (addr.IsEmpty())
+      return addr;
+  }
 
-  // Have explicit protocol defined, so use that
+  // Have explicit protocol defined, so no translation to be done
   PINDEX colon = addr.Find(':');
   if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(colon)) != NULL)
     return addr;
 
-  // No routes specified, just return what we've got so far
+  // No routes specified, just return what we've got so far, maybe it will work
   if (routeTable.IsEmpty())
     return addr;
 
