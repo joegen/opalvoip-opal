@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="TigerJet LID"
+	ProjectGUID="{9A4E2793-1D97-4B0C-BCFD-130136990E35}"
 	>
 	<Platforms>
 		<Platform
@@ -68,6 +69,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
+				AdditionalDependencies="winmm.lib"
 				OutputFile="$(OutDir)/tj_lid_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -157,6 +159,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="winmm.lib"
 				OutputFile="$(OutDir)/tj_lid_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
