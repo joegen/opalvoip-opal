@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.48  2006/10/16 21:30:55  dsandras
+# Applied patch from Brian Lu <brian lu sun com> to fix compilation issues
+# on OpenSolaris. Thanks!
+#
 # Revision 1.47  2006/10/10 10:12:34  csoutheren
 # Allow correct operation if subdirs are missing
 #
@@ -275,6 +279,10 @@
 export OPALDIR=@OPALDIR@
 
 INSTALL=@INSTALL@
+OS_NAME=$(shell uname -s)
+ifeq ($(OS_NAME),SunOS)
+  override SHELL=/usr/bin/bash
+endif
 
 default :: optshared
 
@@ -285,7 +293,7 @@ update:
 	$(MAKE) all
 
 
-SUBDIRS := plugins samples/simple
+SUBDIRS := plugins 
 
 LIBRARY_MAKEFILE:=1
 
