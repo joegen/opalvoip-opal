@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpb.cpp,v $
+ * Revision 1.4  2006/10/16 09:46:49  rjongbloed
+ * Fixed various MSVC 8 warnings
+ *
  * Revision 1.3  2006/10/15 06:15:42  rjongbloed
  * Fixed windows/unix compatibility issue.
  *
@@ -31,6 +34,7 @@
  *
  */
 
+#define _CRT_SECURE_NO_DEPRECATE
 #define PLUGIN_DLL_EXPORTS
 #include <lids/lidplugin.h>
 

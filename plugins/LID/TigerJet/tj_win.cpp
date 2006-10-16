@@ -22,15 +22,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: tj_win.cpp,v $
+ * Revision 1.2  2006/10/16 09:46:49  rjongbloed
+ * Fixed various MSVC 8 warnings
+ *
  * Revision 1.1  2006/10/15 07:19:21  rjongbloed
  * Added first cut of TigerJet USB handset LID plug in
  *
  */
 
+#define _CRT_SECURE_NO_DEPRECATE
+#include <windows.h>
+
 #define PLUGIN_DLL_EXPORTS
 #include <lids/lidplugin.h>
 
-#include <windows.h>
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
@@ -54,7 +59,7 @@ public:
   inline CriticalSection()  { InitializeCriticalSection(this); }
   inline ~CriticalSection() { DeleteCriticalSection(this); }
   inline void Enter()       { EnterCriticalSection(this); }
-  inline Leave()            { LeaveCriticalSection(this); }
+  inline void Leave()       { LeaveCriticalSection(this); }
 };
 
 
@@ -351,7 +356,7 @@ class Context
 
       for (UINT id = 0; id < waveInGetNumDevs(); id++) {
         WAVEINCAPS caps;
-        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && strnicmp(caps.szPname, searchName, strlen(searchName)) == 0) {
+        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && _strnicmp(caps.szPname, searchName, strlen(searchName)) == 0) {
           if (bufsize <= strlen(caps.szPname))
             return PluginLID_BufferTooSmall;
 
@@ -412,7 +417,7 @@ class Context
       UINT id;
       for (id = 0; id < waveInGetNumDevs(); id++) {
         WAVEINCAPS caps;
-        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && stricmp(caps.szPname, device) == 0) {
+        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && _stricmp(caps.szPname, device) == 0) {
           waveInOpen(&m_hWaveIn, id, &format, m_InEvent.GetHandle(), 0, CALLBACK_EVENT);
           break;
         }
@@ -424,7 +429,7 @@ class Context
 
       for (id = 0; id < waveInGetNumDevs(); id++) {
         WAVEOUTCAPS caps;
-        if (waveOutGetDevCaps(id, &caps, sizeof(caps)) == 0 && stricmp(caps.szPname, device) == 0) {
+        if (waveOutGetDevCaps(id, &caps, sizeof(caps)) == 0 && _stricmp(caps.szPname, device) == 0) {
           waveOutOpen(&m_hWaveOut, id, &format, m_OutEvent.GetHandle(), 0, CALLBACK_EVENT);
           break;
         }
@@ -573,7 +578,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      if (stricmp(mediaFormat, g_PCM16) != 0)
+      if (strcmp(mediaFormat, g_PCM16) != 0)
         return PluginLID_UnsupportedMediaFormat;
 
       return PluginLID_NoError;
@@ -591,7 +596,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      if (stricmp(mediaFormat, g_PCM16) != 0)
+      if (strcmp(mediaFormat, g_PCM16) != 0)
         return PluginLID_UnsupportedMediaFormat;
 
       return PluginLID_NoError;

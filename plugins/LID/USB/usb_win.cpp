@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: usb_win.cpp,v $
+ * Revision 1.3  2006/10/16 09:46:49  rjongbloed
+ * Fixed various MSVC 8 warnings
+ *
  * Revision 1.2  2006/10/04 22:30:23  rjongbloed
  * Fixed background thread start up and shut down
  *
@@ -30,6 +33,7 @@
  *
  */
 
+#define _CRT_SECURE_NO_DEPRECATE
 #include <windows.h>
 
 #define PLUGIN_DLL_EXPORTS
@@ -303,7 +307,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      if (stricmp(mediaFormat, "PCM-16") != 0)
+      if (strcmp(mediaFormat, "PCM-16") != 0)
         return PluginLID_UnsupportedMediaFormat;
 
       return PluginLID_NoError;
@@ -321,7 +325,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      if (stricmp(mediaFormat, "PCM-16") != 0)
+      if (strcmp(mediaFormat, "PCM-16") != 0)
         return PluginLID_UnsupportedMediaFormat;
 
       return PluginLID_NoError;
