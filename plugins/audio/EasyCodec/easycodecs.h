@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: easycodecs.h,v $
+ * Revision 1.2  2006/10/16 09:46:49  rjongbloed
+ * Fixed various MSVC 8 warnings
+ *
  * Revision 1.1  2006/08/10 07:04:59  csoutheren
  * Added EasyCodec
  *
@@ -34,7 +37,7 @@
  *
 */
 
-#include <opalplugin.h>
+#include <codec/opalplugin.h>
 #include<windows.h>
 
 #if _MSC_VER > 1000
