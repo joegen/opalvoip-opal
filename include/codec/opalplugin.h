@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2004  2006/10/02 13:30:50  rjongbloed
+ * Revision 1.2005  2006/10/17 04:09:08  shorne
+ * Corrected generic parameter identifiers & added generic codec identifiers
+ *
+ * Revision 2.3  2006/10/02 13:30:50  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.2  2006/08/11 07:52:00  csoutheren
@@ -139,7 +142,7 @@ extern "C" {
 
 #define	PLUGIN_CODEC_VERSION		         1    // initial version
 #define	PLUGIN_CODEC_VERSION_WIDEBAND		 2    // added wideband
-#define	PLUGIN_CODEC_VERSION_VIDEO		   3    // added video
+#define	PLUGIN_CODEC_VERSION_VIDEO		     3    // added video
 
 #define PLUGIN_CODEC_API_VER_FN       PWLibPlugin_GetAPIVersion
 #define PLUGIN_CODEC_API_VER_FN_STR   "PWLibPlugin_GetAPIVersion"
@@ -265,13 +268,13 @@ struct PluginCodec_Definition {
   const void * userData;                   // user data value
 
   unsigned int sampleRate;                 // samples per second
-  unsigned int bitsPerSec;     		         // raw bits per second
+  unsigned int bitsPerSec;     		       // raw bits per second
 
   unsigned int nsPerFrame;                 // nanoseconds per frame
-  unsigned int samplesPerFrame;		         // audio: samples per frame,                      video: frame width
-  unsigned int bytesPerFrame;              // audio: max bytes per frame,                    video: frame height
-  unsigned int recommendedFramesPerPacket; // audio: recommended number of frames per packet video: recommended frame rate
-  unsigned int maxFramesPerPacket;         // audio: maximum number of frames per packet     video: max frame rate
+  unsigned int samplesPerFrame;		       // audio : samples per frame
+  unsigned int bytesPerFrame;              // audio : max bytes per frame
+  unsigned int recommendedFramesPerPacket; // audio : recommended number of frames per packet
+  unsigned int maxFramesPerPacket;         // audio :maximum number of frames per packet
 
   unsigned char rtpPayload;    		         // IANA RTP payload code (if defined)
   const char * sdpFormat;                  // SDP format string (or NULL, if no SDP format)
@@ -326,11 +329,11 @@ struct PluginCodec_H323GenericParameterDefinition
 	   H245_ParameterValue::Choices, as the value is just cast to that type
 	*/
 	PluginCodec_GenericParameter_Logical = 0,
-	PluginCodec_GenericParameter_Bitfield,
-	PluginCodec_GenericParameter_ShortMin,
-	PluginCodec_GenericParameter_ShortMax,
-	PluginCodec_GenericParameter_LongMin,
-	PluginCodec_GenericParameter_LongMax,
+	PluginCodec_GenericParameter_BooleanArray,
+	PluginCodec_GenericParameter_unsignedMin,
+	PluginCodec_GenericParameter_unsignedMax,
+	PluginCodec_GenericParameter_unsigned32Min,
+	PluginCodec_GenericParameter_unsigned32Max,
 	PluginCodec_GenericParameter_OctetString,
 	PluginCodec_GenericParameter_GenericParameter
     } type;
@@ -420,7 +423,7 @@ enum {
   PluginCodec_H323Codec_undefined,			// must be zero, so empty struct is undefined
   PluginCodec_H323Codec_programmed,			// H323ProgrammedCapability
   PluginCodec_H323Codec_nonStandard,		// H323NonStandardData
-  PluginCodec_H323Codec_generic,        // H323GenericCodecData
+  PluginCodec_H323Codec_generic,            // H323GenericCodecData
 
   // audio codecs
   PluginCodec_H323AudioCodec_g711Alaw_64k,		    // int
@@ -447,12 +450,41 @@ enum {
   // video codecs
   PluginCodec_H323VideoCodec_h261,                // implemented 
   PluginCodec_H323VideoCodec_h262,                // not yet implemented
-  PluginCodec_H323VideoCodec_h263,                // not yet implemented
+  PluginCodec_H323VideoCodec_h263,                // implemented
   PluginCodec_H323VideoCodec_is11172,             // not yet implemented
 
   // special codes
   PluginCodec_H323Codec_NoH323 = 0xff,            // used for SIP-only codecs
 };
+
+/////////////////
+//
+// Generic Codec Standard Identifiers
+//
+
+// Audio Capabilities
+// AMR (as defined in H.245v13 Annex I)
+#define OpalPluginCodec_Identifer_AMR             "0.0.8.245.1.1.1"
+
+// AMR-NB\WB  (as defined in H.245v13 Annex R)
+#define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.1.1.9"
+#define OpalPluginCodec_Identifer_AMR_WB          "0.0.8.1.1.10"
+
+// iLBC (as defined in H.245v13 Annex S)
+#define OpalPluginCodec_Identifer_iLBC            "0.0.8.1.1.11"
+
+
+// Video Capabilities
+
+// H264 (as defined in H.241)
+#define OpalPluginCodec_Identifer_H264            "0.0.8.241.0.0.0.0"
+#define OpalPluginCodec_Identifer_H264_RFC3984    "0.0.8.241.0.0.0.1"
+#define OpalPluginCodec_Identifer_H264_RFC3984Int "0.0.8.241.0.0.0.2"
+#define OpalPluginCodec_Identifer_H264_Generic    "0.0.8.241.0.0.1"
+
+// ISO/IEC 14496-2 MPEG4 part 2 (as defined in H.245v13 Annex E)
+#define OpalPluginCodec_Identifer_MPEG4           "0.0.8.245.1.0.0"
+
 
 /////////////////
 //
