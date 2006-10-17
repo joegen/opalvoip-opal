@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2015  2006/10/17 15:36:58  shorne
+ * Revision 1.2016  2006/10/17 23:55:07  csoutheren
+ * Changed to match new enum in opalplugin.h
+ *
+ * Revision 2.14  2006/10/17 15:36:58  shorne
  * Missed line removal in last commit
  *
  * Revision 2.13  2006/10/17 04:10:12  shorne
@@ -2525,20 +2528,20 @@ H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(
   unsigned i;
   for (i = 0; i < data -> nParameters; i++) {
     switch(ptr->type) {
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_ShortMin:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_ShortMax:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_LongMin:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_LongMax:
-	      AddIntegerGenericParameter(ptr->collapsing,ptr->id,ptr->type, ptr->value.integer);
-	      break;
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMin:
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMax:
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsigned32Min:
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsigned32Max:
+        AddIntegerGenericParameter(ptr->collapsing,ptr->id,ptr->type, ptr->value.integer);
+        break;
 	
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Logical:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Bitfield:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
-	    default:
-	      PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
-	      break;
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Logical:
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_BooleanArray:
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
+      case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
+      default:
+        PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
+        break;
     }
     ptr++;
   }
