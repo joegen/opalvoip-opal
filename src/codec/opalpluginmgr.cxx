@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2014  2006/10/17 04:10:12  shorne
+ * Revision 1.2015  2006/10/17 15:36:58  shorne
+ * Missed line removal in last commit
+ *
+ * Revision 2.13  2006/10/17 04:10:12  shorne
  * Corrected h245 generic parameter identifiers
  *
  * Revision 2.12  2006/10/10 07:18:18  csoutheren
@@ -2065,7 +2068,6 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(
 	      break;
 	
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Logical:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_Bitfield:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
 	    default:
