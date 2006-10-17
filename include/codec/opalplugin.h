@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2005  2006/10/17 04:09:08  shorne
+ * Revision 1.2006  2006/10/17 13:04:36  shorne
+ * comments were accidently truncated
+ *
+ * Revision 2.4  2006/10/17 04:09:08  shorne
  * Corrected generic parameter identifiers & added generic codec identifiers
  *
  * Revision 2.3  2006/10/02 13:30:50  rjongbloed
@@ -271,10 +274,10 @@ struct PluginCodec_Definition {
   unsigned int bitsPerSec;     		       // raw bits per second
 
   unsigned int nsPerFrame;                 // nanoseconds per frame
-  unsigned int samplesPerFrame;		       // audio : samples per frame
-  unsigned int bytesPerFrame;              // audio : max bytes per frame
-  unsigned int recommendedFramesPerPacket; // audio : recommended number of frames per packet
-  unsigned int maxFramesPerPacket;         // audio :maximum number of frames per packet
+  unsigned int samplesPerFrame;		       // audio: samples per frame,                      video: frame width
+  unsigned int bytesPerFrame;              // audio: max bytes per frame,                    video: frame height
+  unsigned int recommendedFramesPerPacket; // audio: recommended number of frames per packet video: recommended frame rate
+  unsigned int maxFramesPerPacket;         // audio: maximum number of frames per packet     video: max frame rate
 
   unsigned char rtpPayload;    		         // IANA RTP payload code (if defined)
   const char * sdpFormat;                  // SDP format string (or NULL, if no SDP format)
