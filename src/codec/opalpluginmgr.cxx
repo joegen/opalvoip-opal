@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2013  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2014  2006/10/17 04:10:12  shorne
+ * Corrected h245 generic parameter identifiers
+ *
+ * Revision 2.12  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.11  2006/10/02 13:30:51  rjongbloed
@@ -2053,10 +2056,11 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(
   unsigned i;
   for (i = 0; i < data -> nParameters; i++) {
     switch(ptr->type) {
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_ShortMin:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_ShortMax:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_LongMin:
-	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_LongMax:
+	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_BooleanArray:
+	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMin:
+	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMax:
+	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsigned32Min:
+	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsigned32Max:
 	      AddIntegerGenericParameter(ptr->collapsing,ptr->id,ptr->type, ptr->value.integer);
 	      break;
 	
