@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.2 2006/08/01 13:06:55 rjongbloed Exp $
+ * $Id: amrcodec.c,v 1.3 2006/10/17 04:10:12 shorne Exp $
  */
 
 
@@ -24,7 +24,8 @@ PLUGIN_CODEC_IMPLEMENT("AMR")
 
 /***************************************************************************
  *
- * This plugin implements an interface to the AMR-NB codec for OpenH323.
+ * This plugin implements an interface to the GSM-AMR codec for OpenH323 (H.245 Annex I)
+ * This should not be confused with GSM-AMR-NB (H.245 Annex R)
  *
  * The amr codec itself is not distributed with this plugin. See amrcodec.txt
  * in the src subdirectory of the plugin source.
@@ -229,17 +230,17 @@ static struct PluginCodec_information licenseInfo = {
     "$Ver$",                                                     // source code version
     "richardv@mxtelecom.com",                                    // source code email
     "http://www.mxtelecom.com",                                  // source code URL
-    "Copyright (C) 2004 MX Telecom Ltd.", 		         // source code copyright
+    "Copyright (C) 2004 MX Telecom Ltd.", 		                 // source code copyright
     "None",                                                      // source code license  // FIXME
     PluginCodec_License_None,                                    // source code license
     
     "GSM-AMR (Adaptive Multirate Codec)",                        // codec description
     "3rd Generation Partnership Project",                        // codec author
     NULL,                                                        // codec version
-    NULL,	                                                 // codec email
-    "http://www.3gpp.org",	                                 // codec URL
-    "",          						 // codec copyright information
-    "", 							 // codec license
+    NULL,	                                                     // codec email
+    "http://www.3gpp.org",	                                     // codec URL
+    "",          						                         // codec copyright information
+    "", 							                             // codec license
     PluginCodec_License_RoyaltiesRequired                        // codec license code
 };
 
@@ -248,13 +249,13 @@ static const struct PluginCodec_H323GenericParameterDefinition amr_params[] =
 {
     {1,
      GENERIC_PARAMETER_AMR_MAXAL_SDUFRAMES,
-     PluginCodec_GenericParameter_ShortMin,
+     PluginCodec_GenericParameter_unsignedMin,
      {1}}
 };
      
 static const struct PluginCodec_H323GenericCodecData amrcap =
 {
-    "0.0.8.245.1.1.1",						// capability identifier (Ref: Table I.1 in H.245)
+    OpalPluginCodec_Identifer_AMR,						// capability identifier (Ref: Table I.1 in H.245)
     122,
     1,
     amr_params
@@ -279,19 +280,19 @@ static const struct PluginCodec_Definition amrCodecDefn[] = {
 	PluginCodec_OutputTypeRaw |         	// raw output data
 	PluginCodec_RTPTypeDynamic,         	// dynamic RTP type
 	
-	"GSM-AMR",	                        // text decription
+	"GSM-AMR",	                            // text decription
 	"L16",                              	// source format
 	"GSM-AMR",                             	// destination format
 	
 	(void *)AMR_Mode,                       // user data
 
 	8000,                               	// samples per second
-	0,		                        // raw bits per second
+	0,		                                // raw bits per second
 	20000,                              	// nanoseconds per frame
-	160,                      		// samples per frame
-	32,                  			// bytes per frame; 32 because
-						// the sample coder stomps on
-						// an extra byte
+	160,                      		        // samples per frame
+	32,                  			        // bytes per frame; 32 because
+						                    // the sample coder stomps on
+						                    // an extra byte
 	
 	1,                                  	// recommended number of frames per packet
 	1,                                  	// maximum number of frames per packet
@@ -320,15 +321,15 @@ static const struct PluginCodec_Definition amrCodecDefn[] = {
 
 	"GSM-AMR",                           	// text decription
 	"GSM-AMR",                           	// source format
-	"L16",                            	// destination format
+	"L16",                            	    // destination format
 
 	(void *)AMR_Mode,                       // user data
 
 	8000,                               	// samples per second
-	0,		                        // raw bits per second
+	0,		                                // raw bits per second
 	30000,                              	// nanoseconds per frame
-	160,                      		// samples per frame
-	31,                  			// bytes per frame
+	160,                      		        // samples per frame
+	31,                  			        // bytes per frame
 	1,                                  	// recommended number of frames per packet
 	1,                                  	// maximum number of frames per packet
 	0,                                  	// IANA RTP payload code
@@ -339,7 +340,7 @@ static const struct PluginCodec_Definition amrCodecDefn[] = {
 	amr_codec_decoder,                     	// encode/decode
 	NULL,                                	// codec controls
 	
-	PluginCodec_H323Codec_generic,  	// h323CapabilityType 
+	PluginCodec_H323Codec_generic,  	    // h323CapabilityType 
 	(struct PluginCodec_H323GenericCodecData *)&amrcap
 						// h323CapabilityData
     }
