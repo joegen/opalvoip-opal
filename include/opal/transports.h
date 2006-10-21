@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2024  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2025  2006/10/21 11:48:48  hfriederich
+ * Allow to find out how many interfaces are used before calling WriteConnect()
+ *
+ * Revision 2.23  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.22  2006/08/29 00:55:04  csoutheren
@@ -1110,6 +1113,9 @@ class OpalTransportUDP : public OpalTransportIP
       WriteConnectCallback function,  ///<  Function for writing data
       void * userData                 ///<  User data to pass to write function
     );
+	
+	/**Returns the number of sockets currently present for this transport */
+	virtual unsigned NumberOfConnectSockets() {return connectSockets.GetSize(); }
   //@}
 
 
