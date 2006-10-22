@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: tj_win.cpp,v $
+ * Revision 1.3  2006/10/22 12:08:51  rjongbloed
+ * Major change so that sound card based LIDs, eg USB handsets. are handled in
+ *   common code so not requiring lots of duplication.
+ *
  * Revision 1.2  2006/10/16 09:46:49  rjongbloed
  * Fixed various MSVC 8 warnings
  *
@@ -50,8 +54,6 @@
 
 static HINSTANCE g_hInstance;
 
-static const char g_PCM16[] = "PCM-16";
-
 
 class CriticalSection : CRITICAL_SECTION
 {
@@ -63,46 +65,23 @@ public:
 };
 
 
-class Event
-{
-private:
-  HANDLE m_hEvent;
-public:
-  inline Event()           { m_hEvent = CreateEvent(NULL, FALSE, FALSE, NULL); }
-  inline ~Event()          { if (m_hEvent != NULL) CloseHandle(m_hEvent); }
-  inline bool Wait()       { return WaitForSingleObject(m_hEvent, INFINITE) == WAIT_OBJECT_0; }
-  inline void Set()        { SetEvent(m_hEvent); }
-  inline DWORD GetHandle() { return (DWORD)m_hEvent; }
-};
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 class Context
 {
   protected:
-    HMODULE             m_hDLL;
-    TJIPSYSCALL         m_pTjIpSysCall;
-    TjIpProductID       m_eProductID;
-    bool                m_hasBuzzer;
+    HMODULE          m_hDLL;
+    TJIPSYSCALL      m_pTjIpSysCall;
+    TjIpProductID    m_eProductID;
+    bool             m_hasDTMF;
+    bool             m_hasBuzzer;
+    bool             m_hasMixer;
 
-    bool                m_isOffHook;
-    bool                m_tonePlaying;
+    bool             m_isOffHook;
+    bool             m_tonePlaying;
 
-    std::queue<char>    m_Keys;
-    CriticalSection     m_KeyMutex;
-
-    HWAVEIN             m_hWaveIn;
-    unsigned            m_readFrameSize;
-    std::queue<WAVEHDR> m_InBuffers;
-    Event               m_InEvent;
-    CriticalSection     m_InMutex;
-
-    HWAVEOUT            m_hWaveOut;
-    unsigned            m_writeFrameSize;
-    std::queue<WAVEHDR> m_OutBuffers;
-    Event               m_OutEvent;
-    CriticalSection     m_OutMutex;
+    std::queue<char> m_Keys;
+    CriticalSection  m_KeyMutex;
 
 
 
@@ -282,15 +261,11 @@ class Context
     PLUGIN_LID_CTOR()
     {
       m_eProductID = TJIP_NONE;
+      m_hasDTMF = false;
       m_hasBuzzer = false;
+      m_hasMixer = false;
       m_isOffHook = false;
       m_tonePlaying = false;
-
-      m_hWaveIn = NULL;
-      m_readFrameSize = 160;
-
-      m_hWaveOut = NULL;
-      m_writeFrameSize = 160;
 
       m_hDLL = LoadLibrary("TjIpSys.dll");
       if (m_hDLL== NULL)
@@ -394,74 +369,24 @@ class Context
           break;
       }
 
-      if (!m_pTjIpSysCall(TJIP_INIT_DTMF_TO_PPG, 0, (void *)device))
-        OutputDebugString("Could not initialise DTMF on TigerJet\n");
+      m_hasDTMF = m_pTjIpSysCall(TJIP_INIT_DTMF_TO_PPG, 0, (void *)device) != 0;
 
       TJ_MIXER_OPEN tjMixerOpen;
       memset(&tjMixerOpen, 0, sizeof(tjMixerOpen));
       strncpy(tjMixerOpen.szMixerName, device, sizeof(tjMixerOpen.szMixerName)-1);
+      m_hasMixer = m_pTjIpSysCall(TJIP_OPEN_MIXER, 0, &tjMixerOpen) != 0;
 
-      if (!m_pTjIpSysCall(TJIP_OPEN_MIXER, 0, &tjMixerOpen))
-        OutputDebugString("Could not initialise mixer on TigerJet\n");
-
-
-      WAVEFORMATEX format;
-      format.wFormatTag = WAVE_FORMAT_PCM;
-      format.nChannels = 1;
-      format.nSamplesPerSec = 8000;
-      format.wBitsPerSample = 16;
-      format.nBlockAlign = 2;
-      format.nAvgBytesPerSec = 16000;
-      format.cbSize = 0;
-
-      UINT id;
-      for (id = 0; id < waveInGetNumDevs(); id++) {
-        WAVEINCAPS caps;
-        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && _stricmp(caps.szPname, device) == 0) {
-          waveInOpen(&m_hWaveIn, id, &format, m_InEvent.GetHandle(), 0, CALLBACK_EVENT);
-          break;
-        }
-      }
-      if (m_hWaveIn == NULL) {
-        Close();
-        return PluginLID_InternalError;
-      }
-
-      for (id = 0; id < waveInGetNumDevs(); id++) {
-        WAVEOUTCAPS caps;
-        if (waveOutGetDevCaps(id, &caps, sizeof(caps)) == 0 && _stricmp(caps.szPname, device) == 0) {
-          waveOutOpen(&m_hWaveOut, id, &format, m_OutEvent.GetHandle(), 0, CALLBACK_EVENT);
-          break;
-        }
-      }
-      if (m_hWaveOut == NULL) {
-        Close();
-        return PluginLID_InternalError;
-      }
-
-      return PluginLID_NoError;
+      return PluginLID_UsesSoundChannel;
     }
 
 
     PLUGIN_FUNCTION_ARG0(Close)
     {
-      StopReading(0);
-      StopWriting(0);
-
-      if (m_hWaveOut != NULL) {
-        while (waveOutClose(m_hWaveOut) == WAVERR_STILLPLAYING)
-          waveOutReset(m_hWaveOut);
-        m_hWaveOut = NULL;
+      if (m_hasMixer) {
+        if (!m_pTjIpSysCall(TJIP_CLOSE_MIXER, 0, NULL))
+          OutputDebugString("Could not close mixer on TigerJet\n");
+        m_hasMixer = false;
       }
-
-      if (m_hWaveIn != NULL) {
-        while (waveInClose(m_hWaveIn) == WAVERR_STILLPLAYING)
-          waveInReset(m_hWaveIn);
-        m_hWaveIn = NULL;
-      }
-
-      if (!m_pTjIpSysCall(TJIP_CLOSE_MIXER, 0, NULL))
-        OutputDebugString("Could not close mixer on TigerJet\n");
 
       return PluginLID_NoError;
     }
@@ -549,356 +474,19 @@ class Context
     //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
-
-
-    PLUGIN_FUNCTION_ARG3(GetSupportedFormat, unsigned,index, char *,mediaFormat, unsigned,size)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (index >= 1)
-        return PluginLID_NoMoreNames;
-
-      if (size < sizeof(g_PCM16))
-        return PluginLID_BufferTooSmall;
-
-      strcpy(mediaFormat, g_PCM16);
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetReadFormat, unsigned,line, const char *,mediaFormat)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (strcmp(mediaFormat, g_PCM16) != 0)
-        return PluginLID_UnsupportedMediaFormat;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetWriteFormat, unsigned,line, const char *,mediaFormat)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (strcmp(mediaFormat, g_PCM16) != 0)
-        return PluginLID_UnsupportedMediaFormat;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG3(GetReadFormat, unsigned,line, char *,mediaFormat, unsigned,size)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (size < sizeof(g_PCM16))
-        return PluginLID_BufferTooSmall;
-
-      strcpy(mediaFormat, g_PCM16);
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG3(GetWriteFormat, unsigned,line, char *,mediaFormat, unsigned,size)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (size < sizeof(g_PCM16))
-        return PluginLID_BufferTooSmall;
-
-      strcpy(mediaFormat, g_PCM16);
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG1(StopReading, unsigned,line)
-    {
-      if (m_eProductID == TJIP_NONE || m_hWaveIn == NULL)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      waveInReset(m_hWaveIn);
-
-      m_InMutex.Enter();
-
-      while (m_InBuffers.size() > 0) {
-        WAVEHDR & header = m_InBuffers.front();
-
-        while (waveInUnprepareHeader(m_hWaveIn, &header, sizeof(WAVEHDR)) == WAVERR_STILLPLAYING)
-          waveInReset(m_hWaveIn);
-
-        free(header.lpData);
-        m_InBuffers.pop();
-      }
-
-      // Signal any threads waiting on this event, they should then check
-      // the bufferByteOffset variable for an abort.
-      m_InEvent.Set();
-
-      m_InMutex.Leave();
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG1(StopWriting, unsigned,line)
-    {
-      if (m_eProductID == TJIP_NONE || m_hWaveOut == NULL)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      waveOutReset(m_hWaveOut);
-
-      m_OutMutex.Enter();
-
-      while (m_OutBuffers.size() > 0) {
-        WAVEHDR & header = m_OutBuffers.front();
-
-        while (waveOutUnprepareHeader(m_hWaveOut, &header, sizeof(WAVEHDR)) == WAVERR_STILLPLAYING)
-          waveOutReset(m_hWaveOut);
-
-        free(header.lpData);
-        m_OutBuffers.pop();
-      }
-
-      // Signal any threads waiting on this event, they should then check
-      // the bufferByteOffset variable for an abort.
-      m_OutEvent.Set();
-
-      m_OutMutex.Leave();
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetReadFrameSize, unsigned,line, unsigned,frameSize)
-    {
-      if (frameSize < 8)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (m_readFrameSize != frameSize) {
-        StopReading(line);
-        m_readFrameSize = frameSize;
-      }
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetWriteFrameSize, unsigned,line, unsigned,frameSize)
-    {
-      if (frameSize < 8)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (m_writeFrameSize != frameSize) {
-        StopWriting(line);
-        m_writeFrameSize = frameSize;
-      }
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(GetReadFrameSize, unsigned,line, unsigned *,frameSize)
-    {
-      if (frameSize == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *frameSize = m_readFrameSize;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(GetWriteFrameSize, unsigned,line, unsigned *,frameSize)
-    {
-      if (frameSize == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *frameSize = m_writeFrameSize;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG3(ReadFrame, unsigned,line, void *,buffer, unsigned *,count)
-    {
-      if (buffer == NULL || count == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWaveIn == NULL)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      bool ok = true;
-
-      m_InMutex.Enter();
-
-      if (m_InBuffers.size() == 0) {
-        int bufferCount = 2000/m_readFrameSize; // Want about 250ms of buffering
-        if (bufferCount < 2)
-          bufferCount = 2; // And at least be double buffered, just doesn't work otherwise
-        while (ok && bufferCount-- > 0) {
-          static const WAVEHDR EmptyHeader = { 0 };
-          m_InBuffers.push(EmptyHeader);
-          WAVEHDR & header = m_InBuffers.back();
-          header.lpData = (LPSTR)malloc(m_readFrameSize);
-          header.dwBufferLength = m_readFrameSize;
-          ok = waveInPrepareHeader(m_hWaveIn, &header, sizeof(WAVEHDR)) == MMSYSERR_NOERROR &&
-               waveInAddBuffer(m_hWaveIn, &header, sizeof(WAVEHDR)) == MMSYSERR_NOERROR;
-        }
-
-        ok = ok && waveInStart(m_hWaveIn) == MMSYSERR_NOERROR; // start recording
-      }
-
-      if (ok) {
-        WAVEHDR & header = m_InBuffers.front();
-        while ((header.dwFlags&WHDR_DONE) == 0 || header.dwBytesRecorded == 0) {
-          m_InMutex.Leave();
-
-          if (!m_InEvent.Wait())
-            return PluginLID_InternalError;
-
-          // Check for if StopReading() was called.
-          if (m_InBuffers.size() == 0)
-            return PluginLID_Aborted;
-
-          m_InMutex.Enter();
-        }
-
-        *count = header.dwBytesRecorded;
-        memcpy(buffer, header.lpData, *count);
-        m_InBuffers.push(header);
-        m_InBuffers.pop();
-        ok = waveInAddBuffer(m_hWaveIn, &m_InBuffers.back(), sizeof(WAVEHDR)) == MMSYSERR_NOERROR;
-      }
-
-      m_InMutex.Leave();
-
-      if (ok)
-        return PluginLID_NoError;
-
-      StopReading(line);
-      return PluginLID_InternalError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG4(WriteFrame, unsigned,line, const void *,buffer, unsigned,count, unsigned *,written)
-    {
-      if (buffer == NULL || written == NULL || count != m_writeFrameSize)
-        return PluginLID_InvalidParameter;
-
-      if (m_eProductID == TJIP_NONE)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      m_OutMutex.Enter();
-
-      if (m_OutBuffers.size() == 0) {
-        int bufferCount = 1000/m_writeFrameSize; // Want about 125ms of buffering
-        if (bufferCount < 2)
-          bufferCount = 2; // And at least be double buffered, just doesn't work otherwise
-        while (bufferCount-- > 0) {
-          static const WAVEHDR EmptyHeader = { 0 };
-          m_OutBuffers.push(EmptyHeader);
-          WAVEHDR & header = m_OutBuffers.back();
-          header.lpData = (LPSTR)malloc(m_writeFrameSize);
-          header.dwBufferLength = m_writeFrameSize;
-          header.dwFlags = WHDR_DONE;
-        }
-      }
-
-      while ((m_OutBuffers.front().dwFlags&WHDR_DONE) == 0) {
-        m_OutMutex.Leave();
-
-        // No free buffers, so wait for one
-        if (!m_OutEvent.Wait())
-          return PluginLID_InternalError;
-
-        m_OutMutex.Enter();
-      }
-
-      m_OutBuffers.push(m_OutBuffers.front());
-      m_OutBuffers.pop();
-
-      WAVEHDR & header = m_OutBuffers.back();
-      memcpy(header.lpData, buffer, count);
-      *written = count;
-
-      bool ok = waveOutPrepareHeader(m_hWaveOut, &header, sizeof(WAVEHDR)) == MMSYSERR_NOERROR &&
-                waveOutWrite(m_hWaveOut, &header, sizeof(WAVEHDR)) == MMSYSERR_NOERROR;
-
-      m_OutMutex.Leave();
-
-      if (ok)
-        return PluginLID_NoError;
-
-      StopWriting(line);
-      return PluginLID_InternalError;
-    }
-
-
-
+    //PLUGIN_FUNCTION_ARG3(GetSupportedFormat, unsigned,index, char *,mediaFormat, unsigned,size)
+    //PLUGIN_FUNCTION_ARG2(SetReadFormat, unsigned,line, const char *,mediaFormat)
+    //PLUGIN_FUNCTION_ARG2(SetWriteFormat, unsigned,line, const char *,mediaFormat)
+    //PLUGIN_FUNCTION_ARG3(GetReadFormat, unsigned,line, char *,mediaFormat, unsigned,size)
+    //PLUGIN_FUNCTION_ARG3(GetWriteFormat, unsigned,line, char *,mediaFormat, unsigned,size)
+    //PLUGIN_FUNCTION_ARG1(StopReading, unsigned,line)
+    //PLUGIN_FUNCTION_ARG1(StopWriting, unsigned,line)
+    //PLUGIN_FUNCTION_ARG2(SetReadFrameSize, unsigned,line, unsigned,frameSize)
+    //PLUGIN_FUNCTION_ARG2(SetWriteFrameSize, unsigned,line, unsigned,frameSize)
+    //PLUGIN_FUNCTION_ARG2(GetReadFrameSize, unsigned,line, unsigned *,frameSize)
+    //PLUGIN_FUNCTION_ARG2(GetWriteFrameSize, unsigned,line, unsigned *,frameSize)
+    //PLUGIN_FUNCTION_ARG3(ReadFrame, unsigned,line, void *,buffer, unsigned *,count)
+    //PLUGIN_FUNCTION_ARG4(WriteFrame, unsigned,line, const void *,buffer, unsigned,count, unsigned *,written)
     //PLUGIN_FUNCTION_ARG3(GetAverageSignalLevel, unsigned,line, PluginLID_Boolean,playback, unsigned *,signal)
     //PLUGIN_FUNCTION_ARG2(EnableAudio, unsigned,line, PluginLID_Boolean,enable)
     //PLUGIN_FUNCTION_ARG2(IsAudioEnabled, unsigned,line, PluginLID_Boolean *,enable)
@@ -911,6 +499,9 @@ class Context
 
       if (line >= 1)
         return PluginLID_NoSuchLine;
+
+      if (!m_hasMixer)
+        return PluginLID_UnimplementedFunction;
 
       DWORD dwVolume = volume*32768/100;
       if (dwVolume > 32767)
@@ -930,6 +521,9 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
+      if (!m_hasMixer)
+        return PluginLID_UnimplementedFunction;
+
       DWORD dwVolume = volume*32768/100;
       if (dwVolume > 32767)
         dwVolume = 32767;
@@ -947,6 +541,9 @@ class Context
 
       if (line >= 1)
         return PluginLID_NoSuchLine;
+
+      if (!m_hasMixer)
+        return PluginLID_UnimplementedFunction;
 
       DWORD dwVolume;
       if (!m_pTjIpSysCall(TJIP_GET_WAVEIN_VOL, 0, &dwVolume))
@@ -967,6 +564,9 @@ class Context
 
       if (line >= 1)
         return PluginLID_NoSuchLine;
+
+      if (!m_hasMixer)
+        return PluginLID_UnimplementedFunction;
 
       DWORD dwVolume;
       if (!m_pTjIpSysCall(TJIP_GET_WAVEOUT_VOL, 0, &dwVolume))
@@ -997,6 +597,9 @@ class Context
 
       if (line >= 1)
         return PluginLID_NoSuchLine;
+
+      if (!m_hasDTMF)
+        return PluginLID_UnimplementedFunction;
 
       while (*digits != '\0') {
         int nTone = 0;
@@ -1055,6 +658,8 @@ class Context
     //                                              unsigned        ,numCadences,
     //                                              const unsigned *,onTimes,
     //                                              const unsigned *,offTimes)
+
+
     PLUGIN_FUNCTION_ARG2(PlayTone, unsigned,line, unsigned,tone)
     {
       if (m_eProductID == TJIP_NONE)
@@ -1062,6 +667,9 @@ class Context
 
       if (line >= 1)
         return PluginLID_NoSuchLine;
+
+      if (!m_hasDTMF)
+        return PluginLID_UnimplementedFunction;
 
       int nTone = 0;
       switch (tone) {
@@ -1101,6 +709,9 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
+      if (!m_hasDTMF)
+        return PluginLID_UnimplementedFunction;
+
       *playing = m_tonePlaying;
       return PluginLID_NoError;
     }
@@ -1112,6 +723,9 @@ class Context
 
       if (line >= 1)
         return PluginLID_NoSuchLine;
+
+      if (!m_hasDTMF)
+        return PluginLID_UnimplementedFunction;
 
       m_tonePlaying = false;
       return m_pTjIpSysCall(TJIP_SEND_DTMF_TO_PPG, -1, NULL) ? PluginLID_NoError : PluginLID_InternalError;
@@ -1170,26 +784,26 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::IsLineConnected,
     NULL,//Context::SetLineToLineDirect,
     NULL,//Context::IsLineToLineDirect,
-    Context::GetSupportedFormat,
-    Context::SetReadFormat,
-    Context::SetWriteFormat,
-    Context::GetReadFormat,
-    Context::GetWriteFormat,
-    Context::StopReading,
-    Context::StopWriting,
-    Context::SetReadFrameSize,
-    Context::SetWriteFrameSize,
-    Context::GetReadFrameSize,
-    Context::GetWriteFrameSize,
-    Context::ReadFrame,
-    Context::WriteFrame,
+    NULL,//Context::GetSupportedFormat,
+    NULL,//Context::SetReadFormat,
+    NULL,//Context::SetWriteFormat,
+    NULL,//Context::GetReadFormat,
+    NULL,//Context::GetWriteFormat,
+    NULL,//Context::StopReading,
+    NULL,//Context::StopWriting,
+    NULL,//Context::SetReadFrameSize,
+    NULL,//Context::SetWriteFrameSize,
+    NULL,//Context::GetReadFrameSize,
+    NULL,//Context::GetWriteFrameSize,
+    NULL,//Context::ReadFrame,
+    NULL,//Context::WriteFrame,
     NULL,//Context::GetAverageSignalLevel,
     NULL,//Context::EnableAudio,
     NULL,//Context::IsAudioEnabled,
-    Context::SetRecordVolume,
-    Context::SetPlayVolume,
-    Context::GetRecordVolume,
-    Context::GetPlayVolume,
+    NULL,//Context::SetRecordVolume,
+    NULL,//Context::SetPlayVolume,
+    NULL,//Context::GetRecordVolume,
+    NULL,//Context::GetPlayVolume,
     NULL,//Context::GetAEC,
     NULL,//Context::SetAEC,
     NULL,//Context::GetVAD,
