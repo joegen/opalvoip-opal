@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidplugin.h,v $
- * Revision 1.2003  2006/10/15 06:29:12  rjongbloed
+ * Revision 1.2004  2006/10/22 12:08:51  rjongbloed
+ * Major change so that sound card based LIDs, eg USB handsets. are handled in
+ *   common code so not requiring lots of duplication.
+ *
+ * Revision 2.2  2006/10/15 06:29:12  rjongbloed
  * Added more error codes
  *
  * Revision 2.1  2006/10/02 13:30:50  rjongbloed
@@ -80,6 +84,7 @@ typedef enum PluginLID_Errors {
   PluginLID_InvalidParameter,
   PluginLID_NoSuchDevice,
   PluginLID_DeviceOpenFailed,
+  PluginLID_UsesSoundChannel,
   PluginLID_DeviceNotOpen,
   PluginLID_NoSuchLine,
   PluginLID_OperationNotAllowed,
