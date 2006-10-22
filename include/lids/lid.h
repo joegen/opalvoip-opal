@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2015  2006/10/15 06:27:16  rjongbloed
+ * Revision 1.2016  2006/10/22 12:05:54  rjongbloed
+ * Fixed correct usage of read/write buffer sizes in LID endpoints.
+ *
+ * Revision 2.14  2006/10/15 06:27:16  rjongbloed
  * Fixed problem with duplicate registrations of LID plug ins.
  * Added code to remember if line audio was enabled/disabled, helps with LID endpoint logic.
  *
@@ -507,7 +510,7 @@ class OpalLineInterfaceDevice : public PObject
     virtual BOOL SetReadFrameSize(
       unsigned line,    ///<  Number of line
       PINDEX frameSize  ///<  New frame size
-    );
+    ) = 0;
 
     /**Set the write frame size in bytes.
        Note that a LID may ignore this value so always use GetReadFrameSize()
@@ -516,7 +519,7 @@ class OpalLineInterfaceDevice : public PObject
     virtual BOOL SetWriteFrameSize(
       unsigned line,    ///<  Number of line
       PINDEX frameSize  ///<  New frame size
-    );
+    ) = 0;
 
     /**Get the read frame size in bytes.
        All calls to ReadFrame() will return this number of bytes.
@@ -1052,7 +1055,6 @@ class OpalLineInterfaceDevice : public PObject
     T35CountryCodes countryCode;
     PBYTEArray      m_readDeblockingBuffer, m_writeDeblockingBuffer;
     PINDEX          m_readDeblockingOffset, m_writeDeblockingOffset;
-    unsigned int    m_uiCardNumber;
     unsigned int    m_uiDialToneTimeout;
     std::vector<bool> m_LineAudioEnabled;
 #if PTRACING
