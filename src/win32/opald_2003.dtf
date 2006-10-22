@@ -17,16 +17,23 @@ EXPORTS
     ??$?0U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@@std@@QAE@ABV?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@1@@Z @40549 NONAME
     ??$?0U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@@std@@QAE@ABV?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@1@@Z @40550 NONAME
     ??$copy@PAHPAH@std@@YAPAHPAH00@Z @41471 NONAME
+    ??$copy@PAIPAI@std@@YAPAIPAI00@Z @44193 NONAME
     ??$copy@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@00@Z @44060 NONAME
+    ??$copy@Viterator@?$vector@_NV?$allocator@_N@std@@@std@@V123@@std@@YA?AViterator@?$vector@_NV?$allocator@_N@std@@@0@V120@00@Z @44194 NONAME
     ??$copy_backward@PAHPAH@std@@YAPAHPAH00@Z @41472 NONAME
+    ??$copy_backward@PAIPAI@std@@YAPAIPAI00@Z @44195 NONAME
     ??$copy_backward@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@00@Z @44061 NONAME
     ??$copy_backward@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAV12@@std@@YAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@PAV10@00@Z @43208 NONAME
     ??$copy_backward@PAVOpalMediaFormatPair@@PAV1@@std@@YAPAVOpalMediaFormatPair@@PAV1@00@Z @36966 NONAME
+    ??$copy_backward@Viterator@?$vector@_NV?$allocator@_N@std@@@std@@V123@@std@@YA?AViterator@?$vector@_NV?$allocator@_N@std@@@0@V120@00@Z @44196 NONAME
     ??$fill@PAHH@std@@YAXPAH0ABH@Z @41473 NONAME
+    ??$fill@PAII@std@@YAXPAI0ABI@Z @44197 NONAME
     ??$fill@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@U12@@std@@YAXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@0ABU12@@Z @44062 NONAME
     ??$fill@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@@std@@YAXPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@0ABV10@@Z @43209 NONAME
     ??$fill@PAVOpalMediaFormatPair@@V1@@std@@YAXPAVOpalMediaFormatPair@@0ABV1@@Z @36967 NONAME
+    ??$fill@Viterator@?$vector@_NV?$allocator@_N@std@@@std@@_N@std@@YAXViterator@?$vector@_NV?$allocator@_N@std@@@0@0AB_N@Z @44198 NONAME
     ??$fill_n@PAHIH@std@@YAXPAHIABH@Z @41474 NONAME
+    ??$fill_n@PAIII@std@@YAXPAIIABI@Z @44199 NONAME
     ??$find@Viterator@?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@VPString@@@std@@YA?AViterator@?$vector@VPString@@V?$allocator@VPString@@@std@@@0@V120@0ABVPString@@@Z @35502 NONAME
     ??$PAssertCast@$$CBV?$OpalMediaOptionValue@H@@@@YAPBV?$OpalMediaOptionValue@H@@PBV0@PBDH@Z @36182 NONAME
     ??$PAssertCast@$$CBV?$OpalMediaOptionValue@N@@@@YAPBV?$OpalMediaOptionValue@N@@PBV0@PBDH@Z @41928 NONAME
@@ -51,6 +58,7 @@ EXPORTS
     ??$PSafePtrCast@VOpalConnection@@VOpalPCSSConnection@@@@YA?AV?$PSafePtr@VOpalPCSSConnection@@@@ABV?$PSafePtr@VOpalConnection@@@@@Z @35798 NONAME
     ??$PSafePtrCast@VOpalConnection@@VSIPConnection@@@@YA?AV?$PSafePtr@VSIPConnection@@@@ABV?$PSafePtr@VOpalConnection@@@@@Z @35799 NONAME
     ??$_Allocate@H@std@@YAPAHIPAH@Z @41475 NONAME
+    ??$_Allocate@I@std@@YAPAIIPAI@Z @44200 NONAME
     ??$_Allocate@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@IPAU12@@Z @44063 NONAME
     ??$_Allocate@U_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@YAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@0@IPAU120@@Z @43210 NONAME
     ??$_Allocate@U_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@YAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@0@IPAU120@@Z @43211 NONAME
@@ -74,11 +82,15 @@ EXPORTS
     ??$_Construct@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V12@@std@@YAXPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@ABV10@@Z @43215 NONAME
     ??$_Construct@VOpalMediaFormatPair@@V1@@std@@YAXPAVOpalMediaFormatPair@@ABV1@@Z @36973 NONAME
     ??$_Copy_backward_opt@PAHPAH@std@@YAPAHPAH00U_Scalar_ptr_iterator_tag@0@@Z @41476 NONAME
+    ??$_Copy_backward_opt@PAIPAI@std@@YAPAIPAI00U_Scalar_ptr_iterator_tag@0@@Z @44201 NONAME
     ??$_Copy_backward_opt@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@00U_Nonscalar_ptr_iterator_tag@0@@Z @44067 NONAME
     ??$_Copy_backward_opt@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAV12@@std@@YAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@PAV10@00U_Nonscalar_ptr_iterator_tag@0@@Z @43216 NONAME
     ??$_Copy_backward_opt@PAVOpalMediaFormatPair@@PAV1@@std@@YAPAVOpalMediaFormatPair@@PAV1@00U_Nonscalar_ptr_iterator_tag@0@@Z @36974 NONAME
+    ??$_Copy_backward_opt@Viterator@?$vector@_NV?$allocator@_N@std@@@std@@V123@@std@@YA?AViterator@?$vector@_NV?$allocator@_N@std@@@0@V120@00U_Nonscalar_ptr_iterator_tag@0@@Z @44202 NONAME
     ??$_Copy_opt@PAHPAH@std@@YAPAHPAH00U_Scalar_ptr_iterator_tag@0@@Z @41477 NONAME
+    ??$_Copy_opt@PAIPAI@std@@YAPAIPAI00U_Scalar_ptr_iterator_tag@0@@Z @44203 NONAME
     ??$_Copy_opt@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@00U_Nonscalar_ptr_iterator_tag@0@@Z @44068 NONAME
+    ??$_Copy_opt@Viterator@?$vector@_NV?$allocator@_N@std@@@std@@V123@@std@@YA?AViterator@?$vector@_NV?$allocator@_N@std@@@0@V120@00U_Nonscalar_ptr_iterator_tag@0@@Z @44204 NONAME
     ??$_Destroy@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@YAXPAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@0@@Z @43217 NONAME
     ??$_Destroy@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@YAXPAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@0@@Z @43218 NONAME
     ??$_Destroy@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@@std@@YAXPAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@0@@Z @36975 NONAME
@@ -100,6 +112,8 @@ EXPORTS
     ??$_Destroy@VOpalMediaFormatPair@@@std@@YAXPAVOpalMediaFormatPair@@@Z @36977 NONAME
     ??$_Destroy_range@HV?$allocator@H@std@@@std@@YAXPAH0AAV?$allocator@H@0@@Z @41478 NONAME
     ??$_Destroy_range@HV?$allocator@H@std@@@std@@YAXPAH0AAV?$allocator@H@0@U_Scalar_ptr_iterator_tag@0@@Z @41479 NONAME
+    ??$_Destroy_range@IV?$allocator@I@std@@@std@@YAXPAI0AAV?$allocator@I@0@@Z @44205 NONAME
+    ??$_Destroy_range@IV?$allocator@I@std@@@std@@YAXPAI0AAV?$allocator@I@0@U_Scalar_ptr_iterator_tag@0@@Z @44206 NONAME
     ??$_Destroy_range@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@YAXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@0AAV?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@0@@Z @44072 NONAME
     ??$_Destroy_range@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@YAXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@0AAV?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @44073 NONAME
     ??$_Destroy_range@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@YAXPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@0AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@@Z @43222 NONAME
@@ -114,34 +128,42 @@ EXPORTS
     ??$_Ptr_cat@PAVOpalMediaFormatPair@@PAV1@@std@@YA?AU_Nonscalar_ptr_iterator_tag@0@AAPAVOpalMediaFormatPair@@0@Z @36980 NONAME
     ??$_Ptr_cat@Vconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@@std@@YA?AU_Nonscalar_ptr_iterator_tag@0@AAVconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@0@AAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@@Z @43228 NONAME
     ??$_Ptr_cat@Vconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@PAVOpalMediaFormatPair@@@std@@YA?AU_Nonscalar_ptr_iterator_tag@0@AAVconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@0@AAPAVOpalMediaFormatPair@@@Z @36981 NONAME
+    ??$_Ptr_cat@Viterator@?$vector@_NV?$allocator@_N@std@@@std@@V123@@std@@YA?AU_Nonscalar_ptr_iterator_tag@0@AAViterator@?$vector@_NV?$allocator@_N@std@@@0@0@Z @44207 NONAME
     ??$_Ucopy@PAH@?$vector@HV?$allocator@H@std@@@std@@IAEPAHPAH00@Z @41480 NONAME
+    ??$_Ucopy@PAI@?$vector@IV?$allocator@I@std@@@std@@IAEPAIPAI00@Z @44208 NONAME
     ??$_Ucopy@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAEPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU23@00@Z @44075 NONAME
     ??$_Ucopy@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAEPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@1@PAV21@00@Z @43229 NONAME
     ??$_Ucopy@PAVOpalMediaFormatPair@@@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAEPAVOpalMediaFormatPair@@PAV2@00@Z @36982 NONAME
     ??$_Ucopy@Vconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAEPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@1@Vconst_iterator@01@0PAV21@@Z @43230 NONAME
     ??$_Ucopy@Vconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAEPAVOpalMediaFormatPair@@Vconst_iterator@01@0PAV2@@Z @36983 NONAME
     ??$_Uninitialized_copy@PAHPAHV?$allocator@H@std@@@std@@YAPAHPAH00AAV?$allocator@H@0@@Z @41481 NONAME
+    ??$_Uninitialized_copy@PAIPAIV?$allocator@I@std@@@std@@YAPAIPAI00AAV?$allocator@I@0@@Z @44209 NONAME
     ??$_Uninitialized_copy@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@00AAV?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@0@@Z @44076 NONAME
     ??$_Uninitialized_copy@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAV12@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@YAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@PAV10@00AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@@Z @43231 NONAME
     ??$_Uninitialized_copy@PAVOpalMediaFormatPair@@PAV1@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@YAPAVOpalMediaFormatPair@@PAV1@00AAV?$allocator@VOpalMediaFormatPair@@@0@@Z @36984 NONAME
     ??$_Uninitialized_copy@Vconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@3@@std@@YAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@Vconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@0@0PAV10@AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@@Z @43232 NONAME
     ??$_Uninitialized_copy@Vconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@PAVOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@3@@std@@YAPAVOpalMediaFormatPair@@Vconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@0@0PAV1@AAV?$allocator@VOpalMediaFormatPair@@@0@@Z @36985 NONAME
     ??$_Uninitialized_fill_n@PAHIHV?$allocator@H@std@@@std@@YAXPAHIABHAAV?$allocator@H@0@@Z @41482 NONAME
+    ??$_Uninitialized_fill_n@PAIIIV?$allocator@I@std@@@std@@YAXPAIIABIAAV?$allocator@I@0@@Z @44210 NONAME
     ??$_Uninitialized_fill_n@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@IU12@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@YAXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@IABU12@AAV?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@0@@Z @44077 NONAME
     ??$_Uninitialized_fill_n@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@IV12@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@YAXPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@IABV10@AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@@Z @43233 NONAME
     ??$_Uninitialized_fill_n@PAVOpalMediaFormatPair@@IV1@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@YAXPAVOpalMediaFormatPair@@IABV1@AAV?$allocator@VOpalMediaFormatPair@@@0@@Z @36986 NONAME
     ??$_Uninit_copy@HH@std@@YAPAHPAH00AAV?$allocator@H@0@U_Scalar_ptr_iterator_tag@0@@Z @41483 NONAME
+    ??$_Uninit_copy@II@std@@YAPAIPAI00AAV?$allocator@I@0@U_Scalar_ptr_iterator_tag@0@@Z @44211 NONAME
     ??$_Uninit_copy@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@YAPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU12@00AAV?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @44078 NONAME
     ??$_Uninit_copy@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAV12@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@YAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@PAV10@00AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @43234 NONAME
     ??$_Uninit_copy@PAVOpalMediaFormatPair@@PAV1@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@YAPAVOpalMediaFormatPair@@PAV1@00AAV?$allocator@VOpalMediaFormatPair@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @36987 NONAME
     ??$_Uninit_copy@Vconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@3@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@3@@std@@YAPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@Vconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@0@0PAV10@AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @43235 NONAME
     ??$_Uninit_copy@Vconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@PAVOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@3@@std@@YAPAVOpalMediaFormatPair@@Vconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@0@0PAV1@AAV?$allocator@VOpalMediaFormatPair@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @36988 NONAME
     ??$_Uninit_fill_n@HIH@std@@YAXPAHIABHAAV?$allocator@H@0@U_Scalar_ptr_iterator_tag@0@@Z @41484 NONAME
+    ??$_Uninit_fill_n@III@std@@YAXPAIIABIAAV?$allocator@I@0@U_Scalar_ptr_iterator_tag@0@@Z @44212 NONAME
     ??$_Uninit_fill_n@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@IU12@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@YAXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@IABU12@AAV?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @44079 NONAME
     ??$_Uninit_fill_n@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@IV12@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@YAXPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@0@IABV10@AAV?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @43236 NONAME
     ??$_Uninit_fill_n@PAVOpalMediaFormatPair@@IV1@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@YAXPAVOpalMediaFormatPair@@IABV1@AAV?$allocator@VOpalMediaFormatPair@@@0@U_Nonscalar_ptr_iterator_tag@0@@Z @36989 NONAME
     ??0?$allocator@H@std@@QAE@ABV01@@Z @41485 NONAME
     ??0?$allocator@H@std@@QAE@XZ @41486 NONAME
+    ??0?$allocator@I@std@@QAE@ABV01@@Z @44213 NONAME
+    ??0?$allocator@I@std@@QAE@XZ @44214 NONAME
     ??0?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@std@@QAE@ABV01@@Z @43237 NONAME
     ??0?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@std@@QAE@XZ @43238 NONAME
     ??0?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@std@@QAE@ABV01@@Z @43239 NONAME
@@ -408,11 +430,13 @@ EXPORTS
     ??0?$PSortedList@VResponse@H323Transactor@@@@IAE@HPBV0@@Z @146 NONAME
     ??0?$PSortedList@VResponse@H323Transactor@@@@QAE@XZ @147 NONAME
     ??0?$vector@HV?$allocator@H@std@@@std@@QAE@XZ @41487 NONAME
+    ??0?$vector@IV?$allocator@I@std@@@std@@QAE@XZ @44215 NONAME
     ??0?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE@XZ @44086 NONAME
     ??0?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE@ABV01@@Z @43254 NONAME
     ??0?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE@XZ @43255 NONAME
     ??0?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE@ABV01@@Z @37007 NONAME
     ??0?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE@XZ @37008 NONAME
+    ??0?$vector@_NV?$allocator@_N@std@@@std@@QAE@XZ @44216 NONAME
     ??0?$Worker@V?$OpalInternalIPTransportTemplate@VOpalListenerTCP@@VOpalTransportTCP@@$03VOpalTransportUDP@@@@@?$PFactory@VOpalInternalTransport@@VPString@@@@QAE@ABVPString@@_N@Z @43610 NONAME
     ??0?$Worker@V?$OpalInternalIPTransportTemplate@VOpalListenerTCPS@@VOpalTransportTCPS@@$03VOpalTransportUDP@@@@@?$PFactory@VOpalInternalTransport@@VPString@@@@QAE@ABVPString@@_N@Z @43611 NONAME
     ??0?$Worker@V?$OpalInternalIPTransportTemplate@VOpalListenerUDP@@VOpalTransportUDP@@$02VOpalTransportTCP@@@@@?$PFactory@VOpalInternalTransport@@VPString@@@@QAE@ABVPString@@_N@Z @43612 NONAME
@@ -478,6 +502,7 @@ EXPORTS
     ??0?$_Tree_val@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAE@ABU?$less@VPString@@@1@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@1@@Z @44091 NONAME
     ??0?$_Tree_val@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAE@ABU?$less@W4PayloadTypes@RTP_DataFrame@@@1@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@1@@Z @40580 NONAME
     ??0?$_Vector_val@HV?$allocator@H@std@@@std@@IAE@V?$allocator@H@1@@Z @41488 NONAME
+    ??0?$_Vector_val@IV?$allocator@I@std@@@std@@IAE@V?$allocator@I@1@@Z @44217 NONAME
     ??0?$_Vector_val@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAE@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@1@@Z @44092 NONAME
     ??0?$_Vector_val@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAE@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@1@@Z @43274 NONAME
     ??0?$_Vector_val@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAE@V?$allocator@VOpalMediaFormatPair@@@1@@Z @37014 NONAME
@@ -489,10 +514,12 @@ EXPORTS
     ??0CapabilityListCreateEntry@OpalPluginCodecManager@@QAE@PAUPluginCodec_Definition@@0@Z @44093 NONAME
     ??0ConnectionDict@OpalEndPoint@@QAE@XZ @35832 NONAME
     ??0const_iterator@?$vector@HV?$allocator@H@std@@@std@@QAE@PAH@Z @41489 NONAME
+    ??0const_iterator@?$vector@IV?$allocator@I@std@@@std@@QAE@PAI@Z @44218 NONAME
     ??0const_iterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@@Z @44094 NONAME
     ??0const_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z @43275 NONAME
     ??0const_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE@XZ @43276 NONAME
     ??0const_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE@PAVOpalMediaFormatPair@@@Z @37015 NONAME
+    ??0const_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QAE@PBI@Z @44219 NONAME
     ??0const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@@Z @43277 NONAME
     ??0const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE@XZ @43278 NONAME
     ??0const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@@Z @43279 NONAME
@@ -3755,9 +3782,11 @@ EXPORTS
     ??0Info@RTP_JitterBufferAnalyser@@QAE@XZ @2977 NONAME
     ??0InstantiateMe@PWLibStupidLinkerHacks@@QAE@XZ @42056 NONAME
     ??0iterator@?$vector@HV?$allocator@H@std@@@std@@QAE@PAH@Z @41528 NONAME
+    ??0iterator@?$vector@IV?$allocator@I@std@@@std@@QAE@PAI@Z @44220 NONAME
     ??0iterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE@PAUCapabilityListCreateEntry@OpalPluginCodecManager@@@Z @44097 NONAME
     ??0iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE@PAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z @43281 NONAME
     ??0iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE@PAVOpalMediaFormatPair@@@Z @37252 NONAME
+    ??0iterator@?$vector@_NV?$allocator@_N@std@@@std@@QAE@PAI@Z @44221 NONAME
     ??0iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@@Z @43282 NONAME
     ??0iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE@XZ @43283 NONAME
     ??0iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@@Z @43284 NONAME
@@ -4081,6 +4110,7 @@ EXPORTS
     ??0PASN_Stream@@QAE@ABV0@@Z @3411 NONAME
     ??0PAuthInitialiseInstantiateMe@@QAE@XZ @40599 NONAME
     ??0PCaselessString@@QAE@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @43286 NONAME
+    ??0PDTMFEncoder@@QAE@PBDI@Z @44286 NONAME
     ??0PluginLoader@@QAE@XZ @42077 NONAME
     ??0POrdinalKey@@QAE@ABV0@@Z @3442 NONAME
     ??0PortInfo@OpalManager@@QAE@XZ @3444 NONAME
@@ -4098,6 +4128,7 @@ EXPORTS
     ??0ReceivedPacket_PNotifier@OpalSilenceDetector@@QAE@PAV1@@Z @34585 NONAME
     ??0ReceiverReport@RTP_Session@@QAE@XZ @3454 NONAME
     ??0ReceiveTimeout_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @3455 NONAME
+    ??0reference@?$vector@_NV?$allocator@_N@std@@@std@@QAE@ABV_Vb_iter_base@12@@Z @44222 NONAME
     ??0RegistrationList@SIPEndPoint@@QAE@XZ @36631 NONAME
     ??0RegistrationRefresh_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @36071 NONAME
     ??0Request@H323Transactor@@QAE@IAAVH323TransactionPDU@@@Z @3456 NONAME
@@ -4205,6 +4236,7 @@ EXPORTS
     ??0T38_UDPTLPacket_primary_ifp_packet@@QAE@ABV0@@Z @3553 NONAME
     ??0T38_UDPTLPacket_primary_ifp_packet@@QAE@IW4TagClass@PASN_Object@@@Z @3554 NONAME
     ??0TickleMonitor_PNotifier@H323Gatekeeper@@QAE@PAV1@@Z @3555 NONAME
+    ??0TonePlayer_PNotifier@OpalPluginLID@@QAE@PAV1@@Z @44287 NONAME
     ??0TransmitEnded_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @3556 NONAME
     ??0TransmitPacket_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @3557 NONAME
     ??0TransportThreadMain_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @3559 NONAME
@@ -4256,6 +4288,7 @@ EXPORTS
     ??0_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@std@@QAE@PAU012@00ABU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@2@D@Z @43627 NONAME
     ??0_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@std@@@5@$0A@@std@@@std@@QAE@PAU012@00ABU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@2@D@Z @42090 NONAME
     ??0_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAE@PAU012@00ABU?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@2@D@Z @40603 NONAME
+    ??0_Vb_iter_base@?$vector@_NV?$allocator@_N@std@@@std@@QAE@PAI@Z @44223 NONAME
     ??1?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@UAE@XZ @3593 NONAME
     ??1?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@UAE@XZ @3594 NONAME
     ??1?$H235_ENCRYPTED@VH235_EncodedPwdCertToken@@@@UAE@XZ @3595 NONAME
@@ -4384,9 +4417,11 @@ EXPORTS
     ??1?$PSortedList@VOpalMediaOption@@@@UAE@XZ @36239 NONAME
     ??1?$PSortedList@VResponse@H323Transactor@@@@UAE@XZ @3666 NONAME
     ??1?$vector@HV?$allocator@H@std@@@std@@QAE@XZ @41532 NONAME
+    ??1?$vector@IV?$allocator@I@std@@@std@@QAE@XZ @44224 NONAME
     ??1?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE@XZ @44102 NONAME
     ??1?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE@XZ @43300 NONAME
     ??1?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE@XZ @37328 NONAME
+    ??1?$vector@_NV?$allocator@_N@std@@@std@@QAE@XZ @44225 NONAME
     ??1?$Worker@V?$OpalInternalIPTransportTemplate@VOpalListenerTCP@@VOpalTransportTCP@@$03VOpalTransportUDP@@@@@?$PFactory@VOpalInternalTransport@@VPString@@@@UAE@XZ @43634 NONAME
     ??1?$Worker@V?$OpalInternalIPTransportTemplate@VOpalListenerTCPS@@VOpalTransportTCPS@@$03VOpalTransportUDP@@@@@?$PFactory@VOpalInternalTransport@@VPString@@@@UAE@XZ @43635 NONAME
     ??1?$Worker@V?$OpalInternalIPTransportTemplate@VOpalListenerUDP@@VOpalTransportUDP@@$02VOpalTransportTCP@@@@@?$PFactory@VOpalInternalTransport@@VPString@@@@UAE@XZ @43636 NONAME
@@ -6224,6 +6259,7 @@ EXPORTS
     ??1Opal_PCM_Linear16Mono@@UAE@XZ @5300 NONAME
     ??1OpenArgs@PVideoDevice@@QAE@XZ @5318 NONAME
     ??1PASN_GeneralisedTime@@UAE@XZ @5329 NONAME
+    ??1PDTMFEncoder@@UAE@XZ @44288 NONAME
     ??1PluginLoader@@UAE@XZ @42151 NONAME
     ??1PortInfo@OpalManager@@QAE@XZ @5376 NONAME
     ??1PWAVFileConverterALaw@@UAE@XZ @36653 NONAME
@@ -6306,6 +6342,7 @@ EXPORTS
     ??1T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@UAE@XZ @5442 NONAME
     ??1T38_UDPTLPacket_primary_ifp_packet@@UAE@XZ @5443 NONAME
     ??1TickleMonitor_PNotifier@H323Gatekeeper@@UAE@XZ @5444 NONAME
+    ??1TonePlayer_PNotifier@OpalPluginLID@@UAE@XZ @44289 NONAME
     ??1TransmitEnded_PNotifier@OpalRFC2833Proto@@UAE@XZ @5445 NONAME
     ??1TransmitPacket_PNotifier@OpalRFC2833Proto@@UAE@XZ @5446 NONAME
     ??1TransportThreadMain_PNotifier@SIPEndPoint@@UAE@XZ @5448 NONAME
@@ -6765,6 +6802,8 @@ EXPORTS
     ??4POrdinalKey@@QAEAAV0@ABV0@@Z @5875 NONAME
     ??4PPER_Stream@@QAEAAV0@ABV0@@Z @5876 NONAME
     ??4Q931@@QAEAAV0@ABV0@@Z @5882 NONAME
+    ??4reference@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@ABV012@@Z @44226 NONAME
+    ??4reference@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@_N@Z @44227 NONAME
     ??4RTP_DataFrame@@QAEAAV0@ABV0@@Z @5883 NONAME
     ??4RTP_QOS@@QAEAAV0@ABV0@@Z @5884 NONAME
     ??4RTP_SessionManager@@QAEAAV0@ABV0@@Z @5885 NONAME
@@ -6817,8 +6856,10 @@ EXPORTS
     ??7PSafePtrBase@@QBE_NXZ @40168 NONAME
     ??8?$fpos@H@std@@QBE_NABV01@@Z @5927 NONAME
     ??8const_iterator@?$vector@HV?$allocator@H@std@@@std@@QBE_NABV012@@Z @41555 NONAME
+    ??8const_iterator@?$vector@IV?$allocator@I@std@@@std@@QBE_NABV012@@Z @44228 NONAME
     ??8const_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBE_NABV012@@Z @43317 NONAME
     ??8const_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBE_NABV012@@Z @37489 NONAME
+    ??8const_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QBE_NABV012@@Z @44229 NONAME
     ??8const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBE_NABV012@@Z @43318 NONAME
     ??8const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBE_NABV012@@Z @43319 NONAME
     ??8const_iterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QBE_NABV012@@Z @37490 NONAME
@@ -6832,8 +6873,10 @@ EXPORTS
     ??8PASN_ObjectId@@QBE_NABVPString@@@Z @5929 NONAME
     ??9Address@PIPSocket@@QBE_NK@Z @5931 NONAME
     ??9const_iterator@?$vector@HV?$allocator@H@std@@@std@@QBE_NABV012@@Z @41556 NONAME
+    ??9const_iterator@?$vector@IV?$allocator@I@std@@@std@@QBE_NABV012@@Z @44230 NONAME
     ??9const_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBE_NABV012@@Z @43320 NONAME
     ??9const_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBE_NABV012@@Z @37493 NONAME
+    ??9const_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QBE_NABV012@@Z @44231 NONAME
     ??9const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBE_NABV012@@Z @43321 NONAME
     ??9const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBE_NABV012@@Z @43322 NONAME
     ??9const_iterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QBE_NABV012@@Z @37494 NONAME
@@ -6893,7 +6936,9 @@ EXPORTS
     ??A?$PSortedList@VResponse@H323Transactor@@@@QBEAAVResponse@H323Transactor@@H@Z @5976 NONAME
     ??A?$PStringDictionary@VPOrdinalKey@@@@QBEABVPString@@ABVPOrdinalKey@@@Z @5978 NONAME
     ??A?$vector@HV?$allocator@H@std@@@std@@QAEAAHI@Z @41557 NONAME
+    ??A?$vector@IV?$allocator@I@std@@@std@@QAEAAII@Z @44232 NONAME
     ??A?$vector@VPIPSocketAddressAndPort@@V?$allocator@VPIPSocketAddressAndPort@@@std@@@std@@QAEAAVPIPSocketAddressAndPort@@I@Z @40619 NONAME
+    ??A?$vector@_NV?$allocator@_N@std@@@std@@QAE?AVreference@01@I@Z @44233 NONAME
     ??AGCC_ApplicationInvokeSpecifier_expectedCapabilitySet@@QBEAAVGCC_ApplicationInvokeSpecifier_expectedCapabilitySet_subtype@@H@Z @5980 NONAME
     ??AGCC_ApplicationRecord_nonCollapsingCapabilities@@QBEAAVGCC_ApplicationRecord_nonCollapsingCapabilities_subtype@@H@Z @5981 NONAME
     ??AGCC_ArrayOf_ApplicationInvokeSpecifier@@QBEAAVGCC_ApplicationInvokeSpecifier@@H@Z @5982 NONAME
@@ -8725,6 +8770,7 @@ EXPORTS
     ??BPASN_BMPString@@QBE?AVPString@@XZ @7634 NONAME
     ??BPASN_ConstrainedString@@QBEABVPString@@XZ @7636 NONAME
     ??BPString@@QBE?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@XZ @43325 NONAME
+    ??Breference@?$vector@_NV?$allocator@_N@std@@@std@@QBE_NXZ @44234 NONAME
     ??BSafeString@@QAE?AVPString@@XZ @37594 NONAME
     ??BT38_Type_of_msg@@QAEAAVT38_Type_of_msg_data@@XZ @7645 NONAME
     ??BT38_Type_of_msg@@QAEAAVT38_Type_of_msg_t30_indicator@@XZ @7646 NONAME
@@ -8777,6 +8823,7 @@ EXPORTS
     ??D?$PSafePtr@VOpalConnection@@@@QBEAAVOpalConnection@@XZ @35874 NONAME
     ??D?$PSafePtr@VSIPInfo@@@@QBEAAVSIPInfo@@XZ @36685 NONAME
     ??Dconst_iterator@?$vector@HV?$allocator@H@std@@@std@@QBEABHXZ @41578 NONAME
+    ??Dconst_iterator@?$vector@IV?$allocator@I@std@@@std@@QBEABIXZ @44235 NONAME
     ??Dconst_iterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEABUCapabilityListCreateEntry@OpalPluginCodecManager@@XZ @44109 NONAME
     ??Dconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@XZ @43328 NONAME
     ??Dconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEABVOpalMediaFormatPair@@XZ @37598 NONAME
@@ -8789,9 +8836,11 @@ EXPORTS
     ??Dconst_iterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@QBEABU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@2@XZ @44110 NONAME
     ??Dconst_iterator@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QBEABU?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@2@XZ @40622 NONAME
     ??Diterator@?$vector@HV?$allocator@H@std@@@std@@QBEAAHXZ @41579 NONAME
+    ??Diterator@?$vector@IV?$allocator@I@std@@@std@@QBEAAIXZ @44236 NONAME
     ??Diterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEAAUCapabilityListCreateEntry@OpalPluginCodecManager@@XZ @44111 NONAME
     ??Diterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEAAVOpalMediaFormatPair@@XZ @37600 NONAME
     ??Diterator@?$vector@VPIPSocketAddressAndPort@@V?$allocator@VPIPSocketAddressAndPort@@@std@@@std@@QBEAAVPIPSocketAddressAndPort@@XZ @40623 NONAME
+    ??Diterator@?$vector@_NV?$allocator@_N@std@@@std@@QBE?AVreference@12@XZ @44237 NONAME
     ??Diterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBEAAU?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@2@XZ @43331 NONAME
     ??Diterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBEAAU?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@2@XZ @43332 NONAME
     ??Diterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QBEAAU?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@2@XZ @42181 NONAME
@@ -8809,6 +8858,7 @@ EXPORTS
     ??E?$PSafePtr@VSIPInfo@@@@QAEPAVSIPInfo@@XZ @36259 NONAME
     ??Econst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAEAAV012@XZ @43333 NONAME
     ??Econst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAEAAV012@XZ @37602 NONAME
+    ??Econst_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@XZ @44238 NONAME
     ??Econst_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43334 NONAME
     ??Econst_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43335 NONAME
     ??Econst_iterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAEAAV012@XZ @37603 NONAME
@@ -8820,6 +8870,7 @@ EXPORTS
     ??EH323ChannelNumber@@QAEAAV0@H@Z @7679 NONAME
     ??Eiterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAEAAV012@XZ @37604 NONAME
     ??Eiterator@?$vector@VPString@@V?$allocator@VPString@@@std@@@std@@QAEAAV012@XZ @35513 NONAME
+    ??Eiterator@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@XZ @44239 NONAME
     ??Eiterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AV012@H@Z @43336 NONAME
     ??Eiterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43337 NONAME
     ??Eiterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AV012@H@Z @43338 NONAME
@@ -8836,6 +8887,7 @@ EXPORTS
     ??Eiterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@QAEAAV012@XZ @44114 NONAME
     ??Eiterator@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAE?AV012@H@Z @40627 NONAME
     ??Eiterator@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAEAAV012@XZ @40628 NONAME
+    ??Fconst_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@XZ @44240 NONAME
     ??Fconst_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43340 NONAME
     ??Fconst_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43341 NONAME
     ??Fconst_iterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAEAAV012@XZ @42194 NONAME
@@ -8843,6 +8895,7 @@ EXPORTS
     ??Fconst_iterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@std@@QAEAAV012@XZ @43651 NONAME
     ??Fconst_iterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@std@@@5@$0A@@std@@@std@@QAEAAV012@XZ @42197 NONAME
     ??Fconst_iterator@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAEAAV012@XZ @40630 NONAME
+    ??Fiterator@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@XZ @44241 NONAME
     ??Fiterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43342 NONAME
     ??Fiterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEAAV012@XZ @43343 NONAME
     ??Fiterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAEAAV012@XZ @42198 NONAME
@@ -8853,13 +8906,17 @@ EXPORTS
     ??Gconst_iterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEHABV012@@Z @44115 NONAME
     ??Gconst_iterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEHABV012@@Z @43344 NONAME
     ??Gconst_iterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEHABV012@@Z @37607 NONAME
+    ??Gconst_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QBEHV012@@Z @44242 NONAME
     ??Giterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEHABVconst_iterator@12@@Z @44116 NONAME
     ??Giterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEHABVconst_iterator@12@@Z @43345 NONAME
     ??Giterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEHABVconst_iterator@12@@Z @37608 NONAME
+    ??Giterator@?$vector@_NV?$allocator@_N@std@@@std@@QBEHVconst_iterator@12@@Z @44243 NONAME
     ??Hiterator@?$vector@HV?$allocator@H@std@@@std@@QBE?AV012@H@Z @41580 NONAME
+    ??Hiterator@?$vector@IV?$allocator@I@std@@@std@@QBE?AV012@H@Z @44244 NONAME
     ??Hiterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBE?AV012@H@Z @44117 NONAME
     ??Hiterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBE?AV012@H@Z @43346 NONAME
     ??Hiterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBE?AV012@H@Z @37609 NONAME
+    ??Hiterator@?$vector@_NV?$allocator@_N@std@@@std@@QBE?AV012@H@Z @44245 NONAME
     ??R?$less@VOpalMediaFormatPair@@@std@@QBE_NABVOpalMediaFormatPair@@0@Z @37610 NONAME
     ??R?$less@W4PayloadTypes@RTP_DataFrame@@@std@@QBE_NABW4PayloadTypes@RTP_DataFrame@@0@Z @40634 NONAME
     ??RH460_Feature@@QAEAAVH460_FeatureParameter@@ABVH460_FeatureID@@@Z @41185 NONAME
@@ -8867,10 +8924,13 @@ EXPORTS
     ??XIAX2FullFrame@@QAEHAAV0@@Z @37611 NONAME
     ??XIAX2Remote@@QAEHAAV0@@Z @37612 NONAME
     ??Y?$PSet@VPOrdinalKey@@@@QAEAAV0@ABVPOrdinalKey@@@Z @7682 NONAME
+    ??Yconst_iterator@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@H@Z @44246 NONAME
     ??Yiterator@?$vector@HV?$allocator@H@std@@@std@@QAEAAV012@H@Z @41581 NONAME
+    ??Yiterator@?$vector@IV?$allocator@I@std@@@std@@QAEAAV012@H@Z @44247 NONAME
     ??Yiterator@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAEAAV012@H@Z @44118 NONAME
     ??Yiterator@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAEAAV012@H@Z @43347 NONAME
     ??Yiterator@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAEAAV012@H@Z @37613 NONAME
+    ??Yiterator@?$vector@_NV?$allocator@_N@std@@@std@@QAEAAV012@H@Z @44248 NONAME
     ??YOpalMediaFormatList@@QAEAAV0@ABV0@@Z @35624 NONAME
     ??YOpalMediaFormatList@@QAEAAV0@ABVOpalMediaFormat@@@Z @7683 NONAME
     ??YSafeString@@QAEXVPString@@@Z @37614 NONAME
@@ -10834,6 +10894,7 @@ EXPORTS
     ??_7Opal_PCM_G711_uLaw@@6B@ @9399 NONAME
     ??_7Opal_PCM_Linear16Mono@@6B@ @9408 NONAME
     ??_7PASN_GeneralisedTime@@6B@ @9431 NONAME
+    ??_7PDTMFEncoder@@6B@ @44290 NONAME
     ??_7PluginLoader@@6B@ @42258 NONAME
     ??_7PWAVFileConverterALaw@@6B@ @35684 NONAME
     ??_7PWAVFileConverterULaw@@6B@ @35685 NONAME
@@ -10915,6 +10976,7 @@ EXPORTS
     ??_7T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@6B@ @9540 NONAME
     ??_7T38_UDPTLPacket_primary_ifp_packet@@6B@ @9541 NONAME
     ??_7TickleMonitor_PNotifier@H323Gatekeeper@@6B@ @9542 NONAME
+    ??_7TonePlayer_PNotifier@OpalPluginLID@@6B@ @44291 NONAME
     ??_7TransmitEnded_PNotifier@OpalRFC2833Proto@@6B@ @9543 NONAME
     ??_7TransmitPacket_PNotifier@OpalRFC2833Proto@@6B@ @9544 NONAME
     ??_7TransportThreadMain_PNotifier@SIPEndPoint@@6B@ @9546 NONAME
@@ -12902,6 +12964,7 @@ EXPORTS
     ??_R0?AVOpal_PCM_G711_uLaw@@@8 @11304 NONAME
     ??_R0?AVOpal_PCM_Linear16Mono@@@8 @11313 NONAME
     ??_R0?AVPASN_GeneralisedTime@@@8 @11340 NONAME
+    ??_R0?AVPDTMFEncoder@@@8 @44292 NONAME
     ??_R0?AVPluginLoader@@@8 @42317 NONAME
     ??_R0?AVPWAVFileConverterALaw@@@8 @35692 NONAME
     ??_R0?AVPWAVFileConverterULaw@@@8 @35693 NONAME
@@ -12983,6 +13046,7 @@ EXPORTS
     ??_R0?AVT38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@@8 @11422 NONAME
     ??_R0?AVT38_UDPTLPacket_primary_ifp_packet@@@8 @11423 NONAME
     ??_R0?AVTickleMonitor_PNotifier@H323Gatekeeper@@@8 @11424 NONAME
+    ??_R0?AVTonePlayer_PNotifier@OpalPluginLID@@@8 @44293 NONAME
     ??_R0?AVTransmitEnded_PNotifier@OpalRFC2833Proto@@@8 @11425 NONAME
     ??_R0?AVTransmitPacket_PNotifier@OpalRFC2833Proto@@@8 @11426 NONAME
     ??_R0?AVTransportThreadMain_PNotifier@SIPEndPoint@@@8 @11428 NONAME
@@ -14953,6 +15017,7 @@ EXPORTS
     ??_R1A@?0A@A@Opal_PCM_G711_uLaw@@8 @13140 NONAME
     ??_R1A@?0A@A@Opal_PCM_Linear16Mono@@8 @13149 NONAME
     ??_R1A@?0A@A@PASN_GeneralisedTime@@8 @13176 NONAME
+    ??_R1A@?0A@A@PDTMFEncoder@@8 @44294 NONAME
     ??_R1A@?0A@A@PluginLoader@@8 @42379 NONAME
     ??_R1A@?0A@A@PWAVFileConverterALaw@@8 @35701 NONAME
     ??_R1A@?0A@A@PWAVFileConverterULaw@@8 @35702 NONAME
@@ -15034,6 +15099,7 @@ EXPORTS
     ??_R1A@?0A@A@T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@8 @13284 NONAME
     ??_R1A@?0A@A@T38_UDPTLPacket_primary_ifp_packet@@8 @13285 NONAME
     ??_R1A@?0A@A@TickleMonitor_PNotifier@H323Gatekeeper@@8 @13286 NONAME
+    ??_R1A@?0A@A@TonePlayer_PNotifier@OpalPluginLID@@8 @44295 NONAME
     ??_R1A@?0A@A@TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @13287 NONAME
     ??_R1A@?0A@A@TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @13288 NONAME
     ??_R1A@?0A@A@TransportThreadMain_PNotifier@SIPEndPoint@@8 @13290 NONAME
@@ -17006,6 +17072,7 @@ EXPORTS
     ??_R2Opal_PCM_G711_uLaw@@8 @15006 NONAME
     ??_R2Opal_PCM_Linear16Mono@@8 @15015 NONAME
     ??_R2PASN_GeneralisedTime@@8 @15038 NONAME
+    ??_R2PDTMFEncoder@@8 @44296 NONAME
     ??_R2PluginLoader@@8 @42443 NONAME
     ??_R2PWAVFileConverterALaw@@8 @35709 NONAME
     ??_R2PWAVFileConverterULaw@@8 @35710 NONAME
@@ -17087,6 +17154,7 @@ EXPORTS
     ??_R2T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@8 @15140 NONAME
     ??_R2T38_UDPTLPacket_primary_ifp_packet@@8 @15141 NONAME
     ??_R2TickleMonitor_PNotifier@H323Gatekeeper@@8 @15142 NONAME
+    ??_R2TonePlayer_PNotifier@OpalPluginLID@@8 @44297 NONAME
     ??_R2TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @15143 NONAME
     ??_R2TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @15144 NONAME
     ??_R2TransportThreadMain_PNotifier@SIPEndPoint@@8 @15146 NONAME
@@ -19052,6 +19120,7 @@ EXPORTS
     ??_R3Opal_PCM_G711_uLaw@@8 @16858 NONAME
     ??_R3Opal_PCM_Linear16Mono@@8 @16867 NONAME
     ??_R3PASN_GeneralisedTime@@8 @16890 NONAME
+    ??_R3PDTMFEncoder@@8 @44298 NONAME
     ??_R3PluginLoader@@8 @42502 NONAME
     ??_R3PWAVFileConverterALaw@@8 @35717 NONAME
     ??_R3PWAVFileConverterULaw@@8 @35718 NONAME
@@ -19133,6 +19202,7 @@ EXPORTS
     ??_R3T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@8 @16992 NONAME
     ??_R3T38_UDPTLPacket_primary_ifp_packet@@8 @16993 NONAME
     ??_R3TickleMonitor_PNotifier@H323Gatekeeper@@8 @16994 NONAME
+    ??_R3TonePlayer_PNotifier@OpalPluginLID@@8 @44299 NONAME
     ??_R3TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @16995 NONAME
     ??_R3TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @16996 NONAME
     ??_R3TransportThreadMain_PNotifier@SIPEndPoint@@8 @16998 NONAME
@@ -21119,6 +21189,7 @@ EXPORTS
     ??_R4Opal_PCM_G711_uLaw@@6B@ @18729 NONAME
     ??_R4Opal_PCM_Linear16Mono@@6B@ @18738 NONAME
     ??_R4PASN_GeneralisedTime@@6B@ @18761 NONAME
+    ??_R4PDTMFEncoder@@6B@ @44300 NONAME
     ??_R4PluginLoader@@6B@ @42567 NONAME
     ??_R4PWAVFileConverterALaw@@6B@ @35725 NONAME
     ??_R4PWAVFileConverterULaw@@6B@ @35726 NONAME
@@ -21200,6 +21271,7 @@ EXPORTS
     ??_R4T38_UDPTLPacket_error_recovery_secondary_ifp_packets_subtype@@6B@ @18870 NONAME
     ??_R4T38_UDPTLPacket_primary_ifp_packet@@6B@ @18871 NONAME
     ??_R4TickleMonitor_PNotifier@H323Gatekeeper@@6B@ @18872 NONAME
+    ??_R4TonePlayer_PNotifier@OpalPluginLID@@6B@ @44301 NONAME
     ??_R4TransmitEnded_PNotifier@OpalRFC2833Proto@@6B@ @18873 NONAME
     ??_R4TransmitPacket_PNotifier@OpalRFC2833Proto@@6B@ @18874 NONAME
     ??_R4TransportThreadMain_PNotifier@SIPEndPoint@@6B@ @18876 NONAME
@@ -21319,6 +21391,7 @@ EXPORTS
     ?AgeResponses@H323Transactor@@IAEXXZ @18957 NONAME
     ?ALawConverter@@3V?$Worker@VPWAVFileConverterALaw@@@?$PFactory@VPWAVFileConverter@@I@@A @35729 NONAME
     ?allocate@?$allocator@H@std@@QAEPAHI@Z @41706 NONAME
+    ?allocate@?$allocator@I@std@@QAEPAII@Z @44249 NONAME
     ?allocate@?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@QAEPAUCapabilityListCreateEntry@OpalPluginCodecManager@@I@Z @44125 NONAME
     ?allocate@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@I@Z @43433 NONAME
     ?allocate@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@I@Z @43434 NONAME
@@ -21411,13 +21484,17 @@ EXPORTS
     ?Authorise@SIPAuthentication@@QBEHAAVSIP_PDU@@@Z @19009 NONAME
     ?AwaitSetupResponse@H45011Handler@@QAEXABVPString@@0@Z @19010 NONAME
     ?AwaitSetupResponse@H4502Handler@@QAEXABVPString@@0@Z @19011 NONAME
+    ?BadContext@OpalPluginLID@@IBE_NXZ @44283 NONAME
+    ?BadFunction@OpalPluginLID@@IBE_NPAXPBD@Z @44284 NONAME
     ?BandwidthRequest@H323Gatekeeper@@QAEHAAVH323Connection@@I@Z @19012 NONAME
     ?begin@?$vector@HV?$allocator@H@std@@@std@@QAE?AViterator@12@XZ @41710 NONAME
+    ?begin@?$vector@IV?$allocator@I@std@@@std@@QAE?AViterator@12@XZ @44250 NONAME
     ?begin@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE?AViterator@12@XZ @44127 NONAME
     ?begin@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE?AViterator@12@XZ @43436 NONAME
     ?begin@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBE?AVconst_iterator@12@XZ @43437 NONAME
     ?begin@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE?AViterator@12@XZ @38571 NONAME
     ?begin@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBE?AVconst_iterator@12@XZ @38572 NONAME
+    ?begin@?$vector@_NV?$allocator@_N@std@@@std@@QAE?AViterator@12@XZ @44251 NONAME
     ?begin@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@XZ @43438 NONAME
     ?begin@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@XZ @43439 NONAME
     ?begin@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAE?AViterator@12@XZ @38573 NONAME
@@ -21616,6 +21693,7 @@ EXPORTS
     ?Call@StartOutgoing_PNotifier@H323Connection@@UBEXAAVPObject@@H@Z @19177 NONAME
     ?Call@StopActionLocally_PNotifier@OpalH281Handler@@UBEXAAVPObject@@H@Z @40884 NONAME
     ?Call@TickleMonitor_PNotifier@H323Gatekeeper@@UBEXAAVPObject@@H@Z @19179 NONAME
+    ?Call@TonePlayer_PNotifier@OpalPluginLID@@UBEXAAVPObject@@H@Z @44302 NONAME
     ?Call@TransmitEnded_PNotifier@OpalRFC2833Proto@@UBEXAAVPObject@@H@Z @19180 NONAME
     ?Call@TransmitPacket_PNotifier@OpalRFC2833Proto@@UBEXAAVPObject@@H@Z @19181 NONAME
     ?Call@TransportThreadMain_PNotifier@SIPEndPoint@@UBEXAAVPObject@@H@Z @19182 NONAME
@@ -21639,17 +21717,17 @@ EXPORTS
     ?CanRetransmitFrame@IAX2Frame@@QBEHXZ @38591 NONAME
     ?CanSendRIP@H323Transaction@@QBEHXZ @19196 NONAME
     ?capacity@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ @41713 NONAME
+    ?capacity@?$vector@IV?$allocator@I@std@@@std@@QBEIXZ @44252 NONAME
     ?capacity@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEIXZ @44129 NONAME
     ?capacity@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEIXZ @43440 NONAME
     ?capacity@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEIXZ @38592 NONAME
     ?ChallengeKey@IAX2Encryption@@QBEABVPString@@XZ @38593 NONAME
     ?CheckAliasAddressPolicy@H323GatekeeperServer@@UAEHABVH323RegisteredEndPoint@@ABVH225_AdmissionRequest@@ABVH225_AliasAddress@@@Z @19197 NONAME
     ?CheckAliasStringPolicy@H323GatekeeperServer@@UAEHABVH323RegisteredEndPoint@@ABVH225_AdmissionRequest@@ABVPString@@@Z @19198 NONAME
-    ?CheckContextAndFunction@OpalPluginLID@@IBE_NPAXPBD@Z @43963 NONAME
     ?CheckCryptoTokens@H323GatekeeperRequest@@QAEHXZ @19199 NONAME
     ?CheckCryptoTokens@H323Transaction@@QAEHABVH235Authenticators@@@Z @19200 NONAME
     ?CheckCryptoTokens@H323Transactor@@IAEHABVH323TransactionPDU@@ABVPASN_Array@@I1I@Z @19201 NONAME
-    ?CheckError@OpalPluginLID@@IBE_NHPBDH@Z @43964 NONAME
+    ?CheckError@OpalPluginLID@@IBE?AW4PluginLID_Errors@@W42@PBD@Z @44285 NONAME
     ?CheckForHangupMessages@IAX2CallProcessor@@IAEXXZ @43081 NONAME
     ?CheckForRemoteCapabilities@IAX2CallProcessor@@IAEXPAVIAX2FullFrameProtocol@@@Z @43082 NONAME
     ?CheckForResponse@H323Transactor@@IAEHIIPBVPASN_Choice@@@Z @19203 NONAME
@@ -23488,6 +23566,7 @@ EXPORTS
     ?Class@OpalVXMLSession@@SAPBDXZ @20828 NONAME
     ?Class@OpalWAVFile@@SAPBDXZ @20829 NONAME
     ?Class@PASN_GeneralisedTime@@SAPBDXZ @20838 NONAME
+    ?Class@PDTMFEncoder@@SAPBDXZ @44303 NONAME
     ?Class@PluginLoader@@SAPBDXZ @42609 NONAME
     ?Class@Q922_Frame@@SAPBDXZ @40893 NONAME
     ?Class@Q931@@SAPBDXZ @20858 NONAME
@@ -27844,6 +27923,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalVXMLSession@@UBE?AW4Comparison@PObject@@ABV3@@Z @24857 NONAME
     ?CompareObjectMemoryDirect@OpalWAVFile@@UBE?AW4Comparison@PObject@@ABV3@@Z @24858 NONAME
     ?CompareObjectMemoryDirect@PASN_GeneralisedTime@@UBE?AW4Comparison@PObject@@ABV3@@Z @24863 NONAME
+    ?CompareObjectMemoryDirect@PDTMFEncoder@@UBE?AW4Comparison@PObject@@ABV3@@Z @44304 NONAME
     ?CompareObjectMemoryDirect@PluginLoader@@UBE?AW4Comparison@PObject@@ABV3@@Z @42652 NONAME
     ?CompareObjectMemoryDirect@Q922_Frame@@UBE?AW4Comparison@PObject@@ABV3@@Z @40906 NONAME
     ?CompareObjectMemoryDirect@Q931@@UBE?AW4Comparison@PObject@@ABV3@@Z @24879 NONAME
@@ -28706,6 +28786,7 @@ EXPORTS
     ?CreateWAVFile@OpalVXMLSession@@UAEPAVPWAVFile@@ABVPFilePath@@W4OpenMode@PFile@@HI@Z @25645 NONAME
     ?DataSize@IAX2Frame@@QAEHXZ @39022 NONAME
     ?deallocate@?$allocator@H@std@@QAEXPAHI@Z @41790 NONAME
+    ?deallocate@?$allocator@I@std@@QAEXPAII@Z @44253 NONAME
     ?deallocate@?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@QAEXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@I@Z @44136 NONAME
     ?deallocate@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@I@Z @43467 NONAME
     ?deallocate@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@@std@@QAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@I@Z @43468 NONAME
@@ -30371,11 +30452,13 @@ EXPORTS
     ?EncryptContents@IAX2Frame@@QAEHAAVIAX2Encryption@@@Z @39079 NONAME
     ?EncryptionKey@IAX2Encryption@@QBEABVPString@@XZ @39080 NONAME
     ?end@?$vector@HV?$allocator@H@std@@@std@@QAE?AViterator@12@XZ @41807 NONAME
+    ?end@?$vector@IV?$allocator@I@std@@@std@@QAE?AViterator@12@XZ @44254 NONAME
     ?end@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE?AViterator@12@XZ @44141 NONAME
     ?end@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE?AViterator@12@XZ @43475 NONAME
     ?end@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBE?AVconst_iterator@12@XZ @43476 NONAME
     ?end@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QAE?AViterator@12@XZ @39081 NONAME
     ?end@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBE?AVconst_iterator@12@XZ @39082 NONAME
+    ?end@?$vector@_NV?$allocator@_N@std@@@std@@QAE?AViterator@12@XZ @44255 NONAME
     ?end@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@XZ @43477 NONAME
     ?end@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@XZ @43478 NONAME
     ?end@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAE?AViterator@12@XZ @39083 NONAME
@@ -30391,7 +30474,9 @@ EXPORTS
     ?Enqueue@?$PQueue@VSIP_PDU@@@@UAEXPAVSIP_PDU@@@Z @27184 NONAME
     ?equal_range@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AU?$pair@Viterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@V123@@2@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z @43479 NONAME
     ?erase@?$vector@HV?$allocator@H@std@@@std@@QAE?AViterator@12@V312@0@Z @41808 NONAME
+    ?erase@?$vector@IV?$allocator@I@std@@@std@@QAE?AViterator@12@V312@0@Z @44256 NONAME
     ?erase@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE?AViterator@12@V312@@Z @44143 NONAME
+    ?erase@?$vector@_NV?$allocator@_N@std@@@std@@QAE?AViterator@12@V312@0@Z @44257 NONAME
     ?erase@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@V312@0@Z @43480 NONAME
     ?erase@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@V312@@Z @43481 NONAME
     ?erase@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAE?AViterator@12@V312@0@Z @43482 NONAME
@@ -30491,7 +30576,10 @@ EXPORTS
     ?FromString@OpalMediaOption@@QAE_NABVPString@@@Z @36451 NONAME
     ?GarbageCollection@OpalManager@@QAEXXZ @36452 NONAME
     ?GarbageMain@OpalManager@@MAEXAAVPThread@@H@Z @27244 NONAME
+    ?GenerateBusyTone@PDTMFEncoder@@QAEXXZ @44305 NONAME
     ?GenerateCallReference@Q931@@SAIXZ @27245 NONAME
+    ?GenerateDialTone@PDTMFEncoder@@QAEXXZ @44306 NONAME
+    ?GenerateRingBackTone@PDTMFEncoder@@QAEXXZ @44307 NONAME
     ?GetAccept@SIPMIMEInfo@@QBE?AVPString@@XZ @27246 NONAME
     ?GetAcceptEncoding@SIPMIMEInfo@@QBE?AVPString@@XZ @27247 NONAME
     ?GetAcceptLanguage@SIPMIMEInfo@@QBE?AVPString@@XZ @27248 NONAME
@@ -32452,6 +32540,7 @@ EXPORTS
     ?GetClass@OpalVXMLSession@@UBEPBDI@Z @28965 NONAME
     ?GetClass@OpalWAVFile@@UBEPBDI@Z @28966 NONAME
     ?GetClass@PASN_GeneralisedTime@@UBEPBDI@Z @28975 NONAME
+    ?GetClass@PDTMFEncoder@@UBEPBDI@Z @44308 NONAME
     ?GetClass@PluginLoader@@UBEPBDI@Z @42740 NONAME
     ?GetClass@Q922_Frame@@UBEPBDI@Z @40941 NONAME
     ?GetClass@Q931@@UBEPBDI@Z @28995 NONAME
@@ -33971,6 +34060,7 @@ EXPORTS
     ?GetRtpIpPortPair@OpalManager@@QAEGXZ @30220 NONAME
     ?GetRtpIpTypeofService@OpalManager@@QBEEXZ @30221 NONAME
     ?GetRTPPayloadMap@OpalConnection@@QBEABV?$map@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@@std@@XZ @40708 NONAME
+    ?GetRtpSession@OpalRTPMediaStream@@UBEAAVRTP_Session@@XZ @44258 NONAME
     ?GetRxFramesInPacket@H323AudioCapability@@UBEIXZ @30222 NONAME
     ?GetRxFramesInPacket@H323Capability@@UBEIXZ @30223 NONAME
     ?GetSampleSize@PWAVFileConverterXLaw@@UBEIABVPWAVFile@@@Z @35752 NONAME
@@ -34303,8 +34393,6 @@ EXPORTS
     ?InitialiseHeader@IAX2FullFrame@@MAEXPAVIAX2Processor@@@Z @39488 NONAME
     ?InitialiseHeader@IAX2MiniFrame@@UAEXPAVIAX2Processor@@@Z @39489 NONAME
     ?InitializeChallengePassword@IAX2IeMd5Result@@QAEXABVPString@@0@Z @39490 NONAME
-    ?InitiateCall@OpalIVRConnection@@UAEXXZ @30491 NONAME
-    ?InitiateCall@OpalPCSSConnection@@UAEXXZ @30492 NONAME
     ?InitRFC2833Handler@SIPConnection@@IAEXXZ @40713 NONAME
     ?InSeqNo@IAX2SequenceNumbers@@QAEHXZ @39491 NONAME
     ?insert@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE?AViterator@12@V312@ABUCapabilityListCreateEntry@OpalPluginCodecManager@@@Z @44151 NONAME
@@ -36159,6 +36247,7 @@ EXPORTS
     ?InternalIsDescendant@OpalVXMLSession@@UBEHPBD@Z @32120 NONAME
     ?InternalIsDescendant@OpalWAVFile@@UBEHPBD@Z @32121 NONAME
     ?InternalIsDescendant@PASN_GeneralisedTime@@UBEHPBD@Z @32130 NONAME
+    ?InternalIsDescendant@PDTMFEncoder@@UBEHPBD@Z @44309 NONAME
     ?InternalIsDescendant@PluginLoader@@UBEHPBD@Z @42797 NONAME
     ?InternalIsDescendant@Q922_Frame@@UBEHPBD@Z @40981 NONAME
     ?InternalIsDescendant@Q931@@UBEHPBD@Z @32150 NONAME
@@ -36465,6 +36554,7 @@ EXPORTS
     ?MaxBitRateOption@OpalMediaFormat@@2QBDB @36526 NONAME
     ?MaxFrameSizeOption@OpalMediaFormat@@2QBDB @36527 NONAME
     ?max_size@?$allocator@H@std@@QBEIXZ @41872 NONAME
+    ?max_size@?$allocator@I@std@@QBEIXZ @44259 NONAME
     ?max_size@?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@std@@QBEIXZ @43505 NONAME
     ?max_size@?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@std@@QBEIXZ @43506 NONAME
     ?max_size@?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@std@@QBEIXZ @42808 NONAME
@@ -36476,9 +36566,11 @@ EXPORTS
     ?max_size@?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@std@@QBEIXZ @43507 NONAME
     ?max_size@?$allocator@VOpalMediaFormatPair@@@std@@QBEIXZ @39683 NONAME
     ?max_size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ @41873 NONAME
+    ?max_size@?$vector@IV?$allocator@I@std@@@std@@QBEIXZ @44260 NONAME
     ?max_size@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEIXZ @44154 NONAME
     ?max_size@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEIXZ @43508 NONAME
     ?max_size@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEIXZ @39684 NONAME
+    ?max_size@?$vector@_NV?$allocator@_N@std@@@std@@QBEIXZ @44261 NONAME
     ?max_size@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBEIXZ @43509 NONAME
     ?max_size@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBEIXZ @43510 NONAME
     ?max_size@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QBEIXZ @42812 NONAME
@@ -36516,6 +36608,7 @@ EXPORTS
     ?Next@RTP_SessionManager@@QAEPAVRTP_Session@@XZ @32405 NONAME
     ?NextIndex@@YAHXZ @39694 NONAME
     ?NextSrcCallNumber@IAX2EndPoint@@QAEHPAVIAX2Processor@@@Z @42996 NONAME
+    ?NumberOfConnectSockets@OpalTransportUDP@@UAEIXZ @44310 NONAME
     ?OnAcceptModeChange@H323Connection@@UAEXABVH245_RequestModeAck@@@Z @32406 NONAME
     ?OnAccessRequest@H323PeerElement@@UAE?AW4Response@H323Transaction@@AAVH501AccessRequest@@@Z @32407 NONAME
     ?OnActivatePreset@OpalH281Handler@@UAEXE@Z @40986 NONAME
@@ -38525,6 +38618,8 @@ EXPORTS
     ?ResetCall@IAX2RegProcessor@@IAEXXZ @43180 NONAME
     ?resize@?$vector@HV?$allocator@H@std@@@std@@QAEXI@Z @41893 NONAME
     ?resize@?$vector@HV?$allocator@H@std@@@std@@QAEXIH@Z @41894 NONAME
+    ?resize@?$vector@IV?$allocator@I@std@@@std@@QAEXII@Z @44262 NONAME
+    ?resize@?$vector@_NV?$allocator@_N@std@@@std@@QAEXI_N@Z @44263 NONAME
     ?Restart@H245NegMasterSlaveDetermination@@IAEHXZ @34031 NONAME
     ?RetrieveCall@H323Connection@@QAEXXZ @34032 NONAME
     ?RetrieveCall@H4504Handler@@QAEXXZ @34033 NONAME
@@ -38715,7 +38810,6 @@ EXPORTS
     ?SetCapability@H323Capabilities@@QAEHHHPAVH323Capability@@@Z @34166 NONAME
     ?SetCapability@H323EndPoint@@QAEHHHPAVH323Capability@@@Z @34167 NONAME
     ?SetCapabilityNumber@H323Capability@@QAEXI@Z @34168 NONAME
-    ?setCardNumber@OpalLineInterfaceDevice@@IAEXI@Z @41897 NONAME
     ?SetCause@Q931@@QAEXW4CauseValues@1@II@Z @34169 NONAME
     ?SetChallengeKey@IAX2Encryption@@QAEXAAVPString@@@Z @39940 NONAME
     ?SetChannelIdentification@Q931@@QAEXIIH@Z @34170 NONAME
@@ -38761,7 +38855,9 @@ EXPORTS
     ?SetData@IAX2IeUInt@@QAEXAAI@Z @43199 NONAME
     ?SetData@IAX2IeUShort@@QAEXG@Z @39953 NONAME
     ?SetDataSize@OpalAudioMediaStream@@UAEHH@Z @34195 NONAME
+    ?SetDataSize@OpalLineMediaStream@@UAEHH@Z @44311 NONAME
     ?SetDataSize@OpalMediaStream@@UAEHH@Z @34196 NONAME
+    ?SetDataSize@OpalRTPMediaStream@@UAEHH@Z @44264 NONAME
     ?SetDataSize@OpalVideoMediaStream@@UAEHH@Z @36948 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXABVPString@@@Z @34197 NONAME
     ?SetDate@SIPMIMEInfo@@QAEXABVPTime@@@Z @34198 NONAME
@@ -38913,7 +39009,6 @@ EXPORTS
     ?SetReadFormat@OpalLine@@UAEHABVOpalMediaFormat@@@Z @34301 NONAME
     ?SetReadFormat@OpalPluginLID@@UAEHIABVOpalMediaFormat@@@Z @44028 NONAME
     ?SetReadFrameSize@OpalLine@@UAEHH@Z @34304 NONAME
-    ?SetReadFrameSize@OpalLineInterfaceDevice@@UAEHIH@Z @34305 NONAME
     ?SetReadFrameSize@OpalPluginLID@@UAEHIH@Z @44029 NONAME
     ?SetReadOnly@OpalMediaOption@@QAEX_N@Z @39967 NONAME
     ?SetRecordRoute@SIPMIMEInfo@@QAEXABVPStringList@@@Z @34307 NONAME
@@ -39049,15 +39144,16 @@ EXPORTS
     ?SetWriteFormat@OpalLine@@UAEHABVOpalMediaFormat@@@Z @34418 NONAME
     ?SetWriteFormat@OpalPluginLID@@UAEHIABVOpalMediaFormat@@@Z @44035 NONAME
     ?SetWriteFrameSize@OpalLine@@UAEHH@Z @34421 NONAME
-    ?SetWriteFrameSize@OpalLineInterfaceDevice@@UAEHIH@Z @34422 NONAME
     ?SetWriteFrameSize@OpalPluginLID@@UAEHIH@Z @44036 NONAME
     ?SetWWWAuthenticate@SIPMIMEInfo@@QAEXABVPString@@@Z @34424 NONAME
     ?SetZoomDirection@H281_Frame@@QAEXW4ZoomDirection@1@@Z @41053 NONAME
     ?ShouldClearCallOnRoundTripFail@H323EndPoint@@QBEHXZ @34425 NONAME
     ?size@?$vector@HV?$allocator@H@std@@@std@@QBEIXZ @41908 NONAME
+    ?size@?$vector@IV?$allocator@I@std@@@std@@QBEIXZ @44265 NONAME
     ?size@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEIXZ @44163 NONAME
     ?size@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEIXZ @43522 NONAME
     ?size@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@QBEIXZ @39979 NONAME
+    ?size@?$vector@_NV?$allocator@_N@std@@@std@@QBEIXZ @44266 NONAME
     ?size@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBEIXZ @43523 NONAME
     ?size@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QBEIXZ @43524 NONAME
     ?size@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QBEIXZ @42858 NONAME
@@ -39183,6 +39279,7 @@ EXPORTS
     ?Terminate@IAX2Processor@@UAEXXZ @40038 NONAME
     ?TickleMonitor@H323Gatekeeper@@MAEXAAVPTimer@@H@Z @34486 NONAME
     ?TickleMonitor@H323PeerElement@@MAEXAAVPTimer@@H@Z @34487 NONAME
+    ?TonePlayer@OpalPluginLID@@MAEXAAVPThread@@H@Z @44312 NONAME
     ?TransferCall@H323Connection@@QAEXABVPString@@0@Z @34488 NONAME
     ?TransferCall@H323EndPoint@@QAEXABVPString@@00@Z @34489 NONAME
     ?TransferCall@H4502Handler@@QAEXABVPString@@0@Z @34490 NONAME
@@ -39337,6 +39434,7 @@ EXPORTS
     ?ZeroAllValues@IAX2SequenceNumbers@@QAEXXZ @40078 NONAME
     ?ZeroValues@IAX2WaitingForAck@@QAEXXZ @40079 NONAME
     ?_Buy@?$vector@HV?$allocator@H@std@@@std@@IAE_NI@Z @41912 NONAME
+    ?_Buy@?$vector@IV?$allocator@I@std@@@std@@IAE_NI@Z @44267 NONAME
     ?_Buy@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAE_NI@Z @44164 NONAME
     ?_Buy@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAE_NI@Z @43532 NONAME
     ?_Buy@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAE_NI@Z @40080 NONAME
@@ -39365,6 +39463,7 @@ EXPORTS
     ?_Color@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@KAAADPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@@Z @40748 NONAME
     ?_Copy@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@PAU342@0@Z @40749 NONAME
     ?_Copy@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAEXABV12@@Z @40750 NONAME
+    ?_Dec@const_iterator@?$vector@_NV?$allocator@_N@std@@@std@@IAEXXZ @44268 NONAME
     ?_Dec@const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEXXZ @43539 NONAME
     ?_Dec@const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEXXZ @43540 NONAME
     ?_Dec@const_iterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAEXXZ @42878 NONAME
@@ -39373,6 +39472,7 @@ EXPORTS
     ?_Dec@const_iterator@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@std@@@5@$0A@@std@@@std@@QAEXXZ @42881 NONAME
     ?_Dec@const_iterator@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAEXXZ @40752 NONAME
     ?_Destroy@?$vector@HV?$allocator@H@std@@@std@@IAEXPAH0@Z @41913 NONAME
+    ?_Destroy@?$vector@IV?$allocator@I@std@@@std@@IAEXPAI0@Z @44269 NONAME
     ?_Destroy@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAEXPAUCapabilityListCreateEntry@OpalPluginCodecManager@@0@Z @44167 NONAME
     ?_Destroy@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAEXPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@0@Z @43541 NONAME
     ?_Destroy@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAEXPAVOpalMediaFormatPair@@0@Z @40083 NONAME
@@ -39384,6 +39484,8 @@ EXPORTS
     ?_Erase@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @43790 NONAME
     ?_Erase@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @44168 NONAME
     ?_Erase@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@@Z @40754 NONAME
+    ?_Getptr@reference@?$vector@_NV?$allocator@_N@std@@@std@@QBEPAIXZ @44270 NONAME
+    ?_Inc@const_iterator@?$vector@_NV?$allocator@_N@std@@@std@@IAEXXZ @44271 NONAME
     ?_Inc@const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEXXZ @43544 NONAME
     ?_Inc@const_iterator@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@QAEXXZ @43545 NONAME
     ?_Inc@const_iterator@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@QAEXXZ @40085 NONAME
@@ -39408,9 +39510,12 @@ EXPORTS
     ?_Insert@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAE?AViterator@12@_NPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@std@@@5@$0A@@std@@@2@ABU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VPPluginModuleManager@@VPString@@@@@2@@Z @42894 NONAME
     ?_Insert@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAE?AViterator@12@_NPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@ABU?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@2@@Z @40758 NONAME
     ?_Insert_n@?$vector@HV?$allocator@H@std@@@std@@IAEXViterator@12@IABH@Z @41914 NONAME
+    ?_Insert_n@?$vector@IV?$allocator@I@std@@@std@@IAEXViterator@12@IABI@Z @44272 NONAME
     ?_Insert_n@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAEXViterator@12@IABUCapabilityListCreateEntry@OpalPluginCodecManager@@@Z @44171 NONAME
     ?_Insert_n@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAEXViterator@12@IABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z @43550 NONAME
     ?_Insert_n@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAEXViterator@12@IABVOpalMediaFormatPair@@@Z @40087 NONAME
+    ?_Insert_n@?$vector@_NV?$allocator@_N@std@@@std@@IAEXViterator@12@I_N@Z @44273 NONAME
+    ?_Insert_x@?$vector@_NV?$allocator@_N@std@@@std@@IAEIViterator@12@I@Z @44274 NONAME
     ?_Isnil@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAAADPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@@Z @43551 NONAME
     ?_Isnil@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAAADPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@@Z @43552 NONAME
     ?_Isnil@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@KAAADPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@2@@Z @40088 NONAME
@@ -39467,6 +39572,7 @@ EXPORTS
     ?_Lrotate@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @43800 NONAME
     ?_Lrotate@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @44178 NONAME
     ?_Lrotate@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@@Z @40765 NONAME
+    ?_Mask@reference@?$vector@_NV?$allocator@_N@std@@@std@@IBEIXZ @44275 NONAME
     ?_Max@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@PAU342@@Z @43565 NONAME
     ?_Max@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@PAU342@@Z @43566 NONAME
     ?_Max@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@KAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@2@PAU342@@Z @40095 NONAME
@@ -39499,6 +39605,7 @@ EXPORTS
     ?_Myval@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@std@@KAAAU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@2@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @43804 NONAME
     ?_Myval@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@KAAAU?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@2@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @44182 NONAME
     ?_Myval@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@KAAAU?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@2@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@@Z @40769 NONAME
+    ?_Nw@?$vector@_NV?$allocator@_N@std@@@std@@KAII@Z @44276 NONAME
     ?_Parent@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@PAU342@@Z @43573 NONAME
     ?_Parent@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@PAU342@@Z @43574 NONAME
     ?_Parent@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@2@PAU342@@Z @40099 NONAME
@@ -39508,6 +39615,7 @@ EXPORTS
     ?_Parent@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@2@PAU342@@Z @44183 NONAME
     ?_Parent@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@PAU342@@Z @40770 NONAME
     ?_Ptr_cat@std@@YA?AU_Scalar_ptr_iterator_tag@1@PAH0@Z @41915 NONAME
+    ?_Ptr_cat@std@@YA?AU_Scalar_ptr_iterator_tag@1@PAI0@Z @44277 NONAME
     ?_Right@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH323Capability@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@PAU342@@Z @43575 NONAME
     ?_Right@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@PAU342@@Z @43576 NONAME
     ?_Right@?$_Tree@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@std@@KAAAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@U?$less@VOpalMediaFormatPair@@@std@@V?$allocator@U?$pair@$$CBVOpalMediaFormatPair@@PAVWorkerBase@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@@std@@@5@$0A@@std@@@2@PAU342@@Z @40100 NONAME
@@ -39549,6 +39657,7 @@ EXPORTS
     ?_Rrotate@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@2@@Z @44188 NONAME
     ?_Rrotate@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAEXPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@@Z @40775 NONAME
     ?_Tidy@?$vector@HV?$allocator@H@std@@@std@@IAEXXZ @41916 NONAME
+    ?_Tidy@?$vector@IV?$allocator@I@std@@@std@@IAEXXZ @44278 NONAME
     ?_Tidy@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAEXXZ @44189 NONAME
     ?_Tidy@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAEXXZ @43585 NONAME
     ?_Tidy@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAEXXZ @40105 NONAME
@@ -39560,12 +39669,16 @@ EXPORTS
     ?_Tidy@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalInternalTransport@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXXZ @43811 NONAME
     ?_Tidy@?$_Tree@V?$_Tmap_traits@VPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@U?$less@VPString@@@std@@V?$allocator@U?$pair@$$CBVPString@@PAVWorkerBase@?$PFactory@VOpalSecurityMode@@VPString@@@@@std@@@5@$0A@@std@@@std@@IAEXXZ @44190 NONAME
     ?_Tidy@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@IAEXXZ @40777 NONAME
+    ?_Trim@?$vector@_NV?$allocator@_N@std@@@std@@IAEXI@Z @44279 NONAME
     ?_Ubound@?$_Tree@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@std@@IBEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VOpalMediaFormat@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@2@$0A@@std@@@2@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z @43588 NONAME
     ?_Ufill@?$vector@HV?$allocator@H@std@@@std@@IAEPAHPAHIABH@Z @41917 NONAME
+    ?_Ufill@?$vector@IV?$allocator@I@std@@@std@@IAEPAIPAIIABI@Z @44280 NONAME
     ?_Ufill@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IAEPAUCapabilityListCreateEntry@OpalPluginCodecManager@@PAU34@IABU34@@Z @44191 NONAME
     ?_Ufill@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IAEPAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@PAV32@IABV32@@Z @43589 NONAME
     ?_Ufill@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IAEPAVOpalMediaFormatPair@@PAV3@IABV3@@Z @40107 NONAME
     ?_Xlen@?$vector@HV?$allocator@H@std@@@std@@IBEXXZ @41918 NONAME
+    ?_Xlen@?$vector@IV?$allocator@I@std@@@std@@IBEXXZ @44281 NONAME
     ?_Xlen@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@IBEXXZ @44192 NONAME
     ?_Xlen@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@IBEXXZ @43590 NONAME
     ?_Xlen@?$vector@VOpalMediaFormatPair@@V?$allocator@VOpalMediaFormatPair@@@std@@@std@@IBEXXZ @40108 NONAME
+    ?_Xlen@?$vector@_NV?$allocator@_N@std@@@std@@IBEXXZ @44282 NONAME
