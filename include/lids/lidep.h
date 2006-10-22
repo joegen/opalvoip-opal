@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2023  2006/08/29 08:47:43  rjongbloed
+ * Revision 1.2024  2006/10/22 12:05:56  rjongbloed
+ * Fixed correct usage of read/write buffer sizes in LID endpoints.
+ *
+ * Revision 2.22  2006/08/29 08:47:43  rjongbloed
  * Added functions to get average audio signal level from audio streams in
  *   suitable connection types.
  *
@@ -662,6 +665,15 @@ class OpalLineMediaStream : public OpalMediaStream
       const BYTE * data,   ///<  Data to write
       PINDEX length,       ///<  Length of data to read.
       PINDEX & written     ///<  Length of data actually written
+    );
+
+    /**Set the data size in bytes that is expected to be used. Some media
+       streams can make use of this information to perform optimisations.
+
+       The default behaviour does nothing.
+      */
+    virtual BOOL SetDataSize(
+      PINDEX dataSize  ///<  New data size
     );
 
     /**Indicate if the media stream is synchronous.
