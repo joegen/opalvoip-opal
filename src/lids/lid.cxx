@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2018  2006/10/15 06:27:16  rjongbloed
+ * Revision 1.2019  2006/10/22 12:05:56  rjongbloed
+ * Fixed correct usage of read/write buffer sizes in LID endpoints.
+ *
+ * Revision 2.17  2006/10/15 06:27:16  rjongbloed
  * Fixed problem with duplicate registrations of LID plug ins.
  * Added code to remember if line audio was enabled/disabled, helps with LID endpoint logic.
  *
@@ -541,18 +544,6 @@ BOOL OpalLineInterfaceDevice::StopWriting(unsigned)
 {
   m_writeDeblockingOffset = 0;
   return TRUE;
-}
-
-
-BOOL OpalLineInterfaceDevice::SetReadFrameSize(unsigned, PINDEX)
-{
-  return FALSE;
-}
-
-
-BOOL OpalLineInterfaceDevice::SetWriteFrameSize(unsigned, PINDEX)
-{
-  return FALSE;
 }
 
 

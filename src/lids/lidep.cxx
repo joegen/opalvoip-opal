@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2035  2006/10/15 06:23:35  rjongbloed
+ * Revision 1.2036  2006/10/22 12:05:56  rjongbloed
+ * Fixed correct usage of read/write buffer sizes in LID endpoints.
+ *
+ * Revision 2.34  2006/10/15 06:23:35  rjongbloed
  * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
  *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
  *
@@ -910,12 +913,12 @@ BOOL OpalLineMediaStream::Open()
   if (IsSource()) {
     if (!line.SetReadFormat(mediaFormat))
       return FALSE;
-    useDeblocking = mediaFormat.GetFrameSize() != line.GetReadFrameSize();
+    useDeblocking = !line.SetReadFrameSize(GetDataSize()) || line.GetReadFrameSize() != GetDataSize();
   }
   else {
     if (!line.SetWriteFormat(mediaFormat))
       return FALSE;
-    useDeblocking = mediaFormat.GetFrameSize() != line.GetWriteFrameSize();
+    useDeblocking = !line.SetWriteFrameSize(GetDataSize()) || line.GetWriteFrameSize() != GetDataSize();
   }
 
   PTRACE(3, "Media\tStream set to " << mediaFormat << ", frame size: rd="
@@ -1052,6 +1055,16 @@ BOOL OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX &
             "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
 
   return FALSE;
+}
+
+
+BOOL OpalLineMediaStream::SetDataSize(PINDEX dataSize)
+{
+  if (IsSource())
+    useDeblocking = !line.SetReadFrameSize(dataSize) || line.GetReadFrameSize() != dataSize;
+  else
+    useDeblocking = !line.SetWriteFrameSize(dataSize) || line.GetWriteFrameSize() != dataSize;
+  return OpalMediaStream::SetDataSize(dataSize);
 }
 
 
