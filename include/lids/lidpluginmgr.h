@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.h,v $
- * Revision 1.2002  2006/10/02 13:30:50  rjongbloed
+ * Revision 1.2003  2006/10/22 12:08:51  rjongbloed
+ * Major change so that sound card based LIDs, eg USB handsets. are handled in
+ *   common code so not requiring lots of duplication.
+ *
+ * Revision 2.1  2006/10/02 13:30:50  rjongbloed
  * Added LID plug ins
  *
  */
@@ -38,6 +42,7 @@
 #endif
 
 #include <ptlib/pluginmgr.h>
+#include <ptlib/sound.h>
 #include <lids/lidplugin.h>
 #include <lids/lid.h>
 
@@ -606,14 +611,22 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 
 
   protected:
+    PDECLARE_NOTIFIER(PThread, OpalPluginLID, TonePlayer);
+
 #if PTRACING
-    bool CheckContextAndFunction(void * fnPtr, const char * fnName) const;
-    bool CheckError(int error, const char * fnName, int ignoredError = PluginLID_NoError) const;
+    bool BadContext() const;
+    bool BadFunction(void * fnPtr, const char * fnName) const;
+    PluginLID_Errors CheckError(PluginLID_Errors error, const char * fnName) const;
 #endif
 
     const PluginLID_Definition & m_definition;
     void                       * m_context;
     PString                      m_deviceName;
+
+    PSoundChannel                m_recorder;
+    PSoundChannel                m_player;
+    PThread                    * m_tonePlayer;
+    PSyncPoint                   m_stopTone;
 };
 
 
