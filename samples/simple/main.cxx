@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2077  2006/10/15 06:12:48  rjongbloed
+ * Revision 1.2078  2006/10/22 12:09:57  rjongbloed
+ * Fixed minor error in user output string.
+ *
+ * Revision 2.76  2006/10/15 06:12:48  rjongbloed
  * Fixed correct local A-Party endpoint type depending on compiler flags and command line arguments.
  * Fixed being able to select IVR via wildcard (routing table order) on source endpoint type.
  * Fixed correctly trimming spaces from POTS device name.
@@ -1521,7 +1524,7 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
   if (prefix == "pc" || prefix == "pots")
     cout << (stream.IsSink() ? "playing " : "grabbing ") << stream.GetMediaFormat();
   else if (prefix == "ivr")
-    cout << (stream.IsSink() ? "streaming" : "recording") << stream.GetMediaFormat();
+    cout << (stream.IsSink() ? "streaming " : "recording ") << stream.GetMediaFormat();
   else
     cout << (stream.IsSink() ? "sending " : "receiving ") << stream.GetMediaFormat()
           << (stream.IsSink() ? " to " : " from ")<< prefix;
