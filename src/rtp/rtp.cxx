@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2041  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2042  2006/10/24 04:18:28  csoutheren
+ * Added support for encrypted RTCP
+ *
+ * Revision 2.40  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.39  2006/09/08 05:12:26  csoutheren
@@ -1084,6 +1087,11 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
+RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
+{
+  return e_ProcessPacket;
+}
+
 RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
 {
   // Check that the PDU is the right version
@@ -2076,7 +2084,17 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
   if (!remoteAddress.IsValid() || remoteControlPort == 0)
     return TRUE;
 
-  while (!controlSocket->WriteTo(frame.GetPointer(), frame.GetCompoundSize(),
+  PINDEX len = frame.GetCompoundSize();
+  switch (OnSendControl(frame, len)) {
+    case e_ProcessPacket :
+      break;
+    case e_IgnorePacket :
+      return TRUE;
+    case e_AbortTransport :
+      return FALSE;
+  }
+
+  while (!controlSocket->WriteTo(frame.GetPointer(), len,
                                 remoteAddress, remoteControlPort)) {
     switch (controlSocket->GetErrorNumber()) {
       case ECONNRESET :

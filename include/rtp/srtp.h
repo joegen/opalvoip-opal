@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.4  2006/10/24 04:18:28  csoutheren
+ * Added support for encrypted RTCP
+ *
  * Revision 1.3  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
@@ -131,6 +134,8 @@ class OpalSRTP_UDP : public RTP_UDP
 
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame) = 0;
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame) = 0;
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len) = 0;
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame) = 0;
 
     virtual OpalSRTPSecurityMode * GetSRTPParms() const
     { return srtpParms; }

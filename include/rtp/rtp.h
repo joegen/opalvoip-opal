@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2026  2006/09/05 06:18:22  csoutheren
+ * Revision 1.2027  2006/10/24 04:18:28  csoutheren
+ * Added support for encrypted RTCP
+ *
+ * Revision 2.25  2006/09/05 06:18:22  csoutheren
  * Start bringing in SRTP code for libSRTP
  *
  * Revision 2.24  2006/08/29 18:39:21  dsandras
@@ -659,6 +662,7 @@ class RTP_Session : public PObject
       e_AbortTransport
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
