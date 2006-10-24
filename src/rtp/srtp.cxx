@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.8  2006/10/24 04:18:28  csoutheren
+ * Added support for encrypted RTCP
+ *
  * Revision 1.7  2006/10/10 10:59:17  csoutheren
  * Fix SRTP compilation on old compilers
  *
@@ -136,6 +139,8 @@ class LibSRTP_UDP : public OpalSRTP_UDP
 
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 };
 
 ///////////////////////////////////////////////////////
@@ -303,6 +308,36 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
   frame.SetPayloadSize(len - frame.GetHeaderSize());
 
   return RTP_UDP::OnReceiveData(frame);
+}
+
+RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendControl(RTP_ControlFrame & frame, PINDEX & transmittedLen)
+{
+  SendReceiveStatus stat = RTP_UDP::OnSendControl(frame, transmittedLen);
+  if (stat != e_ProcessPacket)
+    return stat;
+
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+
+  int len = transmittedLen;
+  err_status_t err = ::srtp_protect_rtcp(srtp->outboundSession, frame.GetPointer(), &len);
+  if (err != err_status_ok)
+    return RTP_Session::e_IgnorePacket;
+  transmittedLen = len;
+
+  return e_ProcessPacket;
+}
+
+RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveControl(RTP_ControlFrame & frame)
+{
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+
+  int len = frame.GetSize();
+  err_status_t err = ::srtp_unprotect_rtcp(srtp->inboundSession, frame.GetPointer(), &len);
+  if (err != err_status_ok)
+    return RTP_Session::e_IgnorePacket;
+  frame.SetSize(len);
+
+  return RTP_UDP::OnReceiveControl(frame);
 }
 
 ///////////////////////////////////////////////////////
