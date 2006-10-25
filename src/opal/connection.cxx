@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2078  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2079  2006/10/25 13:02:54  rjongbloed
+ * Fixed compiler error due to tone subsystem upgrade
+ *
+ * Revision 2.77  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.76  2006/09/28 07:42:18  csoutheren
@@ -1267,7 +1270,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
   // before the audio is passed on to the sound card (or other output device)
 
   // Pass the 16 bit PCM audio through the DTMF decoder   
-  PString tones = dtmfDecoder.Decode(frame.GetPayloadPtr(), frame.GetPayloadSize());
+  PString tones = dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/sizeof(short));
   if (!tones.IsEmpty()) {
     PTRACE(1, "DTMF detected. " << tones);
     PINDEX i;
