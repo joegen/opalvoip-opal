@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2004  2006/10/22 12:08:51  rjongbloed
+ * Revision 1.2005  2006/10/25 22:26:16  rjongbloed
+ * Changed LID tone handling to use new tone generation for accurate country based tones.
+ *
+ * Revision 2.3  2006/10/22 12:08:51  rjongbloed
  * Major change so that sound card based LIDs, eg USB handsets. are handled in
  *   common code so not requiring lots of duplication.
  *
@@ -747,7 +750,7 @@ BOOL OpalPluginLID::SetRemoveDTMF(unsigned line, BOOL removeTones)
 
 OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::IsToneDetected(unsigned line)
 {
-  unsigned tone = NoTone;
+  int tone = NoTone;
   CHECK_FN(IsToneDetected, (m_context, line, &tone));
   return (CallProgressTones)tone;
 }
@@ -755,7 +758,7 @@ OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::IsToneDetected(unsigne
 
 OpalLineInterfaceDevice::CallProgressTones OpalPluginLID::WaitForToneDetect(unsigned line, unsigned timeout)
 {
-  unsigned tone = NoTone;
+  int tone = NoTone;
   if (CHECK_FN(WaitForToneDetect, (m_context, line, timeout, &tone)) == PluginLID_UnimplementedFunction)
     return OpalLineInterfaceDevice::WaitForToneDetect(line, timeout);
   return (CallProgressTones)tone;
@@ -790,22 +793,15 @@ BOOL OpalPluginLID::SetToneFilterParameters(unsigned line,
 
 void OpalPluginLID::TonePlayer(PThread &, INT tone)
 {
-  PDTMFEncoder toneData;
-  switch (tone) {
-    case DialTone : // Dial tone
-      toneData.GenerateDialTone();
-      break;
-    case RingTone : // Ring indication tone
-      toneData.GenerateRingBackTone();
-      break;
-    case BusyTone : // Line engaged tone
-      toneData.GenerateBusyTone();
-      break;
-    case FastBusyTone : // fast busy tone
-    case ClearTone : // Call failed/cleared tone (often same as busy tone)
-    case CNGTone : // Fax CNG tone
-      return;
+  if (tone >= NumTones)
+    return;
+
+  PTones toneData;
+  if (!toneData.Generate(m_callProgressTones[tone])) {
+    PTRACE(2, "LID Plugin\tTone generation generation for \"" << m_callProgressTones[tone] << "\"failed.");
+    return;
   }
+
   while (!m_stopTone.Wait(0)) {
     if (!m_player.Write(toneData, toneData.GetSize())) {
       PTRACE(2, "LID Plugin\tTone generation write failed.");
@@ -916,18 +912,24 @@ PStringList OpalPluginLID::GetCountryCodeNameList() const
 {
   PStringList countries;
 
-  if (BAD_FN(GetSupportedCountry))
-    return countries;
-
-  unsigned countryCode;
   unsigned index = 0;
-  while ((osError = m_definition.GetSupportedCountry(m_context, index++, &countryCode)) == PluginLID_NoError && countryCode < NumCountryCodes)
-    countries.AppendString(GetCountryCodeName((T35CountryCodes)countryCode));
-#if PTRACING
-  if (osError != PluginLID_NoMoreNames)
-    CheckError((PluginLID_Errors)osError, "GetSupportedCountry");
-#endif
+  for (;;) {
+    unsigned countryCode = NumCountryCodes;
+    switch (CHECK_FN(GetSupportedCountry, (m_context, index++, &countryCode))) {
+      case PluginLID_UnimplementedFunction :
+        return OpalLineInterfaceDevice::GetCountryCodeNameList();
 
-  return countries;
+      case PluginLID_NoError :
+        if (countryCode < NumCountryCodes)
+          countries.AppendString(GetCountryCodeName((T35CountryCodes)countryCode));
+        break;
+
+      case PluginLID_NoMoreNames :
+        return countries;
+
+      default :
+        return PStringList();
+    }
+  }
 }
 
