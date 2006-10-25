@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_win.cpp,v $
+ * Revision 1.2  2006/10/25 22:26:15  rjongbloed
+ * Changed LID tone handling to use new tone generation for accurate country based tones.
+ *
  * Revision 1.1  2006/10/02 13:30:53  rjongbloed
  * Added LID plug ins
  *
@@ -561,7 +564,7 @@ class Context
         }
       }
 
-      unsigned tone;
+      int tone;
       if (IsToneDetected(line, &tone) != PluginLID_NoError)
         return PluginLID_InternalError;
 
@@ -1702,7 +1705,7 @@ class Context
 
 
 
-    PLUGIN_FUNCTION_ARG2(IsToneDetected, unsigned,line, unsigned *,tone)
+    PLUGIN_FUNCTION_ARG2(IsToneDetected, unsigned,line, int *,tone)
     {
       if (tone == NULL)
         return PluginLID_InvalidParameter;
@@ -1747,8 +1750,8 @@ class Context
     }
 
 
-    //PLUGIN_FUNCTION_ARG3(WaitForToneDetect, unsigned,line, unsigned,timeout, unsigned *,tone)
-    //PLUGIN_FUNCTION_ARG3(WaitForTone, unsigned,line, unsigned,tone, unsigned,timeout)
+    //PLUGIN_FUNCTION_ARG3(WaitForToneDetect, unsigned,line, unsigned,timeout, int *,tone)
+    //PLUGIN_FUNCTION_ARG3(WaitForTone, unsigned,line, int,tone, unsigned,timeout)
 
     PLUGIN_FUNCTION_ARG7(SetToneFilterParameters, unsigned        ,line,
                                                   unsigned        ,tone,

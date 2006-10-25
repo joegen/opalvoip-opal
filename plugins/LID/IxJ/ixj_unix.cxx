@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_unix.cxx,v $
+ * Revision 1.2  2006/10/25 22:26:15  rjongbloed
+ * Changed LID tone handling to use new tone generation for accurate country based tones.
+ *
  * Revision 1.1  2006/10/03 09:42:03  rjongbloed
  * Start of unix support for LID plug ins
  *
@@ -754,8 +757,8 @@ class Context
     }
 
 
-    //PLUGIN_FUNCTION_ARG3(WaitForToneDetect, unsigned,line, unsigned,timeout, unsigned *,tone)
-    //PLUGIN_FUNCTION_ARG3(WaitForTone, unsigned,line, unsigned,tone, unsigned,timeout)
+    //PLUGIN_FUNCTION_ARG3(WaitForToneDetect, unsigned,line, unsigned,timeout, int *,tone)
+    //PLUGIN_FUNCTION_ARG3(WaitForTone, unsigned,line, int,tone, unsigned,timeout)
 
     PLUGIN_FUNCTION_ARG7(SetToneFilterParameters, unsigned        ,line,
                                                   unsigned        ,tone,
