@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2019  2006/10/22 12:05:56  rjongbloed
+ * Revision 1.2020  2006/10/25 22:26:16  rjongbloed
+ * Changed LID tone handling to use new tone generation for accurate country based tones.
+ *
+ * Revision 2.18  2006/10/22 12:05:56  rjongbloed
  * Fixed correct usage of read/write buffer sizes in LID endpoints.
  *
  * Revision 2.17  2006/10/15 06:27:16  rjongbloed
@@ -455,6 +458,8 @@ OpalLineInterfaceDevice::OpalLineInterfaceDevice()
   setReadDeblockingOffset(P_MAX_INDEX);
   setWriteDeblockingOffset(0);
   setDialToneTimeout(DIAL_TONE_TIMEOUT);
+
+  SetCountryCode(UnitedStates);
 }
 
 
@@ -1000,10 +1005,8 @@ static struct {
   unsigned dialCode;
   OpalLineInterfaceDevice::T35CountryCodes t35Code;
   const char * fullName;
-  const char * dialTone;
-  const char * ringTone;
-  const char * busyTone;
-} CountryInfo[] = {
+  const char * tone[OpalLineInterfaceDevice::NumTones];
+} const CountryInfo[] = {
   { "AF", 93,   OpalLineInterfaceDevice::Afghanistan,           "Afghanistan" },
   { "AL", 355,  OpalLineInterfaceDevice::Albania,               "Albania" },
   { "DZ", 213,  OpalLineInterfaceDevice::Algeria,               "Algeria" },
@@ -1013,7 +1016,7 @@ static struct {
   { "AG", 1268, OpalLineInterfaceDevice::AntiguaAndBarbuda,     "Antigua and Barbuda" },
   { "AR", 54,   OpalLineInterfaceDevice::Argentina,             "Argentina" },
   { "AC", 247,  OpalLineInterfaceDevice::Ascension,             "Ascension Island" },
-  { "AU", 61,   OpalLineInterfaceDevice::Australia,             "Australia",            "425:0.1", "425:0.4-0.2-0.4-2", "425:0.375-0.375" },
+  { "AU", 61,   OpalLineInterfaceDevice::Australia,             "Australia",            "425x25:0.1", "400+450:0.4-0.2-0.4-2", "425:0.375-0.375", "425:0.375-0.375/50%425:0.375-0.375" },
   { "AT", 43,   OpalLineInterfaceDevice::Austria,               "Austria" },
   { "BS", 1242, OpalLineInterfaceDevice::Bahamas,               "Bahamas" },
   { "BH", 973,  OpalLineInterfaceDevice::Bahrain,               "Bahrain" },
@@ -1070,7 +1073,7 @@ static struct {
   { "TF", 0,    OpalLineInterfaceDevice::FrenchSouthernAndAntarcticLands, "French Southern and Antarctic Lands" },
   { "GA", 241,  OpalLineInterfaceDevice::Gabon,                 "Gabon" },
   { "GM", 220,  OpalLineInterfaceDevice::Gambia,                "Gambia" },
-  { "DE", 49,   OpalLineInterfaceDevice::Germany,               "Germany" },
+  { "DE", 49,   OpalLineInterfaceDevice::Germany,               "Germany",              "425:0.1", "425:1-4", "425:0.48-0.48", "425:0.24-0.24", "425:0.48-0.48", "425:0.2-0.2-0.2-5" },
   { "GH", 233,  OpalLineInterfaceDevice::Ghana,                 "Ghana" },
   { "GI", 350,  OpalLineInterfaceDevice::Gibraltar,             "Gibraltar" },
   { "GR", 30,   OpalLineInterfaceDevice::Greece,                "Greece" },
@@ -1127,10 +1130,10 @@ static struct {
   { "MM", 95,   OpalLineInterfaceDevice::Myanmar,               "Myanmar" },
   { "NR", 674,  OpalLineInterfaceDevice::Nauru,                 "Nauru" },
   { "NP", 977,  OpalLineInterfaceDevice::Nepal,                 "Nepal" },
-  { "NL", 31,   OpalLineInterfaceDevice::Netherlands,           "Netherlands",          "425:0.1", "425:1.0-4.0", "425:0.5-0.5" },
+  { "NL", 31,   OpalLineInterfaceDevice::Netherlands,           "Netherlands",          "425:0.1", "425:1.0-4.0", "425:0.5-0.5", "425:0.25-0.25", "425:0.5-0.5", "425:0.5-9.5"  },
   { "AN", 599,  OpalLineInterfaceDevice::NetherlandsAntilles,   "Netherlands Antilles" },
   { "NC", 687,  OpalLineInterfaceDevice::NewCaledonia,          "New Caledonia" },
-  { "NZ", 64,   OpalLineInterfaceDevice::NewZealand,            "New Zealand" },
+  { "NZ", 64,   OpalLineInterfaceDevice::NewZealand,            "New Zealand",          "400:0.1", "400x17:0.4-0.2-0.4-2", "400:0.5-0.5", "400:0.25-0.25", "900:0.25-0.25", "400:0.1-0.1" },
   { "NI", 505,  OpalLineInterfaceDevice::Nicaragua,             "Nicaragua" },
   { "NE", 227,  OpalLineInterfaceDevice::Niger,                 "Niger" },
   { "NG", 234,  OpalLineInterfaceDevice::Nigeria,               "Nigeria" },
@@ -1185,8 +1188,8 @@ static struct {
   { "UG", 256,  OpalLineInterfaceDevice::Uganda,                "Uganda" },
   { "UA", 380,  OpalLineInterfaceDevice::Ukraine,               "Ukraine" },
   { "AE", 971,  OpalLineInterfaceDevice::UnitedArabEmirates,    "United Arab Emirates" },
-  { "GB", 44,   OpalLineInterfaceDevice::UnitedKingdom,         "United Kingdom",       "350-440:0.1", "400-450:0.4-0.2-0.4-2", "400:0.375-0.375" },
-  { "US", 1,    OpalLineInterfaceDevice::UnitedStates,          "United States",        "350-440:0.1", "440-480:2.0-4.0",       "480-620:0.5-0.5" },
+  { "GB", 44,   OpalLineInterfaceDevice::UnitedKingdom,         "United Kingdom",       "350+440:0.1", "400+450:0.4-0.2-0.4-2", "400:0.375-0.375", "400:0.35-0.225-0.525", "400:3-10",  },
+  { "US", 1,    OpalLineInterfaceDevice::UnitedStates,          "United States",        "350+440:0.1", "440+480:2.0-4.0",       "480+620:0.5-0.5", "480+620:0.3-0.2", "350+440:0.5", "440:0.3-10-0.3-10", "1100:0.25" },
   { "UY", 598,  OpalLineInterfaceDevice::Uruguay,               "Uruguay" },
   { "VU", 678,  OpalLineInterfaceDevice::Vanuatu,               "Vanuatu" },
   { "VA", 379,  OpalLineInterfaceDevice::VaticanCityState,      "Vatican City State" },
@@ -1203,9 +1206,10 @@ static struct {
 
 OpalLineInterfaceDevice::T35CountryCodes OpalLineInterfaceDevice::GetCountryCode(const PString & str)
 {
-  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++)
+  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
     if (str *= CountryInfo[i].fullName)
       return CountryInfo[i].t35Code;
+  }
 
   return OpalLineInterfaceDevice::UnknownCountry;
 }
@@ -1213,9 +1217,10 @@ OpalLineInterfaceDevice::T35CountryCodes OpalLineInterfaceDevice::GetCountryCode
 
 PString OpalLineInterfaceDevice::GetCountryCodeName(T35CountryCodes c) 
 {
-  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++)
+  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
     if (CountryInfo[i].t35Code == c)
       return CountryInfo[i].fullName;
+  }
 
   return "<Unknown>";
 }
@@ -1237,20 +1242,21 @@ BOOL OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
 
   for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
     if (CountryInfo[i].t35Code == country) {
-      PTRACE(2, "LID\tCountry set to " << CountryInfo[i].fullName);
+      PTRACE(2, "LID\tCountry set to \"" << CountryInfo[i].fullName << '"');
       for (line = 0; line < GetLineCount(); line++) {
-        if (CountryInfo[i].dialTone != NULL)
-          SetToneFilter(line, DialTone, CountryInfo[i].dialTone);
-        if (CountryInfo[i].ringTone != NULL)
-          SetToneFilter(line, RingTone, CountryInfo[i].ringTone);
-        if (CountryInfo[i].busyTone != NULL)
-          SetToneFilter(line, BusyTone, CountryInfo[i].busyTone);
+        for (int tone = 0; tone < NumTones; tone++) {
+          const char * toneStr = CountryInfo[i].tone[tone];
+          if (toneStr != NULL)
+            toneStr = CountryInfo[UnitedStates].tone[tone];
+          SetToneFilter(line, (CallProgressTones)tone, toneStr);
+          m_callProgressTones[tone] = toneStr;
+        }
       }
       return TRUE;
     }
   }
 
-  PTRACE(2, "LID\tCountry set to " << GetCountryCodeName());
+  PTRACE(2, "LID\tCountry could not be set to \"" << GetCountryCodeName(country) <<"\", leaveing as \"" << GetCountryCodeName() << '"');
   return TRUE;
 }
 
@@ -1258,7 +1264,10 @@ BOOL OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
 PStringList OpalLineInterfaceDevice::GetCountryCodeNameList() const
 {
   PStringList list;
-  list.AppendString("United States");
+  for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
+    if (CountryInfo[i].tone[DialTone] != NULL)
+      list.AppendString(CountryInfo[i].fullName);
+  }
   return list;
 }
 
@@ -1277,7 +1286,7 @@ static PCaselessString DeSpaced(const PString & orig)
 
 BOOL OpalLineInterfaceDevice::SetCountryCodeName(const PString & countryName)
 {
-  PTRACE(4, "LID\tSetting country code name to " << countryName);
+  PTRACE(4, "LID\tSetting country code name to \"" << countryName << '"');
   PCaselessString spacelessAndCaseless = DeSpaced(countryName);
   if (spacelessAndCaseless.IsEmpty())
     return FALSE;
