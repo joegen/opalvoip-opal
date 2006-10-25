@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidplugin.h,v $
- * Revision 1.2004  2006/10/22 12:08:51  rjongbloed
+ * Revision 1.2005  2006/10/25 22:26:14  rjongbloed
+ * Changed LID tone handling to use new tone generation for accurate country based tones.
+ *
+ * Revision 2.3  2006/10/22 12:08:51  rjongbloed
  * Major change so that sound card based LIDs, eg USB handsets. are handled in
  *   common code so not requiring lots of duplication.
  *
@@ -196,9 +199,9 @@ typedef struct PluginLID_Definition
   PluginLID_Errors (*GetRemoveDTMF)(void * context, unsigned line, PluginLID_Boolean * removeTones);
   PluginLID_Errors (*SetRemoveDTMF)(void * context, unsigned line, PluginLID_Boolean removeTones);
 
-  PluginLID_Errors (*IsToneDetected)(void * context, unsigned line, unsigned * tone);
-  PluginLID_Errors (*WaitForToneDetect)(void * context, unsigned line, unsigned timeout, unsigned * tone);
-  PluginLID_Errors (*WaitForTone)(void * context, unsigned line, unsigned tone, unsigned timeout);
+  PluginLID_Errors (*IsToneDetected)(void * context, unsigned line, int * tone);
+  PluginLID_Errors (*WaitForToneDetect)(void * context, unsigned line, unsigned timeout, int * tone);
+  PluginLID_Errors (*WaitForTone)(void * context, unsigned line, int tone, unsigned timeout);
 
   PluginLID_Errors (*SetToneFilterParameters)(void * context, unsigned line,
                                               unsigned tone,
