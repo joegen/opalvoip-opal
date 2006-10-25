@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2016  2006/10/22 12:05:54  rjongbloed
+ * Revision 1.2017  2006/10/25 22:26:14  rjongbloed
+ * Changed LID tone handling to use new tone generation for accurate country based tones.
+ *
+ * Revision 2.15  2006/10/22 12:05:54  rjongbloed
  * Fixed correct usage of read/write buffer sizes in LID endpoints.
  *
  * Revision 2.14  2006/10/15 06:27:16  rjongbloed
@@ -774,15 +777,15 @@ class OpalLineInterfaceDevice : public PObject
 
 
     enum CallProgressTones {
-      NoTone    = 0x00,   // indicates no tones
-      DialTone  = 0x01,   // Dial tone
-      RingTone  = 0x02,   // Ring indication tone
-      BusyTone  = 0x04,   // Line engaged tone
-      FastBusyTone  = 0x08,   // fast busy tone
-      ClearTone = 0x10,   // Call failed/cleared tone (often same as busy tone)
-      CNGTone   = 0x20,   // Fax CNG tone
-      MwiTone   = 0x40,   // Message Waiting Tone
-      AllTones  = 0x4f
+      NoTone = -1, // indicates no tones
+      DialTone,    // Dial tone
+      RingTone,    // Ring indication tone
+      BusyTone,    // Line engaged tone
+      CongestionTone,// aka fast busy tone
+      ClearTone,   // Call failed/disconnected tone (often same as busy tone)
+      MwiTone,     // Message Waiting Tone
+      CNGTone,     // Fax CNG tone
+      NumTones
     };
 
     /**See if any tone is detected.
@@ -1050,13 +1053,14 @@ class OpalLineInterfaceDevice : public PObject
     unsigned int getDialToneTimeout() const {return m_uiDialToneTimeout;};
     void   setDialToneTimeout(unsigned int uiDialToneTimeout) {m_uiDialToneTimeout = uiDialToneTimeout;};
         
-    int             os_handle;
-    mutable int     osError;
-    T35CountryCodes countryCode;
-    PBYTEArray      m_readDeblockingBuffer, m_writeDeblockingBuffer;
-    PINDEX          m_readDeblockingOffset, m_writeDeblockingOffset;
-    unsigned int    m_uiDialToneTimeout;
+    int               os_handle;
+    mutable int       osError;
+    T35CountryCodes   countryCode;
+    PBYTEArray        m_readDeblockingBuffer, m_writeDeblockingBuffer;
+    PINDEX            m_readDeblockingOffset, m_writeDeblockingOffset;
+    unsigned int      m_uiDialToneTimeout;
     std::vector<bool> m_LineAudioEnabled;
+    PString           m_callProgressTones[NumTones];
 #if PTRACING
     friend ostream & operator<<(ostream & o, CallProgressTones t);
 #endif
