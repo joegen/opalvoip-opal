@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="EasyG729A"
+	Name="EasyG729A Audio Codec"
 	ProjectGUID="{B0FD150D-E781-4605-B70D-32019FEFD6F1}"
 	>
 	<Platforms>
@@ -52,10 +52,7 @@
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile=".\Compile/EasyG729A.pch"
-				AssemblerListingLocation=".\Compile/"
-				ObjectFile=".\Compile/"
-				ProgramDataBaseFileName=".\Compile/"
+				PrecompiledHeaderFile=""
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 			/>
@@ -73,13 +70,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="odbc32.lib odbccp32.lib"
-				OutputFile="../../Release/EasyG729A_pwplugin.dll"
+				OutputFile="$(OutDir)/EasyG729A_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				ProgramDatabaseFile=".\Release/EasyG729A_pwplugin.pdb"
-				ImportLibrary="./Release/EasyG729A.lib"
-				TargetMachine="1"
+				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -93,7 +88,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\Release/EasyG729A.bsc"
+				OutputFile="$(IntDir)/EasyG729A.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -146,10 +141,8 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				PrecompiledHeaderFile=".\Debug/EasyG729A.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				PrecompiledHeaderFile=""
+				ProgramDataBaseFileName="$(TargetDir)/$(TargetName).pdb"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
@@ -168,14 +161,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="ptlibs.lib odbc32.lib odbccp32.lib"
-				OutputFile="../../Debug/EasyG729A_pwplugin.dll"
+				OutputFile="$(OutDir)/EasyG729A_pwplugin.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="../../Debug/EasyG729A.pdb"
-				ImportLibrary="./Debug/EasyG729A.lib"
-				TargetMachine="1"
+				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
+				ImportLibrary="$(IntDir)/$(TargetName).lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -189,7 +180,7 @@
 			<Tool
 				Name="VCBscMakeTool"
 				SuppressStartupBanner="true"
-				OutputFile=".\../Debug/EasyG729A.bsc"
+				OutputFile="$(IntDir)/EasyG729A.bsc"
 			/>
 			<Tool
 				Name="VCFxCopTool"
