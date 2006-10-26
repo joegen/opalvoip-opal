@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_unix.cxx,v $
+ * Revision 1.3  2006/10/26 09:21:44  rjongbloed
+ * Fixed GNU compiler error
+ *
  * Revision 1.2  2006/10/25 22:26:15  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
@@ -739,7 +742,7 @@ class Context
 
 
 
-    PLUGIN_FUNCTION_ARG2(IsToneDetected, unsigned,line, unsigned *,tone)
+    PLUGIN_FUNCTION_ARG2(IsToneDetected, unsigned,line, int *,tone)
     {
       if (tone == NULL)
         return PluginLID_InvalidParameter;
