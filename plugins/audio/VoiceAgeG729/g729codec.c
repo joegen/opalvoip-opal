@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.c,v $
+ * Revision 1.3  2006/10/26 08:39:25  rjongbloed
+ * Updated to latest Voice Age download library
+ *
  * Revision 1.2  2006/08/01 13:06:53  rjongbloed
  * Added a raft of unvalidated audio codecs from OpenH323 tree
  *
@@ -48,7 +51,7 @@ PLUGIN_CODEC_IMPLEMENT("VoiceAgeG729")
 
 #include <stdlib.h>
 #include <malloc.h>
-#include "va_g729/va_g729a.h"
+#include "va_g729/va_g729.h"
 
 #define SAMPLES_PER_FRAME   L_FRAME
 #define BYTES_PER_FRAME     L_FRAME_COMPRESSED

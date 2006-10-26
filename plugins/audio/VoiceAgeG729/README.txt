@@ -23,7 +23,7 @@ OPAL. This codec is only available under Windows, although theoretically is woul
 2. BUILDING WITH WINDOWS
 ========================
 
-1. Obtain the actual codec libraries from Voice Age
+1. Obtain the actual codec libraries from http://www.voiceage.com/freecodecs.php
 
 2. Unpack into the "va_g729" directory within this directory
 
@@ -47,6 +47,9 @@ entity against any legal actions that may arise from use of this code in any way
 
 ----------------------------------------------------------------------
 $Log: README.txt,v $
+Revision 1.3  2006/10/26 08:39:25  rjongbloed
+Updated to latest Voice Age download library
+
 Revision 1.2  2006/08/01 13:06:51  rjongbloed
 Added a raft of unvalidated audio codecs from OpenH323 tree
 
