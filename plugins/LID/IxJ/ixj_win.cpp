@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_win.cpp,v $
+ * Revision 1.3  2006/10/26 08:36:49  rjongbloed
+ * Fixed DevStudio 2005 warning
+ *
  * Revision 1.2  2006/10/25 22:26:15  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
@@ -103,7 +106,7 @@ static const struct {
 static PINDEX FindCodec(const char * mediaFormat)
 {
   for (PINDEX codecType = 0; codecType < PARRAYSIZE(CodecInfo); codecType++) {
-    if (stricmp(mediaFormat, CodecInfo[codecType].mediaFormat) == 0)
+    if (strcmp(mediaFormat, CodecInfo[codecType].mediaFormat) == 0)
       return codecType;
   }
 
