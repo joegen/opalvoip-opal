@@ -21,9 +21,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IMA ADPCM Audio Codec", "au
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Voice Age G.729 Audio Codec", "audio\VoiceAgeG729\VoiceAgeG729_2005.vcproj", "{3F038BF6-B7B9-4941-AF57-8D539FC05781}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG729A", "audio\EasyCodec\EasyG729A_2005.vcproj", "{B0FD150D-E781-4605-B70D-32019FEFD6F1}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG729A Audio Codec", "audio\EasyCodec\EasyG729A_2005.vcproj", "{B0FD150D-E781-4605-B70D-32019FEFD6F1}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG7231", "audio\EasyCodec\EasyG7231_2005.vcproj", "{7CF86525-9E45-4C67-93DC-5959F1E571AE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG7231 Audio Codec", "audio\EasyCodec\EasyG7231_2005.vcproj", "{7CF86525-9E45-4C67-93DC-5959F1E571AE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IxJ LID", "LID\IxJ\IxJ_2005.vcproj", "{2F7CD8F0-30C8-4B70-A807-E13472EE23CA}"
 EndProject
@@ -32,6 +32,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VPB LID", "LID\VPB\VPB_2005.vcproj", "{EE028C0B-AF72-499F-A778-82C3645A90DB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TigerJet LID", "LID\TigerJet\TJ_2005.vcproj", "{9A4E2793-1D97-4B0C-BCFD-130136990E35}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG728 Audio Codec", "audio\EasyCodec\EasyG728_2005.vcproj", "{85E1586D-70E4-41DA-B548-B78E63B25EA2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -136,6 +138,12 @@ Global
 		{9A4E2793-1D97-4B0C-BCFD-130136990E35}.No Trace|Win32.Build.0 = Release|Win32
 		{9A4E2793-1D97-4B0C-BCFD-130136990E35}.Release|Win32.ActiveCfg = Release|Win32
 		{9A4E2793-1D97-4B0C-BCFD-130136990E35}.Release|Win32.Build.0 = Release|Win32
+		{85E1586D-70E4-41DA-B548-B78E63B25EA2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{85E1586D-70E4-41DA-B548-B78E63B25EA2}.Debug|Win32.Build.0 = Debug|Win32
+		{85E1586D-70E4-41DA-B548-B78E63B25EA2}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{85E1586D-70E4-41DA-B548-B78E63B25EA2}.No Trace|Win32.Build.0 = Debug|Win32
+		{85E1586D-70E4-41DA-B548-B78E63B25EA2}.Release|Win32.ActiveCfg = Release|Win32
+		{85E1586D-70E4-41DA-B548-B78E63B25EA2}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
