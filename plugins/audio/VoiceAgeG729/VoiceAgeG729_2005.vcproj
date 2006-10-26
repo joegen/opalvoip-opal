@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
-				AdditionalDependencies="va_g729/va_g729a.lib"
+				AdditionalDependencies="va_g729/va_g729.lib"
 				OutputFile="$(OutDir)/VoiceAgeG729_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -162,7 +162,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="va_g729/va_g729a.lib"
+				AdditionalDependencies="va_g729/va_g729.lib"
 				OutputFile="$(OutDir)/VoiceAgeG729_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
