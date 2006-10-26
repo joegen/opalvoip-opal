@@ -4110,7 +4110,6 @@ EXPORTS
     ??0PASN_Stream@@QAE@ABV0@@Z @3411 NONAME
     ??0PAuthInitialiseInstantiateMe@@QAE@XZ @40599 NONAME
     ??0PCaselessString@@QAE@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @43286 NONAME
-    ??0PDTMFEncoder@@QAE@PBDI@Z @44286 NONAME
     ??0PluginLoader@@QAE@XZ @42077 NONAME
     ??0POrdinalKey@@QAE@ABV0@@Z @3442 NONAME
     ??0PortInfo@OpalManager@@QAE@XZ @3444 NONAME
@@ -6259,7 +6258,6 @@ EXPORTS
     ??1Opal_PCM_Linear16Mono@@UAE@XZ @5300 NONAME
     ??1OpenArgs@PVideoDevice@@QAE@XZ @5318 NONAME
     ??1PASN_GeneralisedTime@@UAE@XZ @5329 NONAME
-    ??1PDTMFEncoder@@UAE@XZ @44288 NONAME
     ??1PluginLoader@@UAE@XZ @42151 NONAME
     ??1PortInfo@OpalManager@@QAE@XZ @5376 NONAME
     ??1PWAVFileConverterALaw@@UAE@XZ @36653 NONAME
@@ -10894,7 +10892,6 @@ EXPORTS
     ??_7Opal_PCM_G711_uLaw@@6B@ @9399 NONAME
     ??_7Opal_PCM_Linear16Mono@@6B@ @9408 NONAME
     ??_7PASN_GeneralisedTime@@6B@ @9431 NONAME
-    ??_7PDTMFEncoder@@6B@ @44290 NONAME
     ??_7PluginLoader@@6B@ @42258 NONAME
     ??_7PWAVFileConverterALaw@@6B@ @35684 NONAME
     ??_7PWAVFileConverterULaw@@6B@ @35685 NONAME
@@ -12964,7 +12961,6 @@ EXPORTS
     ??_R0?AVOpal_PCM_G711_uLaw@@@8 @11304 NONAME
     ??_R0?AVOpal_PCM_Linear16Mono@@@8 @11313 NONAME
     ??_R0?AVPASN_GeneralisedTime@@@8 @11340 NONAME
-    ??_R0?AVPDTMFEncoder@@@8 @44292 NONAME
     ??_R0?AVPluginLoader@@@8 @42317 NONAME
     ??_R0?AVPWAVFileConverterALaw@@@8 @35692 NONAME
     ??_R0?AVPWAVFileConverterULaw@@@8 @35693 NONAME
@@ -15017,7 +15013,6 @@ EXPORTS
     ??_R1A@?0A@A@Opal_PCM_G711_uLaw@@8 @13140 NONAME
     ??_R1A@?0A@A@Opal_PCM_Linear16Mono@@8 @13149 NONAME
     ??_R1A@?0A@A@PASN_GeneralisedTime@@8 @13176 NONAME
-    ??_R1A@?0A@A@PDTMFEncoder@@8 @44294 NONAME
     ??_R1A@?0A@A@PluginLoader@@8 @42379 NONAME
     ??_R1A@?0A@A@PWAVFileConverterALaw@@8 @35701 NONAME
     ??_R1A@?0A@A@PWAVFileConverterULaw@@8 @35702 NONAME
@@ -17072,7 +17067,6 @@ EXPORTS
     ??_R2Opal_PCM_G711_uLaw@@8 @15006 NONAME
     ??_R2Opal_PCM_Linear16Mono@@8 @15015 NONAME
     ??_R2PASN_GeneralisedTime@@8 @15038 NONAME
-    ??_R2PDTMFEncoder@@8 @44296 NONAME
     ??_R2PluginLoader@@8 @42443 NONAME
     ??_R2PWAVFileConverterALaw@@8 @35709 NONAME
     ??_R2PWAVFileConverterULaw@@8 @35710 NONAME
@@ -19120,7 +19114,6 @@ EXPORTS
     ??_R3Opal_PCM_G711_uLaw@@8 @16858 NONAME
     ??_R3Opal_PCM_Linear16Mono@@8 @16867 NONAME
     ??_R3PASN_GeneralisedTime@@8 @16890 NONAME
-    ??_R3PDTMFEncoder@@8 @44298 NONAME
     ??_R3PluginLoader@@8 @42502 NONAME
     ??_R3PWAVFileConverterALaw@@8 @35717 NONAME
     ??_R3PWAVFileConverterULaw@@8 @35718 NONAME
@@ -21189,7 +21182,6 @@ EXPORTS
     ??_R4Opal_PCM_G711_uLaw@@6B@ @18729 NONAME
     ??_R4Opal_PCM_Linear16Mono@@6B@ @18738 NONAME
     ??_R4PASN_GeneralisedTime@@6B@ @18761 NONAME
-    ??_R4PDTMFEncoder@@6B@ @44300 NONAME
     ??_R4PluginLoader@@6B@ @42567 NONAME
     ??_R4PWAVFileConverterALaw@@6B@ @35725 NONAME
     ??_R4PWAVFileConverterULaw@@6B@ @35726 NONAME
@@ -23566,7 +23558,6 @@ EXPORTS
     ?Class@OpalVXMLSession@@SAPBDXZ @20828 NONAME
     ?Class@OpalWAVFile@@SAPBDXZ @20829 NONAME
     ?Class@PASN_GeneralisedTime@@SAPBDXZ @20838 NONAME
-    ?Class@PDTMFEncoder@@SAPBDXZ @44303 NONAME
     ?Class@PluginLoader@@SAPBDXZ @42609 NONAME
     ?Class@Q922_Frame@@SAPBDXZ @40893 NONAME
     ?Class@Q931@@SAPBDXZ @20858 NONAME
@@ -27923,7 +27914,6 @@ EXPORTS
     ?CompareObjectMemoryDirect@OpalVXMLSession@@UBE?AW4Comparison@PObject@@ABV3@@Z @24857 NONAME
     ?CompareObjectMemoryDirect@OpalWAVFile@@UBE?AW4Comparison@PObject@@ABV3@@Z @24858 NONAME
     ?CompareObjectMemoryDirect@PASN_GeneralisedTime@@UBE?AW4Comparison@PObject@@ABV3@@Z @24863 NONAME
-    ?CompareObjectMemoryDirect@PDTMFEncoder@@UBE?AW4Comparison@PObject@@ABV3@@Z @44304 NONAME
     ?CompareObjectMemoryDirect@PluginLoader@@UBE?AW4Comparison@PObject@@ABV3@@Z @42652 NONAME
     ?CompareObjectMemoryDirect@Q922_Frame@@UBE?AW4Comparison@PObject@@ABV3@@Z @40906 NONAME
     ?CompareObjectMemoryDirect@Q931@@UBE?AW4Comparison@PObject@@ABV3@@Z @24879 NONAME
@@ -30576,10 +30566,7 @@ EXPORTS
     ?FromString@OpalMediaOption@@QAE_NABVPString@@@Z @36451 NONAME
     ?GarbageCollection@OpalManager@@QAEXXZ @36452 NONAME
     ?GarbageMain@OpalManager@@MAEXAAVPThread@@H@Z @27244 NONAME
-    ?GenerateBusyTone@PDTMFEncoder@@QAEXXZ @44305 NONAME
     ?GenerateCallReference@Q931@@SAIXZ @27245 NONAME
-    ?GenerateDialTone@PDTMFEncoder@@QAEXXZ @44306 NONAME
-    ?GenerateRingBackTone@PDTMFEncoder@@QAEXXZ @44307 NONAME
     ?GetAccept@SIPMIMEInfo@@QBE?AVPString@@XZ @27246 NONAME
     ?GetAcceptEncoding@SIPMIMEInfo@@QBE?AVPString@@XZ @27247 NONAME
     ?GetAcceptLanguage@SIPMIMEInfo@@QBE?AVPString@@XZ @27248 NONAME
@@ -32540,7 +32527,6 @@ EXPORTS
     ?GetClass@OpalVXMLSession@@UBEPBDI@Z @28965 NONAME
     ?GetClass@OpalWAVFile@@UBEPBDI@Z @28966 NONAME
     ?GetClass@PASN_GeneralisedTime@@UBEPBDI@Z @28975 NONAME
-    ?GetClass@PDTMFEncoder@@UBEPBDI@Z @44308 NONAME
     ?GetClass@PluginLoader@@UBEPBDI@Z @42740 NONAME
     ?GetClass@Q922_Frame@@UBEPBDI@Z @40941 NONAME
     ?GetClass@Q931@@UBEPBDI@Z @28995 NONAME
@@ -36247,7 +36233,6 @@ EXPORTS
     ?InternalIsDescendant@OpalVXMLSession@@UBEHPBD@Z @32120 NONAME
     ?InternalIsDescendant@OpalWAVFile@@UBEHPBD@Z @32121 NONAME
     ?InternalIsDescendant@PASN_GeneralisedTime@@UBEHPBD@Z @32130 NONAME
-    ?InternalIsDescendant@PDTMFEncoder@@UBEHPBD@Z @44309 NONAME
     ?InternalIsDescendant@PluginLoader@@UBEHPBD@Z @42797 NONAME
     ?InternalIsDescendant@Q922_Frame@@UBEHPBD@Z @40981 NONAME
     ?InternalIsDescendant@Q931@@UBEHPBD@Z @32150 NONAME
@@ -37162,6 +37147,7 @@ EXPORTS
     ?OnSendCallProceeding_UUIE@H460_Feature@@UAEHAAVH225_FeatureDescriptor@@@Z @41406 NONAME
     ?OnSendCapabilitySet@H323Connection@@UAEXAAVH245_TerminalCapabilitySet@@@Z @32832 NONAME
     ?OnSendConnect@H323EndPoint@@UAEHAAVH323Connection@@AAVH323SignalPDU@@@Z @40731 NONAME
+    ?OnSendControl@RTP_Session@@UAE?AW4SendReceiveStatus@1@AAVRTP_ControlFrame@@AAH@Z @44313 NONAME
     ?OnSendData@RTP_Session@@UAE?AW4SendReceiveStatus@1@AAVRTP_DataFrame@@@Z @32833 NONAME
     ?OnSendDescriptorForEndpoint@H323GatekeeperServer@@UAEHAAVH323RegisteredEndPoint@@AAVH225_ArrayOf_AliasAddress@@AAVH225_EndpointType@@1@Z @35469 NONAME
     ?OnSendDescriptorForEndpoint@H323RegisteredEndPoint@@UAEHAAVH225_ArrayOf_AliasAddress@@AAVH225_EndpointType@@0@Z @35470 NONAME
