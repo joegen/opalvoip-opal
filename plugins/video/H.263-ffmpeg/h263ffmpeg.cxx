@@ -28,6 +28,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.6  2006/10/26 08:35:59  rjongbloed
+ * Fixed DevStudio 2005 warning
+ *
  * Revision 1.5  2006/10/04 08:44:14  csoutheren
  * Fixed loading problems on Linux
  *
@@ -63,6 +66,7 @@
  */
 
 
+#define _CRT_SECURE_NO_DEPRECATE
 #include <codec/opalplugin.h>
 
 extern "C" {
