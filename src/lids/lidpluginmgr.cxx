@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2005  2006/10/25 22:26:16  rjongbloed
+ * Revision 1.2006  2006/10/28 00:38:43  rjongbloed
+ * Fixed setting of country tones.
+ * Added initialisation of country tones.
+ * Fixed playing of country tones in generic sound driver LID (eg TigerJet)
+ * Added some more country tone information.
+ *
+ * Revision 2.4  2006/10/25 22:26:16  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
  * Revision 2.3  2006/10/22 12:08:51  rjongbloed
@@ -803,7 +809,7 @@ void OpalPluginLID::TonePlayer(PThread &, INT tone)
   }
 
   while (!m_stopTone.Wait(0)) {
-    if (!m_player.Write(toneData, toneData.GetSize())) {
+    if (!m_player.Write(toneData, toneData.GetSize()*2)) {
       PTRACE(2, "LID Plugin\tTone generation write failed.");
       break;
     }

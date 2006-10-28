@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2020  2006/10/25 22:26:16  rjongbloed
+ * Revision 1.2021  2006/10/28 00:38:43  rjongbloed
+ * Fixed setting of country tones.
+ * Added initialisation of country tones.
+ * Fixed playing of country tones in generic sound driver LID (eg TigerJet)
+ * Added some more country tone information.
+ *
+ * Revision 2.19  2006/10/25 22:26:16  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
  * Revision 2.18  2006/10/22 12:05:56  rjongbloed
@@ -454,12 +460,19 @@ OpalLineInterfaceDevice::OpalLineInterfaceDevice()
 {
   setOsHandle(-1);
   setOsError(0);
-  countryCode = UnknownCountry;
   setReadDeblockingOffset(P_MAX_INDEX);
   setWriteDeblockingOffset(0);
   setDialToneTimeout(DIAL_TONE_TIMEOUT);
 
-  SetCountryCode(UnitedStates);
+  // Unknown country, just use US tones
+  countryCode = UnknownCountry;
+  m_callProgressTones[DialTone] = "350+440:0.2";
+  m_callProgressTones[RingTone] = "440+480:2.0-4.0";
+  m_callProgressTones[BusyTone] = "480+620:0.5-0.5";
+  m_callProgressTones[CongestionTone] = "480+620:0.3-0.2";
+  m_callProgressTones[ClearTone] = "350+440:0.5";
+  m_callProgressTones[MwiTone] = "350+440:0.2";
+  m_callProgressTones[CNGTone] = "1100:0.25";
 }
 
 
@@ -932,21 +945,19 @@ OpalLineInterfaceDevice::CallProgressTones
 {
   PTRACE(3, "LID\tDialOut to " << number << ", line = " << line << ", requireTone = " << requireTone);
 
-  if (IsLineTerminal(line)){
+  if (IsLineTerminal(line)) {
     PTRACE(1, "LID\tDialOut line is a terminal, do nothing");
     return NoTone;
 
   }
-  if (!SetLineOffHook(line)){
+  if (!SetLineOffHook(line)) {
     PTRACE(1, "LID\tDialOut cannot set the line off hook");
     return NoTone;
   }  
 
   /* Wait for dial tone or Message waiting tone */
-  CallProgressTones tone;
-  tone = WaitForToneDetect(line, m_uiDialToneTimeout);
-  if((tone != DialTone)  && 
-     (tone != MwiTone)){
+  CallProgressTones tone = WaitForToneDetect(line, m_uiDialToneTimeout);
+  if (tone != DialTone  && tone != MwiTone) {
     PTRACE(3, "LID\tDialOut dial tone or mwi tone not detected");
     if (requireTone)
       return tone;
@@ -1016,13 +1027,13 @@ static struct {
   { "AG", 1268, OpalLineInterfaceDevice::AntiguaAndBarbuda,     "Antigua and Barbuda" },
   { "AR", 54,   OpalLineInterfaceDevice::Argentina,             "Argentina" },
   { "AC", 247,  OpalLineInterfaceDevice::Ascension,             "Ascension Island" },
-  { "AU", 61,   OpalLineInterfaceDevice::Australia,             "Australia",            "425x25:0.1", "400+450:0.4-0.2-0.4-2", "425:0.375-0.375", "425:0.375-0.375/50%425:0.375-0.375" },
+  { "AU", 61,   OpalLineInterfaceDevice::Australia,             "Australia",            "425x25:0.2", "400+450:0.4-0.2-0.4-2", "425:0.375-0.375", "425:0.375-0.375/50%425:0.375-0.375", "425:0.375-0.375", "425x25:0.1-0.04" },
   { "AT", 43,   OpalLineInterfaceDevice::Austria,               "Austria" },
   { "BS", 1242, OpalLineInterfaceDevice::Bahamas,               "Bahamas" },
   { "BH", 973,  OpalLineInterfaceDevice::Bahrain,               "Bahrain" },
   { "BD", 880,  OpalLineInterfaceDevice::Bangladesh,            "Bangladesh" },
   { "BB", 1246, OpalLineInterfaceDevice::Barbados,              "Barbados" },
-  { "BE", 32,   OpalLineInterfaceDevice::Belgium,               "Belgium" },
+  { "BE", 32,   OpalLineInterfaceDevice::Belgium,               "Belgium",              "425:0.2", "425:1.0-3.0", "425:0.5-0.5", "425:0.167-0.167", "425:0.5-0.5", "425:1-0.25" },
   { "BZ", 501,  OpalLineInterfaceDevice::Belize,                "Belize" },
   { "BJ", 229,  OpalLineInterfaceDevice::Benin,                 "Benin" },
   { "BM", 1441, OpalLineInterfaceDevice::Bermudas,              "Bermudas" },
@@ -1040,13 +1051,13 @@ static struct {
   { "xx", 0,    OpalLineInterfaceDevice::Byelorussia,           "Byelorussia" },
   { "KH", 855,  OpalLineInterfaceDevice::Cambodia,              "Cambodia" },
   { "CM", 237,  OpalLineInterfaceDevice::Cameroon,              "Cameroon" },
-  { "CA", 1,    OpalLineInterfaceDevice::Canada,                "Canada" },
+  { "CA", 1,    OpalLineInterfaceDevice::Canada,                "Canada",               "350+440:0.2", "440+480:2-4", "480+620:0.5-0.5", "480+620:0.25-0.25", "480+620:0.5-0.5" },
   { "CV", 238,  OpalLineInterfaceDevice::CapeVerde,             "Cape Verde" },
   { "KY", 1345, OpalLineInterfaceDevice::CaymanIslands,         "Cayman Islands" },
   { "CF", 236,  OpalLineInterfaceDevice::CentralAfricanRepublic,"Central African Republic" },
   { "TD", 235,  OpalLineInterfaceDevice::Chad,                  "Chad" },
   { "CL", 56,   OpalLineInterfaceDevice::Chile,                 "Chile" },
-  { "CN", 86,   OpalLineInterfaceDevice::China,                 "China" },
+  { "CN", 86,   OpalLineInterfaceDevice::China,                 "China",                "450:0.2", "450:1-4", "450:0.35-0.35", "450:0.7-0.7", "450:0.35-0.35" },
   { "CO", 57,   OpalLineInterfaceDevice::Colombia,              "Colombia" },
   { "KM", 269,  OpalLineInterfaceDevice::Comoros,               "Comoros" },
   { "CG", 242,  OpalLineInterfaceDevice::Congo,                 "Congo" },
@@ -1068,12 +1079,12 @@ static struct {
   { "FK", 500,  OpalLineInterfaceDevice::FalklandIslands,       "Falkland Islands" },
   { "FJ", 679,  OpalLineInterfaceDevice::Fiji,                  "Fiji" },
   { "FI", 358,  OpalLineInterfaceDevice::Finland,               "Finland" },
-  { "FR", 33,   OpalLineInterfaceDevice::France,                "France" },
+  { "FR", 33,   OpalLineInterfaceDevice::France,                "France",               "440:0.2", "440:1.5-3.5", "440:0.5-0.5", "440:0.5-0.5", "440:0.5-0.5" },
   { "PF", 689,  OpalLineInterfaceDevice::FrenchPolynesia,       "French Polynesia" },
   { "TF", 0,    OpalLineInterfaceDevice::FrenchSouthernAndAntarcticLands, "French Southern and Antarctic Lands" },
   { "GA", 241,  OpalLineInterfaceDevice::Gabon,                 "Gabon" },
   { "GM", 220,  OpalLineInterfaceDevice::Gambia,                "Gambia" },
-  { "DE", 49,   OpalLineInterfaceDevice::Germany,               "Germany",              "425:0.1", "425:1-4", "425:0.48-0.48", "425:0.24-0.24", "425:0.48-0.48", "425:0.2-0.2-0.2-5" },
+  { "DE", 49,   OpalLineInterfaceDevice::Germany,               "Germany",              "425:0.2", "425:1-4", "425:0.48-0.48", "425:0.24-0.24", "425:0.48-0.48", "425+400:0.2" },
   { "GH", 233,  OpalLineInterfaceDevice::Ghana,                 "Ghana" },
   { "GI", 350,  OpalLineInterfaceDevice::Gibraltar,             "Gibraltar" },
   { "GR", 30,   OpalLineInterfaceDevice::Greece,                "Greece" },
@@ -1095,9 +1106,9 @@ static struct {
   { "IQ", 964,  OpalLineInterfaceDevice::Iraq,                  "Iraq" },
   { "IE", 353,  OpalLineInterfaceDevice::Ireland,               "Ireland" },
   { "IL", 972,  OpalLineInterfaceDevice::Israel,                "Israel" },
-  { "IT", 39,   OpalLineInterfaceDevice::Italy,                 "Italy" },
+  { "IT", 39,   OpalLineInterfaceDevice::Italy,                 "Italy",                "425:0.2-0.2-0.6-1", "425:1-4", "425:0.5-0.5", "425:0.2-0.2", "425:0.5-0.5", "425:0.4" },
   { "JM", 1876, OpalLineInterfaceDevice::Jamaica,               "Jamaica" },
-  { "JP", 81,   OpalLineInterfaceDevice::Japan,                 "Japan" },
+  { "JP", 81,   OpalLineInterfaceDevice::Japan,                 "Japan",                "400:0.2", "400x18:1-2", "400:0.5-0.5", "425:0.2-0.2", "400:0.5-0.5" },
   { "JE", 442,  OpalLineInterfaceDevice::Jersey,                "Jersey" },
   { "JO", 962,  OpalLineInterfaceDevice::Jordan,                "Jordan" },
   { "KE", 254,  OpalLineInterfaceDevice::Kenya,                 "Kenya" },
@@ -1130,10 +1141,10 @@ static struct {
   { "MM", 95,   OpalLineInterfaceDevice::Myanmar,               "Myanmar" },
   { "NR", 674,  OpalLineInterfaceDevice::Nauru,                 "Nauru" },
   { "NP", 977,  OpalLineInterfaceDevice::Nepal,                 "Nepal" },
-  { "NL", 31,   OpalLineInterfaceDevice::Netherlands,           "Netherlands",          "425:0.1", "425:1.0-4.0", "425:0.5-0.5", "425:0.25-0.25", "425:0.5-0.5", "425:0.5-9.5"  },
+  { "NL", 31,   OpalLineInterfaceDevice::Netherlands,           "Netherlands",          "425:0.2", "425:1-4", "425:0.5-0.5", "425:0.25-0.25", "425:0.5-0.5", "425:0.5-0.05"  },
   { "AN", 599,  OpalLineInterfaceDevice::NetherlandsAntilles,   "Netherlands Antilles" },
   { "NC", 687,  OpalLineInterfaceDevice::NewCaledonia,          "New Caledonia" },
-  { "NZ", 64,   OpalLineInterfaceDevice::NewZealand,            "New Zealand",          "400:0.1", "400x17:0.4-0.2-0.4-2", "400:0.5-0.5", "400:0.25-0.25", "900:0.25-0.25", "400:0.1-0.1" },
+  { "NZ", 64,   OpalLineInterfaceDevice::NewZealand,            "New Zealand",          "400:0.2", "400x17:0.4-0.2-0.4-2", "400:0.5-0.5", "400:0.25-0.25", "900:0.25-0.25", "400:0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1-0.1" },
   { "NI", 505,  OpalLineInterfaceDevice::Nicaragua,             "Nicaragua" },
   { "NE", 227,  OpalLineInterfaceDevice::Niger,                 "Niger" },
   { "NG", 234,  OpalLineInterfaceDevice::Nigeria,               "Nigeria" },
@@ -1164,7 +1175,7 @@ static struct {
   { "SN", 221,  OpalLineInterfaceDevice::Senegal,               "Senegal" },
   { "SC", 248,  OpalLineInterfaceDevice::Seychelles,            "Seychelles" },
   { "SL", 232,  OpalLineInterfaceDevice::SierraLeone,           "Sierra Leone" },
-  { "SG", 65,   OpalLineInterfaceDevice::Singapore,             "Singapore",            "425:0.1", "425:0.4-0.2-0.4-2", "425:0.75-0.75"},
+  { "SG", 65,   OpalLineInterfaceDevice::Singapore,             "Singapore",            "425:0.2", "425x24:0.4-0.2-0.4-2", "425:0.75-0.75", "425:0.25-0.25", "425:0.75-0.75" },
   { "SB", 677,  OpalLineInterfaceDevice::SolomonIslands,        "Solomon Islands" },
   { "SO", 252,  OpalLineInterfaceDevice::Somalia,               "Somalia" },
   { "ZA", 27,   OpalLineInterfaceDevice::SouthAfrica,           "South Africa" },
@@ -1188,8 +1199,8 @@ static struct {
   { "UG", 256,  OpalLineInterfaceDevice::Uganda,                "Uganda" },
   { "UA", 380,  OpalLineInterfaceDevice::Ukraine,               "Ukraine" },
   { "AE", 971,  OpalLineInterfaceDevice::UnitedArabEmirates,    "United Arab Emirates" },
-  { "GB", 44,   OpalLineInterfaceDevice::UnitedKingdom,         "United Kingdom",       "350+440:0.1", "400+450:0.4-0.2-0.4-2", "400:0.375-0.375", "400:0.35-0.225-0.525", "400:3-10",  },
-  { "US", 1,    OpalLineInterfaceDevice::UnitedStates,          "United States",        "350+440:0.1", "440+480:2.0-4.0",       "480+620:0.5-0.5", "480+620:0.3-0.2", "350+440:0.5", "440:0.3-10-0.3-10", "1100:0.25" },
+  { "GB", 44,   OpalLineInterfaceDevice::UnitedKingdom,         "United Kingdom",       "350+440:0.2", "400+450:0.4-0.2-0.4-2", "400:0.375-0.375", "400:0.35-0.225-0.525", "400:6-2",     "350+440:0.75/440:0.75" },
+  { "US", 1,    OpalLineInterfaceDevice::UnitedStates,          "United States",        "350+440:0.2", "440+480:2.0-4.0",       "480+620:0.5-0.5", "480+620:0.3-0.2",      "350+440:0.5" },
   { "UY", 598,  OpalLineInterfaceDevice::Uruguay,               "Uruguay" },
   { "VU", 678,  OpalLineInterfaceDevice::Vanuatu,               "Vanuatu" },
   { "VA", 379,  OpalLineInterfaceDevice::VaticanCityState,      "Vatican City State" },
@@ -1246,7 +1257,7 @@ BOOL OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
       for (line = 0; line < GetLineCount(); line++) {
         for (int tone = 0; tone < NumTones; tone++) {
           const char * toneStr = CountryInfo[i].tone[tone];
-          if (toneStr != NULL)
+          if (toneStr == NULL)
             toneStr = CountryInfo[UnitedStates].tone[tone];
           SetToneFilter(line, (CallProgressTones)tone, toneStr);
           m_callProgressTones[tone] = toneStr;
