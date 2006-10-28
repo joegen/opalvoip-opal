@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2078  2006/10/22 12:09:57  rjongbloed
+ * Revision 1.2079  2006/10/28 00:39:42  rjongbloed
+ * Added argument to set country on LID
+ *
+ * Revision 2.77  2006/10/22 12:09:57  rjongbloed
  * Fixed minor error in user output string.
  *
  * Revision 2.76  2006/10/15 06:12:48  rjongbloed
@@ -403,6 +406,7 @@ void SimpleOpalProcess::Main()
 #if OPAL_LID
              "L-no-lid."
              "-lid:"
+             "-country:"
 #endif
              "n-no-gatekeeper."
              "-no-std-dial-peer."
@@ -527,6 +531,7 @@ void SimpleOpalProcess::Main()
             "Line Interface options:\n"
             "  -L --no-lid             : Do not use line interface device.\n"
             "     --lid device         : Select line interface device (eg Quicknet:013A17C2, default *:*).\n"
+            "     --country code       : Select country to use for LID (eg \"US\", \"au\" or \"+61\").\n"
             "\n"
 #endif
             "Sound card options:\n"
@@ -803,6 +808,12 @@ BOOL MyManager::Initialise(PArgList & args)
       PINDEX colon = devices[d].Find(':');
       OpalLineInterfaceDevice * lid = OpalLineInterfaceDevice::Create(devices[d].Left(colon));
       if (lid->Open(devices[d].Mid(colon+1).Trim())) {
+        if (args.HasOption("country")) {
+          PString country = args.GetOptionString("country");
+          if (!lid->SetCountryCodeName(country))
+            cerr << "Could not set LID to country name \"" << country << '"' << endl;
+        }
+
         // Create LID protocol handler, automatically adds to manager
         if (potsEP == NULL)
           potsEP = new OpalPOTSEndPoint(*this);
