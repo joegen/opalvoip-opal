@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2042  2006/10/24 04:18:28  csoutheren
+ * Revision 1.2043  2006/10/28 16:40:28  dsandras
+ * Fixed SIP reinvite without breaking H.323 calls.
+ *
+ * Revision 2.41  2006/10/24 04:18:28  csoutheren
  * Added support for encrypted RTCP
  *
  * Revision 2.40  2006/09/28 07:42:18  csoutheren
@@ -1579,18 +1582,21 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
 }
 
 
-void RTP_SessionManager::ReleaseSession(unsigned sessionID)
+void RTP_SessionManager::ReleaseSession(unsigned sessionID,
+                                        BOOL clearAll)
 {
   PTRACE(2, "RTP\tReleasing session " << sessionID);
 
   mutex.Wait();
 
-  if (sessions.Contains(sessionID)) {
+  while (sessions.Contains(sessionID)) {
     if (sessions[sessionID].DecrementReference()) {
       PTRACE(3, "RTP\tDeleting session " << sessionID);
       sessions[sessionID].SetJitterBufferSize(0, 0);
       sessions.SetAt(sessionID, NULL);
     }
+    if (!clearAll)
+      break;
   }
 
   mutex.Signal();

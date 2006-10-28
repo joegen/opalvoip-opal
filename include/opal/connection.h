@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2064  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2065  2006/10/28 16:40:28  dsandras
+ * Fixed SIP reinvite without breaking H.323 calls.
+ *
+ * Revision 2.63  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.62  2006/09/28 07:42:17  csoutheren
@@ -894,7 +897,8 @@ class OpalConnection : public PSafeObject
        UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
-      unsigned sessionID    ///<  RTP session number
+      unsigned sessionID,    ///<  RTP session number
+      BOOL clearAll = FALSE  ///<  Clear all sessions
     );
 
     /**Create and open a new RTP session.
