@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2183  2006/10/11 01:22:51  csoutheren
+ * Revision 1.2184  2006/10/28 16:40:28  dsandras
+ * Fixed SIP reinvite without breaking H.323 calls.
+ *
+ * Revision 2.182  2006/10/11 01:22:51  csoutheren
  * Applied 1565585 - SIP changed codec order (compatibility to Mediatrix)
  * Thanks to Simon Zwahlen
  *
@@ -2052,8 +2055,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     if (!IsConnectionOnHold()) {
       PWaitAndSignal m(streamsMutex);
       GetCall().RemoveMediaStreams();
-      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID);
-      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID);
+      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID, TRUE);
     }
  
     if (originalInvite->HasSDP()) {
