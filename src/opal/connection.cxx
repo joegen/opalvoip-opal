@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2079  2006/10/25 13:02:54  rjongbloed
+ * Revision 1.2080  2006/10/28 16:40:28  dsandras
+ * Fixed SIP reinvite without breaking H.323 calls.
+ *
+ * Revision 2.78  2006/10/25 13:02:54  rjongbloed
  * Fixed compiler error due to tone subsystem upgrade
  *
  * Revision 2.77  2006/10/10 07:18:18  csoutheren
@@ -1022,9 +1025,10 @@ RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
 }
 
 
-void OpalConnection::ReleaseSession(unsigned sessionID)
+void OpalConnection::ReleaseSession(unsigned sessionID,
+                                    BOOL clearAll)
 {
-  rtpSessions.ReleaseSession(sessionID);
+  rtpSessions.ReleaseSession(sessionID, clearAll);
 }
 
 
