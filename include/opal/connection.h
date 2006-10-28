@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.h,v $
- * Revision 1.2050.2.2  2006/03/20 10:48:34  csoutheren
+ * Revision 1.2050.2.3  2006/10/28 16:41:58  dsandras
+ * Backported patch from HEAD to fix SIP reinvite without breaking
+ * H.323 calls.
+ *
+ * Revision 2.49.2.2  2006/03/20 10:48:34  csoutheren
  * Backport from CVS head
  *
  * Revision 2.49.2.1  2006/02/06 04:38:37  csoutheren
@@ -803,7 +807,8 @@ class OpalConnection : public PSafeObject
        UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
-      unsigned sessionID    ///<  RTP session number
+      unsigned sessionID,    ///<  RTP session number
+      BOOL clearAll = FALSE  ///<  Clear all sessions
     );
 
     /**Create and open a new RTP session.

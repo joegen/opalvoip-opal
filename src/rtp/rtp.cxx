@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2026.2.6  2006/08/29 18:38:27  dsandras
+ * Revision 1.2026.2.7  2006/10/28 16:41:58  dsandras
+ * Backported patch from HEAD to fix SIP reinvite without breaking
+ * H.323 calls.
+ *
+ * Revision 2.25.2.6  2006/08/29 18:38:27  dsandras
  * Added function to better deal with reinvites.
  *
  * Revision 2.25.2.5  2006/06/05 20:13:48  dsandras
@@ -1548,7 +1552,8 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
 }
 
 
-void RTP_SessionManager::ReleaseSession(unsigned sessionID)
+void RTP_SessionManager::ReleaseSession(unsigned sessionID,
+                                        BOOL clearAll)
 {
   PTRACE(2, "RTP\tReleasing session " << sessionID);
 
@@ -1560,6 +1565,8 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID)
       sessions[sessionID].SetJitterBufferSize(0, 0);
       sessions.SetAt(sessionID, NULL);
     }
+    if (!clearAll)
+      break;
   }
 
   mutex.Signal();

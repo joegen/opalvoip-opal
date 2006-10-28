@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2056.2.1  2006/03/20 10:48:34  csoutheren
+ * Revision 1.2056.2.2  2006/10/28 16:41:58  dsandras
+ * Backported patch from HEAD to fix SIP reinvite without breaking
+ * H.323 calls.
+ *
+ * Revision 2.55.2.1  2006/03/20 10:48:34  csoutheren
  * Backport from CVS head
  *
  * Revision 2.57  2006/03/20 10:37:47  csoutheren
@@ -819,9 +823,10 @@ RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
 }
 
 
-void OpalConnection::ReleaseSession(unsigned sessionID)
+void OpalConnection::ReleaseSession(unsigned sessionID,
+                                    BOOL clearAll)
 {
-  rtpSessions.ReleaseSession(sessionID);
+  rtpSessions.ReleaseSession(sessionID, clearAll);
 }
 
 
