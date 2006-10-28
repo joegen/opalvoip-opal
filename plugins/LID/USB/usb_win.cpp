@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: usb_win.cpp,v $
+ * Revision 1.5  2006/10/28 00:45:35  rjongbloed
+ * Major change so that sound card based LIDs, eg USB handsets. are handled in
+ *   common code so not requiring lots of duplication.
+ *
  * Revision 1.4  2006/10/25 22:26:15  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
@@ -283,271 +287,26 @@ class Context
     //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
-
-
-    PLUGIN_FUNCTION_ARG3(GetSupportedFormat, unsigned,index, char *,mediaFormat, unsigned,size)
-    {
-      if (mediaFormat == NULL || size < 2)
-        return PluginLID_InvalidParameter;
-
-      if (index >= 1)
-        return PluginLID_NoMoreNames;
-
-      strncpy(mediaFormat, "PCM-16", size-1);
-      mediaFormat[size-1] = '\0';
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetReadFormat, unsigned,line, const char *,mediaFormat)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (strcmp(mediaFormat, "PCM-16") != 0)
-        return PluginLID_UnsupportedMediaFormat;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetWriteFormat, unsigned,line, const char *,mediaFormat)
-    {
-      if (mediaFormat == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      if (strcmp(mediaFormat, "PCM-16") != 0)
-        return PluginLID_UnsupportedMediaFormat;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG3(GetReadFormat, unsigned,line, char *,mediaFormat, unsigned,size)
-    {
-      if (mediaFormat == NULL || size == 0)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      strncpy(mediaFormat, "PCM-16", size-1);
-      mediaFormat[size-1] = '\0';
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG3(GetWriteFormat, unsigned,line, char *,mediaFormat, unsigned,size)
-    {
-      if (mediaFormat == NULL || size == 0)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      strncpy(mediaFormat, "PCM-16", size-1);
-      mediaFormat[size-1] = '\0';
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG1(StopReading, unsigned,line)
-    {
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG1(StopWriting, unsigned,line)
-    {
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetReadFrameSize, unsigned,line, unsigned,frameSize)
-    {
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      m_readFrameSize = frameSize;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetWriteFrameSize, unsigned,line, unsigned,frameSize)
-    {
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      m_writeFrameSize = frameSize;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(GetReadFrameSize, unsigned,line, unsigned *,frameSize)
-    {
-      if (frameSize == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *frameSize = m_readFrameSize;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(GetWriteFrameSize, unsigned,line, unsigned *,frameSize)
-    {
-      if (frameSize == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *frameSize = m_writeFrameSize;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG3(ReadFrame, unsigned,line, void *,buffer, unsigned *,count)
-    {
-      if (buffer == NULL || count == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *count = m_readFrameSize;
-
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG4(WriteFrame, unsigned,line, const void *,buffer, unsigned,count, unsigned *,written)
-    {
-      if (buffer == NULL || written == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *written = count;
-
-      return PluginLID_NoError;
-    }
-
-
-
+    //PLUGIN_FUNCTION_ARG3(GetSupportedFormat, unsigned,index, char *,mediaFormat, unsigned,size)
+    //PLUGIN_FUNCTION_ARG2(SetReadFormat, unsigned,line, const char *,mediaFormat)
+    //PLUGIN_FUNCTION_ARG2(SetWriteFormat, unsigned,line, const char *,mediaFormat)
+    //PLUGIN_FUNCTION_ARG3(GetReadFormat, unsigned,line, char *,mediaFormat, unsigned,size)
+    //PLUGIN_FUNCTION_ARG3(GetWriteFormat, unsigned,line, char *,mediaFormat, unsigned,size)
+    //PLUGIN_FUNCTION_ARG1(StopReading, unsigned,line)
+    //PLUGIN_FUNCTION_ARG1(StopWriting, unsigned,line)
+    //PLUGIN_FUNCTION_ARG2(SetReadFrameSize, unsigned,line, unsigned,frameSize)
+    //PLUGIN_FUNCTION_ARG2(SetWriteFrameSize, unsigned,line, unsigned,frameSize)
+    //PLUGIN_FUNCTION_ARG2(GetReadFrameSize, unsigned,line, unsigned *,frameSize)
+    //PLUGIN_FUNCTION_ARG2(GetWriteFrameSize, unsigned,line, unsigned *,frameSize)
+    //PLUGIN_FUNCTION_ARG3(ReadFrame, unsigned,line, void *,buffer, unsigned *,count)
+    //PLUGIN_FUNCTION_ARG4(WriteFrame, unsigned,line, const void *,buffer, unsigned,count, unsigned *,written)
     //PLUGIN_FUNCTION_ARG3(GetAverageSignalLevel, unsigned,line, PluginLID_Boolean,playback, unsigned *,signal)
     //PLUGIN_FUNCTION_ARG2(EnableAudio, unsigned,line, PluginLID_Boolean,enable)
     //PLUGIN_FUNCTION_ARG2(IsAudioEnabled, unsigned,line, PluginLID_Boolean *,enable)
-
-
-    PLUGIN_FUNCTION_ARG2(SetRecordVolume, unsigned,line, unsigned,volume)
-    {
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      return PluginLID_InternalError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(SetPlayVolume, unsigned,line, unsigned,volume)
-    {
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      return PluginLID_InternalError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(GetRecordVolume, unsigned,line, unsigned *,volume)
-    {
-      if (volume == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *volume = 1;
-      return PluginLID_NoError;
-    }
-
-
-    PLUGIN_FUNCTION_ARG2(GetPlayVolume, unsigned,line, unsigned *,volume)
-    {
-      if (volume == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      *volume = 1;
-      return PluginLID_NoError;
-    }
-
-
-
+    //PLUGIN_FUNCTION_ARG2(SetRecordVolume, unsigned,line, unsigned,volume)
+    //PLUGIN_FUNCTION_ARG2(SetPlayVolume, unsigned,line, unsigned,volume)
+    //PLUGIN_FUNCTION_ARG2(GetRecordVolume, unsigned,line, unsigned *,volume)
+    //PLUGIN_FUNCTION_ARG2(GetPlayVolume, unsigned,line, unsigned *,volume)
     //PLUGIN_FUNCTION_ARG2(GetAEC, unsigned,line, unsigned *,level)
     //PLUGIN_FUNCTION_ARG2(SetAEC, unsigned,line, unsigned,level)
     //PLUGIN_FUNCTION_ARG2(GetVAD, unsigned,line, PluginLID_Boolean *,enable)
@@ -556,20 +315,7 @@ class Context
     //PLUGIN_FUNCTION_ARG2(SetCallerID, unsigned,line, const char *,idString)
     //PLUGIN_FUNCTION_ARG2(SendCallerIDOnCallWaiting, unsigned,line, const char *,idString)
     //PLUGIN_FUNCTION_ARG2(SendVisualMessageWaitingIndicator, unsigned,line, PluginLID_Boolean,on)
-
-    PLUGIN_FUNCTION_ARG4(PlayDTMF, unsigned,line, const char *,digits, unsigned,onTime, unsigned,offTime)
-    {
-      if (digits == NULL)
-        return PluginLID_InvalidParameter;
-
-      if (m_hWnd == 0)
-        return PluginLID_DeviceNotOpen;
-
-      if (line >= 1)
-        return PluginLID_NoSuchLine;
-
-      return PluginLID_NoError;
-    }
+    //PLUGIN_FUNCTION_ARG4(PlayDTMF, unsigned,line, const char *,digits, unsigned,onTime, unsigned,offTime)
 
 
     PLUGIN_FUNCTION_ARG2(ReadDTMF, unsigned,line, char *,digit)
@@ -590,18 +336,9 @@ class Context
     //                                              unsigned        ,numCadences,
     //                                              const unsigned *,onTimes,
     //                                              const unsigned *,offTimes)
-    PLUGIN_FUNCTION_ARG2(PlayTone, unsigned,line, unsigned,tone)
-    {
-    }
-
-    PLUGIN_FUNCTION_ARG2(IsTonePlaying, unsigned,line, PluginLID_Boolean *,playing)
-    {
-    }
-
-    PLUGIN_FUNCTION_ARG1(StopTone, unsigned,line)
-    {
-    }
-
+    //PLUGIN_FUNCTION_ARG2(PlayTone, unsigned,line, unsigned,tone)
+    //PLUGIN_FUNCTION_ARG2(IsTonePlaying, unsigned,line, PluginLID_Boolean *,playing)
+    //PLUGIN_FUNCTION_ARG1(StopTone, unsigned,line)
     //PLUGIN_FUNCTION_ARG4(DialOut, unsigned,line, const char *,number, PluginLID_Boolean,requireTones, unsigned,uiDialDelay)
     //PLUGIN_FUNCTION_ARG2(GetWinkDuration, unsigned,line, unsigned *,winkDuration)
     //PLUGIN_FUNCTION_ARG2(SetWinkDuration, unsigned,line, unsigned,winkDuration)
@@ -840,26 +577,26 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::IsLineConnected,
     NULL,//Context::SetLineToLineDirect,
     NULL,//Context::IsLineToLineDirect,
-    Context::GetSupportedFormat,
-    Context::SetReadFormat,
-    Context::SetWriteFormat,
-    Context::GetReadFormat,
-    Context::GetWriteFormat,
-    Context::StopReading,
-    Context::StopWriting,
-    Context::SetReadFrameSize,
-    Context::SetWriteFrameSize,
-    Context::GetReadFrameSize,
-    Context::GetWriteFrameSize,
-    Context::ReadFrame,
-    Context::WriteFrame,
+    NULL,//Context::GetSupportedFormat,
+    NULL,//Context::SetReadFormat,
+    NULL,//Context::SetWriteFormat,
+    NULL,//Context::GetReadFormat,
+    NULL,//Context::GetWriteFormat,
+    NULL,//Context::StopReading,
+    NULL,//Context::StopWriting,
+    NULL,//Context::SetReadFrameSize,
+    NULL,//Context::SetWriteFrameSize,
+    NULL,//Context::GetReadFrameSize,
+    NULL,//Context::GetWriteFrameSize,
+    NULL,//Context::ReadFrame,
+    NULL,//Context::WriteFrame,
     NULL,//Context::GetAverageSignalLevel,
     NULL,//Context::EnableAudio,
     NULL,//Context::IsAudioEnabled,
-    Context::SetRecordVolume,
-    Context::SetPlayVolume,
-    Context::GetRecordVolume,
-    Context::GetPlayVolume,
+    NULL,//Context::SetRecordVolume,
+    NULL,//Context::SetPlayVolume,
+    NULL,//Context::GetRecordVolume,
+    NULL,//Context::GetPlayVolume,
     NULL,//Context::GetAEC,
     NULL,//Context::SetAEC,
     NULL,//Context::GetVAD,
@@ -868,7 +605,7 @@ static struct PluginLID_Definition definition[1] =
     NULL,//Context::SetCallerID,
     NULL,//Context::SendCallerIDOnCallWaiting,
     NULL,//Context::SendVisualMessageWaitingIndicator,
-    Context::PlayDTMF,
+    NULL,//Context::PlayDTMF,
     Context::ReadDTMF,
     NULL,//Context::GetRemoveDTMF,
     NULL,//Context::SetRemoveDTMF,
