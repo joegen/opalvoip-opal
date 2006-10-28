@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.20  2006/10/06 08:16:51  dsandras
+ * Revision 1.2121.2.21  2006/10/28 16:41:58  dsandras
+ * Backported patch from HEAD to fix SIP reinvite without breaking
+ * H.323 calls.
+ *
+ * Revision 2.120.2.20  2006/10/06 08:16:51  dsandras
  * Backported fix from HEAD for RFC2833 support.
  *
  * Revision 2.120.2.19  2006/08/11 07:30:27  dsandras
@@ -1673,8 +1677,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     if (!IsConnectionOnHold()) {
       PWaitAndSignal m(streamsMutex);
       GetCall().RemoveMediaStreams();
-      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID);
-      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID);
+      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID, TRUE);
     }
  
     if (originalInvite->HasSDP()) {

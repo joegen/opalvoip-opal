@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2022.2.2  2006/08/29 18:38:27  dsandras
+ * Revision 1.2022.2.3  2006/10/28 16:41:58  dsandras
+ * Backported patch from HEAD to fix SIP reinvite without breaking
+ * H.323 calls.
+ *
+ * Revision 2.21.2.2  2006/08/29 18:38:27  dsandras
  * Added function to better deal with reinvites.
  *
  * Revision 2.21.2.1  2006/02/06 04:38:37  csoutheren
@@ -999,7 +1003,8 @@ class RTP_SessionManager : public PObject
        clients via the UseSession() function, then the session is deleted.
      */
     void ReleaseSession(
-      unsigned sessionID    ///<  Session ID to release.
+      unsigned sessionID,    ///<  Session ID to release.
+      BOOL clearAll = FALSE  ///<  Clear all sessions with that ID
     );
 
     /**Get a session for the specified ID.
