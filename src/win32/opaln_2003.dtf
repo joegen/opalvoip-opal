@@ -31647,8 +31647,8 @@ EXPORTS
     ?Release@OpalConnection@@UAEXW4CallEndReason@1@@Z @27407 NONAME
     ?ReleaseDestCallNumber@IAX2EndPoint@@QAEXPAVIAX2Processor@@@Z @36717 NONAME
     ?ReleaseSession@H323Connection@@UAEXI@Z @27409 NONAME
-    ?ReleaseSession@OpalConnection@@UAEXI@Z @27410 NONAME
-    ?ReleaseSession@RTP_SessionManager@@QAEXI@Z @27411 NONAME
+    ?ReleaseSession@OpalConnection@@UAEXIH@Z @38003 NONAME
+    ?ReleaseSession@RTP_SessionManager@@QAEXIH@Z @38004 NONAME
     ?ReleaseSrcCallNumber@IAX2EndPoint@@QAEXPAVIAX2Processor@@@Z @36718 NONAME
     ?RemoteAddress@IAX2Remote@@QAE?AVAddress@PIPSocket@@XZ @32891 NONAME
     ?RemoteHoldConnection@IAX2Connection@@QAEXXZ @35571 NONAME
