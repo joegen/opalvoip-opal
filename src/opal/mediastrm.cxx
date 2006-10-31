@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2049  2006/10/11 01:15:15  csoutheren
+ * Revision 1.2050  2006/10/31 04:14:10  csoutheren
+ * Fixed problem with uninitialised variable when getting video frames
+ *
+ * Revision 2.48  2006/10/11 01:15:15  csoutheren
  * Applied 1552449 - Always use max RTP buffer size
  * Thanks to Simon Zwahlen
  *
@@ -1000,7 +1003,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   frame->width = width;
   frame->height = height;
 
-  PINDEX bytesReturned;
+  PINDEX bytesReturned = size;
   if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
     return FALSE;
 
