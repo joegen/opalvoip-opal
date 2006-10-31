@@ -1,11 +1,20 @@
 /*
  * H.263 Plugin codec for OpenH323/OPAL
  *
- * Copyright (C) 2006 Post Increment, All Rights Reserved
+ * This code is based on the following files from the OPAL project which
+ * have been removed from the current build and distributions but are still
+ * available in the CVS "attic"
+ * 
+ *    src/codecs/h263codec.cxx 
+ *    include/codecs/h263codec.h 
+
+ * The original files, and this version of the original code, are released under the same 
+ * MPL 1.0 license. Substantial portions of the original code were contributed
+ * by Salyens and March Networks and their right to be identified as copyright holders
+ * of the original code portions and any parts now included in this new copy is asserted through 
+ * their inclusion in the copyright notices below.
  *
- * This code is based on the file h263codec.cxx from the OPAL project released
- * under the MPL 1.0 license which contains the following:
- *
+ * Copyright (C) 2006 Post Increment
  * Copyright (C) 2005 Salyens
  * Copyright (C) 2001 March Networks Corporation
  * Copyright (C) 1999-2000 Equivalence Pty. Ltd.
@@ -28,6 +37,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.7  2006/10/31 05:47:56  csoutheren
+ * Clarified copyright and heritage of original codec source
+ *
  * Revision 1.6  2006/10/26 08:35:59  rjongbloed
  * Fixed DevStudio 2005 warning
  *
@@ -1485,7 +1497,7 @@ static struct PluginCodec_information licenseInfo = {
   "1.0",                                                        // source code version
   "craigs@postincrement.com",                                   // source code email
   "http://www.postincrement.com",                               // source code URL
-  "Copyright (C) 2006 by Post Increment, All Rights Reserved ",  // source code copyright
+  "Copyright (C) 2006 by Post Increment",                       // source code copyright
   ", Copyright (C) 2005 Salyens"
   ", Copyright (C) 2001 March Networks Corporation"
   ", Copyright (C) 1999-2000 Equivalence Pty. Ltd."
