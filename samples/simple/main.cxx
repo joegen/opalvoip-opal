@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2079  2006/10/28 00:39:42  rjongbloed
+ * Revision 1.2080  2006/10/31 04:41:47  csoutheren
+ * Add support for new methods needed for vidfiledevices
+ *
+ * Revision 2.78  2006/10/28 00:39:42  rjongbloed
  * Added argument to set country on LID
  *
  * Revision 2.77  2006/10/22 12:09:57  rjongbloed
@@ -449,6 +452,8 @@ void SimpleOpalProcess::Main()
              "-rx-video." "-no-rx-video."
              "-tx-video." "-no-tx-video."
              "-grabber:"
+             "-grabdevice:"
+             "-grabchannel:"
              "-display:"
 #if P_EXPAT
              "V-no-ivr."
@@ -485,8 +490,10 @@ void SimpleOpalProcess::Main()
             "     --tx-video           : Start transmitting video immediately.\n"
             "     --no-rx-video        : Don't start receiving video immediately.\n"
             "     --no-tx-video        : Don't start transmitting video immediately.\n"
-            "     --grabber dev        : Set the video grabber device.\n"
-            "     --display dev        : Set the video display device.\n"
+            "     --grabber dev        : Set the video grabber driver.\n"
+            "     --grabdevice dev     : Set the video grabber device.\n"
+            "     --grabchanel num     : Set the video grabber device channel.\n"
+            "     --display dev        : Set the video display driver.\n"
             "\n"
 
 #if OPAL_SIP
@@ -684,6 +691,15 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
+  OpalMediaFormat fmt("H.261-CIF");
+  if (!fmt.IsValid())
+    cerr << "cannot find format" << endl;
+  else {
+    fmt.SetOptionInteger(OpalVideoFormat::EncodingQualityOption, 16);
+    fmt.SetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption, TRUE);
+    OpalMediaFormat::SetRegisteredMediaFormat(fmt);
+  }
+
 #if OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
@@ -698,9 +714,12 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
     video.deviceName = args.GetOptionString("grabber");
+    video.filename   = args.GetOptionString("grabdevice");
+    video.channelNumber = args.GetOptionString("grabchannel").AsInteger();
     if (!SetVideoInputDevice(video)) {
-      cerr << "error: cannot set video input device " << video.deviceName 
-           << "options are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
+      cout << "Unknown grabber device " << video.deviceName << endl;
+      cout << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
+      return FALSE;
     }
   }
 
