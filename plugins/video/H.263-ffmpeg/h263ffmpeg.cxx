@@ -37,6 +37,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.8  2006/10/31 05:53:30  csoutheren
+ * More changes to copyright information
+ *
  * Revision 1.7  2006/10/31 05:47:56  csoutheren
  * Clarified copyright and heritage of original codec source
  *
@@ -1493,10 +1496,10 @@ static PluginCodec_ControlDefn sipDecoderControls[] = {
 static struct PluginCodec_information licenseInfo = {
   1145863600,                                                   // timestamp =  Mon 24 Apr 2006 07:26:40 AM UTC
 
-  "Craig Southeren, Post Increment",                            // source code author
+  "Craig Southeren, Guilhem Tardy, Derek Smithies",             // source code author
   "1.0",                                                        // source code version
-  "craigs@postincrement.com",                                   // source code email
-  "http://www.postincrement.com",                               // source code URL
+  "openh323@openh323.org",                                      // source code email
+  "http://sourceforge.net/projects/openh323",                   // source code URL
   "Copyright (C) 2006 by Post Increment",                       // source code copyright
   ", Copyright (C) 2005 Salyens"
   ", Copyright (C) 2001 March Networks Corporation"
@@ -1504,12 +1507,13 @@ static struct PluginCodec_information licenseInfo = {
   "MPL 1.0",                                                    // source code license
   PluginCodec_License_MPL,                                      // source code license
   
-  "FFMPEG",                                                        // codec description
-  "Fabrice Bellard",                                               // codec author
-  "4.7.1",                                                         // codec version
-  "bellard@users.sourceforge.net",                                 // codec email
-  "http://sourceforge.net/projects/ffmpeg/",                       // codec URL
-  "Copyright (c) 2001 Fabrice Bellard.",                           // codec copyright information
+  "FFMPEG",                                                     // codec description
+  "Michael Niedermayer, Fabrice Bellard",                       // codec author
+  "4.7.1",                                                      // codec version
+  "ffmpeg-devel-request@ mplayerhq.hu",                         // codec email
+  "http://sourceforge.net/projects/ffmpeg/",                    // codec URL
+  "Copyright (c) 2000-2001 Fabrice Bellard"                     // codec copyright information
+  ", Copyright (c) 2002-2003 Michael Niedermayer",
   "GNU LESSER GENERAL PUBLIC LICENSE, Version 2.1, February 1999", // codec license
   PluginCodec_License_LGPL                                         // codec license code
 };
