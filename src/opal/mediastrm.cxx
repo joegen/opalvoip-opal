@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2050  2006/10/31 04:14:10  csoutheren
+ * Revision 1.2051  2006/11/01 06:57:23  csoutheren
+ * Fixed usage of YUV frame header
+ *
+ * Revision 2.49  2006/10/31 04:14:10  csoutheren
  * Fixed problem with uninitialised variable when getting video frames
  *
  * Revision 2.48  2006/10/11 01:15:15  csoutheren
@@ -930,7 +933,7 @@ BOOL OpalVideoMediaStream::SetDataSize(PINDEX dataSize)
       dataSize = minDataSize;
   }
 
-  return OpalMediaStream::SetDataSize(sizeof(OpalVideoTranscoder::FrameHeader)+dataSize); 
+  return OpalMediaStream::SetDataSize(sizeof(PluginCodec_Video_FrameHeader) + dataSize); 
 }
 
 
@@ -1004,7 +1007,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   frame->height = height;
 
   PINDEX bytesReturned = size;
-  if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
+  if (!inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned))
     return FALSE;
 
   PTimeInterval currentGrabTime = PTimer::Tick();
@@ -1012,12 +1015,12 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   lastGrabTime = currentGrabTime;
 
   marker = TRUE;
-  length = bytesReturned + sizeof(OpalVideoTranscoder::FrameHeader);
+  length = bytesReturned + sizeof(PluginCodec_Video_FrameHeader);
 
   if (outputDevice == NULL)
     return TRUE;
 
-  return outputDevice->SetFrameData(0, 0, width, height, frame->data, TRUE);
+  return outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), TRUE);
 }
 
 
@@ -1044,7 +1047,7 @@ BOOL OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX & 
   outputDevice->SetFrameSize(frame->width, frame->height);
   return outputDevice->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
-                                    frame->data, marker);
+                                    OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
 }
 
 

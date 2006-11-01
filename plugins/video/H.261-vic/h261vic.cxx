@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.7  2006/11/01 06:57:23  csoutheren
+ * Fixed usage of YUV frame header
+ *
  * Revision 1.6  2006/11/01 05:19:49  csoutheren
  * Add optional debugging
  *
@@ -89,19 +92,9 @@
 
  */
 
-//#define DEBUG_OUTPUT 1
+#define DEBUG_OUTPUT 1
 
 #include <codec/opalplugin.h>
-
-#if DEBUG_OUTPUT
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
-
-#endif
-
 
 extern "C" {
 PLUGIN_CODEC_IMPLEMENT(VIC_H261)
@@ -142,10 +135,22 @@ typedef unsigned int u_int;
 
 #if DEBUG_OUTPUT
 
-static void debug_write_data(int & fd, const char * title, const char * filename, const void * buffer, int writeLen)
+#ifdef _WIN32
+#include <stdio.h>
+#include <io.h>
+#include <fcntl.h>
+#define CREAT(f) _open(f, _O_WRONLY | _O_TRUNC | _O_CREAT | _O_BINARY, 0600 )
+#else
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#define CREAT(f) ::creat(f, 0666)
+#endif
+
+static void debug_write_data(int & fd, const char * title, const char * filename, const void * buffer, size_t writeLen)
 {
   if (fd == -1) {
-   if ((fd = creat(filename, 0666)) < 0) 
+   if ((fd = CREAT(filename)) < 0) 
     printf("cannot open %s file\n", title);
   }
   if (fd >= 0) {
@@ -485,12 +490,12 @@ debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPa
 
 #if DEBUG_OUTPUT
 static int encoderYUV = -1;
-debug_write_data(encoderYUV, "encoder input", "encoder.yuv", header->data,
+debug_write_data(encoderYUV, "encoder input", "encoder.yuv", OPAL_VIDEO_FRAME_DATA_PTR(header),
                                                              srcRTP.GetPayloadSize() - sizeof(PluginCodec_Video_FrameHeader));
 #endif
 
       // "grab" the frame
-      memcpy(videoEncoder->GetFramePtr(), header->data, frameWidth*frameHeight*12/8);
+      memcpy(videoEncoder->GetFramePtr(), OPAL_VIDEO_FRAME_DATA_PTR(header), frameWidth*frameHeight*12/8);
 
       // force I-frame, if requested
       if (forceIFrame || (flags & PluginCodec_CoderForceIFrame) != 0) {
@@ -710,7 +715,7 @@ debug_write_data(decoderInput, "decoder input", "decoder.input", srcRTP.GetPacke
       frameHeader->x = frameHeader->y = 0;
       frameHeader->width = frameWidth;
       frameHeader->height = frameHeight;
-      memcpy(frameHeader->data, videoDecoder->GetFramePtr(), frameBytes);
+      memcpy(OPAL_VIDEO_FRAME_DATA_PTR(frameHeader), videoDecoder->GetFramePtr(), frameBytes);
 
       videoDecoder->resetndblk();
 
@@ -718,7 +723,7 @@ debug_write_data(decoderInput, "decoder input", "decoder.input", srcRTP.GetPacke
 
 #if DEBUG_OUTPUT
 static int decoderOutput = -1;
-debug_write_data(decoderOutput, "decoder output", "decoder.yuv", frameHeader->data,
+debug_write_data(decoderOutput, "decoder output", "decoder.yuv", OPAL_VIDEO_FRAME_DATA_PTR(frameHeader),
                                                                  dstRTP.GetPayloadSize() - sizeof(PluginCodec_Video_FrameHeader));
 #endif
       flags = PluginCodec_ReturnCoderLastFrame | PluginCodec_ReturnCoderIFrame;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT I-FRAME DETECTION

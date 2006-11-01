@@ -37,6 +37,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.9  2006/11/01 06:57:23  csoutheren
+ * Fixed usage of YUV frame header
+ *
  * Revision 1.8  2006/10/31 05:53:30  csoutheren
  * More changes to copyright information
  *
@@ -1098,10 +1101,10 @@ int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE *
 
   // get payload and ensure correct padding
   if (srcRTP.GetHeaderSize() + (unsigned)(srcRTP.GetPayloadSize() + FF_INPUT_BUFFER_PADDING_SIZE <= srcRTP.GetMaxPacketLen()))
-    payload = header->data;
+    payload = OPAL_VIDEO_FRAME_DATA_PTR(header);
   else {
     payload = rawFrameBuffer;
-    memcpy(payload, header->data, rawFrameLen);
+    memcpy(payload, OPAL_VIDEO_FRAME_DATA_PTR(header), rawFrameLen);
   }
 
   int size = frameWidth * frameHeight;
@@ -1375,9 +1378,9 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   int size = frameWidth * frameHeight;
   if (picture->data[1] == picture->data[0] + size
       && picture->data[2] == picture->data[1] + (size >> 2))
-    memcpy(header->data, picture->data[0], frameBytes);
+    memcpy(OPAL_VIDEO_FRAME_DATA_PTR(header), picture->data[0], frameBytes);
   else {
-    unsigned char *dst = header->data;
+    unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
     for (int i=0; i<3; i ++) {
       unsigned char *src = picture->data[i];
       int dst_stride = i ? frameWidth >> 1 : frameWidth;
