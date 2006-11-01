@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2017  2006/09/22 00:58:41  csoutheren
+ * Revision 1.2018  2006/11/01 06:57:23  csoutheren
+ * Fixed usage of YUV frame header
+ *
+ * Revision 2.16  2006/09/22 00:58:41  csoutheren
  * Fix usages of PAtomicInteger
  *
  * Revision 2.15  2006/07/24 14:03:39  csoutheren
@@ -297,7 +300,7 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
     dstHeader->y = srcHeader->y + band*scanLinesPerBand;
     dstHeader->width = srcHeader->width;
     dstHeader->height = scanLinesPerBand;
-    memcpy(dstHeader->data, srcHeader->data+band*bytesPerScanLine, scanLinesPerBand*bytesPerScanLine);
+    memcpy(OPAL_VIDEO_FRAME_DATA_PTR(dstHeader), OPAL_VIDEO_FRAME_DATA_PTR(srcHeader)+band*bytesPerScanLine, scanLinesPerBand*bytesPerScanLine);
   }
 
   output[output.GetSize()-1].SetMarker(TRUE);

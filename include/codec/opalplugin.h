@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2006  2006/10/17 13:04:36  shorne
+ * Revision 1.2007  2006/11/01 06:57:23  csoutheren
+ * Fixed usage of YUV frame header
+ *
+ * Revision 2.5  2006/10/17 13:04:36  shorne
  * comments were accidently truncated
  *
  * Revision 2.4  2006/10/17 04:09:08  shorne
@@ -499,14 +502,26 @@ struct PluginCodec_Video_FrameHeader {
   unsigned int  y;
   unsigned int  width;
   unsigned int  height;
-  unsigned char data[1];
 };
+
+#ifdef __cplusplus
+};
+
+inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(struct PluginCodec_Video_FrameHeader * base)
+{ return (((unsigned char *)base) + sizeof(PluginCodec_Video_FrameHeader)); }
+
+inline unsigned char * OPAL_VIDEO_FRAME_DATA_PTR(const PluginCodec_Video_FrameHeader * base)
+{ return (((unsigned char *)base) + sizeof(PluginCodec_Video_FrameHeader)); }
+
+extern "C" {
+#endif
 
 #define PLUGIN_CODEC_VIDEO_SET_FRAME_SIZE_FN    "set_frame_size"    // argument is struct PluginCodec_VideoSetFrameInfo
 struct PluginCodec_Video_SetFrameInfo {
   int width;
   int height;
 };
+
 
 /////////////////
 //
