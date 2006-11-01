@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2040.2.1  2006/08/07 20:18:25  dsandras
+ * Revision 1.2040.2.2  2006/11/01 17:47:48  dsandras
+ * Fixed initialization thanks to Brian Lu <brian lu sun com>.
+ *
+ * Revision 2.39.2.1  2006/08/07 20:18:25  dsandras
  * Backported various patches from HEAD.
  *
  * Revision 2.39  2005/12/30 14:30:02  dsandras
@@ -889,7 +892,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   frame->width = width;
   frame->height = height;
 
-  PINDEX bytesReturned;
+  PINDEX bytesReturned = 0;
   if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
     return FALSE;
 
