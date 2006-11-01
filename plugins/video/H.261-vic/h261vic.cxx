@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.8  2006/11/01 06:59:06  csoutheren
+ * Turn off debuggng by default
+ *
  * Revision 1.7  2006/11/01 06:57:23  csoutheren
  * Fixed usage of YUV frame header
  *
@@ -92,7 +95,7 @@
 
  */
 
-#define DEBUG_OUTPUT 1
+//#define DEBUG_OUTPUT 1
 
 #include <codec/opalplugin.h>
 
