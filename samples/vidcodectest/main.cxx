@@ -150,7 +150,7 @@ void VidCodecTest::Main()
       header->width  = yuvIn.GetWidth();
       header->height = yuvIn.GetHeight();
 
-      if (!yuvIn.ReadFrame(header->data)) {
+      if (!yuvIn.ReadFrame(OPAL_VIDEO_FRAME_DATA_PTR(header))) {
         break;
       }
 
@@ -175,92 +175,17 @@ void VidCodecTest::Main()
 
       PluginCodec_Video_FrameHeader * headerOut = (PluginCodec_Video_FrameHeader *)yuvOutFrame[0].GetPayloadPtr();
 
-      if (!yuvOut.WriteFrame(headerOut->data)) {
+      if (!yuvOut.WriteFrame(OPAL_VIDEO_FRAME_DATA_PTR(headerOut))) {
         PError << "error: output file write failed" << endl;
         break;
       }
 
       ++frameCount;
+
+      break;
     }
 
     cout << frameCount << " frames transcoded" << endl;
   }
-
-#if 0
-
-  PYUVFile inFile(176, 144, args[1], PFile::ReadOnly, PFile::MustExist);
-  if (!inFile.IsOpen()) {
-    PError << "error: cannot open input file " << inFile.GetFilePath() << endl;
-    return;
-  }
-
-  PVideoChannel      * channel = new PVideoChannel;
-  PVideoInputDevice  * grabber = PVideoInputDevice::CreateDevice(VideoGrabberDriverName);
-  if (grabber == NULL) {
-    PError << "error: cannot create video input device for driver " << VideoGrabberDriverName << endl;
-    return;
-  }
-
-  if (!InitGrabber(grabber, 176, 144, args[0], 0, 10)) {
-    delete grabber;
-    return;
-  }
-
-  H323_RFC2190_H263Codec encoder(H323VideoCodec::Encoder, 
-      1,     // unsigned sqcifMPI = 1,	// {1..3600 units seconds/frame, 1..32 units 1/29.97 Hz}
-      2,     // unsigned qcifMPI = 2,
-      4,     // unsigned cifMPI = 4,
-      8,     // unsigned cif4MPI = 8,
-      32,    // unsigned cif16MPI = 32,
-      400,   // unsigned maxBitRate = 400,
-      FALSE, // BOOL unrestrictedVector = FALSE,
-      FALSE, // BOOL arithmeticCoding = FALSE, // not supported
-      FALSE, // BOOL advancedPrediction = FALSE,
-      FALSE  // BOOL pbFrames = FALSE,
-  );
-
-  grabber->Start();
-  channel->AttachVideoReader(grabber);
-
-  if (!encoder.AttachChannel(channel, TRUE)) {
-    PError << "error: cannot attach grabber to codec" << endl;
-    return;
-  }
-
-  PFile outFile(args[1], PFile::WriteOnly, PFile::Create);
-  if (!outFile.IsOpen()) {
-    PError << "error: cannot create output file " << outFile.GetFilePath() << endl;
-    return;
-  }
-
-  BYTE carryOver = 0;
-
-  for (;;) {
-    RTP_DataFrame rtpFrame;
-    unsigned length;
-    if (!encoder.Read(rtpFrame.GetPayloadPtr(), length, rtpFrame))
-      break;
-    BYTE * data = rtpFrame.GetPayloadPtr();
-    PINDEX size = rtpFrame.GetPayloadSize();
-    static unsigned modes[4] = {
-        4,   // mode A
-        4,   // mode A
-        8,   // mode B
-        12   // mode C
-    };
-    PINDEX offset = modes[(data[0] >> 6) & 3];
-    PINDEX sbit   = (data[0] >> 3) & 0x7;
-    PINDEX ebit   = data[0] & 0x7;
-    if (sbit != 0)
-      data[offset] |= carryOver;
-    if (ebit != 0) {
-      carryOver = data[offset + size - 1];
-      --size;
-    }
-
-    outFile.Write(data + offset, size - offset);
-  }
-
-#endif
 }
 
