@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.9  2006/11/01 07:26:55  csoutheren
+ * Fix debugging
+ *
  * Revision 1.8  2006/11/01 06:59:06  csoutheren
  * Turn off debuggng by default
  *
@@ -137,9 +140,9 @@ typedef unsigned int u_int;
 
 
 #if DEBUG_OUTPUT
+#include <stdio.h>
 
 #ifdef _WIN32
-#include <stdio.h>
 #include <io.h>
 #include <fcntl.h>
 #define CREAT(f) _open(f, _O_WRONLY | _O_TRUNC | _O_CREAT | _O_BINARY, 0600 )
@@ -435,6 +438,7 @@ class H261EncoderContext
       WaitAndSignal m(mutex);
 
 #if DEBUG_OUTPUT
+printf("header size = %i\n", sizeof(PluginCodec_Video_FrameHeader));
 static int encoderOutput = -1;
 #endif
 
