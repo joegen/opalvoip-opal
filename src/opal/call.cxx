@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2049  2006/08/28 00:10:55  csoutheren
+ * Revision 1.2050  2006/11/01 14:40:17  dsandras
+ * Applied fix from Hannes Friederich to prevent deadlock. Thanks!
+ *
+ * Revision 2.48  2006/08/28 00:10:55  csoutheren
  * Applied 1545126 - Deadlock fix in OpalCall
  * Thanks to Drazen Dimoti
  *
@@ -419,12 +422,12 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
       createdOne = TRUE;
   }
 
+  UnlockReadWrite();
+  
   if (ok && createdOne) {
     for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
-
-  UnlockReadWrite();
 
   return ok;
 }
