@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2080  2006/10/31 04:41:47  csoutheren
+ * Revision 1.2081  2006/11/01 00:46:40  csoutheren
+ * Implement video output file device
+ *
+ * Revision 2.79  2006/10/31 04:41:47  csoutheren
  * Add support for new methods needed for vidfiledevices
  *
  * Revision 2.78  2006/10/28 00:39:42  rjongbloed
@@ -455,6 +458,7 @@ void SimpleOpalProcess::Main()
              "-grabdevice:"
              "-grabchannel:"
              "-display:"
+             "-displaydevice:"
 #if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
@@ -492,8 +496,9 @@ void SimpleOpalProcess::Main()
             "     --no-tx-video        : Don't start transmitting video immediately.\n"
             "     --grabber dev        : Set the video grabber driver.\n"
             "     --grabdevice dev     : Set the video grabber device.\n"
-            "     --grabchanel num     : Set the video grabber device channel.\n"
+            "     --grabchannel num    : Set the video grabber device channel.\n"
             "     --display dev        : Set the video display driver.\n"
+            "     --displaydevice dev  : Set the video display device.\n"
             "\n"
 
 #if OPAL_SIP
@@ -717,8 +722,8 @@ BOOL MyManager::Initialise(PArgList & args)
     video.filename   = args.GetOptionString("grabdevice");
     video.channelNumber = args.GetOptionString("grabchannel").AsInteger();
     if (!SetVideoInputDevice(video)) {
-      cout << "Unknown grabber device " << video.deviceName << endl;
-      cout << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
+      cerr << "Unknown grabber device " << video.deviceName << endl
+           << "options are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
       return FALSE;
     }
   }
@@ -726,8 +731,9 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption("display")) {
     PVideoDevice::OpenArgs video = GetVideoOutputDevice();
     video.deviceName = args.GetOptionString("display");
+    video.filename   = args.GetOptionString("displaydevice");
     if (!SetVideoOutputDevice(video)) {
-      cerr << "error: cannot set video output device " << video.deviceName
+      cerr << "Unknown display device " << video.deviceName << endl
            << "options are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
       return FALSE;
     }
