@@ -54,6 +54,9 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
+ * Revision 1.5  2006/11/01 20:02:33  dsandras
+ * Fixed MINGW32 compilation.
+ *
  * Revision 1.4  2006/08/12 10:59:14  rjongbloed
  * Added Linux build for H.261 plug-in.
  *
@@ -144,7 +147,7 @@
 
 #include "config.h"
 
-#if defined(WIN32) || defined(_WIN32_WCE)
+#if defined(WIN32) || defined(_WIN32_WCE) 
 #include <winsock.h>
 #else
 #include <sys/file.h>
@@ -156,16 +159,16 @@
 #include "dct.h"
 #include "bsd-endian.h"
 
-/*
-#ifdef WIN32
+
+#ifdef _WIN32
 extern "C" {
 u_long ntohl(const u_long n)
 {
   unsigned char * p = (unsigned char *)&n;
   return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
 }
+};
 #endif
-*/
 
 #define SPLICE(v, p, n) (v) |= (p) << SHIFT(n)
 
