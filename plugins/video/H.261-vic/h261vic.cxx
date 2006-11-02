@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.10  2006/11/02 02:32:15  csoutheren
+ * Fixed corruption problem on linux
+ *
  * Revision 1.9  2006/11/01 07:26:55  csoutheren
  * Fix debugging
  *
@@ -306,8 +309,8 @@ class RTPFrame
     inline int GetExtensionSize() const                { return !GetExtension() ? 0  : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2); }
     inline int GetExtensionType() const                { return !GetExtension() ? -1 : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount()); }
     inline int GetPayloadSize() const                  { return packetLen - GetHeaderSize(); }
-    inline const unsigned char * GetPayloadPtr() const { return packet + GetHeaderSize(); }
-    inline const unsigned char * GetPacketPtr() const  { return packet; }
+    inline unsigned char * GetPayloadPtr() const       { return packet + GetHeaderSize(); }
+    inline unsigned char * GetPacketPtr() const        { return packet; }
 
     inline unsigned int GetHeaderSize() const    
     { 
@@ -437,11 +440,6 @@ class H261EncoderContext
     {
       WaitAndSignal m(mutex);
 
-#if DEBUG_OUTPUT
-printf("header size = %i\n", sizeof(PluginCodec_Video_FrameHeader));
-static int encoderOutput = -1;
-#endif
-
       // create RTP frame from source buffer
       RTPFrame srcRTP(src, srcLen);
 
@@ -455,6 +453,7 @@ static int encoderOutput = -1;
         videoEncoder->IncEncodeAndGetPacket((u_char *)dstRTP.GetPayloadPtr(), payloadLength); //get next packet on list
         dstLen = SetEncodedPacket(dstRTP, !videoEncoder->MoreToIncEncode(), RTP_RFC2032_PAYLOAD, lastTimeStamp, payloadLength, flags);
 #if DEBUG_OUTPUT
+static int encoderOutput = -1;
 debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPacketPtr(), dstLen);
 #endif
         return 1;
@@ -616,9 +615,9 @@ static PluginCodec_ControlDefn sipEncoderControls[] = {
 class H261DecoderContext
 {
   public:
+    u_char * rvts;
     P64Decoder * videoDecoder;
     u_short expectedSequenceNumber;
-    u_char * rvts;
     int ndblk, nblk;
     int now;
     bool packetReceived;
@@ -630,16 +629,18 @@ class H261DecoderContext
   public:
     H261DecoderContext()
     {
+      rvts = NULL;
+
+      videoDecoder = new FullP64Decoder();
+      videoDecoder->marks(rvts);
+
       expectedSequenceNumber = 0;
       nblk = ndblk = 0;
-      rvts = NULL;
       now = 1;
       packetReceived = false;
       frameWidth = frameHeight = 0;
 
       // Create the actual decoder
-      videoDecoder = new FullP64Decoder();
-      videoDecoder->marks(rvts);
     }
 
     ~H261DecoderContext()
@@ -663,7 +664,7 @@ class H261DecoderContext
 
       // Check for lost packets to help decoder
       bool lostPreviousPacket = false;
-      if (expectedSequenceNumber != 0 && expectedSequenceNumber != srcRTP.GetSequenceNumber()) {
+      if ((expectedSequenceNumber == 0) || (expectedSequenceNumber != srcRTP.GetSequenceNumber())) {
         lostPreviousPacket = true;
         //PTRACE(3,"H261\tDetected loss of one video packet. "
         //      << expectedSequenceNumber << " != "
