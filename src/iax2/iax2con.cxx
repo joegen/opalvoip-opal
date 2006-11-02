@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.12  2006/11/02 09:08:49  rjongbloed
+ * Fixed compiler warning
+ *
  * Revision 1.11  2006/09/13 00:20:12  csoutheren
  * Fixed warnings under VS.net
  *
@@ -478,7 +481,7 @@ void IAX2Connection::TransferConnection(
   }
 }
     
-BOOL IAX2Connection::ForwardCall(const PString & forwardParty)
+BOOL IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
 {
   PTRACE(3, "Forward call to " + forwardParty);
   //we can not currently forward calls that have not been accepted.
