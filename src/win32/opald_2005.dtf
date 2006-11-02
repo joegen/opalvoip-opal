@@ -33923,6 +33923,7 @@ EXPORTS
     ?GetInstance@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@KAAAV1@XZ @33346 NONAME
     ?GetInterfaceAddresses@H323Transactor@@QAE?AVH323TransportAddressArray@@HPAVOpalTransport@@@Z @33347 NONAME
     ?GetInterfaceAddresses@OpalEndPoint@@QAE?AVOpalTransportAddressArray@@HPAVOpalTransport@@@Z @33348 NONAME
+    ?GetInviteTimeout@SIPEndPoint@@QBEABVPTimeInterval@@XZ @40865 NONAME
     ?GetInvokeId@H450xHandler@@QBEIXZ @33349 NONAME
     ?GetIpAddress@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@@Z @33350 NONAME
     ?GetIpAndPort@OpalInternalIPTransport@@UBEHABVOpalTransportAddress@@AAVAddress@PIPSocket@@AAG@Z @33351 NONAME
@@ -37652,6 +37653,8 @@ EXPORTS
     ?OpalTranscoder_Opal_PCM_G711_ALaw@@3V?$Worker@VOpal_PCM_G711_ALaw@@@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@A @37048 NONAME
     ?OpalTranscoder_Opal_PCM_G711_uLaw@@3V?$Worker@VOpal_PCM_G711_uLaw@@@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@A @37049 NONAME
     ?opalwavfileLoader@PWLibStupidLinkerHacks@@3HA @37050 NONAME
+    ?OPAL_VIDEO_FRAME_DATA_PTR@@YAPAEPAUPluginCodec_Video_FrameHeader@@@Z @40866 NONAME
+    ?OPAL_VIDEO_FRAME_DATA_PTR@@YAPAEPBUPluginCodec_Video_FrameHeader@@@Z @40867 NONAME
     ?Open@H245NegLogicalChannel@@UAEHABVH323Capability@@II@Z @37051 NONAME
     ?Open@H245NegLogicalChannels@@UAEHABVH323Capability@@II@Z @37052 NONAME
     ?Open@H323Channel@@UAEHXZ @37053 NONAME
@@ -38779,8 +38782,8 @@ EXPORTS
     ?Release@OpalConnection@@UAEXW4CallEndReason@1@@Z @38165 NONAME
     ?ReleaseDestCallNumber@IAX2EndPoint@@QAEXPAVIAX2Processor@@@Z @39460 NONAME
     ?ReleaseSession@H323Connection@@UAEXI@Z @38166 NONAME
-    ?ReleaseSession@OpalConnection@@UAEXI@Z @38167 NONAME
-    ?ReleaseSession@RTP_SessionManager@@QAEXI@Z @38168 NONAME
+    ?ReleaseSession@OpalConnection@@UAEXIH@Z @40868 NONAME
+    ?ReleaseSession@RTP_SessionManager@@QAEXIH@Z @40869 NONAME
     ?ReleaseSrcCallNumber@IAX2EndPoint@@QAEXPAVIAX2Processor@@@Z @39461 NONAME
     ?RemoteAddress@IAX2Remote@@QAE?AVAddress@PIPSocket@@XZ @38169 NONAME
     ?RemoteHoldConnection@IAX2Connection@@QAEXXZ @38170 NONAME
