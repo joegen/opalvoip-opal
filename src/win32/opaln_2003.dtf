@@ -29095,6 +29095,7 @@ EXPORTS
     ?GetInstance@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@KAAAV1@XZ @32357 NONAME
     ?GetInterfaceAddresses@H323Transactor@@QAE?AVH323TransportAddressArray@@HPAVOpalTransport@@@Z @25633 NONAME
     ?GetInterfaceAddresses@OpalEndPoint@@QAE?AVOpalTransportAddressArray@@HPAVOpalTransport@@@Z @25634 NONAME
+    ?GetInviteTimeout@SIPEndPoint@@QBEABVPTimeInterval@@XZ @38007 NONAME
     ?GetInvokeId@H450xHandler@@QBEIXZ @25635 NONAME
     ?GetIpAddress@OpalTransportAddress@@QBEHAAVAddress@PIPSocket@@@Z @25636 NONAME
     ?GetIpAndPort@OpalInternalIPTransport@@UBEHABVOpalTransportAddress@@AAVAddress@PIPSocket@@AAG@Z @25637 NONAME
@@ -31304,6 +31305,8 @@ EXPORTS
     ?OpalTranscoder_Opal_PCM_G711_ALaw@@3V?$Worker@VOpal_PCM_G711_ALaw@@@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@A @36547 NONAME
     ?OpalTranscoder_Opal_PCM_G711_uLaw@@3V?$Worker@VOpal_PCM_G711_uLaw@@@?$PFactory@VOpalTranscoder@@VOpalMediaFormatPair@@@@A @36548 NONAME
     ?opalwavfileLoader@PWLibStupidLinkerHacks@@3HA @33689 NONAME
+    ?OPAL_VIDEO_FRAME_DATA_PTR@@YAPAEPAUPluginCodec_Video_FrameHeader@@@Z @38005 NONAME
+    ?OPAL_VIDEO_FRAME_DATA_PTR@@YAPAEPBUPluginCodec_Video_FrameHeader@@@Z @38006 NONAME
     ?Open@H245NegLogicalChannel@@UAEHABVH323Capability@@II@Z @27207 NONAME
     ?Open@H245NegLogicalChannels@@UAEHABVH323Capability@@II@Z @27208 NONAME
     ?Open@H323Channel@@UAEHXZ @27209 NONAME
