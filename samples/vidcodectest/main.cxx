@@ -137,6 +137,7 @@ void VidCodecTest::Main()
   if (coding == 'x') {
 
     PINDEX frameCount = 0;
+    WORD sequence = 1;
 
     for (;;) {
 
@@ -162,6 +163,8 @@ void VidCodecTest::Main()
       yuvOutFrame.RemoveAll();
       PINDEX i;
       for (i = 0; i < encodedFrames.GetSize(); ++i) {
+encodedFrames[i].SetSequenceNumber(++sequence);
+cout << "sequence = " << encodedFrames[i].GetSequenceNumber() << endl;
         if (!decoder->ConvertFrames(encodedFrames[i], yuvOutFrame)) {
           PError << "error: decoder returned error" << endl;
           break;
@@ -181,8 +184,6 @@ void VidCodecTest::Main()
       }
 
       ++frameCount;
-
-      break;
     }
 
     cout << frameCount << " frames transcoded" << endl;
