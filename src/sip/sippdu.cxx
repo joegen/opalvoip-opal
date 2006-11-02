@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2113  2006/10/01 17:16:32  hfriederich
+ * Revision 1.2114  2006/11/02 03:09:06  csoutheren
+ * Changed to use correct timeout when sending PDUs
+ * Thanks to Peter Kocsis
+ *
+ * Revision 2.112  2006/10/01 17:16:32  hfriederich
  * Ensures that an ACK is sent out for every final response to INVITE
  *
  * Revision 2.111  2006/09/22 00:58:41  csoutheren
@@ -2049,8 +2053,12 @@ BOOL SIPTransaction::Start()
   state = Trying;
   retry = 0;
   retryTimer = endpoint.GetRetryTimeoutMin();
-  completionTimer = endpoint.GetNonInviteTimeout();
   localAddress = transport.GetLocalAddress();
+
+  if (method == Method_INVITE)
+    completionTimer = endpoint.GetInviteTimeout();
+  else
+    completionTimer = endpoint.GetNonInviteTimeout();
 
   if (connection != NULL) {
     // Use the connection transport to send the request
