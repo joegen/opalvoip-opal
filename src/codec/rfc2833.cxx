@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2003  2002/02/19 07:35:08  robertj
+ * Revision 1.2004  2006/11/02 21:17:29  hfriederich
+ * Set marker bit at the beginning of an event
+ *
+ * Revision 2.2  2002/02/19 07:35:08  robertj
  * Added OpalRFC2833 as a OpalMediaFormat variable.
  *
  * Revision 2.1  2002/01/22 05:35:28  robertj
@@ -232,6 +235,9 @@ void OpalRFC2833Proto::TransmitPacket(RTP_DataFrame & frame, INT)
   }
 
   unsigned duration = actualTimestamp - transmitTimestamp;
+  if(duration == 0) {
+	  frame.SetMarker(TRUE);
+  }
   payload[2] = (BYTE)(duration>>8);
   payload[3] = (BYTE) duration    ;
 }
