@@ -38702,10 +38702,10 @@ EXPORTS
     ?RetrieveConnection@IAX2Connection@@UAEXXZ @38156 NONAME
     ?RetrieveConnection@OpalConnection@@UAEXXZ @38157 NONAME
     ?RetrieveConnection@SIPConnection@@UAEXXZ @38158 NONAME
-    ?Ring@OpalLine@@UAEHHPAI@Z @38159 NONAME
+    ?Ring@OpalLine@@UAEHHPBII@Z @40626 NONAME
     ?RingingWasAcked@IAX2CallProcessor@@IAEXXZ @39345 NONAME
-    ?RingLine@OpalLineInterfaceDevice@@UAEHIHPAI@Z @38164 NONAME
-    ?RingLine@OpalPluginLID@@UAEHIHPAI@Z @40428 NONAME
+    ?RingLine@OpalLineInterfaceDevice@@UAEHIHPBII@Z @40627 NONAME
+    ?RingLine@OpalPluginLID@@UAEHIHPBII@Z @40628 NONAME
     ?RxFramesPerPacketOption@OpalAudioFormat@@2QBDB @38167 NONAME
     ?SelectDefaultLogicalChannel@H323Connection@@UAEXI@Z @38168 NONAME
     ?SelectFastStartChannels@H323Connection@@UAEXIHH@Z @38169 NONAME
