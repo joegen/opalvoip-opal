@@ -31767,10 +31767,10 @@ EXPORTS
     ?RetrieveConnection@IAX2Connection@@UAEXXZ @35589 NONAME
     ?RetrieveConnection@OpalConnection@@UAEXXZ @29948 NONAME
     ?RetrieveConnection@SIPConnection@@UAEXXZ @29949 NONAME
-    ?Ring@OpalLine@@UAEHHPAI@Z @27477 NONAME
+    ?Ring@OpalLine@@UAEHHPBII@Z @38011 NONAME
     ?RingingWasAcked@IAX2CallProcessor@@IAEXXZ @37206 NONAME
-    ?RingLine@OpalLineInterfaceDevice@@UAEHIHPAI@Z @27481 NONAME
-    ?RingLine@OpalPluginLID@@UAEHIHPAI@Z @37711 NONAME
+    ?RingLine@OpalLineInterfaceDevice@@UAEHIHPBII@Z @38012 NONAME
+    ?RingLine@OpalPluginLID@@UAEHIHPBII@Z @38013 NONAME
     ?RxFramesPerPacketOption@OpalAudioFormat@@2QBDB @29808 NONAME
     ?SelectDefaultLogicalChannel@H323Connection@@UAEXI@Z @27488 NONAME
     ?SelectFastStartChannels@H323Connection@@UAEXIHH@Z @27489 NONAME
