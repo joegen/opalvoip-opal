@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2006  2006/10/28 00:38:43  rjongbloed
+ * Revision 1.2007  2006/11/05 05:04:47  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
+ * Revision 2.5  2006/10/28 00:38:43  rjongbloed
  * Fixed setting of country tones.
  * Added initialisation of country tones.
  * Fixed playing of country tones in generic sound driver LID (eg TigerJet)
@@ -348,9 +351,28 @@ BOOL OpalPluginLID::IsLineRinging(unsigned line, DWORD * cadence)
 }
 
 
-BOOL OpalPluginLID::RingLine(unsigned line, PINDEX nCadence, unsigned * pattern)
+BOOL OpalPluginLID::RingLine(unsigned line, PINDEX nCadence, const unsigned * pattern, unsigned frequency)
 {
-  return CHECK_FN(RingLine, (m_context, line, nCadence, pattern)) == PluginLID_NoError;
+  PUnsignedArray cadence;
+
+  if (nCadence > 0 && pattern == NULL) {
+    PString description = m_callProgressTones[RingTone];
+    PINDEX colon = description.Find(':');
+    if (colon != P_MAX_INDEX) {
+      unsigned newFrequency = description.Left(colon).AsUnsigned();
+      if (newFrequency > 5 && newFrequency < 3000) {
+        PStringArray times = description.Mid(colon+1).Tokenise('-');
+        if (times.GetSize() > 1) {
+          cadence.SetSize(times.GetSize());
+          for (PINDEX i = 0; i < cadence.GetSize(); i++)
+            cadence[i] = (unsigned)(times[i].AsReal()*1000);
+          return CHECK_FN(RingLine, (m_context, line, cadence.GetSize(), cadence, newFrequency)) == PluginLID_NoError;
+        }
+      }
+    }
+  }
+
+  return CHECK_FN(RingLine, (m_context, line, nCadence, pattern, frequency)) == PluginLID_NoError;
 }
 
 
