@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_win.cpp,v $
+ * Revision 1.4  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
  * Revision 1.3  2006/10/26 08:36:49  rjongbloed
  * Fixed DevStudio 2005 warning
  *
@@ -297,7 +300,7 @@ class Context
       if (hDriver == INVALID_HANDLE_VALUE)
         return PluginLID_NoError;
 
-      RingLine(0, 0, NULL);
+      RingLine(0, 0, NULL, 0);
       StopReading(0);
       StopWriting(0);
       SetLineToLineDirect(0, 1, TRUE); // Back to pass through mode
@@ -506,7 +509,7 @@ class Context
       return PluginLID_NoError;
     }
 
-    PLUGIN_FUNCTION_ARG3(RingLine, unsigned,line, unsigned,nCadence, unsigned *,pattern)
+    PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
     {
       if (hDriver == INVALID_HANDLE_VALUE)
         return PluginLID_DeviceNotOpen;

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2017  2006/10/25 22:26:14  rjongbloed
+ * Revision 1.2018  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
+ * Revision 2.16  2006/10/25 22:26:14  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
  * Revision 2.15  2006/10/22 12:05:54  rjongbloed
@@ -430,9 +433,10 @@ class OpalLineInterfaceDevice : public PObject
        the standard ring pattern for the selected country is used.
       */
     virtual BOOL RingLine(
-      unsigned line,     ///<  Number of line
-      PINDEX nCadence,   ///<  Number of entries in cadence array
-      unsigned * pattern ///<  Ring pattern times
+      unsigned line,                   ///< Number of line
+      PINDEX nCadence,                 ///< Number of entries in cadence array
+      const unsigned * pattern = NULL, ///< Ring pattern times
+      unsigned frequency = 400         ///< Frequency of ring (if relevant)
     );
 
 
@@ -1187,9 +1191,10 @@ class OpalLine : public PObject
        the standard ring pattern for the selected country is used.
       */
     virtual BOOL Ring(
-      PINDEX nCadence,   ///<  Number of entries in cadence array
-      unsigned * pattern ///<  Ring pattern times
-    ) { return device.RingLine(lineNumber, nCadence, pattern); }
+      PINDEX nCadence,                 ///< Number of entries in cadence array
+      const unsigned * pattern = NULL, ///< Ring pattern times
+      unsigned frequency = 400         ///< Frequency of ring (if relevant)
+    ) { return device.RingLine(lineNumber, nCadence, pattern, frequency); }
 
 
     /**Determine if line has been disconnected from a call.
