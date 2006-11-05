@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidplugin.h,v $
- * Revision 1.2005  2006/10/25 22:26:14  rjongbloed
+ * Revision 1.2006  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
+ * Revision 2.4  2006/10/25 22:26:14  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
  * Revision 2.3  2006/10/22 12:08:51  rjongbloed
@@ -155,7 +158,7 @@ typedef struct PluginLID_Definition
   PluginLID_Errors (*HookFlash)(void * context, unsigned line, unsigned flashTime);
   PluginLID_Errors (*HasHookFlash)(void * context, unsigned line, PluginLID_Boolean * flashed);
   PluginLID_Errors (*IsLineRinging)(void * context, unsigned line, unsigned long * cadence);
-  PluginLID_Errors (*RingLine)(void * context, unsigned line, unsigned nCadence, unsigned * pattern);
+  PluginLID_Errors (*RingLine)(void * context, unsigned line, unsigned nCadence, const unsigned * pattern, unsigned frequency);
   PluginLID_Errors (*IsLineConnected)(void * context, unsigned line, PluginLID_Boolean checkForWink, PluginLID_Boolean * connected);
   PluginLID_Errors (*SetLineToLineDirect)(void * context, unsigned line1, unsigned line2, PluginLID_Boolean connect);
   PluginLID_Errors (*IsLineToLineDirect)(void * context, unsigned line1, unsigned line2, PluginLID_Boolean * connected);

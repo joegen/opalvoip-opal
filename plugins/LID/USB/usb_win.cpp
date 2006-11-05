@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: usb_win.cpp,v $
+ * Revision 1.6  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
  * Revision 1.5  2006/10/28 00:45:35  rjongbloed
  * Major change so that sound card based LIDs, eg USB handsets. are handled in
  *   common code so not requiring lots of duplication.
@@ -283,7 +286,7 @@ class Context
     //PLUGIN_FUNCTION_ARG2(HookFlash, unsigned,line, unsigned,flashTime)
     //PLUGIN_FUNCTION_ARG2(HasHookFlash, unsigned,line, PluginLID_Boolean *,flashed)
     //PLUGIN_FUNCTION_ARG2(IsLineRinging, unsigned,line, unsigned long *,cadence)
-    //PLUGIN_FUNCTION_ARG3(RingLine, unsigned,line, unsigned,nCadence, unsigned *,pattern)
+    //PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
     //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
