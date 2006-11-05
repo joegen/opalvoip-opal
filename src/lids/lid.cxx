@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2021  2006/10/28 00:38:43  rjongbloed
+ * Revision 1.2022  2006/11/05 05:04:47  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
+ * Revision 2.20  2006/10/28 00:38:43  rjongbloed
  * Fixed setting of country tones.
  * Added initialisation of country tones.
  * Fixed playing of country tones in generic sound driver LID (eg TigerJet)
@@ -524,7 +527,7 @@ BOOL OpalLineInterfaceDevice::IsLineRinging(unsigned, DWORD *)
 }
 
 
-BOOL OpalLineInterfaceDevice::RingLine(unsigned, PINDEX, unsigned *)
+BOOL OpalLineInterfaceDevice::RingLine(unsigned, PINDEX, const unsigned *, unsigned)
 {
   return FALSE;
 }
