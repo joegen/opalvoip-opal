@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.h,v $
- * Revision 1.2003  2006/10/22 12:08:51  rjongbloed
+ * Revision 1.2004  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
+ * Revision 2.2  2006/10/22 12:08:51  rjongbloed
  * Major change so that sound card based LIDs, eg USB handsets. are handled in
  *   common code so not requiring lots of duplication.
  *
@@ -200,9 +203,10 @@ class OpalPluginLID : public OpalLineInterfaceDevice
        by the array   unsigned AusRing[] = { 400, 200, 400, 2000 }
       */
     virtual BOOL RingLine(
-      unsigned line,     ///<  Number of line
-      PINDEX nCadence,   ///<  Number of entries in cadence array
-      unsigned * pattern ///<  Ring pattern times
+      unsigned line,                   ///< Number of line
+      PINDEX nCadence,                 ///< Number of entries in cadence array
+      const unsigned * pattern = NULL, ///< Ring pattern times
+      unsigned frequency = 400         ///< Frequency of ring (if relevant)
     );
 
 

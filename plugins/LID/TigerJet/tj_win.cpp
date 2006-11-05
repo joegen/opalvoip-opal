@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: tj_win.cpp,v $
+ * Revision 1.5  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
  * Revision 1.4  2006/10/25 22:26:15  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
@@ -77,15 +80,19 @@ class Context
     TJIPSYSCALL      m_pTjIpSysCall;
     TjIpProductID    m_eProductID;
     bool             m_hasDTMF;
-    bool             m_hasBuzzer;
+    bool             m_hasBeeper;
     bool             m_hasMixer;
 
     bool             m_isOffHook;
     bool             m_tonePlaying;
 
+    HANDLE           m_hRingThread;
+    HANDLE           m_hRingStopEvent;
+    unsigned         m_ringFrequency;
+    std::vector<unsigned> m_ringCadence;
+
     std::queue<char> m_Keys;
     CriticalSection  m_KeyMutex;
-
 
 
     static void StaticKeyCallback(void * context, UINT message, WPARAM wParam, LPARAM lParam)
@@ -98,78 +105,58 @@ class Context
       m_KeyMutex.Enter();
 
       switch (message) {
+	case WM_TJIP_HID_KEY_RELEASED:
+          Beep(m_ringFrequency);
+          break;
+
 	case WM_TJIP_HID_NEW_KEY:
-          switch (wParam) {
-            case 0xb0:
-              m_Keys.push('0');
-              break;
-            case 0xb1:
-              m_Keys.push('1');
-              break;
-            case 0xb2:
-              m_Keys.push('2');
-              break;
-            case 0xb3:
-              m_Keys.push('3');
-              break;
-            case 0xb4:
-              m_Keys.push('4');
-              break;
-            case 0xb5:
-              m_Keys.push('5');
-              break;
-            case 0xb6:
-              m_Keys.push('6');
-              break;
-            case 0xb7:
-              m_Keys.push('7');
-              break;
-            case 0xb8:
-              m_Keys.push('8');
-              break;
-            case 0xb9:
-              m_Keys.push('9');
-              break;
-              break;
-            case 0xba: // '*' key
-              m_Keys.push('*');
-              break;
-              break;
-            case 0xbb: // '#' key
-              m_Keys.push('#');
-              break;
+          static struct {
+            WPARAM code;
+            char   ascii;
+            int    frequency;
+            int    hook; // 1 is off hook, -1 if on hook, 0 is no change
+          } KeyInfo[] = {
+            { 0xb0, '0', (941+1336)/2 }, // Average the DTMF frequencies
+            { 0xb1, '1', (697+1209)/2 },
+            { 0xb2, '2', (697+1336)/2 },
+            { 0xb3, '3', (697+1477)/2 },
+            { 0xb4, '4', (770+1209)/2 },
+            { 0xb5, '5', (770+1336)/2 },
+            { 0xb6, '6', (770+1477)/2 },
+            { 0xb7, '7', (852+1209)/2 },
+            { 0xb8, '8', (852+1336)/2 },
+            { 0xb9, '9', (852+1477)/2 },
+            { 0xba, '*', (941+1209)/2 },
+            { 0xbb, '#', (941+1477)/2 },
+            { 0x51, 'd', 900 }, // down
+            { 0x52, 'u', 1400 }, // up
+            { 0x2f, 'm', 500 }, // Mute
+            { 0x2a, '\b', 2500 }, // Clear/Backspace key
+            { 0x31, '\r', 1800, 1 }, // Enter (dial) key
+            { 0x26, '\033', 700, -1 }  // Escape (hangup) key
+          };
+          for (int i = 0; i < sizeof(KeyInfo)/sizeof(KeyInfo[0]); i++) {
+            if (wParam == KeyInfo[i].code) {
+              Beep(KeyInfo[i].frequency);
+              switch (KeyInfo[i].hook) {
+                case 1 :
+                  if (!m_isOffHook) {
+                    m_isOffHook = true;
+                    while (!m_Keys.empty())
+                      m_Keys.pop();
+                  }
+                  break;
 
-            case 0x2a: // Clear/Backspace key
-              m_Keys.push('\b');
-              break;
+                case -1 :
+                  m_isOffHook = false;
+                  break;
 
-            case 0x2f: // Mute
-              m_Keys.push('M');
-              break;
-
-            case 0x51: // down
-              m_Keys.push('D');
-              break;
-            case 0x52: // up
-              m_Keys.push('U');
-              break;
-
-            case 0x31: // Enter key
-              if (!m_isOffHook) {
-                m_isOffHook = true;
-                while (!m_Keys.empty())
-                  m_Keys.pop();
+                default :
+                  m_Keys.push(KeyInfo[i].ascii);
               }
               break;
-
-            case 0x26: // hangup
-              m_isOffHook = false;
-              break;
+            }
           }
-          break;
-
-	case WM_TJIP_HID_KEY_RELEASED:
-          break;
       }
       m_KeyMutex.Leave();
     }
@@ -183,7 +170,6 @@ class Context
       vc.vcCmd.wValue = 0;
       vc.vcCmd.wIndex = regIndex;
       vc.vcCmd.wLength = len;
-      vc.vcCmd.bData   = 0x55;
       vc.dwDataSize = len;
       vc.pDataBuf = data;
 
@@ -199,6 +185,7 @@ class Context
       vc.vcCmd.wValue = 0;
       vc.vcCmd.wIndex = regIndex;
       vc.vcCmd.wLength = len;
+      vc.vcCmd.bData   = 0x55;
       vc.dwDataSize = len;
       vc.pDataBuf = (PVOID)data;
 
@@ -210,52 +197,24 @@ class Context
       return WriteRegister(regIndex, &data, 1);
     }
 
-    void InitBuzzer()
+    void Beep(unsigned frequency)
     {
-      //-----------------------------------------------------
-      // Check if GIO[8] has hardwire with other pins 
-      // Step 1: Store current GIO[3:0] setting
-      // step 2: set GIO[3:0] : 0b0000
-      // Step 3: set GIO[8] : 0b1, read back and check GIO[8]
-      // Step 4: Restore GIO[3:0] to as before
-      //-----------------------------------------------------
-      BYTE data, Reg0xa;
-      ReadRegister(0xa, &Reg0xa);     // store BIO[3:0] setting
-      WriteRegister(0xa, 0x55);       // set GIO[3:0] all output as 0b0000
-      WriteRegister(0x1a, 3);         // set GIO[8] to high
-      ReadRegister(0x1a, &data);      // read back
-
-      m_hasBuzzer = (data & 0x2) == 0x2;
-      if (!m_hasBuzzer)              
-      {
-	WriteRegister(0x1a, 0);       // set GIO[8] to input mode
-	WriteRegister(0xa, Reg0xa);   // restore GIO[3:0] setting
-      }
-
-      // set the counter frequency
-      WriteRegister(0x18, 0xff);
-      WriteRegister(0x1a, 1);         // GIO8 as buzzer control output 0
-      WriteRegister(0xa, Reg0xa);     // Restore GIO[3:0] setting
-    }
-
-    void Buzz(unsigned frequency)
-    {
-      if (!m_hasBuzzer)
+      if (!m_hasBeeper)
         return;
 
       if (frequency == 0) {
-        WriteRegister(0x1a, 0x1);     // Turn buzzer off
+        WriteRegister(0x1a, 0x1);     // Turn Beeper off
         return;
       }
 
       int divisor = 46875 / frequency - 1;
-      if (divisor < 0)
-	divisor = 0;
+      if (divisor < 1)
+	divisor = 1;
       else if (divisor > 255)
 	divisor = 255;
 
       WriteRegister(0x18, divisor); // set frequency
-      WriteRegister(0x1a, 0x9);     // Turn buzzer on
+      WriteRegister(0x1a, 0x9);     // Turn Beeper on
     }
 
 
@@ -265,10 +224,13 @@ class Context
     {
       m_eProductID = TJIP_NONE;
       m_hasDTMF = false;
-      m_hasBuzzer = false;
+      m_hasBeeper = false;
       m_hasMixer = false;
       m_isOffHook = false;
       m_tonePlaying = false;
+      m_hRingThread = NULL;
+      m_hRingStopEvent = NULL;
+      m_ringFrequency = 0;
 
       m_hDLL = LoadLibrary("TjIpSys.dll");
       if (m_hDLL== NULL)
@@ -356,7 +318,16 @@ class Context
         case TJIP_TJ560BHANDSET_KEYPAD_HID :
 	  WriteRegister(0x0b, 100);	// default is 48, now set to 100 ==> period = 100/2 = 50ms
 
-          InitBuzzer();
+          // Initialise beeper
+          WriteRegister(0xa, 0x55);       // set GIO[3:0] all output as 0b0000
+          WriteRegister(0x1a, 3);         // set GIO[8] to high
+
+          BYTE value;
+          ReadRegister(0x1a, &value);      // read back
+          m_hasBeeper = (value & 0x2) == 0x2;
+
+          WriteRegister(0x1a, m_hasBeeper ? 1 : 0);         // GIO8 as Beeper control output 0
+          WriteRegister(0xa, 0);     // Restore GIO[3:0] setting
 
 	  BYTE reg12, reg13;
 	  ReadRegister(0x12, &reg12);
@@ -385,6 +356,8 @@ class Context
 
     PLUGIN_FUNCTION_ARG0(Close)
     {
+      RingLine(0, 0, NULL, 0);
+
       if (m_hasMixer) {
         if (!m_pTjIpSysCall(TJIP_CLOSE_MIXER, 0, NULL))
           OutputDebugString("Could not close mixer on TigerJet\n");
@@ -461,7 +434,25 @@ class Context
     //PLUGIN_FUNCTION_ARG2(HasHookFlash, unsigned,line, PluginLID_Boolean *,flashed)
     //PLUGIN_FUNCTION_ARG2(IsLineRinging, unsigned,line, unsigned long *,cadence)
 
-    PLUGIN_FUNCTION_ARG3(RingLine, unsigned,line, unsigned,nCadence, unsigned *,pattern)
+    static void CadenceThreadMain(void * arg)
+    {
+      ((Context *)arg)->CadenceThread();
+    }
+
+    void CadenceThread()
+    {
+      size_t cadenceIndex = 0;
+
+      while (m_ringCadence.size() > 0 && WaitForSingleObject(m_hRingStopEvent, m_ringCadence[cadenceIndex]) == WAIT_TIMEOUT) {
+        m_KeyMutex.Enter();
+        if (++cadenceIndex >= m_ringCadence.size())
+          cadenceIndex = 0;
+        Beep((cadenceIndex&1) != 0 ? 0 : m_ringFrequency);
+        m_KeyMutex.Leave();
+      }
+    }
+
+    PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
     {
       if (m_eProductID == TJIP_NONE)
         return PluginLID_DeviceNotOpen;
@@ -469,7 +460,28 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      Buzz(nCadence == 0 ? 0 : 800);
+      if (m_hRingThread != NULL) {
+        SetEvent(m_hRingStopEvent);
+        if (WaitForSingleObject(m_hRingThread, 5000) == WAIT_TIMEOUT)
+          TerminateThread(m_hRingThread, -1);
+
+        CloseHandle(m_hRingStopEvent);
+        m_hRingStopEvent = NULL;
+        m_hRingThread = NULL;
+      }
+
+      m_KeyMutex.Enter();
+
+      m_ringCadence.assign(pattern, &pattern[nCadence]);
+      m_ringFrequency = nCadence == 0 ? 0 : frequency;
+      Beep(m_ringFrequency);
+
+      if (nCadence > 1) {
+        m_hRingStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+        m_hRingThread = (HANDLE)_beginthread(CadenceThreadMain, 0, this);
+      }
+
+      m_KeyMutex.Leave();
 
       return PluginLID_NoError;
     }

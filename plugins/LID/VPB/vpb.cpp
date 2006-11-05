@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vpb.cpp,v $
+ * Revision 1.6  2006/11/05 05:04:46  rjongbloed
+ * Improved the terminal LID line ringing, epecially for country emulation.
+ *
  * Revision 1.5  2006/10/25 22:26:16  rjongbloed
  * Changed LID tone handling to use new tone generation for accurate country based tones.
  *
@@ -299,7 +302,7 @@ class Context
       return PluginLID_NoError;
     }
 
-    //PLUGIN_FUNCTION_ARG3(RingLine, unsigned,line, unsigned,nCadence, unsigned *,pattern)
+    //PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
     //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
