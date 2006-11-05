@@ -31853,10 +31853,10 @@ EXPORTS
     ?RetrieveConnection@IAX2Connection@@UAEXXZ @31323 NONAME
     ?RetrieveConnection@OpalConnection@@UAEXXZ @31324 NONAME
     ?RetrieveConnection@SIPConnection@@UAEXXZ @31325 NONAME
-    ?Ring@OpalLine@@UAEHHPAI@Z @31326 NONAME
+    ?Ring@OpalLine@@UAEHHPBII@Z @33771 NONAME
     ?RingingWasAcked@IAX2CallProcessor@@IAEXXZ @32508 NONAME
-    ?RingLine@OpalLineInterfaceDevice@@UAEHIHPAI@Z @31331 NONAME
-    ?RingLine@OpalPluginLID@@UAEHIHPAI@Z @33576 NONAME
+    ?RingLine@OpalLineInterfaceDevice@@UAEHIHPBII@Z @33772 NONAME
+    ?RingLine@OpalPluginLID@@UAEHIHPBII@Z @33773 NONAME
     ?RxFramesPerPacketOption@OpalAudioFormat@@2QBDB @31334 NONAME
     ?SelectDefaultLogicalChannel@H323Connection@@UAEXI@Z @31335 NONAME
     ?SelectFastStartChannels@H323Connection@@UAEXIHH@Z @31336 NONAME
