@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_unix.cxx,v $
+ * Revision 1.4  2006/11/06 05:31:45  csoutheren
+ * Fixed Unix compile
+ *
  * Revision 1.3  2006/10/26 09:21:44  rjongbloed
  * Fixed GNU compiler error
  *
@@ -250,7 +253,7 @@ class Context
       return PluginLID_NoError;
     }
 
-    PLUGIN_FUNCTION_ARG3(RingLine, unsigned,line, unsigned,nCadence, unsigned *,pattern)
+    PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
     {
       if (hDriver == -1)
         return PluginLID_DeviceNotOpen;
