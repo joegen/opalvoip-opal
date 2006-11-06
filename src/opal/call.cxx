@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2050  2006/11/01 14:40:17  dsandras
+ * Revision 1.2051  2006/11/06 13:57:40  dsandras
+ * Use readonly locks as suggested by Robert as we are not
+ * writing to the collection. Fixes deadlock on SIP when
+ * reinvite.
+ *
+ * Revision 2.49  2006/11/01 14:40:17  dsandras
  * Applied fix from Hannes Friederich to prevent deadlock. Thanks!
  *
  * Revision 2.48  2006/08/28 00:10:55  csoutheren
@@ -404,7 +409,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   BOOL createdOne = FALSE;
 
-  if (!LockReadWrite())
+  if (!LockReadOnly())
     return FALSE;
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
@@ -422,7 +427,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
       createdOne = TRUE;
   }
 
-  UnlockReadWrite();
+  UnlockReadOnly();
   
   if (ok && createdOne) {
     for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2132  2006/10/06 09:08:32  dsandras
+ * Revision 1.2133  2006/11/06 13:57:40  dsandras
+ * Use readonly locks as suggested by Robert as we are not
+ * writing to the collection. Fixes deadlock on SIP when
+ * reinvite.
+ *
+ * Revision 2.131  2006/10/06 09:08:32  dsandras
  * Added autodetection of the realm from the challenge response.
  *
  * Revision 2.130  2006/09/28 07:42:18  csoutheren
@@ -1013,7 +1018,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     pdu->AdjustVia(transport);
 
   // Find a corresponding connection
-  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
+  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID(), PSafeReadOnly);
   if (connection != NULL) {
     SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
     if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
