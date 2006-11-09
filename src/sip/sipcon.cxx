@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2185  2006/11/09 18:02:07  hfriederich
+ * Revision 1.2186  2006/11/09 18:24:55  hfriederich
+ * Ensures that responses to received INVITE get sent out on the same network interface as where the INVITE was received. Remove cout statement
+ *
+ * Revision 2.184  2006/11/09 18:02:07  hfriederich
  * Prevent sending OK if already releasing, thus having sent a final response. Modify call end reason if media format list empty
  *
  * Revision 2.183  2006/10/28 16:40:28  dsandras
@@ -801,7 +804,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else 
-    transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
+    transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
   
   lastTransportAddress = transportAddress.GetHostAddress();
 
@@ -885,7 +888,6 @@ static SIP_PDU::StatusCodes RFC3398_MapQ931ToSIPCode(unsigned q931Cause)
     if (Q931ReasonToSIPCode[i].q931Cause == q931Cause)
       return (SIP_PDU::StatusCodes)Q931ReasonToSIPCode[i].sipCode;
 
-  cout << "RETURNING BAD GATEWAY: " << q931Cause << endl;
   return SIP_PDU::Failure_BadGateway;
 }
 

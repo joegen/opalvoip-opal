@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2133  2006/11/06 13:57:40  dsandras
+ * Revision 1.2134  2006/11/09 18:24:55  hfriederich
+ * Ensures that responses to received INVITE get sent out on the same network interface as where the INVITE was received. Remove cout statement
+ *
+ * Revision 2.132  2006/11/06 13:57:40  dsandras
  * Use readonly locks as suggested by Robert as we are not
  * writing to the collection. Fixes deadlock on SIP when
  * reinvite.
@@ -827,31 +830,43 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
 
 
-OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address)
+OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address, 
+                                             BOOL isLocalAddress)
 {
-  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
-  WORD port = GetDefaultSignalPort();
-  if (!listeners.IsEmpty())
-    GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
-
   OpalTransport * transport;
-  if (ip.IsAny()) {
-    // endpoint is listening to anything - attempt call using all interfaces
-    transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
-    if (transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport from " << address);
+	
+  if(isLocalAddress == TRUE) {
+    // already determined which interface to use
+    transport = address.CreateTransport(*this);
+    if(transport == NULL) {
+      PTRACE(1, "SIP\tCould not create transport for " << address);
       return NULL;
     }
-  }
-  else {
-    // endpoint has a specific listener - use only that interface
-    OpalTransportAddress LocalAddress(ip, port, "udp$");
-    transport = LocalAddress.CreateTransport(*this) ;
-    if (transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
-      return NULL;
+  } else {
+    PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
+    WORD port = GetDefaultSignalPort();
+    if (!listeners.IsEmpty())
+      GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
+
+    if (ip.IsAny()) {
+      // endpoint is listening to anything - attempt call using all interfaces
+      transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
+      if (transport == NULL) {
+        PTRACE(1, "SIP\tCould not create transport from " << address);
+        return NULL;
+      }
+    }
+    else {
+      // endpoint has a specific listener - use only that interface
+      OpalTransportAddress LocalAddress(ip, port, "udp$");
+      transport = LocalAddress.CreateTransport(*this) ;
+      if (transport == NULL) {
+        PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
+        return NULL;
+      }
     }
   }
+  
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
@@ -1028,7 +1043,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     connection->QueuePDU(pdu);
     return TRUE;
   }
-
+  
   // PDUs outside of connection context
   if (!transport.IsReliable()) {
     // Get response address from new request
