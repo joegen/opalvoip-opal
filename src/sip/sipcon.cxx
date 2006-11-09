@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2184  2006/10/28 16:40:28  dsandras
+ * Revision 1.2185  2006/11/09 18:02:07  hfriederich
+ * Prevent sending OK if already releasing, thus having sent a final response. Modify call end reason if media format list empty
+ *
+ * Revision 2.183  2006/10/28 16:40:28  dsandras
  * Fixed SIP reinvite without breaking H.323 calls.
  *
  * Revision 2.182  2006/10/11 01:22:51  csoutheren
@@ -1088,6 +1091,11 @@ BOOL SIPConnection::SetConnected()
       return FALSE;
     }
   }
+  
+  // abort if already in releasing phase
+  if (phase >= ReleasingPhase) {
+    return FALSE;
+  }
     
   // update the route set and the target address according to 12.1.1
   // requests in a dialog do not modify the route set according to 12.2
@@ -1180,7 +1188,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   remoteFormatList += incomingMedia->GetMediaFormats(rtpSessionId);
   remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (remoteFormatList.GetSize() == 0) {
-    Release(EndedByTransportFail);
+    Release(EndedByCapabilityExchange);
     return FALSE;
   }
 
