@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2020  2006/04/23 20:12:52  dsandras
+ * Revision 1.2021  2006/11/09 17:54:13  hfriederich
+ * Allow matching of fixed RTP payload type media formats if no rtpmap attribute is present in the received SDP
+ *
+ * Revision 2.19  2006/04/23 20:12:52  dsandras
  * The RFC tells that the SDP answer SHOULD have the same payload type than the
  * SDP offer. Added rtpmap support to allow this. Fixes problems with Asterisk,
  * and Ekiga report #337456.
@@ -133,7 +136,7 @@ class SDPMediaFormat : public PObject
     
     SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType,
-      const char * name = "-",
+      const char * name = NULL,
       unsigned rate = 8000,
       const char * param = ""
     );
