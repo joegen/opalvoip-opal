@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2064  2006/08/12 04:20:39  csoutheren
+ * Revision 1.2065  2006/11/09 18:24:55  hfriederich
+ * Ensures that responses to received INVITE get sent out on the same network interface as where the INVITE was received. Remove cout statement
+ *
+ * Revision 2.63  2006/08/12 04:20:39  csoutheren
  * Removed Windows warning and fixed timeout in SIP PING code
  *
  * Revision 2.62  2006/08/12 04:09:24  csoutheren
@@ -593,8 +596,20 @@ class SIPEndPoint : public OpalEndPoint
   
   /**@name Protocol handling routines */
   //@{
+
+    /**Creates an OpalTransport instance, based on the
+       information provided in address.
+       if isLocalAddress is TRUE, address is interpreted
+       as the local interface to use for outgoing traffic,
+       thus ensuring that the same interface is used
+       for responses as the one where the originating pdu
+       arrived.
+       Else, address is interpreted as the remote address,
+       to which the transport should connect
+      */
     OpalTransport * CreateTransport(
-      const OpalTransportAddress & address
+      const OpalTransportAddress & address,
+      BOOL isLocalAddress = FALSE
     );
 
     virtual void HandlePDU(
