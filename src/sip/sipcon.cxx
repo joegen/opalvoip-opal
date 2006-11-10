@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2186  2006/11/09 18:24:55  hfriederich
+ * Revision 1.2187  2006/11/10 23:19:51  hfriederich
+ * Don't send RFC2833 if already sent INFO
+ *
+ * Revision 2.185  2006/11/09 18:24:55  hfriederich
  * Ensures that responses to received INVITE get sent out on the same network interface as where the INVITE was received. Remove cout statement
  *
  * Revision 2.184  2006/11/09 18:02:07  hfriederich
@@ -2843,9 +2846,10 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
         }
         infoTransaction->GetEntityBody() = str;
         infoTransaction->Wait();
+        BOOL success = !infoTransaction->IsFailed();
         delete infoTransaction;
+        return success;
       }
-      break;
 
     // anything else - send as RFC 2833
     case SendUserInputAsProtocolDefault:
