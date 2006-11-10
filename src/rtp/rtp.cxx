@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2043  2006/10/28 16:40:28  dsandras
+ * Revision 1.2044  2006/11/10 12:40:30  csoutheren
+ * Fix RTP payload extension size calculation
+ * Thanks to Viktor Krikun
+ *
+ * Revision 2.42  2006/10/28 16:40:28  dsandras
  * Fixed SIP reinvite without breaking H.323 calls.
  *
  * Revision 2.41  2006/10/24 04:18:28  csoutheren
@@ -609,7 +613,7 @@ void RTP_DataFrame::SetExtensionType(int type)
 PINDEX RTP_DataFrame::GetExtensionSize() const
 {
   if (GetExtension())
-    return *(PUInt16b *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2];
+    return *(PUInt16b *)&theArray[MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2] * 4;
 
   return 0;
 }
