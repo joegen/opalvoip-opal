@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2065  2006/10/28 16:40:28  dsandras
+ * Revision 1.2066  2006/11/11 12:23:18  hfriederich
+ * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
+ *
+ * Revision 2.64  2006/10/28 16:40:28  dsandras
  * Fixed SIP reinvite without breaking H.323 calls.
  *
  * Revision 2.63  2006/10/10 07:18:18  csoutheren
@@ -764,6 +767,12 @@ class OpalConnection : public PSafeObject
       BOOL isSource,
       OpalMediaPatch & patch    ///<  New patch
     );
+	
+    /**Attaches the RFC 2833 handler to the media patch
+       This method may be called from subclasses, e.g. within
+       OnPatchMediaStream()
+      */
+    virtual void AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch);
 
     /**Get a media stream.
        Locates a stream given a RTP session ID. Each session would usually
