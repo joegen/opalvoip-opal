@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2054  2006/08/22 08:55:46  csoutheren
+ * Revision 1.2055  2006/11/11 12:23:17  hfriederich
+ * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
+ *
+ * Revision 2.53  2006/08/22 08:55:46  csoutheren
  * Removed duplicate declaration of remoteIsNAT that was hiding variable of same name in the ancestor
  *
  * Revision 2.52  2006/08/12 03:55:39  csoutheren
@@ -673,6 +676,10 @@ class H323Connection : public OpalConnection
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
+
+    /**Overrides from OpalConnection
+      */
+    void OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch);
 
     /**See if the media can bypass the local host.
 
