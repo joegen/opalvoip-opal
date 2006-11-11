@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2120  2006/10/23 01:53:04  csoutheren
+ * Revision 1.2121  2006/11/11 08:44:42  hfriederich
+ * Apply patch #1575071 fix RFC2833 handler's filter stage. Thanks to Borko Jandras
+ *
+ * Revision 2.119  2006/10/23 01:53:04  csoutheren
  * Fix for H.323 tunneling change
  *
  * Revision 2.118  2006/10/11 00:55:25  csoutheren
@@ -3934,13 +3937,14 @@ BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
       PIsDescendant(&channel, H323_RTPChannel)) {
     OpalMediaPatch * patch = channel.GetMediaStream()->GetPatch();
     if (patch != NULL) {
+      OpalMediaFormat mediaFormat = channel.GetMediaStream()->GetMediaFormat();
       if (channel.GetNumber().IsFromRemote()) {
-        patch->AddFilter(rfc2833Handler->GetReceiveHandler());
+        patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaFormat);
         if (detectInBandDTMF)
           patch->AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
       }
       else
-        patch->AddFilter(rfc2833Handler->GetTransmitHandler());
+        patch->AddFilter(rfc2833Handler->GetTransmitHandler(), mediaFormat);
     }
   }
   return endpoint.OnStartLogicalChannel(*this, channel);
