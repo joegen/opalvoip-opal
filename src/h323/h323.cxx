@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2122  2006/11/11 09:40:14  hfriederich
+ * Revision 1.2123  2006/11/11 09:43:24  hfriederich
+ * Remove tab from previous commit
+ *
+ * Revision 2.121  2006/11/11 09:40:14  hfriederich
  * Don't send RFC2833 if already sent User Input via other mode
  *
  * Revision 2.120  2006/11/11 08:44:42  hfriederich
@@ -3948,7 +3951,7 @@ BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
       }
       else {
         patch->AddFilter(rfc2833Handler->GetTransmitHandler(), mediaFormat);
-	  }
+      }
     }
   }
   return endpoint.OnStartLogicalChannel(*this, channel);
