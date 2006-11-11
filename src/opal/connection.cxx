@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2080  2006/10/28 16:40:28  dsandras
+ * Revision 1.2081  2006/11/11 12:23:18  hfriederich
+ * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
+ *
+ * Revision 2.79  2006/10/28 16:40:28  dsandras
  * Fixed SIP reinvite without breaking H.323 calls.
  *
  * Revision 2.78  2006/10/25 13:02:54  rjongbloed
@@ -345,6 +348,7 @@
 #include <opal/endpoint.h>
 #include <opal/call.h>
 #include <opal/transcoders.h>
+#include <opal/patch.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <codec/rfc2833.h>
@@ -900,6 +904,21 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
 {
   PTRACE(3, "OpalCon\tNew patch created");
+}
+
+
+void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch)
+{
+  if(rfc2833Handler != NULL) {
+    if(isSource) {
+      PTRACE(3, "OpalCon\tAdding RFC2833 receive handler");
+      OpalMediaStream & mediaStream = patch.GetSource();
+      patch.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+    } else {
+      PTRACE(3, "OpalCOn\tAdding RFC2833 transmit handler");
+      patch.AddFilter(rfc2833Handler->GetTransmitHandler(), patch.GetSinkFormat());
+    }
+  }
 }
 
 

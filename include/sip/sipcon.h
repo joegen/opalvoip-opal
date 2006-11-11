@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2054  2006/10/01 17:16:32  hfriederich
+ * Revision 1.2055  2006/11/11 12:23:18  hfriederich
+ * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
+ *
+ * Revision 2.53  2006/10/01 17:16:32  hfriederich
  * Ensures that an ACK is sent out for every final response to INVITE
  *
  * Revision 2.52  2006/08/12 04:09:24  csoutheren
@@ -343,6 +346,10 @@ class SIPConnection : public OpalConnection
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
+	
+    /**Overrides from OpalConnection
+      */
+    virtual void OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch);
 
 
     /**Call back for answering an incoming call.
@@ -663,8 +670,6 @@ class SIPConnection : public OpalConnection
     );
     SDPMediaDescription::Direction GetDirection(unsigned sessionId);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
-
-    void InitRFC2833Handler();
 
     OpalTransportUDP & GetUDPTransport();
     OpalTransportUDP * udpTransport;
