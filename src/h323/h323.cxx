@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2121  2006/11/11 08:44:42  hfriederich
+ * Revision 1.2122  2006/11/11 09:40:14  hfriederich
+ * Don't send RFC2833 if already sent User Input via other mode
+ *
+ * Revision 2.120  2006/11/11 08:44:42  hfriederich
  * Apply patch #1575071 fix RFC2833 handler's filter stage. Thanks to Borko Jandras
  *
  * Revision 2.119  2006/10/23 01:53:04  csoutheren
@@ -3943,8 +3946,9 @@ BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
         if (detectInBandDTMF)
           patch->AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
       }
-      else
+      else {
         patch->AddFilter(rfc2833Handler->GetTransmitHandler(), mediaFormat);
+	  }
     }
   }
   return endpoint.OnStartLogicalChannel(*this, channel);
@@ -4114,13 +4118,11 @@ BOOL H323Connection::SendUserInputTone(char tone, unsigned duration)
 
   switch (mode) {
     case SendUserInputAsQ931 :
-      SendUserInputIndicationQ931(PString(tone));
-      break;
+      return SendUserInputIndicationQ931(PString(tone));
 
     case SendUserInputAsString :
     case SendUserInputAsProtocolDefault:
-      SendUserInputIndicationString(PString(tone));
-      break;
+      return SendUserInputIndicationString(PString(tone));
 
     case SendUserInputAsTone :
       return SendUserInputIndicationTone(tone, duration);
