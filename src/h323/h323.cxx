@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2123  2006/11/11 09:43:24  hfriederich
+ * Revision 1.2124  2006/11/11 12:23:18  hfriederich
+ * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
+ *
+ * Revision 2.122  2006/11/11 09:43:24  hfriederich
  * Remove tab from previous commit
  *
  * Revision 2.121  2006/11/11 09:40:14  hfriederich
@@ -3494,6 +3497,18 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
 }
 
 
+void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
+{
+  OpalConnection::OnPatchMediaStream(isSource, patch);
+  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+    AttachRFC2833HandlerToPatch(isSource, patch);
+    if(detectInBandDTMF && isSource) {
+      patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
+    }
+  }
+}
+
+
 BOOL H323Connection::IsMediaBypassPossible(unsigned sessionID) const
 {
   PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
@@ -3939,21 +3954,6 @@ BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
 
 BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
-  if (channel.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID &&
-      PIsDescendant(&channel, H323_RTPChannel)) {
-    OpalMediaPatch * patch = channel.GetMediaStream()->GetPatch();
-    if (patch != NULL) {
-      OpalMediaFormat mediaFormat = channel.GetMediaStream()->GetMediaFormat();
-      if (channel.GetNumber().IsFromRemote()) {
-        patch->AddFilter(rfc2833Handler->GetReceiveHandler(), mediaFormat);
-        if (detectInBandDTMF)
-          patch->AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
-      }
-      else {
-        patch->AddFilter(rfc2833Handler->GetTransmitHandler(), mediaFormat);
-      }
-    }
-  }
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 

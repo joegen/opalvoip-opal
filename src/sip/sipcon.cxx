@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2187  2006/11/10 23:19:51  hfriederich
+ * Revision 1.2188  2006/11/11 12:23:18  hfriederich
+ * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
+ *
+ * Revision 2.186  2006/11/10 23:19:51  hfriederich
  * Don't send RFC2833 if already sent INFO
  *
  * Revision 2.185  2006/11/09 18:24:55  hfriederich
@@ -1116,9 +1119,6 @@ BOOL SIPConnection::SetConnected()
   // send the 200 OK response
   SendInviteOK(sdpOut);
 
-  // init DTMF handler
-  InitRFC2833Handler();
-
   // switch phase 
   SetPhase(ConnectedPhase);
   connectedTime = PTime ();
@@ -1401,30 +1401,17 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
                                 endpoint.GetManager().GetMaxAudioJitterDelay());
 }
 
-
-void SIPConnection::InitRFC2833Handler()
+void SIPConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 {
-  PWaitAndSignal m(streamsMutex);
-  if (rfc2833Handler != NULL) {
-    for (int i = 0; i < mediaStreams.GetSize(); i++) {
-      OpalMediaStream & mediaStream = mediaStreams[i];
-      if (mediaStream.GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-        if (mediaStream.IsSource()) {
-          mediaStream.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-        }
-        else {
-          mediaStream.AddFilter(rfc2833Handler->GetTransmitHandler(), mediaStream.GetMediaFormat());
-        }
-      }
-    }
+  OpalConnection::OnPatchMediaStream(isSource, patch);
+  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+    AttachRFC2833HandlerToPatch(isSource, patch);
   }
 }
 
 
 void SIPConnection::OnConnected ()
 {
-  InitRFC2833Handler();
-
   OpalConnection::OnConnected ();
 }
 
