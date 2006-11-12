@@ -54,6 +54,9 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
+ * Revision 1.6  2006/11/12 03:34:07  rjongbloed
+ * Fixed compilation on DevStudio 2003
+ *
  * Revision 1.5  2006/11/01 20:02:33  dsandras
  * Fixed MINGW32 compilation.
  *
@@ -147,9 +150,7 @@
 
 #include "config.h"
 
-#if defined(WIN32) || defined(_WIN32_WCE) 
-#include <winsock.h>
-#else
+#if !(defined(WIN32) || defined(_WIN32_WCE))
 #include <sys/file.h>
 #endif
 #include <sys/stat.h>
@@ -159,16 +160,6 @@
 #include "dct.h"
 #include "bsd-endian.h"
 
-
-#ifdef _WIN32
-extern "C" {
-u_long ntohl(const u_long n)
-{
-  unsigned char * p = (unsigned char *)&n;
-  return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
-}
-};
-#endif
 
 #define SPLICE(v, p, n) (v) |= (p) << SHIFT(n)
 
