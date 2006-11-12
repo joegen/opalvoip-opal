@@ -21422,6 +21422,7 @@ EXPORTS
     ?AttachInterrogateResultToPdu@H4507Handler@@UAEXAAVH323SignalPDU@@AAVH4507_MWIInterrogateRes@@@Z @35319 NONAME
     ?AttachQoS@H323Capability@@UAEXPAVRTP_QOS@@@Z @18959 NONAME
     ?AttachQoS@H323RealTimeCapability@@UAEXPAVRTP_QOS@@@Z @18960 NONAME
+    ?AttachRFC2833HandlerToPatch@OpalConnection@@UAEXHAAVOpalMediaPatch@@@Z @38014 NONAME
     ?AttachSignalChannel@H323Connection@@QAEXABVPString@@PAVOpalTransport@@H@Z @18961 NONAME
     ?AttachSupplementaryServiceAPDU@H450ServiceAPDU@@QAEXAAVH323SignalPDU@@@Z @18962 NONAME
     ?AttachThread@OpalTransport@@UAEXPAVPThread@@@Z @18963 NONAME
@@ -25726,7 +25727,7 @@ EXPORTS
     ?CreateTransport@H323DataChannel@@UAEHXZ @22725 NONAME
     ?CreateTransport@H323_T38Channel@@UAEHXZ @22726 NONAME
     ?CreateTransport@OpalTransportAddress@@UBEPAVOpalTransport@@AAVOpalEndPoint@@W4BindOptions@1@@Z @22729 NONAME
-    ?CreateTransport@SIPEndPoint@@QAEPAVOpalTransport@@ABVOpalTransportAddress@@@Z @22730 NONAME
+    ?CreateTransport@SIPEndPoint@@QAEPAVOpalTransport@@ABVOpalTransportAddress@@H@Z @38015 NONAME
     ?CreateTransport@SIPInfo@@UAEHAAVOpalTransportAddress@@@Z @29684 NONAME
     ?CreateVideoInputDevice@OpalConnection@@UAEHABVOpalMediaFormat@@AAPAVPVideoInputDevice@@AAH@Z @32093 NONAME
     ?CreateVideoInputDevice@OpalEndPoint@@UAEHABVOpalConnection@@ABVOpalMediaFormat@@AAPAVPVideoInputDevice@@AAH@Z @32094 NONAME
@@ -29818,7 +29819,6 @@ EXPORTS
     ?InitialiseHeader@IAX2FullFrame@@MAEXPAVIAX2Processor@@@Z @32543 NONAME
     ?InitialiseHeader@IAX2MiniFrame@@UAEXPAVIAX2Processor@@@Z @32544 NONAME
     ?InitializeChallengePassword@IAX2IeMd5Result@@QAEXABVPString@@0@Z @32545 NONAME
-    ?InitRFC2833Handler@SIPConnection@@IAEXXZ @33666 NONAME
     ?InSeqNo@IAX2SequenceNumbers@@QAEHXZ @32546 NONAME
     ?insert@?$vector@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QAE?AViterator@12@V312@ABUCapabilityListCreateEntry@OpalPluginCodecManager@@@Z @37843 NONAME
     ?insert@?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QAE?AViterator@12@V312@ABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@2@@Z @37104 NONAME
@@ -30692,9 +30692,11 @@ EXPORTS
     ?OnOpenSourceMediaStreams@SIPConnection@@MAEHABVOpalMediaFormatList@@IPAVSDPMediaDescription@@@Z @33445 NONAME
     ?OnOutgoingCall@H323Connection@@UAEHABVH323SignalPDU@@@Z @26709 NONAME
     ?OnOutgoingCall@H323EndPoint@@UAEHAAVH323Connection@@ABVH323SignalPDU@@@Z @26710 NONAME
+    ?OnPatchMediaStream@H323Connection@@UAEXHAAVOpalMediaPatch@@@Z @38016 NONAME
     ?OnPatchMediaStream@OpalConnection@@UAEXHAAVOpalMediaPatch@@@Z @33446 NONAME
     ?OnPatchMediaStream@OpalPCSSConnection@@UAEXHAAVOpalMediaPatch@@@Z @33447 NONAME
     ?OnPatchMediaStream@OpalPCSSEndPoint@@UAEXABVOpalPCSSConnection@@HAAVOpalMediaPatch@@@Z @33448 NONAME
+    ?OnPatchMediaStream@SIPConnection@@UAEXHAAVOpalMediaPatch@@@Z @38017 NONAME
     ?OnPreamble@OpalT38Protocol@@UAEHXZ @26711 NONAME
     ?OnReceiveAccessConfirmation@H323PeerElement@@UAEHABVH501PDU@@ABVH501_AccessConfirmation@@@Z @26712 NONAME
     ?OnReceiveAccessConfirmation@H323_AnnexG@@UAEHABVH501PDU@@ABVH501_AccessConfirmation@@@Z @26713 NONAME
