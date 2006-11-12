@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: tj_win.cpp,v $
+ * Revision 1.6  2006/11/12 03:35:15  rjongbloed
+ * Fixed destruction race condition
+ *
  * Revision 1.5  2006/11/05 05:04:46  rjongbloed
  * Improved the terminal LID line ringing, epecially for country emulation.
  *
@@ -253,8 +256,14 @@ class Context
     {
       Close();
 
-      if (m_eProductID != TJIP_NONE)
+      if (m_eProductID != TJIP_NONE) {
+        TJ_CALLBACK_INFO info;
+        info.fpCallback = NULL;
+        info.context = NULL;
+        m_pTjIpSysCall(TJIP_SET_CALLBACK, 0, &info);
+
         m_pTjIpSysCall(TJIP_SYS_CLOSE, 0, NULL);
+      }
 
       if (m_hDLL != NULL)
         FreeLibrary(m_hDLL);
