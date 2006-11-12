@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2007  2006/11/05 05:04:47  rjongbloed
+ * Revision 1.2008  2006/11/12 03:36:42  rjongbloed
+ * Fixed setting country code on LIDs that do not directly support them.
+ *
+ * Revision 2.6  2006/11/05 05:04:47  rjongbloed
  * Improved the terminal LID line ringing, epecially for country emulation.
  *
  * Revision 2.5  2006/10/28 00:38:43  rjongbloed
@@ -927,12 +930,15 @@ BOOL OpalPluginLID::SetWinkDuration(unsigned line, unsigned winkDuration)
 
 BOOL OpalPluginLID::SetCountryCode(T35CountryCodes country)
 {
-  OpalLineInterfaceDevice::SetCountryCode(country);
+  switch (CHECK_FN(SetCountryCode, (m_context, country))) {
+    case PluginLID_UnimplementedFunction :
+      return OpalLineInterfaceDevice::SetCountryCode(country);
 
-  if (m_definition.DialOut == NULL)
-    return TRUE;
+    case PluginLID_NoError :
+      return TRUE;
+  }
 
-  return CHECK_FN(SetCountryCode, (m_context, country)) == PluginLID_NoError;
+  return FALSE;
 }
 
 
