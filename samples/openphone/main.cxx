@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.14  2006/11/12 03:39:17  rjongbloed
+ * Fixed setting and saving of LID country code from Options dialog.
+ *
  * Revision 1.13  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
@@ -650,8 +653,10 @@ bool MyManager::Initialise()
     if (PAssertNULL(line) != NULL) {
       if (config->Read(AECKey, &value1) && value1 >= 0 && value1 < OpalLineInterfaceDevice::AECError)
         line->SetAEC((OpalLineInterfaceDevice::AECLevels)value1);
-      if (config->Read(CountryKey, &str))
-        line->GetDevice().SetCountryCodeName(str);
+      if (config->Read(CountryKey, &str)) {
+        if (!line->GetDevice().SetCountryCodeName(str))
+          LogWindow << "Could not configure Line Interface Device to country \"" << str << '"' << endl;
+      }
     }
   }
 
@@ -1720,6 +1725,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Fill line interface combo box with available devices and set selection
   m_selectedAEC = FindWindowByNameAs<wxChoice>(this, AECKey);
   m_selectedCountry = FindWindowByNameAs<wxComboBox>(this, CountryKey);
+  m_selectedCountry->SetValidator(wxGenericValidator(&m_Country));
   m_selectedLID = FindWindowByNameAs<wxComboBox>(this, LineInterfaceDeviceKey);
   m_selectedLID->SetValidator(wxGenericValidator(&m_LineInterfaceDevice));
   devices = OpalLineInterfaceDevice::GetAllDevices();
@@ -1752,6 +1758,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
       }
 
       INIT_FIELD(AEC, line->GetAEC());
+
+      PStringList countries = line->GetDevice().GetCountryCodeNameList();
+      for (i = 0; i < countries.GetSize(); i++)
+        m_selectedCountry->Append((const char *)countries[i]);
       INIT_FIELD(Country, line->GetDevice().GetCountryCodeName());
     }
     else {
@@ -1997,7 +2007,9 @@ bool OptionsDialog::TransferDataFromWindow()
     if (PAssertNULL(line) != NULL) {
       line->SetAEC((OpalLineInterfaceDevice::AECLevels)m_AEC);
       config->Write(AECKey, m_AEC);
-      SAVE_FIELD(Country, line->GetDevice().SetCountryCodeName);
+      if (!line->GetDevice().SetCountryCodeName(m_Country))
+        LogWindow << "Could not configure Line Interface Device to country \"" << m_Country << '"' << endl;
+      config->Write(CountryKey, m_Country);
     }
   }
 

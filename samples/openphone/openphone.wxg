@@ -771,12 +771,6 @@
                                                         <object class="wxComboBox" name="Country" base="EditComboBox">
                                                             <selection>0</selection>
                                                             <choices>
-                                                                <choice>Australia</choice>
-                                                                <choice>France</choice>
-                                                                <choice>Germany</choice>
-                                                                <choice>Japan</choice>
-                                                                <choice>United Kingdom</choice>
-                                                                <choice></choice>
                                                             </choices>
                                                             <size>80, 12d</size>
                                                         </object>
