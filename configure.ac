@@ -80,14 +80,12 @@ if test "${HAS_PTLIB:-unset}" = "unset" ; then
 fi
 
 if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  echo "Cannot find pwlib - please install or set PWLIBDIR and try again"
-  exit
+  AC_MSG_ERROR("Cannot find pwlib - please install or set PWLIBDIR and try again")
 fi
 
 if test "${PWLIBDIR:-unset}" = "unset" ; then
   if test "${PTLIB_CONFIG:-unset}" = "unset" ; then
-    echo "Cannot find ptlib-config - please install and try again"
-    exit
+    AC_MSG_ERROR("Cannot find ptlib-config - please install and try again")
   fi
   PWLIBDIR=`$PTLIB_CONFIG --prefix`
 fi
@@ -124,16 +122,13 @@ if test "${PWLIB_VERSION_CHECK}x" = "nox" ; then
   AC_MSG_RESULT(check disabled)
 else
   if test $PW_MAJOR_VERSION -lt $REQUIRED_PWLIB_MAJOR ; then
-    AC_MSG_RESULT(Major version less than required $REQUIRED_PWLIB_MAJOR)
-    exit 1
+    AC_MSG_ERROR(Major version less than required $REQUIRED_PWLIB_MAJOR)
   fi
   if test $PW_MINOR_VERSION -lt $REQUIRED_PWLIB_MINOR ; then
-    AC_MSG_RESULT(Minor version less than required $REQUIRED_PWLIB_MINOR)
-    exit 1
+    AC_MSG_ERROR(Minor version less than required $REQUIRED_PWLIB_MINOR)
   fi
   if test $PW_BUILD_NUMBER -lt $REQUIRED_PWLIB_BUILD ; then
-    AC_MSG_RESULT(Build version less than required $REQUIRED_PWLIB_BUILD)
-    exit 1
+    AC_MSG_ERROR(Build version less than required $REQUIRED_PWLIB_BUILD)
   fi
   AC_MSG_RESULT(ok)
 fi
