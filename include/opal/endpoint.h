@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2036  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2037  2006/11/19 06:02:57  rjongbloed
+ * Moved function that reads User Input into a destination address to
+ *   OpalManager so can be easily overidden in applications.
+ *
+ * Revision 2.35  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.34  2006/09/28 07:42:17  csoutheren
@@ -638,6 +642,15 @@ class OpalEndPoint : public PObject
       OpalConnection & connection,  ///<  Connection input has come from
       char tone,                    ///<  Tone received
       int duration                  ///<  Duration of tone
+    );
+
+    /**Read a sequence of user indications from connection with timeouts.
+      */
+    virtual PString ReadUserInput(
+      OpalConnection & connection,        ///<  Connection to read input from
+      const char * terminators = "#\r\n", ///<  Characters that can terminte input
+      unsigned lastDigitTimeout = 4,      ///<  Timeout on last digit in string
+      unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
     );
   //@}
 
