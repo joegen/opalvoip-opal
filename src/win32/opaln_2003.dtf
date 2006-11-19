@@ -31612,6 +31612,8 @@ EXPORTS
     ?ReadPDU@OpalTransportTCP@@UAEHAAVPBYTEArray@@@Z @27391 NONAME
     ?ReadPDU@OpalTransportUDP@@UAEHAAVPBYTEArray@@@Z @27392 NONAME
     ?ReadUserInput@OpalConnection@@UAE?AVPString@@PBDII@Z @27395 NONAME
+    ?ReadUserInput@OpalEndPoint@@UAE?AVPString@@AAVOpalConnection@@PBDII@Z @38018 NONAME
+    ?ReadUserInput@OpalManager@@UAE?AVPString@@AAVOpalConnection@@PBDII@Z @38019 NONAME
     ?Receive@H323_ExternalRTPChannel@@UAEXXZ @27396 NONAME
     ?Receive@H323_T120Channel@@UAEXXZ @27397 NONAME
     ?Receive@H323_T38Channel@@UAEXXZ @27398 NONAME
