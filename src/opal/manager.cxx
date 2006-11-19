@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2065  2006/10/15 06:23:35  rjongbloed
+ * Revision 1.2066  2006/11/19 06:02:58  rjongbloed
+ * Moved function that reads User Input into a destination address to
+ *   OpalManager so can be easily overidden in applications.
+ *
+ * Revision 2.64  2006/10/15 06:23:35  rjongbloed
  * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
  *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
  *
@@ -830,6 +834,37 @@ void OpalManager::OnUserInputTone(OpalConnection & connection,
                                   int duration)
 {
   connection.GetCall().OnUserInputTone(connection, tone, duration);
+}
+
+
+PString OpalManager::ReadUserInput(OpalConnection & connection,
+                                  const char * terminators,
+                                  unsigned lastDigitTimeout,
+                                  unsigned firstDigitTimeout)
+{
+  PTRACE(3, "OpalCon\tReadUserInput from " << connection);
+
+  connection.PromptUserInput(TRUE);
+  PString digit = connection.GetUserInput(firstDigitTimeout);
+  connection.PromptUserInput(FALSE);
+
+  if (digit.IsEmpty()) {
+    PTRACE(2, "OpalCon\tReadUserInput first character timeout (" << firstDigitTimeout << "ms) on " << *this);
+    return PString::Empty();
+  }
+
+  PString input;
+  while (digit.FindOneOf(terminators) == P_MAX_INDEX) {
+    input += digit;
+
+    digit = connection.GetUserInput(lastDigitTimeout);
+    if (digit.IsEmpty()) {
+      PTRACE(2, "OpalCon\tReadUserInput last character timeout (" << lastDigitTimeout << "ms) on " << *this);
+      return input; // Input so far will have to do
+    }
+  }
+
+  return input.IsEmpty() ? digit : input;
 }
 
 
