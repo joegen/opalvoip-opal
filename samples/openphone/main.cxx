@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.15  2006/11/19 06:06:01  rjongbloed
+ * Added override for dialing on a LID to use unique speed dial code immediately.
+ *
  * Revision 1.14  2006/11/12 03:39:17  rjongbloed
  * Fixed setting and saving of LID country code from Options dialog.
  *
@@ -1208,7 +1211,7 @@ bool MyManager::HasSpeedDialName(const wxString & name) const
 }
 
 
-bool MyManager::HasSpeedDialNumber(const char * number, const char * ignore) const
+int MyManager::GetSpeedDialIndex(const char * number, const char * ignore) const
 {
   int count = m_speedDials->GetItemCount();
   wxListItem item;
@@ -1218,10 +1221,10 @@ bool MyManager::HasSpeedDialNumber(const char * number, const char * ignore) con
     if (m_speedDials->GetItem(item)) {
       int len = item.m_text.Length();
       if (len > 0 && (ignore == NULL || strcmp(ignore, item.m_text) != 0) && strncmp(number, item.m_text, len) == 0)
-        return true;
+        return item.m_itemId;
     }
   }
-  return false;
+  return -1;
 }
 
 
@@ -1309,6 +1312,15 @@ void MyManager::StopRingSound()
 }
 
 
+BOOL MyManager::OnIncomingConnection(OpalConnection & connection)
+{
+  if (connection.GetEndPoint().GetPrefixName() == "pots")
+    LogWindow << "Line interface device \"" << connection.GetRemotePartyName() << "\" has gone off hook." << endl;
+
+  return OpalManager::OnIncomingConnection(connection);
+}
+
+
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
   m_currentCallToken = call.GetToken();
@@ -1321,52 +1333,53 @@ void MyManager::OnClearedCall(OpalCall & call)
 {
   StopRingSound();
 
-  PString remoteName = '"' + call.GetPartyB() + '"';
+  PString name = call.GetPartyB().IsEmpty() ? call.GetPartyA() : call.GetPartyB();
+
   switch (call.GetCallEndReason()) {
     case OpalConnection::EndedByRemoteUser :
-      LogWindow << remoteName << " has cleared the call";
+      LogWindow << '"' << name << "\" has cleared the call";
       break;
     case OpalConnection::EndedByCallerAbort :
-      LogWindow << remoteName << " has stopped calling";
+      LogWindow << '"' << name << "\" has stopped calling";
       break;
     case OpalConnection::EndedByRefusal :
-      LogWindow << remoteName << " did not accept your call";
+      LogWindow << '"' << name << "\" did not accept your call";
       break;
     case OpalConnection::EndedByNoAnswer :
-      LogWindow << remoteName << " did not answer your call";
+      LogWindow << '"' << name << "\" did not answer your call";
       break;
     case OpalConnection::EndedByTransportFail :
-      LogWindow << "Call with " << remoteName << " ended abnormally";
+      LogWindow << "Call with \"" << name << "\" ended abnormally";
       break;
     case OpalConnection::EndedByCapabilityExchange :
-      LogWindow << "Could not find common codec with " << remoteName;
+      LogWindow << "Could not find common codec with \"" << name << '"';
       break;
     case OpalConnection::EndedByNoAccept :
-      LogWindow << "Did not accept incoming call from " << remoteName;
+      LogWindow << "Did not accept incoming call from \"" << name << '"';
       break;
     case OpalConnection::EndedByAnswerDenied :
-      LogWindow << "Refused incoming call from " << remoteName;
+      LogWindow << "Refused incoming call from \"" << name << '"';
       break;
     case OpalConnection::EndedByNoUser :
-      LogWindow << "Gatekeeper could find user " << remoteName;
+      LogWindow << "Gatekeeper could find user \"" << name << '"';
       break;
     case OpalConnection::EndedByNoBandwidth :
-      LogWindow << "Call to " << remoteName << " aborted, insufficient bandwidth.";
+      LogWindow << "Call to \"" << name << "\" aborted, insufficient bandwidth.";
       break;
     case OpalConnection::EndedByUnreachable :
-      LogWindow << remoteName << " could not be reached.";
+      LogWindow << '"' << name << "\" could not be reached.";
       break;
     case OpalConnection::EndedByNoEndPoint :
-      LogWindow << "No phone running for " << remoteName;
+      LogWindow << "No phone running for \"" << name << '"';
       break;
     case OpalConnection::EndedByHostOffline :
-      LogWindow << remoteName << " is not online.";
+      LogWindow << '"' << name << "\" is not online.";
       break;
     case OpalConnection::EndedByConnectFail :
-      LogWindow << "Transport error calling " << remoteName;
+      LogWindow << "Transport error calling \"" << name << '"';
       break;
     default :
-      LogWindow << "Call with " << remoteName << " completed";
+      LogWindow << "Call with \"" << name << "\" completed";
   }
   PTime now;
   LogWindow << ", on " << now.AsString("w h:mma") << ". Duration "
@@ -1465,8 +1478,50 @@ BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
     
 void MyManager::OnUserInputString(OpalConnection & connection, const PString & value)
 {
-  LogWindow << "User input received: \"" << value << '"' << endl;
+  LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
   OpalManager::OnUserInputString(connection, value);
+}
+
+
+PString MyManager::ReadUserInput(OpalConnection & connection,
+                                 const char * terminators,
+                                 unsigned,
+                                 unsigned firstDigitTimeout)
+{
+  // The usual behaviour is to read until a '#' or timeout and that yields the
+  // entire destination address. However for this application we want to disable
+  // the timeout and short circuit the need for '#' as the speed dial number is
+  // always unique.
+
+  PTRACE(3, "OpalPhone\tReadUserInput from " << connection);
+
+  connection.PromptUserInput(TRUE);
+  PString digit = connection.GetUserInput(firstDigitTimeout);
+  connection.PromptUserInput(FALSE);
+
+  PString input;
+  while (!digit.IsEmpty()) {
+    input += digit;
+
+    int index = GetSpeedDialIndex(input, NULL);
+    if (index >= 0) {
+      wxListItem nameItem;
+      nameItem.m_itemId = index;
+      nameItem.m_mask = wxLIST_MASK_TEXT;
+      nameItem.m_col = e_NameColumn;
+      wxListItem addressItem = nameItem;
+      addressItem.m_col = e_AddressColumn;
+      if (m_speedDials->GetItem(nameItem) && m_speedDials->GetItem(addressItem)) {
+        LogWindow << "Calling \"" << nameItem.m_text << "\" using \"" << addressItem.m_text << '"' << endl;
+        return addressItem.m_text.c_str();
+      }
+    }
+
+    digit = connection.GetUserInput(firstDigitTimeout);
+  }
+
+  PTRACE(2, "OpalPhone\tReadUserInput timeout (" << firstDigitTimeout << "ms) on " << *this);
+  return PString::Empty();
 }
 
 
@@ -2773,7 +2828,7 @@ void SpeedDialDialog::OnChange(wxCommandEvent & WXUNUSED(event))
 
   m_ok->Enable(!newName.IsEmpty() && !inUse);
 
-  m_ambiguous->Show(m_manager.HasSpeedDialNumber(m_numberCtrl->GetValue(), m_Number));
+  m_ambiguous->Show(m_manager.GetSpeedDialIndex(m_numberCtrl->GetValue(), m_Number) >= 0);
 }
 
 
