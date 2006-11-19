@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.36  2006/11/19 06:06:01  rjongbloed
+ * Added override for dialing on a LID to use unique speed dial code immediately.
+ *
  * Revision 1.35  2006/09/16 04:20:36  rjongbloed
  * Fixed crash when entering opetions dialog.
  * Added recent calls list to Call dialog.
@@ -544,7 +547,7 @@ class MyManager : public wxFrame, public OpalManager
     bool Initialise();
 
     bool HasSpeedDialName(const wxString & name) const;
-    bool HasSpeedDialNumber(const char * number, const char * ignore) const;
+    int  GetSpeedDialIndex(const char * number, const char * ignore) const;
 
     void MakeCall(const PwxString & address);
     void AnswerCall();
@@ -557,11 +560,38 @@ class MyManager : public wxFrame, public OpalManager
     PSafePtr<OpalConnection> GetUserConnection();
 
   private:
-    // Controls on main frame
-    enum {
-      SplitterID = 100,
-      SpeedDialsID
-    };
+    // OpalManager overrides
+    virtual BOOL OnIncomingConnection(
+      OpalConnection & connection
+    );
+    virtual void OnEstablishedCall(
+      OpalCall & call   /// Call that was completed
+    );
+    virtual void OnClearedCall(
+      OpalCall & call   /// Connection that was established
+    );
+    virtual BOOL OnOpenMediaStream(
+      OpalConnection & connection,  /// Connection that owns the media stream
+      OpalMediaStream & stream    /// New media stream being opened
+    );
+    virtual BOOL CreateVideoOutputDevice(
+      const OpalConnection & connection,    /// Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  /// Media format for stream
+      BOOL preview,                         /// Flag indicating is a preview output
+      PVideoOutputDevice * & device,        /// Created device
+      BOOL & autoDelete                     /// Flag for auto delete device
+    );
+    virtual void OnUserInputString(
+      OpalConnection & connection,  /// Connection input has come from
+      const PString & value         /// String value of indication
+    );
+    virtual PString ReadUserInput(
+      OpalConnection & connection,        ///<  Connection to read input from
+      const char * terminators = "#\r\n", ///<  Characters that can terminte input
+      unsigned lastDigitTimeout = 4,      ///<  Timeout on last digit in string
+      unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
+    );
+
 
     void OnClose(wxCloseEvent& event);
 
@@ -584,27 +614,6 @@ class MyManager : public wxFrame, public OpalManager
     void OnSpeedDialColumnResize(wxListEvent& event);
     void OnRightClick(wxListEvent& event);
 
-    virtual void OnEstablishedCall(
-      OpalCall & call   /// Call that was completed
-    );
-    virtual void OnClearedCall(
-      OpalCall & call   /// Connection that was established
-    );
-    virtual BOOL OnOpenMediaStream(
-      OpalConnection & connection,  /// Connection that owns the media stream
-      OpalMediaStream & stream    /// New media stream being opened
-    );
-    virtual BOOL CreateVideoOutputDevice(
-      const OpalConnection & connection,    /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  /// Media format for stream
-      BOOL preview,                         /// Flag indicating is a preview output
-      PVideoOutputDevice * & device,        /// Created device
-      BOOL & autoDelete                     /// Flag for auto delete device
-    );
-    virtual void OnUserInputString(
-      OpalConnection & connection,  /// Connection input has come from
-      const PString & value         /// String value of indication
-    );
 
     enum SpeedDialViews {
       e_ViewLarge,
@@ -627,6 +636,12 @@ class MyManager : public wxFrame, public OpalManager
       e_AddressColumn,
       e_DescriptionColumn,
       e_NumColumns
+    };
+
+    // Controls on main frame
+    enum {
+      SplitterID = 100,
+      SpeedDialsID
     };
 
     wxSplitterWindow * m_splitter;
