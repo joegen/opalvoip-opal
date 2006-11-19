@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2042  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2043  2006/11/19 06:02:58  rjongbloed
+ * Moved function that reads User Input into a destination address to
+ *   OpalManager so can be easily overidden in applications.
+ *
+ * Revision 2.41  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.40  2006/09/28 07:42:18  csoutheren
@@ -535,6 +539,15 @@ void OpalEndPoint::OnUserInputTone(OpalConnection & connection,
                                    int duration)
 {
   manager.OnUserInputTone(connection, tone, duration);
+}
+
+
+PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
+                                    const char * terminators,
+                                    unsigned lastDigitTimeout,
+                                    unsigned firstDigitTimeout)
+{
+  return manager.ReadUserInput(connection, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
 

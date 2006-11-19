@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2081  2006/11/11 12:23:18  hfriederich
+ * Revision 1.2082  2006/11/19 06:02:58  rjongbloed
+ * Moved function that reads User Input into a destination address to
+ *   OpalManager so can be easily overidden in applications.
+ *
+ * Revision 2.80  2006/11/11 12:23:18  hfriederich
  * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
  *
  * Revision 2.79  2006/10/28 16:40:28  dsandras
@@ -471,6 +475,11 @@ OpalConnection::OpalConnection(OpalCall & call,
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
   PAssert(ownerCall.SafeReference(), PLogicError);
+
+  // Set an initial value for the A-Party name, if we are in fact the A-Party
+  if (ownerCall.connectionsActive.IsEmpty())
+    ownerCall.partyA = localPartyName;
+
   ownerCall.connectionsActive.Append(this);
 
   phase = UninitialisedPhase;
@@ -1244,32 +1253,7 @@ PString OpalConnection::ReadUserInput(const char * terminators,
                                       unsigned lastDigitTimeout,
                                       unsigned firstDigitTimeout)
 {
-  PTRACE(3, "OpalCon\tReadUserInput from " << *this);
-
-  PromptUserInput(TRUE);
-  PString input = GetUserInput(firstDigitTimeout);
-  PromptUserInput(FALSE);
-
-  if (!input) {
-    for (;;) {
-      PString next = GetUserInput(lastDigitTimeout);
-      if (next.IsEmpty()) {
-        PTRACE(3, "OpalCon\tReadUserInput last character timeout on " << *this);
-        break;
-      }
-      if (next.FindOneOf(terminators) != P_MAX_INDEX) {
-        if (input.IsEmpty())
-          input = next;
-        break;
-      }
-      input += next;
-    }
-  }
-  else {
-    PTRACE(3, "OpalCon\tReadUserInput first character timeout on " << *this);
-  }
-
-  return input;
+  return endpoint.ReadUserInput(*this, terminators, lastDigitTimeout, firstDigitTimeout);
 }
 
 
