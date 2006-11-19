@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2008  2006/11/12 03:36:42  rjongbloed
+ * Revision 1.2009  2006/11/19 04:58:09  rjongbloed
+ * Fixed being able to restart tones on LIDs
+ *
+ * Revision 2.7  2006/11/12 03:36:42  rjongbloed
  * Fixed setting country code on LIDs that do not directly support them.
  *
  * Revision 2.6  2006/11/05 05:04:47  rjongbloed
@@ -846,6 +849,18 @@ BOOL OpalPluginLID::PlayTone(unsigned line, CallProgressTones tone)
 {
   switch (CHECK_FN(PlayTone, (m_context, line, tone))) {
     case PluginLID_UnimplementedFunction :
+      // Stop previous tone, if running
+      if (m_tonePlayer != NULL) {
+        m_stopTone.Signal();
+        m_tonePlayer->WaitForTermination(1000);
+        delete m_tonePlayer;
+      }
+
+      // Clear out extraneous signals
+      while (m_stopTone.Wait(0))
+        ;
+
+      // Start new tone thread
       m_tonePlayer = PThread::Create(PCREATE_NOTIFIER(TonePlayer), tone, PThread::NoAutoDeleteThread, PThread::NormalPriority, "TonePlayer");
       return m_tonePlayer != NULL;
 
