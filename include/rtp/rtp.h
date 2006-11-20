@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2028  2006/10/28 16:40:28  dsandras
+ * Revision 1.2029  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.27  2006/10/28 16:40:28  dsandras
  * Fixed SIP reinvite without breaking H.323 calls.
  *
  * Revision 2.26  2006/10/24 04:18:28  csoutheren
@@ -290,14 +293,19 @@
 #pragma interface
 #endif
 
-
+#include <opal/buildopts.h>
 #include <ptlib/sockets.h>
 
 
 class RTP_JitterBuffer;
 class PSTUNClient;
 
-
+#if OPAL_RTP_AGGREGATE
+#include <ptclib/sockagg.h>
+#else
+typedef void * PHandleAggregator;
+typedef void * RTP_AggregatedHandle;
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // 
@@ -561,6 +569,7 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
+      PHandleAggregator * aggregator, ///<  RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
       RTP_UserData * userData = NULL, ///<  Optional data for session.
       BOOL autoDeleteUserData = TRUE  ///<  Delete optional data with session.
@@ -606,11 +615,11 @@ class RTP_Session : public PObject
     { return FALSE; }
 
     /**Read a data frame from the RTP channel.
-       This function will conditionally read data from eth jitter buffer or
+       This function will conditionally read data from the jitter buffer or
        directly if there is no jitter buffer enabled. An application should
        generally use this in preference to directly calling ReadData().
       */
-    BOOL ReadBufferedData(
+    virtual BOOL ReadBufferedData(
       DWORD timestamp,        ///<  Timestamp to read from buffer.
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
@@ -621,7 +630,8 @@ class RTP_Session : public PObject
        available or an error occurs.
       */
     virtual BOOL ReadData(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
+      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+      BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
     ) = 0;
 
     /**Write a data frame from the RTP channel.
@@ -800,6 +810,11 @@ class RTP_Session : public PObject
       const PTimeInterval & interval ///<  New time interval for reports.
     )  { reportTimeInterval = interval; }
 
+    /**Get the current report timer
+     */
+    PTimeInterval GetReportTimer()
+    { return reportTimer; }
+
     /**Get the interval for transmitter statistics in the session.
       */
     unsigned GetTxStatisticsInterval() { return txStatisticsInterval; }
@@ -896,6 +911,14 @@ class RTP_Session : public PObject
     DWORD GetMaxJitterTime() const { return maximumJitterLevel>>7; }
   //@}
 
+  /**@name Functions added to support RTP aggregation */
+  //@{
+    virtual int GetDataSocketHandle() const
+    { return -1; }
+    virtual int GetControlSocketHandle() const
+    { return -1; }
+  //@}
+
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
@@ -958,6 +981,8 @@ class RTP_Session : public PObject
 
     PMutex reportMutex;
     PTimer reportTimer;
+
+    PHandleAggregator * aggregator;
 };
 
 
@@ -1079,8 +1104,9 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
-      unsigned id,       ///<  Session ID for RTP channel
-      BOOL remoteIsNAT   ///<  TRUE is remote is behind NAT
+      PHandleAggregator * aggregator, ///< RTP aggregator
+      unsigned id,                    ///<  Session ID for RTP channel
+      BOOL remoteIsNAT                ///<  TRUE is remote is behind NAT
     );
 
     /// Destroy the RTP
@@ -1094,7 +1120,7 @@ class RTP_UDP : public RTP_Session
        returned by this function. It will block until a data frame is
        available or an error occurs.
       */
-    virtual BOOL ReadData(RTP_DataFrame & frame);
+    virtual BOOL ReadData(RTP_DataFrame & frame, BOOL loop);
 
     /**Write a data frame from the RTP channel.
       */
@@ -1123,7 +1149,7 @@ class RTP_UDP : public RTP_Session
   //@{
     /**Open the UDP ports for the RTP session.
       */
-    BOOL Open(
+    virtual BOOL Open(
       PIPSocket::Address localAddress,  ///<  Local interface to bind to
       WORD portBase,                    ///<  Base of ports to search
       WORD portMax,                     ///<  end of ports to search (inclusive)
@@ -1181,7 +1207,7 @@ class RTP_UDP : public RTP_Session
     /**Set the remote address and port information for session.
       */
     BOOL SetRemoteSocketInfo(
-      PIPSocket::Address address,   ///<  Address of remote
+      PIPSocket::Address address,   ///<  Addre ss of remote
       WORD port,                    ///<  Port on remote
       BOOL isDataPort               ///<  Flag for data or control channel
     );
@@ -1192,6 +1218,12 @@ class RTP_UDP : public RTP_Session
       const PIPSocket::Address & addr
     );
   //@}
+
+    int GetDataSocketHandle() const
+    { return dataSocket != NULL ? dataSocket->GetHandle() : -1; }
+
+    int GetControlSocketHandle() const
+    { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
   protected:
     SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);

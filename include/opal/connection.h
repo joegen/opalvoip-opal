@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2066  2006/11/11 12:23:18  hfriederich
+ * Revision 1.2067  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.65  2006/11/11 12:23:18  hfriederich
  * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
  *
  * Revision 2.64  2006/10/28 16:40:28  dsandras
@@ -1347,6 +1350,8 @@ class OpalConnection : public PSafeObject
 #if PTRACING
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
+
+    BOOL useRTPAggregation;
 };
 
 class RTP_UDP;
@@ -1356,6 +1361,7 @@ class OpalSecurityMode : public PObject
   PCLASSINFO(OpalSecurityMode, PObject);
   public:
     virtual RTP_UDP * CreateRTPSession(
+      PHandleAggregator * _aggregator,   ///< handle aggregator
       unsigned id,          ///<  Session ID for RTP channel
       BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     ) = 0;
