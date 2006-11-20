@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2013  2006/06/27 12:08:01  csoutheren
+ * Revision 1.2014  2006/11/20 03:37:13  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.12  2006/06/27 12:08:01  csoutheren
  * Patch 1455568 - RFC2833 patch
  * Thanks to Boris Pavacic
  *
@@ -190,7 +193,6 @@
 
 #include <rtp/jitter.h>
 
-
 /*Number of consecutive attempts to add a packet to the jitter buffer while
   it is full before the system clears the jitter buffer and starts over
   again. */
@@ -233,6 +235,64 @@ class RTP_JitterBufferAnalyser : public PObject
 
 #endif
 
+#if OPAL_RTP_AGGREGATE
+class RTP_AggregatedHandle : public PAggregatedHandle
+{
+  public:
+    RTP_AggregatedHandle(PHandleAggregator * _owner, RTP_JitterBuffer & _jitterBuffer)
+      : jitterBuffer(_jitterBuffer), 
+        dataFd(jitterBuffer.session.GetDataSocketHandle()), 
+        controlFd(jitterBuffer.session.GetControlSocketHandle()),
+        owner(_owner)
+    { }
+
+    ~RTP_AggregatedHandle()
+    {
+    }
+
+    PAggregatorFDList_t GetFDs()
+    { 
+      PAggregatorFDList_t list; 
+      list.push_back(&controlFd); 
+      list.push_back(&dataFd); 
+      return list; 
+    }
+
+    BOOL Init()
+    {
+      return jitterBuffer.Init(currentReadFrame, markerWarning);
+    }
+
+    BOOL PreRead()
+    {
+      return jitterBuffer.PreRead(currentReadFrame, markerWarning);
+    }
+
+    BOOL OnRead()
+    {
+      return jitterBuffer.OnRead(currentReadFrame, markerWarning, FALSE);
+    }
+
+    void DeInit()
+    {
+      return jitterBuffer.DeInit(currentReadFrame, markerWarning);
+    }
+
+    PTimeInterval GetTimeout()
+    { return jitterBuffer.session.GetReportTimer(); }
+
+    BOOL Remove()
+    { return owner->RemoveHandle(this); }
+
+    RTP_JitterBuffer & jitterBuffer;
+    RTP_JitterBuffer::Entry * currentReadFrame;
+    BOOL markerWarning;
+
+  protected:
+    PAggregatorFD dataFd, controlFd;
+    PHandleAggregator * owner;
+};
+#endif
 
 #define new PNEW
 
@@ -242,10 +302,10 @@ class RTP_JitterBufferAnalyser : public PObject
 RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
                                    unsigned minJitterDelay,
                                    unsigned maxJitterDelay,
-				   unsigned time,
+                                   unsigned time,
                                    PINDEX stackSize)
-  : PThread(stackSize, NoAutoDeleteThread, HighestPriority, "RTP Jitter:%x"),
-    session(sess)
+  : 
+    session(sess), jitterThread(NULL), jitterStackSize(stackSize)
 {
   // Jitter buffer is a queue of frames waiting for playback, a list of
   // free frames, and a couple of place holders for the frame that is
@@ -308,17 +368,29 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
   analyser = NULL;
 #endif
 
-  // Start reading data from RTP session
-  Resume();
+#if OPAL_RTP_AGGREGATE
+  aggregratedHandle = NULL;
+#endif
 }
 
 
 RTP_JitterBuffer::~RTP_JitterBuffer()
 {
-  PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << GetThreadName());
-
   shuttingDown = TRUE;
-  PAssert(WaitForTermination(10000), "Jitter buffer thread did not terminate");
+
+#if OPAL_RTP_AGGREGATE
+  if (jitterThread == NULL) {
+    aggregratedHandle->Remove();
+    delete aggregratedHandle;  
+    aggregratedHandle = NULL;
+  } else 
+#endif
+  {
+    PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
+    PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
+    delete jitterThread;
+    jitterThread = NULL;
+  }
 
   bufferMutex.Wait();
 
@@ -369,152 +441,206 @@ void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
     bufferSize++;
   }
 
-  if (IsTerminated()) {
-    packetsTooLate = 0;
-    bufferOverruns = 0;
-    consecutiveBufferOverruns = 0;
-    consecutiveMarkerBits = 0;
-    consecutiveEarlyPacketStartTime = 0;
+  if (jitterThread != NULL) {
+    if (jitterThread->IsTerminated()) {
+      packetsTooLate = 0;
+      bufferOverruns = 0;
+      consecutiveBufferOverruns = 0;
+      consecutiveMarkerBits = 0;
+      consecutiveEarlyPacketStartTime = 0;
 
-    oldestFrame = newestFrame = currentWriteFrame = NULL;
+      oldestFrame = newestFrame = currentWriteFrame = NULL;
 
-    shuttingDown = FALSE;
-    preBuffering = TRUE;
+      shuttingDown = FALSE;
+      preBuffering = TRUE;
 
-    PTRACE(2, "RTP\tJitter buffer restarted:"
-              " size=" << bufferSize <<
-              " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
-              " (" << (currentJitterTime/timeUnits) << "ms)");
-    Restart();
+      PTRACE(2, "RTP\tJitter buffer restarted:"
+                " size=" << bufferSize <<
+                " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
+                " (" << (currentJitterTime/timeUnits) << "ms)");
+      jitterThread->Restart();
+    }
   }
 
   bufferMutex.Signal();
 }
 
-
-void RTP_JitterBuffer::Main()
+void RTP_JitterBuffer::Resume(PHandleAggregator * 
+#if OPAL_RTP_AGGREGATE
+                              aggregator
+#endif
+                              )
 {
+#if OPAL_RTP_AGGREGATE
+  // if we are aggregating RTP threads, add the socket to the RTP aggregator
+  if (aggregator != NULL) {
+    aggregratedHandle = new RTP_AggregatedHandle(aggregator, *this);
+    aggregator->AddHandle(aggregratedHandle);
+    return;
+  }
+#endif
+
+  // otherwise create a seperate thread as per the old design
+  jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), 0, PThread::NoAutoDeleteThread, PThread::HighestPriority, "RTP Jitter:%x",  jitterStackSize);
+  jitterThread->Resume();
+}
+
+void RTP_JitterBuffer::JitterThreadMain(PThread &, INT)
+{
+  RTP_JitterBuffer::Entry * currentReadFrame;
+  BOOL markerWarning;
+
   PTRACE(3, "RTP\tJitter RTP receive thread started: " << this);
 
+  if (Init(currentReadFrame, markerWarning)) {
+
+    for (;;) {
+      if (!PreRead(currentReadFrame, markerWarning))
+        break;
+
+      if (!OnRead(currentReadFrame, markerWarning, TRUE))
+        break;
+    }
+
+    DeInit(currentReadFrame, markerWarning);
+  }
+
+  PTRACE(3, "RTP\tJitter RTP receive thread finished: " << this);
+}
+
+//void RTP_JitterBuffer::Main()
+BOOL RTP_JitterBuffer::Init(Entry * & /*currentReadFrame*/, BOOL & markerWarning)
+{
   bufferMutex.Wait();
+  markerWarning = FALSE;
+  return TRUE;
+}
 
-  for (;;) {
+void RTP_JitterBuffer::DeInit(Entry * & /*currentReadFrame*/, BOOL & /*markerWarning*/)
+{
+}
 
-    // Get the next free frame available for use for reading from the RTP
-    // transport. Place it into a parking spot.
-    Entry * currentReadFrame;
-    if (freeFrames != NULL) {
-      // Take the next free frame and make it the current for reading
-      currentReadFrame = freeFrames;
-      freeFrames = freeFrames->next;
-      if (freeFrames != NULL)
-        freeFrames->prev = NULL;
-      PTRACE_IF(2, consecutiveBufferOverruns > 1,
+BOOL RTP_JitterBuffer::PreRead(RTP_JitterBuffer::Entry * & currentReadFrame, BOOL & /*markerWarning*/)
+{
+  // Get the next free frame available for use for reading from the RTP
+  // transport. Place it into a parking spot.
+  if (freeFrames != NULL) {
+    // Take the next free frame and make it the current for reading
+    currentReadFrame = freeFrames;
+    freeFrames = freeFrames->next;
+    if (freeFrames != NULL)
+      freeFrames->prev = NULL;
+    PTRACE_IF(2, consecutiveBufferOverruns > 1,
                 "RTP\tJitter buffer full, threw away "
                 << consecutiveBufferOverruns << " oldest frames");
-      consecutiveBufferOverruns = 0;
+    consecutiveBufferOverruns = 0;
+  }
+  else {
+    // We have a full jitter buffer, need a new frame so take the oldest one
+    currentReadFrame = oldestFrame;
+    if (oldestFrame != NULL)
+	    oldestFrame = oldestFrame->next;
+    if (oldestFrame != NULL)
+      oldestFrame->prev = NULL;
+    currentDepth--;
+    bufferOverruns++;
+    consecutiveBufferOverruns++;
+    if (consecutiveBufferOverruns > MAX_BUFFER_OVERRUNS) {
+      PTRACE(2, "RTP\tJitter buffer continuously full, throwing away entire buffer.");
+      freeFrames = oldestFrame;
+      oldestFrame = newestFrame = NULL;
+      preBuffering = TRUE;
     }
     else {
-      // We have a full jitter buffer, need a new frame so take the oldest one
-      currentReadFrame = oldestFrame;
-      if (oldestFrame != NULL)
-	oldestFrame = oldestFrame->next;
-      if (oldestFrame != NULL)
-        oldestFrame->prev = NULL;
-      currentDepth--;
-      bufferOverruns++;
-      consecutiveBufferOverruns++;
-      if (consecutiveBufferOverruns > MAX_BUFFER_OVERRUNS) {
-        PTRACE(2, "RTP\tJitter buffer continuously full, throwing away entire buffer.");
-        freeFrames = oldestFrame;
-        oldestFrame = newestFrame = NULL;
-        preBuffering = TRUE;
-      }
-      else {
-        PTRACE_IF(2, consecutiveBufferOverruns == 1,
-                  "RTP\tJitter buffer full, throwing away oldest frame ("
-                  << currentReadFrame->GetTimestamp() << ')');
-      }
+      PTRACE_IF(2, consecutiveBufferOverruns == 1,
+                "RTP\tJitter buffer full, throwing away oldest frame ("
+                << currentReadFrame->GetTimestamp() << ')');
     }
+  }
 
-    if (currentReadFrame == NULL) {
-      bufferMutex.Signal();
-      return;
-    }
-
+  if (currentReadFrame != NULL)
     currentReadFrame->next = NULL;
 
-    bufferMutex.Signal();
+  bufferMutex.Signal();
 
+  return TRUE;
+}
+
+BOOL RTP_JitterBuffer::OnRead(RTP_JitterBuffer::Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop)
+{
+  do {
     // Keep reading from the RTP transport frames
-    if (!session.ReadData(*currentReadFrame)) {
+    if (!session.ReadData(*currentReadFrame, loop)) {
       if (currentReadFrame != NULL)
-	delete currentReadFrame;  // Destructor won't delete this one, so do it here.
+        delete currentReadFrame;  // Destructor won't delete this one, so do it here.
       shuttingDown = TRUE; // Flag to stop the reading side thread
       PTRACE(3, "RTP\tJitter RTP receive thread ended");
-      return;
+      return FALSE;
     }
+  } while (currentReadFrame->GetSize() == 0);
 
-    currentReadFrame->tick = PTimer::Tick();
+  currentReadFrame->tick = PTimer::Tick();
 
-    if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
-      if (currentReadFrame != NULL && currentReadFrame->GetMarker()) {
-        PTRACE(3, "RTP\tReceived start of talk burst: " << currentReadFrame->GetTimestamp());
-        //preBuffering = TRUE;
-        consecutiveMarkerBits++;
-      }
-      else
-        consecutiveMarkerBits = 0;
+  if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
+    if (currentReadFrame != NULL && currentReadFrame->GetMarker()) {
+      PTRACE(3, "RTP\tReceived start of talk burst: " << currentReadFrame->GetTimestamp());
+      //preBuffering = TRUE;
+      consecutiveMarkerBits++;
     }
-    else {
-      if (currentReadFrame != NULL && currentReadFrame->GetMarker())
-        currentReadFrame->SetMarker(FALSE);
-      if (consecutiveMarkerBits == maxConsecutiveMarkerBits) {
-        PTRACE(3, "RTP\tEvery packet has Marker bit, ignoring them from this client!");
-      }
+    else
+      consecutiveMarkerBits = 0;
+  }
+  else {
+    if (currentReadFrame != NULL && currentReadFrame->GetMarker())
+      currentReadFrame->SetMarker(FALSE);
+    if (!markerWarning && consecutiveMarkerBits == maxConsecutiveMarkerBits) {
+      markerWarning = TRUE;
+      PTRACE(3, "RTP\tEvery packet has Marker bit, ignoring them from this client!");
     }
+  }
     
     
 #if PTRACING && !defined(NO_ANALYSER)
-    analyser->In(currentReadFrame->GetTimestamp(), currentDepth, preBuffering ? "PreBuf" : "");
+  analyser->In(currentReadFrame->GetTimestamp(), currentDepth, preBuffering ? "PreBuf" : "");
 #endif
 
-    // Queue the frame for playing by the thread at other end of jitter buffer
-    bufferMutex.Wait();
+  // Queue the frame for playing by the thread at other end of jitter buffer
+  bufferMutex.Wait();
 
-    // Have been reading a frame, put it into the queue now, at correct position
-    if (newestFrame == NULL || oldestFrame == NULL)
-      oldestFrame = newestFrame = currentReadFrame; // Was empty
-    else {
-      DWORD time = currentReadFrame->GetTimestamp();
+  // Have been reading a frame, put it into the queue now, at correct position
+  if (newestFrame == NULL || oldestFrame == NULL)
+    oldestFrame = newestFrame = currentReadFrame; // Was empty
+  else {
+    DWORD time = currentReadFrame->GetTimestamp();
 
-      if (time > newestFrame->GetTimestamp() || (time == newestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() >= newestFrame->GetSequenceNumber())) {
-        // Is newer than newst, put at that end of queue
-        currentReadFrame->prev = newestFrame;
-        newestFrame->next = currentReadFrame;
-        newestFrame = currentReadFrame;
-      }
-      else if (time < oldestFrame->GetTimestamp() || (time == oldestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < oldestFrame->GetSequenceNumber())) {
-        // Is older than the oldest, put at that end of queue
-        currentReadFrame->next = oldestFrame;
-        oldestFrame->prev = currentReadFrame;
-        oldestFrame = currentReadFrame;
-      }
-      else {
-        // Somewhere in between, locate its position
-        Entry * frame = newestFrame->prev;
-        while (time < frame->GetTimestamp() || (time == frame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < frame->GetSequenceNumber()))
-          frame = frame->prev;
-
-        currentReadFrame->prev = frame;
-        currentReadFrame->next = frame->next;
-        frame->next->prev = currentReadFrame;
-        frame->next = currentReadFrame;
-      }
+    if (time > newestFrame->GetTimestamp() || (time == newestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() >= newestFrame->GetSequenceNumber())) {
+      // Is newer than newst, put at that end of queue
+      currentReadFrame->prev = newestFrame;
+      newestFrame->next = currentReadFrame;
+      newestFrame = currentReadFrame;
     }
+    else if (time < oldestFrame->GetTimestamp() || (time == oldestFrame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < oldestFrame->GetSequenceNumber())) {
+      // Is older than the oldest, put at that end of queue
+      currentReadFrame->next = oldestFrame;
+      oldestFrame->prev = currentReadFrame;
+      oldestFrame = currentReadFrame;
+    }
+    else {
+      // Somewhere in between, locate its position
+      Entry * frame = newestFrame->prev;
+      while (time < frame->GetTimestamp() || (time == frame->GetTimestamp() && currentReadFrame->GetSequenceNumber() < frame->GetSequenceNumber()))
+        frame = frame->prev;
 
-    currentDepth++;
+      currentReadFrame->prev = frame;
+      currentReadFrame->next = frame->next;
+      frame->next->prev = currentReadFrame;
+      frame->next = currentReadFrame;
+    }
   }
+
+  currentDepth++;
+
+  return TRUE;
 }
 
 

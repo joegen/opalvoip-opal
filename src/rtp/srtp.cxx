@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.9  2006/11/20 03:37:13  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
  * Revision 1.8  2006/10/24 04:18:28  csoutheren
  * Added support for encrypted RTCP
  *
@@ -85,11 +88,15 @@
 //  this class implements SRTP over UDP
 //
 
-OpalSRTP_UDP::OpalSRTP_UDP(
-     unsigned id,                   ///<  Session ID for RTP channel
-      BOOL remoteIsNAT,             ///<  TRUE is remote is behind NAT
-      OpalSecurityMode * _srtpParms ///<  Paramaters to use for SRTP
-) : RTP_UDP(id, remoteIsNAT)
+OpalSRTP_UDP::OpalSRTP_UDP(PHandleAggregator * _aggregator,   ///<  RTP aggregator
+                                      unsigned id,            ///<  Session ID for RTP channel
+                                          BOOL remoteIsNAT)   ///<  TRUE is remote is behind NAT
+  : RTP_UDP(_aggregator, id, remoteIsNAT)
+{
+  srtpParms = NULL;
+}
+
+void OpalSRTP_UDP::SetSecurityMode(OpalSecurityMode * _srtpParms)
 {
   srtpParms = dynamic_cast<OpalSRTPSecurityMode *>(_srtpParms);
 }
@@ -111,7 +118,7 @@ OpalSRTP_UDP::~OpalSRTP_UDP()
 //  implement SRTP via libSRTP
 //
 
-#if defined(HAS_LIBSRTP) 
+#if HAS_LIBSRTP
 
 namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
@@ -123,46 +130,15 @@ namespace PWLibStupidLinkerHacks {
 
 #include "srtp/srtp.h"
 
-class OpalSRTPSecurityMode;
-
-class LibSRTP_UDP : public OpalSRTP_UDP
-{
-  PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
-  public:
-    LibSRTP_UDP(
-      unsigned int id,                 ///<  Session ID for RTP channel
-      BOOL remoteIsNAT,                ///<  TRUE is remote is behind NAT
-      OpalSRTPSecurityMode * srtpParms ///<  Paramaters to use for SRTP
-    );
-
-    ~LibSRTP_UDP();
-
-    virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
-    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
-    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
-};
-
-///////////////////////////////////////////////////////
-
-class StaticInitializer
-{
-  public:
-    StaticInitializer()
-    { srtp_init(); }
-};
-
-static StaticInitializer initializer;
-
 ///////////////////////////////////////////////////////
 
 class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
 {
   PCLASSINFO(LibSRTPSecurityMode_Base, OpalSRTPSecurityMode);
   public:
-    RTP_UDP * CreateRTPSession(
-      unsigned id,          ///<  Session ID for RTP channel
-      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+    RTP_UDP * CreateRTPSession(PHandleAggregator * _aggregator,   ///< handle aggregator
+                                            unsigned id,          ///<  Session ID for RTP channel
+                                            BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     );
 
     BOOL SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return TRUE; }
@@ -186,10 +162,25 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
     KeySalt outgoingKey;
     srtp_policy_t inboundPolicy;
     srtp_policy_t outboundPolicy;
+
+  private:
+    static BOOL inited;
+    static PMutex initMutex;
 };
+
+BOOL LibSRTPSecurityMode_Base::inited = FALSE;
+PMutex LibSRTPSecurityMode_Base::initMutex;
+
 
 void LibSRTPSecurityMode_Base::Init()
 {
+  {
+    PWaitAndSignal m(initMutex);
+    if (!inited) {
+      srtp_init();
+      inited = TRUE;
+    }
+  }
   inboundPolicy.ssrc.type  = ssrc_any_inbound;
   inboundPolicy.next       = NULL;
   outboundPolicy.ssrc.type = ssrc_any_outbound;
@@ -199,9 +190,14 @@ void LibSRTPSecurityMode_Base::Init()
 }
 
 
-RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(unsigned id, BOOL remoteIsNAT)
+RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(
+                              PHandleAggregator * _aggregator,   ///< handle aggregator
+                                         unsigned id, 
+                                             BOOL remoteIsNAT)
 {
-  return new LibSRTP_UDP(id, remoteIsNAT, this);
+  LibSRTP_UDP * session = new LibSRTP_UDP(_aggregator, id, remoteIsNAT);
+  session->SetSecurityMode(this);
+  return session;
 }
 
 BOOL LibSRTPSecurityMode_Base::SetIncomingSSRC(DWORD ssrc)
@@ -271,11 +267,19 @@ DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_12
 
 ///////////////////////////////////////////////////////
 
-LibSRTP_UDP::LibSRTP_UDP(unsigned _sessionId, BOOL _remoteIsNAT, OpalSRTPSecurityMode * _srtpParms)
-  : OpalSRTP_UDP(_sessionId, _remoteIsNAT, _srtpParms)
+LibSRTP_UDP::LibSRTP_UDP(PHandleAggregator * _aggregator,   ///< handle aggregator
+                                    unsigned _sessionId, 
+                                        BOOL _remoteIsNAT)
+  : OpalSRTP_UDP(_aggregator, _sessionId, _remoteIsNAT)
 {
-  _srtpParms->GetOutgoingSSRC(syncSourceOut);
 }
+
+void LibSRTP_UDP::SetSecurityMode(OpalSecurityMode * _srtpParms)
+{
+  OpalSRTP_UDP::SetSecurityMode(_srtpParms);
+  ((LibSRTPSecurityMode_Base *)_srtpParms)->GetOutgoingSSRC(syncSourceOut);
+}
+
 
 LibSRTP_UDP::~LibSRTP_UDP()
 {
@@ -290,6 +294,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
   LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
 
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
+  frame.SetPayloadSize(len + SRTP_MAX_TRAILER_LEN);
   err_status_t err = ::srtp_protect(srtp->outboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
     return RTP_Session::e_IgnorePacket;
