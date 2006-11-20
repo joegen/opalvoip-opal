@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2010  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2011  2006/11/20 07:27:47  csoutheren
+ * Fix compilation problem on Linux
+ *
+ * Revision 2.9  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.8  2005/12/30 14:29:15  dsandras
@@ -124,7 +127,9 @@ class RTP_JitterBuffer : public PObject
   PCLASSINFO(RTP_JitterBuffer, PObject);
 
   public:
+#if OPAL_RTP_AGGREGATE
     friend class RTP_AggregatedHandle;
+#endif
 
     RTP_JitterBuffer(
       RTP_Session & session,   ///<  Associated RTP session tor ead data from
