@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2082  2006/11/19 06:02:58  rjongbloed
+ * Revision 1.2083  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.81  2006/11/19 06:02:58  rjongbloed
  * Moved function that reads User Input into a destination address to
  *   OpalManager so can be easily overidden in applications.
  *
@@ -470,7 +473,8 @@ OpalConnection::OpalConnection(OpalCall & call,
     displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token),
     remoteIsNAT(FALSE),
-    q931Cause(0x100)
+    q931Cause(0x100),
+    useRTPAggregation(endpoint.UseRTPAggregation())
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -1086,7 +1090,9 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
       PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
       return NULL;
     }
-    rtpSession = parms->CreateRTPSession(sessionID, remoteIsNAT);
+    rtpSession = parms->CreateRTPSession(
+                  useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                  sessionID, remoteIsNAT);
     if (rtpSession == NULL) {
       PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
       delete parms;
@@ -1095,7 +1101,9 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   }
   else
   {
-    rtpSession = new RTP_UDP(sessionID, remoteIsNAT);
+    rtpSession = new RTP_UDP(
+                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                   sessionID, remoteIsNAT);
   }
 
   WORD firstPort = manager.GetRtpIpPortPair();

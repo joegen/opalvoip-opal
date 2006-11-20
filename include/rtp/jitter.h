@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2009  2005/12/30 14:29:15  dsandras
+ * Revision 1.2010  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.8  2005/12/30 14:29:15  dsandras
  * Removed the assumption that the jitter will contain a 8 kHz signal.
  *
  * Revision 2.7  2005/11/30 13:35:26  csoutheren
@@ -110,20 +113,19 @@
 #pragma interface
 #endif
 
-
 #include <rtp/rtp.h>
-
 
 class RTP_JitterBufferAnalyser;
 
-
 ///////////////////////////////////////////////////////////////////////////////
 
-class RTP_JitterBuffer : public PThread
+class RTP_JitterBuffer : public PObject
 {
-  PCLASSINFO(RTP_JitterBuffer, PThread);
+  PCLASSINFO(RTP_JitterBuffer, PObject);
 
   public:
+    friend class RTP_AggregatedHandle;
+
     RTP_JitterBuffer(
       RTP_Session & session,   ///<  Associated RTP session tor ead data from
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
@@ -177,10 +179,16 @@ class RTP_JitterBuffer : public PThread
       */
     void SetMaxConsecutiveMarkerBits(DWORD max) { maxConsecutiveMarkerBits = max; }
 
+    /**Start jitter thread
+      */
+    void Resume(PHandleAggregator * aggregator = NULL);
+
+    PDECLARE_NOTIFIER(PThread, RTP_JitterBuffer, JitterThreadMain);
+
+    BOOL WaitForTermination(const PTimeInterval & t)
+    { return (jitterThread == NULL) ? TRUE : jitterThread->WaitForTermination(t); }
 
   protected:
-    virtual void Main();
-
     class Entry : public RTP_DataFrame
     {
       public:
@@ -222,6 +230,16 @@ class RTP_JitterBuffer : public PThread
     BOOL   doneFirstWrite;
 
     RTP_JitterBufferAnalyser * analyser;
+
+    PThread * jitterThread;
+    PINDEX    jitterStackSize;
+
+    RTP_AggregatedHandle * aggregratedHandle;
+
+    BOOL Init(Entry * & currentReadFrame, BOOL & markerWarning);
+    BOOL PreRead(Entry * & currentReadFrame, BOOL & markerWarning);
+    BOOL OnRead(Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop);
+    void DeInit(Entry * & currentReadFrame, BOOL & markerWarning);
 };
 
 
