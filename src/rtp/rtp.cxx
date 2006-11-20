@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2044  2006/11/10 12:40:30  csoutheren
+ * Revision 1.2045  2006/11/20 03:37:13  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.43  2006/11/10 12:40:30  csoutheren
  * Fix RTP payload extension size calculation
  * Thanks to Viktor Krikun
  *
@@ -480,9 +483,7 @@
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
 
-
 #define new PNEW
-
 
 #if !PTRACING // Stuff to remove unised parameters warning
 #define PTRACE_sender
@@ -809,11 +810,14 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_Session::RTP_Session(unsigned id, RTP_UserData * data, BOOL autoDelete)
+RTP_Session::RTP_Session(
+                         PHandleAggregator * _aggregator, 
+                         unsigned id, RTP_UserData * data, BOOL autoDelete)
 : canonicalName(PProcess::Current().GetUserName()),
   toolName(PProcess::Current().GetName()),
   reportTimeInterval(0, 12),  // Seconds
-  reportTimer(reportTimeInterval)
+  reportTimer(reportTimeInterval),
+  aggregator(_aggregator)
 {
   PAssert(id > 0 && id < 256, PInvalidParameter);
   sessionID = (BYTE)id;
@@ -949,6 +953,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
   else {
     SetIgnoreOutOfOrderPackets(FALSE);
     jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
+    jitter->Resume(aggregator);
   }
 }
 
@@ -969,7 +974,7 @@ BOOL RTP_Session::ReadBufferedData(DWORD timestamp, RTP_DataFrame & frame)
   if (jitter != NULL)
     return jitter->ReadData(timestamp, frame);
   else
-    return ReadData(frame);
+    return ReadData(frame, TRUE);
 }
 
 
@@ -1660,8 +1665,8 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
 }
 
 
-RTP_UDP::RTP_UDP(unsigned id, BOOL _remoteIsNAT)
-  : RTP_Session(id),
+RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, unsigned id, BOOL _remoteIsNAT)
+  : RTP_Session(_aggregator, id),
     remoteAddress(0),
     remoteTransmitAddress(0),
     remoteIsNAT(_remoteIsNAT)
@@ -1764,34 +1769,37 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
     }
   }
 
-  if (dataSocket == NULL || controlSocket == NULL) {
-    dataSocket = new PUDPSocket(dataQos);
-    controlSocket = new PUDPSocket(ctrlQos);
-    while (!dataSocket->Listen(localAddress,    1, localDataPort) ||
-           !controlSocket->Listen(localAddress, 1, localControlPort)) {
-      dataSocket->Close();
-      controlSocket->Close();
-      if ((localDataPort > portMax) || (localDataPort > 0xfffd))
-        return FALSE; // If it ever gets to here the OS has some SERIOUS problems!
-      localDataPort    += 2;
-      localControlPort += 2;
+  // allow for special case of portBase == 0 and portMax == 0
+  if (portBase != 0 && portMax != 0) {
+    if (dataSocket == NULL || controlSocket == NULL) {
+      dataSocket = new PUDPSocket(dataQos);
+      controlSocket = new PUDPSocket(ctrlQos);
+      while (!dataSocket->Listen(localAddress,    1, localDataPort) ||
+             !controlSocket->Listen(localAddress, 1, localControlPort)) {
+        dataSocket->Close();
+        controlSocket->Close();
+        if ((localDataPort > portMax) || (localDataPort > 0xfffd))
+          return FALSE; // If it ever gets to here the OS has some SERIOUS problems!
+        localDataPort    += 2;
+        localControlPort += 2;
+      }
     }
+
+  #ifndef __BEOS__
+
+    // Set the IP Type Of Service field for prioritisation of media UDP packets
+    // through some Cisco routers and Linux boxes
+    if (!dataSocket->SetOption(IP_TOS, tos, IPPROTO_IP)) {
+      PTRACE(1, "RTP_UDP\tCould not set TOS field in IP header: " << dataSocket->GetErrorText());
+    }
+
+    // Increase internal buffer size on media UDP sockets
+    SetMinBufferSize(*dataSocket,    SO_RCVBUF);
+    SetMinBufferSize(*dataSocket,    SO_SNDBUF);
+    SetMinBufferSize(*controlSocket, SO_RCVBUF);
+    SetMinBufferSize(*controlSocket, SO_SNDBUF);
+  #endif
   }
-
-#ifndef __BEOS__
-
-  // Set the IP Type Of Service field for prioritisation of media UDP packets
-  // through some Cisco routers and Linux boxes
-  if (!dataSocket->SetOption(IP_TOS, tos, IPPROTO_IP)) {
-    PTRACE(1, "RTP_UDP\tCould not set TOS field in IP header: " << dataSocket->GetErrorText());
-  }
-
-  // Increase internal buffer size on media UDP sockets
-  SetMinBufferSize(*dataSocket,    SO_RCVBUF);
-  SetMinBufferSize(*dataSocket,    SO_SNDBUF);
-  SetMinBufferSize(*controlSocket, SO_RCVBUF);
-  SetMinBufferSize(*controlSocket, SO_SNDBUF);
-#endif
 
   shutdownRead = FALSE;
   shutdownWrite = FALSE;
@@ -1886,9 +1894,9 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
 }
 
 
-BOOL RTP_UDP::ReadData(RTP_DataFrame & frame)
+BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
 {
-  for (;;) {
+  do {
     int selectStatus = PSocket::Select(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
@@ -1935,7 +1943,10 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame)
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
         return FALSE;
     }
-  }
+  } while (loop);
+
+  frame.SetSize(0);
+  return TRUE;
 }
 
 
@@ -1949,7 +1960,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   PIPSocket::Address addr;
   WORD port;
 
-  if (socket.ReadFrom(frame.GetPointer(), frame.GetSize(), addr, port)) {
+  if (socket.ReadFrom(frame.GetPointer(2048), 2048, addr, port)) {
     if (ignoreOtherSources) {
       // If remote address never set from higher levels, then try and figure
       // it out from the first packet received.
