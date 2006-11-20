@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2006  2006/10/05 07:11:49  csoutheren
+ * Revision 1.2007  2006/11/20 03:56:37  csoutheren
+ * Fix usage of define
+ *
+ * Revision 2.5  2006/10/05 07:11:49  csoutheren
  * Add --disable-lid option
  *
  * Revision 2.4  2006/10/02 13:30:52  rjongbloed
@@ -65,18 +68,16 @@ class PluginLoader : public PProcessStartup
     { 
       OpalPluginCodecManager::Bootstrap(); 
       PWLibStupidLinkerHacks::opalwavfileLoader =1;
-#if defined(HAS_LIBSRTP) 
+#if HAS_LIBSRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;
 #endif
     }
 };
 
 static PFactory<PPluginModuleManager>::Worker<OpalPluginCodecManager> opalPluginCodecManagerFactory("OpalPluginCodecManager", true);
-
 #if OPAL_LID
 static PFactory<PPluginModuleManager>::Worker<OpalPluginLIDManager> opalPluginLIDManagerFactory("OpalPluginLIDManager", true);
 #endif
-
 static PFactory<PProcessStartup>::Worker<PluginLoader> opalpluginStartupFactory("OpalPluginLoader", true);
 
 #endif // P_HAS_PLUGINS
