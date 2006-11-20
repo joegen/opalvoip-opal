@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.23  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
  * Revision 1.22  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
@@ -184,9 +187,9 @@
 
 /////////////////////////////////////////////////
 //
-// Sangoma support
+// Various options
 //
-#undef HAS_SANGOMA
+//#define OPAL_RTP_AGGREGATE   1
 
 /////////////////////////////////////////////////
 //

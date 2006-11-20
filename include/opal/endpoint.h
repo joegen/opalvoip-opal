@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2037  2006/11/19 06:02:57  rjongbloed
+ * Revision 1.2038  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.36  2006/11/19 06:02:57  rjongbloed
  * Moved function that reads User Input into a destination address to
  *   OpalManager so can be easily overidden in applications.
  *
@@ -782,6 +785,22 @@ class OpalEndPoint : public PObject
     virtual PString GetDefaultSecurityMode() const 
     { return defaultSecurityMode; }
 
+    virtual BOOL UseRTPAggregation() const;
+
+    /**Set the RTP aggregation size
+      */
+    void SetRTPAggregationSize(
+      PINDEX size            ///< max connections per aggregation thread. Value of 1 or zero disables aggregation
+    );
+
+    /**Get the RTP aggregation size
+      */
+    PINDEX GetRTPAggregationSize() const;
+
+    /** Get the aggregator used for RTP channels
+      */
+    PHandleAggregator * GetRTPAggregator();
+
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;
@@ -805,8 +824,15 @@ class OpalEndPoint : public PObject
 
     PString defaultSecurityMode; 
 
-  friend void OpalManager::GarbageCollection();
-  friend void OpalConnection::Release(CallEndReason reason);
+#if OPAL_RTP_AGGREGATE
+    PMutex rtpAggregationMutex;
+    BOOL useRTPAggregation; 
+    PINDEX rtpAggregationSize;
+    PHandleAggregator * rtpAggregator;
+#endif
+
+    friend void OpalManager::GarbageCollection();
+    friend void OpalConnection::Release(CallEndReason reason);
 };
 
 

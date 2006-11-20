@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2043  2006/11/19 06:02:58  rjongbloed
+ * Revision 1.2044  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.42  2006/11/19 06:02:58  rjongbloed
  * Moved function that reads User Input into a destination address to
  *   OpalManager so can be easily overidden in applications.
  *
@@ -193,10 +196,13 @@
 #pragma implementation "endpoint.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/endpoint.h>
 
 #include <opal/manager.h>
 #include <opal/call.h>
+#include <rtp/rtp.h>
 
 //
 // TODO find the correct value, usually the bandwidth for pure audio call is 1280 kb/sec 
@@ -216,6 +222,11 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     attributeBits(attributes),
     defaultLocalPartyName(manager.GetDefaultUserName()),
     defaultDisplayName(manager.GetDefaultDisplayName())
+#if OPAL_RTP_AGGREGATE
+    ,useRTPAggregation(manager.UseRTPAggregation()),
+    rtpAggregationSize(10),
+    rtpAggregator(NULL)
+#endif
 {
   manager.AttachEndPoint(this);
 
@@ -235,6 +246,17 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
 
 OpalEndPoint::~OpalEndPoint()
 {
+#if OPAL_RTP_AGGREGATE
+  // delete aggregators
+  {
+    PWaitAndSignal m(rtpAggregationMutex);
+    if (rtpAggregator != NULL) {
+      delete rtpAggregator;
+      rtpAggregator = NULL;
+    }
+  }
+#endif
+
   PTRACE(3, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
@@ -586,6 +608,54 @@ PString OpalEndPoint::GetSSLCertificate() const
   return "server.pem";
 }
 #endif
+
+PHandleAggregator * OpalEndPoint::GetRTPAggregator()
+{
+#if OPAL_RTP_AGGREGATE
+  PWaitAndSignal m(rtpAggregationMutex);
+  if (rtpAggregationSize == 0)
+    return NULL;
+
+  if (rtpAggregator == NULL)
+    rtpAggregator = new PHandleAggregator(rtpAggregationSize);
+
+  return rtpAggregator;
+#else
+  return NULL;
+#endif
+}
+
+BOOL OpalEndPoint::UseRTPAggregation() const
+{ 
+#if OPAL_RTP_AGGREGATE
+  return useRTPAggregation; 
+#else
+  return FALSE;
+#endif
+}
+
+void OpalEndPoint::SetRTPAggregationSize(PINDEX 
+#if OPAL_RTP_AGGREGATE
+                             size
+#endif
+                             )
+{ 
+#if OPAL_RTP_AGGREGATE
+  rtpAggregationSize = size; 
+#endif
+}
+
+PINDEX OpalEndPoint::GetRTPAggregationSize() const
+{ 
+#if OPAL_RTP_AGGREGATE
+  return rtpAggregationSize; 
+#else
+  return 0;
+#endif
+}
+
+
+
 
 
 /////////////////////////////////////////////////////////////////////////////

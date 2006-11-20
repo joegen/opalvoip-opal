@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2052  2006/11/19 06:02:58  rjongbloed
+ * Revision 1.2053  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.51  2006/11/19 06:02:58  rjongbloed
  * Moved function that reads User Input into a destination address to
  *   OpalManager so can be easily overidden in applications.
  *
@@ -1190,6 +1193,8 @@ class OpalManager : public PObject
     virtual PString GetDefaultSecurityMode() const 
     { return defaultSecurityMode; }
 
+    virtual BOOL UseRTPAggregation() const;
+
   protected:
     // Configuration variables
     PString       defaultUserName;
@@ -1264,8 +1269,12 @@ class OpalManager : public PObject
 
     PString defaultSecurityMode;
 
-  friend OpalCall::OpalCall(OpalManager & mgr);
-  friend void OpalCall::OnReleased(OpalConnection & connection);
+#if OPAL_RTP_AGGREGATE
+    BOOL useRTPAggregation; 
+#endif
+
+    friend OpalCall::OpalCall(OpalManager & mgr);
+    friend void OpalCall::OnReleased(OpalConnection & connection);
 };
 
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2066  2006/11/19 06:02:58  rjongbloed
+ * Revision 1.2067  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
+ * Revision 2.65  2006/11/19 06:02:58  rjongbloed
  * Moved function that reads User Input into a destination address to
  *   OpalManager so can be easily overidden in applications.
  *
@@ -336,6 +339,9 @@ OpalManager::OpalManager()
     noMediaTimeout(0, 0, 5),     // Minutes
     translationAddress(0),       // Invalid address to disable
     activeCalls(*this)
+#if OPAL_RTP_AGGREGATE
+    ,useRTPAggregation(TRUE)
+#endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
   rtpIpPorts.max = 5199;
@@ -1287,6 +1293,15 @@ void OpalManager::GarbageMain(PThread &, INT)
 
 void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
+}
+
+BOOL OpalManager::UseRTPAggregation() const
+{ 
+#if OPAL_RTP_AGGREGATE
+  return useRTPAggregation; 
+#else
+  return FALSE;
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.5  2006/11/20 03:37:12  csoutheren
+ * Allow optional inclusion of RTP aggregation
+ *
  * Revision 1.4  2006/10/24 04:18:28  csoutheren
  * Added support for encrypted RTCP
  *
@@ -84,8 +87,6 @@ namespace PWLibStupidLinkerHacks {
 //     STRONGHOLD
 //
 
-class OpalSRTP_UDP;
-
 class OpalSRTPSecurityMode : public OpalSecurityMode
 {
   PCLASSINFO(OpalSRTPSecurityMode, OpalSecurityMode);
@@ -107,8 +108,9 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
     virtual BOOL GetIncomingSSRC(DWORD & ssrc) const = 0;
 
     virtual RTP_UDP * CreateRTPSession(
-      unsigned id,          ///<  Session ID for RTP channel
-      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+      PHandleAggregator * _aggregator,   ///< handle aggregator
+      unsigned id,                       ///<  Session ID for RTP channel
+      BOOL remoteIsNAT                   ///<  TRUE is remote is behind NAT
     ) = 0;
 
     virtual BOOL Open() = 0;
@@ -125,10 +127,12 @@ class OpalSRTP_UDP : public RTP_UDP
   PCLASSINFO(OpalSRTP_UDP, RTP_UDP);
   public:
     OpalSRTP_UDP(
-     unsigned id,                  ///<  Session ID for RTP channel
-      BOOL remoteIsNAT,            ///<  TRUE is remote is behind NAT
-      OpalSecurityMode * srtpParms ///<  Paramaters to use for SRTP
+      PHandleAggregator * _aggregator,   ///< handle aggregator
+      unsigned id,                       ///<  Session ID for RTP channel
+      BOOL remoteIsNAT                  ///<  TRUE is remote is behind NAT
     );
+
+    virtual void SetSecurityMode(OpalSecurityMode * srtpParms);
 
     ~OpalSRTP_UDP();
 
@@ -143,6 +147,36 @@ class OpalSRTP_UDP : public RTP_UDP
   protected:
     OpalSRTPSecurityMode * srtpParms;
 };
+
+
+////////////////////////////////////////////////////////////////////
+//
+//  this class implements SRTP using libSRTP
+//
+
+#if HAS_LIBSRTP
+
+class LibSRTP_UDP : public OpalSRTP_UDP
+{
+  PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
+  public:
+    LibSRTP_UDP(PHandleAggregator * _aggregator,   ///< handle aggregator
+                  unsigned int id,                 ///<  Session ID for RTP channel
+                  BOOL remoteIsNAT                 ///<  TRUE is remote is behind NAT
+    );
+
+    ~LibSRTP_UDP();
+
+    void SetSecurityMode(OpalSecurityMode * _srtpParms);
+
+    virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
+};
+
+#endif // HAS_LIBSRTP
+
 
 #endif // OPAL_SRTP
 
