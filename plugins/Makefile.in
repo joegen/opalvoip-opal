@@ -25,13 +25,13 @@ endif
 all debug opt both \
 optshared debugshared bothshared \
 optnoshared debugnoshared bothnoshared:
-	@set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir); )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
 
 clean optclean debugclean:
-	@set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) clean; )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
 
 install uninstall:
-	@set -e; $(foreach dir,$(SUBDIRS),$(MAKE) -C $(dir) $@; )
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) $@; fi ; )
 
 optdepend debugdepend bothdepend release tagbuild:
 	@echo
