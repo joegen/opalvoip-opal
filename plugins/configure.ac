@@ -268,17 +268,40 @@ CPPFLAGS=$OLD_CPPFLAGS
 
 dnl ########################################################################
 
-AC_CONFIG_FILES(audio/gsm-amr/Makefile)
-AC_CONFIG_FILES(audio/GSM0610/Makefile)
-AC_CONFIG_FILES(audio/iLBC/Makefile)
-AC_CONFIG_FILES(audio/Speex/Makefile)
-AC_CONFIG_FILES(audio/LPC_10/Makefile)
-AC_CONFIG_FILES(audio/G726/Makefile)
-AC_CONFIG_FILES(audio/IMA_ADPCM/Makefile)
-AC_CONFIG_FILES(video/H.261-vic/Makefile)
-AC_CONFIG_FILES(video/H.263-ffmpeg/Makefile)
-AC_CONFIG_FILES(LID/IxJ/Makefile)
-AC_CONFIG_FILES(LID/VPB/Makefile)
+if test -d audio/gsm-amr ; then
+  AC_CONFIG_FILES(audio/gsm-amr/Makefile)
+fi
+if test -d audio/GSM0610 ; then
+  AC_CONFIG_FILES(audio/GSM0610/Makefile)
+fi
+if test -d audio/iLBC ; then
+  AC_CONFIG_FILES(audio/iLBC/Makefile)
+fi
+if test -d audio/Speex ; then
+  AC_CONFIG_FILES(audio/Speex/Makefile)
+fi
+if test -d audio/LPC_10 ; then
+  AC_CONFIG_FILES(audio/LPC_10/Makefile)
+fi
+if test -d audio/G726 ; then
+  AC_CONFIG_FILES(audio/G726/Makefile)
+fi
+if test -d audio/IMA_ADPCM ; then
+  AC_CONFIG_FILES(audio/IMA_ADPCM/Makefile)
+fi
+if test -d video/H.261-vic ; then
+  AC_CONFIG_FILES(video/H.261-vic/Makefile)
+fi
+if test -d video/H.263-ffmpeg ; then
+  AC_CONFIG_FILES(video/H.263-ffmpeg/Makefile)
+fi
+if test -d LID/IxJ ; then
+  AC_CONFIG_FILES(LID/IxJ/Makefile)
+fi
+if test -d LID/VPB ; then
+  AC_CONFIG_FILES(LID/VPB/Makefile)
+fi
+
 AC_CONFIG_FILES(Makefile)
 
 dnl ########################################################################
