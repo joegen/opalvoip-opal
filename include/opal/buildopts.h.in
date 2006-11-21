@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.24  2006/11/21 01:02:10  csoutheren
+ * Use correct pathnames for libSRTP libraries in debug and release mode
+ *
  * Revision 1.23  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
@@ -208,7 +211,11 @@
 #pragma include_alias("integers.h",          "@LIBSRTP_DIR@/crypto/include/integers.h")
 
 
-#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/lib/libsrtp.lib"
+#ifdef _DEBUG
+#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Debug/srtp.lib"
+#else
+#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/srtp.lib"
+#endif
 
 #endif
 #endif
