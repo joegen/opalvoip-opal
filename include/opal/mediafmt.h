@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2044  2006/08/20 03:45:54  csoutheren
+ * Revision 1.2045  2006/11/21 01:00:59  csoutheren
+ * Ensure SDP only uses codecs that are valid for SIP
+ *
+ * Revision 2.43  2006/08/20 03:45:54  csoutheren
  * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
  * rather than relying on the presence of the IANA rtp encoding name field
  *
@@ -67,7 +70,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2044  2006/08/20 03:45:54  csoutheren
+ * Revision 1.2045  2006/11/21 01:00:59  csoutheren
+ * Ensure SDP only uses codecs that are valid for SIP
+ *
+ * Revision 2.43  2006/08/20 03:45:54  csoutheren
  * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
  * rather than relying on the presence of the IANA rtp encoding name field
  *
@@ -357,7 +363,8 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     PINDEX FindFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const unsigned clockRate,                   ///<  clock rate
-      const char * rtpEncodingName = NULL         ///<  RTP payload type name
+      const char * rtpEncodingName = NULL,        ///<  RTP payload type name
+      const char * protocol = NULL                ///<  protocol to be valid for (if NULL, then all)
     ) const;
 
     /**Get a format position in the list matching the wildcard.
@@ -668,7 +675,8 @@ class OpalMediaFormat : public PCaselessString
     OpalMediaFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       unsigned clockRate,                         ///<  clock rate
-      const char * rtpEncodingName = NULL         ///<  RTP payload type name
+      const char * rtpEncodingName = NULL,        ///<  RTP payload type name
+      const char * protocol = NULL                ///<  valid protocol (if NULL, then all)
     );
 
     /**Construct a media format, searching database for information.
