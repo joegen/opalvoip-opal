@@ -5221,7 +5221,7 @@ _ACEOF
 fi
 
 
-HAS_FFMPEG=0
+HAS_FFMPEG=1
 
 
 
@@ -5923,27 +5923,50 @@ CPPFLAGS=$OLD_CPPFLAGS
 
 
 
-          ac_config_files="$ac_config_files audio/gsm-amr/Makefile"
+if test -d audio/gsm-amr ; then
+            ac_config_files="$ac_config_files audio/gsm-amr/Makefile"
 
-          ac_config_files="$ac_config_files audio/GSM0610/Makefile"
+fi
+if test -d audio/GSM0610 ; then
+            ac_config_files="$ac_config_files audio/GSM0610/Makefile"
 
-          ac_config_files="$ac_config_files audio/iLBC/Makefile"
+fi
+if test -d audio/iLBC ; then
+            ac_config_files="$ac_config_files audio/iLBC/Makefile"
 
-          ac_config_files="$ac_config_files audio/Speex/Makefile"
+fi
+if test -d audio/Speex ; then
+            ac_config_files="$ac_config_files audio/Speex/Makefile"
 
-          ac_config_files="$ac_config_files audio/LPC_10/Makefile"
+fi
+if test -d audio/LPC_10 ; then
+            ac_config_files="$ac_config_files audio/LPC_10/Makefile"
 
-          ac_config_files="$ac_config_files audio/G726/Makefile"
+fi
+if test -d audio/G726 ; then
+            ac_config_files="$ac_config_files audio/G726/Makefile"
 
-          ac_config_files="$ac_config_files audio/IMA_ADPCM/Makefile"
+fi
+if test -d audio/IMA_ADPCM ; then
+            ac_config_files="$ac_config_files audio/IMA_ADPCM/Makefile"
 
-          ac_config_files="$ac_config_files video/H.261-vic/Makefile"
+fi
+if test -d video/H.261-vic ; then
+            ac_config_files="$ac_config_files video/H.261-vic/Makefile"
 
-          ac_config_files="$ac_config_files video/H.263-ffmpeg/Makefile"
+fi
+if test -d video/H.263-ffmpeg ; then
+            ac_config_files="$ac_config_files video/H.263-ffmpeg/Makefile"
 
-          ac_config_files="$ac_config_files LID/IxJ/Makefile"
+fi
+if test -d LID/IxJ ; then
+            ac_config_files="$ac_config_files LID/IxJ/Makefile"
 
-          ac_config_files="$ac_config_files LID/VPB/Makefile"
+fi
+if test -d LID/VPB ; then
+            ac_config_files="$ac_config_files LID/VPB/Makefile"
+
+fi
 
           ac_config_files="$ac_config_files Makefile"
 
