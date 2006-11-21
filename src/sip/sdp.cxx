@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2041  2006/08/20 03:45:55  csoutheren
+ * Revision 1.2042  2006/11/21 01:01:00  csoutheren
+ * Ensure SDP only uses codecs that are valid for SIP
+ *
+ * Revision 2.40  2006/08/20 03:45:55  csoutheren
  * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
  * rather than relying on the presence of the IANA rtp encoding name field
  *
@@ -383,7 +386,7 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 
 OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 {
-  return OpalMediaFormat(payloadType, clockRate, encodingName);
+  return OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
 }
 
 
@@ -663,6 +666,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
       PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
     else {
       if (opalFormat.GetDefaultSessionID() == sessionID && 
+          opalFormat.IsValidForProtocol("sip") &&
           opalFormat.GetEncodingName() != NULL) {
         PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
 	      list += opalFormat;
@@ -882,7 +886,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
         /////////////////////////////////
 	  
         else if (currentMedia == NULL) {
-	  PINDEX thePos;
+	        PINDEX thePos;
           switch (key[0]) {
             case 'v' : // protocol version (mandatory)
               protocolVersion = value.AsInteger();
@@ -905,14 +909,14 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'u' : // URI of description
             case 'e' : // email address
             case 'p' : // phone number
-	      break;
+	            break;
             case 'b' : // bandwidth information
-	      thePos = value.Find(':');
-	      if (thePos != P_MAX_INDEX) {
-		bandwidthModifier = value.Left(thePos);
-		bandwidthValue = value.Mid(thePos+1).AsInteger();
-	      }
-	      break;
+	            thePos = value.Find(':');
+	            if (thePos != P_MAX_INDEX) {
+		            bandwidthModifier = value.Left(thePos);
+		            bandwidthValue = value.Mid(thePos+1).AsInteger();
+	            }
+	            break;
             case 'z' : // time zone adjustments
             case 'k' : // encryption key
             case 'r' : // zero or more repeat times
@@ -1001,9 +1005,9 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
     if ((mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Video && sessionID == OpalMediaFormat::DefaultVideoSessionID) || (mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Audio && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
       if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
-	return mediaDescriptions[i].GetDirection();
+	      return mediaDescriptions[i].GetDirection();
       else
-	return direction;
+	      return direction;
     }
   }
   

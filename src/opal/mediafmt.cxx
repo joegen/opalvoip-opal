@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2057  2006/10/10 07:18:18  csoutheren
+ * Revision 1.2058  2006/11/21 01:01:00  csoutheren
+ * Ensure SDP only uses codecs that are valid for SIP
+ *
+ * Revision 2.56  2006/10/10 07:18:18  csoutheren
  * Allow compilation with and without various options
  *
  * Revision 2.55  2006/09/11 04:48:55  csoutheren
@@ -618,12 +621,12 @@ OpalMediaFormat::OpalMediaFormat()
 }
 
 
-OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name)
+OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name);
+  PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name, protocol);
   if (idx != P_MAX_INDEX)
     *this = registeredFormats[idx];
   else
@@ -1170,13 +1173,17 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
   }
 }
 
-PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name) const
+PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol) const
 {
   for (PINDEX idx = 0; idx < GetSize(); idx++) {
     OpalMediaFormat & mediaFormat = (*this)[idx];
 
     // clock rates must always match
     if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
+      continue;
+
+    // if protocol is specified, must be valid for the protocol
+    if ((protocol != NULL) && !mediaFormat.IsValidForProtocol(protocol))
       continue;
 
     // if an encoding name is specified, and it matches exactly, then use it
