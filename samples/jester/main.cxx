@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.5  2006/11/23 07:55:15  rjongbloed
+ * Fixed sample app build due to RTP session class API breakage.
+ *
  * Revision 1.4  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
@@ -58,7 +61,7 @@ RTP_DataFrame *dataFrame;
 ///////////////////////////////////////////////////////////////
 
 JestRTP_Session::JestRTP_Session()
-    : RTP_Session(101)
+    : RTP_Session(NULL, 101)
 {
     PTRACE(4, "constructor of the rtp session tester");
     psuedoTimestamp = 480;
@@ -67,9 +70,7 @@ JestRTP_Session::JestRTP_Session()
     readCount = 0;
 }
 
-BOOL JestRTP_Session::ReadData(
-    RTP_DataFrame & frame   ///<  Frame read from the RTP session
-    )
+BOOL JestRTP_Session::ReadData(RTP_DataFrame & frame, BOOL)
 {
     newDataReady.Wait();
     frame = *dataFrame;
