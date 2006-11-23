@@ -16,7 +16,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\USB"
+			IntermediateDirectory="..\..\Debug\TigerJet"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -40,7 +40,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/USB.tlb"
+				TypeLibraryName="$(IntDir)/$(TargetName).tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -106,7 +106,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\USB"
+			IntermediateDirectory="..\..\Release\TigerJet"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -130,7 +130,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\Release/USB.tlb"
+				TypeLibraryName="$(IntDir)/$(TargetName).tlb"
 				HeaderFileName=""
 			/>
 			<Tool
