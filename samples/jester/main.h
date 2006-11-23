@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.3  2006/11/23 07:55:15  rjongbloed
+ * Fixed sample app build due to RTP session class API breakage.
+ *
  * Revision 1.2  2006/08/25 06:04:44  dereksmithies
  * Add to the docs on the functions.  Add a new thread to generate the frames,
  * which helps make the operation of the jitterbuffer clearer.
@@ -60,14 +63,15 @@ class JestRTP_Session: public RTP_Session
        The thread which is inside the jitter buffer will call this method.
       */
     virtual BOOL ReadData(
-      RTP_DataFrame & frame   ///<  Frame read from the RTP session
-	);
+      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+      BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+    );
 
    /**Write a data frame from the RTP channel.
       */
     virtual BOOL WriteData(
       RTP_DataFrame & frame   ///<  Frame to write to the RTP session
-	);
+    );
 
     /**Write a control frame from the RTP channel.
       */
