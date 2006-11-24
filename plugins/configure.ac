@@ -301,6 +301,9 @@ fi
 if test -d LID/VPB ; then
   AC_CONFIG_FILES(LID/VPB/Makefile)
 fi
+if test -d LID/CAPI ; then
+  AC_CONFIG_FILES(LID/CAPI/Makefile)
+fi
 
 AC_CONFIG_FILES(Makefile)
 
