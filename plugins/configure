@@ -5967,6 +5967,10 @@ if test -d LID/VPB ; then
             ac_config_files="$ac_config_files LID/VPB/Makefile"
 
 fi
+if test -d LID/CAPI ; then
+            ac_config_files="$ac_config_files LID/CAPI/Makefile"
+
+fi
 
           ac_config_files="$ac_config_files Makefile"
 
@@ -6535,6 +6539,7 @@ do
   "video/H.263-ffmpeg/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/H.263-ffmpeg/Makefile" ;;
   "LID/IxJ/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
   "LID/VPB/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
+  "LID/CAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "audio/Speex/libspeex/speex_config_types.h" ) CONFIG_FILES="$CONFIG_FILES audio/Speex/libspeex/speex_config_types.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -7482,6 +7487,7 @@ do
   "video/H.263-ffmpeg/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/H.263-ffmpeg/Makefile" ;;
   "LID/IxJ/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
   "LID/VPB/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
+  "LID/CAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "audio/Speex/libspeex/speex_config_types.h" ) CONFIG_FILES="$CONFIG_FILES audio/Speex/libspeex/speex_config_types.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
