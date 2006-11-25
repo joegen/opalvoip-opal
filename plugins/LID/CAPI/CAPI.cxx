@@ -20,6 +20,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: CAPI.cxx,v $
+ * Revision 1.3  2006/11/25 03:44:02  rjongbloed
+ * Changed CAPI library interface so uses late binding on Win32 DLL preventing annoying
+ *   dialogs from appearing of no ISDN on your system.
+ *
  * Revision 1.2  2006/11/25 00:17:16  rjongbloed
  * Changed illegal application ID to more compatible zero value.
  *
@@ -40,8 +44,65 @@
 
   #include "win32/capi2032.h"
 
-  typedef DWORD CAPI_APPLID_T;
-  const CAPI_APPLID_T CAPI_APPLID_INVALID = 0;
+  class CAPI
+  {
+  private:
+    HMODULE m_hDLL;
+    CAPI_REGISTER_FUNCTION          m_REGISTER;
+    CAPI_RELEASE_FUNCTION           m_RELEASE;
+    CAPI_PUT_MESSAGE_FUNCTION       m_PUT_MESSAGE;
+    CAPI_GET_MESSAGE_FUNCTION       m_GET_MESSAGE;
+    CAPI_WAIT_FOR_SIGNAL_FUNCTION   m_WAIT_FOR_SIGNAL;
+    CAPI_GET_MANUFACTURER_FUNCTION  m_GET_MANUFACTURER;
+    CAPI_GET_VERSION_FUNCTION       m_GET_VERSION;
+    CAPI_GET_SERIAL_NUMBER_FUNCTION m_GET_SERIAL_NUMBER;
+    CAPI_GET_PROFILE_FUNCTION       m_GET_PROFILE;
+    CAPI_INSTALLED_FUNCTION         m_INSTALLED;
+
+  public:
+    typedef DWORD Result;
+    typedef DWORD ApplID;
+    typedef DWORD UInt;
+    enum {
+      InvalidApplId = 0,
+      Success = 0
+    };
+
+    CAPI()
+    {
+      m_hDLL = LoadLibrary(CAPI_DLL_NAME);
+    }
+
+    ~CAPI()
+    {
+      if (m_hDLL != NULL)
+        FreeLibrary(m_hDLL);
+    }
+
+    #define DEF_FN(fn, def, arg) \
+      Result fn def \
+      { \
+        return m_hDLL != NULL && \
+              (m_##fn != NULL || (m_##fn = (CAPI_##fn##_FUNCTION)GetProcAddress(m_hDLL, (LPCSTR)CAPI_##fn##_ORDINAL)) != NULL) \
+              ? m_##fn arg : 0x10000; \
+      }
+
+    #define DEF_FN1(fn, t,p)                        DEF_FN(fn, (t p), (p))
+    #define DEF_FN2(fn, t1,p1, t2,p2)               DEF_FN(fn, (t1 p1, t2 p2), (p1, p2))
+    #define DEF_FN4(fn, t1,p1, t2,p2, t3,p3, t4,p4) DEF_FN(fn, (t1 p1, t2 p2, t3 p3, t4 p4), (p1, p2, p3, p4))
+    #define DEF_FN5(fn, t1,p1, t2,p2, t3,p3, t4,p4, t5,p5) DEF_FN(fn, (t1 p1, t2 p2, t3 p3, t4 p4, t5 p5), (p1, p2, p3, p4, p5))
+
+    DEF_FN5(REGISTER, UInt,bufferSize, UInt,maxLogicalConnection, UInt,maxBDataBlocks, UInt,maxBDataLen, ApplID*,pApplID);
+    DEF_FN1(RELEASE, ApplID,applId);
+    DEF_FN2(PUT_MESSAGE, ApplID,applId, void *,pCAPIMessage);
+    DEF_FN2(GET_MESSAGE, ApplID,applId, void **,ppCAPIMessage);
+    DEF_FN1(WAIT_FOR_SIGNAL, ApplID,applId);
+    DEF_FN1(GET_MANUFACTURER, char *,szBuffer);
+    DEF_FN4(GET_VERSION, UInt*,pCAPIMajor, UInt*,pCAPIMinor, UInt*,pManufacturerMajor, UInt*,pManufacturerMinor);
+    DEF_FN1(GET_SERIAL_NUMBER, char*,szBuffer);
+    DEF_FN2(GET_PROFILE, void*,pBuffer, UInt,CtrlNr);
+    DEF_FN(INSTALLED, (), ());
+  };
 
 #else
 
@@ -49,74 +110,75 @@
   #include <sys/types.h>
   #include <capi20.h>
 
-  typedef unsigned CAPI_APPLID_T;
-  const CAPI_APPLID_T CAPI_APPLID_INVALID = 0;
-
-  static inline _cdword CAPI_REGISTER(_cdword MessageBufferSize,
-                                      _cdword MaxLogicalConnection,
-                                      _cdword MaxBDataBlocks,
-                                      _cdword MaxBDataLen,
-                                      CAPI_APPLID_T * pApplID)
+  class CAPI
   {
-    return capi20_register(MaxLogicalConnection, MaxBDataBlocks, MaxBDataLen, (unsigned *)pApplID);
-  }
+  public:
+    typedef unsigned Result;
+    typedef unsigned ApplID;
+    typedef unsigned UInt;
+    enum {
+      InvalidApplId = 0
+    };
 
-  static inline _cdword CAPI_RELEASE(CAPI_APPLID_T ApplID)
-  {
-    return capi20_release(ApplID);
-  }
+    Result REGISTER(UInt bufferSize, UInt maxLogicalConnection, UInt maxBDataBlocks, UInt maxBDataLen, ApplID* pApplID)
+    {
+      return capi20_register(maxLogicalConnection, maxBDataBlocks, maxBDataLen, pApplID);
+    }
 
-  static inline _cdword CAPI_PUT_MESSAGE(CAPI_APPLID_T ApplID, void * pCAPIMessage)
-  {
-    return capi20_put_message(ApplID, (unsigned char *)pCAPIMessage);
-  }
+    Result RELEASE(ApplID ApplID)
+    {
+      return capi20_release(ApplID);
+    }
 
-  static inline _cdword CAPI_GET_MESSAGE(CAPI_APPLID_T ApplID, void ** ppCAPIMessage)
-  {
-    return capi20_get_message(ApplID, (unsigned char **)ppCAPIMessage);
-  }
+    Result PUT_MESSAGE(ApplID ApplID, void * pCAPIMessage)
+    {
+      return capi20_put_message(ApplID, (unsigned char *)pCAPIMessage);
+    }
 
-  static inline _cdword CAPI_WAIT_FOR_SIGNAL(CAPI_APPLID_T ApplID)
-  {
-    return capi20_waitformessage(ApplID, NULL);
-  }
+    Result GET_MESSAGE(ApplID ApplID, void ** ppCAPIMessage)
+    {
+      return capi20_get_message(ApplID, (unsigned char **)ppCAPIMessage);
+    }
 
-  static inline void CAPI_GET_MANUFACTURER(char * szBuffer)
-  {
-    capi20_get_manufacturer(0, (unsigned char *)szBuffer);
-  }
+    Result WAIT_FOR_SIGNAL(ApplID ApplID)
+    {
+      return capi20_waitformessage(ApplID, NULL);
+    }
 
-  static inline _cdword CAPI_GET_VERSION(_cdword *pCAPIMajor,
-                                         _cdword *pCAPIMinor,
-                                         _cdword *pManufacturerMajor,
-                                         _cdword *pManufacturerMinor)
-  {
-    unsigned char buffer[4*sizeof(_cdword)];
-    if (capi20_get_version(0, buffer) == NULL)
-      return 0x100;
+    Result GET_MANUFACTURER(char * szBuffer)
+    {
+      capi20_get_manufacturer(0, (unsigned char *)szBuffer);
+    }
 
-    if (pCAPIMajor) *pCAPIMajor = ((_cdword *)buffer)[0];
-    if (pCAPIMinor) *pCAPIMinor = ((_cdword *)buffer)[1];
-    if (pManufacturerMajor) *pManufacturerMajor = ((_cdword *)buffer)[2];
-    if (pManufacturerMinor) *pManufacturerMinor = ((_cdword *)buffer)[3];
+    Result GET_VERSION(UInt *pCAPIMajor, UInt *pCAPIMinor, UInt *pManufacturerMajor, UInt *pManufacturerMinor)
+    {
+      unsigned char buffer[4*sizeof(uint32_t)];
+      if (capi20_get_version(0, buffer) == NULL)
+        return 0x100;
 
-    return 0;
-  }
+      if (pCAPIMajor) *pCAPIMajor = (UInt)(((uint32_t *)buffer)[0]);
+      if (pCAPIMinor) *pCAPIMinor = (UInt)(((uint32_t *)buffer)[1]);
+      if (pManufacturerMajor) *pManufacturerMajor = (UInt)(((uint32_t *)buffer)[2]);
+      if (pManufacturerMinor) *pManufacturerMinor = (UInt)(((uint32_t *)buffer)[3]);
 
-  static inline _cdword CAPI_GET_SERIAL_NUMBER(char * szBuffer)
-  {
-      return capi20_get_serial_number(0, (unsigned char *)szBuffer) == NULL ? 0x100 : 0;
-  }
+      return 0;
+    }
 
-  static inline _cdword CAPI_GET_PROFILE(void * pBuffer, _cdword CtrlNr)
-  {
-    return capi20_get_profile(CtrlNr, (unsigned char *)pBuffer);
-  }
+    Result GET_SERIAL_NUMBER(char * szBuffer)
+    {
+        return capi20_get_serial_number(0, (unsigned char *)szBuffer) == NULL ? 0x100 : 0;
+    }
 
-  static inline _cdword CAPI_INSTALLED()
-  {
+    Result GET_PROFILE(void * pBuffer, Int32 CtrlNr)
+    {
+      return capi20_get_profile(CtrlNr, (unsigned char *)pBuffer);
+    }
+
+    Result INSTALLED()
+    {
       return capi20_isinstalled();
-  }
+    }
+  };
 
 #endif
 
@@ -143,9 +205,11 @@ class Context
         MaxBlockCount = 2,
         MaxBlockSize = 128
     };
-    CAPI_APPLID_T m_ApplicationId;
-    unsigned      m_ControllerNumber;
-    unsigned      m_LineCount;
+
+    CAPI         m_CAPI;
+    CAPI::ApplID m_ApplicationId;
+    unsigned     m_ControllerNumber;
+    unsigned     m_LineCount;
 
     struct LineState
     {
@@ -162,20 +226,20 @@ class Context
     PLUGIN_LID_CTOR()
     {
       m_LineCount = 0;
-      unsigned result = CAPI_REGISTER(MaxLineCount*MaxBlockCount*MaxBlockSize+1024,
-                                      MaxLineCount,
-                                      MaxBlockCount,
-                                      MaxBlockSize,
-                                      &m_ApplicationId);
-      if (result != 0)
-        m_ApplicationId = CAPI_APPLID_INVALID;
+      CAPI::Result result = m_CAPI.REGISTER(MaxLineCount*MaxBlockCount*MaxBlockSize+1024,
+                                            MaxLineCount,
+                                            MaxBlockCount,
+                                            MaxBlockSize,
+                                            &m_ApplicationId);
+      if (result != CAPI::Success)
+        m_ApplicationId = CAPI::InvalidApplId;
     }
 
     PLUGIN_LID_DTOR()
     {
       Close();
-      if (m_ApplicationId != CAPI_APPLID_INVALID)
-        CAPI_RELEASE(m_ApplicationId);
+      if (m_ApplicationId != CAPI::InvalidApplId)
+        m_CAPI.RELEASE(m_ApplicationId);
     }
 
 
@@ -184,11 +248,11 @@ class Context
       if (name == NULL || size == 0)
         return PluginLID_InvalidParameter;
 
-      if (m_ApplicationId == CAPI_APPLID_INVALID)
+      if (m_ApplicationId == CAPI::InvalidApplId)
         return PluginLID_InternalError;
 
       CAPI_PROFILE profile;
-      if (CAPI_GET_PROFILE(&profile, 0) != 0)
+      if (m_CAPI.GET_PROFILE(&profile, 0) != CAPI::Success)
         return PluginLID_InternalError;
 
       if (index >= profile.NumControllers)
@@ -206,7 +270,7 @@ class Context
     {
       Close();
 
-      if (m_ApplicationId == CAPI_APPLID_INVALID)
+      if (m_ApplicationId == CAPI::InvalidApplId)
         return PluginLID_InternalError;
 
       m_ControllerNumber = atoi(device);
@@ -214,7 +278,7 @@ class Context
         return PluginLID_NoSuchDevice;
 
       CAPI_PROFILE profile;
-      if (CAPI_GET_PROFILE(&profile, m_ControllerNumber) != 0)
+      if (m_CAPI.GET_PROFILE(&profile, m_ControllerNumber) != CAPI::Success)
         return PluginLID_NoSuchDevice;
 
       m_LineCount = profile.NumBChannels;
