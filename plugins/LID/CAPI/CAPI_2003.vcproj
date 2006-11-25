@@ -36,7 +36,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="FALSE"
-				AdditionalDependencies="win32\capi2032.lib"
 				OutputFile="$(OutDir)/capi_lid_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -104,7 +103,6 @@ copy &quot;$(TargetDir)\$(TargetName).pdb&quot; c:\pwlib_plugins
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="win32\capi2032.lib"
 				OutputFile="$(OutDir)/capi_lid_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
@@ -161,6 +159,12 @@ copy &quot;$(TargetDir)\$(TargetName).pdb&quot; c:\pwlib_plugins
 					Optimization="2"
 					PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS;$(NoInherit)"/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath=".\Win32\capi2032.h">
+		</File>
+		<File
+			RelativePath=".\Win32\capiutils.h">
 		</File>
 	</Files>
 	<Globals>
