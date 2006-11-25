@@ -71,6 +71,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "..\src\win32
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common ISDN API LID", "LID\CAPI\CAPI_2003.vcproj", "{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -185,6 +189,12 @@ Global
 		{0C3AF508-06FF-47EF-BE5A-F72F41759246}.No Trace.Build.0 = No Trace|Win32
 		{0C3AF508-06FF-47EF-BE5A-F72F41759246}.Release.ActiveCfg = Release|Win32
 		{0C3AF508-06FF-47EF-BE5A-F72F41759246}.Release.Build.0 = Release|Win32
+		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.Debug.ActiveCfg = Debug|Win32
+		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.Debug.Build.0 = Debug|Win32
+		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.No Trace.ActiveCfg = Release|Win32
+		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.No Trace.Build.0 = Release|Win32
+		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.Release.ActiveCfg = Release|Win32
+		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
