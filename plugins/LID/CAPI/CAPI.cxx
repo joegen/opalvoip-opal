@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: CAPI.cxx,v $
+ * Revision 1.2  2006/11/25 00:17:16  rjongbloed
+ * Changed illegal application ID to more compatible zero value.
+ *
  * Revision 1.1  2006/11/24 09:22:01  rjongbloed
  * Added files for CAPI LID on both Windows and Linux. Still much implementationto be done!
  *
@@ -38,7 +41,7 @@
   #include "win32/capi2032.h"
 
   typedef DWORD CAPI_APPLID_T;
-  const CAPI_APPLID_T CAPI_APPLID_INVALID = UINT_MAX;
+  const CAPI_APPLID_T CAPI_APPLID_INVALID = 0;
 
 #else
 
@@ -47,7 +50,7 @@
   #include <capi20.h>
 
   typedef unsigned CAPI_APPLID_T;
-  const CAPI_APPLID_T CAPI_APPLID_INVALID = 0xffffffff;
+  const CAPI_APPLID_T CAPI_APPLID_INVALID = 0;
 
   static inline _cdword CAPI_REGISTER(_cdword MessageBufferSize,
                                       _cdword MaxLogicalConnection,
