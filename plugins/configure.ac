@@ -238,6 +238,31 @@ AC_SUBST(HAS_VPB)
 
 dnl ########################################################################
 dnl
+dnl CAPI
+dnl 
+
+AC_CHECK_HEADERS(capi20.h, HAS_CAPI20_H=1)
+HAS_CAPI=0
+capi=yes
+AC_ARG_ENABLE(capi,
+       [  --enable-capi            enable CAPI],
+       capi=$enableval)
+AC_MSG_CHECKING(CAPI)
+if test "$capi" = "yes" ; then
+  if test "x$HAS_CAPI20_H" != "x" ; then
+    HAS_CAPI=1
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(not available)
+  fi
+else
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(HAS_CAPI)
+
+
+dnl ########################################################################
+dnl
 dnl Sangoma libraries
 dnl 
 
