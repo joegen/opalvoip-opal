@@ -22,6 +22,11 @@ ifeq ($(HAS_VPB),1)
 SUBDIRS += LID/VPB
 endif
 
+HAS_CAPI=@HAS_CAPI@
+ifeq ($(HAS_CAPI),1)
+SUBDIRS += LID/CAPI
+endif
+
 all debug opt both \
 optshared debugshared bothshared \
 optnoshared debugnoshared bothnoshared:
