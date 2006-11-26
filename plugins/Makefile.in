@@ -1,0 +1,42 @@
+SUBDIRS = audio/GSM0610 \
+          audio/Speex \
+          audio/iLBC \
+	  audio/LPC_10 \
+	  audio/G726 \
+	  audio/IMA_ADPCM \
+	  audio/gsm-amr \
+	  video/H.261-vic
+
+HAS_FFMPEG=@HAS_FFMPEG@
+ifeq ($(HAS_FFMPEG),1)
+SUBDIRS += video/H.263-ffmpeg
+endif
+
+HAS_IXJ=@HAS_IXJ@
+ifeq ($(HAS_IXJ),1)
+SUBDIRS += LID/IxJ
+endif
+
+HAS_VPB=@HAS_VPB@
+ifeq ($(HAS_VPB),1)
+SUBDIRS += LID/VPB
+endif
+
+HAS_CAPI=@HAS_CAPI@
+ifeq ($(HAS_CAPI),1)
+SUBDIRS += LID/CAPI
+endif
+
+all debug opt both \
+optshared debugshared bothshared \
+optnoshared debugnoshared bothnoshared:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
+
+clean optclean debugclean:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
+
+install uninstall:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) $@; fi ; )
+
+optdepend debugdepend bothdepend release tagbuild:
+	@echo
