@@ -70,7 +70,6 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
-				AdditionalDependencies="win32\capi2032.lib"
 				OutputFile="$(OutDir)/capi_lid_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -162,7 +161,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="win32\capi2032.lib"
 				OutputFile="$(OutDir)/capi_lid_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
