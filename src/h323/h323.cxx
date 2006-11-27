@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2124  2006/11/11 12:23:18  hfriederich
+ * Revision 1.2125  2006/11/27 11:11:21  csoutheren
+ * Apply 1588592 - Fixes for H.245 tunneling
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.123  2006/11/11 12:23:18  hfriederich
  * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
  *
  * Revision 2.122  2006/11/11 09:43:24  hfriederich
@@ -617,7 +621,7 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 
   // If remote does not do tunneling, so we don't either. Note that if it
   // gets turned off once, it stays off for good.
-  if (h245Tunneling && !pdu.m_h323_uu_pdu.m_h245Tunneling) {
+  if (h245Tunneling && !pdu.m_h323_uu_pdu.m_h245Tunneling && pdu.GetQ931().HasIE(Q931::UserUserIE)) {
     masterSlaveDeterminationProcedure->Stop();
     capabilityExchangeProcedure->Stop();
     h245Tunneling = FALSE;
@@ -1047,7 +1051,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   OnSetLocalCapabilities();
 
   // Check that it has the H.245 channel connection info
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && !setupPDU.m_h323_uu_pdu.m_h245Tunneling)
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     if (!CreateOutgoingControlChannel(setup.m_h245Address))
       return FALSE;
 
@@ -1215,7 +1219,7 @@ BOOL H323Connection::OnReceivedCallProceeding(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(call.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (call.HasOptionalField(H225_CallProceeding_UUIE::e_h245Address) && !pdu.m_h323_uu_pdu.m_h245Tunneling)
+  if (call.HasOptionalField(H225_CallProceeding_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     CreateOutgoingControlChannel(call.m_h245Address);
 
   return TRUE;
@@ -1237,7 +1241,7 @@ BOOL H323Connection::OnReceivedProgress(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(progress.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (progress.HasOptionalField(H225_Progress_UUIE::e_h245Address) && !pdu.m_h323_uu_pdu.m_h245Tunneling)
+  if (progress.HasOptionalField(H225_Progress_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     return CreateOutgoingControlChannel(progress.m_h245Address);
 
   return TRUE;
@@ -1266,7 +1270,7 @@ BOOL H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(alert.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (alert.HasOptionalField(H225_Alerting_UUIE::e_h245Address) && !pdu.m_h323_uu_pdu.m_h245Tunneling)
+  if (alert.HasOptionalField(H225_Alerting_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     if (!CreateOutgoingControlChannel(alert.m_h245Address))
       return FALSE;
 
@@ -1324,7 +1328,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(connect.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (connect.HasOptionalField(H225_Connect_UUIE::e_h245Address) && !pdu.m_h323_uu_pdu.m_h245Tunneling) {
+  if (connect.HasOptionalField(H225_Connect_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled())) {
     if (!endpoint.IsH245Disabled() && (!CreateOutgoingControlChannel(connect.m_h245Address))) {
       if (fastStartState != FastStartAcknowledged)
         return FALSE;
@@ -1394,7 +1398,7 @@ BOOL H323Connection::OnReceivedFacility(const H323SignalPDU & pdu)
     HandleFastStartAcknowledge(fac.m_fastStart);
 
   // Check that it has the H.245 channel connection info
-  if (fac.HasOptionalField(H225_Facility_UUIE::e_h245Address) && !pdu.m_h323_uu_pdu.m_h245Tunneling) {
+  if (fac.HasOptionalField(H225_Facility_UUIE::e_h245Address) && (!pdu.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled())) {
     if (controlChannel != NULL) {
       // Fix race condition where both side want to open H.245 channel. we have
       // channel bit it is not open (ie we are listening) and the remote has
