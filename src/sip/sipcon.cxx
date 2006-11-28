@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2188  2006/11/11 12:23:18  hfriederich
+ * Revision 1.2189  2006/11/28 20:24:24  dsandras
+ * Fixed crash when calling himself due to transport deletion.
+ *
+ * Revision 2.187  2006/11/11 12:23:18  hfriederich
  * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
  *
  * Revision 2.186  2006/11/10 23:19:51  hfriederich
@@ -1991,6 +1994,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     delete originalInvite;
 
   originalInvite = new SIP_PDU(request);
+  // Special case auto calling
+  if (IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
+    SendInviteResponse(SIP_PDU::Failure_InternalServerError);
+    return;
+  }
+
   if (request.HasSDP())
     remoteSDP = request.GetSDP();
   if (!isReinvite)
