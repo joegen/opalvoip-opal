@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.21  2006/10/28 16:41:58  dsandras
+ * Revision 1.2121.2.22  2006/11/28 20:26:22  dsandras
+ * Backported fix from HEAD.
+ *
+ * Revision 2.120.2.21  2006/10/28 16:41:58  dsandras
  * Backported patch from HEAD to fix SIP reinvite without breaking
  * H.323 calls.
  *
@@ -1612,6 +1615,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     delete originalInvite;
 
   originalInvite = new SIP_PDU(request);
+  // Special case auto calling
+  if (IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
+    SendInviteResponse(SIP_PDU::Failure_InternalServerError);
+    return;
+  }
+
   if (request.HasSDP())
     remoteSDP = request.GetSDP();
   if (!isReinvite)
