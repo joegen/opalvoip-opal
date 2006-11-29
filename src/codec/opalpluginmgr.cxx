@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2016  2006/10/17 23:55:07  csoutheren
+ * Revision 1.2017  2006/11/29 06:28:58  csoutheren
+ * Add ability call codec control functions on all transcoders
+ *
+ * Revision 2.15  2006/10/17 23:55:07  csoutheren
  * Changed to match new enum in opalplugin.h
  *
  * Revision 2.14  2006/10/17 15:36:58  shorne
@@ -234,6 +237,21 @@ static BOOL CallCodecControl(PluginCodec_Definition * codec,
       retVal = (*codecControls->control)(codec, context, name, parm, parmLen);
       return TRUE;
     }
+    codecControls++;
+  }
+
+  return FALSE;
+}
+
+static BOOL HasCodecControl(PluginCodec_Definition * codec, const char * name)
+{
+  PluginCodec_ControlDefn * codecControls = codec->codecControls;
+  if (codecControls == NULL)
+    return 0;
+
+  while (codecControls->name != NULL) {
+    if (strcmp(codecControls->name, name) == 0)
+      return TRUE;
     codecControls++;
   }
 
@@ -723,6 +741,15 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
       return TRUE;
     }
 
+    BOOL HasCodecControl(const char * name)
+    { return ::HasCodecControl(codec, name); }
+
+    BOOL CallCodecControl(const char * name,
+                                      void * parm, 
+                              unsigned int * parmLen,
+                                       int & retVal)
+    { return ::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
+
   protected:
     void * context;
     PluginCodec_Definition * codec;
@@ -756,6 +783,15 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder
       if (codec != NULL && codec->destroyCodec != NULL) 
         (*codec->destroyCodec)(codec, context); 
     }
+
+    BOOL HasCodecControl(const char * name)
+    { return ::HasCodecControl(codec, name); }
+
+    BOOL CallCodecControl(const char * name,
+                                      void * parm, 
+                              unsigned int * parmLen,
+                                       int & retVal)
+    { return ::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
 
   protected:
     void * context;
@@ -829,11 +865,16 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder
   public:
     OpalPluginVideoTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder);
     ~OpalPluginVideoTranscoder();
-    BOOL HasCodecControl(const char * name);
+
+    BOOL HasCodecControl(const char * name)
+    { return ::HasCodecControl(codec, name); }
+
     BOOL CallCodecControl(const char * name,
                                       void * parm, 
                               unsigned int * parmLen,
-                                       int & retVal);
+                                       int & retVal)
+    { return ::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
+
     BOOL ExecuteCommand(const OpalMediaCommand & /*command*/);
     PINDEX GetOptimalDataFrameSize(BOOL input) const;
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
@@ -879,41 +920,6 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 
   if (codec != NULL && codec->destroyCodec != NULL) 
     (*codec->destroyCodec)(codec, context); 
-}
-
-BOOL OpalPluginVideoTranscoder::HasCodecControl(const char * name)
-{
-  PluginCodec_ControlDefn * codecControls = codec->codecControls;
-  if (codecControls == NULL)
-    return 0;
-
-  while (codecControls->name != NULL) {
-    if (strcmp(codecControls->name, name) == 0)
-      return TRUE;
-    codecControls++;
-  }
-
-  return FALSE;
-}
-
-BOOL OpalPluginVideoTranscoder::CallCodecControl(const char * name,
-                                  void * parm, 
-                          unsigned int * parmLen,
-                                    int & retVal)
-{
-  PluginCodec_ControlDefn * codecControls = codec->codecControls;
-  if (codecControls == NULL)
-    return FALSE;
-
-  while (codecControls->name != NULL) {
-    if (strcmp(codecControls->name, name) == 0) {
-      retVal = (*codecControls->control)(codec, context, name, parm, parmLen);
-      return TRUE;
-    }
-    codecControls++;
-  }
-
-  return FALSE;
 }
 
 BOOL OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
