@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2029  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2030  2006/11/29 06:31:59  csoutheren
+ * Add support fort RTP BYE
+ *
+ * Revision 2.28  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.27  2006/10/28 16:40:28  dsandras
@@ -458,6 +461,10 @@ class RTP_ControlFrame : public PBYTEArray
     BOOL WriteNextCompound();
 
     PINDEX GetCompoundSize() const { return compoundSize; }
+    void SetCompoundSize(PINDEX v) { compoundSize = v; }
+
+    BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
+    void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
 
 #pragma pack(1)
     struct ReceiverReport {
@@ -919,6 +926,8 @@ class RTP_Session : public PObject
     { return -1; }
   //@}
 
+    virtual void SendBYE();
+
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
@@ -950,6 +959,7 @@ class RTP_Session : public PObject
 
     // Statistics
     DWORD packetsSent;
+    DWORD rtcpPacketsSent;
     DWORD octetsSent;
     DWORD packetsReceived;
     DWORD octetsReceived;

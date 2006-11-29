@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2045  2006/11/20 03:37:13  csoutheren
+ * Revision 1.2046  2006/11/29 06:31:59  csoutheren
+ * Add support fort RTP BYE
+ *
+ * Revision 2.44  2006/11/20 03:37:13  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.43  2006/11/10 12:40:30  csoutheren
@@ -843,6 +846,7 @@ RTP_Session::RTP_Session(
   consecutiveOutOfOrderPackets = 0;
 
   packetsSent = 0;
+  rtcpPacketsSent = 0;
   octetsSent = 0;
   packetsReceived = 0;
   octetsReceived = 0;
@@ -871,7 +875,6 @@ RTP_Session::RTP_Session(
   lastReceivedPayloadType = RTP_DataFrame::MaxPayloadType;
 }
 
-
 RTP_Session::~RTP_Session()
 {
   PTRACE_IF(2, packetsSent != 0 || packetsReceived != 0,
@@ -897,6 +900,32 @@ RTP_Session::~RTP_Session()
     delete userData;
 }
 
+void RTP_Session::SendBYE()
+{
+  // send a BYE if we ever sent a packet
+  if (packetsSent != 0 || rtcpPacketsSent != 0) {
+    RTP_ControlFrame frame;
+    frame.SetPayloadType(RTP_ControlFrame::e_Goodbye);
+    frame.SetCount(1);
+
+    BYTE * payload = frame.GetPointer() + 4;
+    *(PUInt32b *)payload = syncSourceOut;
+    PINDEX len = 4;
+    const char * reasonStr = "session ending";
+    if (reasonStr != NULL) {
+      strcpy((char *)(payload+len), reasonStr);
+      len += strlen(reasonStr);
+    }
+    while (len & 3) {
+      frame.SetPadding(TRUE);
+      payload[len] = '\0';
+      ++len;
+    }
+    *(PUInt16b *)(frame.GetPointer()+2) = (WORD)(len/4);
+    frame.SetCompoundSize(8 + len); // needed so that WriteControl gets the right length
+    WriteControl(frame);
+  }
+}
 
 PString RTP_Session::GetCanonicalName() const
 {
@@ -1101,6 +1130,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 
 RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
 {
+  rtcpPacketsSent++;
   return e_ProcessPacket;
 }
 
