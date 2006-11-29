@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2027  2006/10/04 06:33:20  csoutheren
+ * Revision 1.2028  2006/11/29 06:28:58  csoutheren
+ * Add ability call codec control functions on all transcoders
+ *
+ * Revision 2.26  2006/10/04 06:33:20  csoutheren
  * Add compliant handling for multiples speex frames per packet
  *
  * Revision 2.25  2006/10/03 01:06:35  rjongbloed
@@ -403,15 +406,17 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
 {
   const BYTE * inputPtr = input.GetPayloadPtr();
   PINDEX inputLength = input.GetPayloadSize();
-  BYTE * outputPtr = output.GetPayloadPtr();
 
   if (inputLength == 0) {
     output.SetPayloadSize(outputBytesPerFrame);
-    return ConvertSilentFrame (outputPtr);
+    return ConvertSilentFrame (output.GetPayloadPtr());
   }
 
   // set maximum output payload size
-  output.SetPayloadSize((inputLength + inputBytesPerFrame - 1)/inputBytesPerFrame*outputBytesPerFrame);
+  if (!output.SetPayloadSize((inputLength + inputBytesPerFrame - 1)/inputBytesPerFrame*outputBytesPerFrame))
+    return FALSE;
+
+  BYTE * outputPtr = output.GetPayloadPtr();
 
   PINDEX outLen = 0;
 
