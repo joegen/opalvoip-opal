@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2024  2006/04/09 12:12:54  rjongbloed
+ * Revision 1.2025  2006/11/29 06:28:57  csoutheren
+ * Add ability call codec control functions on all transcoders
+ *
+ * Revision 2.23  2006/04/09 12:12:54  rjongbloed
  * Changed the media format option merging to include the transcoder formats.
  *
  * Revision 2.22  2006/02/02 07:02:57  csoutheren
@@ -371,6 +374,14 @@ class OpalTranscoder : public OpalMediaFormatPair
        would only apply to a video transcoder.
       */
     const PNotifier & GetCommandNotifier() const { return commandNotifier; }
+
+    /**Call a codec control function. This will normally only be defined for plugin codecs
+      */
+    virtual BOOL HasCodecControl(const char *)
+    { return FALSE; }
+
+    virtual BOOL CallCodecControl(const char *, void *,  unsigned int *, int &)
+    { return -1; }
   //@}
 
   protected:
