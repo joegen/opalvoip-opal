@@ -21661,7 +21661,10 @@ EXPORTS
     ?Call@TransmitPacket_PNotifier@OpalRFC2833Proto@@UBEXAAVPObject@@H@Z @19181 NONAME
     ?Call@TransportThreadMain_PNotifier@SIPEndPoint@@UBEXAAVPObject@@H@Z @19182 NONAME
     ?Call@UpdateAllDescriptors_PNotifier@H323PeerElement@@UBEXAAVPObject@@H@Z @19183 NONAME
-    ?CallCodecControl@OpalPluginVideoTranscoder@@QAEHPBDPAXPAIAAH@Z @42589 NONAME
+    ?CallCodecControl@OpalPluginFramedAudioTranscoder@@UAEHPBDPAXPAIAAH@Z @44840 NONAME
+    ?CallCodecControl@OpalPluginStreamedAudioTranscoder@@UAEHPBDPAXPAIAAH@Z @44841 NONAME
+    ?CallCodecControl@OpalPluginVideoTranscoder@@UAEHPBDPAXPAIAAH@Z @44842 NONAME
+    ?CallCodecControl@OpalTranscoder@@UAEHPBDPAXPAIAAH@Z @44843 NONAME
     ?CallMustBeActive@IAX2Frame@@UAEHXZ @38588 NONAME
     ?CallMustBeActive@IAX2FullFrame@@MAEHXZ @38589 NONAME
     ?CallStopSounds@IAX2CallProcessor@@IAEXXZ @43080 NONAME
@@ -34295,7 +34298,10 @@ EXPORTS
     ?Hangup@IAX2CallProcessor@@QAEXVPString@@@Z @43100 NONAME
     ?HasAttribute@OpalEndPoint@@QBEHW4Attributes@1@@Z @30460 NONAME
     ?HasCall@OpalManager@@UAEHABVPString@@@Z @30461 NONAME
-    ?HasCodecControl@OpalPluginVideoTranscoder@@QAEHPBD@Z @42766 NONAME
+    ?HasCodecControl@OpalPluginFramedAudioTranscoder@@UAEHPBD@Z @44844 NONAME
+    ?HasCodecControl@OpalPluginStreamedAudioTranscoder@@UAEHPBD@Z @44845 NONAME
+    ?HasCodecControl@OpalPluginVideoTranscoder@@UAEHPBD@Z @44846 NONAME
+    ?HasCodecControl@OpalTranscoder@@UAEHPBD@Z @44847 NONAME
     ?HasConnection@OpalEndPoint@@UAEHABVPString@@@Z @30462 NONAME
     ?HasExpired@SIPInfo@@UAEHXZ @36506 NONAME
     ?HasFeature@H460_FeatureSet@@QAEHABVH460_FeatureID@@@Z @41351 NONAME
@@ -38605,6 +38611,7 @@ EXPORTS
     ?SendACK@SIPConnection@@UAEHAAVSIPTransaction@@AAVSIP_PDU@@@Z @44159 NONAME
     ?SendAckFrame@IAX2Processor@@IAEXPAVIAX2FullFrame@@@Z @39919 NONAME
     ?SendAnswerMessageToRemoteNode@IAX2CallProcessor@@IAEXXZ @43182 NONAME
+    ?SendBYE@RTP_Session@@UAEXXZ @44848 NONAME
     ?SendCachedResponse@H323Transactor@@IAEHABVH323TransactionPDU@@@Z @34050 NONAME
     ?SendCachedResponse@Response@H323Transactor@@QAEHAAVOpalTransport@@@Z @34051 NONAME
     ?SendCallCreditServiceControl@H323GatekeeperCall@@UAEHXZ @34052 NONAME
@@ -38786,6 +38793,7 @@ EXPORTS
     ?SetCommandNotifier@OpalTranscoder@@QAEXABVPNotifier@@@Z @39943 NONAME
     ?SetCommandNotifier@Sink@OpalMediaPatch@@QAEXABVPNotifier@@@Z @39944 NONAME
     ?SetCommonOptions@H323VideoPluginCapability@@SAHAAVOpalMediaFormat@@HHH@Z @42857 NONAME
+    ?SetCompoundSize@RTP_ControlFrame@@QAEXH@Z @44849 NONAME
     ?SetConnected@H323Connection@@UAEHXZ @34172 NONAME
     ?SetConnected@IAX2CallProcessor@@QAEXXZ @43197 NONAME
     ?SetConnected@IAX2Connection@@UAEHXZ @39945 NONAME
@@ -38927,6 +38935,7 @@ EXPORTS
     ?setOsError@OpalLineInterfaceDevice@@IAEXH@Z @41901 NONAME
     ?setOsHandle@OpalLineInterfaceDevice@@IAEXH@Z @41902 NONAME
     ?SetOutSeqNo@IAX2SequenceNumbers@@QAEXH@Z @39965 NONAME
+    ?SetPadding@RTP_ControlFrame@@QAEXH@Z @44850 NONAME
     ?SetPanDirection@H281_Frame@@QAEXW4PanDirection@1@@Z @41042 NONAME
     ?SetParameters@OpalEchoCanceler@@QAEXABUParams@1@@Z @40366 NONAME
     ?SetParameters@OpalSilenceDetector@@QAEXABUParams@1@@Z @34637 NONAME
