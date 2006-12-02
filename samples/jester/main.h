@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.4  2006/12/02 07:31:00  dereksmithies
+ * Add more options - duration of each packet.
+ *
  * Revision 1.3  2006/11/23 07:55:15  rjongbloed
  * Fixed sample app build due to RTP session class API breakage.
  *
@@ -137,10 +140,20 @@ class JesterProcess : public PProcess
   protected:
 
 #ifdef DOC_PLUS_PLUS
-    /**Generate the Udp packets that we could have read from the internet */
+    /**Generate the Udp packets that we could have read from the internet. In
+       other words, place packets in the jitter buffer. */
     virtual void GenerateUdpPackets(PThread &, INT);
 #else
     PDECLARE_NOTIFIER(PThread, JesterProcess, GenerateUdpPackets);
+#endif
+
+#ifdef DOC_PLUS_PLUS
+    /**Read in the Udp packets (from the output of the jitter buffer), that we
+       could have read from the internet. In other words, extract packets from
+       the jitter buffer. */
+    virtual void ConsumeUdpPackets(PThread &, INT);
+#else
+    PDECLARE_NOTIFIER(PThread, JesterProcess, ConsumeUdpPackets);
 #endif
 
     /**The rtp session that we use to jitter buffer the code in */
@@ -148,6 +161,9 @@ class JesterProcess : public PProcess
 
     /**The number of iterations we run for */
     PINDEX iterations;
+
+    /**The length, in ms, that each packet represents */
+    PINDEX duration;
 };
 
 

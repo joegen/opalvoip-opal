@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.7  2006/12/02 07:31:00  dereksmithies
+ * Add more options - duration of each packet.
+ *
  * Revision 1.6  2006/12/02 04:16:13  dereksmithies
  * Get it to terminate correctly.
  * Report on when each frame is commited, and when each frame is received.
@@ -82,15 +85,25 @@ BOOL JestRTP_Session::ReadData(RTP_DataFrame & frame, BOOL)
 	return FALSE;
     }
 
-    newDataReady.Wait();
-    if (!runningOk)
-	return FALSE;
+    while(TRUE) {
+	newDataReady.Wait();
+	if (!runningOk)
+	    return FALSE;
 
-    frame = *dataFrame;
-    dataFrame = NULL;
+	if (dataFrame == NULL)
+	    continue;
+
+	frame = *dataFrame;
+	
+	dataFrame = NULL;
+	
+	return runningOk;
+    }
 
     return runningOk;
 }
+
+
 
 void JestRTP_Session::Close(
     BOOL /*reading */   ///<  Closing the read side of the session
@@ -123,7 +136,7 @@ BOOL JestRTP_Session::WriteControl(
 
 JesterProcess::JesterProcess()
   : PProcess("Derek Smithies Code Factory", "Jester",
-             MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
+             1, 1, ReleaseCode, 0)
 {
 }
 
@@ -134,6 +147,7 @@ void JesterProcess::Main()
   PArgList & args = GetArguments();
   args.Parse(
              "h-help."
+	     "d-duration:"
 	     "i-iterations:"
 #if PTRACING
              "o-output:"
@@ -147,24 +161,25 @@ void JesterProcess::Main()
       cout << "Usage : " << GetName() << " [options] \n"
 	  
 	  "General options:\n"
-	  " -i --iterations #        : number of packets to ask for \n"
+	  "  -d --duration        : duration of each packet, default is 20ms. \n"
+	  "  -i --iterations #    : number of packets to ask for  (default is 80)\n"
 #if PTRACING
-	  "  -t --trace              : Enable trace, use multiple times for more detail.\n"
-	  "  -o --output             : File for trace output, default is stderr.\n"
+	  "  -t --trace           : Enable trace, use multiple times for more detail.\n"
+	  "  -o --output          : File for trace output, default is stderr.\n"
 #endif
 
-	  "  -h --help               : This help message.\n"
-	  "  -v --version            : report version and program info.\n"
+	  "  -h --help            : This help message.\n"
+	  "  -v --version         : report version and program info.\n"
 	  "\n"
 	  "\n";
       return;
   }
 
   if (args.HasOption('v')) {
-      cout << GetName()
-	   << " Version " << GetVersion(TRUE)
-	   << " by " << GetManufacturer()
-	   << " on " << GetOSClass() << ' ' << GetOSName()
+      cout << GetName()  << endl
+	   << " Version " << GetVersion(TRUE) << endl
+	   << " by " << GetManufacturer() << endl
+	   << " on " << GetOSClass() << ' ' << GetOSName() << endl
 	   << " (" << GetOSVersion() << '-' << GetOSHardware() << ")\n\n";
       return;
   }
@@ -175,66 +190,112 @@ void JesterProcess::Main()
                      PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
 #endif
 
-  testSession.SetJitterBufferSize(8 * 100,8 * 1000);
+  testSession.SetJitterBufferSize(8 * 100,8 * 10000);
 
   runningOk = TRUE;
   iterations = 80;
-  PThread * writer = PThread::Create(PCREATE_NOTIFIER(GenerateUdpPackets), 0,
-				     PThread::NoAutoDeleteThread,
-				     PThread::NormalPriority);
-
-  PThread::Sleep(50);
-
-  RTP_DataFrame readFrame;
-  DWORD readTimestamp = 0;
-  PAdaptiveDelay readDelay;
-
+  duration   = 20;
 
   if (args.HasOption('i'))
       iterations = args.GetOptionString('i').AsInteger();
 
-  PTRACE(3, "Read in " << iterations << " psuedo packets");
+  if (args.HasOption('d'))
+      duration = args.GetOptionString('d').AsInteger();
 
-  for(PINDEX i = 0; i < iterations; i++) {
-      BOOL success = testSession.ReadBufferedData(readTimestamp, readFrame);
-      readDelay.Delay(40);
-      if (success) {
-	  readTimestamp += 320;
-	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " has given us " 
-		 << (readFrame.GetTimestamp() >> 3) << " on payload size " 
-		 << readFrame.GetPayloadSize());
-      } else {
-	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " BAD READ");
-      }
-  }
+  PTRACE(3, "Process " << iterations << " psuedo packets");
+  PTRACE(3, "Process packets of size " << duration << " ms");
 
-  cout << "Finished reading packets " << endl;
-  testSession.Close(TRUE);
-  PTRACE(3, "Closed the RTP Session");
+
+  PThread * writer = PThread::Create(PCREATE_NOTIFIER(GenerateUdpPackets), 0,
+				     PThread::NoAutoDeleteThread,
+				     PThread::NormalPriority,
+				     "generate");
+
+  PThread::Sleep(10);
+
+  PThread * reader = PThread::Create(PCREATE_NOTIFIER(ConsumeUdpPackets), 0,
+				     PThread::NoAutoDeleteThread,
+				     PThread::NormalPriority,
+				     "consume");
+
+
 
   writer->WaitForTermination();
+
+  reader->WaitForTermination();
+
+  delete writer;
+  delete reader;
+  
 }
+
 
 void JesterProcess::GenerateUdpPackets(PThread &, INT )
 {
+    PAdaptiveDelay delay;
+
     for(PINDEX i = 0; i < iterations; i++) {
 	RTP_DataFrame *frame = new RTP_DataFrame;
 	
 	frame->SetPayloadType(RTP_DataFrame::GSM);
 	frame->SetSyncSource(0x12345678);
 	frame->SetSequenceNumber((WORD)(i + 100));
-	frame->SetPayloadSize(66);
+	frame->SetPayloadSize((duration/20) * 33); 
 
-	frame->SetTimestamp( i  * 320);
+	frame->SetTimestamp( 0 + (i  * duration * 8));
 
-	PTRACE(3, "Send a new frame at iteration " << i 
+	PTRACE(3, "GenerateUdpPacket    iteration " << i 
 	       << " with time of " << (frame->GetTimestamp() >> 3) << " ms");
-	dataFrame = frame;
-	newDataReady.Signal();
 
-	PThread::Sleep(30 + ((i % 4) * 5));
+	if ((i%10) != 0) {
+	    dataFrame = frame;
+	    newDataReady.Signal();
+	} else   //Drop 1 in 10 packets.
+	    delete frame;
+
+	delay.Delay(duration);
+	switch (i % 2) 
+	{
+	    case 0: 
+		break;
+	    case 1:// PThread::Sleep(10);
+		break;
+	}
+//	PThread::Sleep(duration + ((i % 4) * 5));
     }
     PTRACE(3, "End of generate udp packets ");
     runningOk = FALSE;
 }
+
+
+void JesterProcess::ConsumeUdpPackets(PThread &, INT)
+{
+  RTP_DataFrame readFrame;
+  DWORD readTimestamp = 0;
+  PAdaptiveDelay readDelay;
+
+  for(PINDEX i = 0; i < iterations; i++) {
+      BOOL success = testSession.ReadBufferedData(readTimestamp, readFrame);
+      readDelay.Delay(duration);
+      if (success && (readFrame.GetPayloadSize() > 0)) {
+	  readTimestamp = (duration * 8) + readFrame.GetTimestamp();
+	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " has given us " 
+		 << (readFrame.GetTimestamp() >> 3) << " on payload size " 
+		 << readFrame.GetPayloadSize() << "    jitter len is "
+		 << (testSession.GetJitterBufferSize() >> 3) << "ms" );
+      } else {
+	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " BAD READ");
+	  PTRACE(4, "Get a frame, timestamp" << (readFrame.GetTimestamp() >> 3) << "ms"
+		 << " payload" << readFrame.GetPayloadSize()  << "bytes  "
+		 << "  success" << success);
+      }
+  }
+
+  testSession.Close(TRUE);
+  PTRACE(3, "Closed the RTP Session");
+
+  PTRACE(3, "End of consume udp packets ");
+}
+
+
 // End of File ///////////////////////////////////////////////////////////////
