@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.6  2006/12/02 04:16:13  dereksmithies
+ * Get it to terminate correctly.
+ * Report on when each frame is commited, and when each frame is received.
+ *
  * Revision 1.5  2006/11/23 07:55:15  rjongbloed
  * Fixed sample app build due to RTP session class API breakage.
  *
@@ -57,6 +61,7 @@ PCREATE_PROCESS(JesterProcess);
 
 PSyncPoint newDataReady;
 RTP_DataFrame *dataFrame;
+BOOL       runningOk;
 
 ///////////////////////////////////////////////////////////////
 
@@ -64,20 +69,27 @@ JestRTP_Session::JestRTP_Session()
     : RTP_Session(NULL, 101)
 {
     PTRACE(4, "constructor of the rtp session tester");
-    psuedoTimestamp = 480;
-    psuedoSequenceNo = 5023;
+    psuedoTimestamp = 0;
+    psuedoSequenceNo = 0;
     closedDown = FALSE;
     readCount = 0;
 }
 
 BOOL JestRTP_Session::ReadData(RTP_DataFrame & frame, BOOL)
 {
+    if (!runningOk) {
+	PTRACE(3, "End of rtp session, return false");
+	return FALSE;
+    }
+
     newDataReady.Wait();
+    if (!runningOk)
+	return FALSE;
+
     frame = *dataFrame;
     dataFrame = NULL;
 
-    PTRACE(4, "ReadData has a frame of time " << (frame.GetTimestamp() >> 3));
-    return TRUE;
+    return runningOk;
 }
 
 void JestRTP_Session::Close(
@@ -86,6 +98,8 @@ void JestRTP_Session::Close(
 {
     PTRACE(3, "Close the rtp thing down ");
     closedDown = TRUE; 
+    runningOk = FALSE;
+    newDataReady.Signal();
 }
 
 BOOL JestRTP_Session::WriteData(
@@ -163,6 +177,7 @@ void JesterProcess::Main()
 
   testSession.SetJitterBufferSize(8 * 100,8 * 1000);
 
+  runningOk = TRUE;
   iterations = 80;
   PThread * writer = PThread::Create(PCREATE_NOTIFIER(GenerateUdpPackets), 0,
 				     PThread::NoAutoDeleteThread,
@@ -171,25 +186,32 @@ void JesterProcess::Main()
   PThread::Sleep(50);
 
   RTP_DataFrame readFrame;
-  DWORD readTimestamp = 480;
+  DWORD readTimestamp = 0;
   PAdaptiveDelay readDelay;
 
 
   if (args.HasOption('i'))
       iterations = args.GetOptionString('i').AsInteger();
 
-  PTRACE(3, "Run for " << iterations << " psuedo packets");
+  PTRACE(3, "Read in " << iterations << " psuedo packets");
 
   for(PINDEX i = 0; i < iterations; i++) {
-      testSession.ReadBufferedData(readTimestamp, readFrame);
+      BOOL success = testSession.ReadBufferedData(readTimestamp, readFrame);
       readDelay.Delay(40);
-      PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " has given us " << (readFrame.GetTimestamp() >> 3));
-      
-      readTimestamp += 480;
+      if (success) {
+	  readTimestamp += 320;
+	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " has given us " 
+		 << (readFrame.GetTimestamp() >> 3) << " on payload size " 
+		 << readFrame.GetPayloadSize());
+      } else {
+	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " BAD READ");
+      }
   }
 
-  cout << "Finished experiment" << endl;
+  cout << "Finished reading packets " << endl;
   testSession.Close(TRUE);
+  PTRACE(3, "Closed the RTP Session");
+
   writer->WaitForTermination();
 }
 
@@ -203,14 +225,16 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 	frame->SetSequenceNumber((WORD)(i + 100));
 	frame->SetPayloadSize(66);
 
-	frame->SetTimestamp( (i + 100) * 8 * 20);
+	frame->SetTimestamp( i  * 320);
 
-	PTRACE(3, "Send a new frame at iteration " << i);
-	PTRACE(3, "The pin is " << ::hex << dataFrame << ::dec);
+	PTRACE(3, "Send a new frame at iteration " << i 
+	       << " with time of " << (frame->GetTimestamp() >> 3) << " ms");
 	dataFrame = frame;
 	newDataReady.Signal();
 
-	PThread::Sleep(35 + ((i % 4) * 5));
+	PThread::Sleep(30 + ((i % 4) * 5));
     }
+    PTRACE(3, "End of generate udp packets ");
+    runningOk = FALSE;
 }
 // End of File ///////////////////////////////////////////////////////////////
