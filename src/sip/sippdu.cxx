@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2114  2006/11/02 03:09:06  csoutheren
+ * Revision 1.2115  2006/12/03 16:54:52  dsandras
+ * Do not allow contentLength to be negative in order to prevent
+ * crashes when receiving malformed PDUs. Fixes Ekiga report #379801.
+ *
+ * Revision 2.113  2006/11/02 03:09:06  csoutheren
  * Changed to use correct timeout when sending PDUs
  * Thanks to Peter Kocsis
  *
@@ -1895,7 +1899,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
     if (pos<pp.GetSize())
       pos++;
-    contentLength = pp.GetSize() - pos;
+    contentLength = PMAX(0,pp.GetSize() - pos);
     if(contentLength > 0)
       memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
   }
