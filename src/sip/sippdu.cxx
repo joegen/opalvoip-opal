@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.9  2006/08/07 20:07:46  dsandras
+ * Revision 1.2084.2.10  2006/12/03 16:56:48  dsandras
+ * Backported fix from HEAD (Ekiga report #379801).
+ *
+ * Revision 2.83.2.9  2006/08/07 20:07:46  dsandras
  * Backported qop support from HEAD.
  *
  * Revision 2.83.2.8  2006/08/07 19:53:31  dsandras
@@ -1835,7 +1838,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
     if (pos<pp.GetSize())
       pos++;
-    contentLength = pp.GetSize() - pos;
+    contentLength = PMAX(0,pp.GetSize() - pos);
     if(contentLength > 0)
       memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
   }
