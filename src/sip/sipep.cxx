@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2134  2006/11/09 18:24:55  hfriederich
+ * Revision 1.2135  2006/12/08 04:02:51  csoutheren
+ * Applied 1575788 - Fix a crash in ~SIPInfo due to an open transport
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.133  2006/11/09 18:24:55  hfriederich
  * Ensures that responses to received INVITE get sent out on the same network interface as where the INVITE was received. Remove cout statement
  *
  * Revision 2.132  2006/11/06 13:57:40  dsandras
@@ -518,13 +522,14 @@ SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
 
 SIPInfo::~SIPInfo() 
 {
-  registrations.RemoveAll();
   PWaitAndSignal m(transportMutex);
 
   if (registrarTransport) { 
     delete registrarTransport;
     registrarTransport = NULL;
   }
+
+  registrations.RemoveAll();
 }
 
 
