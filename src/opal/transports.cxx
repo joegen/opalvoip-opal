@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2070  2006/09/28 07:42:18  csoutheren
+ * Revision 1.2071  2006/12/08 05:10:44  csoutheren
+ * Applied 1608002 - Callback for OpalTransportUDP multiple interface handling
+ * Thanks to Hannes Friederich
+ *
+ * Revision 2.69  2006/09/28 07:42:18  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.68  2006/08/29 01:37:11  csoutheren
@@ -1838,6 +1842,7 @@ BOOL OpalTransportUDP::Connect()
     interfaces.Append(new PIPSocket::InterfaceEntry("", localAddress, PIPSocket::Address(0xffffffff), ""));
   }
   else {
+    endpoint.AdjustInterfaceTable(remoteAddress, interfaces);
     PTRACE(4, "OpalUDP\tConnecting to interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
   }
 
