@@ -49,6 +49,10 @@ AC_DEFINE_UNQUOTED(OPAL_MINOR,   ${MINOR_VERSION})
 AC_DEFINE_UNQUOTED(OPAL_BUILD,   ${BUILD_NUMBER})
 AC_DEFINE_UNQUOTED(OPAL_VERSION, "$OPAL_VERSION")
 
+AC_MSG_NOTICE(Opal version is ${OPAL_VERSION});
+
+#use to set the version in opal.pc
+AC_SUBST(OPAL_VERSION)
 
 dnl ########################################################################
 dnl look for ptlib, use a preference order of explicit PWLIBDIR, directory
@@ -554,5 +558,8 @@ dnl output header file
 AC_CONFIG_FILES(opal_inc.mak)
 AC_CONFIG_FILES(Makefile)
 AC_CONFIG_HEADERS(include/opal/buildopts.h)
+AC_CONFIG_FILES(opal.pc)
+AC_CONFIG_FILES(opal.spec)
+AC_CONFIG_FILES(opal_cfg.dxy)
 
 AC_OUTPUT(src/codec/speex/libspeex/speex_config_types.h)

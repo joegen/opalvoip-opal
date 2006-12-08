@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.49  2006/12/08 05:08:16  csoutheren
+# Applied 1589270 - spec, pkgconfig, doxygen
+# Thanks to Frederic Heem
+#
 # Revision 1.48  2006/10/16 21:30:55  dsandras
 # Applied patch from Brian Lu <brian lu sun com> to fix compilation issues
 # on OpenSolaris. Thanks!
@@ -600,6 +604,7 @@ CLEAN_FILES = $(OPAL_LIB)
 
 include @PWLIBDIR@/make/common.mak
 
+PROG=opal
 ####################################################
 # replace lib.mak
 
@@ -689,6 +694,8 @@ ifeq ($(P_SHAREDLIB),1)
 	cd $(LIBDIR) ; rm -f $(LIBNAME_MAJ) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MAJ)
 	cd $(LIBDIR) ; rm -f $(LIBNAME_MIN) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MIN)
 
+	cd $(LIBDIR) ; rm -f libopal.$(LIB_SUFFIX) ;  ln -sf $(LIBNAME_PAT) libopal.$(LIB_SUFFIX)
+	
   $(LIBDIR)/$(LIBNAME_PAT): $(STATIC_LIB_FILE)
 	@echo EXTLIBS = $(EXTLIBS)
 	@echo SYSLIBS = $(SYSLIBS)
@@ -752,10 +759,12 @@ install:
 		     $(DESTDIR)$(PREFIX)/include/opal/sip \
 		     $(DESTDIR)$(PREFIX)/include/opal/t120 \
 		     $(DESTDIR)$(PREFIX)/include/opal/t38 \
+		     $(DESTDIR)$(PREFIX)/lib/pkgconfig \
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
 	done)
 	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)@LIBDIR@
+	$(INSTALL) -m 444 opal.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig
 	ln -snf $(LIBNAME_PAT) \
 		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
 	ln -snf $(LIBNAME_PAT) \
@@ -804,9 +813,10 @@ uninstall:
 	      $(DESTDIR)@LIBDIR@/libopal.so \
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
-	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT)
-	$(MAKE) -C plugins uninstall
-
+	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT) \
+	      $(DESTDIR)$(PREFIX)/lib/pkgconfig/opal.pc \
+	      $(MAKE) -C plugins uninstall
+ 
 docs: FORCE
 	doxygen opal_cfg.dxy
 
