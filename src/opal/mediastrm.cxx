@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2040.2.2  2006/11/01 17:47:48  dsandras
+ * Revision 1.2040.2.3  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.39.2.2  2006/11/01 17:47:48  dsandras
  * Fixed initialization thanks to Brian Lu <brian lu sun com>.
  *
  * Revision 2.39.2.1  2006/08/07 20:18:25  dsandras
@@ -180,6 +184,8 @@
 #include <opal/mediastrm.h>
 
 #include <ptlib/videoio.h>
+#include <ptlib/sound.h>
+
 #include <opal/patch.h>
 #include <codec/vidcodec.h>
 #include <lids/lid.h>

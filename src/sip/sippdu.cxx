@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.10  2006/12/03 16:56:48  dsandras
+ * Revision 1.2084.2.11  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.83.2.10  2006/12/03 16:56:48  dsandras
  * Backported fix from HEAD (Ekiga report #379801).
  *
  * Revision 2.83.2.9  2006/08/07 20:07:46  dsandras
@@ -1234,7 +1238,7 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 
   qopAuth = qopAuthInt = FALSE;
   cnonce.MakeEmpty();
-  nonceCount = 1;
+  nonceCount.SetValue(1);
 
   if (auth.Find("digest") != 0) {
     PTRACE(1, "SIP\tUnknown authentication type");

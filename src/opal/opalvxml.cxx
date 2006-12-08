@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2012  2004/07/17 09:45:06  rjongbloed
+ * Revision 1.2012.2.1  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.11  2004/07/17 09:45:06  rjongbloed
  * Fixed problem if Close() is called before Open(), would shut down connection.
  *
  * Revision 2.10  2004/06/30 12:48:23  rjongbloed
@@ -156,7 +160,11 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
     PString name;
 #ifdef _WIN32
       name = "Microsoft SAPI";
+#if PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11
+      if (std::find(engines.begin(), engines.end(), std::string(name)) == engines.end())
+#else
       if (std::find(engines.begin(), engines.end(), name) == engines.end())
+#endif
 #endif
         name = engines[0];
       tts = PFactory<PTextToSpeech>::CreateInstance(name);

@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjwin32.cxx,v $
- * Revision 1.2013  2004/10/06 13:03:41  rjongbloed
+ * Revision 1.2013.2.1  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.12  2004/10/06 13:03:41  rjongbloed
  * Added "configure" support for known LIDs
  * Changed LID GetName() function to be normalised against the GetAllNames()
  *   return values and fixed the pre-factory registration system.
@@ -450,6 +454,7 @@
  */
 
 #include <ptlib.h>
+#include <ptlib/sound.h>
 
 #include <lids/ixjlid.h>
 

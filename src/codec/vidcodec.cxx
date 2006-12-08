@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2012  2006/01/12 17:55:22  dsandras
+ * Revision 1.2012.2.1  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.11  2006/01/12 17:55:22  dsandras
  * Initialize the fillLevel to a saner value.
  *
  * Revision 2.10  2005/10/21 17:58:31  dsandras
@@ -73,6 +77,7 @@
 #include <codec/vidcodec.h>
 
 #include <ptlib/vconvert.h>
+#include <ptlib/videoio.h>
 
 #define FRAME_WIDTH  PVideoDevice::CIFWidth
 #define FRAME_HEIGHT PVideoDevice::CIFHeight

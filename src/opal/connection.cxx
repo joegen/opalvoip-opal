@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2056.2.2  2006/10/28 16:41:58  dsandras
+ * Revision 1.2056.2.3  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.55.2.2  2006/10/28 16:41:58  dsandras
  * Backported patch from HEAD to fix SIP reinvite without breaking
  * H.323 calls.
  *
@@ -1050,7 +1054,11 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
   // before the audio is passed on to the sound card (or other output device)
 
   // Pass the 16 bit PCM audio through the DTMF decoder   
+#if PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11
+  PString tones = dtmfDecoder.Decode((short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/2);
+#else
   PString tones = dtmfDecoder.Decode(frame.GetPayloadPtr(), frame.GetPayloadSize());
+#endif
   if (!tones.IsEmpty()) {
     PTRACE(1, "DTMF detected. " << tones);
     PINDEX i;
