@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2030  2006/11/29 06:31:59  csoutheren
+ * Revision 1.2031  2006/12/08 04:12:12  csoutheren
+ * Applied 1589274 - better rtp error handling of malformed rtcp packet
+ * Thanks to frederich
+ *
+ * Revision 2.29  2006/11/29 06:31:59  csoutheren
  * Add support fort RTP BYE
  *
  * Revision 2.28  2006/11/20 03:37:12  csoutheren
@@ -455,7 +459,7 @@ class RTP_ControlFrame : public PBYTEArray
     PINDEX GetPayloadSize() const { return 4*(*(PUInt16b *)&theArray[compoundOffset+2]); }
     void   SetPayloadSize(PINDEX sz);
 
-    BYTE * GetPayloadPtr() const { return (BYTE *)(theArray+compoundOffset+4); }
+    BYTE * GetPayloadPtr() const;
 
     BOOL ReadNextCompound();
     BOOL WriteNextCompound();
@@ -509,6 +513,11 @@ class RTP_ControlFrame : public PBYTEArray
         BYTE length;      /* length of SDES item (in octets) */
         char data[1];     /* text, not zero-terminated */
 
+        /* WARNING, SourceDescription may not be big enough to contain length and data, for 
+           instance, when type == RTP_ControlFrame::e_END.
+           Be careful whan calling the following function of it may read to over to 
+           memory allocated*/
+        unsigned int GetLengthTotal() const {return (unsigned int)(length + 2);} 
         const Item * GetNextItem() const { return (const Item *)((char *)this + length + 2); }
         Item * GetNextItem() { return (Item *)((char *)this + length + 2); }
       } item[1];          /* list of SDES items */
