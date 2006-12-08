@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2058  2006/11/21 01:01:00  csoutheren
+ * Revision 1.2059  2006/12/08 07:33:13  csoutheren
+ * Fix problem with wideband audio plugins and sound channel
+ *
+ * Revision 2.57  2006/11/21 01:01:00  csoutheren
  * Ensure SDP only uses codecs that are valid for SIP
  *
  * Revision 2.56  2006/10/10 07:18:18  csoutheren
@@ -308,29 +311,30 @@ static class InstantiateMe
 
 /////////////////////////////////////////////////////////////////////////////
 
-#define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames) \
+#define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock) \
   const OpalAudioFormat & GetOpal##name() \
   { \
     static const OpalAudioFormat name(OPAL_##name, RTP_DataFrame::rtpPayloadType, \
-                                    encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames); \
+                                    encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock); \
     return name; \
   }
 
-AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240, 30, 256);
-AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256);
-AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  16, 4,  120, 15, 256);
-AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256);
-AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256);
-AUDIO_FORMAT(G728,           G728,           "G728",  5, 20, 100, 10, 256);
-AUDIO_FORMAT(G729,           G729,           "G729", 10, 80,  24,  5, 256);
-AUDIO_FORMAT(G729A,          G729,           "G729", 10, 80,  24,  5, 256);
-AUDIO_FORMAT(G729B,          G729,           "G729", 10, 80,  24,  5, 256);
-AUDIO_FORMAT(G729AB,         G729,           "G729", 10, 80,  24,  5, 256);
-AUDIO_FORMAT(G7231_6k3,      G7231,          "G723", 24, 240,  8,  3, 256);
-AUDIO_FORMAT(G7231_5k3,      G7231,          "G723", 24, 240,  8,  3, 256);
-AUDIO_FORMAT(G7231A_6k3,     G7231,          "G723", 24, 240,  8,  3, 256);
-AUDIO_FORMAT(G7231A_5k3,     G7231,          "G723", 24, 240,  8,  3, 256);
-AUDIO_FORMAT(GSM0610,        GSM,            "GSM",  33, 160,  7,  4, 7);
+AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     16, 8,  240, 30, 256, 16000);
+AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  16, 4,  120, 15, 256, 16000);
+AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(G711_ALAW_64K,  PCMA,           "PCMA",  8, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(G728,           G728,           "G728",  5, 20, 100, 10, 256,  8000);
+AUDIO_FORMAT(G729,           G729,           "G729", 10, 80,  24,  5, 256,  8000);
+AUDIO_FORMAT(G729A,          G729,           "G729", 10, 80,  24,  5, 256,  8000);
+AUDIO_FORMAT(G729B,          G729,           "G729", 10, 80,  24,  5, 256,  8000);
+AUDIO_FORMAT(G729AB,         G729,           "G729", 10, 80,  24,  5, 256,  8000);
+AUDIO_FORMAT(G7231_6k3,      G7231,          "G723", 24, 240,  8,  3, 256,  8000);
+AUDIO_FORMAT(G7231_5k3,      G7231,          "G723", 24, 240,  8,  3, 256,  8000);
+AUDIO_FORMAT(G7231A_6k3,     G7231,          "G723", 24, 240,  8,  3, 256,  8000);
+AUDIO_FORMAT(G7231A_5k3,     G7231,          "G723", 24, 240,  8,  3, 256,  8000);
+AUDIO_FORMAT(GSM0610,        GSM,            "GSM",  33, 160,  7,  4, 7  ,  8000);
 
 
 const OpalMediaFormat & GetOpalRFC2833()
