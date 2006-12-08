@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2036  2006/10/15 06:23:35  rjongbloed
+ * Revision 1.2037  2006/12/08 07:33:13  csoutheren
+ * Fix problem with wideband audio plugins and sound channel
+ *
+ * Revision 2.35  2006/10/15 06:23:35  rjongbloed
  * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
  *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
  *
@@ -278,7 +281,8 @@ OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList formats;
 
-  formats += OpalPCM16; // Sound card can only do 16 bit PCM
+  formats += OpalPCM16;        // Sound card can only do 16 bit PCM
+  formats += OpalPCM16_16KHZ;  // and can do it at 16khz too
 
 #if OPAL_VIDEO
   AddVideoMediaFormats(formats);
@@ -463,7 +467,8 @@ OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
  
   OpalMediaFormatList formats;
 
-  formats += OpalPCM16; // Sound card can only do 16 bit PCM
+  formats += OpalPCM16;        // Sound card can only do 16 bit PCM
+  formats += OpalPCM16_16KHZ;  // and can do it at 16khz too
 
 #if OPAL_VIDEO
   AddVideoMediaFormats(formats);
