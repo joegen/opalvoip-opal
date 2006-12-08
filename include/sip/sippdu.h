@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037.2.3  2006/08/07 20:47:37  dsandras
+ * Revision 1.2037.2.4  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.36.2.3  2006/08/07 20:47:37  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.36.2.2  2006/08/07 20:08:54  dsandras
@@ -452,6 +456,26 @@ class SIPAuthentication : public PObject
       const PString & username = PString::Empty(),
       const PString & password = PString::Empty()
     );
+
+#if PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11
+    SIPAuthentication & operator =(const SIPAuthentication & auth)
+    {
+      isProxy   = auth.isProxy;
+      authRealm = auth.authRealm;
+      username  = auth.username;
+      password  = auth.password;
+      nonce     = auth.nonce;
+      algorithm = auth.algorithm;
+		  opaque    = auth.opaque;
+              
+		  qopAuth    = auth.qopAuth;
+		  qopAuthInt = auth.qopAuthInt;
+		  cnonce     = auth.cnonce;
+		  nonceCount.SetValue(auth.nonceCount);
+
+      return *this;
+    }
+#endif
 
     BOOL Parse(
       const PCaselessString & auth,

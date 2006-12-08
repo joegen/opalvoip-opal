@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.25  2006/10/08 13:25:47  dsandras
+ * Revision 1.2098.2.26  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.97.2.25  2006/10/08 13:25:47  dsandras
  * Fixed previous commit.
  *
  * Revision 2.97.2.24  2006/10/06 09:09:50  dsandras
@@ -1343,8 +1347,8 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
       sec = 3600;
     info->SetExpire(sec*9/10);
 
-    if (info->GetAuthRealm().IsEmpty())
-      SetAuthRealm(transaction.GetURI().GetHostName());
+    //if (info->GetAuthRealm().IsEmpty())
+    //  SetAuthRealm(transaction.GetURI().GetHostName());
   }
   else 
     activeSIPInfo.Remove(info);

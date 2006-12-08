@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2046  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2046.2.1  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.45  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.44  2005/11/24 20:31:54  dsandras
@@ -191,7 +195,9 @@
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
+
 #include <ptclib/pstun.h>
+#include <ptlib/videoio.h>
 
 class OpalEndPoint;
 class OpalMediaPatch;

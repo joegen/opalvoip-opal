@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2029.2.1  2006/08/07 20:26:27  dsandras
+ * Revision 1.2029.2.2  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.28.2.1  2006/08/07 20:26:27  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.28  2005/11/30 13:35:26  csoutheren
@@ -139,6 +143,8 @@
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 
+#include <ptlib/sound.h>
+#include <ptlib/videoio.h>
 
 class RTP_Session;
 class OpalMediaPatch;
@@ -627,6 +633,8 @@ class OpalFileMediaStream : public OpalRawMediaStream
     PFile file;
 };
 
+class OpalMediaFormat;
+class PSoundChannel;
 
 /**This class describes a media stream that transfers data to/from a audio
    PSoundChannel.

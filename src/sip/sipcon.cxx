@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.22  2006/11/28 20:26:22  dsandras
+ * Revision 1.2121.2.23  2006/12/08 06:27:20  csoutheren
+ * Fix compilation problem caused by bad patch backports
+ * Allow compilation with latest PWLib
+ *
+ * Revision 2.120.2.22  2006/11/28 20:26:22  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.120.2.21  2006/10/28 16:41:58  dsandras
@@ -1617,7 +1621,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   originalInvite = new SIP_PDU(request);
   // Special case auto calling
   if (IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
-    SendInviteResponse(SIP_PDU::Failure_InternalServerError);
+    SIP_PDU response(*originalInvite, SIP_PDU::Failure_InternalServerError);
+    SendPDU(response, originalInvite->GetViaAddress(endpoint));    
     return;
   }
 
