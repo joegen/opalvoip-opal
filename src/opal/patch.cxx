@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2038  2006/10/06 05:33:12  hfriederich
+ * Revision 1.2039  2006/12/08 05:13:10  csoutheren
+ * Applied 1603783 - To allow media streams to handle more then one patch
+ * Thanks to jmatela
+ *
+ * Revision 2.37  2006/10/06 05:33:12  hfriederich
  * Fix RFC2833 for SIP connections
  *
  * Revision 2.36  2006/07/24 14:03:40  csoutheren
@@ -288,7 +292,7 @@ void OpalMediaPatch::Close()
     OpalMediaStream * stream = sinks[0].stream;
     stream->GetDeleteMutex().Wait();
     inUse.Signal();
-    stream->SetPatch(NULL);
+    stream->RemovePatch(this);
     inUse.Wait();
     stream->GetDeleteMutex().Signal();
     RemoveSink(stream);
