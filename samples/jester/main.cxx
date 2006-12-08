@@ -22,6 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.8  2006/12/08 09:00:20  dereksmithies
+ * Add mutex protection of a pointer.
+ * Change default to send packets at a non uniform rate, so they go at 0 20 60 80 120 140 180 etc.
+ * Add ability to suppress the sending of packets, so we simulate silence suppression.
+ *
  * Revision 1.7  2006/12/02 07:31:00  dereksmithies
  * Add more options - duration of each packet.
  *
@@ -63,6 +68,7 @@
 PCREATE_PROCESS(JesterProcess);
 
 PSyncPoint newDataReady;
+PMutex     dataFrameMutex;
 RTP_DataFrame *dataFrame;
 BOOL       runningOk;
 
@@ -90,13 +96,16 @@ BOOL JestRTP_Session::ReadData(RTP_DataFrame & frame, BOOL)
 	if (!runningOk)
 	    return FALSE;
 
-	if (dataFrame == NULL)
+	dataFrameMutex.Wait();
+	if (dataFrame == NULL) {
+	    dataFrameMutex.Signal();
 	    continue;
-
+	}
 	frame = *dataFrame;
 	
 	dataFrame = NULL;
-	
+	dataFrameMutex.Signal();
+
 	return runningOk;
     }
 
@@ -146,9 +155,11 @@ void JesterProcess::Main()
   // Get and parse all of the command line arguments.
   PArgList & args = GetArguments();
   args.Parse(
-             "h-help."
 	     "d-duration:"
 	     "i-iterations:"
+	     "j-jitter:"
+	     "s-silence."
+             "h-help."
 #if PTRACING
              "o-output:"
              "t-trace."
@@ -161,8 +172,10 @@ void JesterProcess::Main()
       cout << "Usage : " << GetName() << " [options] \n"
 	  
 	  "General options:\n"
-	  "  -d --duration        : duration of each packet, default is 20ms. \n"
+	  "  -d --duration        : duration of each packet, default is 30ms. \n"
 	  "  -i --iterations #    : number of packets to ask for  (default is 80)\n"
+	  "  -s --silence         : simulate silence suppression. - so audio is sent in bursts.\n"
+	  "  -j --jitter #        : size of the jitter buffer in ms (100) \n"
 #if PTRACING
 	  "  -t --trace           : Enable trace, use multiple times for more detail.\n"
 	  "  -o --output          : File for trace output, default is stderr.\n"
@@ -190,17 +203,25 @@ void JesterProcess::Main()
                      PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
 #endif
 
-  testSession.SetJitterBufferSize(8 * 100,8 * 10000);
 
-  runningOk = TRUE;
-  iterations = 80;
-  duration   = 20;
+
+  runningOk     = TRUE;
+  iterations    = 80;
+  duration      = 30;
+  minJitterSize = 100;
 
   if (args.HasOption('i'))
       iterations = args.GetOptionString('i').AsInteger();
 
   if (args.HasOption('d'))
       duration = args.GetOptionString('d').AsInteger();
+
+  if (args.HasOption('j'))
+      minJitterSize = args.GetOptionString('j').AsInteger();
+
+  testSession.SetJitterBufferSize(8 * minJitterSize, 8 * minJitterSize * 3);
+
+  silenceSuppression = args.HasOption('s');
 
   PTRACE(3, "Process " << iterations << " psuedo packets");
   PTRACE(3, "Process packets of size " << duration << " ms");
@@ -233,32 +254,41 @@ void JesterProcess::Main()
 void JesterProcess::GenerateUdpPackets(PThread &, INT )
 {
     PAdaptiveDelay delay;
-
+    BOOL lastFrameWasSilence = TRUE;
     for(PINDEX i = 0; i < iterations; i++) {
-	RTP_DataFrame *frame = new RTP_DataFrame;
-	
-	frame->SetPayloadType(RTP_DataFrame::GSM);
-	frame->SetSyncSource(0x12345678);
-	frame->SetSequenceNumber((WORD)(i + 100));
-	frame->SetPayloadSize((duration/20) * 33); 
+	if (silenceSuppression && ((i % 1000) > 700)) {
+	    PTRACE(3, "Don't send this frame - silence period");
+	    lastFrameWasSilence = TRUE;
+	} else {
+	    RTP_DataFrame *frame = new RTP_DataFrame;
+	    frame->SetMarker(lastFrameWasSilence);
+	    frame->SetPayloadType(RTP_DataFrame::PCMU);
+	    frame->SetSyncSource(0x12345678);
+	    frame->SetSequenceNumber((WORD)(i + 100));
+	    frame->SetPayloadSize((duration/30) * 240); 
+	    
+	    frame->SetTimestamp( 0 + (i  * duration * 8));
+	    
+	    PTRACE(3, "GenerateUdpPacket    iteration " << i 
+		   << " with time of " << (frame->GetTimestamp() >> 3) << " ms");
 
-	frame->SetTimestamp( 0 + (i  * duration * 8));
-
-	PTRACE(3, "GenerateUdpPacket    iteration " << i 
-	       << " with time of " << (frame->GetTimestamp() >> 3) << " ms");
-
-	if ((i%10) != 0) {
-	    dataFrame = frame;
+	    dataFrameMutex.Wait();
+	    if (dataFrame != NULL) {
+		delete frame;
+	    } else {
+		dataFrame = frame;
+	    }
+	    dataFrameMutex.Signal();
 	    newDataReady.Signal();
-	} else   //Drop 1 in 10 packets.
-	    delete frame;
+	    lastFrameWasSilence = FALSE;
+	}
 
 	delay.Delay(duration);
 	switch (i % 2) 
 	{
 	    case 0: 
 		break;
-	    case 1:// PThread::Sleep(10);
+	    case 1: PThread::Sleep(10);
 		break;
 	}
 //	PThread::Sleep(duration + ((i % 4) * 5));
@@ -279,15 +309,19 @@ void JesterProcess::ConsumeUdpPackets(PThread &, INT)
       readDelay.Delay(duration);
       if (success && (readFrame.GetPayloadSize() > 0)) {
 	  readTimestamp = (duration * 8) + readFrame.GetTimestamp();
+	  if (readFrame.GetMarker()) {
+	      PTRACE(3, "Start of speech burst");
+	  }
 	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " has given us " 
 		 << (readFrame.GetTimestamp() >> 3) << " on payload size " 
 		 << readFrame.GetPayloadSize() << "    jitter len is "
 		 << (testSession.GetJitterBufferSize() >> 3) << "ms" );
       } else {
-	  PTRACE(4, "ReadBufferedData " << ::setw(4) << i << " BAD READ");
+	  PTRACE(4, "ReadBufferedData     iteration " << ::setw(4) << i << " BAD READ");
 	  PTRACE(4, "Get a frame, timestamp" << (readFrame.GetTimestamp() >> 3) << "ms"
-		 << " payload" << readFrame.GetPayloadSize()  << "bytes  "
-		 << "  success" << success);
+		 << " payload " << readFrame.GetPayloadSize()  << " bytes  "
+		 << "    good read=" << (success? ("TRUE") : ("FALSE")));
+	  readTimestamp += (duration * 8);
       }
   }
 
