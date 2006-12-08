@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2045  2006/11/21 01:00:59  csoutheren
+ * Revision 1.2046  2006/12/08 07:33:13  csoutheren
+ * Fix problem with wideband audio plugins and sound channel
+ *
+ * Revision 2.44  2006/11/21 01:00:59  csoutheren
  * Ensure SDP only uses codecs that are valid for SIP
  *
  * Revision 2.43  2006/08/20 03:45:54  csoutheren
@@ -70,7 +73,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2045  2006/11/21 01:00:59  csoutheren
+ * Revision 1.2046  2006/12/08 07:33:13  csoutheren
+ * Fix problem with wideband audio plugins and sound channel
+ *
+ * Revision 2.44  2006/11/21 01:00:59  csoutheren
  * Ensure SDP only uses codecs that are valid for SIP
  *
  * Revision 2.43  2006/08/20 03:45:54  csoutheren
@@ -1067,6 +1073,7 @@ class OpalVideoFormat : public OpalMediaFormat
 // List of known media formats
 
 #define OPAL_PCM16          "PCM-16"
+#define OPAL_PCM16_16KHZ    "PCM-16-16kHz"
 #define OPAL_L16_MONO_8KHZ  "Linear-16-Mono-8kHz"
 #define OPAL_L16_MONO_16KHZ "Linear-16-Mono-16kHz"
 #define OPAL_G711_ULAW_64K  "G.711-uLaw-64k"
@@ -1085,6 +1092,7 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_RFC2833        "UserInput/RFC2833"
 
 extern const OpalAudioFormat & GetOpalPCM16();
+extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_16KHZ();
 extern const OpalAudioFormat & GetOpalG711_ULAW_64K();
@@ -1102,6 +1110,7 @@ extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalMediaFormat & GetOpalRFC2833();
 
 #define OpalPCM16          GetOpalPCM16()
+#define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
 #define OpalL16_MONO_8KHZ  GetOpalL16_MONO_8KHZ()
 #define OpalL16_MONO_16KHZ GetOpalL16_MONO_16KHZ()
 #define OpalG711_ULAW_64K  GetOpalG711_ULAW_64K()

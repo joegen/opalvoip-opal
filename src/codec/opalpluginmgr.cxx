@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2017  2006/11/29 06:28:58  csoutheren
+ * Revision 1.2018  2006/12/08 07:33:13  csoutheren
+ * Fix problem with wideband audio plugins and sound channel
+ *
+ * Revision 2.16  2006/11/29 06:28:58  csoutheren
  * Add ability call codec control functions on all transcoders
  *
  * Revision 2.15  2006/10/17 23:55:07  csoutheren
@@ -1773,12 +1776,34 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
-      new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair("PCM-16",                 encoderCodec->destFormat), encoderCodec, TRUE);
-      new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+      if (encoderCodec->sampleRate == 8000) {
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair("PCM-16",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+      }
+      else if (encoderCodec->sampleRate == 16000)
+      {
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair("PCM-16-16kHz",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
+      }
+      else
+      {
+        PTRACE(3, "H323PLUGIN\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+      }
       break;
     case PluginCodec_MediaTypeAudioStreamed:
-      new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair("PCM-16",                 encoderCodec->destFormat), encoderCodec, TRUE);
-      new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+      if (encoderCodec->sampleRate == 8000) {
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair("PCM-16",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+      }
+      else if (encoderCodec->sampleRate == 16000)
+      {
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair("PCM-16-16kHz",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
+      }
+      else
+      {
+        PTRACE(3, "H323PLUGIN\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+      }
       break;
 #endif
     default:
