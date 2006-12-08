@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2067  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2068  2006/12/08 04:22:06  csoutheren
+ * Applied 1589261 - new release cause for fxo endpoints
+ * Thanks to Frederic Heem
+ *
+ * Revision 2.66  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.65  2006/11/11 12:23:18  hfriederich
@@ -311,7 +315,7 @@ class OpalConnection : public PSafeObject
   public:
     /**Call/Connection ending reasons.
        NOTE: if anything is added to this, you also need to add the field to
-       the tables in call.cxx and h323pdu.cxx.
+       the tables in connection.cxx and h323pdu.cxx.
       */
     enum CallEndReason {
       EndedByLocalUser,         /// Local endpoint application cleared call
@@ -340,6 +344,10 @@ class OpalConnection : public PSafeObject
       EndedByQ931Cause,         /// The remote ended the call with unmapped Q.931 cause code
       EndedByDurationLimit,     /// Call cleared due to an enforced duration limit
       EndedByInvalidConferenceID, /// Call cleared due to invalid conference ID
+      EndedByNoDialTone,        /// Call cleared due to missing dial tone
+      EndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
+      EndedByOutOfService,      /// Call cleared because the line is out of service, 
+      EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
       NumCallEndReasons
     };
 
@@ -355,6 +363,7 @@ class OpalConnection : public PSafeObject
       AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
       AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
       AnswerCallProgress,          /// Answer the call with a h323 progress, or sip 183 session in progress, or ... 
+      AnswerCallNowAndReleaseCurrent, /// Answer the call ans destroy the current call
       NumAnswerCallResponses
     };
 #if PTRACING

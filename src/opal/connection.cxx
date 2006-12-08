@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2083  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2084  2006/12/08 04:22:06  csoutheren
+ * Applied 1589261 - new release cause for fxo endpoints
+ * Thanks to Frederic Heem
+ *
+ * Revision 2.82  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.81  2006/11/19 06:02:58  rjongbloed
@@ -412,7 +416,12 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
     "EndedByQ931Cause",         /// The remote ended the call with unmapped Q.931 cause code
     "EndedByDurationLimit",     /// Call cleared due to an enforced duration limit
     "EndedByInvalidConferenceID",/// Call cleared due to invalid conference ID
+    "EndedByNoDialTone",        /// Call cleared due to missing dial tone
+    "EndedByNoRingBackTone",    /// Call cleared due to missing ringback tone    
+    "EndedByOutOfService",      /// Call cleared because the line is out of service, 
+    "EndedByAcceptingCallWaiting", /// Call cleared because another call is answered
   };
+  PAssert((PINDEX)reason < PARRAYSIZE(names), "Invalid reason");
   return out << names[reason];
 }
 
@@ -425,7 +434,8 @@ ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
     "AnswerCallDeferred",
     "AnswerCallAlertWithMedia",
     "AnswerCallDeferredWithMedia",
-    "AnswerCallProgress"
+    "AnswerCallProgress",
+    "AnswerCallNowAndReleaseCurrent"
   };
   if ((PINDEX)s >= PARRAYSIZE(AnswerCallResponseNames))
     o << "InvalidAnswerCallResponse<" << (unsigned)s << '>';
