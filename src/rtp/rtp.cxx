@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2046  2006/11/29 06:31:59  csoutheren
+ * Revision 1.2047  2006/12/08 04:12:12  csoutheren
+ * Applied 1589274 - better rtp error handling of malformed rtcp packet
+ * Thanks to frederich
+ *
+ * Revision 2.45  2006/11/29 06:31:59  csoutheren
  * Add support fort RTP BYE
  *
  * Revision 2.44  2006/11/20 03:37:13  csoutheren
@@ -730,6 +734,16 @@ void RTP_ControlFrame::SetPayloadSize(PINDEX sz)
   *(PUInt16b *)&theArray[compoundOffset+2] = (WORD)sz;
 }
 
+BYTE * RTP_ControlFrame::GetPayloadPtr() const 
+{ 
+  PTRACE(5, "RTCP\tGetPayloadPtr offset = " << compoundOffset << ", size = " << GetSize());
+  if ((GetPayloadSize() == 0) || ((compoundOffset + 4) >= GetSize())){
+    PTRACE(2, "RTCP\tGetPayloadPtr null");
+    return NULL;
+  } else {
+    return (BYTE *)(theArray + compoundOffset + 4); 
+  }
+}
 
 BOOL RTP_ControlFrame::ReadNextCompound()
 {
@@ -1269,7 +1283,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
   maximumReceiveTimeAccum = 0;
   minimumReceiveTimeAccum = 0xffffffff;
 
-  PTRACE(2, "RTP\tReceive statistics: "
+  PTRACE(4, "RTP\tReceive statistics: "
 	 " packets=" << packetsReceived <<
 	 " octets=" << octetsReceived <<
 	 " lost=" << packetsLost <<
@@ -1390,8 +1404,14 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 {
   do {
     BYTE * payload = frame.GetPayloadPtr();
-    unsigned size = frame.GetPayloadSize();
+    unsigned size = frame.GetPayloadSize(); 
+    if ((payload == NULL) || (size == 0) || ((payload + size) > (frame.GetPointer() + frame.GetSize()))){
+      /* TODO: 1.shall we test for a maximum size ? Indeed but what's the value ? *
+               2. what's the correct exit status ? */
+      PTRACE(2, "RTP\tOnReceiveControl invalid frame");
 
+      break;
+    }
     switch (frame.GetPayloadType()) {
     case RTP_ControlFrame::e_SenderReport :
       if (size >= sizeof(RTP_ControlFrame::SenderReport)) {
@@ -1421,18 +1441,35 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 
     case RTP_ControlFrame::e_SourceDescription :
       if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
-      	SourceDescriptionArray descriptions;
-	      const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
-	      for (PINDEX srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
-	        descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
-	        const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
-	        while (item->type != RTP_ControlFrame::e_END) {
-	          descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
-	          item = item->GetNextItem();
-	        }
-	        sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem();
-	      }
-	      OnRxSourceDescription(descriptions);
+	SourceDescriptionArray descriptions;
+	const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
+	for (PINDEX srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
+	  descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
+	  const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
+          unsigned uiSizeCurrent = 0;   /* current size of the items already parsed */
+	  while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
+	    descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+	    uiSizeCurrent += item->GetLengthTotal();
+	//    PTRACE(2,"RTP\tSourceDescription item " << item << ", current size = " << uiSizeCurrent);
+            
+	    /* avoid reading where GetNextItem() shall not */
+            if(uiSizeCurrent >= size){
+              PTRACE(2,"RTP\tSourceDescription end of items");
+	      item = NULL;
+	      break;
+	    } else {
+	      item = item->GetNextItem();
+	    }
+	  }
+          /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
+             otherwise it reads over the buffer */
+	  if((item == NULL) || 
+            (item->type == RTP_ControlFrame::e_END) || 
+            ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
+	    break;
+	  }
+	}
+	OnRxSourceDescription(descriptions);
       }
       else {
 	      PTRACE(2, "RTP\tSourceDescription packet truncated");
@@ -1440,21 +1477,30 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
       break;
 
     case RTP_ControlFrame::e_Goodbye :
-      if (size >= 4) {
-	      PString str;
-	      unsigned count = frame.GetCount()*4;
-	      if (size > count)
-	        str = PString((const char *)(payload+count+1), payload[count]);
-	      PDWORDArray sources(count);
-	      for (PINDEX i = 0; i < (PINDEX)count; i++)
-	        sources[i] = ((const PUInt32b *)payload)[i];
-	      OnRxGoodbye(sources, str);
+    {
+      unsigned count = frame.GetCount()*4;
+      if ((size >= 4) && (count > 0)) {
+        PString str;
+  
+        if (size > count){
+          if((payload[count] + sizeof(DWORD) /*SSRC*/ + sizeof(unsigned char) /* length */) <= size){
+            str = PString((const char *)(payload+count+1), payload[count]);
+          } else {
+            PTRACE(2, "RTP\tGoodbye packet invalid");
+          }
+        }
+        PDWORDArray sources(frame.GetCount());
+        for (PINDEX i = 0; i < (PINDEX)frame.GetCount(); i++){
+          sources[i] = ((const PUInt32b *)payload)[i];
+        }  
+        OnRxGoodbye(sources, str);
       }
       else {
 	      PTRACE(2, "RTP\tGoodbye packet truncated");
       }
       break;
 
+    }
     case RTP_ControlFrame::e_ApplDefined :
       if (size >= 4) {
 	      PString str((const char *)(payload+4), 4);
