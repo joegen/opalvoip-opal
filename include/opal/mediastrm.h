@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2038  2006/10/11 01:15:15  csoutheren
+ * Revision 1.2039  2006/12/08 05:13:10  csoutheren
+ * Applied 1603783 - To allow media streams to handle more then one patch
+ * Thanks to jmatela
+ *
+ * Revision 2.37  2006/10/11 01:15:15  csoutheren
  * Applied 1552449 - Always use max RTP buffer size
  * Thanks to Simon Zwahlen
  *
@@ -402,9 +406,17 @@ class OpalMediaStream : public PObject
     
     /**Set the patch thread that is using this stream.
       */
-    void SetPatch(
+    virtual void SetPatch(
       OpalMediaPatch * patch  ///<  Media patch thread
     );
+
+    /**Remove the patch thread that is using this stream.
+       This function is useful in case of streams which can be accessed by
+       multiple instances of OpalMediaPatch.
+
+       The default behaviour simply sets patchThread to NULL.
+    */
+    virtual void RemovePatch(OpalMediaPatch * patch) { SetPatch(NULL); }
 
     /**Get the patch thread that is using the stream.
       */
