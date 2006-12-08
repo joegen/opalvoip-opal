@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2125  2006/11/27 11:11:21  csoutheren
+ * Revision 1.2126  2006/12/08 04:53:50  csoutheren
+ * Applied 1609966 - Small fix for H.323 hold/retrieve
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.124  2006/11/27 11:11:21  csoutheren
  * Apply 1588592 - Fixes for H.245 tunneling
  * Thanks to Simon Zwahlen
  *
@@ -3241,6 +3245,7 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
+    ownerCall.RemoveMediaStreams();
     transmitterSidePaused = TRUE;
   }
   else {
