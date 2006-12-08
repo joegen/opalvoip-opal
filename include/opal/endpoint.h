@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2038  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2039  2006/12/08 05:10:43  csoutheren
+ * Applied 1608002 - Callback for OpalTransportUDP multiple interface handling
+ * Thanks to Hannes Friederich
+ *
+ * Revision 2.37  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.36  2006/11/19 06:02:57  rjongbloed
@@ -170,7 +174,6 @@
 #include <opal/manager.h>
 #include <opal/mediafmt.h>
 #include <opal/transports.h>
-
 
 class OpalCall;
 class OpalMediaStream;
@@ -800,6 +803,13 @@ class OpalEndPoint : public PObject
     /** Get the aggregator used for RTP channels
       */
     PHandleAggregator * GetRTPAggregator();
+	
+    /**Callback to allow interface adjustments before connecting to the remote party
+       The default implementation does nothing and returns TRUE
+      */
+    virtual BOOL AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
+                                      PIPSocket::InterfaceTable & interfaceTable);
+
 
   protected:
     OpalManager   & manager;
