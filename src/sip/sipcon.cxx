@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2189  2006/11/28 20:24:24  dsandras
+ * Revision 1.2190  2006/12/08 04:24:19  csoutheren
+ * Applied 1604554 - SIP remote hold improvements
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.188  2006/11/28 20:24:24  dsandras
  * Fixed crash when calling himself due to transport deletion.
  *
  * Revision 2.187  2006/11/11 12:23:18  hfriederich
@@ -2042,6 +2046,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       // the current codecs, or to put the call on hold
       if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly && sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
 
+        PTRACE(3, "SIP\tRemote hold detected");
         remote_hold = TRUE;
         PauseMediaStreams(TRUE);
         endpoint.OnHold(*this);
@@ -2051,11 +2056,19 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
         // If we receive a consecutive reinvite without the SendOnly
         // parameter, then we are not on hold anymore
         if (remote_hold) {
-
+          PTRACE(3, "SIP\tRemote retrieve from hold detected");
           remote_hold = FALSE;
           PauseMediaStreams(FALSE);
           endpoint.OnHold(*this);
         }
+      }
+    }
+    else {
+      if (remote_hold) {
+        PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
+        remote_hold = FALSE;
+        PauseMediaStreams(FALSE);
+        endpoint.OnHold(*this);
       }
     }
     
@@ -2172,7 +2185,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   // If we receive an ACK in established phase, perhaps it
   // is a re-INVITE
-  if (phase == EstablishedPhase) {
+  if (phase == EstablishedPhase && !IsConnectionOnHold()) {
     OpalConnection::OnConnected ();
     StartMediaStreams();
   }
