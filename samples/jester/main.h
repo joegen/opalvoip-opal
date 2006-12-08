@@ -22,6 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.5  2006/12/08 09:00:21  dereksmithies
+ * Add mutex protection of a pointer.
+ * Change default to send packets at a non uniform rate, so they go at 0 20 60 80 120 140 180 etc.
+ * Add ability to suppress the sending of packets, so we simulate silence suppression.
+ *
  * Revision 1.4  2006/12/02 07:31:00  dereksmithies
  * Add more options - duration of each packet.
  *
@@ -164,6 +169,14 @@ class JesterProcess : public PProcess
 
     /**The length, in ms, that each packet represents */
     PINDEX duration;
+
+    /**Flag to indicate if we do, or do not, simulate silence suppression. If
+       TRUE, we do silence suppresion and send packets in bursts of onnnn,
+       nothing, onnn, nothing..*/
+    BOOL silenceSuppression;
+
+    /**min size of the jitter buffer in ms */
+    PINDEX minJitterSize;
 };
 
 
