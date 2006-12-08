@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2045  2006/12/08 05:10:44  csoutheren
+ * Revision 1.2046  2006/12/08 05:39:29  csoutheren
+ * Remove warnings under Windows
+ *
+ * Revision 2.44  2006/12/08 05:10:44  csoutheren
  * Applied 1608002 - Callback for OpalTransportUDP multiple interface handling
  * Thanks to Hannes Friederich
  *
@@ -658,8 +661,8 @@ PINDEX OpalEndPoint::GetRTPAggregationSize() const
 #endif
 }
 
-BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & remoteAddress, 
-                                        PIPSocket::InterfaceTable & interfaceTable)
+BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
+                                        PIPSocket::InterfaceTable & /*interfaceTable*/)
 {
   return TRUE;
 }

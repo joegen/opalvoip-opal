@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2039  2006/12/08 05:13:10  csoutheren
+ * Revision 1.2040  2006/12/08 05:39:29  csoutheren
+ * Remove warnings under Windows
+ *
+ * Revision 2.38  2006/12/08 05:13:10  csoutheren
  * Applied 1603783 - To allow media streams to handle more then one patch
  * Thanks to jmatela
  *
@@ -416,7 +419,7 @@ class OpalMediaStream : public PObject
 
        The default behaviour simply sets patchThread to NULL.
     */
-    virtual void RemovePatch(OpalMediaPatch * patch) { SetPatch(NULL); }
+    virtual void RemovePatch(OpalMediaPatch * patch);
 
     /**Get the patch thread that is using the stream.
       */

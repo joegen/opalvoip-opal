@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2051  2006/11/01 06:57:23  csoutheren
+ * Revision 1.2052  2006/12/08 05:39:29  csoutheren
+ * Remove warnings under Windows
+ *
+ * Revision 2.50  2006/11/01 06:57:23  csoutheren
  * Fixed usage of YUV frame header
  *
  * Revision 2.49  2006/10/31 04:14:10  csoutheren
@@ -556,6 +559,11 @@ BOOL OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaForm
   if (patchThread != NULL) return patchThread->RemoveFilter(Filter, Stage);
 
   return FALSE;
+}
+
+void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ ) 
+{ 
+  SetPatch(NULL); 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
