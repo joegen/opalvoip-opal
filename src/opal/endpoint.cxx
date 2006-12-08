@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2044  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2045  2006/12/08 05:10:44  csoutheren
+ * Applied 1608002 - Callback for OpalTransportUDP multiple interface handling
+ * Thanks to Hannes Friederich
+ *
+ * Revision 2.43  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.42  2006/11/19 06:02:58  rjongbloed
@@ -654,7 +658,11 @@ PINDEX OpalEndPoint::GetRTPAggregationSize() const
 #endif
 }
 
-
+BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & remoteAddress, 
+                                        PIPSocket::InterfaceTable & interfaceTable)
+{
+  return TRUE;
+}
 
 
 
