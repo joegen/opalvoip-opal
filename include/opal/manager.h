@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2053  2006/11/20 03:37:12  csoutheren
+ * Revision 1.2054  2006/12/08 04:22:06  csoutheren
+ * Applied 1589261 - new release cause for fxo endpoints
+ * Thanks to Frederic Heem
+ *
+ * Revision 2.52  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.51  2006/11/19 06:02:58  rjongbloed
@@ -210,6 +214,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/call.h>
+#include <opal/connection.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
