@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2135  2006/12/08 04:02:51  csoutheren
+ * Revision 1.2136  2006/12/10 18:31:17  dsandras
+ * Synced with Phobos.
+ *
+ * Revision 2.134  2006/12/08 04:02:51  csoutheren
  * Applied 1575788 - Fix a crash in ~SIPInfo due to an open transport
  * Thanks to Drazen Dimoti
  *
@@ -1253,7 +1256,8 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   // and update the realm
   if (realm_info == NULL) {
     realm_info = callid_info;
-    realm_info->SetAuthRealm(auth.GetAuthRealm());
+    if (!auth.GetAuthRealm().IsEmpty())
+      realm_info->SetAuthRealm(auth.GetAuthRealm());
     PTRACE(2, "SIP\tUpdated realm to " << auth.GetAuthRealm());
   }
   
@@ -1352,6 +1356,9 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     if (!sec)
       sec = 3600;
     info->SetExpire(sec*9/10);
+
+    if (info->GetAuthRealm().IsEmpty())
+      info->SetAuthRealm(transaction.GetURI().GetHostName());
   }
   else 
     activeSIPInfo.Remove(info);
