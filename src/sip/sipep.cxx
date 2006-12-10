@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.26  2006/12/08 06:27:20  csoutheren
+ * Revision 1.2098.2.27  2006/12/10 18:29:45  dsandras
+ * Fixed previous revert.
+ *
+ * Revision 2.97.2.26  2006/12/08 06:27:20  csoutheren
  * Fix compilation problem caused by bad patch backports
  * Allow compilation with latest PWLib
  *
@@ -1247,7 +1250,8 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   // and update the realm
   if (realm_info == NULL) {
     realm_info = callid_info;
-    realm_info->SetAuthRealm(auth.GetAuthRealm());
+    if (!auth.GetAuthRealm().IsEmpty())
+      realm_info->SetAuthRealm(auth.GetAuthRealm());
     PTRACE(2, "SIP\tUpdated realm to " << auth.GetAuthRealm());
   }
   
@@ -1347,8 +1351,8 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
       sec = 3600;
     info->SetExpire(sec*9/10);
 
-    //if (info->GetAuthRealm().IsEmpty())
-    //  SetAuthRealm(transaction.GetURI().GetHostName());
+    if (info->GetAuthRealm().IsEmpty())
+      info->SetAuthRealm(transaction.GetURI().GetHostName());
   }
   else 
     activeSIPInfo.Remove(info);
