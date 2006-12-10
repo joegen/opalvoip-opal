@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2136  2006/12/10 18:31:17  dsandras
+ * Revision 1.2137  2006/12/10 19:16:19  dsandras
+ * Fixed typo.
+ *
+ * Revision 2.135  2006/12/10 18:31:17  dsandras
  * Synced with Phobos.
  *
  * Revision 2.134  2006/12/08 04:02:51  csoutheren
@@ -1357,7 +1360,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
       sec = 3600;
     info->SetExpire(sec*9/10);
 
-    if (info->GetAuthRealm().IsEmpty())
+    if (info->GetAuthentication().GetAuthRealm().IsEmpty())
       info->SetAuthRealm(transaction.GetURI().GetHostName());
   }
   else 
