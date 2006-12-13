@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2071  2006/12/08 05:10:44  csoutheren
+ * Revision 1.2072  2006/12/13 04:59:48  csoutheren
+ * Applied 1613084 - Memory leak in internal transports handling
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.70  2006/12/08 05:10:44  csoutheren
  * Applied 1608002 - Callback for OpalTransportUDP multiple interface handling
  * Thanks to Hannes Friederich
  *
@@ -548,14 +552,14 @@ static const char UdpPrefix[] = "udp$";
 
 #include <ptclib/pstun.h>
 
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(TcpPrefix);
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport>  opalInternalIPTransportFactory(IpPrefix);
-static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(UdpPrefix);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport> opalInternalTCPTransportFactory(TcpPrefix, true);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPTransport>  opalInternalIPTransportFactory(IpPrefix, true);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalUDPTransport> opalInternalUDPTransportFactory(UdpPrefix, true);
 
 #if P_SSL
 #include <ptclib/pssl.h>
 static const char TcpsPrefix[] = "tcps$";
-static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPSTransport> opalInternalTCPSTransportFactory(TcpsPrefix);
+static PFactory<OpalInternalTransport>::Worker<OpalInternalTCPSTransport> opalInternalTCPSTransportFactory(TcpsPrefix, true);
 #endif
 
 /////////////////////////////////////////////////////////////////
