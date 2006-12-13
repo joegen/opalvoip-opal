@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2042  2006/08/29 01:37:11  csoutheren
+ * Revision 1.2043  2006/12/13 05:01:21  csoutheren
+ * Applied 1613992 - fixes a feature set memory leak
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.41  2006/08/29 01:37:11  csoutheren
  * Change secure URLs to use h323s and tcps to be inline with sips
  *
  * Revision 2.40  2006/08/21 05:29:25  csoutheren
@@ -1422,7 +1426,7 @@ class H323EndPoint : public OpalEndPoint
 #ifdef H323_H460
     /** Get the Endpoing FeatureSet
      */
-    H460_FeatureSet & GetFeatureSet() { return features.DeriveNewFeatureSet(); };
+    H460_FeatureSet & GetFeatureSet() { return features; };
 #endif
 
     /**Return the STUN server to use.
