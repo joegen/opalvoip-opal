@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.13  2006/12/18 02:58:42  csoutheren
+ * Missed wideband checkin fix
+ *
  * Revision 1.12  2006/11/29 06:26:40  csoutheren
  * Add support for enabling VBR
  * Fix problems with large numbers of frames per packet
@@ -890,6 +893,12 @@ static struct PluginCodec_Definition ver2SpeexCodecDefn[] = {
   DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow18k2,  6,   NARROW_BITSPERFRAME_MODE6),
   DECLARE_H323_NARROW_SPEEX_CODEC(ietfSpeex, Narrow24k6,  7,   NARROW_BITSPERFRAME_MODE7),
 
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
+  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   5,  WIDE_BITSPERFRAME_MODE6),
+  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide20k6,   6,  WIDE_BITSPERFRAME_MODE6),
+
   //DECLARE_SPEEXW_CODEC(Narrow5k95,  2),   // does not work
   DECLARE_H323_NARROW_SPEEXW_CODEC(Narrow8k,    3,  NARROW_BITSPERFRAME_MODE3),
   //DECLARE_SPEEX_CODEC(Narrow11k,   4),    // does not work
@@ -897,17 +906,13 @@ static struct PluginCodec_Definition ver2SpeexCodecDefn[] = {
   //DECLARE_SPEEX_CODEC(Narrow18k2,  6),    // does not work
   //DECLARE_SPEEX_CODEC(Narrow24k6,  7)     // does not work
 
+  DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide20k6,   6,  WIDE_BITSPERFRAME_MODE6),
+
 #ifdef INCLUDE_DEPRECATED_SPEEX_CODECS
   DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
   DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
   DECLARE_H323_WIDE_SPEEX_CODEC(speex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
 #endif
-
-  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide11k5,   2,  WIDE_BITSPERFRAME_MODE2),
-  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide17k6,   3,  WIDE_BITSPERFRAME_MODE3),
-  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   4,  WIDE_BITSPERFRAME_MODE4),
-  //DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide28k6,   5,  WIDE_BITSPERFRAME_MODE6),
-  DECLARE_H323_WIDE_SPEEX_CODEC(ietfSpeex, Wide20k6,   6,  WIDE_BITSPERFRAME_MODE6),
 
   DECLARE_SIP_SPEEX_CODEC("SpeexNB",  8000, Narrow8k, 3, NARROW_BITSPERFRAME_MODE3, NARROW_SAMPLES_PER_FRAME),
   DECLARE_SIP_SPEEX_CODEC("SpeexWB", 16000, Wide20k6, 6, WIDE_BITSPERFRAME_MODE6,   WIDE_SAMPLES_PER_FRAME)
