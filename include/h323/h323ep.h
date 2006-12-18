@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2043  2006/12/13 05:01:21  csoutheren
+ * Revision 1.2044  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.42  2006/12/13 05:01:21  csoutheren
  * Applied 1613992 - fixes a feature set memory leak
  * Thanks to Drazen Dimoti
  *
@@ -475,9 +480,10 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party,  ///<  Remote party to call
-      void * userData = NULL  ///<  Arbitrary data to pass to connection
+      OpalCall & call,          ///<  Owner of connection
+      const PString & party,    ///<  Remote party to call
+      void * userData = NULL,   ///<  Arbitrary data to pass to connection
+      unsigned int options = 0  ///<  options to pass to conneciton
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -770,7 +776,8 @@ class H323EndPoint : public OpalEndPoint
       OpalTransport & transport, ///<  Transport for connection
       const PString & alias,     ///<  Alias for outgoing call
       const H323TransportAddress & address,   ///<  Address for outgoing call
-      H323SignalPDU * setupPDU   ///<  Setup PDU for incoming call
+      H323SignalPDU * setupPDU,  ///<  Setup PDU for incoming call
+      unsigned options = 0
     );
 
     /**Setup the transfer of an existing call (connection) to a new remote party
@@ -1661,7 +1668,8 @@ class H323EndPoint : public OpalEndPoint
       const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
       unsigned capabilityLevel,     ///<  Intrusion capability level
       const PString & remoteParty,  ///<  Remote party to call
-      void * userData               ///<  user data to pass to CreateConnection
+      void * userData,              ///<  user data to pass to CreateConnection
+      unsigned int options = 0      ///<  options to pass to connection
     );
 
     // Configuration variables, commonly changed

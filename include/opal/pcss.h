@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2025  2006/10/15 06:23:35  rjongbloed
+ * Revision 1.2026  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.24  2006/10/15 06:23:35  rjongbloed
  * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
  *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
  *
@@ -183,9 +188,10 @@ class OpalPCSSEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party,  ///<  Remote party to call
-      void * userData = NULL  ///<  Arbitrary data to pass to connection
+      OpalCall & call,           ///<  Owner of connection
+      const PString & party,     ///<  Remote party to call
+      void * userData = NULL,    ///<  Arbitrary data to pass to connection
+      unsigned int options = 0   ///<  options to pass to conneciton
     );
 
     /**Get the data formats this endpoint is capable of operating.

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2045  2006/09/22 00:58:40  csoutheren
+ * Revision 1.2046  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.44  2006/09/22 00:58:40  csoutheren
  * Fix usages of PAtomicInteger
  *
  * Revision 2.43  2006/08/12 04:09:24  csoutheren
@@ -784,7 +789,9 @@ class SIPTransaction : public SIP_PDU
   public:
     SIPTransaction(
       SIPEndPoint   & endpoint,
-      OpalTransport & transport
+      OpalTransport & transport,
+      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
     /** Construct a transaction for requests in a dialog.
      *  The transport is used to determine the local address
@@ -813,7 +820,10 @@ class SIPTransaction : public SIP_PDU
     const OpalTransportAddress & GetLocalAddress() const { return localAddress; }
 
   protected:
-    void Construct();
+    void Construct(
+      const PTimeInterval & minRetryTime = PMaxTimeInterval,
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+    );
     BOOL ResendCANCEL();
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
@@ -845,6 +855,9 @@ class SIPTransaction : public SIP_PDU
 
     PSyncPoint finished;
     PTimedMutex mutex;
+
+    PTimeInterval retryTimeoutMin; 
+    PTimeInterval retryTimeoutMax; 
 
     OpalTransportAddress localAddress;
 };
@@ -901,7 +914,9 @@ class SIPRegister : public SIPTransaction
       OpalTransport & transport,
       const SIPURL & address,
       const PString & id,
-      unsigned expires
+      unsigned expires,
+      const PTimeInterval & minRetryTime = PMaxTimeInterval,
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
 };
 

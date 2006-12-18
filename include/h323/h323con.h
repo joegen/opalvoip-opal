@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2055  2006/11/11 12:23:17  hfriederich
+ * Revision 1.2056  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.54  2006/11/11 12:23:17  hfriederich
  * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
  *
  * Revision 2.53  2006/08/22 08:55:46  csoutheren
@@ -530,24 +535,6 @@ class H323Connection : public OpalConnection
   public:
   /**@name Construction */
   //@{
-    enum Options {
-      FastStartOptionDisable       = 0x0001,
-      FastStartOptionEnable        = 0x0002,
-      FastStartOptionMask          = 0x0003,
-
-      H245TunnelingOptionDisable   = 0x0004,
-      H245TunnelingOptionEnable    = 0x0008,
-      H245TunnelingOptionMask      = 0x000c,
-
-      H245inSetupOptionDisable     = 0x0010,
-      H245inSetupOptionEnable      = 0x0020,
-      H245inSetupOptionMask        = 0x0030,
-
-      DetectInBandDTMFOptionDisable= 0x0040,
-      DetectInBandDTMFOptionEnable = 0x0080,
-      DetectInBandDTMFOptionMask   = 0x00c0,
-    };
-
     /**Create a new connection.
      */
     H323Connection(
