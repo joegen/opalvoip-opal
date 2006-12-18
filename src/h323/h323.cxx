@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2126  2006/12/08 04:53:50  csoutheren
+ * Revision 1.2127  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.125  2006/12/08 04:53:50  csoutheren
  * Applied 1609966 - Small fix for H.323 hold/retrieve
  * Thanks to Simon Zwahlen
  *
@@ -245,7 +250,7 @@ H323Connection::H323Connection(OpalCall & call,
                                const PString & alias,
                                const H323TransportAddress & address,
                                unsigned options)
-  : OpalConnection(call, ep, token),
+  : OpalConnection(call, ep, token, options),
     endpoint(ep),
     gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #ifdef H323_H460
@@ -1933,7 +1938,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     if (!ok)
       return EndedByTransportFail;
 
-    if (setup.m_fastStart.GetSize() > 0) {
+    if (doH245inSETUP && (setup.m_fastStart.GetSize() > 0)) {
+
       // Now if fast start as well need to put this in setup specific field
       // and not the generic H.245 tunneling field
       setup.IncludeOptionalField(H225_Setup_UUIE::e_parallelH245Control);

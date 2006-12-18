@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2037  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2038  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.36  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.35  2006/10/15 06:23:35  rjongbloed
@@ -241,7 +246,8 @@ static BOOL SetDeviceName(const PString & name,
 
 BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
-                                      void * userData)
+                                      void * userData,
+                               unsigned int /*options*/)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;

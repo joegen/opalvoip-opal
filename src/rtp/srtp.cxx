@@ -27,6 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.10  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
  * Revision 1.9  2006/11/20 03:37:13  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
@@ -81,6 +86,8 @@
 #include <opal/connection.h>
 #include <h323/h323caps.h>
 #include <h323/h235auth.h>
+
+// default key = 2687012454
 
 
 ////////////////////////////////////////////////////////////////////

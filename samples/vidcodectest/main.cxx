@@ -4,10 +4,14 @@
 #include <opal/transcoders.h>
 #include <codec/vidcodec.h>
 
+#include "intel.h"
+
 #define MAJOR_VERSION 1
 #define MINOR_VERSION 0
 #define BUILD_TYPE    ReleaseCode
 #define BUILD_NUMBER  0
+
+#define RAW_VIDEO_FORMAT       OpalYUV420P
 
 class VidCodecTest : public PProcess
 {
@@ -15,9 +19,15 @@ class VidCodecTest : public PProcess
 
   public:
     VidCodecTest();
-
     void Main();
 };
+
+namespace PWLibStupidLinkerHacks {
+extern int opalLoader;
+};
+
+extern int intelLoader;
+
 
 PCREATE_PROCESS(VidCodecTest);
 
@@ -25,6 +35,8 @@ VidCodecTest::VidCodecTest()
   : PProcess("Post Increment", "VidCodecTest",
              MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
+  PWLibStupidLinkerHacks::opalLoader = 1;
+  intelLoader = 1;
 }
 
 void ListCodecs()
@@ -40,6 +52,8 @@ void ListCodecs()
     }
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////
 
 void VidCodecTest::Main()
 {
@@ -82,8 +96,9 @@ void VidCodecTest::Main()
 
   BOOL error = FALSE;
   if (coding == 'd' || coding == 'x') {
-    inCodec  = args[1];
-    outCodec = "YUV420P";
+    inCodec  = args[1]; 
+    //inCodec = "H.264-QCIF";
+    outCodec = RAW_VIDEO_FORMAT;
     decoder = OpalTranscoder::Create(inCodec, outCodec);
     if (decoder == NULL) {
       PError << "error: unable to create decoder of " << inCodec << endl;
@@ -94,7 +109,7 @@ void VidCodecTest::Main()
     }
   }
   if (coding == 'e' || coding == 'x') {
-    inCodec = "YUV420P";
+    inCodec = RAW_VIDEO_FORMAT;
     outCodec  = args[1];
     encoder = OpalTranscoder::Create(inCodec, outCodec);
     if (encoder == NULL) {
@@ -155,6 +170,7 @@ void VidCodecTest::Main()
         break;
       }
 
+      encodedFrames.Append(new RTP_DataFrame(100000));
       if (!encoder->ConvertFrames(yuvInFrame, encodedFrames)) {
         PError << "error: encoder returned error" << endl;
         break;

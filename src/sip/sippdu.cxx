@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2115  2006/12/03 16:54:52  dsandras
+ * Revision 1.2116  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.114  2006/12/03 16:54:52  dsandras
  * Do not allow contentLength to be negative in order to prevent
  * crashes when receiving malformed PDUs. Fixes Ekiga report #379801.
  *
@@ -1987,12 +1992,14 @@ PString SIP_PDU::GetTransactionID() const
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPTransaction::SIPTransaction(SIPEndPoint & ep,
-                               OpalTransport & trans)
+                               OpalTransport & trans,
+                               const PTimeInterval & minRetryTime,
+                               const PTimeInterval & maxRetryTime)
   : endpoint(ep),
     transport(trans)
 {
   connection = NULL;
-  Construct();
+  Construct(minRetryTime, maxRetryTime);
 }
 
 
@@ -2009,13 +2016,16 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
 }
 
 
-void SIPTransaction::Construct()
+void SIPTransaction::Construct(const PTimeInterval & minRetryTime, const PTimeInterval & maxRetryTime)
 {
   retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
   completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
 
   retry = 1;
   state = NotStarted;
+
+  retryTimeoutMin = ((minRetryTime != PMaxTimeInterval) && (minRetryTime != 0)) ? minRetryTime : endpoint.GetRetryTimeoutMin(); 
+  retryTimeoutMax = ((maxRetryTime != PMaxTimeInterval) && (maxRetryTime != 0)) ? maxRetryTime : endpoint.GetRetryTimeoutMax(); ; 
 }
 
 
@@ -2056,7 +2066,7 @@ BOOL SIPTransaction::Start()
 
   state = Trying;
   retry = 0;
-  retryTimer = endpoint.GetRetryTimeoutMin();
+  retryTimer = retryTimeoutMin;
   localAddress = transport.GetLocalAddress();
 
   if (method == Method_INVITE)
@@ -2120,7 +2130,7 @@ BOOL SIPTransaction::ResendCANCEL()
   if (state < Cancelling) {
     state = Cancelling;
     retry = 0;
-    retryTimer = endpoint.GetRetryTimeoutMin();
+    retryTimer = retryTimeoutMin;
   }
 
   return TRUE;
@@ -2159,7 +2169,7 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
     state = Proceeding;
     retry = 0;
-    retryTimer = endpoint.GetRetryTimeoutMax();
+    retryTimer = retryTimeoutMax;
     completionTimer = endpoint.GetNonInviteTimeout();
 
     mutex.Signal();
@@ -2233,9 +2243,9 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     return;
   }
 
-  PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1<<retry);
-  if (timeout > endpoint.GetRetryTimeoutMax())
-    retryTimer = endpoint.GetRetryTimeoutMax();
+  PTimeInterval timeout = retryTimeoutMin*(1<<retry);
+  if (timeout > retryTimeoutMax)
+    retryTimer = retryTimeoutMax;
   else
     retryTimer = timeout;
 }
@@ -2404,8 +2414,10 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const SIPURL & address,
                          const PString & id,
-                         unsigned expires)
-  : SIPTransaction(ep, trans)
+                         unsigned expires,
+                         const PTimeInterval & minRetryTime, 
+                         const PTimeInterval & maxRetryTime)
+  : SIPTransaction(ep, trans, minRetryTime, maxRetryTime)
 {
   PString addrStr = address.AsQuotedString();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();

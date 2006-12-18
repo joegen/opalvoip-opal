@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2190  2006/12/08 04:24:19  csoutheren
+ * Revision 1.2191  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.189  2006/12/08 04:24:19  csoutheren
  * Applied 1604554 - SIP remote hold improvements
  * Thanks to Simon Zwahlen
  *
@@ -777,8 +782,9 @@ SIPConnection::SIPConnection(OpalCall & call,
                              SIPEndPoint & ep,
                              const PString & token,
                              const SIPURL & destination,
-                             OpalTransport * inviteTransport)
-  : OpalConnection(call, ep, token),
+                             OpalTransport * inviteTransport,
+                             unsigned int options)
+  : OpalConnection(call, ep, token, options),
     endpoint(ep),
     pduSemaphore(0, P_MAX_INDEX)
 {
