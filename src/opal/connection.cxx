@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2084  2006/12/08 04:22:06  csoutheren
+ * Revision 1.2085  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.83  2006/12/08 04:22:06  csoutheren
  * Applied 1589261 - new release cause for fxo endpoints
  * Thanks to Frederic Heem
  *
@@ -472,7 +477,8 @@ ostream & operator<<(ostream & o, OpalConnection::SendUserInputModes m)
 
 OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
-                               const PString & token)
+                               const PString & token,
+                               unsigned int options)
   : ownerCall(call),
     endpoint(ep),
     callToken(token),
@@ -484,7 +490,14 @@ OpalConnection::OpalConnection(OpalCall & call,
     remotePartyName(token),
     remoteIsNAT(FALSE),
     q931Cause(0x100),
-    useRTPAggregation(endpoint.UseRTPAggregation())
+    t120handler(NULL),
+    t38handler(NULL),
+    h224Handler(NULL),
+    silenceDetector(NULL),
+    echoCanceler(NULL),
+    phase(UninitialisedPhase),
+    originating(FALSE),
+    callEndReason(NumCallEndReasons)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -496,26 +509,41 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   ownerCall.connectionsActive.Append(this);
 
-  phase = UninitialisedPhase;
-  originating = FALSE;
-  callEndReason = NumCallEndReasons;
   detectInBandDTMF = !endpoint.GetManager().DetectInBandDTMFDisabled();
   minAudioJitterDelay = endpoint.GetManager().GetMinAudioJitterDelay();
   maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
-  silenceDetector = NULL;
-  echoCanceler = NULL;
+  switch (options & SendDTMFMask) {
+    case SendDTMFAsString:
+      sendUserInputMode = SendUserInputAsString;
+      break;
+    case SendDTMFAsTone:
+      sendUserInputMode = SendUserInputAsTone;
+      break;
+    case SendDTMFAsRFC2833:
+      sendUserInputMode = SendUserInputAsInlineRFC2833;
+      break;
+    case SendDTMFAsDefault:
+    default:
+      sendUserInputMode = ep.GetSendUserInputMode();
+      break;
+  }
   
-  sendUserInputMode = ep.GetSendUserInputMode();
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 
-  t120handler = NULL;
-  t38handler = NULL;
-
-  h224Handler = NULL;
-
   securityMode = ep.GetDefaultSecurityMode();
+
+  switch (options & RTPAggregationMask) {
+    case RTPAggregationDisable:
+      useRTPAggregation = FALSE;
+      break;
+    case RTPAggregationEnable:
+      useRTPAggregation = TRUE;
+      break;
+    default:
+      useRTPAggregation = endpoint.UseRTPAggregation();
+  }
 }
 
 OpalConnection::~OpalConnection()
@@ -657,7 +685,12 @@ void OpalConnection::OnReleased()
 
 BOOL OpalConnection::OnIncomingConnection()
 {
-  return endpoint.OnIncomingConnection(*this);
+  return OnIncomingConnection(0);
+}
+
+BOOL OpalConnection::OnIncomingConnection(unsigned options)
+{
+  return endpoint.OnIncomingConnection(*this, options);
 }
 
 

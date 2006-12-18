@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2137  2006/12/10 19:16:19  dsandras
+ * Revision 1.2138  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.136  2006/12/10 19:16:19  dsandras
  * Fixed typo.
  *
  * Revision 2.135  2006/12/10 18:31:17  dsandras
@@ -514,15 +519,19 @@
  
 ////////////////////////////////////////////////////////////////////////////
 
-SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
-  :ep(endpoint)
+SIPInfo::SIPInfo(SIPEndPoint & endpoint, 
+               const PString & adjustedUsername, 
+         const PTimeInterval & retryMin,
+         const PTimeInterval & retryMax)
+  : ep(endpoint), 
+    registrarTransport(NULL),
+    registered(FALSE),
+    expire(0),
+    retryTimeoutMin(retryMin), 
+    retryTimeoutMax(retryMax) 
 {
-  expire = 0;
-  registered = FALSE; 
-  registrarTransport = NULL;
+  registrationID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   registrationAddress.Parse(adjustedUsername);
-  registrationID = 
-    OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 }
 
 
@@ -567,8 +576,15 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
 }
 
 
-SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & authName, const PString & pass, int exp)
-  :SIPInfo(endpoint, name)
+SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint,
+                               const PString & _originalHost,
+                               const PString & name, 
+                               const PString & authName, 
+                               const PString & pass, 
+                                           int exp,
+                        const PTimeInterval & minRetryTime, 
+                        const PTimeInterval & maxRetryTime)
+  : SIPInfo(endpoint, name, minRetryTime, maxRetryTime), originalHost(_originalHost)
 {
   expire = exp;
   if (expire == 0)
@@ -598,7 +614,8 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unreg
 			  t, 
 			  registrationAddress, 
 			  registrationID, 
-			  unregister ? 0:expire); 
+			  unregister ? 0 : expire,
+        retryTimeoutMin, retryTimeoutMax);
 }
 
 void SIPRegisterInfo::OnSuccess ()
@@ -920,7 +937,8 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 
 BOOL SIPEndPoint::MakeConnection(OpalCall & call,
                                  const PString & _remoteParty,
-                                 void * userData)
+                                 void * userData,
+                           unsigned int options)
 {
   PString remoteParty;
   
@@ -932,7 +950,7 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL, options);
   if (connection == NULL)
     return FALSE;
 
@@ -965,9 +983,10 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                               void * /*userData*/,
                                               const SIPURL & destination,
                                               OpalTransport * transport,
-                                              SIP_PDU * /*invite*/)
+                                              SIP_PDU * /*invite*/,
+                                              unsigned int options)
 {
-  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport);
+  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport, options);
   if (conn != NULL)
     OnNewConnection(call, *conn);
   return conn;
@@ -1619,14 +1638,16 @@ BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
 
 BOOL SIPEndPoint::Register(const PString & host,
                            const PString & username,
-			   const PString & authName,
+                           const PString & authName,
                            const PString & password,
-			   const PString & realm,
-			   int timeout)
+                           const PString & realm,
+			                                 int timeout,
+                     const PTimeInterval & minRetryTime, 
+                     const PTimeInterval & maxRetryTime)
 {
   if (timeout == 0)
     timeout = GetRegistrarTimeToLive().GetSeconds(); 
-  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
+  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout, minRetryTime, maxRetryTime);
 }
 
 BOOL SIPEndPoint::Ping(const PString & host,
@@ -1670,7 +1691,9 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
 				  const PString & password,
 				  const PString & realm,
 				  const PString & body,
-				  int timeout)
+				  int timeout,
+          const PTimeInterval & minRetryTime, 
+          const PTimeInterval & maxRetryTime)
 {
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
@@ -1736,16 +1759,16 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
   else {
     switch (m) {
       case SIP_PDU::Method_REGISTER:
-        info = new SIPRegisterInfo(*this, adjustedUsername, authName, password, timeout);
+        info = CreateRegisterInfo(host, adjustedUsername, authName, password, timeout, minRetryTime, maxRetryTime);
         break;
       case SIP_PDU::Method_SUBSCRIBE:
-        info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
+        info = CreateMWISubscribeInfo(adjustedUsername, timeout);
         break;
       case SIP_PDU::Method_PING:
-        info = new SIPPingInfo(*this, adjustedUsername, timeout);
+        info = CreatePingInfo(adjustedUsername, timeout);
         break;
       case SIP_PDU::Method_MESSAGE:
-        info = new SIPMessageInfo(*this, adjustedUsername, body);
+        info = CreateMessageInfo(adjustedUsername, body);
         break;
       default:
         PTRACE(1, "SIP\tUnknown SIP request method " << m);
@@ -1770,6 +1793,32 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
   return TRUE;
 }
 
+SIPRegisterInfo * SIPEndPoint::CreateRegisterInfo(
+      const PString & originalHost,
+      const PString & adjustedUsername, 
+      const PString & authName, 
+      const PString & password, 
+      int timeout, 
+      const PTimeInterval & minRetryTime, 
+      const PTimeInterval & maxRetryTime)
+{
+  return new SIPRegisterInfo(*this, originalHost, adjustedUsername, authName, password, timeout, minRetryTime, maxRetryTime);
+}
+
+SIPMWISubscribeInfo * SIPEndPoint::CreateMWISubscribeInfo(const PString & adjustedUsername, int timeout)
+{
+  return new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
+}
+
+SIPPingInfo * SIPEndPoint::CreatePingInfo(const PString & adjustedUsername, int timeout)
+{
+  return new SIPPingInfo(*this, adjustedUsername, timeout);
+}
+
+SIPMessageInfo * SIPEndPoint::CreateMessageInfo(const PString & adjustedUsername, const PString & body)
+{
+  return new SIPMessageInfo(*this, adjustedUsername, body);
+}
 
 BOOL SIPEndPoint::Unregister(const PString & host,
 			     const PString & user)

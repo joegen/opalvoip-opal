@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2036  2006/10/22 12:05:56  rjongbloed
+ * Revision 1.2037  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.35  2006/10/22 12:05:56  rjongbloed
  * Fixed correct usage of read/write buffer sizes in LID endpoints.
  *
  * Revision 2.34  2006/10/15 06:23:35  rjongbloed
@@ -204,7 +209,8 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
 
 BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
-                                     void * userData)
+                                     void * userData,
+                                     unsigned int /*options*/)
 {
   PTRACE(3, "LID EP\tMakeConnection remoteParty " << remoteParty << ", prefix "<< GetPrefixName());  
   // First strip of the prefix if present

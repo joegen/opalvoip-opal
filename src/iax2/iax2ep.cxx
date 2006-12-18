@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.16  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
  * Revision 1.15  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
@@ -407,8 +412,8 @@ PString IAX2EndPoint::BuildUrl(
 BOOL IAX2EndPoint::MakeConnection(
 				 OpalCall & call,
 				 const PString & rParty, 
-				 void * userData
-				 )
+				 void * userData,
+   unsigned int /*options*/)
 {
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
