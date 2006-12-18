@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2046  2006/12/08 05:39:29  csoutheren
+ * Revision 1.2047  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.45  2006/12/08 05:39:29  csoutheren
  * Remove warnings under Windows
  *
  * Revision 2.44  2006/12/08 05:10:44  csoutheren
@@ -419,7 +424,12 @@ BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
-  return manager.OnIncomingConnection(connection);
+  return OnIncomingConnection(connection, 0);
+}
+
+BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options)
+{
+  return manager.OnIncomingConnection(connection, options);
 }
 
 

@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2059  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2060  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.58  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.57  2006/09/19 01:52:17  csoutheren
@@ -525,7 +530,8 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 
 BOOL H323EndPoint::MakeConnection(OpalCall & call,
                                   const PString & remoteParty,
-                                  void * userData)
+                                  void * userData,
+                            unsigned int options)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
@@ -533,7 +539,8 @@ BOOL H323EndPoint::MakeConnection(OpalCall & call,
                           PString::Empty(),
                           UINT_MAX,
                           remoteParty,
-                          userData);
+                          userData,
+                          options);
 }
 
 
@@ -618,9 +625,10 @@ H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
                                                 OpalTransport & /*transport*/,
                                                 const PString & alias,
                                                 const H323TransportAddress & address,
-                                                H323SignalPDU * /*setupPDU*/)
+                                                H323SignalPDU * /*setupPDU*/,
+                                                unsigned options)
 {
-  H323Connection * conn = new H323Connection(call, *this, token, alias, address);
+  H323Connection * conn = new H323Connection(call, *this, token, alias, address, options);
   if (conn != NULL)
     OnNewConnection(call, *conn);
   return conn;
@@ -662,7 +670,8 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
                                     const PString & callIdentity,
                                     unsigned capabilityLevel,
                                     const PString & remoteParty,
-                                    void * userData)
+                                    void * userData,
+                              unsigned int options)
 {
   PString alias;
   H323TransportAddress address;
@@ -694,7 +703,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     } while (connectionsActive.Contains(newToken));
   }
 
-  H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL);
+  H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options);
   if (connection == NULL) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;

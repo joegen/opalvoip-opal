@@ -2333,10 +2333,6 @@
 					/>
 				</FileConfiguration>
 			</File>
-			<File
-				RelativePath="..\..\include\codec\opalplugin.h"
-				>
-			</File>
 			<Filter
 				Name="Opal Headers"
 				>
@@ -2374,6 +2370,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\mediastrm.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\codec\opalplugin.h"
 					>
 				</File>
 				<File

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2016  2006/10/15 06:23:35  rjongbloed
+ * Revision 1.2017  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.15  2006/10/15 06:23:35  rjongbloed
  * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
  *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
  *
@@ -130,7 +135,8 @@ OpalIVREndPoint::~OpalIVREndPoint()
 
 BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
-                                     void * userData)
+                                     void * userData,
+                               unsigned int /*options*/)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
