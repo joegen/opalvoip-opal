@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2039  2006/12/08 05:10:43  csoutheren
+ * Revision 1.2040  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.38  2006/12/08 05:10:43  csoutheren
  * Applied 1608002 - Callback for OpalTransportUDP multiple interface handling
  * Thanks to Hannes Friederich
  *
@@ -340,9 +345,10 @@ class OpalEndPoint : public PObject
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party,  ///<  Remote party to call
-      void * userData         ///<  Arbitrary data to pass to connection
+      OpalCall & call,          ///<  Owner of connection
+      const PString & party,    ///<  Remote party to call
+      void * userData,          ///<  Arbitrary data to pass to connection
+      unsigned int options = 0  ///<  options to pass to conneciton
     ) = 0;
 
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
@@ -371,6 +377,10 @@ class OpalEndPoint : public PObject
 
        The default behaviour calls the OpalManager function of the same name.
      */
+    virtual BOOL OnIncomingConnection(
+      OpalConnection & connection,  ///<  Connection that is calling
+      unsigned options              ///<  options for new connection (can't use default value as overrides will fail)
+    );
     virtual BOOL OnIncomingConnection(
       OpalConnection & connection   ///<  Connection that is calling
     );

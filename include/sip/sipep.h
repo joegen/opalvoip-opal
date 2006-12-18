@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2065  2006/11/09 18:24:55  hfriederich
+ * Revision 1.2066  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.64  2006/11/09 18:24:55  hfriederich
  * Ensures that responses to received INVITE get sent out on the same network interface as where the INVITE was received. Remove cout statement
  *
  * Revision 2.63  2006/08/12 04:20:39  csoutheren
@@ -83,7 +88,6 @@
  * Revision 2.49  2006/03/06 12:56:02  csoutheren
  * Added experimental support for SIP SRV lookups
  *
-=======
  * Revision 2.48.2.2  2006/04/06 05:33:07  csoutheren
  * Backports from CVS head up to Plugin_Merge2
  *
@@ -122,7 +126,6 @@
  * Revision 2.49  2006/03/06 12:56:02  csoutheren
  * Added experimental support for SIP SRV lookups
  *
->>>>>>> 2.48.2.2
  * Revision 2.48  2006/02/19 11:51:46  dsandras
  * Fixed FindSIPInfoByDomain.
  *
@@ -315,7 +318,9 @@ class SIPInfo : public PSafeObject
   public:
     SIPInfo(
       SIPEndPoint & ep, 
-      const PString & name
+      const PString & name,
+      const PTimeInterval & retryMin = PMaxTimeInterval,
+      const PTimeInterval & retryMax = PMaxTimeInterval
     );
 
     ~SIPInfo();
@@ -363,6 +368,9 @@ class SIPInfo : public PSafeObject
     virtual void SetAuthUser(const PString & u)
     { authUser = u;}
     
+    virtual PString GetAuthUser() const
+    { return authUser;}
+
     virtual void SetPassword(const PString & p)
     { password = p;}
     
@@ -396,15 +404,18 @@ class SIPInfo : public PSafeObject
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
-      PTime	         registrationTime;
+      PTime              registrationTime;
       BOOL               registered;
-      int	         expire;
-      PString	         authRealm;
+      int	               expire;
+      PString	           authRealm;
       PString            authUser;
       PString 	         password;
-      PString		 body;
+      PString		         body;
       PMutex             transportMutex;
       unsigned           authenticationAttempts;
+
+      PTimeInterval retryTimeoutMin; 
+      PTimeInterval retryTimeoutMax; 
     
     private:
 };
@@ -414,7 +425,16 @@ class SIPRegisterInfo : public SIPInfo
   PCLASSINFO(SIPRegisterInfo, SIPInfo);
 
   public:
-    SIPRegisterInfo(SIPEndPoint & ep, const PString & adjustedUsername, const PString & authName, const PString & password, int expire);
+    SIPRegisterInfo(
+      SIPEndPoint & ep, 
+      const PString & originalHost,
+      const PString & adjustedUsername, 
+      const PString & authName, 
+      const PString & password, 
+      int expire, 
+      const PTimeInterval & minRetryTime, 
+      const PTimeInterval & maxRetryTime
+    );
     ~SIPRegisterInfo();
     virtual SIPTransaction * CreateTransaction(OpalTransport &, BOOL);
     virtual SIP_PDU::Methods GetMethod()
@@ -422,6 +442,8 @@ class SIPRegisterInfo : public SIPInfo
 
     virtual void OnSuccess();
     virtual void OnFailed(SIP_PDU::StatusCodes r);
+
+    PString originalHost;
 };
 
 class SIPMWISubscribeInfo : public SIPInfo
@@ -544,9 +566,10 @@ class SIPEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party,  ///<  Remote party to call
-      void * userData = NULL  ///<  Arbitrary data to pass to connection
+      OpalCall & call,          ///<  Owner of connection
+      const PString & party,    ///<  Remote party to call
+      void * userData = NULL,   ///<  Arbitrary data to pass to connection
+      unsigned int options = 0  ///<  options to pass to conneciton
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -572,7 +595,8 @@ class SIPEndPoint : public OpalEndPoint
       void * userData,            ///<  User data for connection
       const SIPURL & destination, ///<  Destination for outgoing call
       OpalTransport * transport,  ///<  Transport INVITE has been received on
-      SIP_PDU * invite            ///<  Original INVITE pdu
+      SIP_PDU * invite,           ///<  Original INVITE pdu
+      unsigned int options = 0    ///<  connection options
     );
     
     /**Setup a connection transfer a connection for the SIP endpoint.
@@ -716,7 +740,9 @@ class SIPEndPoint : public OpalEndPoint
       const PString & autName = PString::Empty(),
       const PString & password = PString::Empty(),
       const PString & authRealm = PString::Empty(),
-      int timeout = 0
+      int timeout = 0,
+      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
 
     /** Send a SIP PING to the remote host
@@ -956,11 +982,6 @@ class SIPEndPoint : public OpalEndPoint
     void SetNATBindingRefreshMethod(const NATBindingRefreshMethod m) { natMethod = m; }
 
 
-  protected:
-    PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
-    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
-    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
-
     /** This dictionary is used both to contain the active and successful
       * registrations, and subscriptions. Currently, only MWI subscriptions
       * are supported.
@@ -976,8 +997,8 @@ class SIPEndPoint : public OpalEndPoint
 	    {
 	      unsigned count = 0;
 	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-		if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
-		  count++;
+      		if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
+		        count++;
 	      return count;
 	    }
 	  
@@ -1035,6 +1056,29 @@ class SIPEndPoint : public OpalEndPoint
 	    }
     };
 
+    RegistrationList & GetActiveSIPInfo() 
+    { return activeSIPInfo; }
+
+    /** Allow applications to create ancestors of the various registration types
+      */
+    virtual SIPRegisterInfo * CreateRegisterInfo(
+      const PString & originalHost,
+      const PString & adjustedUsername, 
+      const PString & authName, 
+      const PString & password, 
+      int expire, 
+      const PTimeInterval & minRetryTime, 
+      const PTimeInterval & maxRetryTime
+    );
+    virtual SIPMWISubscribeInfo * CreateMWISubscribeInfo(const PString & adjustedUsername, int expire);
+    virtual SIPPingInfo *         CreatePingInfo(const PString & adjustedUsername, int expire);
+    virtual SIPMessageInfo *      CreateMessageInfo(const PString & adjustedUsername, const PString & body);
+
+  protected:
+    PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
+    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
+    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
+
     static BOOL WriteSIPInfo(
       OpalTransport & transport, 
       void * info
@@ -1048,7 +1092,9 @@ class SIPEndPoint : public OpalEndPoint
       const PString & password = PString::Empty(), 
       const PString & authRealm = PString::Empty(),
       const PString & body = PString::Empty(),
-      int timeout = 0
+      int timeout = 0,
+      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
 
     BOOL TransmitSIPUnregistrationInfo (
