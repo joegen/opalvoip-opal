@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2055  2006/11/11 12:23:18  hfriederich
+ * Revision 1.2056  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.54  2006/11/11 12:23:18  hfriederich
  * Code reorganisation to improve RFC2833 handling for both SIP and H.323. Thanks Simon Zwahlen for the idea
  *
  * Revision 2.53  2006/10/01 17:16:32  hfriederich
@@ -249,7 +254,8 @@ class SIPConnection : public OpalConnection
       SIPEndPoint & endpoint,     ///<  Owner endpoint for connection
       const PString & token,      ///<  token to identify the connection
       const SIPURL & address,     ///<  Destination address for outgoing call
-      OpalTransport * transport   ///<  Transport INVITE came in on
+      OpalTransport * transport,  ///<  Transport INVITE came in on
+      unsigned int options = 0    ///<  Connection options
     );
 
     /**Destroy connection.

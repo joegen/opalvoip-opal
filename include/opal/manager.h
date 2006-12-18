@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2054  2006/12/08 04:22:06  csoutheren
+ * Revision 1.2055  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.53  2006/12/08 04:22:06  csoutheren
  * Applied 1589261 - new release cause for fxo endpoints
  * Thanks to Frederic Heem
  *
@@ -318,7 +323,8 @@ class OpalManager : public PObject
       const PString & partyA,       ///<  The A party of call
       const PString & partyB,       ///<  The B party of call
       PString & token,              ///<  Token for call
-      void * userData = NULL        ///<  user data passed to Call and Connection
+      void * userData = NULL,       ///<  user data passed to Call and Connection
+      unsigned options = 0          ///<  options passed to connection
     );
 
     /**A call back function whenever a call is completed.
@@ -493,6 +499,12 @@ class OpalManager : public PObject
       const PString & party,  ///<  Party to call
       void * userData         ///<  user data to pass to connections
     );
+    virtual BOOL MakeConnection(
+      OpalCall & call,          ///<  Owner of connection
+      const PString & party,    ///<  Party to call
+      void * userData,          ///<  user data to pass to connections
+      unsigned int options      ///<  options to pass to conneciton
+    );
 
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
@@ -520,6 +532,10 @@ class OpalManager : public PObject
        and this connection is a third party for a conference call then
        AnswerCallNow is returned as a B party is not required.
      */
+    virtual BOOL OnIncomingConnection(
+      OpalConnection & connection,   ///<  Connection that is calling
+      unsigned options               ///<  options for new connection (can't use default as overrides will fail)
+    );
     virtual BOOL OnIncomingConnection(
       OpalConnection & connection   ///<  Connection that is calling
     );

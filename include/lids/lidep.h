@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2024  2006/10/22 12:05:56  rjongbloed
+ * Revision 1.2025  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.23  2006/10/22 12:05:56  rjongbloed
  * Fixed correct usage of read/write buffer sizes in LID endpoints.
  *
  * Revision 2.22  2006/08/29 08:47:43  rjongbloed
@@ -184,9 +189,10 @@ class OpalLIDEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///< Owner of connection
-      const PString & party,  ///< Remote party to call
-      void * userData = NULL  ///< Arbitrary data to pass to connection
+      OpalCall & call,          ///< Owner of connection
+      const PString & party,    ///< Remote party to call
+      void * userData = NULL,   ///< Arbitrary data to pass to connection
+      unsigned int options = 0  ///<  options to pass to conneciton
     );
 
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection

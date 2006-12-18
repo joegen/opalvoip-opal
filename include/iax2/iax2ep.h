@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.7  2006/12/18 03:18:41  csoutheren
+ *  Messy but simple fixes
+ *    - Add access to SIP REGISTER timeout
+ *    - Ensure OpalConnection options are correctly progagated
+ *
  *  Revision 1.6  2006/09/11 03:08:51  dereksmithies
  *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  *  improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -175,9 +180,10 @@ class IAX2EndPoint : public OpalEndPoint
      The default behaviour is pure.
   */
   virtual BOOL MakeConnection(
-			      OpalCall & call,        /// Owner of connection
-			      const PString & party,  /// Remote party to call
-			      void * userData = NULL  /// Arbitrary data to pass to connection
+			      OpalCall & call,          /// Owner of connection
+			      const PString & party,    /// Remote party to call
+			      void * userData = NULL,   /// Arbitrary data to pass to connection
+            unsigned int options = 0  ///<  options to pass to conneciton
 			      );
   
   /**Create a connection for the IAX endpoint.

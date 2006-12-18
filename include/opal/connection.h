@@ -28,7 +28,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2068  2006/12/08 04:22:06  csoutheren
+ * Revision 1.2069  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.67  2006/12/08 04:22:06  csoutheren
  * Applied 1589261 - new release cause for fxo endpoints
  * Thanks to Frederic Heem
  *
@@ -363,13 +368,42 @@ class OpalConnection : public PSafeObject
       AnswerCallAlertWithMedia,    /// As for AnswerCallPending but starts media channels
       AnswerCallDeferredWithMedia, /// As for AnswerCallDeferred but starts media channels
       AnswerCallProgress,          /// Answer the call with a h323 progress, or sip 183 session in progress, or ... 
-      AnswerCallNowAndReleaseCurrent, /// Answer the call ans destroy the current call
+      AnswerCallNowAndReleaseCurrent, /// Answer the call and destroy the current call
       NumAnswerCallResponses
     };
 #if PTRACING
     friend ostream & operator<<(ostream & o, AnswerCallResponse s);
 #endif
 
+    /** Connection options
+    */
+    enum Options {
+      FastStartOptionDisable       = 0x0001,   // H.323 specific
+      FastStartOptionEnable        = 0x0002,
+      FastStartOptionMask          = 0x0003,
+
+      H245TunnelingOptionDisable   = 0x0004,   // H.323 specific
+      H245TunnelingOptionEnable    = 0x0008,
+      H245TunnelingOptionMask      = 0x000c,
+
+      H245inSetupOptionDisable     = 0x0010,   // H.323 specific
+      H245inSetupOptionEnable      = 0x0020,
+      H245inSetupOptionMask        = 0x0030,
+
+      DetectInBandDTMFOptionDisable = 0x0040,  // SIP and H.323
+      DetectInBandDTMFOptionEnable  = 0x0080,
+      DetectInBandDTMFOptionMask    = 0x00c0,
+
+      RTPAggregationDisable        = 0x0100,   // SIP and H.323
+      RTPAggregationEnable         = 0x0200,
+      RTPAggregationMask           = 0x0300,
+
+      SendDTMFAsDefault            = 0x0000,   // SIP and H.323
+      SendDTMFAsString             = 0x0400,
+      SendDTMFAsTone               = 0x0800,
+      SendDTMFAsRFC2833            = 0x0c00,
+      SendDTMFMask                 = 0x0c00
+    };
 
   /**@name Construction */
   //@{
@@ -378,8 +412,9 @@ class OpalConnection : public PSafeObject
     OpalConnection(
       OpalCall & call,          ///<  Owner calll for connection
       OpalEndPoint & endpoint,  ///<  Owner endpoint for connection
-      const PString & token     ///<  Token to identify the connection
-    );
+      const PString & token,    ///<  Token to identify the connection
+      unsigned options = 0      ///<  Connection options
+    );  
 
     /**Destroy connection.
      */
@@ -508,6 +543,7 @@ class OpalConnection : public PSafeObject
 
        The default behaviour calls the OpalManager function of the same name.
      */
+    virtual BOOL OnIncomingConnection(unsigned int options); // can't use default as overrides will fail
     virtual BOOL OnIncomingConnection();
 
     /**Start an outgoing connection.

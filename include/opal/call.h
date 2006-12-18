@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2026  2006/06/30 00:49:06  csoutheren
+ * Revision 1.2027  2006/12/18 03:18:41  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
+ *
+ * Revision 2.25  2006/06/30 00:49:06  csoutheren
  * Applied 1469865 - remove connection from call's connection list
  * Thanks to Frederich Heem
  *
@@ -450,7 +455,7 @@ class OpalCall : public PSafeObject
 
     
   //use to add the connection to the call's connection list
-  friend OpalConnection::OpalConnection(OpalCall & call, OpalEndPoint & ep, const PString & token);
+  friend OpalConnection::OpalConnection(OpalCall & call, OpalEndPoint & ep, const PString & token, unsigned int options);
   //use to remove the connection from the call's connection list
   friend OpalConnection::~OpalConnection();
 };
