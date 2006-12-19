@@ -41,6 +41,10 @@
 /************ Change log
  *
  * $Log: encoder-h261.cxx,v $
+ * Revision 1.6  2006/12/19 03:11:55  dereksmithies
+ * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
+ * This will help memory management - many thanks.
+ *
  * Revision 1.5  2006/08/12 10:59:14  rjongbloed
  * Added Linux build for H.261 plug-in.
  *
@@ -132,12 +136,12 @@ H261Encoder::H261Encoder(Transmitter *T) : Encoder(T),
 
 H261Encoder::~H261Encoder(void)
 {
- 	for (int q = 0; q < 32; ++q) {
-	  if(llm_[q])
-	    delete (char *)llm_[q];
-	  if(clm_[q])
-      delete (char *)clm_[q];
-	}
+    for (int q = 0; q < 32; ++q) {
+	if(llm_[q])
+	    delete [] (char *)llm_[q];
+	if(clm_[q])
+	    delete [] (char *)clm_[q];
+    }
 }
 
 
