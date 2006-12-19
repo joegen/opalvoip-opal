@@ -26,6 +26,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.11  2006/12/19 03:11:54  dereksmithies
+ * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
+ * This will help memory management - many thanks.
+ *
  * Revision 1.10  2006/11/02 02:32:15  csoutheren
  * Fixed corruption problem on linux
  *
@@ -646,7 +650,7 @@ class H261DecoderContext
     ~H261DecoderContext()
     {
       if (rvts)
-        delete rvts;
+        delete [] rvts;
       delete videoDecoder;
     }
 
