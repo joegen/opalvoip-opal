@@ -54,6 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
+ * Revision 1.7  2006/12/19 03:11:55  dereksmithies
+ * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
+ * This will help memory management - many thanks.
+ *
  * Revision 1.6  2006/11/12 03:34:07  rjongbloed
  * Fixed compilation on DevStudio 2003
  *
@@ -192,7 +196,7 @@ P64Decoder::P64Decoder()
 
 P64Decoder::~P64Decoder()
 {
-	delete fs_;
+	delete [] fs_;
 }
 
 void P64Decoder::init()
@@ -1235,7 +1239,7 @@ FullP64Decoder::FullP64Decoder()
 
 void FullP64Decoder::allocate()
 {
-	delete fs_;
+	delete [] fs_;
 	int n = size_ + (size_ >> 1);
 	fs_ = new u_char[2 * n];
 	/* initialize to gray */
@@ -1342,7 +1346,7 @@ IntraP64Decoder::IntraP64Decoder()
 
 void IntraP64Decoder::allocate()
 {
-	delete fs_;
+	delete [] fs_;
 	int n = size_ + (size_ >> 1);
 	fs_ = new u_char[n];
 	/* initialize to gray */

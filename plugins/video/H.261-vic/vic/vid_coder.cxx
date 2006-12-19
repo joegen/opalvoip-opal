@@ -35,6 +35,10 @@
 /************ Change log
  *
  * $Log: vid_coder.cxx,v $
+ * Revision 1.3  2006/12/19 03:11:55  dereksmithies
+ * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
+ * This will help memory management - many thanks.
+ *
  * Revision 1.2  2006/07/31 09:09:22  csoutheren
  * Checkin of validated codec used during development
  *
@@ -99,10 +103,10 @@ Pre_Vid_Coder::~Pre_Vid_Coder()
 void Pre_Vid_Coder::Free_Memory()
 {
     if(crvec)
-	delete crvec;
+	delete [] crvec;
     crvec= NULL;
     if(ref)
-	delete ref;
+	delete [] ref;
     ref= NULL;
 }
 
@@ -113,7 +117,7 @@ void Pre_Vid_Coder::crinit()
 	scan = 0;
 	nblk = blkw * blkh;	
         if (crvec)
-           delete crvec;
+           delete [] crvec;
 	crvec = new u_char[nblk];
 	for (int i = 0; i < nblk; ++i)
 		crvec[i] = CR_MOTION|CR_SEND;
@@ -123,7 +127,7 @@ void Pre_Vid_Coder::crinit()
 void Pre_Vid_Coder::allocref()
 {
 	if(ref)
-           delete ref;
+           delete [] ref;
 	ref = new u_char[framesize];
 	memset((char*)ref, 0, framesize);
 }
