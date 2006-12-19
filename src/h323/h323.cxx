@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2127  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2128  2006/12/19 07:21:49  csoutheren
+ * Fix problem with not adjusting H.245 addresses for NAT
+ *
+ * Revision 2.126  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -959,9 +962,12 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
         )  
     {
-      PIPSocket::Address localAddress = signallingChannel->GetLocalAddress();
+      PIPSocket::Address localAddress;
+      signallingChannel->GetLocalAddress().GetIpAddress(localAddress);
+
       PIPSocket::Address ourAddress = localAddress;
       endpoint.TranslateTCPAddress(localAddress, sigAddr);
+
       if (localAddress == ourAddress) {
         PTRACE(3, "H225\tSource signal address " << srcAddr << " and TCP peer address " << sigAddr << " indicate remote endpoint is behind NAT");
         remoteIsNAT = TRUE;
@@ -2442,6 +2448,18 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
   }
 
   H323TransportAddress listeningAddress = controlListener->GetLocalAddress(localSignallingInterface);
+
+  // map H.245 listening address using NAT code
+  PIPSocket::Address localAddress; WORD listenPort;
+  listeningAddress.GetIpAndPort(localAddress, listenPort);
+
+  PIPSocket::Address remoteAddress;
+  signallingChannel->GetRemoteAddress().GetIpAddress(remoteAddress);
+
+  if (endpoint.TranslateTCPAddress(localAddress, remoteAddress))
+    listeningAddress = H323TransportAddress(localAddress, listenPort);
+
+  // assign address into the PDU
   return listeningAddress.SetPDU(h245Address);
 }
 
