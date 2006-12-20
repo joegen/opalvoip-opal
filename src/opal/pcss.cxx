@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2038  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2039  2006/12/20 04:38:29  csoutheren
+ * Ensure tokens are still generated whe no audio devices are present
+ *
+ * Revision 2.37  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -189,7 +192,10 @@
 
 static PString MakeToken(const PString & playDevice, const PString & recordDevice)
 {
-  if (playDevice == recordDevice)
+  if (playDevice.IsEmpty() || recordDevice.IsEmpty())
+    return PGloballyUniqueID().AsString();
+
+  if (playDevice == recordDevice) 
     return recordDevice;
   else
     return playDevice + '\\' + recordDevice;
@@ -390,7 +396,7 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   silenceDetector = new OpalPCM16SilenceDetector;
   echoCanceler = new OpalEchoCanceler;
 
-  PTRACE(3, "PCSS\tCreated PC sound system connection.");
+  PTRACE(3, "PCSS\tCreated PC sound system connection with token '" << callToken << "'");
 }
 
 
