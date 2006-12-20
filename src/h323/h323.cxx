@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2128  2006/12/19 07:21:49  csoutheren
+ * Revision 1.2129  2006/12/20 04:40:59  csoutheren
+ * Fixed typo in last checkin
+ *
+ * Revision 2.127  2006/12/19 07:21:49  csoutheren
  * Fix problem with not adjusting H.245 addresses for NAT
  *
  * Revision 2.126  2006/12/18 03:18:42  csoutheren
@@ -2456,8 +2459,8 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
   PIPSocket::Address remoteAddress;
   signallingChannel->GetRemoteAddress().GetIpAddress(remoteAddress);
 
-  if (endpoint.TranslateTCPAddress(localAddress, remoteAddress))
-    listeningAddress = H323TransportAddress(localAddress, listenPort);
+  endpoint.TranslateTCPAddress(localAddress, remoteAddress);
+  listeningAddress = H323TransportAddress(localAddress, listenPort);
 
   // assign address into the PDU
   return listeningAddress.SetPDU(h245Address);
