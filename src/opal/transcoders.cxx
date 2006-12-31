@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2028  2006/11/29 06:28:58  csoutheren
+ * Revision 1.2029  2006/12/31 17:00:14  dsandras
+ * Do not try transcoding RTP frames if they do not correspond to the formats
+ * for which the transcoder was created.
+ *
+ * Revision 2.27  2006/11/29 06:28:58  csoutheren
  * Add ability call codec control functions on all transcoders
  *
  * Revision 2.26  2006/10/04 06:33:20  csoutheren
@@ -214,6 +218,8 @@ BOOL OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
+  RTP_DataFrame::PayloadTypes pt;
+
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
   else {
@@ -232,6 +238,23 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
   }
   output[0].SetTimestamp(input.GetTimestamp());
   output[0].SetMarker(input.GetMarker());
+
+  if (payloadTypeMap.size() == 0) {
+    pt = inputMediaFormat.GetPayloadType();
+  }
+  else {
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(inputMediaFormat.GetPayloadType());
+    if (r != payloadTypeMap.end()) 
+      pt = r->second;
+    else 
+      pt = inputMediaFormat.GetPayloadType();
+  }
+
+  if (pt != input.GetPayloadType()) {
+    PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
+    return TRUE;
+  }
+
   return Convert(input, output[0]);
 }
 
