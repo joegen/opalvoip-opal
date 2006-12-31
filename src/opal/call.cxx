@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2040.2.3  2006/03/20 10:48:34  csoutheren
+ * Revision 1.2040.2.4  2006/12/31 17:00:48  dsandras
+ * Do not try transcoding RTP frames if they do not correspond to the formats
+ * for which the transcoder was created.
+ *
+ * Revision 2.39.2.3  2006/03/20 10:48:34  csoutheren
  * Backport from CVS head
  *
  * Revision 2.42  2006/03/20 10:37:47  csoutheren
@@ -520,6 +524,14 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   OpalMediaPatch * patch = NULL;
 
   {
+    RTP_DataFrame::PayloadMapType map;
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        map = conn->GetRTPPayloadMap();
+      }
+    }
+    if (map.size() == 0)
+      map = connection.GetRTPPayloadMap();
     for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
       if (conn != &connection) {
         OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
@@ -531,7 +543,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
             if (patch == NULL)
               return FALSE;
           }
-          patch->AddSink(sink, conn->GetRTPPayloadMap());
+          patch->AddSink(sink, map);
         }
       }
     }
