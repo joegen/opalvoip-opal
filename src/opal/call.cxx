@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2051  2006/11/06 13:57:40  dsandras
+ * Revision 1.2052  2006/12/31 17:00:13  dsandras
+ * Do not try transcoding RTP frames if they do not correspond to the formats
+ * for which the transcoder was created.
+ *
+ * Revision 2.50  2006/11/06 13:57:40  dsandras
  * Use readonly locks as suggested by Robert as we are not
  * writing to the collection. Fixes deadlock on SIP when
  * reinvite.
@@ -576,6 +580,14 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   OpalMediaPatch * patch = NULL;
 
   {
+    RTP_DataFrame::PayloadMapType map;
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        map = conn->GetRTPPayloadMap();
+      }
+    }
+    if (map.size() == 0)
+      map = connection.GetRTPPayloadMap();
     for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
       if (conn != &connection) {
         OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
@@ -587,7 +599,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
             if (patch == NULL)
               return FALSE;
           }
-          patch->AddSink(sink, conn->GetRTPPayloadMap());
+          patch->AddSink(sink, map);
         }
       }
     }
