@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2191  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2192  2007/01/02 17:28:40  dsandras
+ * Do not create a new RTPSessionManager when authenticating an INVITE, because
+ * it will use new UDP ports which is not needed and causes bad behaviors with
+ * some broken SIP Proxies. (Ekiga report #359971)
+ *
+ * Revision 2.190  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -1568,8 +1573,8 @@ BOOL SIPConnection::IsConnectionOnHold()
 
 
 BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp, 
-                                  RTP_SessionManager & rtpSessions,
-                                              unsigned rtpSessionId)
+                             RTP_SessionManager & rtpSessions,
+                             unsigned rtpSessionId)
 {
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
@@ -2475,7 +2480,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
     routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport);
+  SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start())
   {
     PWaitAndSignal m(invitationsMutex); 
