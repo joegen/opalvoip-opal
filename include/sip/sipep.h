@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2066  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2067  2007/01/02 15:26:13  dsandras
+ * Added DNS Fallback for realm authentication if the classical comparison
+ * doesn't work. Fixes problems with broken SIP proxies. (Ekiga report #377346)
+ *
+ * Revision 2.65  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -1016,13 +1020,20 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified authRealm
 	     */
-	    SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		      if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
-		        return info;
-	      return NULL;
-	    }
+            SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
+            {
+              PIPSocket::Address realmAddress;
+
+              for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+                if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
+                  return info;
+              for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
+                if (PIPSocket::GetHostAddress(info->GetAuthentication().GetAuthRealm(), realmAddress))
+                  if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
+                    return info;
+              }
+              return NULL;
+            }
 
 	    /**
 	     * Find the SIPInfo object with the specified URL. The url is
