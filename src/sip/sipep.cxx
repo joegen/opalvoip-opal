@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.28  2006/12/10 19:15:59  dsandras
+ * Revision 1.2098.2.29  2007/01/04 22:10:35  dsandras
+ * Make sure we do not strip a > when stripping parameters from the From field
+ * when receiving a MESSAGE.
+ *
+ * Revision 2.97.2.28  2006/12/10 19:15:59  dsandras
  * Fixed typo.
  *
  * Revision 2.97.2.27  2006/12/10 18:29:45  dsandras
@@ -1487,6 +1491,10 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
   PINDEX j = from.Find (';');
   if (j != P_MAX_INDEX)
     from = from.Left(j); // Remove all parameters
+  j = from.Find ('<');
+  if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
+    from += '>';
+
   OnMessageReceived(from, pdu.GetEntityBody());
 }
 
