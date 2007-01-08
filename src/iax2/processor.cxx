@@ -29,6 +29,9 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.20  2007/01/08 20:10:48  dereksmithies
+ * Lower trace levels statements.
+ *
  * Revision 1.19  2007/01/08 20:02:58  dereksmithies
  * Add license statement, and  cvs log statement.
  *
@@ -65,7 +68,7 @@ void IAX2WaitingForAck::Assign(IAX2FullFrame *f, ResponseToAck _response)
   timeStamp = f->GetTimeStamp();
   seqNo     = f->GetSequenceInfo().InSeqNo();
   response  = _response;
-  PTRACE(3, "MatchingAck\tIs looking for " << timeStamp << " and " << seqNo << " to do " << GetResponseAsString());
+  PTRACE(4, "MatchingAck\tIs looking for " << timeStamp << " and " << seqNo << " to do " << GetResponseAsString());
 }
 
 void IAX2WaitingForAck::ZeroValues()
@@ -77,14 +80,14 @@ void IAX2WaitingForAck::ZeroValues()
 
 BOOL IAX2WaitingForAck::MatchingAckPacket(IAX2FullFrame *f)
 {
-  PTRACE(3, "MatchingAck\tCompare " << timeStamp << " and " << seqNo);
+  PTRACE(4, "MatchingAck\tCompare " << timeStamp << " and " << seqNo);
   if (f->GetTimeStamp() != timeStamp) {
     PTRACE(3, "MatchingAck\tTimstamps differ");
     return FALSE;
   }
 
   if (f->GetSequenceInfo().OutSeqNo() != seqNo) {
-    PTRACE(3, "MatchingAck\tOut seqnos differ");    
+    PTRACE(4, "MatchingAck\tOut seqnos differ");    
     return FALSE;
   }
 
@@ -131,7 +134,7 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
 
 IAX2Processor::~IAX2Processor()
 {
-  PTRACE(3, "IAX2CallProcessor DESTRUCTOR");
+  PTRACE(5, "IAX2CallProcessor DESTRUCTOR");
 
   StopNoResponseTimer();
   
@@ -153,7 +156,7 @@ PString IAX2Processor::GetCallToken()
 
 void IAX2Processor::Main()
 {
-  PTRACE(1, "Start of iax processing");
+  PTRACE(3, "Start of iax processing");
   PString name = GetThreadName();
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
@@ -181,16 +184,16 @@ BOOL IAX2Processor::IsStatusQueryEthernetFrame(IAX2Frame *frame)
   PINDEX subClass = f->GetSubClass();
    
   if (subClass == IAX2FullFrameProtocol::cmdLagRq) {
-    PTRACE(3, "Special packet of  lagrq to process");
+    PTRACE(4, "Special packet of  lagrq to process");
     return TRUE;
   }
    
   if (subClass == IAX2FullFrameProtocol::cmdPing) {
-    PTRACE(3, "Special packet of Ping to process");
+    PTRACE(4, "Special packet of Ping to process");
     return TRUE;
   }
    
-  PTRACE(3, "This frame  is not a cmdPing or cmdLagRq");
+  PTRACE(4, "This frame  is not a cmdPing or cmdLagRq");
    
   return FALSE;
 }
@@ -244,9 +247,9 @@ void IAX2Processor::Terminate()
     endpoint.ReleaseDestCallNumber(this);
   }
   
-  PTRACE(3, "Processor has been directed to end. So end now.");
+  PTRACE(4, "Processor has been directed to end. So end now.");
   if (IsTerminated()) {
-    PTRACE(3, "Processor has already ended");
+    PTRACE(4, "Processor has already ended");
   }
   
   Activate();
@@ -272,18 +275,18 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
   }  
   
   if (PIsDescendant(frame, IAX2MiniFrame)) {
-    PTRACE(3, "IaxConnection\tIncoming mini frame" << frame->IdString());
+    PTRACE(4, "IaxConnection\tIncoming mini frame" << frame->IdString());
     ProcessNetworkFrame((IAX2MiniFrame *)frame);
     return TRUE;
   }
   
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
-  PTRACE(3, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
+  PTRACE(4, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
   
   endpoint.transmitter->PurgeMatchingFullFrames(f);
 
   if (sequence.IncomingMessageIsOk(*f)) {
-    PTRACE(3, "sequence numbers are Ok");
+    PTRACE(4, "sequence numbers are Ok");
   }
   
   IncControlFramesRcvd();
@@ -320,9 +323,9 @@ void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrameProtocol *src)
 
 void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 {
-  PTRACE(3, "Send frame " << src->GetClass() << " " << src->IdString() << " to remote endpoint");
+  PTRACE(4, "Send frame " << src->GetClass() << " " << src->IdString() << " to remote endpoint");
   if (src->IsFullFrame()) {
-    PTRACE(3, "Send full frame " << src->GetClass() << " with seq increase");
+    PTRACE(4, "Send full frame " << src->GetClass() << " with seq increase");
     sequence.MassageSequenceForSending(*(IAX2FullFrame*)src);
     IncControlFramesSent();
   }
@@ -343,7 +346,7 @@ BOOL IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & passwor
   IAX2IeAuthMethods ie(ieData.authMethods);
   
   if (ie.IsMd5Authentication()) {
-    PTRACE(3, "Processor\tMD5 Authentiction yes, make reply up");
+    PTRACE(5, "Processor\tMD5 Authentiction yes, make reply up");
     IAX2IeMd5Result *res = new IAX2IeMd5Result(ieData.challenge, password);
     reply->AppendIe(res);
     processed = TRUE;
@@ -356,13 +359,13 @@ BOOL IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & passwor
     reply->AppendIe(new IAX2IePassword(password));
     processed = TRUE;
   } else if (ie.IsRsaAuthentication()) {
-    PTRACE(3, "DO NOT handle RSA authentication ");
+    PTRACE(4, "DO NOT handle RSA authentication ");
     reply->SetSubClass(IAX2FullFrameProtocol::cmdInval);
     processed = TRUE;
   }
   
   if (ieData.encryptionMethods == IAX2IeEncryption::encryptAes128) {
-    PTRACE(3, "Processor\tEnable AES 128 encryption");
+    PTRACE(4, "Processor\tEnable AES 128 encryption");
     encryption.SetEncryptionOn();
     reply->AppendIe(new IAX2IeEncryption);
   }
@@ -372,8 +375,8 @@ BOOL IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & passwor
 
 void IAX2Processor::SendAckFrame(IAX2FullFrame *inReplyTo)
 {
-  PTRACE(3, "Processor\tSend an ack frame in reply" );
-  PTRACE(3, "Processor\tIn reply to " << *inReplyTo);
+  PTRACE(4, "Processor\tSend an ack frame in reply" );
+  PTRACE(4, "Processor\tIn reply to " << *inReplyTo);
   
   //callIrrelevant is used because if a call ends we still want the remote
   //endpoint to get the acknowledgment of the call ending!
@@ -386,8 +389,8 @@ void IAX2Processor::SendAckFrame(IAX2FullFrame *inReplyTo)
 
 void IAX2Processor::SendUnsupportedFrame(IAX2FullFrame *inReplyTo)
 {
-  PTRACE(3, "Processor\tSend an unsupported frame in reply" );
-  PTRACE(3, "Processor\tIn reply to " << *inReplyTo);
+  PTRACE(4, "Processor\tSend an unsupported frame in reply" );
+  PTRACE(4, "Processor\tIn reply to " << *inReplyTo);
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdUnsupport, inReplyTo, 
     IAX2FullFrame::callIrrelevant);
@@ -422,7 +425,7 @@ BOOL IAX2Processor::ProcessCommonNetworkFrame(IAX2FullFrameProtocol * src)
 
 void IAX2Processor::ProcessIaxCmdPing(IAX2FullFrameProtocol *src)
 {
-  PTRACE(3, "ProcessIaxCmdPing(IAX2FullFrameProtocol *src)");
+  PTRACE(4, "ProcessIaxCmdPing(IAX2FullFrameProtocol *src)");
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdPong, src, IAX2FullFrame::callIrrelevant);
   TransmitFrameToRemoteEndpoint(f);
 }
@@ -430,24 +433,24 @@ void IAX2Processor::ProcessIaxCmdPing(IAX2FullFrameProtocol *src)
 void IAX2Processor::ProcessIaxCmdPong(IAX2FullFrameProtocol *src)
 {
   SendAckFrame(src);  
-  PTRACE(3, "ProcessIaxCmdPong(IAX2FullFrameProtocol *src)");
+  PTRACE(4, "ProcessIaxCmdPong(IAX2FullFrameProtocol *src)");
 }
 
 void IAX2Processor::ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src)
 {
-  PTRACE(3, "ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src)");
+  PTRACE(4, "ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src)");
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdLagRp, src, IAX2FullFrame::callIrrelevant);
   TransmitFrameToRemoteEndpoint(f);
 }
 
 void IAX2Processor::ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)
 {
-  PTRACE(3, "ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)");
+  PTRACE(4, "ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)");
   SendAckFrame(src);
-  PTRACE(3, "Process\tRound trip lag time is " << (IAX2Frame::CalcTimeStamp(callStartTick) - src->GetTimeStamp()));
+  PTRACE(4, "Process\tRound trip lag time is " << (IAX2Frame::CalcTimeStamp(callStartTick) - src->GetTimeStamp()));
 }
 
 void IAX2Processor::ProcessIaxCmdVnak(IAX2FullFrameProtocol * /*src*/)
 {
-  PTRACE(1, "Frames recieved out of order.  We should resend them but this is not implemented");
+  PTRACE(3, "Frames recieved out of order.  We should resend them but this is not implemented");
 }
