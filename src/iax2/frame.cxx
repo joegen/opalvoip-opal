@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.14  2007/01/08 04:06:58  dereksmithies
+ *  Modify logging level, and improve the comments.
+ *
  *  Revision 1.13  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -267,7 +270,7 @@ BOOL IAX2Frame::ProcessNetworkPacket()
 {
   /*We are guaranteed to have a packet > 4 bytes in size */
   PINDEX a = 0;
-  PTRACE(3, "Process Network Packet of " << data.GetSize() << " bytes");
+  PTRACE(5, "Process Network Packet of " << data.GetSize() << " bytes");
   Read2Bytes(a);
   remote.SetSourceCallNumber(a & 0x7fff);
   PTRACE(6, "Source call number is " << (a & 0x7fff));
@@ -278,7 +281,7 @@ BOOL IAX2Frame::ProcessNetworkPacket()
     isFullFrame = TRUE;
     Read2Bytes(a);
     remote.SetDestCallNumber(a & 0x7fff);
-    PTRACE(3, "Dest call number is " << a);
+    PTRACE(6, "Dest call number is " << a);
     PTRACE(6, "Have a full frame of (as yet) unknown type ");
     return TRUE;
   }
@@ -289,6 +292,7 @@ BOOL IAX2Frame::ProcessNetworkPacket()
     Read2Bytes(b);
     remote.SetSourceCallNumber(b);
     BuildConnectionTokenId();
+    return TRUE;
   }
 
   isAudio = TRUE;
@@ -299,7 +303,7 @@ BOOL IAX2Frame::ProcessNetworkPacket()
 void IAX2Frame::BuildConnectionTokenId()
 {
   connectionToken = PString("iax2:") + remote.RemoteAddress().AsString() + PString("-") + PString(remote.SourceCallNumber());
-  PTRACE(3, "This frame belongs to connection \"" << connectionToken << "\"");
+  PTRACE(6, "This frame belongs to connection \"" << connectionToken << "\"");
 }
 
 void IAX2Frame::PrintOn(ostream & strm) const

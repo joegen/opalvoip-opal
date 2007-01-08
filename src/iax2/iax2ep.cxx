@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.18  2007/01/08 04:06:58  dereksmithies
+ * Modify logging level, and improve the comments.
+ *
  * Revision 1.17  2007/01/08 01:26:22  dereksmithies
  * Get it to make an iax2 call correctly.
  * Addjust some PTRACE levels.
@@ -576,9 +579,10 @@ BOOL IAX2EndPoint::ProcessInMatchingProcessor(IAX2Frame *f)
 
 //The receiving thread has finished reading a frame, and has droppped it here.
 //At this stage, we do not know the frame type. We just know if it is full or mini.
+//The frame has not been acknowledged, or replied to.
 void IAX2EndPoint::IncomingEthernetFrame(IAX2Frame *frame)
 {
-  PTRACE(3, "IAXEp\tEthernet Frame received from Receiver " << frame->IdString());
+  PTRACE(5, "IAXEp\tEthernet Frame received from Receiver " << frame->IdString());
   packetsReadFromEthernet.AddNewFrame(frame);
   incomingFrameHandler.ProcessList();
 }
@@ -593,7 +597,7 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
     }
 
     PString idString = f->IdString();
-    PTRACE(3, "Distribution\tNow try to find a home for " << idString);
+    PTRACE(5, "Distribution\tNow try to find a home for " << idString);
     if (ProcessInMatchingProcessor(f)) {
       continue;
     }
