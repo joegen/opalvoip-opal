@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.17  2007/01/08 01:26:22  dereksmithies
+ * Get it to make an iax2 call correctly.
+ * Addjust some PTRACE levels.
+ *
  * Revision 1.16  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
@@ -413,16 +417,12 @@ BOOL IAX2EndPoint::MakeConnection(
 				 OpalCall & call,
 				 const PString & rParty, 
 				 void * userData,
-   unsigned int /*options*/)
+				 unsigned int /*options*/)
 {
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
-  PTRACE(3, "IaxEp\tParty A=\"" << call.GetPartyA() << "\"  and party B=\"" <<  call.GetPartyB() << "\"");
+  PTRACE(4, "IaxEp\tParty A=\"" << call.GetPartyA() << "\"  and party B=\"" <<  call.GetPartyB() << "\"");
 
-  if (!call.GetPartyA().IsEmpty()) {
-     PTRACE(3, "IaxEp\tWe are receving a call");
-     return TRUE;
-  }
   
   PStringList remoteInfo = DissectRemoteParty(rParty);
   if(remoteInfo[protoIndex] != PString("iax2"))
@@ -430,7 +430,7 @@ BOOL IAX2EndPoint::MakeConnection(
 
   PString remotePartyName = rParty.Mid(5);    
 
-  PTRACE(3, "OpalMan\tNow do dns resolution of " << remoteInfo[addressIndex] << " for an iax2 call");
+  PTRACE(4, "OpalMan\tNow do dns resolution of " << remoteInfo[addressIndex] << " for an iax2 call");
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(remoteInfo[addressIndex], ip)) {
     PTRACE(3, "Could not make a iax2 call to " << remoteInfo[addressIndex] << " as IP resolution failed");
@@ -468,7 +468,7 @@ BOOL IAX2EndPoint::MakeConnection(
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
   // the A-party thread.
-  if (call.GetConnection(0) == (OpalConnection*)connection)
+  if (call.GetConnection(0) == (OpalConnection*)connection) 
     connection->SetUpConnection();
 
   return TRUE;
