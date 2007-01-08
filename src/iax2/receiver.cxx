@@ -26,6 +26,9 @@
  *
  *
  *  $Log: receiver.cxx,v $
+ *  Revision 1.5  2007/01/08 04:06:58  dereksmithies
+ *  Modify logging level, and improve the comments.
+ *
  *  Revision 1.4  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -66,14 +69,14 @@ IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   keepGoing = TRUE;
   fromNetworkFrames.Initialise();
   
-  PTRACE(3, "IAX Rx\tListen on socket " << sock);
-  PTRACE(3, "IAX Rx\tStart Thread");
+  PTRACE(5, "IAX Rx\tListen on socket " << sock);
+  PTRACE(5, "IAX Rx\tStart Thread");
   Resume();
 }
 
 IAX2Receiver::~IAX2Receiver()
 {
-  PTRACE(3, "End receiver thread");
+  PTRACE(5, "End receiver thread");
   keepGoing = FALSE;
   
   PIPSocket::Address addr;
@@ -82,7 +85,7 @@ IAX2Receiver::~IAX2Receiver()
   sock.Close();   //This kills the reading of packets from the socket, and activates receiver thread.
   
   if (WaitForTermination(1000))
-    PTRACE(1, "IAX Rx\tHas Terminated just FINE");
+    PTRACE(5, "IAX Rx\tHas Terminated just FINE");
   else
     PTRACE(1, "IAX Rx\tERROR Did not terminate");
   
@@ -98,10 +101,10 @@ void IAX2Receiver::Main()
     BOOL res = ReadNetworkSocket();
     
     if (res == FALSE) {
-      PTRACE(3, "IAX Rx\tNetwork socket has closed down, so exit");
+      PTRACE(3, "IAX2 Rx\tNetwork socket has closed down, so exit");
       break;            /*Network socket has closed down*/
     }
-    PTRACE(3, "IAX Rx\tHave successfully read a packet from the network");
+    PTRACE(6, "IAX2 Rx\tHave successfully read a packet from the network");
     
     for(;;) {
       IAX2Frame *frame     = (IAX2Frame *)fromNetworkFrames.GetLastFrame();
@@ -111,14 +114,14 @@ void IAX2Receiver::Main()
       endpoint.IncomingEthernetFrame(frame);
     }
   }
-  PTRACE(3, "End of receiver thread ");
+  PTRACE(4, "IAX2 Rx\tEnd of IAX2 receiver thread ");
 }
 
 
 void IAX2Receiver::AddNewReceivedFrame(IAX2Frame *newFrame)
 {
   /**This method may split a frame up (if it is trunked) */
-  PTRACE(3, "IAX Rx\tAdd frame to list of received frames " << newFrame->IdString());
+  PTRACE(6, "IAX Rx\tAdd frame to list of received frames " << newFrame->IdString());
   fromNetworkFrames.AddNewFrame(newFrame);
 }
 
@@ -126,7 +129,7 @@ BOOL IAX2Receiver::ReadNetworkSocket()
 {
   IAX2Frame *frame = new IAX2Frame(endpoint);
   
-  PTRACE(3, "IAX Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
+  PTRACE(5, "IAX Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
   BOOL res = frame->ReadNetworkPacket(sock);
   
   if (res == FALSE) {
@@ -144,6 +147,14 @@ BOOL IAX2Receiver::ReadNetworkSocket()
     return TRUE;
   }
   
+  /* At this point, the IAX2Connection instance this frame belongs to is
+     known, and stored in the frame structure. Consequently, the frame is
+     ready to be passed on to the endpoint for distribution, and is passed on
+     to the endpoint.IncomingEthernetFrame method. 
+
+     We use the "fromNetworkFrames" list as a buffer, to ensure the receive
+     thread is not held up in the distribution of this frame. Consequently,
+     the chance of dropping a frame is less.*/
   AddNewReceivedFrame(frame);
   
   return TRUE;
