@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.19  2007/01/09 03:32:23  dereksmithies
+ * Tidy up and improve the close down process - make it more robust.
+ * Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  * Revision 1.18  2007/01/08 04:06:58  dereksmithies
  * Modify logging level, and improve the comments.
  *
@@ -140,7 +144,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
 
 IAX2EndPoint::~IAX2EndPoint()
 {
-  PTRACE(3, "Endpoint\tIaxEndPoint destructor. Terminate the  transmitter, receiver, and incoming frame handler.");
+  PTRACE(5, "Endpoint\tIaxEndPoint destructor. Terminate the  transmitter, receiver, and incoming frame handler.");
   
   //contents of this array are automatically shifted when removed
   //so we only need to loop through the first element until all
@@ -152,9 +156,27 @@ IAX2EndPoint::~IAX2EndPoint()
     delete regProcessor;
   }
 
+  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the different registration processeors");
+
   incomingFrameHandler.Terminate();
   incomingFrameHandler.WaitForTermination();
   packetsReadFromEthernet.AllowDeleteObjects();  
+  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the incoming frame handler");
+  
+  transmitter->Terminate();
+  receiver->Terminate();
+  transmitter->WaitForTermination();
+  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 transmitter");
+  receiver->WaitForTermination();
+  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 receiver");
+
+  if (specialPacketHandler != NULL) {
+    specialPacketHandler->Terminate();
+    specialPacketHandler->WaitForTermination();
+    delete specialPacketHandler;
+    PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 special packet handler");
+  }
+  specialPacketHandler = NULL;
   
   if (transmitter != NULL)
     delete transmitter;
@@ -164,13 +186,7 @@ IAX2EndPoint::~IAX2EndPoint()
   if (sock != NULL)
     delete sock; 
   
-  if (specialPacketHandler != NULL) {
-    specialPacketHandler->Resume();
-    specialPacketHandler->Terminate();
-    specialPacketHandler->WaitForTermination();
-    delete specialPacketHandler;
-  }
-  specialPacketHandler = NULL;
+
 
   PTRACE(3, "Endpoint\tDESTRUCTOR of IAX2 endpoint has Finished.");  
 }
@@ -248,36 +264,41 @@ void IAX2EndPoint::OnEstablished(OpalConnection & con)
   OpalEndPoint::OnEstablished(con);
 }
 
-int IAX2EndPoint::NextSrcCallNumber(IAX2Processor * processor)
+PINDEX IAX2EndPoint::NextSrcCallNumber(IAX2Processor * processor)
 {
-  PWaitAndSignal m(callNumbLock);
-  PWaitAndSignal m2(srcProcessorsMutex);
-  
-  PINDEX callno = callnumbs++;
-  PINDEX numsChecked = 0;
-  
-  if (callnumbs > 32766)
-    callnumbs = 1;
+  PINDEX callno;
+  PINDEX numsChecked;
+  {
+    PWaitAndSignal m(callNumbLock);
     
-  while (srcProcessors.Contains(callno)) {
+    callno = callnumbs++;
+    numsChecked = 0;
     
-    //check if the call numbers are full if so return an error
-    if (numsChecked > 32766) {
-      cerr << "All call numbers have been taken";
-      PTRACE(0, "All call numbers have been taken");
-      return -1;
-    }
-      
-    //overflow if over the largest call number
-    if (callno > 32766)
-      callno = 1;
-    
-    callno++;
-    numsChecked++;
+    if (callnumbs > 32766)
+      callnumbs = 1;    
   }
-    
-  srcProcessors.SetAt(callno, processor);
-  
+  {
+    PWaitAndSignal m2(srcProcessorsMutex);
+   
+    while (srcProcessors.Contains(callno)) {
+      
+      //check if the call numbers are full if so return an error
+      if (numsChecked > 32766) {
+	cerr << "All call numbers have been taken";
+	PTRACE(0, "All call numbers have been taken");
+	return P_MAX_INDEX;
+      }
+      
+      //overflow if over the largest call number
+      if (callno > 32766)
+	callno = 1;
+      
+      callno++;
+      numsChecked++;
+    }
+
+    srcProcessors.SetAt(callno, processor);
+  }  
   return callno;
 }
 
@@ -379,12 +400,12 @@ PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
 
  finishedDissection:
 
-  PTRACE(3, "Opal\t call protocol          " << res[protoIndex]);
-  PTRACE(3, "Opal\t destination user       " << res[userIndex]);
-  PTRACE(3, "Opal\t transport to use       " << res[transportIndex]);
-  PTRACE(3, "Opal\t destination address    " << res[addressIndex]);
-  PTRACE(3, "Opal\t destination extension  " << res[extensionIndex]);
-  PTRACE(3, "Opal\t destination context    " << res[contextIndex]);
+  PTRACE(4, "Opal\t call protocol          " << res[protoIndex]);
+  PTRACE(4, "Opal\t destination user       " << res[userIndex]);
+  PTRACE(4, "Opal\t transport to use       " << res[transportIndex]);
+  PTRACE(4, "Opal\t destination address    " << res[addressIndex]);
+  PTRACE(4, "Opal\t destination extension  " << res[extensionIndex]);
+  PTRACE(4, "Opal\t destination context    " << res[contextIndex]);
 
   return res;
 }
@@ -518,7 +539,7 @@ BOOL IAX2EndPoint::Initialise()
   callnumbs = PRandom::Number() % 32000;
   
   sock = new PUDPSocket(ListenPortNumber());
-  PTRACE(3, "IAX2EndPoint\tCreate Socket " << sock->GetPort());
+  PTRACE(4, "IAX2EndPoint\tCreate Socket " << sock->GetPort());
   
   if (!sock->Listen(INADDR_ANY, 0, ListenPortNumber())) {
     PTRACE(3, "Receiver\tFailed to listen for incoming connections on " << ListenPortNumber());

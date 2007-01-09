@@ -26,6 +26,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: receiver.h,v $
+ *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
+ *  Tidy up and improve the close down process - make it more robust.
+ *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  *  Revision 1.3  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -82,6 +86,12 @@ class IAX2Receiver : public PThread
   //@{
   /*The method which the receiver thread invokes*/
   virtual void Main();
+
+  /**Close down this thread in a civilised fashion, by sending an empty packet
+     to the PUDPSocket of this protocol. The Receiver will receive this
+     packet, and check the close down flag, and so realise it is time to close
+     down. */
+  virtual void Terminate();
   
   /**Sit in here, waiting for data on the socket*/
   BOOL ReadNetworkSocket();

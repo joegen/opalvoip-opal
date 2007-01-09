@@ -26,6 +26,10 @@
  *
  *
  *  $Log: receiver.cxx,v $
+ *  Revision 1.6  2007/01/09 03:32:23  dereksmithies
+ *  Tidy up and improve the close down process - make it more robust.
+ *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  *  Revision 1.5  2007/01/08 04:06:58  dereksmithies
  *  Modify logging level, and improve the comments.
  *
@@ -76,6 +80,17 @@ IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
 
 IAX2Receiver::~IAX2Receiver()
 {
+  Terminate();
+  WaitForTermination();
+  
+  fromNetworkFrames.AllowDeleteObjects();
+
+  PTRACE(4, "IAX Rx\tDestructor finished");
+
+}
+
+void IAX2Receiver::Terminate()
+{
   PTRACE(5, "End receiver thread");
   keepGoing = FALSE;
   
@@ -83,14 +98,6 @@ IAX2Receiver::~IAX2Receiver()
   sock.GetLocalAddress(addr);
   sock.WriteTo("", 1, addr, sock.GetPort());
   sock.Close();   //This kills the reading of packets from the socket, and activates receiver thread.
-  
-  if (WaitForTermination(1000))
-    PTRACE(5, "IAX Rx\tHas Terminated just FINE");
-  else
-    PTRACE(1, "IAX Rx\tERROR Did not terminate");
-  
-  fromNetworkFrames.AllowDeleteObjects();
-  PTRACE(3, "IAX Rx\tDestructor finished");
 }
 
 void IAX2Receiver::Main()
@@ -100,7 +107,7 @@ void IAX2Receiver::Main()
   while (keepGoing) {
     BOOL res = ReadNetworkSocket();
     
-    if (res == FALSE) {
+    if ((res == FALSE) || (keepGoing == FALSE)) {
       PTRACE(3, "IAX2 Rx\tNetwork socket has closed down, so exit");
       break;            /*Network socket has closed down*/
     }

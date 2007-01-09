@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.8  2007/01/09 03:32:23  dereksmithies
+ *  Tidy up and improve the close down process - make it more robust.
+ *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  *  Revision 1.7  2006/12/18 03:18:41  csoutheren
  *  Messy but simple fixes
  *    - Add access to SIP REGISTER timeout
@@ -215,10 +219,12 @@ class IAX2EndPoint : public OpalEndPoint
   BOOL ConectionForFrameIsAlive(IAX2Frame *f);
   
   /**Request a new source call number, one that is different to 
-     all other source call numbers for this program.  This method
-     will return -1 if there is no available call number.
+     all other source call numbers for this program.  
+
+     @return P_MAX_INDEX  if there is no available call number,
+     or return a unique valid call number.
      */
-  int NextSrcCallNumber(IAX2Processor * processor);
+  PINDEX NextSrcCallNumber(IAX2Processor * processor);
   
   /**Release a src call so it can be used by new processors so no
      packets get directed there.*/

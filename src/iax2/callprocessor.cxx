@@ -27,6 +27,10 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.5  2007/01/09 03:32:23  dereksmithies
+ * Tidy up and improve the close down process - make it more robust.
+ * Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  * Revision 1.4  2006/09/13 00:20:12  csoutheren
  * Fixed warnings under VS.net
  *
@@ -171,7 +175,14 @@ void IAX2CallProcessor::AssignConnection(IAX2Connection * _con)
 {
   con = _con;
 
-  remote.SetSourceCallNumber(con->GetEndPoint().NextSrcCallNumber(this));
+  PINDEX newCallNumber = con->GetEndPoint().NextSrcCallNumber(this);
+  if (newCallNumber == P_MAX_INDEX) {
+      /* This call cannot be started, cause we could not get a 
+	 src call number to use.                               */
+      return;
+  }
+
+  remote.SetSourceCallNumber(newCallNumber);
   
   Resume();
 }
@@ -1357,7 +1368,6 @@ void IAX2CallProcessor::DoStatusCheck()
 void IAX2CallProcessor::OnNoResponseTimeout()
 {
   PTRACE(3, "hangup now, as we have had no response from the remote node in the specified time ");
-  cout << "no answer in specified time period. End this call " << endl;
   
   con->ClearCall(OpalConnection::EndedByNoAnswer);
 }

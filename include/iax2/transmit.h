@@ -27,6 +27,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: transmit.h,v $
+ *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
+ *  Tidy up and improve the close down process - make it more robust.
+ *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  *  Revision 1.3  2006/06/16 01:47:08  dereksmithies
  *  Get the OnHold features of IAX2 to work correctly.
  *  Thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
@@ -87,6 +91,9 @@ class IAX2Transmit : public PThread
   /**@name Worker methods*/
   //@{
   
+  /**Cause this thread to end now */
+  virtual void Terminate();
+
   /**Queue a frame for delivery. This is called by a connection, and then
      the transmit thread is woken up.
   */
