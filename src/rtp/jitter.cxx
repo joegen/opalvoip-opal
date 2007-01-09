@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2014  2006/11/20 03:37:13  csoutheren
+ * Revision 1.2015  2007/01/09 23:04:41  dereksmithies
+ * Abstract out the jitterbuffer. This enables the use of the jitter buffer
+ * in quite different circumstances (such as iax2 and test programs).
+ *
+ * Revision 2.13  2006/11/20 03:37:13  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
  * Revision 2.12  2006/06/27 12:08:01  csoutheren
@@ -299,20 +303,17 @@ class RTP_AggregatedHandle : public PAggregatedHandle
 
 /////////////////////////////////////////////////////////////////////////////
 
-RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
-                                   unsigned minJitterDelay,
+OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
                                    unsigned maxJitterDelay,
                                    unsigned time,
                                    PINDEX stackSize)
-  : 
-    session(sess), jitterThread(NULL), jitterStackSize(stackSize)
+  : jitterThread(NULL), jitterStackSize(stackSize)
 {
   // Jitter buffer is a queue of frames waiting for playback, a list of
   // free frames, and a couple of place holders for the frame that is
   // currently beeing read from the RTP transport or written to the codec.
 
   oldestFrame = newestFrame = currentWriteFrame = NULL;
-
   // Calculate the maximum amount of timestamp units for the jitter buffer
   minJitterTime = minJitterDelay;
   maxJitterTime = maxJitterDelay;
@@ -356,11 +357,7 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
     freeFrames = frame;
   }
 
-  PTRACE(2, "RTP\tJitter buffer created:"
-            " size=" << bufferSize <<
-            " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
-            " (" << (currentJitterTime/timeUnits) << "ms)"
-            " obj=" << this);
+  PTRACE(2, "RTP\tOpal jitter buffer created:" << *this << " obj=" << this);
 
 #if PTRACING && !defined(NO_ANALYSER)
   analyser = new RTP_JitterBufferAnalyser;
@@ -374,7 +371,7 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
 }
 
 
-RTP_JitterBuffer::~RTP_JitterBuffer()
+OpalJitterBuffer::~OpalJitterBuffer()
 {
   shuttingDown = TRUE;
 
@@ -418,8 +415,14 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 #endif
 }
 
+void OpalJitterBuffer::PrintOn(ostream & strm) const
+{
+    strm << " size=" << bufferSize 
+	 << " delay=" << (minJitterTime/timeUnits) << '-' << (maxJitterTime/timeUnits) << " ms  /" 
+	 << currentJitterTime << " (" << (currentJitterTime/timeUnits) << "ms)";
+}
 
-void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay)
+void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay)
 {
   if (shuttingDown)
     PAssert(WaitForTermination(10000), "Jitter buffer thread did not terminate");
@@ -454,10 +457,7 @@ void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
       shuttingDown = FALSE;
       preBuffering = TRUE;
 
-      PTRACE(2, "RTP\tJitter buffer restarted:"
-                " size=" << bufferSize <<
-                " delay=" << minJitterTime << '-' << maxJitterTime << '/' << currentJitterTime <<
-                " (" << (currentJitterTime/timeUnits) << "ms)");
+      PTRACE(2, "RTP\tJitter buffer restarted:" << *this);
       jitterThread->Restart();
     }
   }
@@ -465,7 +465,7 @@ void RTP_JitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   bufferMutex.Signal();
 }
 
-void RTP_JitterBuffer::Resume(PHandleAggregator * 
+void OpalJitterBuffer::Resume(PHandleAggregator * 
 #if OPAL_RTP_AGGREGATE
                               aggregator
 #endif
@@ -485,9 +485,9 @@ void RTP_JitterBuffer::Resume(PHandleAggregator *
   jitterThread->Resume();
 }
 
-void RTP_JitterBuffer::JitterThreadMain(PThread &, INT)
+void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
 {
-  RTP_JitterBuffer::Entry * currentReadFrame;
+  OpalJitterBuffer::Entry * currentReadFrame;
   BOOL markerWarning;
 
   PTRACE(3, "RTP\tJitter RTP receive thread started: " << this);
@@ -508,19 +508,19 @@ void RTP_JitterBuffer::JitterThreadMain(PThread &, INT)
   PTRACE(3, "RTP\tJitter RTP receive thread finished: " << this);
 }
 
-//void RTP_JitterBuffer::Main()
-BOOL RTP_JitterBuffer::Init(Entry * & /*currentReadFrame*/, BOOL & markerWarning)
+//void OpalJitterBuffer::Main()
+BOOL OpalJitterBuffer::Init(Entry * & /*currentReadFrame*/, BOOL & markerWarning)
 {
   bufferMutex.Wait();
   markerWarning = FALSE;
   return TRUE;
 }
 
-void RTP_JitterBuffer::DeInit(Entry * & /*currentReadFrame*/, BOOL & /*markerWarning*/)
+void OpalJitterBuffer::DeInit(Entry * & /*currentReadFrame*/, BOOL & /*markerWarning*/)
 {
 }
 
-BOOL RTP_JitterBuffer::PreRead(RTP_JitterBuffer::Entry * & currentReadFrame, BOOL & /*markerWarning*/)
+BOOL OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL & /*markerWarning*/)
 {
   // Get the next free frame available for use for reading from the RTP
   // transport. Place it into a parking spot.
@@ -566,11 +566,11 @@ BOOL RTP_JitterBuffer::PreRead(RTP_JitterBuffer::Entry * & currentReadFrame, BOO
   return TRUE;
 }
 
-BOOL RTP_JitterBuffer::OnRead(RTP_JitterBuffer::Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop)
+BOOL OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop)
 {
   do {
     // Keep reading from the RTP transport frames
-    if (!session.ReadData(*currentReadFrame, loop)) {
+    if (!OnReadPacket(*currentReadFrame, loop)) {
       if (currentReadFrame != NULL)
         delete currentReadFrame;  // Destructor won't delete this one, so do it here.
       shuttingDown = TRUE; // Flag to stop the reading side thread
@@ -644,7 +644,7 @@ BOOL RTP_JitterBuffer::OnRead(RTP_JitterBuffer::Entry * & currentReadFrame, BOOL
 }
 
 
-BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
+BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 {
   if (shuttingDown)
     return FALSE;
@@ -963,6 +963,32 @@ BOOL RTP_JitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
   frame = *currentWriteFrame;
   return TRUE;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
+                                   unsigned minJitterDelay,
+                                   unsigned maxJitterDelay,
+                                   unsigned time,
+                                   PINDEX stackSize)
+    : OpalJitterBuffer(minJitterDelay, maxJitterDelay, time, stackSize),
+      session(sess)
+{
+    PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
+}
+
+BOOL RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
+				    BOOL loop)
+{
+    BOOL success = session.ReadData(frame, loop);
+    PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
+    return success;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 
 #if PTRACING && !defined(NO_ANALYSER)
