@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2129  2006/12/20 04:40:59  csoutheren
+ * Revision 1.2130  2007/01/09 00:59:53  csoutheren
+ * Fix problem with sense of NAT detection
+ *
+ * Revision 2.128  2006/12/20 04:40:59  csoutheren
  * Fixed typo in last checkin
  *
  * Revision 2.127  2006/12/19 07:21:49  csoutheren
@@ -971,7 +974,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       PIPSocket::Address ourAddress = localAddress;
       endpoint.TranslateTCPAddress(localAddress, sigAddr);
 
-      if (localAddress == ourAddress) {
+      if (localAddress != ourAddress) {
         PTRACE(3, "H225\tSource signal address " << srcAddr << " and TCP peer address " << sigAddr << " indicate remote endpoint is behind NAT");
         remoteIsNAT = TRUE;
       }
