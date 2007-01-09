@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2011  2006/11/20 07:27:47  csoutheren
+ * Revision 1.2012  2007/01/09 23:04:41  dereksmithies
+ * Abstract out the jitterbuffer. This enables the use of the jitter buffer
+ * in quite different circumstances (such as iax2 and test programs).
+ *
+ * Revision 2.10  2006/11/20 07:27:47  csoutheren
  * Fix compilation problem on Linux
  *
  * Revision 2.9  2006/11/20 03:37:12  csoutheren
@@ -118,27 +122,47 @@
 
 #include <rtp/rtp.h>
 
+class RTP_JitterBuffer;
 class RTP_JitterBufferAnalyser;
 
-///////////////////////////////////////////////////////////////////////////////
 
-class RTP_JitterBuffer : public PObject
+///////////////////////////////////////////////////////////////////////////////
+/**This is an Abstract jitter buffer, which can be used simply in any
+   application. The user is required to use a descendant of this class, and
+   provide a "OnReadPacket" method, so that network packets can be placed in
+   this class instance */
+class OpalJitterBuffer : public PObject
 {
-  PCLASSINFO(RTP_JitterBuffer, PObject);
+  PCLASSINFO(OpalJitterBuffer, PObject);
 
   public:
 #if OPAL_RTP_AGGREGATE
     friend class RTP_AggregatedHandle;
 #endif
-
-    RTP_JitterBuffer(
-      RTP_Session & session,   ///<  Associated RTP session tor ead data from
+    /**Constructor for this jitter buffer. The size of this buffer can be
+       altered later with the SetDelay method */
+    OpalJitterBuffer(
       unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
       unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
       unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
       PINDEX stackSize = 30000 ///<  Stack size for jitter thread
     );
-    ~RTP_JitterBuffer();
+    
+    /**Destructor, which closes this down and deletes the internal list of frames */
+    ~OpalJitterBuffer();
+
+    /**Report the statistics for this jitter instance */
+    void PrintOn(ostream & strm  ) const;
+
+    /**This method is where this OpalJitterBuffer collects data from the
+       outside world.  A descendant class of OpalJitterBuffer will override
+       this method
+
+    @return TRUE on successful read, FALSE on faulty read. */
+    virtual BOOL OnReadPacket    (
+	RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+	BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+	) = 0;
 
 //    PINDEX GetSize() const { return bufferSize; }
     /**Set the maximum delay the jitter buffer will operate to.
@@ -188,7 +212,7 @@ class RTP_JitterBuffer : public PObject
       */
     void Resume(PHandleAggregator * aggregator = NULL);
 
-    PDECLARE_NOTIFIER(PThread, RTP_JitterBuffer, JitterThreadMain);
+    PDECLARE_NOTIFIER(PThread, OpalJitterBuffer, JitterThreadMain);
 
     BOOL WaitForTermination(const PTimeInterval & t)
     { return (jitterThread == NULL) ? TRUE : jitterThread->WaitForTermination(t); }
@@ -202,7 +226,6 @@ class RTP_JitterBuffer : public PObject
         PTimeInterval tick;
     };
 
-    RTP_Session & session;
     PINDEX        bufferSize;
     DWORD         minJitterTime;
     DWORD         maxJitterTime;
@@ -246,6 +269,38 @@ class RTP_JitterBuffer : public PObject
     BOOL OnRead(Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop);
     void DeInit(Entry * & currentReadFrame, BOOL & markerWarning);
 };
+
+/////////////////////////////////////////////////////////////////////////////
+/**A descendant of the OpalJitterBuffer that reads RTP_DataFrame instances
+   from the RTP_Sessions */
+class RTP_JitterBuffer : public OpalJitterBuffer
+{
+    PCLASSINFO(RTP_JitterBuffer, OpalJitterBuffer);
+
+ public:
+        RTP_JitterBuffer(
+	    RTP_Session & session,   ///<  Associated RTP session tor ead data from
+	    unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
+	    unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
+	    unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
+	    PINDEX stackSize = 30000 ///<  Stack size for jitter thread
+	    );
+	
+	
+    /**This class instance collects data from the outside world in this
+       method.
+
+    @return TRUE on successful read, FALSE on faulty read. */
+    virtual BOOL OnReadPacket    (
+	RTP_DataFrame & frame,  ///<  Frame read from the RTP session
+	BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+	) ;
+
+ protected:
+	/**This class extracts data from the outside world by reading from this session variable */
+   RTP_Session & session;
+};
+
 
 
 #endif // __OPAL_JITTER_H
