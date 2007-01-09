@@ -305,8 +305,8 @@ void IAX2RegProcessor::ResetCall()
   //our source call number and the sequence numbers. 
   endpoint.ReleaseSrcCallNumber(this);
   
-  int callno = endpoint.NextSrcCallNumber(this);
-  if (callno != -1)
+  PINDEX callno = endpoint.NextSrcCallNumber(this);
+  if (callno != P_MAX_INDEX)
     remote.SetSourceCallNumber(callno);
     
   sequence.ZeroAllValues();

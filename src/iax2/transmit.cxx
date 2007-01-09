@@ -26,6 +26,10 @@
  *
  *
  *  $Log: transmit.cxx,v $
+ *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
+ *  Tidy up and improve the close down process - make it more robust.
+ *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  *  Revision 1.3  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -70,19 +74,16 @@ IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
 
 IAX2Transmit::~IAX2Transmit()
 {
-  keepGoing = FALSE;
-  activate.Signal();
-  
-  if(WaitForTermination(1000))
-    PTRACE(1, "Has Terminated just FINE");
-  else
-    PTRACE(1, "ERROR Did not terminate");
-  
   sendNowFrames.AllowDeleteObjects();
   ackingFrames.AllowDeleteObjects();
-  PTRACE(3,"Destructor finished");
+  PTRACE(5, "IAX2Transmit\tDestructor finished");
 }
 
+void IAX2Transmit::Terminate()
+{
+  keepGoing = FALSE;
+  activate.Signal();
+}
 
 void IAX2Transmit::SendFrame(IAX2Frame *newFrame)
 {
@@ -108,14 +109,16 @@ void IAX2Transmit::Main()
   SetThreadName("IAX2Transmit");
   while(keepGoing) {
     activate.Wait();
+    
+    if (!keepGoing)
+      break;
 
     ReportLists();
     ProcessAckingList();
     
     ProcessSendList();
   }
-  PTRACE(3, " End of the Transmit thread.");
-  
+  PTRACE(3, " End of the Transmit thread.");  
 }
 
 void IAX2Transmit::ProcessAckingList()
