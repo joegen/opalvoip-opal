@@ -29,6 +29,10 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.21  2007/01/09 03:32:23  dereksmithies
+ * Tidy up and improve the close down process - make it more robust.
+ * Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
+ *
  * Revision 1.20  2007/01/08 20:10:48  dereksmithies
  * Lower trace levels statements.
  *
@@ -382,7 +386,7 @@ void IAX2Processor::SendAckFrame(IAX2FullFrame *inReplyTo)
   //endpoint to get the acknowledgment of the call ending!
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdAck, inReplyTo, 
     IAX2FullFrame::callIrrelevant);
-  PTRACE(4, "Swquence for sending is (pre) " << sequence.AsString());
+  PTRACE(4, "Sequence for sending is (pre) " << sequence.AsString());
   TransmitFrameToRemoteEndpoint(f);
   PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
 }
