@@ -27,6 +27,9 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.7  2007/01/10 09:16:55  csoutheren
+ * Allow compilation with video disabled
+ *
  * Revision 1.6  2006/09/11 03:08:50  dereksmithies
  * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  * improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -60,7 +63,10 @@
 #pragma implementation "iax2medstrm.h"
 #endif
 
+#if OPAL_VIDEO
 #include <codec/vidcodec.h>
+#endif
+
 #include <iax2/frame.h>
 #include <iax2/iax2con.h>
 #include <iax2/iax2medstrm.h>

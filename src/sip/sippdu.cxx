@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2116  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2117  2007/01/10 09:16:55  csoutheren
+ * Allow compilation with video disabled
+ *
+ * Revision 2.115  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -2349,9 +2352,11 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
 
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+#if OPAL_VIDEO
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+#endif
   connection.OnCreatingINVITE(*this);
 }
 
@@ -2364,9 +2369,11 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
   rtpSessions = sm;
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+#if OPAL_VIDEO
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+#endif
   connection.OnCreatingINVITE(*this);
 }
 
