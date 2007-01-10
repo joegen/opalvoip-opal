@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2130  2007/01/09 00:59:53  csoutheren
+ * Revision 1.2131  2007/01/10 09:16:55  csoutheren
+ * Allow compilation with video disabled
+ *
+ * Revision 2.129  2007/01/09 00:59:53  csoutheren
  * Fix problem with sense of NAT detection
  *
  * Revision 2.128  2006/12/20 04:40:59  csoutheren
@@ -3498,8 +3501,10 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFormats*/,
                                            unsigned sessionID)
 {
+#if OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
     return FALSE;
+#endif
 
   // Check if we have already got a transmitter running, select one if not
   if ((fastStartState == FastStartDisabled ||
@@ -3607,30 +3612,42 @@ void H323Connection::OnSelectLogicalChannels()
   // Select the first codec that uses the "standard" audio session.
   switch (fastStartState) {
     default : //FastStartDisabled :
+#if OPAL_AUDIO
       SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
+#endif
+#if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
+#endif
       if (endpoint.CanAutoStartTransmitFax())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
       break;
 
     case FastStartInitiate :
+#if OPAL_AUDIO
       SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, TRUE, TRUE);
+#endif
+#if OPAL_VIDEO
       SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
+#endif
       SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
                               endpoint.CanAutoStartTransmitFax(),
                               endpoint.CanAutoStartReceiveFax());
       break;
 
     case FastStartResponse :
+#if OPAL_AUDIO
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
       StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
+#endif
+#if OPAL_VIDEO
       if (endpoint.CanAutoStartTransmitVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
+#endif
       if (endpoint.CanAutoStartTransmitFax())
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveFax())

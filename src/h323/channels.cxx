@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2035  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2036  2007/01/10 09:16:55  csoutheren
+ * Allow compilation with video disabled
+ *
+ * Revision 2.34  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.33  2006/07/24 14:03:40  csoutheren
@@ -594,7 +597,11 @@
 #include <h323/channels.h>
 
 #include <opal/transports.h>
+
+#if OPAL_VIDEO
 #include <codec/vidcodec.h>
+#endif
+
 #include <h323/h323ep.h>
 #include <h323/h323con.h>
 #include <h323/h323rtp.h>
@@ -916,6 +923,7 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
 
   switch (type.GetTag())
   {
+#if OPAL_VIDEO
     case H245_MiscellaneousCommand_type::e_videoFreezePicture :
       mediaStream->ExecuteCommand(OpalVideoFreezePicture());
       break;
@@ -943,15 +951,18 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
     case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
       mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
       break;
+#endif
+    default:
+      break;
   }
 }
 
 
 void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command, INT)
 {
-  H323ControlPDU pdu;
-
+#if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
+    H323ControlPDU pdu;
     const OpalVideoUpdatePicture & updatePicture = (const OpalVideoUpdatePicture &)command;
 
     if (updatePicture.GetNumBlocks() < 0)
@@ -979,7 +990,7 @@ void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command, INT)
     connection.WriteControlPDU(pdu);
     return;
   }
-
+#endif
 }
 
 

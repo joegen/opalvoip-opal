@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2192  2007/01/02 17:28:40  dsandras
+ * Revision 1.2193  2007/01/10 09:16:55  csoutheren
+ * Allow compilation with video disabled
+ *
+ * Revision 2.191  2007/01/02 17:28:40  dsandras
  * Do not create a new RTPSessionManager when authenticating an INVITE, because
  * it will use new UDP ports which is not needed and causes bad behaviors with
  * some broken SIP Proxies. (Ekiga report #359971)
@@ -1338,13 +1341,14 @@ SDPMediaDescription::Direction SIPConnection::GetDirection(unsigned sessionId)
     return SDPMediaDescription::RecvOnly;
   else if (local_hold)
     return SDPMediaDescription::SendOnly;
+#if OPAL_VIDEO
   else if (sessionId == OpalMediaFormat::DefaultVideoSessionID) {
-
     if (endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo())
       return SDPMediaDescription::SendOnly;
     else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
       return SDPMediaDescription::RecvOnly;
   }
+#endif
   
   return SDPMediaDescription::Undefined;
 }
@@ -1579,8 +1583,10 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
 
+#if OPAL_VIDEO
   if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo() && !endpoint.GetManager().CanAutoStartTransmitVideo())
     return FALSE;
+#endif
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
@@ -1627,9 +1633,11 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Audio);
       break;
 
+#if OPAL_VIDEO
     case OpalMediaFormat::DefaultVideoSessionID:
       localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Video);
       break;
+#endif
 
     case OpalMediaFormat::DefaultDataSessionID:
     default:
