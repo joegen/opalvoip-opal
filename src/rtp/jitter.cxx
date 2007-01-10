@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2015  2007/01/09 23:04:41  dereksmithies
+ * Revision 1.2016  2007/01/10 01:47:29  dereksmithies
+ * Fix a close down situation, for those cases when this class is used elsewhere.
+ *
+ * Revision 2.14  2007/01/09 23:04:41  dereksmithies
  * Abstract out the jitterbuffer. This enables the use of the jitter buffer
  * in quite different circumstances (such as iax2 and test programs).
  *
@@ -377,18 +380,21 @@ OpalJitterBuffer::~OpalJitterBuffer()
 
 #if OPAL_RTP_AGGREGATE
   if (jitterThread == NULL) {
-    aggregratedHandle->Remove();
-    delete aggregratedHandle;  
-    aggregratedHandle = NULL;
+      if (aggregatedHandle != NULL) {
+	  aggregratedHandle->Remove();
+	  delete aggregratedHandle;  
+	  aggregratedHandle = NULL;
+      }
   } else 
 #endif
   {
-    PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
-    PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
-    delete jitterThread;
-    jitterThread = NULL;
+      if (jitterThread != NULL) {
+	  PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
+	  PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
+	  delete jitterThread;
+	  jitterThread = NULL;
+      }
   }
-
   bufferMutex.Wait();
 
   // Free up all the memory allocated
