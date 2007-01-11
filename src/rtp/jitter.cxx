@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2016  2007/01/10 01:47:29  dereksmithies
+ * Revision 1.2017  2007/01/11 02:46:01  dereksmithies
+ * Minor reporting issues.
+ *
+ * Revision 2.15  2007/01/10 01:47:29  dereksmithies
  * Fix a close down situation, for those cases when this class is used elsewhere.
  *
  * Revision 2.14  2007/01/09 23:04:41  dereksmithies
@@ -393,6 +396,8 @@ OpalJitterBuffer::~OpalJitterBuffer()
 	  PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
 	  delete jitterThread;
 	  jitterThread = NULL;
+      } else {
+	  PTRACE(3, "RTP\tJitter buffer thread is null, when the OpalJitterBuffer destructor runs");
       }
   }
   bufferMutex.Wait();
@@ -414,11 +419,15 @@ OpalJitterBuffer::~OpalJitterBuffer()
 
   bufferMutex.Signal();
 
+
 #if PTRACING && !defined(NO_ANALYSER)
   PTRACE(5, "Jitter buffer analysis: size=" << bufferSize
          << " time=" << currentJitterTime << '\n' << *analyser);
   delete analyser;
 #endif
+
+  PTRACE(6, "RTP\tFinished destruction of OpalJitterBuffer " << *this);
+
 }
 
 void OpalJitterBuffer::PrintOn(ostream & strm) const
