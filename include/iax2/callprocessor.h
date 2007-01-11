@@ -26,6 +26,10 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.4  2007/01/11 03:02:15  dereksmithies
+ *  Remove the previous audio buffering code, and switch to using the jitter
+ *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  *  Revision 1.3  2006/09/22 00:33:19  csoutheren
  *  Changed PAtomicInteger to BOOL
  *
@@ -140,14 +144,6 @@ class IAX2CallProcessor : public IAX2Processor
      The behaviour at the opal level is pure. Here, the method is defined.
   */
   virtual BOOL SetUpConnection();
-
-  /**A sound packet has been given (by the Receiver thread) to this
-     IAX2CallProcessor class, and queued on the IAX2SoundList structure. The
-     OpalIAX2MediaStream thread will call this method to retrieving the
-     sound packet. The OpalIAX2MediaStream will handle this packet
-     appropriately - eg send to the PC speaker..
-   */
-  IAX2Frame *GetSoundPacketFromNetwork(DWORD minBuffer, DWORD maxBuffer);
 
   /**Return TRUE if the remote info in the frame matches the remote info in this connection */
   BOOL Matches(IAX2Frame *frame) { return remote == (frame->GetRemoteInfo()); }
@@ -471,13 +467,6 @@ class IAX2CallProcessor : public IAX2Processor
   /**Array of sound packets read from the audio device, and is about
      to be transmitted to the remote node */
   IAX2SoundList   soundWaitingForTransmission;
-  
-  /**This mutex guards soundReadFromEthernet*/
-  PMutex  soundReadFromEthernetMutex;
-  
-  /**Array of sound packets which has been read from the ethernet, and
-     is to be sent to the audio device */
-  IAX2FrameList   soundReadFromEthernet;
   
   /**
    * This is the current state of the sound buffer for the packets

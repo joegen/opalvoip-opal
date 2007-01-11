@@ -26,6 +26,10 @@
  * The author of this code is Derek J Smithies
  *
  * $Log: iax2medstrm.h,v $
+ * Revision 1.2  2007/01/11 03:02:15  dereksmithies
+ * Remove the previous audio buffering code, and switch to using the jitter
+ * buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  * Revision 1.1  2005/07/30 07:01:32  csoutheren
  * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
  * Thanks to Derek Smithies of Indranet Technologies Ltd. for
@@ -46,6 +50,7 @@
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
 #include <iax2/iax2con.h>
+#include <iax2/iax2jitter.h>
 
 class RTP_Session;
 class OpalMediaPatch;
@@ -58,7 +63,6 @@ class OpalLine;
 class OpalIAX2MediaStream : public OpalMediaStream
 {
   PCLASSINFO(OpalIAX2MediaStream, OpalMediaStream);
-  public:
   /**@name Construction */
   //@{
     /**Construct a new media stream for connecting to the media 
@@ -67,12 +71,11 @@ class OpalIAX2MediaStream : public OpalMediaStream
 		   const OpalMediaFormat & mediaFormat, /*!< Media format for stream */
 		   unsigned sessionID,                  /*!< Session number for stream */
 		   BOOL isSource,                       /*!< Is a source stream */
-		   unsigned minJitterDelay,             /*!< Minimum delay from jitter buffer (ms) */
-		   unsigned maxJitterDelay,             /*!< Maximum delay from jitter buffer (ms) */
 		   IAX2Connection &con                  /*!< IAX connection to read/send incoming packets */
 		   );
   //@}
  
+ public:
   /**@name Overrides of OpalMediaStream class */
   //@{
     /**Open the media stream.
@@ -94,22 +97,22 @@ class OpalIAX2MediaStream : public OpalMediaStream
       */
     virtual BOOL Close();
  
-    /**Read raw media data from the source media stream.
-       The default behaviour reads from the OpalLine object.
-      */
-    virtual BOOL ReadData(
-      BYTE * data,      /// Data buffer to read to
-      PINDEX size,      /// Size of buffer
-      PINDEX & length   /// Length of data actually read
+    /**
+       Goes to the IAX2Connection class, and removes a packet from the connection. The connection class turned the media 
+       packet into a RTP_DataFrame class, and jitter buffered it.
+
+    @return TRUE on successful read of a packet, FALSE on faulty read.*/
+    virtual BOOL ReadPacket(
+      RTP_DataFrame & packet ///< Data buffer to read to
     );
 
    /**Write raw media data to the sink media stream.
        The default behaviour writes to the OpalLine object.
       */
     virtual BOOL WriteData(
-      const BYTE * data,   /// Data to write
-      PINDEX length,       /// Length of data to read.
-      PINDEX & written     /// Length of data actually written
+      const BYTE * data,   ///< Data to write
+      PINDEX length,       ///< Length of data to write.
+      PINDEX & written     ///<Length of data actually written
     );
 
     /**Indicate if the media stream is synchronous.
@@ -127,16 +130,9 @@ class OpalIAX2MediaStream : public OpalMediaStream
        unused data is stored here. 
     */
     PBYTEArray pendingData;
-
-    /**The endpoint has specified the min delay from a jitter buffer*/
-    unsigned      minAudioJitterDelay;
-
-    /**The endpoint has specified the max delay from a jitter buffer*/
-    unsigned      maxAudioJitterDelay;
-
 };
 
-#endif  //__OPAL_IAXs_MEDIASTRM_H
+#endif  //__OPAL_IAX2_MEDIASTRM_H
 
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 2 spaces.     */

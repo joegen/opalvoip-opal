@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.20  2007/01/11 03:02:15  dereksmithies
+ * Remove the previous audio buffering code, and switch to using the jitter
+ * buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  * Revision 1.19  2007/01/09 03:32:23  dereksmithies
  * Tidy up and improve the close down process - make it more robust.
  * Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -738,14 +742,14 @@ PINDEX IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
     codecNames += PString(list[i]);
 
   for(i = 0; i < codecNames.GetSize(); i++) {
-    PTRACE(3, "Supported codec in opal is " << codecNames[i]);
+    PTRACE(5, "Supported codec in opal is " << codecNames[i]);
   }
     
   PINDEX returnValue = 0;
   for (i = 0; i < codecNames.GetSize(); i++) 
     returnValue += IAX2FullFrameVoice::OpalNameToIax2Value(codecNames[i]);
 
-  PTRACE(3, "Bitmask of codecs we support is 0x" 
+  PTRACE(5, "Bitmask of codecs we support is 0x" 
 	 << ::hex << returnValue << ::dec);
   
   return  returnValue;
@@ -756,7 +760,7 @@ void IAX2EndPoint::CopyLocalMediaFormats(OpalMediaFormatList & list)
   for(PINDEX i = 0; i < localMediaFormats.GetSize(); i++) {
     PStringStream strm;
     strm << localMediaFormats[i];
-    PTRACE(3, "copy local format " << strm);
+    PTRACE(5, "copy local format " << strm);
     list += *(new OpalMediaFormat(strm));
   }
 }
@@ -886,7 +890,6 @@ void IAX2IncomingEthernetFrames::Main()
   SetThreadName("Distribute to Cons");
   while (keepGoing) {
     activate.Wait();
-    PTRACE(3, "Distribute\tNow look for frames to send to connections");
     endpoint->ProcessReceivedEthernetFrames();
   }
 
