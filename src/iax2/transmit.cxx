@@ -26,6 +26,10 @@
  *
  *
  *  $Log: transmit.cxx,v $
+ *  Revision 1.5  2007/01/11 03:02:16  dereksmithies
+ *  Remove the previous audio buffering code, and switch to using the jitter
+ *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
  *  Tidy up and improve the close down process - make it more robust.
  *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -123,7 +127,7 @@ void IAX2Transmit::Main()
 
 void IAX2Transmit::ProcessAckingList()
 {
-  PTRACE(3,"TASK 1 of 2: ackingFrameList");
+  PTRACE(4,"TASK 1 of 2: ackingFrameList");
   
   IAX2FrameList framesToSend;
   framesToSend.Initialise();
@@ -137,24 +141,24 @@ void IAX2Transmit::ProcessAckingList()
 
 void IAX2Transmit::ReportLists()
 {
-  PTRACE(3, "IAX2Transmit\tSend now frames is: ");
+  PTRACE(5, "IAX2Transmit\tSend now frames is: ");
   sendNowFrames.ReportList();
-  PTRACE(3, "IAX2Transmit\tAckingFrames is:");
+  PTRACE(5, "IAX2Transmit\tAckingFrames is:");
   ackingFrames.ReportList();
 }
 
 void IAX2Transmit::ProcessSendList()
 {
-  PTRACE(3,"TASK 2 of 2: ProcessSendList");
-  PTRACE(3,"SendList has " << sendNowFrames.GetSize() << " elements");
+  PTRACE(5, "TASK 2 of 2: ProcessSendList");
+  PTRACE(5, "SendList has " << sendNowFrames.GetSize() << " elements");
   
   for(;;) {
     IAX2Frame * active = sendNowFrames.GetLastFrame();
     if (active == NULL) {
-      PTRACE(3, "IAX2Transmit has emptied the sendNowFrames list, so finish (for now)");
+      PTRACE(5, "IAX2Transmit has emptied the sendNowFrames list, so finish (for now)");
       break;
     }
-    PTRACE(3, "IAX2Transmit\tProcess (or send) frame " << active->IdString());
+    PTRACE(5, "IAX2Transmit\tProcess (or send) frame " << active->IdString());
 
     BOOL isFullFrame = FALSE;
     if (PIsDescendant(active, IAX2FullFrame)) {
@@ -168,33 +172,33 @@ void IAX2Transmit::ProcessSendList()
     }
     
     if (!active->TransmitPacket(sock)) {
-      PTRACE(3,"Delete  " << active->IdString() << " as transmit failed.");
+      PTRACE(4, "Delete  " << active->IdString() << " as transmit failed.");
       delete active;
       continue;
     }
     
     if (!isFullFrame) {
-      PTRACE(3, "Delete this frame as it is a mini frame, and continue" << active->IdString());
+      PTRACE(4, "Delete this frame as it is a mini frame, and continue" << active->IdString());
       delete active;
       continue;
     }
     
     IAX2FullFrame *f= (IAX2FullFrame *)active;
     if (f->IsAckFrame()) {
-      PTRACE(3, "Delete this frame as it is an ack frame, and continue" << f->IdString());
+      PTRACE(4, "Delete this frame as it is an ack frame, and continue" << f->IdString());
       delete f;
       continue;
     }
     
     if (!active->CanRetransmitFrame()) {
-      PTRACE(3, "Delete this frame now as it does not need to be retransmitted." << f->IdString());
+      PTRACE(4, "Delete this frame now as it does not need to be retransmitted." << f->IdString());
       delete f;
       continue;
     }
     
-    PTRACE(3, "Put " << f->IdString() << " onto acking list");
+    PTRACE(5, "Put " << f->IdString() << " onto acking list");
     ackingFrames.AddNewFrame(active);
-    PTRACE(3, "Acking frames has " << ackingFrames.GetSize() << " elements");
+    PTRACE(5, "Acking frames has " << ackingFrames.GetSize() << " elements");
   }
 }
 

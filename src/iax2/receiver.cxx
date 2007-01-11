@@ -26,6 +26,10 @@
  *
  *
  *  $Log: receiver.cxx,v $
+ *  Revision 1.7  2007/01/11 03:02:16  dereksmithies
+ *  Remove the previous audio buffering code, and switch to using the jitter
+ *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  *  Revision 1.6  2007/01/09 03:32:23  dereksmithies
  *  Tidy up and improve the close down process - make it more robust.
  *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -73,8 +77,8 @@ IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   keepGoing = TRUE;
   fromNetworkFrames.Initialise();
   
-  PTRACE(5, "IAX Rx\tListen on socket " << sock);
-  PTRACE(5, "IAX Rx\tStart Thread");
+  PTRACE(6, "IAX2 Rx\tReceiver Constructed just fine");
+  PTRACE(6, "IAX2 Rx\tListen on socket " << sock);
   Resume();
 }
 
@@ -85,13 +89,13 @@ IAX2Receiver::~IAX2Receiver()
   
   fromNetworkFrames.AllowDeleteObjects();
 
-  PTRACE(4, "IAX Rx\tDestructor finished");
+  PTRACE(6, "IAX2 Rx\tDestructor finished");
 
 }
 
 void IAX2Receiver::Terminate()
 {
-  PTRACE(5, "End receiver thread");
+  PTRACE(5, "IAX2 Rx\tEnd receiver thread");
   keepGoing = FALSE;
   
   PIPSocket::Address addr;
@@ -128,7 +132,7 @@ void IAX2Receiver::Main()
 void IAX2Receiver::AddNewReceivedFrame(IAX2Frame *newFrame)
 {
   /**This method may split a frame up (if it is trunked) */
-  PTRACE(6, "IAX Rx\tAdd frame to list of received frames " << newFrame->IdString());
+  PTRACE(6, "IAX2 Rx\tAdd frame to list of received frames " << newFrame->IdString());
   fromNetworkFrames.AddNewFrame(newFrame);
 }
 
@@ -136,20 +140,20 @@ BOOL IAX2Receiver::ReadNetworkSocket()
 {
   IAX2Frame *frame = new IAX2Frame(endpoint);
   
-  PTRACE(5, "IAX Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
+  PTRACE(5, "IAX2 Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
   BOOL res = frame->ReadNetworkPacket(sock);
   
   if (res == FALSE) {
-    PTRACE(3, "IAX Rx\tFailed to read network packet from socket for FrameID-->" << frame->IdString());
+    PTRACE(3, "IAX2 Rx\tFailed to read network packet from socket for FrameID-->" << frame->IdString());
     delete frame;
     return FALSE;
   }
   
-  PTRACE(3, "IAX Rx\tHave read a frame from the network socket fro FrameID-->" 
+  PTRACE(6, "IAX2 Rx\tHave read a frame from the network socket fro FrameID-->" 
 	 << frame->IdString() << endl  << *frame);
   
   if(frame->ProcessNetworkPacket() == FALSE) {
-    PTRACE(3, "IAX Rx\tFailed to interpret header for " << frame->IdString());
+    PTRACE(3, "IAX2 Rx\tFailed to interpret header for " << frame->IdString());
     delete frame;
     return TRUE;
   }

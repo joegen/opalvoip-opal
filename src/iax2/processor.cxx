@@ -29,6 +29,10 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.22  2007/01/11 03:02:16  dereksmithies
+ * Remove the previous audio buffering code, and switch to using the jitter
+ * buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  * Revision 1.21  2007/01/09 03:32:23  dereksmithies
  * Tidy up and improve the close down process - make it more robust.
  * Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -86,7 +90,7 @@ BOOL IAX2WaitingForAck::MatchingAckPacket(IAX2FullFrame *f)
 {
   PTRACE(4, "MatchingAck\tCompare " << timeStamp << " and " << seqNo);
   if (f->GetTimeStamp() != timeStamp) {
-    PTRACE(3, "MatchingAck\tTimstamps differ");
+    PTRACE(4, "MatchingAck\tTimstamps differ");
     return FALSE;
   }
 
@@ -148,8 +152,11 @@ IAX2Processor::~IAX2Processor()
   frameList.AllowDeleteObjects();
 }
 
-void IAX2Processor::SetCallToken(PString newToken) 
+void IAX2Processor::SetCallToken(const PString & newToken) 
 {
+  if (!IsHandlingSpecialPackets())
+    SetThreadName("Proc" + newToken);
+
   callToken = newToken;
 } 
 
@@ -164,8 +171,6 @@ void IAX2Processor::Main()
   PString name = GetThreadName();
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
-  else
-    SetThreadName("Process " + name);
 
   while(endThread == FALSE) {
     activate.Wait();
@@ -268,7 +273,7 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
   
   //check the frame has not already been built
   if (!PIsDescendant(frame, IAX2MiniFrame) && !PIsDescendant(frame, IAX2FullFrame)) {
-    PTRACE(3, "IaxConnection\tUnknown  incoming frame " << frame->IdString());
+    PTRACE(5, "IaxConnection\tUnknown  incoming frame " << frame->IdString());
     IAX2Frame *af = frame->BuildAppropriateFrameType(encryption);
     delete frame;
     
