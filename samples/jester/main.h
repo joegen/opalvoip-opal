@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.6  2007/01/11 09:20:41  dereksmithies
+ * Use the new OpalJitterBufer class, allowing easy access to the jitter buffer's internal
+ * variables. Play output audio to the specified sound device.
+ *
  * Revision 1.5  2006/12/08 09:00:21  dereksmithies
  * Add mutex protection of a pointer.
  * Change default to send packets at a non uniform rate, so they go at 0 20 60 80 120 140 180 etc.
@@ -47,90 +51,45 @@
 #define _Jester_MAIN_H
 
 
+#include <ptclib/pwavfile.h>
+#include <ptlib/sound.h>
+
 #include <rtp/jitter.h>
 #include <rtp/rtp.h>
+
+/** We use the IAX2 jitter buffer, as it is close to what we need, and has no
+    RTP session stuff to worry about. The iax2 jitter buffer is derived from
+    the OpalJitterBuffer, and demands OPAL library code newer than Jan 2007 */
+
+/**** Note, this code will only compile if you use an OPAL library code newer
+    than January 2007 */
+#include <iax2/iax2jitter.h>   
+/**** Note, this code will only compile if you use an OPAL library code newer
+    than January 2007 */
+
+
+
 #include <ptclib/delaychan.h>
 #include <ptclib/random.h>
 
 
+
 /////////////////////////////////////////////////////////////////////////////
-/**Simulate an RTP_Session - this class will make up data received from the
-   network */
-class JestRTP_Session: public RTP_Session
+/**we use this class primarily to access variables in the OpalJitterBuffer*/
+class JesterJitterBuffer : public IAX2JitterBuffer
 {
-    PCLASSINFO(JestRTP_Session, RTP_Session);
+ public:
+    /**Report the target jitter time, which is the current delay */
+    DWORD GetTargetJitterTime() { return targetJitterTime; }
 
-    /**Constructor, which just uses "any old random value" */
-    JestRTP_Session();
+    /**Report the current jitter depth */
+    unsigned GetCurrentDepth() { return currentDepth; }
 
-  /**Read a data frame from the RTP channel.
-       Any control frames received are dispatched to callbacks and are not
-       returned by this function. It will block until a data frame is
-       available or an error occurs.
-
-       The thread which is inside the jitter buffer will call this method.
-      */
-    virtual BOOL ReadData(
-      RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
-    );
-
-   /**Write a data frame from the RTP channel.
-      */
-    virtual BOOL WriteData(
-      RTP_DataFrame & frame   ///<  Frame to write to the RTP session
-    );
-
-    /**Write a control frame from the RTP channel.
-      */
-    virtual BOOL WriteControl(
-      RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
-	);
-
-    /**Write the RTCP reports.
-      */
-//    virtual BOOL SendReport() { PTRACE(4, "Send report has been quashed"); return TRUE; }
-
-    /**Close down the RTP session.
-      */
-    virtual void Close(
-	BOOL /*reading */   ///<  Closing the read side of the session
-	);
-
-   /**Reopens an existing session in the given direction.
-      */
-    virtual void Reopen(
-	BOOL /*isReading */
-	) { }
-
-    /**Get the local host name as used in SDES packes.
-      */
-    virtual PString GetLocalHostName() { return PString("Jester"); }
-
-
-
- protected:
-    /**psuedo sequence number that we will put into the packets */
-    WORD psuedoSequenceNo;
-
-    /**psuedo timestamp that we will put into the packets. Timestamp goes up
-     * by the number of samples placed in the packet. So, 8khz, 30ms duration,
-     * means 240 increment for each packet. */
-    DWORD psuedoTimestamp;
-
-    /**Flag to indicate we have closed down */
-    BOOL closedDown;
-
-    /**time at which this all started */
-    PTime startJester;
-
-    /**Number of times we have read a packet. This is required to determine the required time period
-       to sleep */
-    PINDEX readCount;
-
-    /**Seed for a random number generator */
-    PRandom variation;
+    /**report the current jitter time */
+    DWORD GetCurrentJitterTime() { return currentJitterTime; }
 };
+
+/////////////////////////////////////////////////////////////////////////////
 
 /** The main class that is instantiated to do things */
 class JesterProcess : public PProcess
@@ -161,14 +120,18 @@ class JesterProcess : public PProcess
     PDECLARE_NOTIFIER(PThread, JesterProcess, ConsumeUdpPackets);
 #endif
 
-    /**The rtp session that we use to jitter buffer the code in */
-    JestRTP_Session testSession;    
-
-    /**The number of iterations we run for */
-    PINDEX iterations;
-
-    /**The length, in ms, that each packet represents */
-    PINDEX duration;
+    /**Handle user input, which is keys to describe the status of the program,
+       while the different loops run. The program will not finish until this
+       method is completed.*/
+    void ManageUserInput();
+    
+    /**Name of the sound device we will write audio to. If not specified, this
+       program will write to
+       PSoundChannel::GetDefaultDevice(PSoundChannel::Player) */
+    PString audioDevice;
+    
+    /**The number of bytes of data in each simulated RTP_DataFrame */
+    PINDEX bytesPerBlock;
 
     /**Flag to indicate if we do, or do not, simulate silence suppression. If
        TRUE, we do silence suppresion and send packets in bursts of onnnn,
@@ -177,6 +140,30 @@ class JesterProcess : public PProcess
 
     /**min size of the jitter buffer in ms */
     PINDEX minJitterSize;
+
+    /**A descendant of the OpalJitterBuffer, which means we have the minimum
+       of code to write to test OpalJitterBuffer. Further, we can now access
+       variables in the OpalJitterBuffer */
+    JesterJitterBuffer jitterBuffer;
+
+    /**The sound channel that we will write audio to*/
+    PSoundChannel player;
+
+    /**Name of the wavfile containing the audio we will read in */
+    PString wavFile;
+
+    /**the current index that the generate thread is on (or iteration count) */
+    PINDEX generateIndex;
+
+    /**the current index that the consume thread is on (or iteration count) */
+    PINDEX consumeIndex;
+
+    /**the timestamp, as used by the generate thread */
+    DWORD generateTimestamp;
+
+    /**the timestamp, as used by the consume thread */
+    DWORD consumeTimestamp;
+
 };
 
 
