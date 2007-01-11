@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.50  2007/01/11 03:24:57  dereksmithies
+# It now references the new file to compile, iax2/iax2jitter.cxx
+#
 # Revision 1.49  2006/12/08 05:08:16  csoutheren
 # Applied 1589270 - spec, pkgconfig, doxygen
 # Thanks to Frederic Heem
@@ -474,10 +477,10 @@ ifdef IAX2_AVAIL
 
 SOURCES += \
            $(OPAL_SRCDIR)/iax2/callprocessor.cxx \
-	   $(OPAL_SRCDIR)/iax2/specialprocessor.cxx \
            $(OPAL_SRCDIR)/iax2/frame.cxx \
            $(OPAL_SRCDIR)/iax2/iax2con.cxx \
            $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2jitter.cxx \
            $(OPAL_SRCDIR)/iax2/iax2medstrm.cxx \
            $(OPAL_SRCDIR)/iax2/iedata.cxx \
            $(OPAL_SRCDIR)/iax2/ies.cxx \
@@ -487,6 +490,7 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/remote.cxx \
            $(OPAL_SRCDIR)/iax2/safestrings.cxx \
            $(OPAL_SRCDIR)/iax2/sound.cxx \
+           $(OPAL_SRCDIR)/iax2/specialprocessor.cxx \
            $(OPAL_SRCDIR)/iax2/transmit.cxx 
 endif
 endif
