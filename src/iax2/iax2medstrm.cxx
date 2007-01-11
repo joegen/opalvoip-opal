@@ -27,6 +27,10 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.8  2007/01/11 03:02:16  dereksmithies
+ * Remove the previous audio buffering code, and switch to using the jitter
+ * buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  * Revision 1.7  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
@@ -88,26 +92,11 @@
 OpalIAX2MediaStream::OpalIAX2MediaStream(const OpalMediaFormat & mediaFormat,
 				       unsigned sessionID,   
 				       BOOL isSource,        
-				       unsigned minJitterDelay,
-				       unsigned maxJitterDelay,
 				       IAX2Connection &con)
   : OpalMediaStream(mediaFormat, sessionID, isSource),
-    connection(con),
-    minAudioJitterDelay(minJitterDelay),
-    maxAudioJitterDelay(maxJitterDelay)
+    connection(con)
 {
-  PTRACE(3, "Media\tCREATE an opal iax media audio stream ");
-  
-  //change the jitter settings if user does not have sane settings
-  if (minJitterDelay < 20) {
-    cerr << "Changed minJitterDelay to something more sane" << endl;
-    minJitterDelay = 20;
-  }
-  
-  if (maxJitterDelay < 60) {
-    cerr << "Changed maxJitterDelay to something more sane" << endl;
-    maxJitterDelay = 60;
-  }
+    PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
 }
  
  
@@ -138,11 +127,10 @@ BOOL OpalIAX2MediaStream::Close()
 }
  
  
-BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
+BOOL OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  PTRACE(6, "Media\tRead data of " << size << " bytes max");
-  length = 0;
-  
+  PTRACE(6, "Media\tRead media comppressed audio packet from the iax2 connection");
+
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
     return FALSE;
@@ -153,72 +141,20 @@ BOOL OpalIAX2MediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     return FALSE;
   }
     
+  BOOL success = connection.ReadSoundPacket(timestamp, packet); 
 
-  PINDEX pendingSize;
-  pendingSize = pendingData.GetSize();
-  if (pendingSize > 0) {
-    if (size < pendingSize) {
-      memcpy(buffer, pendingData.GetPointer(), size);
-      length = size;
-      memmove(pendingData.GetPointer(), pendingData.GetPointer() + size, pendingSize - size);
-      pendingData.SetSize(pendingSize - size);
-      PTRACE(6, "Media\tPending size was " << pendingSize << " and read size was " << size);
-      return TRUE;
-    } else {
-      memcpy(buffer, pendingData.GetPointer(), pendingSize);
-      length += pendingSize;
-      pendingData.SetSize(0);
-      PTRACE(6, "Media\tPick up "<< pendingSize << " from the pending data in our quest to read " << size);
-    }
-  }
-  
-  IAX2Frame *res = connection.GetSoundPacketFromNetwork(minAudioJitterDelay, maxAudioJitterDelay);
-  if ((res == NULL) && (length > 0)) {
-    PTRACE(3, "Finished getting media data. Send " << length);
-    return TRUE;
-  }
-
-  if (res == NULL) {
-    do {
-      if (connection.GetPhase() == OpalConnection::ReleasedPhase) {
-        PTRACE(3, "Media\tExit now from opal media stream" << *this);
-        return FALSE;
-      }
-      
-      PThread::Sleep(10); //Under windows may not be 10ms..
-      PTRACE(6, "Media\tJust slept another 10ms cause read nothing in last iteration ");
-      res = connection.GetSoundPacketFromNetwork(minAudioJitterDelay, maxAudioJitterDelay);
-      if (res != NULL) {
-        PTRACE(6, "Media\tNow we have data to process " << res->IdString());
-      }
-    } while ((res == NULL) && isOpen);
-  }
-  
-  if (res == NULL) {
-    PTRACE(3, "Media\tWe have looped and looped, but still have a null");
-    return FALSE;
-  }
-
-  PTRACE(6, "Media\tThis frame has " << res->GetMediaDataSize() << " bytes of media");
-  if (res->GetMediaDataSize() <= (size - length)) {
-    memcpy(buffer + length, res->GetMediaDataPointer(), res->GetMediaDataSize());
-    length = length + res->GetMediaDataSize();
-    delete res;
-    PTRACE(3, "Media\t have written to supplied data array & exit");
-    return TRUE;
-  }
-
-  PINDEX bytesToCopy = size - length;
-  memcpy(buffer + length, res->GetMediaDataPointer(), bytesToCopy);
-  pendingData.SetSize(res->GetMediaDataSize() - bytesToCopy);
-  memcpy(pendingData.GetPointer(), res->GetMediaDataPointer() + bytesToCopy, pendingData.GetSize());
-  length = size;
-  delete res;
-  cout << "done iteration " << PTimer::Tick() << endl;
-  PTRACE(3, "Media\tOk, we have to save some to pending... ");
-  return TRUE;
+  return success;
 }
 
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 // This routine takes data from the source (eg mic) and sends the data to the remote host.
 BOOL OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)

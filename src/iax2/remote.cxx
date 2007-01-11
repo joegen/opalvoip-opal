@@ -27,6 +27,10 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.7  2007/01/11 03:02:16  dereksmithies
+ * Remove the previous audio buffering code, and switch to using the jitter
+ * buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  * Revision 1.6  2005/08/28 23:51:30  dereksmithies
  * Improve test for massaging timestamps in fullframes. Thanks to Adrian Sietsma
  *
@@ -84,26 +88,26 @@ void IAX2Remote::Assign(IAX2Remote & source)
 BOOL IAX2Remote::operator==(IAX2Remote & other)
 {
   if (remoteAddress != other.RemoteAddress()) {
-    PTRACE(3, "Comparison of two remotes " << endl << other << endl << (*this) );
-    PTRACE(4, "comparison of two remotes  Addresses are different");
+    PTRACE(5, "Comparison of two remotes " << endl << other << endl << (*this) );
+    PTRACE(5, "comparison of two remotes  Addresses are different");
     return FALSE;
   }
   
   if (remotePort != other.RemotePort()) {
-    PTRACE(3, "Comparison of two remotes " << endl << other << endl << (*this) );
-    PTRACE(4, "comparison of two remotes  remote ports are different");
+    PTRACE(5, "Comparison of two remotes " << endl << other << endl << (*this) );
+    PTRACE(5, "comparison of two remotes  remote ports are different");
     return FALSE;
   }
   
   if (destCallNumber != other.DestCallNumber()) {
-    PTRACE(3, "Comparison of two remotes " << endl << other << endl << (*this) );
-    PTRACE(4, "comparison of two remotes. Dest call numbers differ");	
+    PTRACE(5, "Comparison of two remotes " << endl << other << endl << (*this) );
+    PTRACE(5, "comparison of two remotes. Dest call numbers differ");	
     return FALSE;
   }
   
   if (sourceCallNumber != other.SourceCallNumber()) {
-    PTRACE(3, "Comparison of two remotes " << endl << other << endl << (*this) );
-    PTRACE(4, "comparison of two remotes. Source call numbers differ");	
+    PTRACE(5, "Comparison of two remotes " << endl << other << endl << (*this) );
+    PTRACE(5, "comparison of two remotes. Source call numbers differ");	
     return FALSE;
   }
   
@@ -120,13 +124,13 @@ BOOL IAX2Remote::operator*=(IAX2Remote & other)
   }
   
   if (remotePort != other.RemotePort()) {
-    PTRACE(3, "comparison of two remotes  remote ports are different");
+    PTRACE(5, "comparison of two remotes  remote ports are different");
     return FALSE;
   }
   
   if ((sourceCallNumber != other.DestCallNumber()) && (other.DestCallNumber() != callNumberUndefined)) {
-    PTRACE(3, "comparison of two remotes. Local source number differs to incoming dest call number");
-    PTRACE(3, " local sourceCallNumber " << sourceCallNumber 
+    PTRACE(5, "comparison of two remotes. Local source number differs to incoming dest call number");
+    PTRACE(5, " local sourceCallNumber " << sourceCallNumber 
 	   << "        incoming Dest " << other.DestCallNumber());
     return FALSE;
   }
@@ -241,34 +245,34 @@ void IAX2PacketIdList::PrintOn(ostream & strm) const
 void IAX2PacketIdList::AppendNewFrame(IAX2FullFrame &src)
 {
   IAX2FrameIdValue *f = new IAX2FrameIdValue(src.GetSequenceInfo().OutSeqNo());
-  PTRACE(3, "AppendNewFrame " << (*f));
+  PTRACE(5, "AppendNewFrame " << (*f));
 
   if(GetSize() == 0) {
-    PTRACE(3, "SeqNos\tList empty, so add now. " << (*f));
+    PTRACE(5, "SeqNos\tList empty, so add now. " << (*f));
     Append(f);
     return;
   }
 
   if (Contains(*f)) {
-    PTRACE(3, "SeqNos\tJustRead frame is " << (*f));
-    PTRACE(3, "SeqNos\tIn queue waiting removal " << (*f));
+    PTRACE(5, "SeqNos\tJustRead frame is " << (*f));
+    PTRACE(5, "SeqNos\tIn queue waiting removal " << (*f));
     delete f;
     return;
   }
 
   if (((IAX2FrameIdValue *)GetAt(0))->Compare(*f) == GreaterThan) {
-    PTRACE(3, "SeqNos\tHave already processed " << (*f));
-    PTRACE(3, "SeqNos\tFirst frame in que " << (*(IAX2FrameIdValue *)GetAt(0)));
-    PTRACE(3, "SeqNos\tFrame just read is " << (*f));
+    PTRACE(5, "SeqNos\tHave already processed " << (*f));
+    PTRACE(5, "SeqNos\tFirst frame in que " << (*(IAX2FrameIdValue *)GetAt(0)));
+    PTRACE(5, "SeqNos\tFrame just read is " << (*f));
     delete f;
     return;
   }
 
-  PTRACE(3, "SeqNos\tList is younger than this value. " << (*f));
+  PTRACE(5, "SeqNos\tList is younger than this value. " << (*f));
   Append(f);
   RemoveOldContiguousValues();
 
-  PTRACE(3, "SeqNos\t"  << (*this));
+  PTRACE(5, "SeqNos\t"  << (*this));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -327,15 +331,15 @@ void IAX2SequenceNumbers::MassageSequenceForSending(IAX2FullFrame &src)
   PWaitAndSignal m(mutex);
 
   inSeqNo = (receivedLog.GetFirstValue() + 1) & 0xff;
-  PTRACE(3, "SeqNos\tsentreceivedoseqno is " << inSeqNo);
+  PTRACE(5, "SeqNos\tsentreceivedoseqno is " << inSeqNo);
 
   if (src.IsAckFrame()) {
-    PTRACE(3, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ACK Frame");
+    PTRACE(5, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ACK Frame");
     src.ModifyFrameHeaderSequenceNumbers(inSeqNo, src.GetSequenceInfo().OutSeqNo());
     return;
   } 
 
-  PTRACE(3, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ordinary Frame");
+  PTRACE(5, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ordinary Frame");
 
   PINDEX timeStamp = src.GetTimeStamp();
   if ((timeStamp < (lastSentTimeStamp + minSpacing)) && !src.IsNewFrame() && 
@@ -356,8 +360,8 @@ BOOL IAX2SequenceNumbers::IncomingMessageIsOk(IAX2FullFrame &src)
   PWaitAndSignal m(mutex);
 
   receivedLog.AppendNewFrame(src);
-  PTRACE(3, "SeqNos\treceivedoseqno is " << src.GetSequenceInfo().OutSeqNo());
-  PTRACE(3, "SeqNos\tReceived log of sequence numbers is " << endl << receivedLog);
+  PTRACE(5, "SeqNos\treceivedoseqno is " << src.GetSequenceInfo().OutSeqNo());
+  PTRACE(5, "SeqNos\tReceived log of sequence numbers is " << endl << receivedLog);
 
   return TRUE;
 }
