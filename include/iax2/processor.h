@@ -26,6 +26,10 @@
  *
  * 
  *  $Log: processor.h,v $
+ *  Revision 1.12  2007/01/11 03:02:15  dereksmithies
+ *  Remove the previous audio buffering code, and switch to using the jitter
+ *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  *  Revision 1.11  2006/09/22 00:33:19  csoutheren
  *  Changed PAtomicInteger to BOOL
  *
@@ -210,7 +214,7 @@ class IAX2Processor : public PThread
      However, if this connection is created in response to a call,
      this connection can determine the callToken on examination of
      that incoming first packet */
-  void SetCallToken(PString newToken);
+  void SetCallToken(const PString & newToken);
   
   /**Return the string that identifies this IAX2Connection instance */
   PString GetCallToken();

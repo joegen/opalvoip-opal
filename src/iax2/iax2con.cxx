@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.13  2007/01/11 03:02:15  dereksmithies
+ * Remove the previous audio buffering code, and switch to using the jitter
+ * buffer provided in Opal. Reduce the verbosity of the log mesasges.
+ *
  * Revision 1.12  2006/11/02 09:08:49  rjongbloed
  * Fixed compiler warning
  *
@@ -125,18 +129,18 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   SetCallToken(token);
   originating = FALSE;
 
-  PTRACE(3, "IAX2Connection class has been initialised, and is ready to run");
-
   ep.CopyLocalMediaFormats(localMediaFormats);
   AdjustMediaFormats(localMediaFormats);
   for (PINDEX i = 0; i < localMediaFormats.GetSize(); i++) {
-    PTRACE(3, "Local ordered codecs are " << localMediaFormats[i]);
+    PTRACE(5, "Local ordered codecs are " << localMediaFormats[i]);
   }
   
   local_hold = FALSE;
   remote_hold = FALSE;
 
   phase = SetUpPhase;
+
+  PTRACE(6, "IAX2Connection class has been initialised, and is ready to run");
 }
 
 IAX2Connection::~IAX2Connection()
@@ -156,6 +160,8 @@ void IAX2Connection::ClearCall(CallEndReason reason)
 {
   PTRACE(3, "IAX2Con\tClearCall(reason);");
 
+  jitterBuffer.CloseDown();
+
   callEndReason = reason;
   iax2Processor->Hangup(reason);
 
@@ -174,9 +180,7 @@ void IAX2Connection::Release( CallEndReason reason)
 
 void IAX2Connection::OnReleased()
 {
-  PTRACE(3, "IAX2Con\tOnReleased()");
-  PTRACE(3, "IAX2\t***************************************************OnReleased:from IAX connection " 
-	 << *this);
+  PTRACE(3, "IAX2Con\tOnReleased()" << *this);
 
   iax2Processor->OnReleased();
   OpalConnection::OnReleased();
@@ -212,12 +216,17 @@ void IAX2Connection::OnAlerting()
   phase = AlertingPhase;
   PTRACE(3, "IAX2Con\tOn Alerting. Phone is ringing at  " << GetRemotePartyName());
   OpalConnection::OnAlerting();
+
+  
+  jitterBuffer.SetDelay(endpoint.GetManager().GetMinAudioJitterDelay() * 8,
+			endpoint.GetManager().GetMaxAudioJitterDelay() * 8);
+  jitterBuffer.Resume(NULL);
 }
 
 BOOL IAX2Connection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/) 
 { 
- PTRACE(3, "IAX2Con\tSetAlerting " << *this); 
- return TRUE;
+  PTRACE(3, "IAX2Con\tSetAlerting " << *this); 
+  return TRUE;
 }
 
 BOOL IAX2Connection::SetConnected()
@@ -280,16 +289,13 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
                                                    unsigned sessionID,
                                                    BOOL isDataSource)
 {
-  PTRACE(3, "IAX2Con\tCreateMediaStream");
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     PTRACE(3, "connection\t  create a null media stream ");
     return new OpalNullMediaStream(mediaFormat, sessionID, isDataSource);
   }
 
-  PTRACE(3, "IAX2con\tCreate an OpalIAXMediaStream");
+  PTRACE(4, "IAX2con\tCreate an OpalIAX2MediaStream");
   return new OpalIAX2MediaStream(mediaFormat, sessionID, isDataSource,
-                                 endpoint.GetManager().GetMinAudioJitterDelay(),
-                                 endpoint.GetManager().GetMaxAudioJitterDelay(),
                                  *this);
 }
 
@@ -343,7 +349,7 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
 
       PString wildcard = IAX2FullFrameVoice::GetSubClassName(1 << i);
       if (!remoteMediaFormats.HasFormat(wildcard)) {
-	PTRACE(2, "Connection\tRemote capability says add codec " << wildcard);
+	PTRACE(4, "Connection\tRemote capability says add codec " << wildcard);
 	remoteMediaFormats += *(new OpalMediaFormat(wildcard));
       }
     }
@@ -355,12 +361,12 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
   }
 
   for (i = 0; i < remoteMediaFormats.GetSize(); i++) {
-    PTRACE(3, "Connection\tRemote codec is " << remoteMediaFormats[i]);
+    PTRACE(4, "Connection\tRemote codec is " << remoteMediaFormats[i]);
   }    
 
-  PTRACE(3, "REMOTE Codecs are " << remoteMediaFormats);
+  PTRACE(4, "REMOTE Codecs are " << remoteMediaFormats);
   AdjustMediaFormats(remoteMediaFormats);
-  PTRACE(3, "REMOTE Codecs are " << remoteMediaFormats);
+  PTRACE(4, "REMOTE Codecs are " << remoteMediaFormats);
 }
 
 void IAX2Connection::EndCallNow(CallEndReason reason)
@@ -372,8 +378,8 @@ unsigned int IAX2Connection::ChooseCodec()
 {
   int res;
   
-  PTRACE(3, "Local capabilities are  " << localMediaFormats);
-  PTRACE(3, "remote capabilities are " << remoteMediaFormats);
+  PTRACE(4, "Local capabilities are  " << localMediaFormats);
+  PTRACE(4, "remote capabilities are " << remoteMediaFormats);
   
   if (remoteMediaFormats.GetSize() == 0) {
     PTRACE(3, "No remote media formats supported. Exit now ");
@@ -406,6 +412,8 @@ unsigned int IAX2Connection::ChooseCodec()
   return 0;
 
  selectCodec:
+  currentPayloadType = localMediaFormats[res].GetPayloadType();
+
   PStringStream strm;
   strm << localMediaFormats[res];
   PTRACE(3, "Connection\t have selected the codec " << strm);
@@ -486,6 +494,28 @@ BOOL IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
   PTRACE(3, "Forward call to " + forwardParty);
   //we can not currently forward calls that have not been accepted.
   return FALSE;
+}
+
+void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
+{
+    PTRACE(6, "RTP\tIAX2 Incoming Media frame of " << soundFrame->GetMediaDataSize() << " bytes and timetamp=" << (soundFrame->GetTimeStamp() * 8));
+
+    RTP_DataFrame *mediaFrame = new RTP_DataFrame();
+    mediaFrame->SetTimestamp(soundFrame->GetTimeStamp() * 8);
+    mediaFrame->SetMarker(FALSE);
+    mediaFrame->SetPayloadType(currentPayloadType);
+
+    mediaFrame->SetPayloadSize(soundFrame->GetMediaDataSize());
+    mediaFrame->SetSize(mediaFrame->GetPayloadSize() + mediaFrame->GetHeaderSize());
+    memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), soundFrame->GetMediaDataSize());
+
+    jitterBuffer.NewFrameFromNetwork(mediaFrame);
+}
+
+BOOL IAX2Connection::ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet)
+{ 
+  BOOL success = jitterBuffer.ReadData(timestamp, packet); 
+  return success;
 }
 
 /* The comment below is magic for those who use emacs to edit this file. */
