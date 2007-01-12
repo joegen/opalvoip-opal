@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.7  2007/01/12 10:00:58  dereksmithies
+ * bring it up to date so it compiles.
+ *
  * Revision 1.6  2007/01/11 09:20:41  dereksmithies
  * Use the new OpalJitterBufer class, allowing easy access to the jitter buffer's internal
  * variables. Play output audio to the specified sound device.
@@ -51,6 +54,11 @@
 #define _Jester_MAIN_H
 
 
+#ifdef P_USE_PRAGMA
+#pragma interface
+#endif
+
+
 #include <ptclib/pwavfile.h>
 #include <ptlib/sound.h>
 
@@ -78,15 +86,56 @@
 /**we use this class primarily to access variables in the OpalJitterBuffer*/
 class JesterJitterBuffer : public IAX2JitterBuffer
 {
+    PCLASSINFO(JesterJitterBuffer, IAX2JitterBuffer);
  public:
+    JesterJitterBuffer();
+
+    ~JesterJitterBuffer();
+
     /**Report the target jitter time, which is the current delay */
     DWORD GetTargetJitterTime() { return targetJitterTime; }
 
     /**Report the current jitter depth */
     unsigned GetCurrentDepth() { return currentDepth; }
 
-    /**report the current jitter time */
+    /** repot on an internal variable */
     DWORD GetCurrentJitterTime() { return currentJitterTime; }
+
+
+    virtual void Close(
+	BOOL /*reading */   ///<  Closing the read side of the session
+	);
+
+   /**Reopens an existing session in the given direction.
+      */
+    virtual void Reopen(
+	BOOL /*isReading */
+	) { }
+
+    /**Get the local host name as used in SDES packes.
+      */
+    virtual PString GetLocalHostName() { return PString("Jester"); }
+
+
+
+ protected:
+    /**psuedo sequence number that we will put into the packets */
+    WORD psuedoSequenceNo;
+
+    /**psuedo timestamp that we will put into the packets. Timestamp goes up
+     * by the number of samples placed in the packet. So, 8khz, 30ms duration,
+     * means 240 increment for each packet. */
+    DWORD psuedoTimestamp;
+
+    /**Flag to indicate we have closed down */
+    BOOL closedDown;
+
+    /**time at which this all started */
+    PTime startJester;
+
+    /**Number of times we have read a packet. This is required to determine the required time period
+       to sleep */
+    PINDEX readCount;
 };
 
 /////////////////////////////////////////////////////////////////////////////
