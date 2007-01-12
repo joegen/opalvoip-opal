@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.10  2007/01/12 10:00:57  dereksmithies
+ * bring it up to date so it compiles.
+ *
  * Revision 1.9  2007/01/11 09:20:41  dereksmithies
  * Use the new OpalJitterBufer class, allowing easy access to the jitter buffer's internal
  * variables. Play output audio to the specified sound device.
@@ -57,6 +60,11 @@
  *
  */
 
+#ifdef P_USE_PRAGMA
+#pragma implementation "main.h"
+#endif
+
+
 #include <ptlib.h>
 
 #include <opal/buildopts.h>
@@ -64,7 +72,6 @@
 
 #include "main.h"
 #include "../../version.h"
-
 
 
 #define new PNEW
@@ -75,7 +82,23 @@ PCREATE_PROCESS(JesterProcess);
 BOOL       keepRunning;
 
 ///////////////////////////////////////////////////////////////
+JesterJitterBuffer::JesterJitterBuffer():
+    IAX2JitterBuffer()
+{
 
+}
+
+JesterJitterBuffer::~JesterJitterBuffer()
+{
+
+}
+
+void JesterJitterBuffer::Close(BOOL /*reading */ )
+{
+CloseDown();
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 JesterProcess::JesterProcess()
   : PProcess("Derek Smithies Code Factory", "Jester",
@@ -186,6 +209,7 @@ void JesterProcess::Main()
 
   PThread * writer = PThread::Create(PCREATE_NOTIFIER(GenerateUdpPackets), 0,
 				     PThread::NoAutoDeleteThread,
+
 				     PThread::NormalPriority,
 				     "generate");
 
@@ -299,7 +323,6 @@ void JesterProcess::ConsumeUdpPackets(PThread &, INT)
 void JesterProcess::ManageUserInput()
 {
    PConsoleChannel console(PConsoleChannel::StandardInput);
-
 
    PStringStream help;
    help << "Select:\n";
