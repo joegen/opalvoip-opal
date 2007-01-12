@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.12  2007/01/12 02:48:11  dereksmithies
+ *  Make the iax2callprocessor a more permanent variable in the iax2connection.
+ *
  *  Revision 1.11  2007/01/12 02:39:00  dereksmithies
  *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
  *  Ensure that the connection looks after the callProcessor.
@@ -187,7 +190,7 @@ class IAX2Connection : public OpalConnection
   void AcceptIncomingCall();
   
   /**Report if this Connection is still active */
-  BOOL IsCallTerminating() { return iax2Processor->IsCallTerminating(); }
+  BOOL IsCallTerminating() { return iax2Processor.IsCallTerminating(); }
   
   /**Indicate to remote endpoint an alert is in progress.  If this is
      an incoming connection and the AnswerCallResponse is in a
@@ -249,7 +252,7 @@ class IAX2Connection : public OpalConnection
   void SetCallToken(PString newToken);
 
   /**Return the string that identifies this IAX2Connection instance */
-  PString GetCallToken() { return iax2Processor->GetCallToken(); }
+  PString GetCallToken() { return iax2Processor.GetCallToken(); }
 
   /**Transmit IAX2Frame to remote endpoint,
     It is only called by the the IAXProcessor class. */
@@ -271,13 +274,13 @@ class IAX2Connection : public OpalConnection
   BOOL ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet);
 
   /**Get information on Remote class (remote node address & port + source & dest call number.) */
-  IAX2Remote & GetRemoteInfo() { return iax2Processor->GetRemoteInfo(); }
+  IAX2Remote & GetRemoteInfo() { return iax2Processor.GetRemoteInfo(); }
 
   /**Get the sequence number info (inSeqNo and outSeqNo) */
-  IAX2SequenceNumbers & GetSequenceInfo() { return iax2Processor->GetSequenceInfo(); }
+  IAX2SequenceNumbers & GetSequenceInfo() { return iax2Processor.GetSequenceInfo(); }
   
   /**Get the call start time */
-  const PTimeInterval & GetCallStartTick() { return iax2Processor->GetCallStartTick(); } 
+  const PTimeInterval & GetCallStartTick() { return iax2Processor.GetCallStartTick(); } 
 
   /**Call back for an incoming call.
      This function is used for an application to control the answering of
@@ -423,9 +426,7 @@ class IAX2Connection : public OpalConnection
   
   /**Signal that the remote side has retrieved the connection*/
   void RemoteRetrieveConnection();
-  
-  IAX2CallProcessor * GetCallProcessor() { return iax2Processor; }
-  
+
   /**Set the username for when we connect to a remote node
      we use it as authentication.  Note this must only be
      used before SetUpConnection is ran.  This is optional
@@ -493,7 +494,7 @@ class IAX2Connection : public OpalConnection
   OpalMediaFormatList localMediaFormats;
     
   /**The thread that processes the list of pending frames on this class */
-  IAX2CallProcessor * iax2Processor;
+  IAX2CallProcessor & iax2Processor;
   
   /**Whether the connection is on hold locally */
   BOOL            local_hold;
