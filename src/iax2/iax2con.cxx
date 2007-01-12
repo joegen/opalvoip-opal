@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.14  2007/01/12 02:39:00  dereksmithies
+ * Remove the notion of srcProcessors and dstProcessor lists from the ep.
+ * Ensure that the connection looks after the callProcessor.
+ *
  * Revision 1.13  2007/01/11 03:02:15  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -186,6 +190,23 @@ void IAX2Connection::OnReleased()
   OpalConnection::OnReleased();
   
 }
+
+void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
+{
+  PTRACE(5, "IAX2Con\tIncomingEthernetFrame(IAX2Frame *frame)" << frame->IdString());
+
+  if (iax2Processor->IsCallTerminating()) { 
+    PTRACE(3, "IAX2Con\t***** incoming frame during termination " << frame->IdString());
+     // snuck in here during termination. may be an ack for hangup or other re-transmitted frames
+     IAX2Frame *af = frame->BuildAppropriateFrameType(iax2Processor->GetEncryptionInfo());
+     if (af != NULL) {
+       endpoint.transmitter->PurgeMatchingFullFrames(af);
+       delete af;
+     }
+   }
+   else
+     iax2Processor->IncomingEthernetFrame(frame);
+} 
 
 void IAX2Connection::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
 {
