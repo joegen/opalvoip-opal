@@ -29,6 +29,10 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.23  2007/01/12 02:39:00  dereksmithies
+ * Remove the notion of srcProcessors and dstProcessor lists from the ep.
+ * Ensure that the connection looks after the callProcessor.
+ *
  * Revision 1.22  2007/01/11 03:02:16  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -246,16 +250,6 @@ void IAX2Processor::Terminate()
 {
   endThread = TRUE;
   
-  //we aren't using this source call number so signal the end point
-  //this will stop it attempting to send new packets to us
-  if (remote.SourceCallNumber() != remote.callNumberUndefined) {    
-    endpoint.ReleaseSrcCallNumber(this);
-  }
-  
-  if (remote.DestCallNumber() != 0) {
-    endpoint.ReleaseDestCallNumber(this);
-  }
-  
   PTRACE(4, "Processor has been directed to end. So end now.");
   if (IsTerminated()) {
     PTRACE(4, "Processor has already ended");
@@ -303,7 +297,6 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (remote.DestCallNumber() == 0) {
     PTRACE(3, "Set Destination call number to " << frame->GetRemoteInfo().SourceCallNumber());
     remote.SetDestCallNumber(frame->GetRemoteInfo().SourceCallNumber());
-    endpoint.RegisterDestCallNumber(this);
   }
   
   ProcessFullFrame(*f);

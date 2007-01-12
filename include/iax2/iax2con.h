@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.11  2007/01/12 02:39:00  dereksmithies
+ *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
+ *  Ensure that the connection looks after the callProcessor.
+ *
  *  Revision 1.10  2007/01/11 03:02:15  dereksmithies
  *  Remove the previous audio buffering code, and switch to using the jitter
  *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -124,8 +128,10 @@ class IAX2Connection : public OpalConnection
   /**@name General worker methods*/
   //@{
   
-  /**Handle a received IAX frame. This may be a mini frame or full frame */
-  //void IncomingEthernetFrame (IAX2Frame *frame);
+  /**Handle a received IAX frame. This may be a mini frame or full frame.
+   Typically, this connection instance will immediately pass the frame on to
+   the CallProcessor::IncomingEthernetFrame() method.*/
+  void IncomingEthernetFrame (IAX2Frame *frame);
   
   /**Test to see if it is a status query type iax frame (eg lagrq) and handle it. If the frame
      is a status query, and it is handled, return TRUE */

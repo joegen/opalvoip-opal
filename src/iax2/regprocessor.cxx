@@ -303,7 +303,6 @@ void IAX2RegProcessor::ResetCall()
   //to prevent creating a new regprocessor instance for each
   //registration time.  We just emulate a new call by resetting
   //our source call number and the sequence numbers. 
-  endpoint.ReleaseSrcCallNumber(this);
   
   PINDEX callno = endpoint.NextSrcCallNumber(this);
   if (callno != P_MAX_INDEX)

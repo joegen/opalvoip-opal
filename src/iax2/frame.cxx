@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.16  2007/01/12 02:39:00  dereksmithies
+ *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
+ *  Ensure that the connection looks after the callProcessor.
+ *
  *  Revision 1.15  2007/01/11 03:02:15  dereksmithies
  *  Remove the previous audio buffering code, and switch to using the jitter
  *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -334,7 +338,7 @@ DWORD IAX2Frame::CalcTimeStamp(const PTimeInterval & callStartTick)
 BOOL IAX2Frame::TransmitPacket(PUDPSocket &sock)
 {
   if (CallMustBeActive()) {
-    if (!endpoint.ProcessorForFrameIsAlive(this)) {
+    if (!endpoint.ConnectionForFrameIsAlive(this)) {
       PTRACE(3, "Connection not found, call has been terminated. " << IdString());
       return FALSE;   //This happens because the call has been terminated.
     }

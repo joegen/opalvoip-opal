@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.21  2007/01/12 02:39:00  dereksmithies
+ * Remove the notion of srcProcessors and dstProcessor lists from the ep.
+ * Ensure that the connection looks after the callProcessor.
+ *
  * Revision 1.20  2007/01/11 03:02:15  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -135,10 +139,6 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   sock = NULL;
   callsEstablished.SetValue(0);
   
-  //The connections and this class handle deletion of srcProcessors outside this dictionary
-  srcProcessors.AllowDeleteObjects(FALSE);
-  destProcessors.AllowDeleteObjects(FALSE);
-  
   //We handle the deletion of regProcessor objects.
   regProcessors.AllowDeleteObjects(FALSE);
 
@@ -207,18 +207,17 @@ BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 
 void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 {
-  PTRACE(2, "IAX2\tWe have received a NEW request from " << f->GetConnectionToken());
+  PTRACE(3, "IAX2\tWe have received a NEW request from " << f->GetConnectionToken());
   
-  {
-    PWaitAndSignal m(srcProcessorsMutex);
-    if (srcProcessors.Contains(f->GetRemoteInfo().DestCallNumber())) {
-      PTRACE(3, "IAX2\thave received  a duplicate new packet from " << f->GetConnectionToken());
-      cerr << " Have received  a duplicate new packet from " << f->GetConnectionToken() << endl;
-      delete f;
-      return;
-    }
+  if (connectionsActive.Contains(f->GetConnectionToken())) {
+    PTRACE(3, "IAX2\thave received  a duplicate new packet from " << f->GetConnectionToken());
+    cerr << " Haave received  a duplicate new packet from " << f->GetConnectionToken() << endl;
+    delete f;
+    return;
   }
-  
+
+/* We need to extract the username from the incoming frame. We have to do this now, before
+   establishing the connection. */
   IAX2FullFrameProtocol ffp(*f);
   
   PString userName;
@@ -244,6 +243,7 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   ffp.CopyDataFromIeListTo(ieData);
 
   PString url = BuildUrl(host, userName, ieData.callingNumber);
+/* We have completed the extraction of information process. Now we can build the matching connection */
 
   IAX2Connection *connection =
     CreateConnection(*GetManager().CreateCall(), f->GetConnectionToken(),
@@ -270,84 +270,60 @@ void IAX2EndPoint::OnEstablished(OpalConnection & con)
 
 PINDEX IAX2EndPoint::NextSrcCallNumber(IAX2Processor * processor)
 {
-  PINDEX callno;
-  PINDEX numsChecked;
-  {
     PWaitAndSignal m(callNumbLock);
     
-    callno = callnumbs++;
-    numsChecked = 0;
+    PINDEX callno = callnumbs++;
     
     if (callnumbs > 32766)
       callnumbs = 1;    
-  }
-  {
-    PWaitAndSignal m2(srcProcessorsMutex);
-   
-    while (srcProcessors.Contains(callno)) {
-      
-      //check if the call numbers are full if so return an error
-      if (numsChecked > 32766) {
-	cerr << "All call numbers have been taken";
-	PTRACE(0, "All call numbers have been taken");
-	return P_MAX_INDEX;
-      }
-      
-      //overflow if over the largest call number
-      if (callno > 32766)
-	callno = 1;
-      
-      callno++;
-      numsChecked++;
-    }
 
-    srcProcessors.SetAt(callno, processor);
-  }  
-  return callno;
+    return callno;
 }
 
-void IAX2EndPoint::ReleaseSrcCallNumber(IAX2Processor * processor)
-{
-  PWaitAndSignal m(srcProcessorsMutex);
-  if (!srcProcessors.RemoveAt(processor->GetRemoteInfo().SourceCallNumber())) {
-    PTRACE(1, "OnProcessorSourceCallEnd could not remove the processor from the dictionary");
-  }
-}
 
-void IAX2EndPoint::RegisterDestCallNumber(IAX2Processor * processor)
+BOOL IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 {
-  PWaitAndSignal m(destProcessorsMutex);
-  destProcessors.SetAt(processor->GetRemoteInfo().DestCallNumber(), processor);
-}
+  PString frameToken = f->GetConnectionToken();
 
-void IAX2EndPoint::ReleaseDestCallNumber(IAX2Processor * processor)
-{
-  PWaitAndSignal m(destProcessorsMutex);
-  destProcessors.RemoveAt(processor->GetRemoteInfo().DestCallNumber());
-}
+  // ReportStoredConnections();
 
-BOOL IAX2EndPoint::ProcessorForFrameIsAlive(IAX2Frame *f)
-{
-  PWaitAndSignal m(srcProcessorsMutex);
-  
-  if (srcProcessors.Contains(f->GetRemoteInfo().SourceCallNumber()))
+  BOOL res = connectionsActive.Contains(frameToken);
+  if (res) {
     return TRUE;
-  else
+  }
+
+  mutexTokenTable.Wait();
+  PString tokenTranslated = tokenTable(frameToken);
+  mutexTokenTable.Signal();
+
+  if (tokenTranslated.IsEmpty()) {
+    PTRACE(3, "No matching translation table entry token for \"" << frameToken << "\"");
     return FALSE;
+  }
+
+  res = connectionsActive.Contains(tokenTranslated);
+  if (res) {
+    PTRACE(5, "Found \"" << tokenTranslated << "\" in the connectionsActive table");
+    return TRUE;
+  }
+
+  PTRACE(3, "ERR Could not find matching connection for \"" << tokenTranslated 
+	 << "\" or \"" << frameToken << "\"");
+  return FALSE;
 }
 
 void IAX2EndPoint::ReportStoredConnections()
 {
   PStringList cons = GetAllConnections();
-  PTRACE(3, " There are " << cons.GetSize() << " stored connections in connectionsActive");
+  PTRACE(5, " There are " << cons.GetSize() << " stored connections in connectionsActive");
   PINDEX i;
   for(i = 0; i < cons.GetSize(); i++)
     PTRACE(3, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
 
   PWaitAndSignal m(mutexTokenTable);
-  PTRACE(3, " There are " << tokenTable.GetSize() << " stored connections in the token translation table.");
+  PTRACE(5, " There are " << tokenTable.GetSize() << " stored connections in the token translation table.");
   for (i = 0; i < tokenTable.GetSize(); i++)
-    PTRACE(3, " token table at " << i << " is " << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
+    PTRACE(5, " token table at " << i << " is " << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
 }
 
 PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
@@ -458,16 +434,16 @@ BOOL IAX2EndPoint::MakeConnection(
 
   PString remotePartyName = rParty.Mid(5);    
 
-  PTRACE(4, "OpalMan\tNow do dns resolution of " << remoteInfo[addressIndex] << " for an iax2 call");
+  PTRACE(5, "OpalMan\tNow do dns resolution of " << remoteInfo[addressIndex] << " for an iax2 call");
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(remoteInfo[addressIndex], ip)) {
     PTRACE(3, "Could not make a iax2 call to " << remoteInfo[addressIndex] << " as IP resolution failed");
     return FALSE;
   }
 
-  PStringStream callID;
-  callID << "iax2:" <<  ip.AsString() << "OutgoingCall" << PString(++callsEstablished);
-  IAX2Connection * connection = CreateConnection(call, callID, userData, remotePartyName);
+  PStringStream callId;
+  callId << "iax2:" <<  ip.AsString() << "OutgoingCall" << PString(++callsEstablished);
+  IAX2Connection * connection = CreateConnection(call, callId, userData, remotePartyName);
   if (connection == NULL)
     return FALSE;
   connectionsActive.SetAt(connection->GetToken(), connection);
@@ -569,38 +545,61 @@ PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
   return statusQueryCounter++;
 }
 
-BOOL IAX2EndPoint::ProcessInMatchingProcessor(IAX2Frame *f)
-{
-  PINDEX destCallNo = f->GetRemoteInfo().DestCallNumber();
-  
-  //check if this frame only contains a source call number
-  //therefore we must lookup the processors by dest call number
-  if (destCallNo == IAX2Remote::callNumberUndefined) {
-    PINDEX srcCallNo = f->GetRemoteInfo().SourceCallNumber();
-    PWaitAndSignal m(destProcessorsMutex);
-    IAX2Processor *processor = destProcessors.GetAt(srcCallNo);
-    
-    if (processor != NULL) {
-      processor->IncomingEthernetFrame(f);
-      return TRUE; 
-    }
-    
-  } else {
-    //otherwise we will use the frame's dest call number
-    //which means we need to look up a processor by source
-    //call number
-    PWaitAndSignal m(srcProcessorsMutex);
-    IAX2Processor *processor = srcProcessors.GetAt(destCallNo);
-  
-    if (processor != NULL) {
-      processor->IncomingEthernetFrame(f);
-      return TRUE; 
-    }
-    
+
+BOOL IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
+{   
+  if (!frame->IsFullFrame()) {
+    PTRACE(3, frame->GetConnectionToken() << " is Not a FullFrame, so dont add a translation entry(return now) ");
+    return FALSE;
   }
   
+  PINDEX destCallNo = frame->GetRemoteInfo().DestCallNumber();  /*Call number at our end */
+  /* We do not know if the frame is encrypted, so examination of anything other than the 
+     source call number/dest call number is unwise */ 
+
+  PSafePtr<IAX2Connection> connection;
+  for (connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.GetAt(0)); connection != NULL; ++connection) {
+    PTRACE(3, "Compare " << connection->GetRemoteInfo().SourceCallNumber() << " and " <<  destCallNo);
+    if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
+      PTRACE(3, "Need to add translation for " << connection->GetCallToken() 
+	     << " (" << frame->GetConnectionToken() 
+	     << PString(") into token translation table"));
+      PWaitAndSignal m(mutexTokenTable);
+      tokenTable.SetAt(frame->GetConnectionToken(), connection->GetCallToken());
+      return TRUE;
+    }
+  }
+
   return FALSE;
 }
+
+
+BOOL IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
+{
+  ReportStoredConnections();
+
+  PString tokenTranslated;
+  mutexTokenTable.Wait();
+  tokenTranslated = tokenTable(f->GetConnectionToken());
+  mutexTokenTable.Signal();
+
+  if (tokenTranslated.IsEmpty()) 
+    tokenTranslated = f->GetConnectionToken();
+
+  IAX2Connection *connection;
+  connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.FindWithLock(tokenTranslated));
+  if (connection != NULL) {
+    connection->IncomingEthernetFrame(f);
+    return TRUE;
+  }
+  
+  PTRACE(3, "ERR Could not find matching connection for \"" << tokenTranslated 
+	 << "\" or \"" << f->GetConnectionToken() << "\"");
+  return FALSE;
+}
+
+
+
 
 //The receiving thread has finished reading a frame, and has droppped it here.
 //At this stage, we do not know the frame type. We just know if it is full or mini.
@@ -623,8 +622,14 @@ void IAX2EndPoint::ProcessReceivedEthernetFrames()
 
     PString idString = f->IdString();
     PTRACE(5, "Distribution\tNow try to find a home for " << idString);
-    if (ProcessInMatchingProcessor(f)) {
+    if (ProcessInMatchingConnection(f)) {
       continue;
+    }
+
+    if (AddNewTranslationEntry(f)) {
+      if (ProcessInMatchingConnection(f)) {
+	continue;
+      }
     }
 
     /**These packets cannot be encrypted, as they are not going to a phone call */
