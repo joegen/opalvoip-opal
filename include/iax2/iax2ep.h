@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.9  2007/01/12 02:39:00  dereksmithies
+ *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
+ *  Ensure that the connection looks after the callProcessor.
+ *
  *  Revision 1.8  2007/01/09 03:32:23  dereksmithies
  *  Tidy up and improve the close down process - make it more robust.
  *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -225,21 +229,11 @@ class IAX2EndPoint : public OpalEndPoint
      or return a unique valid call number.
      */
   PINDEX NextSrcCallNumber(IAX2Processor * processor);
-  
-  /**Release a src call so it can be used by new processors so no
-     packets get directed there.*/
-  void ReleaseSrcCallNumber(IAX2Processor * processor);
-    
+      
   /**Write the token of all connections in the connectionsActive
      structure to the trace file */
   void ReportStoredConnections();
   
-  /**Register that the processor has a new destination call number*/
-  void RegisterDestCallNumber(IAX2Processor * processor);
-
-  /**Release a processor's destination call number*/
-  void ReleaseDestCallNumber(IAX2Processor * processor);
-
   /**Report the port in use for IAX calls */
   WORD ListenPortNumber()  { return 4569; }
       
@@ -266,12 +260,15 @@ class IAX2EndPoint : public OpalEndPoint
   
   /**Set the password to some value */
   void SetPassword(PString newValue);
-    
-  /**Return True if a connection (which matches this Frame ) can be
-     found. This check is called prior to transmission of this
-     frame. */
-  BOOL ProcessorForFrameIsAlive(IAX2Frame *f);
-  
+
+  /**It is possible that a retransmitted frame has been in the transmit queue,
+     and while sitting there that frames sending connection has died.  Thus,
+     prior to transmission, call tis method.
+
+     @return True if a connection (which matches this Frame ) can be
+     found. */
+  BOOL ConnectionForFrameIsAlive(IAX2Frame *f);
+ 
   /**Get out sequence number to use on status query frames*/
   PINDEX GetOutSequenceNumberForStatusQuery();
   
@@ -463,14 +460,15 @@ class IAX2EndPoint : public OpalEndPoint
      destination call to handle them. */
   IAX2SpecialProcessor * specialPacketHandler;
     
-  /**For the supplied IAX2Frame, pass it to a connection in the connectionsActive structure.
-     If no matching connection is found, return FALSE;
+  /**For the supplied IAX2Frame, pass it to a connection in the
+     connectionsActive structure.  If no matching connection is found, return
+     FALSE;
      
      If a matching connections is found, give the frame to the
      connection (for the connection to process) and return TRUE;
   */
-  BOOL ProcessInMatchingProcessor(IAX2Frame *f);  
-  
+  BOOL ProcessInMatchingConnection(IAX2Frame *f);  
+    
   /**The TokenTranslationDict may need a new entry. Examine
      the list of active connections, to see if any match this frame.
      If any do, then we add a new translation entry in tokenTable;
@@ -513,29 +511,6 @@ class IAX2EndPoint : public OpalEndPoint
      must be protected by the regProcessorsMutex*/
   PArrayObjects regProcessors;
   
-  /**This is a mutex guarding srcProcessors.
-     When ever processors is used this mutex should be locked
-     and unlocked when it has finished being used. */
-  PMutex srcProcessorsMutex;
-  
-  /**This is a PDictionary of procssors.  It uses the source
-     call number as the key to find a processor.  The processors
-     contained in this PDictionary are deleted by the IAX2EndPoint
-     or by the a IA2Connection so they must never be deleted directly
-     from inside this PDictionary.*/
-  PDictionary<POrdinalKey, IAX2Processor> srcProcessors;
-  
-  /**This is a mutex guarding destProcessors.
-     When ever destProcessors is used this mutex should be locked
-     and unlocked when it has finished being used. */
-  PMutex destProcessorsMutex;
-  
-  /**This is a PDictionary of procssors.  It uses the destination
-     call number as the key to find a processor.  The processors
-     contained in this PDictionary are deleted by the IAX2EndPoint
-     or by the a IA2Connection so they must never be deleted directly
-     from inside this PDictionary.*/
-  PDictionary<POrdinalKey, IAX2Processor> destProcessors;
 };
 
 #endif // IAX_ENDPOINT_H
