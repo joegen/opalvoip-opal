@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.22  2007/01/12 02:48:11  dereksmithies
+ * Make the iax2callprocessor a more permanent variable in the iax2connection.
+ *
  * Revision 1.21  2007/01/12 02:39:00  dereksmithies
  * Remove the notion of srcProcessors and dstProcessor lists from the ep.
  * Ensure that the connection looks after the callProcessor.
@@ -258,7 +261,7 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   connectionsActive.SetAt(connection->GetToken(), connection);
   connection->OnIncomingConnection();
 
-  connection->GetCallProcessor()->IncomingEthernetFrame(f);
+  connection->IncomingEthernetFrame(f);
 }
 
 void IAX2EndPoint::OnEstablished(OpalConnection & con)
