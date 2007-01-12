@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.15  2007/01/12 02:48:11  dereksmithies
+ * Make the iax2callprocessor a more permanent variable in the iax2connection.
+ *
  * Revision 1.14  2007/01/12 02:39:00  dereksmithies
  * Remove the notion of srcProcessors and dstProcessor lists from the ep.
  * Ensure that the connection looks after the callProcessor.
@@ -117,7 +120,8 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 			     const PString & inRemoteParty,
            const PString & inRemotePartyName)
   : OpalConnection(call, ep, token), 
-     endpoint(ep)
+endpoint(ep),
+iax2Processor(*new IAX2CallProcessor(ep))
 {  
   remotePartyAddress = "iax2:" + inRemoteParty;
   if (inRemotePartyName.IsEmpty())
@@ -128,8 +132,8 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
   PStringList res = IAX2EndPoint::DissectRemoteParty(inRemoteParty);
   remotePartyNumber = res[IAX2EndPoint::extensionIndex];
   
-  iax2Processor = new IAX2CallProcessor(ep);
-  iax2Processor->AssignConnection(this);
+
+  iax2Processor.AssignConnection(this);
   SetCallToken(token);
   originating = FALSE;
 
@@ -149,15 +153,14 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 
 IAX2Connection::~IAX2Connection()
 {
-  iax2Processor->Terminate();
-  iax2Processor->WaitForTermination(1000);
-  if (!iax2Processor->IsTerminated()) {
+  iax2Processor.Terminate();
+  iax2Processor.WaitForTermination(1000);
+  if (!iax2Processor.IsTerminated()) {
     PAssertAlways("List rpocessor failed to terminate");
   }
   PTRACE(3, "connection has terminated");
 
-  delete iax2Processor;
-  iax2Processor = NULL;
+  delete & iax2Processor;
 }
 
 void IAX2Connection::ClearCall(CallEndReason reason)
@@ -167,7 +170,7 @@ void IAX2Connection::ClearCall(CallEndReason reason)
   jitterBuffer.CloseDown();
 
   callEndReason = reason;
-  iax2Processor->Hangup(reason);
+  iax2Processor.Hangup(reason);
 
   OpalConnection::ClearCall(reason);
 }
@@ -176,9 +179,9 @@ void IAX2Connection::ClearCall(CallEndReason reason)
 void IAX2Connection::Release( CallEndReason reason)		        
 { 
   PTRACE(3, "IAX2Con\tRelease( CallEndReason " << reason);
-  iax2Processor->Hangup(reason);
+  iax2Processor.Hangup(reason);
 
-  iax2Processor->Release(reason); 
+  iax2Processor.Release(reason); 
   OpalConnection::Release(reason);
 }
 
@@ -186,7 +189,7 @@ void IAX2Connection::OnReleased()
 {
   PTRACE(3, "IAX2Con\tOnReleased()" << *this);
 
-  iax2Processor->OnReleased();
+  iax2Processor.OnReleased();
   OpalConnection::OnReleased();
   
 }
@@ -195,17 +198,17 @@ void IAX2Connection::IncomingEthernetFrame(IAX2Frame *frame)
 {
   PTRACE(5, "IAX2Con\tIncomingEthernetFrame(IAX2Frame *frame)" << frame->IdString());
 
-  if (iax2Processor->IsCallTerminating()) { 
+  if (iax2Processor.IsCallTerminating()) { 
     PTRACE(3, "IAX2Con\t***** incoming frame during termination " << frame->IdString());
      // snuck in here during termination. may be an ack for hangup or other re-transmitted frames
-     IAX2Frame *af = frame->BuildAppropriateFrameType(iax2Processor->GetEncryptionInfo());
+     IAX2Frame *af = frame->BuildAppropriateFrameType(iax2Processor.GetEncryptionInfo());
      if (af != NULL) {
        endpoint.transmitter->PurgeMatchingFullFrames(af);
        delete af;
      }
    }
    else
-     iax2Processor->IncomingEthernetFrame(frame);
+     iax2Processor.IncomingEthernetFrame(frame);
 } 
 
 void IAX2Connection::TransmitFrameToRemoteEndpoint(IAX2Frame *src)
@@ -256,7 +259,7 @@ BOOL IAX2Connection::SetConnected()
   PTRACE(3, "IAX2Con\tSETCONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   if (!originating)
-    iax2Processor->SetConnected();
+    iax2Processor.SetConnected();
 
   connectedTime = PTime ();
 
@@ -282,18 +285,18 @@ void IAX2Connection::OnConnected()
 
 void IAX2Connection::SendDtmf(PString dtmf)
 {
-  iax2Processor->SendDtmf(dtmf); 
+  iax2Processor.SendDtmf(dtmf); 
 }
 
 BOOL IAX2Connection::SendUserInputString(const PString & value ) 
 { 
-  iax2Processor->SendText(value); 
+  iax2Processor.SendText(value); 
   return TRUE;
 }
   
 BOOL IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
 { 
-  iax2Processor->SendDtmf(tone); 
+  iax2Processor.SendDtmf(tone); 
   return TRUE;
 }
 
@@ -303,7 +306,7 @@ void IAX2Connection::OnEstablished()
   PTRACE(3, "IAX2Con\t ON ESTABLISHED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
   OpalConnection::OnEstablished();
-  iax2Processor->SetEstablished(originating);
+  iax2Processor.SetEstablished(originating);
 }
 
 OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
@@ -322,7 +325,7 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
 
 void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
 {
-  iax2Processor->PutSoundPacketToNetwork(sound);
+  iax2Processor.PutSoundPacketToNetwork(sound);
 } 
 
 BOOL IAX2Connection::SetUpConnection() 
@@ -330,11 +333,11 @@ BOOL IAX2Connection::SetUpConnection()
   PTRACE(3, "IAX2Con\tSetUpConnection() ");
   PTRACE(3, "IAX2Con\tWe are making a call");
   
-  iax2Processor->SetUserName(userName);
-  iax2Processor->SetPassword(password);
+  iax2Processor.SetUserName(userName);
+  iax2Processor.SetPassword(password);
   
   originating = TRUE;
-  return iax2Processor->SetUpConnection(); 
+  return iax2Processor.SetUpConnection(); 
 }
 
 void IAX2Connection::SetCallToken(PString newToken)
@@ -342,7 +345,7 @@ void IAX2Connection::SetCallToken(PString newToken)
   PTRACE(3, "IAX2Con\tSetCallToken(PString newToken)" << newToken);
 
   callToken = newToken;
-  iax2Processor->SetCallToken(newToken);
+  iax2Processor.SetCallToken(newToken);
 }
 
 PINDEX IAX2Connection::GetSupportedCodecs() 
@@ -456,7 +459,7 @@ void IAX2Connection::HoldConnection()
   PauseMediaStreams(TRUE);
   endpoint.OnHold(*this);
   
-  iax2Processor->SendHold();
+  iax2Processor.SendHold();
 }
 
 void IAX2Connection::RetrieveConnection()
@@ -468,7 +471,7 @@ void IAX2Connection::RetrieveConnection()
   PauseMediaStreams(FALSE);  
   endpoint.OnHold(*this);
   
-  iax2Processor->SendHoldRelease();
+  iax2Processor.SendHoldRelease();
 }
 
 void IAX2Connection::RemoteHoldConnection()
@@ -502,7 +505,7 @@ void IAX2Connection::TransferConnection(
   if (rpList[IAX2EndPoint::addressIndex] == remoteAddress || 
       rpList[IAX2EndPoint::addressIndex].IsEmpty()) {
         
-    iax2Processor->SendTransfer(
+    iax2Processor.SendTransfer(
         rpList[IAX2EndPoint::extensionIndex],
         rpList[IAX2EndPoint::contextIndex]);
   } else {
