@@ -27,6 +27,9 @@
  *
  *
  * $Log: iax2jitter.cxx,v $
+ * Revision 1.2  2007/01/13 00:04:57  rjongbloed
+ * Fixed compilation on DevStudio 2003
+ *
  * Revision 1.1  2007/01/11 03:02:16  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -76,20 +79,17 @@ RTP_DataFrame * PendingRtpDataFrames::InternalGetLastFrame()
 
 RTP_DataFrame * PendingRtpDataFrames::GetLastFrame() 
 {
-  while(TRUE) {
-      
-      if (!keepGoing)
-	  return NULL;
-      
-      RTP_DataFrame * answer = InternalGetLastFrame();
-      if (answer != NULL)
-	  return answer;
-      
-      if (!keepGoing)
-	  return NULL;  
-      
-      activate.Wait();
+  while (keepGoing) {
+    RTP_DataFrame * answer = InternalGetLastFrame();
+    if (answer != NULL)
+      return answer;
+
+    if (!keepGoing)
+      return NULL;  
+
+    activate.Wait();
   }
+  return NULL;
 }
 
 void PendingRtpDataFrames::AddNewFrame(RTP_DataFrame *newElem)
