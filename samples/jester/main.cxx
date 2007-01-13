@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.11  2007/01/13 00:05:40  rjongbloed
+ * Fixed compilation on DevStudio 2003
+ *
  * Revision 1.10  2007/01/12 10:00:57  dereksmithies
  * bring it up to date so it compiles.
  *
@@ -176,11 +179,7 @@ void JesterProcess::Main()
   if (args.HasOption('w'))
       wavFile = args.GetOptionString('w');
   else {
-#ifdef P_LINUX
       wavFile = "../../../contrib/openam/sample_message.wav";
-#else
-      wavFile = "..\..\..\contrib\openam\sample_message.wav";
-#endif
   }
   
   bytesPerBlock = 480;
@@ -295,8 +294,7 @@ void JesterProcess::ConsumeUdpPackets(PThread &, INT)
 {
   RTP_DataFrame readFrame;
   PAdaptiveDelay readDelay;
-  BYTE silence[bytesPerBlock];
-  memset(silence, 0, bytesPerBlock);
+  PBYTEArray silence(bytesPerBlock);
   consumeTimestamp = 0;
   consumeIndex = 0;
   while(keepRunning) {
