@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.23  2007/01/13 00:04:57  rjongbloed
+ * Fixed compilation on DevStudio 2003
+ *
  * Revision 1.22  2007/01/12 02:48:11  dereksmithies
  * Make the iax2callprocessor a more permanent variable in the iax2connection.
  *
@@ -271,7 +274,7 @@ void IAX2EndPoint::OnEstablished(OpalConnection & con)
   OpalEndPoint::OnEstablished(con);
 }
 
-PINDEX IAX2EndPoint::NextSrcCallNumber(IAX2Processor * processor)
+PINDEX IAX2EndPoint::NextSrcCallNumber(IAX2Processor * /*processor*/)
 {
     PWaitAndSignal m(callNumbLock);
     
