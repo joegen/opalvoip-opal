@@ -27,6 +27,10 @@
  *
  *
  * $Log: iax2jitter.cxx,v $
+ * Revision 1.3  2007/01/14 21:06:07  dereksmithies
+ * Fix a memory leak. The RTP_DataFrame class does need to be handled more
+ * efficiently, but this will do for now.
+ *
  * Revision 1.2  2007/01/13 00:04:57  rjongbloed
  * Fixed compilation on DevStudio 2003
  *
@@ -130,6 +134,7 @@ BOOL IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
 	return FALSE;
 
     frame = *oldestFrame;
+    delete oldestFrame;
 
     return TRUE;
 }
