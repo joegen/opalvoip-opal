@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.13  2007/01/14 22:18:35  dereksmithies
+ * MOdify the period when doing silence detect, to be 69sec off,  6 sec on.
+ *
  * Revision 1.12  2007/01/14 20:52:32  dereksmithies
  * Report available audio devices if it fails to open the specified device.
  *
@@ -251,7 +254,7 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
     while(keepRunning) {
 	generateTimestamp =  960 + (generateIndex  * 240);
 	//Silence period, 45 seconds cycle, with 3 second on time.
-	if (silenceSuppression && ((generateIndex % 1500) > 200)) {
+	if (silenceSuppression && ((generateIndex % 2500) > 200)) {
 	    PTRACE(3, "Don't send this frame - silence period");
 	    if (lastFrameWasSilence == FALSE) {
 		PTRACE(3, "Stop Audio here");
