@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.12  2007/01/14 20:52:32  dereksmithies
+ * Report available audio devices if it fails to open the specified device.
+ *
  * Revision 1.11  2007/01/13 00:05:40  rjongbloed
  * Fixed compilation on DevStudio 2003
  *
@@ -195,7 +198,14 @@ void JesterProcess::Main()
   if (!player.Open(audioDevice, PSoundChannel::Player)) {
       cerr <<  "Failed to open the sound device " << audioDevice 
 	   << " to write the jittered audio to"  << endl;
-      cerr << "Terminating now" << endl;
+      cerr << endl 
+	   << "available devices are " << endl;
+      PStringList namesPlay = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
+      for (PINDEX i = 0; i < namesPlay.GetSize(); i++)
+	  cerr << i << "  " << namesPlay[i] << endl;
+
+      cerr << endl;
+      cerr << "Terminating now" << endl;      
       return;
   }
 
@@ -241,7 +251,7 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
     while(keepRunning) {
 	generateTimestamp =  960 + (generateIndex  * 240);
 	//Silence period, 45 seconds cycle, with 3 second on time.
-	if (silenceSuppression && ((generateIndex % 1500) > 100)) {
+	if (silenceSuppression && ((generateIndex % 1500) > 200)) {
 	    PTRACE(3, "Don't send this frame - silence period");
 	    if (lastFrameWasSilence == FALSE) {
 		PTRACE(3, "Stop Audio here");
