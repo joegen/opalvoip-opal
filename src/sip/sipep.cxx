@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.29  2007/01/04 22:10:35  dsandras
+ * Revision 1.2098.2.30  2007/01/15 22:16:44  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.97.2.29  2007/01/04 22:10:35  dsandras
  * Make sure we do not strip a > when stripping parameters from the From field
  * when receiving a MESSAGE.
  *
@@ -545,27 +548,32 @@
  
 ////////////////////////////////////////////////////////////////////////////
 
-SIPInfo::SIPInfo(SIPEndPoint &endpoint, const PString & adjustedUsername)
-  :ep(endpoint)
+SIPInfo::SIPInfo(SIPEndPoint & endpoint, 
+               const PString & adjustedUsername, 
+         const PTimeInterval & retryMin,
+         const PTimeInterval & retryMax)
+  : ep(endpoint), 
+    registrarTransport(NULL),
+    registered(FALSE),
+    expire(0),
+    retryTimeoutMin(retryMin), 
+    retryTimeoutMax(retryMax) 
 {
-  expire = 0;
-  registered = FALSE; 
-  registrarTransport = NULL;
+  registrationID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
   registrationAddress.Parse(adjustedUsername);
-  registrationID = 
-    OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 }
 
 
 SIPInfo::~SIPInfo() 
 {
-  registrations.RemoveAll();
   PWaitAndSignal m(transportMutex);
 
   if (registrarTransport) { 
     delete registrarTransport;
     registrarTransport = NULL;
   }
+
+  registrations.RemoveAll();
 }
 
 
@@ -597,8 +605,15 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
 }
 
 
-SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint, const PString & name, const PString & authName, const PString & pass, int exp)
-  :SIPInfo(endpoint, name)
+SIPRegisterInfo::SIPRegisterInfo(SIPEndPoint & endpoint,
+                               const PString & _originalHost,
+                               const PString & name, 
+                               const PString & authName, 
+                               const PString & pass, 
+                                           int exp,
+                        const PTimeInterval & minRetryTime, 
+                        const PTimeInterval & maxRetryTime)
+  : SIPInfo(endpoint, name, minRetryTime, maxRetryTime), originalHost(_originalHost)
 {
   expire = exp;
   if (expire == 0)
@@ -628,7 +643,8 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unreg
 			  t, 
 			  registrationAddress, 
 			  registrationID, 
-			  unregister ? 0:expire); 
+			  unregister ? 0 : expire,
+        retryTimeoutMin, retryTimeoutMax);
 }
 
 void SIPRegisterInfo::OnSuccess ()
@@ -750,7 +766,7 @@ SIPEndPoint::~SIPEndPoint()
     SIPURL url;
     SIPInfo *info = activeSIPInfo.GetAt(0);
     url = info->GetRegistrationAddress ();
-    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) {
+    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) { 
       Unregister(url.GetHostName(), url.GetUserName());
       info->SetRegistered(FALSE);
     }
@@ -847,31 +863,43 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
 
 
-OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address)
+OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address, 
+                                             BOOL isLocalAddress)
 {
-  PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
-  WORD port = GetDefaultSignalPort();
-  if (!listeners.IsEmpty())
-    GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
-
   OpalTransport * transport;
-  if (ip.IsAny()) {
-    // endpoint is listening to anything - attempt call using all interfaces
-    transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
-    if (transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport from " << address);
+	
+  if(isLocalAddress == TRUE) {
+    // already determined which interface to use
+    transport = address.CreateTransport(*this);
+    if(transport == NULL) {
+      PTRACE(1, "SIP\tCould not create transport for " << address);
       return NULL;
     }
-  }
-  else {
-    // endpoint has a specific listener - use only that interface
-    OpalTransportAddress LocalAddress(ip, port, "udp$");
-    transport = LocalAddress.CreateTransport(*this) ;
-    if (transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
-      return NULL;
+  } else {
+    PIPSocket::Address ip(PIPSocket::GetDefaultIpAny());
+    WORD port = GetDefaultSignalPort();
+    if (!listeners.IsEmpty())
+      GetListeners()[0].GetLocalAddress().GetIpAndPort(ip, port);
+
+    if (ip.IsAny()) {
+      // endpoint is listening to anything - attempt call using all interfaces
+      transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
+      if (transport == NULL) {
+        PTRACE(1, "SIP\tCould not create transport from " << address);
+        return NULL;
+      }
+    }
+    else {
+      // endpoint has a specific listener - use only that interface
+      OpalTransportAddress LocalAddress(ip, port, "udp$");
+      transport = LocalAddress.CreateTransport(*this) ;
+      if (transport == NULL) {
+        PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
+        return NULL;
+      }
     }
   }
+  
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
@@ -1036,10 +1064,8 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     pdu->AdjustVia(transport);
 
   // Find a corresponding connection
-  connectionsActiveInUse.Wait();
-  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID());
+  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID(), PSafeReadOnly);
   if (connection != NULL) {
-    connectionsActiveInUse.Signal();
     SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
     if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
       // Have a response to the INVITE, so end Connect mode on the transport
@@ -1048,10 +1074,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
     connection->QueuePDU(pdu);
     return TRUE;
   }
-
-  if (pdu->GetMethod() != SIP_PDU::Method_INVITE)
-    connectionsActiveInUse.Signal();
-
+  
   // PDUs outside of connection context
   if (!transport.IsReliable()) {
     // Get response address from new request
@@ -1064,6 +1087,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   switch (pdu->GetMethod()) {
     case SIP_PDU::NumMethods :
       {
+        PWaitAndSignal m(transactionsMutex);
         SIPTransaction * transaction = transactions.GetAt(pdu->GetTransactionID());
         if (transaction != NULL)
           transaction->OnReceivedResponse(*pdu);
@@ -1088,12 +1112,12 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 
     case SIP_PDU::Method_MESSAGE :
       {
-	OnReceivedMESSAGE(transport, *pdu);
+        OnReceivedMESSAGE(transport, *pdu);
         SIP_PDU response(*pdu, SIP_PDU::Successful_OK);
-	PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
-	response.GetMIME().SetContact(GetLocalURL(transport, username));
+        PString username = SIPURL(response.GetMIME().GetTo()).GetUserName();
+        response.GetMIME().SetContact(GetLocalURL(transport, username));
         response.Write(transport);
-	break;
+        break;
       }
    
     case SIP_PDU::Method_OPTIONS :
@@ -1199,7 +1223,6 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
   // add the connection to the endpoint list
   connectionsActive.SetAt(connection->GetToken(), connection);
-  connectionsActiveInUse.Signal();
   
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);
@@ -1423,8 +1446,8 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 
       PTRACE(3, "SIP\tSubscription is " << pdu.GetMIME().GetSubscriptionState());
       if (pdu.GetMIME().GetExpires(0) != 0) {
-	int sec = pdu.GetMIME().GetExpires(0)*9/10;  
-	info->SetExpire(sec);
+	      int sec = pdu.GetMIME().GetExpires(0)*9/10;  
+	      info->SetExpire(sec);
       }
     }
   }
@@ -1497,7 +1520,6 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
 
   OnMessageReceived(from, pdu.GetEntityBody());
 }
-
 
 void SIPEndPoint::OnRegistrationFailed(const PString & /*host*/, 
 				       const PString & /*userName*/,
@@ -1620,17 +1642,18 @@ BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
   return TRUE;
 }
 
-
 BOOL SIPEndPoint::Register(const PString & host,
                            const PString & username,
-			   const PString & authName,
+                           const PString & authName,
                            const PString & password,
-			   const PString & realm,
-			   int timeout)
+                           const PString & realm,
+			                                 int timeout,
+                     const PTimeInterval & minRetryTime, 
+                     const PTimeInterval & maxRetryTime)
 {
   if (timeout == 0)
     timeout = GetRegistrarTimeToLive().GetSeconds(); 
-  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout);
+  return TransmitSIPInfo(SIP_PDU::Method_REGISTER, host, username, authName, password, realm, PString::Empty(), timeout, minRetryTime, maxRetryTime);
 }
 
 
@@ -1655,7 +1678,6 @@ BOOL SIPEndPoint::MWISubscribe(const PString & host, const PString & username, i
   return TransmitSIPInfo (SIP_PDU::Method_SUBSCRIBE, host, username, timeout);
 }
 
-
 BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
 				  const PString & host,
 				  const PString & username,
@@ -1663,7 +1685,9 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
 				  const PString & password,
 				  const PString & realm,
 				  const PString & body,
-				  int timeout)
+				  int timeout,
+          const PTimeInterval & minRetryTime, 
+          const PTimeInterval & maxRetryTime)
 {
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
@@ -1724,18 +1748,22 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
       info->SetBody(body);         // Adjust the body if required 
     info->SetExpire(timeout);      // Adjust the expire field
   } 
+
   // otherwise create a new request with this method type
   else {
-    if (m == SIP_PDU::Method_REGISTER)
-      info = new SIPRegisterInfo(*this, adjustedUsername, authName, password, timeout);
-    else if (m == SIP_PDU::Method_SUBSCRIBE) {
-      info = new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
-    }
-    else if (m == SIP_PDU::Method_MESSAGE)
-      info = new SIPMessageInfo(*this, adjustedUsername, body);
-    if (info == NULL) {
-      PTRACE(1, "SIP\tUnknown SIP request method " << m);
-      return FALSE;
+    switch (m) {
+      case SIP_PDU::Method_REGISTER:
+        info = CreateRegisterInfo(host, adjustedUsername, authName, password, timeout, minRetryTime, maxRetryTime);
+        break;
+      case SIP_PDU::Method_SUBSCRIBE:
+        info = CreateMWISubscribeInfo(adjustedUsername, timeout);
+        break;
+      case SIP_PDU::Method_MESSAGE:
+        info = CreateMessageInfo(adjustedUsername, body);
+        break;
+      default:
+        PTRACE(1, "SIP\tUnknown SIP request method " << m);
+        return FALSE;
     }
     activeSIPInfo.Append(info);
   }
@@ -1756,6 +1784,27 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
   return TRUE;
 }
 
+SIPRegisterInfo * SIPEndPoint::CreateRegisterInfo(
+      const PString & originalHost,
+      const PString & adjustedUsername, 
+      const PString & authName, 
+      const PString & password, 
+      int timeout, 
+      const PTimeInterval & minRetryTime, 
+      const PTimeInterval & maxRetryTime)
+{
+  return new SIPRegisterInfo(*this, originalHost, adjustedUsername, authName, password, timeout, minRetryTime, maxRetryTime);
+}
+
+SIPMWISubscribeInfo * SIPEndPoint::CreateMWISubscribeInfo(const PString & adjustedUsername, int timeout)
+{
+  return new SIPMWISubscribeInfo(*this, adjustedUsername, timeout);
+}
+
+SIPMessageInfo * SIPEndPoint::CreateMessageInfo(const PString & adjustedUsername, const PString & body)
+{
+  return new SIPMessageInfo(*this, adjustedUsername, body);
+}
 
 BOOL SIPEndPoint::Unregister(const PString & host,
 			     const PString & user)
@@ -1828,8 +1877,7 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
 }
 
 
-void SIPEndPoint::ParsePartyName(const PString & remoteParty,
-				 PString & party)
+void SIPEndPoint::ParsePartyName(const PString & remoteParty, PString & party)
 {
   party = remoteParty;
   
@@ -1844,18 +1892,17 @@ void SIPEndPoint::ParsePartyName(const PString & remoteParty,
     PINDEX i;
     for (i = 0; i < e164.GetLength(); ++i)
       if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
-	break;
+	      break;
     if (i >= e164.GetLength()) {
       PString str;
       if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
-	PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
-	party = str;
+	      PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
+	      party = str;
       }
     }
   }
 #endif
 }
-
 
 void SIPEndPoint::SetProxy(const PString & hostname,
                            const PString & username,
