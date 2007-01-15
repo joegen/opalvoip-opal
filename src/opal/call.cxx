@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2040.2.4  2006/12/31 17:00:48  dsandras
+ * Revision 1.2040.2.5  2007/01/15 22:16:43  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.39.2.4  2006/12/31 17:00:48  dsandras
  * Do not try transcoding RTP frames if they do not correspond to the formats
  * for which the transcoder was created.
  *
@@ -299,8 +302,9 @@ BOOL OpalCall::OnSetUp(OpalConnection & connection)
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
-      if (conn->SetUpConnection())
+      if (conn->SetUpConnection()) {
         ok = TRUE;
+      }
     }
   }
 
@@ -364,6 +368,9 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 
   BOOL createdOne = FALSE;
 
+  if (!LockReadOnly())
+    return FALSE;
+
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       if (conn->SetConnected())
@@ -376,6 +383,8 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
     if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
       createdOne = TRUE;
   }
+
+  UnlockReadOnly();
 
   if (ok && createdOne) {
     for (PSafePtr<OpalConnection> conn = connectionsActive; conn != NULL; ++conn)
@@ -400,7 +409,7 @@ BOOL OpalCall::OnEstablished(OpalConnection & PTRACE_PARAM(connection))
   if (connectionsActive.GetSize() < 2)
     return FALSE;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (conn->GetPhase() != OpalConnection::EstablishedPhase)
       return FALSE;
   }
@@ -613,11 +622,13 @@ void OpalCall::OnReleased(OpalConnection & connection)
   connectionsActive.Remove(&connection);
 
   // A call will evaporate when one connection left, at some point this is
-  // to be changes so can have "parked" connections.
-  PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
-  if (last != NULL && connectionsActive.GetSize() == 1)
-    last->Release(connection.GetCallEndReason());
-
+  // to be changes so can have "parked" connections. 
+  if(connectionsActive.GetSize() == 1)
+  {
+    PSafePtr<OpalConnection> last = connectionsActive.GetAt(0, PSafeReference);
+    if (last != NULL)
+      last->Release(connection.GetCallEndReason());
+  }
   if (connectionsActive.IsEmpty()) {
     OnCleared();
     manager.activeCalls.RemoveAt(GetToken());

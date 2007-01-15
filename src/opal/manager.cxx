@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2057.2.1  2006/03/20 10:48:34  csoutheren
+ * Revision 1.2057.2.2  2007/01/15 22:16:43  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.56.2.1  2006/03/20 10:48:34  csoutheren
  * Backport from CVS head
  *
  * Revision 2.57  2006/03/20 10:37:47  csoutheren
@@ -478,7 +481,7 @@ BOOL OpalManager::ClearCall(const PString & token,
 
   {
     // Find the call by token, callid or conferenceid
-    PSafePtr<OpalCall> call = activeCalls.FindWithLock(token);
+    PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
     if (call == NULL)
       return FALSE;
 
