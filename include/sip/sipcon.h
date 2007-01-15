@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2056  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2057  2007/01/15 22:12:20  dsandras
+ * Added missing mutex.
+ *
+ * Revision 2.55  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -614,7 +617,7 @@ class SIPConnection : public OpalConnection
       unsigned rtpSessionId
     );
 
-    SIPTransaction * GetTransaction (const PString & transactionID) { return transactions.GetAt(transactionID); }
+    SIPTransaction * GetTransaction (const PString & transactionID) { PWaitAndSignal m(transactionsMutex); return transactions.GetAt(transactionID); }
 
     void AddTransaction(
       SIPTransaction * transaction
