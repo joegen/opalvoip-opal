@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2040.2.3  2006/12/08 06:27:20  csoutheren
+ * Revision 1.2040.2.4  2007/01/15 22:16:43  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.39.2.3  2006/12/08 06:27:20  csoutheren
  * Fix compilation problem caused by bad patch backports
  * Allow compilation with latest PWLib
  *
@@ -210,9 +213,9 @@ OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL 
   // Set default frame size to 50ms of audio, otherwise just one frame
   unsigned frameTime = mediaFormat.GetFrameTime();
   if (frameTime != 0 && mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
-    defaultDataSize = ((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize();
+    SetDataSize(((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize());
   else
-    defaultDataSize = mediaFormat.GetFrameSize();
+    SetDataSize(mediaFormat.GetFrameSize());
 
   timestamp = 0;
   marker = TRUE;
@@ -313,6 +316,8 @@ BOOL OpalMediaStream::Close()
 
   patchMutex.Wait();
 
+  isOpen = FALSE;
+
   if (patchThread != NULL) {
     PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *patchThread);
     OpalMediaPatch * patch = patchThread;
@@ -331,7 +336,6 @@ BOOL OpalMediaStream::Close()
   else
     patchMutex.Signal();
 
-  isOpen = FALSE;
   return TRUE;
 }
 
@@ -507,6 +511,22 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 }
 
 
+void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+{
+  PWaitAndSignal Lock(patchMutex);
+  if (patchThread != NULL) patchThread->AddFilter(Filter, Stage);
+}
+
+
+BOOL OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
+{
+  PWaitAndSignal Lock(patchMutex);
+
+  if (patchThread != NULL) return patchThread->RemoveFilter(Filter, Stage);
+
+  return FALSE;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalNullMediaStream::OpalNullMediaStream(const OpalMediaFormat & mediaFormat,
@@ -553,12 +573,6 @@ OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
-  /* If we are a source then we should set our buffer size to the max
-     practical UDP packet size. This means we have a buffer that can accept
-     whatever the RTP sender throws at us. For sink, we just clamp it to that
-     maximum size. */
-  if (isSource || defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
-    defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
 }
 
 
@@ -617,6 +631,22 @@ BOOL OpalRTPMediaStream::WritePacket(RTP_DataFrame & packet)
   return rtpSession.WriteData(packet);
 }
 
+BOOL OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
+{
+  if (dataSize <= 0)
+    return FALSE;
+
+  defaultDataSize = dataSize;
+
+  /* If we are a source then we should set our buffer size to the max
+     practical UDP packet size. This means we have a buffer that can accept
+     whatever the RTP sender throws at us. For sink, we just clamp it to that
+     maximum size. */
+  if (IsSource() || defaultDataSize > RTP_DataFrame::MaxEthernetPayloadSize)
+    defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
+
+  return TRUE;
+}
 
 BOOL OpalRTPMediaStream::IsSynchronous() const
 {
@@ -643,13 +673,17 @@ OpalRawMediaStream::OpalRawMediaStream(const OpalMediaFormat & mediaFormat,
 {
   channel = chan;
   autoDelete = autoDel;
+  averageSignalSum = 0;
+  averageSignalSamples = 0;
 }
 
 
 OpalRawMediaStream::~OpalRawMediaStream()
 {
+  PWaitAndSignal m(channel_mutex);
   if (autoDelete)
     delete channel;
+  channel = NULL;
 }
 
 
@@ -662,13 +696,16 @@ BOOL OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & length)
     return FALSE;
   }
 
-  if (channel == NULL)
+  PWaitAndSignal m(channel_mutex);
+  if (!IsOpen() || 
+      channel == NULL)
     return FALSE;
 
   if (!channel->Read(buffer, size))
     return FALSE;
 
   length = channel->GetLastReadCount();
+  CollectAverage(buffer, length);
   return TRUE;
 }
 
@@ -682,20 +719,25 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
     return FALSE;
   }
 
-  if (channel == NULL)
+  PWaitAndSignal m(channel_mutex);
+  if (!IsOpen() ||
+      channel == NULL)
     return FALSE;
 
   if (buffer != NULL && length != 0) {
     if (!channel->Write(buffer, length))
       return FALSE;
+    written = channel->GetLastWriteCount();
+    CollectAverage(buffer, written);
   }
   else {
     PBYTEArray silence(defaultDataSize);
     if (!channel->Write(silence, defaultDataSize))
       return FALSE;
+    written = channel->GetLastWriteCount();
+    CollectAverage(silence, written);
   }
 
-  written = channel->GetLastWriteCount();
   return TRUE;
 }
 
@@ -706,10 +748,37 @@ BOOL OpalRawMediaStream::Close()
   if (!OpalMediaStream::Close())
     return FALSE;
 
+  PWaitAndSignal m(channel_mutex);
   if (channel == NULL)
     return FALSE;
 
   return channel->Close();
+}
+
+
+unsigned OpalRawMediaStream::GetAverageSignalLevel()
+{
+  PWaitAndSignal m(channel_mutex);
+
+  if (averageSignalSamples == 0)
+    return UINT_MAX;
+
+  unsigned average = (unsigned)(averageSignalSum/averageSignalSamples);
+  averageSignalSum = average;
+  averageSignalSamples = 1;
+  return average;
+}
+
+
+void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
+{
+  size = size/2;
+  averageSignalSamples += size;
+  const short * pcm = (const short *)buffer;
+  while (size-- > 0) {
+    averageSignalSum += PABS(*pcm);
+    pcm++;
+  }
 }
 
 
@@ -898,7 +967,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   frame->width = width;
   frame->height = height;
 
-  PINDEX bytesReturned = 0;
+  PINDEX bytesReturned = size;
   if (!inputDevice->GetFrameData(frame->data, &bytesReturned))
     return FALSE;
 

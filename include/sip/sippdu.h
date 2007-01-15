@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037.2.4  2006/12/08 06:27:20  csoutheren
+ * Revision 1.2037.2.5  2007/01/15 22:16:43  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.36.2.4  2006/12/08 06:27:20  csoutheren
  * Fix compilation problem caused by bad patch backports
  * Allow compilation with latest PWLib
  *
@@ -356,6 +359,9 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetReferTo() const;
     void SetReferTo(const PString & r);
+
+    PString GetReferredBy() const;
+    void SetReferredBy(const PString & r);
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
@@ -719,6 +725,7 @@ class SIP_PDU : public PObject
     unsigned GetVersionMajor() const         { return versionMajor; }
     unsigned GetVersionMinor() const         { return versionMinor; }
     const PString & GetEntityBody() const    { return entityBody; }
+          PString & GetEntityBody()          { return entityBody; }
     const PString & GetInfo() const          { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }
@@ -764,7 +771,9 @@ class SIPTransaction : public SIP_PDU
   public:
     SIPTransaction(
       SIPEndPoint   & endpoint,
-      OpalTransport & transport
+      OpalTransport & transport,
+      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
     /** Construct a transaction for requests in a dialog.
      *  The transport is used to determine the local address
@@ -780,6 +789,7 @@ class SIPTransaction : public SIP_PDU
     BOOL IsInProgress() const { return state == Trying && state == Proceeding; }
     BOOL IsFailed() const { return state > Terminated_Success; }
     BOOL IsFinished()     { return finished.Wait(0); }
+    BOOL IsCanceled() const {return state == Terminated_Cancelled;}
     void Wait();
     BOOL SendCANCEL();
 
@@ -792,7 +802,10 @@ class SIPTransaction : public SIP_PDU
     const OpalTransportAddress & GetLocalAddress() const { return localAddress; }
 
   protected:
-    void Construct();
+    void Construct(
+      const PTimeInterval & minRetryTime = PMaxTimeInterval,
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+    );
     BOOL ResendCANCEL();
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
@@ -811,7 +824,7 @@ class SIPTransaction : public SIP_PDU
       Terminated_Cancelled,
       NumStates
     };
-    void SetTerminated(States newState);
+    virtual void SetTerminated(States newState);
 
     SIPEndPoint   & endpoint;
     OpalTransport & transport;
@@ -824,6 +837,9 @@ class SIPTransaction : public SIP_PDU
 
     PSyncPoint finished;
     PTimedMutex mutex;
+
+    PTimeInterval retryTimeoutMin; 
+    PTimeInterval retryTimeoutMax; 
 
     OpalTransportAddress localAddress;
 };
@@ -854,6 +870,11 @@ class SIPInvite : public SIPTransaction
       OpalTransport & transport,
       RTP_SessionManager & sm
     );
+    SIPInvite(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      unsigned rtpSessionId
+    );
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
 
@@ -875,7 +896,9 @@ class SIPRegister : public SIPTransaction
       OpalTransport & transport,
       const SIPURL & address,
       const PString & id,
-      unsigned expires
+      unsigned expires,
+      const PTimeInterval & minRetryTime = PMaxTimeInterval,
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
 };
 
@@ -912,12 +935,25 @@ class SIPMWISubscribe : public SIPTransaction
 
 class SIPRefer : public SIPTransaction
 {
-    PCLASSINFO(SIPRefer, SIPTransaction);
+  PCLASSINFO(SIPRefer, SIPTransaction);
   public:
     SIPRefer(
       SIPConnection & connection,
       OpalTransport & transport,
       const PString & refer
+    );
+    SIPRefer(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      const PString & refer,
+      const PString & referred_by
+    );
+  protected:
+    void Construct(
+      SIPConnection & connection,
+      OpalTransport & transport,
+      const PString & refer,
+      const PString & referred_by = PString::Empty()
     );
 };
 

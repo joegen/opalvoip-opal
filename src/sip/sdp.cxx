@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2027.2.3  2006/04/23 20:17:10  dsandras
+ * Revision 1.2027.2.4  2007/01/15 22:16:43  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.26.2.3  2006/04/23 20:17:10  dsandras
  * Backport from HEAD.
  *
  * Revision 2.35  2006/04/23 20:12:52  dsandras
@@ -165,7 +168,7 @@ static OpalTransportAddress ParseConnectAddress(const PStringArray & tokens, PIN
   if (tokens.GetSize() == offset+3) {
     if (tokens[offset] *= "IN") {
       if (tokens[offset+1] *= "IP4")
-        return tokens[offset+2];
+        return OpalTransportAddress(tokens[offset+2], 0, "udp");
       else {
         PTRACE(1, "SDP\tConnect address has invalid address type \"" << tokens[offset+1] << '"');
       }

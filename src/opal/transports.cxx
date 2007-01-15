@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2058  2005/11/29 11:49:35  dsandras
+ * Revision 1.2058.2.1  2007/01/15 22:16:43  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.57  2005/11/29 11:49:35  dsandras
  * socket is autodeleted, even in case of failure.
  *
  * Revision 2.56  2005/10/21 17:57:00  dsandras
@@ -842,7 +845,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
     }
   }
 
-  if (host == "*") {
+  if (host == "*" || host == "0.0.0.0") {
     ip = PIPSocket::GetDefaultIpAny();
     return TRUE;
   }
@@ -1767,7 +1770,9 @@ OpalTransportUDP::~OpalTransportUDP()
 BOOL OpalTransportUDP::Close()
 {
   PTRACE(4, "OpalUDP\tClose");
-  PReadWaitAndSignal mutex(channelPointerMutex);
+  PWaitAndSignal lock(connectSocketsMutex);
+
+  iostream::clear(badbit);
 
   if (socketOwnedByListener) {
     channelPointerMutex.StartWrite();
@@ -1828,11 +1833,14 @@ BOOL OpalTransportUDP::Connect()
     PUDPSocket * socket;
     if (stun->CreateSocket(socket)) {
       PIndirectChannel::Close();	//closing the channel and opening it with the new socket
+      channelPointerMutex.StartWrite();
       readAutoDelete = writeAutoDelete = FALSE;
+      channelPointerMutex.EndWrite();
       Open(socket);
       socket->GetLocalAddress(localAddress, localPort);
       socket->SetSendAddress(remoteAddress, remotePort);
       PTRACE(4, "OpalUDP\tSTUN created socket: " << localAddress << ':' << localPort);
+      PWaitAndSignal lock (connectSocketsMutex);
       connectSockets.Append(socket);
       return true;
     }
@@ -1899,7 +1907,10 @@ BOOL OpalTransportUDP::Connect()
 
     socket->GetLocalAddress(localAddress, localPort);
     socket->SetSendAddress(remoteAddress, remotePort);
+
+    connectSocketsMutex.Wait();
     connectSockets.Append(socket);
+    connectSocketsMutex.Signal();
   }
   
   readAutoDelete = writeAutoDelete = FALSE;
@@ -1916,6 +1927,7 @@ BOOL OpalTransportUDP::Connect()
 void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 {
   PAssert(theLocalAddress.GetIpAndPort(localAddress, localPort), PInvalidParameter);
+  PWaitAndSignal lock(connectSocketsMutex);
 
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
@@ -1926,8 +1938,16 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
       connectSockets.DisallowDeleteObjects();
       connectSockets.RemoveAt(i);
       connectSockets.AllowDeleteObjects();
+
+      // We need to protect this because it is still possible that someone
+      // is using the socket we want to delete.
+      channelPointerMutex.StartWrite();
+
       readChannel = NULL;
       writeChannel = NULL;
+
+      channelPointerMutex.EndWrite();
+
       socket->SetOption(SO_BROADCAST, 0);
       PAssert(Open(socket), PLogicError);
       break;
@@ -1942,6 +1962,7 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 
 BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
+  PReadWaitAndSignal m(channelPointerMutex);
   if (connectSockets.IsEmpty())
     return OpalTransportIP::SetLocalAddress(newLocalAddress);
 
@@ -1951,12 +1972,15 @@ BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddr
   if (!newLocalAddress.GetIpAndPort(localAddress, localPort))
     return FALSE;
 
+  PWaitAndSignal lock(connectSocketsMutex);
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address ip;
     WORD port = 0;
     if (socket->GetLocalAddress(ip, port) && ip == localAddress && port == localPort) {
+      channelPointerMutex.StartWrite();
       writeChannel = &connectSockets[i];
+      channelPointerMutex.EndWrite();
       return TRUE;
     }
   }
@@ -1998,42 +2022,48 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     PSocket::SelectList selection;
 
     PINDEX i;
+    connectSocketsMutex.Wait();
     for (i = 0; i < connectSockets.GetSize(); i++)
       selection += connectSockets[i];
+    connectSocketsMutex.Signal();
 
     if (PSocket::Select(selection, GetReadTimeout()) != PChannel::NoError) {
       PTRACE(1, "OpalUDP\tError on connection read select.");
       return FALSE;
     }
-
+    
     if (selection.IsEmpty()) {
       PTRACE(2, "OpalUDP\tTimeout on connection read select.");
       return FALSE;
     }
 
     PUDPSocket & socket = (PUDPSocket &)selection[0];
-    channelPointerMutex.StartWrite();
     if (!socket.IsOpen()) {
-      channelPointerMutex.EndWrite();
       PTRACE(2, "OpalUDP\tSocket closed in connection read select.");
       return FALSE;
     }
+    channelPointerMutex.StartWrite();
     socket.GetLocalAddress(localAddress, localPort);
     readChannel = &socket;
     channelPointerMutex.EndWrite();
   }
 
   for (;;) {
+    PReadWaitAndSignal mutex(channelPointerMutex);
     if (!OpalTransportIP::Read(buffer, length))
       return FALSE;
 
     PUDPSocket * socket = (PUDPSocket *)GetReadChannel();
+    if (socket == NULL) {
+      PTRACE(1, "UDP\tSocket closed");
+      return FALSE;
+    }
 
     PIPSocket::Address address;
     WORD port;
 
     socket->GetLastReceiveAddress(address, port);
-    lastReceivedAddress = OpalTransportAddress(address, port);
+    lastReceivedAddress = OpalTransportAddress(address, port, UdpPrefix);
 
     switch (promiscuousReads) {
       case AcceptFromRemoteOnly :
@@ -2091,10 +2121,13 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * userDa
   BOOL ok = FALSE;
 
   PINDEX i;
+  PWaitAndSignal lock(connectSocketsMutex);
   for (i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket & socket = (PUDPSocket &)connectSockets[i];
     socket.GetLocalAddress(localAddress, localPort);
+    channelPointerMutex.StartWrite();
     writeChannel = &socket;
+    channelPointerMutex.EndWrite();
     if (function(*this, userData))
       ok = TRUE;
   }
