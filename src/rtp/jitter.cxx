@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2017  2007/01/11 02:46:01  dereksmithies
+ * Revision 1.2018  2007/01/15 21:32:54  rjongbloed
+ * Fixed minor (and generally benign) bug in jitter buffer SetDelay, should use same time base as
+ *   constructor for calculating number of buffers
+ *
+ * Revision 2.16  2007/01/11 02:46:01  dereksmithies
  * Minor reporting issues.
  *
  * Revision 2.15  2007/01/10 01:47:29  dereksmithies
@@ -449,7 +453,9 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   currentJitterTime = minJitterDelay;
   targetJitterTime = currentJitterTime;
 
-  PINDEX newBufferSize = maxJitterTime/40+1;
+  // Calculate number of frames to allocate, we make the assumption that the
+  // smallest packet we can possibly get is 5ms long.
+  PINDEX newBufferSize = maxJitterTime/(5*timeUnits)+1;
   while (bufferSize < newBufferSize) {
     Entry * frame = new Entry;
     frame->prev = NULL;
