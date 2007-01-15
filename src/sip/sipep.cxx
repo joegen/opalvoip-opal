@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2139  2007/01/04 22:09:41  dsandras
+ * Revision 1.2140  2007/01/15 22:14:19  dsandras
+ * Added missing mutexes.
+ *
+ * Revision 2.138  2007/01/04 22:09:41  dsandras
  * Make sure we do not strip a > when stripping parameters from the From field
  * when receiving a MESSAGE.
  *
@@ -1090,6 +1093,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   switch (pdu->GetMethod()) {
     case SIP_PDU::NumMethods :
       {
+        PWaitAndSignal m(transactionsMutex);
         SIPTransaction * transaction = transactions.GetAt(pdu->GetTransactionID());
         if (transaction != NULL)
           transaction->OnReceivedResponse(*pdu);
