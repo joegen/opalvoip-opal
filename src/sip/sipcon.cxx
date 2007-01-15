@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2193  2007/01/10 09:16:55  csoutheren
+ * Revision 1.2194  2007/01/15 22:13:59  dsandras
+ * Make sure we do not ignore SIP reINVITEs.
+ *
+ * Revision 2.192  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
  * Revision 2.191  2007/01/02 17:28:40  dsandras
@@ -2018,7 +2021,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   originalInvite = new SIP_PDU(request);
   // Special case auto calling
-  if (IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
+  if (!isReinvite && IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
     SendInviteResponse(SIP_PDU::Failure_InternalServerError);
     return;
   }
