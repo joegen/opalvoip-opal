@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2029.2.2  2006/12/08 06:27:20  csoutheren
+ * Revision 1.2029.2.3  2007/01/15 22:16:42  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.28.2.2  2006/12/08 06:27:20  csoutheren
  * Fix compilation problem caused by bad patch backports
  * Allow compilation with latest PWLib
  *
@@ -387,6 +390,14 @@ class OpalMediaStream : public PObject
     OpalMediaPatch * GetPatch() const { return patchThread; }
   //@}
 
+    /**Add a filter to the owning patch safely.
+      */
+    void AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage =  OpalMediaFormat());
+
+    /**Remove a filter from the owning patch safely.
+      */
+    BOOL RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage);
+
     /**Get the mutex that prevents the destructor from completing.
       */
     PMutex &  GetDeleteMutex() const { return deleteMutex; }
@@ -510,6 +521,12 @@ class OpalRTPMediaStream : public OpalMediaStream
       RTP_DataFrame & packet
     );
 
+    /**Set the data size in bytes that is expected to be used.
+      */
+    virtual BOOL SetDataSize(
+      PINDEX dataSize  ///<  New data size
+    );
+
     /**Indicate if the media stream is synchronous.
        Returns FALSE for RTP streams.
       */
@@ -520,6 +537,12 @@ class OpalRTPMediaStream : public OpalMediaStream
        The default behaviour does nothing.
       */
     virtual void EnableJitterBuffer() const;
+
+    /** Return current RTP session
+      */
+    virtual RTP_Session & GetRtpSession() const
+    { return rtpSession; }
+
   //@}
 
   protected:
@@ -578,17 +601,25 @@ class OpalRawMediaStream : public OpalMediaStream
      */
     PChannel * GetChannel() { return channel; }
     
-
     /**Close the media stream.
 
        Closes the associated PChannel.
       */
     virtual BOOL Close();
+
+    /**Get average signal level in last frame.
+      */
+    virtual unsigned GetAverageSignalLevel();
   //@}
 
   protected:
     PChannel * channel;
+    PMutex     channel_mutex;
     BOOL       autoDelete;
+
+    PUInt64    averageSignalSum;
+    unsigned   averageSignalSamples;
+    void CollectAverage(const BYTE * buffer, PINDEX size);
 };
 
 

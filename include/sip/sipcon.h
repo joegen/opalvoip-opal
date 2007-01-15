@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2042.2.2  2006/03/08 21:55:59  dsandras
+ * Revision 1.2042.2.3  2007/01/15 22:16:42  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.41.2.2  2006/03/08 21:55:59  dsandras
  * Forgot to commit this file. Sorry.
  *
  * Revision 2.41.2.1  2006/02/11 13:32:24  csoutheren
@@ -500,29 +503,31 @@ class SIPConnection : public OpalConnection
     virtual BOOL ForwardCall(
       const PString & forwardParty   ///<  Party to forward call to.
     );
-    
+
+    virtual BOOL SendACK(SIPTransaction & invite, SIP_PDU & response);
+
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
      */
     BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
-    unsigned GetNextCSeq() { return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
 
     BOOL BuildSDP(
-      SDPSessionDescription * &,			     
+      SDPSessionDescription * &,     
       RTP_SessionManager & rtpSessions,
       unsigned rtpSessionId
     );
 
-	SIPTransaction * GetTransaction (PString transactionID) { return transactions.GetAt(transactionID); }
+    SIPTransaction * GetTransaction (const PString & transactionID) { PWaitAndSignal m(transactionsMutex); return transactions.GetAt(transactionID); }
 
     void AddTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
 
     void RemoveTransaction(
       SIPTransaction * transaction
-    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
+    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
@@ -599,7 +604,9 @@ class SIPConnection : public OpalConnection
     PSemaphore    pduSemaphore;
     PThread     * pduHandler;
 
+    PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
+    PMutex             invitationsMutex;
     SIPTransactionList invitations;
     SIPTransactionDict transactions;
     unsigned           lastSentCSeq;
