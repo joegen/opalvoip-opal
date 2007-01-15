@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.h,v $
- * Revision 1.2020  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2020.2.1  2007/01/15 22:16:42  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
+ *
+ * Revision 2.19  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.18  2005/09/19 20:48:23  dsandras
@@ -1104,6 +1107,7 @@ class OpalTransportUDP : public OpalTransportIP
     OpalTransportAddress lastReceivedAddress;
     BOOL                 socketOwnedByListener;
     PBYTEArray           preReadPacket;
+    PMutex               connectSocketsMutex;
     PSocketList          connectSockets;
     BOOL 		 reuseAddressFlag;
 };
