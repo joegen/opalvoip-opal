@@ -24,48 +24,105 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.11  2006/12/08 06:27:20  csoutheren
- * Fix compilation problem caused by bad patch backports
- * Allow compilation with latest PWLib
+ * Revision 1.2084.2.12  2007/01/15 22:16:44  dsandras
+ * Backported patches improving stability from HEAD to Phobos.
  *
- * Revision 2.83.2.10  2006/12/03 16:56:48  dsandras
- * Backported fix from HEAD (Ekiga report #379801).
+ * Revision 2.115  2006/12/18 03:18:42  csoutheren
+ * Messy but simple fixes
+ *   - Add access to SIP REGISTER timeout
+ *   - Ensure OpalConnection options are correctly progagated
  *
- * Revision 2.83.2.9  2006/08/07 20:07:46  dsandras
- * Backported qop support from HEAD.
+ * Revision 2.114  2006/12/03 16:54:52  dsandras
+ * Do not allow contentLength to be negative in order to prevent
+ * crashes when receiving malformed PDUs. Fixes Ekiga report #379801.
  *
- * Revision 2.83.2.8  2006/08/07 19:53:31  dsandras
- * Backported fix from HEAD to add support for the opaque attribute when
- * authenticating.
+ * Revision 2.113  2006/11/02 03:09:06  csoutheren
+ * Changed to use correct timeout when sending PDUs
+ * Thanks to Peter Kocsis
  *
- * Revision 2.83.2.7  2006/05/06 16:05:13  dsandras
- * Another backport from HEAD.
+ * Revision 2.112  2006/10/01 17:16:32  hfriederich
+ * Ensures that an ACK is sent out for every final response to INVITE
+ *
+ * Revision 2.111  2006/09/22 00:58:41  csoutheren
+ * Fix usages of PAtomicInteger
+ *
+ * Revision 2.110  2006/08/28 00:42:25  csoutheren
+ * Applied 1545201 - SIPTransaction - control of access to SIPConnection
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.109  2006/08/12 04:09:24  csoutheren
+ * Applied 1538497 - Add the PING method
+ * Thanks to Paul Rolland
+ *
+ * Revision 2.108  2006/08/03 08:09:52  csoutheren
+ * Removed another incorrect double quote
+ *
+ * Revision 2.107  2006/07/29 08:31:19  hfriederich
+ * Removing invalid quotation mark after algorithm=md5. Fixes problems with registration on certain servers
+ *
+ * Revision 2.106  2006/07/24 09:03:00  csoutheren
+ * Removed suprious "response" clause in authentication response
+ *
+ * Revision 2.105  2006/07/14 13:44:22  csoutheren
+ * Fix formatting
+ * Fix compile warning on Linux
+ *
+ * Revision 2.104  2006/07/14 07:37:21  csoutheren
+ * Implement qop authentication.
+ *
+ * Revision 2.103  2006/07/14 06:57:40  csoutheren
+ * Fixed problem with opaque authentication
+ *
+ * Revision 2.102  2006/07/14 04:22:43  csoutheren
+ * Applied 1517397 - More Phobos stability fix
+ * Thanks to Dinis Rosario
+ *
+ * Revision 2.101  2006/07/14 01:15:51  csoutheren
+ * Add support for "opaque" attribute in SIP authentication
+ *
+ * Revision 2.100  2006/07/09 10:18:29  csoutheren
+ * Applied 1517393 - Opal T.38
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.99  2006/07/06 20:37:58  dsandras
+ * Applied patch from Brian Lu <brian lu sun com> to fix compilation on opensolaris. thanks!
+ *
+ * Revision 2.98  2006/07/05 04:29:14  csoutheren
+ * Applied 1495008 - Add a callback: OnCreatingINVITE
+ * Thanks to mturconi
+ *
+ * Revision 2.97  2006/06/30 06:59:21  csoutheren
+ * Applied 1494417 - Add check for ContentLength tag
+ * Thanks to mturconi
+ *
+ * Revision 2.96  2006/06/30 01:05:18  csoutheren
+ * Minor cleanups
+ *
+ * Revision 2.95  2006/05/30 04:58:06  csoutheren
+ * Added suport for SIP INFO message (untested as yet)
+ * Fixed some issues with SIP state machine on answering calls
+ * Fixed some formatting issues
  *
  * Revision 2.94  2006/05/06 16:04:16  dsandras
  * Fixed GetSendAddress to handle the case where the first route doesn't contain
  * the 'lr' parameter. Fixes Ekiga report #340415.
  *
- * Revision 2.83.2.6  2006/04/11 21:59:46  dsandras
- * More backports from HEAD.
+ * Revision 2.93  2006/05/04 11:17:34  hfriederich
+ * improving SIPTransaction::Wait() to wait until transaction is complete instead of finished
  *
  * Revision 2.92  2006/04/11 21:58:25  dsandras
  * Various cleanups and fixes. Fixes Ekiga report #336444.
- *
- * Revision 2.83.2.5  2006/03/23 21:29:37  dsandras
- * Backport from HEAD.
  *
  * Revision 2.91  2006/03/23 21:25:14  dsandras
  * Fixed parameter of callback called on registration timeout.
  * Simplified SIPOptions code.
  *
- * Revision 2.83.2.4  2006/03/19 19:39:56  dsandras
- * Backports from HEAD.
+ * Revision 2.90  2006/03/20 00:25:36  csoutheren
+ * Applied patch #1446482
+ * Thanks to Adam Butcher
  *
  * Revision 2.89  2006/03/19 19:38:25  dsandras
  * Use full host when reporting a registration timeout.
- *
- * Revision 2.83.2.3  2006/03/19 18:17:55  dsandras
- * Backports from HEAD.
  *
  * Revision 2.88  2006/03/19 13:15:12  dsandras
  * Removed cout.
@@ -76,9 +133,6 @@
  * Revision 2.86  2006/03/18 21:56:07  dsandras
  * Remove REGISTER and SUBSCRIBE from the Allow field. Fixes Ekiga report
  * #334979.
- *
- * Revision 2.83.2.2  2006/03/14 10:41:04  csoutheren
- * Backport from CVS head
  *
  * Revision 2.85  2006/03/14 10:26:34  dsandras
  * Reverted accidental previous change that was breaking retransmissions.
@@ -839,6 +893,16 @@ void SIPMIMEInfo::SetReferTo(const PString & r)
   SetAt(compactForm ? "r" : "Refer-To",  r);
 }
 
+PString SIPMIMEInfo::GetReferredBy() const
+{
+  return GetFullOrCompact("Referred-By", 'b');
+}
+
+
+void SIPMIMEInfo::SetReferredBy(const PString & r)
+{
+  SetAt(compactForm ? "b" : "Referred-By",  r);
+}
 
 void SIPMIMEInfo::SetContentLength(PINDEX v)
 {
@@ -1614,10 +1678,9 @@ void SIP_PDU::SetAllow(void)
   PStringList methods;
   
   for (PINDEX i = 0 ; i < SIP_PDU::NumMethods ; i++) {
-  
-    if (PString(MethodNames[i]).Find("SUBSCRIBE") == P_MAX_INDEX
-	&& PString(MethodNames[i]).Find("REGISTER") == P_MAX_INDEX)
-    methods += MethodNames[i];
+    PString method(MethodNames[i]);
+    if (method.Find("SUBSCRIBE") == P_MAX_INDEX && method.Find("REGISTER") == P_MAX_INDEX)
+      methods += method;
   }
   
   str << setfill(',') << methods << setfill(' ');
@@ -1746,7 +1809,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // ios::lock() mutex which would prevent simultaneous reads and writes.
   transport.SetReadTimeout(PMaxTimeInterval);
 #if defined(__MWERKS__) || (__GNUC__ >= 3) || (_MSC_VER >= 1300) || defined(SOLARIS)
-  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(_BADOFF))
+  if (transport.rdbuf()->pubseekoff(0, ios_base::cur) == streampos(-1))
 #else
   if (transport.rdbuf()->seekoff(0, ios::cur, ios::in) == EOF)
 #endif                  
@@ -1757,7 +1820,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   // get the message from transport into cmd and parse MIME
   transport.clear();
-  PString cmd;
+  PString cmd(512);
   if (!transport.bad() && !transport.eof()) {
     transport.SetReadTimeout(3000);
     transport >> cmd >> mime;
@@ -1930,12 +1993,14 @@ PString SIP_PDU::GetTransactionID() const
 ////////////////////////////////////////////////////////////////////////////////////
 
 SIPTransaction::SIPTransaction(SIPEndPoint & ep,
-                               OpalTransport & trans)
+                               OpalTransport & trans,
+                               const PTimeInterval & minRetryTime,
+                               const PTimeInterval & maxRetryTime)
   : endpoint(ep),
     transport(trans)
 {
   connection = NULL;
-  Construct();
+  Construct(minRetryTime, maxRetryTime);
 }
 
 
@@ -1952,13 +2017,16 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
 }
 
 
-void SIPTransaction::Construct()
+void SIPTransaction::Construct(const PTimeInterval & minRetryTime, const PTimeInterval & maxRetryTime)
 {
   retryTimer.SetNotifier(PCREATE_NOTIFIER(OnRetry));
   completionTimer.SetNotifier(PCREATE_NOTIFIER(OnTimeout));
 
   retry = 1;
   state = NotStarted;
+
+  retryTimeoutMin = ((minRetryTime != PMaxTimeInterval) && (minRetryTime != 0)) ? minRetryTime : endpoint.GetRetryTimeoutMin(); 
+  retryTimeoutMax = ((maxRetryTime != PMaxTimeInterval) && (maxRetryTime != 0)) ? maxRetryTime : endpoint.GetRetryTimeoutMax(); ; 
 }
 
 
@@ -1969,14 +2037,12 @@ SIPTransaction::~SIPTransaction()
 
   if (state > NotStarted && state < Terminated_Success) 
     finished.Signal();
-  
-  PWaitAndSignal m(mutex);
-  
+
   if (connection != NULL && state > NotStarted && state < Terminated_Success) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
     connection->RemoveTransaction(this);
   }
-  
+
   PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
@@ -2001,9 +2067,13 @@ BOOL SIPTransaction::Start()
 
   state = Trying;
   retry = 0;
-  retryTimer = endpoint.GetRetryTimeoutMin();
-  completionTimer = endpoint.GetNonInviteTimeout();
+  retryTimer = retryTimeoutMin;
   localAddress = transport.GetLocalAddress();
+
+  if (method == Method_INVITE)
+    completionTimer = endpoint.GetInviteTimeout();
+  else
+    completionTimer = endpoint.GetNonInviteTimeout();
 
   if (connection != NULL) {
     // Use the connection transport to send the request
@@ -2061,7 +2131,7 @@ BOOL SIPTransaction::ResendCANCEL()
   if (state < Cancelling) {
     state = Cancelling;
     retry = 0;
-    retryTimer = endpoint.GetRetryTimeoutMin();
+    retryTimer = retryTimeoutMin;
   }
 
   return TRUE;
@@ -2070,12 +2140,12 @@ BOOL SIPTransaction::ResendCANCEL()
 
 BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
-  PWaitAndSignal m(mutex);
-
   PString cseq = response.GetMIME().GetCSeq();
 
   // If is the response to a CANCEl we sent, then just ignore it
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
+    // Lock only if we have not already locked it in SIPInvite::OnReceivedResponse
+    PWaitAndSignal m(mutex, method != Method_INVITE);
     SetTerminated(Terminated_Cancelled);
     return FALSE;
   }
@@ -2086,6 +2156,10 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return FALSE;
   }
 
+  if (method != Method_INVITE) mutex.Wait();
+
+  BOOL notCompletedFlag = state < Completed;
+
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
@@ -2094,31 +2168,39 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   if (response.GetStatusCode()/100 == 1) {
     PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
 
+    state = Proceeding;
+    retry = 0;
+    retryTimer = retryTimeoutMax;
+    completionTimer = endpoint.GetNonInviteTimeout();
+
+    mutex.Signal();
+
     if (connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
       endpoint.OnReceivedResponse(*this, response);
-
-    state = Proceeding;
-    retry = 0;
-    retryTimer = endpoint.GetRetryTimeoutMax();
-    completionTimer = endpoint.GetNonInviteTimeout();
   }
-  else {
+   else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
 
-    if (state < Completed && connection != NULL)
+    state = Completed;
+    finished.Signal();
+    retryTimer.Stop();
+    completionTimer = endpoint.GetPduCleanUpTimeout();
+
+    mutex.Signal();
+
+    if (notCompletedFlag && connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
       endpoint.OnReceivedResponse(*this, response);
 
     if (!OnCompleted(response))
       return FALSE;
-
-    state = Completed;
-    retryTimer.Stop();
-    completionTimer = endpoint.GetPduCleanUpTimeout();
   }
+
+  // If this is invite then we need to lock it again
+  if (method == Method_INVITE) mutex.Wait();
 
   return TRUE;
 }
@@ -2162,9 +2244,9 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     return;
   }
 
-  PTimeInterval timeout = endpoint.GetRetryTimeoutMin()*(1<<retry);
-  if (timeout > endpoint.GetRetryTimeoutMax())
-    retryTimer = endpoint.GetRetryTimeoutMax();
+  PTimeInterval timeout = retryTimeoutMin*(1<<retry);
+  if (timeout > retryTimeoutMax)
+    retryTimer = retryTimeoutMax;
   else
     retryTimer = timeout;
 }
@@ -2209,20 +2291,11 @@ void SIPTransaction::SetTerminated(States newState)
            << " but already terminated ( " << StateNames[state] << ')');
     return;
   }
-
+  
+  States oldState = state;
+  
   state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
-
-  if (connection != NULL) {
-    if (state != Terminated_Success)
-      connection->OnTransactionFailed(*this);
-
-    connection->RemoveTransaction(this);
-  }
-  else {
-    endpoint.RemoveTransaction(this);
-  }
-    
 
   // REGISTER or MESSAGE Failed, tell the endpoint
   if (state != Terminated_Success) {
@@ -2248,7 +2321,23 @@ void SIPTransaction::SetTerminated(States newState)
     }
   }
 
-  finished.Signal();
+  if (oldState != Completed) {
+    finished.Signal();
+  }
+
+  if (connection != NULL) {
+    if (state != Terminated_Success) {
+      mutex.Signal();
+
+      connection->OnTransactionFailed(*this);
+
+      mutex.Wait();
+    }
+  }
+  else {
+    endpoint.RemoveTransaction(this);
+  }
+    
 }
 
 
@@ -2280,18 +2369,37 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 }
 
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsigned rtpSessionId)
+  : SIPTransaction(connection, transport, Method_INVITE)
+{
+  mime.SetDate() ;                             // now
+  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+
+  connection.BuildSDP(sdp, rtpSessions, rtpSessionId);
+}
 
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
+  PWaitAndSignal m(mutex);
+	
+  States originalState = state;
+
   if (!SIPTransaction::OnReceivedResponse(response))
     return FALSE;
 
   if (response.GetStatusCode()/100 == 1) {
     retryTimer.Stop();
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  }
-  else
+  } 
+  else {
     completionTimer = endpoint.GetAckTimeout();
+
+    // If the state was already 'Completed', ensure that still an
+    // ACK is sent
+    if (originalState >= Completed) {
+      connection->SendACK(*this, response);
+    }
+  }
 
   /* Handle response to outgoing call cancellation */
   if (response.GetStatusCode() == Failure_RequestTerminated)
@@ -2305,8 +2413,10 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const SIPURL & address,
                          const PString & id,
-                         unsigned expires)
-  : SIPTransaction(ep, trans)
+                         unsigned expires,
+                         const PTimeInterval & minRetryTime, 
+                         const PTimeInterval & maxRetryTime)
+  : SIPTransaction(ep, trans, minRetryTime, maxRetryTime)
 {
   PString addrStr = address.AsQuotedString();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
@@ -2353,11 +2463,25 @@ SIPMWISubscribe::SIPMWISubscribe(SIPEndPoint & ep,
 
 /////////////////////////////////////////////////////////////////////////
 
+SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer, const PString & referred_by)
+  : SIPTransaction(connection, transport, Method_REFER)
+{
+  Construct(connection, transport, refer, referred_by);
+}
+
 SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const PString & refer)
   : SIPTransaction(connection, transport, Method_REFER)
 {
+  Construct(connection, transport, refer, PString::Empty());
+}
+
+
+void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const PString & refer, const PString & referred_by)
+{
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
   mime.SetReferTo(refer);
+  if(!referred_by.IsEmpty())
+    mime.SetReferredBy(referred_by);
 }
 
 
