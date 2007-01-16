@@ -26,6 +26,10 @@
  *
  * 
  *  $Log: processor.h,v $
+ *  Revision 1.13  2007/01/16 03:17:42  dereksmithies
+ *  tidyup of comments. Remove unused variables.
+ *  Guarantee that media frames are sent with a monotonically increasing timestamp
+ *
  *  Revision 1.12  2007/01/11 03:02:15  dereksmithies
  *  Remove the previous audio buffering code, and switch to using the jitter
  *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -290,13 +294,15 @@ class IAX2Processor : public PThread
   /**Array of frames read from the Receiver for this call */
   IAX2FrameList frameList;
   
-  /**The call token, which uniquely identifies this IAX2CallProcessor, and the associated call */
+  /**The call token, which uniquely identifies this IAX2CallProcessor, and the
+     associated call */
   SafeString callToken;
   
   /**A threaded pure threaded callback for the sub classes of processor */
   virtual void OnNoResponseTimeout() = 0;
   
-  /** A defined value which is the maximum time we will wait for an answer to our packets */
+  /** A defined value which is the maximum time we will wait for an answer to
+     our packets */
   enum DefinedNoResponseTimePeriod {
     NoResponseTimePeriod = 5000 /*!< Time (in milliseconds) we will wait */
   };
@@ -310,29 +316,35 @@ class IAX2Processor : public PThread
      sent to the endpoint,and not related to any particular call. */
   BOOL       specialPackets;
   
-  /**Go through the three lists for incoming data (ethernet/sound/UI commands.  */
+  /**Go through the three lists for incoming data (ethernet/sound/UI
+     commands.  */
   virtual void ProcessLists() = 0;  
   
   /**A pure virtual method that is implemented by sub classes to
-   * process an incoming full frame*/
+     process an incoming full frame*/
   virtual void ProcessFullFrame(IAX2FullFrame & fullFrame) = 0;
   
   /**Attempt to process a common frame ie: LagRq, LagRp, Vnak, Ping or Pong.*/
   BOOL ProcessCommonNetworkFrame(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Initial message, used to measure the round trip time    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Initial
+     message, used to measure the round trip time  */
   virtual void ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Reply to cmdLagrq, which tells us the round trip time    */
+  /** Process a FullFrameProtocol class, where the sub Class value is Reply to
+     cmdLagrq, which tells us the round trip time  */
   virtual void ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is If we receive voice before valid first voice frame, send this    */
+  /** Process a FullFrameProtocol class, where the sub Class value is If we
+     receive voice before valid first voice frame, send this  */
   virtual void ProcessIaxCmdVnak(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is Ping request,     */
+  /** Process a FullFrameProtocol class, where the sub Class value is Ping
+     request,  */
   virtual void ProcessIaxCmdPing(IAX2FullFrameProtocol *src);
   
-  /** Process a FullFrameProtocol class, where the sub Class value is reply to a Ping    */
+  /** Process a FullFrameProtocol class, where the sub Class value is reply to
+     a Ping  */
   virtual void ProcessIaxCmdPong(IAX2FullFrameProtocol *src); 
   
   /**remove one frame on the incoming ethernet frame list. If there
@@ -356,8 +368,9 @@ class IAX2Processor : public PThread
    * an incoming network frame of type  IAX2MiniFrame */
   virtual void ProcessNetworkFrame(IAX2MiniFrame * src) = 0;  
   
-  /**Transmit IAX2Frame to remote endpoint, and then increment send count. This calls a method in
-     the Transmitter class. .It is only called by the this IAX2CallProcessor class.  */
+  /**Transmit IAX2Frame to remote endpoint, and then increment send
+     count. This calls a method in the Transmitter class. .It is only called
+     by the this IAX2CallProcessor class.  */
   void TransmitFrameToRemoteEndpoint(IAX2Frame *src);
 
   /**Transmit IAX2Frame to remote endpoint, and then increment send
@@ -366,7 +379,7 @@ class IAX2Processor : public PThread
      determines what to do when an ack frame is received for the sent
      frame.  */
   void TransmitFrameToRemoteEndpoint(IAX2FullFrame *src,
-             IAX2WaitingForAck::ResponseToAck response  ///action to do on getting Ack
+             IAX2WaitingForAck::ResponseToAck response  ///<action to do on getting Ack
              );
 
   /**Transmit IAX2Frame to remote endpoint,. This calls a method in the
@@ -377,8 +390,8 @@ class IAX2Processor : public PThread
   /**FullFrameProtocol class needs to have the IE's correctly appended prior to transmission */
   void TransmitFrameToRemoteEndpoint(IAX2FullFrameProtocol *src);
   
-  /** Do the md5/rsa authentication. Return True if successful. Has the side effect of appending the
-      appropriate Ie class to the "reply" parameter.*/
+  /** Do the md5/rsa authentication. Return True if successful. Has the side
+      effect of appending the appropriate Ie class to the "reply" parameter.*/
   BOOL Authenticate(IAX2FullFrameProtocol *reply, /*!< this frame contains the result of authenticating the internal data*/
                     PString & password /*!< the password to authenticate with */
         );
@@ -386,7 +399,8 @@ class IAX2Processor : public PThread
   /**Hold each of the possible values from an Ie class */
   IAX2IeData ieData;
   
-  /**Transmit an IAX2 protocol frame with subclass type ack immediately to remote endpoint */
+  /**Transmit an IAX2 protocol frame with subclass type ack immediately to
+     remote endpoint */
   void SendAckFrame(IAX2FullFrame *inReplyTo);
   
   /**Transmit an unsupported frame to the remote endpoint*/
@@ -406,6 +420,14 @@ class IAX2Processor : public PThread
   PDECLARE_NOTIFIER(PTimer, IAX2Processor, OnNoResponseTimeoutStart);
 #endif 
 
+ protected:
+  /**The timestamp we will put on the next mini frame out of here 
+
+     This timestamp is monotonically increasing, and bears "some" relation to
+     actuality.  We generate the timestamp uniformly - this instance of an
+     iax2 call could be driven from a slightly non uniform packet source. */
+
+  DWORD currentSoundTimeStamp;
 };
 
 #endif // PROCESSOR_H

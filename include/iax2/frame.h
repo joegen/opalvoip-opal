@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.8  2007/01/16 03:17:42  dereksmithies
+ *  tidyup of comments. Remove unused variables.
+ *  Guarantee that media frames are sent with a monotonically increasing timestamp
+ *
  *  Revision 1.7  2006/08/09 03:46:39  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -307,7 +311,7 @@ class IAX2Frame :  public PObject
 
   /**The time stamp to use, for those cases when the user demands a particular
    * timestamp on construction. */
-  PINDEX presetTimeStamp;
+  DWORD presetTimeStamp;
 };
 
 /////////////////////////////////////////////////////////////////////////////    
@@ -330,7 +334,7 @@ class IAX2MiniFrame : public IAX2Frame
      TimeStamp will be calculated from time since call started, if the users timestamp is 0.
      If the users timeStamp is non zero, the frames timestamp will be this.
   */
-  IAX2MiniFrame(IAX2Processor * con, PBYTEArray &sound, BOOL isAudio, PINDEX usersTimeStamp = 0);
+  IAX2MiniFrame(IAX2Processor * con, PBYTEArray &sound, BOOL isAudio, DWORD usersTimeStamp = 0);
 
   /**Destructor*/
   virtual ~IAX2MiniFrame();

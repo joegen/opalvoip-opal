@@ -27,6 +27,10 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.7  2007/01/16 03:17:42  dereksmithies
+ * tidyup of comments. Remove unused variables.
+ * Guarantee that media frames are sent with a monotonically increasing timestamp
+ *
  * Revision 1.6  2007/01/11 03:02:15  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -168,7 +172,9 @@ IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   statusCheckOtherEnd = FALSE;
   
   soundBufferState = BufferToSmall;
+  callStartTick = PTimer::Tick();
 }
+
 
 IAX2CallProcessor::~IAX2CallProcessor()
 {
@@ -322,7 +328,6 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
   remote.SetRemotePort(con->GetEndPoint().ListenPortNumber());
   remote.SetRemoteAddress(ip);
     
-  callStartTick = PTimer::Tick();
   IAX2FullFrameProtocol * f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdNew);
   PTRACE(4, "Create full frame protocol to do cmdNew. Just contains data. ");
   f->AppendIe(new IAX2IeVersion());
@@ -438,7 +443,7 @@ void IAX2CallProcessor::ProcessLists()
   
   if (!dtmfText.IsEmpty()) {
     PString dtmfs = dtmfText.GetAndDelete();
-   PTRACE(4, "Have " << dtmfs << " DTMF chars to send");
+    PTRACE(4, "Have " << dtmfs << " DTMF chars to send");
     for (PINDEX i = 0; i < dtmfs.GetLength(); i++)
       SendDtmfMessage(dtmfs[i]);
   }  
@@ -485,6 +490,7 @@ void IAX2CallProcessor::ProcessIncomingVideoFrame(IAX2Frame *newFrame)
   delete newFrame;
 }
 
+
 void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
 {
   if (sound == NULL)
@@ -497,48 +503,25 @@ void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
 
   IncAudioFramesSent();   
 
-  PTRACE(6, "This frame is size " << sound->GetSize());
-  PTRACE(6, "This frame is duration " << audioFrameDuration);
-  PTRACE(6, "This frame is compresed bytes of " << audioCompressedBytes);
 
-  PINDEX thisDuration = (PINDEX)((sound->GetSize() * audioFrameDuration) / audioCompressedBytes);
-  DWORD thisTimeStamp = (DWORD)(PTimer::Tick() - callStartTick).GetMilliSeconds();
-  PTRACE(6, "This frame is duration " << thisDuration << " ms   at time " << thisTimeStamp);
+  DWORD lastTimeStamp = currentSoundTimeStamp;
+  DWORD thisTimeStamp = currentSoundTimeStamp + audioFrameDuration;
 
-  thisTimeStamp = ((thisTimeStamp + (thisDuration > 1))/thisDuration) * thisDuration;
-  DWORD lastTimeStamp = thisTimeStamp - thisDuration;
+  BOOL sendFullFrame =  (((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
+			 || audioFramesNotStarted);
 
-  BOOL sendFullFrame =  ((thisTimeStamp - lastSentAudioFrameTime) > 65536)
-                        || ((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
-                        || audioFramesNotStarted;
-
-  if ((thisTimeStamp - lastSentAudioFrameTime) > 65536) {
-    PTRACE(6, "RollOver last sent audio frame too large " );
-    PTRACE(6, "Thistime stamp is " << thisTimeStamp);
-    PTRACE(6, "Thisduration is " << thisDuration);
-    PTRACE(6, "This last timestamp is " << lastTimeStamp);
-    PTRACE(6, "last sent audio frame is " <<lastSentAudioFrameTime);
-  }
-
-  if ((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff)) {
-    PTRACE(6, "RollOver timestamp past 65535");
-    PTRACE(6, "Thistime stamp is " << thisTimeStamp);
-    PTRACE(6, "Thisduration is " << thisDuration);
-    PTRACE(6, "This last timestamp is " << lastTimeStamp);
-    PTRACE(6, "last sent audio frame is " <<lastSentAudioFrameTime);
-  }
-  lastSentAudioFrameTime = thisTimeStamp;
+  currentSoundTimeStamp = thisTimeStamp;
 
   if (sendFullFrame) {
     audioFramesNotStarted = FALSE;
-      IAX2FullFrameVoice *f = new IAX2FullFrameVoice(this, *sound, thisTimeStamp);
-      PTRACE(5, "Send a full audio frame" << thisDuration << " On " << f->IdString());
-      TransmitFrameToRemoteEndpoint(f);
+    IAX2FullFrameVoice *f = new IAX2FullFrameVoice(this, *sound, thisTimeStamp);
+    PTRACE(5, "Send a full audio frame" << thisTimeStamp << " On " << f->IdString());
+    TransmitFrameToRemoteEndpoint(f);
   } else {
-      IAX2MiniFrame *f = new IAX2MiniFrame(this, *sound, TRUE, thisTimeStamp & 0xffff);
-      TransmitFrameToRemoteEndpoint(f);
+    IAX2MiniFrame *f = new IAX2MiniFrame(this, *sound, TRUE, thisTimeStamp & 0xffff);
+    TransmitFrameToRemoteEndpoint(f);
   }
-
+  
   delete sound;
 }
 
@@ -1323,3 +1306,18 @@ PString IAX2CallProcessor::GetUserName() const
   else
     return "";
 }
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+/* The comment below is magic for those who use emacs to edit this file. */
+/* With the comment below, the tab key does auto indent to 4 spaces.     */
+
+/*
+ * Local Variables:
+ * mode:c
+ * c-file-style:linux
+ * c-basic-offset:2
+ * End:
+ */
