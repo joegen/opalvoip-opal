@@ -29,6 +29,10 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.24  2007/01/16 03:17:42  dereksmithies
+ * tidyup of comments. Remove unused variables.
+ * Guarantee that media frames are sent with a monotonically increasing timestamp
+ *
  * Revision 1.23  2007/01/12 02:39:00  dereksmithies
  * Remove the notion of srcProcessors and dstProcessor lists from the ep.
  * Ensure that the connection looks after the callProcessor.
@@ -142,6 +146,8 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   noResponseTimer.SetNotifier(PCREATE_NOTIFIER(OnNoResponseTimeoutStart));
   
   specialPackets = FALSE;
+
+  currentSoundTimeStamp = 0;
 }
 
 IAX2Processor::~IAX2Processor()

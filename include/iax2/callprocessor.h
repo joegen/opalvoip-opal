@@ -26,6 +26,10 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.5  2007/01/16 03:17:42  dereksmithies
+ *  tidyup of comments. Remove unused variables.
+ *  Guarantee that media frames are sent with a monotonically increasing timestamp
+ *
  *  Revision 1.4  2007/01/11 03:02:15  dereksmithies
  *  Remove the previous audio buffering code, and switch to using the jitter
  *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -133,8 +137,9 @@ class IAX2CallProcessor : public IAX2Processor
       ready for transmission in fullframes of type dtmf. */
   void SendDtmf(PString dtmfs);
 
-  /** Ask this IAX2CallProcessor to send text to the remote endpoint. The text is placed on a queue,
-      ready for transmission in fullframes of type text. */
+  /** Ask this IAX2CallProcessor to send text to the remote endpoint. The text
+      is placed on a queue, ready for transmission in fullframes of type
+      text. */
   void SendText(const PString & text);
 
   /**Start an outgoing connection.
@@ -145,15 +150,16 @@ class IAX2CallProcessor : public IAX2Processor
   */
   virtual BOOL SetUpConnection();
 
-  /**Return TRUE if the remote info in the frame matches the remote info in this connection */
+  /**Return TRUE if the remote info in the frame matches the remote info in
+     this connection */
   BOOL Matches(IAX2Frame *frame) { return remote == (frame->GetRemoteInfo()); }
   
   /**A method to cause some of the values in this class to be formatted
      into a printable stream */
   virtual void PrintOn(ostream & strm) const;
   
-  /**Invoked by the User interface, which causes the statistics (count of in/out packets)
-     to be printed*/
+  /**Invoked by the User interface, which causes the statistics (count of
+     in/out packets) to be printed*/
   void ReportStatistics();  
 
   /**Return TRUE if the arg matches the source call number for this connection */
@@ -618,9 +624,6 @@ class IAX2CallProcessor : public IAX2Processor
   /** The timer which is used to do the status check */
   PTimer statusCheckTimer;
 
-  /**Time sent the last frame of audio */
-  PINDEX lastSentAudioFrameTime;
-
   /**The time period, in ms, of each audio frame. It is used when determining the
    * appropriate timestamp to go on a packet. */
   PINDEX audioFrameDuration;
@@ -666,6 +669,19 @@ class IAX2CallProcessor : public IAX2Processor
   /**The context to call for a transfer -- this is optional*/
   PString transferCalledContext;  
 };
+
+////////////////////////////////////////////////////////////////////////////////
+
+/* The comment below is magic for those who use emacs to edit this file. */
+/* With the comment below, the tab key does auto indent to 4 spaces.     */
+
+/*
+ * Local Variables:
+ * mode:c
+ * c-file-style:linux
+ * c-basic-offset:2
+ * End:
+ */
 
 
 #endif // CALLPROCESSOR_H

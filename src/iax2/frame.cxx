@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.17  2007/01/16 03:17:42  dereksmithies
+ *  tidyup of comments. Remove unused variables.
+ *  Guarantee that media frames are sent with a monotonically increasing timestamp
+ *
  *  Revision 1.16  2007/01/12 02:39:00  dereksmithies
  *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
  *  Ensure that the connection looks after the callProcessor.
@@ -495,7 +499,7 @@ IAX2MiniFrame::IAX2MiniFrame(IAX2EndPoint &_endpoint)
 }
 
 IAX2MiniFrame::IAX2MiniFrame(IAX2Processor * iax2Processor, PBYTEArray &sound, 
-		     BOOL _isAudio, PINDEX usersTimeStamp) 
+		     BOOL _isAudio, DWORD usersTimeStamp) 
   : IAX2Frame(iax2Processor->GetEndPoint())
 {
   isAudio = _isAudio;
@@ -516,7 +520,7 @@ void IAX2MiniFrame::InitialiseHeader(IAX2Processor *iax2Processor)
 {
   if (iax2Processor != NULL) {
     remote   = iax2Processor->GetRemoteInfo();
-    BuildTimeStamp(iax2Processor->GetCallStartTick());          
+    BuildTimeStamp(iax2Processor->GetCallStartTick());
     SetConnectionToken(iax2Processor->GetCallToken());
   }
   WriteHeader();
