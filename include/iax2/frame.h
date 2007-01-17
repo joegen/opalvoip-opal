@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.9  2007/01/17 03:48:13  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.8  2007/01/16 03:17:42  dereksmithies
  *  tidyup of comments. Remove unused variables.
  *  Guarantee that media frames are sent with a monotonically increasing timestamp
@@ -466,7 +469,7 @@ class IAX2FullFrame : public IAX2Frame
   PINDEX GetSubClass() const { return subClass; }
   
   /**Dry the current value of the subClass variable */
-  void SetSubClass(int newValue) { subClass = newValue;}
+  void SetSubClass(PINDEX newValue) { subClass = newValue;}
   
   /**Write the header for this class to the internal data array. 12
      bytes of data are writen.  The application developer must write the
@@ -961,8 +964,14 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   /**Mark this frame as having (or not having) information elements*/
   virtual BOOL InformationElementsPresent() { return !ieElements.IsEmpty(); }
   
+  /**Report the current value of the subClass variable */
+  ProtocolSc GetSubClass() const { return (ProtocolSc) subClass; }
+
   /**Get text description of the subclass contents*/
   virtual PString GetSubClassName() const; 
+
+  /**Get text description of the subclass contents*/
+  static PString GetSubClassName(PINDEX t);
   
   /**Return a pointer to the n'th Ie in the internal list. If it is not
      there, a NULL is returned */
@@ -987,6 +996,9 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   /**Return the IAX2FullFrame type represented here (voice, protocol, session etc*/
   virtual BYTE GetFullFrameType() { return iax2ProtocolType; }
   
+  /**Pretty print this frame data to the designated stream*/
+  virtual void PrintOn(ostream & strm) const;
+
  protected:
   
   /**Read the information elements from the incoming data array 
@@ -995,6 +1007,11 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   
   /**A list of the IEs read from/(or  written to) the data section of this frame,*/
   IAX2IeList ieElements;
+
+  /**Pretty print the protocol value with an English word. */
+#if PTRACING
+    friend ostream & operator<<(ostream & o, ProtocolSc t);
+#endif
 };
 
 /////////////////////////////////////////////////////////////////////////////    

@@ -105,14 +105,16 @@ class IAX2RegProcessor : public IAX2Processor
   /**Go through the three lists for incoming data (ethernet/sound/UI commands.  */
   virtual void ProcessLists();
   
-  /**Processes a full frame*/
+  /**Processes a full frame, and sends it off to the relevant processor. This RegistrationProcessor instance worries about those types 
+   common to registration, so is concerned about cmdRegAuth, cmdRegAck etc.*/
   virtual void ProcessFullFrame(IAX2FullFrame & fullFrame);
   
-  /**Processes are mini frame*/
+  /**Handles a mini frame - so copes with media.*/
   virtual void ProcessNetworkFrame(IAX2MiniFrame * src);
   
-  /**Processes a protocol full frame*/
-  void ProcessNetworkFrame(IAX2FullFrameProtocol * src);
+  /**Processes a protocol full frame, well, those components relating to
+   * registration.*/
+  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Reset the call, ie: get a new call source number, 
      put the sequence numbers to 0 and reset the timer.
