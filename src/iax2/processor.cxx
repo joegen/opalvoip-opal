@@ -29,6 +29,9 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.25  2007/01/17 03:48:48  dereksmithies
+ * Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  * Revision 1.24  2007/01/16 03:17:42  dereksmithies
  * tidyup of comments. Remove unused variables.
  * Guarantee that media frames are sent with a monotonically increasing timestamp
@@ -404,9 +407,10 @@ void IAX2Processor::SendUnsupportedFrame(IAX2FullFrame *inReplyTo)
     IAX2FullFrame::callIrrelevant);
   f->AppendIe(new IAX2IeIaxUnknown((BYTE)inReplyTo->GetSubClass()));
   TransmitFrameToRemoteEndpoint(f);
+  delete inReplyTo;
 }
 
-BOOL IAX2Processor::ProcessCommonNetworkFrame(IAX2FullFrameProtocol * src)
+BOOL IAX2Processor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 {
   switch(src->GetSubClass()) {
   case IAX2FullFrameProtocol::cmdLagRq:
@@ -435,12 +439,14 @@ void IAX2Processor::ProcessIaxCmdPing(IAX2FullFrameProtocol *src)
 {
   PTRACE(4, "ProcessIaxCmdPing(IAX2FullFrameProtocol *src)");
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdPong, src, IAX2FullFrame::callIrrelevant);
+  delete src;
   TransmitFrameToRemoteEndpoint(f);
 }
 
 void IAX2Processor::ProcessIaxCmdPong(IAX2FullFrameProtocol *src)
 {
   SendAckFrame(src);  
+  delete src;
   PTRACE(4, "ProcessIaxCmdPong(IAX2FullFrameProtocol *src)");
 }
 
@@ -448,6 +454,7 @@ void IAX2Processor::ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src)
 {
   PTRACE(4, "ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src)");
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdLagRp, src, IAX2FullFrame::callIrrelevant);
+  delete src;
   TransmitFrameToRemoteEndpoint(f);
 }
 
@@ -455,10 +462,12 @@ void IAX2Processor::ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)
 {
   PTRACE(4, "ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)");
   SendAckFrame(src);
+  delete src;
   PTRACE(4, "Process\tRound trip lag time is " << (IAX2Frame::CalcTimeStamp(callStartTick) - src->GetTimeStamp()));
 }
 
-void IAX2Processor::ProcessIaxCmdVnak(IAX2FullFrameProtocol * /*src*/)
+void IAX2Processor::ProcessIaxCmdVnak(IAX2FullFrameProtocol *src)
 {
-  PTRACE(3, "Frames recieved out of order.  We should resend them but this is not implemented");
+    delete src;
+    PTRACE(3, "Frames recieved out of order.  We should resend them but this is not implemented");
 }

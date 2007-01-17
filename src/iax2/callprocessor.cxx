@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.8  2007/01/17 03:48:48  dereksmithies
+ * Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  * Revision 1.7  2007/01/16 03:17:42  dereksmithies
  * tidyup of comments. Remove unused variables.
  * Guarantee that media frames are sent with a monotonically increasing timestamp
@@ -783,19 +786,18 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameNull * src)
   return;
 }
 
-void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
+BOOL IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 { /* these frames are labelled as AST_FRAME_IAX in the asterisk souces.
-     These frames contain Information Elements in the data field.*/
-  
-  PTRACE(4, "ProcessNetworkFrame(IAX2FullFrameProtocol * src)");
+     These frames contain Information Elements in the data field.*/  
+  PTRACE(4, "ProcessNetworkFrame " << *src);
 
   CheckForRemoteCapabilities(src);
-
   src->CopyDataFromIeListTo(ieData);
   
   //check if the common method can process it?
-  if (ProcessCommonNetworkFrame(src))
-    return;
+  if (IAX2Processor::ProcessNetworkFrame(src)) {
+    return TRUE;
+  }
 
   switch(src->GetSubClass()) {
   case IAX2FullFrameProtocol::cmdNew:
@@ -878,11 +880,10 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     break;*/
   default:
     PTRACE(1, "Process Full Frame Protocol, Type not expected");
-    SendUnsupportedFrame(src);   
+    SendUnsupportedFrame(src);   //This method will delete the frame src.
   };
   
-  delete src;
-  return;
+  return FALSE;
 }
 
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameText * src)
@@ -919,7 +920,7 @@ void IAX2CallProcessor::CheckForRemoteCapabilities(IAX2FullFrameProtocol *src)
   
   src->GetRemoteCapability(remoteCapability, format);
 
-  PTRACE(4, "Connection\t Remote capabilities are " << remoteCapability << "   codec preferred " << format);
+  PTRACE(4, "Connection\tRemote capabilities are " << remoteCapability << "   codec preferred " << format);
   if ((remoteCapability == 0) && (format == 0))
     return;
 
@@ -957,6 +958,7 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   
   if (IsCallHappening()) {
     PTRACE(3, "Remote node has sent us a second new message. ignore");
+    delete src;
     return;
   }
   
@@ -973,6 +975,7 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
     TransmitFrameToRemoteEndpoint(reply);
     
     con->EndCallNow(OpalConnection::EndedByCapabilityExchange);
+    delete src;
     return;
   }
   
@@ -993,6 +996,7 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   IAX2FullFrameSessionControl *r;
   r = new IAX2FullFrameSessionControl(this, IAX2FullFrameSessionControl::ringing);
   TransmitFrameToRemoteEndpoint(r, IAX2WaitingForAck::RingingAcked);
+  delete src;
 }
 
 void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
@@ -1003,6 +1007,7 @@ void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
   
   if (!nextTask.MatchingAckPacket(src)) {
     PTRACE(3, "ack packet does not match a pending response");
+    delete src;
     return;
   }
   
@@ -1021,7 +1026,7 @@ void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
     break;
   }
 
-  
+  delete src;  
 }
 
 void IAX2CallProcessor::RingingWasAcked()
@@ -1084,6 +1089,8 @@ void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
   PTRACE(1, "The remote node (" << con->GetRemotePartyAddress()  << ") has closed the call");
 
   con->EndCallNow(OpalConnection::EndedByRemoteUser);
+
+  delete src;
 }
 
 void IAX2CallProcessor::ProcessIaxCmdReject(IAX2FullFrameProtocol *src)
@@ -1093,6 +1100,8 @@ void IAX2CallProcessor::ProcessIaxCmdReject(IAX2FullFrameProtocol *src)
   cout << "Cause \"" << ieData.cause << "\"" << endl;
   SendAckFrame(src);
   con->EndCallNow(OpalConnection::EndedByRefusal);
+
+  delete src;
 }
 
 void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
@@ -1123,9 +1132,11 @@ void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
 
   PTRACE(4, "codec frame play duration is " << audioFrameDuration << " ms, which compressed to " 
    << audioCompressedBytes << " bytes of data");
+
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdAuthReq(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdAuthReq(IAX2FullFrameProtocol * src)
 {
   PTRACE(4, "ProcessIaxCmdAuthReq(IAX2FullFrameProtocol *src)");
   StopNoResponseTimer();
@@ -1138,11 +1149,14 @@ void IAX2CallProcessor::ProcessIaxCmdAuthReq(IAX2FullFrameProtocol * /*src*/)
   
   TransmitFrameToRemoteEndpoint(f);
   StartNoResponseTimer();
+
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdAuthRep(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdAuthRep(IAX2FullFrameProtocol * src)
 {
   PTRACE(4, "ProcessIaxCmdAuthRep(IAX2FullFrameProtocol *src)");
+  delete src;
   /** When this packet has been acked, we send an accept */     
 }
 
@@ -1156,102 +1170,121 @@ void IAX2CallProcessor::ProcessIaxCmdInval(IAX2FullFrameProtocol * src)
     PTRACE(3, "ProcessIaxCmdInval - remote end does not like us, and nuked the call");
     con->ClearCall(OpalConnection::EndedByRemoteUser);
   }
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdDpReq(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdDpReq(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdDpReq(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdDpRep(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdDpRep(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdDpRep(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdDial(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdDial(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdDial(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTxreq(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTxreq(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdTxreq(IAX2FullFrameProtocol */*src*/)");
+  delete src;
   //Not implemented.
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTxcnt(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTxcnt(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdTxcnt(IAX2FullFrameProtocol * /*src*/)");
-  //Not implemented.
+  delete src;
+//Not implemented.
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTxacc(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTxacc(IAX2FullFrameProtocol *src)
 { /*Transfer has been accepted */
   PTRACE(3, "ProcessIaxCmdTxacc(IAX2FullFrameProtocol * /*src*/)");
+  delete src;
   //Not implemented.
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTxready(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTxready(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdTxready(IAX2FullFrameProtocol */*src*/)");
+  delete src;
   //Not implemented.
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTxrel(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTxrel(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdTxrel(IAX2FullFrameProtocol */*src*/)");
+  delete src;
   //Not implemented.
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTxrej(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTxrej(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdTxrej(IAX2FullFrameProtocol */*src*/)");
+  delete src;
   //Not implemented. (transfer rejected)
 }
 
-void IAX2CallProcessor::ProcessIaxCmdQuelch(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdQuelch(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdQuelch(IAX2FullFrameProtocol */*src*/)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdUnquelch(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdUnquelch(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdUnquelch(IAX2FullFrameProtocol */*src*/)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdPage(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdPage(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdPage(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdMwi(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdMwi(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdMwi(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdUnsupport(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdUnsupport(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdUnsupport(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdTransfer(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdTransfer(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdTransfer(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdProvision(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdProvision(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdProvision(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdFwDownl(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdFwDownl(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdFwDownl(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
-void IAX2CallProcessor::ProcessIaxCmdFwData(IAX2FullFrameProtocol * /*src*/)
+void IAX2CallProcessor::ProcessIaxCmdFwData(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdFwData(IAX2FullFrameProtocol *src)");
+  delete src;
 }
 
 void IAX2CallProcessor::StartStatusCheckTimer(PINDEX msToWait)

@@ -25,6 +25,9 @@
  * The author of this code is Stephen Cook
  *
  *  $Log: specialprocessor.cxx,v $
+ *  Revision 1.4  2007/01/17 03:48:48  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.3  2006/09/13 00:20:12  csoutheren
  *  Fixed warnings under VS.net
  *
@@ -96,14 +99,14 @@ void IAX2SpecialProcessor::ProcessNetworkFrame(IAX2MiniFrame * src)
   delete src;
 }
 
-void IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
+BOOL IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 {
   PTRACE(3, "ProcessNetworkFrame(IAX2FullFrameProtocol * src)");
   src->CopyDataFromIeListTo(ieData);
   
   //check if the common method can process it?
-  if (ProcessCommonNetworkFrame(src))
-    return;
+  if (IAX2Processor::ProcessNetworkFrame(src))
+      return TRUE;
   
   switch (src->GetSubClass()) {
     case IAX2FullFrameProtocol::cmdPoke:
@@ -112,16 +115,18 @@ void IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     default:
       PTRACE(1, "Process Full Frame Protocol, Type not expected");
       SendUnsupportedFrame(src);
+      return FALSE;
   }
   
-  delete src;
+  return TRUE;
 }
 
-void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol * /*src*/)
+void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdPoke(IAX2FullFrameProtocol * src)");
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdPong,
     IAX2FullFrameProtocol::callIrrelevant);    
   TransmitFrameToRemoteEndpoint(f);
+  delete src;
 }
