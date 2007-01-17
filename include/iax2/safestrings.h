@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: safestrings.h,v $
+ *  Revision 1.3  2007/01/17 22:27:52  dereksmithies
+ *  Correctly sends DTMF to remote node. Tidy up string handling.
+ *
  *  Revision 1.2  2005/08/24 04:56:25  dereksmithies
  *  Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
  *  the remote end.  Many Thanks.
@@ -72,7 +75,7 @@ class SafeStrings :  public PObject
   //@{
   
   /**Add a new string to the list, in a thread safe fashion. */
-  void AppendString(PString & newString,        /*!<String to add to the list.    */
+  void AppendString(const PString & newString,        /*!<String to add to the list.    */
 		    BOOL splitString = FALSE   /*!<If True, the string is added to the list, character by character.    */
 		    );
   
@@ -87,6 +90,9 @@ class SafeStrings :  public PObject
   
   /** Return True if this list is empty */
   BOOL IsEmpty();
+
+  /** Return True if there is data ready to be read from the list */
+  BOOL StringsAvailable() { return !IsEmpty(); }
   
   /** Return the first string on list, and then delete all elements on the list */
   PString GetFirstDeleteAll();

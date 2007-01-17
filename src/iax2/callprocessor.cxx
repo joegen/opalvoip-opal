@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.9  2007/01/17 22:27:52  dereksmithies
+ * Correctly sends DTMF to remote node. Tidy up string handling.
+ *
  * Revision 1.8  2007/01/17 03:48:48  dereksmithies
  * Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -451,13 +454,13 @@ void IAX2CallProcessor::ProcessLists()
       SendDtmfMessage(dtmfs[i]);
   }  
 
-  if (!textList.IsEmpty()) {
-   PStringArray sendList; // text messages
-   textList.GetAllDeleteAll(sendList);
-   PTRACE(4, "Have " << sendList.GetSize() << " text strings to send");
-   for (PINDEX i = 0; i < sendList.GetSize(); i++)
-     SendTextMessage(sendList[i]);    
-   }
+  if (textList.StringsAvailable()) {
+    PStringArray sendList; // text messages
+    textList.GetAllDeleteAll(sendList);
+    PTRACE(4, "Have " << sendList.GetSize() << " text strings to send");
+    for (PINDEX i = 0; i < sendList.GetSize(); i++)
+      SendTextMessage(sendList[i]);    
+  }
    
   //This method will send a transfer message if it has been requested
   SendTransferMessage();   
@@ -530,12 +533,16 @@ void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
 
 void IAX2CallProcessor::SendDtmf(PString dtmfs)
 {
+  PTRACE(4, "Activate the iax2 processeor, DTMF of  " << dtmfs << " to send");
   dtmfText += dtmfs;
+  activate.Signal();
 }
 
 void IAX2CallProcessor::SendText(const PString & text)
 {
+  PTRACE(4, "Activate the iax2 processeor, text of " << text << " to send");
   textList.AppendString(text);
+  activate.Signal();
 }
 
 void IAX2CallProcessor::SendHold()
