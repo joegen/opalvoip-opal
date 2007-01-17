@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.13  2007/01/17 03:48:13  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.12  2007/01/12 02:48:11  dereksmithies
  *  Make the iax2callprocessor a more permanent variable in the iax2connection.
  *
@@ -508,10 +511,14 @@ class IAX2Connection : public OpalConnection
      that packets arrive in schedule at the far end. */
   IAX2JitterBuffer jitterBuffer;
   
-  /**The payload type, which we put on all RTP_DataFrame packets. We need
-     this variable when we convert IAX2 Media Frames into RTP_DataFrames, in
-     preparation to putng into the jitter buffer. */
-  RTP_DataFrame::PayloadTypes currentPayloadType;
+  /**The payload type, which we put on all RTP_DataFrame packets. This
+     variable is placed on all RTP_DataFrame instances, prior to placing these
+     frames into the jitter buffer.
+
+     This variable is not used in the transmission of frames.
+
+     Note that this variable describes the payload type as opal sees it. */
+  RTP_DataFrame::PayloadTypes opalPayloadType;
 };
 
 

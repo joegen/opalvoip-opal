@@ -26,6 +26,9 @@
  *
  * 
  *  $Log: processor.h,v $
+ *  Revision 1.14  2007/01/17 03:48:13  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.13  2007/01/16 03:17:42  dereksmithies
  *  tidyup of comments. Remove unused variables.
  *  Guarantee that media frames are sent with a monotonically increasing timestamp
@@ -324,9 +327,6 @@ class IAX2Processor : public PThread
      process an incoming full frame*/
   virtual void ProcessFullFrame(IAX2FullFrame & fullFrame) = 0;
   
-  /**Attempt to process a common frame ie: LagRq, LagRp, Vnak, Ping or Pong.*/
-  BOOL ProcessCommonNetworkFrame(IAX2FullFrameProtocol *src);
-  
   /** Process a FullFrameProtocol class, where the sub Class value is Initial
      message, used to measure the round trip time  */
   virtual void ProcessIaxCmdLagRq(IAX2FullFrameProtocol *src);
@@ -367,6 +367,15 @@ class IAX2Processor : public PThread
   /**A pure virtual method that is implmented by to process 
    * an incoming network frame of type  IAX2MiniFrame */
   virtual void ProcessNetworkFrame(IAX2MiniFrame * src) = 0;  
+
+  /* A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in the
+     asterisk souces, It will contain 0, 1, 2 or more Information Elements
+     (Ie) in the data section. This processor is used to do things that are
+     common to registration and call handling.
+
+  This method will eat/delete the supplied frame. Return TRUE on success,
+  FALSE on failure.*/
+  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Transmit IAX2Frame to remote endpoint, and then increment send
      count. This calls a method in the Transmitter class. .It is only called

@@ -26,6 +26,9 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.6  2007/01/17 03:48:13  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.5  2007/01/16 03:17:42  dereksmithies
  *  tidyup of comments. Remove unused variables.
  *  Guarantee that media frames are sent with a monotonically increasing timestamp
@@ -281,7 +284,7 @@ class IAX2CallProcessor : public IAX2Processor
      
   A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in the asterisk souces,
   It will contain 0, 1, 2 or more Information Elements (Ie) in the data section.*/
-  void ProcessNetworkFrame(IAX2FullFrameProtocol * src);
+  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Internal method to process an incoming network frame of type  IAX2FullFrameText */
   void ProcessNetworkFrame(IAX2FullFrameText * src);

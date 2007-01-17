@@ -25,6 +25,9 @@
  * The author of this code is Stephen Cook
  *
  *  $Log: specialprocessor.h,v $
+ *  Revision 1.3  2007/01/17 03:48:13  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.2  2006/09/11 03:12:51  dereksmithies
  *  Add logging and MPL license statements.
  *
@@ -75,8 +78,9 @@ class IAX2SpecialProcessor : public IAX2Processor
   /**Called when there is no response to a request*/
   virtual void OnNoResponseTimeout();
   
-  /**Process an IAX2FullFrameProtocol */
-  void ProcessNetworkFrame(IAX2FullFrameProtocol * src);
+  /**Process an IAX2FullFrameProtocol. This special processor handles
+   things relative to special needs of full frame protocols.*/
+  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Process a poke command*/
   void ProcessIaxCmdPoke(IAX2FullFrameProtocol * src);
