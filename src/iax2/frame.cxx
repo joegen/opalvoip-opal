@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.18  2007/01/17 03:48:48  dereksmithies
+ *  Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  *  Revision 1.17  2007/01/16 03:17:42  dereksmithies
  *  tidyup of comments. Remove unused variables.
  *  Guarantee that media frames are sent with a monotonically increasing timestamp
@@ -129,6 +132,8 @@ IAX2Frame::IAX2Frame(IAX2EndPoint &_endpoint)
   ZeroAllValues();
   
   frameIndex = NextIndex();
+
+  PTRACE(5, "Construct this IAX2Frame  " << IdString());
 }
 
 IAX2Frame::~IAX2Frame()
@@ -490,12 +495,14 @@ IAX2MiniFrame::IAX2MiniFrame(IAX2Frame & srcFrame)
   frameIndex = NextIndex();
   isAudio = (data[0] != 0) || (data[1] != 0);
   isVideo = !isAudio;
+  PTRACE(6, "Build this IAX2MiniFrame " << IdString());
 }
 
 IAX2MiniFrame::IAX2MiniFrame(IAX2EndPoint &_endpoint)
   : IAX2Frame(_endpoint)
 {
   ZeroAllValues();
+  PTRACE(6, "Build this IAX2MiniFrame " << IdString());
 }
 
 IAX2MiniFrame::IAX2MiniFrame(IAX2Processor * iax2Processor, PBYTEArray &sound, 
@@ -509,11 +516,12 @@ IAX2MiniFrame::IAX2MiniFrame(IAX2Processor * iax2Processor, PBYTEArray &sound,
   PINDEX headerSize = data.GetSize();
   data.SetSize(sound.GetSize() + headerSize);
   memcpy(data.GetPointer() + headerSize, sound.GetPointer(), sound.GetSize());
+  PTRACE(6, "Build this IAX2MiniFrame " << IdString());
 }
 
 IAX2MiniFrame::~IAX2MiniFrame()
 {
-  PTRACE(5, "Destroy this IAX2MiniFrame " << IdString());
+  PTRACE(6, "Destroy this IAX2MiniFrame " << IdString());
 }
 
 void IAX2MiniFrame::InitialiseHeader(IAX2Processor *iax2Processor)
@@ -929,8 +937,7 @@ void IAX2FullFrame::PrintOn(ostream & strm) const
 {
   strm << IdString() << " ++  " << GetFullFrameName() << " -- " 
        << GetSubClassName() << " \"" << connectionToken << "\"" << endl
-       << remote << endl
-       << ::hex << data << ::dec;
+       << remote << endl;
 }
 
 void IAX2FullFrame::ModifyFrameHeaderSequenceNumbers(PINDEX inNo, PINDEX outNo)
@@ -1206,6 +1213,7 @@ IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Processor *iax2Processor, PINDE
   InitialiseHeader(iax2Processor);
   callMustBeActive = (needCon == callActive);
   PTRACE(5, "Construct a fullframeprotocol from a processor, subclass value    and a connectionrequired. " << IdString());
+
 }
 
 IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2Processor *iax2Processor,  ProtocolSc  subClassValue, ConnectionRequired needCon)
@@ -1261,7 +1269,7 @@ IAX2FullFrameProtocol::IAX2FullFrameProtocol(IAX2FullFrame & srcFrame)
 IAX2FullFrameProtocol::~IAX2FullFrameProtocol()
 {
   ieElements.AllowDeleteObjects(TRUE);
-  PTRACE(5, "Destroy this IAX2FullFrameProtocol " << IdString());
+  PTRACE(4, "Destroy this IAX2FullFrameProtocol(" << GetSubClassName() << ") " << IdString());
 }
 
 void IAX2FullFrameProtocol::SetRetransmissionRequired()
@@ -1366,8 +1374,14 @@ void IAX2FullFrameProtocol::CopyDataFromIeListTo(IAX2IeData &res)
   }
 }
 
-PString IAX2FullFrameProtocol::GetSubClassName() const{
-  switch (GetSubClass()) {
+PString IAX2FullFrameProtocol::GetSubClassName() const
+{
+  return GetSubClassName(GetSubClass());
+}
+
+PString IAX2FullFrameProtocol::GetSubClassName(PINDEX t)
+{
+  switch (t) {
   case cmdNew:        return PString("new");
   case cmdPing:       return PString("ping");
   case cmdPong:       return PString("pong");
@@ -1406,7 +1420,24 @@ PString IAX2FullFrameProtocol::GetSubClassName() const{
   case cmdFwDownl:    return PString("fwDownl");
   case cmdFwData:     return PString("fwData");
   };
-  return PString("Undefined FullFRameProtocol subclass value of ") + PString(GetSubClass());
+  return PString("Undefined FullFrameProtocol subclass value of ") + PString(t);
+}
+
+#if PTRACING
+ostream & operator << (ostream & o, IAX2FullFrameProtocol::ProtocolSc t)
+{
+  PString answer = IAX2FullFrameProtocol::GetSubClassName(t);
+  o << answer;
+  return o;
+}
+#endif
+
+void IAX2FullFrameProtocol::PrintOn(ostream & strm) const
+{
+  strm << "IAX2FullFrameProtocol(" << GetSubClassName() << ") " 
+       << IdString() << " -- " 
+       << " \"" << connectionToken << "\"" << endl
+       << remote << endl;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
