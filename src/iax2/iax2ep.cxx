@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.24  2007/01/17 03:48:48  dereksmithies
+ * Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  * Revision 1.23  2007/01/13 00:04:57  rjongbloed
  * Fixed compilation on DevStudio 2003
  *
@@ -772,7 +775,7 @@ void IAX2EndPoint::CopyLocalMediaFormats(OpalMediaFormatList & list)
     PStringStream strm;
     strm << localMediaFormats[i];
     PTRACE(5, "copy local format " << strm);
-    list += *(new OpalMediaFormat(strm));
+    list += OpalMediaFormat(strm);
   }
 }
 

@@ -123,14 +123,14 @@ void IAX2RegProcessor::ProcessFullFrame(IAX2FullFrame & fullFrame)
   
 }
 
-void IAX2RegProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
+BOOL IAX2RegProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 {
   PTRACE(3, "ProcessNetworkFrame(IAX2FullFrameProtocol * src)");  
   src->CopyDataFromIeListTo(ieData);
   
   //check if the common method can process it?
-  if (ProcessCommonNetworkFrame(src))
-    return;
+  if (IAX2Processor::ProcessNetworkFrame(src))
+    return TRUE;
   
   if (registrationState == registrationHappening) {
     switch (src->GetSubClass()) {
@@ -145,6 +145,7 @@ void IAX2RegProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
       break;
     default:
       PTRACE(1, "Process Full Frame Protocol registering, Type not expected");
+      delete src;
     }
   }
   
@@ -161,15 +162,14 @@ void IAX2RegProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
       break;
     default:
       PTRACE(1, "Process Full Frame Protocol unregistering, Type not expected");
+      delete src;
+      return FALSE;
     }
-  }
-     
-  delete src;
-  
-  
+  }  
+  return TRUE;
 }
 
-void IAX2RegProcessor::ProcessIaxCmdRegAuth(IAX2FullFrameProtocol * /*src*/)
+void IAX2RegProcessor::ProcessIaxCmdRegAuth(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdRegAuth(IAX2FullFrameProtocol * src)");
   
@@ -185,6 +185,7 @@ void IAX2RegProcessor::ProcessIaxCmdRegAuth(IAX2FullFrameProtocol * /*src*/)
   TransmitFrameToRemoteEndpoint(f);
   
   StartNoResponseTimer();
+  delete src;
 }
 
 void IAX2RegProcessor::ProcessIaxCmdRegAck(IAX2FullFrameProtocol * src)
@@ -212,6 +213,7 @@ void IAX2RegProcessor::ProcessIaxCmdRegAck(IAX2FullFrameProtocol * src)
   registrationState = registrationWait;
   
   SendAckFrame(src);
+  delete src;
 }
 
 void IAX2RegProcessor::ProcessIaxCmdRegRej(IAX2FullFrameProtocol * src)
@@ -227,9 +229,10 @@ void IAX2RegProcessor::ProcessIaxCmdRegRej(IAX2FullFrameProtocol * src)
   registrationTimer = registrationRefreshTime * 1000; //convert to milliseconds
   
   SendAckFrame(src);
+  delete src;
 }
 
-void IAX2RegProcessor::ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol * /*src*/)
+void IAX2RegProcessor::ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol * src)");
   
@@ -243,9 +246,10 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegAuth(IAX2FullFrameProtocol * /*src*/)
   TransmitFrameToRemoteEndpoint(f);
   
   StartNoResponseTimer();
+  delete src;
 }
 
-void IAX2RegProcessor::ProcessIaxCmdUnRegAck(IAX2FullFrameProtocol * src)
+void IAX2RegProcessor::ProcessIaxCmdUnRegAck(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdUnRegAck(IAX2FullFrameProtocol * src)");
   
@@ -255,9 +259,10 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegAck(IAX2FullFrameProtocol * src)
   registrationState = registrationUnregistered;
   endpoint.OnUnregistered(host, userName, FALSE);
   Terminate();
+  delete src;
 }
 
-void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol * /*src*/)
+void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol *src)
 {
   PTRACE(3, "ProcessIaxCmdRej(IAX2FullFrameProtocol * src)");
   
@@ -267,6 +272,7 @@ void IAX2RegProcessor::ProcessIaxCmdUnRegRej(IAX2FullFrameProtocol * /*src*/)
   registrationState = registrationUnregistered;
   endpoint.OnUnregistered(host, userName, TRUE);
   Terminate();
+  delete src;
 }
 
 void IAX2RegProcessor::OnDoRegistration(PTimer &, INT)

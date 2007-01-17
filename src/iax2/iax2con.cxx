@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.16  2007/01/17 03:48:48  dereksmithies
+ * Tidy up comments, remove leaks, improve reporting of packet types.
+ *
  * Revision 1.15  2007/01/12 02:48:11  dereksmithies
  * Make the iax2callprocessor a more permanent variable in the iax2connection.
  *
@@ -123,6 +126,8 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 endpoint(ep),
 iax2Processor(*new IAX2CallProcessor(ep))
 {  
+  opalPayloadType = RTP_DataFrame::MaxPayloadType;
+
   remotePartyAddress = "iax2:" + inRemoteParty;
   if (inRemotePartyName.IsEmpty())
     remotePartyName = inRemoteParty;
@@ -227,7 +232,7 @@ BOOL IAX2Connection::OnIncomingConnection()
   PTRACE(3, "IAX2Con\tOnIncomingConnection()");
   phase = SetUpPhase;
   originating = FALSE;
-  PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX call");
+  PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
   return OpalConnection::OnIncomingConnection();
 }
@@ -374,7 +379,7 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
       PString wildcard = IAX2FullFrameVoice::GetSubClassName(1 << i);
       if (!remoteMediaFormats.HasFormat(wildcard)) {
 	PTRACE(4, "Connection\tRemote capability says add codec " << wildcard);
-	remoteMediaFormats += *(new OpalMediaFormat(wildcard));
+	remoteMediaFormats += OpalMediaFormat(wildcard);
       }
     }
   }
@@ -388,9 +393,9 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
     PTRACE(4, "Connection\tRemote codec is " << remoteMediaFormats[i]);
   }    
 
-  PTRACE(4, "REMOTE Codecs are " << remoteMediaFormats);
+  PTRACE(4, "Connection\tREMOTE Codecs are " << remoteMediaFormats);
   AdjustMediaFormats(remoteMediaFormats);
-  PTRACE(4, "REMOTE Codecs are " << remoteMediaFormats);
+  PTRACE(4, "Connection\tREMOTE Codecs are " << remoteMediaFormats);
 }
 
 void IAX2Connection::EndCallNow(CallEndReason reason)
@@ -401,17 +406,17 @@ void IAX2Connection::EndCallNow(CallEndReason reason)
 unsigned int IAX2Connection::ChooseCodec()
 {
   int res;
-  
+
   PTRACE(4, "Local capabilities are  " << localMediaFormats);
   PTRACE(4, "remote capabilities are " << remoteMediaFormats);
   
   if (remoteMediaFormats.GetSize() == 0) {
-    PTRACE(3, "No remote media formats supported. Exit now ");
+    PTRACE(0, "No remote media formats supported. Exit now ");
     return 0;
   }
 
   if (localMediaFormats.GetSize() == 0) {
-    PTRACE(3, "No local media formats supported. Exit now ");
+    PTRACE(0, "No local media formats supported. Exit now ");
     return 0;
   }
 
@@ -433,14 +438,16 @@ unsigned int IAX2Connection::ChooseCodec()
       }
   }
   PTRACE(0, "Connection. Failed to select a codec " );
+  cerr << "Failed to select a codec" << endl;
   return 0;
 
  selectCodec:
-  currentPayloadType = localMediaFormats[res].GetPayloadType();
+  opalPayloadType = localMediaFormats[res].GetPayloadType();
 
   PStringStream strm;
   strm << localMediaFormats[res];
   PTRACE(3, "Connection\t have selected the codec " << strm);
+  PTRACE(3, "Connection\tOn payload type " << opalPayloadType);
 
   return IAX2FullFrameVoice::OpalNameToIax2Value(strm);
 }
@@ -524,16 +531,24 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 {
     PTRACE(6, "RTP\tIAX2 Incoming Media frame of " << soundFrame->GetMediaDataSize() << " bytes and timetamp=" << (soundFrame->GetTimeStamp() * 8));
 
+    if (opalPayloadType == RTP_DataFrame::MaxPayloadType) {
+      //have not done a capability decision. (or capability failed).
+      PTRACE(3, "RTP\tDump this sound frame, as no capability decision has been made");
+      delete soundFrame;
+      return;
+    }
+
     RTP_DataFrame *mediaFrame = new RTP_DataFrame();
     mediaFrame->SetTimestamp(soundFrame->GetTimeStamp() * 8);
     mediaFrame->SetMarker(FALSE);
-    mediaFrame->SetPayloadType(currentPayloadType);
+    mediaFrame->SetPayloadType(opalPayloadType);
 
     mediaFrame->SetPayloadSize(soundFrame->GetMediaDataSize());
     mediaFrame->SetSize(mediaFrame->GetPayloadSize() + mediaFrame->GetHeaderSize());
     memcpy(mediaFrame->GetPayloadPtr(), soundFrame->GetMediaDataPointer(), soundFrame->GetMediaDataSize());
 
     jitterBuffer.NewFrameFromNetwork(mediaFrame);
+    delete soundFrame;
 }
 
 BOOL IAX2Connection::ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet)
