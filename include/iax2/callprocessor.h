@@ -26,6 +26,9 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.7  2007/01/17 22:27:52  dereksmithies
+ *  Correctly sends DTMF to remote node. Tidy up string handling.
+ *
  *  Revision 1.6  2007/01/17 03:48:13  dereksmithies
  *  Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -454,11 +457,13 @@ class IAX2CallProcessor : public IAX2Processor
   /**Array of remote node we have to make a call to */
   SafeStrings callList;
   
-  /**Contains the concatanation  of the dtmf we have to send to the remote endpoint.
-   This string is sent a character at a time, one DTMF frame per character.*/
+  /**Contains the concatanation of the dtmf we have to send to the remote
+   endpoint.  This string is sent a character at a time, one DTMF frame per
+   character. This list is threadsafe. */
   SafeString dtmfText;
 
-  /**Array of the text we have to send to the remote endpoint */
+  /**Array of the text we have to send to the remote endpoint. This array is
+     threadsafe. */
   SafeStrings textList;
 
   /**Array of received dtmf characters (These have come from the network)*/
