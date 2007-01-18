@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2045  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2046  2007/01/18 12:49:21  csoutheren
+ * Add ability to disable T.38 in compile
+ *
+ * Revision 2.44  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -1331,6 +1334,7 @@ class H323EndPoint : public OpalEndPoint
       */
     virtual void OnReceivedInitiateReturnError();
 
+#if OPAL_VIDEO
     /**See if should auto-start receive video channels on connection.
      */
     BOOL CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
@@ -1338,7 +1342,9 @@ class H323EndPoint : public OpalEndPoint
     /**See if should auto-start transmit video channels on connection.
      */
     BOOL CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
+#endif
 
+#if OPAL_T38FAX
     /**See if should auto-start receive fax channels on connection.
      */
     BOOL CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
@@ -1346,7 +1352,8 @@ class H323EndPoint : public OpalEndPoint
     /**See if should auto-start transmit fax channels on connection.
      */
     BOOL CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
-	
+#endif
+
     /** Returns whether H.224 is enabled or not
      */
     BOOL IsH224Enabled() const { return isH224Enabled; }
