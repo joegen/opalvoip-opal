@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2020  2006/05/30 11:33:02  hfriederich
+ * Revision 1.2021  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.19  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.18  2005/12/09 05:41:10  csoutheren
@@ -911,7 +915,16 @@ H225_Setup_UUIE & H323SignalPDU::BuildSetup(const H323Connection & connection,
   }
 
   setup.IncludeOptionalField(H225_Setup_UUIE::e_sourceAddress);
-  H323SetAliasAddresses(endpoint.GetAliasNames(), setup.m_sourceAddress);
+  {
+    OpalConnection::StringOptions * stringOptions = connection.GetStringOptions();
+    PString callingParty;
+    if (stringOptions != NULL)
+      callingParty = (*stringOptions)("Calling-Party-Name");
+    if (callingParty.IsEmpty())
+      H323SetAliasAddresses(endpoint.GetAliasNames(), setup.m_sourceAddress);
+    else
+      H323SetAliasAddresses(PStringArray(callingParty), setup.m_sourceAddress);
+  }
 
   setup.m_conferenceID = connection.GetConferenceIdentifier();
   setup.m_conferenceGoal.SetTag(H225_Setup_UUIE_conferenceGoal::e_create);
@@ -1549,9 +1562,30 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
   PINDEX i;
   const PStringList & aliases = connection.GetLocalAliasNames();
 
-  PString localName = connection.GetLocalPartyName();
-  PString displayName = connection.GetDisplayName();
+  PString localName;
+  PString displayName;
   PString number;
+
+  {
+    OpalConnection::StringOptions * stringOptions = connection.GetStringOptions();
+    PString strLocal, strDisplay;
+    if (stringOptions != NULL) {
+      strLocal   = (*stringOptions)("Calling-Party-Name");
+      strDisplay = (*stringOptions)("Calling-Display-Name");
+    }
+
+    if (!strLocal.IsEmpty())
+      localName = strLocal;
+    else
+      localName = connection.GetLocalPartyName();
+
+    if (!strDisplay.IsEmpty())
+      displayName = strDisplay;
+    else if (!strLocal.IsEmpty())
+      displayName = localName;
+    else
+      displayName = connection.GetDisplayName();
+  }
 
   if (IsE164(localName)) {
     number = localName;
