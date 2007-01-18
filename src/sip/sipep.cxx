@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2140  2007/01/15 22:14:19  dsandras
+ * Revision 1.2141  2007/01/18 04:45:17  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.139  2007/01/15 22:14:19  dsandras
  * Added missing mutexes.
  *
  * Revision 2.138  2007/01/04 22:09:41  dsandras
@@ -943,9 +947,10 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 }
 
 BOOL SIPEndPoint::MakeConnection(OpalCall & call,
-                                 const PString & _remoteParty,
-                                 void * userData,
-                           unsigned int options)
+                            const PString & _remoteParty,
+                                     void * userData,
+                               unsigned int options,
+                        OpalConnection::StringOptions * stringOptions)
 {
   PString remoteParty;
   
@@ -957,7 +962,7 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL, options);
+  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL, options, stringOptions);
   if (connection == NULL)
     return FALSE;
 
@@ -986,14 +991,15 @@ BOOL SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 
 
 SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
-                                              const PString & token,
-                                              void * /*userData*/,
-                                              const SIPURL & destination,
-                                              OpalTransport * transport,
-                                              SIP_PDU * /*invite*/,
-                                              unsigned int options)
+                                         const PString & token,
+                                                  void * /*userData*/,
+                                          const SIPURL & destination,
+                                         OpalTransport * transport,
+                                               SIP_PDU * /*invite*/,
+                                            unsigned int options,
+                                     OpalConnection::StringOptions * stringOptions)
 {
-  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport, options);
+  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
   if (conn != NULL)
     OnNewConnection(call, *conn);
   return conn;
