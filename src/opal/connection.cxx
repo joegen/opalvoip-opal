@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2086  2007/01/18 04:45:17  csoutheren
+ * Revision 1.2087  2007/01/18 12:25:33  csoutheren
+ * Add ability to set H.323 call-id via options
+ *
+ * Revision 2.85  2007/01/18 04:45:17  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -549,6 +552,12 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
     default:
       useRTPAggregation = endpoint.UseRTPAggregation();
+  }
+
+  if (stringOptions != NULL) {
+    PString id((*stringOptions)("Call-Identifier"));
+    if (!id.IsEmpty())
+      callIdentifier = PGloballyUniqueID(id);
   }
 }
 
