@@ -26,6 +26,10 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.8  2007/01/18 04:45:16  csoutheren
+ *  Messy, but simple change to add additional options argument to OpalConnection constructor
+ *  This allows the provision of non-trivial arguments for connections
+ *
  *  Revision 1.7  2007/01/17 22:27:52  dereksmithies
  *  Correctly sends DTMF to remote node. Tidy up string handling.
  *
@@ -141,7 +145,7 @@ class IAX2CallProcessor : public IAX2Processor
   
   /** Ask this IAX2CallProcessor to send dtmf to the remote endpoint. The dtmf is placed on a queue,
       ready for transmission in fullframes of type dtmf. */
-  void SendDtmf(PString dtmfs);
+  void SendDtmf(const PString & dtmfs);
 
   /** Ask this IAX2CallProcessor to send text to the remote endpoint. The text
       is placed on a queue, ready for transmission in fullframes of type

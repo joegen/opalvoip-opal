@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2060  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2061  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.59  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -531,7 +535,8 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
 BOOL H323EndPoint::MakeConnection(OpalCall & call,
                                   const PString & remoteParty,
                                   void * userData,
-                            unsigned int options)
+                            unsigned int options,
+                            OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(2, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
@@ -540,7 +545,8 @@ BOOL H323EndPoint::MakeConnection(OpalCall & call,
                           UINT_MAX,
                           remoteParty,
                           userData,
-                          options);
+                          options,
+                          stringOptions);
 }
 
 
@@ -626,9 +632,10 @@ H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
                                                 const PString & alias,
                                                 const H323TransportAddress & address,
                                                 H323SignalPDU * /*setupPDU*/,
-                                                unsigned options)
+                                                unsigned options,
+                                                OpalConnection::StringOptions * stringOptions)
 {
-  H323Connection * conn = new H323Connection(call, *this, token, alias, address, options);
+  H323Connection * conn = new H323Connection(call, *this, token, alias, address, options, stringOptions);
   if (conn != NULL)
     OnNewConnection(call, *conn);
   return conn;
@@ -668,10 +675,11 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
 BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
                                     const PString & existingToken,
                                     const PString & callIdentity,
-                                    unsigned capabilityLevel,
+                                           unsigned capabilityLevel,
                                     const PString & remoteParty,
-                                    void * userData,
-                              unsigned int options)
+                                             void * userData,
+                                       unsigned int options,
+                                OpalConnection::StringOptions * stringOptions)
 {
   PString alias;
   H323TransportAddress address;
@@ -703,7 +711,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
     } while (connectionsActive.Contains(newToken));
   }
 
-  H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options);
+  H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options, stringOptions);
   if (connection == NULL) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;

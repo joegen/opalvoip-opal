@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2027  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2028  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.26  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -455,7 +459,7 @@ class OpalCall : public PSafeObject
 
     
   //use to add the connection to the call's connection list
-  friend OpalConnection::OpalConnection(OpalCall & call, OpalEndPoint & ep, const PString & token, unsigned int options);
+  friend OpalConnection::OpalConnection(OpalCall &, OpalEndPoint &, const PString &, unsigned int, OpalConnection::StringOptions *);
   //use to remove the connection from the call's connection list
   friend OpalConnection::~OpalConnection();
 };

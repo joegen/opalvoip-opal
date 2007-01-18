@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2067  2007/01/02 15:26:13  dsandras
+ * Revision 1.2068  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.66  2007/01/02 15:26:13  dsandras
  * Added DNS Fallback for realm authentication if the classical comparison
  * doesn't work. Fixes problems with broken SIP proxies. (Ekiga report #377346)
  *
@@ -570,10 +574,11 @@ class SIPEndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,          ///<  Owner of connection
-      const PString & party,    ///<  Remote party to call
-      void * userData = NULL,   ///<  Arbitrary data to pass to connection
-      unsigned int options = 0  ///<  options to pass to conneciton
+      OpalCall & call,                         ///<  Owner of connection
+      const PString & party,                   ///<  Remote party to call
+      void * userData,                         ///<  Arbitrary data to pass to connection
+      unsigned int options,                    ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions  ///<  complex string options
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -594,13 +599,15 @@ class SIPEndPoint : public OpalEndPoint
        The default implementation is to create a OpalSIPConnection.
       */
     virtual SIPConnection * CreateConnection(
-      OpalCall & call,            ///<  Owner of connection
-      const PString & token,      ///<  token used to identify connection
-      void * userData,            ///<  User data for connection
-      const SIPURL & destination, ///<  Destination for outgoing call
-      OpalTransport * transport,  ///<  Transport INVITE has been received on
-      SIP_PDU * invite,           ///<  Original INVITE pdu
-      unsigned int options = 0    ///<  connection options
+      OpalCall & call,                         ///<  Owner of connection
+      const PString & token,                   ///<  token used to identify connection
+      void * userData,                         ///<  User data for connection
+      const SIPURL & destination,              ///<  Destination for outgoing call
+      OpalTransport * transport,               ///<  Transport INVITE has been received on
+      SIP_PDU * invite,                        ///<  Original INVITE pdu
+      unsigned int options = 0,                ///<  connection options
+      OpalConnection::StringOptions * stringOptions = NULL ///<  complex string options
+
     );
     
     /**Setup a connection transfer a connection for the SIP endpoint.

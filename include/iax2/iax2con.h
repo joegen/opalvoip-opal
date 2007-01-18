@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.14  2007/01/18 04:45:16  csoutheren
+ *  Messy, but simple change to add additional options argument to OpalConnection constructor
+ *  This allows the provision of non-trivial arguments for connections
+ *
  *  Revision 1.13  2007/01/17 03:48:13  dereksmithies
  *  Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -178,8 +182,10 @@ class IAX2Connection : public OpalConnection
       CallEndReason reason = EndedByLocalUser /// Reason for call clearing
       );
 
+  OpalConnection::SendUserInputModes GetRealSendUserInputMode() const;
+
   /**Provided as a link between the iax endpoint and the iax processor */
-  void SendDtmf(PString dtmf);
+  void SendDtmf(const PString & dtmf);
 
   /** sending text fullframes **/
   virtual BOOL SendUserInputString(const PString & value );

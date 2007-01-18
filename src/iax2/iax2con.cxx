@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.17  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
  * Revision 1.16  2007/01/17 03:48:48  dereksmithies
  * Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -288,15 +292,36 @@ void IAX2Connection::OnConnected()
   OpalConnection::OnConnected();
 }
 
-void IAX2Connection::SendDtmf(PString dtmf)
+void IAX2Connection::SendDtmf(const PString & dtmf)
 {
   iax2Processor.SendDtmf(dtmf); 
 }
 
-BOOL IAX2Connection::SendUserInputString(const PString & value ) 
+BOOL IAX2Connection::SendUserInputString(const PString & value) 
 { 
-  iax2Processor.SendText(value); 
-  return TRUE;
+  SendUserInputModes mode = GetRealSendUserInputMode();
+
+  PTRACE(2, "IAX2\tSendUserInput(\"" << value << "\"), using mode " << mode);
+
+  if (mode == SendUserInputAsString) {
+    iax2Processor.SendText(value); 
+    return TRUE;
+  }
+
+  return OpalConnection::SendUserInputString(value);
+}
+
+OpalConnection::SendUserInputModes IAX2Connection::GetRealSendUserInputMode() const
+{
+  switch (sendUserInputMode) {
+    case SendUserInputAsString:
+    case SendUserInputAsTone:
+      return sendUserInputMode;
+    default:
+      break;
+  }
+
+  return SendUserInputAsTone;
 }
   
 BOOL IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
