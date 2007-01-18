@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2009  2005/02/21 12:20:08  rjongbloed
+ * Revision 1.2010  2007/01/18 12:49:22  csoutheren
+ * Add ability to disable T.38 in compile
+ *
+ * Revision 2.8  2005/02/21 12:20:08  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.7  2003/01/07 04:39:53  robertj
@@ -116,6 +119,10 @@
 #ifdef __GNUC__
 #pragma implementation "t38proto.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_T38FAX
 
 #include <t38/t38proto.h>
 
@@ -561,6 +568,8 @@ BOOL OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
   /* don't handle lost packets yet */
   return TRUE;
 }
+
+#endif // OPAL_T38FAX
 
 
 /////////////////////////////////////////////////////////////////////////////
