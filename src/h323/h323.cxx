@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2132  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2133  2007/01/18 12:49:22  csoutheren
+ * Add ability to disable T.38 in compile
+ *
+ * Revision 2.131  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -3624,8 +3627,10 @@ void H323Connection::OnSelectLogicalChannels()
       if (endpoint.CanAutoStartTransmitVideo())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
 #endif
+#if OPAL_T38FAX
       if (endpoint.CanAutoStartTransmitFax())
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
+#endif
       break;
 
     case FastStartInitiate :
@@ -3637,9 +3642,11 @@ void H323Connection::OnSelectLogicalChannels()
                               endpoint.CanAutoStartTransmitVideo(),
                               endpoint.CanAutoStartReceiveVideo());
 #endif
+#if OPAL_T38FAX
       SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
                               endpoint.CanAutoStartTransmitFax(),
                               endpoint.CanAutoStartReceiveFax());
+#endif
       break;
 
     case FastStartResponse :
@@ -3653,10 +3660,12 @@ void H323Connection::OnSelectLogicalChannels()
       if (endpoint.CanAutoStartReceiveVideo())
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
+#if OPAL_T38FAX
       if (endpoint.CanAutoStartTransmitFax())
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
       if (endpoint.CanAutoStartReceiveFax())
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsReceiver);
+#endif
       break;
   }
 }

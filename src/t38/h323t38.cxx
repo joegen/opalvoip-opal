@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2014  2005/02/21 12:20:08  rjongbloed
+ * Revision 1.2015  2007/01/18 12:49:22  csoutheren
+ * Add ability to disable T.38 in compile
+ *
+ * Revision 2.13  2005/02/21 12:20:08  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.12  2004/04/07 08:21:10  rjongbloed
@@ -153,6 +156,10 @@
 #ifdef __GNUC__
 #pragma implementation "h323t38.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_T38FAX
 
 #include <t38/h323t38.h>
 
@@ -500,5 +507,6 @@ BOOL H323_T38Channel::CreateListener()
   return CreateTransport();
 }
 
+#endif // OPAL_T38FAX
 
 /////////////////////////////////////////////////////////////////////////////
