@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2068  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2069  2007/01/18 04:45:17  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.67  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -473,7 +477,8 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
                             const PString & partyB,
                             PString & token,
                             void * userData,
-                            unsigned int options)
+                            unsigned int options,
+                            OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
@@ -486,7 +491,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   // go through the routing engine via OnIncomingConnection. If we were the
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
-  if (MakeConnection(*call, partyA, userData, options) && call->GetConnection(0)->SetUpConnection()) {
+  if (MakeConnection(*call, partyA, userData, options, stringOptions) && call->GetConnection(0)->SetUpConnection()) {
     PTRACE(1, "SetUpCall succeeded, call=" << *call);
     return TRUE;
   }
@@ -603,15 +608,20 @@ PString OpalManager::GetNextCallToken()
 
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
 {
-  return MakeConnection(call, remoteParty, NULL, 0);
+  return MakeConnection(call, remoteParty, NULL, 0, NULL);
 }
 
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData)
 {
-  return MakeConnection(call, remoteParty, userData, 0);
+  return MakeConnection(call, remoteParty, userData, 0, NULL);
 }
 
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options)
+{
+  return MakeConnection(call, remoteParty, userData, options, NULL);
+}
+
+BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
@@ -625,7 +635,7 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
 
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (epname == endpoints[i].GetPrefixName()) {
-      if (endpoints[i].MakeConnection(call, remoteParty, userData, options))
+      if (endpoints[i].MakeConnection(call, remoteParty, userData, options, stringOptions))
         return TRUE;
     }
   }
@@ -636,10 +646,15 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
 {
-  return OnIncomingConnection(connection, 0);
+  return OnIncomingConnection(connection, 0, NULL);
 }
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options)
+{
+  return OnIncomingConnection(connection, options, NULL);
+}
+
+BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
 
@@ -650,7 +665,7 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned opt
     return TRUE;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  return MakeConnection(call, OnRouteConnection(connection), NULL, options);
+  return MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions);
 }
 
 

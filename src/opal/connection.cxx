@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2085  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2086  2007/01/18 04:45:17  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.84  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -478,7 +482,8 @@ ostream & operator<<(ostream & o, OpalConnection::SendUserInputModes m)
 OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
                                const PString & token,
-                               unsigned int options)
+                               unsigned int options,
+                               OpalConnection::StringOptions * _stringOptions)
   : ownerCall(call),
     endpoint(ep),
     callToken(token),
@@ -497,7 +502,8 @@ OpalConnection::OpalConnection(OpalCall & call,
     echoCanceler(NULL),
     phase(UninitialisedPhase),
     originating(FALSE),
-    callEndReason(NumCallEndReasons)
+    callEndReason(NumCallEndReasons),
+    stringOptions(_stringOptions)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -559,6 +565,7 @@ OpalConnection::~OpalConnection()
   delete t120handler;
   delete t38handler;
   delete h224Handler;
+  delete stringOptions;
 
   ownerCall.connectionsActive.Remove(this);
   ownerCall.SafeDereference();
@@ -690,9 +697,13 @@ BOOL OpalConnection::OnIncomingConnection()
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options)
 {
-  return endpoint.OnIncomingConnection(*this, options);
+  return endpoint.OnIncomingConnection(*this, options, NULL);
 }
 
+BOOL OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
+{
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+}
 
 PString OpalConnection::GetDestinationAddress()
 {

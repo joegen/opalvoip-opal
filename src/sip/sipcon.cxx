@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2194  2007/01/15 22:13:59  dsandras
+ * Revision 1.2195  2007/01/18 04:45:17  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.193  2007/01/15 22:13:59  dsandras
  * Make sure we do not ignore SIP reINVITEs.
  *
  * Revision 2.192  2007/01/10 09:16:55  csoutheren
@@ -794,8 +798,9 @@ SIPConnection::SIPConnection(OpalCall & call,
                              const PString & token,
                              const SIPURL & destination,
                              OpalTransport * inviteTransport,
-                             unsigned int options)
-  : OpalConnection(call, ep, token, options),
+                             unsigned int options,
+                             OpalConnection::StringOptions * stringOptions)
+  : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
     pduSemaphore(0, P_MAX_INDEX)
 {
@@ -2012,6 +2017,39 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
          || (IsOriginating()))) {
     PTRACE(2, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
     isReinvite = TRUE;
+  }
+  else
+  {
+    // get the remote transport address
+    PURL contact(originalInvite->GetMIME().GetContact());
+    OpalTransportAddress sourceAddress(contact.GetHostName());
+
+    //
+    // two condition for detecting remote is behind a NAT
+    //   1. the signalling address is not private, but the TCP source address is
+    //   2. the signalling and TCP source address are both private, but not the same
+    //
+    // but don't enable NAT usage if local endpoint is configured to be behind a NAT
+    //
+    PIPSocket::Address srcAddr, sigAddr;
+    sourceAddress.GetIpAddress(srcAddr);
+    transport->GetRemoteAddress().GetIpAddress(sigAddr);
+    if (
+        (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
+        ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
+        )  
+    {
+      PIPSocket::Address localAddress;
+      transport->GetLocalAddress().GetIpAddress(localAddress);
+
+      PIPSocket::Address ourAddress = localAddress;
+      endpoint.GetManager().TranslateIPAddress(localAddress, sigAddr);
+
+      if (localAddress != ourAddress) {
+        PTRACE(3, "SIP\tSource signal address " << srcAddr << " and peer address " << sigAddr << " indicate remote endpoint is behind NAT");
+        remoteIsNAT = TRUE;
+      }
+    }
   }
 
   // originalInvite should contain the first received INVITE for

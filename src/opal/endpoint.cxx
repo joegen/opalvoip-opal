@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2047  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2048  2007/01/18 04:45:17  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.46  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -273,6 +277,17 @@ OpalEndPoint::~OpalEndPoint()
 }
 
 
+BOOL OpalEndPoint::MakeConnection(OpalCall &, const PString &, void *, unsigned int)
+{
+  PAssertAlways("Must implement descendant of OpalEndPoint::MakeConnection");
+  return FALSE;
+}
+
+BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int options, OpalConnection::StringOptions *)
+{
+  return MakeConnection(call, party, userData, options);
+}
+
 void OpalEndPoint::PrintOn(ostream & strm) const
 {
   strm << "EP<" << prefixName << '>';
@@ -432,6 +447,10 @@ BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned op
   return manager.OnIncomingConnection(connection, options);
 }
 
+BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(connection, options, stringOptions);
+}
 
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {
