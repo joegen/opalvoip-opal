@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2044  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2045  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.43  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -482,8 +486,9 @@ class H323EndPoint : public OpalEndPoint
     virtual BOOL MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
-      void * userData = NULL,   ///<  Arbitrary data to pass to connection
-      unsigned int options = 0  ///<  options to pass to conneciton
+      void * userData,          ///<  Arbitrary data to pass to connection
+      unsigned int options,     ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -770,14 +775,15 @@ class H323EndPoint : public OpalEndPoint
     /**Create a connection that uses the specified call.
       */
     virtual H323Connection * CreateConnection(
-      OpalCall & call,           ///<  Call object to attach the connection to
-      const PString & token,     ///<  Call token for new connection
-      void * userData,           ///<  Arbitrary user data from MakeConnection
-      OpalTransport & transport, ///<  Transport for connection
-      const PString & alias,     ///<  Alias for outgoing call
-      const H323TransportAddress & address,   ///<  Address for outgoing call
-      H323SignalPDU * setupPDU,  ///<  Setup PDU for incoming call
-      unsigned options = 0
+      OpalCall & call,                         ///<  Call object to attach the connection to
+      const PString & token,                   ///<  Call token for new connection
+      void * userData,                         ///<  Arbitrary user data from MakeConnection
+      OpalTransport & transport,               ///<  Transport for connection
+      const PString & alias,                   ///<  Alias for outgoing call
+      const H323TransportAddress & address,    ///<  Address for outgoing call
+      H323SignalPDU * setupPDU,                ///<  Setup PDU for incoming call
+      unsigned options = 0,
+      OpalConnection::StringOptions * stringOptions = NULL ///<  complex string options
     );
 
     /**Setup the transfer of an existing call (connection) to a new remote party
@@ -1664,12 +1670,13 @@ class H323EndPoint : public OpalEndPoint
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
     BOOL InternalMakeCall(
       OpalCall & call,
-      const PString & existingToken,///<  Existing connection to be transferred
-      const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
-      unsigned capabilityLevel,     ///<  Intrusion capability level
-      const PString & remoteParty,  ///<  Remote party to call
-      void * userData,              ///<  user data to pass to CreateConnection
-      unsigned int options = 0      ///<  options to pass to connection
+      const PString & existingToken,           ///<  Existing connection to be transferred
+      const PString & callIdentity,            ///<  Call identity of the secondary call (if it exists)
+      unsigned capabilityLevel,                ///<  Intrusion capability level
+      const PString & remoteParty,             ///<  Remote party to call
+      void * userData,                         ///<  user data to pass to CreateConnection
+      unsigned int options = 0,                ///<  options to pass to connection
+      OpalConnection::StringOptions * stringOptions = NULL ///<  complex string options
     );
 
     // Configuration variables, commonly changed

@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2056  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2057  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.55  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -538,12 +542,13 @@ class H323Connection : public OpalConnection
     /**Create a new connection.
      */
     H323Connection(
-      OpalCall & call,            ///<  Call object connection belongs to
-      H323EndPoint & endpoint,    ///<  H323 End Point object
-      const PString & token,      ///<  Token for new connection
-      const PString & alias,     ///<  Alias for outgoing call
-      const H323TransportAddress & address,   ///<  Address for outgoing call
-      unsigned options = 0        ///<  Connection option bits
+      OpalCall & call,                         ///<  Call object connection belongs to
+      H323EndPoint & endpoint,                 ///<  H323 End Point object
+      const PString & token,                   ///<  Token for new connection
+      const PString & alias,                   ///<  Alias for outgoing call
+      const H323TransportAddress & address,    ///<  Address for outgoing call
+      unsigned options = 0,                    ///<  Connection option bits
+      OpalConnection::StringOptions * stringOptions = NULL ///<  complex string options
     );
 
     /**Destroy the connection

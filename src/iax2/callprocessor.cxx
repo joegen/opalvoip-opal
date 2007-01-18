@@ -27,6 +27,10 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.10  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
  * Revision 1.9  2007/01/17 22:27:52  dereksmithies
  * Correctly sends DTMF to remote node. Tidy up string handling.
  *
@@ -531,7 +535,7 @@ void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
   delete sound;
 }
 
-void IAX2CallProcessor::SendDtmf(PString dtmfs)
+void IAX2CallProcessor::SendDtmf(const PString & dtmfs)
 {
   PTRACE(4, "Activate the iax2 processeor, DTMF of  " << dtmfs << " to send");
   dtmfText += dtmfs;

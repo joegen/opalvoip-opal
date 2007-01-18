@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2069  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2070  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.68  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -405,15 +409,20 @@ class OpalConnection : public PSafeObject
       SendDTMFMask                 = 0x0c00
     };
 
+    class StringOptions : public PStringToString 
+    {
+    };
+
   /**@name Construction */
   //@{
     /**Create a new connection.
      */
     OpalConnection(
-      OpalCall & call,          ///<  Owner calll for connection
-      OpalEndPoint & endpoint,  ///<  Owner endpoint for connection
-      const PString & token,    ///<  Token to identify the connection
-      unsigned options = 0      ///<  Connection options
+      OpalCall & call,                         ///<  Owner calll for connection
+      OpalEndPoint & endpoint,                 ///<  Owner endpoint for connection
+      const PString & token,                   ///<  Token to identify the connection
+      unsigned options = 0,                    ///<  Connection options
+      OpalConnection::StringOptions * stringOptions = NULL     ///< more complex options
     );  
 
     /**Destroy connection.
@@ -543,6 +552,7 @@ class OpalConnection : public PSafeObject
 
        The default behaviour calls the OpalManager function of the same name.
      */
+    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions); // can't use default as overrides will fail
     virtual BOOL OnIncomingConnection(unsigned int options); // can't use default as overrides will fail
     virtual BOOL OnIncomingConnection();
 
@@ -1327,6 +1337,9 @@ class OpalConnection : public PSafeObject
     virtual PString GetSecurityMode() const 
     { return securityMode; }
 
+    StringOptions * GetStringOptions() const
+    { return stringOptions; }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
@@ -1397,6 +1410,8 @@ class OpalConnection : public PSafeObject
 #endif
 
     BOOL useRTPAggregation;
+
+    StringOptions * stringOptions;
 };
 
 class RTP_UDP;

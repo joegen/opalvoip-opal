@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2040  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2041  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.39  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -349,7 +353,14 @@ class OpalEndPoint : public PObject
       const PString & party,    ///<  Remote party to call
       void * userData,          ///<  Arbitrary data to pass to connection
       unsigned int options = 0  ///<  options to pass to conneciton
-    ) = 0;
+    );
+    virtual BOOL MakeConnection(
+      OpalCall & call,          ///<  Owner of connection
+      const PString & party,    ///<  Remote party to call
+      void * userData,          ///<  Arbitrary data to pass to connection
+      unsigned int options,     ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions
+    );
 
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
        This function allows the application to set up some parameters or to log some messages
@@ -377,6 +388,11 @@ class OpalEndPoint : public PObject
 
        The default behaviour calls the OpalManager function of the same name.
      */
+    virtual BOOL OnIncomingConnection(
+      OpalConnection & connection,  ///<  Connection that is calling
+      unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
+      OpalConnection::StringOptions * stringOptions
+    );
     virtual BOOL OnIncomingConnection(
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options              ///<  options for new connection (can't use default value as overrides will fail)

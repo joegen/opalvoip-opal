@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2057  2007/01/15 22:12:20  dsandras
+ * Revision 1.2058  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.56  2007/01/15 22:12:20  dsandras
  * Added missing mutex.
  *
  * Revision 2.55  2006/12/18 03:18:41  csoutheren
@@ -253,12 +257,13 @@ class SIPConnection : public OpalConnection
     /**Create a new connection.
      */
     SIPConnection(
-      OpalCall & call,            ///<  Owner call for connection
-      SIPEndPoint & endpoint,     ///<  Owner endpoint for connection
-      const PString & token,      ///<  token to identify the connection
-      const SIPURL & address,     ///<  Destination address for outgoing call
-      OpalTransport * transport,  ///<  Transport INVITE came in on
-      unsigned int options = 0    ///<  Connection options
+      OpalCall & call,                          ///<  Owner call for connection
+      SIPEndPoint & endpoint,                   ///<  Owner endpoint for connection
+      const PString & token,                    ///<  token to identify the connection
+      const SIPURL & address,                   ///<  Destination address for outgoing call
+      OpalTransport * transport,                ///<  Transport INVITE came in on
+      unsigned int options = 0,                 ///<  Connection options
+      OpalConnection::StringOptions * stringOptions = NULL  ///<  complex string options
     );
 
     /**Destroy connection.

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2131  2007/01/10 09:16:55  csoutheren
+ * Revision 1.2132  2007/01/18 04:45:16  csoutheren
+ * Messy, but simple change to add additional options argument to OpalConnection constructor
+ * This allows the provision of non-trivial arguments for connections
+ *
+ * Revision 2.130  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
  * Revision 2.129  2007/01/09 00:59:53  csoutheren
@@ -261,8 +265,9 @@ H323Connection::H323Connection(OpalCall & call,
                                const PString & token,
                                const PString & alias,
                                const H323TransportAddress & address,
-                               unsigned options)
-  : OpalConnection(call, ep, token, options),
+                               unsigned options,
+                               OpalConnection::StringOptions * stringOptions)
+  : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
     gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #ifdef H323_H460
