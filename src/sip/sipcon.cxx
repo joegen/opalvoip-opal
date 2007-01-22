@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2196  2007/01/18 12:49:22  csoutheren
+ * Revision 1.2197  2007/01/22 02:09:01  csoutheren
+ * Fix mistake that crashes incoming calls
+ *
+ * Revision 2.195  2007/01/18 12:49:22  csoutheren
  * Add ability to disable T.38 in compile
  *
  * Revision 2.194  2007/01/18 04:45:17  csoutheren
@@ -2032,7 +2035,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   else
   {
     // get the remote transport address
-    PURL contact(originalInvite->GetMIME().GetContact());
+    PURL contact(request.GetMIME().GetContact());
     OpalTransportAddress sourceAddress(contact.GetHostName());
 
     //
