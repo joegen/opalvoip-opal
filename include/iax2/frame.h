@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.10  2007/01/23 02:08:25  dereksmithies
+ *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
+ *
  *  Revision 1.9  2007/01/17 03:48:13  dereksmithies
  *  Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -415,7 +418,7 @@ class IAX2FullFrame : public IAX2Frame
   BOOL IsAuthReqFrame();
 
   /**Return True if this is a VNAK frame */
-  BOOL IsVNakFrame();
+  BOOL IsVnakFrame();
   
   /**Return True if this is a REGREQ frame */
   BOOL IsRegReqFrame();
@@ -435,9 +438,15 @@ class IAX2FullFrame : public IAX2Frame
   /**Return True if this FullFrame is of a type that increments the InSeqNo */
   BOOL FrameIncrementsInSeqNo();
 
-  /**True if this is a full frame - always returns true as this is a full frame. */
+  /**True if this is a full frame - always returns true as this is a full
+     frame. */
   virtual BOOL IsFullFrame() { return TRUE; }  
   
+  /**Report TRUE if this is a hangup frame. We need this information for
+     processing incoming frames, before fully dissection of the frame has
+     completed */
+  BOOL IsHangupFrame();
+
   /** Initialise to zero all the members of this particular class */
   void ZeroAllValues();
   
@@ -459,6 +468,11 @@ class IAX2FullFrame : public IAX2Frame
      when a packet has been received that matches one of the previously sent packets. */
   void MarkDeleteNow();
   
+  /**A Vnak frame has been received. This Vnak frame is demanding that we
+     resend this particular frame. Given it is to be resent by vnak, we reset
+     the countdown variables. E.G. it gets the full amount of retries again. */
+  void MarkVnakSendNow();
+
   /**Pointer to the beginning of the media (after the header) in this packet */
   virtual BYTE *GetMediaDataPointer();
   
@@ -1165,9 +1179,14 @@ class IAX2FrameList : public IAX2Frame *
   void GrabContents(IAX2FrameList &src);
   
   /**Delete the frame that has been sent, which is waiting for this
-   * reply. The reply is the argument. */
+     reply. The reply is the argument. */
   void DeleteMatchingSendFrame(IAX2FullFrame *reply);
-  
+
+  /** A Vnak frame has been received (voice not acknowledged) which actually
+      means, retransmit all those frames you have on this particular call
+      number from the oseqno specified in the supplied frame */
+  void SendVnakRequestedFrames(IAX2FullFrameProtocol &src);
+
   /**Add the frame (supplied as an argument) to the end of this list*/
   void AddNewFrame(IAX2Frame *src);
   

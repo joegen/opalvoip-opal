@@ -27,6 +27,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: transmit.h,v $
+ *  Revision 1.5  2007/01/23 02:08:25  dereksmithies
+ *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
+ *
  *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
  *  Tidy up and improve the close down process - make it more robust.
  *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -112,11 +115,16 @@ class IAX2Transmit : public PThread
      frames to send/delete.*/
   virtual void Main();
   
-  /** A full frame was transmitted a while ago, and the receiver has replied with
-      a suitable acknowledgement. The acknowledgment (the newFrame) means that matching
-      frames in the ack list should be removed.
+  /** A full frame was transmitted a while ago, and the receiver has replied
+      with a suitable acknowledgement. The acknowledgment (the newFrame) means
+      that matching frames in the ack list should be removed.
   */
   void PurgeMatchingFullFrames(IAX2Frame *frame);
+
+  /** A Vnak frame has been received (voice not acknowledged) which actually
+      means, retransmit all those frames you have on this particular call
+      number from the oseqno specified in the supplied frame */
+  void SendVnakRequestedFrames(IAX2FullFrameProtocol &src);
 
   /** Report on the contents of the lists waiting for transmission */
   void ReportLists();
