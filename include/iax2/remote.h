@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.7  2007/01/23 02:08:25  dereksmithies
+ *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
+ *
  *  Revision 1.6  2006/08/09 03:46:40  dereksmithies
  *  Add ability to register to a remote Asterisk box. The iaxProcessor class is split
  *  into a callProcessor and a regProcessor class.
@@ -238,6 +241,17 @@ class IAX2PacketIdList : public PSortedList
 class IAX2SequenceNumbers
 {
  public:
+/**An enum to describe incoming frame. The incoming frame may be on time
+   (perfect sequence numbers) repeated (we have already seen it before) or out
+   of order (a frame is skipped). */
+  enum IncomingOrder {
+    InSequence,  ///<  perfect sequence number
+    SkippedFrame, ///< there is a missing frame, a VNAK condition
+    RepeatedFrame ///< we have already seen this frame...
+  };
+
+
+
   /**Constructor, which sets the in and out sequence numbers to zero*/
   IAX2SequenceNumbers() 
     { ZeroAllValues();   };
@@ -288,8 +302,10 @@ class IAX2SequenceNumbers
   void WrapAroundFrameSequence(IAX2SequenceNumbers & src);
   
   /** We have received a message from the remote node. Check sequence numbers
-   * are ok. If ok reply TRUE  */
-  BOOL IncomingMessageIsOk(IAX2FullFrame &src /*<!frame to be compared with current data base.*/  );
+      are ok. reply with the appropriate enum to describe if the incoming
+      frame is early, late, or on time */
+  IncomingOrder IncomingMessageInOrder
+    (IAX2FullFrame &src /*<!frame to be compared with current data base.*/  );
   
   /**Copy the sequence info from the source argument to this class */
   void CopyContents(IAX2SequenceNumbers &src);
@@ -306,6 +322,7 @@ class IAX2SequenceNumbers
 
   /**Add an offset to the inSeqNo and outSeqNo variables */
   void AddWrapAroundValue(PINDEX newOffset);
+
 
  protected:
 
