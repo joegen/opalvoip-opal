@@ -26,6 +26,9 @@
  *
  *
  *  $Log: transmit.cxx,v $
+ *  Revision 1.6  2007/01/23 02:10:39  dereksmithies
+ *   Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
+ *
  *  Revision 1.5  2007/01/11 03:02:16  dereksmithies
  *  Remove the previous audio buffering code, and switch to using the jitter
  *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -108,6 +111,12 @@ void IAX2Transmit::PurgeMatchingFullFrames(IAX2Frame *newFrame)
   ackingFrames.DeleteMatchingSendFrame((IAX2FullFrame *)newFrame);
 }
 
+void IAX2Transmit::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
+{
+  ackingFrames.SendVnakRequestedFrames(src);
+}
+
+
 void IAX2Transmit::Main()
 {
   SetThreadName("IAX2Transmit");
@@ -184,8 +193,8 @@ void IAX2Transmit::ProcessSendList()
     }
     
     IAX2FullFrame *f= (IAX2FullFrame *)active;
-    if (f->IsAckFrame()) {
-      PTRACE(4, "Delete this frame as it is an ack frame, and continue" << f->IdString());
+    if (f->IsAckFrame() || f->IsVnakFrame()) {
+      PTRACE(4, "Delete this frame as it is an ack/vnak frame, and continue" << f->IdString());
       delete f;
       continue;
     }
