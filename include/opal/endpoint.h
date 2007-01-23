@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2041  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2042  2007/01/23 00:59:40  csoutheren
+ * Fix problem with providing backwards compatible overrides for OpalEndpoint::MakeConnection
+ *
+ * Revision 2.40  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -351,8 +354,13 @@ class OpalEndPoint : public PObject
     virtual BOOL MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
+      void * userData = NULL    ///<  Arbitrary data to pass to connection
+    );
+    virtual BOOL MakeConnection(
+      OpalCall & call,          ///<  Owner of connection
+      const PString & party,    ///<  Remote party to call
       void * userData,          ///<  Arbitrary data to pass to connection
-      unsigned int options = 0  ///<  options to pass to conneciton
+      unsigned int options      ///<  options to pass to conneciton
     );
     virtual BOOL MakeConnection(
       OpalCall & call,          ///<  Owner of connection
