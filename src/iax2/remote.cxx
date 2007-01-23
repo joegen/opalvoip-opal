@@ -27,6 +27,9 @@
  *
  *
  * $Log: remote.cxx,v $
+ * Revision 1.8  2007/01/23 02:10:39  dereksmithies
+ *  Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
+ *
  * Revision 1.7  2007/01/11 03:02:16  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -329,9 +332,7 @@ BOOL IAX2SequenceNumbers::operator == (IAX2SequenceNumbers &other)
 void IAX2SequenceNumbers::MassageSequenceForSending(IAX2FullFrame &src)
 {
   PWaitAndSignal m(mutex);
-
-  inSeqNo = (receivedLog.GetFirstValue() + 1) & 0xff;
-  PTRACE(5, "SeqNos\tsentreceivedoseqno is " << inSeqNo);
+  PTRACE(5, "SeqNos\tsentreceivedoseqno is " << (inSeqNo & 0xff));
 
   if (src.IsAckFrame()) {
     PTRACE(5, "SeqNos\tMassage - SequenceForSending(FullFrame &src) ACK Frame");
@@ -350,20 +351,41 @@ void IAX2SequenceNumbers::MassageSequenceForSending(IAX2FullFrame &src)
   }
 
   lastSentTimeStamp = timeStamp;
-  src.ModifyFrameHeaderSequenceNumbers(inSeqNo, outSeqNo);
+
+  if (src.IsVnakFrame()) {
+      src.ModifyFrameHeaderSequenceNumbers(inSeqNo, inSeqNo);
+      return;
+    } else
+      src.ModifyFrameHeaderSequenceNumbers(inSeqNo, outSeqNo);
   
   outSeqNo++;
 }
 
-BOOL IAX2SequenceNumbers::IncomingMessageIsOk(IAX2FullFrame &src)
+IAX2SequenceNumbers::IncomingOrder IAX2SequenceNumbers::IncomingMessageInOrder(IAX2FullFrame &src)
 {
+  if (src.IsAckFrame())
+    return InSequence;
+
+  if (src.IsHangupFrame())
+    return InSequence;
+
+  PINDEX newFrameOutSeqNo = src.GetSequenceInfo().OutSeqNo();
+
   PWaitAndSignal m(mutex);
+  if ((inSeqNo & 0xff) == newFrameOutSeqNo) {
+    PTRACE(5, "SeqNos\treceivedoseqno is " << newFrameOutSeqNo << " and in order");
+    inSeqNo ++;
+    return InSequence;
+  }
 
-  receivedLog.AppendNewFrame(src);
-  PTRACE(5, "SeqNos\treceivedoseqno is " << src.GetSequenceInfo().OutSeqNo());
-  PTRACE(5, "SeqNos\tReceived log of sequence numbers is " << endl << receivedLog);
+  if ((inSeqNo & 0xff) > newFrameOutSeqNo) {
+    //WE have already seen this frame. drop it.
+    PTRACE(5, "SeqNos\treceivedoseqno is " << newFrameOutSeqNo << " We have already seen this frame");
+    return RepeatedFrame;
+  }
 
-  return TRUE;
+  PTRACE(5, "SeqNos\treceivedoseqno is " << newFrameOutSeqNo << " is out of order.  " << inSeqNo);
+  return SkippedFrame;
 }
 
 
