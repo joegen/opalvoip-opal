@@ -26,6 +26,9 @@
  *
  * 
  *  $Log: processor.h,v $
+ *  Revision 1.15  2007/01/23 02:08:25  dereksmithies
+ *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
+ *
  *  Revision 1.14  2007/01/17 03:48:13  dereksmithies
  *  Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -411,6 +414,11 @@ class IAX2Processor : public PThread
   /**Transmit an IAX2 protocol frame with subclass type ack immediately to
      remote endpoint */
   void SendAckFrame(IAX2FullFrame *inReplyTo);
+
+  /**Transmit an IAX2 protocol frame with subclass type VNAK immediately to
+     remote endpoint. This message indicates we have received some full frames
+     out of order, and want the interim ones retransmitted. */
+  void SendVnakFrame(IAX2FullFrame *inReplyTo);
   
   /**Transmit an unsupported frame to the remote endpoint*/
   void SendUnsupportedFrame(IAX2FullFrame *inReplyTo);
