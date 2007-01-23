@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2048  2007/01/18 04:45:17  csoutheren
+ * Revision 1.2049  2007/01/23 00:59:40  csoutheren
+ * Fix problem with providing backwards compatible overrides for OpalEndpoint::MakeConnection
+ *
+ * Revision 2.47  2007/01/18 04:45:17  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -276,11 +279,15 @@ OpalEndPoint::~OpalEndPoint()
   PTRACE(3, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
-
-BOOL OpalEndPoint::MakeConnection(OpalCall &, const PString &, void *, unsigned int)
+BOOL OpalEndPoint::MakeConnection(OpalCall &, const PString &, void *)
 {
   PAssertAlways("Must implement descendant of OpalEndPoint::MakeConnection");
   return FALSE;
+}
+
+BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int /*options*/)
+{
+  return MakeConnection(call, party, userData);
 }
 
 BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int options, OpalConnection::StringOptions *)
