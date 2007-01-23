@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.25  2007/01/23 02:10:38  dereksmithies
+ *  Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
+ *
  * Revision 1.24  2007/01/17 03:48:48  dereksmithies
  * Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -326,13 +329,15 @@ void IAX2EndPoint::ReportStoredConnections()
   PStringList cons = GetAllConnections();
   PTRACE(5, " There are " << cons.GetSize() << " stored connections in connectionsActive");
   PINDEX i;
-  for(i = 0; i < cons.GetSize(); i++)
-    PTRACE(3, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
+  for(i = 0; i < cons.GetSize(); i++) {
+    PTRACE(5, "    #" << (i + 1) << "                     \"" << cons[i] << "\"");
+  }
 
   PWaitAndSignal m(mutexTokenTable);
   PTRACE(5, " There are " << tokenTable.GetSize() << " stored connections in the token translation table.");
-  for (i = 0; i < tokenTable.GetSize(); i++)
+  for (i = 0; i < tokenTable.GetSize(); i++) {
     PTRACE(5, " token table at " << i << " is " << tokenTable.GetKeyAt(i) << " " << tokenTable.GetDataAt(i));
+  }
 }
 
 PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)

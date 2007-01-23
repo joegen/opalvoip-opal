@@ -29,6 +29,9 @@
  * and this work was sponsored by the Google summer of code 
  *
  * $Log: processor.cxx,v $
+ * Revision 1.26  2007/01/23 02:10:38  dereksmithies
+ *  Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
+ *
  * Revision 1.25  2007/01/17 03:48:48  dereksmithies
  * Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -294,15 +297,32 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
   
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
   PTRACE(4, "IaxConnection\tFullFrame incoming frame " << frame->IdString());
-  
-  endpoint.transmitter->PurgeMatchingFullFrames(f);
 
-  if (sequence.IncomingMessageIsOk(*f)) {
-    PTRACE(4, "sequence numbers are Ok");
+  /*Check to see if this frame is legitimate - that sequence numbers match. If it is out of
+    sequence, we have to drop it, and send a vnak frame */
+  switch(sequence.IncomingMessageInOrder(*f)) {
+      case IAX2SequenceNumbers::InSequence:
+	  break;
+      case IAX2SequenceNumbers::SkippedFrame: {
+	  PTRACE(4, "Skipped frame, received frame is " << f->GetSequenceInfo().AsString());
+	  SendVnakFrame(f);
+	  delete f;
+	  return TRUE;
+      } 
+	  break;
+      case IAX2SequenceNumbers::RepeatedFrame: {
+	  SendAckFrame(f);
+	  delete f;
+	  return TRUE;
+      }
   }
+
+  PTRACE(4, "sequence numbers are Ok");
+
+  endpoint.transmitter->PurgeMatchingFullFrames(f);
   
   IncControlFramesRcvd();
-  
+
   if (remote.DestCallNumber() == 0) {
     PTRACE(3, "Set Destination call number to " << frame->GetRemoteInfo().SourceCallNumber());
     remote.SetDestCallNumber(frame->GetRemoteInfo().SourceCallNumber());
@@ -398,6 +418,21 @@ void IAX2Processor::SendAckFrame(IAX2FullFrame *inReplyTo)
   PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
 }
 
+void IAX2Processor::SendVnakFrame(IAX2FullFrame *inReplyTo)
+{
+  PTRACE(4, "Processor\tSend Vnak frame in reply" );
+  PTRACE(4, "Processor\tIn reply to " << *inReplyTo);
+  
+  //callIrrelevant is used because if a call ends we still want the remote
+  //endpoint to get the acknowledgment of the call ending!
+  IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdVnak, inReplyTo, 
+    IAX2FullFrame::callIrrelevant);
+  PTRACE(4, "Sequence for sending is (pre) " << sequence.AsString());
+  TransmitFrameToRemoteEndpoint(f);
+  PTRACE(4, "Sequence for sending is (ppost) " << sequence.AsString());
+}
+
+
 void IAX2Processor::SendUnsupportedFrame(IAX2FullFrame *inReplyTo)
 {
   PTRACE(4, "Processor\tSend an unsupported frame in reply" );
@@ -468,6 +503,7 @@ void IAX2Processor::ProcessIaxCmdLagRp(IAX2FullFrameProtocol *src)
 
 void IAX2Processor::ProcessIaxCmdVnak(IAX2FullFrameProtocol *src)
 {
+    PTRACE(4, "ProcessIaxCmdVnak\tFrames recieved out of order.");
+    endpoint.transmitter->SendVnakRequestedFrames(*src);
     delete src;
-    PTRACE(3, "Frames recieved out of order.  We should resend them but this is not implemented");
 }

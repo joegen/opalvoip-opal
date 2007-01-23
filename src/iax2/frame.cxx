@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.19  2007/01/23 02:10:38  dereksmithies
+ *   Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
+ *
  *  Revision 1.18  2007/01/17 03:48:48  dereksmithies
  *  Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -759,7 +762,7 @@ BOOL IAX2FullFrame::IsAuthReqFrame()
   return (subClass == IAX2FullFrameProtocol::cmdAuthReq) && (frameType == iax2ProtocolType);
 }
 
-BOOL IAX2FullFrame::IsVNakFrame()
+BOOL IAX2FullFrame::IsVnakFrame()
 {
   return (subClass == IAX2FullFrameProtocol::cmdVnak) && (frameType == iax2ProtocolType);
 }
@@ -787,6 +790,11 @@ BOOL IAX2FullFrame::IsRegRelFrame()
 BOOL IAX2FullFrame::IsRegRejFrame()
 {
   return (subClass == IAX2FullFrameProtocol::cmdRegRej) && (frameType == iax2ProtocolType);
+}
+
+BOOL IAX2FullFrame::IsHangupFrame()
+{
+  return (subClass == IAX2FullFrameProtocol::cmdHangup) && (frameType == iax2ProtocolType);
 }
 
 BOOL IAX2FullFrame::FrameIncrementsInSeqNo()
@@ -862,6 +870,16 @@ BOOL IAX2FullFrame::WriteHeader()
   PTRACE(6, "Comppressed sub class is " << a << " from " << subClass);
   
   return TRUE;
+}
+
+void IAX2FullFrame::MarkVnakSendNow()
+{
+  transmissionTimer.Stop();
+  sendFrameNow = TRUE;
+  retries = 3;
+  deleteFrameNow = FALSE;    
+  retryDelta = PTimeInterval(minRetryTime);
+  retries = maxRetries;
 }
 
 void IAX2FullFrame::MarkDeleteNow()
@@ -1676,6 +1694,38 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
   }
   PTRACE(4, "No match found, so no sent frame will be deleted ");
   return;
+}  
+
+void IAX2FrameList::SendVnakRequestedFrames(IAX2FullFrameProtocol &src)
+{
+  PINDEX srcOutSeqNo = src.GetSequenceInfo().OutSeqNo();
+  PWaitAndSignal m(mutex);
+  PTRACE(4, "Look for a frame that has been sent, waiting to be acked etc, that matches the supplied Vnak frame");
+  
+  for (PINDEX i = 0; i < GetEntries(); i++) {
+    IAX2Frame *frame = (IAX2Frame *)GetAt(i);
+    if (frame == NULL)
+      continue;
+    
+    if (!frame->IsFullFrame())
+      continue;
+
+    IAX2FullFrame *sent = (IAX2FullFrame *)frame;
+
+    if (sent->DeleteFrameNow()) {
+      PTRACE(4, "Skip this frame, as it is marked, delete now" << sent->IdString());
+      continue;
+    }
+    
+    if (!(sent->GetRemoteInfo() *= src.GetRemoteInfo())) {
+      PTRACE(3, "mismatch in remote info");
+      continue;
+    }
+
+    if (sent->GetSequenceInfo().OutSeqNo() <= srcOutSeqNo) {
+      sent->MarkVnakSendNow();
+    }
+  }
 }
 
 void IAX2FrameList::GetResendFramesDeleteOldFrames(IAX2FrameList &framesToSend)
