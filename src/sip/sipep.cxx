@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2141  2007/01/18 04:45:17  csoutheren
+ * Revision 1.2142  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.140  2007/01/18 04:45:17  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -1043,6 +1049,10 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   return TRUE;
 }
 
+BOOL SIPEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(conn, options, stringOptions);
+}
 
 BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,  
 				    const PString & forwardParty)

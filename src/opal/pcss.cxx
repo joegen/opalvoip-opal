@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2039  2006/12/20 04:38:29  csoutheren
+ * Revision 1.2040  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.38  2006/12/20 04:38:29  csoutheren
  * Ensure tokens are still generated whe no audio devices are present
  *
  * Revision 2.37  2006/12/18 03:18:42  csoutheren
@@ -380,6 +386,10 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
   soundChannelBuffers = depth;
 }
 
+BOOL OpalPCSSEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(conn, options, stringOptions);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -405,13 +415,17 @@ OpalPCSSConnection::~OpalPCSSConnection()
   PTRACE(3, "PCSS\tDeleted PC sound system connection.");
 }
 
+BOOL OpalPCSSConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+}
 
 BOOL OpalPCSSConnection::SetUpConnection()
 {
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
-    if (!OnIncomingConnection()) {
+    if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
       return FALSE;
     }
