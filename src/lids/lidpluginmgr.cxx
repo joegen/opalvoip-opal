@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2009  2006/11/19 04:58:09  rjongbloed
+ * Revision 1.2010  2007/01/24 04:02:46  csoutheren
+ * Removed warnings on Linux
+ *
+ * Revision 2.8  2006/11/19 04:58:09  rjongbloed
  * Fixed being able to restart tones on LIDs
  *
  * Revision 2.7  2006/11/12 03:36:42  rjongbloed
@@ -807,6 +810,9 @@ BOOL OpalPluginLID::WaitForTone(unsigned line, CallProgressTones tone, unsigned 
 
     case PluginLID_NoError :
       return TRUE;
+
+    default:
+      break;
   }
 
   return FALSE;
@@ -866,6 +872,9 @@ BOOL OpalPluginLID::PlayTone(unsigned line, CallProgressTones tone)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default:
+      break;
   }
 
   return FALSE;
@@ -888,6 +897,8 @@ BOOL OpalPluginLID::StopTone(unsigned line)
       case PluginLID_UnimplementedFunction :
       case PluginLID_NoError :
         return TRUE;
+      default:
+        break;
     }
     return false;
   }
@@ -951,6 +962,9 @@ BOOL OpalPluginLID::SetCountryCode(T35CountryCodes country)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default:
+      break;
   }
 
   return FALSE;
