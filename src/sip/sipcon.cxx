@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2197  2007/01/22 02:09:01  csoutheren
+ * Revision 1.2198  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.196  2007/01/22 02:09:01  csoutheren
  * Fix mistake that crashes incoming calls
  *
  * Revision 2.195  2007/01/18 12:49:22  csoutheren
@@ -2191,9 +2197,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
   
-  
   // indicate the other is to start ringing (but look out for clear calls)
-  if (!OnIncomingConnection()) {
+  if (!OnIncomingConnection(0, NULL)) {
     PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
@@ -2207,6 +2212,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   AnsweringCall(OnAnswerCall(remotePartyAddress));
 }
 
+BOOL SIPConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+}
 
 OpalConnection::AnswerCallResponse SIPConnection::OnAnswerCall(
       const PString & callerName      /// Name of caller

@@ -28,6 +28,12 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.18  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
  * Revision 1.17  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
@@ -231,14 +237,14 @@ void IAX2Connection::OnSetUp()
   ownerCall.OnSetUp(*this); 
 }
 
-BOOL IAX2Connection::OnIncomingConnection()
+BOOL IAX2Connection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "IAX2Con\tOnIncomingConnection()");
   phase = SetUpPhase;
   originating = FALSE;
   PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
-  return OpalConnection::OnIncomingConnection();
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
 
 void IAX2Connection::OnAlerting()

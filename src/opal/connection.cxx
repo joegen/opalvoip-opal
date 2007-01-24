@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2088  2007/01/24 00:28:28  csoutheren
+ * Revision 1.2089  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.87  2007/01/24 00:28:28  csoutheren
  * Fixed overrides of OnIncomingConnection
  *
  * Revision 2.86  2007/01/18 12:25:33  csoutheren
@@ -704,18 +710,22 @@ void OpalConnection::OnReleased()
 
 BOOL OpalConnection::OnIncomingConnection()
 {
-  return endpoint.OnIncomingConnection(*this);
+  return OnIncomingConnection(0);
 }
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options)
 {
-  return endpoint.OnIncomingConnection(*this, options);
+  return OnIncomingConnection(options, NULL);
 }
+
+/*
+  explicitly not implemented so as to force descendants to be changed
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+  return endpoint.OnIncomingConnection(options, stringOptions);
 }
+*/
 
 PString OpalConnection::GetDestinationAddress()
 {

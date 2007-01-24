@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2050  2007/01/24 00:28:28  csoutheren
+ * Revision 1.2051  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.49  2007/01/24 00:28:28  csoutheren
  * Fixed overrides of OnIncomingConnection
  *
  * Revision 2.48  2007/01/23 00:59:40  csoutheren
@@ -449,18 +455,22 @@ BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
-  return manager.OnIncomingConnection(connection);
+  return OnIncomingConnection(connection, 0);
 }
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options )
+BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options)
 {
-  return manager.OnIncomingConnection(connection, options);
+  return OnIncomingConnection(connection, options, NULL);
 }
+
+/*
+  changed to pure virtual
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   return manager.OnIncomingConnection(connection, options, stringOptions);
 }
+*/
 
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {

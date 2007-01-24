@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2037  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2038  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.36  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -563,6 +569,13 @@ BOOL OpalLIDEndPoint::OnSetUpConnection(OpalLineConnection & PTRACE_PARAM(connec
   return TRUE;
 }
 #endif
+
+BOOL OpalLIDEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(conn, options, stringOptions);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalLineConnection::OpalLineConnection(OpalCall & call,
@@ -587,6 +600,10 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   
 }
 
+BOOL OpalLineConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+}
 
 void OpalLineConnection::OnReleased()
 {
@@ -780,7 +797,7 @@ void OpalLineConnection::Monitor(BOOL offHook)
       }
       else {
         // Otherwise we are A-Party
-        if (!OnIncomingConnection()) {
+        if (!OnIncomingConnection(0, NULL)) {
           Release(EndedByCallerAbort);
           return;
         }
@@ -846,7 +863,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
 
   wasOffHook = TRUE;
 
-  if (!OnIncomingConnection()) {
+  if (!OnIncomingConnection(0, NULL)) {
     Release(EndedByCallerAbort);
     return;
   }
@@ -855,7 +872,6 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
   if (!ownerCall.OnSetUp(*this))
     Release(EndedByNoAccept);
 }
-
 
 BOOL OpalLineConnection::SetUpConnection()
 {
