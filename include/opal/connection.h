@@ -28,7 +28,13 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2070  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2071  2007/01/24 04:00:56  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.69  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -551,8 +557,12 @@ class OpalConnection : public PSafeObject
        OpalConnection::GetRemotePartyName().
 
        The default behaviour calls the OpalManager function of the same name.
+
+       Note that the most explicit version of this override is made pure, so as to force 
+       descendant classes to implement it. This will only affect code that implements new
+       descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
-    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions); // can't use default as overrides will fail
+    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions) = 0;
     virtual BOOL OnIncomingConnection(unsigned int options); // can't use default as overrides will fail
     virtual BOOL OnIncomingConnection();
 

@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2013  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2014  2007/01/24 04:00:56  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.12  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -216,6 +222,8 @@ class OpalIVREndPoint : public OpalEndPoint
     PString GetDefaultTextToSpeech() const
     { return defaultTts; }
 
+    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
+
   //@}
 
   protected:
@@ -334,6 +342,8 @@ class OpalIVRConnection : public OpalConnection
 
     PTextToSpeech * GetTextToSpeech()
     { return vxmlSession.GetTextToSpeech(); }
+
+    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     OpalIVREndPoint   & endpoint;
