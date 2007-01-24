@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2087  2007/01/18 12:25:33  csoutheren
+ * Revision 1.2088  2007/01/24 00:28:28  csoutheren
+ * Fixed overrides of OnIncomingConnection
+ *
+ * Revision 2.86  2007/01/18 12:25:33  csoutheren
  * Add ability to set H.323 call-id via options
  *
  * Revision 2.85  2007/01/18 04:45:17  csoutheren
@@ -701,12 +704,12 @@ void OpalConnection::OnReleased()
 
 BOOL OpalConnection::OnIncomingConnection()
 {
-  return OnIncomingConnection(0);
+  return endpoint.OnIncomingConnection(*this);
 }
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options)
 {
-  return endpoint.OnIncomingConnection(*this, options, NULL);
+  return endpoint.OnIncomingConnection(*this, options);
 }
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)

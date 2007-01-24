@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2049  2007/01/23 00:59:40  csoutheren
+ * Revision 1.2050  2007/01/24 00:28:28  csoutheren
+ * Fixed overrides of OnIncomingConnection
+ *
+ * Revision 2.48  2007/01/23 00:59:40  csoutheren
  * Fix problem with providing backwards compatible overrides for OpalEndpoint::MakeConnection
  *
  * Revision 2.47  2007/01/18 04:45:17  csoutheren
@@ -446,10 +449,10 @@ BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
-  return OnIncomingConnection(connection, 0);
+  return manager.OnIncomingConnection(connection);
 }
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options)
+BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options )
 {
   return manager.OnIncomingConnection(connection, options);
 }
