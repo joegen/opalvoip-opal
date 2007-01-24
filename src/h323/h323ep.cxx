@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2061  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2062  2007/01/24 04:00:56  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.60  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -1015,9 +1021,13 @@ BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
                                   const H323SignalPDU & /*setupPDU*/,
                                   H323SignalPDU & /*alertingPDU*/)
 {
-  return connection.OnIncomingConnection();
+  return connection.OnIncomingConnection(0, NULL);
 }
 
+BOOL H323EndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(conn, options, stringOptions);
+}
 
 BOOL H323EndPoint::OnCallTransferInitiate(H323Connection & /*connection*/,
                                           const PString & /*remoteParty*/)
