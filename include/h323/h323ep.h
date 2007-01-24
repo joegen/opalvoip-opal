@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2046  2007/01/18 12:49:21  csoutheren
+ * Revision 1.2047  2007/01/24 04:00:55  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.45  2007/01/18 12:49:21  csoutheren
  * Add ability to disable T.38 in compile
  *
  * Revision 2.44  2007/01/18 04:45:16  csoutheren
@@ -1671,6 +1677,8 @@ class H323EndPoint : public OpalEndPoint
     static BYTE defaultT35CountryCode;
     static BYTE defaultT35Extension;
     static WORD defaultManufacturerCode;
+
+    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);

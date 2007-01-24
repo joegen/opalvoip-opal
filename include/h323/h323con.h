@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2057  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2058  2007/01/24 04:00:55  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.56  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -2262,6 +2268,8 @@ class H323Connection : public OpalConnection
      * @return a reference to the  H4507 handler
      */
     H4507Handler&  getH4507handler(){return *h4507handler;};
+
+    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
     
   protected:
     /**Internal function to check if call established.

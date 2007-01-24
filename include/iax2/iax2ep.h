@@ -25,6 +25,12 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.10  2007/01/24 04:00:55  csoutheren
+ *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ *  Added some pure viritual functions to prevent old code from breaking silently
+ *  New OpalEndpoint and OpalConnection descendants will need to re-implement
+ *  OnIncomingConnection. Sorry :)
+ *
  *  Revision 1.9  2007/01/12 02:39:00  dereksmithies
  *  Remove the notion of srcProcessors and dstProcessor lists from the ep.
  *  Ensure that the connection looks after the callProcessor.
@@ -413,6 +419,8 @@ class IAX2EndPoint : public OpalEndPoint
     const PString & context = PString::Empty(),
     const PString & transport = PString::Empty()
   );
+
+  BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
   
   //@}
   
