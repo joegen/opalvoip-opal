@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2133  2007/01/18 12:49:22  csoutheren
+ * Revision 1.2134  2007/01/24 04:00:56  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.132  2007/01/18 12:49:22  csoutheren
  * Add ability to disable T.38 in compile
  *
  * Revision 2.131  2007/01/18 04:45:16  csoutheren
@@ -428,6 +434,10 @@ H323Connection::~H323Connection()
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
 }
 
+BOOL H323Connection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+}
 
 void H323Connection::OnReleased()
 {

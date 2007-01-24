@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2026  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2027  2007/01/24 04:00:56  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.25  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -336,6 +342,8 @@ class OpalPCSSEndPoint : public OpalEndPoint
     );
   //@}
 
+    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
+
   protected:
     PString  soundChannelPlayDevice;
     PString  soundChannelRecordDevice;
@@ -517,6 +525,7 @@ class OpalPCSSConnection : public OpalConnection
     unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
   //@}
 
+    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     OpalPCSSEndPoint & endpoint;

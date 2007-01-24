@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2068  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2069  2007/01/24 04:00:56  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.67  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -1091,6 +1097,8 @@ class SIPEndPoint : public OpalEndPoint
     virtual SIPMWISubscribeInfo * CreateMWISubscribeInfo(const PString & adjustedUsername, int expire);
     virtual SIPPingInfo *         CreatePingInfo(const PString & adjustedUsername, int expire);
     virtual SIPMessageInfo *      CreateMessageInfo(const PString & adjustedUsername, const PString & body);
+
+    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
