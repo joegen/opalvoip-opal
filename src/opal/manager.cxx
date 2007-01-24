@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2069  2007/01/18 04:45:17  csoutheren
+ * Revision 1.2070  2007/01/24 00:28:28  csoutheren
+ * Fixed overrides of OnIncomingConnection
+ *
+ * Revision 2.68  2007/01/18 04:45:17  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -644,14 +647,14 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
   return FALSE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
+BOOL OpalManager::OnIncomingConnection(OpalConnection &)
 {
-  return OnIncomingConnection(connection, 0, NULL);
+  return TRUE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned)
 {
-  return OnIncomingConnection(connection, options, NULL);
+  return connection.OnIncomingConnection();
 }
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
@@ -665,7 +668,10 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned opt
     return TRUE;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  return MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions);
+  if (!MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions))
+    return FALSE;
+
+  return connection.OnIncomingConnection(options);
 }
 
 
