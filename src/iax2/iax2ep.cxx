@@ -28,6 +28,12 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.26  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
  * Revision 1.25  2007/01/23 02:10:38  dereksmithies
  *  Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
  *
@@ -268,10 +274,16 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   
   // add the connection to the endpoint list
   connectionsActive.SetAt(connection->GetToken(), connection);
-  connection->OnIncomingConnection();
+  connection->OnIncomingConnection(0, NULL);
 
   connection->IncomingEthernetFrame(f);
 }
+
+BOOL IAX2EndPoint::OnIncomingConnection(OpalConnection & conn, unsigned options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(conn, options, stringOptions);
+}
+
 
 void IAX2EndPoint::OnEstablished(OpalConnection & con)
 {

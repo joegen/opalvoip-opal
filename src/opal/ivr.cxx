@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2017  2006/12/18 03:18:42  csoutheren
+ * Revision 1.2018  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.16  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -205,6 +211,11 @@ BOOL OpalIVREndPoint::StartVXML()
   return FALSE;
 }
 
+BOOL OpalIVREndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return manager.OnIncomingConnection(conn, options, stringOptions);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVRConnection::OpalIVRConnection(OpalCall & call,
@@ -242,7 +253,7 @@ BOOL OpalIVRConnection::SetUpConnection()
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
-    if (!OnIncomingConnection()) {
+    if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
       return FALSE;
     }
@@ -281,6 +292,11 @@ BOOL OpalIVRConnection::SetUpConnection()
   }
 
   return TRUE;
+}
+
+BOOL OpalIVRConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+{
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
 
 BOOL OpalIVRConnection::StartVXML()

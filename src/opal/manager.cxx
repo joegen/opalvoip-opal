@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2070  2007/01/24 00:28:28  csoutheren
+ * Revision 1.2071  2007/01/24 04:00:57  csoutheren
+ * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
+ * Added some pure viritual functions to prevent old code from breaking silently
+ * New OpalEndpoint and OpalConnection descendants will need to re-implement
+ * OnIncomingConnection. Sorry :)
+ *
+ * Revision 2.69  2007/01/24 00:28:28  csoutheren
  * Fixed overrides of OnIncomingConnection
  *
  * Revision 2.68  2007/01/18 04:45:17  csoutheren
@@ -647,14 +653,14 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
   return FALSE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection &)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
 {
-  return TRUE;
+  return OnIncomingConnection(connection, 0);
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options)
 {
-  return connection.OnIncomingConnection();
+  return OnIncomingConnection(connection, options, NULL);
 }
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
