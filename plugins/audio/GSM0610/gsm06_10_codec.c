@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsm06_10_codec.c,v $
+ * Revision 1.8  2007/01/25 03:16:47  csoutheren
+ * Allow encoder and decoder to handle multiple frames
+ *
  * Revision 1.7  2006/10/02 13:32:28  rjongbloed
  * Plug in build files clean up
  *
@@ -120,6 +123,8 @@ PLUGIN_CODEC_IMPLEMENT(GSM_0610)
 #define MAX_FRAMES_PER_PACKET   7
 #define PREF_FRAMES_PER_PACKET  1
 
+#define MIN(a,b)    (((a)<=(b))?(a):(b))
+
 #define PAYLOAD_CODE            3
 
 /////////////////////////////////////////////////////////////////////////////
@@ -151,9 +156,27 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
                                    unsigned int * flag)
 {
   struct gsm_state * context = (struct gsm_state *)_context;
-  gsm_encode(context, (void *)from, to);
+  int frames;
 
-  *toLen = BYTES_PER_FRAME;
+  if (*toLen < BYTES_PER_FRAME)
+    return 0;
+
+  if (*fromLen < SAMPLES_PER_FRAME * 2)
+    return 0;
+
+  frames = MIN(*fromLen / (SAMPLES_PER_FRAME * 2), (*toLen / BYTES_PER_FRAME));
+
+  if (frames == 0)
+    return 0;
+
+  *fromLen = frames * SAMPLES_PER_FRAME * 2;
+  *toLen   = frames * BYTES_PER_FRAME;
+
+  while (frames-- > 0) {
+    gsm_encode(context, (void *)from, to);
+    to   = ((char *)to) + BYTES_PER_FRAME;
+    from = ((const char *)from) + SAMPLES_PER_FRAME * 2;
+  }
 
   return 1; 
 }
@@ -171,16 +194,33 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   if (*fromLen < BYTES_PER_FRAME)
     return 0;
 
-  // Unless the packet is 65 bytes long, it must be normal GSM
+  // if the packet is not 65 bytes long, assume it is frames of normal GSM
   if (*fromLen != 65) {
+
+    int frames;
+
     if (*toLen < SAMPLES_PER_FRAME * 2)
       return 0;
+
+    frames = MIN(*toLen / (SAMPLES_PER_FRAME * 2), (*fromLen / BYTES_PER_FRAME));
+
+    if (frames == 0)
+      return 0;
+
     {
       int opt = 0;
       gsm_option(context, GSM_OPT_WAV49, &opt);
     }
-    gsm_decode(context, (void *)from, to);
-    *toLen = SAMPLES_PER_FRAME * 2;
+
+    *fromLen = frames * BYTES_PER_FRAME;
+    *toLen   = frames * SAMPLES_PER_FRAME * 2;
+
+    while (frames-- > 0) {
+      gsm_decode(context, (void *)from, to);
+      from = ((const char *)from) + BYTES_PER_FRAME;
+      to   = ((char *)to) + SAMPLES_PER_FRAME * 2;
+    }
+
     return 1;
   }
 
