@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2071  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2072  2007/01/25 03:30:10  csoutheren
+ * Fix problem with calling OpalConnection::OnIncomingConnection twice
+ *
+ * Revision 2.70  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -674,10 +677,7 @@ BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned opt
     return TRUE;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  if (!MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions))
-    return FALSE;
-
-  return connection.OnIncomingConnection(options);
+  return MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions);
 }
 
 
