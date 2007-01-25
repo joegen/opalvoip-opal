@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2052  2006/12/31 17:00:13  dsandras
+ * Revision 1.2053  2007/01/25 11:48:11  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.51  2006/12/31 17:00:13  dsandras
  * Do not try transcoding RTP frames if they do not correspond to the formats
  * for which the transcoder was created.
  *
@@ -593,9 +600,9 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
         OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
         if (sink == NULL)
           return FALSE;
-        if (source.RequiresPatchThread()) {
+        if (source.RequiresPatch()) {
           if (patch == NULL) {
-            patch = manager.CreateMediaPatch(source);
+            patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
             if (patch == NULL)
               return FALSE;
           }

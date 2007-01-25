@@ -24,7 +24,14 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2052  2006/12/08 05:39:29  csoutheren
+ * Revision 1.2053  2007/01/25 11:48:11  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.51  2006/12/08 05:39:29  csoutheren
  * Remove warnings under Windows
  *
  * Revision 2.50  2006/11/01 06:57:23  csoutheren
@@ -255,7 +262,7 @@ OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL 
   marker = TRUE;
   paused = FALSE;
   mismatchedPayloadTypes = 0;
-  patchThread = NULL;
+  mediaPatch = NULL;
 }
 
 
@@ -287,11 +294,11 @@ BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PWaitAndSignal mutex(patchMutex);
 
-  if (patchThread == NULL)
+  if (mediaPatch == NULL)
     return FALSE;
 
   // If we are source, then update the sink side, and vice versa
-  return patchThread->UpdateMediaFormat(mediaFormat, IsSink());
+  return mediaPatch->UpdateMediaFormat(mediaFormat, IsSink());
 }
 
 
@@ -299,10 +306,10 @@ BOOL OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 {
   PWaitAndSignal mutex(patchMutex);
 
-  if (patchThread == NULL)
+  if (mediaPatch == NULL)
     return FALSE;
 
-  return patchThread->ExecuteCommand(command, IsSink());
+  return mediaPatch->ExecuteCommand(command, IsSink());
 }
 
 
@@ -310,8 +317,8 @@ void OpalMediaStream::SetCommandNotifier(const PNotifier & notifier)
 {
   PWaitAndSignal mutex(patchMutex);
 
-  if (patchThread != NULL)
-    patchThread->SetCommandNotifier(notifier, IsSink());
+  if (mediaPatch != NULL)
+    mediaPatch->SetCommandNotifier(notifier, IsSink());
 
   commandNotifier = notifier;
 }
@@ -330,10 +337,8 @@ BOOL OpalMediaStream::Start()
     return FALSE;
 
   patchMutex.Wait();
-  if (patchThread != NULL && patchThread->IsSuspended()) {
-    patchThread->Resume();
-    PThread::Yield(); // This is so the thread name below is initialised.
-    PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
+  if (mediaPatch != NULL) {
+    mediaPatch->Start();
   }
   patchMutex.Signal();
 
@@ -352,10 +357,10 @@ BOOL OpalMediaStream::Close()
 
   isOpen = FALSE;
 
-  if (patchThread != NULL) {
-    PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *patchThread);
-    OpalMediaPatch * patch = patchThread;
-    patchThread = NULL;
+  if (mediaPatch != NULL) {
+    PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
+    OpalMediaPatch * patch = mediaPatch;
+    mediaPatch = NULL;
 
     if (IsSink())
       patch->RemoveSink(this);
@@ -516,12 +521,28 @@ BOOL OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & wri
 }
 
 
+BOOL OpalMediaStream::PushPacket(RTP_DataFrame & packet)
+{
+  if(mediaPatch == NULL) {
+    return FALSE;
+  }
+	
+  return mediaPatch->PushFrame(packet);
+}
+
+
 BOOL OpalMediaStream::SetDataSize(PINDEX dataSize)
 {
   if (dataSize <= 0)
     return FALSE;
 
   defaultDataSize = dataSize;
+  return TRUE;
+}
+
+
+BOOL OpalMediaStream::RequiresPatch() const
+{
   return TRUE;
 }
 
@@ -540,7 +561,7 @@ void OpalMediaStream::EnableJitterBuffer() const
 void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
   patchMutex.Wait();
-  patchThread = patch;
+  mediaPatch = patch;
   patchMutex.Signal();
 }
 
@@ -548,7 +569,7 @@ void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
 {
   PWaitAndSignal Lock(patchMutex);
-  if (patchThread != NULL) patchThread->AddFilter(Filter, Stage);
+  if (mediaPatch != NULL) mediaPatch->AddFilter(Filter, Stage);
 }
 
 
@@ -556,7 +577,7 @@ BOOL OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaForm
 {
   PWaitAndSignal Lock(patchMutex);
 
-  if (patchThread != NULL) return patchThread->RemoveFilter(Filter, Stage);
+  if (mediaPatch != NULL) return mediaPatch->RemoveFilter(Filter, Stage);
 
   return FALSE;
 }
@@ -585,6 +606,12 @@ BOOL OpalNullMediaStream::ReadData(BYTE * /*buffer*/, PINDEX /*size*/, PINDEX & 
 BOOL OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX /*length*/, PINDEX & /*written*/)
 {
   return FALSE;
+}
+
+
+BOOL OpalNullMediaStream::RequiresPatch() const
+{
+	return FALSE;
 }
 
 

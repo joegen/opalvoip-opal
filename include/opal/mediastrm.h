@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2040  2006/12/08 05:39:29  csoutheren
+ * Revision 1.2041  2007/01/25 11:48:11  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.39  2006/12/08 05:39:29  csoutheren
  * Remove warnings under Windows
  *
  * Revision 2.38  2006/12/08 05:13:10  csoutheren
@@ -282,6 +289,11 @@ class OpalMediaStream : public PObject
        The default does nothing.
       */
     virtual BOOL Close();
+	
+    /**Callback that is called on the source stream once the media patch has started.
+       The default behaviour does nothing
+      */
+    virtual void OnPatchStart() {};
 
     /**Write a list of RTP frames of data to the sink media stream.
        The default behaviour simply calls WritePacket() on each of the
@@ -331,6 +343,12 @@ class OpalMediaStream : public PObject
       PINDEX & written     ///<  Length of data actually written
     );
 
+    /**Pushes a frame to the patch
+      */
+    BOOL PushPacket(
+      RTP_DataFrame & packet
+    );
+
     /**Set the data size in bytes that is expected to be used. Some media
        streams can make use of this information to perform optimisations.
 
@@ -352,8 +370,13 @@ class OpalMediaStream : public PObject
        take 30 milliseconds to complete.
       */
     virtual BOOL IsSynchronous() const = 0;
+	
+    /**Indicate if the media stream requires a OpalMediaPatch instance.
+       The default behaviour returns TRUE.
+      */
+    virtual BOOL RequiresPatch() const;
 
-    /**Indicate if the media stream requires a OpalMediaPatch thread.
+    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
        The default behaviour returns TRUE.
       */
     virtual BOOL RequiresPatchThread() const;
@@ -423,7 +446,7 @@ class OpalMediaStream : public PObject
 
     /**Get the patch thread that is using the stream.
       */
-    OpalMediaPatch * GetPatch() const { return patchThread; }
+    OpalMediaPatch * GetPatch() const { return mediaPatch; }
 
     /**Add a filter to the owning patch safely.
       */
@@ -450,7 +473,7 @@ class OpalMediaStream : public PObject
     BOOL            marker;
     unsigned        mismatchedPayloadTypes;
 
-    OpalMediaPatch * patchThread;
+    OpalMediaPatch * mediaPatch;
     PMutex           patchMutex;
     PNotifier        commandNotifier;
 
@@ -496,8 +519,13 @@ class OpalNullMediaStream : public OpalMediaStream
       PINDEX length,       ///<  Length of data to read.
       PINDEX & written     ///<  Length of data actually written
     );
+	
+    /**Indicate if the media stream requires a OpalMediaPatch instance
+       The default behaviour returns FALSE.
+    */
+    virtual BOOL RequiresPatch() const;
 
-    /**Indicate if the media stream requires a OpalMediaPatch thread.
+    /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
        The default behaviour returns FALSE.
       */
     virtual BOOL RequiresPatchThread() const;

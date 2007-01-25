@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2039  2006/12/08 05:13:10  csoutheren
+ * Revision 1.2040  2007/01/25 11:48:11  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.38  2006/12/08 05:13:10  csoutheren
  * Applied 1603783 - To allow media streams to handle more then one patch
  * Thanks to jmatela
  *
@@ -179,19 +186,17 @@
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
-  : PThread(65536,  //16*4kpage size
-            NoAutoDeleteThread,
-            HighestPriority,
-            "Media Patch:%x"),
-    source(src)
+: source(src)
 {
   src.SetPatch(this);
+  patchThread = NULL;
 }
 
 
 OpalMediaPatch::~OpalMediaPatch()
 {
   inUse.Wait();
+  delete patchThread;
   PTRACE(3, "Patch\tMedia patch thread " << *this << " destroyed.");
 }
 
@@ -221,62 +226,21 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
   } 
 }
 
-
-void OpalMediaPatch::Main()
+void OpalMediaPatch::Start()
 {
-  PTRACE(3, "Patch\tThread started for " << *this);
-  PINDEX i;
-
   inUse.Wait();
-  BOOL isSynchronous = source.IsSynchronous();
-  if (!source.IsSynchronous()) {
-    for (i = 0; i < sinks.GetSize(); i++) {
-      if (sinks[i].stream->IsSynchronous()) {
-        source.EnableJitterBuffer();
-        isSynchronous = TRUE;
-        break;
-      }
-    }
-  }
-
-  inUse.Signal();
-  RTP_DataFrame sourceFrame(source.GetDataSize());
-  RTP_DataFrame emptyFrame(source.GetDataSize());
-
-  while (source.IsOpen()) {
-    inUse.Wait();
-    
-    if(!source.IsOpen() ||
-        sinks.GetSize() == 0 ||       
-       !source.ReadPacket(sourceFrame))
-    {
-      inUse.Signal();
-      break;
-    }
-
-    FilterFrame(sourceFrame, source.GetMediaFormat());    
-
-    PINDEX len = sinks.GetSize();
-    for (i = 0; i < len; i++)
-      sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
-
+	
+  if(patchThread != NULL) {
     inUse.Signal();
-
-    if (!isSynchronous || !sourceFrame.GetPayloadSize())
-      Sleep(5); // Don't starve the CPU
-#if !defined(WIN32)
-    else
-      Sleep(5); // Permit to another thread to take the mutex
-#endif
-
-    if (len == 0)
-      break;
-
-    // make a new, clean frame, so that silence frame won't confuse RFC2833 handler
-    sourceFrame = emptyFrame;
+    return;
   }
-
-  PTRACE(3, "Patch\tThread ended for " << *this);
+	
+  patchThread = new Thread(*this);
+  patchThread->Resume();
+  PThread::Yield();
+  PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
+	
+  inUse.Signal();
 }
 
 
@@ -297,12 +261,15 @@ void OpalMediaPatch::Close()
     stream->GetDeleteMutex().Signal();
     RemoveSink(stream);
   }
-  inUse.Signal();
 
   PTRACE(3, "Patch\tWaiting for media patch thread to stop " << *this);
-  if (!IsSuspended()) {
-    PAssert(WaitForTermination(10000), "Media patch thread not terminated.");
+  if (patchThread != NULL && !patchThread->IsSuspended()) {
+    inUse.Signal();
+    PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
+    return;
   }
+  
+  inUse.Signal();
 }
 
 
@@ -525,6 +492,72 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, BOOL fromSin
   }
 }
 
+void OpalMediaPatch::Main()
+{
+  PTRACE(3, "Patch\tThread started for " << *this);
+  PINDEX i;
+	
+  inUse.Wait();
+  source.OnPatchStart();
+  BOOL isSynchronous = source.IsSynchronous();
+  if (!source.IsSynchronous()) {
+    for (i = 0; i < sinks.GetSize(); i++) {
+      if (sinks[i].stream->IsSynchronous()) {
+        source.EnableJitterBuffer();
+        isSynchronous = TRUE;
+        break;
+      }
+    }
+  }
+	
+  inUse.Signal();
+  RTP_DataFrame sourceFrame(source.GetDataSize());
+  RTP_DataFrame emptyFrame(source.GetDataSize());
+	
+  while (source.IsOpen()) {
+    inUse.Wait();
+		
+    if(!source.IsOpen() ||
+        sinks.GetSize() == 0 ||       
+        !source.ReadPacket(sourceFrame))
+    {
+      inUse.Signal();
+      break;
+    }
+		
+    PINDEX len = sinks.GetSize();
+		
+    DispatchFrame(sourceFrame);
+		
+    inUse.Signal();
+		
+    if (!isSynchronous || !sourceFrame.GetPayloadSize())
+      PThread::Sleep(5); // Don't starve the CPU
+#if !defined(WIN32)
+    else
+      PThread::Sleep(5); // Permit to another thread to take the mutex
+#endif
+		
+    if (len == 0)
+      break;
+		
+    // make a new, clean frame, so that silence frame won't confuse RFC2833 handler
+    sourceFrame = emptyFrame;
+  }
+
+  PTRACE(3, "Patch\tThread ended for " << *this);
+}
+
+
+void OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
+{
+  FilterFrame(frame, source.GetMediaFormat());    
+	
+  PINDEX len = sinks.GetSize();
+  for (PINDEX i = 0; i < len; i++)
+    sinks[i].WriteFrame(frame);
+}
+
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
@@ -603,6 +636,37 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   }
 
   return true;
+}
+
+OpalMediaPatch::Thread::Thread(OpalMediaPatch & p)
+: PThread(65536,  //16*4kpage size
+  NoAutoDeleteThread,
+  HighestPriority,
+  "Media Patch:%x"),
+  patch(p)
+{
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+OpalPassiveMediaPatch::OpalPassiveMediaPatch(OpalMediaStream & source)
+: OpalMediaPatch(source)
+{
+}
+
+
+void OpalPassiveMediaPatch::Start()
+{
+  source.OnPatchStart();
+}
+
+
+BOOL OpalPassiveMediaPatch::PushFrame(RTP_DataFrame & frame)
+{
+  DispatchFrame(frame);
+  return TRUE;
 }
 
 
