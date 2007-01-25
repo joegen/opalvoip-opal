@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2013  2006/06/30 01:33:43  csoutheren
+ * Revision 1.2014  2007/01/25 11:48:11  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.12  2006/06/30 01:33:43  csoutheren
  * Add function to get patch sink media format
  *
  * Revision 2.11  2006/02/02 07:02:57  csoutheren
@@ -96,12 +103,12 @@ class OpalTranscoder;
    capabile of doing natively.
 
    Note the thread is not actually started straight away. It is expected that
-   the Resume() function is called on the patch when the creator code is
+   the Start() function is called on the patch when the creator code is
    ready for it to begin. For example all sink streams have been added.
   */
-class OpalMediaPatch : public PThread
+class OpalMediaPatch : public PObject
 {
-    PCLASSINFO(OpalMediaPatch, PThread);
+    PCLASSINFO(OpalMediaPatch, PObject);
   public:
   /**@name Construction */
   //@{
@@ -130,16 +137,17 @@ class OpalMediaPatch : public PThread
 
   /**@name Operations */
   //@{
-    /**Thread entry point.
+    /**Start the patch. The default implementation simply starts the
+       patch thread, which in turn calls Main()
       */
-    virtual void Main();
+    virtual void Start();
 
     /**Close the patch.
-       This is an internal function that closes all of the sink streams and
+      This is an internal function that closes all of the sink streams and
        waits for the the thread to terminate. It is called when the source
        stream is called.
       */
-    void Close();
+    virtual void Close();
 
     /**Add another "sink" OpalMediaStream to patch.
        The stream must not be a ReadOnly media stream for the patch to be
@@ -225,9 +233,17 @@ class OpalMediaPatch : public PThread
       const PNotifier & notifier,   ///<  Command to execute.
       BOOL fromSink                 ///<  Flag for source or sink
     );
+
+    virtual BOOL PushFrame(RTP_DataFrame & frame) { return FALSE; };
+
   //@}
 
   protected:
+		
+    /**Called from the associated patch thread */
+    virtual void Main();
+    void DispatchFrame(RTP_DataFrame & frame);
+	
     OpalMediaStream & source;
 
     class Sink : public PObject {
@@ -258,8 +274,37 @@ class OpalMediaPatch : public PThread
         OpalMediaFormat stage;
     };
     PList<Filter> filters;
+	
+    class Thread : public PThread {
+        PCLASSINFO(Thread, PThread);
+      public:
+        Thread(OpalMediaPatch & p);
+        virtual void Main() { patch.Main(); };
+        OpalMediaPatch & patch;
+    };
 
+    Thread * patchThread;
     mutable PTimedMutex inUse;
+};
+
+/**Passive Media Patch
+   In contrast to the 'default' media patch does this instance not run
+   it's own thread. Instead, the source stream may push data to the sinks
+   whenever needed. Useful for implementations where the source is not
+   a continuous data stream (e.g. H.224/H.281 FECC, where data is sent
+   on user input) or the source stream is driven by an external thread loop.
+*/
+class OpalPassiveMediaPatch : public OpalMediaPatch
+{
+    PCLASSINFO(OpalPassiveMediaPatch, OpalMediaPatch);
+  public:
+
+    OpalPassiveMediaPatch(
+      OpalMediaStream & source       ///<  Source media stream
+    );
+
+    virtual void Start();
+    virtual BOOL PushFrame(RTP_DataFrame & frame);
 };
 
 
