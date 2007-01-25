@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2072  2007/01/25 03:30:10  csoutheren
+ * Revision 1.2073  2007/01/25 11:48:11  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.71  2007/01/25 03:30:10  csoutheren
  * Fix problem with calling OpalConnection::OnIncomingConnection twice
  *
  * Revision 2.70  2007/01/24 04:00:57  csoutheren
@@ -852,9 +859,14 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
 #endif // OPAL_VIDEO
 
 
-OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source)
+OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
+                                               BOOL requiresPatchThread)
 {
-  return new OpalMediaPatch(source);
+  if (requiresPatchThread) {
+    return new OpalMediaPatch(source);
+  } else {
+    return new OpalPassiveMediaPatch(source);
+  }
 }
 
 
