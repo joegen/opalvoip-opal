@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2056  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2057  2007/01/25 11:48:10  hfriederich
+ * OpalMediaPatch code refactorization.
+ * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
+ * (not using a thread). Also adds the possibility for source streams
+ * to push frames down to the sink streams instead of having a patch
+ * thread around.
+ *
+ * Revision 2.55  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -754,7 +761,8 @@ class OpalManager : public PObject
        The default behaviour returns an instance of OpalMediaPatch.
       */
     virtual OpalMediaPatch * CreateMediaPatch(
-      OpalMediaStream & source         ///<  Source media stream
+      OpalMediaStream & source,         ///<  Source media stream
+      BOOL requiresPatchThread = TRUE
     );
 
     /**Destroy a OpalMediaPatch instance.
