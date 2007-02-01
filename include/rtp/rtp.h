@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2031  2006/12/08 04:12:12  csoutheren
+ * Revision 1.2032  2007/02/01 06:43:19  csoutheren
+ * Added virtual to functions
+ *
+ * Revision 2.30  2006/12/08 04:12:12  csoutheren
  * Applied 1589274 - better rtp error handling of malformed rtcp packet
  * Thanks to frederich
  *
@@ -1187,11 +1190,11 @@ class RTP_UDP : public RTP_Session
   //@{
     /**Get local address of session.
       */
-    PIPSocket::Address GetLocalAddress() const { return localAddress; }
+    virtual PIPSocket::Address GetLocalAddress() const { return localAddress; }
 
     /**Set local address of session.
       */
-    void SetLocalAddress(
+    virtual void SetLocalAddress(
       const PIPSocket::Address & addr
     ) { localAddress = addr; }
 
@@ -1201,31 +1204,31 @@ class RTP_UDP : public RTP_Session
 
     /**Get local data port of session.
       */
-    WORD GetLocalDataPort() const { return localDataPort; }
+    virtual WORD GetLocalDataPort() const { return localDataPort; }
 
     /**Get local control port of session.
       */
-    WORD GetLocalControlPort() const { return localControlPort; }
+    virtual WORD GetLocalControlPort() const { return localControlPort; }
 
     /**Get remote data port of session.
       */
-    WORD GetRemoteDataPort() const { return remoteDataPort; }
+    virtual WORD GetRemoteDataPort() const { return remoteDataPort; }
 
     /**Get remote control port of session.
       */
-    WORD GetRemoteControlPort() const { return remoteControlPort; }
+    virtual WORD GetRemoteControlPort() const { return remoteControlPort; }
 
     /**Get data UDP socket of session.
       */
-    PUDPSocket & GetDataSocket() { return *dataSocket; }
+    virtual PUDPSocket & GetDataSocket() { return *dataSocket; }
 
     /**Get control UDP socket of session.
       */
-    PUDPSocket & GetControlSocket() { return *controlSocket; }
+    virtual PUDPSocket & GetControlSocket() { return *controlSocket; }
 
     /**Set the remote address and port information for session.
       */
-    BOOL SetRemoteSocketInfo(
+    virtual BOOL SetRemoteSocketInfo(
       PIPSocket::Address address,   ///<  Addre ss of remote
       WORD port,                    ///<  Port on remote
       BOOL isDataPort               ///<  Flag for data or control channel
@@ -1233,15 +1236,15 @@ class RTP_UDP : public RTP_Session
 
     /**Apply QOS - requires address to connect the socket on Windows platforms
      */
-    void ApplyQOS(
+    virtual void ApplyQOS(
       const PIPSocket::Address & addr
     );
   //@}
 
-    int GetDataSocketHandle() const
+    virtual int GetDataSocketHandle() const
     { return dataSocket != NULL ? dataSocket->GetHandle() : -1; }
 
-    int GetControlSocketHandle() const
+    virtual int GetControlSocketHandle() const
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
   protected:
