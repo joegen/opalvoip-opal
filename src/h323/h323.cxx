@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2134  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2135  2007/02/05 04:13:14  csoutheren
+ * Add check for return value from logical channel start
+ *
+ * Revision 2.133  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -2340,9 +2343,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                         channelToStart.Close();
                       }
                     }
-                    else
-                      channelToStart.Start();
-                    if (channelToStart.IsOpen())
+                    else if (channelToStart.Start() && channelToStart.IsOpen())
                       break;
                   }
                 }
