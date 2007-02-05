@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2040  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2041  2007/02/05 19:43:17  dsandras
+ * Added additional mutex to prevent temporary deadlock when nothing is
+ * received on the remote media stream during the establishment phase.
+ *
+ * Revision 2.39  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -195,6 +199,7 @@ OpalMediaPatch::OpalMediaPatch(OpalMediaStream & src)
 
 OpalMediaPatch::~OpalMediaPatch()
 {
+  PWaitAndSignal m(patchThreadMutex);
   inUse.Wait();
   delete patchThread;
   PTRACE(3, "Patch\tMedia patch thread " << *this << " destroyed.");
@@ -228,19 +233,15 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 
 void OpalMediaPatch::Start()
 {
-  inUse.Wait();
+  PWaitAndSignal m(patchThreadMutex);
 	
-  if(patchThread != NULL) {
-    inUse.Signal();
+  if(patchThread != NULL) 
     return;
-  }
 	
   patchThread = new Thread(*this);
   patchThread->Resume();
   PThread::Yield();
   PTRACE(4, "Media\tStarting thread " << patchThread->GetThreadName());
-	
-  inUse.Signal();
 }
 
 
