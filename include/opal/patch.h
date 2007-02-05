@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2014  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2015  2007/02/05 19:43:17  dsandras
+ * Added additional mutex to prevent temporary deadlock when nothing is
+ * received on the remote media stream during the establishment phase.
+ *
+ * Revision 2.13  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -284,6 +288,7 @@ class OpalMediaPatch : public PObject
     };
 
     Thread * patchThread;
+    PMutex patchThreadMutex;
     mutable PTimedMutex inUse;
 };
 
