@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.51  2007/02/05 19:50:31  dsandras
+# Fixed uninstallation of plugins.
+#
 # Revision 1.50  2007/01/11 03:24:57  dereksmithies
 # It now references the new file to compile, iax2/iax2jitter.cxx
 #
@@ -818,8 +821,8 @@ uninstall:
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
 	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT) \
-	      $(DESTDIR)$(PREFIX)/lib/pkgconfig/opal.pc \
-	      $(MAKE) -C plugins uninstall
+	      $(DESTDIR)$(PREFIX)/lib/pkgconfig/opal.pc 
+	$(MAKE) -C plugins uninstall
  
 docs: FORCE
 	doxygen opal_cfg.dxy
