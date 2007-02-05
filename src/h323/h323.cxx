@@ -24,8 +24,8 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2135  2007/02/05 04:13:14  csoutheren
- * Add check for return value from logical channel start
+ * Revision 1.2136  2007/02/05 04:23:00  csoutheren
+ * Check status on starting both read and write channels
  *
  * Revision 2.133  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
@@ -2332,18 +2332,21 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
                   if (channelToStart.Open()) {
+                    BOOL started = FALSE;
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                       transmitterMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
                       if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
                         if (!mediaWaitForConnect)
-                          channelToStart.Start();
+                          started = channelToStart.Start();
                       }
                       else {
                         transmitterMediaStream = NULL;
                         channelToStart.Close();
                       }
                     }
-                    else if (channelToStart.Start() && channelToStart.IsOpen())
+                    else
+                      started = channelToStart.Start();
+                    if (started && channelToStart.IsOpen())
                       break;
                   }
                 }
