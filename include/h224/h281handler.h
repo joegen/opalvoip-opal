@@ -3,7 +3,7 @@
  *
  * H.281 protocol handler implementation for the OpenH323 Project.
  *
- * Copyright (c) 2006 Network for Educational Technology, ETH Zurich.
+ * Copyright (c) 2006-2007 Network for Educational Technology, ETH Zurich.
  * Written by Hannes Friederich.
  *
  * The contents of this file are subject to the Mozilla Public License
@@ -19,6 +19,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281handler.h,v $
+ * Revision 1.2.6.1  2007/02/07 08:51:00  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
  * Revision 1.2  2006/04/23 18:52:19  dsandras
  * Removed warnings when compiling with gcc on Linux.
  *
@@ -92,26 +104,31 @@ protected:
 
 /** This class implements a defalt H.281 handler
  */
-class OpalH281Handler : public PObject
+class OpalH281Handler : public OpalH224Client
 {
-  PCLASSINFO(OpalH281Handler, PObject);
+  PCLASSINFO(OpalH281Handler, OpalH224Client);
 	
 public:
 	
-  OpalH281Handler(OpalH224Handler & h224Handler);
+  OpalH281Handler();
   ~OpalH281Handler();
 	
   enum VideoSource {
-    CurrentVideoSource		= 0x00,
-	MainCamera				= 0x01,
-	AuxiliaryCamera			= 0x02,
-	DocumentCamera			= 0x03,
-	AuxiliaryDocumentCamera = 0x04,
-	VideoPlaybackSource		= 0x05
+    CurrentVideoSource      = 0x00,
+    MainCamera              = 0x01,
+    AuxiliaryCamera         = 0x02,
+    DocumentCamera          = 0x03,
+    AuxiliaryDocumentCamera = 0x04,
+    VideoPlaybackSource	    = 0x05
   };
-	
-  BOOL GetRemoteHasH281() const { return remoteHasH281; }
-  void SetRemoteHasH281(BOOL flag) { remoteHasH281 = flag; }
+  
+  /**Overriding default OpalH224Client methods */
+  virtual BYTE GetClientID() const { return H281_CLIENT_ID; };
+  virtual BOOL HasExtraCapabilities() const { return TRUE; };
+  
+  /**Processing incoming frames. Overrides from OpalH224Client */
+  virtual void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);
+  virtual void OnReceivedMessage(const H224_Frame & message);
 	
   BYTE GetLocalNumberOfPresets() const { return localNumberOfPresets; }
   void SetLocalNumberOfPresets(BYTE presets) { localNumberOfPresets = presets; }
@@ -125,9 +142,9 @@ public:
       The action will continue until StopAction() is called.
    */
   void StartAction(H281_Frame::PanDirection panDirection,
-				   H281_Frame::TiltDirection tiltDirection,
-				   H281_Frame::ZoomDirection zoomDireciton,
-			       H281_Frame::FocusDirection focusDirection);
+                   H281_Frame::TiltDirection tiltDirection,
+                   H281_Frame::ZoomDirection zoomDireciton,
+                   H281_Frame::FocusDirection focusDirection);
   
   /** Stops any action currently ongoing
    */
@@ -155,11 +172,6 @@ public:
    */
   void SendExtraCapabilities() const;
 	
-  /** Processing incoming frames
-   */
-  void OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size);
-  void OnReceivedMessage(const H281_Frame & message);
-	
   /*
    * methods that subclasses can override.
    * The default handler does not implement FECC on the local side.
@@ -173,9 +185,9 @@ public:
   /** Indicates to start the action specified
    */
   virtual void OnStartAction(H281_Frame::PanDirection panDirection,
-							 H281_Frame::TiltDirection tiltDirection,
-							 H281_Frame::ZoomDirection zoomDirection,
-							 H281_Frame::FocusDirection focusDirection);
+                             H281_Frame::TiltDirection tiltDirection,
+                             H281_Frame::ZoomDirection zoomDirection,
+                             H281_Frame::FocusDirection focusDirection);
 	
   /** Indicates to stop the action stared with OnStartAction()
    */
@@ -197,9 +209,7 @@ protected:
 		
   PDECLARE_NOTIFIER(PTimer, OpalH281Handler, ContinueAction);
   PDECLARE_NOTIFIER(PTimer, OpalH281Handler, StopActionLocally);
-	
-  OpalH224Handler & h224Handler;
-  BOOL remoteHasH281;
+
   BYTE localNumberOfPresets;
   BYTE remoteNumberOfPresets;
   H281VideoSource localVideoSources[6];

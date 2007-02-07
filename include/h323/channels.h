@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2016  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2016.4.1  2007/02/07 08:51:00  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.15  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.14.6.1  2006/08/09 12:49:21  csoutheren
@@ -223,7 +235,7 @@
 #include <rtp/rtp.h>
 #include <h323/transaddr.h>
 
-
+class OpalMediaType;
 class OpalMediaStream;
 class OpalMediaCommand;
 
@@ -328,6 +340,10 @@ class H323Channel : public PObject
        meaningfull, the default simply returns 0.
      */
     virtual unsigned GetSessionID() const;
+    
+    /**Indicate the media type of the channel
+      */
+    virtual const OpalMediaType & GetMediaType() const;
 
     /**Get the media transport address for the connection.
        This is primarily used to determine if media bypass is possible for the
@@ -767,7 +783,8 @@ class H323_RTPChannel : public H323_RealTimeChannel
       H323Connection & connection,        ///<  Connection to endpoint for channel
       const H323Capability & capability,  ///<  Capability channel is using
       Directions direction,               /// Direction of channel
-      RTP_Session & rtp                   /// RTP session for channel
+      RTP_Session & rtp,                  /// RTP session for channel
+      unsigned sessionID                  ///< RTP Session ID for this channel
     );
 
     /// Destroy the channel
@@ -781,7 +798,13 @@ class H323_RTPChannel : public H323_RealTimeChannel
        RTP_Session member variable.
      */
     virtual unsigned GetSessionID() const;
-  //@}
+
+    /**Indicate the media type of the channel.
+       Return session for channel. This returns the session ID of the
+       RTP_Session member variable.
+      */
+    virtual const OpalMediaType & GetMediaType() const;
+    //@}
 
   /**@name Overrides from class H323_RealTimeChannel */
   //@{
@@ -821,6 +844,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
   //@}
 
   protected:
+    unsigned           sessionID;
     RTP_Session      & rtpSession;
     H323_RTP_Session & rtpCallbacks;
 };

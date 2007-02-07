@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2018  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2018.4.1  2007/02/07 08:51:00  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.17  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -349,16 +361,6 @@ class H323Capability : public PObject
       const PString & name     ///<  Name of capability
     );
 
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
-      */
-    virtual unsigned GetDefaultSessionID() const;
-
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
 
@@ -385,7 +387,7 @@ class H323Capability : public PObject
 
     /**Create the channel instance, allocating resources as required.
        This creates a logical channel object appropriate for the parameters
-       provided. Not if param is NULL, sessionID must be provided, otherwise
+       provided. Note if param is NULL, sessionID must be provided, otherwise
        this is taken from the fields in param.
      */
     virtual H323Channel * CreateChannel(
@@ -754,15 +756,6 @@ class H323AudioCapability : public H323RealTimeCapability
 
   /**@name Operations */
   //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
-      */
-    virtual unsigned GetDefaultSessionID() const;
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -1119,19 +1112,6 @@ class H323VideoCapability : public H323RealTimeCapability
     virtual MainTypes GetMainType() const;
   //@}
 
-  /**@name Operations */
-  //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
-      */
-    virtual unsigned GetDefaultSessionID() const;
-  //@}
-
   /**@name Protocol manipulation */
   //@{
     /**This function is called whenever and outgoing TerminalCapabilitySet
@@ -1466,18 +1446,6 @@ class H323DataCapability : public H323Capability
        Always returns e_Data.
      */
     virtual MainTypes GetMainType() const;
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns 3, indicating a data session.
-      */
-    virtual unsigned GetDefaultSessionID() const;
   //@}
 
   /**@name Protocol manipulation */

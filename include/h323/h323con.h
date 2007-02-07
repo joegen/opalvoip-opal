@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058  2007/01/24 04:00:55  csoutheren
+ * Revision 1.2058.2.1  2007/02/07 08:51:00  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.57  2007/01/24 04:00:55  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -561,6 +573,12 @@ class H323Connection : public OpalConnection
      */
     ~H323Connection();
   //@}
+    
+    enum {
+      DefaultAudioSessionID = 1,
+      DefaultVideoSessionID = 2,
+      DefaultDataSessionID  = 3
+    };
 
   /**@name Overrides from OpalConnection */
   //@{
@@ -652,7 +670,7 @@ class H323Connection : public OpalConnection
       */
     virtual BOOL OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaType & mediaType           ///<  Session to start stream on
     );
     
     /**Open a new media stream.
@@ -660,7 +678,7 @@ class H323Connection : public OpalConnection
        by the underlying connection protocol. For instance H.323 would create
        an OpalRTPStream.
 
-       The sessionID parameter may not be needed by a particular media stream
+       The media type parameter may not be needed by a particular media stream
        and may be ignored. In the case of an OpalRTPStream it us used.
 
        Note that media streams may be created internally to the underlying
@@ -671,7 +689,6 @@ class H323Connection : public OpalConnection
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
 
@@ -684,15 +701,15 @@ class H323Connection : public OpalConnection
        The default behaviour returns TRUE if the session is audio or video.
      */
     virtual BOOL IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaType & mediaType     ///<  Media type for media channel
     ) const;
 
     /**Get information on the media channel for the connection.
        The default behaviour returns TRUE and fills the info structure if
-       there is a media channel active for the sessionID.
+       there is a media channel active for the media type.
      */
     virtual BOOL GetMediaInformation(
-      unsigned sessionID,     ///<  Session ID for media channel
+      const OpalMediaType & mediaType, ///<  Media type for media channel
       MediaInformation & info ///<  Information on media channel
     ) const;
   //@}
@@ -1597,14 +1614,14 @@ class H323Connection : public OpalConnection
     /**Select default logical channel for normal start.
       */
     virtual void SelectDefaultLogicalChannel(
-      unsigned sessionID    ///<  Session ID to find default logical channel.
+      const OpalMediaType & mediaType    ///<  Media type to find default logical channel.
     );
 
     /**Select default logical channel for fast start.
        Internal function, not for normal use.
       */
     virtual void SelectFastStartChannels(
-      unsigned sessionID,   ///<  Session ID to find default logical channel.
+      const OpalMediaType & mediaType,   ///<  Media type to find default logical channel.
       BOOL transmitter,     ///<  Whether to open transmitters
       BOOL receiver         ///<  Whether to open receivers
     );
@@ -1613,7 +1630,7 @@ class H323Connection : public OpalConnection
        Internal function, not for normal use.
       */
     virtual void StartFastStartChannel(
-      unsigned sessionID,               ///<  Session ID to find logical channel.
+      const OpalMediaType & mediaType,  ///<  Session ID to find logical channel.
       H323Channel::Directions direction ///<  Direction of channel to start
     );
 
@@ -1817,12 +1834,12 @@ class H323Connection : public OpalConnection
     ) const;
 
     /**Find a logical channel.
-       Locates a channel give a RTP session ID. Each session would usually
+       Locates a channel given a media type. Each session would usually
        have two logical channels associated with it, so the fromRemote flag
        bay be used to distinguish which channel to return.
       */
     H323Channel * FindChannel(
-      unsigned sessionId,   ///<  Session ID to search for.
+      const OpalMediaType & mediaType,   ///<  media type to search for.
       BOOL fromRemote       ///<  Indicates the direction of RTP data.
     ) const;
   //@}
@@ -1954,18 +1971,11 @@ class H323Connection : public OpalConnection
 
   /**@name RTP Session Management */
   //@{
-    /**Get an RTP session for the specified ID.
-       If there is no session of the specified ID, NULL is returned.
-      */
-    virtual RTP_Session * GetSession(
-      unsigned sessionID
-    ) const;
-
-    /**Get an H323 RTP session for the specified ID.
-       If there is no session of the specified ID, NULL is returned.
+    /**Get an H323 RTP session for the specified media type.
+       If there is no session of the specified media type, NULL is returned.
       */
     virtual H323_RTP_Session * GetSessionCallbacks(
-      unsigned sessionID
+      const OpalMediaType & mediaType
     ) const;
 
     /**Use an RTP session for the specified ID and for the given direction.
@@ -1979,7 +1989,7 @@ class H323Connection : public OpalConnection
       */
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,
-      unsigned sessionID,
+      const OpalMediaType & mediaType,
       RTP_QOS * rtpqos = NULL
     );
 
@@ -1987,7 +1997,7 @@ class H323Connection : public OpalConnection
        clients via the UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
-      unsigned sessionID
+      const OpalMediaType & mediaType
     );
 
     /**Callback from the RTP session for statistics monitoring.
@@ -2002,10 +2012,10 @@ class H323Connection : public OpalConnection
     ) const;
 
     /**Get the names of the codecs in use for the RTP session.
-       If there is no session of the specified ID, an empty string is returned.
+       If there is no session of the specified media type, an empty string is returned.
       */
     virtual PString GetSessionCodecNames(
-      unsigned sessionID
+      const OpalMediaType & mediaType
     ) const;
 
   //@}
@@ -2284,6 +2294,7 @@ class H323Connection : public OpalConnection
     PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
+    unsigned GetRTPSessionIDForMediaType(const OpalMediaType & mediaType);
 
 
     H323EndPoint & endpoint;
@@ -2393,9 +2404,15 @@ class H323Connection : public OpalConnection
 #ifdef H323_H460
 	H460_FeatureSet & features;
 #endif
+    
+    typedef std::map<OpalMediaType, unsigned> SessionIDMap;
+    SessionIDMap sessionIDMap;
+    PMutex sessionIDMutex;
+    unsigned nextSessionID;
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
+    
 };
 
 

@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2047  2007/01/24 04:00:55  csoutheren
+ * Revision 1.2047.2.1  2007/02/07 08:51:00  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.46  2007/01/24 04:00:55  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -1350,23 +1362,13 @@ class H323EndPoint : public OpalEndPoint
     BOOL CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
 #endif
 
-#if OPAL_T38FAX
     /**See if should auto-start receive fax channels on connection.
      */
-    BOOL CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
+    BOOL CanAutoStartReceiveData() const { return autoStartReceiveData; }
 
     /**See if should auto-start transmit fax channels on connection.
      */
-    BOOL CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
-#endif
-
-    /** Returns whether H.224 is enabled or not
-     */
-    BOOL IsH224Enabled() const { return isH224Enabled; }
-	
-    /** Enables / disables H.224
-	 */
-    void SetIsH224Enabled(BOOL flag) { isH224Enabled = flag; }
+    BOOL CanAutoStartTransmitData() const { return autoStartTransmitData; }
 
     /**See if should automatically do call forward of connection.
      */
@@ -1696,9 +1698,8 @@ class H323EndPoint : public OpalEndPoint
 
     // Configuration variables, commonly changed
     PStringList localAliasNames;
-    BOOL        autoStartReceiveFax;
-    BOOL        autoStartTransmitFax;
-    BOOL        isH224Enabled;
+    BOOL        autoStartReceiveData;
+    BOOL        autoStartTransmitData;
     BOOL        autoCallForward;
     BOOL        disableFastStart;
     BOOL        disableH245Tunneling;
