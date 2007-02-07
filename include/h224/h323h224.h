@@ -4,7 +4,7 @@
  * H.323 H.224 logical channel establishment implementation for the 
  * OpenH323 Project.
  *
- * Copyright (c) 2006 Network for Educational Technology, ETH Zurich.
+ * Copyright (c) 2006-2007 Network for Educational Technology, ETH Zurich.
  * Written by Hannes Friederich.
  *
  * The contents of this file are subject to the Mozilla Public License
@@ -20,6 +20,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.h,v $
+ * Revision 1.3.4.1  2007/02/07 08:51:00  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
  * Revision 1.3  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
@@ -44,6 +56,7 @@
 #include <ptlib.h>
 #include <h323/h323caps.h>
 
+#include <h224/h224mediafmt.h>
 #include <h224/h224.h>
 #include <h224/h224handler.h>
 
@@ -133,6 +146,9 @@ protected:
   RTP_DataFrame::PayloadTypes rtpPayloadType;
   
 };
+
+#define OPAL_REGISTER_H224_CAPABILITY() \
+  static H323CapabilityFactory::Worker<H323_H224Capability> h224Factory(OpalH224, true);
 
 #endif // __OPAL_H323H224_H
 
