@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2059.2.1  2007/02/07 08:51:03  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.58  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.57  2006/11/21 01:01:00  csoutheren
@@ -295,6 +307,10 @@
 
 #define new PNEW
 
+#define OPAL_UNKNOWN_MEDIA_TYPE_STRING "UnknownMedia"
+#define OPAL_DEFAULT_AUDIO_MEDIA_TYPE_STRING "DefaultAudioMedia"
+#define OPAL_DEFAULT_VIDEO_MEDIA_TYPE_STRING "DefaultVideoMedia"
+
 namespace PWLibStupidLinkerHacks {
 extern int opalLoader;
 
@@ -311,11 +327,38 @@ static class InstantiateMe
 
 /////////////////////////////////////////////////////////////////////////////
 
+const OpalMediaType & GetUnknownMediaType()
+{
+  static const OpalMediaType unknownMediaType(
+    OPAL_UNKNOWN_MEDIA_TYPE_STRING,
+    OpalMediaType::Unknown
+  );
+  return unknownMediaType;
+}
+
+const OpalMediaType & GetDefaultAudioMediaType()
+{
+  static const OpalMediaType audioMediaType(
+    OPAL_DEFAULT_AUDIO_MEDIA_TYPE_STRING, 
+    OpalMediaType::Audio
+  );
+  return audioMediaType;
+}
+
+const OpalMediaType & GetDefaultVideoMediaType()
+{
+  static const OpalMediaType videoMediaType(
+    OPAL_DEFAULT_VIDEO_MEDIA_TYPE_STRING,
+    OpalMediaType::Video
+  );
+  return videoMediaType;
+}
+
 #define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock) \
   const OpalAudioFormat & GetOpal##name() \
   { \
     static const OpalAudioFormat name(OPAL_##name, RTP_DataFrame::rtpPayloadType, \
-                                    encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock); \
+                                      encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock); \
     return name; \
   }
 
@@ -341,7 +384,7 @@ const OpalMediaFormat & GetOpalRFC2833()
 {
   static const OpalMediaFormat RFC2833(
     OPAL_RFC2833,
-    0,
+    OpalUnknownMediaType,
     (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
     "telephone-event",
     TRUE,   // Needs jitter
@@ -354,9 +397,24 @@ const OpalMediaFormat & GetOpalRFC2833()
 }
 
 
+static OpalMediaTypeList & GetMediaTypesList()
+{
+  static OpalMediaTypeList registeredTypes;
+  return registeredTypes;
+}
+
+
+static PMutex & GetMediaTypesListMutex()
+{
+  static PMutex mutex;
+  return mutex;
+}
+
+
 static OpalMediaFormatList & GetMediaFormatsList()
 {
   static OpalMediaFormatList registeredFormats;
+  PWaitAndSignal m(GetMediaTypesListMutex());
   return registeredFormats;
 }
 
@@ -365,6 +423,264 @@ static PMutex & GetMediaFormatsListMutex()
 {
   static PMutex mutex;
   return mutex;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+OpalMediaType::OpalMediaType(const char * theName, MIMEMediaType theMIMEMediaType)
+{
+  PWaitAndSignal mutex(GetMediaTypesListMutex());
+  OpalMediaTypeList & registeredTypes = GetMediaTypesList();
+      
+  PINDEX idx = registeredTypes.FindType(theName);
+  if (idx != P_MAX_INDEX) {
+    *this = registeredTypes[idx];
+  } else {
+    name = theName;
+    mimeMediaType = theMIMEMediaType;
+          
+    if (name == OPAL_DEFAULT_AUDIO_MEDIA_TYPE_STRING) {
+      uniqueID = 1; // Default audio media has id one
+    } else if (name == OPAL_DEFAULT_VIDEO_MEDIA_TYPE_STRING) {
+      // Default video media has id two. Ensures that audio media is loaded before video media
+      uniqueID = OpalDefaultAudioMediaType.uniqueID + 1;
+    } else if (name == OPAL_UNKNOWN_MEDIA_TYPE_STRING) {
+      uniqueID = 0;
+      return; // Don't add this to the base list
+    } else {
+      // The first two id's are assigned to DefaultAudio and DefaultVideo.
+      // Thus, we're starting with the id one larger than default video
+      static unsigned id = OpalDefaultVideoMediaType.uniqueID + 1;
+      uniqueID = id++;
+    }
+    
+    registeredTypes.OpalMediaTypeBaseList::Append(this);
+  }
+}
+
+
+OpalMediaType::OpalMediaType(const OpalMediaType & mediaType)
+{
+  name = mediaType.name;
+  mimeMediaType = mediaType.mimeMediaType;
+  uniqueID = mediaType.uniqueID;
+}
+
+
+OpalMediaType & OpalMediaType::operator=(const OpalMediaType & type)
+{
+  name = type.name;
+  mimeMediaType = type.mimeMediaType;
+  uniqueID = type.uniqueID;
+    
+  return *this;
+}
+
+
+OpalMediaTypeList OpalMediaType::GetAllRegisteredMediaTypes()
+{
+  OpalMediaTypeList copy;
+  GetAllRegisteredMediaTypes(copy);
+  return copy;
+}
+
+
+void OpalMediaType::GetAllRegisteredMediaTypes(OpalMediaTypeList & copy)
+{
+  PWaitAndSignal mutex(GetMediaTypesListMutex());
+  const OpalMediaTypeList & registeredTypes = GetMediaTypesList();
+    
+  for (PINDEX i = 0; i < registeredTypes.GetSize(); i++) {
+    copy.OpalMediaTypeBaseList::Append(&(registeredTypes[i]));
+  }
+}
+
+
+PString OpalMediaType::GetMIMETypeString(MIMEMediaType mimeType)
+{
+  switch (mimeType) {
+    case Audio:
+      return "audio";
+    case Video:
+      return "video";
+    case Application:
+      return "application";
+    case Image:
+      return "image";
+    case Message:
+      return "message";
+    case Multipart:
+      return "multipart";
+    case Text:
+      return "text";
+    case Model:
+      return "model";
+    case Example:
+      return "example";
+    default:
+      return "unknown";
+  }
+}
+
+
+OpalMediaType::MIMEMediaType OpalMediaType::ParseMIMEMediaType(const PString & typeString)
+{
+  if (typeString *= "audio") {
+    return Audio;
+  } else if (typeString *= "video") {
+    return Video;
+  } else if (typeString *= "application") {
+    return Application;
+  } else if (typeString *= "image") {
+    return Image;
+  } else if (typeString *= "message") {
+    return Message;
+  } else if (typeString *= "multipart") {
+    return Multipart;
+  } else if (typeString *= "text") {
+    return Text;
+  } else if (typeString *= "model") {
+    return Model;
+  } else if (typeString *= "example") {
+    return Example;
+  } else {
+    return Unknown;
+  }
+}
+
+
+PObject::Comparison OpalMediaType::Compare(const PObject & obj) const
+{
+  const OpalMediaType * otherType = PDownCast(const OpalMediaType, &obj);
+  if (otherType == NULL)
+    return GreaterThan;
+    
+  if (uniqueID == otherType->uniqueID)
+    return EqualTo;
+  
+  if(uniqueID < otherType->uniqueID)
+    return LessThan;
+  
+  return GreaterThan;
+}
+
+
+void OpalMediaType::PrintOn(ostream & strm) const
+{
+  strm << name << " (" << mimeMediaType << ")";
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalMediaTypeList::OpalMediaTypeList()
+{
+  DisallowDeleteObjects();
+}
+
+
+OpalMediaTypeList::OpalMediaTypeList(const OpalMediaType & type)
+{
+  DisallowDeleteObjects();
+  *this += type;
+}
+
+
+OpalMediaTypeList & OpalMediaTypeList::operator+=(const OpalMediaType & type)
+{
+  if (!type.GetName()) {
+    if (!HasType(type)) {
+      PWaitAndSignal mutex(GetMediaTypesListMutex());
+      const OpalMediaTypeList & registeredTypes = GetMediaTypesList();
+      PINDEX idx = registeredTypes.FindType(type.GetName());
+      if (idx != P_MAX_INDEX)
+        OpalMediaTypeBaseList::Append(&registeredTypes[idx]);
+    }
+  }
+  return *this;
+}
+
+
+OpalMediaTypeList & OpalMediaTypeList::operator+=(const OpalMediaTypeList & types)
+{
+  for (PINDEX i = 0; i < types.GetSize(); i++)
+    *this += types[i];
+  return *this;
+}
+
+
+OpalMediaTypeList & OpalMediaTypeList::operator-=(const OpalMediaType & type)
+{
+  PINDEX idx = FindType(type.GetName());
+  if (idx != P_MAX_INDEX)
+    RemoveAt(idx);
+    
+  return *this;
+}
+
+
+OpalMediaTypeList & OpalMediaTypeList::operator-=(const OpalMediaTypeList & types)
+{
+  for (PINDEX i = 0; i < types.GetSize(); i++)
+    *this -= types[i];
+  return *this;
+}
+
+
+void OpalMediaTypeList::Remove(const PStringArray & mask)
+{
+  PINDEX i;
+  for (i = 0; i < mask.GetSize(); i++) {
+    PINDEX idx;
+    if ((idx = FindType(mask[i])) != P_MAX_INDEX)
+      RemoveAt(idx);
+  }
+}
+
+PINDEX OpalMediaTypeList::FindType(const PString & name) const
+{
+  for (PINDEX idx = 0; idx < GetSize(); idx++) {
+    OpalMediaType & mediaType = (*this)[idx];
+        
+    if(mediaType.GetName() == name)
+      return idx;
+  }
+    
+  return P_MAX_INDEX;
+}
+
+
+BOOL OpalMediaTypeList::HasType(const OpalMediaType & type) const
+{
+  for (PINDEX i = 0; i < GetSize(); i++) {
+    OpalMediaType & mediaType = (*this)[i];
+        
+    if (mediaType.GetUniqueID() == type.GetUniqueID()) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+
+void OpalMediaTypeList::Reorder(const PStringArray & order)
+{
+  PINDEX nextPos = 0;
+  for (PINDEX i = 0; i < order.GetSize(); i++) {
+    const PString & name = order[i];
+        
+    PINDEX findPos = 0;
+    while (findPos < GetSize()) {
+      if (((*this)[findPos]).GetName() == name) {
+        if (findPos > nextPos)
+          OpalMediaTypeBaseList::InsertAt(nextPos, RemoveAt(findPos));
+        nextPos++;
+      }
+      findPos++;
+    }
+  }
 }
 
 
@@ -621,7 +937,7 @@ OpalMediaFormat::OpalMediaFormat()
 {
   rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
   rtpEncodingName = NULL;
-  defaultSessionID = 0;
+  mediaType = &(OpalUnknownMediaType);
 }
 
 
@@ -651,7 +967,7 @@ OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
 
 
 OpalMediaFormat::OpalMediaFormat(const char * fullName,
-                                 unsigned dsid,
+                                 const OpalMediaType & theMediaType,
                                  RTP_DataFrame::PayloadTypes pt,
                                  const char * en,
                                  BOOL     nj,
@@ -675,7 +991,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 
   rtpPayloadType = pt;
   rtpEncodingName = en;
-  defaultSessionID = dsid;
+  mediaType = &theMediaType;
 
   if (nj)
     AddOption(new OpalMediaOptionBoolean(NeedsJitterOption, true, OpalMediaOption::OrMerge, true));
@@ -732,7 +1048,7 @@ OpalMediaFormat & OpalMediaFormat::operator=(const OpalMediaFormat &format)
   options.MakeUnique();
   rtpPayloadType = format.rtpPayloadType;
   rtpEncodingName = format.rtpEncodingName;
-  defaultSessionID = format.defaultSessionID;
+  mediaType = format.mediaType;
   return *this;  
 }
 
@@ -1031,7 +1347,7 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 				                         unsigned clockRate,
                                    time_t timeStamp)
   : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultAudioSessionID,
+                    OpalDefaultAudioMediaType,
                     rtpPayloadType,
                     encodingName,
                     TRUE,
@@ -1066,7 +1382,7 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  unsigned bitRate,
                                    time_t timeStamp)
   : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultVideoSessionID,
+                    OpalDefaultVideoMediaType,
                     rtpPayloadType,
                     encodingName,
                     FALSE,
@@ -1133,8 +1449,9 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & fo
       PWaitAndSignal mutex(GetMediaFormatsListMutex());
       const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
       PINDEX idx = registeredFormats.FindFormat(format);
-      if (idx != P_MAX_INDEX)
+      if (idx != P_MAX_INDEX) {
         OpalMediaFormatBaseList::Append(&registeredFormats[idx]);
+      }
     }
   }
   return *this;

@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2073.2.1  2007/02/07 08:51:03  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.72  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -294,9 +306,6 @@
 #if OPAL_VIDEO
 #include <codec/vidcodec.h>
 #endif
-
-#include <h224/h224handler.h>
-#include <h224/h281handler.h>
 
 #include "../../version.h"
 
@@ -775,12 +784,12 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 
 BOOL OpalManager::IsMediaBypassPossible(const OpalConnection & source,
                                         const OpalConnection & destination,
-                                        unsigned sessionID) const
+                                        const OpalMediaType & mediaType) const
 {
-  PTRACE(3, "OpalMan\tIsMediaBypassPossible: session " << sessionID);
+  PTRACE(3, "OpalMan\tIsMediaBypassPossible: session " << mediaType);
 
-  return source.IsMediaBypassPossible(sessionID) &&
-         destination.IsMediaBypassPossible(sessionID);
+  return source.IsMediaBypassPossible(mediaType) &&
+         destination.IsMediaBypassPossible(mediaType);
 }
 
 
@@ -937,27 +946,6 @@ OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection &
 OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
-}
-
-
-OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection,
-														 unsigned sessionID) const
-{
-#ifdef OPAL_H224
-  return new OpalH224Handler(connection, sessionID);
-#else
-  return NULL;
-#endif
-}
-
-
-OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
-{
-#ifdef OPAL_H224
-  return new OpalH281Handler(h224Handler);
-#else
-  return NULL;
-#endif
 }
 
 
