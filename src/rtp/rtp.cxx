@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047  2006/12/08 04:12:12  csoutheren
+ * Revision 1.2047.2.1  2007/02/07 08:51:03  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.46  2006/12/08 04:12:12  csoutheren
  * Applied 1589274 - better rtp error handling of malformed rtcp packet
  * Thanks to frederich
  *
@@ -486,6 +498,7 @@
 
 #include <rtp/rtp.h>
 
+#include <opal/mediafmt.h>
 #include <rtp/jitter.h>
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
@@ -829,16 +842,14 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 
 RTP_Session::RTP_Session(
                          PHandleAggregator * _aggregator, 
-                         unsigned id, RTP_UserData * data, BOOL autoDelete)
+                         const OpalMediaType & _mediaType, RTP_UserData * data, BOOL autoDelete)
 : canonicalName(PProcess::Current().GetUserName()),
   toolName(PProcess::Current().GetName()),
   reportTimeInterval(0, 12),  // Seconds
   reportTimer(reportTimeInterval),
-  aggregator(_aggregator)
+  aggregator(_aggregator),
+  mediaType(_mediaType)
 {
-  PAssert(id > 0 && id < 256, PInvalidParameter);
-  sessionID = (BYTE)id;
-
   referenceCount = 1;
   userData = data;
   autoDeleteUserData = autoDelete;
@@ -1641,15 +1652,15 @@ RTP_SessionManager & RTP_SessionManager::operator=(const RTP_SessionManager & sm
 }
 
 
-RTP_Session * RTP_SessionManager::UseSession(unsigned sessionID)
+RTP_Session * RTP_SessionManager::UseSession(const OpalMediaType & mediaType)
 {
   PWaitAndSignal m(mutex);
 
-  RTP_Session * session = sessions.GetAt(sessionID);
+  RTP_Session * session = sessions.GetAt(mediaType.GetUniqueID());
   if (session == NULL) 
     return NULL; 
   
-  PTRACE(3, "RTP\tFound existing session " << sessionID);
+  PTRACE(3, "RTP\tFound existing session " << mediaType);
   session->IncrementReference();
 
   return session;
@@ -1662,23 +1673,25 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
   
   if (session != NULL) {
     PTRACE(2, "RTP\tAdding session " << *session);
-    sessions.SetAt(session->GetSessionID(), session);
+    sessions.SetAt(session->GetMediaType().GetUniqueID(), session);
   }
 }
 
 
-void RTP_SessionManager::ReleaseSession(unsigned sessionID,
+void RTP_SessionManager::ReleaseSession(const OpalMediaType & mediaType,
                                         BOOL clearAll)
 {
-  PTRACE(2, "RTP\tReleasing session " << sessionID);
+  PTRACE(2, "RTP\tReleasing session " << mediaType);
 
   mutex.Wait();
+  
+  unsigned id = mediaType.GetUniqueID();
 
-  while (sessions.Contains(sessionID)) {
-    if (sessions[sessionID].DecrementReference()) {
-      PTRACE(3, "RTP\tDeleting session " << sessionID);
-      sessions[sessionID].SetJitterBufferSize(0, 0);
-      sessions.SetAt(sessionID, NULL);
+  while (sessions.Contains(id)) {
+    if (sessions[id].DecrementReference()) {
+      PTRACE(3, "RTP\tDeleting session " << mediaType);
+      sessions[id].SetJitterBufferSize(0, 0);
+      sessions.SetAt(id, NULL);
     }
     if (!clearAll)
       break;
@@ -1688,14 +1701,14 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID,
 }
 
 
-RTP_Session * RTP_SessionManager::GetSession(unsigned sessionID) const
+RTP_Session * RTP_SessionManager::GetSession(const OpalMediaType & mediaType) const
 {
   PWaitAndSignal wait(mutex);
-  if (!sessions.Contains(sessionID))
+  if (!sessions.Contains(mediaType.GetUniqueID()))
     return NULL;
 
-  PTRACE(3, "RTP\tFound existing session " << sessionID);
-  return &sessions[sessionID];
+  PTRACE(3, "RTP\tFound existing session " << mediaType);
+  return &sessions[mediaType.GetUniqueID()];
 }
 
 
@@ -1741,8 +1754,8 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
 }
 
 
-RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, unsigned id, BOOL _remoteIsNAT)
-  : RTP_Session(_aggregator, id),
+RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, const OpalMediaType & _mediaType, BOOL _remoteIsNAT)
+  : RTP_Session(_aggregator, _mediaType),
     remoteAddress(0),
     remoteTransmitAddress(0),
     remoteIsNAT(_remoteIsNAT)
@@ -1883,7 +1896,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
   if (canonicalName.Find('@') == P_MAX_INDEX)
     canonicalName += '@' + GetLocalHostName();
 
-  PTRACE(2, "RTP_UDP\tSession " << sessionID << " created: "
+  PTRACE(2, "RTP_UDP\tSession " << mediaType << " created: "
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
   
@@ -1905,7 +1918,7 @@ void RTP_UDP::Close(BOOL reading)
 {
   if (reading) {
     if (!shutdownRead) {
-      PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
+      PTRACE(3, "RTP_UDP\tSession " << mediaType << ", Shutting down read.");
       syncSourceIn = 0;
       shutdownRead = TRUE;
       if (dataSocket != NULL && controlSocket != NULL) {
@@ -1918,7 +1931,7 @@ void RTP_UDP::Close(BOOL reading)
     }
   }
   else {
-    PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down write.");
+    PTRACE(3, "RTP_UDP\tSession " << mediaType << ", Shutting down write.");
     shutdownWrite = TRUE;
   }
 }
@@ -1937,7 +1950,7 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
     return TRUE;
   }
 
-  PTRACE(3, "RTP_UDP\tSetRemoteSocketInfo: session=" << sessionID << ' '
+  PTRACE(3, "RTP_UDP\tSetRemoteSocketInfo: session=" << mediaType << ' '
          << (isDataPort ? "data" : "control") << " channel, "
             "new=" << address << ':' << port << ", "
             "local=" << localAddress << ':' << localDataPort << '-' << localControlPort << ", "
@@ -1976,7 +1989,7 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
     int selectStatus = PSocket::Select(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
-      PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
+      PTRACE(3, "RTP_UDP\tSession " << mediaType << ", Read shutdown.");
       shutdownRead = FALSE;
       return FALSE;
     }
@@ -2005,17 +2018,17 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
         break;
 
       case 0 :
-        PTRACE(5, "RTP_UDP\tSession " << sessionID << ", check for sending report.");
+        PTRACE(5, "RTP_UDP\tSession " << mediaType << ", check for sending report.");
         if (!SendReport())
           return FALSE;
         break;
 
       case PSocket::Interrupted:
-        PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Interrupted.");
+        PTRACE(3, "RTP_UDP\tSession " << mediaType << ", Interrupted.");
         return FALSE;
 
       default :
-        PTRACE(1, "RTP_UDP\tSession " << sessionID << ", Select error: "
+        PTRACE(1, "RTP_UDP\tSession " << mediaType << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
         return FALSE;
     }
@@ -2061,7 +2074,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       	allowRemoteTransmitAddressChange = FALSE;
       }
       else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
-      	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
+      	PTRACE(1, "RTP_UDP\tSession " << mediaType << ", "
 	             << channelName << " PDU from incorrect host, "
 	            " is " << addr << " should be " << remoteTransmitAddress);
 	      return RTP_Session::e_IgnorePacket;
@@ -2076,7 +2089,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   switch (socket.GetErrorNumber()) {
     case ECONNRESET :
     case ECONNREFUSED :
-      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
+      PTRACE(2, "RTP_UDP\tSession " << mediaType << ", "
              << channelName << " port on remote not ready.");
       return RTP_Session::e_IgnorePacket;
 
@@ -2102,7 +2115,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataPDU(RTP_DataFrame & frame)
   // Check received PDU is big enough
   PINDEX pduSize = dataSocket->GetLastReadCount();
   if (pduSize < RTP_DataFrame::MinHeaderSize || pduSize < frame.GetHeaderSize()) {
-    PTRACE(2, "RTP_UDP\tSession " << sessionID
+    PTRACE(2, "RTP_UDP\tSession " << mediaType
            << ", Received data packet too small: " << pduSize << " bytes");
     return e_IgnorePacket;
   }
@@ -2122,7 +2135,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 
   PINDEX pduSize = controlSocket->GetLastReadCount();
   if (pduSize < 4 || pduSize < 4+frame.GetPayloadSize()) {
-    PTRACE(2, "RTP_UDP\tSession " << sessionID
+    PTRACE(2, "RTP_UDP\tSession " << mediaType
            << ", Received control packet too small: " << pduSize << " bytes");
     return e_IgnorePacket;
   }
@@ -2135,7 +2148,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
 {
   if (shutdownWrite) {
-    PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Write shutdown.");
+    PTRACE(3, "RTP_UDP\tSession " << mediaType << ", Write shutdown.");
     shutdownWrite = FALSE;
     return FALSE;
   }
@@ -2159,11 +2172,11 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
     switch (dataSocket->GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", data port on remote not ready.");
+        PTRACE(2, "RTP_UDP\tSession " << mediaType << ", data port on remote not ready.");
         break;
 
       default:
-        PTRACE(1, "RTP_UDP\tSession " << sessionID
+        PTRACE(1, "RTP_UDP\tSession " << mediaType
                << ", Write error on data port ("
                << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << dataSocket->GetErrorText(PChannel::LastWriteError));
@@ -2196,11 +2209,11 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
     switch (controlSocket->GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", control port on remote not ready.");
+        PTRACE(2, "RTP_UDP\tSession " << mediaType << ", control port on remote not ready.");
         break;
 
       default:
-        PTRACE(1, "RTP_UDP\tSession " << sessionID
+        PTRACE(1, "RTP_UDP\tSession " << mediaType
                << ", Write error on control port ("
                << controlSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << controlSocket->GetErrorText(PChannel::LastWriteError));

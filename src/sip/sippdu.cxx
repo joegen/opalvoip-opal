@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117  2007/01/10 09:16:55  csoutheren
+ * Revision 1.2117.2.1  2007/02/07 08:51:03  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.116  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
  * Revision 2.115  2006/12/18 03:18:42  csoutheren
@@ -2351,12 +2363,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetDate() ;                             // now
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
 
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
-      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
-#endif
+  connection.BuildSDP(sdp, rtpSessions);
   connection.OnCreatingINVITE(*this);
 }
 
@@ -2368,22 +2375,17 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
 
   rtpSessions = sm;
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
-      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
-#endif
+  connection.BuildSDP(sdp, rtpSessions);
   connection.OnCreatingINVITE(*this);
 }
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsigned rtpSessionId)
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, const OpalMediaType & mediaType)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now
   mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
 
-  connection.BuildSDP(sdp, rtpSessions, rtpSessionId);
+  connection.BuildSDP(sdp, rtpSessions, mediaType);
 }
 
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)

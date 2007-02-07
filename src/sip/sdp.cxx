@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2042  2006/11/21 01:01:00  csoutheren
+ * Revision 1.2042.2.1  2007/02/07 08:51:03  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.41  2006/11/21 01:01:00  csoutheren
  * Ensure SDP only uses codecs that are valid for SIP
  *
  * Revision 2.40  2006/08/20 03:45:55  csoutheren
@@ -204,14 +216,16 @@
 #endif
 
 #include <sip/sdp.h>
+#include <sip/sdpcaps.h>
 
 #include <ptlib/socket.h>
 #include <opal/transports.h>
 
 
 #define SIP_DEFAULT_SESSION_NAME  "Opal SIP Session"
-#define	SDP_MEDIA_TRANSPORT       "RTP/AVP"
-#define	SDP_MEDIA_TRANSPORT_UDPTL "udptl"
+
+#define RTP_TRANSPORT_STRING "RTP/AVP"
+#define UTPTL_TRANSPORT_STRING "udptl"
 
 #define new PNEW
 
@@ -276,111 +290,21 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
   : payloadType(pt),
     clockRate(_clockRate),
     encodingName(_name),
-    parameters(_parms),
-    nteSet(TRUE)
+    parameters(_parms)
 {
-  if (encodingName == OpalRFC2833.GetEncodingName())
-    AddNTEString("0-15");
 }
-
-
-SDPMediaFormat::SDPMediaFormat(const PString & nteString, RTP_DataFrame::PayloadTypes pt)
-
-  : payloadType(pt),
-    clockRate(8000),
-    encodingName(OpalRFC2833.GetEncodingName()),
-    nteSet(TRUE)
-{
-  AddNTEString(nteString);
-}
-
-
-void SDPMediaFormat::SetFMTP(const PString & str)
-{
-  if (encodingName == OpalRFC2833.GetEncodingName()) {
-    nteSet.RemoveAll();
-    AddNTEString(str);
-  }
-  else {
-    fmtp = str;
-  }
-}
-
-
-PString SDPMediaFormat::GetFMTP() const
-{
-  if (encodingName == OpalRFC2833.GetEncodingName())
-    return GetNTEString();
-  else
-    return fmtp;
-}
-
-
-PString SDPMediaFormat::GetNTEString() const
-{
-  POrdinalSet & nteSetNc = (POrdinalSet &)nteSet;
-  PString str;
-  PINDEX i = 0;
-  while (i < nteSet.GetSize()) {
-    if (!nteSetNc.Contains(POrdinalKey(i)))
-      i++;
-    else {
-      PINDEX start = i++;
-      while (nteSetNc.Contains(POrdinalKey(i)))
-        i++;
-      if (!str.IsEmpty())
-        str += ",";
-      str += PString(PString::Unsigned, start);
-      if (i > start+1)
-        str += PString('-') + PString(PString::Unsigned, i-1);
-    }
-  }
-
-  return str;
-}
-
-
-void SDPMediaFormat::AddNTEString(const PString & str)
-{
-  PStringArray tokens = str.Tokenise(",", FALSE);
-  PINDEX i;
-  for (i = 0; i < tokens.GetSize(); i++)
-    AddNTEToken(tokens[i]);
-}
-
-
-void SDPMediaFormat::AddNTEToken(const PString & ostr)
-{
-  PString str = ostr.Trim();
-  if (str[0] == ',')
-    str = str.Mid(1);
-  if (str.Right(1) == ",")
-    str = str.Left(str.GetLength()-1);
-  PINDEX pos = str.Find('-');
-  if (pos == P_MAX_INDEX)
-    nteSet.Include(new POrdinalKey(str.AsInteger()));
-  else {
-    PINDEX from = str.Left(pos).AsInteger();
-    PINDEX to   = str.Mid(pos+1).AsInteger();
-    while (from <= to)
-      nteSet.Include(new POrdinalKey(from++));
-  }
-}
-
 
 void SDPMediaFormat::PrintOn(ostream & strm) const
 {
-  PAssert(!encodingName.IsEmpty(), "SDPAudioMediaFormat encoding name is empty");
+  PAssert(!encodingName.IsEmpty(), "SDPMediaFormat encoding name is empty");
 
   strm << "a=rtpmap:" << (int)payloadType << ' ' << encodingName << '/' << clockRate;
   if (!parameters.IsEmpty())
     strm << '/' << parameters;
   strm << "\r\n";
 
-  PString fmtpString = GetFMTP();
-
-  if (!fmtpString.IsEmpty())
-    strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
+  if (!fmtp.IsEmpty())
+    strm << "a=fmtp:" << (int)payloadType << ' ' << fmtp << "\r\n";
 }
 
 
@@ -392,43 +316,107 @@ OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 
 //////////////////////////////////////////////////////////////////////////////
 
-#if PTRACING
-ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
+
+SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, 
+                                         OpalMediaType::MIMEMediaType _mimeMediaType,
+                                         Transport _transport)
+  : transportAddress(address)
 {
-  static const char * const MediaTypeNames[SDPMediaDescription::NumMediaTypes] = {
-    "Audio", "Video", "Application", "Image", "Unknown"
-  };
-
-  if (type < PARRAYSIZE(MediaTypeNames) && MediaTypeNames[type] != NULL)
-    out << MediaTypeNames[type];
-  else
-    out << "MediaTypes<" << (int)type << '>';
-
-  return out;
-}
-#endif
-
-SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
-  : mediaType(_mediaType),
-    transportAddress(address),
-	packetTime(0)
-{
-  switch (mediaType) {
-    case Audio:
-      media = "audio";
-      break;
-    case Video:
-      media = "video";
-      break;
-    case Image:
-      media = "image";
-      break;
-    default:
-      break;
-  }
-
-  transport = (mediaType == Image) ? SDP_MEDIA_TRANSPORT_UDPTL : SDP_MEDIA_TRANSPORT;
+  mimeMediaType = _mimeMediaType;
+  portCount = 1;
+  transport = _transport;
   direction = Undefined;
+  packetTime = 0;
+}
+
+
+void SDPMediaDescription::PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const
+{
+  PIPSocket::Address commonIP;
+  commonAddr.GetIpAddress(commonIP);
+    
+  PIPSocket::Address transportIP;
+  transportAddress.GetIpAddress(transportIP);
+    
+  PString connectString;
+  if (commonIP != transportIP)
+    connectString = GetConnectAddressString(transportAddress);
+    
+  PrintOn(str, connectString);
+}
+
+void SDPMediaDescription::PrintOn(ostream & str) const
+{
+  PIPSocket::Address ip;
+  transportAddress.GetIpAddress(ip);
+  PrintOn(str, GetConnectAddressString(transportAddress));
+}
+
+void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+{
+  //
+  // if no media formats, then do not output the media header
+  // this avoids displaying an empty media header with no payload types
+  // when (for example) video has been disabled
+  //
+  if (formats.GetSize() == 0)
+    return;
+    
+  PIPSocket::Address ip;
+  WORD port;
+  transportAddress.GetIpAndPort(ip, port);
+    
+  // output media header
+  str << "m=" << mimeMediaType << " "<< port;
+  if (portCount > 1) {
+    str << '/' << portCount;
+  }
+    
+  str << " " << transport;
+    
+  if (transport == RTP) {
+        
+    // output RTP payload types
+    PINDEX i;
+    for (i = 0; i < formats.GetSize(); i++)
+      str << ' ' << (int)formats[i].GetPayloadType();
+    str << "\r\n";
+        
+    // output attributes for each payload type
+    for (i = 0; i < formats.GetSize(); i++)
+      str << formats[i];
+        
+    if (packetTime)
+      str << "a=ptime:" << packetTime << "\r\n";
+        
+    // media format direction
+    switch (direction) {
+      case SDPMediaDescription::RecvOnly:
+        str << "a=recvonly" << "\r\n";
+        break;
+      case SDPMediaDescription::SendOnly:
+        str << "a=sendonly" << "\r\n";
+        break;
+      case SDPMediaDescription::SendRecv:
+        str << "a=sendrecv" << "\r\n";
+        break;
+      case SDPMediaDescription::Inactive:
+        str << "a=inactive" << "\r\n";
+        break;
+      default:
+        break;
+    }
+  }
+    
+  else {
+    PINDEX i;
+    for (i = 0; i < formats.GetSize(); i++)
+      str << ' ' << formats[i].GetEncodingName();
+    str << "\r\n";
+  }
+    
+  if (!connectString.IsEmpty())
+    str << "c=" << connectString << "\r\n";
 }
 
 
@@ -440,23 +428,14 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
     return FALSE;
   }
-
-  media = tokens[0];
-  if (media == "video")
-    mediaType = Video;
-  else if (media == "audio")
-    mediaType = Audio;
-  else if (media == "image")
-    mediaType = Image;
-  else {
-    PTRACE(1, "SDP\tUnknown media type " << media);
-    mediaType = Unknown;
+  
+  mimeMediaType = OpalMediaType::ParseMIMEMediaType(tokens[0]);
+  if (mimeMediaType == OpalMediaType::Unknown) {
+    PTRACE(1, "SDP\tUnknown media type " << tokens[0]);
   }
 
-  PString portStr  = tokens[1];
-  transport        = tokens[2];
-
   // parse the port and port count
+  PString portStr  = tokens[1];
   PINDEX pos = portStr.Find('/');
   if (pos == P_MAX_INDEX) 
     portCount = 1;
@@ -467,26 +446,40 @@ BOOL SDPMediaDescription::Decode(const PString & str)
   }
   unsigned port = portStr.AsUnsigned();
   PTRACE(4, "SDP\tMedia session port=" << port);
-
-  if ((transport != SDP_MEDIA_TRANSPORT) && (transport != SDP_MEDIA_TRANSPORT_UDPTL)) {
-    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
-    return FALSE;
-  }
-
   PIPSocket::Address ip;
   transportAddress.GetIpAddress(ip);
   transportAddress = OpalTransportAddress(ip, (WORD)port);
 
+  // parse the transport
+  transport = ParseTransport(tokens[2]);
+  if ((transport != RTP) && (transport != UDPTL)) {
+    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+    return FALSE;
+  }
+
   // create the format list
   PINDEX i;
   for (i = 3; i < tokens.GetSize(); i++) {
-    if (mediaType == Image)
+    if (transport == UDPTL)
       formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)RTP_DataFrame::DynamicBase, tokens[i], 0));
     else
       formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
   }
 
   return TRUE;
+}
+
+
+const OpalMediaType & SDPMediaDescription::GetMediaType() const
+{
+  for (PINDEX i = 0; i < formats.GetSize(); i++) {
+    OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
+    if(!opalFormat.IsEmpty()) {
+      return opalFormat.GetMediaType();
+    }
+  }
+    
+  return OpalUnknownMediaType;
 }
 
 
@@ -512,8 +505,8 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   PString str  = ostr.Mid(pos+1);
 
   if (attr *= "ptime") {                // caseless comparison
-      packetTime = str.AsUnsigned() ;
-      return;
+    packetTime = str.AsUnsigned() ;
+    return;
   }
 
   // extract the RTP payload type
@@ -567,95 +560,13 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
 }
 
 
-void SDPMediaDescription::PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const
+void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 {
-  PIPSocket::Address commonIP;
-  commonAddr.GetIpAddress(commonIP);
-
-  PIPSocket::Address transportIP;
-  transportAddress.GetIpAddress(transportIP);
-
-  PString connectString;
-  if (commonIP != transportIP)
-    connectString = GetConnectAddressString(transportAddress);
-
-  PrintOn(str, connectString);
-}
-
-void SDPMediaDescription::PrintOn(ostream & str) const
-{
-  PIPSocket::Address ip;
-  transportAddress.GetIpAddress(ip);
-  PrintOn(str, GetConnectAddressString(transportAddress));
-}
-
-void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
-{
-  //
-  // if no media formats, then do not output the media header
-  // this avoids displaying an empty media header with no payload types
-  // when (for example) video has been disabled
-  //
-  if (formats.GetSize() == 0)
-    return;
-
-  PIPSocket::Address ip;
-  WORD port;
-  transportAddress.GetIpAndPort(ip, port);
-
-  // output media header
-  str << "m=" 
-      << media << " "
-      << port << " "
-      << transport;
-
-  if (transport == SDP_MEDIA_TRANSPORT) {
-
-    // output RTP payload types
-    PINDEX i;
-    for (i = 0; i < formats.GetSize(); i++)
-      str << ' ' << (int)formats[i].GetPayloadType();
-    str << "\r\n";
-
-    // output attributes for each payload type
-    for (i = 0; i < formats.GetSize(); i++)
-      str << formats[i];
-
-    if (packetTime)
-      str << "a=ptime:" << packetTime << "\r\n";
-
-    // media format direction
-    switch (direction) {
-      case SDPMediaDescription::RecvOnly:
-        str << "a=recvonly" << "\r\n";
-        break;
-      case SDPMediaDescription::SendOnly:
-        str << "a=sendonly" << "\r\n";
-        break;
-      case SDPMediaDescription::SendRecv:
-        str << "a=sendrecv" << "\r\n";
-        break;
-      case SDPMediaDescription::Inactive:
-        str << "a=inactive" << "\r\n";
-        break;
-      default:
-        break;
-    }
-  }
-
-  else {
-    PINDEX i;
-    for (i = 0; i < formats.GetSize(); i++)
-      str << ' ' << formats[i].GetEncodingName();
-    str << "\r\n";
-  }
-
-  if (!connectString.IsEmpty())
-    str << "c=" << connectString << "\r\n";
+    formats.Append(sdpMediaFormat);
 }
 
 
-OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) const
+OpalMediaFormatList SDPMediaDescription::GetMediaFormats(const OpalMediaType & mediaType) const
 {
   OpalMediaFormatList list;
 
@@ -663,9 +574,9 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
     if (opalFormat.IsEmpty())
-      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
+      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to a codec codec");
     else {
-      if (opalFormat.GetDefaultSessionID() == sessionID && 
+      if (opalFormat.GetMediaType() == mediaType && 
           opalFormat.IsValidForProtocol("sip") &&
           opalFormat.GetEncodingName() != NULL) {
         PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
@@ -675,27 +586,6 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
   }
 
   return list;
-}
-
-void SDPMediaDescription::CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const
-{
-  OpalMediaFormatList list;
-
-  PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++) {
-    OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
-    if (!opalFormat.IsEmpty() && 
-         opalFormat.GetDefaultSessionID() == sessionID &&
-         opalFormat.GetPayloadType() != formats[i].GetPayloadType()) {
-      map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), formats[i].GetPayloadType()));
-      PTRACE(2, "SIP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
-    }
-  }
-}
-
-void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
-{
-  formats.Append(sdpMediaFormat);
 }
 
 
@@ -728,21 +618,61 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
   }
 
   SDPMediaFormat * sdpFormat = new SDPMediaFormat(payloadType, encodingName, clockRate);
-  PString fmtp = mediaFormat.GetOptionString("fmtp");
-  if (!fmtp.IsEmpty())
-    sdpFormat->SetFMTP(fmtp);
+  SDPCapability::GetCapability(mediaFormat).OnSendingSDP(mediaFormat, *sdpFormat);
   AddSDPMediaFormat(sdpFormat);
 }
 
 
-void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map)
+void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType, const RTP_DataFrame::PayloadMapType & map)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat & mediaFormat = mediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == session &&
+    if (mediaFormat.GetMediaType() == mediaType &&
         mediaFormat.GetEncodingName() != NULL &&
         mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
       AddMediaFormat(mediaFormat, map);
+  }
+}
+
+
+void SDPMediaDescription::CreateRTPMap(const OpalMediaType & mediaType, RTP_DataFrame::PayloadMapType & map) const
+{
+  OpalMediaFormatList list;
+    
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++) {
+    OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
+    if (!opalFormat.IsEmpty() && 
+      opalFormat.GetMediaType() == mediaType &&
+      opalFormat.GetPayloadType() != formats[i].GetPayloadType()) {
+      map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), formats[i].GetPayloadType()));
+      PTRACE(2, "SIP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
+    }
+  }
+}
+
+
+PString SDPMediaDescription::GetTransportString(Transport transport)
+{
+  switch (transport) {
+    case RTP:
+      return RTP_TRANSPORT_STRING;
+    case UDPTL:
+      return UTPTL_TRANSPORT_STRING;
+    default:
+      return "unknown";
+  }
+}
+
+
+SDPMediaDescription::Transport SDPMediaDescription::ParseTransport(const PString & transportString)
+{
+  if (transportString *= RTP_TRANSPORT_STRING) {
+    return RTP;
+  } else if (transportString *= UTPTL_TRANSPORT_STRING) {
+    return UDPTL;
+  } else {
+    return Unknown;
   }
 }
 
@@ -911,11 +841,11 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'p' : // phone number
 	            break;
             case 'b' : // bandwidth information
-	            thePos = value.Find(':');
-	            if (thePos != P_MAX_INDEX) {
-		            bandwidthModifier = value.Left(thePos);
-		            bandwidthValue = value.Mid(thePos+1).AsInteger();
-	            }
+                thePos = value.Find(':');
+                if (thePos != P_MAX_INDEX) {
+                  bandwidthModifier = value.Left(thePos);
+                  bandwidthValue = value.Mid(thePos+1).AsInteger();
+                }
 	            break;
             case 'z' : // time zone adjustments
             case 'k' : // encryption key
@@ -923,13 +853,13 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
             case 'a' : // zero or more session attribute lines
               if (value *= "sendonly")
-		            SetDirection (SDPMediaDescription::SendOnly);
+                  SetDirection (SDPMediaDescription::SendOnly);
 	            else if (value *= "recvonly")
-		            SetDirection (SDPMediaDescription::RecvOnly);
+                  SetDirection (SDPMediaDescription::RecvOnly);
 	            else if (value *= "sendrecv")
-		            SetDirection (SDPMediaDescription::SendRecv);
+                  SetDirection (SDPMediaDescription::SendRecv);
 	            else if (value *= "inactive")
-		            SetDirection (SDPMediaDescription::Inactive);
+                  SetDirection (SDPMediaDescription::Inactive);
 	            break;
 
             default:
@@ -986,12 +916,12 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 
 
 SDPMediaDescription * SDPSessionDescription::GetMediaDescription(
-                                    SDPMediaDescription::MediaType rtpMediaType) const
+                                    OpalMediaType::MIMEMediaType mimeMediaType) const
 {
-  // look for matching media type
+  // look for matching mime media type
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if (mediaDescriptions[i].GetMediaType() == rtpMediaType)
+    if (mediaDescriptions[i].GetMIMEMediaType() == mimeMediaType)
       return &mediaDescriptions[i];
   }
 
@@ -999,11 +929,25 @@ SDPMediaDescription * SDPSessionDescription::GetMediaDescription(
 }
 
 
-SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
+SDPMediaDescription * SDPSessionDescription::GetMediaDescription(
+                                        const OpalMediaType & mediaType) const
 {
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if ((mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Video && sessionID == OpalMediaFormat::DefaultVideoSessionID) || (mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Audio && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
+    if (mediaDescriptions[i].GetMediaType() == mediaType) {
+      return &mediaDescriptions[i];
+    }
+  }
+
+  return NULL;
+}
+
+
+SDPMediaDescription::Direction SDPSessionDescription::GetDirection(const OpalMediaType & mediaType) const
+{
+  PINDEX i;
+  for (i = 0; i < mediaDescriptions.GetSize(); i++) {
+    if (mediaDescriptions[i].GetMediaType() == mediaType) {
       if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
 	      return mediaDescriptions[i].GetDirection();
       else
