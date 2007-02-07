@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2028  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2028.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.27  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -347,7 +359,7 @@ class OpalCall : public PSafeObject
     virtual BOOL OpenSourceMediaStreams(
       const OpalConnection & connection,        ///<  Connection requesting open
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                        ///<  Session to start streams on
+      const OpalMediaType & mediaType           ///<  Media Type to start
     );
 
     /**Connect up the media streams on the connections.
@@ -372,7 +384,7 @@ class OpalCall : public PSafeObject
      */
     virtual BOOL IsMediaBypassPossible(
       const OpalConnection & connection,  ///<  Source connection
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaType & mediaType     ///<  Media type for media channel
     ) const;
   //@}
 

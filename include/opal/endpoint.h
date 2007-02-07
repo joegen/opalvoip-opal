@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2043.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.42  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -195,8 +207,6 @@
 
 class OpalCall;
 class OpalMediaStream;
-class OpalH224Handler;
-class OpalH281Handler;
 
 
 /**This class describes an endpoint base class.
@@ -728,33 +738,6 @@ class OpalEndPoint : public PObject
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
-    ) const;
-	
-	/** Create an instance of the H.224 protocol handler.
-        This is called when the subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer to a
-        heap variable (using new) as it will be automatically deleted when the Connection
-        is deleted.
-		
-        The default behaviour calls the OpalManager function of the same name.
-      */
-    virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, 
-      unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer to a
-        heap variable (using new) as it will be automatically deleted when the Connection
-        is deleted.
-		
-        The default behaviour calls the OpalManager function of the same name
-      */
-    virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
     ) const;
 
   //@}

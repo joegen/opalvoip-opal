@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2041  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2041.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.40  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -204,7 +216,6 @@ class OpalMediaStream : public PObject
       */
     OpalMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
 
@@ -398,9 +409,9 @@ class OpalMediaStream : public PObject
       */
     BOOL IsSink() const { return !isSource; }
 
-    /**Get the session number of the stream.
+    /**Get the media type of the stream.
      */
-    unsigned GetSessionID() const { return sessionID; }
+    const OpalMediaType & GetMediaType() const { return GetMediaFormat().GetMediaType(); }
 
     /**Get the timestamp of last read.
       */
@@ -464,7 +475,6 @@ class OpalMediaStream : public PObject
 
   protected:
     OpalMediaFormat mediaFormat;
-    unsigned        sessionID;
     BOOL	    paused;
     BOOL            isSource;
     BOOL            isOpen;
@@ -495,7 +505,6 @@ class OpalNullMediaStream : public OpalMediaStream
       */
     OpalNullMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
   //@}
@@ -630,7 +639,6 @@ class OpalRawMediaStream : public OpalMediaStream
       */
     OpalRawMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       PChannel * channel,                  ///<  I/O channel to stream to/from
       BOOL autoDelete                      ///<  Automatically delete channel
@@ -701,7 +709,6 @@ class OpalFileMediaStream : public OpalRawMediaStream
       */
     OpalFileMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       PFile * file,                        ///<  File to stream to/from
       BOOL autoDelete = TRUE               ///<  Automatically delete file
@@ -711,7 +718,6 @@ class OpalFileMediaStream : public OpalRawMediaStream
       */
     OpalFileMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       const PFilePath & path               ///<  File path to stream to/from
     );
@@ -747,7 +753,6 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       */
     OpalAudioMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       PINDEX buffers,                      ///<  Number of buffers on sound channel
       PSoundChannel * channel,             ///<  Audio device to stream to/from
@@ -758,7 +763,6 @@ class OpalAudioMediaStream : public OpalRawMediaStream
       */
     OpalAudioMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       PINDEX buffers,                      ///<  Number of buffers on sound channel
       const PString & deviceName           ///<  Name of audio device to stream to/from
@@ -808,7 +812,6 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     OpalVideoMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       PVideoInputDevice * inputDevice,     ///<  Device to use for video grabbing
       PVideoOutputDevice * outputDevice,   ///<  Device to use for video display
       BOOL autoDelete = TRUE               ///<  Automatically delete PVideoDevices
@@ -886,7 +889,6 @@ class OpalUDPMediaStream : public OpalMediaStream
       */
     OpalUDPMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       OpalTransportUDP & transport         ///<  UDP transport instance
     );

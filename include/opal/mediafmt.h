@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2046.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.45  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.44  2006/11/21 01:00:59  csoutheren
@@ -73,7 +85,19 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2046.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.45  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.44  2006/11/21 01:00:59  csoutheren
@@ -302,8 +326,170 @@
 #undef max
 #endif
 
-class OpalMediaFormat;
+class OpalMediaType;
 
+///////////////////////////////////////////////////////////////////////////////
+
+PLIST(OpalMediaTypeBaseList, OpalMediaType);
+
+class OpalMediaTypeList : public OpalMediaTypeBaseList
+{
+  PCLASSINFO(OpalMediaTypeList, OpalMediaTypeBaseList);
+public:
+  /**@name Construction */
+  //@{
+  /**Create an empty media type list.
+    */
+  OpalMediaTypeList();
+    
+  /**Create a media format list with one media type in it.
+    */
+  OpalMediaTypeList(
+                    const OpalMediaType & type    ///<  Type to add
+                    );
+    
+  /**Create a copy of a media type list.
+    */
+  OpalMediaTypeList(const OpalMediaTypeList & l) : OpalMediaTypeBaseList(l) { }
+  //@}
+    
+  /**@name Operations */
+  //@{
+  /**Add a type to the list.
+     If the type is invalid or already in the list then it is not added.
+    */
+  OpalMediaTypeList & operator+=(
+                                 const OpalMediaType & type    ///<  Type to add
+                                 );
+    
+  /**Add the type contained in the other list to the list.
+     If one type is already in the list then it is not added.
+    */
+  OpalMediaTypeList & operator+=(
+                                 const OpalMediaTypeList & types    ///<  types to add
+                                 );
+    
+  /**Remove a type from the list.
+     If the format is invalid or not in the list then this does nothing.
+    */
+  OpalMediaTypeList & operator-=(
+                                 const OpalMediaType & type    ///<  Type to remove
+                                 );
+    
+  /**Remove all types in the other list from this list.
+     If one type is not in the list then this does nothing.
+    */
+  OpalMediaTypeList & operator-=(
+                                 const OpalMediaTypeList & types    ///<  types to remove
+                                 );
+    
+  /**Get the position of the type with name
+        
+     Returns P_MAX_INDEX if not in list.
+    */
+  PINDEX FindType(
+                  const PString & name    ///<   string name of the desired type
+                  ) const;
+    
+  /**Determine if the given type is in the list.
+    */
+  BOOL HasType(
+               const OpalMediaType & type
+               ) const;
+    
+  /**Determine if the given type name is in the list.
+    */
+  BOOL HasType(
+               const PString & name
+               ) const { return FindType(name) != P_MAX_INDEX; }
+    
+  /**Remove all the types specified.
+    */
+  void Remove(
+              const PStringArray & mask
+              );
+    
+  /**Reorder the formats in the list.
+     The order variable is an array of names and the list is reordered
+     according to the order in that array.
+    */
+  void Reorder(
+               const PStringArray & order
+               );
+  //@}
+    
+private:
+  virtual PINDEX Append(PObject *) { return P_MAX_INDEX; }
+  virtual PINDEX Insert(const PObject &, PObject *) { return P_MAX_INDEX; }
+  virtual PINDEX InsertAt(PINDEX, PObject *) { return P_MAX_INDEX; }
+  virtual BOOL SetAt(PINDEX, PObject *) { return FALSE; }
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+/**This class describes a media type as used in the OPAL system. A media
+   type describes what type of media is to be transferred. (e.g. audio / video)
+   In addition to that, this class contains a string description which can be
+   used to describe the purpose of this media type. Common is DefaultAudioMedia
+   and DefaultVideoMedia. If there is a secondary video channel, a different
+   media type may be used.
+   The default behaviour of the OPAL system is to open at most one media stream 
+   per media type.
+*/
+class OpalMediaType : public PObject
+{
+  PCLASSINFO(OpalMediaType, PObject);
+    
+public:
+    
+  enum MIMEMediaType {
+    Audio,
+    Video,
+    Application,
+    Image,
+    Message,
+    Multipart,
+    Text,
+    Model,
+    Example,
+    Unknown,
+    NumMIMEMediaTypes
+  };
+    
+  OpalMediaType(const char * name, MIMEMediaType mimeMediaType);
+  OpalMediaType(const OpalMediaType & mediaType);
+  
+  OpalMediaType & operator=(
+                            const OpalMediaType & type ///<  other media type
+                            );
+  
+  const PString & GetName() const { return name; }
+  MIMEMediaType GetMIMEMediaType() const { return mimeMediaType; }
+  unsigned GetUniqueID() const { return uniqueID; }
+  
+  static OpalMediaTypeList GetAllRegisteredMediaTypes();
+  static void GetAllRegisteredMediaTypes(
+                                         OpalMediaTypeList & copy    ///<  List to receive the copy of the master list
+                                         );
+  
+  static PString GetMIMETypeString(MIMEMediaType mimeType);
+  static MIMEMediaType ParseMIMEMediaType(const PString & typeString);
+  
+  virtual Comparison Compare(const PObject & obj) const;
+  virtual void PrintOn(ostream & strm) const;
+    
+  protected:
+    
+  PString name;
+  MIMEMediaType mimeMediaType;
+  unsigned uniqueID;
+};
+
+inline ostream & operator<<(ostream & strm, OpalMediaType::MIMEMediaType mimeType) { return strm << OpalMediaType::GetMIMETypeString(mimeType); }
+
+
+class OpalMediaFormat;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -630,8 +816,6 @@ class OpalMediaOptionString : public OpalMediaOption
    format is the type of any media data that is trasferred between OPAL
    entities. For example an audio codec such as G.723.1 is a media format, a
    video codec such as H.261 is also a media format.
-
-   There
   */
 class OpalMediaFormat : public PCaselessString
 {
@@ -658,7 +842,7 @@ class OpalMediaFormat : public PCaselessString
       */
     OpalMediaFormat(
       const char * fullName,      ///<  Full name of media format
-      unsigned defaultSessionID,  ///<  Default session for codec type
+      const OpalMediaType & mediaType,  ///<  media type for codec
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,  ///<  RTP encoding name
       BOOL     needsJitter,       ///<  Indicate format requires a jitter buffer
@@ -781,16 +965,9 @@ class OpalMediaFormat : public PCaselessString
       */
     const char * GetEncodingName() const { return rtpEncodingName; }
 
-    enum {
-      DefaultAudioSessionID = 1,
-      DefaultVideoSessionID = 2,
-      DefaultDataSessionID  = 3,
-      DefaultH224SessionID  = 4
-    };
-
-    /**Get the default session ID for media format.
+    /**Get the media type ID for media format.
       */
-    unsigned GetDefaultSessionID() const { return defaultSessionID; }
+    const OpalMediaType & GetMediaType() const { return *mediaType; }
 
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
@@ -996,7 +1173,7 @@ class OpalMediaFormat : public PCaselessString
 
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     const char *                 rtpEncodingName;
-    unsigned                     defaultSessionID;
+    const OpalMediaType *        mediaType;
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
     time_t codecBaseTime;
@@ -1007,14 +1184,14 @@ class OpalMediaFormat : public PCaselessString
 
 // A pair of macros to simplify cration of OpalMediFormat instances.
 
-#define OPAL_MEDIA_FORMAT(name, fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
+#define OPAL_MEDIA_FORMAT(name, fullName, mediaType, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
 const class name##_Class : public OpalMediaFormat \
 { \
   public: \
     name##_Class(); \
 } name; \
 name##_Class::name##_Class() \
-      : OpalMediaFormat(fullName, defaultSessionID, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
+      : OpalMediaFormat(fullName, mediaType, rtpPayloadType, encodingName, needsJitter, bandwidth, frameSize, frameTime, timeUnits) \
 
 #if OPAL_AUDIO
 class OpalAudioFormat : public OpalMediaFormat
@@ -1069,6 +1246,15 @@ class OpalVideoFormat : public OpalMediaFormat
     static const char * const AdaptivePacketDelayOption;
 };
 #endif
+
+// List of default media types
+extern const OpalMediaType & GetUnknownMediaType();
+extern const OpalMediaType & GetDefaultAudioMediaType();
+extern const OpalMediaType & GetDefaultVideoMediaType();
+
+#define OpalUnknownMediaType GetUnknownMediaType()
+#define OpalDefaultAudioMediaType GetDefaultAudioMediaType()
+#define OpalDefaultVideoMediaType GetDefaultVideoMediaType()
 
 // List of known media formats
 
@@ -1133,6 +1319,7 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
 
+typedef PFactory<OpalMediaType, std::string> OpalMediaTypeFactory;
 typedef PFactory<OpalMediaFormat, std::string> OpalMediaFormatFactory;
 
 #ifdef _MSC_VER

@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2057  2007/01/25 11:48:10  hfriederich
+ * Revision 1.2057.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.56  2007/01/25 11:48:10  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -242,8 +254,6 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
-class OpalH224Handler;
-class OpalH281Handler;
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -690,7 +700,7 @@ class OpalManager : public PObject
     virtual BOOL IsMediaBypassPossible(
       const OpalConnection & source,      ///<  Source connection
       const OpalConnection & destination, ///<  Destination connection
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaType & mediaType     ///<  Media type for media channel
     ) const;
 
     /**Call back when opening a media stream.
@@ -847,32 +857,6 @@ class OpalManager : public PObject
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
-    ) const;
-	
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the call subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH224Handler instance
-      */
-	virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.281 protocol handler.
-        This is called when a H.224 channel is established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH281Handler instance
-      */
-	virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
     ) const;
 
     class RouteEntry : public PObject

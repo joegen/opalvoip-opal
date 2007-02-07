@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046  2006/12/18 03:18:41  csoutheren
+ * Revision 1.2046.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.45  2006/12/18 03:18:41  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
  *   - Ensure OpalConnection options are correctly progagated
@@ -891,7 +903,7 @@ class SIPInvite : public SIPTransaction
     SIPInvite(
       SIPConnection & connection,
       OpalTransport & transport,
-      unsigned rtpSessionId
+      const OpalMediaType & mediaType
     );
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
