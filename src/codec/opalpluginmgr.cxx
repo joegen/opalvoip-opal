@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2018  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2018.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.17  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.16  2006/11/29 06:28:58  csoutheren
@@ -441,7 +453,7 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     }
     ~OpalPluginAudioMediaFormat()
     {
-      OpalMediaFormatFactory::Unregister(*this);
+     //OpalMediaFormatFactory::Unregister(*this);
     }
 
     bool IsValidForProtocol(const PString & protocol) const
@@ -1666,13 +1678,13 @@ void OpalPluginCodecManager::RegisterPluginPair(
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
+      //defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
       break;
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
-      defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
+      //defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
       frameTime = (8 * encoderCodec->nsPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
       break;

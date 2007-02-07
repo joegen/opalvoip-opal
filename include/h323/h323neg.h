@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2008  2002/11/10 11:33:16  robertj
+ * Revision 1.2008.10.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.7  2002/11/10 11:33:16  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.6  2002/09/16 02:52:34  robertj
@@ -386,7 +398,7 @@ class H245NegLogicalChannels : public H245Negotiator
     H323Channel * FindChannel(unsigned channelNumber, BOOL fromRemote);
     H245NegLogicalChannel & GetNegLogicalChannelAt(PINDEX i);
     H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, BOOL fromRemote);
-    H323Channel * FindChannelBySession(unsigned rtpSessionId, BOOL fromRemote);
+    H323Channel * FindChannelByMediaType(const OpalMediaType & mediaType, BOOL fromRemote);
     void RemoveAll();
 
   protected:

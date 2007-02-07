@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2027  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2027.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.26  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -426,9 +438,6 @@ class OpalPCSSConnection : public OpalConnection
        by the underlying connection protocol. For instance H.323 would create
        an OpalRTPStream.
 
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
        Note that media streams may be created internally to the underlying
        protocol. This function is not the only way a stream can come into
        existance.
@@ -437,7 +446,6 @@ class OpalPCSSConnection : public OpalConnection
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
 
@@ -457,7 +465,7 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual BOOL OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaType & mediaType           ///<  Media type to start stream on
     );
 
     /**Open source transmitter media stream for session.

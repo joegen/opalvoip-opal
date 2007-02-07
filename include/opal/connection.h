@@ -28,7 +28,19 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2071.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.70  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -304,8 +316,6 @@ class OpalRFC2833Proto;
 class OpalRFC2833Info;
 class OpalT120Protocol;
 class OpalT38Protocol;
-class OpalH224Handler;
-class OpalH281Handler;
 
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
@@ -755,11 +765,11 @@ class OpalConnection : public PSafeObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
     
-    /**Open source transmitter media stream for session.
+    /**Open source transmitter media stream for media type.
       */
     virtual BOOL OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaType & mediatype           ///<  Media Type to start stream on
     );
 
     /**Open source transmitter media stream for session.
@@ -789,9 +799,6 @@ class OpalConnection : public PSafeObject
        by the underlying connection protocol. For instance H.323 would create
        an OpalRTPStream.
 
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
        Note that media streams may be created internally to the underlying
        protocol. This function is not the only way a stream can come into
        existance.
@@ -800,7 +807,6 @@ class OpalConnection : public PSafeObject
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
 
@@ -843,12 +849,12 @@ class OpalConnection : public PSafeObject
     virtual void AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch);
 
     /**Get a media stream.
-       Locates a stream given a RTP session ID. Each session would usually
+       Locates a stream given a OpalMediaType. Each media type would usually
        have two media streams associated with it, so the source flag
        may be used to distinguish which channel to return.
       */
     OpalMediaStream * GetMediaStream(
-      unsigned sessionId,  ///<  Session ID to search for.
+      const OpalMediaType & mediaType,  ///<  media type to search for.
       BOOL source          ///<  Indicates the direction of stream.
     ) const;
 
@@ -870,29 +876,31 @@ class OpalConnection : public PSafeObject
        possible.
      */
     virtual BOOL IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaType & mediaType     ///<  Media type for media channel
     ) const;
 
     /**Meda information structure for GetMediaInformation() function.
       */
     struct MediaInformation {
-      MediaInformation() { rfc2833 = RTP_DataFrame::IllegalPayloadType; }
+      MediaInformation() { payloadType = RTP_DataFrame::IllegalPayloadType; }
 
       OpalTransportAddress data;           ///<  Data channel address
       OpalTransportAddress control;        ///<  Control channel address
-      RTP_DataFrame::PayloadTypes rfc2833; ///<  Payload type for RFC2833
+      RTP_DataFrame::PayloadTypes payloadType; ///<  Payload type for special purposes (e.g. RFC2833)
     };
 
     /**Get information on the media channel for the connection.
        The default behaviour checked the mediaTransportAddresses dictionary
-       for the session ID and returns information based on that. It also uses
-       the rfc2833Handler variable for that part of the info.
+       for the mediaType and returns information based on that.
+        
+       The payloadType field of the struct has a media type dependent meaning.
+       For OpalDefaultAudioMediaType, the field should contain the used RFC2833 payload type.
 
        It is up to the descendant class to assure that the mediaTransportAddresses
        dictionary is set correctly before OnIncomingCall() is executed.
      */
     virtual BOOL GetMediaInformation(
-      unsigned sessionID,     ///<  Session ID for media channel
+      const OpalMediaType & mediaType,     ///<  media type for media channel
       MediaInformation & info ///<  Information on media channel
     ) const;
 
@@ -942,15 +950,15 @@ class OpalConnection : public PSafeObject
 
   /**@name RTP Session Management */
   //@{
-    /**Get an RTP session for the specified ID.
-       If there is no session of the specified ID, NULL is returned.
+    /**Get an RTP session for the specified media type.
+       If there is no session of the media type, NULL is returned.
       */
     virtual RTP_Session * GetSession(
-      unsigned sessionID    ///<  RTP session number
+      const OpalMediaType & mediaType    ///<  media type
     ) const;
 
-    /**Use an RTP session for the specified ID.
-       This will find a session of the specified ID and increment its
+    /**Use an RTP session for the specified media type.
+       This will find a session of the specified media type and increment its
        reference count. Multiple OpalRTPStreams use this to indicate their
        usage of the RTP session.
 
@@ -958,23 +966,23 @@ class OpalConnection : public PSafeObject
        called or the session is never deleted for the lifetime of the Opal
        connection.
 
-       If there is no session of the specified ID one is created.
+       If there is no session of the specified media type one is created.
 
        The type of RTP session that is created will be compatible with the
        transport. At this time only IP (RTp over UDP) is supported.
       */
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,  ///<  Transport of signalling
-      unsigned sessionID,               ///<  RTP session number
+      const OpalMediaType & mediaType,  ///<  media type
       RTP_QOS * rtpqos = NULL           ///<  Quiality of Service information
     );
 
     /**Release the session.
-       If the session ID is not being used any more any clients via the
+       If the media type is not being used any more any clients via the
        UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
-      unsigned sessionID,    ///<  RTP session number
+      const OpalMediaType & mediaType,    ///<  media type
       BOOL clearAll = FALSE  ///<  Clear all sessions
     );
 
@@ -984,7 +992,7 @@ class OpalConnection : public PSafeObject
       */
     virtual RTP_Session * CreateSession(
       const OpalTransport & transport,
-      unsigned sessionID,
+      const OpalMediaType & mediaType,
       RTP_QOS * rtpqos
     );
   //@}
@@ -1175,35 +1183,6 @@ class OpalConnection : public PSafeObject
        while keeping track of that variable for autmatic deletion.
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler();
-	
-	/** Create an instance of the H.224 protocol handler.
-	    This is called when the subsystem requires that a H.224 channel be established.
-		
-	    Note that if the application overrides this it should return a pointer
-	    to a heap variable (using new) as it will be automatically deleted when
-	    the OpalConnection is deleted.
-	
-	    The default behaviour calls the OpalEndpoint function of the same name if
-        there is not already a H.224 handler associated with this connection. If there
-        is already such a H.224 handler associated, this instance is returned instead.
-	  */
-	virtual OpalH224Handler *CreateH224ProtocolHandler(unsigned sessionID);
-	
-	/** Create an instance of the H.281 protocol handler.
-		This is called when the subsystem requires that a H.224 channel be established.
-		
-		Note that if the application overrides this it should return a pointer
-		to a heap variable (using new) as it will be automatically deleted when
-		the associated H.224 handler is deleted.
-		
-		The default behaviour calls the OpalEndpoint function of the same name.
-	*/
-	virtual OpalH281Handler *CreateH281ProtocolHandler(OpalH224Handler & h224Handler);
-	
-    /** Returns the H.224 handler associated with this connection or NULL if no
-		handler was created
-	  */
-	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
 
   //@}
 
@@ -1392,7 +1371,6 @@ class OpalConnection : public PSafeObject
     OpalRFC2833Proto    * rfc2833Handler;
     OpalT120Protocol    * t120handler;
     OpalT38Protocol     * t38handler;
-    OpalH224Handler		  * h224Handler;
 
     MediaAddressesDict  mediaTransportAddresses;
     PMutex              mediaStreamMutex;
@@ -1432,7 +1410,7 @@ class OpalSecurityMode : public PObject
   public:
     virtual RTP_UDP * CreateRTPSession(
       PHandleAggregator * _aggregator,   ///< handle aggregator
-      unsigned id,          ///<  Session ID for RTP channel
+      const OpalMediaType & mediaType,   ///<  Media type for RTP channel
       BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     ) = 0;
 };

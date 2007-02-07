@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2025  2006/11/29 06:28:57  csoutheren
+ * Revision 1.2025.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.24  2006/11/29 06:28:57  csoutheren
  * Add ability call codec control functions on all transcoders
  *
  * Revision 2.23  2006/04/09 12:12:54  rjongbloed
@@ -309,7 +321,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        between the two named formats.
       */
     static BOOL SelectFormats(
-      unsigned sessionID,               ///<  Session ID for media formats
+      const OpalMediaType & mediaType,        ///<  Media type for media formats
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       OpalMediaFormat & srcFormat,      ///<  Selected source format to be used

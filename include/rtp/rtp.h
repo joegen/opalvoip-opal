@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032  2007/02/01 06:43:19  csoutheren
+ * Revision 1.2032.2.1  2007/02/07 08:51:01  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.31  2007/02/01 06:43:19  csoutheren
  * Added virtual to functions
  *
  * Revision 2.30  2006/12/08 04:12:12  csoutheren
@@ -576,6 +588,8 @@ class RTP_UserData : public PObject
 };
 
 
+class OpalMediaType;
+
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
 class RTP_Session : public PObject
@@ -589,7 +603,7 @@ class RTP_Session : public PObject
      */
     RTP_Session(
       PHandleAggregator * aggregator, ///<  RTP aggregator
-      unsigned id,                    ///<  Session ID for RTP channel
+      const OpalMediaType & mediaType,  ///<  Media type for RTP channel
       RTP_UserData * userData = NULL, ///<  Optional data for session.
       BOOL autoDeleteUserData = TRUE  ///<  Delete optional data with session.
     );
@@ -750,9 +764,9 @@ class RTP_Session : public PObject
 
   /**@name Member variable access */
   //@{
-    /**Get the ID for the RTP session.
+    /**Get the media type for the RTP session.
       */
-    unsigned GetSessionID() const { return sessionID; }
+    const OpalMediaType & GetMediaType() const { return mediaType; }
 
     /**Get the canonical name for the RTP session.
       */
@@ -943,7 +957,7 @@ class RTP_Session : public PObject
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
 
-    unsigned           sessionID;
+    const OpalMediaType & mediaType;
     PString            canonicalName;
     PString            toolName;
     unsigned           referenceCount;
@@ -1027,45 +1041,42 @@ class RTP_SessionManager : public PObject
 
   /**@name Operations */
   //@{
-    /**Use an RTP session for the specified ID.
+    /**Use an RTP session for the specified media type.
 
        If this function returns a non-null value, then the ReleaseSession()
        function MUST be called or the session is never deleted for the
        lifetime of the session manager.
 
-       If there is no session of the specified ID, then you MUST call the
-       AddSession() function with a new RTP_Session. The mutex flag is left
-       locked in this case. The AddSession() expects the mutex to be locked
-       and unlocks it automatically.
+       If there is no session of the specified media type, then you MUST call the
+       AddSession() function with a new RTP_Session. 
       */
     RTP_Session * UseSession(
-      unsigned sessionID    ///<  Session ID to use.
+      const OpalMediaType & mediaType    ///<  media type to use.
     );
 
-    /**Add an RTP session for the specified ID.
+    /**Add an RTP session for the specified media type.
 
        This function MUST be called only after the UseSession() function has
-       returned NULL. The mutex flag is left locked in that case. This
-       function expects the mutex to be locked and unlocks it automatically.
+       returned NULL.
       */
     void AddSession(
       RTP_Session * session    ///<  Session to add.
     );
 
-    /**Release the session. If the session ID is not being used any more any
+    /**Release the session. If the media type is not being used any more any
        clients via the UseSession() function, then the session is deleted.
      */
     void ReleaseSession(
-      unsigned sessionID,    ///<  Session ID to release.
-      BOOL clearAll = FALSE  ///<  Clear all sessions with that ID
+      const OpalMediaType & mediaType,    ///<  media type to release.
+      BOOL clearAll = FALSE  ///<  Clear all sessions with that media type
     );
 
-    /**Get a session for the specified ID.
+    /**Get a session for the specified media type.
        Unlike UseSession, this does not increment the usage count on the
        session so may be used to just gain a pointer to an RTP session.
      */
     RTP_Session * GetSession(
-      unsigned sessionID    ///<  Session ID to get.
+      const OpalMediaType & mediaType   ///<  media type to get.
     ) const;
 
     /**Begin an enumeration of the RTP sessions.
@@ -1127,7 +1138,7 @@ class RTP_UDP : public RTP_Session
      */
     RTP_UDP(
       PHandleAggregator * aggregator, ///< RTP aggregator
-      unsigned id,                    ///<  Session ID for RTP channel
+      const OpalMediaType & mediaType, ///<  Media type for RTP channel
       BOOL remoteIsNAT                ///<  TRUE is remote is behind NAT
     );
 
