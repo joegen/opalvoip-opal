@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2089.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.88  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -387,7 +399,6 @@
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
 #include <t38/t38proto.h>
-#include <h224/h224handler.h>
 
 #define new PNEW
 
@@ -509,7 +520,6 @@ OpalConnection::OpalConnection(OpalCall & call,
     q931Cause(0x100),
     t120handler(NULL),
     t38handler(NULL),
-    h224Handler(NULL),
     silenceDetector(NULL),
     echoCanceler(NULL),
     phase(UninitialisedPhase),
@@ -582,7 +592,6 @@ OpalConnection::~OpalConnection()
   delete rfc2833Handler;
   delete t120handler;
   delete t38handler;
-  delete h224Handler;
   delete stringOptions;
 
   ownerCall.connectionsActive.Remove(this);
@@ -770,29 +779,29 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
   endpoint.AdjustMediaFormats(*this, mediaFormats);
 }
 
-BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
+BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType)
 {
   {
     PWaitAndSignal m(mediaStreamMutex);
 
     // See if already opened
-    OpalMediaStream * stream = GetMediaStream(sessionID, TRUE);
+    OpalMediaStream * stream = GetMediaStream(mediaType, TRUE);
 
     if (stream != NULL && stream->IsOpen()) {
-      PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for session "
-             << sessionID << " on " << *this);
+      PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for media type "
+             << mediaType << " on " << *this);
       return TRUE;
     }
 
-    PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
+    PTRACE(3, "OpalCon\tOpenSourceMediaStream for media type " << mediaType << " on " << *this);
 
     OpalMediaFormat sourceFormat, destinationFormat;
-    if (!OpalTranscoder::SelectFormats(sessionID,
-                                      GetMediaFormats(),
-                                      mediaFormats,
-                                      sourceFormat,
-                                      destinationFormat)) {
-      PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
+    if (!OpalTranscoder::SelectFormats(mediaType,
+                                       GetMediaFormats(),
+                                       mediaFormats,
+                                       sourceFormat,
+                                       destinationFormat)) {
+      PTRACE(2, "OpalCon\tOpenSourceMediaStream media type " << mediaType
             << ", could not find compatible media format:\n"
                 "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
                 "   sink  formats=" << mediaFormats << setfill(' '));
@@ -802,11 +811,11 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
     PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
     
     if (stream == NULL)
-      stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
+      stream = CreateMediaStream(sourceFormat, TRUE);
 
     if (stream == NULL) {
       PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
-            << sessionID << " on " << *this);
+            << mediaType << " on " << *this);
       return FALSE;
     }
 
@@ -829,9 +838,9 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
 OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
-  unsigned sessionID = source.GetSessionID();
+  const OpalMediaType & mediaType = source.GetMediaType();
   
-  PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << sessionID);
+  PTRACE(3, "OpalCon\tOpenSinkMediaStream " << *this << " session=" << mediaType);
 
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
 
@@ -843,17 +852,17 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   // opened to maintain symmetric codecs, if possible.
   {
     PWaitAndSignal m(mediaStreamMutex);
-    OpalMediaStream * otherStream = GetMediaStream(sessionID, TRUE);
+    OpalMediaStream * otherStream = GetMediaStream(mediaType, TRUE);
     if (otherStream != NULL)
       order += otherStream->GetMediaFormat();
     destinationFormats.Reorder(order);
 
     OpalMediaFormat destinationFormat;
-    if (!OpalTranscoder::SelectFormats(sessionID,
-                                      sourceFormat, // Only use selected format on source
-                                      destinationFormats,
-                                      sourceFormat,
-                                      destinationFormat)) {
+    if (!OpalTranscoder::SelectFormats(mediaType,
+                                       sourceFormat, // Only use selected format on source
+                                       destinationFormats,
+                                       sourceFormat,
+                                       destinationFormat)) {
       PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
                 "  source formats=" << setfill(',') << sourceFormat << "\n"
                 "   sink  formats=" << destinationFormats << setfill(' '));
@@ -862,7 +871,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
     PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
 
-    OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
+    OpalMediaStream * stream = CreateMediaStream(destinationFormat, FALSE);
     if (stream == NULL) {
       PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
       return NULL;
@@ -931,11 +940,11 @@ void OpalConnection::PauseMediaStreams(BOOL paused)
 
 
 OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
                                                     BOOL isSource)
 {
+    const OpalMediaType & mediaType = mediaFormat.GetMediaType();
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
+  if (mediaType == OpalDefaultVideoMediaType) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
       BOOL autoDelete;
@@ -943,14 +952,14 @@ OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & medi
         PVideoOutputDevice * previewDevice;
         if (!CreateVideoOutputDevice(mediaFormat, TRUE, previewDevice, autoDelete))
           previewDevice = NULL;
-        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, previewDevice, autoDelete);
+        return new OpalVideoMediaStream(mediaFormat, videoDevice, previewDevice, autoDelete);
       }
     }
     else {
       PVideoOutputDevice * videoDevice;
       BOOL autoDelete;
       if (CreateVideoOutputDevice(mediaFormat, FALSE, videoDevice, autoDelete))
-        return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice, autoDelete);
+        return new OpalVideoMediaStream(mediaFormat, NULL, videoDevice, autoDelete);
     }
   }
 #endif
@@ -1011,11 +1020,11 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
 }
 
 
-OpalMediaStream * OpalConnection::GetMediaStream(unsigned sessionId, BOOL source) const
+OpalMediaStream * OpalConnection::GetMediaStream(const OpalMediaType & mediaType, BOOL source) const
 {
   PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
-    if (mediaStreams[i].GetSessionID() == sessionId &&
+    if (mediaStreams[i].GetMediaType() == mediaType &&
         mediaStreams[i].IsSource() == source)
       return &mediaStreams[i];
   }
@@ -1042,22 +1051,22 @@ BOOL OpalConnection::RemoveMediaStream(OpalMediaStream * strm)
 
 
 
-BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
+BOOL OpalConnection::IsMediaBypassPossible(const OpalMediaType & /* media type */) const
 {
   PTRACE(3, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
   return FALSE;
 }
 
 
-BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
+BOOL OpalConnection::GetMediaInformation(const OpalMediaType & mediaType,
                                          MediaInformation & info) const
 {
-  if (!mediaTransportAddresses.Contains(sessionID)) {
-    PTRACE(3, "OpalCon\tGetMediaInformation for session " << sessionID << " - no channel.");
+  if (!mediaTransportAddresses.Contains(mediaType.GetUniqueID())) {
+    PTRACE(3, "OpalCon\tGetMediaInformation for session " << mediaType << " - no channel.");
     return FALSE;
   }
 
-  OpalTransportAddress & address = mediaTransportAddresses[sessionID];
+  OpalTransportAddress & address = mediaTransportAddresses[mediaType.GetUniqueID()];
 
   PIPSocket::Address ip;
   WORD port;
@@ -1068,9 +1077,10 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
   else
     info.data = info.control = address;
 
-  info.rfc2833 = rfc2833Handler->GetPayloadType();
-  PTRACE(3, "OpalCon\tGetMediaInformation for session " << sessionID
-         << " data=" << info.data << " rfc2833=" << info.rfc2833);
+  // fill payloadType with payload type for RFC2833
+  info.payloadType = rfc2833Handler->GetPayloadType();
+  PTRACE(3, "OpalCon\tGetMediaInformation for session " << mediaType
+         << " data=" << info.data << " rfc2833=" << info.payloadType);
   return TRUE;
 }
 
@@ -1113,19 +1123,19 @@ unsigned OpalConnection::GetAudioSignalLevel(BOOL /*source*/)
 }
 
 
-RTP_Session * OpalConnection::GetSession(unsigned sessionID) const
+RTP_Session * OpalConnection::GetSession(const OpalMediaType & mediaType) const
 {
-  return rtpSessions.GetSession(sessionID);
+  return rtpSessions.GetSession(mediaType);
 }
 
 
 RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
-                                         unsigned sessionID,
+                                         const OpalMediaType & mediaType,
                                          RTP_QOS * rtpqos)
 {
-  RTP_Session * rtpSession = rtpSessions.UseSession(sessionID);
+  RTP_Session * rtpSession = rtpSessions.UseSession(mediaType);
   if (rtpSession == NULL) {
-    rtpSession = CreateSession(transport, sessionID, rtpqos);
+    rtpSession = CreateSession(transport, mediaType, rtpqos);
     rtpSessions.AddSession(rtpSession);
   }
 
@@ -1133,15 +1143,15 @@ RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
 }
 
 
-void OpalConnection::ReleaseSession(unsigned sessionID,
+void OpalConnection::ReleaseSession(const OpalMediaType & mediaType,
                                     BOOL clearAll)
 {
-  rtpSessions.ReleaseSession(sessionID, clearAll);
+  rtpSessions.ReleaseSession(mediaType, clearAll);
 }
 
 
 RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
-                                            unsigned sessionID,
+                                            const OpalMediaType & mediaType,
                                             RTP_QOS * rtpqos)
 {
   // We only support RTP over UDP at this point in time ...
@@ -1168,7 +1178,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
     }
     rtpSession = parms->CreateRTPSession(
                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
-                  sessionID, remoteIsNAT);
+                  mediaType, remoteIsNAT);
     if (rtpSession == NULL) {
       PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
       delete parms;
@@ -1179,7 +1189,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   {
     rtpSession = new RTP_UDP(
                    useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
-                   sessionID, remoteIsNAT);
+                   mediaType, remoteIsNAT);
   }
 
   WORD firstPort = manager.GetRtpIpPortPair();
@@ -1385,20 +1395,6 @@ OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
   if (t38handler == NULL)
     t38handler = endpoint.CreateT38ProtocolHandler(*this);
   return t38handler;
-}
-
-
-OpalH224Handler * OpalConnection::CreateH224ProtocolHandler(unsigned sessionID)
-{
-  if(h224Handler == NULL)
-    h224Handler = endpoint.CreateH224ProtocolHandler(*this, sessionID);
-	
-  return h224Handler;
-}
-
-OpalH281Handler * OpalConnection::CreateH281ProtocolHandler(OpalH224Handler & h224Handler)
-{
-  return endpoint.CreateH281ProtocolHandler(h224Handler);
 }
 
 

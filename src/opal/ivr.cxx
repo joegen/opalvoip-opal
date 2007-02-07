@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2018  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2018.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.17  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -373,10 +385,9 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 
 
 OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                       unsigned sessionID,
                                                        BOOL isSource)
 {
-  return new OpalIVRMediaStream(mediaFormat, sessionID, isSource, vxmlSession);
+  return new OpalIVRMediaStream(mediaFormat, isSource, vxmlSession);
 }
 
 
@@ -394,13 +405,12 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 /////////////////////////////////////////////////////////////////////////////
 
 OpalIVRMediaStream::OpalIVRMediaStream(const OpalMediaFormat & mediaFormat,
-                                       unsigned sessionID,
                                        BOOL isSourceStream,
                                        PVXMLSession & vxml)
-  : OpalRawMediaStream(mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
+  : OpalRawMediaStream(mediaFormat, isSourceStream, &vxml, FALSE),
     vxmlSession(vxml)
 {
-  PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
+  PTRACE(3, "IVR\tOpalIVRMediaStream media format = " << mediaFormat << ", isSourceStream = " << isSourceStream);
 }
 
 

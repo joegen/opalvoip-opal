@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2062.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.61  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -172,9 +184,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
 
   localAliasNames.AppendString(defaultLocalPartyName);
 
-  autoStartReceiveFax = autoStartTransmitFax = FALSE;
-  
-  isH224Enabled = FALSE;
+  autoStartReceiveData = autoStartTransmitData = FALSE;
 
   m_bH245Disabled = FALSE;
   autoCallForward = TRUE;

@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2028  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2028.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.27  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.26  2006/08/11 07:52:01  csoutheren
@@ -476,12 +488,6 @@ H323Capability * H323Capability::Create(const PString & name)
 }
 
 
-unsigned H323Capability::GetDefaultSessionID() const
-{
-  return 0;
-}
-
-
 void H323Capability::SetTxFramesInPacket(unsigned /*frames*/)
 {
 }
@@ -901,12 +907,6 @@ H323Capability::MainTypes H323AudioCapability::GetMainType() const
 }
 
 
-unsigned H323AudioCapability::GetDefaultSessionID() const
-{
-  return OpalMediaFormat::DefaultAudioSessionID;
-}
-
-
 void H323AudioCapability::SetTxFramesInPacket(unsigned frames)
 {
   GetWritableMediaFormat().SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption, frames);
@@ -1238,12 +1238,6 @@ BOOL H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL)
 }
 
 
-unsigned H323VideoCapability::GetDefaultSessionID() const
-{
-  return OpalMediaFormat::DefaultVideoSessionID;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
 
 H323NonStandardVideoCapability::H323NonStandardVideoCapability(
@@ -1382,12 +1376,6 @@ H323DataCapability::H323DataCapability(unsigned rate)
 H323Capability::MainTypes H323DataCapability::GetMainType() const
 {
   return e_Data;
-}
-
-
-unsigned H323DataCapability::GetDefaultSessionID() const
-{
-  return 3;
 }
 
 
@@ -1755,7 +1743,7 @@ class H323_UserInputCapability_##type : public H323_UserInputCapability \
   DECLARE_USER_INPUT_CLASS(type) \
   const OpalMediaFormat UserInput_##type( \
     H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type], \
-    0, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1, 0, 0, 0 \
+    OpalUnknownMediaType, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1, 0, 0, 0 \
   ); \
   H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type]) \
 
