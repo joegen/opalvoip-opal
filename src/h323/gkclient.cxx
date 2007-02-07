@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2036  2006/07/28 10:41:50  rjongbloed
+ * Revision 1.2036.4.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.35  2006/07/28 10:41:50  rjongbloed
  * Fixed DevStudio 2005 warnings on time_t conversions.
  *
  * Revision 2.34  2006/06/30 05:26:13  csoutheren
@@ -2014,14 +2026,14 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_originator);
   info.m_originator = !connection.HadAnsweredCall();
 
-  H323_RTP_Session * session = connection.GetSessionCallbacks(OpalMediaFormat::DefaultAudioSessionID);
+  H323_RTP_Session * session = connection.GetSessionCallbacks(OpalDefaultAudioMediaType);
   if (session != NULL) {
     info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_audio);
     info.m_audio.SetSize(1);
     session->OnSendRasInfo(info.m_audio[0]);
   }
 
-  session = connection.GetSessionCallbacks(OpalMediaFormat::DefaultVideoSessionID);
+  session = connection.GetSessionCallbacks(OpalDefaultVideoMediaType);
   if (session != NULL) {
     info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_video);
     info.m_video.SetSize(1);

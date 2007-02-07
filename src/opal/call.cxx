@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2053  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2053.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.52  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -378,7 +390,7 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
   UnlockReadWrite();
 
 
-  BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
+  BOOL hasMedia = connection.GetMediaStream(OpalDefaultAudioMediaType, TRUE) != NULL;
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
@@ -430,12 +442,12 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
     }
 
     OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
-      createdOne = TRUE;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
-      createdOne = TRUE;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
-      createdOne = TRUE;
+    const OpalMediaTypeList & mediaTypes = OpalMediaType::GetAllRegisteredMediaTypes();
+    
+    for (PINDEX i = 0; i < mediaTypes.GetSize(); i++) {
+      if (OpenSourceMediaStreams(*conn, formats, mediaTypes[i]))
+        createdOne = TRUE;
+    }
   }
 
   UnlockReadOnly();
@@ -523,17 +535,17 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 
 BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
                                       const OpalMediaFormatList & mediaFormats,
-                                      unsigned sessionID)
+                                      const OpalMediaType & mediaType)
 {
-  PTRACE(2, "Call\tOpenSourceMediaStreams for session " << sessionID
+  PTRACE(2, "Call\tOpenSourceMediaStreams for media type " << mediaType
          << " with media " << setfill(',') << mediaFormats << setfill(' '));
 
   BOOL startedOne = FALSE;
 
   OpalMediaFormatList adjustableMediaFormats;
-  // Keep the media formats for the session ID
+  // Keep the media formats for the media type
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    if (mediaFormats[i].GetDefaultSessionID() == sessionID)
+    if (mediaFormats[i].GetMediaType() == mediaType)
       adjustableMediaFormats += mediaFormats[i];
   }
 
@@ -542,15 +554,15 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
   
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
-      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
+      if (conn->OpenSourceMediaStream(adjustableMediaFormats, mediaType)) {
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
         // have a preference for symmetric codecs on subsequent connection(s)
         PWaitAndSignal m(conn->GetMediaStreamMutex());
-        OpalMediaStream * otherStream = conn->GetMediaStream(sessionID, TRUE);
+        OpalMediaStream * otherStream = conn->GetMediaStream(mediaType, TRUE);
         if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
           adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
-          PTRACE(4, "Call\tOpenSourceMediaStreams for session " << sessionID
+          PTRACE(4, "Call\tOpenSourceMediaStreams for mediaType " << mediaType
                  << " adjusted media to " << setfill(',') << adjustableMediaFormats << setfill(' '));
         }
       }
@@ -624,15 +636,15 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 
 
 BOOL OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
-                                     unsigned sessionID) const
+                                     const OpalMediaType & mediaType) const
 {
-  PTRACE(3, "Call\tCanDoMediaBypass " << connection << " session " << sessionID);
+  PTRACE(3, "Call\tCanDoMediaBypass " << connection << " session " << mediaType);
 
   BOOL ok = FALSE;
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
-      ok = manager.IsMediaBypassPossible(connection, *conn, sessionID);
+      ok = manager.IsMediaBypassPossible(connection, *conn, mediaType);
       break;
     }
   }

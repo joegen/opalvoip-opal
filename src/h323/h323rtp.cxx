@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013  2005/03/03 18:31:23  dsandras
+ * Revision 1.2013.10.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.12  2005/03/03 18:31:23  dsandras
  * Fixed silence detection definition in the logical channel parameters.
  *
  * Revision 2.11  2004/02/24 11:28:46  rjongbloed
@@ -208,7 +220,7 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
 {
   PTRACE(3, "RTP\tOnSendingPDU");
 
-  param.m_sessionID = rtp.GetSessionID();
+  param.m_sessionID = channel.GetSessionID();
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = FALSE;
@@ -293,7 +305,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  const H245_H2250LogicalChannelParameters & param,
                                  unsigned & errorCode)
 {
-  if (param.m_sessionID != rtp.GetSessionID()) {
+  if (param.m_sessionID != channel.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return FALSE;
@@ -338,7 +350,7 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
     PTRACE(1, "RTP_UDP\tNo session specified");
   }
 
-  if (param.m_sessionID != rtp.GetSessionID()) {
+  if (param.m_sessionID != channel.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tAck for invalid session: " << param.m_sessionID);
   }
 
@@ -368,7 +380,8 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
 
 void H323_RTP_UDP::OnSendRasInfo(H225_RTPSession & info)
 {
-  info.m_sessionId = rtp.GetSessionID();
+  //info.m_sessionId = rtp.GetSessionID();
+    info.m_sessionId = 1; //FIXME
   info.m_ssrc = rtp.GetSyncSourceOut();
   info.m_cname = rtp.GetCanonicalName();
 

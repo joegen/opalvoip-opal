@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2012  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2012.10.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.11  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.10  2002/11/10 11:33:19  robertj
@@ -1425,8 +1437,8 @@ H245NegLogicalChannel * H245NegLogicalChannels::FindNegLogicalChannel(unsigned c
 }
 
 
-H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId,
-                                                           BOOL fromRemote)
+H323Channel * H245NegLogicalChannels::FindChannelByMediaType(const OpalMediaType & mediaType,
+                                                             BOOL fromRemote)
 {
   PWaitAndSignal wait(mutex);
 
@@ -1434,7 +1446,7 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
   for (i = 0; i < GetSize(); i++) {
     H323Channel * channel = channels.GetDataAt(i).GetChannel();
-    if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
+    if (channel != NULL && channel->GetMediaType() == mediaType &&
                            channel->GetDirection() == desiredDirection)
       return channel;
   }

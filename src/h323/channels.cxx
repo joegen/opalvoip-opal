@@ -27,7 +27,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036  2007/01/10 09:16:55  csoutheren
+ * Revision 1.2036.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.35  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
  * Revision 2.34  2006/08/10 05:10:30  csoutheren
@@ -725,6 +737,15 @@ unsigned H323Channel::GetSessionID() const
 }
 
 
+const OpalMediaType & H323Channel::GetMediaType() const
+{
+  if (capability == NULL) {
+    return OpalUnknownMediaType;
+  }
+  return capability->GetMediaFormat().GetMediaType();
+}
+
+
 BOOL H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
                                            OpalTransportAddress & /*control*/) const
 {
@@ -1172,11 +1193,13 @@ BOOL H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
 H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
                                  const H323Capability & cap,
                                  Directions direction,
-                                 RTP_Session & r)
+                                 RTP_Session & r,
+                                 unsigned id)
   : H323_RealTimeChannel(conn, cap, direction),
     rtpSession(r),
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
+  sessionID = id;
   mediaStream = new OpalRTPMediaStream(capability->GetMediaFormat(), receiver, rtpSession,
                                        endpoint.GetManager().GetMinAudioJitterDelay(),
                                        endpoint.GetManager().GetMaxAudioJitterDelay());
@@ -1189,13 +1212,19 @@ H323_RTPChannel::~H323_RTPChannel()
 {
   // Finished with the RTP session, this will delete the session if it is no
   // longer referenced by any logical channels.
-  connection.ReleaseSession(GetSessionID());
+  connection.ReleaseSession(capability->GetMediaFormat().GetMediaType());
 }
 
 
 unsigned H323_RTPChannel::GetSessionID() const
 {
-  return rtpSession.GetSessionID();
+  return sessionID;
+}
+
+
+const OpalMediaType & H323_RTPChannel::GetMediaType() const
+{
+  return rtpSession.GetMediaType();
 }
 
 
@@ -1265,7 +1294,7 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
 
 void H323_ExternalRTPChannel::Construct(unsigned id)
 {
-  mediaStream = new OpalNullMediaStream(capability->GetMediaFormat(), id, receiver);
+  mediaStream = new OpalNullMediaStream(capability->GetMediaFormat(), receiver);
   sessionID = id;
 
   PTRACE(3, "H323RTP\tExternal " << (receiver ? "receiver" : "transmitter")
@@ -1310,7 +1339,7 @@ BOOL H323_ExternalRTPChannel::Start()
     return FALSE;
 
   OpalConnection::MediaInformation info;
-  if (!otherParty->GetMediaInformation(sessionID, info))
+  if (!otherParty->GetMediaInformation(capability->GetMediaFormat().GetMediaType(), info))
     return FALSE;
 
   externalMediaAddress = info.data;

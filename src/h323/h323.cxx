@@ -24,7 +24,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136  2007/02/05 04:23:00  csoutheren
+ * Revision 1.2136.2.1  2007/02/07 08:51:02  hfriederich
+ * New branch with major revision of the core Opal media format handling system.
+ *
+ * - Session IDs have been replaced by new OpalMediaType class.
+ * - The creation of H.245 TCS and SDP media descriptions have been extended
+ *   to dynamically handle all available media types
+ * - The H.224 code has been rewritten for better integration into the Opal
+ *   system. It takes advantage of the new media type system and removes
+ *   all hooks found in the core Opal classes.
+ *
+ * More work will follow as the current version breaks lots of important code.
+ *
+ * Revision 2.135  2007/02/05 04:23:00  csoutheren
  * Check status on starting both read and write channels
  *
  * Revision 2.133  2007/01/24 04:00:56  csoutheren
@@ -191,7 +203,6 @@
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
-#include <h224/h323h224.h>
 
 #ifdef H323_H460
 #include <h323/h460.h>
@@ -363,7 +374,6 @@ H323Connection::H323Connection(OpalCall & call,
   mustSendDRQ = FALSE;
   earlyStart = FALSE;
   startT120 = TRUE;
-  startH224 = ep.IsH224Enabled();
   lastPDUWasH245inSETUP = FALSE;
   endSessionNeeded = FALSE;
 
@@ -416,6 +426,7 @@ H323Connection::H323Connection(OpalCall & call,
   features.LoadFeatureSet(H460_Feature::FeatureSignal, this);
 #endif
   
+  nextSessionID = 4;
 }
 
 
@@ -2324,7 +2335,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                 channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
                 if (channelCapability == NULL) {
                   channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
-                  remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID()-1, channelCapability);
+                  //remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID()-1, channelCapability);
                 }
               }
               // Must use the actual capability instance from the
@@ -2335,7 +2346,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                     BOOL started = FALSE;
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                       transmitterMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                      if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
+                      if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), transmitterMediaStream->GetMediaFormat().GetMediaType())) {
                         if (!mediaWaitForConnect)
                           started = channelToStart.Start();
                       }
@@ -2990,9 +3001,9 @@ H323Channel * H323Connection::GetLogicalChannel(unsigned number, BOOL fromRemote
 }
 
 
-H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, BOOL fromRemote) const
+H323Channel * H323Connection::FindChannel(const OpalMediaType & mediaType, BOOL fromRemote) const
 {
-  return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
+  return logicalChannels->FindChannelByMediaType(mediaType, fromRemote);
 }
 
 
@@ -3155,30 +3166,28 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
     if (!channel)
       return NULL;
 
-    unsigned int session_id = channel->GetSessionID();
-    if (session_id == OpalMediaFormat::DefaultAudioSessionID || session_id == OpalMediaFormat::DefaultVideoSessionID) {
-      const H323ChannelNumber & channelNumber = channel->GetNumber();
+    const OpalMediaType & mediaType = channel->GetMediaType();
+    const H323ChannelNumber & channelNumber = channel->GetNumber();
 
-      H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
-      OpalMediaStream *stream = GetMediaStream (session_id, FALSE);
+    H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
+    OpalMediaStream *stream = GetMediaStream (mediaType, FALSE);
 
-      if (!channelNumber.IsFromRemote()) { // Transmit channel
-        if (IsMediaOnHold()) {
+    if (!channelNumber.IsFromRemote()) { // Transmit channel
+      if (IsMediaOnHold()) {
 //          H323Codec & codec = *channel->GetCodec();
 //          existingTransmitChannel = codec.GetRawDataChannel();
 	  //FIXME
-        }
-        else {
-          // Enable/mute the transmit channel depending on whether the remote end is held
-          chan2->SetPause(IsLocalHold());
-	        stream->SetPaused(IsLocalHold());
-        }
       }
       else {
-        // Enable/mute the receive channel depending on whether the remote endis held
+        // Enable/mute the transmit channel depending on whether the remote end is held
         chan2->SetPause(IsLocalHold());
-	stream->SetPaused(IsLocalHold());
+        stream->SetPaused(IsLocalHold());
       }
+    }
+    else {
+      // Enable/mute the receive channel depending on whether the remote endis held
+      chan2->SetPause(IsLocalHold());
+      stream->SetPaused(IsLocalHold());
     }
   }
 
@@ -3362,30 +3371,19 @@ void H323Connection::OnSetLocalCapabilities()
   }
 
   // Add those things that are in the other parties media format list
-  static unsigned sessionOrder[] = {
-    OpalMediaFormat::DefaultAudioSessionID,
-    OpalMediaFormat::DefaultVideoSessionID,
-    OpalMediaFormat::DefaultDataSessionID,
-    0
-  };
+  // This is achieved by going through each media type and adding
+  // all media formats that belong to that media type in one simultaneous group
+  const OpalMediaTypeList & mediaTypes = OpalMediaType::GetAllRegisteredMediaTypes();
   PINDEX simultaneous;
-
-  for (PINDEX s = 0; s < PARRAYSIZE(sessionOrder); s++) {
+  for (PINDEX s = 0; s < mediaTypes.GetSize(); s++) {
     simultaneous = P_MAX_INDEX;
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
-      if (format.GetDefaultSessionID() == sessionOrder[s] &&
+      if (format.GetMediaType() == mediaTypes[s] &&
           format.GetPayloadType() < RTP_DataFrame::MaxPayloadType)
         simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
     }
   }
-  
-#ifdef OPAL_H224
-  // If H.224 is enabled, add the corresponding capabilities
-  if(GetEndPoint().IsH224Enabled()) {
-    localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
-  }
-#endif
 
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
@@ -3395,8 +3393,8 @@ void H323Connection::OnSetLocalCapabilities()
     MediaInformation info;
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL &&
-        otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
-      capability->SetPayloadType(info.rfc2833);
+        otherParty->GetMediaInformation(OpalDefaultAudioMediaType, info))
+      capability->SetPayloadType(info.payloadType);
     else
       localCapabilities.Remove(capability);
   }
@@ -3457,23 +3455,23 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
     // If we are early starting, start channels as soon as possible instead of
     // waiting for connect PDU
-    if (earlyStart && IsH245Master() && FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
+    if (earlyStart && IsH245Master() && FindChannel(OpalDefaultAudioMediaType, FALSE) == NULL)
       OnSelectLogicalChannels();
   }
 
-  if (h245_available && startT120) {
+  /*if (h245_available && startT120) {
     if (remoteCapabilities.FindCapability("T.120") != NULL) {
       H323Capability * capability = localCapabilities.FindCapability("T.120");
       if (capability != NULL)
         OpenLogicalChannel(*capability, 3, H323Channel::IsBidirectional);
     }
     startT120 = FALSE;
-  }
+  }*/
   
   switch (phase) {
     case ConnectedPhase :
       // Check if we have already got a transmitter running, select one if not
-      if (FindChannel(OpalMediaFormat::DefaultAudioSessionID, FALSE) == NULL)
+      if (FindChannel(OpalDefaultAudioMediaType, FALSE) == NULL)
         OnSelectLogicalChannels();
 
       connectionState = EstablishedConnection;
@@ -3489,23 +3487,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     default :
       break;
   }
-  
-  if(h245_available && startH224) {
-    if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
-      H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);
-      if(capability != NULL) {
-	    if(logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
-		  H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
-          if(channel != NULL) {
-			channel->SetNumber(logicalChannels->GetNextChannelNumber());
-			fastStartChannels.Append(channel);
-          }
-        }
-      }
-    }
-	   
-	startH224 = FALSE;
-  }
+
 }
 
 
@@ -3521,29 +3503,29 @@ OpalMediaFormatList H323Connection::GetMediaFormats() const
 
 
 BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFormats*/,
-                                           unsigned sessionID)
+                                           const OpalMediaType & mediaType)
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
+  if (mediaType == OpalDefaultVideoMediaType && !endpoint.GetManager().CanAutoStartReceiveVideo())
     return FALSE;
 #endif
 
   // Check if we have already got a transmitter running, select one if not
   if ((fastStartState == FastStartDisabled ||
        fastStartState == FastStartAcknowledged) &&
-      FindChannel(sessionID, FALSE) != NULL)
+      FindChannel(mediaType, FALSE) != NULL)
     return FALSE;
 
-  PTRACE(1, "H323\tOpenSourceMediaStream called: session " << sessionID);
+  PTRACE(1, "H323\tOpenSourceMediaStream called: session " << mediaType);
   return TRUE;
 }
 
 OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
                                                     BOOL isSource)
 {
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
+  const OpalMediaType & mediaType = mediaFormat.GetMediaType();
+  if (ownerCall.IsMediaBypassPossible(*this, mediaType))
+    return new OpalNullMediaStream(mediaFormat, isSource);
 
   if (!isSource) {
     OpalMediaStream * stream = transmitterMediaStream;
@@ -3551,9 +3533,9 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
     return stream;
   }
 
-  RTP_Session * session = GetSession(sessionID);
+  RTP_Session * session = GetSession(mediaType);
   if (session == NULL) {
-    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID);
+    PTRACE(1, "H323\tCreateMediaStream could not find session " << mediaType);
     return NULL;
   }
 
@@ -3566,7 +3548,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
 void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if(patch.GetSource().GetMediaType() == OpalDefaultAudioMediaType) {
     AttachRFC2833HandlerToPatch(isSource, patch);
     if(detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
@@ -3575,40 +3557,40 @@ void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 }
 
 
-BOOL H323Connection::IsMediaBypassPossible(unsigned sessionID) const
+BOOL H323Connection::IsMediaBypassPossible(const OpalMediaType & mediaType) const
 {
-  PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
+  PTRACE(3, "H323\tIsMediaBypassPossible: session " << mediaType);
 
-  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
-         sessionID == OpalMediaFormat::DefaultVideoSessionID;
+  return mediaType == OpalDefaultAudioMediaType ||
+         mediaType == OpalDefaultVideoMediaType;
 }
 
 
-BOOL H323Connection::GetMediaInformation(unsigned sessionID,
+BOOL H323Connection::GetMediaInformation(const OpalMediaType & mediaType,
                                          MediaInformation & info) const
 {
-  if (!OpalConnection::GetMediaInformation(sessionID, info))
+  if (!OpalConnection::GetMediaInformation(mediaType, info))
     return FALSE;
 
   H323Capability * capability = remoteCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL)
-    info.rfc2833 = capability->GetPayloadType();
+    info.payloadType = capability->GetPayloadType();
 
-  PTRACE(3, "H323\tGetMediaInformation for session " << sessionID
-         << " data=" << info.data << " rfc2833=" << info.rfc2833);
+  PTRACE(3, "H323\tGetMediaInformation for session " << mediaType
+         << " data=" << info.data << " rfc2833=" << info.payloadType);
   return TRUE;
 }
 
 
-void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Directions direction)
+void H323Connection::StartFastStartChannel(const OpalMediaType & mediaType, H323Channel::Directions direction)
 {
   for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++) {
     H323Channel & channel = fastStartChannels[i];
-    if (channel.GetSessionID() == sessionID && channel.GetDirection() == direction) {
+    if (channel.GetMediaType() == mediaType && channel.GetDirection() == direction) {
       if (channel.Open()) {
         if (direction == H323Channel::IsTransmitter) {
           transmitterMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channel.GetSessionID())) {
+          if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), transmitterMediaStream->GetMediaFormat().GetMediaType())) {
             if (!mediaWaitForConnect)
               channel.Start();
           }
@@ -3630,72 +3612,67 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
 void H323Connection::OnSelectLogicalChannels()
 {
   PTRACE(2, "H245\tDefault OnSelectLogicalChannels, " << fastStartState);
-
-  // Select the first codec that uses the "standard" audio session.
-  switch (fastStartState) {
-    default : //FastStartDisabled :
-#if OPAL_AUDIO
-      SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
-#endif
+    
+  OpalMediaTypeList mediaTypes = OpalMediaType::GetAllRegisteredMediaTypes();
+  
+  BOOL startTransmit = TRUE;
+  BOOL startReceive = TRUE;
+  
+  for (PINDEX i = 0; i < mediaTypes.GetSize(); i++) {
+    const OpalMediaType & mediaType = mediaTypes[i];
+      
+    switch(fastStartState) {
+      default: //FastStartDisabled :
 #if OPAL_VIDEO
-      if (endpoint.CanAutoStartTransmitVideo())
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
+        if (mediaType == OpalDefaultVideoMediaType && !endpoint.CanAutoStartTransmitVideo()) {
+          continue;
+        }
 #endif
-#if OPAL_T38FAX
-      if (endpoint.CanAutoStartTransmitFax())
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
-#endif
-      break;
-
-    case FastStartInitiate :
-#if OPAL_AUDIO
-      SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, TRUE, TRUE);
-#endif
+        SelectDefaultLogicalChannel(mediaType);
+        break;
+      case FastStartInitiate:
+        startTransmit = TRUE;
+        startReceive = TRUE;
 #if OPAL_VIDEO
-      SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
-                              endpoint.CanAutoStartTransmitVideo(),
-                              endpoint.CanAutoStartReceiveVideo());
+        if (mediaType == OpalDefaultVideoMediaType) {
+          startTransmit = endpoint.CanAutoStartTransmitVideo();
+          startReceive = endpoint.CanAutoStartReceiveVideo();
+        }
 #endif
-#if OPAL_T38FAX
-      SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
-                              endpoint.CanAutoStartTransmitFax(),
-                              endpoint.CanAutoStartReceiveFax());
-#endif
-      break;
-
-    case FastStartResponse :
-#if OPAL_AUDIO
-      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
-      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
-#endif
+        SelectFastStartChannels(mediaType, startTransmit, startReceive);
+        break;
+      case FastStartResponse:
 #if OPAL_VIDEO
-      if (endpoint.CanAutoStartTransmitVideo())
-        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
-      if (endpoint.CanAutoStartReceiveVideo())
-        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
+        if (mediaType == OpalDefaultVideoMediaType) {
+          if (endpoint.CanAutoStartTransmitVideo()) {
+            StartFastStartChannel(mediaType, H323Channel::IsTransmitter);
+          }
+          if (endpoint.CanAutoStartReceiveVideo()) {
+            StartFastStartChannel(mediaType, H323Channel::IsReceiver);
+          }
+          continue;
+        }
 #endif
-#if OPAL_T38FAX
-      if (endpoint.CanAutoStartTransmitFax())
-        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
-      if (endpoint.CanAutoStartReceiveFax())
-        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsReceiver);
-#endif
-      break;
+        StartFastStartChannel(mediaType, H323Channel::IsTransmitter);
+        StartFastStartChannel(mediaType, H323Channel::IsReceiver);
+        break;
+    }
   }
 }
 
 
-void H323Connection::SelectDefaultLogicalChannel(unsigned sessionID)
+void H323Connection::SelectDefaultLogicalChannel(const OpalMediaType & mediaType)
 {
-  if (FindChannel(sessionID, FALSE))
+  if (FindChannel(mediaType, FALSE))
     return; 
 
   for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
     H323Capability & localCapability = localCapabilities[i];
-    if (localCapability.GetDefaultSessionID() == sessionID) {
+    if (localCapability.GetMediaFormat().GetMediaType() == mediaType) {
       H323Capability * remoteCapability = remoteCapabilities.FindCapability(localCapability);
       if (remoteCapability != NULL) {
         PTRACE(3, "H323\tSelecting " << *remoteCapability);
+        unsigned sessionID = GetRTPSessionIDForMediaType(mediaType);
         if (OpenLogicalChannel(*remoteCapability, sessionID, H323Channel::IsTransmitter))
           break;
         PTRACE(2, "H323\tOnSelectLogicalChannels, OpenLogicalChannel failed: "
@@ -3706,14 +3683,15 @@ void H323Connection::SelectDefaultLogicalChannel(unsigned sessionID)
 }
 
 
-void H323Connection::SelectFastStartChannels(unsigned sessionID,
+void H323Connection::SelectFastStartChannels(const OpalMediaType & mediaType,
                                              BOOL transmitter,
                                              BOOL receiver)
 {
   // Select all of the fast start channels to offer to the remote when initiating a call.
   for (PINDEX i = 0; i < localCapabilities.GetSize(); i++) {
     H323Capability & capability = localCapabilities[i];
-    if (capability.GetDefaultSessionID() == sessionID) {
+    if (capability.GetMediaFormat().GetMediaType() == mediaType) {
+      unsigned sessionID = GetRTPSessionIDForMediaType(mediaType);
       if (receiver) {
         if (!OpenLogicalChannel(capability, sessionID, H323Channel::IsReceiver)) {
           PTRACE(2, "H323\tOnSelectLogicalChannels, OpenLogicalChannel rx failed: " << capability);
@@ -3741,8 +3719,8 @@ BOOL H323Connection::OpenLogicalChannel(const H323Capability & capability,
       // Traditional H245 handshake
       if (!logicalChannels->Open(capability, sessionID))
         return FALSE;
-      transmitterMediaStream = logicalChannels->FindChannelBySession(sessionID, FALSE)->GetMediaStream();
-      if (GetCall().OpenSourceMediaStreams(*this, capability.GetMediaFormat(), sessionID))
+      transmitterMediaStream = logicalChannels->FindChannelByMediaType(capability.GetMediaFormat().GetMediaType(), FALSE)->GetMediaStream();
+      if (GetCall().OpenSourceMediaStreams(*this, capability.GetMediaFormat(), capability.GetMediaFormat().GetMediaType()))
         return TRUE;
       PTRACE(2, "H323\tOpenLogicalChannel, OpenSourceMediaStreams failed: " << capability);
       return FALSE;
@@ -3794,9 +3772,12 @@ BOOL H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & /*open
 BOOL H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChannel)
 {
   unsigned session = conflictingChannel.GetSessionID();
+  const H323Capability & capability = conflictingChannel.GetCapability();
+  const OpalMediaType & mediaType = capability.GetMediaFormat().GetMediaType();
+  
   PTRACE(2, "H323\tLogical channel " << conflictingChannel
          << " conflict on session " << session
-         << ", codec: " << conflictingChannel.GetCapability());
+         << ", codec: " << capability);
 
   /* Matrix of conflicts:
        Local EP is master and conflicting channel from remote (OLC)
@@ -3815,7 +3796,7 @@ BOOL H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChanne
    */
 
   BOOL fromRemote = conflictingChannel.GetNumber().IsFromRemote();
-  H323Channel * channel = FindChannel(session, !fromRemote);
+  H323Channel * channel = FindChannel(mediaType, !fromRemote);
   if (channel == NULL) {
     PTRACE(1, "H323\tCould not resolve conflict, no reverse channel.");
     return FALSE;
@@ -3886,7 +3867,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
       }
       
       capability = remoteCapabilities.Copy(*capability);
-      remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
+      //remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
     }
   }
   else {
@@ -3941,11 +3922,13 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 
 
 H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability & capability,
-                                                          H323Channel::Directions dir,
-                                                                         unsigned sessionID,
-							                         const H245_H2250LogicalChannelParameters * param,
-                                                                        RTP_QOS * rtpqos)
+                                                           H323Channel::Directions dir,
+                                                           unsigned sessionID,
+                                                           const H245_H2250LogicalChannelParameters * param,
+                                                           RTP_QOS * rtpqos)
 {
+  const OpalMediaType & mediaType = capability.GetMediaFormat().GetMediaType();
+
   {
     PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
@@ -3954,9 +3937,9 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
       return NULL;
     }
 
-    if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
+    if (ownerCall.IsMediaBypassPossible(*this, mediaType)) {
       MediaInformation info;
-      if (!otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+      if (!otherParty->GetMediaInformation(OpalDefaultAudioMediaType, info))
         return NULL;
       return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
     }
@@ -3976,12 +3959,12 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     sessionID = param->m_sessionID;
   }
 
-  session = UseSession(GetControlChannel(), sessionID, rtpqos);
+  session = UseSession(GetControlChannel(), mediaType, rtpqos);
   if (session == NULL)
     return NULL;
 
   ((RTP_UDP *) session)->Reopen(dir == H323Channel::IsReceiver);
-  return new H323_RTPChannel(*this, capability, dir, *session);
+  return new H323_RTPChannel(*this, capability, dir, *session, sessionID);
 }
 
 
@@ -4302,19 +4285,13 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
 }
 
 
-RTP_Session * H323Connection::GetSession(unsigned sessionID) const
+H323_RTP_Session * H323Connection::GetSessionCallbacks(const OpalMediaType & mediaType) const
 {
-  return rtpSessions.GetSession(sessionID);
-}
-
-
-H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
-{
-  RTP_Session * session = rtpSessions.GetSession(sessionID);
+  RTP_Session * session = rtpSessions.GetSession(mediaType);
   if (session == NULL)
     return NULL;
 
-  PTRACE(3, "RTP\tFound existing session " << sessionID);
+  PTRACE(3, "RTP\tFound existing session " << mediaType);
   PObject * data = session->GetUserData();
   PAssert(PIsDescendant(data, H323_RTP_Session), PInvalidCast);
   return (H323_RTP_Session *)data;
@@ -4322,10 +4299,10 @@ H323_RTP_Session * H323Connection::GetSessionCallbacks(unsigned sessionID) const
 
 
 RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
-                                         unsigned sessionID,
+                                         const OpalMediaType & mediaType,
                                          RTP_QOS * rtpqos)
 {
-  RTP_UDP * udp_session = (RTP_UDP *)OpalConnection::UseSession(transport, sessionID, rtpqos);
+  RTP_UDP * udp_session = (RTP_UDP *)OpalConnection::UseSession(transport, mediaType, rtpqos);
   if (udp_session == NULL)
     return NULL;
 
@@ -4335,9 +4312,9 @@ RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
 }
 
 
-void H323Connection::ReleaseSession(unsigned sessionID)
+void H323Connection::ReleaseSession(const OpalMediaType & mediaType)
 {
-  rtpSessions.ReleaseSession(sessionID);
+  rtpSessions.ReleaseSession(mediaType);
 }
 
 
@@ -4367,12 +4344,12 @@ static void AddSessionCodecName(PStringStream & name, H323Channel * channel)
 }
 
 
-PString H323Connection::GetSessionCodecNames(unsigned sessionID) const
+PString H323Connection::GetSessionCodecNames(const OpalMediaType & mediaType) const
 {
   PStringStream name;
 
-  AddSessionCodecName(name, FindChannel(sessionID, FALSE));
-  AddSessionCodecName(name, FindChannel(sessionID, TRUE));
+  AddSessionCodecName(name, FindChannel(mediaType, FALSE));
+  AddSessionCodecName(name, FindChannel(mediaType, TRUE));
 
   return name;
 }
@@ -4421,7 +4398,7 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
       if (!OpenLogicalChannel(*capability,
-                              capability->GetDefaultSessionID(),
+                              1/*capability->GetDefaultSessionID()*/, // FIXME
                               H323Channel::IsTransmitter)) {
         PTRACE(1, "H245\tCould not open channel after mode change: " << *capability);
       }
@@ -4458,7 +4435,7 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   for (PINDEX i = first; i < last; i++) {
     H323Capability * capability = localCapabilities.FindCapability(modes[i]);
     if (capability != NULL && OpenLogicalChannel(*capability,
-                                                 capability->GetDefaultSessionID(),
+                                                 1/*capability->GetDefaultSessionID()*/, // FIXME
                                                  H323Channel::IsTransmitter)) {
       PTRACE(1, "H245\tOpened " << *capability << " after T.38 mode change");
       break;
@@ -4569,6 +4546,58 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
 	return &features;
 }
 #endif
+
+unsigned H323Connection::GetRTPSessionIDForMediaType(const OpalMediaType & mediaType)
+{
+  PWaitAndSignal m(sessionIDMutex);
+    
+  SessionIDMap::iterator r = sessionIDMap.find(mediaType);
+  if (r != sessionIDMap.end()) {
+    return r->second;
+  }
+  
+  // There was no record found for this media type. Use the MIME media type to define the next action:
+  // If MIME type is audio and DefaultAudioSessionID is free, assign this ID to the media type.
+  // If MIME type is video and DefaultVideoSessionID is free, assign this ID to the media type.
+  // If MIME type is neither audio nor video and DefaultDataSessionID is free, assign this ID to the media type.
+  // Else, if we're master, assign a new session ID. If we're slave, temporarily assign value 0 and
+  // update the information once the OLC-Ack is received.
+  unsigned defaultSessionID = DefaultDataSessionID;
+  OpalMediaType::MIMEMediaType mimeMediaType = mediaType.GetMIMEMediaType();
+  if(mimeMediaType == OpalMediaType::Audio) {
+    defaultSessionID = DefaultAudioSessionID;
+  } else if(mimeMediaType == OpalMediaType::Video) {
+    defaultSessionID = DefaultVideoSessionID;
+  }
+  
+  // search for session ID
+  BOOL found = FALSE;
+  for (r = sessionIDMap.begin(); r != sessionIDMap.end(); ++r) {
+    if (r->second == defaultSessionID) {
+      found = TRUE;
+      break;
+    }
+  }
+  
+  // if not found, assign the ID and return it
+  if (found == FALSE) {
+    PTRACE(3, "Assigning default session ID " << defaultSessionID << " to media type " << mediaType);
+    sessionIDMap.insert(SessionIDMap::value_type(mediaType, defaultSessionID));
+    return defaultSessionID;
+  }
+  
+  if (IsH245Master()) {
+    // assign a new id to this media type
+    unsigned sessionID = nextSessionID;
+    nextSessionID++;
+    PTRACE(3, "Assigning session ID " << sessionID << " to media type " << mediaType);
+    sessionIDMap.insert(SessionIDMap::value_type(mediaType, sessionID));
+    return sessionID;
+  } else {
+    PTRACE(3, "Cannot assign session ID for media type as only the master can do this");
+    return 0;
+  }
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
