@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2059.2.2  2007/02/09 09:25:19  hfriederich
+ * Make BuildSDP() virtual so it can be overridden by subclasses
+ *
+ * Revision 2.58.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -630,7 +633,7 @@ class SIPConnection : public OpalConnection
 
     unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
 	
-    BOOL BuildSDP(
+    virtual BOOL BuildSDP(
       SDPSessionDescription * &,
       RTP_SessionManager & rtpSessions
     );
