@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2060  2007/02/10 18:14:32  hfriederich
+ * Add copy constructor to have consistent code with assignment operator.
+ * Only make options unique when they actually differ
+ *
+ * Revision 2.58  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.57  2006/11/21 01:01:00  csoutheren
@@ -650,6 +654,12 @@ OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
 }
 
 
+OpalMediaFormat::OpalMediaFormat(const OpalMediaFormat & mediaFormat)
+{
+  operator=(mediaFormat);
+}
+
+
 OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned dsid,
                                  RTP_DataFrame::PayloadTypes pt,
@@ -729,10 +739,10 @@ OpalMediaFormat & OpalMediaFormat::operator=(const OpalMediaFormat &format)
   PWaitAndSignal m2(format.media_format_mutex);
   *static_cast<PCaselessString *>(this) = *static_cast<const PCaselessString *>(&format);
   options = format.options;
-  options.MakeUnique();
   rtpPayloadType = format.rtpPayloadType;
   rtpEncodingName = format.rtpEncodingName;
   defaultSessionID = format.defaultSessionID;
+  codecBaseTime = format.codecBaseTime;
   return *this;  
 }
 
@@ -781,6 +791,7 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 {
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(mediaFormat.media_format_mutex);
+  options.MakeUnique();
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
     if (option != NULL && !options[i].Merge(*option))
@@ -952,6 +963,7 @@ bool OpalMediaFormat::AddOption(OpalMediaOption * option)
     return false;
   }
 
+  options.MakeUnique();
   options.Append(option);
   return true;
 }
