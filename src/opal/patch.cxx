@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.7  2007/01/15 22:16:43  dsandras
+ * Revision 1.2020.2.8  2007/02/10 21:48:35  dsandras
+ * Fixed potential deadlock if ReadPacket takes time to return or does not
+ * return. Thanks to Hannes Friederich for the proposal and the SUN Team
+ * for the bug report (Ekiga #404904).
+ *
+ * Revision 2.19.2.7  2007/01/15 22:16:43  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.19.2.6  2006/10/06 08:18:16  dsandras
@@ -212,12 +217,12 @@ void OpalMediaPatch::Main()
   RTP_DataFrame emptyFrame(source.GetDataSize());
 
   while (source.IsOpen()) {
+    if (!source.ReadPacket(sourceFrame))
+      break;
+
     inUse.Wait();
     
-    if(!source.IsOpen() ||
-        sinks.GetSize() == 0 ||       
-       !source.ReadPacket(sourceFrame))
-    {
+    if(!source.IsOpen() || sinks.GetSize() == 0) {
       inUse.Signal();
       break;
     }
