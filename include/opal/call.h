@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2028.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2028.2.2  2007/02/10 23:07:21  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.27.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -350,6 +354,16 @@ class OpalCall : public PSafeObject
       const OpalConnection & connection,  ///<  Connection requesting formats
       BOOL includeSpecifiedConnection     ///<  Include parameters media
     );
+    
+    /**Adjust the media format options of the given media format
+       by calling AdjustMediaFormatOptions() on each connection in the call,
+       optionally excepting the one provided as a parameter.
+      */
+    void AdjustMediaFormatOptions(
+      OpalMediaFormat & mediaFormat,     ///< Media format to be adjusted
+      const OpalConnection & connection, ///< Connection requesting the adjustment
+      BOOL includeSpecifiedConnection = FALSE  ///< Include the connection passed above
+    ) const;
 
     /**Open transmitter media streams for each connection.
        All connections in the call except the one specified are requested to
