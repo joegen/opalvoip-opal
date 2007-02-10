@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2043.2.2  2007/02/10 23:07:21  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.42.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -826,6 +830,9 @@ class OpalEndPoint : public PObject
     /** Get the aggregator used for RTP channels
       */
     PHandleAggregator * GetRTPAggregator();
+    
+    BOOL GetAdjustMediaFormatOptions() const { return adjustMediaFormatOptions; }
+    void SetAdjustMediaFormatOptions(BOOL adjust) { adjustMediaFormatOptions = adjust; }
 	
     /**Callback to allow interface adjustments before connecting to the remote party
        The default implementation does nothing and returns TRUE
@@ -863,6 +870,8 @@ class OpalEndPoint : public PObject
     PINDEX rtpAggregationSize;
     PHandleAggregator * rtpAggregator;
 #endif
+    
+    BOOL adjustMediaFormatOptions;
 
     friend void OpalManager::GarbageCollection();
     friend void OpalConnection::Release(CallEndReason reason);

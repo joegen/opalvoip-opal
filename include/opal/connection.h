@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2071.2.2  2007/02/10 23:07:21  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.70.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -422,7 +426,11 @@ class OpalConnection : public PSafeObject
       SendDTMFAsString             = 0x0400,
       SendDTMFAsTone               = 0x0800,
       SendDTMFAsRFC2833            = 0x0c00,
-      SendDTMFMask                 = 0x0c00
+      SendDTMFMask                 = 0x0c00,
+        
+      AdjustMediaFormatOptionsEnable  = 0x1000,   // SIP and H.323
+      AdjustMediaFormatOptionsDisable = 0x2000,
+      AdjustMediaFormatOptionsMask    = 0x3000
     };
 
     class StringOptions : public PStringToString 
@@ -764,6 +772,15 @@ class OpalConnection : public PSafeObject
     virtual void AdjustMediaFormats(
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
+    
+    /**Callback to adjust media format options on the given media format.
+       This may be called by another connection to let this connection
+       adjust the specified media format. Useful to propagate non-default media 
+       option values to the calling connection.
+    
+       The default behaviour does nothing
+      */
+    virtual void AdjustMediaFormatOptions(OpalMediaFormat & mediaFormat) const {}
     
     /**Open source transmitter media stream for media type.
       */
@@ -1398,6 +1415,7 @@ class OpalConnection : public PSafeObject
 #endif
 
     BOOL useRTPAggregation;
+    BOOL adjustMediaFormatOptions;
 
     StringOptions * stringOptions;
 };
