@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2089.2.2  2007/02/10 23:07:22  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.88.2.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -571,6 +575,17 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
     default:
       useRTPAggregation = endpoint.UseRTPAggregation();
+  }
+  
+  switch (options & AdjustMediaFormatOptionsMask) {
+    case AdjustMediaFormatOptionsEnable:
+      adjustMediaFormatOptions = TRUE;
+      break;
+    case AdjustMediaFormatOptionsDisable:
+      adjustMediaFormatOptions = FALSE;
+      break;
+    default:
+      adjustMediaFormatOptions = endpoint.GetAdjustMediaFormatOptions();
   }
 
   if (stringOptions != NULL) {

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2136.2.2  2007/02/10 23:07:22  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.135.2.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -3380,8 +3384,13 @@ void H323Connection::OnSetLocalCapabilities()
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
       if (format.GetMediaType() == mediaTypes[s] &&
-          format.GetPayloadType() < RTP_DataFrame::MaxPayloadType)
-        simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
+          format.GetPayloadType() < RTP_DataFrame::MaxPayloadType) {
+          
+        if (adjustMediaFormatOptions == TRUE) {
+          ownerCall.AdjustMediaFormatOptions(format, *this);
+        }
+        simultaneous = localCapabilities.AddAllCapabilitiesWithFormat(0, simultaneous, format);
+      }
     }
   }
 
