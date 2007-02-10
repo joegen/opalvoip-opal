@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2046.2.2  2007/02/10 18:15:56  hfriederich
+ * (Backport from HEAD)
+ * Add copy constructor to have consistent code with assignment operator.
+ * Only make options unique when they actually differ
+ *
+ * Revision 2.45.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -85,7 +90,12 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2046.2.2  2007/02/10 18:15:56  hfriederich
+ * (Backport from HEAD)
+ * Add copy constructor to have consistent code with assignment operator.
+ * Only make options unique when they actually differ
+ *
+ * Revision 2.45.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -902,6 +912,10 @@ class OpalMediaFormat : public PCaselessString
     OpalMediaFormat(
       const PString & wildcard  ///<  Wildcard name to search for
     );
+    
+    /**Copy constructor
+      */
+    OpalMediaFormat(const OpalMediaFormat & mediaFormat);
 
     /**Return TRUE if media format info is valid. This may be used if the
        single string constructor is used to check that it matched something
