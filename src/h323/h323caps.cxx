@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2028.2.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2028.2.2  2007/02/10 23:07:22  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.27.2.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -485,6 +489,18 @@ H323Capability * H323Capability::Create(const PString & name)
     return NULL;
 
   return (H323Capability *)cap->Clone();
+}
+
+
+H323Capability * H323Capability::CreateWithFormat(const OpalMediaFormat & mediaFormat)
+{
+  H323Capability * cap = H323CapabilityFactory::CreateInstance(mediaFormat);
+  if(cap == NULL)
+    return NULL;
+    
+  cap = (H323Capability *)cap->Clone();
+  cap->UpdateFormat(mediaFormat);
+  return cap;
 }
 
 
@@ -2110,6 +2126,40 @@ PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
     }
   }
 
+  return reply;
+}
+
+
+PINDEX H323Capabilities::AddAllCapabilitiesWithFormat(PINDEX descriptorNum,
+                                                      PINDEX simultaneous,
+                                                      const OpalMediaFormat & mediaFormat)
+{
+  PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
+    
+  PStringArray searchString = PStringArray(mediaFormat);
+    
+  H323CapabilityFactory::KeyList_T stdCaps = H323CapabilityFactory::GetKeyList();
+  H323CapabilityFactory::KeyList_T::const_iterator r;
+    
+  for (r = stdCaps.begin(); r != stdCaps.end(); ++r) {
+    PCaselessString capName = *r;
+    if (MatchWildcard(capName, searchString) && FindCapability(capName) == NULL) {
+        
+      H323Capability * capability = H323Capability::CreateWithFormat(mediaFormat);
+      PINDEX num = SetCapability(descriptorNum, simultaneous, capability);
+      if (descriptorNum == P_MAX_INDEX) {
+        reply = num;
+        descriptorNum = num;
+        simultaneous = P_MAX_INDEX;
+      }
+      else if (simultaneous == P_MAX_INDEX) {
+        if (reply == P_MAX_INDEX)
+          reply = num;
+        simultaneous = num;
+      }
+    }
+  }
+    
   return reply;
 }
 
