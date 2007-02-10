@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2018.4.1  2007/02/07 08:51:00  hfriederich
+ * Revision 1.2018.4.2  2007/02/10 23:07:20  hfriederich
+ * Allow to adjust media formats between connections.
+ * Allow H323 capabilities to update their state based on media formats.
+ *
+ * Revision 2.17.4.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -360,6 +364,13 @@ class H323Capability : public PObject
     static H323Capability * Create(
       const PString & name     ///<  Name of capability
     );
+    
+    /**Create an H323Capability descendant given a media format.
+       This uses the registration system to create the capability.
+      */
+    static H323Capability * CreateWithFormat(
+      const OpalMediaFormat & mediaFormat ///< Media format for capability
+    );
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -478,6 +489,13 @@ class H323Capability : public PObject
     virtual BOOL IsUsable(
       const H323Connection & connection
     ) const;
+    
+    /**Callback to allow adjustments of the class members based on information
+       in the OpalMediaFormat.
+        
+       The default behaviour does nothing.
+      */
+    virtual void UpdateFormat(const OpalMediaFormat & mediaFormat) {}
   //@}
 
   /**@name Member variable access */
@@ -2244,6 +2262,16 @@ class H323Capabilities : public PObject
       const PString & name     ///<  New capabilities name, if using "known" one.
     )
     { return AddAllCapabilities(descriptorNum, simultaneous, name); }
+    
+    /**Add all matching capabilities to descriptor lists.
+       All capabilities that match the given media format are added as in the other
+       form of the SetCapability() function.
+      */
+    PINDEX AddAllCapabilitiesWithFormat(
+      PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
+      const OpalMediaFormat & mediaFormat ///< media format to search for
+    );
 
     /**Add a codec to the capabilities table. This will assure that the
        assignedCapabilityNumber field in the capability is unique for all
