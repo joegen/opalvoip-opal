@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2047  2007/02/10 18:14:31  hfriederich
+ * Add copy constructor to have consistent code with assignment operator.
+ * Only make options unique when they actually differ
+ *
+ * Revision 2.45  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.44  2006/11/21 01:00:59  csoutheren
@@ -73,7 +77,11 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046  2006/12/08 07:33:13  csoutheren
+ * Revision 1.2047  2007/02/10 18:14:31  hfriederich
+ * Add copy constructor to have consistent code with assignment operator.
+ * Only make options unique when they actually differ
+ *
+ * Revision 2.45  2006/12/08 07:33:13  csoutheren
  * Fix problem with wideband audio plugins and sound channel
  *
  * Revision 2.44  2006/11/21 01:00:59  csoutheren
@@ -717,6 +725,12 @@ class OpalMediaFormat : public PCaselessString
       */
     OpalMediaFormat(
       const PString & wildcard  ///<  Wildcard name to search for
+    );
+    
+    /**Copy Constructor
+      */
+    OpalMediaFormat(
+      const OpalMediaFormat & mediaFormat ///< other media format
     );
 
     /**Return TRUE if media format info is valid. This may be used if the
