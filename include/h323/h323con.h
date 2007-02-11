@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.1  2007/02/07 08:51:00  hfriederich
+ * Revision 1.2058.2.2  2007/02/11 11:46:53  hfriederich
+ * Allow subclasses to create custom instances of H323_RTPChannel
+ *
+ * Revision 2.57.2.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -1731,6 +1734,16 @@ class H323Connection : public OpalConnection
       const H245_H2250LogicalChannelParameters * param,
                                          ///<  Parameters for channel
       RTP_QOS * rtpqos = NULL            ///<  QoS for RTP
+    );
+    
+    /**Creates a new instance of an RTP Channel.
+       Allows subclasses to return custom instances.
+      */
+    virtual H323_RTPChannel * CreateRTPChannel(
+      const H323Capability & capability,  ///< Capability creating channel
+      H323Channel::Directions direction,  ///< Direction of channel
+      RTP_Session & rtp,                  ///< RTP Session for channel
+      unsigned sessionID                  ///< Session ID for RTP channel
     );
 
     /**This function is called when the remote endpoint want's to create
