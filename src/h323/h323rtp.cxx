@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013.10.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2013.10.2  2007/02/11 08:25:06  hfriederich
+ * Only add silence suppression parameter if really sending audio
+ *
+ * Revision 2.12.10.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -239,7 +242,7 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
   else {
     // Set flag for we are going to stop sending audio on silence
     OpalMediaStream * mediaStream = channel.GetMediaStream();
-    if (mediaStream != NULL) {
+    if (mediaStream != NULL && mediaStream->GetMediaFormat().GetMediaType().GetMIMEMediaType() == OpalMediaType::Audio) {
       param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
       param.m_silenceSuppression = (connection.GetEndPoint ().GetManager ().GetSilenceDetectParams ().m_mode != OpalSilenceDetector::NoSilenceDetection);
     }
