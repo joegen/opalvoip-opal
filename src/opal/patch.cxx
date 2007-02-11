@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041  2007/02/05 19:43:17  dsandras
+ * Revision 1.2041.2.1  2007/02/11 11:59:38  hfriederich
+ * (backport from HEAD - original commit by dsandras)
+ * Fixed potential deadlock if ReadPacket takes time to return or does not
+ * return. Thanks to Hannes Friederich for the proposal and the SUN Team
+ * for the bug report (Ekiga #404904)
+ *
+ * Revision 2.40  2007/02/05 19:43:17  dsandras
  * Added additional mutex to prevent temporary deadlock when nothing is
  * received on the remote media stream during the establishment phase.
  *
@@ -516,16 +522,16 @@ void OpalMediaPatch::Main()
   RTP_DataFrame emptyFrame(source.GetDataSize());
 	
   while (source.IsOpen()) {
+    if (!source.ReadPacket(sourceFrame))
+      break;
+      
     inUse.Wait();
-		
-    if(!source.IsOpen() ||
-        sinks.GetSize() == 0 ||       
-        !source.ReadPacket(sourceFrame))
-    {
+      
+    if(!source.IsOpen() || sinks.GetSize() == 0) {
       inUse.Signal();
       break;
     }
-		
+      
     PINDEX len = sinks.GetSize();
 		
     DispatchFrame(sourceFrame);
