@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2018.4.2  2007/02/10 23:07:20  hfriederich
+ * Revision 1.2018.4.3  2007/02/11 09:41:17  hfriederich
+ * Give capabilities access to media packetization information when sending
+ * TCS and OLC
+ *
+ * Revision 2.17.4.2  2007/02/10 23:07:20  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -284,6 +288,7 @@ class H323Capabilities;
 class H245_CapabilityIdentifier;
 class H245_GenericCapability;
 class H245_GenericParameter;
+class H245_MediaPacketizationCapability;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -472,6 +477,51 @@ class H323Capability : public PObject
       const H245_DataType & pdu,  ///<  PDU to get information from
       BOOL receiver               ///<  Is receiver OLC
     ) = 0;
+    
+    /**This function is called whenever an outgoing TerminalCapabilitySet
+       PDU is being constructed for the control channel.
+       It allows the capability to alter values in the media packetization
+       capability. Note that the media packetization capability is shared
+       with other capabilities. The code used to modify values should take
+       this into account and especially not take any assumptions whether 
+       certain fields are already present or not.
+        
+       The default behaviour does nothing
+      */
+    virtual void OnSendingPDU(
+      H245_MediaPacketizationCapability & mediaPacketizationCapability
+    ) const {}
+    
+    /**This function is called whenever an incoming TerminalCapabilitySet
+       PDU is received on the control channel. It allows the capability
+       to inspect media packetization information.
+        
+       The default behaviour does nothing
+      */
+    virtual void OnReceivedPDU(
+      const H245_MediaPacketizationCapability & mediaPacketizationCapability
+    ) {}
+    
+    /**This function is called whenever an outgoing OpenLogicalChannel PDU
+       is being constructed for the control channel. It allows the
+       capability to add capability-specific information to the logical
+       channel parameters.
+        
+       The default behaviour does nothing
+      */
+    virtual void OnSendingPDU(
+      H245_H2250LogicalChannelParameters & param
+    ) const {}
+    
+    /**This function is called whenever an incoming OpenLogicalChannel PDU
+       is received on the control channel. It allows the capability to
+       inspect channel parameter details.
+        
+       The default behaviour does nothing
+       */
+    virtual void OnReceivedPDU(
+      const H245_H2250LogicalChannelParameters & param
+    ) {}
 
     /**Compare the nonStandardData part of the capability, if applicable.
       */

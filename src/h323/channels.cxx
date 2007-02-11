@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2036.2.2  2007/02/11 09:41:17  hfriederich
+ * Give capabilities access to media packetization information when sending
+ * TCS and OLC
+ *
+ * Revision 2.35.2.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -1230,6 +1234,7 @@ const OpalMediaType & H323_RTPChannel::GetMediaType() const
 
 BOOL H323_RTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
+  capability->OnSendingPDU(param);
   return rtpCallbacks.OnSendingPDU(*this, param);
 }
 
@@ -1243,6 +1248,7 @@ void H323_RTPChannel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & para
 BOOL H323_RTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
                                     unsigned & errorCode)
 {
+  capability->OnReceivedPDU(param);
   return rtpCallbacks.OnReceivedPDU(*this, param, errorCode);
 }
 
