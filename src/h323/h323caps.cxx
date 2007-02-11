@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2028.2.2  2007/02/10 23:07:22  hfriederich
+ * Revision 1.2028.2.3  2007/02/11 09:41:17  hfriederich
+ * Give capabilities access to media packetization information when sending
+ * TCS and OLC
+ *
+ * Revision 2.27.2.2  2007/02/10 23:07:22  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -1964,6 +1968,17 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
     allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
   allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
   H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
+  
+  const H245_MediaPacketizationCapability * mediaPacketizationCapability = NULL;
+  const H245_MultiplexCapability * muxCap = NULL;
+  if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability)) {
+    muxCap = &pdu.m_multiplexCapability;
+      
+    if (muxCap->GetTag() == H245_MultiplexCapability::e_h2250Capability) {
+      const H245_H2250Capability & h2250 = *muxCap;
+      mediaPacketizationCapability = &h2250.m_mediaPacketizationCapability;
+    }
+  }
 
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
@@ -1973,8 +1988,13 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
           copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
-          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
+          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability)) {
+            if (mediaPacketizationCapability != NULL) {
+              copy->OnReceivedPDU(*mediaPacketizationCapability);
+            }
+        
             table.Append(copy);
+          }
           else
             delete copy;
         }
@@ -2515,6 +2535,9 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
   PAssert((tableSize > 0) == (setSize > 0), PLogicError);
   if (tableSize == 0 || setSize == 0)
     return;
+  
+  H245_H2250Capability & h225_0 = pdu.m_multiplexCapability;
+  H245_MediaPacketizationCapability & mediaPacketizationCapability = h225_0.m_mediaPacketizationCapability;
 
   // Set the table of capabilities
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityTable);
@@ -2530,6 +2553,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
       capability.OnSendingPDU(entry.m_capability);
+      capability.OnSendingPDU(mediaPacketizationCapability);
     }
   }
 
