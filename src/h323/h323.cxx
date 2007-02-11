@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.2  2007/02/10 23:07:22  hfriederich
+ * Revision 1.2136.2.3  2007/02/11 11:46:55  hfriederich
+ * Allow subclasses to create custom instances of H323_RTPChannel
+ *
+ * Revision 2.135.2.2  2007/02/10 23:07:22  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -3973,9 +3976,17 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     return NULL;
 
   ((RTP_UDP *) session)->Reopen(dir == H323Channel::IsReceiver);
-  return new H323_RTPChannel(*this, capability, dir, *session, sessionID);
+  return CreateRTPChannel(capability, dir, *session, sessionID);
 }
 
+
+H323_RTPChannel * H323Connection::CreateRTPChannel(const H323Capability & capability,
+                                                   H323Channel::Directions direction,
+                                                   RTP_Session & rtp,
+                                                   unsigned sessionID)
+{
+    return new H323_RTPChannel(*this, capability, direction, rtp, sessionID);
+}
 
 BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
                                             H323Channel::Directions dir,
