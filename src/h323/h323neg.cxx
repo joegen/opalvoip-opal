@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2012.10.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2012.10.2  2007/02/12 19:38:39  hfriederich
+ * Give capabilities only access to OLC media packetization parameters.
+ * Ensure these callbacks are called before a channel is created
+ *
+ * Revision 2.11.10.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -819,6 +823,13 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
     PTRACE(3, "H245\tOpening channel: " << channelNumber
            << ", channel->OnSendingPDU() failed");
     return FALSE;
+  }
+  
+  // Add media packetization information if needed
+  if (capability.HasMediaPacketizationParameters()) {
+      H245_H2250LogicalChannelParameters & param = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
+      capability.OnSendingPDU(param.m_mediaPacketization);
   }
 
   if (replacementFor > 0) {

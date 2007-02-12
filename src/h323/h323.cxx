@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.3  2007/02/11 11:46:55  hfriederich
+ * Revision 1.2136.2.4  2007/02/12 19:38:39  hfriederich
+ * Give capabilities only access to OLC media packetization parameters.
+ * Ensure these callbacks are called before a channel is created
+ *
+ * Revision 2.135.2.3  2007/02/11 11:46:55  hfriederich
  * Allow subclasses to create custom instances of H323_RTPChannel
  *
  * Revision 2.135.2.2  2007/02/10 23:07:22  hfriederich
@@ -3911,6 +3915,13 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     PTRACE(2, "H323\tCreateLogicalChannel - data type not supported");
     return NULL; // If codec not supported, return error
   }
+  
+  // Give the capability access to the media packetization information
+  if (param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization)) {
+    const H245_H2250LogicalChannelParameters_mediaPacketization & mediaPacketization = 
+      param->m_mediaPacketization;
+    capability->OnReceivedPDU(mediaPacketization);
+  }
 
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
     return NULL; // If codec combination not supported, return error
@@ -3921,7 +3932,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     PTRACE(2, "H323\tCreateLogicalChannel - data type not available");
     return NULL;
   }
-
+  
   if (!channel->SetInitialBandwidth())
     errorCode = H245_OpenLogicalChannelReject_cause::e_insufficientBandwidth;
   else if (channel->OnReceivedPDU(open, errorCode))
