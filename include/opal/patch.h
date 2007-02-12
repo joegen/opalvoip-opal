@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2015  2007/02/05 19:43:17  dsandras
+ * Revision 1.2016  2007/02/12 02:44:27  csoutheren
+ * Start of support for ZRTP
+ *
+ * Revision 2.14  2007/02/05 19:43:17  dsandras
  * Added additional mutex to prevent temporary deadlock when nothing is
  * received on the remote media stream during the establishment phase.
  *
@@ -238,7 +241,7 @@ class OpalMediaPatch : public PObject
       BOOL fromSink                 ///<  Flag for source or sink
     );
 
-    virtual BOOL PushFrame(RTP_DataFrame & frame) { return FALSE; };
+    virtual BOOL PushFrame(RTP_DataFrame & /*frame*/) { return FALSE; };
 
   //@}
 
