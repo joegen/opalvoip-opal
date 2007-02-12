@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2025.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2025.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision of the Opal media command implementation.
+ * Building a media command chain where commands are passed on until
+ * consumed.
+ *
+ * Revision 2.24.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -257,11 +262,22 @@ class OpalTranscoder : public OpalMediaFormatPair
     /**Execute the command specified to the transcoder. The commands are
        highly context sensitive, for example VideoFastUpdate would only apply
        to a video transcoder.
+       Return TRUE to indicate that the command is captured. Else, the command
+       will be propagated further in the media command chain.
 
        The default behaviour simply returns FALSE.
       */
     virtual BOOL ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
+    );
+    
+    /**Issue the command specified to the media command chain.
+       towardsSink determines the direction in which the command
+       should traverse the chain.
+      */
+    BOOL IssueCommand(
+      const OpalMediaCommand & command, ///< Command to be executed
+      BOOL towardsSink                  ///< Direction the command should go
     );
 
     /**Get the optimal size for data frames to be converted.

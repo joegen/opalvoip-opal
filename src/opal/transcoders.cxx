@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.1  2007/02/07 08:51:03  hfriederich
+ * Revision 1.2029.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision of the Opal media command implementation.
+ * Building a media command chain where commands are passed on until
+ * consumed.
+ *
+ * Revision 2.28.2.1  2007/02/07 08:51:03  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -224,6 +229,19 @@ BOOL OpalTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat
 BOOL OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 {
   return FALSE;
+}
+
+
+BOOL OpalTranscoder::IssueCommand(const OpalMediaCommand & command,
+                                  BOOL towardsSink)
+{
+  if (commandNotifier.IsNULL()) {
+    return FALSE;
+  }
+    
+  INT direction = (towardsSink == TRUE) ? 1 : 0;
+  commandNotifier(*(PRemoveConst(OpalMediaCommand, &command)), direction);
+  return TRUE;
 }
 
 
