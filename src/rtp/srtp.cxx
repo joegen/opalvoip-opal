@@ -27,6 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.11  2007/02/12 02:44:27  csoutheren
+ * Start of support for ZRTP
+ *
+ * Revision 1.11  2007/02/10 07:08:41  craigs
+ * Start of support for ZRTP
+ *
  * Revision 1.10  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
@@ -98,21 +104,9 @@
 OpalSRTP_UDP::OpalSRTP_UDP(PHandleAggregator * _aggregator,   ///<  RTP aggregator
                                       unsigned id,            ///<  Session ID for RTP channel
                                           BOOL remoteIsNAT)   ///<  TRUE is remote is behind NAT
-  : RTP_UDP(_aggregator, id, remoteIsNAT)
+  : SecureRTP_UDP(_aggregator, id, remoteIsNAT)
 {
-  srtpParms = NULL;
 }
-
-void OpalSRTP_UDP::SetSecurityMode(OpalSecurityMode * _srtpParms)
-{
-  srtpParms = dynamic_cast<OpalSRTPSecurityMode *>(_srtpParms);
-}
-
-OpalSRTP_UDP::~OpalSRTP_UDP()
-{
-  delete srtpParms;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////
 //
@@ -125,13 +119,13 @@ OpalSRTP_UDP::~OpalSRTP_UDP()
 //  implement SRTP via libSRTP
 //
 
-#if HAS_LIBSRTP
+#if HAS_LIBSRTP || HAS_LIBZRTP
 
 namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
 };
 
-#ifdef WIN32
+#if HAS_LIBSRTP && WIN32
 #pragma comment(lib, LIBSRTP_LIBRARY)
 #endif
 
@@ -177,7 +171,6 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
 
 BOOL LibSRTPSecurityMode_Base::inited = FALSE;
 PMutex LibSRTPSecurityMode_Base::initMutex;
-
 
 void LibSRTPSecurityMode_Base::Init()
 {
@@ -281,13 +274,6 @@ LibSRTP_UDP::LibSRTP_UDP(PHandleAggregator * _aggregator,   ///< handle aggregat
 {
 }
 
-void LibSRTP_UDP::SetSecurityMode(OpalSecurityMode * _srtpParms)
-{
-  OpalSRTP_UDP::SetSecurityMode(_srtpParms);
-  ((LibSRTPSecurityMode_Base *)_srtpParms)->GetOutgoingSSRC(syncSourceOut);
-}
-
-
 LibSRTP_UDP::~LibSRTP_UDP()
 {
 }
@@ -298,7 +284,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
   if (stat != e_ProcessPacket)
     return stat;
 
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
 
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
   frame.SetPayloadSize(len + SRTP_MAX_TRAILER_LEN);
@@ -311,7 +297,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
 {
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
 
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
   err_status_t err = ::srtp_unprotect(srtp->inboundSession, frame.GetPointer(), &len);
@@ -328,7 +314,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendControl(RTP_ControlFrame & frame, 
   if (stat != e_ProcessPacket)
     return stat;
 
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
 
   int len = transmittedLen;
   err_status_t err = ::srtp_protect_rtcp(srtp->outboundSession, frame.GetPointer(), &len);
@@ -341,7 +327,7 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendControl(RTP_ControlFrame & frame, 
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveControl(RTP_ControlFrame & frame)
 {
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
 
   int len = frame.GetSize();
   err_status_t err = ::srtp_unprotect_rtcp(srtp->inboundSession, frame.GetPointer(), &len);

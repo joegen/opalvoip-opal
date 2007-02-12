@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047  2006/12/08 04:12:12  csoutheren
+ * Revision 1.2048  2007/02/12 02:44:27  csoutheren
+ * Start of support for ZRTP
+ *
+ * Revision 2.47  2007/02/10 07:08:41  craigs
+ * Start of support for ZRTP
+ *
+ * Revision 2.46  2006/12/08 04:12:12  csoutheren
  * Applied 1589274 - better rtp error handling of malformed rtcp packet
  * Thanks to frederich
  *
@@ -489,6 +495,7 @@
 #include <rtp/jitter.h>
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
+#include <opal/connection.h>
 
 #define new PNEW
 
@@ -2211,5 +2218,30 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
   return TRUE;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+SecureRTP_UDP::SecureRTP_UDP(PHandleAggregator * _aggregator, unsigned id, BOOL remoteIsNAT)
+  : RTP_UDP(_aggregator, id, remoteIsNAT)
+
+{
+  securityParms = NULL;
+}
+
+SecureRTP_UDP::~SecureRTP_UDP()
+{
+  delete securityParms;
+}
+
+void SecureRTP_UDP::SetSecurityMode(OpalSecurityMode * newParms)
+{ 
+  if (securityParms != NULL)
+    delete securityParms;
+  securityParms = newParms; 
+}
+  
+OpalSecurityMode * SecureRTP_UDP::GetSecurityParms() const
+{ 
+  return securityParms; 
+}
 
 /////////////////////////////////////////////////////////////////////////////
