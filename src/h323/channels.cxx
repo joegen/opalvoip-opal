@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.2  2007/02/11 09:41:17  hfriederich
+ * Revision 1.2036.2.3  2007/02/12 15:34:03  hfriederich
+ * Re-enable media command notifier
+ *
+ * Revision 2.35.2.2  2007/02/11 09:41:17  hfriederich
  * Give capabilities access to media packetization information when sending
  * TCS and OLC
  *
@@ -917,7 +920,7 @@ BOOL H323UnidirectionalChannel::Start()
   if (!mediaStream->Start())
     return FALSE;
 
-  //mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));  // TODO: HERE
+  mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
 
   paused = FALSE;
   return TRUE;
