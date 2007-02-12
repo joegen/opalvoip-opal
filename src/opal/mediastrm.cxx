@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.1  2007/02/07 08:51:03  hfriederich
+ * Revision 1.2053.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision of the Opal media command implementation.
+ * Building a media command chain where commands are passed on until
+ * consumed.
+ *
+ * Revision 2.52.2.1  2007/02/07 08:51:03  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -313,23 +318,29 @@ BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 }
 
 
-BOOL OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
+BOOL OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command,
+                                     BOOL isEndOfChain)
 {
   PWaitAndSignal mutex(patchMutex);
-
-  if (mediaPatch == NULL)
-    return FALSE;
-
-  return mediaPatch->ExecuteCommand(command, IsSink());
+    
+  if (isEndOfChain == TRUE) {
+    if (commandNotifier.IsNULL()) {
+      return FALSE;
+    }
+    commandNotifier(*(PRemoveConst(OpalMediaCommand, &command)), 0);
+    return TRUE;
+  } else {
+    if (mediaPatch == NULL) {
+      return FALSE;
+    }
+    return mediaPatch->ExecuteCommand(command, *this);
+  }
 }
 
 
 void OpalMediaStream::SetCommandNotifier(const PNotifier & notifier)
 {
   PWaitAndSignal mutex(patchMutex);
-
-  if (mediaPatch != NULL)
-    mediaPatch->SetCommandNotifier(notifier, IsSink());
 
   commandNotifier = notifier;
 }

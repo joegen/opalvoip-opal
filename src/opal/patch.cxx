@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.1  2007/02/11 11:59:38  hfriederich
+ * Revision 1.2041.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision of the Opal media command implementation.
+ * Building a media command chain where commands are passed on until
+ * consumed.
+ *
+ * Revision 2.40.2.1  2007/02/11 11:59:38  hfriederich
  * (backport from HEAD - original commit by dsandras)
  * Fixed potential deadlock if ReadPacket takes time to return or does not
  * return. Thanks to Hannes Friederich for the proposal and the SUN Team
@@ -355,6 +360,8 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
            << " using transcoders " << *sink->primaryCodec
            << " and " << *sink->secondaryCodec);
   }
+  
+  sink->SetCommandNotifiers();
 
   source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(TRUE));
   return TRUE;
@@ -472,32 +479,37 @@ BOOL OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, BOOL
 }
 
 
-BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, BOOL fromSink)
+BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, 
+                                    const OpalMediaStream & mediaStream)
 {
   PWaitAndSignal mutex(inUse);
 
-  if (fromSink)
-    return source.ExecuteCommand(command);
-
-  BOOL atLeastOne = FALSE;
-  for (PINDEX i = 0; i < sinks.GetSize(); i++)
-    atLeastOne = sinks[i].ExecuteCommand(command) || atLeastOne;
-
-  return atLeastOne;
-}
-
-
-void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, BOOL fromSink)
-{
-  PWaitAndSignal mutex(inUse);
-
-  if (fromSink)
-    source.SetCommandNotifier(notifier);
-  else {
-    for (PINDEX i = 0; i < sinks.GetSize(); i++)
-      sinks[i].SetCommandNotifier(notifier);
+  // If a sink stream calls this function, find out which Sink this stream belongs to and forward
+  // the command to the transcoder(s). If the transcoders don't capture the command, forward
+  // the command to the source stream.
+  // If the source stream calls this function, forward the command to all sinks. The sinks will
+  // first forward to command to the transcoder(s). If the command isn't captured there, the
+  // sink stream will receive the command.
+  if (mediaStream.IsSink()) {
+    for (PINDEX i = 0; i < sinks.GetSize(); i++) {
+      if (sinks[i].stream == &mediaStream) {
+        BOOL result = sinks[i].ExecuteCommand(command, TRUE);
+        if (result == FALSE) {
+          return source.ExecuteCommand(command, TRUE);
+        }
+        return TRUE;
+      }
+    }
+    return FALSE;
+  } else {
+    BOOL atLeastOne = FALSE;
+    for (PINDEX i = 0; i < sinks.GetSize(); i++) {
+      atLeastOne = sinks[i].ExecuteCommand(command, FALSE) || atLeastOne;
+    }
+    return atLeastOne;
   }
 }
+
 
 void OpalMediaPatch::Main()
 {
@@ -578,27 +590,82 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 }
 
 
-bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
+BOOL OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command,
+                                          BOOL fromSink)
 {
-  BOOL atLeastOne = FALSE;
+  if (fromSink == TRUE) {
+    // Pass the command first to the secondary codec
+    // and then the primary codec
+    BOOL result = FALSE;
+    if (secondaryCodec != NULL) {
+      result = secondaryCodec->ExecuteCommand(command);
+    }
+    if (result == FALSE && primaryCodec != NULL) {
+      result = primaryCodec->ExecuteCommand(command);
+    }
+    return result;
+  } else {
+    // Pass the command first to the primary codec,
+    // then to the secondary codec and finally to the
+    // sink stream, unless the command is captured
+    // somewhere.
+    BOOL result = FALSE;
+    if (primaryCodec != NULL) {
+      result = primaryCodec->ExecuteCommand(command);
+    }
+    if (result == FALSE && secondaryCodec != NULL) {
+      result = secondaryCodec->ExecuteCommand(command);
+    }
+    if (result == FALSE) {
+      result = stream->ExecuteCommand(command, TRUE);
+    }
+    return result;
+  }
+}
 
-  if (secondaryCodec != NULL)
-    atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;
-
-  if (primaryCodec != NULL)
-    atLeastOne = primaryCodec->ExecuteCommand(command) || atLeastOne;
-
-  return atLeastOne;
+void OpalMediaPatch::Sink::SetCommandNotifiers()
+{
+  if (primaryCodec != NULL) {
+    primaryCodec->SetCommandNotifier(PCREATE_NOTIFIER(ExecuteCommandFromPrimaryCodec));
+  }
+  if (secondaryCodec != NULL) {
+    secondaryCodec->SetCommandNotifier(PCREATE_NOTIFIER(ExecuteCommandFromSecondaryCodec));
+  }
 }
 
 
-void OpalMediaPatch::Sink::SetCommandNotifier(const PNotifier & notifier)
+void OpalMediaPatch::Sink::ExecuteCommandFromPrimaryCodec(OpalMediaCommand & command,
+                                                          INT towardsSink)
 {
-  if (secondaryCodec != NULL)
-    secondaryCodec->SetCommandNotifier(notifier);
+  if (towardsSink == 0) {
+    // towards source, execute on the source stream
+    patch.source.ExecuteCommand(command, TRUE);
+  } else {
+    BOOL result = FALSE;
+    if (secondaryCodec != NULL) {
+      result = secondaryCodec->ExecuteCommand(command);
+    }
+    if (result == FALSE) {
+      stream->ExecuteCommand(command, TRUE);
+    }
+  }
+}
 
-  if (primaryCodec != NULL)
-    primaryCodec->SetCommandNotifier(notifier);
+
+void OpalMediaPatch::Sink::ExecuteCommandFromSecondaryCodec(OpalMediaCommand & command,
+                                                            INT towardsSink)
+{
+  if (towardsSink == 0) {
+    BOOL result = FALSE;
+    if (primaryCodec != NULL) { // Should always be TRUE, actually
+      result = primaryCodec->ExecuteCommand(command);
+    }
+    if (result == FALSE) {
+      patch.source.ExecuteCommand(command, TRUE);
+    }
+  } else {
+    stream->ExecuteCommand(command, TRUE);
+  }
 }
 
 
