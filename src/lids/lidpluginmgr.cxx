@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2010  2007/01/24 04:02:46  csoutheren
+ * Revision 1.2011  2007/02/12 23:55:41  dereksmithies
+ * Fix GCC warnings about unused enumeration values in switch statements.
+ *
+ * Revision 2.9  2007/01/24 04:02:46  csoutheren
  * Removed warnings on Linux
  *
  * Revision 2.8  2006/11/19 04:58:09  rjongbloed
@@ -334,6 +337,8 @@ BOOL OpalPluginLID::HookFlash(unsigned line, unsigned flashTime)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -394,6 +399,8 @@ BOOL OpalPluginLID::IsLineDisconnected(unsigned line, BOOL checkForWink)
 
     case PluginLID_NoError :
       return disconnected;
+
+    default : ;
   }
   return FALSE;
 }
@@ -429,13 +436,17 @@ OpalMediaFormatList OpalPluginLID::GetMediaFormats() const
         return formats;
 
       case PluginLID_NoError :
+      {
         OpalMediaFormat format = buffer;
         if (format.IsEmpty()) {
           PTRACE(2, "LID Plugin\tCodec format \"" << buffer << "\" in " << m_definition.name << " is not supported by OPAL.");
         }
         else
           formats += format;
-        break;
+      }
+      break;
+
+      default : ;
     }
   }
 }
@@ -449,6 +460,8 @@ BOOL OpalPluginLID::SetReadFormat(unsigned line, const OpalMediaFormat & mediaFo
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -462,6 +475,8 @@ BOOL OpalPluginLID::SetWriteFormat(unsigned line, const OpalMediaFormat & mediaF
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -476,6 +491,8 @@ OpalMediaFormat OpalPluginLID::GetReadFormat(unsigned line)
 
     case PluginLID_NoError :
       return buffer;
+
+    default : ;
   }
   return OpalMediaFormat();
 }
@@ -490,6 +507,8 @@ OpalMediaFormat OpalPluginLID::GetWriteFormat(unsigned line)
 
     case PluginLID_NoError :
       return buffer;
+
+    default : ;
   }
   return OpalMediaFormat();
 }
@@ -505,6 +524,8 @@ BOOL OpalPluginLID::StopReading(unsigned line)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -520,6 +541,8 @@ BOOL OpalPluginLID::StopWriting(unsigned line)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -533,6 +556,8 @@ BOOL OpalPluginLID::SetReadFrameSize(unsigned line, PINDEX frameSize)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -546,6 +571,8 @@ BOOL OpalPluginLID::SetWriteFrameSize(unsigned line, PINDEX frameSize)
 
     case PluginLID_NoError :
       return TRUE;
+
+   default : ;
   }
   return FALSE;
 }
@@ -561,6 +588,8 @@ PINDEX OpalPluginLID::GetReadFrameSize(unsigned line)
     case PluginLID_UnimplementedFunction :
       PINDEX size, buffers;
       return m_recorder.GetBuffers(size, buffers) ? size : 0;
+
+      default : ;
   }
   return 0;
 }
@@ -576,6 +605,8 @@ PINDEX OpalPluginLID::GetWriteFrameSize(unsigned line)
     case PluginLID_UnimplementedFunction :
       PINDEX size, buffers;
       return m_player.GetBuffers(size, buffers) ? size : 0;
+
+      default : ;
   }
   return 0;
 }
@@ -594,6 +625,8 @@ BOOL OpalPluginLID::ReadFrame(unsigned line, void * buffer, PINDEX & count)
     case PluginLID_NoError :
       count = uiCount;
       return TRUE;
+
+   default : ;
   }
   return FALSE;
 }
@@ -612,6 +645,8 @@ BOOL OpalPluginLID::WriteFrame(unsigned line, const void * buffer, PINDEX count,
     case PluginLID_NoError :
       written = uiCount;
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -633,6 +668,8 @@ BOOL OpalPluginLID::EnableAudio(unsigned line, BOOL enable)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -655,6 +692,8 @@ BOOL OpalPluginLID::SetRecordVolume(unsigned line, unsigned volume)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -668,6 +707,8 @@ BOOL OpalPluginLID::SetPlayVolume(unsigned line, unsigned volume)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -681,6 +722,8 @@ BOOL OpalPluginLID::GetRecordVolume(unsigned line, unsigned & volume)
 
     case PluginLID_NoError :
       return TRUE;
+
+    default : ;
   }
   return FALSE;
 }
@@ -694,6 +737,9 @@ BOOL OpalPluginLID::GetPlayVolume(unsigned line, unsigned & volume)
 
     case PluginLID_NoError :
       return TRUE;
+
+      default:;
+
   }
   return FALSE;
 }
