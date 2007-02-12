@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032  2007/02/01 06:43:19  csoutheren
+ * Revision 1.2033  2007/02/12 02:44:27  csoutheren
+ * Start of support for ZRTP
+ *
+ * Revision 2.32  2007/02/10 07:08:41  craigs
+ * Start of support for ZRTP
+ *
+ * Revision 2.31  2007/02/01 06:43:19  csoutheren
  * Added virtual to functions
  *
  * Revision 2.30  2006/12/08 04:12:12  csoutheren
@@ -309,6 +315,7 @@
 
 class RTP_JitterBuffer;
 class PSTUNClient;
+class OpalSecurityMode;
 
 #if OPAL_RTP_AGGREGATE
 #include <ptclib/sockagg.h>
@@ -1276,8 +1283,33 @@ class RTP_UDP : public RTP_Session
     BOOL remoteIsNAT;
 };
 
+/////////////////////////////////////////////////////////////////////////////
+
+class SecureRTP_UDP : public RTP_UDP
+{
+  PCLASSINFO(SecureRTP_UDP, RTP_UDP);
+
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new RTP channel.
+     */
+    SecureRTP_UDP(
+      PHandleAggregator * aggregator, ///< RTP aggregator
+      unsigned id,                    ///<  Session ID for RTP channel
+      BOOL remoteIsNAT                ///<  TRUE is remote is behind NAT
+    );
+
+    /// Destroy the RTP
+    ~SecureRTP_UDP();
+
+    virtual void SetSecurityMode(OpalSecurityMode * srtpParms);  
+    virtual OpalSecurityMode * GetSecurityParms() const;
+
+  protected:
+    OpalSecurityMode * securityParms;
+};
 
 #endif // __OPAL_RTP_H
-
 
 /////////////////////////////////////////////////////////////////////////////

@@ -510,12 +510,45 @@ fi
 AC_SUBST(OPAL_IVR)
 
 
+
+
+dnl ########################################################################
+dnl
+dnl ZRTP from Phil Zimmermann
+dnl 
+
+dnl MSWIN_DISPLAY     libzrtp,ZRTP/SRTP support
+dnl MSWIN_CHECK_FILE  libzrtp,include\zrtp_types.h,HAS_LIBZRTP=1
+dnl MSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
+dnl MSWIN_CHECK_DIR   libsrtp,.\srtp_win32k
+dnl MSWIN_CHECK_DIR   libzrtp,.\zrtp
+dnl MSWIN_CHECK_DIR   libzrtp,..\external\zrtp
+dnl MSWIN_CHECK_DIR   libzrtp,c:\libs
+
+HAS_LIBZRTP=
+dnl AC_MSG_CHECKING(for libZRTP)
+dnl AC_TRY_COMPILE([#include "srtp/srtp.h"],
+dnl  [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
+dnl  HAS_LIBSRTP=1)
+dnl if test "${HAS_LIBSRTP}" = "1" ; then
+dnl   AC_MSG_RESULT(yes)
+dnl   AC_DEFINE(HAS_LIBSRTP, 1)
+dnl   HAS_LIBSRTP=1
+dnl   OPAL_SRTP=1
+dnl else
+dnl   AC_MSG_RESULT(no)
+dnl fi
+AC_SUBST(OPAL_ZRTP)
+AC_SUBST(HAS_LIBZRTP)
+
+
 dnl ########################################################################
 dnl
 dnl Cisco libSRTP
 dnl 
 
 dnl MSWIN_DISPLAY     libsrtp,Cisco libSRTP support
+dnl MSWIN_IF_FEATURE  libsrtp,!libzrtp
 dnl MSWIN_CHECK_FILE  libsrtp,include\srtp.h,HAS_LIBSRTP=1
 dnl MSWIN_DIR_SYMBOL  libsrtp,LIBSRTP_DIR
 dnl MSWIN_CHECK_DIR   libsrtp,.\srtp
@@ -537,8 +570,6 @@ else
 fi
 AC_SUBST(OPAL_SRTP)
 AC_SUBST(HAS_LIBSRTP)
-
-
 dnl ########################################################################
 dnl output make directives
 

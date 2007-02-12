@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2072  2007/02/12 02:44:27  csoutheren
+ * Start of support for ZRTP
+ *
+ *
+ * Revision 2.70  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -1435,6 +1439,7 @@ class OpalSecurityMode : public PObject
       unsigned id,          ///<  Session ID for RTP channel
       BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     ) = 0;
+    virtual BOOL Open() = 0;
 };
 
 
