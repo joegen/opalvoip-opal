@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision 1.2041.2.3  2007/02/13 11:29:49  hfriederich
+ * Return sink stream format if no transcoder is present
+ *
+ * Revision 2.40.2.2  2007/02/12 15:32:01  hfriederich
  * Revision of the Opal media command implementation.
  * Building a media command chain where commands are passed on until
  * consumed.
@@ -400,8 +403,8 @@ OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 
 	if (sink.primaryCodec != NULL)
 		return sink.primaryCodec->GetOutputFormat();
-
-	return fmt;
+    
+    return sink.stream->GetMediaFormat();
 }
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
