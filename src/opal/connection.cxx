@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2090  2007/02/13 23:36:42  csoutheren
+ * Fix problem with using SIP connections that have no StringOptions
+ *
+ * Revision 2.88  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -515,7 +518,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     phase(UninitialisedPhase),
     originating(FALSE),
     callEndReason(NumCallEndReasons),
-    stringOptions(_stringOptions)
+    stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
