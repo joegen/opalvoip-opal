@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision 1.2053.2.3  2007/02/13 11:30:59  hfriederich
+ * Return media format by reference instead of value
+ *
+ * Revision 2.52.2.2  2007/02/12 15:32:01  hfriederich
  * Revision of the Opal media command implementation.
  * Building a media command chain where commands are passed on until
  * consumed.
@@ -300,7 +303,7 @@ void OpalMediaStream::PrintOn(ostream & strm) const
 }
 
 
-OpalMediaFormat OpalMediaStream::GetMediaFormat() const
+const OpalMediaFormat & OpalMediaStream::GetMediaFormat() const
 {
   return mediaFormat;
 }
