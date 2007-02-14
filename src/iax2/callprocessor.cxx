@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.11  2007/02/14 00:18:29  dereksmithies
+ * Fix no response timer, so calls can last for more than 1 minute.
+ *
  * Revision 1.10  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
@@ -275,7 +278,6 @@ void IAX2CallProcessor::RemoteNodeHasAnswered()
   
   SetCallAnswered();
   PTRACE(3, " Remote node has answered");
-  StopNoResponseTimer();
   PTRACE(3, "IAX\tCALL con->OnConnected");
   con->OnConnected();
 }
@@ -801,6 +803,7 @@ BOOL IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 { /* these frames are labelled as AST_FRAME_IAX in the asterisk souces.
      These frames contain Information Elements in the data field.*/  
   PTRACE(4, "ProcessNetworkFrame " << *src);
+  StopNoResponseTimer();
 
   CheckForRemoteCapabilities(src);
   src->CopyDataFromIeListTo(ieData);
@@ -1068,7 +1071,6 @@ void IAX2CallProcessor::SetEstablished(BOOL PTRACE_PARAM(originator))
 void IAX2CallProcessor::SendAnswerMessageToRemoteNode()
 {
   answerCallNow = FALSE;
-  StopNoResponseTimer();
   PTRACE(4, "Processor\tSend Answer message");
   IAX2FullFrameSessionControl * reply;
   reply = new IAX2FullFrameSessionControl(this, IAX2FullFrameSessionControl::answer);
@@ -1120,7 +1122,6 @@ void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
   con->OnAlerting();
 
   PTRACE(4, "ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)");
-  StopNoResponseTimer();
     
   if (IsCallAccepted()) {
     PTRACE(3, "Second accept packet received. Ignore it");
@@ -1150,7 +1151,7 @@ void IAX2CallProcessor::ProcessIaxCmdAccept(IAX2FullFrameProtocol *src)
 void IAX2CallProcessor::ProcessIaxCmdAuthReq(IAX2FullFrameProtocol * src)
 {
   PTRACE(4, "ProcessIaxCmdAuthReq(IAX2FullFrameProtocol *src)");
-  StopNoResponseTimer();
+
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdAuthRep);
   
   if (!GetPassword().IsEmpty())
