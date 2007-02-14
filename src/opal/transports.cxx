@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072  2006/12/13 04:59:48  csoutheren
+ * Revision 1.2072.2.1  2007/02/14 08:29:33  hfriederich
+ * (Backport from HEAD)
+ * Allow use of localhost for incoming calls
+ *
+ * Revision 2.71  2006/12/13 04:59:48  csoutheren
  * Applied 1613084 - Memory leak in internal transports handling
  * Thanks to Drazen Dimoti
  *
@@ -1854,7 +1858,7 @@ BOOL OpalTransportUDP::Connect()
   PINDEX i;
   for (i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
-    if (interfaceAddress == 0 || interfaceAddress == PIPSocket::Address())
+    if (interfaceAddress == 0/* || interfaceAddress == PIPSocket::Address()*/)
       continue;
 
     // Check for already have had that IP address.
