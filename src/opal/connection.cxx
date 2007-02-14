@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.2  2007/02/10 23:07:22  hfriederich
+ * Revision 1.2089.2.3  2007/02/14 08:26:12  hfriederich
+ * (Backport from HEAD)
+ * Fix problem with using SIP connections that have no StringOptions
+ *
+ * Revision 2.88.2.2  2007/02/10 23:07:22  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -529,7 +533,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     phase(UninitialisedPhase),
     originating(FALSE),
     callEndReason(NumCallEndReasons),
-    stringOptions(_stringOptions)
+    stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
