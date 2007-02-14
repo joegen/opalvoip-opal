@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059.2.2  2007/02/10 18:15:56  hfriederich
+ * Revision 1.2059.2.3  2007/02/14 08:34:40  hfriederich
+ * (Backport from HEAD)
+ * Extended FindFormat to allow finding multiple matching formats
+ *
+ * Revision 2.58.2.2  2007/02/10 18:15:56  hfriederich
  * (Backport from HEAD)
  * Add copy constructor to have consistent code with assignment operator.
  * Only make options unique when they actually differ
@@ -1576,10 +1580,11 @@ static BOOL WildcardMatch(const PCaselessString & str, const PStringArray & wild
 }
 
 
-PINDEX OpalMediaFormatList::FindFormat(const PString & search) const
+PINDEX OpalMediaFormatList::FindFormat(const PString & search, PINDEX pos) const
 {
   PStringArray wildcards = search.Tokenise('*', TRUE);
-  for (PINDEX idx = 0; idx < GetSize(); idx++) {
+  PINDEX idx;
+  for (idx = pos; idx < GetSize(); idx++) {
     if (WildcardMatch((*this)[idx], wildcards))
       return idx;
   }
