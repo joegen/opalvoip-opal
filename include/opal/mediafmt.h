@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.2  2007/02/10 18:15:56  hfriederich
+ * Revision 1.2046.2.3  2007/02/14 08:34:40  hfriederich
+ * (Backport from HEAD)
+ * Extended FindFormat to allow finding multiple matching formats
+ *
+ * Revision 2.45.2.2  2007/02/10 18:15:56  hfriederich
  * (Backport from HEAD)
  * Add copy constructor to have consistent code with assignment operator.
  * Only make options unique when they actually differ
@@ -90,7 +94,11 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.2  2007/02/10 18:15:56  hfriederich
+ * Revision 1.2046.2.3  2007/02/14 08:34:40  hfriederich
+ * (Backport from HEAD)
+ * Extended FindFormat to allow finding multiple matching formats
+ *
+ * Revision 2.45.2.2  2007/02/10 18:15:56  hfriederich
  * (Backport from HEAD)
  * Add copy constructor to have consistent code with assignment operator.
  * Only make options unique when they actually differ
@@ -577,7 +585,8 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        Returns P_MAX_INDEX if not in list.
       */
     PINDEX FindFormat(
-      const PString & wildcard    ///<  Wildcard string name.
+      const PString & wildcard,    ///<  Wildcard string name.
+      PINDEX pos = 0
     ) const;
 
     /**Determine if a format matching the payload type is in the list.
