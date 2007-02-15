@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2069.2.1  2007/02/15 09:43:16  hfriederich
+ * Make CreateTransport() virtual
+ *
+ * Revision 2.68  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -648,7 +651,7 @@ class SIPEndPoint : public OpalEndPoint
        Else, address is interpreted as the remote address,
        to which the transport should connect
       */
-    OpalTransport * CreateTransport(
+    virtual OpalTransport * CreateTransport(
       const OpalTransportAddress & address,
       BOOL isLocalAddress = FALSE
     );
