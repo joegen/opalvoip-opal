@@ -26,6 +26,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdpcaps.h,v $
+ * Revision 1.1.2.2  2007/02/16 10:43:41  hfriederich
+ * - Extend SDP capability system for merging local / remote format parameters.
+ * - Propagate media format options to the media streams
+ *
  * Revision 1.1.2.1  2007/02/07 09:31:05  hfriederich
  * Add new SDPCapability class to ease translation between FMTP and media
  * format representation.
@@ -45,20 +49,39 @@
 
 /////////////////////////////////////////////////////////
 
-
+/**This class encapsulates the translation between media formats and the
+   SDP representation and vice versa.
+   It is guaranteed that UpdateMediaFormat() is called before a call to
+   either OnSendingSDP() or OnReceivedSDP(). However, OnReceivedSDP() may
+   be called multiple times in case of Re-invites, so SDP capabilities should
+   store the local settings somehow and apply correct merge rules every time
+   OnReceivedSDP() is called.
+  */
 class SDPCapability : public PObject
 {
-    PCLASSINFO(SDPCapability, PObject);
+  PCLASSINFO(SDPCapability, PObject);
+    
 public:
     
-    SDPCapability();
+  SDPCapability();
     
-    static const SDPCapability & GetCapability(const OpalMediaFormat & mediaFormat);
+  /**Creates a new instance of an SDPCapability for the given media format.
+     This function uses the SDPCapability factory to look for custom capabilities.
+     If no custom capability is found, a default SDPCapability instance is returned.
+    */
+  static SDPCapability * CreateCapability(const OpalMediaFormat & mediaFormat);
     
-    virtual BOOL OnSendingSDP(const OpalMediaFormat & mediaFormat, SDPMediaFormat & sdpMediaFormat) const;
-    virtual BOOL OnReceivingSDP(OpalMediaFormat & mediaFormat, const SDPMediaFormat & sdpMediaFormat) const;
+  virtual BOOL OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const { return TRUE; }
+  virtual BOOL OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
+                             const SDPMediaDescription & mediaDescription,
+                             const SDPSessionDescription & sessionDescription) { return TRUE; }
+    
+  virtual void UpdateMediaFormat(const OpalMediaFormat & _mediaFormat) { mediaFormat = _mediaFormat; }
+  virtual const OpalMediaFormat & GetMediaFormat() const { return mediaFormat; }
+  
+protected:
+  OpalMediaFormat mediaFormat;
 };
-
 
 /////////////////////////////////////////////////////////
 
@@ -68,13 +91,30 @@ class RFC2833_SDPCapability : public SDPCapability
     PCLASSINFO(RFC2833_SDPCapability, SDPCapability);
 public:
 
-    virtual BOOL OnSendingSDP(const OpalMediaFormat & mediaFormat, SDPMediaFormat & sdpMediaFormat) const;
-    virtual BOOL OnReceivingSDP(OpalMediaFormat & mediaFormat, const SDPMediaFormat & sdpMediaFormat) const;
+    virtual BOOL OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const;
+    virtual BOOL OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
+                               const SDPMediaDescription & sdpMediaDescription,
+                               const SDPSessionDescription & sessionDescription);
 };
 
 /////////////////////////////////////////////////////////
 
-/* SDP capability registration macros based on absstract factories
+PLIST(SDPCapabilityBaseList, SDPCapability);
+
+class SDPCapabilityList : public SDPCapabilityBaseList
+{
+  PCLASSINFO(SDPCapabilityList, SDPCapabilityBaseList);
+    
+public:
+    
+  BOOL HasCapability(const OpalMediaFormat & mediaFormat) const { return FindCapability(mediaFormat) != NULL; }
+  SDPCapability * FindCapability(const OpalMediaFormat & mediaFormat) const;
+  void AddCapabilityWithFormat(const OpalMediaFormat & mediaFormat);
+};
+
+/////////////////////////////////////////////////////////
+
+/* SDP capability registration macros based on abstract factories
  */
 typedef PFactory<SDPCapability, std::string> SDPCapabilityFactory;
 

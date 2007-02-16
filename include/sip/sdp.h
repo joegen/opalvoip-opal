@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2021.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2021.2.2  2007/02/16 10:43:41  hfriederich
+ * - Extend SDP capability system for merging local / remote format parameters.
+ * - Propagate media format options to the media streams
+ *
+ * Revision 2.20.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -118,6 +122,9 @@
 #include <opal/mediafmt.h>
 #include <rtp/rtp.h>
 
+class SDPCapability;
+class SDPCapabilityList;
+class SDPSessionDescription;
 
 /////////////////////////////////////////////////////////
 
@@ -229,8 +236,9 @@ class SDPMediaDescription : public PObject
     void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
     
     OpalMediaFormatList GetMediaFormats(const OpalMediaType & mediaType) const;
-    void AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map);
-    void AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType, const RTP_DataFrame::PayloadMapType & map);
+    void AddCapabilityFormat(const SDPCapability & capability, const RTP_DataFrame::PayloadMapType & map);
+    void UpdateCapabilities(SDPCapabilityList & capabilities, 
+                            const SDPSessionDescription & sessionDescription) const;
     void CreateRTPMap(const OpalMediaType & mediaType, RTP_DataFrame::PayloadMapType & map) const;
 
     /**Internal method that is used during decode stage */

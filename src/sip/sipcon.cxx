@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.1  2007/02/07 08:51:03  hfriederich
+ * Revision 1.2198.2.2  2007/02/16 10:43:41  hfriederich
+ * - Extend SDP capability system for merging local / remote format parameters.
+ * - Propagate media format options to the media streams
+ *
+ * Revision 2.197.2.1  2007/02/07 08:51:03  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -1179,7 +1183,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const OpalMediaType & mediaType, const O
     PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty == NULL) {
-      PTRACE(2, "H323\tCorwardly fefusing to create an RTP channel with only one connection");
+      PTRACE(2, "SIP\tCowardly refusing to create an RTP channel with only one connection");
       return NULL;
      }
 
@@ -1290,7 +1294,10 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   
     // Add in the RFC2833 handler, if used
     if (hasTelephoneEvent) {
-      localMedia->AddMediaFormat(OpalRFC2833, rtpPayloadMap);
+      SDPCapability * capability = capabilities.FindCapability(OpalRFC2833);
+      if (capability != NULL) {
+        localMedia->AddCapabilityFormat(*capability, rtpPayloadMap);
+      }
     }
 
   // set the remote address after the stream is opened
@@ -1361,7 +1368,10 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetMediaType() == mediaType) {
       if (OpenSourceMediaStream(otherList, mediaType) && localMedia) {
-        localMedia->AddMediaFormat(mediaStream.GetMediaFormat(), rtpPayloadMap);
+        SDPCapability * capability = capabilities.FindCapability(mediaStream.GetMediaFormat());
+        if (capability != NULL) {
+          localMedia->AddCapabilityFormat(*capability, rtpPayloadMap);
+        }
         reverseStreamsFailed = FALSE;
       }
     }
@@ -1447,15 +1457,21 @@ OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
 OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                    BOOL isSource)
 {
-    const OpalMediaType & mediaType = mediaFormat.GetMediaType();
+  const OpalMediaType & mediaType = mediaFormat.GetMediaType();
     
   if (ownerCall.IsMediaBypassPossible(*this, mediaType))
     return new OpalNullMediaStream(mediaFormat, isSource);
 
   if (rtpSessions.GetSession(mediaType) == NULL)
     return NULL;
+  
+  OpalMediaFormat adjustableMediaFormat = mediaFormat;
+  SDPCapability * capability = capabilities.FindCapability(mediaFormat);
+  if (capability != NULL) {
+    adjustableMediaFormat = capability->GetMediaFormat();
+  }
 
-  return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(mediaType),
+  return new OpalRTPMediaStream(adjustableMediaFormat, isSource, *rtpSessions.GetSession(mediaType),
                                 endpoint.GetManager().GetMinAudioJitterDelay(),
                                 endpoint.GetManager().GetMaxAudioJitterDelay());
 }
@@ -1681,9 +1697,16 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   SDPMediaDescription * localMedia = new SDPMediaDescription(localAddress, mediaType.GetMIMEMediaType());
  
   // add media formats first, as Mediatrix gateways barf if RFC2833 is first
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
-  AdjustMediaFormats(formats);
-  localMedia->AddMediaFormats(formats, mediaType, rtpPayloadMap);
+  if (capabilities.IsEmpty()) {
+    PopulateCapabilityList();
+  }
+  for (PINDEX i = 0; i < capabilities.GetSize(); i++) {
+    const SDPCapability & capability = capabilities[i];
+    if (capability.GetMediaFormat().GetMediaType() == mediaType) {
+
+      localMedia->AddCapabilityFormat(capability, rtpPayloadMap);
+    }
+  }
 
   // Set format if we have an RTP payload type for RFC2833
   if (mediaType == OpalDefaultAudioMediaType) {
@@ -1698,7 +1721,10 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     if (ntePayloadCode != RTP_DataFrame::IllegalPayloadType) {
       PTRACE(3, "SIP\tUsing RTP payload " << ntePayloadCode << " for NTE");
       rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(OpalRFC2833.GetPayloadType(), ntePayloadCode));
-      localMedia->AddMediaFormat(OpalRFC2833, rtpPayloadMap);
+      SDPCapability * capability = capabilities.FindCapability(OpalRFC2833);
+      if(capability != NULL) {
+        localMedia->AddCapabilityFormat(*capability, rtpPayloadMap);
+      }
     } else {
       PTRACE(2, "SIP\tCould not allocate dynamic RTP payload for NTE");
     }
@@ -2618,6 +2644,11 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 
   remoteSDP = pdu.GetSDP();
   
+  // Ensure capabilities are present
+  if (capabilities.GetSize() == 0) {
+    PopulateCapabilityList();
+  }
+  
   OpalMediaTypeList mediaTypes = OpalMediaType::GetAllRegisteredMediaTypes();
   for (PINDEX i  = 0; i < mediaTypes.GetSize(); i++) {
     OnReceivedSDPMediaDescription(remoteSDP, mediaTypes[i]);
@@ -2638,6 +2669,8 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     PTRACE(1, "SIP\tCould not find SDP media description for " << mediaType);
     return FALSE;
   }
+  
+  mediaDescription->UpdateCapabilities(capabilities, sdp);
 
   //if (mediaType != SDPMediaDescription::Image) {
     // Create the RTPSession
@@ -2970,6 +3003,35 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
   }
 
   return OpalConnection::SendUserInputTone(tone, duration);
+}
+
+BOOL SIPConnection::PopulateCapabilityList()
+{
+  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+  AdjustMediaFormats(formats);
+  for (PINDEX i = 0; i < formats.GetSize(); i++) {
+    OpalMediaFormat mediaFormat = formats[i];
+    const char *encodingName = mediaFormat.GetEncodingName();
+    if (encodingName != NULL &&
+        *encodingName != '\0' &&
+        mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType &&
+        mediaFormat.IsValidForProtocol("sip")) {
+        
+      if (adjustMediaFormatOptions == TRUE) {
+        GetCall().AdjustMediaFormatOptions(mediaFormat, *this);
+      }
+      capabilities.AddCapabilityWithFormat(mediaFormat);
+    }
+  }
+  
+  // special handling for RFC2833
+  OpalMediaFormat rfc2833Format = OpalRFC2833;
+  if (adjustMediaFormatOptions == TRUE) {
+    GetCall().AdjustMediaFormatOptions(rfc2833Format, *this);
+  }
+  capabilities.AddCapabilityWithFormat(rfc2833Format);
+  
+  return TRUE;
 }
 
 /////////////////////////////////////////////////////////////////////////////

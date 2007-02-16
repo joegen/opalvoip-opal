@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdpcaps.cxx,v $
+ * Revision 1.1.2.2  2007/02/16 10:43:41  hfriederich
+ * - Extend SDP capability system for merging local / remote format parameters.
+ * - Propagate media format options to the media streams
+ *
  * Revision 1.1.2.1  2007/02/07 09:31:05  hfriederich
  * Add new SDPCapability class to ease translation between FMTP and media
  * format representation.
@@ -48,41 +52,55 @@ SDPCapability::SDPCapability()
 }
 
 
-const SDPCapability & SDPCapability::GetCapability(const OpalMediaFormat & mediaFormat)
+SDPCapability * SDPCapability::CreateCapability(const OpalMediaFormat & mediaFormat)
 {
-    static SDPCapability defaultCapability;
-    SDPCapability * cap = SDPCapabilityFactory::CreateInstance(mediaFormat.GetEncodingName());
-    if(cap == NULL) {
-        return defaultCapability;
-    }
-    return *cap;
-}
-
-
-BOOL SDPCapability::OnSendingSDP(const OpalMediaFormat & mediaFormat, SDPMediaFormat & sdpMediaFormat) const
-{
-    return TRUE;
-}
-
-
-BOOL SDPCapability::OnReceivingSDP(OpalMediaFormat & mediaFormat, const SDPMediaFormat & sdpMediaFormat) const
-{
-    return TRUE;
+    
+  SDPCapability * cap = SDPCapabilityFactory::CreateInstance(mediaFormat.GetEncodingName());
+  if(cap == NULL) {
+    cap = new SDPCapability();
+  }
+  cap->UpdateMediaFormat(mediaFormat);
+  return cap;
 }
 
 
 /////////////////////////////////////////////////////////
 
-BOOL RFC2833_SDPCapability::OnSendingSDP(const OpalMediaFormat & mediaFormat, SDPMediaFormat & sdpMediaFormat) const
+BOOL RFC2833_SDPCapability::OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const
 {
     sdpMediaFormat.SetFMTP("0-15");
     return TRUE;
 }
 
 
-BOOL RFC2833_SDPCapability::OnReceivingSDP(OpalMediaFormat & mediaFormat, const SDPMediaFormat & sdpMediaFormat) const
+BOOL RFC2833_SDPCapability::OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
+                                          const SDPMediaDescription & mediaDescription,
+                                          const SDPSessionDescription & sessionDescription)
 {
     return TRUE;
+}
+
+/////////////////////////////////////////////////////////
+
+SDPCapability * SDPCapabilityList::FindCapability(const OpalMediaFormat & mediaFormat) const
+{
+  for (PINDEX i = 0; i < GetSize(); i++) {
+    SDPCapability & capability = (*this)[i];
+    if (capability.GetMediaFormat() == mediaFormat) {
+      return &capability;
+    }
+  }
+  return NULL;
+}
+
+void SDPCapabilityList::AddCapabilityWithFormat(const OpalMediaFormat & mediaFormat)
+{
+  if (HasCapability(mediaFormat)) {
+    return;
+  }
+    
+  SDPCapability * capability = SDPCapability::CreateCapability(mediaFormat);
+  Append(capability);
 }
 
 // End of file ////////////////////////////////////////////////////////////////
