@@ -24,7 +24,11 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2014  2006/07/24 14:03:38  csoutheren
+ * Revision 1.2015  2007/02/16 07:56:02  dereksmithies
+ * Change flag used so H.323 capabiliites are included  if H.323 was enabled
+ * when the library was configured.
+ *
+ * Revision 2.13  2006/07/24 14:03:38  csoutheren
  * Merged in audio and video plugins from CVS branch PluginBranch
  *
  * Revision 2.12.4.2  2006/04/19 07:52:30  csoutheren
@@ -87,7 +91,7 @@
 
 #include <opal/transcoders.h>
 
-#ifndef NO_H323
+#if OPAL_H323
 #include <h323/h323caps.h>
 #endif
 
@@ -225,7 +229,10 @@ class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef NO_H323
+#if OPAL_H323
+/* This code is only built if the user has enabled the H.323 voip
+   protocol in the configure step. The default configuration enables
+   H.323 */
 
 /**This class is a uncompressed video capability.
  */
