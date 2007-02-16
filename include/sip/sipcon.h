@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.2  2007/02/09 09:25:19  hfriederich
+ * Revision 1.2059.2.3  2007/02/16 10:43:41  hfriederich
+ * - Extend SDP capability system for merging local / remote format parameters.
+ * - Propagate media format options to the media streams
+ *
+ * Revision 2.58.2.2  2007/02/09 09:25:19  hfriederich
  * Make BuildSDP() virtual so it can be overridden by subclasses
  *
  * Revision 2.58.2.1  2007/02/07 08:51:01  hfriederich
@@ -258,7 +262,7 @@
 
 #include <opal/connection.h>
 #include <sip/sippdu.h>
-
+#include <sip/sdpcaps.h>
 
 class OpalCall;
 class SIPEndPoint;
@@ -713,6 +717,7 @@ class SIPConnection : public OpalConnection
       const OpalMediaType & mediaType,
       SDPMediaDescription *localMedia
     );
+    BOOL PopulateCapabilityList();
     SDPMediaDescription::Direction GetDirection(const OpalMediaType & mediaType);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
@@ -731,6 +736,7 @@ class SIPConnection : public OpalConnection
     PString               forwardParty;
     SIP_PDU             * originalInvite;
     SDPSessionDescription remoteSDP;
+    SDPCapabilityList     capabilities;
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
