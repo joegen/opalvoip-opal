@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2199  2007/02/19 04:43:42  csoutheren
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
+ *
+ * Revision 2.197  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -868,6 +871,8 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   udpTransport = NULL;
 
+  sentTrying = FALSE;
+
   PTRACE(3, "SIP\tCreated connection.");
 }
 
@@ -1086,7 +1091,10 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   if (phase != SetUpPhase) 
     return FALSE;
 
-  SendInviteResponse(SIP_PDU::Information_Ringing);
+  if (!sentTrying) {
+    SendInviteResponse(SIP_PDU::Information_Ringing);
+    sentTrying = TRUE;
+  }
   SetPhase(AlertingPhase);
 
   return TRUE;
@@ -1185,7 +1193,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
     PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty == NULL) {
-      PTRACE(2, "H323\tCorwardly fefusing to create an RTP channel with only one connection");
+      PTRACE(2, "H323\tCorwardly refusing to create an RTP channel with only one connection");
       return NULL;
      }
 
@@ -2110,7 +2118,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
   // send trying with To: tag
-  SendInviteResponse(SIP_PDU::Information_Trying);
+  if (!sentTrying) {
+    SendInviteResponse(SIP_PDU::Information_Trying);
+    sentTrying = TRUE;
+  }
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) {
@@ -2207,9 +2218,18 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   SetPhase(SetUpPhase);
 
-  ownerCall.OnSetUp(*this);
+  if (!OnOpenIncomingMediaChannels()) {
+    PTRACE(2, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
+    Release();
+    return;
+  }
+}
 
+BOOL SIPConnection::OnOpenIncomingMediaChannels()
+{
+  ownerCall.OnSetUp(*this);
   AnsweringCall(OnAnswerCall(remotePartyAddress));
+  return TRUE;
 }
 
 BOOL SIPConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
