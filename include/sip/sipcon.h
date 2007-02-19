@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2060  2007/02/19 04:42:27  csoutheren
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
+ *
+ * Revision 2.58  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -665,6 +668,7 @@ class SIPConnection : public OpalConnection
     const SIPAuthentication & GetAuthenticator() const { return authentication; }
 
     BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    BOOL OnOpenIncomingMediaChannels();
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
@@ -711,6 +715,7 @@ class SIPConnection : public OpalConnection
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
+    BOOL                  sentTrying;
 
     SIP_PDU_Queue pduQueue;
     PSemaphore    pduSemaphore;

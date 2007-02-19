@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058  2007/01/24 04:00:55  csoutheren
+ * Revision 1.2059  2007/02/19 04:42:27  csoutheren
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
+ *
+ * Revision 2.57  2007/01/24 04:00:55  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -2270,6 +2273,7 @@ class H323Connection : public OpalConnection
     H4507Handler&  getH4507handler(){return *h4507handler;};
 
     BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    virtual BOOL OnOpenIncomingMediaChannels();
     
   protected:
     /**Internal function to check if call established.
@@ -2284,7 +2288,6 @@ class H323Connection : public OpalConnection
     PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
-
 
     H323EndPoint & endpoint;
 
@@ -2314,6 +2317,7 @@ class H323Connection : public OpalConnection
     BOOL            h245Tunneling;
     H323SignalPDU * h245TunnelRxPDU;
     H323SignalPDU * h245TunnelTxPDU;
+    H323SignalPDU * setupPDU;
     H323SignalPDU * alertingPDU;
     H323SignalPDU * connectPDU;
     H323SignalPDU * progressPDU;
