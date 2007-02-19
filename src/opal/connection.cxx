@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2090  2007/02/13 23:36:42  csoutheren
+ * Revision 1.2091  2007/02/19 04:43:42  csoutheren
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
+ *
+ * Revision 2.89  2007/02/13 23:36:42  csoutheren
  * Fix problem with using SIP connections that have no StringOptions
  *
  * Revision 2.88  2007/01/24 04:00:57  csoutheren
@@ -1438,4 +1441,10 @@ void OpalConnection::SetPhase(Phases phaseToSet)
     phase = phaseToSet;
   }
 }
+
+BOOL OpalConnection::OnOpenIncomingMediaChannels()
+{
+  return TRUE;
+}
+
 /////////////////////////////////////////////////////////////////////////////
