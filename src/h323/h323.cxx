@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136  2007/02/05 04:23:00  csoutheren
+ * Revision 1.2137  2007/02/19 04:43:42  csoutheren
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
+ *
+ * Revision 2.135  2007/02/05 04:23:00  csoutheren
  * Check status on starting both read and write channels
  *
  * Revision 2.133  2007/01/24 04:00:56  csoutheren
@@ -331,6 +334,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   h245TunnelTxPDU = NULL;
   h245TunnelRxPDU = NULL;
+  setupPDU    = NULL;
   alertingPDU = NULL;
   connectPDU = NULL;
 
@@ -429,6 +433,7 @@ H323Connection::~H323Connection()
   delete h450dispatcher;
   delete signallingChannel;
   delete controlChannel;
+  delete setupPDU;
   delete alertingPDU;
   delete connectPDU;
   delete progressPDU;
@@ -921,14 +926,14 @@ void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolI
 }
 
 
-BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
+BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPDU)
 {
-  PINDEX i;
-
-  if (setupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
+  if (originalSetupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
     return FALSE;
 
-  const H225_Setup_UUIE & setup = setupPDU.m_h323_uu_pdu.m_h323_message_body;
+  setupPDU = new H323SignalPDU(originalSetupPDU);
+
+  H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
   switch (setup.m_conferenceGoal.GetTag()) {
     case H225_Setup_UUIE_conferenceGoal::e_create:
@@ -936,19 +941,19 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       break;
 
     case H225_Setup_UUIE_conferenceGoal::e_invite:
-      return endpoint.OnConferenceInvite(setupPDU);
+      return endpoint.OnConferenceInvite(*setupPDU);
 
     case H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService:
-      return endpoint.OnCallIndependentSupplementaryService(setupPDU);
+      return endpoint.OnCallIndependentSupplementaryService(*setupPDU);
 
     case H225_Setup_UUIE_conferenceGoal::e_capability_negotiation:
-      return endpoint.OnNegotiateConferenceCapabilities(setupPDU);
+      return endpoint.OnNegotiateConferenceCapabilities(*setupPDU);
   }
 
   SetRemoteVersions(setup.m_protocolIdentifier);
 
   // Get the ring pattern
-  distinctiveRing = setupPDU.GetDistinctiveRing();
+  distinctiveRing = setupPDU->GetDistinctiveRing();
 
   // Save the identifiers sent by caller
   if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier))
@@ -957,15 +962,15 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   SetRemoteApplication(setup.m_sourceInfo);
 
   // Determine the remote parties name/number/address as best we can
-  setupPDU.GetQ931().GetCallingPartyNumber(remotePartyNumber);
-  remotePartyName = setupPDU.GetSourceAliases(signallingChannel);
+  setupPDU->GetQ931().GetCallingPartyNumber(remotePartyNumber);
+  remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway
   if (setup.m_destinationAddress.GetSize() == 0)
     calledDestinationName = signallingChannel->GetLocalAddress();
   else 
     calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
-  setupPDU.GetQ931().GetCalledPartyNumber(calledDestinationNumber);
+  setupPDU->GetQ931().GetCalledPartyNumber(calledDestinationNumber);
 
   // get the peer address
   remotePartyAddress = signallingChannel->GetRemoteAddress();
@@ -1007,8 +1012,8 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   // Anything else we need from setup PDU
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
-  if (!setupPDU.GetQ931().GetCalledPartyNumber(localDestinationAddress)) {
-    localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
+  if (!setupPDU->GetQ931().GetCalledPartyNumber(localDestinationAddress)) {
+    localDestinationAddress = setupPDU->GetDestinationAlias(TRUE);
     if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
       localDestinationAddress = '*';
   }
@@ -1041,7 +1046,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     alertingPDU->BuildAlerting(*this);
 
     /** If we have a case of incoming call intrusion we should not Clear the Call*/
-    if (!OnIncomingCall(setupPDU, *alertingPDU) && (!isCallIntrusion)) {
+    if (!OnIncomingCall(*setupPDU, *alertingPDU) && (!isCallIntrusion)) {
       Release(EndedByNoAccept);
       PTRACE(1, "H225\tApplication not accepting calls");
       return FALSE;
@@ -1092,13 +1097,25 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     }
   }
 
+  if (!OnOpenIncomingMediaChannels())
+    return FALSE;
+
+  return connectionState != ShuttingDownConnection;
+}
+
+BOOL H323Connection::OnOpenIncomingMediaChannels()
+{
+  H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
+
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
 
   // Check that it has the H.245 channel connection info
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU->m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     if (!CreateOutgoingControlChannel(setup.m_h245Address))
       return FALSE;
+
+  PINDEX i;
 
   // See if remote endpoint wants to start fast
   if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
@@ -1156,7 +1173,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
         SetPhase(AlertingPhase);
-        AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU, *progressPDU));
+        AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
       }
     }
   }
