@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2074  2007/02/19 08:30:40  csoutheren
+ * Revision 1.2075  2007/02/19 08:35:02  csoutheren
+ * Add better way to fliter interfaces
+ *
+ * Revision 2.73  2007/02/19 08:30:40  csoutheren
  * Only allow use of loopback interface when destination is also on the loopback interface
  *
  * Revision 2.72  2007/02/13 23:38:04  csoutheren
@@ -1862,7 +1865,7 @@ BOOL OpalTransportUDP::Connect()
     PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
 
     // only allow use of loopback interface if the destination is also on the loopback interface
-    if ((interfaceAddress == 0 || interfaceAddress == PIPSocket::Address()) && !remoteAddress.IsLoopback())
+    if ((interfaceAddress == 0 || interfaceAddress == PIPSocket::Address()) != remoteAddress.IsLoopback())
       continue;
 
     // Check for already have had that IP address.
