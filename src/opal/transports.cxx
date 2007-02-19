@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2073  2007/02/13 23:38:04  csoutheren
+ * Revision 1.2074  2007/02/19 08:30:40  csoutheren
+ * Only allow use of loopback interface when destination is also on the loopback interface
+ *
+ * Revision 2.72  2007/02/13 23:38:04  csoutheren
  * Allow use of localhost for incoming calls
  *
  * Revision 2.71  2006/12/13 04:59:48  csoutheren
@@ -1836,7 +1839,6 @@ BOOL OpalTransportUDP::Connect()
     }
     PTRACE(4, "OpalUDP\tSTUN could not create socket!");
   }
-  
 
   // See if prebound to interface, only use that if so
   PIPSocket::InterfaceTable interfaces;
@@ -1855,9 +1857,12 @@ BOOL OpalTransportUDP::Connect()
 
   PIndirectChannel::Close();	//closing the channel and opening it with the new socket
   PINDEX i;
+
   for (i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
-    if (interfaceAddress == 0/* || interfaceAddress == PIPSocket::Address()*/)
+
+    // only allow use of loopback interface if the destination is also on the loopback interface
+    if ((interfaceAddress == 0 || interfaceAddress == PIPSocket::Address()) && !remoteAddress.IsLoopback())
       continue;
 
     // Check for already have had that IP address.
