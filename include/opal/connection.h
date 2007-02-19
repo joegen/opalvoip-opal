@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2072  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2073  2007/02/19 04:42:27  csoutheren
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
+ *
+ * Revision 2.71  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  *
@@ -1353,6 +1356,8 @@ class OpalConnection : public PSafeObject
 
     StringOptions * GetStringOptions() const
     { return stringOptions; }
+
+    virtual BOOL OnOpenIncomingMediaChannels();
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
