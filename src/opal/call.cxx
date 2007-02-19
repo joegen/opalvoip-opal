@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2053  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2054  2007/02/19 08:35:11  csoutheren
+ * Fix typo
+ *
+ * Revision 2.52  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -503,7 +506,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
         first = FALSE;
       }
       else {
-        // Want intersaction of the possible formats for all connections.
+        // Want intersection of the possible formats for all connections.
         for (PINDEX i = 0; i < commonFormats.GetSize(); i++) {
           if (possibleFormats.GetValuesIndex(commonFormats[i]) == P_MAX_INDEX)
             commonFormats.RemoveAt(i--);
