@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2143  2007/02/19 04:40:23  csoutheren
+ * Don't send multple 100 Trying
+ * Guard against inability to create transports
+ *
+ * Revision 2.141  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -1006,7 +1010,7 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                      OpalConnection::StringOptions * stringOptions)
 {
   SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
-  if (conn != NULL)
+  if (conn != NULL) 
     OnNewConnection(call, *conn);
   return conn;
 }
@@ -1228,9 +1232,9 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
     return FALSE;
   }
   
-  // send provisional response
-  SIP_PDU response(*request, SIP_PDU::Information_Trying);
-  response.Write(transport);
+  // don't send provisional response here because it will be sent by the connection
+  //SIP_PDU response(*request, SIP_PDU::Information_Trying);
+  //response.Write(transport);
 
   // ask the endpoint for a connection
   SIPConnection *connection = 
@@ -1238,6 +1242,14 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 		     NULL, request->GetURI(), &transport, request);
   if (connection == NULL) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
+    response.Write(transport);
+    return FALSE;
+  }
+
+  if (&connection->GetTransport() == NULL) {
+    delete connection;
+    PTRACE(2, "SIP\tFailed to create a transport for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
     return FALSE;
