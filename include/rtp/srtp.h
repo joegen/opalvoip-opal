@@ -27,6 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.7  2007/02/20 04:26:43  csoutheren
+ * Ensure outgoing and incoming SSRC are set for SRTP sessions
+ * Fixed problem with sending secure RTCP packets
+ *
  * Revision 1.6  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
@@ -153,6 +157,15 @@ class LibSRTP_UDP : public OpalSRTP_UDP
     );
 
     ~LibSRTP_UDP();
+
+    BOOL Open(
+      PIPSocket::Address localAddress,  ///<  Local interface to bind to
+      WORD portBase,                    ///<  Base of ports to search
+      WORD portMax,                     ///<  end of ports to search (inclusive)
+      BYTE ipTypeOfService,             ///<  Type of Service byte
+      PSTUNClient * stun = NULL,        ///<  STUN server to use createing sockets (or NULL if no STUN)
+      RTP_QOS * rtpqos = NULL           ///<  QOS spec (or NULL if no QoS)
+    );
 
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
