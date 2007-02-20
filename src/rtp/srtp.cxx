@@ -27,6 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.12  2007/02/20 04:26:57  csoutheren
+ * Ensure outgoing and incoming SSRC are set for SRTP sessions
+ * Fixed problem with sending secure RTCP packets
+ *
  * Revision 1.11  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
@@ -217,12 +221,17 @@ BOOL LibSRTPSecurityMode_Base::SetOutgoingSSRC(DWORD ssrc)
 
 BOOL LibSRTPSecurityMode_Base::GetOutgoingSSRC(DWORD & ssrc) const
 {
+  if (outboundPolicy.ssrc.type != ssrc_specific)
+    return FALSE;
   ssrc = outboundPolicy.ssrc.value;
   return TRUE;
 }
 
 BOOL LibSRTPSecurityMode_Base::GetIncomingSSRC(DWORD & ssrc) const
 {
+  if (inboundPolicy.ssrc.type != ssrc_specific)
+    return FALSE;
+
   ssrc = inboundPolicy.ssrc.value;
   return TRUE;
 }
@@ -278,6 +287,27 @@ LibSRTP_UDP::~LibSRTP_UDP()
 {
 }
 
+BOOL LibSRTP_UDP::Open(
+      PIPSocket::Address localAddress,  ///<  Local interface to bind to
+      WORD portBase,                    ///<  Base of ports to search
+      WORD portMax,                     ///<  end of ports to search (inclusive)
+      BYTE ipTypeOfService,             ///<  Type of Service byte
+      PSTUNClient * stun,               ///<  STUN server to use createing sockets (or NULL if no STUN)
+      RTP_QOS * rtpqos                  ///<  QOS spec (or NULL if no QoS)
+)
+{
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
+  if (srtp == NULL)
+    return FALSE;
+
+  // get the inbound and outbound SSRC if they are set
+  srtp->GetOutgoingSSRC(syncSourceOut);
+  srtp->GetIncomingSSRC(syncSourceIn);
+
+  return OpalSRTP_UDP::Open(localAddress, portBase, portMax, ipTypeOfService, stun, rtpqos);
+}
+
+
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
 {
   SendReceiveStatus stat = RTP_UDP::OnSendData(frame);
@@ -314,9 +344,11 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendControl(RTP_ControlFrame & frame, 
   if (stat != e_ProcessPacket)
     return stat;
 
+  frame.SetMinSize(transmittedLen + SRTP_MAX_TRAILER_LEN);
+  int len = transmittedLen;
+
   LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
 
-  int len = transmittedLen;
   err_status_t err = ::srtp_protect_rtcp(srtp->outboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
     return RTP_Session::e_IgnorePacket;
