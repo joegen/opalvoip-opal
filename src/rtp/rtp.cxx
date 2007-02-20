@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2049  2007/02/20 04:26:57  csoutheren
+ * Revision 1.2050  2007/02/20 21:35:45  csoutheren
+ * Fixed stupid typo in RTP open
+ *
+ * Revision 2.48  2007/02/20 04:26:57  csoutheren
  * Ensure outgoing and incoming SSRC are set for SRTP sessions
  * Fixed problem with sending secure RTCP packets
  *
@@ -1837,7 +1840,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
   }
 
   // allow for special case of portBase == 0 or portMax == 0, which indicates a shared RTP session
-  if ((portBase == 0) || (portMax == 0)) {
+  if ((portBase != 0) || (portMax != 0)) {
     if (stun != NULL) {
       if (stun->CreateSocketPair(dataSocket, controlSocket)) {
         dataSocket->GetLocalAddress(localAddress, localDataPort);
