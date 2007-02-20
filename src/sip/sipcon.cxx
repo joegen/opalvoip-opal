@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2199  2007/02/19 04:43:42  csoutheren
+ * Revision 1.2200  2007/02/20 07:15:03  csoutheren
+ * Second attempt at sane 180 handling
+ *
+ * Revision 2.198  2007/02/19 04:43:42  csoutheren
  * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
  *
  * Revision 2.197  2007/01/24 04:00:57  csoutheren
@@ -1677,7 +1680,11 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 
     case OpalMediaFormat::DefaultDataSessionID:
     default:
-      localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Image);
+      if (!localAddress.IsEmpty()) 
+        localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Image);
+      else {
+        PTRACE(3, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
+      }
       break;
   }
 
@@ -2117,14 +2124,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   targetAddress.AdjustForRequestURI();
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
-  // send trying with To: tag
-  if (!sentTrying) {
-    SendInviteResponse(SIP_PDU::Information_Trying);
-    sentTrying = TRUE;
-  }
+  // flag Trying as already sent (either has or soon will be)
+  sentTrying = TRUE;
 
   // We received a Re-INVITE for a current connection
-  if (isReinvite) {
+  if (isReinvite) { 
+
+    // always send Trying for Re-INVITE
+    SendInviteResponse(SIP_PDU::Information_Trying);
 
     remoteFormatList.RemoveAll();
     SDPSessionDescription sdpOut(GetLocalAddress());
