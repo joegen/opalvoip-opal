@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2143  2007/02/19 04:40:23  csoutheren
+ * Revision 1.2144  2007/02/20 07:15:03  csoutheren
+ * Second attempt at sane 180 handling
+ *
+ * Revision 2.142  2007/02/19 04:40:23  csoutheren
  * Don't send multple 100 Trying
  * Guard against inability to create transports
  *
@@ -1232,9 +1235,10 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
     return FALSE;
   }
   
-  // don't send provisional response here because it will be sent by the connection
-  //SIP_PDU response(*request, SIP_PDU::Information_Trying);
-  //response.Write(transport);
+  // send provisional response here because creating the connection can take a long time
+  // on some systems
+  SIP_PDU response(*request, SIP_PDU::Information_Trying);
+  response.Write(transport);
 
   // ask the endpoint for a connection
   SIPConnection *connection = 
