@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2048  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2049  2007/02/20 04:26:57  csoutheren
+ * Ensure outgoing and incoming SSRC are set for SRTP sessions
+ * Fixed problem with sending secure RTCP packets
+ *
+ * Revision 2.47  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  * Revision 2.47  2007/02/10 07:08:41  craigs
@@ -1832,28 +1836,28 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
     ctrlQos = &(rtpQos->ctrlQoS);
   }
 
-  if (stun != NULL) {
-    if (stun->CreateSocketPair(dataSocket, controlSocket)) {
-      dataSocket->GetLocalAddress(localAddress, localDataPort);
-      controlSocket->GetLocalAddress(localAddress, localControlPort);
-    }
-    else {
-      PTRACE(1, "RTP\tSTUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
-      if (stun->CreateSocket(dataSocket)) {
+  // allow for special case of portBase == 0 or portMax == 0, which indicates a shared RTP session
+  if ((portBase == 0) || (portMax == 0)) {
+    if (stun != NULL) {
+      if (stun->CreateSocketPair(dataSocket, controlSocket)) {
         dataSocket->GetLocalAddress(localAddress, localDataPort);
-      }
-      else {
-        PTRACE(1, "RTP\tSTUN could not create RTP socket either.");
-        return FALSE;
-      }
-      if (stun->CreateSocket(controlSocket)) {
         controlSocket->GetLocalAddress(localAddress, localControlPort);
       }
+      else {
+        PTRACE(1, "RTP\tSTUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
+        if (stun->CreateSocket(dataSocket)) {
+          dataSocket->GetLocalAddress(localAddress, localDataPort);
+        }
+        else {
+          PTRACE(1, "RTP\tSTUN could not create RTP socket either.");
+          return FALSE;
+        }
+        if (stun->CreateSocket(controlSocket)) {
+          controlSocket->GetLocalAddress(localAddress, localControlPort);
+        }
+      }
     }
-  }
 
-  // allow for special case of portBase == 0 and portMax == 0
-  if (portBase != 0 && portMax != 0) {
     if (dataSocket == NULL || controlSocket == NULL) {
       dataSocket = new PUDPSocket(dataQos);
       controlSocket = new PUDPSocket(ctrlQos);
@@ -1868,8 +1872,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
       }
     }
 
-  #ifndef __BEOS__
-
+#   ifndef __BEOS__
     // Set the IP Type Of Service field for prioritisation of media UDP packets
     // through some Cisco routers and Linux boxes
     if (!dataSocket->SetOption(IP_TOS, tos, IPPROTO_IP)) {
@@ -1881,7 +1884,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
     SetMinBufferSize(*dataSocket,    SO_SNDBUF);
     SetMinBufferSize(*controlSocket, SO_RCVBUF);
     SetMinBufferSize(*controlSocket, SO_SNDBUF);
-  #endif
+#   endif
   }
 
   shutdownRead = FALSE;
