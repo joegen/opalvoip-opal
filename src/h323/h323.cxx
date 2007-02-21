@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2137  2007/02/19 04:43:42  csoutheren
+ * Revision 1.2138  2007/02/21 02:34:55  csoutheren
+ * Ensure codec mask is applied on local caps
+ *
+ * Revision 2.136  2007/02/19 04:43:42  csoutheren
  * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
  *
  * Revision 2.135  2007/02/05 04:23:00  csoutheren
@@ -3417,6 +3420,8 @@ void H323Connection::OnSetLocalCapabilities()
     else
       localCapabilities.Remove(capability);
   }
+
+  localCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
 
   PTRACE(2, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
