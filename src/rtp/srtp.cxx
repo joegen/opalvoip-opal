@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.13  2007/02/23 05:24:14  csoutheren
+ * Fixed problem linking with ZRTP on Windows
+ *
  * Revision 1.12  2007/02/20 04:26:57  csoutheren
  * Ensure outgoing and incoming SSRC are set for SRTP sessions
  * Fixed problem with sending secure RTCP packets
@@ -129,11 +132,13 @@ namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
 };
 
-#if HAS_LIBSRTP && WIN32
+#if HAS_LIBSRTP && _WIN32
 #pragma comment(lib, LIBSRTP_LIBRARY)
 #endif
 
+extern "C" {
 #include "srtp/srtp.h"
+};
 
 ///////////////////////////////////////////////////////
 
