@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.26  2007/02/23 05:24:00  csoutheren
+ * Fixed problem linking with ZRTP on Windows
+ *
  * Revision 1.25  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
@@ -244,6 +247,8 @@
 #else
 #define LIBZRTP_LIBRARY "@LIBZRTP_DIR@/Release/libzrtp.lib"
 #endif
+
+#pragma comment(lib, LIBZRTP_LIBRARY)
 
 #pragma include_alias("WINCONFIG/config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
 #pragma include_alias("WINCONFIG\config.h",         "@LIBZRTP_DIR@/srtp_win32k/WINCONFIG/config.h")
