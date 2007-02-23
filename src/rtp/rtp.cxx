@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2050  2007/02/20 21:35:45  csoutheren
+ * Revision 1.2051  2007/02/23 08:06:20  csoutheren
+ * More implementation of ZRTP (not yet complete)
+ *
+ * Revision 2.49  2007/02/20 21:35:45  csoutheren
  * Fixed stupid typo in RTP open
  *
  * Revision 2.48  2007/02/20 04:26:57  csoutheren
@@ -549,6 +552,12 @@ RTP_DataFrame::RTP_DataFrame(PINDEX sz)
   theArray[0] = '\x80';
 }
 
+
+RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len)
+  : PBYTEArray(data, len)
+{
+  payloadSize = len - GetHeaderSize();
+}
 
 void RTP_DataFrame::SetExtension(BOOL ext)
 {
