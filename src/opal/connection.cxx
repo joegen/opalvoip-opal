@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2091  2007/02/19 04:43:42  csoutheren
+ * Revision 1.2092  2007/02/23 01:01:47  csoutheren
+ * Added abilty to set Q.931 codes through normal OpalConnection::CallEndReason
+ *
+ * Revision 2.90  2007/02/19 04:43:42  csoutheren
  * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
  *
  * Revision 2.89  2007/02/13 23:36:42  csoutheren
@@ -630,6 +633,10 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
+    if ((reason & EndedWithQ931Code) != 0) {
+      SetQ931Cause((int)reason >> 24);
+      reason = (CallEndReason)(reason & 0xff);
+    }
     PTRACE(3, "OpalCon\tCall end reason for " << GetToken() << " set to " << reason);
     callEndReason = reason;
   }
@@ -1153,7 +1160,11 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   // We only support RTP over UDP at this point in time ...
   if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
     return NULL;
-                                        
+
+  // We only support video and audio over IP at this time
+  if (sessionID != OpalMediaFormat::DefaultAudioSessionID && sessionID != OpalMediaFormat::DefaultVideoSessionID)
+    return NULL;
+
   PIPSocket::Address localAddress;
   transport.GetLocalAddress().GetIpAddress(localAddress);
 
