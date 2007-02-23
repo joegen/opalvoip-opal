@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2033  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2034  2007/02/23 08:06:04  csoutheren
+ * More implementation of ZRTP (not yet complete)
+ *
+ * Revision 2.32  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  * Revision 2.32  2007/02/10 07:08:41  craigs
@@ -347,6 +350,7 @@ class RTP_DataFrame : public PBYTEArray
 
   public:
     RTP_DataFrame(PINDEX payloadSize = 2048);
+    RTP_DataFrame(const BYTE * data, PINDEX len);
 
     enum {
       ProtocolVersion = 2,
