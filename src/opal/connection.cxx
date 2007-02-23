@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2092  2007/02/23 01:01:47  csoutheren
+ * Revision 1.2093  2007/02/23 07:10:02  csoutheren
+ * Fixed problem with new reason code
+ *
+ * Revision 2.91  2007/02/23 01:01:47  csoutheren
  * Added abilty to set Q.931 codes through normal OpalConnection::CallEndReason
  *
  * Revision 2.90  2007/02/19 04:43:42  csoutheren
@@ -451,8 +454,8 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
     "EndedByOutOfService",      /// Call cleared because the line is out of service, 
     "EndedByAcceptingCallWaiting", /// Call cleared because another call is answered
   };
-  PAssert((PINDEX)reason < PARRAYSIZE(names), "Invalid reason");
-  return out << names[reason];
+  PAssert((PINDEX)(reason & 0xff) < PARRAYSIZE(names), "Invalid reason");
+  return out << names[reason & 0xff];
 }
 
 ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
