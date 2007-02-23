@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2073  2007/02/19 04:42:27  csoutheren
+ * Revision 1.2074  2007/02/23 01:01:35  csoutheren
+ * Added abilty to set Q.931 codes through normal OpalConnection::CallEndReason
+ *
+ * Revision 2.72  2007/02/19 04:42:27  csoutheren
  * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
  *
  * Revision 2.71  2007/02/12 02:44:27  csoutheren
@@ -370,7 +373,9 @@ class OpalConnection : public PSafeObject
       EndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
       EndedByOutOfService,      /// Call cleared because the line is out of service, 
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
-      NumCallEndReasons
+      NumCallEndReasons,
+
+      EndedWithQ931Code = 0x100  /// Q931 code specified in MS byte
     };
 
 #if PTRACING
