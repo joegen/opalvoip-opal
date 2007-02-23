@@ -22,7 +22,10 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * $Log: zrtp.cxx,v $
- * Revision 1.2002  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2003  2007/02/23 05:24:14  csoutheren
+ * Fixed problem linking with ZRTP on Windows
+ *
+ * Revision 2.1  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  * Revision 2.1  2007/02/10 07:08:41  craigs
@@ -52,7 +55,7 @@ namespace PWLibStupidLinkerHacks {
   int libZRTPLoader;
 };
 
-#if WIN32
+#if _WIN32
 #pragma comment(lib, LIBZRTP_LIBRARY)
 #endif
 
