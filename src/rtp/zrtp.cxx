@@ -22,7 +22,10 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * $Log: zrtp.cxx,v $
- * Revision 1.2003  2007/02/23 05:24:14  csoutheren
+ * Revision 1.2004  2007/02/23 08:06:20  csoutheren
+ * More implementation of ZRTP (not yet complete)
+ *
+ * Revision 2.2  2007/02/23 05:24:14  csoutheren
  * Fixed problem linking with ZRTP on Windows
  *
  * Revision 2.1  2007/02/12 02:44:27  csoutheren
@@ -59,11 +62,11 @@ namespace PWLibStupidLinkerHacks {
 #pragma comment(lib, LIBZRTP_LIBRARY)
 #endif
 
-class ZRTPSecurityMode_Base : public OpalZRTPSecurityMode
+class LibZRTPSecurityMode_Base : public OpalZRTPSecurityMode
 {
-  PCLASSINFO(ZRTPSecurityMode_Base, OpalZRTPSecurityMode);
+  PCLASSINFO(LibZRTPSecurityMode_Base, OpalZRTPSecurityMode);
   public:
-    ZRTPSecurityMode_Base();
+    LibZRTPSecurityMode_Base();
 
     RTP_UDP * CreateRTPSession(PHandleAggregator * _aggregator,   ///< handle aggregator
                                             unsigned id,          ///<  Session ID for RTP channel
@@ -72,47 +75,39 @@ class ZRTPSecurityMode_Base : public OpalZRTPSecurityMode
 
     BOOL Open();
 
+    zrtp_zid_t zid;
+    zrtp_conn_ctx_t zrtpConn;
+    zrtp_stream_ctx_t zrtpStream;
+
   protected:
     void Init();
-
-    zrtp_zid_t zid;
-    zrtp_conn_ctx_t zrtpSession;
 
   private:
     static PMutex initMutex;
     static zrtp_global_ctx * zrtpContext;
 };
 
-PMutex ZRTPSecurityMode_Base::initMutex;
-zrtp_global_ctx_t * ZRTPSecurityMode_Base::zrtpContext = NULL;
+PMutex LibZRTPSecurityMode_Base::initMutex;
+zrtp_global_ctx_t * LibZRTPSecurityMode_Base::zrtpContext = NULL;
 
 #define DECLARE_LIBZRTP_CRYPTO_ALG(name) \
-class ZRTPSecurityMode_##name : public OpalZRTPSecurityMode_Base \
+class OpalZRTPSecurityMode_##name : public LibZRTPSecurityMode_Base \
 { \
   public: \
-    ZRTPSecurityMode_##name() \
+    OpalZRTPSecurityMode_##name() \
     { \
       Init(); \
     } \
 }; \
-static PFactory<OpalSecurityMode>::Worker<ZRTPSecurityMode_##name> factoryZRTPSecurityMode_##name("ZRTP|" #name); \
+static PFactory<OpalSecurityMode>::Worker<OpalZRTPSecurityMode_##name> factoryZRTPSecurityMode_##name("ZRTP|" #name); \
 
-//DECLARE_LIBZRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_80);
-
-class ZRTPSecurityMode_Test : public ZRTPSecurityMode_Base 
-{ 
-  public: 
-    ZRTPSecurityMode_Test() 
-    { 
-      Init(); 
-    } 
-}; 
-static PFactory<OpalSecurityMode>::Worker<ZRTPSecurityMode_Test> factoryZRTPSecurityMode_Test("ZRTP|Test"); \
-
-//DECLARE_LIBZRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_80);
+DECLARE_LIBZRTP_CRYPTO_ALG(AES_128_DH_4096_AUTH_80);
 //DECLARE_LIBZRTP_CRYPTO_ALG(AES_CM_128_HMAC_SHA1_32);
 //DECLARE_LIBZRTP_CRYPTO_ALG(AES_CM_128_NULL_AUTH);
 //DECLARE_LIBZRTP_CRYPTO_ALG(NULL_CIPHER_HMAC_SHA1_80);
+
+DECLARE_LIBZRTP_CRYPTO_ALG(STRONGHOLD);
+
 
 ///////////////////////////////////////////////////////
 
@@ -126,9 +121,14 @@ void zrtp_print_log(log_level_t level, const char* format, ...)
   va_end( arg );
 }
 
-int zrtp_send_rtp(const zrtp_stream_ctx_t* /*stream_ctx*/, char* /*packet*/, unsigned int /*length*/)
+int zrtp_send_rtp(const zrtp_stream_ctx_t* stream_ctx, char* packet, unsigned int length)
 {
-	return zrtp_status_ok;
+  OpalZRTP_UDP * rtpSession = (OpalZRTP_UDP *)stream_ctx->stream_usr_data;
+  if (rtpSession == NULL)
+    return zrtp_status_write_fail;
+
+  RTP_DataFrame frame((BYTE *)packet, length);
+  return rtpSession->WriteData(frame);
 }
 
 zrtp_status_t zrtp_packet_callback(zrtp_packet_event_t /*evnt*/, zrtp_stream_ctx_t * /*ctx*/, zrtp_rtp_info_t * /*packet*/)
@@ -195,11 +195,11 @@ void zrtp_play_alert(zrtp_stream_ctx_t * /*stream_ctx*/)
 };
 ///////////////////////////////////////////////////////
 
-ZRTPSecurityMode_Base::ZRTPSecurityMode_Base()
+LibZRTPSecurityMode_Base::LibZRTPSecurityMode_Base()
 {
 }
 
-void ZRTPSecurityMode_Base::Init()
+void LibZRTPSecurityMode_Base::Init()
 {
   {
     PWaitAndSignal m(initMutex);
@@ -210,7 +210,7 @@ void ZRTPSecurityMode_Base::Init()
   }
 }
 
-RTP_UDP * ZRTPSecurityMode_Base::CreateRTPSession(
+RTP_UDP * LibZRTPSecurityMode_Base::CreateRTPSession(
   PHandleAggregator * _aggregator,   ///< handle aggregator
   unsigned id,                       ///<  Session ID for RTP channel
   BOOL remoteIsNAT                   ///<  TRUE is remote is behind NAT
@@ -221,7 +221,7 @@ RTP_UDP * ZRTPSecurityMode_Base::CreateRTPSession(
   return session;
 }
 
-BOOL ZRTPSecurityMode_Base::Open()
+BOOL LibZRTPSecurityMode_Base::Open()
 {
   return TRUE;
 }
@@ -239,24 +239,73 @@ OpalZRTP_UDP::~OpalZRTP_UDP()
 {
 }
 
-RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnSendData(RTP_DataFrame & /*frame*/)
+RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnSendData(RTP_DataFrame & frame)
 {
   return e_IgnorePacket;
+  SendReceiveStatus stat = RTP_UDP::OnSendData(frame);
+  if (stat != e_ProcessPacket)
+    return stat;
+
+  LibZRTPSecurityMode_Base * zrtp = (LibZRTPSecurityMode_Base *)securityParms;
+
+  unsigned len = frame.GetHeaderSize() + frame.GetPayloadSize();
+  frame.SetPayloadSize(len + SRTP_MAX_TRAILER_LEN);
+
+  zrtp_status_t err = ::zrtp_process_rtp(&zrtp->zrtpStream, (char *)frame.GetPointer(), &len);
+  
+  if (err != zrtp_status_ok)
+    return RTP_Session::e_IgnorePacket;
+
+  frame.SetPayloadSize(len - frame.GetHeaderSize());
+  return e_ProcessPacket;
 }
 
-RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnReceiveData(RTP_DataFrame & /*frame*/)
+RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
 {
-  return e_IgnorePacket;
+  LibZRTPSecurityMode_Base * zrtp = (LibZRTPSecurityMode_Base *)securityParms;
+
+  unsigned len = frame.GetHeaderSize() + frame.GetPayloadSize();
+
+  zrtp_status_t err = ::zrtp_process_srtp(&zrtp->zrtpStream, (char *)frame.GetPointer(), &len);
+
+  if (err != zrtp_status_ok)
+    return RTP_Session::e_IgnorePacket;
+
+  frame.SetPayloadSize(len - frame.GetHeaderSize());
+
+  return RTP_UDP::OnReceiveData(frame);
 }
 
-RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /* len */)
+RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnSendControl(RTP_ControlFrame & frame, PINDEX & transmittedLen)
 {
-  return e_IgnorePacket;
+  SendReceiveStatus stat = RTP_UDP::OnSendControl(frame, transmittedLen);
+  if (stat != e_ProcessPacket)
+    return stat;
+
+  frame.SetMinSize(transmittedLen + SRTP_MAX_TRAILER_LEN);
+  unsigned len = transmittedLen;
+
+  LibZRTPSecurityMode_Base * zrtp = (LibZRTPSecurityMode_Base *)securityParms;
+
+  zrtp_status_t err = ::zrtp_process_srtcp(&zrtp->zrtpStream, (char *)frame.GetPointer(), &len);
+  if (err != zrtp_status_ok)
+    return RTP_Session::e_IgnorePacket;
+  transmittedLen = len;
+
+  return e_ProcessPacket;
 }
 
-RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnReceiveControl(RTP_ControlFrame & /*frame*/)
+RTP_UDP::SendReceiveStatus OpalZRTP_UDP::OnReceiveControl(RTP_ControlFrame & frame)
 {
-  return e_IgnorePacket;
+  LibZRTPSecurityMode_Base * zrtp = (LibZRTPSecurityMode_Base *)securityParms;
+
+  unsigned len = frame.GetSize();
+  zrtp_status_t err = ::zrtp_process_rtcp(&zrtp->zrtpStream, (char *)frame.GetPointer(), &len);
+  if (err != zrtp_status_ok)
+    return RTP_Session::e_IgnorePacket;
+  frame.SetSize(len);
+
+  return RTP_UDP::OnReceiveControl(frame);
 }
 
 #endif
