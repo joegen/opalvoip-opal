@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.14  2007/02/24 09:29:08  dereksmithies
+ * Add ability to turn off the first packet in an audio burst. Test the jitter buffer
+ * can cope with missing the first packet.
+ *
  * Revision 1.13  2007/01/14 22:18:35  dereksmithies
  * MOdify the period when doing silence detect, to be 69sec off,  6 sec on.
  *
@@ -125,6 +129,7 @@ void JesterProcess::Main()
 	     "j-jitter:"
 	     "s-silence."
              "h-help."
+	     "m-marker."
 #if PTRACING
              "o-output:"
              "t-trace."
@@ -138,18 +143,19 @@ void JesterProcess::Main()
       cout << "Usage : " << GetName() << " [options] \n"
 	  
 	  "General options:\n"
-	  "  -a --audiodevice     : audio device to play the output on\n"
-	  "  -i --iterations #    : number of packets to ask for  (default is 80)\n"
-	  "  -s --silence         : simulate silence suppression. - so audio is sent in bursts.\n"
-	  "  -j --jitter #        : size of the jitter buffer in ms (100) \n"
+	  "  -a --audiodevice      : audio device to play the output on\n"
+	  "  -i --iterations #     : number of packets to ask for  (default is 80)\n"
+	  "  -s --silence          : simulate silence suppression. - so audio is sent in bursts.\n"
+	  "  -j --jitter [min-]max : size of the jitter buffer in ms (100-1000) \n"
+	  "  -m --marker           : turn some of the marker bits off, that indicate speech bursts\n"
 #if PTRACING
-	  "  -t --trace           : Enable trace, use multiple times for more detail.\n"
-	  "  -o --output          : File for trace output, default is stderr.\n"
+	  "  -t --trace            : Enable trace, use multiple times for more detail.\n"
+	  "  -o --output           : File for trace output, default is stderr.\n"
 #endif
 
-	  "  -h --help            : This help message.\n"
-	  "  -v --version         : report version and program info.\n"
-	  "  -w --wavfile         : audio file from which the source data is read from \n"
+	  "  -h --help             : This help message.\n"
+	  "  -v --version          : report version and program info.\n"
+	  "  -w --wavfile          : audio file from which the source data is read from \n"
 	  "\n"
 	  "\n";
       return;
@@ -170,17 +176,40 @@ void JesterProcess::Main()
                      PTrace::Timestamp|PTrace::Thread|PTrace::FileAndLine);
 #endif
 
-  minJitterSize = 100;
-
   if (args.HasOption('a'))
       audioDevice = args.GetOptionString('a');
   else
       audioDevice =  PSoundChannel::GetDefaultDevice(PSoundChannel::Player);
 
-  if (args.HasOption('j'))
-      minJitterSize = args.GetOptionString('j').AsInteger();
+  minJitterSize = 100;
+  maxJitterSize = 1000;
+ 
+  if (args.HasOption('j')) {
+      unsigned minJitterNew;
+      unsigned maxJitterNew;
+      PStringArray delays = args.GetOptionString('j').Tokenise(",-");
+
+      if (delays.GetSize() > 1) {
+	  minJitterNew = delays[0].AsUnsigned();
+	  maxJitterNew = delays[1].AsUnsigned();
+      } else {
+	  maxJitterNew = delays[0].AsUnsigned();
+	  minJitterNew = maxJitterNew;
+      }
+
+      if (minJitterNew >= 20 && minJitterNew <= maxJitterNew && maxJitterNew <= 1000) {
+	  minJitterSize = minJitterNew;
+	  maxJitterSize = maxJitterNew;
+      } else {
+	  cout << "Jitter should be between 20 milliseconds and 1 seconds, is "
+	       << 20 << '-' << 1000 << endl;
+      }
+  } 
+  cerr << "Set jitter buffer size to " << minJitterSize << ".." << maxJitterSize << " ms" << endl;
 
   silenceSuppression = args.HasOption('s');
+
+  markerSuppression = args.HasOption('m');
 
   if (args.HasOption('w'))
       wavFile = args.GetOptionString('w');
@@ -188,9 +217,7 @@ void JesterProcess::Main()
       wavFile = "../../../contrib/openam/sample_message.wav";
   }
   
-  bytesPerBlock = 480;
-
-  cerr << "Jitter size is set to " << minJitterSize << " ms" << endl;
+  bytesPerBlock = 640;
 
   if (!PFile::Exists(wavFile)) {
       cerr << "the audio file " << wavFile << " does not exist." << endl;
@@ -198,7 +225,7 @@ void JesterProcess::Main()
       return;
   }
 
-  if (!player.Open(audioDevice, PSoundChannel::Player)) {
+  if (!player.Open(audioDevice, PSoundChannel::Player, 1, 8000, 16)) {
       cerr <<  "Failed to open the sound device " << audioDevice 
 	   << " to write the jittered audio to"  << endl;
       cerr << endl 
@@ -212,12 +239,12 @@ void JesterProcess::Main()
       return;
   }
 
-  jitterBuffer.SetDelay(8 * minJitterSize, 8 * minJitterSize * 3);
+  jitterBuffer.SetDelay(8 * minJitterSize, 8 * maxJitterSize);
   jitterBuffer.Resume();
 
   keepRunning = TRUE;
-  generateTimestamp = FALSE;
-  consumeTimestamp = FALSE;
+  generateTimestamp = 0;
+  consumeTimestamp = 0;
 
   PThread * writer = PThread::Create(PCREATE_NOTIFIER(GenerateUdpPackets), 0,
 				     PThread::NoAutoDeleteThread,
@@ -250,15 +277,17 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
     BOOL lastFrameWasSilence = TRUE;
     PWAVFile soundFile(wavFile);
     generateIndex = 0;
-    
+    PINDEX talkSequenceCounter = 0;
+
     while(keepRunning) {
-	generateTimestamp =  960 + (generateIndex  * 240);
-	//Silence period, 45 seconds cycle, with 3 second on time.
-	if (silenceSuppression && ((generateIndex % 2500) > 200)) {
+	generateTimestamp =  (bytesPerBlock * 2) + ((generateIndex  * bytesPerBlock) >> 1);
+	//Silence period, 10 seconds cycle, with 3 second on time.
+	if (silenceSuppression && ((generateIndex % 1000) > 200)) {
 	    PTRACE(3, "Don't send this frame - silence period");
 	    if (lastFrameWasSilence == FALSE) {
 		PTRACE(3, "Stop Audio here");
 		cout << "Stop audio at " << PTime() << endl;
+		talkSequenceCounter++;
 	    }
 	    lastFrameWasSilence = TRUE;
 	} else {
@@ -284,7 +313,11 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 		soundFile.Open();
 		PTRACE(3, "Reopen the sound file, as have reached the end of it");
 	    }
-	    jitterBuffer.NewFrameFromNetwork(frame);
+//	    cerr << " " << silenceSuppression << "  " << markerSuppression << "  " << frame->GetMarker() << "  " << (talkSequenceCounter & 1) << endl;
+	    if (silenceSuppression && markerSuppression && frame->GetMarker() && (talkSequenceCounter & 1))
+		cerr << "Suppress speech frame" << endl;
+	    else
+		jitterBuffer.NewFrameFromNetwork(frame);
 	}
 
 	delay.Delay(30);
@@ -306,23 +339,29 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 void JesterProcess::ConsumeUdpPackets(PThread &, INT)
 {
   RTP_DataFrame readFrame;
-  PAdaptiveDelay readDelay;
   PBYTEArray silence(bytesPerBlock);
   consumeTimestamp = 0;
   consumeIndex = 0;
+
   while(keepRunning) {
 
       BOOL success = jitterBuffer.ReadData(consumeTimestamp, readFrame);
+      PTime lastWriteTime;
       if (success && (readFrame.GetPayloadSize() > 0)) {
 	  consumeTimestamp = readFrame.GetTimestamp();
+	  PTRACE(3, "Write audio to sound device, " << readFrame.GetPayloadSize() << " bytes");
 	  player.Write(readFrame.GetPayloadPtr(), readFrame.GetPayloadSize());
 	  PTRACE(3, "Play audio from the  buffer to sound device, ts=" << consumeTimestamp);
       }
       else {
+	  PTRACE(3, "Write silence to sound device, " << bytesPerBlock << " bytes");
 	  player.Write(silence, bytesPerBlock);
 	  PTRACE(3, "Play audio from silence buffer to sound device, ts=" << consumeTimestamp);	 
       }
-      consumeTimestamp += 240;
+      PTime thisTime;
+      PTRACE(3, "Write to sound device took " << (thisTime - lastWriteTime).GetMilliSeconds() << " ms");
+
+      consumeTimestamp += (bytesPerBlock / 2);
       consumeIndex++;
   }
 
