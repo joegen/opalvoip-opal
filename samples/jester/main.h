@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.8  2007/02/24 09:29:08  dereksmithies
+ * Add ability to turn off the first packet in an audio burst. Test the jitter buffer
+ * can cope with missing the first packet.
+ *
  * Revision 1.7  2007/01/12 10:00:58  dereksmithies
  * bring it up to date so it compiles.
  *
@@ -187,8 +191,20 @@ class JesterProcess : public PProcess
        nothing, onnn, nothing..*/
     BOOL silenceSuppression;
 
+    /**Flag to indicate if we do, or do not fiddle with the operaiton of
+       silence suppression function. When doing silence suppression, the start
+       of each talk burst has the marker bit turned on. If this flag is set
+       TRUE, then some of those marker bits (half of them) are
+       suppressed. This flag therefore tests the operation of the jitter
+       buffer, to see if it copes with the dropping of the first packet in
+       each voice stream */
+    BOOL markerSuppression;
+
     /**min size of the jitter buffer in ms */
     PINDEX minJitterSize;
+
+    /**max size of the jitter buffer - time units is ms */
+    PINDEX maxJitterSize;
 
     /**A descendant of the OpalJitterBuffer, which means we have the minimum
        of code to write to test OpalJitterBuffer. Further, we can now access
