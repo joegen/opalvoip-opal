@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.12  2007/01/15 22:16:42  dsandras
+ * Revision 1.2047.2.13  2007/02/27 21:24:07  dsandras
+ * Added missing locking. Fixes Ekiga report #411438.
+ *
+ * Revision 2.46.2.12  2007/01/15 22:16:42  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.46.2.11  2007/01/02 15:26:46  dsandras
@@ -307,10 +310,10 @@ class SIPInfo : public PSafeObject
     { return registrationAddress; }
     
     virtual void AppendTransaction(SIPTransaction * transaction) 
-    { registrations.Append (transaction); }
+    { PWaitAndSignal m(registrationsMutex); registrations.Append (transaction); }
     
     virtual void RemoveTransactions() 
-    { registrations.RemoveAll (); }
+    { PWaitAndSignal m(registrationsMutex); registrations.RemoveAll (); }
 
     virtual BOOL IsRegistered() 
     { return registered; }
@@ -371,6 +374,7 @@ class SIPInfo : public PSafeObject
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
+      PMutex             registrationsMutex;
       PTime              registrationTime;
       BOOL               registered;
       int	               expire;
