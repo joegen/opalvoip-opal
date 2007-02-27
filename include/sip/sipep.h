@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2070  2007/02/27 21:22:42  dsandras
+ * Added missing locking. Fixes Ekiga report #411438.
+ *
+ * Revision 2.68  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -354,10 +357,10 @@ class SIPInfo : public PSafeObject
     { return registrationAddress; }
     
     virtual void AppendTransaction(SIPTransaction * transaction) 
-    { registrations.Append (transaction); }
+    { PWaitAndSignal m(registrationsMutex); registrations.Append (transaction); }
     
     virtual void RemoveTransactions() 
-    { registrations.RemoveAll (); }
+    { PWaitAndSignal m(registrationsMutex); registrations.RemoveAll (); }
 
     virtual BOOL IsRegistered() 
     { return registered; }
@@ -418,6 +421,7 @@ class SIPInfo : public PSafeObject
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
+      PMutex             registrationsMutex;
       PTime              registrationTime;
       BOOL               registered;
       int	               expire;
