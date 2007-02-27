@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.30  2007/01/15 22:16:44  dsandras
+ * Revision 1.2098.2.31  2007/02/27 21:24:06  dsandras
+ * Added missing locking. Fixes Ekiga report #411438.
+ *
+ * Revision 2.97.2.30  2007/01/15 22:16:44  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.97.2.29  2007/01/04 22:10:35  dsandras
@@ -573,7 +576,7 @@ SIPInfo::~SIPInfo()
     registrarTransport = NULL;
   }
 
-  registrations.RemoveAll();
+  RemoveTransactions();
 }
 
 
@@ -762,19 +765,20 @@ SIPEndPoint::~SIPEndPoint()
 {
   listeners.RemoveAll();
 
-  while (activeSIPInfo.GetSize()>0) {
+  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
     SIPURL url;
-    SIPInfo *info = activeSIPInfo.GetAt(0);
     url = info->GetRegistrationAddress ();
     if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) { 
       Unregister(url.GetHostName(), url.GetUserName());
       info->SetRegistered(FALSE);
     }
-    else 
-      activeSIPInfo.Remove(info);
-   
-    activeSIPInfo.DeleteObjectsToBeRemoved();
   }
+  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadWrite); info != NULL; ++info) {
+    if (info->GetMethod() != SIP_PDU::Method_REGISTER || !info->IsRegistered())
+      activeSIPInfo.Remove(info);
+  }
+   
+  activeSIPInfo.DeleteObjectsToBeRemoved();
 
   PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
