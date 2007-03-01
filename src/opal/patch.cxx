@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.8  2007/02/10 21:48:35  dsandras
+ * Revision 1.2020.2.9  2007/03/01 03:28:49  csoutheren
+ * Backport from head
+ * Ignore packets with no payload emitted by jitter buffer when no input available
+ *
+ * Revision 2.19.2.8  2007/02/10 21:48:35  dsandras
  * Fixed potential deadlock if ReadPacket takes time to return or does not
  * return. Thanks to Hannes Friederich for the proposal and the SUN Team
  * for the bug report (Ekiga #404904).
@@ -227,11 +231,12 @@ void OpalMediaPatch::Main()
       break;
     }
 
-    FilterFrame(sourceFrame, source.GetMediaFormat());    
-
-    PINDEX len = sinks.GetSize();
-    for (i = 0; i < len; i++)
-      sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
+    if (sourceFrame.GetPayloadSize() > 0) {
+      FilterFrame(sourceFrame, source.GetMediaFormat());    
+      PINDEX len = sinks.GetSize();
+      for (i = 0; i < len; i++)
+        sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
+    }
 
     inUse.Signal();
 
