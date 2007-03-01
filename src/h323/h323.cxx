@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2138  2007/02/21 02:34:55  csoutheren
+ * Revision 1.2139  2007/03/01 03:53:18  csoutheren
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.137  2007/02/21 02:34:55  csoutheren
  * Ensure codec mask is applied on local caps
  *
  * Revision 2.136  2007/02/19 04:43:42  csoutheren
@@ -1108,6 +1112,8 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPD
 
 BOOL H323Connection::OnOpenIncomingMediaChannels()
 {
+  ApplyStringOptions();
+
   H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
@@ -1741,6 +1747,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 
 BOOL H323Connection::SetUpConnection()
 {
+  ApplyStringOptions();
+
   signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::NormalPriority,
@@ -1941,6 +1949,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
     transportAddress.SetPDU(setup.m_destCallSignalAddress);
   }
+
+  ApplyStringOptions();
 
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
@@ -3580,8 +3590,8 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
   }
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *session,
-                                endpoint.GetManager().GetMinAudioJitterDelay(),
-                                endpoint.GetManager().GetMaxAudioJitterDelay());
+                                GetMinAudioJitterDelay(),
+                                GetMaxAudioJitterDelay());
 }
 
 
