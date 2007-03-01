@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036  2007/01/10 09:16:55  csoutheren
+ * Revision 1.2037  2007/03/01 03:36:28  csoutheren
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ *
+ * Revision 2.35  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
  * Revision 2.34  2006/08/10 05:10:30  csoutheren
@@ -1178,8 +1181,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
   mediaStream = new OpalRTPMediaStream(capability->GetMediaFormat(), receiver, rtpSession,
-                                       endpoint.GetManager().GetMinAudioJitterDelay(),
-                                       endpoint.GetManager().GetMaxAudioJitterDelay());
+                                       conn.GetMinAudioJitterDelay(),
+                                       conn.GetMaxAudioJitterDelay());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }
