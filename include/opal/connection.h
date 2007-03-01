@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2074  2007/02/23 01:01:35  csoutheren
+ * Revision 1.2075  2007/03/01 03:52:31  csoutheren
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.73  2007/02/23 01:01:35  csoutheren
  * Added abilty to set Q.931 codes through normal OpalConnection::CallEndReason
  *
  * Revision 2.72  2007/02/19 04:42:27  csoutheren
@@ -1362,7 +1366,11 @@ class OpalConnection : public PSafeObject
     StringOptions * GetStringOptions() const
     { return stringOptions; }
 
+    void SetStringOptions(StringOptions * options);
+
     virtual BOOL OnOpenIncomingMediaChannels();
+
+    virtual void ApplyStringOptions();
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
