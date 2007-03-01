@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2052  2007/03/01 05:51:04  rjongbloed
+ * Revision 1.2053  2007/03/01 06:16:54  rjongbloed
+ * Fixed DevStudio 2005 warning
+ *
+ * Revision 2.51  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -460,13 +463,13 @@ BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 }
 
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
+BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/)
 {
   return TRUE;
 }
 
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options)
+BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
 {
   return TRUE;
 }
