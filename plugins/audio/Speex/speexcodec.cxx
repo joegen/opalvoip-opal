@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.14  2007/03/01 09:16:59  dereksmithies
+ * Cure memory leak.
+ *
  * Revision 1.13  2006/12/18 02:58:42  csoutheren
  * Missed wideband checkin fix
  *
@@ -225,6 +228,7 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
   // finish writing the data
   *toLen = speex_bits_write(&context->speexBits, (char *)to, *toLen); 
 
+  speex_bits_destroy(&context->speexBits);  
   return 1; 
 }
 
@@ -232,7 +236,6 @@ static void destroy_encoder(const struct PluginCodec_Definition * codec, void * 
 {
   PluginSpeexContext * context = (PluginSpeexContext *)_context;
 
-  //speex_bits_destroy(&context->speexBits);  // speex_encoder_destroy does this
   speex_encoder_destroy(context->coderState); 
   free(context);
 }
@@ -267,8 +270,10 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
 
   speex_bits_init(&context->speexBits);
 
-  if (*toLen < codec->samplesPerFrame*2)
+  if (*toLen < codec->samplesPerFrame*2) {
+    speex_bits_destroy(&context->speexBits);  
     return 0;
+  }
 
   int status = 0;
 
@@ -289,6 +294,7 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
     *toLen = i*codec->samplesPerFrame*2;
   }
 
+  speex_bits_destroy(&context->speexBits);  
   return 1;
 }
 
