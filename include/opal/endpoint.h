@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2044  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.42  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -406,7 +411,7 @@ class OpalEndPoint : public PObject
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
       OpalConnection::StringOptions * stringOptions
-    ) = 0;
+    );
     virtual BOOL OnIncomingConnection(
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options              ///<  options for new connection (can't use default value as overrides will fail)

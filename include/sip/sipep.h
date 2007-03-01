@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2070  2007/02/27 21:22:42  dsandras
+ * Revision 1.2071  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.69  2007/02/27 21:22:42  dsandras
  * Added missing locking. Fixes Ekiga report #411438.
  *
  * Revision 2.68  2007/01/24 04:00:56  csoutheren
@@ -1102,7 +1107,6 @@ class SIPEndPoint : public OpalEndPoint
     virtual SIPPingInfo *         CreatePingInfo(const PString & adjustedUsername, int expire);
     virtual SIPMessageInfo *      CreateMessageInfo(const PString & adjustedUsername, const PString & body);
 
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);

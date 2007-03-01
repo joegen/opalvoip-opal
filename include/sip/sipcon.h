@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2060  2007/02/19 04:42:27  csoutheren
+ * Revision 1.2061  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.59  2007/02/19 04:42:27  csoutheren
  * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
  *
  * Revision 2.58  2007/01/24 04:00:56  csoutheren
@@ -667,7 +672,6 @@ class SIPConnection : public OpalConnection
     const PStringList & GetRouteSet() const { return routeSet; }
     const SIPAuthentication & GetAuthenticator() const { return authentication; }
 
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
     BOOL OnOpenIncomingMediaChannels();
 
   protected:

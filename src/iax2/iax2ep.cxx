@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.27  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
  * Revision 1.26  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
@@ -277,11 +282,6 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   connection->OnIncomingConnection(0, NULL);
 
   connection->IncomingEthernetFrame(f);
-}
-
-BOOL IAX2EndPoint::OnIncomingConnection(OpalConnection & conn, unsigned options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
 }
 
 
