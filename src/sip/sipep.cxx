@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2145  2007/02/27 21:22:42  dsandras
+ * Revision 1.2146  2007/03/01 05:51:07  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.144  2007/02/27 21:22:42  dsandras
  * Added missing locking. Fixes Ekiga report #411438.
  *
  * Revision 2.143  2007/02/20 07:15:03  csoutheren
@@ -1060,10 +1065,6 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   return TRUE;
 }
 
-BOOL SIPEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
 
 BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,  
 				    const PString & forwardParty)

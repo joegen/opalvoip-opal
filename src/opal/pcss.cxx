@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2040  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2041  2007/03/01 05:51:07  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.39  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -386,10 +391,6 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
   soundChannelBuffers = depth;
 }
 
-BOOL OpalPCSSEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -415,10 +416,6 @@ OpalPCSSConnection::~OpalPCSSConnection()
   PTRACE(3, "PCSS\tDeleted PC sound system connection.");
 }
 
-BOOL OpalPCSSConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
-}
 
 BOOL OpalPCSSConnection::SetUpConnection()
 {
