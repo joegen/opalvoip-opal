@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2059  2007/02/19 04:42:27  csoutheren
+ * Revision 1.2060  2007/03/01 05:51:03  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.58  2007/02/19 04:42:27  csoutheren
  * Added OnIncomingMediaChannels so incoming calls can optionally be handled in two stages
  *
  * Revision 2.57  2007/01/24 04:00:55  csoutheren
@@ -2272,7 +2277,6 @@ class H323Connection : public OpalConnection
      */
     H4507Handler&  getH4507handler(){return *h4507handler;};
 
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
     virtual BOOL OnOpenIncomingMediaChannels();
     
   protected:
