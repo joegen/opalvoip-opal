@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2063  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.61  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -1024,10 +1029,6 @@ BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
   return connection.OnIncomingConnection(0, NULL);
 }
 
-BOOL H323EndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
 
 BOOL H323EndPoint::OnCallTransferInitiate(H323Connection & /*connection*/,
                                           const PString & /*remoteParty*/)

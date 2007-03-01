@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2096  2007/03/01 05:05:40  csoutheren
+ * Revision 1.2097  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.95  2007/03/01 05:05:40  csoutheren
  * Fixed problem with override of OnIncomingConnection
  *
  * Revision 2.94  2007/03/01 03:55:43  csoutheren
@@ -736,17 +741,23 @@ void OpalConnection::OnReleased()
 
 BOOL OpalConnection::OnIncomingConnection()
 {
-  return OnIncomingConnection(0, NULL);
+  return TRUE;
 }
 
-/*
-  explicitly not implemented so as to force descendants to be changed
+
+BOOL OpalConnection::OnIncomingConnection(unsigned int /*options*/)
+{
+  return TRUE;
+}
+
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return endpoint.OnIncomingConnection(options, stringOptions);
+  return OnIncomingConnection() &&
+         OnIncomingConnection(options) &&
+         endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
-*/
+
 
 PString OpalConnection::GetDestinationAddress()
 {

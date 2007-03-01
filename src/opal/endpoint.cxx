@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2052  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.50  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -447,30 +452,33 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
   delete connection;
 }
 
+
 BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
   return TRUE;
 }
 
+
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
-  return OnIncomingConnection(connection, 0);
+  return TRUE;
 }
+
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options)
 {
-  return OnIncomingConnection(connection, options, NULL);
+  return TRUE;
 }
 
-/*
-  changed to pure virtual
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return manager.OnIncomingConnection(connection, options, stringOptions);
+  return OnIncomingConnection(connection) &&
+         OnIncomingConnection(connection, options) &&
+         manager.OnIncomingConnection(connection, options, stringOptions);
 }
-*/
+
 
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {
