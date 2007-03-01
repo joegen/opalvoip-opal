@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2051  2007/02/23 08:06:20  csoutheren
+ * Revision 1.2052  2007/03/01 03:31:25  csoutheren
+ * Remove spurious zero bytes from the end of RTCP SDES packets
+ * Fix format of RTCP BYE packets
+ *
+ * Revision 2.50  2007/02/23 08:06:20  csoutheren
  * More implementation of ZRTP (not yet complete)
  *
  * Revision 2.49  2007/02/20 21:35:45  csoutheren
@@ -727,8 +731,7 @@ RTP_ControlFrame::RTP_ControlFrame(PINDEX sz)
   : PBYTEArray(sz)
 {
   compoundOffset = 0;
-  compoundSize = 0;
-  theArray[0] = '\x80'; // Set version 2
+  payloadSize = 0;
 }
 
 
@@ -746,85 +749,111 @@ void RTP_ControlFrame::SetPayloadType(unsigned t)
   theArray[compoundOffset+1] = (BYTE)t;
 }
 
+PINDEX RTP_ControlFrame::GetCompoundSize() const 
+{ 
+  // transmitted length is the offset of the last compound block
+  // plus the compound length of the last block
+  return compoundOffset + *(PUInt16b *)&theArray[compoundOffset+2]*4;
+}
 
 void RTP_ControlFrame::SetPayloadSize(PINDEX sz)
 {
-  sz = (sz+3)/4;
-  PAssert(sz <= 0xffff, PInvalidParameter);
+  payloadSize = sz;
 
-  compoundSize = compoundOffset+4*(sz+1);
-  SetMinSize(compoundSize+1);
-  *(PUInt16b *)&theArray[compoundOffset+2] = (WORD)sz;
+  // compound size is in words, rounded up to nearest word
+  PINDEX compoundSize = (payloadSize + 3) & ~3;
+  PAssert(compoundSize <= 0xffff, PInvalidParameter);
+
+  // make sure buffer is big enough for previous packets plus packet header plus payload
+  SetMinSize(compoundOffset + 4 + 4*(compoundSize));
+
+  // put the new compound size into the packet (always at offset 2)
+  *(PUInt16b *)&theArray[compoundOffset+2] = (WORD)(compoundSize / 4);
 }
 
 BYTE * RTP_ControlFrame::GetPayloadPtr() const 
 { 
-  PTRACE(5, "RTCP\tGetPayloadPtr offset = " << compoundOffset << ", size = " << GetSize());
-  if ((GetPayloadSize() == 0) || ((compoundOffset + 4) >= GetSize())){
-    PTRACE(2, "RTCP\tGetPayloadPtr null");
+  // payload for current packet is always one DWORD after the current compound start
+  if ((GetPayloadSize() == 0) || ((compoundOffset + 4) >= GetSize()))
     return NULL;
-  } else {
-    return (BYTE *)(theArray + compoundOffset + 4); 
-  }
+  return (BYTE *)(theArray + compoundOffset + 4); 
 }
 
-BOOL RTP_ControlFrame::ReadNextCompound()
+BOOL RTP_ControlFrame::ReadNextPacket()
 {
-  compoundOffset += GetPayloadSize()+4;
-  if (compoundOffset+4 > GetSize())
+  // skip over current packet
+  compoundOffset += GetPayloadSize() + 4;
+
+  // see if another packet is feasible
+  if (compoundOffset + 4 > GetSize())
     return FALSE;
-  return compoundOffset+GetPayloadSize()+4 <= GetSize();
+
+  // check if payload size for new packet is legal
+  return compoundOffset + GetPayloadSize() + 4 <= GetSize();
 }
 
 
-BOOL RTP_ControlFrame::WriteNextCompound()
+BOOL RTP_ControlFrame::StartNewPacket()
 {
-  compoundOffset += GetPayloadSize()+4;
-  if (!SetMinSize(compoundOffset+4))
+  // allocate storage for new packet header
+  if (!SetMinSize(compoundOffset + 4))
     return FALSE;
 
   theArray[compoundOffset] = '\x80'; // Set version 2
   theArray[compoundOffset+1] = 0;    // Set payload type to illegal
   theArray[compoundOffset+2] = 0;    // Set payload size to zero
   theArray[compoundOffset+3] = 0;
+
+  // payload is now zero bytes
+  payloadSize = 0;
+  SetPayloadSize(payloadSize);
+
   return TRUE;
 }
 
-
-RTP_ControlFrame::SourceDescription & RTP_ControlFrame::AddSourceDescription(DWORD src)
+void RTP_ControlFrame::EndPacket()
 {
+  // all packets must align to DWORD boundaries
+  while ((4 + payloadSize & 3) != 0) {
+    theArray[compoundOffset + 4 + payloadSize - 1] = 0;
+    ++payloadSize;
+  }
+
+  compoundOffset += 4 + payloadSize;
+}
+
+void RTP_ControlFrame::StartSourceDescription(DWORD src)
+{
+  // extend payload to include SSRC + END
+  SetPayloadSize(payloadSize + 4 + 1);  
   SetPayloadType(RTP_ControlFrame::e_SourceDescription);
+  SetCount(GetCount()+1); // will be incremented automatically
 
-  PINDEX index = GetCount();
-  SetCount(index+1);
-
-  PINDEX originalPayloadSize = index != 0 ? GetPayloadSize() : 0;
-  SetPayloadSize(originalPayloadSize+sizeof(SourceDescription));
-  SourceDescription & sdes = *(SourceDescription *)(GetPayloadPtr()+originalPayloadSize);
-  sdes.src = src;
-  sdes.item[0].type = e_END;
-  return sdes;
+  // get ptr to new item SDES
+  BYTE * payload = GetPayloadPtr();
+  *(PUInt32b *)payload = src;
+  payload[4] = e_END;
 }
 
 
-RTP_ControlFrame::SourceDescription::Item &
-RTP_ControlFrame::AddSourceDescriptionItem(SourceDescription & sdes,
-					   unsigned type,
-					   const PString & data)
+void RTP_ControlFrame::AddSourceDescriptionItem(unsigned type, const PString & data)
 {
+  // get ptr to new item, remembering that END was inserted previously
+  BYTE * payload = GetPayloadPtr() + payloadSize - 1;
+
+  // length of new item
   PINDEX dataLength = data.GetLength();
-  SetPayloadSize(GetPayloadSize()+sizeof(SourceDescription::Item)+dataLength-1);
 
-  SourceDescription::Item * item = sdes.item;
-  while (item->type != e_END)
-    item = item->GetNextItem();
+  // add storage for new item (note that END has already been included)
+  SetPayloadSize(payloadSize + 1 + 1 + dataLength);
 
-  item->type = (BYTE)type;
-  item->length = (BYTE)dataLength;
-  memcpy(item->data, (const char *)data, item->length);
+  // insert new item
+  payload[0] = (BYTE)type;
+  payload[1] = (BYTE)dataLength;
+  memcpy(payload+2, (const char *)data, dataLength);
 
-  item->GetNextItem()->type = e_END;
-  return *item;
+  // insert new END
+  payload[2+dataLength] = (BYTE)e_END;
 }
 
 
@@ -939,29 +968,44 @@ RTP_Session::~RTP_Session()
 
 void RTP_Session::SendBYE()
 {
-  // send a BYE if we ever sent a packet
-  if (packetsSent != 0 || rtcpPacketsSent != 0) {
-    RTP_ControlFrame frame;
-    frame.SetPayloadType(RTP_ControlFrame::e_Goodbye);
-    frame.SetCount(1);
+  RTP_ControlFrame report;
 
-    BYTE * payload = frame.GetPointer() + 4;
+  // if any packets sent, put in a non-zero report 
+  // else put in a zero report
+  if (packetsSent != 0 || rtcpPacketsSent != 0) 
+    InsertReportPacket(report);
+  else {
+    // Send empty RR as nothing has happened
+    report.StartNewPacket();
+    report.SetPayloadType(RTP_ControlFrame::e_ReceiverReport);
+    report.SetPayloadSize(4);  // length is SSRC 
+    report.SetCount(0);
+
+    // add the SSRC to the start of the payload
+    BYTE * payload = report.GetPayloadPtr();
     *(PUInt32b *)payload = syncSourceOut;
-    PINDEX len = 4;
-    const char * reasonStr = "session ending";
-    if (reasonStr != NULL) {
-      strcpy((char *)(payload+len), reasonStr);
-      len += strlen(reasonStr);
-    }
-    while (len & 3) {
-      frame.SetPadding(TRUE);
-      payload[len] = '\0';
-      ++len;
-    }
-    *(PUInt16b *)(frame.GetPointer()+2) = (WORD)(len/4);
-    frame.SetCompoundSize(8 + len); // needed so that WriteControl gets the right length
-    WriteControl(frame);
+    report.EndPacket();
   }
+
+  const char * reasonStr = "session ending";
+
+  // insert BYTE
+  report.StartNewPacket();
+  report.SetPayloadType(RTP_ControlFrame::e_Goodbye);
+  report.SetPayloadSize(4+1+strlen(reasonStr));  // length is SSRC + reasonLen + reason
+
+  BYTE * payload = report.GetPayloadPtr();
+
+  // one SSRC
+  report.SetCount(1);
+  *(PUInt32b *)payload = syncSourceOut;
+
+  // insert reason
+  payload[4] = (BYTE)strlen(reasonStr);
+  memcpy((char *)(payload+5), reasonStr, payload[4]);
+
+  report.EndPacket();
+  WriteControl(report);
 }
 
 PString RTP_Session::GetCanonicalName() const
@@ -1325,6 +1369,70 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
+BOOL RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
+{
+  // No packets sent yet, so only set RR
+  if (packetsSent == 0) {
+
+    // Send RR as we are not transmitting
+    report.StartNewPacket();
+    report.SetPayloadType(RTP_ControlFrame::e_ReceiverReport);
+    report.SetPayloadSize(4 + sizeof(RTP_ControlFrame::ReceiverReport));  // length is SSRC of packet sender plus RR
+    report.SetCount(1);
+    BYTE * payload = report.GetPayloadPtr();
+
+    // add the SSRC to the start of the payload
+    *(PUInt32b *)payload = syncSourceOut;
+
+    // add the RR after the SSRC
+    AddReceiverReport(*(RTP_ControlFrame::ReceiverReport *)(payload+4));
+  }
+  else
+  {
+    // send SR and RR
+    report.StartNewPacket();
+    report.SetPayloadType(RTP_ControlFrame::e_SenderReport);
+    report.SetPayloadSize(4 + sizeof(RTP_ControlFrame::SenderReport));  // length is SSRC of packet sender plus SR
+    report.SetCount(0);
+    BYTE * payload = report.GetPayloadPtr();
+
+    // add the SSRC to the start of the payload
+    *(PUInt32b *)payload = syncSourceOut;
+
+    // add the SR after the SSRC
+    RTP_ControlFrame::SenderReport * sender = (RTP_ControlFrame::SenderReport *)(payload+4);
+    PTime now;
+    sender->ntp_sec  = (DWORD)(now.GetTimeInSeconds()+SecondsFrom1900to1970); // Convert from 1970 to 1900
+    sender->ntp_frac = now.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
+    sender->rtp_ts   = lastSentTimestamp;
+    sender->psent    = packetsSent;
+    sender->osent    = octetsSent;
+
+    PTRACE(3, "RTP\tSentSenderReport: "
+	   " ssrc=" << syncSourceOut
+	   << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
+	   << " rtp=" << sender->rtp_ts
+	   << " psent=" << sender->psent
+	   << " osent=" << sender->osent);
+
+    if (syncSourceIn != 0) {
+      report.SetPayloadSize(4 + sizeof(RTP_ControlFrame::SenderReport) + sizeof(RTP_ControlFrame::ReceiverReport));
+      report.SetCount(1);
+      AddReceiverReport(*(RTP_ControlFrame::ReceiverReport *)(payload+4+sizeof(RTP_ControlFrame::SenderReport)));
+    }
+  }
+
+  report.EndPacket();
+
+  // Wait a fuzzy amount of time so things don't get into lock step
+  int interval = (int)reportTimeInterval.GetMilliSeconds();
+  int third = interval/3;
+  interval += PRandom::Number()%(2*third);
+  interval -= third;
+  reportTimer = interval;
+
+  return TRUE;
+}
 
 BOOL RTP_Session::SendReport()
 {
@@ -1341,62 +1449,21 @@ BOOL RTP_Session::SendReport()
 
   RTP_ControlFrame report;
 
-  // No packets sent yet, so only send RR
-  if (packetsSent == 0) {
-    // Send RR as we are not transmitting
-    report.SetPayloadType(RTP_ControlFrame::e_ReceiverReport);
-    report.SetPayloadSize(4+sizeof(RTP_ControlFrame::ReceiverReport));
-    report.SetCount(1);
-
-    PUInt32b * payload = (PUInt32b *)report.GetPayloadPtr();
-    *payload = syncSourceOut;
-    AddReceiverReport(*(RTP_ControlFrame::ReceiverReport *)&payload[1]);
-  }
-  else {
-    report.SetPayloadType(RTP_ControlFrame::e_SenderReport);
-    report.SetPayloadSize(sizeof(RTP_ControlFrame::SenderReport));
-
-    RTP_ControlFrame::SenderReport * sender =
-      (RTP_ControlFrame::SenderReport *)report.GetPayloadPtr();
-    sender->ssrc = syncSourceOut;
-    PTime now;
-    sender->ntp_sec = (DWORD)(now.GetTimeInSeconds()+SecondsFrom1900to1970); // Convert from 1970 to 1900
-    sender->ntp_frac = now.GetMicrosecond()*4294; // Scale microseconds to "fraction" from 0 to 2^32
-    sender->rtp_ts = lastSentTimestamp;
-    sender->psent = packetsSent;
-    sender->osent = octetsSent;
-
-    PTRACE(3, "RTP\tSentSenderReport: "
-	   " ssrc=" << sender->ssrc
-	   << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
-	   << " rtp=" << sender->rtp_ts
-	   << " psent=" << sender->psent
-	   << " osent=" << sender->osent);
-
-    if (syncSourceIn != 0) {
-      report.SetPayloadSize(sizeof(RTP_ControlFrame::SenderReport) +
-			    sizeof(RTP_ControlFrame::ReceiverReport));
-      report.SetCount(1);
-      AddReceiverReport(*(RTP_ControlFrame::ReceiverReport *)&sender[1]);
-    }
-  }
+  InsertReportPacket(report);
 
   // Add the SDES part to compound RTCP packet
   PTRACE(2, "RTP\tSending SDES: " << canonicalName);
-  report.WriteNextCompound();
+  report.StartNewPacket();
 
-  RTP_ControlFrame::SourceDescription & sdes = report.AddSourceDescription(syncSourceOut);
-  report.AddSourceDescriptionItem(sdes, RTP_ControlFrame::e_CNAME, canonicalName);
-  report.AddSourceDescriptionItem(sdes, RTP_ControlFrame::e_TOOL, toolName);
+  report.SetCount(0); // will be incremented automatically
+  report.StartSourceDescription  (syncSourceOut);
+  report.AddSourceDescriptionItem(RTP_ControlFrame::e_CNAME, canonicalName);
+  report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, toolName);
+  report.EndPacket();
 
-  // Wait a fuzzy amount of time so things don't get into lock step
-  int interval = (int)reportTimeInterval.GetMilliSeconds();
-  int third = interval/3;
-  interval += PRandom::Number()%(2*third);
-  interval -= third;
-  reportTimer = interval;
+  BOOL stat = WriteControl(report);
 
-  return WriteControl(report);
+  return stat;
 }
 
 
@@ -1439,8 +1506,8 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
     case RTP_ControlFrame::e_SenderReport :
       if (size >= sizeof(RTP_ControlFrame::SenderReport)) {
 	      SenderReport sender;
-	      const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)payload;
-	      sender.sourceIdentifier = sr.ssrc;
+	      sender.sourceIdentifier = *(const PUInt32b *)payload;
+	      const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+4);
 	      sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
 	      sender.rtpTimestamp = sr.rtp_ts;
 	      sender.packetsSent = sr.psent;
@@ -1464,35 +1531,36 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 
     case RTP_ControlFrame::e_SourceDescription :
       if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
-	SourceDescriptionArray descriptions;
-	const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
-	for (PINDEX srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
-	  descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
-	  const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
+        SourceDescriptionArray descriptions;
+	      const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
+        PINDEX srcIdx;
+	      for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
+	        descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
+	        const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
           unsigned uiSizeCurrent = 0;   /* current size of the items already parsed */
-	  while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
-	    descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
-	    uiSizeCurrent += item->GetLengthTotal();
+	        while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
+	          descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+	          uiSizeCurrent += item->GetLengthTotal();
 	//    PTRACE(2,"RTP\tSourceDescription item " << item << ", current size = " << uiSizeCurrent);
             
 	    /* avoid reading where GetNextItem() shall not */
-            if(uiSizeCurrent >= size){
+            if (uiSizeCurrent >= size){
               PTRACE(2,"RTP\tSourceDescription end of items");
-	      item = NULL;
-	      break;
-	    } else {
-	      item = item->GetNextItem();
-	    }
-	  }
+	            item = NULL;
+	            break;
+	          } else {
+	            item = item->GetNextItem();
+	          }
+          }
           /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
              otherwise it reads over the buffer */
-	  if((item == NULL) || 
+	        if((item == NULL) || 
             (item->type == RTP_ControlFrame::e_END) || 
             ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
-	    break;
-	  }
-	}
-	OnRxSourceDescription(descriptions);
+	          break;
+          }
+        }
+	      OnRxSourceDescription(descriptions);
       }
       else {
 	      PTRACE(2, "RTP\tSourceDescription packet truncated");
@@ -1538,7 +1606,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
     default :
       PTRACE(2, "RTP\tUnknown control payload type: " << frame.GetPayloadType());
     }
-  } while (frame.ReadNextCompound());
+  } while (frame.ReadNextPacket());
 
   return e_ProcessPacket;
 }
@@ -1925,6 +1993,9 @@ void RTP_UDP::Reopen(BOOL reading)
 
 void RTP_UDP::Close(BOOL reading)
 {
+  if (shutdownRead || shutdownWrite)
+    SendBYE();
+
   if (reading) {
     if (!shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
