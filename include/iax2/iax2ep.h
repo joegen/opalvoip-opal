@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.11  2007/03/01 05:51:03  rjongbloed
+ *  Fixed backward compatibility of OnIncomingConnection() virtual
+ *    functions on various classes. If an old override returned FALSE
+ *    then it will now abort the call as it used to.
+ *
  *  Revision 1.10  2007/01/24 04:00:55  csoutheren
  *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  *  Added some pure viritual functions to prevent old code from breaking silently
@@ -419,8 +424,6 @@ class IAX2EndPoint : public OpalEndPoint
     const PString & context = PString::Empty(),
     const PString & transport = PString::Empty()
   );
-
-  BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
   
   //@}
   

@@ -28,7 +28,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2076  2007/03/01 05:05:20  csoutheren
+ * Revision 1.2077  2007/03/01 05:51:03  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.75  2007/03/01 05:05:20  csoutheren
  * Fixed problem with override of OnIncomingConnection
  *
  * Revision 2.74  2007/03/01 03:52:31  csoutheren
@@ -581,7 +586,8 @@ class OpalConnection : public PSafeObject
        descendant classes to implement it. This will only affect code that implements new
        descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
-    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions) = 0;
+    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    virtual BOOL OnIncomingConnection(unsigned int options);
     virtual BOOL OnIncomingConnection();
 
     /**Start an outgoing connection.
