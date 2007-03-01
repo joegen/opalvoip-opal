@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2057  2007/01/25 11:48:10  hfriederich
+ * Revision 1.2058  2007/03/01 03:37:37  csoutheren
+ * Fix typo
+ *
+ * Revision 2.56  2007/01/25 11:48:10  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -399,7 +402,7 @@ class OpalManager : public PObject
     /**Clear a call.
        This finds the call by using the token then calls the OpalCall::Clear()
        function on it. All connections are released, and the connections and
-       call er disposed of. Note that this function waits until the call has
+       caller disposed of. Note that this function waits until the call has
        been cleared and all responses timeouts etc completed. Care must be
        used as to when it is called as deadlocks may result.
       */
