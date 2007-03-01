@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2081  2006/11/01 00:46:40  csoutheren
+ * Revision 1.2082  2007/03/01 05:07:32  csoutheren
+ * Only include video code when video enabled
+ *
+ * Revision 2.80  2006/11/01 00:46:40  csoutheren
  * Implement video output file device
  *
  * Revision 2.79  2006/10/31 04:41:47  csoutheren
@@ -696,16 +699,14 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
+#if OPAL_VIDEO
   OpalMediaFormat fmt("H.261-CIF");
-  if (!fmt.IsValid())
-    cerr << "cannot find format" << endl;
-  else {
+  if (fmt.IsValid()) {
     fmt.SetOptionInteger(OpalVideoFormat::EncodingQualityOption, 16);
     fmt.SetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption, TRUE);
     OpalMediaFormat::SetRegisteredMediaFormat(fmt);
   }
 
-#if OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
     autoStartReceiveVideo = TRUE;
