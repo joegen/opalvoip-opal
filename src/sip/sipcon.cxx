@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2200  2007/02/20 07:15:03  csoutheren
+ * Revision 1.2201  2007/03/01 05:51:07  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.199  2007/02/20 07:15:03  csoutheren
  * Second attempt at sane 180 handling
  *
  * Revision 2.198  2007/02/19 04:43:42  csoutheren
@@ -2239,10 +2244,6 @@ BOOL SIPConnection::OnOpenIncomingMediaChannels()
   return TRUE;
 }
 
-BOOL SIPConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
-}
 
 OpalConnection::AnswerCallResponse SIPConnection::OnAnswerCall(
       const PString & callerName      /// Name of caller
