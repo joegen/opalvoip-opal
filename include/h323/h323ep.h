@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2047  2007/01/24 04:00:55  csoutheren
+ * Revision 1.2048  2007/03/01 05:51:03  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.46  2007/01/24 04:00:55  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -1678,7 +1683,6 @@ class H323EndPoint : public OpalEndPoint
     static BYTE defaultT35Extension;
     static WORD defaultManufacturerCode;
 
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
