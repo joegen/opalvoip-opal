@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2094  2007/03/01 03:53:19  csoutheren
+ * Revision 1.2095  2007/03/01 03:55:43  csoutheren
+ * Remove old code
+ *
+ * Revision 2.93  2007/03/01 03:53:19  csoutheren
  * Use local jitter buffer values rather than getting direct from OpalManager
  * Allow OpalConnection string options to be set during incoming calls
  *
@@ -731,11 +734,6 @@ void OpalConnection::OnReleased()
 BOOL OpalConnection::OnIncomingConnection()
 {
   return OnIncomingConnection(0);
-}
-
-BOOL OpalConnection::OnIncomingConnection(unsigned options)
-{
-  return OnIncomingConnection(options, GetIncomingStringOptions());
 }
 
 /*
@@ -1463,11 +1461,6 @@ void OpalConnection::SetPhase(Phases phaseToSet)
 BOOL OpalConnection::OnOpenIncomingMediaChannels()
 {
   return TRUE;
-}
-
-OpalConnection::StringOptions * OpalConnection::GetIncomingStringOptions()
-{
-  return endpoint.GetIncomingStringOptions(*this);
 }
 
 void OpalConnection::SetStringOptions(StringOptions * options)
