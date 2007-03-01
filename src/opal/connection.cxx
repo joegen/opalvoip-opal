@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2095  2007/03/01 03:55:43  csoutheren
+ * Revision 1.2096  2007/03/01 05:05:40  csoutheren
+ * Fixed problem with override of OnIncomingConnection
+ *
+ * Revision 2.94  2007/03/01 03:55:43  csoutheren
  * Remove old code
  *
  * Revision 2.93  2007/03/01 03:53:19  csoutheren
@@ -733,7 +736,7 @@ void OpalConnection::OnReleased()
 
 BOOL OpalConnection::OnIncomingConnection()
 {
-  return OnIncomingConnection(0);
+  return OnIncomingConnection(0, NULL);
 }
 
 /*
