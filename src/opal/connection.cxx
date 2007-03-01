@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2093  2007/02/23 07:10:02  csoutheren
+ * Revision 1.2094  2007/03/01 03:53:19  csoutheren
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.92  2007/02/23 07:10:02  csoutheren
  * Fixed problem with new reason code
  *
  * Revision 2.91  2007/02/23 01:01:47  csoutheren
@@ -731,7 +735,7 @@ BOOL OpalConnection::OnIncomingConnection()
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options)
 {
-  return OnIncomingConnection(options, NULL);
+  return OnIncomingConnection(options, GetIncomingStringOptions());
 }
 
 /*
@@ -1460,5 +1464,36 @@ BOOL OpalConnection::OnOpenIncomingMediaChannels()
 {
   return TRUE;
 }
+
+OpalConnection::StringOptions * OpalConnection::GetIncomingStringOptions()
+{
+  return endpoint.GetIncomingStringOptions(*this);
+}
+
+void OpalConnection::SetStringOptions(StringOptions * options)
+{
+  PWaitAndSignal m(phaseMutex);
+
+  if (stringOptions != NULL)
+    delete stringOptions;
+  stringOptions = options;
+}
+
+
+void OpalConnection::ApplyStringOptions()
+{
+  PWaitAndSignal m(phaseMutex);
+  if (stringOptions != NULL) {
+    if (stringOptions->Contains("Disable-Jitter"))
+      maxAudioJitterDelay = minAudioJitterDelay = 0;
+    PString str = (*stringOptions)("Max-Jitter");
+    if (!str.IsEmpty())
+      maxAudioJitterDelay = str.AsUnsigned();
+    str = (*stringOptions)("Min-Jitter");
+    if (!str.IsEmpty())
+      minAudioJitterDelay = str.AsUnsigned();
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
