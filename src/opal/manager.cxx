@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2075  2007/03/01 05:51:05  rjongbloed
+ * Revision 1.2076  2007/03/01 06:16:54  rjongbloed
+ * Fixed DevStudio 2005 warning
+ *
+ * Revision 2.74  2007/03/01 05:51:05  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -674,12 +677,12 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
   return FALSE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & /*connection*/)
 {
   return TRUE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
 {
   return TRUE;
 }
