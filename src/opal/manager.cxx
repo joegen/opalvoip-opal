@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2074  2007/03/01 03:42:09  csoutheren
+ * Revision 1.2075  2007/03/01 05:51:05  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.73  2007/03/01 03:42:09  csoutheren
  * Don't use yuvfile as a default video device
  *
  * Revision 2.72  2007/01/25 11:48:11  hfriederich
@@ -671,17 +676,23 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
 {
-  return OnIncomingConnection(connection, 0);
+  return TRUE;
 }
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options)
 {
-  return OnIncomingConnection(connection, options, NULL);
+  return TRUE;
 }
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
+
+  if (!OnIncomingConnection(connection))
+    return FALSE;
+
+  if (!OnIncomingConnection(connection, options))
+    return FALSE;
 
   OpalCall & call = connection.GetCall();
 
