@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2075  2007/03/01 03:52:31  csoutheren
+ * Revision 1.2076  2007/03/01 05:05:20  csoutheren
+ * Fixed problem with override of OnIncomingConnection
+ *
+ * Revision 2.74  2007/03/01 03:52:31  csoutheren
  * Use local jitter buffer values rather than getting direct from OpalManager
  * Allow OpalConnection string options to be set during incoming calls
  *
@@ -579,7 +582,6 @@ class OpalConnection : public PSafeObject
        descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
     virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions) = 0;
-    virtual BOOL OnIncomingConnection(unsigned int options); // can't use default as overrides will fail
     virtual BOOL OnIncomingConnection();
 
     /**Start an outgoing connection.
