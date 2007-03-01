@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2014  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2015  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.13  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -222,8 +227,6 @@ class OpalIVREndPoint : public OpalEndPoint
     PString GetDefaultTextToSpeech() const
     { return defaultTts; }
 
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
-
   //@}
 
   protected:
@@ -343,7 +346,6 @@ class OpalIVRConnection : public OpalConnection
     PTextToSpeech * GetTextToSpeech()
     { return vxmlSession.GetTextToSpeech(); }
 
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     OpalIVREndPoint   & endpoint;

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2027  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2028  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.26  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -342,7 +347,6 @@ class OpalPCSSEndPoint : public OpalEndPoint
     );
   //@}
 
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     PString  soundChannelPlayDevice;
@@ -525,7 +529,6 @@ class OpalPCSSConnection : public OpalConnection
     unsigned GetSoundChannelBufferDepth() const { return soundChannelBuffers; }
   //@}
 
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     OpalPCSSEndPoint & endpoint;

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2038  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2039  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.37  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -570,11 +575,6 @@ BOOL OpalLIDEndPoint::OnSetUpConnection(OpalLineConnection & PTRACE_PARAM(connec
 }
 #endif
 
-BOOL OpalLIDEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -600,10 +600,6 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   
 }
 
-BOOL OpalLineConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
-}
 
 void OpalLineConnection::OnReleased()
 {

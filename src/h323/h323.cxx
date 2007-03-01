@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2139  2007/03/01 03:53:18  csoutheren
+ * Revision 1.2140  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
+ * Revision 2.138  2007/03/01 03:53:18  csoutheren
  * Use local jitter buffer values rather than getting direct from OpalManager
  * Allow OpalConnection string options to be set during incoming calls
  *
@@ -447,11 +452,6 @@ H323Connection::~H323Connection()
   delete holdMediaChannel;
 
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
-}
-
-BOOL H323Connection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
 
 void H323Connection::OnReleased()

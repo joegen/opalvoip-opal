@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.19  2007/03/01 05:51:04  rjongbloed
+ * Fixed backward compatibility of OnIncomingConnection() virtual
+ *   functions on various classes. If an old override returned FALSE
+ *   then it will now abort the call as it used to.
+ *
  * Revision 1.18  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
@@ -244,7 +249,7 @@ BOOL IAX2Connection::OnIncomingConnection(unsigned int options, OpalConnection::
   originating = FALSE;
   PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+  return OpalConnection::OnIncomingConnection(options, stringOptions);
 }
 
 void IAX2Connection::OnAlerting()
