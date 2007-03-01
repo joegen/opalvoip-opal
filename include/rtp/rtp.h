@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2034  2007/02/23 08:06:04  csoutheren
+ * Revision 1.2035  2007/03/01 03:31:02  csoutheren
+ * Remove spurious zero bytes from the end of RTCP SDES packets
+ * Fix format of RTCP BYE packets
+ *
+ * Revision 2.33  2007/02/23 08:06:04  csoutheren
  * More implementation of ZRTP (not yet complete)
  *
  * Revision 2.32  2007/02/12 02:44:27  csoutheren
@@ -475,11 +479,11 @@ class RTP_ControlFrame : public PBYTEArray
 
     BYTE * GetPayloadPtr() const;
 
-    BOOL ReadNextCompound();
-    BOOL WriteNextCompound();
+    BOOL ReadNextPacket();
+    BOOL StartNewPacket();
+    void EndPacket();
 
-    PINDEX GetCompoundSize() const { return compoundSize; }
-    void SetCompoundSize(PINDEX v) { compoundSize = v; }
+    PINDEX GetCompoundSize() const;
 
     BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
     void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
@@ -499,7 +503,6 @@ class RTP_ControlFrame : public PBYTEArray
     };
 
     struct SenderReport {
-      PUInt32b ssrc;      /* source this RTCP packet refers to */
       PUInt32b ntp_sec;   /* NTP timestamp */
       PUInt32b ntp_frac;
       PUInt32b rtp_ts;    /* RTP timestamp */
@@ -537,12 +540,11 @@ class RTP_ControlFrame : public PBYTEArray
       } item[1];          /* list of SDES items */
     };
 
-    SourceDescription & AddSourceDescription(
+    void StartSourceDescription(
       DWORD src   ///<  SSRC/CSRC identifier
     );
 
-    SourceDescription::Item & AddSourceDescriptionItem(
-      SourceDescription & sdes, ///<  SDES record to add item to
+    void AddSourceDescriptionItem(
       unsigned type,            ///<  Description type
       const PString & data      ///<  Data for description
     );
@@ -550,7 +552,7 @@ class RTP_ControlFrame : public PBYTEArray
 
   protected:
     PINDEX compoundOffset;
-    PINDEX compoundSize;
+    PINDEX payloadSize;
 };
 
 
@@ -953,6 +955,7 @@ class RTP_Session : public PObject
 
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
+    BOOL InsertReportPacket(RTP_ControlFrame & report);
 
     unsigned           sessionID;
     PString            canonicalName;
