@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2074  2007/03/01 03:42:09  csoutheren
+ * Don't use yuvfile as a default video device
+ *
+ * Revision 2.72  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -396,20 +399,23 @@ OpalManager::OpalManager()
   PStringList devices;
   
   devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
-  if (devices.GetSize() > 0) {
-    videoInputDevice.deviceName = devices[0];
-    if (devices.GetSize() > 1 && (videoInputDevice.deviceName *= "fake"))
-      videoInputDevice.deviceName = devices[1];
+  PINDEX i;
+  for (i = 0; i < devices.GetSize(); ++i) {
+    if ((devices[i] *= "yuvfile") || (devices[i] *= "fake")) 
+      continue;
+    videoInputDevice.deviceName = devices[i];
+    break;
   }
-  autoStartTransmitVideo = !(videoInputDevice.deviceName *= "fake");
+  autoStartTransmitVideo = !videoInputDevice.deviceName.IsEmpty();
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
-  if (devices.GetSize() > 0) {
-    videoOutputDevice.deviceName = devices[0];
-    if (devices.GetSize() > 1 && (videoOutputDevice.deviceName *= "null"))
-      videoOutputDevice.deviceName = devices[1];
+  for (i = 0; i < devices.GetSize(); ++i) {
+    if ((devices[i] *= "yuvfile") || (devices[i] *= "null"))
+      continue;
+    videoInputDevice.deviceName = devices[i];
+    break;
   }
-  autoStartReceiveVideo = !(videoOutputDevice.deviceName *= "null");
+  autoStartReceiveVideo = !videoOutputDevice.deviceName.IsEmpty();
 
   if (autoStartReceiveVideo)
     videoPreviewDevice = videoOutputDevice;
