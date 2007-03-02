@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2020.2.9  2007/03/01 03:28:49  csoutheren
+ * Revision 1.2020.2.10  2007/03/02 10:18:43  dsandras
+ * Temporarily commented out patch that breaks audio calls.
+ *
+ * Revision 2.19.2.9  2007/03/01 03:28:49  csoutheren
  * Backport from head
  * Ignore packets with no payload emitted by jitter buffer when no input available
  *
@@ -221,6 +224,7 @@ void OpalMediaPatch::Main()
   RTP_DataFrame emptyFrame(source.GetDataSize());
 
   while (source.IsOpen()) {
+    PINDEX len = 0;
     if (!source.ReadPacket(sourceFrame))
       break;
 
@@ -231,12 +235,12 @@ void OpalMediaPatch::Main()
       break;
     }
 
-    if (sourceFrame.GetPayloadSize() > 0) {
+    //if (sourceFrame.GetPayloadSize() > 0) {
       FilterFrame(sourceFrame, source.GetMediaFormat());    
-      PINDEX len = sinks.GetSize();
+      len = sinks.GetSize();
       for (i = 0; i < len; i++)
         sinks[i].WriteFrame(sourceFrame);  // Got write error, remove from sink list
-    }
+    //}
 
     inUse.Signal();
 
