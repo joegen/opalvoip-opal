@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2054  2007/02/19 08:35:11  csoutheren
+ * Revision 1.2055  2007/03/04 19:25:00  dsandras
+ * Do not use ReadWrite locks when not required. Fixes potential deadlocks
+ * in weird conditions.
+ *
+ * Revision 2.53  2007/02/19 08:35:11  csoutheren
  * Fix typo
  *
  * Revision 2.52  2007/01/25 11:48:11  hfriederich
@@ -331,7 +335,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   UnlockReadWrite();
 
-  for (PSafePtr<OpalConnection> connection = connectionsActive; connection != NULL; ++connection)
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection)
     connection->Release(reason);
 }
 
@@ -426,7 +430,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   if (!LockReadOnly())
     return FALSE;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (conn != &connection) {
       if (conn->SetConnected())
         ok = TRUE;
@@ -444,7 +448,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   UnlockReadOnly();
   
   if (ok && createdOne) {
-    for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
 
