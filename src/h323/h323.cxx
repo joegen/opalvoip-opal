@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2140  2007/03/01 05:51:04  rjongbloed
+ * Revision 1.2141  2007/03/07 23:47:16  csoutheren
+ * Use correct dynamic payload type for H.323 calls
+ *
+ * Revision 2.139  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -2361,6 +2364,15 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
+                  {
+                    H323_RealTimeChannel * rtp = dynamic_cast<H323_RealTimeChannel *>(&channelToStart);
+                    if (rtp != NULL) {
+                      RTP_DataFrame::PayloadTypes inpt  = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
+                      RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
+                      if (inpt != outpt)
+                        rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt,outpt));
+                    }
+                  }
                   if (channelToStart.Open()) {
                     BOOL started = FALSE;
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
