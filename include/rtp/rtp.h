@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2035  2007/03/01 03:31:02  csoutheren
+ * Revision 1.2036  2007/03/08 04:36:05  csoutheren
+ * Add flag to close RTP session when RTCP BYE received
+ *
+ * Revision 2.34  2007/03/01 03:31:02  csoutheren
  * Remove spurious zero bytes from the end of RTCP SDES packets
  * Fix format of RTCP BYE packets
  *
@@ -952,6 +955,7 @@ class RTP_Session : public PObject
   //@}
 
     virtual void SendBYE();
+    virtual void SetCloseOnBYE(BOOL v)  { closeOnBye = v; }
 
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
@@ -1019,6 +1023,8 @@ class RTP_Session : public PObject
     PTimer reportTimer;
 
     PHandleAggregator * aggregator;
+
+    BOOL closeOnBye;
 };
 
 
