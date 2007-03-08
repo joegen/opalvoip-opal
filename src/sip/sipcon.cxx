@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2201  2007/03/01 05:51:07  rjongbloed
+ * Revision 1.2202  2007/03/08 03:55:09  csoutheren
+ * Applied 1674008 - Connection-specific jitter buffer values
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.200  2007/03/01 05:51:07  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -1463,8 +1467,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
     return NULL;
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
-                                endpoint.GetManager().GetMinAudioJitterDelay(),
-                                endpoint.GetManager().GetMaxAudioJitterDelay());
+                                GetMinAudioJitterDelay(),
+                                GetMaxAudioJitterDelay());
 }
 
 void SIPConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
