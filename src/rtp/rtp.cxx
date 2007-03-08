@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2052  2007/03/01 03:31:25  csoutheren
+ * Revision 1.2053  2007/03/08 04:36:25  csoutheren
+ * Add flag to close RTP session when RTCP BYE received
+ *
+ * Revision 2.51  2007/03/01 03:31:25  csoutheren
  * Remove spurious zero bytes from the end of RTCP SDES packets
  * Fix format of RTCP BYE packets
  *
@@ -939,6 +942,8 @@ RTP_Session::RTP_Session(
   lastTransitTime = 0;
 
   lastReceivedPayloadType = RTP_DataFrame::MaxPayloadType;
+
+  closeOnBye = FALSE;
 }
 
 RTP_Session::~RTP_Session()
@@ -1585,11 +1590,15 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
           sources[i] = ((const PUInt32b *)payload)[i];
         }  
         OnRxGoodbye(sources, str);
-      }
+        }
       else {
 	      PTRACE(2, "RTP\tGoodbye packet truncated");
       }
-      break;
+      if (closeOnBye) {
+	      PTRACE(2, "RTP\tGoodbye packet closing transport");
+        return e_AbortTransport;
+      }
+    break;
 
     }
     case RTP_ControlFrame::e_ApplDefined :
@@ -1643,8 +1652,7 @@ void RTP_Session::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_de
 }
 
 
-void RTP_Session::OnRxGoodbye(const PDWORDArray & PTRACE_src,
-			      const PString & PTRACE_reason)
+void RTP_Session::OnRxGoodbye(const PDWORDArray & PTRACE_src, const PString & PTRACE_reason)
 {
   PTRACE(3, "RTP\tOnGoodbye: \"" << PTRACE_reason << "\" srcs=" << PTRACE_src);
 }
