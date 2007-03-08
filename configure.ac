@@ -77,6 +77,11 @@ if test "${HAS_PTLIB:-unset}" = "unset" ; then
         AC_CHECK_FILE(/usr/include/ptlib.h, HAS_PTLIB=1)
         if test "${HAS_PTLIB:-unset}" != "unset" ; then
           AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/share/pwlib/make/)
+        else
+          AC_CHECK_FILE(${prefix}/include/ptlib.h, HAS_PTLIB=1)
+          if test "${HAS_PTLIB:-unset}" != "unset" ; then
+            AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${prefix}/bin)
+          fi
         fi
       fi
     fi
@@ -99,6 +104,9 @@ if test "x$PWLIBDIR" = "x/usr" -o "x$PWLIBDIR" = "x/usr/"; then
 fi
 if test "x$PWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/local/share/pwlib/"
+fi
+if test "x$PWLIBDIR" = "x${prefix}"; then
+  PWLIBDIR="${prefix}/share/pwlib/"
 fi
 AC_SUBST(PWLIBDIR)
 
