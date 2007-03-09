@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.2  2007/02/11 11:46:53  hfriederich
+ * Revision 1.2058.2.3  2007/03/09 19:15:12  hfriederich
+ * Correctly handle non-default session ID values based on master/slave status
+ *
+ * Revision 2.57.2.2  2007/02/11 11:46:53  hfriederich
  * Allow subclasses to create custom instances of H323_RTPChannel
  *
  * Revision 2.57.2.1  2007/02/07 08:51:00  hfriederich
@@ -2293,6 +2296,8 @@ class H323Connection : public OpalConnection
     H4507Handler&  getH4507handler(){return *h4507handler;};
 
     BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    
+    void RegisterRTPSessionIDForMediaType(const OpalMediaType & mediaType, unsigned sessionID);
     
   protected:
     /**Internal function to check if call established.

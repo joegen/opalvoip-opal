@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.4  2007/02/12 19:38:39  hfriederich
+ * Revision 1.2136.2.5  2007/03/09 19:15:12  hfriederich
+ * Correctly handle non-default session ID values based on master/slave status
+ *
+ * Revision 2.135.2.4  2007/02/12 19:38:39  hfriederich
  * Give capabilities only access to OLC media packetization parameters.
  * Ensure these callbacks are called before a channel is created
  *
@@ -3916,6 +3919,19 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
     return NULL; // If codec not supported, return error
   }
   
+  // Check if the session ID needs to be dynamically assigned.
+  unsigned sessionID = param->m_sessionID;
+  if (sessionID == 0) {
+    if (!IsH245Master()) {
+      errorCode = H245_OpenLogicalChannelReject_cause::e_masterSlaveConflict;
+      PTRACE(2, "H323\tCreateLogicalChannel - received invalid session ID 0 from master");
+      return NULL;
+    }
+      
+    // assign the sessionID value
+    sessionID = GetRTPSessionIDForMediaType(capability->GetMediaFormat().GetMediaType());
+  }
+
   // Give the capability access to the media packetization information
   if (param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization)) {
     const H245_H2250LogicalChannelParameters_mediaPacketization & mediaPacketization = 
@@ -3926,7 +3942,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
     return NULL; // If codec combination not supported, return error
 
-  H323Channel * channel = capability->CreateChannel(*this, direction, param->m_sessionID, param);
+  H323Channel * channel = capability->CreateChannel(*this, direction, sessionID, param);
   if (channel == NULL) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotAvailable;
     PTRACE(2, "H323\tCreateLogicalChannel - data type not available");
@@ -3978,8 +3994,6 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     const H245_UnicastAddress & uaddr = param->m_mediaControlChannel;
     if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
       return NULL;
-
-    sessionID = param->m_sessionID;
   }
 
   session = UseSession(GetControlChannel(), mediaType, rtpqos);
@@ -4627,6 +4641,29 @@ unsigned H323Connection::GetRTPSessionIDForMediaType(const OpalMediaType & media
   } else {
     PTRACE(3, "Cannot assign session ID for media type as only the master can do this");
     return 0;
+  }
+}
+
+void H323Connection::RegisterRTPSessionIDForMediaType(const OpalMediaType & mediaType, unsigned sessionID)
+{
+  PWaitAndSignal m(sessionIDMutex);
+    
+  if(GetRTPSessionIDForMediaType(mediaType) != 0) {
+    return; // already assigned
+  }
+    
+  BOOL found = FALSE;
+  SessionIDMap::iterator r;
+  for (r = sessionIDMap.begin(); r != sessionIDMap.end(); ++r) {
+    if (r->second == sessionID) {
+      found = TRUE;
+      break;
+    }
+  }
+  
+  if (found == FALSE) {
+    PTRACE(3, "Assigning session ID " << sessionID << " to media type " << mediaType);
+    sessionIDMap.insert(SessionIDMap::value_type(mediaType, sessionID));
   }
 }
 
