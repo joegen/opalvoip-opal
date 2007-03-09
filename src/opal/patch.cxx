@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.3  2007/02/13 11:29:49  hfriederich
+ * Revision 1.2041.2.4  2007/03/09 20:03:18  hfriederich
+ * (Backport from HEAD)
+ * Ignore packets with no payload emitted by jitter buffer when no input available
+ *
+ * Revision 2.40.2.3  2007/02/13 11:29:49  hfriederich
  * Return sink stream format if no transcoder is present
  *
  * Revision 2.40.2.2  2007/02/12 15:32:01  hfriederich
@@ -548,8 +552,9 @@ void OpalMediaPatch::Main()
     }
       
     PINDEX len = sinks.GetSize();
-		
-    DispatchFrame(sourceFrame);
+	
+    if (sourceFrame.GetPayloadSize() > 0)
+      DispatchFrame(sourceFrame);
 		
     inUse.Signal();
 		
