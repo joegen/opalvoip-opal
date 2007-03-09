@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.1  2007/02/14 08:29:33  hfriederich
+ * Revision 1.2072.2.2  2007/03/09 19:52:11  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.71.2.1  2007/02/14 08:29:33  hfriederich
  * (Backport from HEAD)
  * Allow use of localhost for incoming calls
  *
@@ -1858,7 +1861,9 @@ BOOL OpalTransportUDP::Connect()
   PINDEX i;
   for (i = 0; i < interfaces.GetSize(); i++) {
     PIPSocket::Address interfaceAddress = interfaces[i].GetAddress();
-    if (interfaceAddress == 0/* || interfaceAddress == PIPSocket::Address()*/)
+      
+    // only allow use of loopback interface if the destination is also on the loopback interface
+    if ((interfaceAddress == 0 || interfaceAddress == PIPSocket::Address()) != remoteAddress.IsLoopback())
       continue;
 
     // Check for already have had that IP address.
