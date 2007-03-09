@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2016.4.1  2007/02/07 08:51:00  hfriederich
+ * Revision 1.2016.4.2  2007/03/09 19:15:12  hfriederich
+ * Correctly handle non-default session ID values based on master/slave status
+ *
+ * Revision 2.15.4.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -762,6 +765,8 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
   //@}
 
   protected:
+    virtual void SetSessionID(unsigned sessionID) {}
+    
     RTP_DataFrame::PayloadTypes rtpPayloadType;
 };
 
@@ -844,6 +849,8 @@ class H323_RTPChannel : public H323_RealTimeChannel
   //@}
 
   protected:
+    virtual void SetSessionID(unsigned _sessionID) { sessionID = _sessionID; }
+    
     unsigned           sessionID;
     RTP_Session      & rtpSession;
     H323_RTP_Session & rtpCallbacks;

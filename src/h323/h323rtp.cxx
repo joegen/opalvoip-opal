@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013.10.2  2007/02/11 08:25:06  hfriederich
+ * Revision 1.2013.10.3  2007/03/09 19:15:12  hfriederich
+ * Correctly handle non-default session ID values based on master/slave status
+ *
+ * Revision 2.12.10.2  2007/02/11 08:25:06  hfriederich
  * Only add silence suppression parameter if really sending audio
  *
  * Revision 2.12.10.1  2007/02/07 08:51:02  hfriederich
@@ -308,7 +311,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  const H245_H2250LogicalChannelParameters & param,
                                  unsigned & errorCode)
 {
-  if (param.m_sessionID != channel.GetSessionID()) {
+  if (param.m_sessionID != channel.GetSessionID() && param.m_sessionID != 0) {
     PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return FALSE;

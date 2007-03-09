@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.4  2007/02/12 19:38:39  hfriederich
+ * Revision 1.2036.2.5  2007/03/09 19:15:12  hfriederich
+ * Correctly handle non-default session ID values based on master/slave status
+ *
+ * Revision 2.35.2.4  2007/02/12 19:38:39  hfriederich
  * Give capabilities only access to OLC media packetization parameters.
  * Ensure these callbacks are called before a channel is created
  *
@@ -1112,14 +1115,11 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
 
   // set session ID
   param.IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-  const H245_H2250LogicalChannelParameters & openparam =
-                          open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-  unsigned sessionID = openparam.m_sessionID;
-  param.m_sessionID = sessionID;
+  param.m_sessionID = GetSessionID();
 
   OnSendOpenAck(param);
 
-  PTRACE(2, "H323RTP\tSending open logical channel ACK: sessionID=" << sessionID);
+  PTRACE(2, "H323RTP\tSending open logical channel ACK: sessionID=" << GetSessionID());
 }
 
 
@@ -1171,6 +1171,21 @@ BOOL H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & a
             H245_OpenLogicalChannelAck_forwardMultiplexAckParameters::e_h2250LogicalChannelAckParameters) {
     PTRACE(1, "H323RTP\tOnly H.225.0 multiplex supported");
     return FALSE;
+  }
+  
+  if (GetSessionID() == 0) {
+    const H245_H2250LogicalChannelAckParameters & param = ack.m_forwardMultiplexAckParameters;
+      
+    if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
+      unsigned id = param.m_sessionID;
+      if (id == 0) {
+        PTRACE(1, "H323RTP\tMaster didn't assign session ID");
+        return FALSE;
+      }
+      
+      SetSessionID(id);
+      connection.RegisterRTPSessionIDForMediaType(GetCapability().GetMediaFormat().GetMediaType(), id);
+    }
   }
 
   return OnReceivedAckPDU(ack.m_forwardMultiplexAckParameters);
