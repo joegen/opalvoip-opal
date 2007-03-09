@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.5  2007/03/09 19:15:12  hfriederich
+ * Revision 1.2036.2.6  2007/03/09 19:30:55  hfriederich
+ * Fix previous commit. Session ID is guaranteed to be greater than 0.
+ * Reject OLC Ack if master doesn't specify session ID.
+ *
+ * Revision 2.35.2.5  2007/03/09 19:15:12  hfriederich
  * Correctly handle non-default session ID values based on master/slave status
  *
  * Revision 2.35.2.4  2007/02/12 19:38:39  hfriederich
@@ -1176,16 +1180,13 @@ BOOL H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & a
   if (GetSessionID() == 0) {
     const H245_H2250LogicalChannelAckParameters & param = ack.m_forwardMultiplexAckParameters;
       
-    if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
-      unsigned id = param.m_sessionID;
-      if (id == 0) {
-        PTRACE(1, "H323RTP\tMaster didn't assign session ID");
-        return FALSE;
-      }
-      
-      SetSessionID(id);
-      connection.RegisterRTPSessionIDForMediaType(GetCapability().GetMediaFormat().GetMediaType(), id);
+    if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
+      PTRACE(1, "H323RTP\tMaster didn't specify session ID");
+      return FALSE;
     }
+    unsigned id = param.m_sessionID;
+    SetSessionID(id);
+    connection.RegisterRTPSessionIDForMediaType(GetCapability().GetMediaFormat().GetMediaType(), id);
   }
 
   return OnReceivedAckPDU(ack.m_forwardMultiplexAckParameters);
