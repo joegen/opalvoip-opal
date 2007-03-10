@@ -27,6 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.5.2.1  2007/03/10 10:05:59  hfriederich
+ * (Backport from HEAD)
+ * SRTP/ZRTP improvements
+ *
  * Revision 1.5  2006/11/20 03:37:12  csoutheren
  * Allow optional inclusion of RTP aggregation
  *
@@ -107,14 +111,6 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
     virtual BOOL SetIncomingSSRC(DWORD ssrc) = 0;
     virtual BOOL GetIncomingSSRC(DWORD & ssrc) const = 0;
 
-    virtual RTP_UDP * CreateRTPSession(
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-      unsigned id,                       ///<  Session ID for RTP channel
-      BOOL remoteIsNAT                   ///<  TRUE is remote is behind NAT
-    ) = 0;
-
-    virtual BOOL Open() = 0;
-
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -122,9 +118,9 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
 //  this class implements SRTP over UDP
 //
 
-class OpalSRTP_UDP : public RTP_UDP
+class OpalSRTP_UDP : public SecureRTP_UDP
 {
-  PCLASSINFO(OpalSRTP_UDP, RTP_UDP);
+  PCLASSINFO(OpalSRTP_UDP, SecureRTP_UDP);
   public:
     OpalSRTP_UDP(
       PHandleAggregator * _aggregator,   ///< handle aggregator
@@ -132,20 +128,10 @@ class OpalSRTP_UDP : public RTP_UDP
       BOOL remoteIsNAT                  ///<  TRUE is remote is behind NAT
     );
 
-    virtual void SetSecurityMode(OpalSecurityMode * srtpParms);
-
-    ~OpalSRTP_UDP();
-
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame) = 0;
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame) = 0;
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len) = 0;
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame) = 0;
-
-    virtual OpalSRTPSecurityMode * GetSRTPParms() const
-    { return srtpParms; }
-
-  protected:
-    OpalSRTPSecurityMode * srtpParms;
 };
 
 
@@ -154,7 +140,7 @@ class OpalSRTP_UDP : public RTP_UDP
 //  this class implements SRTP using libSRTP
 //
 
-#if HAS_LIBSRTP
+#if HAS_LIBSRTP || HAS_LIBZRTP
 
 class LibSRTP_UDP : public OpalSRTP_UDP
 {
@@ -167,7 +153,14 @@ class LibSRTP_UDP : public OpalSRTP_UDP
 
     ~LibSRTP_UDP();
 
-    void SetSecurityMode(OpalSecurityMode * _srtpParms);
+    BOOL Open(
+      PIPSocket::Address localAddress,  ///<  Local interface to bind to
+      WORD portBase,                    ///<  Base of ports to search
+      WORD portMax,                     ///<  end of ports to search (inclusive)
+      BYTE ipTypeOfService,             ///<  Type of Service byte
+      PSTUNClient * stun = NULL,        ///<  STUN server to use createing sockets (or NULL if no STUN)
+      RTP_QOS * rtpqos = NULL           ///<  QOS spec (or NULL if no QoS)
+    );
 
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame);
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);

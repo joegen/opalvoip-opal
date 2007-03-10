@@ -27,6 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.10.2.1  2007/03/10 10:05:59  hfriederich
+ * (Backport from HEAD)
+ * SRTP/ZRTP improvements
+ *
  * Revision 1.10  2006/12/18 03:18:42  csoutheren
  * Messy but simple fixes
  *   - Add access to SIP REGISTER timeout
@@ -98,19 +102,8 @@
 OpalSRTP_UDP::OpalSRTP_UDP(PHandleAggregator * _aggregator,   ///<  RTP aggregator
                                       unsigned id,            ///<  Session ID for RTP channel
                                           BOOL remoteIsNAT)   ///<  TRUE is remote is behind NAT
-  : RTP_UDP(_aggregator, id, remoteIsNAT)
+  : SecureRTP_UDP(_aggregator, id, remoteIsNAT)
 {
-  srtpParms = NULL;
-}
-
-void OpalSRTP_UDP::SetSecurityMode(OpalSecurityMode * _srtpParms)
-{
-  srtpParms = dynamic_cast<OpalSRTPSecurityMode *>(_srtpParms);
-}
-
-OpalSRTP_UDP::~OpalSRTP_UDP()
-{
-  delete srtpParms;
 }
 
 
@@ -125,17 +118,19 @@ OpalSRTP_UDP::~OpalSRTP_UDP()
 //  implement SRTP via libSRTP
 //
 
-#if HAS_LIBSRTP
+#if HAS_LIBSRTP || HAS_LIBZRTP
 
 namespace PWLibStupidLinkerHacks {
   int libSRTPLoader;
 };
 
-#ifdef WIN32
+#if HAS_LIBSRTP && _WIN32
 #pragma comment(lib, LIBSRTP_LIBRARY)
 #endif
 
+extern "C" {
 #include "srtp/srtp.h"
+};
 
 ///////////////////////////////////////////////////////
 
@@ -224,12 +219,18 @@ BOOL LibSRTPSecurityMode_Base::SetOutgoingSSRC(DWORD ssrc)
 
 BOOL LibSRTPSecurityMode_Base::GetOutgoingSSRC(DWORD & ssrc) const
 {
+  if (outboundPolicy.ssrc.type != ssrc_specific)
+    return FALSE;
+    
   ssrc = outboundPolicy.ssrc.value;
   return TRUE;
 }
 
 BOOL LibSRTPSecurityMode_Base::GetIncomingSSRC(DWORD & ssrc) const
 {
+  if (inboundPolicy.ssrc.type != ssrc_specific)
+    return FALSE;
+    
   ssrc = inboundPolicy.ssrc.value;
   return TRUE;
 }
@@ -281,16 +282,30 @@ LibSRTP_UDP::LibSRTP_UDP(PHandleAggregator * _aggregator,   ///< handle aggregat
 {
 }
 
-void LibSRTP_UDP::SetSecurityMode(OpalSecurityMode * _srtpParms)
-{
-  OpalSRTP_UDP::SetSecurityMode(_srtpParms);
-  ((LibSRTPSecurityMode_Base *)_srtpParms)->GetOutgoingSSRC(syncSourceOut);
-}
-
-
 LibSRTP_UDP::~LibSRTP_UDP()
 {
 }
+
+BOOL LibSRTP_UDP::Open(
+  PIPSocket::Address localAddress,  ///<  Local interface to bind to
+  WORD portBase,                    ///<  Base of ports to search
+  WORD portMax,                     ///<  end of ports to search (inclusive)
+  BYTE ipTypeOfService,             ///<  Type of Service byte
+  PSTUNClient * stun,               ///<  STUN server to use createing sockets (or NULL if no STUN)
+  RTP_QOS * rtpqos                  ///<  QOS spec (or NULL if no QoS)
+)
+{
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
+  if (srtp == NULL)
+    return FALSE;
+    
+  // get the inbound and outbound SSRC if they are set
+  srtp->GetOutgoingSSRC(syncSourceOut);
+  srtp->GetIncomingSSRC(syncSourceIn);
+    
+  return OpalSRTP_UDP::Open(localAddress, portBase, portMax, ipTypeOfService, stun, rtpqos);
+}
+
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
 {
@@ -298,8 +313,8 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
   if (stat != e_ProcessPacket)
     return stat;
 
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
-
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
+    
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
   frame.SetPayloadSize(len + SRTP_MAX_TRAILER_LEN);
   err_status_t err = ::srtp_protect(srtp->outboundSession, frame.GetPointer(), &len);
@@ -311,14 +326,14 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendData(RTP_DataFrame & frame)
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveData(RTP_DataFrame & frame)
 {
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
-
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
+    
   int len = frame.GetHeaderSize() + frame.GetPayloadSize();
   err_status_t err = ::srtp_unprotect(srtp->inboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
     return RTP_Session::e_IgnorePacket;
   frame.SetPayloadSize(len - frame.GetHeaderSize());
-
+    
   return RTP_UDP::OnReceiveData(frame);
 }
 
@@ -327,28 +342,30 @@ RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnSendControl(RTP_ControlFrame & frame, 
   SendReceiveStatus stat = RTP_UDP::OnSendControl(frame, transmittedLen);
   if (stat != e_ProcessPacket)
     return stat;
-
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
-
+    
+  frame.SetMinSize(transmittedLen + SRTP_MAX_TRAILER_LEN);
   int len = transmittedLen;
+    
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
+    
   err_status_t err = ::srtp_protect_rtcp(srtp->outboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
     return RTP_Session::e_IgnorePacket;
   transmittedLen = len;
-
+    
   return e_ProcessPacket;
 }
 
 RTP_UDP::SendReceiveStatus LibSRTP_UDP::OnReceiveControl(RTP_ControlFrame & frame)
 {
-  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)srtpParms;
+  LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
 
   int len = frame.GetSize();
   err_status_t err = ::srtp_unprotect_rtcp(srtp->inboundSession, frame.GetPointer(), &len);
   if (err != err_status_ok)
     return RTP_Session::e_IgnorePacket;
   frame.SetSize(len);
-
+    
   return RTP_UDP::OnReceiveControl(frame);
 }
 
