@@ -27,7 +27,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.3  2007/03/09 19:15:12  hfriederich
+ * Revision 1.2058.2.4  2007/03/10 11:19:01  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Use correct dynamic payload type for H.323 calls
+ * Ensure codec mask is applied on local caps
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.57.2.3  2007/03/09 19:15:12  hfriederich
  * Correctly handle non-default session ID values based on master/slave status
  *
  * Revision 2.57.2.2  2007/02/11 11:46:53  hfriederich
@@ -2295,7 +2303,7 @@ class H323Connection : public OpalConnection
      */
     H4507Handler&  getH4507handler(){return *h4507handler;};
 
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    virtual BOOL OnOpenIncomingMediaChannels();
     
     void RegisterRTPSessionIDForMediaType(const OpalMediaType & mediaType, unsigned sessionID);
     
@@ -2343,6 +2351,7 @@ class H323Connection : public OpalConnection
     BOOL            h245Tunneling;
     H323SignalPDU * h245TunnelRxPDU;
     H323SignalPDU * h245TunnelTxPDU;
+    H323SignalPDU * setupPDU;
     H323SignalPDU * alertingPDU;
     H323SignalPDU * connectPDU;
     H323SignalPDU * progressPDU;
