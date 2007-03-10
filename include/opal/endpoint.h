@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043.2.2  2007/02/10 23:07:21  hfriederich
+ * Revision 1.2043.2.3  2007/03/10 07:49:08  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.42.2.2  2007/02/10 23:07:21  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -420,7 +427,7 @@ class OpalEndPoint : public PObject
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
       OpalConnection::StringOptions * stringOptions
-    ) = 0;
+    );
     virtual BOOL OnIncomingConnection(
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options              ///<  options for new connection (can't use default value as overrides will fail)
