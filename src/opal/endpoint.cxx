@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.2  2007/02/10 23:07:22  hfriederich
+ * Revision 1.2051.2.3  2007/03/10 07:49:09  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.50.2.2  2007/02/10 23:07:22  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -473,22 +480,20 @@ BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection)
 {
-  return OnIncomingConnection(connection, 0);
+  return TRUE;
 }
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options)
 {
-  return OnIncomingConnection(connection, options, NULL);
+  return TRUE;
 }
-
-/*
-  changed to pure virtual
 
 BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return manager.OnIncomingConnection(connection, options, stringOptions);
+  return OnIncomingConnection(connection) &&
+         OnIncomingConnection(connection, options) &&
+         manager.OnIncomingConnection(connection, options, stringOptions);
 }
-*/
 
 void OpalEndPoint::OnAlerting(OpalConnection & connection)
 {

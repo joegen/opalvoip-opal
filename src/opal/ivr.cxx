@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2018.2.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2018.2.2  2007/03/10 07:49:09  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.17.2.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -223,10 +230,6 @@ BOOL OpalIVREndPoint::StartVXML()
   return FALSE;
 }
 
-BOOL OpalIVREndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -306,10 +309,6 @@ BOOL OpalIVRConnection::SetUpConnection()
   return TRUE;
 }
 
-BOOL OpalIVRConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
-}
 
 BOOL OpalIVRConnection::StartVXML()
 {

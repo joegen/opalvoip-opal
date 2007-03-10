@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.3  2007/02/14 08:26:12  hfriederich
+ * Revision 1.2089.2.4  2007/03/10 07:49:09  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.88.2.3  2007/02/14 08:26:12  hfriederich
  * (Backport from HEAD)
  * Fix problem with using SIP connections that have no StringOptions
  *
@@ -461,8 +468,8 @@ ostream & operator<<(ostream & out, OpalConnection::CallEndReason reason)
     "EndedByOutOfService",      /// Call cleared because the line is out of service, 
     "EndedByAcceptingCallWaiting", /// Call cleared because another call is answered
   };
-  PAssert((PINDEX)reason < PARRAYSIZE(names), "Invalid reason");
-  return out << names[reason];
+  PAssert((PINDEX)(reason & 0xff) < PARRAYSIZE(names), "Invalid reason");
+  return out << names[reason & 0xff];
 }
 
 ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
@@ -652,6 +659,10 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
 {
   // Only set reason if not already set to something
   if (callEndReason == NumCallEndReasons) {
+    if ((reason & EndedWithQ931Code) != 0) {
+      SetQ931Cause((int)reason >> 24);
+      reason = (CallEndReason)(reason & 0xff);
+    }
     PTRACE(3, "OpalCon\tCall end reason for " << GetToken() << " set to " << reason);
     callEndReason = reason;
   }
@@ -738,22 +749,22 @@ void OpalConnection::OnReleased()
 
 BOOL OpalConnection::OnIncomingConnection()
 {
-  return OnIncomingConnection(0);
+  return TRUE;
 }
 
-BOOL OpalConnection::OnIncomingConnection(unsigned options)
+BOOL OpalConnection::OnIncomingConnection(unsigned int /*options*/)
 {
-  return OnIncomingConnection(options, NULL);
+  return TRUE;
 }
 
-/*
-  explicitly not implemented so as to force descendants to be changed
 
 BOOL OpalConnection::OnIncomingConnection(unsigned options, OpalConnection::StringOptions * stringOptions)
 {
-  return endpoint.OnIncomingConnection(options, stringOptions);
+  return OnIncomingConnection() && 
+         OnIncomingConnection(options) && 
+         endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
-*/
+
 
 PString OpalConnection::GetDestinationAddress()
 {
@@ -1450,4 +1461,38 @@ void OpalConnection::SetPhase(Phases phaseToSet)
     phase = phaseToSet;
   }
 }
+
+
+BOOL OpalConnection::OnOpenIncomingMediaChannels()
+{
+    return TRUE;
+}
+
+
+void OpalConnection::SetStringOptions(StringOptions * options)
+{
+    PWaitAndSignal m(phaseMutex);
+    
+    if (stringOptions != NULL)
+        delete stringOptions;
+    stringOptions = options;
+}
+
+
+void OpalConnection::ApplyStringOptions()
+{
+    PWaitAndSignal m(phaseMutex);
+    if (stringOptions != NULL) {
+        if (stringOptions->Contains("Disable-Jitter"))
+            maxAudioJitterDelay = minAudioJitterDelay = 0;
+        PString str = (*stringOptions)("Max-Jitter");
+        if (!str.IsEmpty())
+            maxAudioJitterDelay = str.AsUnsigned();
+        str = (*stringOptions)("Min-Jitter");
+        if (!str.IsEmpty())
+            minAudioJitterDelay = str.AsUnsigned();
+    }
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
