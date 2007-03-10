@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.5  2007/03/09 19:15:12  hfriederich
+ * Revision 1.2136.2.6  2007/03/10 11:19:02  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Use correct dynamic payload type for H.323 calls
+ * Ensure codec mask is applied on local caps
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.135.2.5  2007/03/09 19:15:12  hfriederich
  * Correctly handle non-default session ID values based on master/slave status
  *
  * Revision 2.135.2.4  2007/02/12 19:38:39  hfriederich
@@ -356,6 +364,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   h245TunnelTxPDU = NULL;
   h245TunnelRxPDU = NULL;
+  setupPDU = NULL;
   alertingPDU = NULL;
   connectPDU = NULL;
 
@@ -454,17 +463,13 @@ H323Connection::~H323Connection()
   delete h450dispatcher;
   delete signallingChannel;
   delete controlChannel;
+  delete setupPDU;
   delete alertingPDU;
   delete connectPDU;
   delete progressPDU;
   delete holdMediaChannel;
 
   PTRACE(3, "H323\tConnection " << callToken << " deleted.");
-}
-
-BOOL H323Connection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
 
 void H323Connection::OnReleased()
@@ -946,14 +951,14 @@ void H323Connection::SetRemoteVersions(const H225_ProtocolIdentifier & protocolI
 }
 
 
-BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
+BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPDU)
 {
-  PINDEX i;
-
-  if (setupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
+  if (originalSetupPDU.m_h323_uu_pdu.m_h323_message_body.GetTag() != H225_H323_UU_PDU_h323_message_body::e_setup)
     return FALSE;
-
-  const H225_Setup_UUIE & setup = setupPDU.m_h323_uu_pdu.m_h323_message_body;
+    
+  setupPDU = new H323SignalPDU(originalSetupPDU);
+  
+  H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
   switch (setup.m_conferenceGoal.GetTag()) {
     case H225_Setup_UUIE_conferenceGoal::e_create:
@@ -961,19 +966,19 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       break;
 
     case H225_Setup_UUIE_conferenceGoal::e_invite:
-      return endpoint.OnConferenceInvite(setupPDU);
+      return endpoint.OnConferenceInvite(*setupPDU);
 
     case H225_Setup_UUIE_conferenceGoal::e_callIndependentSupplementaryService:
-      return endpoint.OnCallIndependentSupplementaryService(setupPDU);
+      return endpoint.OnCallIndependentSupplementaryService(*setupPDU);
 
     case H225_Setup_UUIE_conferenceGoal::e_capability_negotiation:
-      return endpoint.OnNegotiateConferenceCapabilities(setupPDU);
+      return endpoint.OnNegotiateConferenceCapabilities(*setupPDU);
   }
 
   SetRemoteVersions(setup.m_protocolIdentifier);
 
   // Get the ring pattern
-  distinctiveRing = setupPDU.GetDistinctiveRing();
+  distinctiveRing = setupPDU->GetDistinctiveRing();
 
   // Save the identifiers sent by caller
   if (setup.HasOptionalField(H225_Setup_UUIE::e_callIdentifier))
@@ -982,15 +987,15 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
   SetRemoteApplication(setup.m_sourceInfo);
 
   // Determine the remote parties name/number/address as best we can
-  setupPDU.GetQ931().GetCallingPartyNumber(remotePartyNumber);
-  remotePartyName = setupPDU.GetSourceAliases(signallingChannel);
+  setupPDU->GetQ931().GetCallingPartyNumber(remotePartyNumber);
+  remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway
   if (setup.m_destinationAddress.GetSize() == 0)
     calledDestinationName = signallingChannel->GetLocalAddress();
   else 
     calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
-  setupPDU.GetQ931().GetCalledPartyNumber(calledDestinationNumber);
+  setupPDU->GetQ931().GetCalledPartyNumber(calledDestinationNumber);
 
   // get the peer address
   remotePartyAddress = signallingChannel->GetRemoteAddress();
@@ -1032,8 +1037,8 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
 
   // Anything else we need from setup PDU
   mediaWaitForConnect = setup.m_mediaWaitForConnect;
-  if (!setupPDU.GetQ931().GetCalledPartyNumber(localDestinationAddress)) {
-    localDestinationAddress = setupPDU.GetDestinationAlias(TRUE);
+  if (!setupPDU->GetQ931().GetCalledPartyNumber(localDestinationAddress)) {
+    localDestinationAddress = setupPDU->GetDestinationAlias(TRUE);
     if (signallingChannel->GetLocalAddress().IsEquivalent(localDestinationAddress))
       localDestinationAddress = '*';
   }
@@ -1066,7 +1071,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
     alertingPDU->BuildAlerting(*this);
 
     /** If we have a case of incoming call intrusion we should not Clear the Call*/
-    if (!OnIncomingCall(setupPDU, *alertingPDU) && (!isCallIntrusion)) {
+    if (!OnIncomingCall(*setupPDU, *alertingPDU) && (!isCallIntrusion)) {
       Release(EndedByNoAccept);
       PTRACE(1, "H225\tApplication not accepting calls");
       return FALSE;
@@ -1116,14 +1121,28 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
       gatekeeperRouted = response.gatekeeperRouted;
     }
   }
+  
+  if (!OnOpenIncomingMediaChannels())
+    return FALSE;
+  
+  return connectionState != ShuttingDownConnection;
+}
+
+BOOL H323Connection::OnOpenIncomingMediaChannels()
+{
+  ApplyStringOptions();
+    
+  H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
 
   // Check that it has the H.245 channel connection info
-  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU.m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_h245Address) && (!setupPDU->m_h323_uu_pdu.m_h245Tunneling || endpoint.IsH245TunnelingDisabled()))
     if (!CreateOutgoingControlChannel(setup.m_h245Address))
       return FALSE;
+  
+  PINDEX i;
 
   // See if remote endpoint wants to start fast
   if ((fastStartState != FastStartDisabled) && setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
@@ -1181,7 +1200,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & setupPDU)
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
         SetPhase(AlertingPhase);
-        AnsweringCall(OnAnswerCall(remotePartyName, setupPDU, *connectPDU, *progressPDU));
+        AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
       }
     }
   }
@@ -1746,6 +1765,8 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 
 BOOL H323Connection::SetUpConnection()
 {
+  ApplyStringOptions();
+    
   signallingChannel->AttachThread(PThread::Create(PCREATE_NOTIFIER(StartOutgoing), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::NormalPriority,
@@ -1946,6 +1967,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
     setup.IncludeOptionalField(H225_Setup_UUIE::e_destCallSignalAddress);
     transportAddress.SetPDU(setup.m_destCallSignalAddress);
   }
+  
+  ApplyStringOptions();
 
   // Get the local capabilities before fast start is handled
   OnSetLocalCapabilities();
@@ -2356,6 +2379,15 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
+                  {
+                    H323_RealTimeChannel * rtp = dynamic_cast<H323_RealTimeChannel *>(&channelToStart);
+                    if (rtp != NULL) {
+                      RTP_DataFrame::PayloadTypes inpt = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
+                      RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
+                      if (inpt != outpt)
+                        rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt, outpt));
+                    }
+                  }
                   if (channelToStart.Open()) {
                     BOOL started = FALSE;
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
@@ -3417,6 +3449,8 @@ void H323Connection::OnSetLocalCapabilities()
     else
       localCapabilities.Remove(capability);
   }
+  
+  localCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
 
   PTRACE(2, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
@@ -3559,8 +3593,8 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
   }
 
   return new OpalRTPMediaStream(mediaFormat, isSource, *session,
-                                endpoint.GetManager().GetMinAudioJitterDelay(),
-                                endpoint.GetManager().GetMaxAudioJitterDelay());
+                                GetMinAudioJitterDelay(),
+                                GetMaxAudioJitterDelay());
 }
 
 
@@ -3886,7 +3920,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
       }
       
       capability = remoteCapabilities.Copy(*capability);
-      //remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability);
+      //remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability); FIXME
     }
   }
   else {
