@@ -25,7 +25,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.3  2007/02/16 10:43:41  hfriederich
+ * Revision 1.2059.2.4  2007/03/10 08:34:01  hfriederich
+ * (Backport from HEAD)
+ * Connection-specific jitter buffer values
+ *   Thanks to Borko Jandras
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled
+ *   in two stages
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Don't send multiple 100 Trying
+ * Guard against inability to create transports
+ * Added missing locking
+ *
+ * Revision 2.58.2.3  2007/02/16 10:43:41  hfriederich
  * - Extend SDP capability system for merging local / remote format parameters.
  * - Propagate media format options to the media streams
  *
@@ -689,7 +700,7 @@ class SIPConnection : public OpalConnection
     const PStringList & GetRouteSet() const { return routeSet; }
     const SIPAuthentication & GetAuthenticator() const { return authentication; }
 
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    BOOL OnOpenIncomingMediaChannels();
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
@@ -740,6 +751,7 @@ class SIPConnection : public OpalConnection
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
+    BOOL                  sentTrying;
 
     SIP_PDU_Queue pduQueue;
     PSemaphore    pduSemaphore;

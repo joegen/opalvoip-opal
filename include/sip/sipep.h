@@ -25,7 +25,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.1  2007/02/15 09:43:16  hfriederich
+ * Revision 1.2069.2.2  2007/03/10 08:34:01  hfriederich
+ * (Backport from HEAD)
+ * Connection-specific jitter buffer values
+ *   Thanks to Borko Jandras
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled
+ *   in two stages
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Don't send multiple 100 Trying
+ * Guard against inability to create transports
+ * Added missing locking
+ *
+ * Revision 2.68.2.1  2007/02/15 09:43:16  hfriederich
  * Make CreateTransport() virtual
  *
  * Revision 2.68  2007/01/24 04:00:56  csoutheren
@@ -357,10 +368,10 @@ class SIPInfo : public PSafeObject
     { return registrationAddress; }
     
     virtual void AppendTransaction(SIPTransaction * transaction) 
-    { registrations.Append (transaction); }
+    { PWaitAndSignal m(registrationsMutex); registrations.Append (transaction); }
     
     virtual void RemoveTransactions() 
-    { registrations.RemoveAll (); }
+    { PWaitAndSignal m(registrationsMutex); registrations.RemoveAll (); }
 
     virtual BOOL IsRegistered() 
     { return registered; }
@@ -421,6 +432,7 @@ class SIPInfo : public PSafeObject
       SIPURL             registrationAddress;
       PString            registrationID;
       SIPTransactionList registrations;
+      PMutex             registrationsMutex;
       PTime              registrationTime;
       BOOL               registered;
       int	               expire;
@@ -1100,8 +1112,6 @@ class SIPEndPoint : public OpalEndPoint
     virtual SIPMWISubscribeInfo * CreateMWISubscribeInfo(const PString & adjustedUsername, int expire);
     virtual SIPPingInfo *         CreatePingInfo(const PString & adjustedUsername, int expire);
     virtual SIPMessageInfo *      CreateMessageInfo(const PString & adjustedUsername, const PString & body);
-
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
