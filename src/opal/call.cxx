@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2053.2.2  2007/02/10 23:07:22  hfriederich
+ * Revision 1.2053.2.3  2007/03/10 07:45:30  hfriederich
+ * (Backport from HEAD)
+ * Do not use ReadWrite locks when not required. Fixes potential deadlocks
+ * in weird conditions.
+ *
+ * Revision 2.52.2.2  2007/02/10 23:07:22  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -344,7 +349,7 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 
   UnlockReadWrite();
 
-  for (PSafePtr<OpalConnection> connection = connectionsActive; connection != NULL; ++connection)
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection)
     connection->Release(reason);
 }
 
@@ -439,7 +444,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   if (!LockReadOnly())
     return FALSE;
 
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (conn != &connection) {
       if (conn->SetConnected())
         ok = TRUE;
@@ -457,7 +462,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
   UnlockReadOnly();
   
   if (ok && createdOne) {
-    for (PSafePtr<OpalConnection> conn(connectionsActive); conn != NULL; ++conn)
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn)
       conn->StartMediaStreams();
   }
 
@@ -541,7 +546,7 @@ void OpalCall::AdjustMediaFormatOptions(OpalMediaFormat & mediaFormat,
                                         const OpalConnection & connection,
                                         BOOL includeSpecifiedConnection) const
 {
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (includeSpecifiedConnection || conn != &connection) {
       conn->AdjustMediaFormatOptions(mediaFormat);
     }
