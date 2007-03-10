@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2032.2.2  2007/03/10 10:05:58  hfriederich
+ * (Backport from HEAD)
+ * SRTP/ZRTP improvements
+ *
+ * Revision 2.31.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -321,6 +325,7 @@
 
 class RTP_JitterBuffer;
 class PSTUNClient;
+class OpalSecurityMode;
 
 #if OPAL_RTP_AGGREGATE
 #include <ptclib/sockagg.h>
@@ -352,6 +357,7 @@ class RTP_DataFrame : public PBYTEArray
 
   public:
     RTP_DataFrame(PINDEX payloadSize = 2048);
+    RTP_DataFrame(const BYTE * data, PINDEX len);
 
     enum {
       ProtocolVersion = 2,
@@ -476,11 +482,11 @@ class RTP_ControlFrame : public PBYTEArray
 
     BYTE * GetPayloadPtr() const;
 
-    BOOL ReadNextCompound();
-    BOOL WriteNextCompound();
+    BOOL ReadNextPacket();
+    BOOL StartNewPacket();
+    void EndPacket();
 
-    PINDEX GetCompoundSize() const { return compoundSize; }
-    void SetCompoundSize(PINDEX v) { compoundSize = v; }
+    PINDEX GetCompoundSize() const;
 
     BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
     void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
@@ -500,7 +506,6 @@ class RTP_ControlFrame : public PBYTEArray
     };
 
     struct SenderReport {
-      PUInt32b ssrc;      /* source this RTCP packet refers to */
       PUInt32b ntp_sec;   /* NTP timestamp */
       PUInt32b ntp_frac;
       PUInt32b rtp_ts;    /* RTP timestamp */
@@ -538,12 +543,11 @@ class RTP_ControlFrame : public PBYTEArray
       } item[1];          /* list of SDES items */
     };
 
-    SourceDescription & AddSourceDescription(
+    void StartSourceDescription(
       DWORD src   ///<  SSRC/CSRC identifier
     );
 
-    SourceDescription::Item & AddSourceDescriptionItem(
-      SourceDescription & sdes, ///<  SDES record to add item to
+    void AddSourceDescriptionItem(
       unsigned type,            ///<  Description type
       const PString & data      ///<  Data for description
     );
@@ -551,7 +555,7 @@ class RTP_ControlFrame : public PBYTEArray
 
   protected:
     PINDEX compoundOffset;
-    PINDEX compoundSize;
+    PINDEX payloadSize;
 };
 
 
@@ -953,9 +957,11 @@ class RTP_Session : public PObject
   //@}
 
     virtual void SendBYE();
+    virtual void SetCloseOnBYE(BOOL v) { closeOnBye = v; }
 
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
+    BOOL InsertReportPacket(RTP_ControlFrame & report);
 
     const OpalMediaType & mediaType;
     PString            canonicalName;
@@ -1019,6 +1025,8 @@ class RTP_Session : public PObject
     PTimer reportTimer;
 
     PHandleAggregator * aggregator;
+    
+    BOOL closeOnBye;
 };
 
 
@@ -1285,6 +1293,33 @@ class RTP_UDP : public RTP_Session
 
     BOOL appliedQOS;
     BOOL remoteIsNAT;
+};
+
+/////////////////////////////////////////////////////////////////////////////
+
+class SecureRTP_UDP : public RTP_UDP
+{
+  PCLASSINFO(SecureRTP_UDP, RTP_UDP);
+    
+  public:
+  /**@name Construction */
+  //@{
+    /**Create a new RTP channel.
+     */
+    SecureRTP_UDP(
+      PHandleAggregator * aggregator,  ///< RTP aggregator
+      const OpalMediaType & mediaType, ///< Media type for RTP Channel
+      BOOL remoteIsNAT                 ///<  TRUE is remote is behind NAT
+    );
+    
+    /// Destroy the RTP
+    ~SecureRTP_UDP();
+    
+    virtual void SetSecurityMode(OpalSecurityMode * srtpParms);  
+    virtual OpalSecurityMode * GetSecurityParms() const;
+    
+  protected:
+    OpalSecurityMode * securityParms;
 };
 
 
