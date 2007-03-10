@@ -27,7 +27,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2047.2.1  2007/02/07 08:51:00  hfriederich
+ * Revision 1.2047.2.2  2007/03/10 11:19:01  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Use correct dynamic payload type for H.323 calls
+ * Ensure codec mask is applied on local caps
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.46.2.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -1679,8 +1687,6 @@ class H323EndPoint : public OpalEndPoint
     static BYTE defaultT35CountryCode;
     static BYTE defaultT35Extension;
     static WORD defaultManufacturerCode;
-
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
