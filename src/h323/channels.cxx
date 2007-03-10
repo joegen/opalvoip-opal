@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.6  2007/03/09 19:30:55  hfriederich
+ * Revision 1.2036.2.7  2007/03/10 10:50:11  hfriederich
+ * (Backport from HEAD)
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ *
+ * Revision 2.35.2.6  2007/03/09 19:30:55  hfriederich
  * Fix previous commit. Session ID is guaranteed to be greater than 0.
  * Reject OLC Ack if master doesn't specify session ID.
  *
@@ -1228,8 +1232,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
 {
   sessionID = id;
   mediaStream = new OpalRTPMediaStream(capability->GetMediaFormat(), receiver, rtpSession,
-                                       endpoint.GetManager().GetMinAudioJitterDelay(),
-                                       endpoint.GetManager().GetMaxAudioJitterDelay());
+                                       conn.GetMinAudioJitterDelay(),
+                                       conn.GetMaxAudioJitterDelay());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }
