@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2014.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2014.2.2  2007/03/10 07:49:08  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.13.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -234,8 +241,6 @@ class OpalIVREndPoint : public OpalEndPoint
     PString GetDefaultTextToSpeech() const
     { return defaultTts; }
 
-    BOOL OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions);
-
   //@}
 
   protected:
@@ -350,8 +355,6 @@ class OpalIVRConnection : public OpalConnection
 
     PTextToSpeech * GetTextToSpeech()
     { return vxmlSession.GetTextToSpeech(); }
-
-    BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
 
   protected:
     OpalIVREndPoint   & endpoint;

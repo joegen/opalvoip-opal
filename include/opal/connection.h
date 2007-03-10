@@ -28,7 +28,14 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071.2.2  2007/02/10 23:07:21  hfriederich
+ * Revision 1.2071.2.3  2007/03/10 07:49:08  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.70.2.2  2007/02/10 23:07:21  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -377,7 +384,9 @@ class OpalConnection : public PSafeObject
       EndedByNoRingBackTone,    /// Call cleared due to missing ringback tone
       EndedByOutOfService,      /// Call cleared because the line is out of service, 
       EndedByAcceptingCallWaiting, /// Call cleared because another call is answered
-      NumCallEndReasons
+      NumCallEndReasons,
+        
+      EndedWithQ931Code = 0x100  /// Q931 code specified in MS byte
     };
 
 #if PTRACING
@@ -580,8 +589,8 @@ class OpalConnection : public PSafeObject
        descendant classes to implement it. This will only affect code that implements new
        descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
-    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions) = 0;
-    virtual BOOL OnIncomingConnection(unsigned int options); // can't use default as overrides will fail
+    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    virtual BOOL OnIncomingConnection(unsigned int options);
     virtual BOOL OnIncomingConnection();
 
     /**Start an outgoing connection.
@@ -1345,6 +1354,12 @@ class OpalConnection : public PSafeObject
 
     StringOptions * GetStringOptions() const
     { return stringOptions; }
+    
+    void SetStringOptions(StringOptions * options);
+    
+    virtual BOOL OnOpenIncomingMediaChannels();
+    
+    virtual void ApplyStringOptions();
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
@@ -1431,6 +1446,7 @@ class OpalSecurityMode : public PObject
       const OpalMediaType & mediaType,   ///<  Media type for RTP channel
       BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
     ) = 0;
+    virtual BOOL Open() = 0;
 };
 
 
