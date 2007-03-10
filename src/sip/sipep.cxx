@@ -24,7 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2142.2.1  2007/03/10 08:34:02  hfriederich
+ * (Backport from HEAD)
+ * Connection-specific jitter buffer values
+ *   Thanks to Borko Jandras
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled
+ *   in two stages
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Don't send multiple 100 Trying
+ * Guard against inability to create transports
+ * Added missing locking
+ *
+ * Revision 2.141  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -561,7 +572,7 @@ SIPInfo::~SIPInfo()
     registrarTransport = NULL;
   }
 
-  registrations.RemoveAll();
+  RemoveTransactions();
 }
 
 
@@ -774,7 +785,7 @@ SIPEndPoint::~SIPEndPoint()
 {
   listeners.RemoveAll();
 
-  while (activeSIPInfo.GetSize()>0) {
+  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
     SIPURL url;
     SIPInfo *info = activeSIPInfo.GetAt(0);
     url = info->GetRegistrationAddress ();
@@ -782,11 +793,13 @@ SIPEndPoint::~SIPEndPoint()
       Unregister(url.GetHostName(), url.GetUserName());
       info->SetRegistered(FALSE);
     }
-    else 
-      activeSIPInfo.Remove(info);
-   
-    activeSIPInfo.DeleteObjectsToBeRemoved();
   }
+  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadWrite); info != NULL; ++info) {
+    if (info->GetMethod() != SIP_PDU::Method_REGISTER || !info->IsRegistered())
+      activeSIPInfo.Remove(info);
+  }
+   
+  activeSIPInfo.DeleteObjectsToBeRemoved();
 
   PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
@@ -1049,10 +1062,6 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   return TRUE;
 }
 
-BOOL SIPEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
 
 BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,  
 				    const PString & forwardParty)
@@ -1228,7 +1237,8 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
     return FALSE;
   }
   
-  // send provisional response
+  // send provisional response here because creating the connection can take a long time
+  // on some systems
   SIP_PDU response(*request, SIP_PDU::Information_Trying);
   response.Write(transport);
 
@@ -1238,6 +1248,14 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 		     NULL, request->GetURI(), &transport, request);
   if (connection == NULL) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
+    response.Write(transport);
+    return FALSE;
+  }
+  
+  if (&connection->GetTransport() == NULL) {
+    delete connection;
+    PTRACE(2, "SIP\tFailed to create a transport for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
     return FALSE;

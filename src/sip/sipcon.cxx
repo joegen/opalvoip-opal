@@ -24,7 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.2  2007/02/16 10:43:41  hfriederich
+ * Revision 1.2198.2.3  2007/03/10 08:34:02  hfriederich
+ * (Backport from HEAD)
+ * Connection-specific jitter buffer values
+ *   Thanks to Borko Jandras
+ * Added OnIncomingMediaChannels so incoming calls can optionally be handled
+ *   in two stages
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Don't send multiple 100 Trying
+ * Guard against inability to create transports
+ * Added missing locking
+ *
+ * Revision 2.197.2.2  2007/02/16 10:43:41  hfriederich
  * - Extend SDP capability system for merging local / remote format parameters.
  * - Propagate media format options to the media streams
  *
@@ -884,6 +895,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   remote_hold = FALSE;
 
   udpTransport = NULL;
+  
+  sentTrying = FALSE;
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -1103,7 +1116,10 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   if (phase != SetUpPhase) 
     return FALSE;
 
-  SendInviteResponse(SIP_PDU::Information_Ringing);
+  if (!sentTrying) {
+    SendInviteResponse(SIP_PDU::Information_Ringing);
+    sentTrying = TRUE;
+  }
   SetPhase(AlertingPhase);
 
   return TRUE;
@@ -1472,8 +1488,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   }
 
   return new OpalRTPMediaStream(adjustableMediaFormat, isSource, *rtpSessions.GetSession(mediaType),
-                                endpoint.GetManager().GetMinAudioJitterDelay(),
-                                endpoint.GetManager().GetMaxAudioJitterDelay());
+                                GetMinAudioJitterDelay(),
+                                GetMaxAudioJitterDelay());
 }
 
 void SIPConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
@@ -2159,11 +2175,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   targetAddress.AdjustForRequestURI();
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
-  // send trying with To: tag
-  SendInviteResponse(SIP_PDU::Information_Trying);
+  // flag Trying as already sent (either has or soon will be)
+  sentTrying = TRUE;
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) {
+      
+    // always send Trying for Re-INVITE
+      SendInviteResponse(SIP_PDU::Information_Trying);
 
     remoteFormatList.RemoveAll();
     SDPSessionDescription sdpOut(GetLocalAddress());
@@ -2243,14 +2262,18 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   SetPhase(SetUpPhase);
 
-  ownerCall.OnSetUp(*this);
-
-  AnsweringCall(OnAnswerCall(remotePartyAddress));
+  if (!OnOpenIncomingMediaChannels()) {
+    PTRACE(2, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
+    Release();
+    return;
+  }
 }
 
-BOOL SIPConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+BOOL SIPConnection::OnOpenIncomingMediaChannels()
 {
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+  ownerCall.OnSetUp(*this);
+  AnsweringCall(OnAnswerCall(remotePartyAddress));
+  return TRUE;
 }
 
 OpalConnection::AnswerCallResponse SIPConnection::OnAnswerCall(
