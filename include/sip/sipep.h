@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2071  2007/03/01 05:51:04  rjongbloed
+ * Revision 1.2072  2007/03/10 17:56:58  dsandras
+ * Improved locking.
+ *
+ * Revision 2.70  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -1031,7 +1034,7 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified callID
 	     */
-	    SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
+	    PSafePtr<SIPInfo> FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
 		      if (callID == info->GetRegistrationID())
@@ -1042,7 +1045,7 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified authRealm
 	     */
-            SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
+            PSafePtr<SIPInfo> FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
             {
               PIPSocket::Address realmAddress;
 
@@ -1064,7 +1067,7 @@ class SIPEndPoint : public OpalEndPoint
 	     * or 6001@seconix.com when registering 6001@seconix.com to
 	     * sip.seconix.com
 	     */
-	    SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
+	    PSafePtr<SIPInfo> FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
 		      if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
@@ -1078,7 +1081,7 @@ class SIPEndPoint : public OpalEndPoint
 	     * For example, in the above case, the name parameter
 	     * could be "sip.seconix.com" or "seconix.com".
 	     */
-	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+	    PSafePtr <SIPInfo> FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
