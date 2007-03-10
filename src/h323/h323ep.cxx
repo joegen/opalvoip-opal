@@ -27,7 +27,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062.2.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2062.2.2  2007/03/10 11:19:02  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection()
+ * Use correct dynamic payload type for H.323 calls
+ * Ensure codec mask is applied on local caps
+ * Use local jitter buffer values rather than getting direct from OpalManager
+ * Allow OpalConnection string options to be set during incoming calls
+ *
+ * Revision 2.61.2.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -1034,10 +1042,6 @@ BOOL H323EndPoint::OnIncomingCall(H323Connection & connection,
   return connection.OnIncomingConnection(0, NULL);
 }
 
-BOOL H323EndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
 
 BOOL H323EndPoint::OnCallTransferInitiate(H323Connection & /*connection*/,
                                           const PString & /*remoteParty*/)
