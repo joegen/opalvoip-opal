@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2040.2.1  2007/02/07 08:51:03  hfriederich
+ * Revision 1.2040.2.2  2007/03/10 07:49:09  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.39.2.1  2007/02/07 08:51:03  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -398,11 +405,6 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
   soundChannelBuffers = depth;
 }
 
-BOOL OpalPCSSEndPoint::OnIncomingConnection(OpalConnection & conn, unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return manager.OnIncomingConnection(conn, options, stringOptions);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
@@ -427,10 +429,6 @@ OpalPCSSConnection::~OpalPCSSConnection()
   PTRACE(3, "PCSS\tDeleted PC sound system connection.");
 }
 
-BOOL OpalPCSSConnection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
-{
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
-}
 
 BOOL OpalPCSSConnection::SetUpConnection()
 {

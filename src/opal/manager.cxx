@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073.2.1  2007/02/07 08:51:03  hfriederich
+ * Revision 1.2073.2.2  2007/03/10 07:49:09  hfriederich
+ * (Backport from HEAD)
+ * Fixed backward compatibility of OnIncomingConnection() virtual functions
+ *   on various classes. If an old override returned FALSE then it will now
+ *   abort the call as it used to.
+ * Backports some other fixes from HEAD.
+ *
+ * Revision 2.72.2.1  2007/02/07 08:51:03  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -405,20 +412,23 @@ OpalManager::OpalManager()
   PStringList devices;
   
   devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
-  if (devices.GetSize() > 0) {
-    videoInputDevice.deviceName = devices[0];
-    if (devices.GetSize() > 1 && (videoInputDevice.deviceName *= "fake"))
-      videoInputDevice.deviceName = devices[1];
+  PINDEX i;
+  for (i = 0; i < devices.GetSize(); ++i) {
+    if ((devices[i] *= "yuvfile") || (devices[i] *= "fake"))
+      continue;
+    videoInputDevice.deviceName = devices[i];
+    break;
   }
-  autoStartTransmitVideo = !(videoInputDevice.deviceName *= "fake");
+  autoStartTransmitVideo = !videoInputDevice.deviceName.IsEmpty();
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
-  if (devices.GetSize() > 0) {
-    videoOutputDevice.deviceName = devices[0];
-    if (devices.GetSize() > 1 && (videoOutputDevice.deviceName *= "null"))
-      videoOutputDevice.deviceName = devices[1];
+  for (i = 0; i < devices.GetSize(); ++i) {
+    if ((devices[i] *= "yuvfile") || (devices[i] *= "null"))
+      continue;
+    videoInputDevice.deviceName = devices[i];
+    break;
   }
-  autoStartReceiveVideo = !(videoOutputDevice.deviceName *= "null");
+  autoStartReceiveVideo = !videoOutputDevice.deviceName.IsEmpty();
 
   if (autoStartReceiveVideo)
     videoPreviewDevice = videoOutputDevice;
@@ -672,19 +682,25 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
   return FALSE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & /*connection*/)
 {
-  return OnIncomingConnection(connection, 0);
+  return TRUE;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options)
+BOOL OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
 {
-  return OnIncomingConnection(connection, options, NULL);
+  return TRUE;
 }
 
 BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
+    
+  if (!OnIncomingConnection(connection))
+    return FALSE;
+    
+  if (!OnIncomingConnection(connection, options))
+    return FALSE;
 
   OpalCall & call = connection.GetCall();
 
