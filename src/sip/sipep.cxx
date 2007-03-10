@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.31  2007/02/27 21:24:06  dsandras
+ * Revision 1.2098.2.32  2007/03/10 16:48:21  dsandras
+ * Improved locking.
+ *
+ * Revision 2.97.2.31  2007/02/27 21:24:06  dsandras
  * Added missing locking. Fixes Ekiga report #411438.
  *
  * Revision 2.97.2.30  2007/01/15 22:16:44  dsandras
@@ -750,7 +753,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   activeSIPInfo.AllowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
-  registrationTimer.RunContinuous (PTimeInterval(0, 30));
+  registrationTimer.RunContinuous (PTimeInterval(0, 2));
   
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous (natBindingTimeout);
@@ -763,22 +766,31 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  listeners.RemoveAll();
+  while (activeSIPInfo.GetSize()>0) {
 
-  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
-    SIPURL url;
-    url = info->GetRegistrationAddress ();
-    if (info->GetMethod() == SIP_PDU::Method_REGISTER && info->IsRegistered()) { 
-      Unregister(url.GetHostName(), url.GetUserName());
-      info->SetRegistered(FALSE);
+    for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
+
+      SIPURL url = info->GetRegistrationAddress ();
+
+      if (info->GetMethod() == SIP_PDU::Method_REGISTER) {
+
+        if (info->IsRegistered() && info->GetExpire() > 0) {
+          Unregister(url.GetHostName(), url.GetUserName());
+        }
+        else if (!info->IsRegistered()){ 
+          info->SetExpire(-1);
+        }
+      }
+      else {
+        info->SetExpire(-1);
+      }
     }
+
+    activeSIPInfo.DeleteObjectsToBeRemoved();
+    PThread::Current()->Sleep(10);
   }
-  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadWrite); info != NULL; ++info) {
-    if (info->GetMethod() != SIP_PDU::Method_REGISTER || !info->IsRegistered())
-      activeSIPInfo.Remove(info);
-  }
-   
-  activeSIPInfo.DeleteObjectsToBeRemoved();
+
+  listeners.RemoveAll();
 
   PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
@@ -830,7 +842,7 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
   if (natMethod == None)
     return;
 
-  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadWrite); info != NULL; ++info) {
+  for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
 
     OpalTransport *transport = info->GetTransport();
     if (transport && transport->SetRemoteAddress(info->GetRegistrarAddress())) {
@@ -1260,7 +1272,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   }
   
   // Try to find authentication information for the given call ID
-  callid_info = activeSIPInfo.FindSIPInfoByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+  callid_info = activeSIPInfo.FindSIPInfoByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
 
   if (!callid_info)
     return;
@@ -1277,7 +1289,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
   // Try to find authentication information for the requested realm
   // That realm is specified when registering
-  realm_info = activeSIPInfo.FindSIPInfoByAuthRealm(auth.GetAuthRealm(), auth.GetUsername().IsEmpty()?SIPURL(response.GetMIME().GetFrom()).GetUserName():auth.GetUsername(), PSafeReadWrite);
+  realm_info = activeSIPInfo.FindSIPInfoByAuthRealm(auth.GetAuthRealm(), auth.GetUsername().IsEmpty()?SIPURL(response.GetMIME().GetFrom()).GetUserName():auth.GetUsername(), PSafeReadOnly);
 
   // No authentication information found for the realm, 
   // use what we have for the given CallID
@@ -1312,7 +1324,8 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   // from the ones found for the given realm
   if (callid_info->GetAuthentication().IsValid()
       && lastUsername == callid_info->GetAuthentication().GetUsername ()
-      && lastNonce == callid_info->GetAuthentication().GetNonce ()) {
+      && lastNonce == callid_info->GetAuthentication().GetNonce ()
+      && !callid_info->IsRegistered()) {
     PTRACE(1, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
@@ -1362,7 +1375,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     return;
   }
   
-  info = activeSIPInfo.FindSIPInfoByCallID(response.GetMIME().GetCallID(), PSafeReadWrite);
+  info = activeSIPInfo.FindSIPInfoByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
  
   if (info == NULL) 
     return;
@@ -1388,8 +1401,10 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
     if (info->GetAuthentication().GetAuthRealm().IsEmpty())
       info->SetAuthRealm(transaction.GetURI().GetHostName());
   }
-  else 
-    activeSIPInfo.Remove(info);
+  else { 
+    info->SetExpire(-1);
+    info->SetRegistered(FALSE);
+  }
 
   // Callback
   info->OnSuccess();
@@ -1418,7 +1433,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
     
   // A NOTIFY will have the same CallID than the SUBSCRIBE request
   // it corresponds to
-  info = activeSIPInfo.FindSIPInfoByCallID(pdu.GetMIME().GetCallID(), PSafeReadWrite);
+  info = activeSIPInfo.FindSIPInfoByCallID(pdu.GetMIME().GetCallID(), PSafeReadOnly);
   if (info == NULL) {
 
     // We should reject the NOTIFY here, but some proxies still use
@@ -1578,7 +1593,7 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
   // Timer has elapsed
   for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
 
-    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i);
+    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadWrite);
 
     if (info->GetExpire() == -1) {
       activeSIPInfo.Remove(info); // Was invalid the last time, delete it
@@ -1616,8 +1631,9 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 	  info->SetExpire(-1); // Mark as Invalid
 	}
       }
-      else if (info->HasExpired())
+      else if (info->HasExpired()) {
 	info->SetExpire(-1); // Mark as Invalid
+      }
     }
   }
 
@@ -1872,9 +1888,6 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
         return FALSE;
       }
       info->AppendTransaction(request);
-      
-      // Do this synchronously
-      request->Wait ();
     }
 
   return TRUE;
