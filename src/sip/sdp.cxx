@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2042.2.2  2007/02/16 10:43:41  hfriederich
+ * Revision 1.2042.2.3  2007/03/11 11:55:13  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.41.2.2  2007/02/16 10:43:41  hfriederich
  * - Extend SDP capability system for merging local / remote format parameters.
  * - Propagate media format options to the media streams
  *
@@ -607,7 +612,7 @@ void SDPMediaDescription::AddCapabilityFormat(const SDPCapability & capability, 
       payloadType = r->second;
   }
       
-  if (payloadType >= RTP_DataFrame::MaxPayloadType || *encodingName == '\0')
+  if (payloadType > RTP_DataFrame::MaxPayloadType || *encodingName == '\0')
     return;
 
   PINDEX i;
