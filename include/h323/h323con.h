@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.5  2007/03/11 11:42:57  hfriederich
+ * Revision 1.2058.2.6  2007/03/11 15:29:36  hfriederich
+ * Only start the roundTripDelayTimer when the roundTripDelay request was
+ * actually sent out
+ *
+ * Revision 2.57.2.5  2007/03/11 11:42:57  hfriederich
  * Fix session ID info in H225_RTPSession
  *
  * Revision 2.57.2.4  2007/03/10 11:19:01  hfriederich
@@ -1580,7 +1584,7 @@ class H323Connection : public OpalConnection
 
     /**Start the round trip delay calculation over the control channel.
      */
-    void StartRoundTripDelay();
+    BOOL StartRoundTripDelay();
 
     /**Get the round trip delay over the control channel.
      */
