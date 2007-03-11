@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2015.2.1  2007/02/12 15:32:01  hfriederich
+ * Revision 1.2015.2.2  2007/03/11 12:26:15  hfriederich
+ * Add rtp payload map for sinks without transcoders.
+ *
+ * Revision 2.14.2.1  2007/02/12 15:32:01  hfriederich
  * Revision of the Opal media command implementation.
  * Building a media command chain where commands are passed on until
  * consumed.
@@ -267,6 +270,8 @@ class OpalMediaPatch : public PObject
         RTP_DataFrameList intermediateFrames;
         RTP_DataFrameList finalFrames;
         bool              writeSuccessful;
+        
+        RTP_DataFrame::PayloadMapType payloadTypeMap;
     };
     PList<Sink> sinks;
 
