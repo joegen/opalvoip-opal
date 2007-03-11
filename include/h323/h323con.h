@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.4  2007/03/10 11:19:01  hfriederich
+ * Revision 1.2058.2.5  2007/03/11 11:42:57  hfriederich
+ * Fix session ID info in H225_RTPSession
+ *
+ * Revision 2.57.2.4  2007/03/10 11:19:01  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection()
  * Use correct dynamic payload type for H.323 calls
@@ -2305,6 +2308,7 @@ class H323Connection : public OpalConnection
 
     virtual BOOL OnOpenIncomingMediaChannels();
     
+    unsigned GetRTPSessionIDForMediaType(const OpalMediaType & mediaType);
     void RegisterRTPSessionIDForMediaType(const OpalMediaType & mediaType, unsigned sessionID);
     
   protected:
@@ -2320,7 +2324,6 @@ class H323Connection : public OpalConnection
     PDECLARE_NOTIFIER(PThread, H323Connection, StartOutgoing);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewOutgoingControlChannel);
     PDECLARE_NOTIFIER(PThread, H323Connection, NewIncomingControlChannel);
-    unsigned GetRTPSessionIDForMediaType(const OpalMediaType & mediaType);
 
 
     H323EndPoint & endpoint;
