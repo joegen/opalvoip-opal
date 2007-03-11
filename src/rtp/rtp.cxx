@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047.2.2  2007/03/10 10:05:59  hfriederich
+ * Revision 1.2047.2.3  2007/03/11 11:55:13  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.46.2.2  2007/03/10 10:05:59  hfriederich
  * (Backport from HEAD)
  * SRTP/ZRTP improvements
  *
@@ -936,7 +941,7 @@ RTP_Session::RTP_Session(
   packetsLostSinceLastRR = 0;
   lastTransitTime = 0;
 
-  lastReceivedPayloadType = RTP_DataFrame::MaxPayloadType;
+  lastReceivedPayloadType = RTP_DataFrame::IllegalPayloadType;
   
   closeOnBye = FALSE;
 }
@@ -1222,7 +1227,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
     return e_IgnorePacket; // Non fatal error, just ignore
 
   // Check if expected payload type
-  if (lastReceivedPayloadType == RTP_DataFrame::MaxPayloadType)
+  if (lastReceivedPayloadType == RTP_DataFrame::IllegalPayloadType)
     lastReceivedPayloadType = frame.GetPayloadType();
 
   if (lastReceivedPayloadType != frame.GetPayloadType() && !ignorePayloadTypeChanges) {
@@ -1230,10 +1235,6 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
     PTRACE(4, "RTP\tReceived payload type " << frame.GetPayloadType() << ", but was expecting " << lastReceivedPayloadType);
     return e_IgnorePacket;
   }
-
-  // Check for if a control packet rather than data packet.
-  if (frame.GetPayloadType() > RTP_DataFrame::MaxPayloadType)
-    return e_IgnorePacket; // Non fatal error, just ignore
 
   PTimeInterval tick = PTimer::Tick();  // Get timestamp now
 

@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.3  2007/02/13 11:30:59  hfriederich
+ * Revision 1.2053.2.4  2007/03/11 11:55:13  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.52.2.3  2007/02/13 11:30:59  hfriederich
  * Return media format by reference instead of value
  *
  * Revision 2.52.2.2  2007/02/12 15:32:01  hfriederich
@@ -441,7 +446,14 @@ BOOL OpalMediaStream::ReadPacket(RTP_DataFrame & packet)
   if (oldTimestamp == timestamp)
     timestamp += CalculateTimestamp(lastReadCount, mediaFormat);
 
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  // Internal media formats (e.g. PCM-16) have IllegalPayloadType.
+  // In this case set the payload type to MaxPayloadType
+  RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
+  if (payloadType >= RTP_DataFrame::IllegalPayloadType) {
+    payloadType = RTP_DataFrame::MaxPayloadType;
+  }
+  
+  packet.SetPayloadType(payloadType);
   packet.SetPayloadSize(lastReadCount);
   packet.SetTimestamp(oldTimestamp); // Beginning of frame
   packet.SetMarker(marker);
@@ -459,7 +471,7 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   if (paused)
     packet.SetPayloadSize(0);
   
-  if (size > 0 && mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType) {
+  if (size > 0 && mediaFormat.GetPayloadType() <= RTP_DataFrame::MaxPayloadType) {
     if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
       PTRACE_IF(2, mismatchedPayloadTypes > 0,
                 "H323RTP\tPayload type matched again " << mediaFormat.GetPayloadType());
@@ -539,7 +551,14 @@ BOOL OpalMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & wri
   written = length;
   RTP_DataFrame packet(length);
   memcpy(packet.GetPayloadPtr(), buffer, length);
-  packet.SetPayloadType(mediaFormat.GetPayloadType());
+  
+  // Internal media formats (e.g. PCM-16) have IllegalPayloadType.
+  // In this case set the payload type to MaxPayloadType
+  RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
+  if (payloadType >= RTP_DataFrame::IllegalPayloadType) {
+    payloadType = RTP_DataFrame::MaxPayloadType;
+  }
+  packet.SetPayloadType(payloadType);
   packet.SetTimestamp(timestamp);
   packet.SetMarker(marker);
   return WritePacket(packet);
@@ -1122,7 +1141,13 @@ OpalUDPMediaStream::OpalUDPMediaStream(const OpalMediaFormat & mediaFormat,
 
 BOOL OpalUDPMediaStream::ReadPacket(RTP_DataFrame & Packet)
 {
-  Packet.SetPayloadType(mediaFormat.GetPayloadType());
+  // Internal media formats (e.g. PCM-16) have IllegalPayloadType.
+  // In this case set the payload type to MaxPayloadType
+  RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
+  if (payloadType >= RTP_DataFrame::IllegalPayloadType) {
+    payloadType = RTP_DataFrame::MaxPayloadType;
+  }
+  Packet.SetPayloadType(payloadType);
   Packet.SetPayloadSize(0);
 
   if (IsSink()) {

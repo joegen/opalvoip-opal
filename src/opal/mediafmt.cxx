@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059.2.3  2007/02/14 08:34:40  hfriederich
+ * Revision 1.2059.2.4  2007/03/11 11:55:13  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.58.2.3  2007/02/14 08:34:40  hfriederich
  * (Backport from HEAD)
  * Extended FindFormat to allow finding multiple matching formats
  *
@@ -371,8 +376,8 @@ const OpalMediaType & GetDefaultVideoMediaType()
     return name; \
   }
 
-AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     16, 8,  240, 30, 256, 16000);
+AUDIO_FORMAT(PCM16,          IllegalPayloadType, "",     16, 8,  240, 30, 256,  8000);
+AUDIO_FORMAT(PCM16_16KHZ,    IllegalPayloadType, "",     16, 8,  240, 30, 256, 16000);
 AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  16, 4,  120, 15, 256, 16000);
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
@@ -1023,7 +1028,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
     AddOption(new OpalMediaOptionInteger(ClockRateOption, true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::IllegalPayloadType) {
     registeredFormats.OpalMediaFormatBaseList::Append(this);
     return;
   }
@@ -1048,8 +1053,6 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   // then move the old format to the next unused format
   if (match != NULL)
     match->rtpPayloadType = nextUnused;
-  else
-    rtpPayloadType = nextUnused;
 
   registeredFormats.OpalMediaFormatBaseList::Append(this);
 }

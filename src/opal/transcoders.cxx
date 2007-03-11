@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision 1.2029.2.3  2007/03/11 11:55:13  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.28.2.2  2007/02/12 15:32:01  hfriederich
  * Revision of the Opal media command implementation.
  * Building a media command chain where commands are passed on until
  * consumed.
@@ -256,28 +261,31 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
     while (output.GetSize() > 1)
       output.RemoveAt(1);
   }
-
-  if (payloadTypeMap.size() == 0)
-    output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  
+  pt = outputMediaFormat.GetPayloadType();
+  
+  if (pt >= RTP_DataFrame::IllegalPayloadType)
+    output[0].SetPayloadType(RTP_DataFrame::MaxPayloadType);
+  else if (payloadTypeMap.size() == 0)
+    output[0].SetPayloadType(pt);
   else {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(outputMediaFormat.GetPayloadType());
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(pt);
     if (r != payloadTypeMap.end())
       output[0].SetPayloadType(r->second);
     else
-      output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+      output[0].SetPayloadType(pt);
   }
   output[0].SetTimestamp(input.GetTimestamp());
   output[0].SetMarker(input.GetMarker());
 
-  if (payloadTypeMap.size() == 0) {
-    pt = inputMediaFormat.GetPayloadType();
+  pt = inputMediaFormat.GetPayloadType();
+  if (pt >= RTP_DataFrame::IllegalPayloadType) {
+    pt = RTP_DataFrame::MaxPayloadType;
   }
-  else {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(inputMediaFormat.GetPayloadType());
+  if (payloadTypeMap.size() != 0) {
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(pt);
     if (r != payloadTypeMap.end()) 
       pt = r->second;
-    else 
-      pt = inputMediaFormat.GetPayloadType();
   }
 
   if (pt != input.GetPayloadType()) {
