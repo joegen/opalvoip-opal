@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.4  2007/03/09 20:03:18  hfriederich
+ * Revision 1.2041.2.5  2007/03/11 12:26:15  hfriederich
+ * Add rtp payload map for sinks without transcoders.
+ *
+ * Revision 2.40.2.4  2007/03/09 20:03:18  hfriederich
  * (Backport from HEAD)
  * Ignore packets with no payload emitted by jitter buffer when no input available
  *
@@ -327,6 +330,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
 
   if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
+    sink->payloadTypeMap = rtpMap;
     return TRUE;
   }
 
@@ -682,8 +686,16 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!writeSuccessful)
     return false;
 
-  if (primaryCodec == NULL)
+  if (primaryCodec == NULL) {
+    if (payloadTypeMap.size() != 0) {
+      RTP_DataFrame::PayloadTypes payloadType = sourceFrame.GetPayloadType();
+      RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(payloadType);
+      if (r != payloadTypeMap.end()) {
+        sourceFrame.SetPayloadType(r->second);
+      }
+    }
     return writeSuccessful = stream->WritePacket(sourceFrame);
+  }
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
