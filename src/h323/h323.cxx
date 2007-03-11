@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.6  2007/03/10 11:19:02  hfriederich
+ * Revision 1.2136.2.7  2007/03/11 11:55:12  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.135.2.6  2007/03/10 11:19:02  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection()
  * Use correct dynamic payload type for H.323 calls
@@ -3426,7 +3431,7 @@ void H323Connection::OnSetLocalCapabilities()
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
       if (format.GetMediaType() == mediaTypes[s] &&
-          format.GetPayloadType() < RTP_DataFrame::MaxPayloadType) {
+          format.GetPayloadType() <= RTP_DataFrame::MaxPayloadType) {
           
         if (adjustMediaFormatOptions == TRUE) {
           ownerCall.AdjustMediaFormatOptions(format, *this);

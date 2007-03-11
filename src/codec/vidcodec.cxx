@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2018  2006/11/01 06:57:23  csoutheren
+ * Revision 1.2018.2.1  2007/03/11 11:55:12  hfriederich
+ * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
+ *   formats.
+ * If possible, use the payload type specified by the media format
+ *
+ * Revision 2.17  2006/11/01 06:57:23  csoutheren
  * Fixed usage of YUV frame header
  *
  * Revision 2.16  2006/09/22 00:58:41  csoutheren
@@ -113,7 +118,7 @@ const OpalVideoFormat & GetOpalRGB24()
 {
   static const OpalVideoFormat RGB24(
     OPAL_RGB24,
-    RTP_DataFrame::MaxPayloadType,
+    RTP_DataFrame::IllegalPayloadType,
     OPAL_RGB24,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
@@ -126,7 +131,7 @@ const OpalVideoFormat & GetOpalRGB32()
 {
   static const OpalVideoFormat RGB32(
     OPAL_RGB32,
-    RTP_DataFrame::MaxPayloadType,
+    RTP_DataFrame::IllegalPayloadType,
     OPAL_RGB32,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
@@ -139,7 +144,7 @@ const OpalVideoFormat & GetOpalYUV420P()
 {
   static const OpalVideoFormat YUV420P(
     OPAL_YUV420P,
-    RTP_DataFrame::MaxPayloadType,
+    RTP_DataFrame::IllegalPayloadType,
     OPAL_YUV420P,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
@@ -292,7 +297,11 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
   for (unsigned band = 0; band < bandCount; band++) {
     RTP_DataFrame * pkt = new RTP_DataFrame(scanLinesPerBand*bytesPerScanLine);
-    pkt->SetPayloadType(outputMediaFormat.GetPayloadType());
+    RTP_DataFrame::PayloadTypes payloadType = outputMediaFormat.GetPayloadType();
+    if (payloadType >= RTP_DataFrame::IllegalPayloadType) {
+      payloadType = RTP_DataFrame::MaxPayloadType;
+    }
+    pkt->SetPayloadType(payloadType);
     pkt->SetTimestamp(input.GetTimestamp());
     output.Append(pkt);
     FrameHeader * dstHeader = (FrameHeader *)pkt->GetPayloadPtr();
