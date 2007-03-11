@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.7  2007/03/11 11:55:12  hfriederich
+ * Revision 1.2136.2.8  2007/03/11 15:29:37  hfriederich
+ * Only start the roundTripDelayTimer when the roundTripDelay request was
+ * actually sent out
+ *
+ * Revision 2.135.2.7  2007/03/11 11:55:12  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -3467,8 +3471,9 @@ BOOL H323Connection::IsH245Master() const
 }
 
 
-void H323Connection::StartRoundTripDelay()
+BOOL H323Connection::StartRoundTripDelay()
 {
+  BOOL result = FALSE;
   if (LockReadWrite()) {
     if (GetPhase() < ReleasingPhase &&
         masterSlaveDeterminationProcedure->IsDetermined() &&
@@ -3478,11 +3483,15 @@ void H323Connection::StartRoundTripDelay()
         if (endpoint.ShouldClearCallOnRoundTripFail())
           Release(EndedByTransportFail);
       }
-      else
+      else {
         roundTripDelayProcedure->StartRequest();
+        result = TRUE;
+      }
     }
     UnlockReadWrite();
   }
+  
+  return result;
 }
 
 
@@ -4585,8 +4594,9 @@ void H323Connection::MonitorCallStatus()
     return;
 
   if (endpoint.GetRoundTripDelayRate() > 0 && !roundTripDelayTimer.IsRunning()) {
-    roundTripDelayTimer = endpoint.GetRoundTripDelayRate();
-    StartRoundTripDelay();
+    if (StartRoundTripDelay()) {
+      roundTripDelayTimer = endpoint.GetRoundTripDelayRate();
+    }
   }
 
 /*
