@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013.10.3  2007/03/09 19:15:12  hfriederich
+ * Revision 1.2013.10.4  2007/03/11 09:25:58  hfriederich
+ * Fix session ID info in H225_RTPSession
+ *
+ * Revision 2.12.10.3  2007/03/09 19:15:12  hfriederich
  * Correctly handle non-default session ID values based on master/slave status
  *
  * Revision 2.12.10.2  2007/02/11 08:25:06  hfriederich
@@ -386,8 +389,8 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
 
 void H323_RTP_UDP::OnSendRasInfo(H225_RTPSession & info)
 {
-  //info.m_sessionId = rtp.GetSessionID();
-    info.m_sessionId = 1; //FIXME
+  unsigned sessionID = PRemoveConst(H323Connection, &connection)->GetRTPSessionIDForMediaType(rtp.GetMediaType());
+  info.m_sessionId = sessionID;
   info.m_ssrc = rtp.GetSyncSourceOut();
   info.m_cname = rtp.GetCanonicalName();
 
