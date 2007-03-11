@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.24.2.2  2007/03/11 18:05:09  hfriederich
+ * Fix typo in previous commit
+ *
  * Revision 1.24.2.1  2007/03/10 07:36:23  hfriederich
  * (Backport from HEAD)
  * Start of support for ZRTP
@@ -202,9 +205,9 @@
 //
 // libSRTP support
 //
-#undef HAS_LIBSRTP && !HAS_LIBZRTP
+#undef HAS_LIBSRTP
 
-#if HAS_LIBSRTP
+#if HAS_LIBSRTP && !HAS_LIBZRTP
 #if defined(_MSC_VER)
 
 #pragma include_alias("srtp/srtp.h",         "@LIBSRTP_DIR@/include/srtp.h")
