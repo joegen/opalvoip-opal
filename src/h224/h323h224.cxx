@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.7  2007/03/12 23:19:01  csoutheren
+ * Add ability to remove H.224
+ *
  * Revision 1.6  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
@@ -49,6 +52,10 @@
 #ifdef __GNUC__
 #pragma implementation "h323h224.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
 
 #include <h224/h323h224.h>
 
@@ -185,7 +192,7 @@ BOOL H323_H224Channel::Start()
   }
 	
   if(h224Handler == NULL) {
-	h224Handler = connection.CreateH224ProtocolHandler(sessionID);
+  	h224Handler = connection.CreateH224ProtocolHandler(sessionID);
   }
 	
   if(direction == H323Channel::IsReceiver) {
@@ -480,3 +487,6 @@ BOOL H323_H224Channel::ExtractTransport(const H245_TransportAddress & pdu,
 	
   return FALSE;
 }
+
+#endif // OPAL_H224
+
