@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.8  2007/03/11 15:29:37  hfriederich
+ * Revision 1.2136.2.9  2007/03/12 08:10:16  hfriederich
+ * Fix fast start for media types and non-default session ID assignment
+ *
+ * Revision 2.135.2.8  2007/03/11 15:29:37  hfriederich
  * Only start the roundTripDelayTimer when the roundTripDelay request was
  * actually sent out
  *
@@ -457,8 +460,6 @@ H323Connection::H323Connection(OpalCall & call,
 #ifdef H323_H460
   features.LoadFeatureSet(H460_Feature::FeatureSignal, this);
 #endif
-  
-  nextSessionID = 4;
 }
 
 
@@ -1434,10 +1435,11 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   }
 
   // If didn't get fast start channels accepted by remote then clear our
-  // proposed channels
+  // proposed channels and session ID assignments
   if (fastStartState != FastStartAcknowledged) {
     fastStartState = FastStartDisabled;
     fastStartChannels.RemoveAll();
+    sessionIDMap.clear();
   }
   else if (mediaWaitForConnect) {
     // Otherwise start fast started channels if we were waiting for CONNECT
@@ -1985,6 +1987,7 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // Ask the application what channels to open
   PTRACE(3, "H225\tCheck for Fast start by local endpoint");
   fastStartChannels.RemoveAll();
+  sessionIDMap.clear();
   OnSelectLogicalChannels();
 
   // If application called OpenLogicalChannel, put in the fastStart field
@@ -2381,7 +2384,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                 channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
                 if (channelCapability == NULL) {
                   channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
-                  //remoteCapabilities.SetCapability(0, channelCapability->GetDefaultSessionID()-1, channelCapability);
+                  remoteCapabilities.SetCapability(0, channelCapability->GetMediaFormat().GetMediaType().GetUniqueID(), channelCapability);
                 }
               }
               // Must use the actual capability instance from the
@@ -2393,7 +2396,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                     if (rtp != NULL) {
                       RTP_DataFrame::PayloadTypes inpt = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
                       RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
-                      if (inpt != outpt)
+                      if (inpt != outpt && outpt < RTP_DataFrame::IllegalPayloadType)
                         rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt, outpt));
                     }
                   }
@@ -3828,6 +3831,7 @@ BOOL H323Connection::OnOpenLogicalChannel(const H245_OpenLogicalChannel & /*open
   fastStartState = FastStartDisabled;
   if (!fastStartChannels.IsEmpty()) {
     fastStartChannels.RemoveAll();
+    sessionIDMap.clear();
     PTRACE(1, "H245\tReceived early start OLC, aborting fast start");
   }
 
@@ -3934,7 +3938,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
       }
       
       capability = remoteCapabilities.Copy(*capability);
-      //remoteCapabilities.SetCapability(0, capability->GetDefaultSessionID(), capability); FIXME
+      remoteCapabilities.SetCapability(0, capability->GetMediaFormat().GetMediaType().GetUniqueID(), capability);
     }
   }
   else {
@@ -4491,7 +4495,7 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
       if (!OpenLogicalChannel(*capability,
-                              1/*capability->GetDefaultSessionID()*/, // FIXME
+                              GetRTPSessionIDForMediaType(capability->GetMediaFormat().GetMediaType()),
                               H323Channel::IsTransmitter)) {
         PTRACE(1, "H245\tCould not open channel after mode change: " << *capability);
       }
@@ -4528,7 +4532,7 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
   for (PINDEX i = first; i < last; i++) {
     H323Capability * capability = localCapabilities.FindCapability(modes[i]);
     if (capability != NULL && OpenLogicalChannel(*capability,
-                                                 1/*capability->GetDefaultSessionID()*/, // FIXME
+                                                 GetRTPSessionIDForMediaType(capability->GetMediaFormat().GetMediaType()),
                                                  H323Channel::IsTransmitter)) {
       PTRACE(1, "H245\tOpened " << *capability << " after T.38 mode change");
       break;
@@ -4644,6 +4648,10 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
 unsigned H323Connection::GetRTPSessionIDForMediaType(const OpalMediaType & mediaType)
 {
   PWaitAndSignal m(sessionIDMutex);
+  
+  if (sessionIDMap.size() == 0) {
+    nextSessionID = 4;
+  }
     
   SessionIDMap::iterator r = sessionIDMap.find(mediaType);
   if (r != sessionIDMap.end()) {
@@ -4680,7 +4688,7 @@ unsigned H323Connection::GetRTPSessionIDForMediaType(const OpalMediaType & media
     return defaultSessionID;
   }
   
-  if (IsH245Master()) {
+  if (IsH245Master() || fastStartState != FastStartDisabled) {
     // assign a new id to this media type
     unsigned sessionID = nextSessionID;
     nextSessionID++;
