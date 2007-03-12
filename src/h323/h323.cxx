@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2142  2007/03/12 23:22:17  csoutheren
+ * Revision 1.2143  2007/03/12 23:41:32  csoutheren
+ * Undo unwanted edit
+ *
+ * Revision 2.141  2007/03/12 23:22:17  csoutheren
  * Add ability to remove H.450
  *
  * Revision 2.140  2007/03/07 23:47:16  csoutheren
@@ -1778,7 +1781,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 }
 
 
-BOOL H323Connection::SetUpConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+BOOL H323Connection::SetUpConnection()
 {
   ApplyStringOptions();
 
