@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2019  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2020  2007/03/12 23:22:17  csoutheren
+ * Add ability to remove H.450
+ *
+ * Revision 2.18  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -162,6 +165,9 @@
 #pragma implementation "h450pdu.h"
 #endif
 
+#include <opal/buildopts.h>
+
+#if OPAL_H450
 
 #include <h323/h450pdu.h>
 
@@ -2652,3 +2658,5 @@ BOOL H45011Handler::OnReceivedReject(int PTRACE_problemType, int PTRACE_problemN
   ciState = e_ci_Idle;
   return TRUE;
 };
+
+#endif // OPAL_H450
