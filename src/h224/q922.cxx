@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.cxx,v $
+ * Revision 1.5  2007/03/12 23:19:01  csoutheren
+ * Add ability to remove H.224
+ *
  * Revision 1.4  2006/05/03 17:45:51  hfriederich
  * reverting incorrect byte orderings in fcs from previous patch
  *
@@ -38,6 +41,12 @@
 #ifdef __GNUC__
 #pragma implementation "q922.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
+
+#include <h224/h323h224.h>
 
 #include <h224/q922.h>
 
@@ -505,3 +514,5 @@ WORD Q922_Frame::CalculateFCS(const BYTE *data, PINDEX length) const
 	
   return fcs;
 }
+
+#endif // OPAL_H224

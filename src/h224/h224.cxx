@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224.cxx,v $
+ * Revision 1.4  2007/03/12 23:19:01  csoutheren
+ * Add ability to remove H.224
+ *
  * Revision 1.3  2006/05/01 10:29:50  csoutheren
  * Added pragams for gcc < 4
  *
@@ -36,6 +39,10 @@
 #pragma implementation "h224.h"
 #pragma implementation "h224handler.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
@@ -675,3 +682,5 @@ void OpalH224ReceiverThread::Close()
 	
   PAssert(WaitForTermination(10000), "H224 receiver thread not terminated");
 }
+
+#endif // OPAL_H224
