@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.cxx,v $
+ * Revision 1.14  2007/03/12 23:03:34  csoutheren
+ * Disable warnings on Windows
+ *
  * Revision 1.13  2007/02/23 05:24:14  csoutheren
  * Fixed problem linking with ZRTP on Windows
  *
@@ -134,6 +137,11 @@ namespace PWLibStupidLinkerHacks {
 
 #if HAS_LIBSRTP && _WIN32
 #pragma comment(lib, LIBSRTP_LIBRARY)
+#endif
+
+#ifdef _WIN32
+#pragma warning(disable:4244)
+#pragma warning(disable:4505)
 #endif
 
 extern "C" {
@@ -305,7 +313,7 @@ BOOL LibSRTP_UDP::Open(
   if (srtp == NULL)
     return FALSE;
 
-  // get the inbound and outbound SSRC if they are set
+  // get the inbound and outbound SSRC from the SRTP parms and into the RTP session
   srtp->GetOutgoingSSRC(syncSourceOut);
   srtp->GetIncomingSSRC(syncSourceIn);
 
