@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.4  2007/03/12 23:19:01  csoutheren
+ * Add ability to remove H.224
+ *
  * Revision 1.3  2006/05/01 10:29:50  csoutheren
  * Added pragams for gcc < 4
  *
@@ -36,6 +39,10 @@
 #pragma implementation "h281.h"
 #pragma implementation "h281handler.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
@@ -784,3 +791,5 @@ void OpalH281Handler::StopActionLocally(PTimer &, INT)
 	
   OnStopAction();
 }
+
+#endif // OPAL_H224
