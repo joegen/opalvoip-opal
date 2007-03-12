@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2036  2007/03/08 04:36:05  csoutheren
+ * Revision 1.2037  2007/03/12 23:33:18  csoutheren
+ * Added virtual to functions
+ *
+ * Revision 2.35  2007/03/08 04:36:05  csoutheren
  * Add flag to close RTP session when RTCP BYE received
  *
  * Revision 2.34  2007/03/01 03:31:02  csoutheren
@@ -1268,9 +1271,9 @@ class RTP_UDP : public RTP_Session
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
   protected:
-    SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
-    SendReceiveStatus ReadControlPDU();
-    SendReceiveStatus ReadDataOrControlPDU(
+    virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual SendReceiveStatus ReadControlPDU();
+    virtual SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
       PBYTEArray & frame,
       BOOL fromDataChannel
