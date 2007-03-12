@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2053  2007/03/08 04:36:25  csoutheren
+ * Revision 1.2054  2007/03/12 23:05:14  csoutheren
+ * Fix typo and increase readability
+ *
+ * Revision 2.52  2007/03/08 04:36:25  csoutheren
  * Add flag to close RTP session when RTCP BYE received
  *
  * Revision 2.51  2007/03/01 03:31:25  csoutheren
@@ -817,12 +820,13 @@ BOOL RTP_ControlFrame::StartNewPacket()
 void RTP_ControlFrame::EndPacket()
 {
   // all packets must align to DWORD boundaries
-  while ((4 + payloadSize & 3) != 0) {
+  while (((4 + payloadSize) & 3) != 0) {
     theArray[compoundOffset + 4 + payloadSize - 1] = 0;
     ++payloadSize;
   }
 
   compoundOffset += 4 + payloadSize;
+  payloadSize = 0;
 }
 
 void RTP_ControlFrame::StartSourceDescription(DWORD src)
@@ -994,7 +998,7 @@ void RTP_Session::SendBYE()
 
   const char * reasonStr = "session ending";
 
-  // insert BYTE
+  // insert BYE
   report.StartNewPacket();
   report.SetPayloadType(RTP_ControlFrame::e_Goodbye);
   report.SetPayloadSize(4+1+strlen(reasonStr));  // length is SSRC + reasonLen + reason
