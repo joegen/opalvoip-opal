@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2141  2007/03/07 23:47:16  csoutheren
+ * Revision 1.2142  2007/03/12 23:22:17  csoutheren
+ * Add ability to remove H.450
+ *
+ * Revision 2.140  2007/03/07 23:47:16  csoutheren
  * Use correct dynamic payload type for H.323 calls
  *
  * Revision 2.139  2007/03/01 05:51:04  rjongbloed
@@ -198,20 +201,29 @@
 #pragma implementation "h323con.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <h323/h323con.h>
 
 #include <h323/h323ep.h>
 #include <h323/h323neg.h>
 #include <h323/h323rtp.h>
 #include <h323/gkclient.h>
+
+#if OPAL_H450
 #include <h323/h450pdu.h>
+#endif
+
 #include <h323/transaddr.h>
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
-#include <h224/h323h224.h>
 
-#ifdef H323_H460
+#if OPAL_H224
+#include <h224/h323h224.h>
+#endif
+
+#ifdef OPAL_H460
 #include <h323/h460.h>
 #include <h323/h4601.h>
 #endif
@@ -277,7 +289,7 @@ static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225
   }
   
   if (hasFeaturePDU) {
-	connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
+  	connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
   }
 }
 #endif
@@ -331,7 +343,9 @@ H323Connection::H323Connection(OpalCall & call,
   holdMediaChannel = NULL;
   isConsultationTransfer = FALSE;
   isCallIntrusion = FALSE;
+#if OPAL_H450
   callIntrusionProtectionLevel = endpoint.GetCallIntrusionProtectionLevel();
+#endif
 
   switch (options&H245TunnelingOptionMask) {
     case H245TunnelingOptionDisable :
@@ -422,12 +436,14 @@ H323Connection::H323Connection(OpalCall & call,
   requestModeProcedure = new H245NegRequestMode(endpoint, *this);
   roundTripDelayProcedure = new H245NegRoundTripDelay(endpoint, *this);
 
+#if OPAL_H450
   h450dispatcher = new H450xDispatcher(*this);
   h4502handler = new H4502Handler(*this, *h450dispatcher);
   h4504handler = new H4504Handler(*this, *h450dispatcher);
   h4506handler = new H4506Handler(*this, *h450dispatcher);
   h4507handler = new H4507Handler(*this, *h450dispatcher);
   h45011handler = new H45011Handler(*this, *h450dispatcher);
+#endif
 
   alertDone   = FALSE;
   
@@ -445,7 +461,9 @@ H323Connection::~H323Connection()
   delete logicalChannels;
   delete requestModeProcedure;
   delete roundTripDelayProcedure;
+#if OPAL_H450
   delete h450dispatcher;
+#endif
   delete signallingChannel;
   delete controlChannel;
   delete setupPDU;
@@ -477,7 +495,9 @@ void H323Connection::CleanUpOnCallEnd()
   PTRACE(2, "H225\tSending release complete PDU: callRef=" << callReference);
   H323SignalPDU rcPDU;
   rcPDU.BuildReleaseComplete(*this);
+#if OPAL_H450
   h450dispatcher->AttachToReleaseComplete(rcPDU);
+#endif
 
   BOOL sendingReleaseComplete = OnSendReleaseComplete(rcPDU);
 
@@ -687,11 +707,13 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
   h245TunnelRxPDU = &pdu;
 
   // Check for presence of supplementary services
+#if OPAL_H450
   if (pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_h4501SupplementaryService)) {
     if (!h450dispatcher->HandlePDU(pdu)) { // Process H4501SupplementaryService APDU
       return FALSE;
     }
   }
+#endif
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
   if (remoteApplication.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
@@ -1173,6 +1195,7 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
+#if OPAL_H450
   if (connectionState == NoConnectionActive) {
     /** If Call Intrusion is allowed we must answer the call*/
     if (IsCallIntrusion()) {
@@ -1189,6 +1212,7 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
       }
     }
   }
+#endif
 
   return connectionState != ShuttingDownConnection;
 }
@@ -1386,6 +1410,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     return FALSE;
   }
 
+#if OPAL_H450
   // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
   if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
       h4502handler->IsctTimerRunning())
@@ -1393,6 +1418,7 @@ BOOL H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
     PTRACE(4, "H4502\tRemote Endpoint does not support H.450.2.");
     h4502handler->OnReceivedSetupReturnResult();
   }
+#endif
 
   // have answer, so set timeout to interval for monitoring calls health
   signallingChannel->SetReadTimeout(MonitorCallStatusTime);
@@ -1578,7 +1604,9 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
   if (q931Cause == Q931::ErrorInCauseIE)
     q931Cause = pdu.GetQ931().GetCause();
   
+#ifdef H323_H460
   const H225_ReleaseComplete_UUIE & rc = pdu.m_h323_uu_pdu.m_h323_message_body;
+#endif
 
   switch (connectionState) {
     case EstablishedConnection :
@@ -1594,12 +1622,14 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         callEndReason = NumCallEndReasons;
       
       // Are we involved in a transfer with a non H.450.2 compatible transferred-to endpoint?
+#if OPAL_H450
       if (h4502handler->GetState() == H4502Handler::e_ctAwaitSetupResponse &&
           h4502handler->IsctTimerRunning())
       {
         PTRACE(4, "H4502\tThe Remote Endpoint has rejected our transfer request and does not support H.450.2.");
         h4502handler->OnReceivedSetupReturnError(H4501_GeneralErrorList::e_notAvailable);
       }
+#endif
 		  
 #ifdef H323_H460
       ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
@@ -1748,7 +1778,7 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
 }
 
 
-BOOL H323Connection::SetUpConnection()
+BOOL H323Connection::SetUpConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   ApplyStringOptions();
 
@@ -1804,7 +1834,9 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   H323SignalPDU setupPDU;
   H225_Setup_UUIE & setup = setupPDU.BuildSetup(*this, address);
 
+#if OPAL_H450
   h450dispatcher->AttachToSetup(setupPDU);
+#endif
 
   // Save the identifiers generated by BuildSetup
   callReference = setupPDU.GetQ931().GetCallReference();
@@ -1833,7 +1865,9 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
              << (response.rejectReason == UINT_MAX
                   ? PString("Transport error")
                   : H225_AdmissionRejectReason(response.rejectReason).GetTagName()));
+#if OPAL_H450
       h4502handler->onReceivedAdmissionReject(H4501_GeneralErrorList::e_notAvailable);
+#endif
 
       switch (response.rejectReason) {
         case H225_AdmissionRejectReason::e_calledPartyNotRegistered :
@@ -2091,7 +2125,9 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
 
   HandleTunnelPDU(alertingPDU);
 
+#if OPAL_H450
   h450dispatcher->AttachToAlerting(*alertingPDU);
+#endif
 
   if (!endpoint.OnSendAlerting(*this, *alertingPDU, calleeName, withMedia)){
     /* let the application to avoid sending the alerting, mainly for testing other endpoints*/
@@ -2142,7 +2178,9 @@ BOOL H323Connection::SetConnected()
   connectionState = HasExecutedSignalConnect;
   SetPhase(ConnectedPhase);
 
+#if OPAL_H450
   h450dispatcher->AttachToConnect(*connectPDU);
+#endif
 
   if (!endpoint.IsH245Disabled()){
     if (h245Tunneling) {
@@ -3037,6 +3075,7 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, BOOL fromRemote
   return logicalChannels->FindChannelBySession(rtpSessionId, fromRemote);
 }
 
+#if OPAL_H450
 
 void H323Connection::TransferConnection(const PString & remoteParty,
 					const PString & callIdentity)
@@ -3067,7 +3106,6 @@ void H323Connection::HandleConsultationTransfer(const PString & callIdentity,
 {
   h4502handler->HandleConsultationTransfer(callIdentity, incoming);
 }
-
 
 BOOL H323Connection::IsTransferringCall() const
 {
@@ -3121,7 +3159,6 @@ void H323Connection::OnConsultationTransferSuccess(H323Connection& /*secondaryCa
    h4502handler->SetConsultationTransferSuccess();
 }
 
-
 void H323Connection::HoldConnection()
 {
   HoldCall(TRUE);
@@ -3144,7 +3181,6 @@ BOOL H323Connection::IsConnectionOnHold()
 {
   return IsCallOnHold ();
 }
-
 
 void H323Connection::HoldCall(BOOL localHold)
 {
@@ -3291,12 +3327,13 @@ void H323Connection::SendCallWaitingIndication(const unsigned nbOfAddWaitingCall
 }
 
 
+#endif
+
 BOOL H323Connection::OnControlProtocolError(ControlProtocolErrors /*errorSource*/,
                                             const void * /*errorData*/)
 {
   return TRUE;
 }
-
 
 static void SetRFC2833PayloadType(H323Capabilities & capabilities,
                                   OpalRFC2833Proto & rfc2833handler)
