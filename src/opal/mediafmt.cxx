@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2061  2007/02/14 06:51:44  csoutheren
+ * Revision 1.2062  2007/03/13 00:33:11  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.60  2007/02/14 06:51:44  csoutheren
  * Extended FindFormat to allow finding multiple matching formats
  *
  * Revision 2.59  2007/02/10 18:14:32  hfriederich
@@ -360,6 +365,21 @@ const OpalMediaFormat & GetOpalRFC2833()
   return RFC2833;
 }
 
+const OpalMediaFormat & GetOpalCiscoNSE()
+{
+  static const OpalMediaFormat CiscoNSE(
+    OPAL_CISCONSE,
+    0,
+    (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
+    "NSE",
+    TRUE,   // Needs jitter
+    32*(1000/50), // bits/sec  (32 bits every 50ms)
+    4,      // bytes/frame
+    150*8,  // 150 millisecond
+    OpalMediaFormat::AudioClockRate
+  );
+  return CiscoNSE;
+}
 
 static OpalMediaFormatList & GetMediaFormatsList()
 {
@@ -1029,6 +1049,12 @@ bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
 
   return TRUE;
 }
+
+time_t OpalMediaFormat::GetCodecBaseTime() const
+{
+  return codecBaseTime;
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
