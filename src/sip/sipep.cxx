@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2147  2007/03/10 17:56:58  dsandras
+ * Revision 1.2148  2007/03/13 21:22:49  dsandras
+ * Take the remote port into account when unregistering.
+ *
+ * Revision 2.146  2007/03/10 17:56:58  dsandras
  * Improved locking.
  *
  * Revision 2.145  2007/03/01 05:51:07  rjongbloed
@@ -799,7 +802,7 @@ SIPEndPoint::~SIPEndPoint()
       if (info->GetMethod() == SIP_PDU::Method_REGISTER) {
 
         if (info->IsRegistered() && info->GetExpire() > 0) {
-          Unregister(url.GetHostName(), url.GetUserName());
+          Unregister(url.AsString(), url.AsString());
         }
         else if (!info->IsRegistered()){ 
           info->SetExpire(-1);
