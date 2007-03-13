@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2053  2007/03/01 06:16:54  rjongbloed
+ * Revision 1.2054  2007/03/13 00:33:10  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.52  2007/03/01 06:16:54  rjongbloed
  * Fixed DevStudio 2005 warning
  *
  * Revision 2.51  2007/03/01 05:51:04  rjongbloed
@@ -296,20 +301,10 @@ OpalEndPoint::~OpalEndPoint()
   PTRACE(3, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
-BOOL OpalEndPoint::MakeConnection(OpalCall &, const PString &, void *)
+BOOL OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
 {
   PAssertAlways("Must implement descendant of OpalEndPoint::MakeConnection");
   return FALSE;
-}
-
-BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int /*options*/)
-{
-  return MakeConnection(call, party, userData);
-}
-
-BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int options, OpalConnection::StringOptions *)
-{
-  return MakeConnection(call, party, userData, options);
 }
 
 void OpalEndPoint::PrintOn(ostream & strm) const
@@ -640,17 +635,25 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
 }
 
 
+#if OPAL_T120DATA
+
 OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection & connection) const
 {
   return manager.CreateT120ProtocolHandler(connection);
 }
 
+#endif
+
+#if OPAL_T38FAX
 
 OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const
 {
   return manager.CreateT38ProtocolHandler(connection);
 }
 
+#endif
+
+#if OPAL_H224
 
 OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & connection, 
 														  unsigned sessionID) const
@@ -658,11 +661,12 @@ OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & conne
   return manager.CreateH224ProtocolHandler(connection, sessionID);
 }
 
-
 OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
 {
   return manager.CreateH281ProtocolHandler(h224Handler);
 }
+
+#endif
 
 void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
 {
