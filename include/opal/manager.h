@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2058  2007/03/01 03:37:37  csoutheren
+ * Revision 1.2059  2007/03/13 00:32:16  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.57  2007/03/01 03:37:37  csoutheren
  * Fix typo
  *
  * Revision 2.56  2007/01/25 11:48:10  hfriederich
@@ -506,26 +511,11 @@ class OpalManager : public PObject
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party   ///<  Party to call
-    );
-    virtual BOOL MakeConnection(
-      OpalCall & call,        ///<  Owner of connection
-      const PString & party,  ///<  Party to call
-      void * userData         ///<  user data to pass to connections
-    );
-    virtual BOOL MakeConnection(
-      OpalCall & call,          ///<  Owner of connection
-      const PString & party,    ///<  Party to call
-      void * userData,          ///<  user data to pass to connections
-      unsigned int options      ///<  options to pass to conneciton
-    );
-    virtual BOOL MakeConnection(
-      OpalCall & call,          ///<  Owner of connection
-      const PString & party,    ///<  Party to call
-      void * userData,          ///<  user data to pass to connections
-      unsigned int options,     ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions
+      OpalCall & call,                   ///<  Owner of connection
+      const PString & party,             ///<  Party to call
+      void * userData = NULL,            ///<  user data to pass to connections
+      unsigned int options = 0,          ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Call back for answering an incoming call.
@@ -824,6 +814,7 @@ class OpalManager : public PObject
 
   /**@name Other services */
   //@{
+#if OPAL_T120DATA
     /**Create an instance of the T.120 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
        a T.120 channel be established.
@@ -837,7 +828,9 @@ class OpalManager : public PObject
     virtual OpalT120Protocol * CreateT120ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.120 handler created
     ) const;
+#endif
 
+#if OPAL_T38FAX
     /**Create an instance of the T.38 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
        a T.38 fax channel be established.
@@ -852,6 +845,9 @@ class OpalManager : public PObject
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
     ) const;
 	
+#endif
+
+#if OPAL_H224
     /** Create an instance of the H.224 protocol handler.
         This is called when the call subsystem requires that a H.224 channel be established.
 		
@@ -877,6 +873,7 @@ class OpalManager : public PObject
 	virtual OpalH281Handler * CreateH281ProtocolHandler(
       OpalH224Handler & h224Handler
     ) const;
+#endif
 
     class RouteEntry : public PObject
     {

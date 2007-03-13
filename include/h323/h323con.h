@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2060  2007/03/01 05:51:03  rjongbloed
+ * Revision 1.2061  2007/03/13 00:32:16  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.59  2007/03/01 05:51:03  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -932,6 +937,8 @@ class H323Connection : public OpalConnection
       const PString & forwardParty   ///<  Party to forward call to.
     );
 
+#if OPAL_H450
+
     /**Initiate the transfer of an existing call (connection) to a new remote party
        using H.450.2.  This sends a Call Transfer Initiate Invoke message from the
        A-Party (transferring endpoint) to the B-Party (transferred endpoint).
@@ -1130,6 +1137,8 @@ class H323Connection : public OpalConnection
     void SendCallWaitingIndication(
       const unsigned nbOfAddWaitingCalls = 0   ///<  number of additional waiting calls at the served user
     );
+
+#endif
 
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
@@ -2264,7 +2273,7 @@ class H323Connection : public OpalConnection
 	
 	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
-#ifdef H323_H460
+#if H323_H460
     /** Get the connection FeatureSet
      */
     virtual H460_FeatureSet * GetFeatureSet();
@@ -2275,7 +2284,9 @@ class H323Connection : public OpalConnection
      * get the H4507 handler
      * @return a reference to the  H4507 handler
      */
-    H4507Handler&  getH4507handler(){return *h4507handler;};
+#if OPAL_H450
+    H4507Handler&  getH4507handler(){return *h4507handler;}
+#endif
 
     virtual BOOL OnOpenIncomingMediaChannels();
     
@@ -2391,12 +2402,14 @@ class H323Connection : public OpalConnection
     H245NegRequestMode               * requestModeProcedure;
     H245NegRoundTripDelay            * roundTripDelayProcedure;
 
+#if OPAL_H450
     H450xDispatcher                  * h450dispatcher;
     H4502Handler                     * h4502handler;
     H4504Handler                     * h4504handler;
     H4506Handler                     * h4506handler;
     H4507Handler                     * h4507handler;
     H45011Handler                    * h45011handler;
+#endif
 
 #ifdef H323_H460
 	H460_FeatureSet & features;
