@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2076  2007/03/01 06:16:54  rjongbloed
+ * Revision 1.2077  2007/03/13 00:33:11  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.75  2007/03/01 06:16:54  rjongbloed
  * Fixed DevStudio 2005 warning
  *
  * Revision 2.74  2007/03/01 05:51:05  rjongbloed
@@ -639,21 +644,6 @@ PString OpalManager::GetNextCallToken()
   return token;
 }
 
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
-{
-  return MakeConnection(call, remoteParty, NULL, 0, NULL);
-}
-
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData)
-{
-  return MakeConnection(call, remoteParty, userData, 0, NULL);
-}
-
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options)
-{
-  return MakeConnection(call, remoteParty, userData, options, NULL);
-}
-
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
@@ -947,39 +937,38 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
   return input.IsEmpty() ? digit : input;
 }
 
+#if OPAL_T120DATA
 
 OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
 }
 
+#endif
+
+#if OPAL_T38FAX
 
 OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
 }
 
+#endif
+
+#ifdef OPAL_H224
 
 OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection,
 														 unsigned sessionID) const
 {
-#ifdef OPAL_H224
   return new OpalH224Handler(connection, sessionID);
-#else
-  return NULL;
-#endif
 }
-
 
 OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
 {
-#ifdef OPAL_H224
   return new OpalH281Handler(h224Handler);
-#else
-  return NULL;
-#endif
 }
 
+#endif
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
