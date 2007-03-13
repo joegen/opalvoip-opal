@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2041  2007/03/01 05:51:07  rjongbloed
+ * Revision 1.2042  2007/03/13 00:33:11  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.40  2007/03/01 05:51:07  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -264,7 +269,8 @@ static BOOL SetDeviceName(const PString & name,
 BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
                                       void * userData,
-                               unsigned int /*options*/)
+                               unsigned int /*options*/,
+                               OpalConnection::StringOptions *)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -487,17 +493,7 @@ PString OpalPCSSConnection::GetDestinationAddress()
 
 OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
 {
- 
-  OpalMediaFormatList formats;
-
-  formats += OpalPCM16;        // Sound card can only do 16 bit PCM
-  formats += OpalPCM16_16KHZ;  // and can do it at 16khz too
-
-#if OPAL_VIDEO
-  AddVideoMediaFormats(formats);
-#endif
-
-  return formats;
+  return endpoint.GetMediaFormats();
 }
 
 
