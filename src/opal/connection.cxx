@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2098  2007/03/13 00:33:10  csoutheren
+ * Revision 1.2099  2007/03/13 02:17:47  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.97  2007/03/13 00:33:10  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -989,9 +992,17 @@ void OpalConnection::PauseMediaStreams(BOOL paused)
 }
 
 
-OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
-                                                    BOOL isSource)
+OpalMediaStream * OpalConnection::CreateMediaStream(
+#if OPAL_VIDEO
+  const OpalMediaFormat & mediaFormat,
+  unsigned sessionID,
+  BOOL isSource
+#else
+  const OpalMediaFormat & ,
+  unsigned ,
+  BOOL 
+#endif
+  )
 {
 #if OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
