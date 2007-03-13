@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.32  2007/03/10 16:48:21  dsandras
+ * Revision 1.2098.2.33  2007/03/13 21:23:24  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.97.2.32  2007/03/10 16:48:21  dsandras
  * Improved locking.
  *
  * Revision 2.97.2.31  2007/02/27 21:24:06  dsandras
@@ -775,7 +778,7 @@ SIPEndPoint::~SIPEndPoint()
       if (info->GetMethod() == SIP_PDU::Method_REGISTER) {
 
         if (info->IsRegistered() && info->GetExpire() > 0) {
-          Unregister(url.GetHostName(), url.GetUserName());
+          Unregister(url.AsString(), url.AsString());
         }
         else if (!info->IsRegistered()){ 
           info->SetExpire(-1);
