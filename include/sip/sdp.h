@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2021  2006/11/09 17:54:13  hfriederich
+ * Revision 1.2022  2007/03/13 00:32:17  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.20  2006/11/09 17:54:13  hfriederich
  * Allow matching of fixed RTP payload type media formats if no rtpmap attribute is present in the received SDP
  *
  * Revision 2.19  2006/04/23 20:12:52  dsandras
@@ -141,7 +146,7 @@ class SDPMediaFormat : public PObject
       const char * param = ""
     );
 
-    SDPMediaFormat(const PString & fmtp, RTP_DataFrame::PayloadTypes pt);
+    SDPMediaFormat(const PString & encodingName, const PString & nteString, RTP_DataFrame::PayloadTypes pt);
 
     void PrintOn(ostream & str) const;
 
@@ -165,6 +170,16 @@ class SDPMediaFormat : public PObject
     void AddNTEToken(const PString & ostr);
     PString GetNTEString() const;
 
+#if OPAL_T38FAX
+    void AddNSEString(const PString & str);
+    void AddNSEToken(const PString & ostr);
+    PString GetNSEString() const;
+#endif
+
+    void AddNXEString(POrdinalSet & nxeSet, const PString & str);
+    void AddNXEToken(POrdinalSet & nxeSet, const PString & ostr);
+    PString GetNXEString(POrdinalSet & nxeSet) const;
+
     RTP_DataFrame::PayloadTypes payloadType;
 
     unsigned clockRate;
@@ -172,7 +187,10 @@ class SDPMediaFormat : public PObject
     PString parameters;
     PString fmtp;
 
-    POrdinalSet nteSet;     // used for NTE formats only
+    mutable POrdinalSet nteSet;     // used for NTE formats only
+#if OPAL_T38FAX
+    mutable POrdinalSet nseSet;     // used for NSE formats only
+#endif
 };
 
 PLIST(SDPMediaFormatList, SDPMediaFormat);
@@ -252,6 +270,10 @@ class SDPMediaDescription : public PObject
 
     SDPMediaFormatList formats;
     PINDEX packetTime;                  // ptime attribute, in milliseconds
+
+#if OPAL_T38FAX
+    PStringToString t38Attributes;
+#endif // OPAL_T38FAX
 };
 
 PLIST(SDPMediaDescriptionList, SDPMediaDescription);
