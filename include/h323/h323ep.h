@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2048  2007/03/01 05:51:03  rjongbloed
+ * Revision 1.2049  2007/03/13 00:32:16  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.47  2007/03/01 05:51:03  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -498,11 +503,11 @@ class H323EndPoint : public OpalEndPoint
        The default behaviour is pure.
      */
     virtual BOOL MakeConnection(
-      OpalCall & call,          ///<  Owner of connection
-      const PString & party,    ///<  Remote party to call
-      void * userData,          ///<  Arbitrary data to pass to connection
-      unsigned int options,     ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions
+      OpalCall & call,                  ///<  Owner of connection
+      const PString & party,            ///<  Remote party to call
+      void * userData  = NULL,          ///<  Arbitrary data to pass to connection
+      unsigned int options = NULL,      ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -1331,6 +1336,7 @@ class H323EndPoint : public OpalEndPoint
       BOOL mode ///<  New default mode
     ) { canEnforceDurationLimit = mode; } 
 
+#if OPAL_H450
     /**Get Call Intrusion Protection Level of the end point.
       */
     unsigned GetCallIntrusionProtectionLevel() const { return callIntrusionProtectionLevel; }
@@ -1340,6 +1346,7 @@ class H323EndPoint : public OpalEndPoint
     void SetCallIntrusionProtectionLevel(
       unsigned level  ///<  New level from 0 to 3
     ) { PAssert(level<=3, PInvalidParameter); callIntrusionProtectionLevel = level; }
+#endif
 
     /**Called from H.450 OnReceivedInitiateReturnError
       */
@@ -1672,7 +1679,9 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the next available invoke Id for H450 operations
       */
+#if OPAL_H450
     unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
+#endif
 
   //@}
 
@@ -1710,7 +1719,9 @@ class H323EndPoint : public OpalEndPoint
     BOOL        m_bH245Disabled; /* enabled or disabled h245 */
     BOOL        canDisplayAmountString;
     BOOL        canEnforceDurationLimit;
+#if OPAL_H450
     unsigned    callIntrusionProtectionLevel;
+#endif
 
     BYTE          t35CountryCode;
     BYTE          t35Extension;
@@ -1767,10 +1778,12 @@ class H323EndPoint : public OpalEndPoint
     PString              gatekeeperPassword;
     H323CallIdentityDict secondaryConnectionsActive;
 
+#if OPAL_H450
     mutable PAtomicInteger nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
-	
-#ifdef H323_H460
+#endif
+
+#if OPAL_H460
     H460_FeatureSet features;
 #endif
 
