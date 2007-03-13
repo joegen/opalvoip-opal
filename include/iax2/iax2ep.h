@@ -25,6 +25,11 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.12  2007/03/13 00:32:16  csoutheren
+ *  Simple but messy changes to allow compile time removal of protocol
+ *  options such as H.450 and H.460
+ *  Fix MakeConnection overrides
+ *
  *  Revision 1.11  2007/03/01 05:51:03  rjongbloed
  *  Fixed backward compatibility of OnIncomingConnection() virtual
  *    functions on various classes. If an old override returned FALSE
@@ -202,7 +207,8 @@ class IAX2EndPoint : public OpalEndPoint
 			      OpalCall & call,          /// Owner of connection
 			      const PString & party,    /// Remote party to call
 			      void * userData = NULL,   /// Arbitrary data to pass to connection
-            unsigned int options = 0  ///<  options to pass to conneciton
+            unsigned int options = 0, ///<  options to pass to connection
+            OpalConnection::StringOptions * stringOptions = NULL
 			      );
   
   /**Create a connection for the IAX endpoint.

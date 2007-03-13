@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2015  2007/03/01 05:51:04  rjongbloed
+ * Revision 1.2016  2007/03/13 00:32:16  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.14  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -155,7 +160,9 @@ class OpalIVREndPoint : public OpalEndPoint
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,   ///<  Arbitrary data to pass to connection
-      unsigned int options = 0  ///<  options to pass to conneciton
+      unsigned int options = 0, ///<  options to pass to conneciton
+      OpalConnection::StringOptions * stringOptions = NULL
+
     );
 
     /**Get the data formats this endpoint is capable of operating.

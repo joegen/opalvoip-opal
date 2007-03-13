@@ -28,7 +28,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2077  2007/03/01 05:51:03  rjongbloed
+ * Revision 1.2078  2007/03/13 00:32:16  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.76  2007/03/01 05:51:03  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -900,11 +905,19 @@ class OpalConnection : public PSafeObject
     /**Meda information structure for GetMediaInformation() function.
       */
     struct MediaInformation {
-      MediaInformation() { rfc2833 = RTP_DataFrame::IllegalPayloadType; }
+      MediaInformation() { 
+        rfc2833  = RTP_DataFrame::IllegalPayloadType; 
+#if OPAL_T38FAX
+        ciscoNSE = RTP_DataFrame::IllegalPayloadType; 
+#endif
+      }
 
       OpalTransportAddress data;           ///<  Data channel address
       OpalTransportAddress control;        ///<  Control channel address
       RTP_DataFrame::PayloadTypes rfc2833; ///<  Payload type for RFC2833
+#if OPAL_T38FAX
+      RTP_DataFrame::PayloadTypes ciscoNSE; ///<  Payload type for RFC2833
+#endif
     };
 
     /**Get information on the media channel for the connection.
@@ -1172,6 +1185,7 @@ class OpalConnection : public PSafeObject
 
   /**@name Other services */
   //@{
+#if OPAL_T120DATA
     /**Create an instance of the T.120 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
        a T.120 channel be established.
@@ -1185,7 +1199,9 @@ class OpalConnection : public PSafeObject
        while keeping track of that variable for autmatic deletion.
       */
     virtual OpalT120Protocol * CreateT120ProtocolHandler();
+#endif
 
+#if OPAL_T38FAX
     /**Create an instance of the T.38 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
        a T.38 fax channel be established.
@@ -1199,6 +1215,9 @@ class OpalConnection : public PSafeObject
        while keeping track of that variable for autmatic deletion.
       */
     virtual OpalT38Protocol * CreateT38ProtocolHandler();
+#endif
+
+#if OPAL_H224
 	
 	/** Create an instance of the H.224 protocol handler.
 	    This is called when the subsystem requires that a H.224 channel be established.
@@ -1228,6 +1247,7 @@ class OpalConnection : public PSafeObject
 		handler was created
 	  */
 	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
+#endif
 
   //@}
 
@@ -1382,6 +1402,7 @@ class OpalConnection : public PSafeObject
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
+    PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
 
@@ -1420,9 +1441,16 @@ class OpalConnection : public PSafeObject
     OpalSilenceDetector * silenceDetector;
     OpalEchoCanceler    * echoCanceler;
     OpalRFC2833Proto    * rfc2833Handler;
+#if OPAL_T120DATA
     OpalT120Protocol    * t120handler;
+#endif
+#if OPAL_T38FAX
     OpalT38Protocol     * t38handler;
+    OpalRFC2833Proto    * ciscoNSEHandler;
+#endif
+#if OPAL_H224
     OpalH224Handler		  * h224Handler;
+#endif
 
     MediaAddressesDict  mediaTransportAddresses;
     PMutex              mediaStreamMutex;
