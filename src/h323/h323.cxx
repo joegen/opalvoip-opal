@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2143  2007/03/12 23:41:32  csoutheren
+ * Revision 1.2144  2007/03/13 02:17:46  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.142  2007/03/12 23:41:32  csoutheren
  * Undo unwanted edit
  *
  * Revision 2.141  2007/03/12 23:22:17  csoutheren
@@ -398,8 +401,12 @@ H323Connection::H323Connection(OpalCall & call,
 
   mustSendDRQ = FALSE;
   earlyStart = FALSE;
+#if OPAL_T120
   startT120 = TRUE;
+#endif
+#if OPAL_H224
   startH224 = ep.IsH224Enabled();
+#endif
   lastPDUWasH245inSETUP = FALSE;
   endSessionNeeded = FALSE;
 
@@ -3545,6 +3552,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
       OnSelectLogicalChannels();
   }
 
+#if OPAL_T120
   if (h245_available && startT120) {
     if (remoteCapabilities.FindCapability("T.120") != NULL) {
       H323Capability * capability = localCapabilities.FindCapability("T.120");
@@ -3553,6 +3561,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
     }
     startT120 = FALSE;
   }
+#endif
   
   switch (phase) {
     case ConnectedPhase :
@@ -3573,23 +3582,24 @@ void H323Connection::InternalEstablishedConnectionCheck()
     default :
       break;
   }
-  
-  if(h245_available && startH224) {
+
+#if OPAL_H224
+  if (h245_available && startH224) {
     if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
       H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);
-      if(capability != NULL) {
-	    if(logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
-		  H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
-          if(channel != NULL) {
-			channel->SetNumber(logicalChannels->GetNextChannelNumber());
-			fastStartChannels.Append(channel);
+      if (capability != NULL) {
+	      if (logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
+		      H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
+          if  (channel != NULL) {
+			      channel->SetNumber(logicalChannels->GetNextChannelNumber());
+			      fastStartChannels.Append(channel);
           }
         }
       }
     }
-	   
-	startH224 = FALSE;
+	  startH224 = FALSE;
   }
+#endif
 }
 
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2064  2007/03/12 23:22:17  csoutheren
+ * Revision 1.2065  2007/03/13 02:17:46  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.63  2007/03/12 23:22:17  csoutheren
  * Add ability to remove H.450
  *
  * Revision 2.62  2007/03/01 05:51:04  rjongbloed
@@ -693,8 +696,13 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
 
 BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
                                     const PString & existingToken,
+#if OPAL_H450
                                     const PString & callIdentity,
                                            unsigned capabilityLevel,
+#else
+                                    const PString & ,
+                                           unsigned ,
+#endif
                                     const PString & remoteParty,
                                              void * userData,
                                        unsigned int options,
