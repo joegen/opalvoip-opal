@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2203  2007/03/13 00:33:11  csoutheren
+ * Revision 1.2204  2007/03/13 02:17:49  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.202  2007/03/13 00:33:11  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -1403,7 +1406,13 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
 }
 
 
-SDPMediaDescription::Direction SIPConnection::GetDirection(unsigned sessionId)
+SDPMediaDescription::Direction SIPConnection::GetDirection(
+#if OPAL_VIDEO
+  unsigned sessionId
+#else
+  unsigned 
+#endif
+  )
 {
   if (remote_hold)
     return SDPMediaDescription::RecvOnly;
