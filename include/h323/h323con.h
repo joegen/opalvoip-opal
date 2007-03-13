@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2062  2007/03/13 02:16:56  csoutheren
+ * Revision 1.2063  2007/03/13 03:34:00  csoutheren
+ * Fixed use of wrong ifdef
+ *
+ * Revision 2.61  2007/03/13 02:16:56  csoutheren
  * Remove warnings/errors when compiling with various turned off
  *
  * Revision 2.60  2007/03/13 00:32:16  csoutheren
@@ -2365,7 +2368,7 @@ class H323Connection : public OpalConnection
 #if OPAL_T120
     BOOL startT120;
 #endif
-#if OPAL_T38FAX
+#if OPAL_H224
     BOOL startH224;
 #endif
     PString    t38ModeChangeCapabilities;
