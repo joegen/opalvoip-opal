@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2043  2007/03/13 00:33:11  csoutheren
+ * Revision 1.2044  2007/03/13 02:17:49  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.42  2007/03/13 00:33:11  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -710,6 +713,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
     }
   }
 
+#if OPAL_T38FAX
   else if (transport == SDP_MEDIA_TRANSPORT_UDPTL) {
     PINDEX i;
     for (i = 0; i < formats.GetSize(); i++)
@@ -720,6 +724,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
     for (i = 0; i < t38Attributes.GetSize(); i++) 
       str << "a=" << t38Attributes.GetKeyAt(i) << ":" << t38Attributes.GetDataAt(i) << "\r\n";
   }
+#endif
 
   else {
     PINDEX i;
@@ -810,6 +815,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
   if (!fmtp.IsEmpty())
     sdpFormat->SetFMTP(fmtp);
 
+#if OPAL_T38FAX
   if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) {
     PINDEX i;
     for (i = 0; i < mediaFormat.GetOptionCount(); ++i) {
@@ -818,6 +824,7 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
         t38Attributes.SetAt(option.GetName(), option.AsString());
     }
   }
+#endif  
 
   AddSDPMediaFormat(sdpFormat);
 }
