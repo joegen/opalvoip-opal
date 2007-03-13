@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2061  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2062  2007/03/13 02:16:56  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.60  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -2359,8 +2362,12 @@ class H323Connection : public OpalConnection
     BOOL mediaWaitForConnect;
     BOOL transmitterSidePaused;
     BOOL earlyStart;
+#if OPAL_T120
     BOOL startT120;
+#endif
+#if OPAL_T38FAX
     BOOL startH224;
+#endif
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     BOOL       endSessionNeeded;
