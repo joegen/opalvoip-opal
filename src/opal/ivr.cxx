@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2019  2007/03/01 05:51:04  rjongbloed
+ * Revision 1.2020  2007/03/13 00:33:10  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.18  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -147,7 +152,8 @@ OpalIVREndPoint::~OpalIVREndPoint()
 BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
                                      void * userData,
-                               unsigned int /*options*/)
+                               unsigned int /*options*/,
+                               OpalConnection::StringOptions *)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;

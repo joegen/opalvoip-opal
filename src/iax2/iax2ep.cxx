@@ -28,6 +28,11 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.28  2007/03/13 00:33:10  csoutheren
+ * Simple but messy changes to allow compile time removal of protocol
+ * options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
  * Revision 1.27  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
@@ -447,7 +452,8 @@ BOOL IAX2EndPoint::MakeConnection(
 				 OpalCall & call,
 				 const PString & rParty, 
 				 void * userData,
-				 unsigned int /*options*/)
+				 unsigned int /*options*/,
+         OpalConnection::StringOptions * /*stringOptions*/)
 {
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
