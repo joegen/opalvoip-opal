@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2037  2007/03/01 03:36:28  csoutheren
+ * Revision 1.2038  2007/03/13 02:17:46  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.36  2007/03/01 03:36:28  csoutheren
  * Use local jitter buffer values rather than getting direct from OpalManager
  *
  * Revision 2.35  2007/01/10 09:16:55  csoutheren
@@ -924,9 +927,9 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
   if (mediaStream == NULL)
     return;
 
+#if OPAL_VIDEO
   switch (type.GetTag())
   {
-#if OPAL_VIDEO
     case H245_MiscellaneousCommand_type::e_videoFreezePicture :
       mediaStream->ExecuteCommand(OpalVideoFreezePicture());
       break;
@@ -954,14 +957,20 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
     case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
       mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
       break;
-#endif
     default:
       break;
   }
+#endif
 }
 
 
-void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command, INT)
+void H323UnidirectionalChannel::OnMediaCommand(
+#if OPAL_VIDEO
+  OpalMediaCommand & command, 
+#else
+  OpalMediaCommand & , 
+#endif
+  INT)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {

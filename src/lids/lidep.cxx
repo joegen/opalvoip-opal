@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2040  2007/03/13 00:33:10  csoutheren
+ * Revision 1.2041  2007/03/13 02:17:46  csoutheren
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.39  2007/03/13 00:33:10  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -279,7 +282,9 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
 OpalMediaFormatList OpalLIDEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList mediaFormats;
+#if OPAL_VIDEO
   AddVideoMediaFormats(mediaFormats);
+#endif
 
   PWaitAndSignal mutex(linesMutex);
 
@@ -686,7 +691,9 @@ BOOL OpalLineConnection::SetConnected()
 OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
+#if OPAL_VIDEO
   AddVideoMediaFormats(formats);
+#endif
   return formats;
 }
 
