@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2144  2007/03/13 02:17:46  csoutheren
+ * Revision 1.2145  2007/03/14 22:40:09  csoutheren
+ * Fix H.323 problem with payload map and known payload types
+ *
+ * Revision 2.143  2007/03/13 02:17:46  csoutheren
  * Remove warnings/errors when compiling with various turned off
  *
  * Revision 2.142  2007/03/12 23:41:32  csoutheren
@@ -2417,7 +2420,7 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
                     if (rtp != NULL) {
                       RTP_DataFrame::PayloadTypes inpt  = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
                       RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
-                      if (inpt != outpt)
+                      if ((inpt != outpt) && (outpt != RTP_DataFrame::IllegalPayloadType))
                         rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt,outpt));
                     }
                   }
