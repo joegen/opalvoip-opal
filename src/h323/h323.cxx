@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2098.2.2  2007/03/10 16:47:04  dsandras
+ * Revision 1.2098.2.3  2007/03/14 23:08:09  csoutheren
+ * Backport fix from head for H.323 problem with known payload types
+ *
+ * Revision 2.97.2.2  2007/03/10 16:47:04  dsandras
  * Backported fix from HEAD.
  *
  * Revision 2.97.2.1  2006/02/22 12:15:26  csoutheren
@@ -3409,15 +3412,15 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
-                    {
-                      H323_RealTimeChannel * rtp = dynamic_cast<H323_RealTimeChannel *>(&channelToStart);
-                      if (rtp != NULL) {
-                        RTP_DataFrame::PayloadTypes inpt  = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
-                        RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
-                        if (inpt != outpt)
-                          rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt,outpt));
-                      }
+                  {
+                    H323_RealTimeChannel * rtp = dynamic_cast<H323_RealTimeChannel *>(&channelToStart);
+                    if (rtp != NULL) {
+                      RTP_DataFrame::PayloadTypes inpt  = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
+                      RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
+                      if ((inpt != outpt) && (outpt != RTP_DataFrame::IllegalPayloadType))
+                        rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt,outpt));
                     }
+                  }
                   if (channelToStart.Open()) {
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
                       transmitterMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
