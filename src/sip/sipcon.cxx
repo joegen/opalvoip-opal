@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2204  2007/03/13 02:17:49  csoutheren
+ * Revision 1.2205  2007/03/15 21:23:13  dsandras
+ * Make sure lastTransportAddress is correctly initialized even when
+ * uncompliant SIP PDUs are received.
+ *
+ * Revision 2.203  2007/03/13 02:17:49  csoutheren
  * Remove warnings/errors when compiling with various turned off
  *
  * Revision 2.202  2007/03/13 00:33:11  csoutheren
@@ -876,7 +880,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   else 
     transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
   
-  lastTransportAddress = transportAddress.GetHostAddress();
+  if (transport)
+    lastTransportAddress = transport->GetRemoteAddress();
 
   originalInvite = NULL;
   pduHandler = NULL;
