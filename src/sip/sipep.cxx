@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2148  2007/03/13 21:22:49  dsandras
+ * Revision 1.2149  2007/03/17 15:00:24  dsandras
+ * Keep the transport open for a longer time when doing text conversations.
+ *
+ * Revision 2.147  2007/03/13 21:22:49  dsandras
  * Take the remote port into account when unregistering.
  *
  * Revision 2.146  2007/03/10 17:56:58  dsandras
@@ -2082,7 +2085,7 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
 BOOL SIPEndPoint::SendMessage (const SIPURL & url, 
 			       const PString & body)
 {
-  return TransmitSIPInfo(SIP_PDU::Method_MESSAGE, url.AsQuotedString(), url.GetUserName(), "", "", "", body);
+  return TransmitSIPInfo(SIP_PDU::Method_MESSAGE, url.AsQuotedString(), url.GetUserName(), "", "", "", body, 500);
 }
 
 
