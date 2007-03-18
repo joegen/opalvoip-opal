@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047.2.3  2007/03/11 11:55:13  hfriederich
+ * Revision 1.2047.2.4  2007/03/18 19:24:01  hfriederich
+ * (Backport from HEAD)
+ * Fix typo and increase readability
+ *
+ * Revision 2.46.2.3  2007/03/11 11:55:13  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -819,12 +823,13 @@ BOOL RTP_ControlFrame::StartNewPacket()
 void RTP_ControlFrame::EndPacket()
 {
   // all packets must align to DWORD boundaries
-  while ((4 + payloadSize & 3) != 0) {
+  while (((4 + payloadSize) & 3) != 0) {
     theArray[compoundOffset + 4 + payloadSize - 1] = 0;
     ++payloadSize;
   }
     
   compoundOffset += 4 + payloadSize;
+  payloadSize = 0;
 }
 
 void RTP_ControlFrame::StartSourceDescription(DWORD src)
@@ -994,7 +999,7 @@ void RTP_Session::SendBYE()
     
   const char * reasonStr = "session ending";
     
-  // insert BYTE
+  // insert BYE
   report.StartNewPacket();
   report.SetPayloadType(RTP_ControlFrame::e_Goodbye);
   report.SetPayloadSize(4+1+strlen(reasonStr));  // length is SSRC + reasonLen + reason
