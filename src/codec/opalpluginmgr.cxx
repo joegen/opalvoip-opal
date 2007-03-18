@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2018.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2018.2.2  2007/03/18 22:38:40  hfriederich
+ * Fix plugins and MediaType. To be tested.
+ *
+ * Revision 2.17.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -453,7 +456,7 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     }
     ~OpalPluginAudioMediaFormat()
     {
-     //OpalMediaFormatFactory::Unregister(*this);
+      OpalMediaFormatFactory::Unregister(*this);
     }
 
     bool IsValidForProtocol(const PString & protocol) const
@@ -1672,19 +1675,19 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (timeStamp > mediaNow)
     timeStamp = mediaNow;
 
-  unsigned defaultSessionID = 0;
+  OpalMediaType mediaType = OpalUnknownMediaType;
   unsigned frameTime = 0;
   unsigned clockRate = 0;
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      //defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
+      mediaType = OpalDefaultVideoMediaType;
       break;
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
-      //defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
+      mediaType = OpalDefaultAudioMediaType;
       frameTime = (8 * encoderCodec->nsPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
       break;
@@ -1694,7 +1697,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
   }
 
   // add the media format
-  if (defaultSessionID == 0) {
+  if (mediaType == OpalUnknownMediaType) {
     PTRACE(3, "H323PLUGIN\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec, FALSE);
