@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2007  2006/11/01 06:57:23  csoutheren
+ * Revision 1.2007.2.1  2007/03/18 19:35:06  hfriederich
+ * (Backport from HEAD)
+ * Add new code plugin types (backport from OpenH323)
+ *
+ * Revision 2.6  2006/11/01 06:57:23  csoutheren
  * Fixed usage of YUV frame header
  *
  * Revision 2.5  2006/10/17 13:04:36  shorne
@@ -146,9 +150,10 @@ extern "C" {
 
 #define PWLIB_PLUGIN_API_VERSION 0
 
-#define	PLUGIN_CODEC_VERSION		         1    // initial version
-#define	PLUGIN_CODEC_VERSION_WIDEBAND		 2    // added wideband
-#define	PLUGIN_CODEC_VERSION_VIDEO		     3    // added video
+#define	PLUGIN_CODEC_VERSION                 1    // initial version
+#define	PLUGIN_CODEC_VERSION_WIDEBAND	     2    // added wideband
+#define	PLUGIN_CODEC_VERSION_VIDEO	         3    // added video
+#define PLUGIN_CODEC_VERSION_FAX             4
 
 #define PLUGIN_CODEC_API_VER_FN       PWLibPlugin_GetAPIVersion
 #define PLUGIN_CODEC_API_VER_FN_STR   "PWLibPlugin_GetAPIVersion"
@@ -205,6 +210,8 @@ enum PluginCodec_Flags {
   PluginCodec_MediaTypeAudio         = 0x0000,
   PluginCodec_MediaTypeVideo         = 0x0001,
   PluginCodec_MediaTypeAudioStreamed = 0x0002,
+  PluginCodec_MediaTypeFax           = 0x0003,
+  PluginCodec_MediaTypeExtVideo      = 0x0004,
 
   PluginCodec_InputTypeMask          = 0x0010,
   PluginCodec_InputTypeRaw           = 0x0000,
@@ -458,6 +465,9 @@ enum {
   PluginCodec_H323VideoCodec_h262,                // not yet implemented
   PluginCodec_H323VideoCodec_h263,                // implemented
   PluginCodec_H323VideoCodec_is11172,             // not yet implemented
+    
+  PluginCodec_H323VideoCodec_Extended,            // implemented (for use with H.239)
+  PluginCodec_H323T38Codec,                       // not yet implemented
 
   // special codes
   PluginCodec_H323Codec_NoH323 = 0xff,            // used for SIP-only codecs
