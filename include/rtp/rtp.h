@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.2  2007/03/10 10:05:58  hfriederich
+ * Revision 1.2032.2.3  2007/03/18 19:20:44  hfriederich
+ * (Backport from HEAD)
+ * Added virtual to functions
+ *
+ * Revision 2.31.2.2  2007/03/10 10:05:58  hfriederich
  * (Backport from HEAD)
  * SRTP/ZRTP improvements
  *
@@ -1267,9 +1271,9 @@ class RTP_UDP : public RTP_Session
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
   protected:
-    SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
-    SendReceiveStatus ReadControlPDU();
-    SendReceiveStatus ReadDataOrControlPDU(
+    virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual SendReceiveStatus ReadControlPDU();
+    virtual SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
       PBYTEArray & frame,
       BOOL fromDataChannel
