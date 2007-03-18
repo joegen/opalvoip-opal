@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.2  2007/03/10 08:34:01  hfriederich
+ * Revision 1.2069.2.3  2007/03/18 19:17:22  hfriederich
+ * (Backport from HEAD)
+ * Improved locking
+ * Take the remote port into account when unregistering
+ * Keept the transport open for a longer time when doing text conversations.
+ *
+ * Revision 2.68.2.2  2007/03/10 08:34:01  hfriederich
  * (Backport from HEAD)
  * Connection-specific jitter buffer values
  *   Thanks to Borko Jandras
@@ -1037,31 +1043,31 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Find the SIPInfo object with the specified callID
 	     */
-	    SIPInfo *FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
+	    PSafePtr<SIPInfo> FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		      if (callID == info->GetRegistrationID())
-		        return info;
+            if (callID == info->GetRegistrationID())
+              return info;
 	      return NULL;
 	    }
 
 	    /**
 	     * Find the SIPInfo object with the specified authRealm
 	     */
-            SIPInfo *FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
-            {
-              PIPSocket::Address realmAddress;
+        PSafePtr<SIPInfo> FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
+        {
+          PIPSocket::Address realmAddress;
 
-              for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-                if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
+          for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
+            if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
+              return info;
+            for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
+              if (PIPSocket::GetHostAddress(info->GetAuthentication().GetAuthRealm(), realmAddress))
+                if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
                   return info;
-              for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-                if (PIPSocket::GetHostAddress(info->GetAuthentication().GetAuthRealm(), realmAddress))
-                  if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
-                    return info;
-              }
-              return NULL;
             }
+          return NULL;
+        }
 
 	    /**
 	     * Find the SIPInfo object with the specified URL. The url is
@@ -1070,13 +1076,13 @@ class SIPEndPoint : public OpalEndPoint
 	     * or 6001@seconix.com when registering 6001@seconix.com to
 	     * sip.seconix.com
 	     */
-	    SIPInfo *FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
+	    PSafePtr<SIPInfo> FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
-		        return info;
-	      }
-	      return NULL;
+            if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
+              return info;
+          }
+          return NULL;
 	    }
 
 	    /**
@@ -1084,15 +1090,15 @@ class SIPEndPoint : public OpalEndPoint
 	     * For example, in the above case, the name parameter
 	     * could be "sip.seconix.com" or "seconix.com".
 	     */
-	    SIPInfo *FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
-	    {
-	      OpalTransportAddress addr = name;
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-                if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
-                  return info;
-	      }
-	      return NULL;
-	    }
+	    PSafePtr<SIPInfo> FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+        {
+          OpalTransportAddress addr = name;
+          for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
+            if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
+              return info;
+          }
+          return NULL;
+        }
     };
 
     RegistrationList & GetActiveSIPInfo() 
