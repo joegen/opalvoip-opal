@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2205  2007/03/15 21:23:13  dsandras
+ * Revision 1.2206  2007/03/19 01:10:45  rjongbloed
+ * Fixed compiler warning
+ *
+ * Revision 2.204  2007/03/15 21:23:13  dsandras
  * Make sure lastTransportAddress is correctly initialized even when
  * uncompliant SIP PDUs are received.
  *
@@ -1664,7 +1667,7 @@ static void SetNXEPayloadCode(SDPMediaDescription * localMedia,
                               OpalRFC2833Proto    * handler,
                             const OpalMediaFormat &  mediaFormat,
                                        const char * defaultNXEString, 
-                                       const char * label)
+                                       const char * PTRACE_PARAM(label))
 {
   RTP_DataFrame::PayloadTypes defaultPT = mediaFormat.GetPayloadType();
   PString encodingName                  = mediaFormat.GetEncodingName();
