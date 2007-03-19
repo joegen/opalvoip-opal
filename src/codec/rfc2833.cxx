@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2004  2006/11/02 21:17:29  hfriederich
+ * Revision 1.2004.2.1  2007/03/19 23:54:17  hfriederich
+ * (Backport from HEAD)
+ * Add support for Cisco NSE
+ *
+ * Revision 2.3  2006/11/02 21:17:29  hfriederich
  * Set marker bit at the beginning of an event
  *
  * Revision 2.2  2002/02/19 07:35:08  robertj
@@ -44,7 +48,11 @@
 
 
 static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
+char * OpalDefaultNTEString = "0-15,32-49";
 
+#if OPAL_T38FAX
+char * OpalDefaultNSEString = "192,193";
+#endif
 
 #define new PNEW
 
