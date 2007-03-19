@@ -7,9 +7,9 @@
  */
 
 
-#include "gsm.h"
-#include "config.h"
-#include "proto.h"
+#include "../inc/gsm.h"
+#include "../inc/config.h"
+#include "../inc/proto.h"
 
 #ifdef	HAS_STDLIB_H
 #	include	<stdlib.h>

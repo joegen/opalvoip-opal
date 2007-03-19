@@ -10,10 +10,10 @@
 #include	<stdio.h>
 #include	<assert.h>
 
-#include "private.h"
+#include "../inc/private.h"
 
-#include	"gsm.h"
-#include 	"proto.h"
+#include	"../inc/gsm.h"
+#include 	"../inc/proto.h"
 
 /*	4.2.0 .. 4.2.3	PREPROCESSING SECTION
  *  

@@ -7,9 +7,9 @@
  */
 
 
-#include "private.h"
-#include "gsm.h"
-#include "proto.h"
+#include "../inc/private.h"
+#include "../inc/gsm.h"
+#include "../inc/proto.h"
 
 void gsm_encode P3((s, source, c), gsm s, gsm_signal * source, gsm_byte * c)
 {

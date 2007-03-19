@@ -9,9 +9,9 @@
 
 #include <stdio.h>
 
-#include	"private.h"
-#include	"gsm.h"
-#include	"proto.h"
+#include	"../inc/private.h"
+#include	"../inc/gsm.h"
+#include	"../inc/proto.h"
 
 /*
  *  4.3 FIXED POINT IMPLEMENTATION OF THE RPE-LTP DECODER
