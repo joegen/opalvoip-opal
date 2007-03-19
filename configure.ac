@@ -3,6 +3,16 @@ AC_INIT(include/opal/manager.h)
 AC_PROG_CC
 AC_PROG_CXX
 
+h323=yes
+t38=yes
+h224=yes
+h450=yes
+h460=yes
+sip=yes
+iax=yes
+audio=yes
+video=yes
+
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
 REQUIRED_PWLIB_MAJOR=1
@@ -77,6 +87,11 @@ if test "${HAS_PTLIB:-unset}" = "unset" ; then
         AC_CHECK_FILE(/usr/include/ptlib.h, HAS_PTLIB=1)
         if test "${HAS_PTLIB:-unset}" != "unset" ; then
           AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/share/pwlib/make/)
+        else
+          AC_CHECK_FILE(${prefix}/include/ptlib.h, HAS_PTLIB=1)
+          if test "${HAS_PTLIB:-unset}" != "unset" ; then
+            AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${prefix}/bin)
+          fi
         fi
       fi
     fi
@@ -99,6 +114,9 @@ if test "x$PWLIBDIR" = "x/usr" -o "x$PWLIBDIR" = "x/usr/"; then
 fi
 if test "x$PWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/local/share/pwlib/"
+fi
+if test "x$PWLIBDIR" = "x${prefix}"; then
+  PWLIBDIR="${prefix}/share/pwlib/"
 fi
 AC_SUBST(PWLIBDIR)
 
@@ -311,7 +329,6 @@ dnl enable audio, video, SIP, H.323 and IAX
 dnl MSWIN_DISPLAY audio,Audio
 dnl MSWIN_DEFINE  audio,OPAL_AUDIO
 
-audio=yes
 AC_ARG_ENABLE(audio,
        [  --disable-audio         disable audio codec support],
        audio=$enableval)
@@ -328,7 +345,7 @@ fi
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
 
-video=yes
+
 AC_ARG_ENABLE(video,
        [  --disable-video         disable video codec support],
        video=$enableval)
@@ -345,7 +362,6 @@ fi
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
 
-sip=yes
 AC_ARG_ENABLE(sip,
        [  --disable-sip           disable SIP protocol support],
        sip=$enableval)
@@ -362,10 +378,6 @@ fi
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
 
-h323=yes
-t38=yes
-h224=yes
-h460=yes
 AC_ARG_ENABLE(h323,
        [  --disable-h323          disable H.323 protocol support],
        h323=$enableval)
@@ -377,17 +389,18 @@ if test "$h323" = "yes" ; then
 else
   AC_SUBST(OPAL_H323, 0)
   AC_MSG_RESULT(disabled (T.38, H.224, H.460 also disabled))
-  t38=no
   h224=no
   h460=no
 fi
 AC_SUBST(OPAL_H323, $OPAL_H323)
 
+dnl ########################################################################
+dnl
+dnl IAX
 
 dnl MSWIN_DISPLAY iax2,IAX2 support
 dnl MSWIN_DEFINE  iax2,OPAL_IAX2
 
-iax=yes
 AC_ARG_ENABLE(iax,
        [  --disable-iax           disable IAX2 protocol support],
        iax=$enableval)
@@ -399,6 +412,10 @@ if test "$iax" = "yes" ; then
 else
   AC_MSG_RESULT(disabled)
 fi
+
+dnl ########################################################################
+dnl
+dnl H.224
 
 dnl MSWIN_DISPLAY h224,H.224 support
 dnl MSWIN_DEFINE  h224,OPAL_H224
@@ -421,7 +438,6 @@ dnl T.38
 
 dnl MSWIN_DISPLAY    t38,T.38
 dnl MSWIN_DEFINE     t38,OPAL_T38FAX
-dnl MSWIN_IF_FEATURE t38,h323
 
 if test "$t38" = "yes" ; then
   AC_ARG_ENABLE(t38,
@@ -440,20 +456,45 @@ fi
 
 dnl ########################################################################
 dnl
+dnl H.450
+
+dnl MSWIN_DISPLAY    h450,H.450
+dnl MSWIN_DEFINE     h450,OPAL_H450
+dnl MSWIN_IF_FEATURE h450,h323
+
+OPAL_450=
+if test "$h450" = "yes" ; then
+  AC_ARG_ENABLE(h450,
+         [  --disable-h450          disable H.450],
+         h450=$enableval)
+  AC_MSG_CHECKING(H.450 support)
+  if test "$h450" = "yes" ; then
+    AC_SUBST(OPAL_H450, 1)
+    AC_DEFINE(OPAL_H450)
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
+
+
+dnl ########################################################################
+dnl
 dnl H.460
 
-dnl MSWIN_DISPLAY h460,H.460
-dnl MSWIN_DEFINE  h460,H323_H460
+dnl MSWIN_DISPLAY    h460,H.460
+dnl MSWIN_DEFINE     h460,OPAL_H460
+dnl MSWIN_IF_FEATURE h460,h323
 
-H323_460=
+OPAL_460=
 if test "$h460" = "yes" ; then
   AC_ARG_ENABLE(h460,
          [  --disable-h460          disable H.460],
          h460=$enableval)
   AC_MSG_CHECKING(H.460 support)
   if test "$h460" = "yes" ; then
-    AC_SUBST(H323_H460, 1)
-    AC_DEFINE(H323_H460)
+    AC_SUBST(OPAL_H460, 1)
+    AC_DEFINE(OPAL_H460)
     AC_MSG_RESULT(enabled)
   else
     AC_MSG_RESULT(disabled)
@@ -510,12 +551,45 @@ fi
 AC_SUBST(OPAL_IVR)
 
 
+
+
+dnl ########################################################################
+dnl
+dnl ZRTP from Phil Zimmermann
+dnl 
+
+dnl MSWIN_DISPLAY     libzrtp,ZRTP/SRTP support
+dnl MSWIN_CHECK_FILE  libzrtp,include\zrtp_types.h,HAS_LIBZRTP=1
+dnl MSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
+dnl MSWIN_CHECK_DIR   libsrtp,.\srtp_win32k
+dnl MSWIN_CHECK_DIR   libzrtp,.\zrtp
+dnl MSWIN_CHECK_DIR   libzrtp,..\external\zrtp
+dnl MSWIN_CHECK_DIR   libzrtp,c:\libs
+
+HAS_LIBZRTP=
+dnl AC_MSG_CHECKING(for libZRTP)
+dnl AC_TRY_COMPILE([#include "srtp/srtp.h"],
+dnl  [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
+dnl  HAS_LIBSRTP=1)
+dnl if test "${HAS_LIBSRTP}" = "1" ; then
+dnl   AC_MSG_RESULT(yes)
+dnl   AC_DEFINE(HAS_LIBSRTP, 1)
+dnl   HAS_LIBSRTP=1
+dnl   OPAL_SRTP=1
+dnl else
+dnl   AC_MSG_RESULT(no)
+dnl fi
+AC_SUBST(OPAL_ZRTP)
+AC_SUBST(HAS_LIBZRTP)
+
+
 dnl ########################################################################
 dnl
 dnl Cisco libSRTP
 dnl 
 
 dnl MSWIN_DISPLAY     libsrtp,Cisco libSRTP support
+dnl MSWIN_IF_FEATURE  libsrtp,!libzrtp
 dnl MSWIN_CHECK_FILE  libsrtp,include\srtp.h,HAS_LIBSRTP=1
 dnl MSWIN_DIR_SYMBOL  libsrtp,LIBSRTP_DIR
 dnl MSWIN_CHECK_DIR   libsrtp,.\srtp
@@ -537,8 +611,6 @@ else
 fi
 AC_SUBST(OPAL_SRTP)
 AC_SUBST(HAS_LIBSRTP)
-
-
 dnl ########################################################################
 dnl output make directives
 
