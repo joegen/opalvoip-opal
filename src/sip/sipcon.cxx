@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2206  2007/03/19 01:10:45  rjongbloed
+ * Revision 1.2207  2007/03/19 03:56:36  csoutheren
+ * Fix problem with outgoing SDP on retry
+ *
+ * Revision 2.205  2007/03/19 01:10:45  rjongbloed
  * Fixed compiler warning
  *
  * Revision 2.204  2007/03/15 21:23:13  dsandras
@@ -1745,8 +1748,10 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 
       // add the RTP session to the RTP session manager in INVITE
       rtpSessions.AddSession(rtpSession);
-      localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
     }
+
+    if (rtpSession != NULL)
+      localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
   } 
 
   if (sdp == NULL)
