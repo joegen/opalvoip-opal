@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2006  2005/11/30 13:35:26  csoutheren
+ * Revision 1.2006.10.1  2007/03/19 23:54:16  hfriederich
+ * (Backport from HEAD)
+ * Add support for Cisco NSE
+ *
+ * Revision 2.5  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.4  2002/09/16 02:52:33  robertj
@@ -51,6 +55,11 @@
 
 #include <rtp/rtp.h>
 
+extern char * OpalDefaultNTEString;
+
+#if OPAL_T38FAX
+extern char * OpalDefaultNSEString;
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
