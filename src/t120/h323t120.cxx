@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2013  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2013.4.1  2007/03/19 23:39:16  hfriederich
+ * (Backport from HEAD)
+ * Add ability to remove T.120
+ *
+ * Revision 2.12  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -110,6 +114,10 @@
 #ifdef __GNUC__
 #pragma implementation "h323t120.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_T120DATA
 
 #include <t120/h323t120.h>
 #include <h323/h323ep.h>
@@ -387,5 +395,6 @@ BOOL H323_T120Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & /*ack
   return TRUE;
 }
 
-    
+#endif // OPAL_T120DATA
+
 /////////////////////////////////////////////////////////////////////////////
