@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2149  2007/03/17 15:00:24  dsandras
+ * Revision 1.2150  2007/03/19 22:47:56  hfriederich
+ * Allow to share OpalTransport instances between endpoint and connections
+ *   if connecting to same remote address
+ *
+ * Revision 2.148  2007/03/17 15:00:24  dsandras
  * Keep the transport open for a longer time when doing text conversations.
  *
  * Revision 2.147  2007/03/13 21:22:49  dsandras
@@ -581,7 +585,7 @@ SIPInfo::~SIPInfo()
   PWaitAndSignal m(transportMutex);
 
   if (registrarTransport) { 
-    delete registrarTransport;
+    ep.ReleaseTransport(registrarTransport);
     registrarTransport = NULL;
   }
 
@@ -796,7 +800,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  while (activeSIPInfo.GetSize()>0) {
+  while (activeSIPInfo.GetSize() > 0) {
 
     for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
 
@@ -817,10 +821,13 @@ SIPEndPoint::~SIPEndPoint()
     }
 
     activeSIPInfo.DeleteObjectsToBeRemoved();
-    PThread::Current()->Sleep(10);
+    PThread::Current()->Sleep(10); // Let RegistrationRefresh() do the cleanup.
   }
 
   listeners.RemoveAll();
+    
+  // Stop calling RegistrationRefresh() before compiler destroys member objects
+  registrationTimer.Stop();
 
   PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
@@ -909,16 +916,35 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
 
 
-OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address, 
-                                             BOOL isLocalAddress)
+OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remoteAddress, 
+                                             const OpalTransport * originalTransport)
 {
+  PWaitAndSignal m(transportsMutex);
+    
   OpalTransport * transport;
+    
+  if (reuseTransports == TRUE) {
+    PIPSocket::Address ip;
+    WORD port;
+    if (remoteAddress.GetIpAndPort(ip, port)) {
+      OpalTransportAddress addr(ip, port, "udp"); // At the moment only UDP supported
+      TransportRecord * transportRecord = transports.GetAt(addr);
+            
+      if (transportRecord != NULL) {
+        transport = transportRecord->GetTransport();
+        PTRACE(3, "Reusing transport " << *(transportRecord->GetTransport()));
+        transportRecord->IncrementReferenceCount();
+        return transport;
+      }
+    }
+  }
 	
-  if(isLocalAddress == TRUE) {
+  if(originalTransport != NULL) {
     // already determined which interface to use
-    transport = address.CreateTransport(*this);
+    const OpalTransportAddress & localAddress = originalTransport->GetLocalAddress();
+    transport = localAddress.CreateTransport(*this);
     if(transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport for " << address);
+      PTRACE(1, "SIP\tCould not create transport for " << localAddress);
       return NULL;
     }
   } else {
@@ -929,18 +955,18 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
 
     if (ip.IsAny()) {
       // endpoint is listening to anything - attempt call using all interfaces
-      transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
+      transport = remoteAddress.CreateTransport(*this, OpalTransportAddress::NoBinding);
       if (transport == NULL) {
-        PTRACE(1, "SIP\tCould not create transport from " << address);
+        PTRACE(1, "SIP\tCould not create transport from " << remoteAddress);
         return NULL;
       }
     }
     else {
       // endpoint has a specific listener - use only that interface
-      OpalTransportAddress LocalAddress(ip, port, "udp$");
-      transport = LocalAddress.CreateTransport(*this) ;
+      OpalTransportAddress localAddress(ip, port, "udp$");
+      transport = localAddress.CreateTransport(*this) ;
       if (transport == NULL) {
-        PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
+        PTRACE(1, "SIP\tCould not create transport for " << localAddress);
         return NULL;
       }
     }
@@ -949,8 +975,8 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
-  if (!transport->ConnectTo(address)) {
-    PTRACE(1, "SIP\tCould not connect to " << address << " - " << transport->GetErrorText());
+  if (!transport->ConnectTo(remoteAddress)) {
+    PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     delete transport;
     return NULL;
   }
@@ -963,7 +989,41 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & addres
                                             PThread::NoAutoDeleteThread,
                                             PThread::NormalPriority,
                                             "SIP Transport:%x"));
+  
+  if (reuseTransports == TRUE) {
+    PIPSocket::Address ip;
+    WORD port;
+    if (remoteAddress.GetIpAndPort(ip, port)) {
+      OpalTransportAddress addr(ip, port, "udp");
+      TransportRecord * transportRecord = new TransportRecord(transport);
+      transportRecord->IncrementReferenceCount();
+      transports.SetAt(addr, transportRecord);
+    }
+  }
+  
   return transport;
+}
+
+
+void SIPEndPoint::ReleaseTransport(OpalTransport * transport)
+{
+  PWaitAndSignal m(transportsMutex);
+    
+  for (PINDEX i = 0; i < transports.GetSize(); i++) {
+    TransportRecord & transportRecord = transports.GetDataAt(i);
+        
+    if (transportRecord.GetTransport() == transport) {
+      transportRecord.DecrementReferenceCount();
+            
+      if (transportRecord.GetReferenceCount() == 0) {
+        transports.RemoveAt(transports.GetKeyAt(i));
+      }
+      return;
+    }
+  }
+    
+  // Transport not found in dictionary, thus delete the transport.
+  delete transport;
 }
 
 
@@ -2093,4 +2153,18 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
                                   const RTP_Session & /*session*/) const
 {
 }
+
+
+SIPEndPoint::TransportRecord::TransportRecord(OpalTransport * _transport)
+{
+    transport = _transport;
+    referenceCount = 0;
+}
+
+
+SIPEndPoint::TransportRecord::~TransportRecord()
+{
+    delete transport;
+}
+
 // End of file ////////////////////////////////////////////////////////////////

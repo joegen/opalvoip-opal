@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2072  2007/03/10 17:56:58  dsandras
+ * Revision 1.2073  2007/03/19 22:47:56  hfriederich
+ * Allow to share OpalTransport instances between endpoint and connections
+ *   if connecting to same remote address
+ *
+ * Revision 2.71  2007/03/10 17:56:58  dsandras
  * Improved locking.
  *
  * Revision 2.70  2007/03/01 05:51:04  rjongbloed
@@ -651,19 +655,23 @@ class SIPEndPoint : public OpalEndPoint
   //@{
 
     /**Creates an OpalTransport instance, based on the
-       information provided in address.
-       if isLocalAddress is TRUE, address is interpreted
-       as the local interface to use for outgoing traffic,
-       thus ensuring that the same interface is used
-       for responses as the one where the originating pdu
-       arrived.
-       Else, address is interpreted as the remote address,
-       to which the transport should connect
+       information provided in remoteAddress / originalTransport.
+       If GetReuseTransports() is TRUE, the endpoint will only
+       create one transport per remote address.
+       This is useful for UACs that should use the same local port
+       for initiating sessions as they have registered with.
+       If originalTransport is non-NULL, it is ensured that the same
+       network interface is used for responses as the one on which the
+       originating PDU arrived.
       */
     OpalTransport * CreateTransport(
-      const OpalTransportAddress & address,
-      BOOL isLocalAddress = FALSE
+      const OpalTransportAddress & remoteAddress,
+      const OpalTransport * originalTransport = NULL
     );
+    
+    /**Releases the transport created by CreateTransport()
+      */
+    virtual void ReleaseTransport(OpalTransport * transport);
 
     virtual void HandlePDU(
       OpalTransport & transport
@@ -914,6 +922,9 @@ class SIPEndPoint : public OpalEndPoint
       const PTimeInterval & t
     ) { natBindingTimeout = t; natBindingTimer.RunContinuous (natBindingTimeout); }
     const PTimeInterval & GetNATBindingTimeout() const { return natBindingTimeout; }
+    
+    void SetReuseTransports(BOOL _reuseTransports) { reuseTransports = _reuseTransports; }
+    BOOL GetReuseTransports() const { return reuseTransports; }
 
     void AddTransaction(
       SIPTransaction * transaction
@@ -1143,6 +1154,28 @@ class SIPEndPoint : public OpalEndPoint
     void ParsePartyName(
       const PString & remoteParty,     ///<  Party name string.
       PString & party);                ///<  Parsed party name, after e164 lookup
+    
+    class TransportRecord : public PObject {
+        PCLASSINFO(TransportRecord, PObject);
+        
+      public:
+        
+        TransportRecord(OpalTransport * transport);
+        ~TransportRecord();
+        
+        OpalTransport * GetTransport() const { return transport; }
+        unsigned GetReferenceCount() const { return referenceCount; }
+        
+        void IncrementReferenceCount() { referenceCount++; }
+        void DecrementReferenceCount() { referenceCount--; }
+        
+      protected:
+            
+        OpalTransport * transport;
+        unsigned referenceCount;
+    };
+    
+    PDICTIONARY(TransportDict, OpalTransportAddress, TransportRecord);
 
     SIPURL            proxy;
     PString           userAgentString;
@@ -1172,6 +1205,10 @@ class SIPEndPoint : public OpalEndPoint
     PMutex             connectionsActiveInUse;
 
     unsigned           lastSentCSeq;
+    
+    BOOL reuseTransports;
+    PMutex transportsMutex;
+    TransportDict transports;
 };
 
 #endif // __OPAL_SIPEP_H
