@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2207  2007/03/19 03:56:36  csoutheren
+ * Revision 1.2208  2007/03/19 22:47:56  hfriederich
+ * Allow to share OpalTransport instances between endpoint and connections
+ *   if connecting to same remote address
+ *
+ * Revision 2.206  2007/03/19 03:56:36  csoutheren
  * Fix problem with outgoing SDP on retry
  *
  * Revision 2.205  2007/03/19 01:10:45  rjongbloed
@@ -884,7 +888,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else 
-    transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
+    transport = endpoint.CreateTransport(inviteTransport->GetRemoteAddress(), inviteTransport);
   
   if (transport)
     lastTransportAddress = transport->GetRemoteAddress();
@@ -911,7 +915,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 SIPConnection::~SIPConnection()
 {
   delete originalInvite;
-  delete transport;
+  endpoint.ReleaseTransport(transport);
   delete referTransaction;
 
   if (pduHandler) delete pduHandler;
