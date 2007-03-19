@@ -123,7 +123,7 @@
 				ProgramDataBaseFileName="$(TargetDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="1"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
