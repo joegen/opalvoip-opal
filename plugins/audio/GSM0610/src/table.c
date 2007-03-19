@@ -17,8 +17,8 @@
  */
 
 #define	GSM_TABLE_C
-#include "private.h"
-#include	"gsm.h"
+#include "../inc/private.h"
+#include	"../inc/gsm.h"
 
 /*  Table 4.1  Quantization of the Log.-Area Ratios
  */

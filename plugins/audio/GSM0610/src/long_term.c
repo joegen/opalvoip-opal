@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "private.h"
+#include "../inc/private.h"
 
-#include "gsm.h"
-#include "proto.h"
+#include "../inc/gsm.h"
+#include "../inc/proto.h"
 
 /*
  *  4.2.11 .. 4.2.12 LONG TERM PREDICTOR (LTP) SECTION

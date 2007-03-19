@@ -7,10 +7,10 @@
  */
 
 
-#include "private.h"
+#include "../inc/private.h"
 
-#include "gsm.h"
-#include "proto.h"
+#include "../inc/gsm.h"
+#include "../inc/proto.h"
 
 int gsm_decode P3((s, c, target), gsm s, gsm_byte * c, gsm_signal * target)
 {

@@ -10,10 +10,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "private.h"
+#include "../inc/private.h"
 
-#include "gsm.h"
-#include "proto.h"
+#include "../inc/gsm.h"
+#include "../inc/proto.h"
 
 /*  4.2.13 .. 4.2.17  RPE ENCODING SECTION
  */
