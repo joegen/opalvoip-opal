@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2047.2.2  2007/03/10 11:19:01  hfriederich
+ * Revision 1.2047.2.3  2007/03/20 00:46:01  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol
+ *   options such as H.450 and H.460
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.46.2.2  2007/03/10 11:19:01  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection()
  * Use correct dynamic payload type for H.323 calls
@@ -517,7 +523,7 @@ class H323EndPoint : public OpalEndPoint
       const PString & party,    ///<  Remote party to call
       void * userData,          ///<  Arbitrary data to pass to connection
       unsigned int options,     ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Get the data formats this endpoint is capable of operating.
@@ -1346,6 +1352,7 @@ class H323EndPoint : public OpalEndPoint
       BOOL mode ///<  New default mode
     ) { canEnforceDurationLimit = mode; } 
 
+#if OPAL_H450
     /**Get Call Intrusion Protection Level of the end point.
       */
     unsigned GetCallIntrusionProtectionLevel() const { return callIntrusionProtectionLevel; }
@@ -1355,6 +1362,7 @@ class H323EndPoint : public OpalEndPoint
     void SetCallIntrusionProtectionLevel(
       unsigned level  ///<  New level from 0 to 3
     ) { PAssert(level<=3, PInvalidParameter); callIntrusionProtectionLevel = level; }
+#endif
 
     /**Called from H.450 OnReceivedInitiateReturnError
       */
@@ -1677,7 +1685,9 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the next available invoke Id for H450 operations
       */
+#if OPAL_H450
     unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
+#endif
 
   //@}
 
@@ -1713,7 +1723,9 @@ class H323EndPoint : public OpalEndPoint
     BOOL        m_bH245Disabled; /* enabled or disabled h245 */
     BOOL        canDisplayAmountString;
     BOOL        canEnforceDurationLimit;
+#if OPAL_H450
     unsigned    callIntrusionProtectionLevel;
+#endif
 
     BYTE          t35CountryCode;
     BYTE          t35Extension;
@@ -1770,10 +1782,12 @@ class H323EndPoint : public OpalEndPoint
     PString              gatekeeperPassword;
     H323CallIdentityDict secondaryConnectionsActive;
 
+#if OPAL_H450
     mutable PAtomicInteger nextH450CallIdentity;
             /// Next available callIdentity for H450 Transfer operations via consultation.
+#endif
 	
-#ifdef H323_H460
+#if OPAL_H460
     H460_FeatureSet features;
 #endif
 
