@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.24.2.3  2007/03/20 08:38:07  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ * such as H.450 and H.460
+ *
  * Revision 1.24.2.2  2007/03/11 18:05:09  hfriederich
  * Fix typo in previous commit
  *
@@ -144,8 +149,17 @@
 #undef  OPAL_LID
 #undef  OPAL_IVR
 #undef  OPAL_H224
+#undef  OPAL_T120DATA
+#undef  OPAL_H450
+#undef  OPAL_H460
 
-#undef  H323_H460
+#ifdef OPAL_H450
+#define H323_H450 OPAL_H450
+#endif
+
+#ifdef OPAL_H460
+#define H323_H460 OPAL_H460
+#endif
 
 /////////////////////////////////////////////////
 //
@@ -162,10 +176,6 @@
 
 #ifndef OPAL_VIDEO
 #define NO_OPAL_VIDEO
-#endif
-
-#ifndef OPAL_T38FAX
-#define NO_OPAL_T38FAX
 #endif
 
 
