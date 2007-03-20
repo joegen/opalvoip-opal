@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2008  2005/02/21 12:20:07  rjongbloed
+ * Revision 1.2008.10.1  2007/03/20 00:14:30  hfriederich
+ * Move to MediaType architecture
+ *
+ * Revision 2.7  2005/02/21 12:20:07  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.6  2002/11/10 11:33:20  robertj
@@ -93,10 +96,11 @@ class T120ConnectPDU : public MCS_ConnectMCSPDU {
     T120_X224 x224;
 };
 
+const OpalMediaType T120MediaType("T120Media", OpalMediaType::Application);
 
 const OpalMediaFormat OpalT120(
   OPAL_T120,
-  OpalMediaFormat::DefaultDataSessionID,
+  T120MediaType,
   RTP_DataFrame::IllegalPayloadType,
   "t120",
   FALSE,   // No jitter for data
