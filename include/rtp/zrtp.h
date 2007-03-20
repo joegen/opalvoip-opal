@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: zrtp.h,v $
- * Revision 1.2002  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2002.2.1  2007/03/20 09:34:41  hfriederich
+ * Add ZRTP files
+ *
+ * Revision 2.1  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  * Revision 2.1  2007/02/10 07:08:41  craigs

@@ -22,8 +22,8 @@
  * The Initial Developer of the Original Code is Post Increment
  *
  * $Log: zrtp.cxx,v $
- * Revision 1.2005  2007/03/12 23:03:34  csoutheren
- * Disable warnings on Windows
+ * Revision 1.2005.2.1  2007/03/20 09:34:41  hfriederich
+ * Add ZRTP files
  *
  * Revision 2.3  2007/02/23 08:06:20  csoutheren
  * More implementation of ZRTP (not yet complete)
@@ -51,11 +51,6 @@
 #if defined(OPAL_ZRTP)
 
 #include <rtp/zrtp.h>
-
-#ifdef _WIN32
-#pragma warning(disable:4244)
-#pragma warning(disable:4505)
-#endif
 
 extern "C" {
 #include <ZRTP/zrtp.h>
