@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.3.6.2  2007/03/20 00:02:13  hfriederich
+ * (Backport from HEAD)
+ * Add ability to remove H.224
+ *
  * Revision 1.3.6.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
@@ -48,6 +52,10 @@
 #pragma implementation "h281.h"
 #pragma implementation "h281handler.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
@@ -792,3 +800,6 @@ void OpalH281Handler::StopActionLocally(PTimer &, INT)
 	
   OnStopAction();
 }
+
+#endif // OPAL_H224
+
