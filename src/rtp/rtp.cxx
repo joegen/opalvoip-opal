@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2054  2007/03/12 23:05:14  csoutheren
+ * Revision 1.2055  2007/03/20 02:32:09  csoutheren
+ * Don't send BYE twice or when channel is closed
+ *
+ * Revision 2.53  2007/03/12 23:05:14  csoutheren
  * Fix typo and increase readability
  *
  * Revision 2.52  2007/03/08 04:36:25  csoutheren
@@ -948,6 +951,7 @@ RTP_Session::RTP_Session(
   lastReceivedPayloadType = RTP_DataFrame::MaxPayloadType;
 
   closeOnBye = FALSE;
+  byeSent    = FALSE;
 }
 
 RTP_Session::~RTP_Session()
@@ -977,6 +981,11 @@ RTP_Session::~RTP_Session()
 
 void RTP_Session::SendBYE()
 {
+  if (byeSent)
+    return;
+
+  byeSent = TRUE;
+
   RTP_ControlFrame report;
 
   // if any packets sent, put in a non-zero report 
@@ -1921,6 +1930,8 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
   dataSocket = NULL;
   controlSocket = NULL;
 
+  byeSent = FALSE;
+
   PQoS * dataQos = NULL;
   PQoS * ctrlQos = NULL;
   if (rtpQos != NULL) {
@@ -2005,7 +2016,7 @@ void RTP_UDP::Reopen(BOOL reading)
 
 void RTP_UDP::Close(BOOL reading)
 {
-  if (shutdownRead || shutdownWrite)
+  if (!shutdownRead && !shutdownWrite)
     SendBYE();
 
   if (reading) {
