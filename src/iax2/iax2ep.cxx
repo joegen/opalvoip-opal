@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.26.2.2  2007/03/20 08:19:18  hfriederich
+ * Fix typo in previous commit
+ *
  * Revision 1.26.2.1  2007/03/20 08:17:05  hfriederich
  * (Backport from HEAD)
  * Fix MakeConnection overrides
@@ -452,7 +455,7 @@ BOOL IAX2EndPoint::MakeConnection(
 				 const PString & rParty, 
 				 void * userData,
 				 unsigned int /*options*/,
-  OpalConnection::StringOoptions * /*stringOptions*/)
+  OpalConnection::StringOptions * /*stringOptions*/)
 {
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
