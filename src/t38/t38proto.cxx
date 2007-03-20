@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2010  2007/01/18 12:49:22  csoutheren
+ * Revision 1.2010.2.1  2007/03/20 00:18:43  hfriederich
+ * Move to MediaType architecture
+ *
+ * Revision 2.9  2007/01/18 12:49:22  csoutheren
  * Add ability to disable T.38 in compile
  *
  * Revision 2.8  2005/02/21 12:20:08  rjongbloed
@@ -132,10 +135,11 @@
 
 #define new PNEW
 
+const OpalMediaType T38MediaType("T38Media", OpalMediaType::Application);
 
 const OpalMediaFormat OpalT38(
   OPAL_T38,
-  OpalMediaFormat::DefaultDataSessionID,
+  T38MediaType,
   RTP_DataFrame::IllegalPayloadType,
   "t38",
   FALSE, // No jitter for data
