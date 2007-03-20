@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.10.2.1  2007/03/20 08:17:05  hfriederich
+ *  (Backport from HEAD)
+ *  Fix MakeConnection overrides
+ *
  *  Revision 1.10  2007/01/24 04:00:55  csoutheren
  *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  *  Added some pure viritual functions to prevent old code from breaking silently
@@ -197,7 +201,8 @@ class IAX2EndPoint : public OpalEndPoint
 			      OpalCall & call,          /// Owner of connection
 			      const PString & party,    /// Remote party to call
 			      void * userData = NULL,   /// Arbitrary data to pass to connection
-            unsigned int options = 0  ///<  options to pass to conneciton
+            unsigned int options = 0,  ///<  options to pass to connection
+            OpalConnection::StringOptions * stringOptions = NULL
 			      );
   
   /**Create a connection for the IAX endpoint.
