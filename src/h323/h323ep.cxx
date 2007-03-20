@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062.2.2  2007/03/10 11:19:02  hfriederich
+ * Revision 1.2062.2.3  2007/03/20 07:52:19  hfriederich
+ * (Backport from HEAD)
+ * Add ability to remove H.450
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.61.2.2  2007/03/10 11:19:02  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection()
  * Use correct dynamic payload type for H.323 calls
@@ -184,8 +189,10 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
     callIntrusionT3(0,30),                  // Seconds
     callIntrusionT4(0,30),                  // Seconds
     callIntrusionT5(0,10),                  // Seconds
-    callIntrusionT6(0,10),                  // Seconds
-    nextH450CallIdentity(0)
+    callIntrusionT6(0,10)                   // Seconds
+#if OPAL_H450
+    ,nextH450CallIdentity(0)
+#endif
 {
   // Set port in OpalEndPoint class
   defaultSignalPort = _defaultSignalPort;
@@ -201,7 +208,9 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
   disableH245inSetup = FALSE;
   canDisplayAmountString = FALSE;
   canEnforceDurationLimit = TRUE;
+#if OPAL_H450
   callIntrusionProtectionLevel = 3; //H45011_CIProtectionLevel::e_fullProtection;
+#endif
 
   terminalType = e_TerminalOnly;
   clearCallOnRoundTripFail = FALSE;
@@ -698,8 +707,13 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
 
 BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
                                     const PString & existingToken,
+#if OPAL_H450
                                     const PString & callIdentity,
                                            unsigned capabilityLevel,
+#else
+                                    const PString & ,
+                                         unsigned ,
+#endif
                                     const PString & remoteParty,
                                              void * userData,
                                        unsigned int options,
@@ -747,6 +761,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
 
   connection->AttachSignalChannel(newToken, transport, FALSE);
 
+#if OPAL_H450
   if (!callIdentity) {
     if (capabilityLevel == UINT_MAX)
       connection->HandleTransferCall(existingToken, callIdentity);
@@ -755,6 +770,7 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
       connection->IntrudeCall(capabilityLevel);
     }
   }
+#endif
 
   PTRACE(3, "H323\tCreated new connection: " << newToken);
 
@@ -765,6 +781,8 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
   return TRUE;
 }
 
+
+#if OPAL_H450
 
 void H323EndPoint::TransferCall(const PString & token, 
                                 const PString & remoteParty,
@@ -804,6 +822,8 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                           remoteParty,
                           userData);
 }
+
+#endif
 
 BOOL H323EndPoint::OnSendConnect(H323Connection & /*connection*/,
                                  H323SignalPDU & /*connectPDU*/
@@ -1366,12 +1386,12 @@ void H323EndPoint::TranslateTCPAddress(PIPSocket::Address & localAddr,
   manager.TranslateIPAddress(localAddr, remoteAddr);
 }
 
-BOOL H323EndPoint::OnSendFeatureSet(unsigned, H225_FeatureSet & features)
+BOOL H323EndPoint::OnSendFeatureSet(unsigned, H225_FeatureSet & /*features*/)
 {
 	return FALSE;
 }
 
-void H323EndPoint::OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features)
+void H323EndPoint::OnReceiveFeatureSet(unsigned, const H225_FeatureSet & /*features*/)
 {
 }
 
