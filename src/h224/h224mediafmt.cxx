@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224mediafmt.cxx,v $
+ * Revision 1.1.2.2  2007/03/20 00:02:13  hfriederich
+ * (Backport from HEAD)
+ * Add ability to remove H.224
+ *
  * Revision 1.1.2.1  2007/02/15 15:25:36  hfriederich
  * Add media format and media type for H.224
  *
@@ -26,11 +30,16 @@
  */
 
 #include <ptlib.h>
-#include <h224/h224mediafmt.h>
 
 #ifdef __GNUC__
 #pragma implementation "h224mediafmt.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
+
+#include <h224/h224mediafmt.h>
 
 const OpalMediaFormat & GetOpalH224()
 {
@@ -52,3 +61,4 @@ const OpalMediaFormat & GetOpalH224()
   return H224;
 }
 
+#endif // OPAL_H224
