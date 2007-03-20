@@ -27,6 +27,9 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.8.2.1  2007/03/20 08:12:45  hfriederich
+ * Move to MediaType architecture
+ *
  * Revision 1.8  2007/01/11 03:02:16  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -89,11 +92,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalIAX2MediaStream::OpalIAX2MediaStream(const OpalMediaFormat & mediaFormat,
-				       unsigned sessionID,   
+OpalIAX2MediaStream::OpalIAX2MediaStream(const OpalMediaFormat & mediaFormat,   
 				       BOOL isSource,        
 				       IAX2Connection &con)
-  : OpalMediaStream(mediaFormat, sessionID, isSource),
+  : OpalMediaStream(mediaFormat, isSource),
     connection(con)
 {
     PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);

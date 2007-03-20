@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.15.2.1  2007/03/20 08:12:45  hfriederich
+ *  Move to MediaType architecture
+ *
  *  Revision 1.15  2007/01/24 04:00:55  csoutheren
  *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  *  Added some pure viritual functions to prevent old code from breaking silently
@@ -240,17 +243,12 @@ class IAX2Connection : public OpalConnection
   /**Open a new media stream.  This will create a media stream of 
      subclass OpalIAXMediaStream.
      
-     The sessionID parameter is (in this case) not needed by a
-     particular media stream and is ignored.
-     
-     
      Note that media streams may be created internally to the
      underlying protocol. This function is not the only way a stream
      can come into existance.
   */
   OpalMediaStream * CreateMediaStream(
 				      const OpalMediaFormat & mediaFormat, /// Media format for stream
-				      unsigned sessionID,                  /// Session number for stream
 				      BOOL isSource                        /// Is a source stream
 				      );
 
