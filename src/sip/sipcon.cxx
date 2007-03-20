@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.3  2007/03/10 08:34:02  hfriederich
+ * Revision 1.2198.2.4  2007/03/20 12:56:23  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.197.2.3  2007/03/10 08:34:02  hfriederich
  * (Backport from HEAD)
  * Connection-specific jitter buffer values
  *   Thanks to Borko Jandras
@@ -879,9 +882,10 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else 
-    transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
+    transport = endpoint.CreateTransport(inviteTransport->GetRemoteAddress(), inviteTransport);
   
-  lastTransportAddress = transportAddress.GetHostAddress();
+  if (transport)
+    lastTransportAddress = transport->GetRemoteAddress();
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -905,7 +909,9 @@ SIPConnection::SIPConnection(OpalCall & call,
 SIPConnection::~SIPConnection()
 {
   delete originalInvite;
-  delete transport;
+    
+  endpoint.ReleaseTransport(transport);
+  
   delete referTransaction;
 
   if (pduHandler) delete pduHandler;
@@ -1280,6 +1286,9 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     // find the payload type used for telephone-event, if present
     const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
     BOOL hasTelephoneEvent = FALSE;
+#if OPAL_T38FAX
+    BOOL hasNSE = FALSE;
+#endif
     PINDEX i;
     for (i = 0; !hasTelephoneEvent && (i < sdpMediaList.GetSize()); i++) {
       if (sdpMediaList[i].GetEncodingName() == OpalRFC2833.GetEncodingName()) {
@@ -1288,6 +1297,13 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
         rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(OpalRFC2833.GetPayloadType(), sdpMediaList[i].GetPayloadType()));
         remoteFormatList += OpalRFC2833;
       }
+#if OPAL_T38FAX
+      if (sdpMediaList[i].GetEncodingName() == "nse") {
+        ciscoNSEHandler->SetPayloadType(sdpMediaList[i].GetPayloadType());
+        hasNSE = TRUE;
+        remoteFormatList += OpalCiscoNSE;
+      }
+#endif
     }
 
     // Create the RTPSession if required
@@ -1315,6 +1331,14 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
         localMedia->AddCapabilityFormat(*capability, rtpPayloadMap);
       }
     }
+#if OPAL_T38FAX
+    if (hasNSE) {
+      SDPCapability * capability = capabilities.FindCapability(OpalCiscoNSE);
+      if (capability != NULL) {
+        localMedia->AddCapabilityFormat(*capability, rtpPayloadMap);
+      }
+    }
+#endif
 
   // set the remote address after the stream is opened
     PIPSocket::Address ip;
@@ -1397,7 +1421,13 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
 }
 
 
-SDPMediaDescription::Direction SIPConnection::GetDirection(const OpalMediaType & mediaType)
+SDPMediaDescription::Direction SIPConnection::GetDirection(
+#if OPAL_VIDEO
+  const OpalMediaType & mediaType
+#else
+  const OpalMediaType &
+#endif
+)
 {
   if (remote_hold)
     return SDPMediaDescription::RecvOnly;
@@ -1547,6 +1577,8 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 BOOL SIPConnection::SetUpConnection()
 {
+  ApplyStringOptions();
+    
   SIPURL transportAddress = targetAddress;
 
   PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
@@ -1665,6 +1697,9 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 {
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
+#if OPAL_T38FAX
+  RTP_DataFrame::PayloadTypes nsePayloadCode = RTP_DataFrame::IllegalPayloadType;
+#endif
 
 #if OPAL_VIDEO
   if (mediaType == OpalDefaultVideoMediaType && !endpoint.GetManager().CanAutoStartReceiveVideo() && !endpoint.GetManager().CanAutoStartTransmitVideo())
@@ -1683,7 +1718,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   }
 
   if (localAddress.IsEmpty()) {
-    /* We are not doing media bypass, so must have an RTP session.
+    /* We are not doing media bypass, so must have some media session.
        Due to the possibility of several INVITEs going out, all with different
        transport requirements, we actually need to use an rtpSession dictionary
        for each INVITE and not the one for the connection. Once an INVITE is
@@ -1704,7 +1739,8 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       rtpSessions.AddSession(rtpSession);
     }
 
-    localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
+    if (rtpSession != NULL)
+      localAddress = GetLocalAddress(((RTP_UDP *)rtpSession)->GetLocalDataPort());
   } 
 
   if (sdp == NULL)
@@ -2271,6 +2307,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
 BOOL SIPConnection::OnOpenIncomingMediaChannels()
 {
+  ApplyStringOptions();
+    
   ownerCall.OnSetUp(*this);
   AnsweringCall(OnAnswerCall(remotePartyAddress));
   return TRUE;
@@ -2696,7 +2734,15 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   mediaDescription->UpdateCapabilities(capabilities, sdp);
 
   //if (mediaType != SDPMediaDescription::Image) {
-    // Create the RTPSession
+    
+    // see if the remote supports this media
+    OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats(mediaType);
+    if (mediaFormatList.GetSize() == 0) {
+      PTRACE(1, "SIP\tEmpty SDP media description for " << mediaType);
+      return FALSE;
+    }
+  
+    // create the RTPSession
     OpalTransportAddress localAddress;
     OpalTransportAddress address = mediaDescription->GetTransportAddress();
     rtpSession = OnUseRTPSession(mediaType, address, localAddress);
@@ -2707,11 +2753,6 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
     // When receiving an answer SDP, keep the remote SDP media formats order
     // but remove the media formats we do not support.
-    OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats(mediaType);
-    if(mediaFormatList.GetSize() == 0) {
-      PTRACE(1, "SIP\tEmpty SDP media description for " << mediaType);
-      return FALSE;
-    }
     remoteFormatList += mediaFormatList;
     remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
 
