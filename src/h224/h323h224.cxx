@@ -20,6 +20,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.cxx,v $
+ * Revision 1.6.4.2  2007/03/20 00:02:14  hfriederich
+ * (Backport from HEAD)
+ * Add ability to remove H.224
+ *
  * Revision 1.6.4.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
@@ -61,6 +65,10 @@
 #ifdef __GNUC__
 #pragma implementation "h323h224.h"
 #endif
+
+#include <opal/buildopts.h>
+
+#if OPAL_H224
 
 #include <h224/h323h224.h>
 
@@ -142,3 +150,5 @@ BOOL H323_H224Capability::OnReceivedPDU(const H245_DataApplicationCapability & /
 {
   return TRUE;
 }
+
+#endif // OPAL_H224
