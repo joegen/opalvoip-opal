@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2027.2.2  2007/03/10 07:49:08  hfriederich
+ * Revision 1.2027.2.3  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.26.2.2  2007/03/10 07:49:08  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection() virtual functions
  *   on various classes. If an old override returned FALSE then it will now
@@ -216,7 +222,8 @@ class OpalPCSSEndPoint : public OpalEndPoint
       OpalCall & call,           ///<  Owner of connection
       const PString & party,     ///<  Remote party to call
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
-      unsigned int options = 0   ///<  options to pass to conneciton
+      unsigned int options = 0,  ///<  options to pass to connection
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Get the data formats this endpoint is capable of operating.

@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059.2.4  2007/03/11 11:55:13  hfriederich
+ * Revision 1.2059.2.5  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.58.2.4  2007/03/11 11:55:13  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -408,6 +414,23 @@ const OpalMediaFormat & GetOpalRFC2833()
     OpalMediaFormat::AudioClockRate
   );
   return RFC2833;
+}
+
+
+const OpalMediaFormat & GetOpalCiscoNSE()
+{
+  static const OpalMediaFormat CiscoNSE(
+    OPAL_CISCONSE,
+    OpalUnknownMediaType,
+    (RTP_DataFrame::PayloadTypes)100, // Set to this for Cisco compatibility
+    "NSE",
+    TRUE, // Needs jitter
+    32*(1000/50), // bits/secd (32 bits every 50ms)
+    4, // bytes/frame
+    150*8, // 150 millisecond
+    OpalMediaFormat::AudioClockRate
+  );
+  return CiscoNSE;
 }
 
 
@@ -1349,6 +1372,11 @@ bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
     return rtpEncodingName != NULL;
 
   return TRUE;
+}
+
+time_t OpalMediaFormat::GetCodecBaseTime() const
+{
+  return codecBaseTime;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

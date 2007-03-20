@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073.2.2  2007/03/10 07:49:09  hfriederich
+ * Revision 1.2073.2.3  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.72.2.2  2007/03/10 07:49:09  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection() virtual functions
  *   on various classes. If an old override returned FALSE then it will now
@@ -644,21 +650,6 @@ PString OpalManager::GetNextCallToken()
   return token;
 }
 
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty)
-{
-  return MakeConnection(call, remoteParty, NULL, 0, NULL);
-}
-
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData)
-{
-  return MakeConnection(call, remoteParty, userData, 0, NULL);
-}
-
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options)
-{
-  return MakeConnection(call, remoteParty, userData, options, NULL);
-}
-
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
@@ -953,16 +944,19 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
 }
 
 
+#if OPAL_T120DATA
 OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
 }
+#endif
 
-
+#if OPAL_T38FAX
 OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
 {
   return NULL;
 }
+#endif
 
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
