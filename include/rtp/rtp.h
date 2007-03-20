@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.3  2007/03/18 19:20:44  hfriederich
+ * Revision 1.2032.2.4  2007/03/20 09:32:02  hfriederich
+ * (Backport from HEAD)
+ * Don't send BYE twice or when channel is closed
+ *
+ * Revision 2.31.2.3  2007/03/18 19:20:44  hfriederich
  * (Backport from HEAD)
  * Added virtual to functions
  *
@@ -1031,6 +1035,7 @@ class RTP_Session : public PObject
     PHandleAggregator * aggregator;
     
     BOOL closeOnBye;
+    BOOL byeSent;
 };
 
 
