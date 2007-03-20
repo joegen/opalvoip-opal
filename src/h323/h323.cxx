@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.10  2007/03/20 07:52:19  hfriederich
+ * Revision 1.2136.2.11  2007/03/20 08:00:46  hfriederich
+ * Fix previous commit
+ *
+ * Revision 2.135.2.10  2007/03/20 07:52:19  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.450
  * Remove warnings/errors when compiling with various turned off
@@ -1892,7 +1895,9 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
              << (response.rejectReason == UINT_MAX
                   ? PString("Transport error")
                   : H225_AdmissionRejectReason(response.rejectReason).GetTagName()));
+#if OPAL_H450
       h4502handler->onReceivedAdmissionReject(H4501_GeneralErrorList::e_notAvailable);
+#endif
 
       switch (response.rejectReason) {
         case H225_AdmissionRejectReason::e_calledPartyNotRegistered :
