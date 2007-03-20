@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.26.2.1  2007/03/20 08:17:05  hfriederich
+ * (Backport from HEAD)
+ * Fix MakeConnection overrides
+ *
  * Revision 1.26  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
@@ -447,7 +451,8 @@ BOOL IAX2EndPoint::MakeConnection(
 				 OpalCall & call,
 				 const PString & rParty, 
 				 void * userData,
-				 unsigned int /*options*/)
+				 unsigned int /*options*/,
+  OpalConnection::StringOoptions * /*stringOptions*/)
 {
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
