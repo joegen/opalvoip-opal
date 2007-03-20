@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2026  2007/01/24 04:00:56  csoutheren
+ * Revision 1.2026.2.1  2007/03/20 08:29:43  hfriederich
+ * Move to MediaType architecture
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.25  2007/01/24 04:00:56  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -198,7 +202,8 @@ class OpalLIDEndPoint : public OpalEndPoint
       OpalCall & call,          ///< Owner of connection
       const PString & party,    ///< Remote party to call
       void * userData = NULL,   ///< Arbitrary data to pass to connection
-      unsigned int options = 0  ///<  options to pass to conneciton
+      unsigned int options = 0, ///<  options to pass to connection
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
@@ -513,9 +518,6 @@ class OpalLineConnection : public OpalConnection
        by the underlying connection protocol. For instance H.323 would create
        an OpalRTPStream.
 
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
        Note that media streams may be created internally to the underlying
        protocol. This function is not the only way a stream can come into
        existance.
@@ -524,7 +526,6 @@ class OpalLineConnection : public OpalConnection
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
     );
 
@@ -644,7 +645,6 @@ class OpalLineMediaStream : public OpalMediaStream
       */
     OpalLineMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
       OpalLine & line                      ///<  LID line to stream to/from
     );

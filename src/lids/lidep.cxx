@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2038  2007/01/24 04:00:57  csoutheren
+ * Revision 1.2038.2.1  2007/03/20 08:29:43  hfriederich
+ * Move to MediaType architecture
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.37  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
  * New OpalEndpoint and OpalConnection descendants will need to re-implement
@@ -216,7 +220,8 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
 BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
                                      void * userData,
-                                     unsigned int /*options*/)
+                                     unsigned int /*options*/,
+                                     OpalConnection::StringOptions * /*stringOptions*/)
 {
   PTRACE(3, "LID EP\tMakeConnection remoteParty " << remoteParty << ", prefix "<< GetPrefixName());  
   // First strip of the prefix if present
@@ -268,7 +273,9 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
 OpalMediaFormatList OpalLIDEndPoint::GetMediaFormats() const
 {
   OpalMediaFormatList mediaFormats;
+#if OPAL_VIDEO
   AddVideoMediaFormats(mediaFormats);
+#endif
 
   PWaitAndSignal mutex(linesMutex);
 
@@ -684,19 +691,20 @@ BOOL OpalLineConnection::SetConnected()
 OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 {
   OpalMediaFormatList formats = line.GetDevice().GetMediaFormats();
+#if OPAL_VIDEO
   AddVideoMediaFormats(formats);
+#endif
   return formats;
 }
 
 
 OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                        unsigned sessionID,
                                                         BOOL isSource)
 {
-  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
-    return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
+  if (mediaFormat.GetMediaType() != OpalDefaultAudioMediaType)
+    return OpalConnection::CreateMediaStream(mediaFormat, isSource);
 
-  return new OpalLineMediaStream(mediaFormat, sessionID, isSource, line);
+  return new OpalLineMediaStream(mediaFormat, isSource, line);
 }
 
 
@@ -719,7 +727,7 @@ BOOL OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
 BOOL OpalLineConnection::SetAudioVolume(BOOL source, unsigned percentage)
 {
-  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalDefaultAudioMediaType, source));
   if (stream == NULL)
     return FALSE;
 
@@ -730,7 +738,7 @@ BOOL OpalLineConnection::SetAudioVolume(BOOL source, unsigned percentage)
 
 unsigned OpalLineConnection::GetAudioSignalLevel(BOOL source)
 {
-  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalDefaultAudioMediaType, source));
   if (stream == NULL)
     return UINT_MAX;
 
@@ -914,10 +922,9 @@ BOOL OpalLineConnection::SetUpConnection()
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalLineMediaStream::OpalLineMediaStream(const OpalMediaFormat & mediaFormat,
-                                         unsigned sessionID,
                                          BOOL isSource,
                                          OpalLine & ln)
-  : OpalMediaStream(mediaFormat, sessionID, isSource),
+  : OpalMediaStream(mediaFormat, isSource),
     line(ln)
 {
   useDeblocking = FALSE;
