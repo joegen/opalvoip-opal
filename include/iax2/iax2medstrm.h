@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  * $Log: iax2medstrm.h,v $
+ * Revision 1.2.2.1  2007/03/20 08:12:45  hfriederich
+ * Move to MediaType architecture
+ *
  * Revision 1.2  2007/01/11 03:02:15  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -69,7 +72,6 @@ class OpalIAX2MediaStream : public OpalMediaStream
       */
     OpalIAX2MediaStream(
 		   const OpalMediaFormat & mediaFormat, /*!< Media format for stream */
-		   unsigned sessionID,                  /*!< Session number for stream */
 		   BOOL isSource,                       /*!< Is a source stream */
 		   IAX2Connection &con                  /*!< IAX connection to read/send incoming packets */
 		   );

@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.18.2.1  2007/03/20 08:12:45  hfriederich
+ * Move to MediaType architecture
+ *
  * Revision 1.18  2007/01/24 04:00:57  csoutheren
  * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  * Added some pure viritual functions to prevent old code from breaking silently
@@ -346,16 +349,15 @@ void IAX2Connection::OnEstablished()
 }
 
 OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                   unsigned sessionID,
                                                    BOOL isDataSource)
 {
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
+  if (ownerCall.IsMediaBypassPossible(*this, mediaFormat.GetMediaType())) {
     PTRACE(3, "connection\t  create a null media stream ");
-    return new OpalNullMediaStream(mediaFormat, sessionID, isDataSource);
+    return new OpalNullMediaStream(mediaFormat, isDataSource);
   }
 
   PTRACE(4, "IAX2con\tCreate an OpalIAX2MediaStream");
-  return new OpalIAX2MediaStream(mediaFormat, sessionID, isDataSource,
+  return new OpalIAX2MediaStream(mediaFormat, isDataSource,
                                  *this);
 }
 
