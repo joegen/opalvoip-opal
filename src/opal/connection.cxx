@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.4  2007/03/10 07:49:09  hfriederich
+ * Revision 1.2089.2.5  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.88.2.4  2007/03/10 07:49:09  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection() virtual functions
  *   on various classes. If an old override returned FALSE then it will now
@@ -401,6 +407,8 @@
 #pragma implementation "connection.h"
 #endif
 
+#include <opal/buildopts.h>
+
 #include <opal/connection.h>
 
 #include <opal/manager.h>
@@ -413,7 +421,10 @@
 #include <codec/rfc2833.h>
 #include <rtp/rtp.h>
 #include <t120/t120proto.h>
+
+#if OPAL_T38FAX
 #include <t38/t38proto.h>
+#endif
 
 #define new PNEW
 
@@ -533,8 +544,12 @@ OpalConnection::OpalConnection(OpalCall & call,
     remotePartyName(token),
     remoteIsNAT(FALSE),
     q931Cause(0x100),
+#if OPAL_T120DATA
     t120handler(NULL),
+#endif
+#if OPAL_T38FAX
     t38handler(NULL),
+#endif
     silenceDetector(NULL),
     echoCanceler(NULL),
     phase(UninitialisedPhase),
@@ -574,6 +589,9 @@ OpalConnection::OpalConnection(OpalCall & call,
   }
   
   rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
+#if OPAL_T38FAX
+  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
+#endif
 
   securityMode = ep.GetDefaultSecurityMode();
 
@@ -616,8 +634,12 @@ OpalConnection::~OpalConnection()
   delete silenceDetector;
   delete echoCanceler;
   delete rfc2833Handler;
+#if OPAL_T120DATA
   delete t120handler;
+#endif
+#if OPAL_T38FAX
   delete t38handler;
+#endif
   delete stringOptions;
 
   ownerCall.connectionsActive.Remove(this);
@@ -969,11 +991,18 @@ void OpalConnection::PauseMediaStreams(BOOL paused)
 }
 
 
-OpalMediaStream * OpalConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    BOOL isSource)
-{
-    const OpalMediaType & mediaType = mediaFormat.GetMediaType();
+OpalMediaStream * OpalConnection::CreateMediaStream(
 #if OPAL_VIDEO
+  const OpalMediaFormat & mediaFormat,
+  BOOL isSource
+#else
+  const OpalMediaFormat & ,
+  BOOL
+#endif
+)
+{
+#if OPAL_VIDEO
+  const OpalMediaType & mediaType = mediaFormat.GetMediaType();
   if (mediaType == OpalDefaultVideoMediaType) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
@@ -1043,10 +1072,23 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
     } else {
-      PTRACE(3, "OpalCOn\tAdding RFC2833 transmit handler");
+      PTRACE(3, "OpalCon\tAdding RFC2833 transmit handler");
       patch.AddFilter(rfc2833Handler->GetTransmitHandler(), patch.GetSinkFormat());
     }
   }
+    
+#if OPAL_T38FAX
+  if (ciscoNSEHandler != NULL) {
+    if(isSource) {
+      PTRACE(3, "OpalCon\tAdding Cisco NSE receive handler");
+      OpalMediaStream & mediaStream = patch.GetSource();
+      patch.AddFilter(ciscoNSEHandler->GetReceiveHandler(), mediaStream.GetMediaFormat());
+    } else {
+      PTRACE(3, "OpalCon\tAdding Cisco NSE transmit handler");
+      patch.AddFilter(ciscoNSEHandler->GetTransmitHandler(), patch.GetSinkFormat());
+    }
+  }
+#endif
 }
 
 
@@ -1197,7 +1239,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   transport.GetRemoteAddress().GetIpAddress(remoteAddress);
   PSTUNClient * stun = manager.GetSTUN(remoteAddress);
 
-  // create an RTP session or an SRTP session as appropriate
+  // create an (S)RTP session or T38 pseudo-session as appropriate
   RTP_UDP * rtpSession = NULL;
 
   if (!securityMode.IsEmpty()) {
@@ -1394,6 +1436,14 @@ void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT)
 }
 
 
+void OpalConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
+{
+    cout << "Received NSE event" << endl;
+    //if (!info.IsToneStart())
+    //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+}
+
+
 void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 {
   // This function is set up as an 'audio filter'.
@@ -1412,20 +1462,23 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 }
 
 
+#if OPAL_T120DATA
 OpalT120Protocol * OpalConnection::CreateT120ProtocolHandler()
 {
   if (t120handler == NULL)
     t120handler = endpoint.CreateT120ProtocolHandler(*this);
   return t120handler;
 }
+#endif
 
-
+#if OPAL_T38FAX
 OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
 {
   if (t38handler == NULL)
     t38handler = endpoint.CreateT38ProtocolHandler(*this);
   return t38handler;
 }
+#endif
 
 
 void OpalConnection::SetLocalPartyName(const PString & name)

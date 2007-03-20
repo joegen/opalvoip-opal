@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043.2.3  2007/03/10 07:49:08  hfriederich
+ * Revision 1.2043.2.4  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.42.2.3  2007/03/10 07:49:08  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection() virtual functions
  *   on various classes. If an old override returned FALSE then it will now
@@ -381,21 +387,10 @@ class OpalEndPoint : public PObject
     virtual BOOL MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
-      void * userData = NULL    ///<  Arbitrary data to pass to connection
-    );
-    virtual BOOL MakeConnection(
-      OpalCall & call,          ///<  Owner of connection
-      const PString & party,    ///<  Remote party to call
-      void * userData,          ///<  Arbitrary data to pass to connection
-      unsigned int options      ///<  options to pass to conneciton
-    );
-    virtual BOOL MakeConnection(
-      OpalCall & call,          ///<  Owner of connection
-      const PString & party,    ///<  Remote party to call
-      void * userData,          ///<  Arbitrary data to pass to connection
-      unsigned int options,     ///<  options to pass to conneciton
-      OpalConnection::StringOptions * stringOptions
-    );
+      void * userData = NULL,   ///<  Arbitrary data to pass to connection
+      unsigned int options = 0, ///< options to pass to connection
+      OpalConnection::StringOptions * stringOptions = NULL
+    ) = 0;
 
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
        This function allows the application to set up some parameters or to log some messages
@@ -723,6 +718,7 @@ class OpalEndPoint : public PObject
 
   /**@name Other services */
   //@{
+#if OPAL_T120DATA
     /**Create an instance of the T.120 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
        a T.120 channel be established.
@@ -736,7 +732,9 @@ class OpalEndPoint : public PObject
     virtual OpalT120Protocol * CreateT120ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.120 handler created
     ) const;
-
+#endif
+    
+#if OPAL_T38FAX
     /**Create an instance of the T.38 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
        a T.38 fax channel be established.
@@ -750,6 +748,7 @@ class OpalEndPoint : public PObject
     virtual OpalT38Protocol * CreateT38ProtocolHandler(
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
     ) const;
+#endif
 
   //@}
 

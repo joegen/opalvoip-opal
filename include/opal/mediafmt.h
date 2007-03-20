@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.3  2007/02/14 08:34:40  hfriederich
+ * Revision 1.2046.2.4  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.45.2.3  2007/02/14 08:34:40  hfriederich
  * (Backport from HEAD)
  * Extended FindFormat to allow finding multiple matching formats
  *
@@ -93,8 +99,7 @@
  * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
  * Added OpalMediaFormat clone function
  *
- * $Log: mediafmt.h,v $
- * Revision 1.2046.2.3  2007/02/14 08:34:40  hfriederich
+ * Revision 2.45.2.3  2007/02/14 08:34:40  hfriederich
  * (Backport from HEAD)
  * Extended FindFormat to allow finding multiple matching formats
  *
@@ -1188,6 +1193,8 @@ class OpalMediaFormat : public PCaselessString
         and the rtpEncodingName is NULL
       */
     virtual bool IsValidForProtocol(const PString & protocol) const;
+    
+    virtual time_t GetCodecBaseTime() const;
 
   protected:
     OpalMediaOption * FindOption(
@@ -1299,6 +1306,7 @@ extern const OpalMediaType & GetDefaultVideoMediaType();
 #define OPAL_G7231A_5k3     "G.723.1A(5.3k)"
 #define OPAL_GSM0610        "GSM-06.10"
 #define OPAL_RFC2833        "UserInput/RFC2833"
+#define OPAL_CISCONSE       "NamedSignalEvent"
 
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
@@ -1317,6 +1325,7 @@ extern const OpalAudioFormat & GetOpalG7231A_6k3();
 extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
 extern const OpalMediaFormat & GetOpalRFC2833();
+extern const OpalMediaFormat & GetOpalCiscoNSE();
 
 #define OpalPCM16          GetOpalPCM16()
 #define OpalPCM16_16KHZ    GetOpalPCM16_16KHZ()
@@ -1335,6 +1344,7 @@ extern const OpalMediaFormat & GetOpalRFC2833();
 #define OpalG7231A_5k3     GetOpalG7231A_5k3()
 #define OpalGSM0610        GetOpalGSM0610()
 #define OpalRFC2833        GetOpalRFC2833()
+#define OpalCiscoNSE       GetOpalCiscoNSE()
 
 #define OpalL16Mono8kHz    OpalL16_MONO_8KHZ
 #define OpalL16Mono16kHz   OpalL16_MONO_16KHZ

@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.3  2007/03/10 07:49:09  hfriederich
+ * Revision 1.2051.2.4  2007/03/20 09:33:57  hfriederich
+ * (Backport from HEAD)
+ * Simple but messy changes to allow compile time removal of protocol options
+ *   such as H.450 and H.460.
+ * Fix MakeConnection overrides
+ *
+ * Revision 2.50.2.3  2007/03/10 07:49:09  hfriederich
  * (Backport from HEAD)
  * Fixed backward compatibility of OnIncomingConnection() virtual functions
  *   on various classes. If an old override returned FALSE then it will now
@@ -313,20 +319,10 @@ OpalEndPoint::~OpalEndPoint()
   PTRACE(3, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
-BOOL OpalEndPoint::MakeConnection(OpalCall &, const PString &, void *)
+BOOL OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
 {
   PAssertAlways("Must implement descendant of OpalEndPoint::MakeConnection");
   return FALSE;
-}
-
-BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int /*options*/)
-{
-  return MakeConnection(call, party, userData);
-}
-
-BOOL OpalEndPoint::MakeConnection(OpalCall & call, const PString & party, void * userData, unsigned int options, OpalConnection::StringOptions *)
-{
-  return MakeConnection(call, party, userData, options);
 }
 
 void OpalEndPoint::PrintOn(ostream & strm) const
@@ -652,16 +648,19 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
 }
 
 
+#if OPAL_T120DATA
 OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection & connection) const
 {
   return manager.CreateT120ProtocolHandler(connection);
 }
+#endif
 
-
+#if OPAL_T38FAX
 OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const
 {
   return manager.CreateT38ProtocolHandler(connection);
 }
+#endif
 
 
 void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
