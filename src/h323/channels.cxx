@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.7  2007/03/10 10:50:11  hfriederich
+ * Revision 1.2036.2.8  2007/03/20 07:52:18  hfriederich
+ * (Backport from HEAD)
+ * Add ability to remove H.450
+ * Remove warnings/errors when compiling with various turned off
+ *
+ * Revision 2.35.2.7  2007/03/10 10:50:11  hfriederich
  * (Backport from HEAD)
  * Use local jitter buffer values rather than getting direct from OpalManager
  *
@@ -964,9 +969,9 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
   if (mediaStream == NULL)
     return;
 
+#if OPAL_VIDEO
   switch (type.GetTag())
   {
-#if OPAL_VIDEO
     case H245_MiscellaneousCommand_type::e_videoFreezePicture :
       mediaStream->ExecuteCommand(OpalVideoFreezePicture());
       break;
@@ -994,14 +999,20 @@ void H323UnidirectionalChannel::OnMiscellaneousCommand(const H245_MiscellaneousC
     case H245_MiscellaneousCommand_type::e_videoTemporalSpatialTradeOff :
       mediaStream->ExecuteCommand(OpalTemporalSpatialTradeOff((const PASN_Integer &)type));
       break;
-#endif
     default:
       break;
   }
+#endif
 }
 
 
-void H323UnidirectionalChannel::OnMediaCommand(OpalMediaCommand & command, INT)
+void H323UnidirectionalChannel::OnMediaCommand(
+#if OPAL_VIDEO
+  OpalMediaCommand & command,
+#else
+  OpalMediaCommand &,
+#endif
+  INT)
 {
 #if OPAL_VIDEO
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
