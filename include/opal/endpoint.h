@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2045  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2046  2007/03/21 06:15:57  rjongbloed
+ * Added functions to find an active comms listener for an interface,
+ *    and remove/stop it.
+ *
+ * Revision 2.44  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -301,6 +305,19 @@ class OpalEndPoint : public PObject
        one entry using tcp and INADDR_ANY, eg tcp$*:1720
       */
     virtual PStringArray GetDefaultListeners() const;
+
+    /**Find a listener given the transport address.
+      */
+    OpalListener * FindListener(
+        const OpalTransportAddress & iface ///<  Address of interface we may be listening on.
+    );
+
+    /**Stop a listener given the transport address.
+       Returns TRUE if a listener was on that interface, and was stopped.
+      */
+    BOOL StopListener(
+        const OpalTransportAddress & iface ///<  Address of interface we may be listening on.
+    );
 
     /**Remove a listener from the endoint.
        If the listener parameter is NULL then all listeners are removed.
