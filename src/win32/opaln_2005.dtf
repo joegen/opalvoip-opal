@@ -306,6 +306,8 @@ EXPORTS
     ??0?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@QAE@XZ @209 NONAME
     ??0?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@IAE@HPBV0@@Z @210 NONAME
     ??0?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@QAE@XZ @211 NONAME
+    ??0?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@IAE@HPBV0@@Z @34620 NONAME
+    ??0?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@QAE@XZ @34621 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@IAE@HPBV0@@Z @212 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@QAE@XZ @213 NONAME
     ??0?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@IAE@HPBV0@@Z @214 NONAME
@@ -4294,6 +4296,7 @@ EXPORTS
     ??0TonePlayer_PNotifier@OpalPluginLID@@QAE@PAV1@@Z @33692 NONAME
     ??0TransmitEnded_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @4125 NONAME
     ??0TransmitPacket_PNotifier@OpalRFC2833Proto@@QAE@PAV1@@Z @4126 NONAME
+    ??0TransportRecord@SIPEndPoint@@QAE@PAVOpalTransport@@@Z @34622 NONAME
     ??0TransportThreadMain_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @4127 NONAME
     ??0UpdateAllDescriptors_PNotifier@H323PeerElement@@QAE@PAV1@@Z @4128 NONAME
     ??0Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@QAE@ABVOpalMediaFormatPair@@PAUPluginCodec_Definition@@H@Z @4130 NONAME
@@ -4387,6 +4390,7 @@ EXPORTS
     ??1?$PArray@VSourceDescription@RTP_Session@@@@UAE@XZ @4209 NONAME
     ??1?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UAE@XZ @4210 NONAME
     ??1?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UAE@XZ @4211 NONAME
+    ??1?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UAE@XZ @34623 NONAME
     ??1?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UAE@XZ @4212 NONAME
     ??1?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UAE@XZ @4213 NONAME
     ??1?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UAE@XZ @4214 NONAME
@@ -6404,6 +6408,7 @@ EXPORTS
     ??1TonePlayer_PNotifier@OpalPluginLID@@UAE@XZ @33695 NONAME
     ??1TransmitEnded_PNotifier@OpalRFC2833Proto@@UAE@XZ @6198 NONAME
     ??1TransmitPacket_PNotifier@OpalRFC2833Proto@@UAE@XZ @6199 NONAME
+    ??1TransportRecord@SIPEndPoint@@UAE@XZ @34624 NONAME
     ??1TransportThreadMain_PNotifier@SIPEndPoint@@UAE@XZ @6200 NONAME
     ??1UpdateAllDescriptors_PNotifier@H323PeerElement@@UAE@XZ @6201 NONAME
     ??1Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@UAE@XZ @6203 NONAME
@@ -9001,6 +9006,7 @@ EXPORTS
     ??_7?$PArray@VSourceDescription@RTP_Session@@@@6B@ @8737 NONAME
     ??_7?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@6B@ @8738 NONAME
     ??_7?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@6B@ @8739 NONAME
+    ??_7?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@6B@ @34625 NONAME
     ??_7?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@6B@ @8740 NONAME
     ??_7?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@6B@ @8741 NONAME
     ??_7?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@6B@ @8742 NONAME
@@ -11021,6 +11027,7 @@ EXPORTS
     ??_7TonePlayer_PNotifier@OpalPluginLID@@6B@ @33720 NONAME
     ??_7TransmitEnded_PNotifier@OpalRFC2833Proto@@6B@ @10733 NONAME
     ??_7TransmitPacket_PNotifier@OpalRFC2833Proto@@6B@ @10734 NONAME
+    ??_7TransportRecord@SIPEndPoint@@6B@ @34626 NONAME
     ??_7TransportThreadMain_PNotifier@SIPEndPoint@@6B@ @10735 NONAME
     ??_7UpdateAllDescriptors_PNotifier@H323PeerElement@@6B@ @10736 NONAME
     ??_7Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@6B@ @10738 NONAME
@@ -11098,6 +11105,7 @@ EXPORTS
     ??_R0?AV?$PArray@VSourceDescription@RTP_Session@@@@@8 @10803 NONAME
     ??_R0?AV?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@@8 @10804 NONAME
     ??_R0?AV?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@@8 @10805 NONAME
+    ??_R0?AV?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@@8 @34627 NONAME
     ??_R0?AV?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@@8 @10806 NONAME
     ??_R0?AV?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@@8 @10807 NONAME
     ??_R0?AV?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@@8 @10808 NONAME
@@ -13098,6 +13106,7 @@ EXPORTS
     ??_R0?AVTonePlayer_PNotifier@OpalPluginLID@@@8 @33721 NONAME
     ??_R0?AVTransmitEnded_PNotifier@OpalRFC2833Proto@@@8 @12780 NONAME
     ??_R0?AVTransmitPacket_PNotifier@OpalRFC2833Proto@@@8 @12781 NONAME
+    ??_R0?AVTransportRecord@SIPEndPoint@@@8 @34628 NONAME
     ??_R0?AVTransportThreadMain_PNotifier@SIPEndPoint@@@8 @12782 NONAME
     ??_R0?AVUpdateAllDescriptors_PNotifier@H323PeerElement@@@8 @12783 NONAME
     ??_R0?AVWorker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@@8 @12785 NONAME
@@ -13154,6 +13163,7 @@ EXPORTS
     ??_R1A@?0A@EA@?$PArray@VSourceDescription@RTP_Session@@@@8 @12832 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@8 @12833 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@8 @12834 NONAME
+    ??_R1A@?0A@EA@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@8 @34629 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@8 @12835 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@8 @12836 NONAME
     ??_R1A@?0A@EA@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@8 @12837 NONAME
@@ -15154,6 +15164,7 @@ EXPORTS
     ??_R1A@?0A@EA@TonePlayer_PNotifier@OpalPluginLID@@8 @33722 NONAME
     ??_R1A@?0A@EA@TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @14809 NONAME
     ??_R1A@?0A@EA@TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @14810 NONAME
+    ??_R1A@?0A@EA@TransportRecord@SIPEndPoint@@8 @34630 NONAME
     ??_R1A@?0A@EA@TransportThreadMain_PNotifier@SIPEndPoint@@8 @14811 NONAME
     ??_R1A@?0A@EA@UpdateAllDescriptors_PNotifier@H323PeerElement@@8 @14812 NONAME
     ??_R1A@?0A@EA@Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@8 @14814 NONAME
@@ -15222,6 +15233,7 @@ EXPORTS
     ??_R2?$PArray@VSourceDescription@RTP_Session@@@@8 @14872 NONAME
     ??_R2?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@8 @14873 NONAME
     ??_R2?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@8 @14874 NONAME
+    ??_R2?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@8 @34631 NONAME
     ??_R2?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@8 @14875 NONAME
     ??_R2?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@8 @14876 NONAME
     ??_R2?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@8 @14877 NONAME
@@ -17222,6 +17234,7 @@ EXPORTS
     ??_R2TonePlayer_PNotifier@OpalPluginLID@@8 @33723 NONAME
     ??_R2TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @16849 NONAME
     ??_R2TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @16850 NONAME
+    ??_R2TransportRecord@SIPEndPoint@@8 @34632 NONAME
     ??_R2TransportThreadMain_PNotifier@SIPEndPoint@@8 @16851 NONAME
     ??_R2UpdateAllDescriptors_PNotifier@H323PeerElement@@8 @16852 NONAME
     ??_R2Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@8 @16854 NONAME
@@ -17278,6 +17291,7 @@ EXPORTS
     ??_R3?$PArray@VSourceDescription@RTP_Session@@@@8 @16901 NONAME
     ??_R3?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@8 @16902 NONAME
     ??_R3?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@8 @16903 NONAME
+    ??_R3?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@8 @34633 NONAME
     ??_R3?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@8 @16904 NONAME
     ??_R3?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@8 @16905 NONAME
     ??_R3?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@8 @16906 NONAME
@@ -19278,6 +19292,7 @@ EXPORTS
     ??_R3TonePlayer_PNotifier@OpalPluginLID@@8 @33724 NONAME
     ??_R3TransmitEnded_PNotifier@OpalRFC2833Proto@@8 @18878 NONAME
     ??_R3TransmitPacket_PNotifier@OpalRFC2833Proto@@8 @18879 NONAME
+    ??_R3TransportRecord@SIPEndPoint@@8 @34634 NONAME
     ??_R3TransportThreadMain_PNotifier@SIPEndPoint@@8 @18880 NONAME
     ??_R3UpdateAllDescriptors_PNotifier@H323PeerElement@@8 @18881 NONAME
     ??_R3Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@8 @18883 NONAME
@@ -19334,6 +19349,7 @@ EXPORTS
     ??_R4?$PArray@VSourceDescription@RTP_Session@@@@6B@ @18930 NONAME
     ??_R4?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@6B@ @18931 NONAME
     ??_R4?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@6B@ @18932 NONAME
+    ??_R4?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@6B@ @34635 NONAME
     ??_R4?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@6B@ @18933 NONAME
     ??_R4?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@6B@ @18934 NONAME
     ??_R4?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@6B@ @18935 NONAME
@@ -21354,6 +21370,7 @@ EXPORTS
     ??_R4TonePlayer_PNotifier@OpalPluginLID@@6B@ @33725 NONAME
     ??_R4TransmitEnded_PNotifier@OpalRFC2833Proto@@6B@ @20926 NONAME
     ??_R4TransmitPacket_PNotifier@OpalRFC2833Proto@@6B@ @20927 NONAME
+    ??_R4TransportRecord@SIPEndPoint@@6B@ @34636 NONAME
     ??_R4TransportThreadMain_PNotifier@SIPEndPoint@@6B@ @20928 NONAME
     ??_R4UpdateAllDescriptors_PNotifier@H323PeerElement@@6B@ @20929 NONAME
     ??_R4Worker@?$OpalPluginTranscoderFactory@VOpalPluginFramedAudioTranscoder@@@@6B@ @20931 NONAME
@@ -21831,6 +21848,7 @@ EXPORTS
     ?Class@?$PArray@VSourceDescription@RTP_Session@@@@SAPBDXZ @21377 NONAME
     ?Class@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@SAPBDXZ @21378 NONAME
     ?Class@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@SAPBDXZ @21379 NONAME
+    ?Class@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@SAPBDXZ @34637 NONAME
     ?Class@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@SAPBDXZ @21380 NONAME
     ?Class@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@SAPBDXZ @21381 NONAME
     ?Class@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@SAPBDXZ @21382 NONAME
@@ -22235,6 +22253,7 @@ EXPORTS
     ?Class@T120ConnectPDU@@SAPBDXZ @21772 NONAME
     ?Class@T120_X224@@SAPBDXZ @21773 NONAME
     ?Class@Thread@OpalMediaPatch@@SAPBDXZ @34436 NONAME
+    ?Class@TransportRecord@SIPEndPoint@@SAPBDXZ @34638 NONAME
     ?Class@X224@@SAPBDXZ @21775 NONAME
     ?CleanPendingLists@IAX2Processor@@IAEXXZ @21776 NONAME
     ?CleanUpOnCallEnd@H323Connection@@UAEXXZ @21777 NONAME
@@ -22282,6 +22301,7 @@ EXPORTS
     ?Clone@?$PArray@VSourceDescription@RTP_Session@@@@UBEPAVPObject@@XZ @21817 NONAME
     ?Clone@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEPAVPObject@@XZ @21818 NONAME
     ?Clone@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBEPAVPObject@@XZ @21819 NONAME
+    ?Clone@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UBEPAVPObject@@XZ @34639 NONAME
     ?Clone@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UBEPAVPObject@@XZ @21820 NONAME
     ?Clone@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UBEPAVPObject@@XZ @21821 NONAME
     ?Clone@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UBEPAVPObject@@XZ @21822 NONAME
@@ -24692,6 +24712,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@?$PArray@VSourceDescription@RTP_Session@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24221 NONAME
     ?CompareObjectMemoryDirect@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24222 NONAME
     ?CompareObjectMemoryDirect@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24223 NONAME
+    ?CompareObjectMemoryDirect@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @34640 NONAME
     ?CompareObjectMemoryDirect@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24224 NONAME
     ?CompareObjectMemoryDirect@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24225 NONAME
     ?CompareObjectMemoryDirect@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @24226 NONAME
@@ -25096,6 +25117,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@T120ConnectPDU@@UBE?AW4Comparison@PObject@@ABV3@@Z @24616 NONAME
     ?CompareObjectMemoryDirect@T120_X224@@UBE?AW4Comparison@PObject@@ABV3@@Z @24617 NONAME
     ?CompareObjectMemoryDirect@Thread@OpalMediaPatch@@UBE?AW4Comparison@PObject@@ABV4@@Z @34450 NONAME
+    ?CompareObjectMemoryDirect@TransportRecord@SIPEndPoint@@UBE?AW4Comparison@PObject@@ABV4@@Z @34641 NONAME
     ?CompareObjectMemoryDirect@X224@@UBE?AW4Comparison@PObject@@ABV3@@Z @24619 NONAME
     ?CompareParam@H323NonStandardCapabilityInfo@@QBE?AW4Comparison@PObject@@ABVH245_NonStandardParameter@@@Z @24620 NONAME
     ?CompareValue@?$OpalMediaOptionValue@H@@UBE?AW4Comparison@PObject@@ABVOpalMediaOption@@@Z @24621 NONAME
@@ -25865,7 +25887,7 @@ EXPORTS
     ?CreateTransport@H323DataChannel@@UAEHXZ @25361 NONAME
     ?CreateTransport@H323_T38Channel@@UAEHXZ @25362 NONAME
     ?CreateTransport@OpalTransportAddress@@UBEPAVOpalTransport@@AAVOpalEndPoint@@W4BindOptions@1@@Z @25365 NONAME
-    ?CreateTransport@SIPEndPoint@@QAEPAVOpalTransport@@ABVOpalTransportAddress@@H@Z @34105 NONAME
+    ?CreateTransport@SIPEndPoint@@QAEPAVOpalTransport@@ABVOpalTransportAddress@@PBV2@@Z @34642 NONAME
     ?CreateTransport@SIPInfo@@UAEHAAVOpalTransportAddress@@@Z @25367 NONAME
     ?CreateVideoInputDevice@OpalConnection@@UAEHABVOpalMediaFormat@@AAPAVPVideoInputDevice@@AAH@Z @25368 NONAME
     ?CreateVideoInputDevice@OpalEndPoint@@UAEHABVOpalConnection@@ABVOpalMediaFormat@@AAPAVPVideoInputDevice@@AAH@Z @25369 NONAME
@@ -26682,6 +26704,7 @@ EXPORTS
     ?DecodeSample@PWAVFileConverterULaw@@UAEFH@Z @26175 NONAME
     ?DecodeSubType@T38_UDPTLPacket_primary_ifp_packet@@QAEHAAVT38_IFPPacket@@@Z @26176 NONAME
     ?DecrementReference@RTP_Session@@QAEHXZ @26177 NONAME
+    ?DecrementReferenceCount@TransportRecord@SIPEndPoint@@QAEXXZ @34643 NONAME
     ?DecryptContents@IAX2Frame@@IAEHAAVIAX2Encryption@@@Z @26178 NONAME
     ?defaultManufacturerCode@H323EndPoint@@2GA @26179 NONAME
     ?defaultT35CountryCode@H323EndPoint@@2EA @26180 NONAME
@@ -27635,6 +27658,7 @@ EXPORTS
     ?FindFormat@OpalMediaFormatList@@QBEHABVPString@@H@Z @34464 NONAME
     ?FindFormat@OpalMediaFormatList@@QBEHW4PayloadTypes@RTP_DataFrame@@IPBD1@Z @34293 NONAME
     ?FindIntermediateFormat@OpalTranscoder@@SAHAAVOpalMediaFormat@@00@Z @27109 NONAME
+    ?FindListener@OpalEndPoint@@QAEPAVOpalListener@@ABVOpalTransportAddress@@@Z @34644 NONAME
     ?FindNegLogicalChannel@H245NegLogicalChannels@@QAEPAVH245NegLogicalChannel@@IH@Z @27110 NONAME
     ?FindOption@OpalMediaFormat@@IBEPAVOpalMediaOption@@ABVPString@@@Z @27111 NONAME
     ?FindSIPInfoByAuthRealm@RegistrationList@SIPEndPoint@@QAE?AV?$PSafePtr@VSIPInfo@@@@ABVPString@@0W4PSafetyMode@@@Z @34601 NONAME
@@ -27692,6 +27716,7 @@ EXPORTS
     ?GetAndLockVXMLChannel@PVXMLSession@@QAEPAVPVXMLChannel@@XZ @27165 NONAME
     ?GetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @27166 NONAME
     ?GetAt@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBEPAVH460_Feature@@ABVH460_FeatureID@@@Z @27167 NONAME
+    ?GetAt@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UBEPAVTransportRecord@SIPEndPoint@@ABVOpalTransportAddress@@@Z @34645 NONAME
     ?GetAt@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UBEPAVH323ServiceControlSession@@ABVPOrdinalKey@@@Z @27168 NONAME
     ?GetAt@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UBEPAVH450xHandler@@ABVPOrdinalKey@@@Z @27169 NONAME
     ?GetAt@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UBEPAVOpalTransportAddress@@ABVPOrdinalKey@@@Z @27170 NONAME
@@ -27804,6 +27829,7 @@ EXPORTS
     ?GetClass@?$PArray@VSourceDescription@RTP_Session@@@@UBEPBDI@Z @27272 NONAME
     ?GetClass@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEPBDI@Z @27273 NONAME
     ?GetClass@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBEPBDI@Z @27274 NONAME
+    ?GetClass@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UBEPBDI@Z @34646 NONAME
     ?GetClass@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UBEPBDI@Z @27275 NONAME
     ?GetClass@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UBEPBDI@Z @27276 NONAME
     ?GetClass@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UBEPBDI@Z @27277 NONAME
@@ -28208,6 +28234,7 @@ EXPORTS
     ?GetClass@T120ConnectPDU@@UBEPBDI@Z @27667 NONAME
     ?GetClass@T120_X224@@UBEPBDI@Z @27668 NONAME
     ?GetClass@Thread@OpalMediaPatch@@UBEPBDI@Z @34475 NONAME
+    ?GetClass@TransportRecord@SIPEndPoint@@UBEPBDI@Z @34647 NONAME
     ?GetClass@X224@@UBEPBDI@Z @27670 NONAME
     ?GetClientDataPtr@H224_Frame@@QBEPAEXZ @27671 NONAME
     ?GetClientDataSize@H224_Frame@@QBEHXZ @27672 NONAME
@@ -28251,6 +28278,7 @@ EXPORTS
     ?GetData@X224@@QBEABVPBYTEArray@@XZ @27705 NONAME
     ?GetDataAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@QBEAAVH245NegLogicalChannel@@H@Z @27706 NONAME
     ?GetDataAt@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@QBEAAVH460_Feature@@H@Z @27707 NONAME
+    ?GetDataAt@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@QBEAAVTransportRecord@SIPEndPoint@@H@Z @34648 NONAME
     ?GetDataAt@?$PDictionary@VPOrdinalKey@@VPBYTEArray@@@@QBEAAVPBYTEArray@@H@Z @27708 NONAME
     ?GetDataAt@?$PDictionary@VPOrdinalKey@@VRTP_Session@@@@QBEAAVRTP_Session@@H@Z @27709 NONAME
     ?GetDataAt@?$POrdinalDictionary@VPString@@@@QBEHH@Z @27710 NONAME
@@ -29255,6 +29283,7 @@ EXPORTS
     ?GetJitterBufferSize@RTP_Session@@QBEIXZ @28703 NONAME
     ?GetJitterTime@OpalJitterBuffer@@QBEKXZ @34479 NONAME
     ?GetJitterTimeUnits@RTP_Session@@QBEIXZ @28705 NONAME
+    ?GetKeyAt@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@QBEABVOpalTransportAddress@@H@Z @34649 NONAME
     ?GetKeyAt@?$PDictionary@VPOrdinalKey@@VPBYTEArray@@@@QBEABVPOrdinalKey@@H@Z @28706 NONAME
     ?GetKeyAt@?$PSet@VPOrdinalKey@@@@UBEABVPOrdinalKey@@H@Z @28707 NONAME
     ?GetKeyList@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@SA?AV?$vector@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@XZ @34143 NONAME
@@ -29582,6 +29611,7 @@ EXPORTS
     ?GetRecordVolume@OpalLineInterfaceDevice@@UAEHIAAI@Z @29024 NONAME
     ?GetRecordVolume@OpalPluginLID@@UAEHIAAI@Z @33540 NONAME
     ?GetRedirectingNumber@Q931@@QBEHAAVPString@@PAI1111III@Z @29026 NONAME
+    ?GetReferenceCount@TransportRecord@SIPEndPoint@@QBEIXZ @34650 NONAME
     ?GetReferredBy@SIPMIMEInfo@@QBE?AVPString@@XZ @29027 NONAME
     ?GetReferTo@SIPMIMEInfo@@QBE?AVPString@@XZ @29028 NONAME
     ?GetRegisteredEndPoint@H323GatekeeperRequest@@QAEHXZ @29029 NONAME
@@ -29784,6 +29814,7 @@ EXPORTS
     ?GetTransport@SIPConnection@@UBEAAVOpalTransport@@XZ @29222 NONAME
     ?GetTransport@SIPInfo@@UAEPAVOpalTransport@@XZ @29223 NONAME
     ?GetTransport@SIPTransaction@@QBEAAVOpalTransport@@XZ @29224 NONAME
+    ?GetTransport@TransportRecord@SIPEndPoint@@QBEPAVOpalTransport@@XZ @34651 NONAME
     ?GetTransportAddress@OpalListener@@QBE?AVOpalTransportAddress@@XZ @29225 NONAME
     ?GetTransportAddress@SDPMediaDescription@@QBEABVOpalTransportAddress@@XZ @29226 NONAME
     ?GetTxFramesInPacket@H323AudioCapability@@UBEIXZ @29227 NONAME
@@ -29967,6 +29998,7 @@ EXPORTS
     ?IncomingEthernetFrame@IAX2Processor@@QAEXPAVIAX2Frame@@@Z @29406 NONAME
     ?IncomingMessageInOrder@IAX2SequenceNumbers@@QAE?AW4IncomingOrder@1@AAVIAX2FullFrame@@@Z @34497 NONAME
     ?IncrementReference@RTP_Session@@QAEXXZ @29408 NONAME
+    ?IncrementReferenceCount@TransportRecord@SIPEndPoint@@QAEXXZ @34652 NONAME
     ?IncVideoFramesRcvd@IAX2CallProcessor@@IAEXXZ @32406 NONAME
     ?InfoRequest@H323GatekeeperListener@@UAEHAAVH323RegisteredEndPoint@@PAVH323GatekeeperCall@@@Z @29410 NONAME
     ?InfoRequestResponse@H323Gatekeeper@@QAEXABVH323Connection@@@Z @29411 NONAME
@@ -30016,6 +30048,7 @@ EXPORTS
     ?InternalIsDescendant@?$PArray@VSourceDescription@RTP_Session@@@@UBEHPBD@Z @29452 NONAME
     ?InternalIsDescendant@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEHPBD@Z @29453 NONAME
     ?InternalIsDescendant@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBEHPBD@Z @29454 NONAME
+    ?InternalIsDescendant@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UBEHPBD@Z @34653 NONAME
     ?InternalIsDescendant@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UBEHPBD@Z @29455 NONAME
     ?InternalIsDescendant@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UBEHPBD@Z @29456 NONAME
     ?InternalIsDescendant@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UBEHPBD@Z @29457 NONAME
@@ -30420,6 +30453,7 @@ EXPORTS
     ?InternalIsDescendant@T120ConnectPDU@@UBEHPBD@Z @29847 NONAME
     ?InternalIsDescendant@T120_X224@@UBEHPBD@Z @29848 NONAME
     ?InternalIsDescendant@Thread@OpalMediaPatch@@UBEHPBD@Z @34509 NONAME
+    ?InternalIsDescendant@TransportRecord@SIPEndPoint@@UBEHPBD@Z @34654 NONAME
     ?InternalIsDescendant@X224@@UBEHPBD@Z @29850 NONAME
     ?InternalIsMd5@IAX2IeAuthMethods@@KAHF@Z @29851 NONAME
     ?InternalIsPlainText@IAX2IeAuthMethods@@KAHF@Z @29852 NONAME
@@ -31840,6 +31874,7 @@ EXPORTS
     ?ReleaseSession@H323Connection@@UAEXI@Z @31215 NONAME
     ?ReleaseSession@OpalConnection@@UAEXIH@Z @33769 NONAME
     ?ReleaseSession@RTP_SessionManager@@QAEXIH@Z @33770 NONAME
+    ?ReleaseTransport@SIPEndPoint@@UAEXPAVOpalTransport@@@Z @34655 NONAME
     ?RemoteAddress@IAX2Remote@@QAE?AVAddress@PIPSocket@@XZ @31218 NONAME
     ?RemoteHoldConnection@IAX2Connection@@QAEXXZ @31219 NONAME
     ?RemoteNodeHasAnswered@IAX2CallProcessor@@IAEXXZ @32500 NONAME
@@ -31869,6 +31904,7 @@ EXPORTS
     ?RemoveAllServiceRelationships@H323PeerElement@@QAEHXZ @31244 NONAME
     ?RemoveAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UAEPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @31245 NONAME
     ?RemoveAt@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UAEPAVH460_Feature@@ABVH460_FeatureID@@@Z @31246 NONAME
+    ?RemoveAt@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UAEPAVTransportRecord@SIPEndPoint@@ABVOpalTransportAddress@@@Z @34656 NONAME
     ?RemoveAt@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UAEPAVH323ServiceControlSession@@ABVPOrdinalKey@@@Z @31247 NONAME
     ?RemoveAt@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UAEPAVH450xHandler@@ABVPOrdinalKey@@@Z @31248 NONAME
     ?RemoveAt@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UAEPAVOpalTransportAddress@@ABVPOrdinalKey@@@Z @31249 NONAME
@@ -32076,6 +32112,7 @@ EXPORTS
     ?SetAssociatedCallToken@H4502Handler@@QAEXABVPString@@@Z @31441 NONAME
     ?SetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UAEHABVH323ChannelNumber@@PAVH245NegLogicalChannel@@@Z @31442 NONAME
     ?SetAt@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UAEHABVH460_FeatureID@@PAVH460_Feature@@@Z @31443 NONAME
+    ?SetAt@?$PDictionary@VOpalTransportAddress@@VTransportRecord@SIPEndPoint@@@@UAEHABVOpalTransportAddress@@PAVTransportRecord@SIPEndPoint@@@Z @34657 NONAME
     ?SetAt@?$PDictionary@VPOrdinalKey@@VH323ServiceControlSession@@@@UAEHABVPOrdinalKey@@PAVH323ServiceControlSession@@@Z @31444 NONAME
     ?SetAt@?$PDictionary@VPOrdinalKey@@VH450xHandler@@@@UAEHABVPOrdinalKey@@PAVH450xHandler@@@Z @31445 NONAME
     ?SetAt@?$PDictionary@VPOrdinalKey@@VOpalTransportAddress@@@@UAEHABVPOrdinalKey@@PAVOpalTransportAddress@@@Z @31446 NONAME
@@ -32545,6 +32582,7 @@ EXPORTS
     ?StopChannel@H323Transactor@@UAEXXZ @31907 NONAME
     ?StopciTimer@H45011Handler@@QAEXXZ @31908 NONAME
     ?StopctTimer@H4502Handler@@QAEXXZ @31909 NONAME
+    ?StopListener@OpalEndPoint@@QAEHABVOpalTransportAddress@@@Z @34658 NONAME
     ?StopNoResponseTimer@IAX2Processor@@IAEXXZ @31910 NONAME
     ?StopReading@OpalLine@@UAEHXZ @33599 NONAME
     ?StopReading@OpalLineInterfaceDevice@@UAEHI@Z @33600 NONAME
