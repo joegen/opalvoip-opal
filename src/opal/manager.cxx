@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2077  2007/03/13 00:33:11  csoutheren
+ * Revision 1.2078  2007/03/21 16:10:46  hfriederich
+ * Use CallEndReason from connection if call setup fails
+ *
+ * Revision 2.76  2007/03/13 00:33:11  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -534,7 +537,17 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
     return TRUE;
   }
 
-  call->Clear();
+  OpalConnection::CallEndReason endReason = OpalConnection::NumCallEndReasons;
+  PSafePtr<OpalConnection> connection = call->GetConnection(0);
+  if (connection != NULL) {
+    endReason = connection->GetCallEndReason();
+  }
+  
+  if (endReason != OpalConnection::NumCallEndReasons) {
+    call->Clear(endReason);
+  } else {
+    call->Clear();
+  }
 
   if (!activeCalls.RemoveAt(token)) {
     PTRACE(1, "SetUpCall could not remove call from active call list");
