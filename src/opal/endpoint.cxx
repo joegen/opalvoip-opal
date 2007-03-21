@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2054  2007/03/13 00:33:10  csoutheren
+ * Revision 1.2055  2007/03/21 06:15:57  rjongbloed
+ * Added functions to find an active comms listener for an interface,
+ *    and remove/stop it.
+ *
+ * Revision 2.53  2007/03/13 00:33:10  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -389,6 +393,23 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
   if (defaultSignalPort != 0) 
     listenerAddresses.AppendString(GetDefaultTransport() + psprintf("*:%u", defaultSignalPort));
   return listenerAddresses;
+}
+
+
+OpalListener * OpalEndPoint::FindListener(const OpalTransportAddress & iface)
+{
+  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
+    if (listeners[i].GetTransportAddress().IsEquivalent(iface))
+      return &listeners[i];
+  }
+  return NULL;
+}
+
+
+BOOL OpalEndPoint::StopListener(const OpalTransportAddress & iface)
+{
+  OpalListener * listener = FindListener(iface);
+  return listener != NULL && RemoveListener(listener);
 }
 
 
