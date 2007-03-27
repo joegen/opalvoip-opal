@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2074  2007/03/27 20:16:23  dsandras
+ * Revision 1.2075  2007/03/27 21:00:29  dsandras
+ * Removed cout.
+ *
+ * Revision 2.73  2007/03/27 20:16:23  dsandras
  * Temporarily removed use of shared transports as it could have unexpected
  * side effects on the routing of PDUs.
  * Various fixes on the way SIPInfo objects are being handled. Wait
@@ -381,7 +384,7 @@ class SIPInfo : public PSafeObject
     { return registered; }
 
     virtual void SetRegistered(BOOL r) 
-    { cout << "Marking " << registrationAddress << "[" << GetMethod() << "]" <<  " as " << r << endl << flush; registered = r; if (r) registrationTime = PTime ();}
+    { registered = r; if (r) registrationTime = PTime ();}
 
     // An expire time of -1 corresponds to an invalid SIPInfo that 
     // should be deleted.
