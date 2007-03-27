@@ -24,9 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2208  2007/03/19 22:47:56  hfriederich
- * Allow to share OpalTransport instances between endpoint and connections
- *   if connecting to same remote address
+ * Revision 1.2209  2007/03/27 20:16:23  dsandras
+ * Temporarily removed use of shared transports as it could have unexpected
+ * side effects on the routing of PDUs.
+ * Various fixes on the way SIPInfo objects are being handled. Wait
+ * for transports to be closed before being deleted. Added missing mutexes.
+ * Added garbage collector.
  *
  * Revision 2.206  2007/03/19 03:56:36  csoutheren
  * Fix problem with outgoing SDP on retry
@@ -888,7 +891,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   if (inviteTransport == NULL)
     transport = NULL;
   else 
-    transport = endpoint.CreateTransport(inviteTransport->GetRemoteAddress(), inviteTransport);
+    transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
   
   if (transport)
     lastTransportAddress = transport->GetRemoteAddress();
@@ -915,7 +918,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 SIPConnection::~SIPConnection()
 {
   delete originalInvite;
-  endpoint.ReleaseTransport(transport);
+  delete transport;
   delete referTransaction;
 
   if (pduHandler) delete pduHandler;

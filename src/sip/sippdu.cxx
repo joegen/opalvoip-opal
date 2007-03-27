@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117  2007/01/10 09:16:55  csoutheren
+ * Revision 1.2118  2007/03/27 20:16:23  dsandras
+ * Temporarily removed use of shared transports as it could have unexpected
+ * side effects on the routing of PDUs.
+ * Various fixes on the way SIPInfo objects are being handled. Wait
+ * for transports to be closed before being deleted. Added missing mutexes.
+ * Added garbage collector.
+ *
+ * Revision 2.116  2007/01/10 09:16:55  csoutheren
  * Allow compilation with video disabled
  *
  * Revision 2.115  2006/12/18 03:18:42  csoutheren
@@ -2330,14 +2337,14 @@ void SIPTransaction::SetTerminated(States newState)
   if (connection != NULL) {
     if (state != Terminated_Success) {
       mutex.Signal();
-
       connection->OnTransactionFailed(*this);
-
       mutex.Wait();
     }
   }
   else {
+    mutex.Signal();
     endpoint.RemoveTransaction(this);
+    mutex.Wait();
   }
     
 }
