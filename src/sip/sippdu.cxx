@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.12  2007/01/15 22:16:44  dsandras
+ * Revision 1.2084.2.13  2007/03/27 20:18:13  dsandras
+ * Added missing mutex.
+ *
+ * Revision 2.83.2.12  2007/01/15 22:16:44  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.115  2006/12/18 03:18:42  csoutheren
@@ -2328,14 +2331,14 @@ void SIPTransaction::SetTerminated(States newState)
   if (connection != NULL) {
     if (state != Terminated_Success) {
       mutex.Signal();
-
       connection->OnTransactionFailed(*this);
-
       mutex.Wait();
     }
   }
   else {
+    mutex.Signal();
     endpoint.RemoveTransaction(this);
+    mutex.Wait();
   }
     
 }
