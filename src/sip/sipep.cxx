@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.35  2007/03/27 20:23:22  dsandras
+ * Revision 1.2098.2.36  2007/03/27 21:52:45  dsandras
+ * Added more PTRACE statements
+ *
+ * Revision 2.97.2.35  2007/03/27 20:23:22  dsandras
  * Added Garbage collector. Make sure the transport is closed before
  * deleting it. Better handling of SIPInfo objects.
  *
@@ -584,8 +587,10 @@ SIPInfo::~SIPInfo()
 {
   PWaitAndSignal m(transportMutex);
 
+  PTRACE(4,"SIPInfo\tWill delete SIPInfo " << registrationAddress);
   if (registrarTransport) { 
 
+    PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (deleting SIPInfo)");
     registrarTransport->CloseWait ();
     delete registrarTransport;
     registrarTransport = NULL;
@@ -603,6 +608,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   
   // Only delete if we are refreshing
   if (registrarTransport != NULL && HasExpired()) {
+    PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (expired)");
     registrarTransport->CloseWait ();
     delete registrarTransport;
     registrarTransport = NULL;
