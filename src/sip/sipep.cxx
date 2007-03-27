@@ -24,9 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2150  2007/03/19 22:47:56  hfriederich
- * Allow to share OpalTransport instances between endpoint and connections
- *   if connecting to same remote address
+ * Revision 1.2151  2007/03/27 20:16:23  dsandras
+ * Temporarily removed use of shared transports as it could have unexpected
+ * side effects on the routing of PDUs.
+ * Various fixes on the way SIPInfo objects are being handled. Wait
+ * for transports to be closed before being deleted. Added missing mutexes.
+ * Added garbage collector.
  *
  * Revision 2.148  2007/03/17 15:00:24  dsandras
  * Keep the transport open for a longer time when doing text conversations.
@@ -585,7 +588,9 @@ SIPInfo::~SIPInfo()
   PWaitAndSignal m(transportMutex);
 
   if (registrarTransport) { 
-    ep.ReleaseTransport(registrarTransport);
+
+    registrarTransport->CloseWait();
+    delete registrarTransport;
     registrarTransport = NULL;
   }
 
@@ -601,6 +606,8 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   
   // Only delete if we are refreshing
   if (registrarTransport != NULL && HasExpired()) {
+
+    registrarTransport->CloseWait();
     delete registrarTransport;
     registrarTransport = NULL;
   }
@@ -732,6 +739,7 @@ SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL /*unre
 
 void SIPMessageInfo::OnSuccess()
 { 
+  SetRegistered(TRUE);
 }
 
 void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
@@ -787,7 +795,10 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   activeSIPInfo.AllowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
-  registrationTimer.RunContinuous (PTimeInterval(0, 2));
+  registrationTimer.RunContinuous (PTimeInterval(0, 30));
+
+  garbageTimer.SetNotifier(PCREATE_NOTIFIER(GarbageCollect));
+  garbageTimer.RunContinuous (PTimeInterval(0, 2));
   
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous (natBindingTimeout);
@@ -800,7 +811,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  while (activeSIPInfo.GetSize() > 0) {
+  while (activeSIPInfo.GetSize()>0) {
 
     for (PSafePtr<SIPInfo> info(activeSIPInfo, PSafeReadOnly); info != NULL; ++info) {
 
@@ -821,13 +832,10 @@ SIPEndPoint::~SIPEndPoint()
     }
 
     activeSIPInfo.DeleteObjectsToBeRemoved();
-    PThread::Current()->Sleep(10); // Let RegistrationRefresh() do the cleanup.
+    PThread::Current()->Sleep(10);
   }
 
   listeners.RemoveAll();
-    
-  // Stop calling RegistrationRefresh() before compiler destroys member objects
-  registrationTimer.Stop();
 
   PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
@@ -916,35 +924,16 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
 
 
-OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remoteAddress, 
-                                             const OpalTransport * originalTransport)
+OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & address, 
+                                             BOOL isLocalAddress)
 {
-  PWaitAndSignal m(transportsMutex);
-    
   OpalTransport * transport;
-    
-  if (reuseTransports == TRUE) {
-    PIPSocket::Address ip;
-    WORD port;
-    if (remoteAddress.GetIpAndPort(ip, port)) {
-      OpalTransportAddress addr(ip, port, "udp"); // At the moment only UDP supported
-      TransportRecord * transportRecord = transports.GetAt(addr);
-            
-      if (transportRecord != NULL) {
-        transport = transportRecord->GetTransport();
-        PTRACE(3, "Reusing transport " << *(transportRecord->GetTransport()));
-        transportRecord->IncrementReferenceCount();
-        return transport;
-      }
-    }
-  }
 	
-  if(originalTransport != NULL) {
+  if(isLocalAddress == TRUE) {
     // already determined which interface to use
-    const OpalTransportAddress & localAddress = originalTransport->GetLocalAddress();
-    transport = localAddress.CreateTransport(*this);
+    transport = address.CreateTransport(*this);
     if(transport == NULL) {
-      PTRACE(1, "SIP\tCould not create transport for " << localAddress);
+      PTRACE(1, "SIP\tCould not create transport for " << address);
       return NULL;
     }
   } else {
@@ -955,18 +944,18 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
 
     if (ip.IsAny()) {
       // endpoint is listening to anything - attempt call using all interfaces
-      transport = remoteAddress.CreateTransport(*this, OpalTransportAddress::NoBinding);
+      transport = address.CreateTransport(*this, OpalTransportAddress::NoBinding);
       if (transport == NULL) {
-        PTRACE(1, "SIP\tCould not create transport from " << remoteAddress);
+        PTRACE(1, "SIP\tCould not create transport from " << address);
         return NULL;
       }
     }
     else {
       // endpoint has a specific listener - use only that interface
-      OpalTransportAddress localAddress(ip, port, "udp$");
-      transport = localAddress.CreateTransport(*this) ;
+      OpalTransportAddress LocalAddress(ip, port, "udp$");
+      transport = LocalAddress.CreateTransport(*this) ;
       if (transport == NULL) {
-        PTRACE(1, "SIP\tCould not create transport for " << localAddress);
+        PTRACE(1, "SIP\tCould not create transport for " << LocalAddress);
         return NULL;
       }
     }
@@ -975,8 +964,8 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
-  if (!transport->ConnectTo(remoteAddress)) {
-    PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
+  if (!transport->ConnectTo(address)) {
+    PTRACE(1, "SIP\tCould not connect to " << address << " - " << transport->GetErrorText());
     delete transport;
     return NULL;
   }
@@ -989,41 +978,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
                                             PThread::NoAutoDeleteThread,
                                             PThread::NormalPriority,
                                             "SIP Transport:%x"));
-  
-  if (reuseTransports == TRUE) {
-    PIPSocket::Address ip;
-    WORD port;
-    if (remoteAddress.GetIpAndPort(ip, port)) {
-      OpalTransportAddress addr(ip, port, "udp");
-      TransportRecord * transportRecord = new TransportRecord(transport);
-      transportRecord->IncrementReferenceCount();
-      transports.SetAt(addr, transportRecord);
-    }
-  }
-  
   return transport;
-}
-
-
-void SIPEndPoint::ReleaseTransport(OpalTransport * transport)
-{
-  PWaitAndSignal m(transportsMutex);
-    
-  for (PINDEX i = 0; i < transports.GetSize(); i++) {
-    TransportRecord & transportRecord = transports.GetDataAt(i);
-        
-    if (transportRecord.GetTransport() == transport) {
-      transportRecord.DecrementReferenceCount();
-            
-      if (transportRecord.GetReferenceCount() == 0) {
-        transports.RemoveAt(transports.GetKeyAt(i));
-      }
-      return;
-    }
-  }
-    
-  // Transport not found in dictionary, thus delete the transport.
-  delete transport;
 }
 
 
@@ -1485,6 +1440,11 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
   if (info == NULL) 
     return;
   
+  if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
+    info->OnSuccess();
+    return;
+  }
+
   // reset the number of unsuccesful authentication attempts
   info->SetAuthenticationAttempts(0);
   
@@ -1505,14 +1465,15 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
     if (info->GetAuthentication().GetAuthRealm().IsEmpty())
       info->SetAuthRealm(transaction.GetURI().GetHostName());
+
+    info->OnSuccess();
   }
   else { 
-    info->SetExpire(-1);
     info->SetRegistered(FALSE);
-  }
+    info->OnSuccess();
 
-  // Callback
-  info->OnSuccess();
+    info->SetExpire(-1);
+  }
 }
 
 
@@ -1690,6 +1651,19 @@ BOOL SIPEndPoint::IsSubscribed(const PString & host, const PString & user)
 }
 
 
+void SIPEndPoint::GarbageCollect(PTimer &, INT)
+{
+  for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
+
+    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadWrite);
+
+    if (info->GetExpire() == -1) {
+      activeSIPInfo.Remove(info); // Was invalid the last time, delete it
+    }
+  }
+}
+
+
 void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 {
   SIPTransaction *request = NULL;
@@ -1698,47 +1672,41 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
   // Timer has elapsed
   for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
 
-    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadWrite);
+    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadOnly);
 
-    if (info->GetExpire() == -1) {
-      activeSIPInfo.Remove(info); // Was invalid the last time, delete it
+    // Need to refresh
+    if (info->GetExpire() > 0 
+        && info->IsRegistered()
+        && info->GetTransport() != NULL 
+        && info->GetMethod() != SIP_PDU::Method_MESSAGE
+        && info->HasExpired()) {
+      PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
+      infoTransport = info->GetTransport(); // Get current transport
+      OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
+      // Will update the transport if required. For example, if STUN
+      // is used, and the external IP changed. Otherwise, OPAL would
+      // keep registering the old IP.
+      if (info->CreateTransport(registrarAddress)) { 
+        infoTransport = info->GetTransport();
+        info->RemoveTransactions();
+        info->SetExpire(info->GetExpire()*10/9);
+        request = info->CreateTransaction(*infoTransport, FALSE); 
+
+        if (request->Start()) 
+          info->AppendTransaction(request);
+        else {
+          delete request;
+          PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+          info->SetExpire(-1); // Mark as Invalid
+        }
+      }
+      else {
+        PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh: Transport creation failed");
+        info->SetExpire(-1); // Mark as Invalid
+      }
     }
-    else {
-
-      // Need to refresh
-      if (info->GetExpire() > 0 
-	  && info->IsRegistered()
-	  && info->GetTransport() != NULL 
-	  && info->GetMethod() != SIP_PDU::Method_MESSAGE
-	  && info->HasExpired()) {
-	PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
-	infoTransport = info->GetTransport(); // Get current transport
-	OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
-	// Will update the transport if required. For example, if STUN
-	// is used, and the external IP changed. Otherwise, OPAL would
-	// keep registering the old IP.
-	if (info->CreateTransport(registrarAddress)) { 
-	  infoTransport = info->GetTransport();
-	  info->RemoveTransactions();
-	  info->SetExpire(info->GetExpire()*10/9);
-	  request = info->CreateTransaction(*infoTransport, FALSE); 
-
-	  if (request->Start()) 
-	    info->AppendTransaction(request);
-	  else {
-	    delete request;
-	    PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
-	    info->SetExpire(-1); // Mark as Invalid
-	  }
-	}
-	else {
-	  PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh: Transport creation failed");
-	  info->SetExpire(-1); // Mark as Invalid
-	}
-      }
-      else if (info->HasExpired()) {
-	info->SetExpire(-1); // Mark as Invalid
-      }
+    else if (info->HasExpired()) {
+      info->SetExpire(-1); // Mark as Invalid
     }
   }
 
@@ -1823,8 +1791,8 @@ BOOL SIPEndPoint::TransmitSIPInfo(SIP_PDU::Methods m,
 				  const PString & realm,
 				  const PString & body,
 				  int timeout,
-          const PTimeInterval & minRetryTime, 
-          const PTimeInterval & maxRetryTime)
+                                  const PTimeInterval & minRetryTime, 
+                                  const PTimeInterval & maxRetryTime)
 {
   PSafePtr<SIPInfo> info = NULL;
   OpalTransport *transport = NULL;
@@ -2153,18 +2121,4 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
                                   const RTP_Session & /*session*/) const
 {
 }
-
-
-SIPEndPoint::TransportRecord::TransportRecord(OpalTransport * _transport)
-{
-    transport = _transport;
-    referenceCount = 0;
-}
-
-
-SIPEndPoint::TransportRecord::~TransportRecord()
-{
-    delete transport;
-}
-
 // End of file ////////////////////////////////////////////////////////////////
