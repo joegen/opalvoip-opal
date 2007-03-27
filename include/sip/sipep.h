@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.14  2007/03/10 16:48:21  dsandras
+ * Revision 1.2047.2.15  2007/03/27 20:23:22  dsandras
+ * Added Garbage collector. Make sure the transport is closed before
+ * deleting it. Better handling of SIPInfo objects.
+ *
+ * Revision 2.46.2.14  2007/03/10 16:48:21  dsandras
  * Improved locking.
  *
  * Revision 2.46.2.13  2007/02/27 21:24:07  dsandras
@@ -1033,6 +1037,7 @@ class SIPEndPoint : public OpalEndPoint
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
+    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, GarbageCollect);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
 
     static BOOL WriteSIPInfo(
@@ -1081,6 +1086,7 @@ class SIPEndPoint : public OpalEndPoint
     RegistrationList   activeSIPInfo;
 
     PTimer registrationTimer; // Used to refresh the REGISTER and the SUBSCRIBE transactions.
+    PTimer garbageTimer;
     SIPTransactionList messages;
     SIPTransactionDict transactions;
 

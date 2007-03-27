@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.34  2007/03/17 14:59:41  dsandras
+ * Revision 1.2098.2.35  2007/03/27 20:23:22  dsandras
+ * Added Garbage collector. Make sure the transport is closed before
+ * deleting it. Better handling of SIPInfo objects.
+ *
+ * Revision 2.97.2.34  2007/03/17 14:59:41  dsandras
  * Keep the transport open for a longer time when doing text conversations.
  *
  * Revision 2.97.2.33  2007/03/13 21:23:24  dsandras
@@ -581,6 +585,8 @@ SIPInfo::~SIPInfo()
   PWaitAndSignal m(transportMutex);
 
   if (registrarTransport) { 
+
+    registrarTransport->CloseWait ();
     delete registrarTransport;
     registrarTransport = NULL;
   }
@@ -597,6 +603,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   
   // Only delete if we are refreshing
   if (registrarTransport != NULL && HasExpired()) {
+    registrarTransport->CloseWait ();
     delete registrarTransport;
     registrarTransport = NULL;
   }
@@ -728,6 +735,7 @@ SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL /*unre
 
 void SIPMessageInfo::OnSuccess()
 { 
+  SetRegistered(TRUE);
 }
 
 void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
@@ -759,7 +767,10 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   activeSIPInfo.AllowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
-  registrationTimer.RunContinuous (PTimeInterval(0, 2));
+  registrationTimer.RunContinuous (PTimeInterval(0, 30));
+
+  garbageTimer.SetNotifier(PCREATE_NOTIFIER(GarbageCollect));
+  garbageTimer.RunContinuous (PTimeInterval(0, 2));
   
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous (natBindingTimeout);
@@ -835,7 +846,7 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 
   do {
     HandlePDU(*transport);
-  } while (transport->IsOpen());
+  } while (transport->IsOpen() && !transport->bad() && !transport->eof());
   
   PTRACE(2, "SIP\tRead thread finished.");
 }
@@ -1385,6 +1396,12 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
  
   if (info == NULL) 
     return;
+
+  if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
+    info->OnSuccess();
+    return;
+  }
+
   
   // reset the number of unsuccesful authentication attempts
   info->SetAuthenticationAttempts(0);
@@ -1406,14 +1423,15 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
     if (info->GetAuthentication().GetAuthRealm().IsEmpty())
       info->SetAuthRealm(transaction.GetURI().GetHostName());
+
+    info->OnSuccess();
   }
   else { 
-    info->SetExpire(-1);
     info->SetRegistered(FALSE);
-  }
+    info->OnSuccess();
 
-  // Callback
-  info->OnSuccess();
+    info->SetExpire(-1);
+  }
 }
 
 
@@ -1591,6 +1609,19 @@ BOOL SIPEndPoint::IsSubscribed(const PString & host, const PString & user)
 }
 
 
+void SIPEndPoint::GarbageCollect(PTimer &, INT)
+{
+  for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
+
+    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadWrite);
+
+    if (info->GetExpire() == -1) {
+      activeSIPInfo.Remove(info); // Was invalid the last time, delete it
+    }
+  }
+}
+
+
 void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
 {
   SIPTransaction *request = NULL;
@@ -1599,47 +1630,41 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
   // Timer has elapsed
   for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
 
-    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadWrite);
+    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadOnly);
 
-    if (info->GetExpire() == -1) {
-      activeSIPInfo.Remove(info); // Was invalid the last time, delete it
+    // Need to refresh
+    if (info->GetExpire() > 0 
+        && info->IsRegistered()
+        && info->GetTransport() != NULL 
+        && info->GetMethod() != SIP_PDU::Method_MESSAGE
+        && info->HasExpired()) {
+      PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
+      infoTransport = info->GetTransport(); // Get current transport
+      OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
+      // Will update the transport if required. For example, if STUN
+      // is used, and the external IP changed. Otherwise, OPAL would
+      // keep registering the old IP.
+      if (info->CreateTransport(registrarAddress)) { 
+        infoTransport = info->GetTransport();
+        info->RemoveTransactions();
+        info->SetExpire(info->GetExpire()*10/9);
+        request = info->CreateTransaction(*infoTransport, FALSE); 
+
+        if (request->Start()) 
+          info->AppendTransaction(request);
+        else {
+          delete request;
+          PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
+          info->SetExpire(-1); // Mark as Invalid
+        }
+      }
+      else {
+        PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh: Transport creation failed");
+        info->SetExpire(-1); // Mark as Invalid
+      }
     }
-    else {
-
-      // Need to refresh
-      if (info->GetExpire() > 0 
-	  && info->IsRegistered()
-	  && info->GetTransport() != NULL 
-	  && info->GetMethod() != SIP_PDU::Method_MESSAGE
-	  && info->HasExpired()) {
-	PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
-	infoTransport = info->GetTransport(); // Get current transport
-	OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
-	// Will update the transport if required. For example, if STUN
-	// is used, and the external IP changed. Otherwise, OPAL would
-	// keep registering the old IP.
-	if (info->CreateTransport(registrarAddress)) { 
-	  infoTransport = info->GetTransport();
-	  info->RemoveTransactions();
-	  info->SetExpire(info->GetExpire()*10/9);
-	  request = info->CreateTransaction(*infoTransport, FALSE); 
-
-	  if (request->Start()) 
-	    info->AppendTransaction(request);
-	  else {
-	    delete request;
-	    PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
-	    info->SetExpire(-1); // Mark as Invalid
-	  }
-	}
-	else {
-	  PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh: Transport creation failed");
-	  info->SetExpire(-1); // Mark as Invalid
-	}
-      }
-      else if (info->HasExpired()) {
-	info->SetExpire(-1); // Mark as Invalid
-      }
+    else if (info->HasExpired()) {
+      info->SetExpire(-1); // Mark as Invalid
     }
   }
 
