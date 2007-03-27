@@ -515,6 +515,7 @@ EXPORTS
     ??0ContinueAction_PNotifier@OpalH281Handler@@QAE@PAV1@@Z @40750 NONAME
     ??0Entry@OpalJitterBuffer@@QAE@XZ @44821 NONAME
     ??0Filter@OpalMediaPatch@@QAE@ABVPNotifier@@ABVOpalMediaFormat@@@Z @160 NONAME
+    ??0GarbageCollect_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @45176 NONAME
     ??0GarbageMain_PNotifier@OpalManager@@QAE@PAV1@@Z @162 NONAME
     ??0GCC_AlternativeNodeID@@QAE@ABV0@@Z @163 NONAME
     ??0GCC_AlternativeNodeID@@QAE@IW4TagClass@PASN_Object@@@Z @164 NONAME
@@ -4446,6 +4447,7 @@ EXPORTS
     ??1ContinueAction_PNotifier@OpalH281Handler@@UAE@XZ @40762 NONAME
     ??1Entry@OpalJitterBuffer@@UAE@XZ @44832 NONAME
     ??1Filter@OpalMediaPatch@@UAE@XZ @3673 NONAME
+    ??1GarbageCollect_PNotifier@SIPEndPoint@@UAE@XZ @45177 NONAME
     ??1GarbageMain_PNotifier@OpalManager@@UAE@XZ @3675 NONAME
     ??1GCC_AlternativeNodeID@@UAE@XZ @3676 NONAME
     ??1GCC_ApplicationInvokeIndication@@UAE@XZ @3677 NONAME
@@ -9068,6 +9070,7 @@ EXPORTS
     ??_7ContinueAction_PNotifier@OpalH281Handler@@6B@ @40773 NONAME
     ??_7Entry@OpalJitterBuffer@@6B@ @44840 NONAME
     ??_7Filter@OpalMediaPatch@@6B@ @7764 NONAME
+    ??_7GarbageCollect_PNotifier@SIPEndPoint@@6B@ @45178 NONAME
     ??_7GarbageMain_PNotifier@OpalManager@@6B@ @7766 NONAME
     ??_7GCC_AlternativeNodeID@@6B@ @7767 NONAME
     ??_7GCC_ApplicationInvokeIndication@@6B@ @7768 NONAME
@@ -11166,6 +11169,7 @@ EXPORTS
     ??_R0?AVContinueAction_PNotifier@OpalH281Handler@@@8 @40784 NONAME
     ??_R0?AVEntry@OpalJitterBuffer@@@8 @44844 NONAME
     ??_R0?AVFilter@OpalMediaPatch@@@8 @9688 NONAME
+    ??_R0?AVGarbageCollect_PNotifier@SIPEndPoint@@@8 @45179 NONAME
     ??_R0?AVGarbageMain_PNotifier@OpalManager@@@8 @9690 NONAME
     ??_R0?AVGCC_AlternativeNodeID@@@8 @9691 NONAME
     ??_R0?AVGCC_ApplicationInvokeIndication@@@8 @9692 NONAME
@@ -13228,6 +13232,7 @@ EXPORTS
     ??_R1A@?0A@A@ContinueAction_PNotifier@OpalH281Handler@@8 @40795 NONAME
     ??_R1A@?0A@A@Entry@OpalJitterBuffer@@8 @44848 NONAME
     ??_R1A@?0A@A@Filter@OpalMediaPatch@@8 @11524 NONAME
+    ??_R1A@?0A@A@GarbageCollect_PNotifier@SIPEndPoint@@8 @45180 NONAME
     ??_R1A@?0A@A@GarbageMain_PNotifier@OpalManager@@8 @11526 NONAME
     ??_R1A@?0A@A@GCC_AlternativeNodeID@@8 @11527 NONAME
     ??_R1A@?0A@A@GCC_ApplicationInvokeIndication@@8 @11528 NONAME
@@ -15291,6 +15296,7 @@ EXPORTS
     ??_R2ContinueAction_PNotifier@OpalH281Handler@@8 @40806 NONAME
     ??_R2Entry@OpalJitterBuffer@@8 @44852 NONAME
     ??_R2Filter@OpalMediaPatch@@8 @13390 NONAME
+    ??_R2GarbageCollect_PNotifier@SIPEndPoint@@8 @45181 NONAME
     ??_R2GarbageMain_PNotifier@OpalManager@@8 @13392 NONAME
     ??_R2GCC_AlternativeNodeID@@8 @13393 NONAME
     ??_R2GCC_ApplicationInvokeIndication@@8 @13394 NONAME
@@ -17347,6 +17353,7 @@ EXPORTS
     ??_R3ContinueAction_PNotifier@OpalH281Handler@@8 @40817 NONAME
     ??_R3Entry@OpalJitterBuffer@@8 @44856 NONAME
     ??_R3Filter@OpalMediaPatch@@8 @15242 NONAME
+    ??_R3GarbageCollect_PNotifier@SIPEndPoint@@8 @45182 NONAME
     ??_R3GarbageMain_PNotifier@OpalManager@@8 @15244 NONAME
     ??_R3GCC_AlternativeNodeID@@8 @15245 NONAME
     ??_R3GCC_ApplicationInvokeIndication@@8 @15246 NONAME
@@ -19403,6 +19410,7 @@ EXPORTS
     ??_R4ContinueAction_PNotifier@OpalH281Handler@@6B@ @40828 NONAME
     ??_R4Entry@OpalJitterBuffer@@6B@ @44860 NONAME
     ??_R4Filter@OpalMediaPatch@@6B@ @17094 NONAME
+    ??_R4GarbageCollect_PNotifier@SIPEndPoint@@6B@ @45183 NONAME
     ??_R4GarbageMain_PNotifier@OpalManager@@6B@ @17096 NONAME
     ??_R4GCC_AlternativeNodeID@@6B@ @17097 NONAME
     ??_R4GCC_ApplicationInvokeIndication@@6B@ @17098 NONAME
@@ -21697,6 +21705,7 @@ EXPORTS
     ?CalculateAesKeys@IAX2Encryption@@IAEXXZ @38583 NONAME
     ?CalculateFCS@Q922_Frame@@ABEGPBEH@Z @40843 NONAME
     ?Call@ContinueAction_PNotifier@OpalH281Handler@@UBEXAAVPObject@@H@Z @40844 NONAME
+    ?Call@GarbageCollect_PNotifier@SIPEndPoint@@UBEXAAVPObject@@H@Z @45184 NONAME
     ?Call@GarbageMain_PNotifier@OpalManager@@UBEXAAVPObject@@H@Z @19155 NONAME
     ?Call@HandleIncoming_PNotifier@OpalLineConnection@@UBEXAAVPObject@@H@Z @19156 NONAME
     ?Call@HandlePDUsThreadMain_PNotifier@SIPConnection@@UBEXAAVPObject@@H@Z @19157 NONAME
@@ -28831,7 +28840,7 @@ EXPORTS
     ?CreateTransport@H323DataChannel@@UAEHXZ @25633 NONAME
     ?CreateTransport@H323_T38Channel@@UAEHXZ @25634 NONAME
     ?CreateTransport@OpalTransportAddress@@UBEPAVOpalTransport@@AAVOpalEndPoint@@W4BindOptions@1@@Z @25637 NONAME
-    ?CreateTransport@SIPEndPoint@@QAEPAVOpalTransport@@ABVOpalTransportAddress@@H@Z @44288 NONAME
+    ?CreateTransport@SIPEndPoint@@QAEPAVOpalTransport@@ABVOpalTransportAddress@@H@Z @45185 NONAME
     ?CreateTransport@SIPInfo@@UAEHAAVOpalTransportAddress@@@Z @36441 NONAME
     ?CreateVideoInputDevice@OpalConnection@@UAEHABVOpalMediaFormat@@AAPAVPVideoInputDevice@@AAH@Z @39016 NONAME
     ?CreateVideoInputDevice@OpalEndPoint@@UAEHABVOpalConnection@@ABVOpalMediaFormat@@AAPAVPVideoInputDevice@@AAH@Z @39017 NONAME
@@ -30603,6 +30612,7 @@ EXPORTS
     ?FindFormat@OpalMediaFormatList@@QBEHABVPString@@H@Z @45058 NONAME
     ?FindFormat@OpalMediaFormatList@@QBEHW4PayloadTypes@RTP_DataFrame@@IPBD1@Z @44801 NONAME
     ?FindIntermediateFormat@OpalTranscoder@@SAHAAVOpalMediaFormat@@00@Z @40745 NONAME
+    ?FindListener@OpalEndPoint@@QAEPAVOpalListener@@ABVOpalTransportAddress@@@Z @45161 NONAME
     ?FindNegLogicalChannel@H245NegLogicalChannels@@QAEPAVH245NegLogicalChannel@@IH@Z @27230 NONAME
     ?FindOption@OpalMediaFormat@@IBEPAVOpalMediaOption@@ABVPString@@@Z @36442 NONAME
     ?FindSIPInfoByAuthRealm@RegistrationList@SIPEndPoint@@QAE?AV?$PSafePtr@VSIPInfo@@@@ABVPString@@0W4PSafetyMode@@@Z @45118 NONAME
@@ -30629,6 +30639,7 @@ EXPORTS
     ?FrameTimeOption@OpalMediaFormat@@2QBDB @36450 NONAME
     ?FrameWidthOption@OpalVideoFormat@@2QBDB @39097 NONAME
     ?FromString@OpalMediaOption@@QAE_NABVPString@@@Z @36451 NONAME
+    ?GarbageCollect@SIPEndPoint@@MAEXAAVPTimer@@H@Z @45186 NONAME
     ?GarbageCollection@OpalManager@@QAEXXZ @36452 NONAME
     ?GarbageMain@OpalManager@@MAEXAAVPThread@@H@Z @27244 NONAME
     ?GenerateCallReference@Q931@@SAIXZ @27245 NONAME
@@ -39326,6 +39337,7 @@ EXPORTS
     ?StopChannel@H323Transactor@@UAEXXZ @34460 NONAME
     ?StopciTimer@H45011Handler@@QAEXXZ @34461 NONAME
     ?StopctTimer@H4502Handler@@QAEXXZ @34462 NONAME
+    ?StopListener@OpalEndPoint@@QAEHABVOpalTransportAddress@@@Z @45175 NONAME
     ?StopNoResponseTimer@IAX2Processor@@IAEXXZ @39984 NONAME
     ?StopReading@OpalLine@@UAEHXZ @43999 NONAME
     ?StopReading@OpalLineInterfaceDevice@@UAEHI@Z @44000 NONAME
