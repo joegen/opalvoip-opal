@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2151  2007/03/27 20:16:23  dsandras
+ * Revision 1.2152  2007/03/27 20:35:30  dsandras
+ * More checks for transport validity.
+ *
+ * Revision 2.150  2007/03/27 20:16:23  dsandras
  * Temporarily removed use of shared transports as it could have unexpected
  * side effects on the routing of PDUs.
  * Various fixes on the way SIPInfo objects are being handled. Wait
@@ -874,7 +877,7 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 
   do {
     HandlePDU(*transport);
-  } while (transport->IsOpen());
+  } while (transport->IsOpen() && !transport->bad() && !transport->eof());
   
   PTRACE(2, "SIP\tRead thread finished.");
 }
