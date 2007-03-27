@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2152  2007/03/27 20:35:30  dsandras
+ * Revision 1.2153  2007/03/27 21:51:40  dsandras
+ * Added more PTRACE statements
+ *
+ * Revision 2.151  2007/03/27 20:35:30  dsandras
  * More checks for transport validity.
  *
  * Revision 2.150  2007/03/27 20:16:23  dsandras
@@ -590,8 +593,10 @@ SIPInfo::~SIPInfo()
 {
   PWaitAndSignal m(transportMutex);
 
+  PTRACE(4,"SIPInfo\tWill delete SIPInfo " << registrationAddress);
   if (registrarTransport) { 
 
+    PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (deleting SIPInfo)");
     registrarTransport->CloseWait();
     delete registrarTransport;
     registrarTransport = NULL;
@@ -610,6 +615,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   // Only delete if we are refreshing
   if (registrarTransport != NULL && HasExpired()) {
 
+    PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (expired)");
     registrarTransport->CloseWait();
     delete registrarTransport;
     registrarTransport = NULL;
