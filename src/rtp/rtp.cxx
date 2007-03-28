@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2055  2007/03/20 02:32:09  csoutheren
+ * Revision 1.2056  2007/03/28 05:26:11  csoutheren
+ * Add virtual function to wait for incoming data
+ * Swallow RTP packets that arrive on the socket before session starts
+ *
+ * Revision 2.54  2007/03/20 02:32:09  csoutheren
  * Don't send BYE twice or when channel is closed
  *
  * Revision 2.53  2007/03/12 23:05:14  csoutheren
@@ -1919,6 +1923,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
                    PSTUNClient * stun,
                    RTP_QOS * rtpQos)
 {
+  first = TRUE;
   // save local address 
   localAddress = _localAddress;
 
@@ -2089,7 +2094,7 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
 BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
 {
   do {
-    int selectStatus = PSocket::Select(*dataSocket, *controlSocket, reportTimer);
+    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
@@ -2121,7 +2126,7 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
         break;
 
       case 0 :
-        PTRACE(5, "RTP_UDP\tSession " << sessionID << ", check for sending report.");
+        //PTRACE(5, "RTP_UDP\tSession " << sessionID << ", check for sending report.");
         if (!SendReport())
           return FALSE;
         break;
@@ -2141,6 +2146,35 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
   return TRUE;
 }
 
+int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
+{
+  if (first) {
+    BYTE buffer[1500];
+    PINDEX count = 0;
+    do {
+      switch (PSocket::Select(dataSocket, controlSocket, PTimeInterval(0))) {
+        case -2:
+          controlSocket.Read(buffer, sizeof(buffer));
+          ++count;
+          break;
+
+        case -3:
+          controlSocket.Read(buffer, sizeof(buffer));
+          ++count;
+        case -1:
+          dataSocket.Read(buffer, sizeof(buffer));
+          ++count;
+          break;
+        case 0:
+          first = FALSE;
+          break;
+      }
+    } while (first);
+    PTRACE(1, "Swallowed " << count << " RTP packets on startup");
+  }
+
+  return PSocket::Select(dataSocket, controlSocket, timeout);
+}
 
 RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket,
                                                              PBYTEArray & frame,
