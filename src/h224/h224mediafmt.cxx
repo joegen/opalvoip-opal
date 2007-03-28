@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224mediafmt.cxx,v $
+ * Revision 1.1.2.3  2007/03/28 07:40:43  hfriederich
+ * Fix problems with invalid frame size
+ *
  * Revision 1.1.2.2  2007/03/20 00:02:13  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.224
@@ -54,7 +57,7 @@ const OpalMediaFormat & GetOpalH224()
     NULL, //"H224", // As defined in RFC 4573 (Currently disabled for SIP as long there is no standardized signaling)
     FALSE,
     6400, // 6.4kbit/s as defined in RFC 4573
-    0,
+    RTP_DataFrame::MaxEthernetPayloadSize,
     0,
     4800  // As defined in RFC 4573
   );
