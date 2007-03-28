@@ -26,6 +26,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdpcaps.h,v $
+ * Revision 1.1.2.3  2007/03/28 06:00:13  hfriederich
+ * Fix incorrect memory management when using factory
+ *
  * Revision 1.1.2.2  2007/02/16 10:43:41  hfriederich
  * - Extend SDP capability system for merging local / remote format parameters.
  * - Propagate media format options to the media streams
@@ -64,13 +67,15 @@ class SDPCapability : public PObject
 public:
     
   SDPCapability();
+  SDPCapability(const SDPCapability & capability);
     
   /**Creates a new instance of an SDPCapability for the given media format.
      This function uses the SDPCapability factory to look for custom capabilities.
      If no custom capability is found, a default SDPCapability instance is returned.
     */
   static SDPCapability * CreateCapability(const OpalMediaFormat & mediaFormat);
-    
+  
+  virtual PObject * Clone() const;
   virtual BOOL OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const { return TRUE; }
   virtual BOOL OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
                              const SDPMediaDescription & mediaDescription,
@@ -88,13 +93,14 @@ protected:
 
 class RFC2833_SDPCapability : public SDPCapability
 {
-    PCLASSINFO(RFC2833_SDPCapability, SDPCapability);
+  PCLASSINFO(RFC2833_SDPCapability, SDPCapability);
 public:
 
-    virtual BOOL OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const;
-    virtual BOOL OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
-                               const SDPMediaDescription & sdpMediaDescription,
-                               const SDPSessionDescription & sessionDescription);
+  virtual PObject * Clone() const;
+  virtual BOOL OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const;
+  virtual BOOL OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
+                             const SDPMediaDescription & sdpMediaDescription,
+                             const SDPSessionDescription & sessionDescription);
 };
 
 /////////////////////////////////////////////////////////

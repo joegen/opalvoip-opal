@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdpcaps.cxx,v $
+ * Revision 1.1.2.3  2007/03/28 06:00:13  hfriederich
+ * Fix incorrect memory management when using factory
+ *
  * Revision 1.1.2.2  2007/02/16 10:43:41  hfriederich
  * - Extend SDP capability system for merging local / remote format parameters.
  * - Propagate media format options to the media streams
@@ -52,24 +55,44 @@ SDPCapability::SDPCapability()
 }
 
 
+SDPCapability::SDPCapability(const SDPCapability & cap)
+: mediaFormat(cap.mediaFormat)
+{
+}
+
+
 SDPCapability * SDPCapability::CreateCapability(const OpalMediaFormat & mediaFormat)
 {
     
   SDPCapability * cap = SDPCapabilityFactory::CreateInstance(mediaFormat.GetEncodingName());
   if(cap == NULL) {
     cap = new SDPCapability();
+  } else {
+    cap = (SDPCapability *)cap->Clone();
   }
   cap->UpdateMediaFormat(mediaFormat);
   return cap;
 }
 
 
+PObject * SDPCapability::Clone() const
+{
+  return new SDPCapability(*this);
+}
+
+
 /////////////////////////////////////////////////////////
+
+PObject * RFC2833_SDPCapability::Clone() const
+{
+  return new RFC2833_SDPCapability(*this);
+}
+
 
 BOOL RFC2833_SDPCapability::OnSendingSDP(SDPMediaFormat & sdpMediaFormat) const
 {
-    sdpMediaFormat.SetFMTP("0-15");
-    return TRUE;
+  sdpMediaFormat.SetFMTP("0-15");
+  return TRUE;
 }
 
 
@@ -77,7 +100,7 @@ BOOL RFC2833_SDPCapability::OnReceivedSDP(const SDPMediaFormat & sdpMediaFormat,
                                           const SDPMediaDescription & mediaDescription,
                                           const SDPSessionDescription & sessionDescription)
 {
-    return TRUE;
+  return TRUE;
 }
 
 /////////////////////////////////////////////////////////
