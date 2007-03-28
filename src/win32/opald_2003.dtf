@@ -39493,6 +39493,7 @@ EXPORTS
     ?Value@H460_Feature@@QAEAAVH460_FeatureParameter@@ABVH460_FeatureID@@@Z @41469 NONAME
     ?Value@H460_FeatureOID@@QAEAAVH460_FeatureParameter@@ABVPString@@@Z @41470 NONAME
     ?Wait@SIPTransaction@@QAEXXZ @34533 NONAME
+    ?WaitForPDU@RTP_UDP@@MAEHAAVPUDPSocket@@0ABVPTimeInterval@@@Z @45225 NONAME
     ?WaitForTermination@OpalJitterBuffer@@QAEHABVPTimeInterval@@@Z @44959 NONAME
     ?WaitForTone@OpalLine@@UAEHW4CallProgressTones@OpalLineInterfaceDevice@@I@Z @34534 NONAME
     ?WaitForTone@OpalLineInterfaceDevice@@UAEHIW4CallProgressTones@1@I@Z @34535 NONAME
