@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.8  2007/03/20 07:52:18  hfriederich
+ * Revision 1.2036.2.9  2007/03/29 21:31:19  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.35.2.8  2007/03/20 07:52:18  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.450
  * Remove warnings/errors when compiling with various turned off
@@ -1242,7 +1248,7 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
   sessionID = id;
-  mediaStream = new OpalRTPMediaStream(capability->GetMediaFormat(), receiver, rtpSession,
+  mediaStream = new OpalRTPMediaStream(conn, capability->GetMediaFormat(), receiver, rtpSession,
                                        conn.GetMinAudioJitterDelay(),
                                        conn.GetMaxAudioJitterDelay());
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
@@ -1303,7 +1309,7 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
                                                  unsigned id)
   : H323_RealTimeChannel(connection, capability, direction)
 {
-  Construct(id);
+  Construct(connection, id);
 }
 
 
@@ -1317,7 +1323,7 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
     externalMediaAddress(data),
     externalMediaControlAddress(control)
 {
-  Construct(id);
+  Construct(connection, id);
 }
 
 
@@ -1331,12 +1337,12 @@ H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
     externalMediaAddress(ip, dataPort),
     externalMediaControlAddress(ip, (WORD)(dataPort+1))
 {
-  Construct(id);
+  Construct(connection, id);
 }
 
-void H323_ExternalRTPChannel::Construct(unsigned id)
+void H323_ExternalRTPChannel::Construct(H323Connection & conn, unsigned id)
 {
-  mediaStream = new OpalNullMediaStream(capability->GetMediaFormat(), receiver);
+  mediaStream = new OpalNullMediaStream(conn, capability->GetMediaFormat(), receiver);
   sessionID = id;
 
   PTRACE(3, "H323RTP\tExternal " << (receiver ? "receiver" : "transmitter")

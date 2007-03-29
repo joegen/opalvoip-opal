@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2016.4.2  2007/03/09 19:15:12  hfriederich
+ * Revision 1.2016.4.3  2007/03/29 21:31:19  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.15.4.2  2007/03/09 19:15:12  hfriederich
  * Correctly handle non-default session ID values based on master/slave status
  *
  * Revision 2.15.4.1  2007/02/07 08:51:00  hfriederich
@@ -990,7 +996,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     ) const;
 
   protected:
-    void Construct(unsigned id);
+    void Construct(H323Connection & conn, unsigned id);
 
     unsigned             sessionID;
     H323TransportAddress externalMediaAddress;
