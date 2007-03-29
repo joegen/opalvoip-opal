@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2012  2007/03/29 08:31:36  csoutheren
+ * Revision 1.2013  2007/03/29 23:13:52  rjongbloed
+ * Fixed MSVC warning
+ *
+ * Revision 2.11  2007/03/29 08:31:36  csoutheren
  * Fix media formats for T.38 endpoint
  *
  * Revision 2.10  2007/03/29 05:20:17  csoutheren
@@ -659,7 +662,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendData(RTP_DataFrame & frame)
   // reformat the raw T.38 data as an UDPTL packet
   T38_UDPTLPacket udptl;
   udptl.m_seq_number = frame.GetSequenceNumber();
-  udptl.m_primary_ifp_packet.SetValue(frame.GetPayloadPtr(), frame.GetPayloadSize());
+  udptl.m_primary_ifp_packet.SetValue(frame.GetPayloadPtr(), plLen);
 
   udptl.m_error_recovery.SetTag(T38_UDPTLPacket_error_recovery::e_secondary_ifp_packets);
   T38_UDPTLPacket_error_recovery_secondary_ifp_packets & secondary = udptl.m_error_recovery;
