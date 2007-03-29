@@ -24,7 +24,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.4  2007/03/20 12:56:23  hfriederich
+ * Revision 1.2198.2.5  2007/03/29 21:47:23  hfriederich
+ * (Backport from HEAD)
+ * Various fixes on the way SIPInfo objects are being handled. Wait for
+ *   transports to be closed before being deleted. Added missing mutexes.
+ *   Added garbage collector.
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.197.2.4  2007/03/20 12:56:23  hfriederich
  * Backport from HEAD
  *
  * Revision 2.197.2.3  2007/03/10 08:34:02  hfriederich
@@ -1504,10 +1513,12 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
                                                    BOOL isSource)
 {
   const OpalMediaType & mediaType = mediaFormat.GetMediaType();
-    
-  if (ownerCall.IsMediaBypassPossible(*this, mediaType))
-    return new OpalNullMediaStream(mediaFormat, isSource);
 
+  // Use a NULL stream if media is bypassing us
+  if (ownerCall.IsMediaBypassPossible(*this, mediaType))
+    return new OpalNullMediaStream(*this, mediaFormat, isSource);
+
+  // If no RTP sessions matching this media type, then nothing to do
   if (rtpSessions.GetSession(mediaType) == NULL)
     return NULL;
   
@@ -1517,7 +1528,8 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
     adjustableMediaFormat = capability->GetMediaFormat();
   }
 
-  return new OpalRTPMediaStream(adjustableMediaFormat, isSource, *rtpSessions.GetSession(mediaType),
+  return new OpalRTPMediaStream(*this, adjustableMediaFormat, isSource, 
+                                *rtpSessions.GetSession(mediaType),
                                 GetMinAudioJitterDelay(),
                                 GetMaxAudioJitterDelay());
 }
@@ -1539,8 +1551,6 @@ void SIPConnection::OnConnected ()
 
 BOOL SIPConnection::IsMediaBypassPossible(const OpalMediaType & mediaType) const
 {
-  PTRACE(3, "SIP\tIsMediaBypassPossible: session " << mediaType);
-
   return mediaType == OpalDefaultAudioMediaType ||
          mediaType == OpalDefaultVideoMediaType;
 }
