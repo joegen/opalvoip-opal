@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.3  2007/03/11 11:55:13  hfriederich
+ * Revision 1.2029.2.4  2007/03/29 22:07:04  hfriederich
+ * (Backport from HEAD)
+ * Add extra logging
+ *
+ * Revision 2.28.2.3  2007/03/11 11:55:13  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -215,6 +219,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
   : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
 {
   maxOutputSize = RTP_DataFrame::MaxEthernetPayloadSize;
+  outputIsRTP = inputIsRTP = FALSE;
 }
 
 
@@ -298,11 +303,19 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
 
 OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
-                                        const OpalMediaFormat & destFormat)
+                                        const OpalMediaFormat & destFormat,
+                                        const BYTE * instance,
+                                        unsigned instanceLen)
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalMediaFormatPair(srcFormat, destFormat));
-  if (transcoder != NULL)
+  if (transcoder != NULL) {
     transcoder->UpdateOutputMediaFormat(destFormat);
+      
+    if (instance != NULL && instanceLen != 0 && transcoder->HasCodecControl("set_instance_id")) {
+      int ret;
+      transcoder->CallCodecControl("set_instance_id", (void *)instance, &instanceLen, ret);
+    }
+  }
   return transcoder;
 }
 
@@ -465,6 +478,48 @@ PINDEX OpalFramedTranscoder::GetOptimalDataFrameSize(BOOL input) const
 
 BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
 {
+  if (inputIsRTP || outputIsRTP) {
+        
+    const BYTE * inputPtr;
+    PINDEX inLen;
+    if (inputIsRTP) {
+      inputPtr = (const BYTE *)input;
+      inLen    = input.GetHeaderSize() + input.GetPayloadSize(); 
+    }
+    else
+    {
+      inputPtr = input.GetPayloadPtr();
+      inLen    = input.GetPayloadSize(); 
+    }
+        
+    BYTE * outputPtr;
+    PINDEX outLen;
+    output.SetPayloadSize(outputBytesPerFrame);
+    if (outputIsRTP) {
+      outputPtr = output.GetPointer();
+      outLen    = output.GetSize();
+    }
+    else
+    {
+      outputPtr = output.GetPayloadPtr();
+      outLen    = outputBytesPerFrame;
+    }
+        
+    if (!ConvertFrame(inputPtr, inLen, outputPtr, outLen))
+      return FALSE;
+    
+    if (!outputIsRTP)
+      output.SetPayloadSize(outLen);
+    else if (outLen <= RTP_DataFrame::MinHeaderSize)
+      output.SetPayloadSize(0);
+    else if (outLen <= output.GetHeaderSize())
+      output.SetPayloadSize(0);
+    else 
+      output.SetPayloadSize(outLen - output.GetHeaderSize());
+        
+    return TRUE;
+  }
+    
   const BYTE * inputPtr = input.GetPayloadPtr();
   PINDEX inputLength = input.GetPayloadSize();
 
