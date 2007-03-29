@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2043  2007/03/01 03:23:00  csoutheren
+ * Revision 1.2044  2007/03/29 05:22:42  csoutheren
+ * Add extra logging
+ *
+ * Revision 2.42  2007/03/01 03:23:00  csoutheren
  * Ignore packets with no payload emitted by jitter buffer when no input available
  *
  * Revision 2.41  2007/02/10 21:50:36  dsandras
@@ -320,8 +323,10 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     return TRUE;
   }
 
-  sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
+  PString id = stream->GetID();
+  sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (sink->primaryCodec != NULL) {
+    PTRACE(1, "created primary codec " << sourceFormat << "/" << destinationFormat << " with ID " << id);
     sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
@@ -342,8 +347,10 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
       return FALSE;
     }
 
-    sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat);
-    sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat);
+    sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
+    sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
+
+    PTRACE(1, "created two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->secondaryCodec->SetMaxOutputSize(sink->stream->GetDataSize());
 
