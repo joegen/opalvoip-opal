@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2028  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2029  2007/03/29 05:15:48  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.27  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -652,6 +656,7 @@ class OpalLineMediaStream : public OpalMediaStream
     /**Construct a new media stream for Line Interface Devices.
       */
     OpalLineMediaStream(
+      OpalLineConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream

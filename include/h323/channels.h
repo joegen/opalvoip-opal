@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2016  2006/08/10 05:10:30  csoutheren
+ * Revision 1.2017  2007/03/29 05:15:48  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.15  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
  * Revision 2.14.6.1  2006/08/09 12:49:21  csoutheren
@@ -959,7 +963,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     ) const;
 
   protected:
-    void Construct(unsigned id);
+    void Construct(H323Connection & conn, unsigned id);
 
     unsigned             sessionID;
     H323TransportAddress externalMediaAddress;
