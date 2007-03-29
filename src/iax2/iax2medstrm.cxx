@@ -27,6 +27,10 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.9  2007/03/29 05:16:49  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
  * Revision 1.8  2007/01/11 03:02:16  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -89,12 +93,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalIAX2MediaStream::OpalIAX2MediaStream(const OpalMediaFormat & mediaFormat,
-				       unsigned sessionID,   
-				       BOOL isSource,        
-				       IAX2Connection &con)
-  : OpalMediaStream(mediaFormat, sessionID, isSource),
-    connection(con)
+OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn, 
+                                  const OpalMediaFormat & mediaFormat,
+				                                         unsigned sessionID,   
+				                                             BOOL isSource)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
+    connection(conn)
 {
     PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
 }

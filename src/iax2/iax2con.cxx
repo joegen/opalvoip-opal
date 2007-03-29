@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.20  2007/03/29 05:16:49  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
  * Revision 1.19  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
@@ -356,12 +360,11 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     PTRACE(3, "connection\t  create a null media stream ");
-    return new OpalNullMediaStream(mediaFormat, sessionID, isDataSource);
+    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isDataSource);
   }
 
   PTRACE(4, "IAX2con\tCreate an OpalIAX2MediaStream");
-  return new OpalIAX2MediaStream(mediaFormat, sessionID, isDataSource,
-                                 *this);
+  return new OpalIAX2MediaStream(*this, mediaFormat, sessionID, isDataSource);
 }
 
 void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
