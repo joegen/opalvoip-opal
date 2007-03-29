@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2083  2007/03/29 05:24:00  csoutheren
+ * Revision 1.2084  2007/03/29 08:32:22  csoutheren
+ * Pause before dialing when using two endpoint mode
+ *
+ * Revision 2.82  2007/03/29 05:24:00  csoutheren
  * Add support for T.38
  *
  * Revision 2.81  2007/03/01 05:07:32  csoutheren
@@ -1279,6 +1282,11 @@ void MyManager::Main(PArgList & args)
       break;
 
     default :
+      if (pauseBeforeDialing) {
+        cout << "Pausing to allow registration to occur..." << flush;
+        PThread::Sleep(2000);
+        cout << "done" << endl;
+      }
       cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
       SetUpCall(args[0], args[1], currentCallToken);
       break;
