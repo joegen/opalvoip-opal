@@ -24,7 +24,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.3  2007/03/20 12:56:23  hfriederich
+ * Revision 1.2142.2.4  2007/03/29 21:47:23  hfriederich
+ * (Backport from HEAD)
+ * Various fixes on the way SIPInfo objects are being handled. Wait for
+ *   transports to be closed before being deleted. Added missing mutexes.
+ *   Added garbage collector.
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.141.2.3  2007/03/20 12:56:23  hfriederich
  * Backport from HEAD
  *
  * Revision 2.141.2.2  2007/03/18 19:17:22  hfriederich
@@ -576,6 +585,7 @@ SIPInfo::~SIPInfo()
 {
   PWaitAndSignal m(transportMutex);
 
+  PTRACE(4, "SIPInfo\tWill delete SIPInfo " << registrationAddress);
   if (registrarTransport) { 
     ep.ReleaseTransport(registrarTransport);
     registrarTransport = NULL;
@@ -593,7 +603,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   
   // Only delete if we are refreshing
   if (registrarTransport != NULL && HasExpired()) {
-    delete registrarTransport;
+    ep.ReleaseTransport(registrarTransport);
     registrarTransport = NULL;
   }
 
@@ -724,6 +734,7 @@ SIPTransaction * SIPMessageInfo::CreateTransaction(OpalTransport &t, BOOL /*unre
 
 void SIPMessageInfo::OnSuccess()
 { 
+  SetRegistered(TRUE);
 }
 
 void SIPMessageInfo::OnFailed(SIP_PDU::StatusCodes reason)
@@ -779,7 +790,10 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   activeSIPInfo.AllowDeleteObjects();
 
   registrationTimer.SetNotifier(PCREATE_NOTIFIER(RegistrationRefresh));
-  registrationTimer.RunContinuous (PTimeInterval(0, 2));
+  registrationTimer.RunContinuous (PTimeInterval(0, 30));
+  
+  garbageTimer.SetNotifier(PCREATE_NOTIFIER(GarbageCollect));
+  garbageTimer.RunContinuous (PTimeInterval(0, 2));
   
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous (natBindingTimeout);
@@ -859,7 +873,7 @@ void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 
   do {
     HandlePDU(*transport);
-  } while (transport->IsOpen());
+  } while (transport->IsOpen() && !transport->bad() && !transport->eof());
   
   PTRACE(2, "SIP\tRead thread finished.");
 }
@@ -1017,6 +1031,7 @@ void SIPEndPoint::ReleaseTransport(OpalTransport * transport)
     }
     
     // Transport not found in dictionary. Simply delete the transport.
+    transport->CloseWait();
     delete transport;
 }
 
@@ -1479,6 +1494,11 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
   if (info == NULL) 
     return;
   
+  if (transaction.GetMethod() == SIP_PDU::Method_MESSAGE) {
+      info->OnSuccess();
+      return;
+  }
+  
   // reset the number of unsuccesful authentication attempts
   info->SetAuthenticationAttempts(0);
   
@@ -1499,14 +1519,14 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 
     if (info->GetAuthentication().GetAuthRealm().IsEmpty())
       info->SetAuthRealm(transaction.GetURI().GetHostName());
+    
+    info->OnSuccess();
   }
   else {
-    info->SetExpire(-1);
     info->SetRegistered(FALSE);
+    info->OnSuccess();
+    info->SetExpire(-1);
   }
-
-  // Callback
-  info->OnSuccess();
 }
 
 
@@ -1681,6 +1701,19 @@ BOOL SIPEndPoint::IsSubscribed(const PString & host, const PString & user)
     return FALSE;
 
   return info->IsRegistered ();
+}
+
+
+void SIPEndPoint::GarbageCollect(PTimer &, INT)
+{
+  for (PINDEX i = 0 ; i < activeSIPInfo.GetSize () ; i++) {
+        
+    PSafePtr<SIPInfo> info = activeSIPInfo.GetAt (i, PSafeReadWrite);
+        
+    if (info->GetExpire() == -1) {
+      activeSIPInfo.Remove(info); // Was invalid the last time, delete it
+    }
+  }
 }
 
 
@@ -2159,6 +2192,7 @@ SIPEndPoint::TransportRecord::TransportRecord(OpalTransport * _transport)
 
 SIPEndPoint::TransportRecord::~TransportRecord()
 {
+  transport->CloseWait();
   delete transport;
 }
                                                                                                          

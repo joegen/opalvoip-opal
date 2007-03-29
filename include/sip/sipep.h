@@ -25,7 +25,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.4  2007/03/20 12:56:23  hfriederich
+ * Revision 1.2069.2.5  2007/03/29 21:47:23  hfriederich
+ * (Backport from HEAD)
+ * Various fixes on the way SIPInfo objects are being handled. Wait for
+ *   transports to be closed before being deleted. Added missing mutexes.
+ *   Added garbage collector.
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.68.2.4  2007/03/20 12:56:23  hfriederich
  * Backport from HEAD
  *
  * Revision 2.68.2.3  2007/03/18 19:17:22  hfriederich
@@ -1132,6 +1141,7 @@ class SIPEndPoint : public OpalEndPoint
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
+    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, GarbageCollect);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
 
     static BOOL WriteSIPInfo(
@@ -1202,6 +1212,7 @@ class SIPEndPoint : public OpalEndPoint
     RegistrationList   activeSIPInfo;
 
     PTimer registrationTimer; // Used to refresh the REGISTER and the SUBSCRIBE transactions.
+    PTimer garbageTimer;
     SIPTransactionList messages;
     SIPTransactionDict transactions;
 
