@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2056  2007/03/28 05:26:11  csoutheren
+ * Revision 1.2057  2007/03/29 05:07:34  csoutheren
+ * Removed annoying comment
+ *
+ * Revision 2.55  2007/03/28 05:26:11  csoutheren
  * Add virtual function to wait for incoming data
  * Swallow RTP packets that arrive on the socket before session starts
  *
@@ -2126,7 +2129,6 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
         break;
 
       case 0 :
-        //PTRACE(5, "RTP_UDP\tSession " << sessionID << ", check for sending report.");
         if (!SendReport())
           return FALSE;
         break;
