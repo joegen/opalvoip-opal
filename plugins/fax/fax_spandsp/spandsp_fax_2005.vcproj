@@ -48,6 +48,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="spandsp\src; spandsp\src\msvc"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PLUGIN_CODEC_DLL_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -71,6 +72,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
+				AdditionalDependencies="spandsp\src\release\libspandsp.lib libtiff.lib"
 				OutputFile="../../Release/SpanDSPFax_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -160,7 +162,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="spandsp\src\debug\libspandsp.lib"
+				AdditionalDependencies="spandsp\src\debug\libspandsp.lib;libtiff.lib"
 				OutputFile="../../Debug/SpanDSPFax_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
