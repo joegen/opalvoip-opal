@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2025  2006/11/29 06:28:57  csoutheren
+ * Revision 1.2026  2007/03/29 05:22:32  csoutheren
+ * Add extra logging
+ *
+ * Revision 2.24  2006/11/29 06:28:57  csoutheren
  * Add ability call codec control functions on all transcoders
  *
  * Revision 2.23  2006/04/09 12:12:54  rjongbloed
@@ -294,7 +297,9 @@ class OpalTranscoder : public OpalMediaFormatPair
       */
     static OpalTranscoder * Create(
       const OpalMediaFormat & srcFormat,  ///<  Name of source format
-      const OpalMediaFormat & dstFormat   ///<  Name of destination format
+      const OpalMediaFormat & dstFormat,  ///<  Name of destination format
+                 const BYTE * instance = NULL,
+                     unsigned instanceLen = 0
     );
 
     /**Find media format(s) for transcoders.
@@ -391,6 +396,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     PMutex    updateMutex;
 
     RTP_DataFrame::PayloadMapType payloadTypeMap;
+
+    BOOL outputIsRTP, inputIsRTP;
 
   public:
     void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
