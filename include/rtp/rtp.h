@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.4  2007/03/20 09:32:02  hfriederich
+ * Revision 1.2032.2.5  2007/03/29 20:06:04  hfriederich
+ * (Backport from HEAD)
+ * Add virtual function to wait for incoming data
+ * Swallow RTP packets that arrive on the socket before session starts
+ *
+ * Revision 2.31.2.4  2007/03/20 09:32:02  hfriederich
  * (Backport from HEAD)
  * Don't send BYE twice or when channel is closed
  *
@@ -1276,6 +1281,7 @@ class RTP_UDP : public RTP_Session
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
   protected:
+    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
@@ -1302,6 +1308,7 @@ class RTP_UDP : public RTP_Session
 
     BOOL appliedQOS;
     BOOL remoteIsNAT;
+    BOOL first;
 };
 
 /////////////////////////////////////////////////////////////////////////////
