@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2025  2006/10/05 07:11:49  csoutheren
+ * Revision 1.2026  2007/03/29 05:24:00  csoutheren
+ * Add support for T.38
+ *
+ * Revision 2.24  2006/10/05 07:11:49  csoutheren
  * Add --disable-lid option
  *
  * Revision 2.23  2006/08/29 01:37:11  csoutheren
@@ -215,6 +218,10 @@ class MyManager : public OpalManager
 #endif
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
+#endif
+#if OPAL_T38FAX
+    OpalFaxEndPoint  * faxEP;
+    OpalFaxEndPoint  * t38EP;
 #endif
 
     BOOL pauseBeforeDialing;
