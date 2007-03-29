@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2054  2007/03/29 05:16:50  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.52  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -235,6 +239,8 @@
 #include <lids/lid.h>
 #include <rtp/rtp.h>
 #include <opal/transports.h>
+#include <opal/connection.h>
+#include <opal/call.h>
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10
 
@@ -244,25 +250,29 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, unsigned id, BOOL isSourceStream)
-  : mediaFormat(fmt)
+OpalMediaStream::OpalMediaStream(OpalConnection & connection, const OpalMediaFormat & fmt, unsigned _sessionID, BOOL isSourceStream)
+  : mediaFormat(fmt), 
+    sessionID(_sessionID), 
+    paused(FALSE), 
+    isSource(isSourceStream), 
+    isOpen(FALSE), 
+    timestamp(0), 
+    marker(TRUE),
+    mismatchedPayloadTypes(0),
+    mediaPatch(NULL)
 {
-  isSource = isSourceStream;
-  sessionID = id;
-  isOpen = FALSE;
-
   // Set default frame size to 50ms of audio, otherwise just one frame
   unsigned frameTime = mediaFormat.GetFrameTime();
-  if (frameTime != 0 && mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
+  if (sessionID == OpalMediaFormat::DefaultAudioSessionID && 
+      frameTime != 0 && 
+      mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
     SetDataSize(((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize());
   else
     SetDataSize(mediaFormat.GetFrameSize());
 
-  timestamp = 0;
-  marker = TRUE;
-  paused = FALSE;
-  mismatchedPayloadTypes = 0;
-  mediaPatch = NULL;
+  PString tok = connection.GetCall().GetToken();
+
+  id = connection.GetCall().GetToken() + psprintf("_%i", sessionID);
 }
 
 
@@ -589,10 +599,11 @@ void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ )
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalNullMediaStream::OpalNullMediaStream(const OpalMediaFormat & mediaFormat,
+OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
+                                        const OpalMediaFormat & mediaFormat,
                                          unsigned sessionID,
                                          BOOL isSource)
-  : OpalMediaStream(mediaFormat, sessionID, isSource)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
 {
 }
 
@@ -629,12 +640,13 @@ BOOL OpalNullMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
+OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
+                                      const OpalMediaFormat & mediaFormat,
                                        BOOL isSource,
                                        RTP_Session & rtp,
                                        unsigned minJitter,
                                        unsigned maxJitter)
-  : OpalMediaStream(mediaFormat, rtp.GetSessionID(), isSource),
+  : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource),
     rtpSession(rtp),
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
@@ -731,11 +743,12 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRawMediaStream::OpalRawMediaStream(const OpalMediaFormat & mediaFormat,
+OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
+                                     const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        BOOL isSource,
                                        PChannel * chan, BOOL autoDel)
-  : OpalMediaStream(mediaFormat, sessionID, isSource)
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
 {
   channel = chan;
   autoDelete = autoDel;
@@ -850,21 +863,23 @@ void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalFileMediaStream::OpalFileMediaStream(const OpalMediaFormat & mediaFormat,
+OpalFileMediaStream::OpalFileMediaStream(OpalConnection & conn,
+                                         const OpalMediaFormat & mediaFormat,
                                          unsigned sessionID,
                                          BOOL isSource,
                                          PFile * file,
                                          BOOL autoDel)
-  : OpalRawMediaStream(mediaFormat, sessionID, isSource, file, autoDel)
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, file, autoDel)
 {
 }
 
 
-OpalFileMediaStream::OpalFileMediaStream(const OpalMediaFormat & mediaFormat,
+OpalFileMediaStream::OpalFileMediaStream(OpalConnection & conn,
+                                         const OpalMediaFormat & mediaFormat,
                                          unsigned sessionID,
                                          BOOL isSource,
                                          const PFilePath & path)
-  : OpalRawMediaStream(mediaFormat, sessionID, isSource,
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource,
                        new PFile(path, isSource ? PFile::ReadOnly : PFile::WriteOnly),
                        TRUE)
 {
@@ -882,24 +897,26 @@ BOOL OpalFileMediaStream::IsSynchronous() const
 #if OPAL_AUDIO
 #if P_AUDIO
 
-OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
+OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
+                                           const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
                                            BOOL isSource,
                                            PINDEX buffers,
                                            PSoundChannel * channel,
                                            BOOL autoDel)
-  : OpalRawMediaStream(mediaFormat, sessionID, isSource, channel, autoDel)
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, channel, autoDel)
 {
   soundChannelBuffers = buffers;
 }
 
 
-OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
+OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
+                                           const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
                                            BOOL isSource,
                                            PINDEX buffers,
                                            const PString & deviceName)
-  : OpalRawMediaStream(mediaFormat, sessionID, isSource,
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource,
                        new PSoundChannel(deviceName,
                                          isSource ? PSoundChannel::Recorder
                                                   : PSoundChannel::Player,
@@ -932,12 +949,13 @@ BOOL OpalAudioMediaStream::IsSynchronous() const
 
 #if OPAL_VIDEO
 
-OpalVideoMediaStream::OpalVideoMediaStream(const OpalMediaFormat & mediaFormat,
+OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
+                                          const OpalMediaFormat & mediaFormat,
                                            unsigned sessionID,
                                            PVideoInputDevice * in,
                                            PVideoOutputDevice * out,
                                            BOOL del)
-  : OpalMediaStream(mediaFormat, sessionID, in != NULL),
+  : OpalMediaStream(conn, mediaFormat, sessionID, in != NULL),
     inputDevice(in),
     outputDevice(out),
     autoDelete(del)
@@ -1095,11 +1113,12 @@ BOOL OpalVideoMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalUDPMediaStream::OpalUDPMediaStream(const OpalMediaFormat & mediaFormat,
+OpalUDPMediaStream::OpalUDPMediaStream(OpalConnection & conn,
+                                      const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        BOOL isSource,
                                        OpalTransportUDP & transport)
-  : OpalMediaStream(mediaFormat, sessionID, isSource),
+  : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     udpTransport(transport)
 {}
 
