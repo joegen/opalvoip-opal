@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.5  2007/03/20 09:33:57  hfriederich
+ * Revision 1.2089.2.6  2007/03/29 21:45:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.88.2.5  2007/03/20 09:33:57  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
  *   such as H.450 and H.460.
@@ -872,8 +878,10 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
     }
 
     if (stream->Open()) {
-      if (OnOpenMediaStream(*stream))
+      if (OnOpenMediaStream(*stream)) {
+        PTRACE(1, "Opened source stream " << stream->GetID());
         return TRUE;
+      }
       PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
     }
     else {
@@ -930,8 +938,10 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
     }
 
     if (stream->Open()) {
-      if (OnOpenMediaStream(*stream))
+      if (OnOpenMediaStream(*stream)) {
+        PTRACE(1, "Opened sink stream " << stream->GetID());
         return stream;
+      }
       PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
     }
     else {
@@ -1011,14 +1021,14 @@ OpalMediaStream * OpalConnection::CreateMediaStream(
         PVideoOutputDevice * previewDevice;
         if (!CreateVideoOutputDevice(mediaFormat, TRUE, previewDevice, autoDelete))
           previewDevice = NULL;
-        return new OpalVideoMediaStream(mediaFormat, videoDevice, previewDevice, autoDelete);
+        return new OpalVideoMediaStream(*this, mediaFormat, videoDevice, previewDevice, autoDelete);
       }
     }
     else {
       PVideoOutputDevice * videoDevice;
       BOOL autoDelete;
       if (CreateVideoOutputDevice(mediaFormat, FALSE, videoDevice, autoDelete))
-        return new OpalVideoMediaStream(mediaFormat, NULL, videoDevice, autoDelete);
+        return new OpalVideoMediaStream(*this, mediaFormat, NULL, videoDevice, autoDelete);
     }
   }
 #endif

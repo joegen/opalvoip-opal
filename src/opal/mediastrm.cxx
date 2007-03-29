@@ -24,7 +24,13 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.4  2007/03/11 11:55:13  hfriederich
+ * Revision 1.2053.2.5  2007/03/29 21:45:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.52.2.4  2007/03/11 11:55:13  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -260,6 +266,8 @@
 #include <lids/lid.h>
 #include <rtp/rtp.h>
 #include <opal/transports.h>
+#include <opal/connection.h>
+#include <opal/call.h>
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10
 
@@ -269,24 +277,28 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaStream::OpalMediaStream(const OpalMediaFormat & fmt, BOOL isSourceStream)
-  : mediaFormat(fmt)
+OpalMediaStream::OpalMediaStream(OpalConnection & connection, const OpalMediaFormat & fmt, BOOL isSourceStream)
+  : mediaFormat(fmt),
+    paused(FALSE),
+    isSource(isSourceStream),
+    isOpen(FALSE),
+    timestamp(0),
+    marker(TRUE),
+    mismatchedPayloadTypes(0),
+    mediaPatch(NULL)
 {
-  isSource = isSourceStream;
-  isOpen = FALSE;
-
   // Set default frame size to 50ms of audio, otherwise just one frame
   unsigned frameTime = mediaFormat.GetFrameTime();
-  if (frameTime != 0 && mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
+  if (mediaFormat.GetMediaType() == OpalDefaultAudioMediaType &&
+      frameTime != 0 && 
+      mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
     SetDataSize(((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize());
   else
     SetDataSize(mediaFormat.GetFrameSize());
 
-  timestamp = 0;
-  marker = TRUE;
-  paused = FALSE;
-  mismatchedPayloadTypes = 0;
-  mediaPatch = NULL;
+  PString tok = connection.GetCall().GetToken();
+  
+  id = tok + psprintf("_%i", mediaFormat.GetMediaType().GetUniqueID());
 }
 
 
@@ -633,9 +645,10 @@ void OpalMediaStream::RemovePatch(OpalMediaPatch * /*patch*/ )
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalNullMediaStream::OpalNullMediaStream(const OpalMediaFormat & mediaFormat,
+OpalNullMediaStream::OpalNullMediaStream(OpalConnection & conn,
+                                         const OpalMediaFormat & mediaFormat,
                                          BOOL isSource)
-  : OpalMediaStream(mediaFormat, isSource)
+  : OpalMediaStream(conn, mediaFormat, isSource)
 {
 }
 
@@ -672,12 +685,13 @@ BOOL OpalNullMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaStream::OpalRTPMediaStream(const OpalMediaFormat & mediaFormat,
+OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
                                        BOOL isSource,
                                        RTP_Session & rtp,
                                        unsigned minJitter,
                                        unsigned maxJitter)
-  : OpalMediaStream(mediaFormat, isSource),
+  : OpalMediaStream(conn, mediaFormat, isSource),
     rtpSession(rtp),
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
@@ -774,10 +788,11 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRawMediaStream::OpalRawMediaStream(const OpalMediaFormat & mediaFormat,
+OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
                                        BOOL isSource,
                                        PChannel * chan, BOOL autoDel)
-  : OpalMediaStream(mediaFormat, isSource)
+  : OpalMediaStream(conn, mediaFormat, isSource)
 {
   channel = chan;
   autoDelete = autoDel;
@@ -892,19 +907,21 @@ void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalFileMediaStream::OpalFileMediaStream(const OpalMediaFormat & mediaFormat,
+OpalFileMediaStream::OpalFileMediaStream(OpalConnection & conn,
+                                         const OpalMediaFormat & mediaFormat,
                                          BOOL isSource,
                                          PFile * file,
                                          BOOL autoDel)
-  : OpalRawMediaStream(mediaFormat, isSource, file, autoDel)
+  : OpalRawMediaStream(conn, mediaFormat, isSource, file, autoDel)
 {
 }
 
 
-OpalFileMediaStream::OpalFileMediaStream(const OpalMediaFormat & mediaFormat,
+OpalFileMediaStream::OpalFileMediaStream(OpalConnection & conn,
+                                         const OpalMediaFormat & mediaFormat,
                                          BOOL isSource,
                                          const PFilePath & path)
-  : OpalRawMediaStream(mediaFormat, isSource,
+  : OpalRawMediaStream(conn, mediaFormat, isSource,
                        new PFile(path, isSource ? PFile::ReadOnly : PFile::WriteOnly),
                        TRUE)
 {
@@ -922,22 +939,24 @@ BOOL OpalFileMediaStream::IsSynchronous() const
 #if OPAL_AUDIO
 #if P_AUDIO
 
-OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
+OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
+                                           const OpalMediaFormat & mediaFormat,
                                            BOOL isSource,
                                            PINDEX buffers,
                                            PSoundChannel * channel,
                                            BOOL autoDel)
-  : OpalRawMediaStream(mediaFormat, isSource, channel, autoDel)
+  : OpalRawMediaStream(conn, mediaFormat, isSource, channel, autoDel)
 {
   soundChannelBuffers = buffers;
 }
 
 
-OpalAudioMediaStream::OpalAudioMediaStream(const OpalMediaFormat & mediaFormat,
+OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
+                                           const OpalMediaFormat & mediaFormat,
                                            BOOL isSource,
                                            PINDEX buffers,
                                            const PString & deviceName)
-  : OpalRawMediaStream(mediaFormat, isSource,
+  : OpalRawMediaStream(conn, mediaFormat, isSource,
                        new PSoundChannel(deviceName,
                                          isSource ? PSoundChannel::Recorder
                                                   : PSoundChannel::Player,
@@ -970,11 +989,12 @@ BOOL OpalAudioMediaStream::IsSynchronous() const
 
 #if OPAL_VIDEO
 
-OpalVideoMediaStream::OpalVideoMediaStream(const OpalMediaFormat & mediaFormat,
+OpalVideoMediaStream::OpalVideoMediaStream(OpalConnection & conn,
+                                           const OpalMediaFormat & mediaFormat,
                                            PVideoInputDevice * in,
                                            PVideoOutputDevice * out,
                                            BOOL del)
-  : OpalMediaStream(mediaFormat, in != NULL),
+  : OpalMediaStream(conn, mediaFormat, in != NULL),
     inputDevice(in),
     outputDevice(out),
     autoDelete(del)
@@ -1132,10 +1152,11 @@ BOOL OpalVideoMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalUDPMediaStream::OpalUDPMediaStream(const OpalMediaFormat & mediaFormat,
+OpalUDPMediaStream::OpalUDPMediaStream(OpalConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
                                        BOOL isSource,
                                        OpalTransportUDP & transport)
-  : OpalMediaStream(mediaFormat, isSource),
+  : OpalMediaStream(conn, mediaFormat, isSource),
     udpTransport(transport)
 {}
 

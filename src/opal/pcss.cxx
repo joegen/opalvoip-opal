@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2040.2.3  2007/03/20 09:33:57  hfriederich
+ * Revision 1.2040.2.4  2007/03/29 21:45:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.39.2.3  2007/03/20 09:33:57  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
  *   such as H.450 and H.460.
@@ -522,7 +528,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
   if (soundChannel == NULL)
     return NULL;
 
-  return new OpalAudioMediaStream(mediaFormat, isSource, soundChannelBuffers, soundChannel);
+  return new OpalAudioMediaStream(*this, mediaFormat, isSource, soundChannelBuffers, soundChannel);
 }
 
 
