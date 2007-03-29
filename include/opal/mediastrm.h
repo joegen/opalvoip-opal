@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2041  2007/01/25 11:48:11  hfriederich
+ * Revision 1.2042  2007/03/29 05:15:48  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.40  2007/01/25 11:48:11  hfriederich
  * OpalMediaPatch code refactorization.
  * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
  * (not using a thread). Also adds the possibility for source streams
@@ -182,11 +186,13 @@
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
+#include <ptclib/guid.h>
 
 
 class RTP_Session;
 class OpalMediaPatch;
 class OpalLine;
+class OpalConnection;
 
 
 /**This class describes a media stream as used in the OPAL system. A media
@@ -203,6 +209,7 @@ class OpalMediaStream : public PObject
     /**Construct a new media stream.
       */
     OpalMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
@@ -462,10 +469,16 @@ class OpalMediaStream : public PObject
       */
     PMutex &  GetDeleteMutex() const { return deleteMutex; }
 
+    /**  Get the ID associated with this stream. Used for detecting two 
+      *  the streams associated with a bidirectional media channel
+      */
+    PString GetID() const
+    { return id; }
+
   protected:
     OpalMediaFormat mediaFormat;
     unsigned        sessionID;
-    BOOL	    paused;
+    BOOL	          paused;
     BOOL            isSource;
     BOOL            isOpen;
     PINDEX          defaultDataSize;
@@ -478,6 +491,8 @@ class OpalMediaStream : public PObject
     PNotifier        commandNotifier;
 
     mutable PMutex  deleteMutex;
+
+    PString id;   
 };
 
 PLIST(OpalMediaStreamList, OpalMediaStream);
@@ -494,6 +509,7 @@ class OpalNullMediaStream : public OpalMediaStream
     /**Construct a new media stream for RTP sessions.
       */
     OpalNullMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource                        ///<  Is a source stream
@@ -550,6 +566,7 @@ class OpalRTPMediaStream : public OpalMediaStream
     /**Construct a new media stream for RTP sessions.
       */
     OpalRTPMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       BOOL isSource,                       ///<  Is a source stream
       RTP_Session & rtpSession,    ///<  RTP session to stream to/from
@@ -629,6 +646,7 @@ class OpalRawMediaStream : public OpalMediaStream
     /**Construct a new media stream for channel.
       */
     OpalRawMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
@@ -700,6 +718,7 @@ class OpalFileMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for files.
       */
     OpalFileMediaStream(
+      OpalConnection &,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
@@ -710,6 +729,7 @@ class OpalFileMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for files.
       */
     OpalFileMediaStream(
+      OpalConnection & ,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
@@ -746,6 +766,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for audio.
       */
     OpalAudioMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
@@ -757,6 +778,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for audio.
       */
     OpalAudioMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
@@ -807,6 +829,7 @@ class OpalVideoMediaStream : public OpalMediaStream
     /**Construct a new media stream for channel.
       */
     OpalVideoMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       PVideoInputDevice * inputDevice,     ///<  Device to use for video grabbing
@@ -885,6 +908,7 @@ class OpalUDPMediaStream : public OpalMediaStream
     /**Construct a new media stream for channel.
       */
     OpalUDPMediaStream(
+      OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
       BOOL isSource,                       ///<  Is a source stream
