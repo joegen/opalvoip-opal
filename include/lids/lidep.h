@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2026.2.1  2007/03/20 08:29:43  hfriederich
+ * Revision 1.2026.2.2  2007/03/29 21:37:58  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.25.2.1  2007/03/20 08:29:43  hfriederich
  * Move to MediaType architecture
  * Fix MakeConnection overrides
  *
@@ -644,6 +650,7 @@ class OpalLineMediaStream : public OpalMediaStream
     /**Construct a new media stream for Line Interface Devices.
       */
     OpalLineMediaStream(
+      OpalLineConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       BOOL isSource,                       ///<  Is a source stream
       OpalLine & line                      ///<  LID line to stream to/from

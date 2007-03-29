@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2038.2.1  2007/03/20 08:29:43  hfriederich
+ * Revision 1.2038.2.2  2007/03/29 21:37:58  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.37.2.1  2007/03/20 08:29:43  hfriederich
  * Move to MediaType architecture
  * Fix MakeConnection overrides
  *
@@ -704,7 +710,7 @@ OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & 
   if (mediaFormat.GetMediaType() != OpalDefaultAudioMediaType)
     return OpalConnection::CreateMediaStream(mediaFormat, isSource);
 
-  return new OpalLineMediaStream(mediaFormat, isSource, line);
+  return new OpalLineMediaStream(*this, mediaFormat, isSource, line);
 }
 
 
@@ -921,10 +927,11 @@ BOOL OpalLineConnection::SetUpConnection()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalLineMediaStream::OpalLineMediaStream(const OpalMediaFormat & mediaFormat,
+OpalLineMediaStream::OpalLineMediaStream(OpalLineConnection & conn, 
+                                         const OpalMediaFormat & mediaFormat,
                                          BOOL isSource,
                                          OpalLine & ln)
-  : OpalMediaStream(mediaFormat, isSource),
+  : OpalMediaStream(conn, mediaFormat, isSource),
     line(ln)
 {
   useDeblocking = FALSE;
