@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2014.2.3  2007/03/20 09:33:57  hfriederich
+ * Revision 1.2014.2.4  2007/03/29 21:45:55  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.13.2.3  2007/03/20 09:33:57  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
  *   such as H.450 and H.460.
@@ -383,6 +389,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
     /**Construct a new media stream for IVR session.
       */
     OpalIVRMediaStream(
+      OpalIVRConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       BOOL isSource,                       ///<  Is a source stream
       PVXMLSession & vxml                  ///<  vxml session to use
