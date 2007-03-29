@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2025.2.2  2007/02/12 15:32:01  hfriederich
+ * Revision 1.2025.2.3  2007/03/29 22:07:04  hfriederich
+ * (Backport from HEAD)
+ * Add extra logging
+ *
+ * Revision 2.24.2.2  2007/02/12 15:32:01  hfriederich
  * Revision of the Opal media command implementation.
  * Building a media command chain where commands are passed on until
  * consumed.
@@ -322,7 +326,9 @@ class OpalTranscoder : public OpalMediaFormatPair
       */
     static OpalTranscoder * Create(
       const OpalMediaFormat & srcFormat,  ///<  Name of source format
-      const OpalMediaFormat & dstFormat   ///<  Name of destination format
+      const OpalMediaFormat & dstFormat,  ///<  Name of destination format
+      const BYTE * instance = NULL,
+      unsigned instanceLen = 0
     );
 
     /**Find media format(s) for transcoders.
@@ -419,6 +425,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     PMutex    updateMutex;
 
     RTP_DataFrame::PayloadMapType payloadTypeMap;
+    
+    BOOL outputIsRTP, inputIsRTP;
 
   public:
     void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)

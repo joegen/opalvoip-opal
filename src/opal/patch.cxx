@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.5  2007/03/11 12:26:15  hfriederich
+ * Revision 1.2041.2.6  2007/03/29 22:07:04  hfriederich
+ * (Backport from HEAD)
+ * Add extra logging
+ *
+ * Revision 2.40.2.5  2007/03/11 12:26:15  hfriederich
  * Add rtp payload map for sinks without transcoders.
  *
  * Revision 2.40.2.4  2007/03/09 20:03:18  hfriederich
@@ -334,8 +338,10 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     return TRUE;
   }
 
-  sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat);
+  PString id = stream->GetID();
+  sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (sink->primaryCodec != NULL) {
+    PTRACE(1, "created primary codec " << sourceFormat << "/" << destinationFormat << " with ID " << id);
     sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
@@ -356,8 +362,10 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
       return FALSE;
     }
 
-    sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat);
-    sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat);
+    sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
+    sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
+    
+    PTRACE(1, "created two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->secondaryCodec->SetMaxOutputSize(sink->stream->GetDataSize());
 
