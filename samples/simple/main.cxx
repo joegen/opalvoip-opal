@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2082  2007/03/01 05:07:32  csoutheren
+ * Revision 1.2083  2007/03/29 05:24:00  csoutheren
+ * Add support for T.38
+ *
+ * Revision 2.81  2007/03/01 05:07:32  csoutheren
  * Only include video code when video enabled
  *
  * Revision 2.80  2006/11/01 00:46:40  csoutheren
@@ -357,6 +360,8 @@
 #include <h323/gkclient.h>
 #endif
 
+#include <t38/t38proto.h>
+
 #include <opal/transcoders.h>
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
@@ -682,6 +687,10 @@ MyManager::MyManager()
 #if P_EXPAT
   ivrEP  = NULL;
 #endif
+#if OPAL_T38FAX
+  faxEP = NULL;
+  t38EP = NULL;
+#endif
 
   pauseBeforeDialing = FALSE;
 }
@@ -699,6 +708,17 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
+  {
+    OpalMediaFormat fmt(OpalT38);
+    if (!fmt.IsValid()) {
+      cerr << "cannot find t.38" << endl;
+      return false;
+    }
+    else
+    {
+      OpalMediaFormat::SetRegisteredMediaFormat(fmt);
+    }
+  }
 #if OPAL_VIDEO
   OpalMediaFormat fmt("H.261-CIF");
   if (fmt.IsValid()) {
@@ -990,6 +1010,14 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 #endif
 
+#if OPAL_T38FAX
+  ///////////////////////////////////////
+  // Create T38 protocol handler
+  {
+    faxEP = new OpalFaxEndPoint(*this);
+    t38EP = new OpalT38EndPoint(*this);
+  }
+#endif
 
   ///////////////////////////////////////
   // Set the dial peers
@@ -1231,6 +1259,8 @@ void MyManager::NewSpeedDial(const PString & ostr)
 
 void MyManager::Main(PArgList & args)
 {
+  OpalConnection::StringOptions stringOptions;
+
   // See if making a call or just listening.
   switch (args.GetCount()) {
     case 0 :
@@ -1245,7 +1275,7 @@ void MyManager::Main(PArgList & args)
       }
 
       cout << "Initiating call to \"" << args[0] << "\"\n";
-      SetUpCall(srcEP, args[0], currentCallToken);
+      SetUpCall(srcEP, args[0], currentCallToken, 0, 0, &stringOptions);
       break;
 
     default :
