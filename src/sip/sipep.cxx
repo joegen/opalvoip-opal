@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2153  2007/03/27 21:51:40  dsandras
+ * Revision 1.2154  2007/03/29 23:55:46  rjongbloed
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connection class they can create it without
+ *   needing to remember to do any more than the new.
+ *
+ * Revision 2.152  2007/03/27 21:51:40  dsandras
  * Added more PTRACE statements
  *
  * Revision 2.151  2007/03/27 20:35:30  dsandras
@@ -1027,10 +1032,8 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
   SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL, options, stringOptions);
-  if (connection == NULL)
+  if (!AddConnection(connection))
     return FALSE;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
 
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
@@ -1063,10 +1066,7 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                             unsigned int options,
                                      OpalConnection::StringOptions * stringOptions)
 {
-  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
-  if (conn != NULL) 
-    OnNewConnection(call, *conn);
-  return conn;
+  return new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
 }
 
 
@@ -1092,13 +1092,10 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = 
-    CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
-  
-  if (connection == NULL)
+  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+  if (!AddConnection(connection))
     return FALSE;
 
-  connectionsActive.SetAt(callID, connection);
   call.OnReleased(*otherConnection);
   
   connection->SetUpConnection();
@@ -1117,13 +1114,10 @@ BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
 
-  SIPConnection * conn = 
-    CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
-  
-  if (conn == NULL)
+  SIPConnection * conn = CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
+  if (!AddConnection(conn))
     return FALSE;
 
-  connectionsActive.SetAt(callID, conn);
   call.OnReleased(connection);
   
   conn->SetUpConnection();
@@ -1288,10 +1282,9 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   response.Write(transport);
 
   // ask the endpoint for a connection
-  SIPConnection *connection = 
-    CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
-		     NULL, request->GetURI(), &transport, request);
-  if (connection == NULL) {
+  SIPConnection *connection = CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
+                                               NULL, request->GetURI(), &transport, request);
+  if (!AddConnection(connection)) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
@@ -1306,9 +1299,6 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
     return FALSE;
   }
 
-  // add the connection to the endpoint list
-  connectionsActive.SetAt(connection->GetToken(), connection);
-  
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);
   return TRUE;
