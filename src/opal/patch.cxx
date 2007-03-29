@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2044  2007/03/29 05:22:42  csoutheren
+ * Revision 1.2045  2007/03/29 08:30:21  csoutheren
+ * Avoid problem with T.38 codecs
+ *
+ * Revision 2.43  2007/03/29 05:22:42  csoutheren
  * Add extra logging
  *
  * Revision 2.42  2007/03/01 03:23:00  csoutheren
@@ -318,7 +321,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   traceStream << PTrace::End;
 #endif
 
-  if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
+  if ((sourceFormat == destinationFormat) && ((sourceFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) || (source.GetDataSize() <= stream->GetDataSize()))) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return TRUE;
   }
