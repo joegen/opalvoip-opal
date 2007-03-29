@@ -26,6 +26,10 @@
  * The author of this code is Derek J Smithies
  *
  * $Log: iax2medstrm.h,v $
+ * Revision 1.3  2007/03/29 05:15:48  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
  * Revision 1.2  2007/01/11 03:02:15  dereksmithies
  * Remove the previous audio buffering code, and switch to using the jitter
  * buffer provided in Opal. Reduce the verbosity of the log mesasges.
@@ -68,10 +72,10 @@ class OpalIAX2MediaStream : public OpalMediaStream
     /**Construct a new media stream for connecting to the media 
       */
     OpalIAX2MediaStream(
+		   IAX2Connection &con,                 /*!< IAX connection to read/send incoming packets */
 		   const OpalMediaFormat & mediaFormat, /*!< Media format for stream */
 		   unsigned sessionID,                  /*!< Session number for stream */
-		   BOOL isSource,                       /*!< Is a source stream */
-		   IAX2Connection &con                  /*!< IAX connection to read/send incoming packets */
+		   BOOL isSource                        /*!< Is a source stream */
 		   );
   //@}
  
@@ -124,7 +128,7 @@ class OpalIAX2MediaStream : public OpalMediaStream
 
   protected:
     /**The connection is the source/sink of our data packets */
-    IAX2Connection &connection;
+    IAX2Connection & connection;
 
     /**There was unused data from an incoming ethernet frame. The
        unused data is stored here. 
