@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2011  2007/03/29 05:20:17  csoutheren
+ * Revision 1.2012  2007/03/29 08:31:36  csoutheren
+ * Fix media formats for T.38 endpoint
+ *
+ * Revision 2.10  2007/03/29 05:20:17  csoutheren
  * Implement T.38 and fax
  *
  * Revision 2.9  2007/01/18 12:49:22  csoutheren
@@ -899,10 +902,10 @@ BOOL OpalFaxMediaStream::Open()
     return FALSE;
   }
 
+  PWaitAndSignal m2(faxMapMutex);
   PWaitAndSignal m(infoMutex);
-  if (faxCallInfo == NULL) {
 
-    PWaitAndSignal m2(faxMapMutex);
+  if (faxCallInfo == NULL) {
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r != faxCallInfoMap.end()) {
       faxCallInfo = r->second;
@@ -978,17 +981,6 @@ BOOL OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
     PINDEX len = faxCallInfo->socket.GetLastReadCount();
 
     packet.SetPayloadSize(len);
-
-#if USE_SEQ
-    if (len > 2) {
-      unsigned short * ptr = (unsigned short *)packet.GetPayloadPtr();
-      if ((readSequence != 0) && (*ptr != readSequence))
-        cerr << "sequence on incoming fax audio was " << *ptr << " should be " << readSequence << endl;
-      readSequence = *ptr + 1;
-    }
-#endif
-
-    //PTRACE(1, "Fax\tAudio read RTP payload size = " << packet.GetPayloadSize());
   }
 
   return TRUE;
@@ -1014,7 +1006,7 @@ BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
     if (faxCallInfo->spanDSPPort > 0) {
       *(unsigned short *)(packet.GetPayloadPtr()) = writeSequence++;
       if (!faxCallInfo->socket.WriteTo(packet.GetPayloadPtr(), packet.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
-        PTRACE(1, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
+        PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
         return FALSE;
       }
     }
@@ -1027,40 +1019,58 @@ BOOL OpalFaxMediaStream::Close()
 {
   BOOL stat = OpalMediaStream::Close();
 
+  PWaitAndSignal m2(faxMapMutex);
+
   {
-    PWaitAndSignal m(infoMutex);
     if (faxCallInfo == NULL || sessionToken.IsEmpty()) {
       PTRACE(1, "Fax\tCannot close unknown media stream");
       return stat;
     }
 
-    PWaitAndSignal m2(faxMapMutex);
+    // shutdown whatever is running
+    faxCallInfo->socket.Close();
+    faxCallInfo->spanDSP.Close();
+
     OpalFaxCallInfoMap_T::iterator r = faxCallInfoMap.find(sessionToken);
     if (r == faxCallInfoMap.end()) {
-      PTRACE(1, "Fax\tMedia stream not found in T38 session list");
+      PTRACE(1, "Fax\tError: media stream not found in T38 session list");
+      PWaitAndSignal m(infoMutex);
       faxCallInfo = NULL;
       return stat;
     }
 
     if (r->second != faxCallInfo) {
-      PTRACE(1, "Fax\tSession list does not match local ptr");
-    }
-    else if (faxCallInfo == 0) {
-      PTRACE(1, "Fax\tReference count == 0");
-    }
-    
-    else if (--faxCallInfo->refCount > 0) {
+      PTRACE(1, "Fax\tError: session list does not match local ptr");
+      PWaitAndSignal m(infoMutex);
       faxCallInfo = NULL;
       return stat;
     }
 
-    // close for real
-    faxCallInfoMap.erase(r);
+    else if (faxCallInfo->refCount == 0) {
+      PTRACE(1, "Fax\tError: media stream has incorrect reference count");
+      PWaitAndSignal m(infoMutex);
+      faxCallInfo = NULL;
+      return stat;
+    }
+
+    if (--faxCallInfo->refCount > 0) {
+      PWaitAndSignal m(infoMutex);
+      faxCallInfo = NULL;
+      PTRACE(1, "Fax\tClosed fax media stream");
+      return stat;
+    }
   }
 
-  faxCallInfo->spanDSP.Close();
+  // remove info from map
+  faxCallInfoMap.erase(sessionToken);
+
+  // delete the object
+  {
+    PWaitAndSignal m(infoMutex);
+    faxCallInfo = NULL;
+  }
+
   delete faxCallInfo;
-  faxCallInfo = NULL;
 
   return stat;
 }
@@ -1473,7 +1483,7 @@ OpalFaxConnection * OpalT38EndPoint::CreateConnection(OpalCall & call, const PSt
 
 PString OpalT38EndPoint::MakeToken()
 {
-  return psprintf("T38onnection_%i", ++faxCallIndex);
+  return psprintf("T38Connection_%i", ++faxCallIndex);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1503,6 +1513,17 @@ void OpalT38Connection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) c
   endpoint.AdjustMediaFormats(*this, mediaFormats);
   mediaFormats.Remove(PStringArray(OpalPCM16Fax));
 }
+
+OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
+{
+  OpalMediaFormatList formats;
+
+  formats += OpalPCM16;        
+  formats += OpalT38;        
+
+  return formats;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
