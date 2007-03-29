@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2145  2007/03/14 22:40:09  csoutheren
+ * Revision 1.2146  2007/03/29 05:16:49  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.144  2007/03/14 22:40:09  csoutheren
  * Fix H.323 problem with payload map and known payload types
  *
  * Revision 2.143  2007/03/13 02:17:46  csoutheren
@@ -3640,7 +3644,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
                                                     BOOL isSource)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(mediaFormat, sessionID, isSource);
+    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
 
   if (!isSource) {
     OpalMediaStream * stream = transmitterMediaStream;
@@ -3654,7 +3658,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
     return NULL;
   }
 
-  return new OpalRTPMediaStream(mediaFormat, isSource, *session,
+  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
                                 GetMinAudioJitterDelay(),
                                 GetMaxAudioJitterDelay());
 }
