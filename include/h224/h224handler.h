@@ -19,6 +19,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224handler.h,v $
+ * Revision 1.2.6.2  2007/03/29 22:14:58  hfriederich
+ * Pass OpalConnection to OpalMediaStream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
  * Revision 1.2.6.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
@@ -216,7 +221,8 @@ class OpalH224MediaStream : public OpalMediaStream
     
 public:
 	
-  OpalH224MediaStream(OpalH224Handler & h224Handler,
+  OpalH224MediaStream(OpalConnection & connection,
+                      OpalH224Handler & h224Handler,
                       const OpalMediaFormat & mediaFormat,
                       BOOL isSource);
   ~OpalH224MediaStream();

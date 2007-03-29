@@ -19,6 +19,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224.cxx,v $
+ * Revision 1.3.6.3  2007/03/29 22:14:58  hfriederich
+ * Pass OpalConnection to OpalMediaStream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
  * Revision 1.3.6.2  2007/03/20 00:02:13  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.224
@@ -993,10 +998,11 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
 
 ////////////////////////////////////
 
-OpalH224MediaStream::OpalH224MediaStream(OpalH224Handler & handler,
+OpalH224MediaStream::OpalH224MediaStream(OpalConnection & connection, 
+                                         OpalH224Handler & handler,
 										 const OpalMediaFormat & mediaFormat,
 										 BOOL isSource)
-: OpalMediaStream(mediaFormat, isSource),
+: OpalMediaStream(connection, mediaFormat, isSource),
   h224Handler(handler)
 {
   if(isSource == TRUE) {
