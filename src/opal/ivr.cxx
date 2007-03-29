@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2020  2007/03/13 00:33:10  csoutheren
+ * Revision 1.2021  2007/03/29 05:16:50  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.19  2007/03/13 00:33:10  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -292,7 +296,6 @@ BOOL OpalIVRConnection::SetUpConnection()
   phase = ConnectedPhase;
   OnConnected();
 
-
   if (!mediaStreams.IsEmpty()) {
     phase = EstablishedPhase;
     OnEstablished();
@@ -379,7 +382,7 @@ OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & m
                                                        unsigned sessionID,
                                                        BOOL isSource)
 {
-  return new OpalIVRMediaStream(mediaFormat, sessionID, isSource, vxmlSession);
+  return new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, vxmlSession);
 }
 
 
@@ -396,11 +399,12 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalIVRMediaStream::OpalIVRMediaStream(const OpalMediaFormat & mediaFormat,
+OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        BOOL isSourceStream,
                                        PVXMLSession & vxml)
-  : OpalRawMediaStream(mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
+  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
     vxmlSession(vxml)
 {
   PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);

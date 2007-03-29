@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2056  2007/03/10 17:56:33  dsandras
+ * Revision 1.2057  2007/03/29 05:16:50  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.55  2007/03/10 17:56:33  dsandras
  * Improved locking.
  *
  * Revision 2.54  2007/03/04 19:25:00  dsandras
@@ -508,6 +512,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (includeSpecifiedConnection || conn != &connection) {
       OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn->GetMediaFormats());
+PTRACE(4, "Call\tformats for " << *conn << '\n' << setfill('\n') << possibleFormats << setfill(' '));
       if (first) {
         commonFormats = possibleFormats;
         first = FALSE;

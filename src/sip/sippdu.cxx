@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2118  2007/03/27 20:16:23  dsandras
+ * Revision 1.2119  2007/03/29 05:16:50  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.117  2007/03/27 20:16:23  dsandras
  * Temporarily removed use of shared transports as it could have unexpected
  * side effects on the routing of PDUs.
  * Various fixes on the way SIPInfo objects are being handled. Wait
@@ -2364,6 +2368,9 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 #endif
+#if OPAL_T38FAX
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
+#endif
   connection.OnCreatingINVITE(*this);
 }
 
@@ -2380,6 +2387,9 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
     connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+#endif
+#if OPAL_T38FAX
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
 #endif
   connection.OnCreatingINVITE(*this);
 }

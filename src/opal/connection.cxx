@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2099  2007/03/13 02:17:47  csoutheren
+ * Revision 1.2100  2007/03/29 05:16:50  csoutheren
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
+ *
+ * Revision 2.98  2007/03/13 02:17:47  csoutheren
  * Remove warnings/errors when compiling with various turned off
  *
  * Revision 2.97  2007/03/13 00:33:10  csoutheren
@@ -873,8 +877,10 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
     }
 
     if (stream->Open()) {
-      if (OnOpenMediaStream(*stream))
+      if (OnOpenMediaStream(*stream)) {
+        PTRACE(1, "Opened source stream " << stream->GetID());
         return TRUE;
+      }
       PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
     }
     else {
@@ -931,8 +937,10 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
     }
 
     if (stream->Open()) {
-      if (OnOpenMediaStream(*stream))
+      if (OnOpenMediaStream(*stream)) {
+        PTRACE(1, "Opened sink stream " << stream->GetID());
         return stream;
+      }
       PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
     }
     else {
@@ -1013,14 +1021,14 @@ OpalMediaStream * OpalConnection::CreateMediaStream(
         PVideoOutputDevice * previewDevice;
         if (!CreateVideoOutputDevice(mediaFormat, TRUE, previewDevice, autoDelete))
           previewDevice = NULL;
-        return new OpalVideoMediaStream(mediaFormat, sessionID, videoDevice, previewDevice, autoDelete);
+        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, videoDevice, previewDevice, autoDelete);
       }
     }
     else {
       PVideoOutputDevice * videoDevice;
       BOOL autoDelete;
       if (CreateVideoOutputDevice(mediaFormat, FALSE, videoDevice, autoDelete))
-        return new OpalVideoMediaStream(mediaFormat, sessionID, NULL, videoDevice, autoDelete);
+        return new OpalVideoMediaStream(*this, mediaFormat, sessionID, NULL, videoDevice, autoDelete);
     }
   }
 #endif
@@ -1251,6 +1259,13 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
 
   // create an (S)RTP session or T38 pseudo-session as appropriate
   RTP_UDP * rtpSession = NULL;
+
+#if OPAL_T38FAX
+  if (sessionID == OpalMediaFormat::DefaultDataSessionID) {
+    rtpSession = new T38PseudoRTP(NULL, sessionID, remoteIsNAT);
+  }
+  else
+#endif
 
   if (!securityMode.IsEmpty()) {
     OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
