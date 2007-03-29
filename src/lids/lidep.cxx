@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2042  2007/03/29 05:16:49  csoutheren
+ * Revision 1.2043  2007/03/29 23:55:46  rjongbloed
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connection class they can create it without
+ *   needing to remember to do any more than the new.
+ *
+ * Revision 2.41  2007/03/29 05:16:49  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -276,10 +281,8 @@ BOOL OpalLIDEndPoint::MakeConnection(OpalCall & call,
     return FALSE;
 
   }
-  OpalLineConnection * connection = CreateConnection(call, *line, userData, number);
-  connectionsActive.SetAt(connection->GetToken(), connection);
 
-  return TRUE;
+  return AddConnection(CreateConnection(call, *line, userData, number));
 }
 
 
@@ -308,10 +311,7 @@ OpalLineConnection * OpalLIDEndPoint::CreateConnection(OpalCall & call,
                                                        const PString & number)
 {
   PTRACE(3, "LID EP\tCreateConnection call = " << call << " line = " << line << " number = " << number);
-  OpalLineConnection * conn = new OpalLineConnection(call, *this, line, number);
-  if (conn != NULL)
-    OnNewConnection(call, *conn);
-  return conn;
+  return new OpalLineConnection(call, *this, line, number);
 }
 
 
@@ -577,8 +577,8 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
 
   // Have incoming ring, create a new LID connection and let it handle it
   connection = CreateConnection(*manager.CreateCall(), line, NULL, PString::Empty());
-  connectionsActive.SetAt(line.GetToken(), connection);
-  connection->StartIncoming();
+  if (AddConnection(connection))
+    connection->StartIncoming();
 }
 
 

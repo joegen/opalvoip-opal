@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2046  2007/03/21 06:15:57  rjongbloed
+ * Revision 1.2047  2007/03/29 23:55:46  rjongbloed
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connection class they can create it without
+ *   needing to remember to do any more than the new.
+ *
+ * Revision 2.45  2007/03/21 06:15:57  rjongbloed
  * Added functions to find an active comms listener for an interface,
  *    and remove/stop it.
  *
@@ -893,6 +898,7 @@ class OpalEndPoint : public PObject
     {
         virtual void DeleteObject(PObject * object) const;
     } connectionsActive;
+    BOOL AddConnection(OpalConnection * connection);
 
     PMutex inUseFlag;
 
