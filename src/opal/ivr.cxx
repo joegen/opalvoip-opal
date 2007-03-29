@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2021  2007/03/29 05:16:50  csoutheren
+ * Revision 1.2022  2007/03/29 23:55:46  rjongbloed
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connection class they can create it without
+ *   needing to remember to do any more than the new.
+ *
+ * Revision 2.20  2007/03/29 05:16:50  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -168,13 +173,7 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (vxml.IsEmpty() || vxml == "*")
     vxml = defaultVXML;
 
-  OpalIVRConnection * connection = CreateConnection(call, CreateConnectionToken(), userData, vxml);
-  if (connection == NULL)
-    return FALSE;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
-
-  return TRUE;
+  return AddConnection(CreateConnection(call, CreateConnectionToken(), userData, vxml));
 }
 
 
@@ -190,10 +189,7 @@ OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
                                                       void * userData,
                                                       const PString & vxml)
 {
-  OpalIVRConnection * conn = new OpalIVRConnection(call, *this, token, userData, vxml);
-  if (conn != NULL)
-    OnNewConnection(call, *conn);
-  return conn;
+  return new OpalIVRConnection(call, *this, token, userData, vxml);
 }
 
 
