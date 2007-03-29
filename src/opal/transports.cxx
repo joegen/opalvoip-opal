@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.2  2007/03/09 19:52:11  hfriederich
+ * Revision 1.2072.2.3  2007/03/29 22:11:30  hfriederich
+ * (Backport from HEAD)
+ * Fixed deadlock in UDP multi-interface connect algorithm
+ *
+ * Revision 2.71.2.2  2007/03/09 19:52:11  hfriederich
  * Backport from HEAD
  *
  * Revision 2.71.2.1  2007/02/14 08:29:33  hfriederich
@@ -1959,10 +1963,6 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 
 BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
-  PReadWaitAndSignal m(channelPointerMutex);
-  if (connectSockets.IsEmpty())
-    return OpalTransportIP::SetLocalAddress(newLocalAddress);
-
   if (!IsCompatibleTransport(newLocalAddress))
     return FALSE;
 
@@ -1970,6 +1970,9 @@ BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddr
     return FALSE;
 
   PWaitAndSignal lock(connectSocketsMutex);
+  if (connectSockets.IsEmpty()) {
+    return OpalTransportIP::SetLocalAddress(newLocalAddress);
+  }
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address ip;
