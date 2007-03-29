@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2018.2.3  2007/03/20 09:33:57  hfriederich
+ * Revision 1.2018.2.4  2007/03/29 21:45:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.17.2.3  2007/03/20 09:33:57  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
  *   such as H.450 and H.460.
@@ -393,7 +399,7 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                        BOOL isSource)
 {
-  return new OpalIVRMediaStream(mediaFormat, isSource, vxmlSession);
+  return new OpalIVRMediaStream(*this, mediaFormat, isSource, vxmlSession);
 }
 
 
@@ -410,10 +416,11 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalIVRMediaStream::OpalIVRMediaStream(const OpalMediaFormat & mediaFormat,
+OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
+                                       const OpalMediaFormat & mediaFormat,
                                        BOOL isSourceStream,
                                        PVXMLSession & vxml)
-  : OpalRawMediaStream(mediaFormat, isSourceStream, &vxml, FALSE),
+  : OpalRawMediaStream(conn, mediaFormat, isSourceStream, &vxml, FALSE),
     vxmlSession(vxml)
 {
   PTRACE(3, "IVR\tOpalIVRMediaStream media format = " << mediaFormat << ", isSourceStream = " << isSourceStream);
