@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2007  2006/11/20 03:56:37  csoutheren
+ * Revision 1.2008  2007/03/29 05:20:17  csoutheren
+ * Implement T.38 and fax
+ *
+ * Revision 2.6  2006/11/20 03:56:37  csoutheren
  * Fix usage of define
  *
  * Revision 2.5  2006/10/05 07:11:49  csoutheren
@@ -57,6 +60,7 @@
 #include <codec/opalpluginmgr.h>
 #include <lids/lidpluginmgr.h>
 #include <rtp/srtp.h>
+#include <t38/t38proto.h>
 
 
 #if defined(P_HAS_PLUGINS)
@@ -71,6 +75,10 @@ class PluginLoader : public PProcessStartup
 #if HAS_LIBSRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;
 #endif
+#if OPAL_T38FAX
+      PWLibStupidLinkerHacks::t38Loader = 1;
+#endif
+
     }
 };
 
