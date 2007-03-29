@@ -24,7 +24,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.1  2007/02/07 08:51:03  hfriederich
+ * Revision 1.2117.2.2  2007/03/29 21:47:24  hfriederich
+ * (Backport from HEAD)
+ * Various fixes on the way SIPInfo objects are being handled. Wait for
+ *   transports to be closed before being deleted. Added missing mutexes.
+ *   Added garbage collector.
+ * Pass OpalConnection to OpalMediaSream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
+ * Revision 2.116.2.1  2007/02/07 08:51:03  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -2342,14 +2351,14 @@ void SIPTransaction::SetTerminated(States newState)
   if (connection != NULL) {
     if (state != Terminated_Success) {
       mutex.Signal();
-
       connection->OnTransactionFailed(*this);
-
       mutex.Wait();
     }
   }
   else {
+    mutex.Signal();
     endpoint.RemoveTransaction(this);
+    mutex.Wait();
   }
     
 }
