@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transports.cxx,v $
- * Revision 1.2058.2.1  2007/01/15 22:16:43  dsandras
+ * Revision 1.2058.2.2  2007/03/29 07:36:31  dsandras
+ * Backport from HEAD (fixed possible deadlock when getting a SIP retry
+ * before completion.
+ *
+ * Revision 2.57.2.1  2007/01/15 22:16:43  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.57  2005/11/29 11:49:35  dsandras
@@ -1962,10 +1966,6 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 
 BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
-  PReadWaitAndSignal m(channelPointerMutex);
-  if (connectSockets.IsEmpty())
-    return OpalTransportIP::SetLocalAddress(newLocalAddress);
-
   if (!IsCompatibleTransport(newLocalAddress))
     return FALSE;
 
@@ -1973,6 +1973,9 @@ BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddr
     return FALSE;
 
   PWaitAndSignal lock(connectSocketsMutex);
+  if (connectSockets.IsEmpty())
+    return OpalTransportIP::SetLocalAddress(newLocalAddress);
+
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address ip;
