@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2010  2007/03/29 05:19:54  csoutheren
+ * Revision 1.2011  2007/03/29 08:31:25  csoutheren
+ * Fix media formats for T.38 endpoint
+ *
+ * Revision 2.9  2007/03/29 05:19:54  csoutheren
  * Implement T.38 and fax
  *
  * Revision 2.8  2005/02/21 12:19:48  rjongbloed
@@ -664,6 +667,7 @@ class OpalT38Connection : public OpalFaxConnection
     );
     void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
     OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource);
+    OpalMediaFormatList GetMediaFormats() const;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
