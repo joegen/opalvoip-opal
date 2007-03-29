@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2075  2007/02/19 08:35:02  csoutheren
+ * Revision 1.2076  2007/03/29 07:07:23  rjongbloed
+ * Fixed deadlock in UDP multi-interface connect algorithm, and getting a SIP retry before completion.
+ *
+ * Revision 2.74  2007/02/19 08:35:02  csoutheren
  * Add better way to fliter interfaces
  *
  * Revision 2.73  2007/02/19 08:30:40  csoutheren
@@ -1961,10 +1964,6 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 
 BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
-  PReadWaitAndSignal m(channelPointerMutex);
-  if (connectSockets.IsEmpty())
-    return OpalTransportIP::SetLocalAddress(newLocalAddress);
-
   if (!IsCompatibleTransport(newLocalAddress))
     return FALSE;
 
@@ -1972,6 +1971,9 @@ BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddr
     return FALSE;
 
   PWaitAndSignal lock(connectSocketsMutex);
+  if (connectSockets.IsEmpty())
+    return OpalTransportIP::SetLocalAddress(newLocalAddress);
+
   for (PINDEX i = 0; i < connectSockets.GetSize(); i++) {
     PUDPSocket * socket = (PUDPSocket *)connectSockets.GetAt(i);
     PIPSocket::Address ip;
