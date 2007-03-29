@@ -1902,6 +1902,10 @@
 					RelativePath="..\rtp\srtp.cxx"
 					>
 				</File>
+				<File
+					RelativePath="..\rtp\zrtp.cxx"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="T.120 Sources"
@@ -2377,10 +2381,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\include\codec\opalplugin.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\include\opal\opalvxml.h"
 					>
 				</File>
@@ -2509,6 +2509,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\include\codec\opalplugin.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\codec\opalpluginmgr.h"
 					>
 				</File>
@@ -2562,6 +2566,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\rtp\srtp.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\rtp\zrtp.h"
 					>
 				</File>
 			</Filter>
