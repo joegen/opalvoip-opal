@@ -26,6 +26,12 @@
  * The author of this code is Derek J Smithies
  *
  * $Log: iax2medstrm.h,v $
+ * Revision 1.2.2.2  2007/03/29 21:23:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaStream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
  * Revision 1.2.2.1  2007/03/20 08:12:45  hfriederich
  * Move to MediaType architecture
  *
@@ -71,9 +77,9 @@ class OpalIAX2MediaStream : public OpalMediaStream
     /**Construct a new media stream for connecting to the media 
       */
     OpalIAX2MediaStream(
+           IAX2Connection & conn,             
 		   const OpalMediaFormat & mediaFormat, /*!< Media format for stream */
-		   BOOL isSource,                       /*!< Is a source stream */
-		   IAX2Connection &con                  /*!< IAX connection to read/send incoming packets */
+		   BOOL isSource                       /*!< Is a source stream */
 		   );
   //@}
  

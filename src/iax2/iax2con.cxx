@@ -28,6 +28,12 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.18.2.2  2007/03/29 21:23:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaStream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
  * Revision 1.18.2.1  2007/03/20 08:12:45  hfriederich
  * Move to MediaType architecture
  *
@@ -353,12 +359,11 @@ OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & medi
 {
   if (ownerCall.IsMediaBypassPossible(*this, mediaFormat.GetMediaType())) {
     PTRACE(3, "connection\t  create a null media stream ");
-    return new OpalNullMediaStream(mediaFormat, isDataSource);
+    return new OpalNullMediaStream(*this, mediaFormat, isDataSource);
   }
 
   PTRACE(4, "IAX2con\tCreate an OpalIAX2MediaStream");
-  return new OpalIAX2MediaStream(mediaFormat, isDataSource,
-                                 *this);
+  return new OpalIAX2MediaStream(*this, mediaFormat, isDataSource);
 }
 
 void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)

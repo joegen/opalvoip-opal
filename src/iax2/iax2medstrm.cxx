@@ -27,6 +27,12 @@
  *
  *
  * $Log: iax2medstrm.cxx,v $
+ * Revision 1.8.2.2  2007/03/29 21:23:56  hfriederich
+ * (Backport from HEAD)
+ * Pass OpalConnection to OpalMediaStream constructor
+ * Add ID to OpalMediaStreams so that transcoders can match incoming and
+ *   outgoing codecs
+ *
  * Revision 1.8.2.1  2007/03/20 08:12:45  hfriederich
  * Move to MediaType architecture
  *
@@ -92,11 +98,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalIAX2MediaStream::OpalIAX2MediaStream(const OpalMediaFormat & mediaFormat,   
-				       BOOL isSource,        
-				       IAX2Connection &con)
-  : OpalMediaStream(mediaFormat, isSource),
-    connection(con)
+OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn,
+                                         const OpalMediaFormat & mediaFormat,   
+                                         BOOL isSource)
+  : OpalMediaStream(conn, mediaFormat, isSource),
+    connection(conn)
 {
     PTRACE(6, "Media\tConstructor OpalIAX2MediaStream" << mediaFormat);
 }
