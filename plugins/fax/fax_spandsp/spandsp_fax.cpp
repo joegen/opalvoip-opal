@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: spandsp_fax.cpp,v $
+ * Revision 1.2  2007/03/29 08:28:58  csoutheren
+ * Fix shutdown issues
+ *
  * Revision 1.1  2007/03/29 04:49:20  csoutheren
  * Initial checkin
  *
@@ -151,6 +154,26 @@ int socketpair(int d, int type, int protocol, socket_t fds[2])
   if (d != AF_UNIX || type != SOCK_DGRAM)
     return -1;
 
+  // get local IP address
+  in_addr hostAddress;
+  {
+    char hostname[80];
+    if (gethostname(hostname, sizeof(hostname)) == SOCKET_ERROR)
+      return -1;
+    struct hostent * he = gethostbyname(hostname);
+    if (he == 0)
+      return -1;
+    int i;
+    for (i = 0; he->h_addr_list[i] != 0; ++i) {
+      if (*(u_long *)(he->h_addr_list[i]) != INADDR_LOOPBACK) {
+        memcpy(&hostAddress, he->h_addr_list[i], sizeof(hostAddress));
+        break;
+      }
+    }
+    if (he->h_addr_list[i] == 0)
+      return -1;
+  }
+
   // windows does not support AF_UNIX, so use localhost instead
   sockaddr_in sockAddrs[2];
   int sockLens[2];
@@ -164,12 +187,15 @@ int socketpair(int d, int type, int protocol, socket_t fds[2])
     sockLens[i] = sizeof(sockAddrs[0]);
     memset(&sockAddrs[i], 0, sizeof(sockLens[i]));
 
-    sockAddrs[i].sin_family        = AF_INET;
-    sockAddrs[i].sin_addr.s_addr   = inet_addr("10.0.2.9");
-    sockAddrs[i].sin_port          = 0;
+    sockAddrs[i].sin_family  = AF_INET;
+    sockAddrs[i].sin_addr    = hostAddress;
+    sockAddrs[i].sin_port    = 0;
 
     if (bind(fds[i], (sockaddr *)&sockAddrs[i], sockLens[i]) != 0) 
       break;
+
+    sockLens[i] = sizeof(sockAddrs[0]);
+    memset(&sockAddrs[i], 0, sizeof(sockLens[i]));
 
     if (getsockname(fds[i], (sockaddr *)&sockAddrs[i], &sockLens[i]) != 0) 
       break;
@@ -203,44 +229,8 @@ class FaxInstance
   public:
     CriticalSection mutex;
 
-    FaxInstance()
-    { 
-      refCount = 1; 
-#if _WIN32
-      t38Sockets[0] = t38Sockets[1] = INVALID_SOCKET;
-      faxSockets[0] = faxSockets[1] = INVALID_SOCKET;
-      threadHandle = NULL;
-#else
-      t38Sockets[0] = t38Sockets[1] = -1;
-      faxSockets[0] = faxSockets[1] = -1;
-#endif
-    }
-
-    ~FaxInstance()
-    {
-#if _WIN32
-      if (t38Sockets[0] != INVALID_SOCKET)
-        closesocket(t38Sockets[0]);
-      if (t38Sockets[1] != INVALID_SOCKET)
-        closesocket(t38Sockets[1]);
-      if (faxSockets[0] != INVALID_SOCKET)
-        closesocket(faxSockets[0]);
-      if (faxSockets[1] != INVALID_SOCKET)
-        closesocket(faxSockets[1]);
-      if (threadHandle != NULL) {
-        CloseHandle(threadHandle);
-      }
-#else
-      if (t38Sockets[0] != -1)
-        close(t38Sockets[0]);
-      if (t38Sockets[1] != -1)
-        close(t38Sockets[1]);
-      if (faxSockets[0] != -1)
-        close(faxSockets[0]);
-      if (faxSockets[1] != -1)
-        close(faxSockets[1]);
-#endif
-    }
+    FaxInstance();
+    ~FaxInstance();
 
     bool WritePCM(const void * from, unsigned * fromLen);
     bool ReadPCM(void * to, unsigned * toLen);
@@ -282,6 +272,56 @@ static unsigned __stdcall GatewayMain_Static(void * userData)
 };
 #endif // _WIN32
 
+FaxInstance::FaxInstance()
+{ 
+  refCount = 0; 
+#if _WIN32
+  t38Sockets[0] = t38Sockets[1] = INVALID_SOCKET;
+  faxSockets[0] = faxSockets[1] = INVALID_SOCKET;
+  threadHandle = NULL;
+#else
+  t38Sockets[0] = t38Sockets[1] = -1;
+  faxSockets[0] = faxSockets[1] = -1;
+#endif
+}
+
+FaxInstance::~FaxInstance()
+{
+#if _WIN32
+  if (t38Sockets[0] != INVALID_SOCKET)
+    closesocket(t38Sockets[0]);
+  if (t38Sockets[1] != INVALID_SOCKET)
+    closesocket(t38Sockets[1]);
+  if (faxSockets[0] != INVALID_SOCKET)
+    closesocket(faxSockets[0]);
+  if (faxSockets[1] != INVALID_SOCKET)
+    closesocket(faxSockets[1]);
+  if (threadHandle != NULL) {
+    DWORD result;
+    int retries = 10;
+    while ((result = WaitForSingleObject(threadHandle, 1000)) != WAIT_TIMEOUT) {
+      if (result == WAIT_OBJECT_0)
+        break;
+      if (::GetLastError() != ERROR_INVALID_HANDLE) 
+        break;
+      if (retries == 0)
+        break;
+      retries--;
+    }
+    CloseHandle(threadHandle);
+  }
+#else
+  if (t38Sockets[0] != -1)
+    close(t38Sockets[0]);
+  if (t38Sockets[1] != -1)
+    close(t38Sockets[1]);
+  if (faxSockets[0] != -1)
+    close(faxSockets[0]);
+  if (faxSockets[1] != -1)
+    close(faxSockets[1]);
+#endif
+}
+
 void FaxInstance::GatewayMain()
 {
 cerr << "spandsp thread started" << endl;
@@ -315,7 +355,7 @@ bool FaxInstance::Open()
 
 bool FaxInstance::WritePCM(const void * from, unsigned * fromLen)
 {
-  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == *fromLen;
+  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)*fromLen;
 }
 
 bool FaxInstance::ReadPCM(void * to, unsigned * toLen)
@@ -340,7 +380,7 @@ bool FaxInstance::ReadPCM(void * to, unsigned * toLen)
 bool FaxInstance::WriteT38(const void * from, unsigned * fromLen)
 {
   if (*fromLen != 1 || (*(const unsigned char *)from != 0xff))
-    return sendto(t38Sockets[0], (const char *)from, *fromLen, 0, NULL, 0) == *fromLen;
+    return sendto(t38Sockets[0], (const char *)from, *fromLen, 0, NULL, 0) == (int)*fromLen;
   return true;
 }
 
@@ -383,6 +423,27 @@ class FaxCodecContext
     { 
       key.resize(0); 
       instance = NULL;
+    }
+
+    ~FaxCodecContext()
+    {
+      if ((instance == NULL) || (key.size() == 0))
+        return;
+
+      WaitAndSignal m(instanceMapMutex);
+
+      InstanceMapType_T::iterator r = instanceMap.find(key);
+      if (r != instanceMap.end()) {
+        instance = r->second;
+        instance->mutex.Wait();
+        if (instance->refCount > 0)
+          --instance->refCount;
+        else {
+          instance->mutex.Signal();
+          delete instance;
+          instance = NULL;
+        }
+      }
     }
 
     bool StartCodec()
@@ -428,27 +489,8 @@ static void destroy_coder(const struct PluginCodec_Definition * codec, void * _c
   if (_context == NULL)
     return;
   
-  FaxCodecContext & context = *(FaxCodecContext *)_context;
-
-  if (context.instance != NULL) {
-
-    WaitAndSignal m(instanceMapMutex);
-
-    FaxInstance & instance = *context.instance;
-
-    instance.mutex.Wait();
-
-    if (instance.refCount > 1) {
-      instance.refCount;
-      instance.mutex.Signal();
-    } else {
-      instanceMap.erase(context.key);
-      instance.mutex.Signal();
-      delete context.instance;
-    }
-  }
-
-  delete &context;
+  FaxCodecContext * context = (FaxCodecContext *)_context;
+  delete context;
 }
 
 static int codec_pcm_to_t38(const struct PluginCodec_Definition * codec, 
