@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047.2.6  2007/03/29 20:06:05  hfriederich
+ * Revision 1.2047.2.7  2007/03/30 06:16:51  hfriederich
+ * (Backport from HEAD)
+ * Fixed log message about swallowing UDP packets so only prints out if
+ *   non-zero packets were swallowed.
+ *
+ * Revision 2.46.2.6  2007/03/29 20:06:05  hfriederich
  * (Backport from HEAD)
  * Add virtual function to wait for incoming data
  * Swallow RTP packets that arrive on the socket before session starts
@@ -2173,7 +2178,7 @@ int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, con
           break;
       }
     } while (first);
-    PTRACE(1, "Swallowed " << count << " RTP packets on startup");
+    PTRACE_IF(2, count > 0, "Swallowed " << count << " RTP packets on startup");
   }
     
   return PSocket::Select(dataSocket, controlSocket, timeout);
