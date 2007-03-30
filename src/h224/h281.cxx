@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.5  2007/03/30 02:09:50  rjongbloed
+ * Fixed various GCC warnings
+ *
  * Revision 1.4  2007/03/12 23:19:01  csoutheren
  * Add ability to remove H.224
  *
@@ -793,3 +796,4 @@ void OpalH281Handler::StopActionLocally(PTimer &, INT)
 }
 
 #endif // OPAL_H224
+
