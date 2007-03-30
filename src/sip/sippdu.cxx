@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.2  2007/03/29 21:47:24  hfriederich
+ * Revision 1.2117.2.3  2007/03/30 13:56:37  hfriederich
+ * Reorganization of the way transactions are handled. Delete transactions
+ *   in garbage collector when they're terminated. Update destructor code
+ *   to improve safe destruction of SIPEndPoint instances.
+ *
+ * Revision 2.116.2.2  2007/03/29 21:47:24  hfriederich
  * (Backport from HEAD)
  * Various fixes on the way SIPInfo objects are being handled. Wait for
  *   transports to be closed before being deleted. Added missing mutexes.
@@ -2049,21 +2054,14 @@ void SIPTransaction::Construct(const PTimeInterval & minRetryTime, const PTimeIn
   state = NotStarted;
 
   retryTimeoutMin = ((minRetryTime != PMaxTimeInterval) && (minRetryTime != 0)) ? minRetryTime : endpoint.GetRetryTimeoutMin(); 
-  retryTimeoutMax = ((maxRetryTime != PMaxTimeInterval) && (maxRetryTime != 0)) ? maxRetryTime : endpoint.GetRetryTimeoutMax(); ; 
+  retryTimeoutMax = ((maxRetryTime != PMaxTimeInterval) && (maxRetryTime != 0)) ? maxRetryTime : endpoint.GetRetryTimeoutMax();
 }
 
 
 SIPTransaction::~SIPTransaction()
 {
-  retryTimer.Stop();
-  completionTimer.Stop();
-
-  if (state > NotStarted && state < Terminated_Success) 
-    finished.Signal();
-
-  if (connection != NULL && state > NotStarted && state < Terminated_Success) {
-    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " aborted.");
-    connection->RemoveTransaction(this);
+  if (state > NotStarted && state < Terminated_Success) {
+    PAssertAlways("Destroying transaction that is not yet terminated");
   }
 
   PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
@@ -2113,16 +2111,16 @@ BOOL SIPTransaction::Start()
 }
 
 
-void SIPTransaction::Wait()
+void SIPTransaction::WaitForCompletion()
 {
   if (state == NotStarted)
     Start();
 
-  finished.Wait();
+  completed.Wait();
 }
 
 
-BOOL SIPTransaction::SendCANCEL()
+BOOL SIPTransaction::Cancel()
 {
   PWaitAndSignal m(mutex);
 
@@ -2130,6 +2128,13 @@ BOOL SIPTransaction::SendCANCEL()
     return FALSE;
 
   return ResendCANCEL();
+}
+
+
+void SIPTransaction::Abort()
+{
+  PWaitAndSignal m(mutex);
+  SetTerminated(Terminated_Aborted);
 }
 
 
@@ -2181,8 +2186,6 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
   if (method != Method_INVITE) mutex.Wait();
 
-  BOOL notCompletedFlag = state < Completed;
-
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
@@ -2205,18 +2208,23 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   }
    else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
+       
+    BOOL notCompletedFlag = state < Completed;
 
     state = Completed;
-    finished.Signal();
+    completed.Signal();
     retryTimer.Stop();
     completionTimer = endpoint.GetPduCleanUpTimeout();
 
     mutex.Signal();
 
-    if (notCompletedFlag && connection != NULL)
-      connection->OnReceivedResponse(*this, response);
-    else
-      endpoint.OnReceivedResponse(*this, response);
+    // Forward the final response only once to the connection / endpoint
+    if (notCompletedFlag) {
+      if (connection != NULL)
+        connection->OnReceivedResponse(*this, response);
+      else
+        endpoint.OnReceivedResponse(*this, response);
+    }
 
     if (!OnCompleted(response))
       return FALSE;
@@ -2298,6 +2306,7 @@ void SIPTransaction::SetTerminated(States newState)
   static const char * const StateNames[NumStates] = {
     "NotStarted",
     "Trying",
+    "Aborting",
     "Proceeding",
     "Cancelling",
     "Completed",
@@ -2305,13 +2314,15 @@ void SIPTransaction::SetTerminated(States newState)
     "Terminated_Timeout",
     "Terminated_RetriesExceeded",
     "Terminated_TransportError",
-    "Terminated_Cancelled"
+    "Terminated_Cancelled",
+    "Terminated_Aborted"
   };
 #endif
 
   if (state >= Terminated_Success) {
-    PTRACE(3, "SIP\tTried to set state " << StateNames[newState] << " for transaction " << mime.GetCSeq()
-           << " but already terminated ( " << StateNames[state] << ')');
+    PTRACE_IF(3, newState != Terminated_Aborted, "SIP\tTried to set state " << StateNames[newState] 
+              << " for transaction " << mime.GetCSeq()
+              << " but already terminated ( " << StateNames[state] << ')');
     return;
   }
   
@@ -2345,22 +2356,22 @@ void SIPTransaction::SetTerminated(States newState)
   }
 
   if (oldState != Completed) {
-    finished.Signal();
+    completed.Signal();
   }
 
+  // Unlock the mutex before calling the connection / endpoint
+  // to avoid possible deadlocks
+  mutex.Signal();
   if (connection != NULL) {
     if (state != Terminated_Success) {
-      mutex.Signal();
       connection->OnTransactionFailed(*this);
-      mutex.Wait();
     }
+    connection->RemoveTransaction(this);
   }
   else {
-    mutex.Signal();
     endpoint.RemoveTransaction(this);
-    mutex.Wait();
   }
-    
+  mutex.Wait();
 }
 
 

@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2046.2.2  2007/03/30 13:56:37  hfriederich
+ * Reorganization of the way transactions are handled. Delete transactions
+ *   in garbage collector when they're terminated. Update destructor code
+ *   to improve safe destruction of SIPEndPoint instances.
+ *
+ * Revision 2.45.2.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -816,12 +821,14 @@ class SIPTransaction : public SIP_PDU
     ~SIPTransaction();
 
     BOOL Start();
-    BOOL IsInProgress() const { return state == Trying && state == Proceeding; }
+    BOOL IsInProgress() const { return state == Trying || state == Proceeding; }
     BOOL IsFailed() const { return state > Terminated_Success; }
-    BOOL IsFinished()     { return finished.Wait(0); }
-    BOOL IsCanceled() const {return state == Terminated_Cancelled;}
-    void Wait();
-    BOOL SendCANCEL();
+    BOOL IsCompleted() const { return state >= Completed; }
+    BOOL IsCanceled() const { return state == Terminated_Cancelled;}
+    BOOL IsTerminated() const { return state >= Terminated_Success; }
+    void WaitForCompletion();
+    BOOL Cancel();
+    void Abort();
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
     virtual BOOL OnCompleted(SIP_PDU & response);
@@ -844,6 +851,7 @@ class SIPTransaction : public SIP_PDU
     enum States {
       NotStarted,
       Trying,
+      Aborting,
       Proceeding,
       Cancelling,
       Completed,
@@ -852,6 +860,7 @@ class SIPTransaction : public SIP_PDU
       Terminated_RetriesExceeded,
       Terminated_TransportError,
       Terminated_Cancelled,
+      Terminated_Aborted,
       NumStates
     };
     virtual void SetTerminated(States newState);
@@ -865,7 +874,7 @@ class SIPTransaction : public SIP_PDU
     PTimer   retryTimer;
     PTimer   completionTimer;
 
-    PSyncPoint finished;
+    PSyncPoint completed;
     PTimedMutex mutex;
 
     PTimeInterval retryTimeoutMin; 
