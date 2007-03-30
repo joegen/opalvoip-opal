@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2020  2007/03/12 23:22:17  csoutheren
+ * Revision 1.2021  2007/03/30 02:09:53  rjongbloed
+ * Fixed various GCC warnings
+ *
+ * Revision 2.19  2007/03/12 23:22:17  csoutheren
  * Add ability to remove H.450
  *
  * Revision 2.18  2006/08/21 05:29:25  csoutheren
@@ -2660,3 +2663,4 @@ BOOL H45011Handler::OnReceivedReject(int PTRACE_problemType, int PTRACE_problemN
 };
 
 #endif // OPAL_H450
+

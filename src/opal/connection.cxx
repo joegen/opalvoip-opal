@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2100  2007/03/29 05:16:50  csoutheren
+ * Revision 1.2101  2007/03/30 02:09:53  rjongbloed
+ * Fixed various GCC warnings
+ *
+ * Revision 2.99  2007/03/29 05:16:50  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -543,15 +546,20 @@ OpalConnection::OpalConnection(OpalCall & call,
                                OpalConnection::StringOptions * _stringOptions)
   : ownerCall(call),
     endpoint(ep),
+    phase(UninitialisedPhase),
     callToken(token),
+    originating(FALSE),
     alertingTime(0),
     connectedTime(0),
     callEndTime(0),
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token),
+    callEndReason(NumCallEndReasons),
     remoteIsNAT(FALSE),
     q931Cause(0x100),
+    silenceDetector(NULL),
+    echoCanceler(NULL),
 #if OPAL_T120DATA
     t120handler(NULL),
 #endif
@@ -561,11 +569,6 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_H224
     h224Handler(NULL),
 #endif
-    silenceDetector(NULL),
-    echoCanceler(NULL),
-    phase(UninitialisedPhase),
-    originating(FALSE),
-    callEndReason(NumCallEndReasons),
     stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);

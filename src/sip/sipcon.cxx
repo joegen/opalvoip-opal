@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2210  2007/03/29 05:16:50  csoutheren
+ * Revision 1.2211  2007/03/30 02:09:53  rjongbloed
+ * Fixed various GCC warnings
+ *
+ * Revision 2.209  2007/03/29 05:16:50  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -2380,9 +2383,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
           SetAlerting(localPartyName, TRUE);
           break;
 
-        case AnswerCallDeferred:
-        case AnswerCallDeferredWithMedia:
-        case NumAnswerCallResponses:
+        default:
           break;
       }
       break;
