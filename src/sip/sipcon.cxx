@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.5  2007/03/29 21:47:23  hfriederich
+ * Revision 1.2198.2.6  2007/03/30 06:45:21  hfriederich
+ * Fixed GCC warning
+ *
+ * Revision 2.197.2.5  2007/03/29 21:47:23  hfriederich
  * (Backport from HEAD)
  * Various fixes on the way SIPInfo objects are being handled. Wait for
  *   transports to be closed before being deleted. Added missing mutexes.
@@ -2356,9 +2359,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
           SetAlerting(localPartyName, TRUE);
           break;
 
-        case AnswerCallDeferred:
-        case AnswerCallDeferredWithMedia:
-        case NumAnswerCallResponses:
+        default:
           break;
       }
       break;
