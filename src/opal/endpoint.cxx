@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.5  2007/03/29 18:08:55  hfriederich
+ * Revision 1.2051.2.6  2007/03/30 06:44:45  hfriederich
+ * (Backport from HEAD)
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connectino class they can create it without
+ *   needing to remember to do any more than the new.
+ * Fixed various GCC warnings
+ *
+ * Revision 2.50.2.5  2007/03/29 18:08:55  hfriederich
  * (Backport from HEAD)
  * Added functions to find an active comms listener for an interface,
  *   and remove/stop it.
@@ -482,6 +489,19 @@ BOOL OpalEndPoint::HasConnection(const PString & token)
 {
   PWaitAndSignal wait(inUseFlag);
   return connectionsActive.Contains(token);
+}
+
+
+BOOL OpalEndPoint::AddConnection(OpalConnection * connection)
+{
+  if (connection == NULL)
+    return FALSE;
+    
+  OnNewConnection(connection->GetCall(), *connection);
+    
+  connectionsActive.SetAt(connection->GetToken(), connection);
+    
+  return TRUE;
 }
 
 

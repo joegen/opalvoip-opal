@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.6  2007/03/29 21:45:56  hfriederich
+ * Revision 1.2089.2.7  2007/03/30 06:44:45  hfriederich
+ * (Backport from HEAD)
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connectino class they can create it without
+ *   needing to remember to do any more than the new.
+ * Fixed various GCC warnings
+ *
+ * Revision 2.88.2.6  2007/03/29 21:45:56  hfriederich
  * (Backport from HEAD)
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -541,26 +548,26 @@ OpalConnection::OpalConnection(OpalCall & call,
                                OpalConnection::StringOptions * _stringOptions)
   : ownerCall(call),
     endpoint(ep),
+    phase(UninitialisedPhase),
     callToken(token),
+    originating(FALSE),
     alertingTime(0),
     connectedTime(0),
     callEndTime(0),
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token),
+    callEndReason(NumCallEndReasons),
     remoteIsNAT(FALSE),
     q931Cause(0x100),
+    silenceDetector(NULL),
+    echoCanceler(NULL),
 #if OPAL_T120DATA
     t120handler(NULL),
 #endif
 #if OPAL_T38FAX
     t38handler(NULL),
 #endif
-    silenceDetector(NULL),
-    echoCanceler(NULL),
-    phase(UninitialisedPhase),
-    originating(FALSE),
-    callEndReason(NumCallEndReasons),
     stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);

@@ -28,6 +28,13 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.26.2.3  2007/03/30 06:44:45  hfriederich
+ * (Backport from HEAD)
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connectino class they can create it without
+ *   needing to remember to do any more than the new.
+ * Fixed various GCC warnings
+ *
  * Revision 1.26.2.2  2007/03/20 08:19:18  hfriederich
  * Fix typo in previous commit
  *
@@ -270,17 +277,14 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   PString url = BuildUrl(host, userName, ieData.callingNumber);
 /* We have completed the extraction of information process. Now we can build the matching connection */
 
-  IAX2Connection *connection =
-    CreateConnection(*GetManager().CreateCall(), f->GetConnectionToken(),
-		     NULL, url, ieData.callingName);
-  if (connection == NULL) {
+  IAX2Connection *connection = CreateConnection(*GetManager().CreateCall(), f->GetConnectionToken(),
+                                                NULL, url, ieData.callingName);
+  if (!AddConnection(connection)) {
     PTRACE(2, "IAX2\tFailed to create IAX2Connection for NEW request from " << f->GetConnectionToken());
     delete f;
     return;
   }
   
-  // add the connection to the endpoint list
-  connectionsActive.SetAt(connection->GetToken(), connection);
   connection->OnIncomingConnection(0, NULL);
 
   connection->IncomingEthernetFrame(f);
@@ -478,9 +482,8 @@ BOOL IAX2EndPoint::MakeConnection(
   PStringStream callId;
   callId << "iax2:" <<  ip.AsString() << "OutgoingCall" << PString(++callsEstablished);
   IAX2Connection * connection = CreateConnection(call, callId, userData, remotePartyName);
-  if (connection == NULL)
+  if (!AddConnection(connection))
     return FALSE;
-  connectionsActive.SetAt(connection->GetToken(), connection);
 
   //search through the register srcProcessors to see if there is a relevant userName
   //and password we can use for authentication.  If there isn't then the default
@@ -519,10 +522,7 @@ IAX2Connection * IAX2EndPoint::CreateConnection(
       const PString & remoteParty,
       const PString & remotePartyName)
 {
-  IAX2Connection * conn = new IAX2Connection(call, *this, token, userData, remoteParty, remotePartyName); 
-  if (conn != NULL)
-    OnNewConnection(call, *conn);
-  return conn;
+  return new IAX2Connection(call, *this, token, userData, remoteParty, remotePartyName); 
 }
 
 OpalMediaFormatList IAX2EndPoint::GetMediaFormats() const

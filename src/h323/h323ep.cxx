@@ -27,7 +27,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062.2.3  2007/03/20 07:52:19  hfriederich
+ * Revision 1.2062.2.4  2007/03/30 06:44:45  hfriederich
+ * (Backport from HEAD)
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connectino class they can create it without
+ *   needing to remember to do any more than the new.
+ * Fixed various GCC warnings
+ *
+ * Revision 2.61.2.3  2007/03/20 07:52:19  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.450
  * Remove warnings/errors when compiling with various turned off
@@ -611,7 +618,7 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   if (connection == NULL) {
     connection = CreateConnection(*manager.CreateCall(), token, NULL,
                                   *transport, PString::Empty(), PString::Empty(), &pdu);
-    if (connection == NULL) {
+    if (!AddConnection(connection)) {
       PTRACE(1, "H225\tEndpoint could not create connection, "
                 "sending release complete PDU: callRef=" << callReference);
 
@@ -637,8 +644,6 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
 
       return TRUE;
     }
-
-    connectionsActive.SetAt(token, connection);
   }
 
   PTRACE(3, "H323\tCreated new connection: " << token);
@@ -668,10 +673,7 @@ H323Connection * H323EndPoint::CreateConnection(OpalCall & call,
                                                 unsigned options,
                                                 OpalConnection::StringOptions * stringOptions)
 {
-  H323Connection * conn = new H323Connection(call, *this, token, alias, address, options, stringOptions);
-  if (conn != NULL)
-    OnNewConnection(call, *conn);
-  return conn;
+  return new H323Connection(call, *this, token, alias, address, options, stringOptions);
 }
 
 
@@ -750,12 +752,10 @@ BOOL H323EndPoint::InternalMakeCall(OpalCall & call,
   }
 
   H323Connection * connection = CreateConnection(call, newToken, userData, *transport, alias, address, NULL, options, stringOptions);
-  if (connection == NULL) {
+  if (!AddConnection(connection)) {
     PTRACE(1, "H225\tEndpoint could not create connection, aborting setup.");
     return FALSE;
   }
-
-  connectionsActive.SetAt(newToken, connection);
 
   inUseFlag.Signal();
 

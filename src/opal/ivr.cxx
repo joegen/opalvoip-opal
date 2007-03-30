@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2018.2.4  2007/03/29 21:45:56  hfriederich
+ * Revision 1.2018.2.5  2007/03/30 06:44:45  hfriederich
+ * (Backport from HEAD)
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connectino class they can create it without
+ *   needing to remember to do any more than the new.
+ * Fixed various GCC warnings
+ *
+ * Revision 2.17.2.4  2007/03/29 21:45:56  hfriederich
  * (Backport from HEAD)
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -185,13 +192,7 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (vxml.IsEmpty() || vxml == "*")
     vxml = defaultVXML;
 
-  OpalIVRConnection * connection = CreateConnection(call, CreateConnectionToken(), userData, vxml);
-  if (connection == NULL)
-    return FALSE;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
-
-  return TRUE;
+  return AddConnection(CreateConnection(call, CreateConnectionToken(), userData, vxml));
 }
 
 
