@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.4  2007/03/29 21:47:23  hfriederich
+ * Revision 1.2142.2.5  2007/03/30 06:44:45  hfriederich
+ * (Backport from HEAD)
+ * Tidied some code when a new connection is created by an endpoint. Now
+ *   if someone needs to derive a connectino class they can create it without
+ *   needing to remember to do any more than the new.
+ * Fixed various GCC warnings
+ *
+ * Revision 2.141.2.4  2007/03/29 21:47:23  hfriederich
  * (Backport from HEAD)
  * Various fixes on the way SIPInfo objects are being handled. Wait for
  *   transports to be closed before being deleted. Added missing mutexes.
@@ -1072,10 +1079,8 @@ BOOL SIPEndPoint::MakeConnection(OpalCall & call,
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
   SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL, options, stringOptions);
-  if (connection == NULL)
+  if (!AddConnection(connection))
     return FALSE;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
 
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
@@ -1108,10 +1113,7 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
                                             unsigned int options,
                                      OpalConnection::StringOptions * stringOptions)
 {
-  SIPConnection * conn = new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
-  if (conn != NULL)
-    OnNewConnection(call, *conn);
-  return conn;
+  return new SIPConnection(call, *this, token, destination, transport, options, stringOptions);
 }
 
 
@@ -1137,13 +1139,10 @@ BOOL SIPEndPoint::SetupTransfer(const PString & token,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = 
-    CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
-  
-  if (connection == NULL)
+  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+  if (!AddConnection(connection))
     return FALSE;
 
-  connectionsActive.SetAt(callID, connection);
   call.OnReleased(*otherConnection);
   
   connection->SetUpConnection();
@@ -1162,13 +1161,10 @@ BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
 
-  SIPConnection * conn = 
-    CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
-  
-  if (conn == NULL)
+  SIPConnection * conn = CreateConnection(call, callID, NULL, forwardParty, NULL, NULL);
+  if (!AddConnection(conn))
     return FALSE;
 
-  connectionsActive.SetAt(callID, conn);
   call.OnReleased(connection);
   
   conn->SetUpConnection();
@@ -1333,10 +1329,9 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   response.Write(transport);
 
   // ask the endpoint for a connection
-  SIPConnection *connection = 
-    CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
-		     NULL, request->GetURI(), &transport, request);
-  if (connection == NULL) {
+  SIPConnection *connection = CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
+                                               NULL, request->GetURI(), &transport, request);
+  if (!AddConnection(connection)) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
@@ -1350,9 +1345,6 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
     response.Write(transport);
     return FALSE;
   }
-
-  // add the connection to the endpoint list
-  connectionsActive.SetAt(connection->GetToken(), connection);
   
   // Get the connection to handle the rest of the INVITE
   connection->QueuePDU(request);
