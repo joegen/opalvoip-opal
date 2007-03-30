@@ -1,0 +1,9 @@
+*.suo *.opt *.plg *.ncb *.Tags.WW
+lib html
+.asnparser.version
+config.log config.status autom4te.cache
+opal.pc
+opal.spec
+opal_cfg.dxy
+opal_inc.mak
+Makefile
