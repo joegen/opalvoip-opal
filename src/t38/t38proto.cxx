@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2013  2007/03/29 23:13:52  rjongbloed
+ * Revision 1.2014  2007/03/30 02:18:24  csoutheren
+ * Fix obvious error (thanks to Robert)
+ *
+ * Revision 2.12  2007/03/29 23:13:52  rjongbloed
  * Fixed MSVC warning
  *
  * Revision 2.11  2007/03/29 08:31:36  csoutheren
@@ -1144,7 +1147,7 @@ BOOL OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
   }
 
   PINDEX len = faxCallInfo->socket.GetLastReadCount();
-  if (len < sizeof(RTP_DataFrame::MinHeaderSize))
+  if (len < RTP_DataFrame::MinHeaderSize)
     return FALSE;
 
   packet.SetSize(len);
