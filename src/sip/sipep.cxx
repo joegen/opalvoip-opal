@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.5  2007/03/30 06:44:45  hfriederich
+ * Revision 1.2142.2.6  2007/03/30 13:56:37  hfriederich
+ * Reorganization of the way transactions are handled. Delete transactions
+ *   in garbage collector when they're terminated. Update destructor code
+ *   to improve safe destruction of SIPEndPoint instances.
+ *
+ * Revision 2.141.2.5  2007/03/30 06:44:45  hfriederich
  * (Backport from HEAD)
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connectino class they can create it without
@@ -601,6 +606,17 @@ SIPInfo::~SIPInfo()
   RemoveTransactions();
 }
 
+void SIPInfo::RemoveTransactions()
+{
+  PWaitAndSignal m(registrationsMutex);
+    
+  for (PINDEX i = registrations.GetSize(); i > 0; i--) {
+    // Aborting transactions in case they're still not terminated
+    registrations[i-1].Abort();
+  }
+  registrations.RemoveAll();
+}
+
 
 BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
 {
@@ -827,22 +843,29 @@ SIPEndPoint::~SIPEndPoint()
         }
         else if (!info->IsRegistered()) {
           info->SetExpire(-1);
+          info->RemoveTransactions();
         }
       }
       else {
         info->SetExpire(-1);
+        info->RemoveTransactions();
       }
     }
    
     activeSIPInfo.DeleteObjectsToBeRemoved();
-    PThread::Current()->Sleep(10); // Let RegistrationRefresh() do the cleanup.
+    PThread::Current()->Sleep(10); // Let GarbageCollect() do the cleanup.
   }
     
   listeners.RemoveAll();
   
-  // Stop calling RegistrationRefresh() before compiler destroys member objects.
+  // Stop timers before compiler destroys member objects.
   registrationTimer.Stop();
-
+  garbageTimer.Stop();
+  
+  // Clean up remaining transactions
+  GarbageCollect(garbageTimer, 0);
+  activeSIPInfo.DeleteObjectsToBeRemoved();
+  
   PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
 }
@@ -1706,6 +1729,19 @@ void SIPEndPoint::GarbageCollect(PTimer &, INT)
       activeSIPInfo.Remove(info); // Was invalid the last time, delete it
     }
   }
+
+  // Delete terminated transactions
+  {
+    PWaitAndSignal m(completedTransactionsMutex);
+    
+    for (PINDEX i = completedTransactions.GetSize(); i > 0; i--) {
+      SIPTransaction & transaction = completedTransactions[i-1];
+        
+      if (transaction.IsTerminated()) {
+        completedTransactions.RemoveAt(i-1);
+      }
+    }
+  }
 }
 
 
@@ -2092,6 +2128,14 @@ void SIPEndPoint::SetProxy(const SIPURL & url)
 PString SIPEndPoint::GetUserAgent() const 
 { 
   return userAgentString;
+}
+
+BOOL SIPEndPoint::WaitForTransactionCompletion(SIPTransaction * transaction)
+{
+  transaction->WaitForCompletion();
+  BOOL success = !transaction->IsFailed();
+  AddCompletedTransaction(transaction);
+  return success;
 }
 
 BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &auth) 

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.6  2007/03/30 06:45:21  hfriederich
+ * Revision 1.2198.2.7  2007/03/30 13:56:37  hfriederich
+ * Reorganization of the way transactions are handled. Delete transactions
+ *   in garbage collector when they're terminated. Update destructor code
+ *   to improve safe destruction of SIPEndPoint instances.
+ *
+ * Revision 2.197.2.6  2007/03/30 06:45:21  hfriederich
  * Fixed GCC warning
  *
  * Revision 2.197.2.5  2007/03/29 21:47:23  hfriederich
@@ -904,6 +909,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   lastSentCSeq = 0;
   releaseMethod = ReleaseWithNothing;
 
+  invitations.DisallowDeleteObjects();
   transactions.DisallowDeleteObjects();
 
   referTransaction = NULL;
@@ -921,8 +927,10 @@ SIPConnection::SIPConnection(OpalCall & call,
 SIPConnection::~SIPConnection()
 {
   delete originalInvite;
-    
-  endpoint.ReleaseTransport(transport);
+
+  if (transport != NULL) {
+    endpoint.ReleaseTransport(transport);
+  }
   
   delete referTransaction;
 
@@ -1056,22 +1064,12 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithCANCEL :
       {
-        std::vector<BOOL> statuses;
-        statuses.resize(invitations.GetSize());
         PINDEX i;
         {
           PWaitAndSignal m(invitationsMutex);
           for (i = 0; i < invitations.GetSize(); i++) {
             PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
-            statuses[i] = invitations[i].SendCANCEL();
-          }
-        }
-        for (i = 0; i < invitations.GetSize(); i++) {
-          if (statuses[i]) {
-            invitations[i].Wait();
-            PTRACE(3, "SIP\tTransaction " << i << " cancelled");
-          } else {
-            PTRACE(3, "SIP\tCould not cancel transaction " << i);
+            invitations[i].Cancel();
           }
         }
       }
@@ -1084,8 +1082,7 @@ void SIPConnection::OnReleased()
 
   // Sent a BYE, wait for it to complete
   if (byeTransaction != NULL) {
-    byeTransaction->Wait();
-    delete byeTransaction;
+    endpoint.WaitForTransactionCompletion(byeTransaction);
   }
 
   SetPhase(ReleasedPhase);
@@ -1094,11 +1091,24 @@ void SIPConnection::OnReleased()
     pduSemaphore.Signal();
     pduHandler->WaitForTermination();
   }
-
-  if (transport != NULL)
-    transport->CloseWait();
+  
+  // Wait until all INVITEs have completed
+  for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+    endpoint.WaitForTransactionCompletion(&invitations[i]);
+  }
 
   OpalConnection::OnReleased();
+  
+  // Wait until all transactions belonging to this connection have terminated
+  while (transactions.GetSize() > 0) {
+    PThread::Sleep(1000);
+  }
+  
+  // Release the transport
+  if (transport != NULL) {
+    endpoint.ReleaseTransport(transport);
+    transport = NULL;
+  }
   
   // Remove all INVITEs
   {
@@ -1106,7 +1116,6 @@ void SIPConnection::OnReleased()
     invitations.RemoveAll();
   }
 }
-
 
 void SIPConnection::TransferConnection(const PString & remoteParty, const PString & callIdentity)
 {
@@ -1873,6 +1882,7 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
     return;
 
   {
+    // The connection stays 'alive' unless all transactions have failed
     PWaitAndSignal m(invitationsMutex); 
     for (PINDEX i = 0; i < invitations.GetSize(); i++) {
       if (!invitations[i].IsFailed())
@@ -1997,11 +2007,11 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
     if (phase < EstablishedPhase) {
-      // Have a response to the INVITE, so CANCEL all the other invitations sent.
+      // Have a response to the INVITE, so cancel all the other invitations sent.
       PWaitAndSignal m(invitationsMutex); 
       for (i = 0; i < invitations.GetSize(); i++) {
         if (&invitations[i] != &transaction)
-          invitations[i].SendCANCEL();
+          invitations[i].Cancel();
       }
     }
 
@@ -2439,8 +2449,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   
   // The REFER is over
   if (state.Find("terminated") != P_MAX_INDEX) {
-    referTransaction->Wait();
-    delete referTransaction;
+    endpoint.WaitForTransactionCompletion(referTransaction);
     referTransaction = NULL;
 
     // Release the connection
@@ -2476,10 +2485,8 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
                          NULL);
   
   // Send a Final NOTIFY,
-  notifyTransaction = 
-    new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
-  notifyTransaction->Wait ();
-  delete notifyTransaction;
+  notifyTransaction = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
+  endpoint.WaitForTransactionCompletion(notifyTransaction);
 }
 
 
@@ -3065,10 +3072,7 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
           str << tone;
         }
         infoTransaction->GetEntityBody() = str;
-        infoTransaction->Wait();
-        BOOL success = !infoTransaction->IsFailed();
-        delete infoTransaction;
-        return success;
+        return endpoint.WaitForTransactionCompletion(infoTransaction);
       }
 
     // anything else - send as RFC 2833
