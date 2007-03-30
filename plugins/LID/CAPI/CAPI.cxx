@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: CAPI.cxx,v $
+ * Revision 1.4  2007/03/30 00:06:44  rjongbloed
+ * Further implementation, still incomplete.
+ *
  * Revision 1.3  2006/11/25 03:44:02  rjongbloed
  * Changed CAPI library interface so uses late binding on Win32 DLL preventing annoying
  *   dialogs from appearing of no ISDN on your system.
@@ -42,160 +45,305 @@
 
 #ifdef _WINDOWS
 
-  #include "win32/capi2032.h"
+#include <process.h>
+#include <windows.h>
 
-  class CAPI
-  {
-  private:
-    HMODULE m_hDLL;
-    CAPI_REGISTER_FUNCTION          m_REGISTER;
-    CAPI_RELEASE_FUNCTION           m_RELEASE;
-    CAPI_PUT_MESSAGE_FUNCTION       m_PUT_MESSAGE;
-    CAPI_GET_MESSAGE_FUNCTION       m_GET_MESSAGE;
-    CAPI_WAIT_FOR_SIGNAL_FUNCTION   m_WAIT_FOR_SIGNAL;
-    CAPI_GET_MANUFACTURER_FUNCTION  m_GET_MANUFACTURER;
-    CAPI_GET_VERSION_FUNCTION       m_GET_VERSION;
-    CAPI_GET_SERIAL_NUMBER_FUNCTION m_GET_SERIAL_NUMBER;
-    CAPI_GET_PROFILE_FUNCTION       m_GET_PROFILE;
-    CAPI_INSTALLED_FUNCTION         m_INSTALLED;
+typedef BYTE  uint8_t;
+typedef WORD  uint16_t;
+typedef DWORD uint32_t;
 
-  public:
-    typedef DWORD Result;
-    typedef DWORD ApplID;
-    typedef DWORD UInt;
-    enum {
-      InvalidApplId = 0,
-      Success = 0
-    };
+class Mutex : CRITICAL_SECTION
+{
+public:
+  inline Mutex()       { InitializeCriticalSection(this); }
+  inline ~Mutex()      { DeleteCriticalSection(this); }
+  inline void Lock()   { EnterCriticalSection(this); }
+  inline void Unlock() { LeaveCriticalSection(this); }
+};
 
-    CAPI()
-    {
-      m_hDLL = LoadLibrary(CAPI_DLL_NAME);
-    }
+class Semaphore
+{
+private:
+  HANDLE m_hSemaphore;
+public:
+  inline Semaphore(unsigned count = 1) { m_hSemaphore = CreateSemaphore(NULL, 0, count, NULL); }
+  inline ~Semaphore()                  { CloseHandle(m_hSemaphore); }
+  inline void Signal()                 { ReleaseSemaphore(m_hSemaphore,1, NULL); }
+  inline bool Wait(unsigned timeout)   { return WaitForSingleObject(m_hSemaphore, timeout) == WAIT_OBJECT_0; }
+};
 
-    ~CAPI()
-    {
-      if (m_hDLL != NULL)
-        FreeLibrary(m_hDLL);
-    }
 
-    #define DEF_FN(fn, def, arg) \
-      Result fn def \
-      { \
-        return m_hDLL != NULL && \
-              (m_##fn != NULL || (m_##fn = (CAPI_##fn##_FUNCTION)GetProcAddress(m_hDLL, (LPCSTR)CAPI_##fn##_ORDINAL)) != NULL) \
-              ? m_##fn arg : 0x10000; \
-      }
+#include "win32/capi2032.h"
 
-    #define DEF_FN1(fn, t,p)                        DEF_FN(fn, (t p), (p))
-    #define DEF_FN2(fn, t1,p1, t2,p2)               DEF_FN(fn, (t1 p1, t2 p2), (p1, p2))
-    #define DEF_FN4(fn, t1,p1, t2,p2, t3,p3, t4,p4) DEF_FN(fn, (t1 p1, t2 p2, t3 p3, t4 p4), (p1, p2, p3, p4))
-    #define DEF_FN5(fn, t1,p1, t2,p2, t3,p3, t4,p4, t5,p5) DEF_FN(fn, (t1 p1, t2 p2, t3 p3, t4 p4, t5 p5), (p1, p2, p3, p4, p5))
+class CAPI
+{
+private:
+  HMODULE m_hDLL;
+  CAPI_REGISTER_FUNCTION          m_REGISTER;
+  CAPI_RELEASE_FUNCTION           m_RELEASE;
+  CAPI_PUT_MESSAGE_FUNCTION       m_PUT_MESSAGE;
+  CAPI_GET_MESSAGE_FUNCTION       m_GET_MESSAGE;
+  CAPI_WAIT_FOR_SIGNAL_FUNCTION   m_WAIT_FOR_SIGNAL;
+  CAPI_GET_MANUFACTURER_FUNCTION  m_GET_MANUFACTURER;
+  CAPI_GET_VERSION_FUNCTION       m_GET_VERSION;
+  CAPI_GET_SERIAL_NUMBER_FUNCTION m_GET_SERIAL_NUMBER;
+  CAPI_GET_PROFILE_FUNCTION       m_GET_PROFILE;
+  CAPI_INSTALLED_FUNCTION         m_INSTALLED;
 
-    DEF_FN5(REGISTER, UInt,bufferSize, UInt,maxLogicalConnection, UInt,maxBDataBlocks, UInt,maxBDataLen, ApplID*,pApplID);
-    DEF_FN1(RELEASE, ApplID,applId);
-    DEF_FN2(PUT_MESSAGE, ApplID,applId, void *,pCAPIMessage);
-    DEF_FN2(GET_MESSAGE, ApplID,applId, void **,ppCAPIMessage);
-    DEF_FN1(WAIT_FOR_SIGNAL, ApplID,applId);
-    DEF_FN1(GET_MANUFACTURER, char *,szBuffer);
-    DEF_FN4(GET_VERSION, UInt*,pCAPIMajor, UInt*,pCAPIMinor, UInt*,pManufacturerMajor, UInt*,pManufacturerMinor);
-    DEF_FN1(GET_SERIAL_NUMBER, char*,szBuffer);
-    DEF_FN2(GET_PROFILE, void*,pBuffer, UInt,CtrlNr);
-    DEF_FN(INSTALLED, (), ());
+public:
+  typedef DWORD Result;
+  typedef DWORD ApplID;
+  typedef DWORD UInt;
+  enum {
+    InvalidApplId = 0
   };
+
+  CAPI()
+  {
+    memset(this, 0, sizeof(*this));
+    m_hDLL = LoadLibrary(CAPI_DLL_NAME);
+  }
+
+  ~CAPI()
+  {
+    if (m_hDLL != NULL)
+      FreeLibrary(m_hDLL);
+  }
+
+  #define DEF_FN(fn, def, arg) \
+    Result fn def \
+    { \
+      return m_hDLL != NULL && \
+            (m_##fn != NULL || (m_##fn = (CAPI_##fn##_FUNCTION)GetProcAddress(m_hDLL, (LPCSTR)CAPI_##fn##_ORDINAL)) != NULL) \
+            ? m_##fn arg : 0x10000; \
+    }
+
+  #define DEF_FN1(fn, t,p)                        DEF_FN(fn, (t p), (p))
+  #define DEF_FN2(fn, t1,p1, t2,p2)               DEF_FN(fn, (t1 p1, t2 p2), (p1, p2))
+  #define DEF_FN4(fn, t1,p1, t2,p2, t3,p3, t4,p4) DEF_FN(fn, (t1 p1, t2 p2, t3 p3, t4 p4), (p1, p2, p3, p4))
+  #define DEF_FN5(fn, t1,p1, t2,p2, t3,p3, t4,p4, t5,p5) DEF_FN(fn, (t1 p1, t2 p2, t3 p3, t4 p4, t5 p5), (p1, p2, p3, p4, p5))
+
+  DEF_FN5(REGISTER, UInt,bufferSize, UInt,maxLogicalConnection, UInt,maxBDataBlocks, UInt,maxBDataLen, ApplID*,pApplID);
+  DEF_FN1(RELEASE, ApplID,applId);
+  DEF_FN2(PUT_MESSAGE, ApplID,applId, void *,pCAPIMessage);
+  DEF_FN2(GET_MESSAGE, ApplID,applId, void **,ppCAPIMessage);
+  DEF_FN1(WAIT_FOR_SIGNAL, ApplID,applId);
+  DEF_FN1(GET_MANUFACTURER, char *,szBuffer);
+  DEF_FN4(GET_VERSION, UInt*,pCAPIMajor, UInt*,pCAPIMinor, UInt*,pManufacturerMajor, UInt*,pManufacturerMinor);
+  DEF_FN1(GET_SERIAL_NUMBER, char*,szBuffer);
+  DEF_FN2(GET_PROFILE, void*,pBuffer, UInt,CtrlNr);
+  DEF_FN(INSTALLED, (), ());
 
 #else
 
-  // Assume Linux
-  #include <sys/types.h>
-  #include <capi20.h>
+// Assume Linux
+#include <pthread.h>
+#include <semaphore.h>
 
-  class CAPI
+class Mutex
+{
+private:
+  pthread_mutex_t m_Mutex;
+public:
+  inline Mutex()       { pthread_mutex_init(&m_Mutex, NULL); }
+  inline ~Mutex()      { pthread_mutex_destroy(&m_Mutex); }
+  inline void Lock()   { pthread_mutex_lock(&m_Mutex); }
+  inline void Unlock() { pthread_mutex_unlock(&m_Mutex); }
+};
+
+class Semaphore
+{
+private:
+  sem_t m_Semaphore;
+public:
+  inline Semaphore(unsigned count = 1) { sem_init(&m_Semaphore, 0, count); }
+  inline ~Semaphore()                  { sem_destroy(&m_Semaphore); }
+  inline void Signal()                 { sem_post(&m_Semaphore); }
+  inline bool Wait(unsigned timeout)
   {
-  public:
-    typedef unsigned Result;
-    typedef unsigned ApplID;
-    typedef unsigned UInt;
-    enum {
-      InvalidApplId = 0
-    };
+      // Apologies to Posix enthusiasts, but this is ridiculous!
+      struct timespec when;
+      clock_gettime(CLOCK_REALTIME, &when);
+      when.tv_nsec += timeout*1000000;
+      if (when.tv_nsec >= 1000000000) {
+        when.tv_nsec -= 1000000000;
+        when.tv_nsec++;
+      }
+      return sem_timedwait(&m_Semaphore, &when) == 0;
+  }
+};
 
-    Result REGISTER(UInt bufferSize, UInt maxLogicalConnection, UInt maxBDataBlocks, UInt maxBDataLen, ApplID* pApplID)
-    {
-      return capi20_register(maxLogicalConnection, maxBDataBlocks, maxBDataLen, pApplID);
-    }
 
-    Result RELEASE(ApplID ApplID)
-    {
-      return capi20_release(ApplID);
-    }
+#include <sys/types.h>
+#include <capi20.h>
 
-    Result PUT_MESSAGE(ApplID ApplID, void * pCAPIMessage)
-    {
-      return capi20_put_message(ApplID, (unsigned char *)pCAPIMessage);
-    }
-
-    Result GET_MESSAGE(ApplID ApplID, void ** ppCAPIMessage)
-    {
-      return capi20_get_message(ApplID, (unsigned char **)ppCAPIMessage);
-    }
-
-    Result WAIT_FOR_SIGNAL(ApplID ApplID)
-    {
-      return capi20_waitformessage(ApplID, NULL);
-    }
-
-    Result GET_MANUFACTURER(char * szBuffer)
-    {
-      capi20_get_manufacturer(0, (unsigned char *)szBuffer);
-    }
-
-    Result GET_VERSION(UInt *pCAPIMajor, UInt *pCAPIMinor, UInt *pManufacturerMajor, UInt *pManufacturerMinor)
-    {
-      unsigned char buffer[4*sizeof(uint32_t)];
-      if (capi20_get_version(0, buffer) == NULL)
-        return 0x100;
-
-      if (pCAPIMajor) *pCAPIMajor = (UInt)(((uint32_t *)buffer)[0]);
-      if (pCAPIMinor) *pCAPIMinor = (UInt)(((uint32_t *)buffer)[1]);
-      if (pManufacturerMajor) *pManufacturerMajor = (UInt)(((uint32_t *)buffer)[2]);
-      if (pManufacturerMinor) *pManufacturerMinor = (UInt)(((uint32_t *)buffer)[3]);
-
-      return 0;
-    }
-
-    Result GET_SERIAL_NUMBER(char * szBuffer)
-    {
-        return capi20_get_serial_number(0, (unsigned char *)szBuffer) == NULL ? 0x100 : 0;
-    }
-
-    Result GET_PROFILE(void * pBuffer, Int32 CtrlNr)
-    {
-      return capi20_get_profile(CtrlNr, (unsigned char *)pBuffer);
-    }
-
-    Result INSTALLED()
-    {
-      return capi20_isinstalled();
-    }
+class CAPI
+{
+public:
+  typedef unsigned Result;
+  typedef unsigned ApplID;
+  typedef unsigned UInt;
+  enum {
+    InvalidApplId = 0
   };
+
+  Result REGISTER(UInt bufferSize, UInt maxLogicalConnection, UInt maxBDataBlocks, UInt maxBDataLen, ApplID* pApplID)
+  {
+    return capi20_register(maxLogicalConnection, maxBDataBlocks, maxBDataLen, pApplID);
+  }
+
+  Result RELEASE(ApplID ApplID)
+  {
+    return capi20_release(ApplID);
+  }
+
+  Result PUT_MESSAGE(ApplID ApplID, void * pCAPIMessage)
+  {
+    return capi20_put_message(ApplID, (unsigned char *)pCAPIMessage);
+  }
+
+  Result GET_MESSAGE(ApplID ApplID, void ** ppCAPIMessage)
+  {
+    return capi20_get_message(ApplID, (unsigned char **)ppCAPIMessage);
+  }
+
+  Result WAIT_FOR_SIGNAL(ApplID ApplID)
+  {
+    return capi20_waitformessage(ApplID, NULL);
+  }
+
+  Result GET_MANUFACTURER(char * szBuffer)
+  {
+    capi20_get_manufacturer(0, (unsigned char *)szBuffer);
+  }
+
+  Result GET_VERSION(UInt *pCAPIMajor, UInt *pCAPIMinor, UInt *pManufacturerMajor, UInt *pManufacturerMinor)
+  {
+    unsigned char buffer[4*sizeof(uint32_t)];
+    if (capi20_get_version(0, buffer) == NULL)
+      return 0x100;
+
+    if (pCAPIMajor) *pCAPIMajor = (UInt)(((uint32_t *)buffer)[0]);
+    if (pCAPIMinor) *pCAPIMinor = (UInt)(((uint32_t *)buffer)[1]);
+    if (pManufacturerMajor) *pManufacturerMajor = (UInt)(((uint32_t *)buffer)[2]);
+    if (pManufacturerMinor) *pManufacturerMinor = (UInt)(((uint32_t *)buffer)[3]);
+
+    return 0;
+  }
+
+  Result GET_SERIAL_NUMBER(char * szBuffer)
+  {
+      return capi20_get_serial_number(0, (unsigned char *)szBuffer) == NULL ? 0x100 : 0;
+  }
+
+  Result GET_PROFILE(void * pBuffer, UInt CtrlNr)
+  {
+    return capi20_get_profile(CtrlNr, (unsigned char *)pBuffer);
+  }
+
+  Result INSTALLED()
+  {
+    return capi20_isinstalled();
+  }
 
 #endif
 
+  // Rest of CAPI class definition is outside of platform dependent bit
+  // For portability reasons we have to define the message structures ourselves!
 
-// For some reason this is missing from capiutil.h!
-struct CAPI_PROFILE {
-  _cword  NumControllers;     // # of installed Controllers
-  _cword  NumBChannels;       // # of supported B-channels
-  _cdword GlobalOpttions;     // Global options
-  _cdword B1ProtocolOptions;  // B1 protocol support
-  _cdword B2ProtocolOptions;  // B2 protocol support
-  _cdword B3ProtocolOptions;  // B3 protocol support
-  char szReserved[64];
+  #pragma pack(1)
+
+  struct Message {
+    uint16_t m_Length;
+    uint16_t m_ApplId;
+    uint8_t  m_Command;
+    uint8_t  m_Subcommand;
+    uint16_t m_Number;
+
+    union Params {
+      struct ListenReq {
+        uint32_t m_Controller;
+        uint32_t m_InfoMask;
+        uint32_t m_CIPMask;
+        uint32_t m_CIPMask2;
+      } listen_req;
+
+      struct ListenConf {
+        uint32_t m_Controller;
+        uint16_t m_Info;
+      } listen_conf;
+
+      struct ConnectReq {
+        uint32_t m_Controller;
+        uint16_t m_CIPValue;
+      } connect_req;
+
+      struct ConnectConf {
+        uint32_t m_PLCI;
+        uint16_t m_Info;
+      } connect_conf;
+
+      struct ConnectInd {
+        uint32_t m_PLCI;
+        uint16_t m_CIPValue;
+      } connect_ind;
+
+      struct ConnectResp {
+        uint32_t m_PLCI;
+        uint16_t m_Reject;
+      } connect_resp;
+
+      uint8_t  m_Params[200]; // Space for command specific parameters
+    } param;
+
+
+    Message(ApplID applId, unsigned command, unsigned subcommand, size_t fixedParamSize)
+      : m_Length(8+fixedParamSize)
+      , m_ApplId((uint16_t)applId)
+      , m_Command((uint8_t)command)
+      , m_Subcommand((uint8_t)subcommand)
+      , m_Number(0)
+    {
+      memset(&param, 0, sizeof(param));
+    }
+
+    void Add(const char * value, int length = -1)
+    {
+      if (length < 0)
+        length = strlen(value);
+      char * param = ((char *)this)+ m_Length;
+      *param++ = length;
+      if (length > 0)
+        memcpy(param, value, length);
+      m_Length += length+1;
+    }
+  };
+
+  struct Profile {
+    uint16_t m_NumControllers;     // # of installed Controllers
+    uint16_t m_NumBChannels;       // # of supported B-channels
+    uint32_t m_GlobalOpttions;     // Global options
+    uint32_t m_B1ProtocolOptions;  // B1 protocol support
+    uint32_t m_B2ProtocolOptions;  // B2 protocol support
+    uint32_t m_B3ProtocolOptions;  // B3 protocol support
+    uint8_t  m_Reserved[64];       // Make sure struct is big enough
+  };
+
+};
+
+
+class MutexedSection
+{
+private:
+  Mutex & m_Mutex;
+public:
+  MutexedSection(Mutex & mutex) : m_Mutex(mutex) { mutex.Lock(); }
+  ~MutexedSection() { m_Mutex.Unlock(); }
 };
 
 
 static const char G711ULawMediaFmt[] = "G.711-uLaw-64k";
+
 
 class Context
 {
@@ -210,36 +358,184 @@ class Context
     CAPI::ApplID m_ApplicationId;
     unsigned     m_ControllerNumber;
     unsigned     m_LineCount;
+    Mutex        m_Mutex;
+    Semaphore    m_ListenCompleted;
 
-    struct LineState
+    // This is damned annoying, but I don't want to include the entire PWLib just for one thread!
+#ifdef _WINDOWS
+    HANDLE m_hThread;
+    static void ThreadMainStatic(void * arg)
     {
-        _cdword   m_PLCI;
-        bool      m_OffHook;
+        ((Context *)arg)->ThreadMain();
+    }
+    bool StartThread()
+    {
+      return (m_hThread = (HANDLE)_beginthread(ThreadMainStatic, 0, this)) != NULL;
+    }
+    void WaitForThreadExit()
+    {
+        WaitForSingleObject(m_hThread, INFINITE);
+    }
+    void YieldThread()
+    {
+        Sleep(10);
+    }
+#else
+    pthread_t m_hThread;
+    static void * ThreadMainStatic(void * arg)
+    {
+        ((Context *)arg)->ThreadMain();
+        return 0;
+    }
+    bool StartThread()
+    {
+      return pthread_create(&m_hThread, NULL, ThreadMainStatic, this) == 0;
+    }
+    void WaitForThreadExit()
+    {
+      pthread_join(m_hThread, NULL);
+    }
+    void YieldThread()
+    {
+      static const struct timespec ten_milliseconds = { 0, 10000000 };
+      nanosleep(&ten_milliseconds, NULL);
+    }
+#endif
 
-        bool SetLineOffHook(bool newState)
-        {
-            return false;
+    void ThreadMain()
+    {
+      while (m_ApplicationId != CAPI::InvalidApplId) {
+          CAPI::Message * pMessage = NULL;    
+
+        unsigned result = m_CAPI.WAIT_FOR_SIGNAL(m_ApplicationId);
+        if (result == CapiNoError)
+          result = m_CAPI.GET_MESSAGE(m_ApplicationId, (void **)&pMessage);
+
+        switch (result) {
+          case 0x1101 : // Illegal application number
+            // Probably closing down as another thread set m_ApplicationId to CAPI::InvalidApplId
+            return;
+
+          case 0x1104 : // Queue is empty
+            // Really should not have happened if WAIT_FOR_SIGNAL returned!!
+            break;
+
+          case CapiNoError :
+            m_Mutex.Lock();
+            switch (pMessage->m_Subcommand) {
+              case CAPI_IND : // Indications from CAPI
+                switch (pMessage->m_Command) {
+                  case CAPI_CONNECT :
+                    {
+                      size_t line = GetFreeLine();
+                      if (line < MaxLineCount)
+                        m_Line[line].ConnectIndication(*pMessage);
+                      else
+                        SendConnectResponse(pMessage->param.connect_ind.m_PLCI, 4); // Reject, circuit/channel not available
+                    }
+                    break;
+                }
+                break;
+
+              case CAPI_CONF : // Confirmations of requests we have sent
+                switch (pMessage->m_Command) {
+                  case CAPI_LISTEN :
+                    if (pMessage->param.listen_conf.m_Info == CapiNoError)
+                      m_ControllerNumber = pMessage->param.listen_conf.m_Controller;
+                    m_ListenCompleted.Signal();
+                    break;
+
+                  case CAPI_CONNECT :
+                    m_Line[pMessage->m_Number].ConnectConf(*pMessage);
+                    break;
+                }
+                break;
+            }
+            m_Mutex.Unlock();
+            break;
         }
-    } m_LineState[MaxLineCount];
+      }
+    }
+
+    struct Line
+    {
+      enum {
+        e_Idle,
+        e_Incoming,
+        e_Outgoing,
+        e_BearerUp
+      }         m_State;
+      uint32_t  m_PLCI;
+      uint32_t  m_NCCI;
+      Semaphore m_DialCompleted;
+
+      Line()
+        : m_State(e_Idle)
+        , m_PLCI(0)
+        , m_NCCI(0)
+      {
+      }
+
+      void ConnectIndication(const CAPI::Message & message)
+      {
+          m_PLCI = message.param.connect_ind.m_PLCI;
+          m_State = e_Incoming;
+      }
+
+      void ConnectConf(const CAPI::Message & message)
+      {
+        if (message.param.connect_conf.m_Info != CapiNoError)
+          m_State = e_Idle;
+        else
+          m_PLCI = message.param.connect_conf.m_PLCI;
+      }
+
+      bool Disconnect()
+      {
+        if (m_NCCI != 0) {
+        }
+        if (m_PLCI != 0) {
+        }
+        return true;
+      }
+    } m_Line[MaxLineCount];
+
+
+    size_t GetFreeLine() const
+    {
+      for (size_t i = 0; i < MaxLineCount; i++) {
+        if (m_Line[i].m_State == Line::e_Idle)
+          return i;
+      }
+      return MaxLineCount;
+    }
+
+    bool SendConnectResponse(uint32_t plci, uint16_t reason)
+    {
+      CAPI::Message message(m_ApplicationId, CAPI_CONNECT, CAPI_RESP, sizeof(CAPI::Message::Params::ConnectResp));
+      message.param.connect_resp.m_PLCI = plci;
+      message.param.connect_resp.m_Reject = reason;
+      message.Add(NULL, 0); // B protocol
+      message.Add(""); // Connected party number
+      message.Add(""); // Connected party subaddress
+      message.Add(NULL, 0); // Low Layer Compatibility
+      message.Add(NULL, 0); // Additional Info
+
+      return m_CAPI.PUT_MESSAGE(m_ApplicationId, &message) == CapiNoError;
+    }
+
 
   public:
     PLUGIN_LID_CTOR()
     {
+      m_ApplicationId = CAPI::InvalidApplId;
+      m_ControllerNumber = 0;
       m_LineCount = 0;
-      CAPI::Result result = m_CAPI.REGISTER(MaxLineCount*MaxBlockCount*MaxBlockSize+1024,
-                                            MaxLineCount,
-                                            MaxBlockCount,
-                                            MaxBlockSize,
-                                            &m_ApplicationId);
-      if (result != CAPI::Success)
-        m_ApplicationId = CAPI::InvalidApplId;
     }
 
     PLUGIN_LID_DTOR()
     {
       Close();
-      if (m_ApplicationId != CAPI::InvalidApplId)
-        m_CAPI.RELEASE(m_ApplicationId);
     }
 
 
@@ -248,14 +544,11 @@ class Context
       if (name == NULL || size == 0)
         return PluginLID_InvalidParameter;
 
-      if (m_ApplicationId == CAPI::InvalidApplId)
+      CAPI::Profile profile;
+      if (m_CAPI.GET_PROFILE(&profile, 0) != CapiNoError)
         return PluginLID_InternalError;
 
-      CAPI_PROFILE profile;
-      if (m_CAPI.GET_PROFILE(&profile, 0) != CAPI::Success)
-        return PluginLID_InternalError;
-
-      if (index >= profile.NumControllers)
+      if (index >= profile.m_NumControllers)
         return PluginLID_NoMoreNames;
 
       if (size < 3)
@@ -270,28 +563,59 @@ class Context
     {
       Close();
 
-      if (m_ApplicationId == CAPI::InvalidApplId)
+      int controller = atoi(device);
+      if (controller <= 0)
+        return PluginLID_NoSuchDevice;
+
+      CAPI::Profile profile;
+      if (m_CAPI.GET_PROFILE(&profile, controller) != CapiNoError)
+        return PluginLID_NoSuchDevice;
+
+      m_LineCount = profile.m_NumBChannels;
+
+      if (m_CAPI.REGISTER(MaxLineCount*MaxBlockCount*MaxBlockSize+1024,
+                          MaxLineCount,
+                          MaxBlockCount,
+                          MaxBlockSize,
+                          &m_ApplicationId) != CapiNoError)
         return PluginLID_InternalError;
 
-      m_ControllerNumber = atoi(device);
-      if (m_ControllerNumber <= 0)
-        return PluginLID_NoSuchDevice;
+      if (!StartThread())
+        return PluginLID_InternalError;
 
-      CAPI_PROFILE profile;
-      if (m_CAPI.GET_PROFILE(&profile, m_ControllerNumber) != CAPI::Success)
-        return PluginLID_NoSuchDevice;
+      // Start listening for incoming calls
+      CAPI::Message message(m_ApplicationId, CAPI_LISTEN, CAPI_REQ, sizeof(CAPI::Message::Params::ListenReq));
+      message.param.listen_req.m_Controller = controller;
+      message.param.listen_req.m_InfoMask = 0;
+      message.param.listen_req.m_CIPMask = 0xFFF81FF;
+      message.param.listen_req.m_CIPMask2 = 0;
+      message.Add(""); // Calling party number
+      message.Add(""); // Calling party subaddress
 
-      m_LineCount = profile.NumBChannels;
-      return PluginLID_NoError;
+      if (m_CAPI.PUT_MESSAGE(m_ApplicationId, &message) != CapiNoError) {
+        Close();
+        return PluginLID_InternalError;
+      }
+
+      // Wait for listen command to complete, one way or t'other, should be done inside a few seconds
+      m_ListenCompleted.Wait(5000);
+
+      return m_ControllerNumber != 0 ? PluginLID_NoError : PluginLID_InternalError;
     }
 
 
     PLUGIN_FUNCTION_ARG0(Close)
     {
-      if (m_LineCount == 0)
-        return PluginLID_NoError;
-
       m_LineCount = 0;
+      m_ControllerNumber = 0;
+
+      if (m_ApplicationId != CAPI::InvalidApplId) {
+        CAPI::ApplID oldId = m_ApplicationId;
+        m_ApplicationId = CAPI::InvalidApplId;
+        m_CAPI.RELEASE(oldId);
+        WaitForThreadExit();
+      }
+
       return PluginLID_NoError;
     }
 
@@ -301,7 +625,7 @@ class Context
       if (count == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       *count = m_LineCount;
@@ -314,7 +638,7 @@ class Context
       if (isTerminal == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -330,7 +654,7 @@ class Context
       if (present == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -346,26 +670,44 @@ class Context
       if (offHook == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
         return PluginLID_NoSuchLine;
 
-      *offHook = m_LineState[line].m_OffHook;
+      m_Mutex.Lock();
+      *offHook = m_Line[line].m_State != Line::e_Idle;
+      m_Mutex.Unlock();
+
       return PluginLID_NoError;
     }
 
 
     PLUGIN_FUNCTION_ARG2(SetLineOffHook, unsigned,line, PluginLID_Boolean,newState)
     {
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
         return PluginLID_NoSuchLine;
 
-      return m_LineState[line].SetLineOffHook(newState != FALSE) ? PluginLID_NoError : PluginLID_InternalError;
+      bool ok;
+
+      m_Mutex.Lock();
+      switch (m_Line[line].m_State)
+      {
+        case Line::e_Incoming :
+          ok = SendConnectResponse(m_Line[line].m_PLCI, newState ? 0 : 1); // Answer/Reject, circuit/channel not available
+          break;
+
+        default :
+            ok = false;
+      }
+
+      m_Mutex.Unlock();
+
+      return ok ? PluginLID_NoError : PluginLID_InternalError;
     }
 
 
@@ -377,19 +719,39 @@ class Context
       if (cadence == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
         return PluginLID_NoSuchLine;
 
-      *cadence = 0; // Not ringing
+      m_Mutex.Lock();
+      *cadence = m_Line[line].m_State == Line::e_Incoming ? 1 : 0;
+      m_Mutex.Unlock();
 
       return PluginLID_NoError;
     }
 
     //PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
-    //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
+    
+    PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
+    {
+      if (connected == NULL)
+        return PluginLID_InvalidParameter;
+
+      if (m_ControllerNumber == 0)
+        return PluginLID_DeviceNotOpen;
+
+      if (line >= m_LineCount)
+        return PluginLID_NoSuchLine;
+
+      m_Mutex.Lock();
+      *connected = m_Line[line].m_State == Line::e_BearerUp;
+      m_Mutex.Unlock();
+
+      return PluginLID_NoError;
+    }
+
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
 
@@ -415,7 +777,7 @@ class Context
       if (mediaFormat == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -430,7 +792,7 @@ class Context
       if (mediaFormat == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -445,7 +807,7 @@ class Context
       if (mediaFormat == NULL || size == 0)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -464,7 +826,7 @@ class Context
       if (mediaFormat == NULL || size == 0)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -480,7 +842,7 @@ class Context
 
     PLUGIN_FUNCTION_ARG1(StopReading, unsigned,line)
     {
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -492,7 +854,7 @@ class Context
 
     PLUGIN_FUNCTION_ARG1(StopWriting, unsigned,line)
     {
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -504,7 +866,7 @@ class Context
 
     PLUGIN_FUNCTION_ARG2(SetReadFrameSize, unsigned,line, unsigned,frameSize)
     {
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -516,7 +878,7 @@ class Context
 
     PLUGIN_FUNCTION_ARG2(SetWriteFrameSize, unsigned,line, unsigned,frameSize)
     {
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -531,7 +893,7 @@ class Context
       if (frameSize == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -547,7 +909,7 @@ class Context
       if (frameSize == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -563,7 +925,7 @@ class Context
       if (buffer == NULL || count == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -579,7 +941,7 @@ class Context
       if (buffer == NULL || written == NULL || count != MaxBlockSize)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -616,7 +978,7 @@ class Context
       if (tone == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
@@ -645,13 +1007,47 @@ class Context
       if (number == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_LineCount == 0)
+      if (m_ControllerNumber == 0)
         return PluginLID_DeviceNotOpen;
 
       if (line >= m_LineCount)
         return PluginLID_NoSuchLine;
 
-      return PluginLID_NoError;
+      bool ok = false;
+
+      m_Mutex.Lock();
+
+      if (m_Line[line].m_State == Line::e_Idle) {
+        m_Line[line].m_State = Line::e_Outgoing;
+
+        // Start connect for outgoing call
+        CAPI::Message message(m_ApplicationId, CAPI_CONNECT, CAPI_REQ, sizeof(CAPI::Message::Params::ConnectReq));
+        message.m_Number = line;
+        message.param.connect_req.m_Controller = m_ControllerNumber;
+        message.param.connect_req.m_CIPValue = 1; // G.711 speach
+        message.Add(number); // Called party number
+        message.Add(""); // Calling party number
+        message.Add(""); // Called party subaddress
+        message.Add(""); // Calling party subaddress
+        message.Add(NULL, 0); // B protocol
+        message.Add(NULL, 0); // Bearer Capabilities
+        message.Add(NULL, 0); // Low Layer Compatibility
+        message.Add(NULL, 0); // High Layer Compatibility
+        message.Add(NULL, 0); // Additional Info
+
+        if (m_CAPI.PUT_MESSAGE(m_ApplicationId, &message) != CapiNoError)
+          m_Line[line].m_State = Line::e_Idle;
+        else {
+          m_Line[line].m_DialCompleted.Wait(uiDialDelay);
+          ok = m_Line[line].m_State == Line::e_BearerUp;
+          if (!ok)
+            m_Line[line].Disconnect();
+        }
+      }
+
+      m_Mutex.Unlock();
+
+      return ok ? PluginLID_NoError : PluginLID_InternalError;
     }
 
     //PLUGIN_FUNCTION_ARG2(GetWinkDuration, unsigned,line, unsigned *,winkDuration)
