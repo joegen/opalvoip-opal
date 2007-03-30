@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2075  2007/03/27 21:00:29  dsandras
+ * Revision 1.2076  2007/03/30 14:45:32  hfriederich
+ * Reorganization of hte way transactions are handled. Delete transactions
+ *   in garbage collector when they're terminated. Update destructor code
+ *   to improve safe destruction of SIPEndPoint instances.
+ *
+ * Revision 2.74  2007/03/27 21:00:29  dsandras
  * Removed cout.
  *
  * Revision 2.73  2007/03/27 20:16:23  dsandras
@@ -377,8 +382,7 @@ class SIPInfo : public PSafeObject
     virtual void AppendTransaction(SIPTransaction * transaction) 
     { PWaitAndSignal m(registrationsMutex); registrations.Append (transaction); }
     
-    virtual void RemoveTransactions() 
-    { PWaitAndSignal m(registrationsMutex); registrations.RemoveAll (); }
+    virtual void RemoveTransactions();
 
     virtual BOOL IsRegistered() 
     { return registered; }
@@ -939,6 +943,12 @@ class SIPEndPoint : public OpalEndPoint
     unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
 
     
+    /**Waits until the transaction completes and ensures that the transaction is
+     * deleted when the transaction is terminated.
+     * Returns whether the transaction succeeded or not
+     */
+    BOOL WaitForTransactionCompletion(SIPTransaction * transaction);
+    
     /**Return the SIPAuthentication for a specific realm.
      */
     BOOL GetAuthentication(const PString & authRealm, SIPAuthentication &); 
@@ -1151,6 +1161,10 @@ class SIPEndPoint : public OpalEndPoint
       SIP_PDU::Methods method
     );
     
+    void AddCompletedTransaction(
+      SIPTransaction * transaction
+    ) { PWaitAndSignal m(completedTransactionsMutex); completedTransactions.Append(transaction); }
+    
     void ParsePartyName(
       const PString & remoteParty,     ///<  Party name string.
       PString & party);                ///<  Parsed party name, after e164 lookup
@@ -1184,6 +1198,9 @@ class SIPEndPoint : public OpalEndPoint
     PMutex             connectionsActiveInUse;
 
     unsigned           lastSentCSeq;
+    
+    SIPTransactionList completedTransactions;
+    PMutex             completedTransactionsMutex;
 };
 
 #endif // __OPAL_SIPEP_H
