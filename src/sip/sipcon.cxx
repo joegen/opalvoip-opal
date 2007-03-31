@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.7  2007/03/30 13:56:37  hfriederich
+ * Revision 1.2198.2.8  2007/03/31 22:28:06  hfriederich
+ * Fix logical error.
+ * Ensure that media streams are present when received final response
+ *
+ * Revision 2.197.2.7  2007/03/30 13:56:37  hfriederich
  * Reorganization of the way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -1184,7 +1188,7 @@ BOOL SIPConnection::SetConnected()
   if (originalInvite->HasSDP()) {
     remoteSDP = originalInvite->GetSDP();
   }
-  sdpFailure = BuildSDPReply(sdpOut);
+  sdpFailure = !BuildSDPReply(sdpOut);
   if (sdpFailure) {
     Release(EndedByCapabilityExchange);
     return FALSE;
@@ -2297,7 +2301,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       }
     }
  
-    sdpFailure = BuildSDPReply(sdpOut);
+    sdpFailure = !BuildSDPReply(sdpOut);
     
     if (sdpFailure) {
       // Ignore a failed reInvite
@@ -2707,6 +2711,11 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
 
   connectedTime = PTime ();
   OnConnected();                        // start media streams
+  
+  if (mediaStreams.GetSize() == 0) {
+    Release(EndedByCapabilityExchange);
+    return;
+  }
 
   if (phase == EstablishedPhase)
     return;
