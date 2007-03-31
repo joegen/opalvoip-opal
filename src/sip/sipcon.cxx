@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.8  2007/03/31 22:28:06  hfriederich
+ * Revision 1.2198.2.9  2007/03/31 22:48:57  hfriederich
+ * Ensure capabilities are initialized before building the SDP reply
+ *
+ * Revision 2.197.2.8  2007/03/31 22:28:06  hfriederich
  * Fix logical error.
  * Ensure that media streams are present when received final response
  *
@@ -1429,6 +1432,9 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     otherList = otherParty->GetMediaFormats();
   }
 
+  if (capabilities.IsEmpty()) {
+    PopulateCapabilityList();
+  }
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & mediaStream = mediaStreams[i];
     if (mediaStream.GetMediaType() == mediaType) {
