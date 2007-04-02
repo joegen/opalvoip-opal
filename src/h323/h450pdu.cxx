@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2021  2007/03/30 02:09:53  rjongbloed
+ * Revision 1.2022  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.20  2007/03/30 02:09:53  rjongbloed
  * Fixed various GCC warnings
  *
  * Revision 2.19  2007/03/12 23:22:17  csoutheren
@@ -2477,16 +2480,10 @@ BOOL H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool timerE
 }
 
 
-#if PTRACING
-#define PTRACE_errorCode errorCode
-#else
-#define PTRACE_errorCode
-#endif
-
-BOOL H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_errorCode,
+BOOL H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_PARAM(errorCode),
                                                  const bool timerExpiry)
 {
-  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode=" << PTRACE_errorCode);
+  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode=" << errorCode);
   if(!timerExpiry){
     if (ciTimer.IsRunning()){
       ciTimer.Stop();
@@ -2625,18 +2622,10 @@ void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
 }
 
 
-#if PTRACING
-#define PTRACE_problemType   problemType
-#define PTRACE_problemNumber problemNumber
-#else
-#define PTRACE_problemType
-#define PTRACE_problemNumber
-#endif
-
-BOOL H45011Handler::OnReceivedReject(int PTRACE_problemType, int PTRACE_problemNumber)
+BOOL H45011Handler::OnReceivedReject(int PTRACE_PARAM(problemType), int PTRACE_PARAM(problemNumber))
 {
   PTRACE(4, "H450.11\tH45011Handler::OnReceivedReject - problemType= "
-         << PTRACE_problemType << ", problemNumber= " << PTRACE_problemNumber);
+         << problemType << ", problemNumber= " << problemNumber);
 
   if (ciTimer.IsRunning()){
     ciTimer.Stop();

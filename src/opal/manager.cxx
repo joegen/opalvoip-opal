@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2078  2007/03/21 16:10:46  hfriederich
+ * Revision 1.2079  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.77  2007/03/21 16:10:46  hfriederich
  * Use CallEndReason from connection if call setup fails
  *
  * Revision 2.76  2007/03/13 00:33:11  csoutheren
@@ -533,7 +536,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
   if (MakeConnection(*call, partyA, userData, options, stringOptions) && call->GetConnection(0)->SetUpConnection()) {
-    PTRACE(1, "SetUpCall succeeded, call=" << *call);
+    PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
     return TRUE;
   }
 
@@ -550,7 +553,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   }
 
   if (!activeCalls.RemoveAt(token)) {
-    PTRACE(1, "SetUpCall could not remove call from active call list");
+    PTRACE(1, "OpalMan\tSetUpCall could not remove call from active call list");
   }
 
   token.MakeEmpty();

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2101  2007/03/30 02:09:53  rjongbloed
+ * Revision 1.2102  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.100  2007/03/30 02:09:53  rjongbloed
  * Fixed various GCC warnings
  *
  * Revision 2.99  2007/03/29 05:16:50  csoutheren
@@ -881,7 +884,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
     if (stream->Open()) {
       if (OnOpenMediaStream(*stream)) {
-        PTRACE(1, "Opened source stream " << stream->GetID());
+        PTRACE(3, "OpalCon\tOpened source stream " << stream->GetID());
         return TRUE;
       }
       PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
@@ -941,7 +944,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
     if (stream->Open()) {
       if (OnOpenMediaStream(*stream)) {
-        PTRACE(1, "Opened sink stream " << stream->GetID());
+        PTRACE(3, "OpalCon\tOpened sink stream " << stream->GetID());
         return stream;
       }
       PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
@@ -1479,7 +1482,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
   // Pass the 16 bit PCM audio through the DTMF decoder   
   PString tones = dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/sizeof(short));
   if (!tones.IsEmpty()) {
-    PTRACE(1, "DTMF detected. " << tones);
+    PTRACE(1, "OPAL\tDTMF detected. " << tones);
     PINDEX i;
     for (i = 0; i < tones.GetLength(); i++) {
       OnUserInputTone(tones[i], 0);

@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224.cxx,v $
+ * Revision 1.5  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
  * Revision 1.4  2007/03/12 23:19:01  csoutheren
  * Add ability to remove H.224
  *
@@ -295,7 +298,7 @@ void OpalH224Handler::StopTransmit()
 void OpalH224Handler::StartReceive()
 {
   if(receiverThread != NULL) {
-    PTRACE(5, "H.224 handler is already receiving");
+    PTRACE(2, "H.224\tHandler is already receiving");
     return;
   }
 	
@@ -492,7 +495,7 @@ BOOL OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
 {
   if(frame.GetDestinationTerminalAddress() != H224_BROADCAST) {
     // only broadcast frames are handled at the moment
-	PTRACE(3, "Received H.224 frame with non-broadcast address");
+    PTRACE(3, "H.224\tReceived frame with non-broadcast address");
     return TRUE;
   }
   BYTE clientID = frame.GetClientID();
@@ -603,7 +606,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   PINDEX size = frame.GetEncodedSize();
 	
   if(!frame.Encode(transmitFrame->GetPayloadPtr(), size, transmitBitIndex)) {
-    PTRACE(3, "Failed to encode H.224 frame");
+    PTRACE(2, "H.224\tFailed to encode frame");
     return;
   }
 	
@@ -616,7 +619,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   transmitFrame->SetMarker(TRUE);
 	
   if(!session->WriteData(*transmitFrame)) {
-    PTRACE(3, "Failed to write encoded H.224 frame");
+    PTRACE(2, "H.224\tFailed to write encoded frame");
   }
 }
 
@@ -659,7 +662,7 @@ void OpalH224ReceiverThread::Main()
         return;
       }
     } else {
-	  PTRACE(3, "Decoding of H.224 frame failed");
+      PTRACE(2, "H.224\tDecoding of frame failed");
     }
 		
     inUse.Signal();

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2018  2007/01/15 21:32:54  rjongbloed
+ * Revision 1.2019  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.17  2007/01/15 21:32:54  rjongbloed
  * Fixed minor (and generally benign) bug in jitter buffer SetDelay, should use same time base as
  *   constructor for calculating number of buffers
  *
@@ -425,7 +428,7 @@ OpalJitterBuffer::~OpalJitterBuffer()
 
 
 #if PTRACING && !defined(NO_ANALYSER)
-  PTRACE(5, "Jitter buffer analysis: size=" << bufferSize
+  PTRACE(5, "RTP\tJitter buffer analysis: size=" << bufferSize
          << " time=" << currentJitterTime << '\n' << *analyser);
   delete analyser;
 #endif

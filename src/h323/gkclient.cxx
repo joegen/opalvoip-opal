@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2036  2006/07/28 10:41:50  rjongbloed
+ * Revision 1.2037  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.35  2006/07/28 10:41:50  rjongbloed
  * Fixed DevStudio 2005 warnings on time_t conversions.
  *
  * Revision 2.34  2006/06/30 05:26:13  csoutheren
@@ -1682,13 +1685,13 @@ static void ExtractToken(const AdmissionRequestResponseInfo & info,
                          PBYTEArray & accessTokenData)
 {
   if (!info.accessTokenOID1 && tokens.GetSize() > 0) {
-    PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
+    PTRACE(4, "RAS\tLooking for OID " << info.accessTokenOID1 << " in ACF to copy.");
     for (PINDEX i = 0; i < tokens.GetSize(); i++) {
       if (tokens[i].m_tokenOID == info.accessTokenOID1) {
-        PTRACE(4, "Looking for OID " << info.accessTokenOID2 << " in token to copy.");
+        PTRACE(4, "RAS\tLooking for OID " << info.accessTokenOID2 << " in token to copy.");
         if (tokens[i].HasOptionalField(H235_ClearToken::e_nonStandard) &&
             tokens[i].m_nonStandard.m_nonStandardIdentifier == info.accessTokenOID2) {
-          PTRACE(4, "Copying ACF nonStandard OctetString.");
+          PTRACE(4, "RAS\tCopying ACF nonStandard OctetString.");
           accessTokenData = tokens[i].m_nonStandard.m_data;
           break;
         }
