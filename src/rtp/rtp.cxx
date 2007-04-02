@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2058  2007/03/29 23:53:39  rjongbloed
+ * Revision 1.2059  2007/04/02 05:51:34  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.57  2007/03/29 23:53:39  rjongbloed
  * Fixed log message about swallowing UDP packets so only prints out
  *   if non-zero packets were swallowed.
  *
@@ -532,19 +535,6 @@
 #include <opal/connection.h>
 
 #define new PNEW
-
-#if !PTRACING // Stuff to remove unised parameters warning
-#define PTRACE_sender
-#define PTRACE_reports
-#define PTRACE_count
-#define PTRACE_src
-#define PTRACE_description
-#define PTRACE_reason
-#define PTRACE_type
-#define PTRACE_subtype
-#define PTRACE_size
-#define PTRACE_port
-#endif
 
 
 const unsigned SecondsFrom1900to1970 = (70*365+17)*24*60*60U;
@@ -1645,49 +1635,49 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 }
 
 
-void RTP_Session::OnRxSenderReport(const SenderReport & PTRACE_sender,
-				   const ReceiverReportArray & PTRACE_reports)
+void RTP_Session::OnRxSenderReport(const SenderReport & PTRACE_PARAM(sender),
+				   const ReceiverReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
-  PTRACE(3, "RTP\tOnRxSenderReport: " << PTRACE_sender);
-  for (PINDEX i = 0; i < PTRACE_reports.GetSize(); i++)
-    PTRACE(3, "RTP\tOnRxSenderReport RR: " << PTRACE_reports[i]);
+  PTRACE(3, "RTP\tOnRxSenderReport: " << sender);
+  for (PINDEX i = 0; i < reports.GetSize(); i++)
+    PTRACE(3, "RTP\tOnRxSenderReport RR: " << reports[i]);
 #endif
 }
 
 
-void RTP_Session::OnRxReceiverReport(DWORD PTRACE_src,
-				     const ReceiverReportArray & PTRACE_reports)
+void RTP_Session::OnRxReceiverReport(DWORD PTRACE_PARAM(src),
+				     const ReceiverReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
-  PTRACE(3, "RTP\tOnReceiverReport: ssrc=" << PTRACE_src);
-  for (PINDEX i = 0; i < PTRACE_reports.GetSize(); i++)
-    PTRACE(3, "RTP\tOnReceiverReport RR: " << PTRACE_reports[i]);
+  PTRACE(3, "RTP\tOnReceiverReport: ssrc=" << src);
+  for (PINDEX i = 0; i < reports.GetSize(); i++)
+    PTRACE(3, "RTP\tOnReceiverReport RR: " << reports[i]);
 #endif
 }
 
 
-void RTP_Session::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_description)
+void RTP_Session::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
 {
 #if PTRACING
-  for (PINDEX i = 0; i < PTRACE_description.GetSize(); i++)
-    PTRACE(3, "RTP\tOnSourceDescription: " << PTRACE_description[i]);
+  for (PINDEX i = 0; i < description.GetSize(); i++)
+    PTRACE(3, "RTP\tOnSourceDescription: " << description[i]);
 #endif
 }
 
 
-void RTP_Session::OnRxGoodbye(const PDWORDArray & PTRACE_src, const PString & PTRACE_reason)
+void RTP_Session::OnRxGoodbye(const PDWORDArray & PTRACE_PARAM(src), const PString & PTRACE_PARAM(reason))
 {
-  PTRACE(3, "RTP\tOnGoodbye: \"" << PTRACE_reason << "\" srcs=" << PTRACE_src);
+  PTRACE(3, "RTP\tOnGoodbye: \"" << reason << "\" srcs=" << src);
 }
 
 
-void RTP_Session::OnRxApplDefined(const PString & PTRACE_type,
-				  unsigned PTRACE_subtype, DWORD PTRACE_src,
-				  const BYTE * /*data*/, PINDEX PTRACE_size)
+void RTP_Session::OnRxApplDefined(const PString & PTRACE_PARAM(type),
+				  unsigned PTRACE_PARAM(subtype), DWORD PTRACE_PARAM(src),
+				  const BYTE * /*data*/, PINDEX PTRACE_PARAM(size))
 {
-  PTRACE(3, "RTP\tOnApplDefined: \"" << PTRACE_type << "\"-" << PTRACE_subtype
-	 << " " << PTRACE_src << " [" << PTRACE_size << ']');
+  PTRACE(3, "RTP\tOnApplDefined: \"" << type << "\"-" << subtype
+	 << " " << src << " [" << size << ']');
 }
 
 
