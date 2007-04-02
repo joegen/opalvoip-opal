@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.cxx,v $
+ * Revision 1.6  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
  * Revision 1.5  2007/03/12 23:19:01  csoutheren
  * Add ability to remove H.224
  *
@@ -120,67 +123,66 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
   // 2 octets FCS and at least 1 octet information
   if(size < 2+3+2+1)
     return FALSE;
-	
+
   PINDEX octetIndex = 0;
   BYTE bitIndex = 7;
   BYTE onesCounter = 0;
-	
+
   if(!FindFlagEnd(data, size, octetIndex, bitIndex))
-	return FALSE;
-	
+    return FALSE;
+
   BYTE firstOctet;
   BYTE secondOctet;
-	
+
   // read the two first octets
   if(octetIndex >= size || DecodeByte(data, &firstOctet, octetIndex, bitIndex, onesCounter) != Q922_OK)
     return FALSE;
-  
+
   if(octetIndex >= size || DecodeByte(data, &secondOctet, octetIndex, bitIndex, onesCounter) != Q922_OK)
-	return FALSE;
-	
+    return FALSE;
+
   PINDEX arrayIndex = 0;
   while(octetIndex < size) {
-	
+
     BYTE decodedByte;
     BYTE result = DecodeByte(data, &decodedByte, octetIndex, bitIndex, onesCounter);
-	
-	if(result == Q922_ERROR) {
-	  return FALSE;
 
-	} else if(result == Q922_FLAG) {
-		
+    if(result == Q922_ERROR)
+      return FALSE;
+
+    if(result == Q922_FLAG) {
+
       // Found end flag
       // FCS is contained in firstOctet and secondOctet.
       WORD fcs = (secondOctet << 8) | firstOctet;
-			
+
       // Calculate FCS from data to check
       WORD calculatedFCS = CalculateFCS((const BYTE *)theArray, arrayIndex);
-			
-	  if(fcs != calculatedFCS) {
-	    PTRACE(3, "Q.922 frame has incorrect checksum");
-		return FALSE;
+
+      if (fcs != calculatedFCS) {
+        PTRACE(2, "Q.922\tFrame has incorrect checksum");
+        return FALSE;
       }
-			
+
       if(arrayIndex > Q922_HEADER_SIZE) {
         SetInformationFieldSize(arrayIndex - Q922_HEADER_SIZE);
         return TRUE;
       }
-			
-	  return FALSE;
-	}
-		
+
+      return FALSE;
+    }
+
     theArray[arrayIndex] = firstOctet;
     arrayIndex++;
-		
+
     firstOctet = secondOctet;
     secondOctet = decodedByte;
-		
-	// Q922-frames must not exceed an information field size of 260 octets
-    if(arrayIndex >= 260+Q922_HEADER_SIZE) {
+
+    // Q922-frames must not exceed an information field size of 260 octets
+    if(arrayIndex >= 260+Q922_HEADER_SIZE)
       return FALSE;
-	}
   }
-	
+
   return FALSE;
 }
 

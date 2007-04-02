@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.6  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
  * Revision 1.5  2007/03/30 02:09:50  rjongbloed
  * Fixed various GCC warnings
  *
@@ -740,7 +743,7 @@ void OpalH281Handler::OnReceivedMessage(const H281_Frame & message)
 		OnActivatePreset(message.GetPresetNumber());
 	  
   }	else {
-	PTRACE(3, "H.281: Unknown Request: " << requestType);
+	PTRACE(3, "H.281\tUnknown Request: " << requestType);
   }
 }
 

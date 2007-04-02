@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2146  2007/03/29 05:16:49  csoutheren
+ * Revision 1.2147  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.145  2007/03/29 05:16:49  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -244,11 +247,6 @@
 const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #define new PNEW
-
-
-#if !PTRACING // Stuff to remove unised parameters warning
-#define PTRACE_pdu
-#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2490,9 +2488,9 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
 }
 
 
-BOOL H323Connection::OnUnknownSignalPDU(const H323SignalPDU & PTRACE_pdu)
+BOOL H323Connection::OnUnknownSignalPDU(const H323SignalPDU & PTRACE_PARAM(pdu))
 {
-  PTRACE(2, "H225\tUnknown signalling PDU: " << PTRACE_pdu);
+  PTRACE(2, "H225\tUnknown signalling PDU: " << pdu);
   return TRUE;
 }
 

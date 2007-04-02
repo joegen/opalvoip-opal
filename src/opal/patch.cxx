@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2045  2007/03/29 08:30:21  csoutheren
+ * Revision 1.2046  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.44  2007/03/29 08:30:21  csoutheren
  * Avoid problem with T.38 codecs
  *
  * Revision 2.43  2007/03/29 05:22:42  csoutheren
@@ -329,7 +332,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   PString id = stream->GetID();
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (sink->primaryCodec != NULL) {
-    PTRACE(1, "created primary codec " << sourceFormat << "/" << destinationFormat << " with ID " << id);
+    PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "/" << destinationFormat << " with ID " << id);
     sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
@@ -353,7 +356,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
 
-    PTRACE(1, "created two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
+    PTRACE(4, "Patch\tcreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->secondaryCodec->SetMaxOutputSize(sink->stream->GetDataSize());
 
