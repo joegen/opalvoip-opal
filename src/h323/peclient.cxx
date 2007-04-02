@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.cxx,v $
- * Revision 1.2003  2004/06/04 06:54:18  csoutheren
+ * Revision 1.2004  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.2  2004/06/04 06:54:18  csoutheren
  * Migrated updates from OpenH323 1.14.1
  *
  * Revision 2.1  2004/02/19 10:47:05  rjongbloed
@@ -758,7 +761,7 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
     OpalGloballyUniqueID serviceID(info.requestCommon.m_serviceID);
     PSafePtr<H323PeerElementServiceRelationship> sr = localServiceRelationships.FindWithLock(H323PeerElementServiceRelationship(serviceID), PSafeReadWrite);
     if (sr == NULL) {
-      PTRACE(2, "PeerElement\nRejecting unknown service ID " << serviceID << " received from peer " << info.GetReplyAddress());
+      PTRACE(2, "PeerElement\tRejecting unknown service ID " << serviceID << " received from peer " << info.GetReplyAddress());
       info.SetRejectReason(H501_ServiceRejectionReason::e_unknownServiceID);
       return H323Transaction::Reject;
     }
@@ -775,7 +778,7 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
     sr->lastUpdateTime = PTime();
     sr->expireTime = PTime() + (info.scf.m_timeToLive * 1000);
 
-    PTRACE(2, "PeerElement\nService relationship with " << sr->name << " at " << info.GetReplyAddress() << " updated - next update in " << info.scf.m_timeToLive);
+    PTRACE(2, "PeerElement\tService relationship with " << sr->name << " at " << info.GetReplyAddress() << " updated - next update in " << info.scf.m_timeToLive);
     return H323Transaction::Confirm;
   }
 
@@ -817,7 +820,7 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
   monitorTickle.Signal();
 
   // send the response
-  PTRACE(2, "PeerElement\nNew service relationship with " << sr->name << " at " << info.GetReplyAddress() << " created - next update in " << info.scf.m_timeToLive);
+  PTRACE(3, "PeerElement\tNew service relationship with " << sr->name << " at " << info.GetReplyAddress() << " created - next update in " << info.scf.m_timeToLive);
   return H323Transaction::Confirm;
 }
 

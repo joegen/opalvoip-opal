@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2066  2007/03/29 23:55:46  rjongbloed
+ * Revision 1.2067  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.65  2007/03/29 23:55:46  rjongbloed
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connection class they can create it without
  *   needing to remember to do any more than the new.
@@ -146,14 +149,11 @@
 
 #define new PNEW
 
-#if !PTRACING // Stuff to remove unised parameters warning
-#define PTRACE_isEncoding
-#define PTRACE_channel
-#endif
 
 BYTE H323EndPoint::defaultT35CountryCode    = 9; // Country code for Australia
 BYTE H323EndPoint::defaultT35Extension      = 0;
 WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Communications Authority, Oct 2000;
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -553,7 +553,7 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
   for (r = keyList.begin(); r != keyList.end(); ++r)
     authenticators.Append(PFactory<H235Authenticator>::CreateInstance(*r));
 
-  PTRACE(1, "Authenticator list is size " << (int)authenticators.GetSize());
+  PTRACE(3, "H323\tAuthenticator list is size " << (int)authenticators.GetSize());
 
   return authenticators;
 }
@@ -565,7 +565,7 @@ BOOL H323EndPoint::MakeConnection(OpalCall & call,
                             unsigned int options,
                             OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(2, "H323\tMaking call to: " << remoteParty);
+  PTRACE(3, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
                           PString::Empty(),
                           PString::Empty(),
@@ -1190,20 +1190,20 @@ static void OnStartStopChannel(const char * startstop, const H323Channel & chann
 
 
 BOOL H323EndPoint::OnStartLogicalChannel(H323Connection & /*connection*/,
-                                         H323Channel & PTRACE_channel)
+                                         H323Channel & PTRACE_PARAM(channel))
 {
 #if PTRACING
-  OnStartStopChannel("Start", PTRACE_channel);
+  OnStartStopChannel("Start", channel);
 #endif
   return TRUE;
 }
 
 
 void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
-                                          const H323Channel & PTRACE_channel)
+                                          const H323Channel & PTRACE_PARAM(channel))
 {
 #if PTRACING
-  OnStartStopChannel("Stopp", PTRACE_channel);
+  OnStartStopChannel("Stopp", channel);
 #endif
 }
 

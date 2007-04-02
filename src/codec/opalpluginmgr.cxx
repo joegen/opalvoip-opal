@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2019  2007/03/29 05:20:17  csoutheren
+ * Revision 1.2020  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.18  2007/03/29 05:20:17  csoutheren
  * Implement T.38 and fax
  *
  * Revision 2.17  2006/12/08 07:33:13  csoutheren
@@ -1635,9 +1638,9 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       OpalMediaFormat * instance = OpalMediaFormatFactory::CreateInstance(*r);
       if (instance == NULL) {
-        PTRACE(4, "H323PLUGIN\tCannot instantiate opal media format " << *r);
+        PTRACE(4, "OpalPlugin\nCannot instantiate opal media format " << *r);
       } else {
-        PTRACE(4, "H323PLUGIN\tCreating media format " << *r);
+        PTRACE(4, "OpalPlugin\nCreating media format " << *r);
       }
     }
   }
@@ -1649,9 +1652,9 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       H323StaticPluginCodec * instance = PFactory<H323StaticPluginCodec>::CreateInstance(*r);
       if (instance == NULL) {
-        PTRACE(4, "H323PLUGIN\tCannot instantiate static codec plugin " << *r);
+        PTRACE(4, "OpalPlugin\nCannot instantiate static codec plugin " << *r);
       } else {
-        PTRACE(4, "H323PLUGIN\tLoading static codec plugin " << *r);
+        PTRACE(4, "OpalPlugin\nLoading static codec plugin " << *r);
         RegisterStaticCodec(*r, instance->Get_GetAPIFn(), instance->Get_GetCodecFn());
       }
     }
@@ -1689,18 +1692,18 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
 {
   PluginCodec_GetCodecFunction getCodecs;
   if (!dll.GetFunction(PString(signatureFunctionName), (PDynaLink::Function &)getCodecs)) {
-    PTRACE(3, "H323PLUGIN\tPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
+    PTRACE(3, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
     return;
   }
 
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_FAX);
   if (codecs == NULL || count == 0) {
-    PTRACE(3, "H323PLUGIN\tPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
+    PTRACE(3, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
     return;
   } 
 
-  PTRACE(3, "H323PLUGIN\tLoading plugin codec " << dll.GetName());
+  PTRACE(3, "OpalPlugin\nLoading plugin codec " << dll.GetName());
 
   switch (code) {
 
@@ -1727,7 +1730,7 @@ void OpalPluginCodecManager::RegisterStaticCodec(
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecFn)(&count, PLUGIN_CODEC_VERSION_FAX);
   if (codecs == NULL || count == 0) {
-    PTRACE(3, "H323PLUGIN\tStatic codec " << name << " contains no codec definitions");
+    PTRACE(3, "OpalPlugin\nStatic codec " << name << " contains no codec definitions");
     return;
   } 
 
@@ -1792,13 +1795,13 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, void * _co
           RegisterPluginPair(&encoder, &decoder);
           found = TRUE;
 
-          PTRACE(2, "H323PLUGIN\tPlugin codec " << encoder.descr << " defined");
+          PTRACE(2, "OpalPlugin\nPlugin codec " << encoder.descr << " defined");
           break;
         }
       }
     }
     if (!found && isEncoder) {
-      PTRACE(2, "H323PLUGIN\tCannot find decoder for plugin encoder " << encoder.descr);
+      PTRACE(2, "OpalPlugin\nCannot find decoder for plugin encoder " << encoder.descr);
     }
   }
 }
@@ -1862,12 +1865,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   // add the media format
   if (defaultSessionID == 0) {
-    PTRACE(3, "H323PLUGIN\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(3, "OpalPlugin\nCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec, FALSE);
     OpalMediaFormat existingFormat(fmtName);
     if (existingFormat.IsValid() && existingFormat.GetCodecBaseTime() >= timeStamp) {
-      PTRACE(3, "H323PLUGIN\tNewer media format " << fmtName << " already exists");
+      PTRACE(3, "OpalPlugin\nNewer media format " << fmtName << " already exists");
       //AddFormat(existingFormat);
     } else {
       if (existingFormat.IsValid()) {
@@ -1875,7 +1878,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
         GetMediaFormatList() -= existingFormat;
       }
 
-      PTRACE(3, "H323PLUGIN\tCreating new media format" << fmtName);
+      PTRACE(3, "OpalPlugin\nCreating new media format" << fmtName);
 
       OpalMediaFormat * mediaFormat = NULL;
 
@@ -1995,7 +1998,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(3, "H323PLUGIN\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(3, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
     case PluginCodec_MediaTypeAudioStreamed:
@@ -2010,7 +2013,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(3, "H323PLUGIN\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(3, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
 #endif
@@ -2030,7 +2033,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
       (hasCodecControl && (retVal == 0))
        ) {
-    PTRACE(3, "H323PLUGIN\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
+    PTRACE(3, "OpalPlugin\nNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
     return;
   }
 
@@ -2065,7 +2068,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
   }
 
   if (map == NULL) {
-    PTRACE(3, "H323PLUGIN\tCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(3, "OpalPlugin\nCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } 
   else if (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_undefined) {
     for (PINDEX i = 0; map[i].pluginCapType >= 0; i++) {
@@ -2150,7 +2153,7 @@ H323Capability *CreateGenericAudioCap(
     PluginCodec_H323GenericCodecData * pluginData = (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData;
 
     if(pluginData == NULL ) {
-	PTRACE(1, "Generic codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
+	PTRACE(1, "OpalPlugin\nGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
 	return NULL;
     }
     return new H323CodecPluginGenericAudioCapability(encoderCodec, decoderCodec, pluginData);
@@ -2209,8 +2212,8 @@ H323Capability *CreateGenericVideoCap(
   PluginCodec_H323GenericCodecData * pluginData = (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData;
 
   if (pluginData == NULL ) {
-	  PTRACE(1, "Generic codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
-	  return NULL;
+    PTRACE(1, "OpalPlugin\nGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
+    return NULL;
   }
   return new H323CodecPluginGenericVideoCapability(encoderCodec, decoderCodec, pluginData);
 }
@@ -2322,7 +2325,7 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
 	    default:
-	      PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
+	      PTRACE(1, "OpalPlugin\nUnsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr);
 	      break;
     }
     ptr++;
@@ -2788,7 +2791,7 @@ H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(
       case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
       case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
       default:
-        PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
+        PTRACE(1, "OpalPlugin\nUnsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
         break;
     }
     ptr++;

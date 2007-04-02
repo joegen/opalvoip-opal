@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2054  2007/03/29 05:16:50  csoutheren
+ * Revision 1.2055  2007/04/02 05:51:33  rjongbloed
+ * Tidied some trace logs to assure all have a category (bit before a tab character) set.
+ *
+ * Revision 2.53  2007/03/29 05:16:50  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -1134,7 +1137,7 @@ BOOL OpalUDPMediaStream::ReadPacket(RTP_DataFrame & Packet)
 
   PBYTEArray rawData;
   if (!udpTransport.ReadPDU(rawData)) {
-    PTRACE(3, "Read on UDP transport failed: "
+    PTRACE(2, "Media\tRead on UDP transport failed: "
        << udpTransport.GetErrorText() << " transport: " << udpTransport);
     return FALSE;
   }
@@ -1156,7 +1159,7 @@ BOOL OpalUDPMediaStream::WritePacket(RTP_DataFrame & Packet)
 
   if (Packet.GetPayloadSize() > 0) {
     if (!udpTransport.Write(Packet.GetPayloadPtr(), Packet.GetPayloadSize())) {
-      PTRACE(3, "Media\tWrite on UDP transport failed: "
+      PTRACE(2, "Media\tWrite on UDP transport failed: "
          << udpTransport.GetErrorText() << " transport: " << udpTransport);
       return FALSE;
     }
