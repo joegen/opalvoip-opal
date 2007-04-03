@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2079  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2080  2007/04/03 07:13:14  rjongbloed
+ * Fixed SetUpCall() so actually passes userData to CreateCall()
+ *
+ * Revision 2.78  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.77  2007/03/21 16:10:46  hfriederich
@@ -526,7 +529,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
-  OpalCall * call = CreateCall();
+  OpalCall * call = CreateCall(userData);
   token = call->GetToken();
 
   call->SetPartyB(partyB);
@@ -636,12 +639,12 @@ void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 
 OpalCall * OpalManager::CreateCall()
 {
-  return CreateCall(NULL);
+  return new OpalCall(*this);
 }
 
 OpalCall * OpalManager::CreateCall(void * /*userData*/)
 {
-  return new OpalCall(*this);
+  return CreateCall();
 }
 
 
