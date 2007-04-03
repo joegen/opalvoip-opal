@@ -22,7 +22,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2027  2007/04/03 05:27:30  rjongbloed
+ * Revision 1.2028  2007/04/03 07:59:14  rjongbloed
+ * Warning: API change to PCSS callbacks:
+ *   changed return on OnShowIncoming to BOOL, now agrees with
+ *     documentation and allows UI to abort calls early.
+ *   added BOOL to AcceptIncomingConnection indicating the
+ *     supplied token is invalid.
+ *   removed redundent OnGetDestination() function, was never required.
+ *
+ * Revision 2.26  2007/04/03 05:27:30  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -158,15 +166,12 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   public:
     MyPCSSEndPoint(MyManager & manager);
 
-    virtual PString OnGetDestination(const OpalPCSSConnection & connection);
-    virtual void OnShowIncoming(const OpalPCSSConnection & connection);
+    virtual BOOL OnShowIncoming(const OpalPCSSConnection & connection);
     virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
     BOOL SetSoundDevice(PArgList & args, const char * optionName, PSoundChannel::Directions dir);
 
-    PString destinationAddress;
     PString incomingConnectionToken;
-	PString remoteConnectionToken;
     BOOL    autoAnswer;
 };
 

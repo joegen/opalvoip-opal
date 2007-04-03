@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2043  2007/03/29 05:16:50  csoutheren
+ * Revision 1.2044  2007/04/03 07:59:14  rjongbloed
+ * Warning: API change to PCSS callbacks:
+ *   changed return on OnShowIncoming to BOOL, now agrees with
+ *     documentation and allows UI to abort calls early.
+ *   added BOOL to AcceptIncomingConnection indicating the
+ *     supplied token is invalid.
+ *   removed redundent OnGetDestination() function, was never required.
+ *
+ * Revision 2.42  2007/03/29 05:16:50  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -364,11 +372,14 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 }
 
 
-void OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
+BOOL OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
   PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
-  if (connection != NULL)
-    connection->AcceptIncoming();
+  if (connection == NULL)
+    return FALSE;
+
+  connection->AcceptIncoming();
+  return TRUE;
 }
 
 
@@ -458,10 +469,9 @@ BOOL OpalPCSSConnection::SetUpConnection()
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
   phase = AlertingPhase;
-  endpoint.OnShowIncoming(*this);
   OnAlerting();
 
-  return TRUE;
+  return endpoint.OnShowIncoming(*this);
 }
 
 
@@ -486,12 +496,6 @@ BOOL OpalPCSSConnection::SetConnected()
   }
 
   return TRUE;
-}
-
-
-PString OpalPCSSConnection::GetDestinationAddress()
-{
-  return endpoint.OnGetDestination(*this);
 }
 
 
