@@ -28,7 +28,13 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2078  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2079  2007/04/03 05:27:29  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.77  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -655,7 +661,7 @@ class OpalConnection : public PSafeObject
        protocol negotiations are paused until the AnsweringCall() function is
        called.
 
-       The default behaviour simply returns AnswerNow.
+       The default behaviour calls the endpoint function of the same name.
      */
     virtual AnswerCallResponse OnAnswerCall(
       const PString & callerName        ///<  Name of caller
