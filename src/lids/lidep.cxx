@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2043  2007/03/29 23:55:46  rjongbloed
+ * Revision 1.2044  2007/04/03 07:40:24  rjongbloed
+ * Fixed CreateCall usage so correct function (with userData) is called on
+ *   incoming connections.
+ *
+ * Revision 2.42  2007/03/29 23:55:46  rjongbloed
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connection class they can create it without
  *   needing to remember to do any more than the new.
@@ -576,7 +580,7 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
     return;
 
   // Have incoming ring, create a new LID connection and let it handle it
-  connection = CreateConnection(*manager.CreateCall(), line, NULL, PString::Empty());
+  connection = CreateConnection(*manager.CreateCall(NULL), line, NULL, PString::Empty());
   if (AddConnection(connection))
     connection->StartIncoming();
 }

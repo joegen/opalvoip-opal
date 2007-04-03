@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.30  2007/04/03 07:40:24  rjongbloed
+ * Fixed CreateCall usage so correct function (with userData) is called on
+ *   incoming connections.
+ *
  * Revision 1.29  2007/03/29 23:55:46  rjongbloed
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connection class they can create it without
@@ -278,7 +282,7 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   PString url = BuildUrl(host, userName, ieData.callingNumber);
 /* We have completed the extraction of information process. Now we can build the matching connection */
 
-  IAX2Connection *connection = CreateConnection(*GetManager().CreateCall(), f->GetConnectionToken(), NULL, url, ieData.callingName);
+  IAX2Connection *connection = CreateConnection(*manager.CreateCall(NULL), f->GetConnectionToken(), NULL, url, ieData.callingName);
   if (!AddConnection(connection)) {
     PTRACE(2, "IAX2\tFailed to create IAX2Connection for NEW request from " << f->GetConnectionToken());
     delete f;
