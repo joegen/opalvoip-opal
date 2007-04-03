@@ -25,6 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.37  2007/04/03 07:59:13  rjongbloed
+ * Warning: API change to PCSS callbacks:
+ *   changed return on OnShowIncoming to BOOL, now agrees with
+ *     documentation and allows UI to abort calls early.
+ *   added BOOL to AcceptIncomingConnection indicating the
+ *     supplied token is invalid.
+ *   removed redundent OnGetDestination() function, was never required.
+ *
  * Revision 1.36  2006/11/19 06:06:01  rjongbloed
  * Added override for dialing on a LID to use unique speed dial code immediately.
  *
@@ -194,8 +202,7 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     MyPCSSEndPoint(MyManager & manager);
 
   private:
-    virtual PString OnGetDestination(const OpalPCSSConnection & connection);
-    virtual void OnShowIncoming(const OpalPCSSConnection & connection);
+    virtual BOOL OnShowIncoming(const OpalPCSSConnection & connection);
     virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
 
     MyManager & m_manager;
