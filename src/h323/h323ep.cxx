@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2067  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2068  2007/04/03 07:40:24  rjongbloed
+ * Fixed CreateCall usage so correct function (with userData) is called on
+ *   incoming connections.
+ *
+ * Revision 2.66  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.65  2007/03/29 23:55:46  rjongbloed
@@ -603,7 +607,7 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
 
   if (connection == NULL) {
-    connection = CreateConnection(*manager.CreateCall(), token, NULL,
+    connection = CreateConnection(*manager.CreateCall(NULL), token, NULL,
                                   *transport, PString::Empty(), PString::Empty(), &pdu);
     if (!AddConnection(connection)) {
       PTRACE(1, "H225\tEndpoint could not create connection, "
@@ -802,7 +806,7 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                                unsigned capabilityLevel,
                                void * userData)
 {
-  return InternalMakeCall(*manager.CreateCall(),
+  return InternalMakeCall(*manager.CreateCall(NULL),
                           PString::Empty(),
                           PString::Empty(),
                           capabilityLevel,
