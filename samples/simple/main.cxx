@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2084  2007/03/29 08:32:22  csoutheren
+ * Revision 1.2085  2007/04/03 05:27:30  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.83  2007/03/29 08:32:22  csoutheren
  * Pause before dialing when using two endpoint mode
  *
  * Revision 2.82  2007/03/29 05:24:00  csoutheren
@@ -1210,36 +1216,6 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, const PString & listenOption, 
 
 #endif  //OPAL_H323
 
-OpalConnection::AnswerCallResponse
-       MyManager::OnAnswerCall(OpalConnection & connection,
-                                  const PString & caller)
-{
-  cout << "incoming call from " << caller << endl;
-  cout << "Answer call (Y/N) " << endl;
-  currentCallToken = connection.GetCall().GetToken();
-  return OpalConnection::AnswerCallPending;
-}
-
-void MyManager::AnswerCall(OpalConnection::AnswerCallResponse response)
-{
-  {
-	PSafePtr<OpalCall> call = FindCallWithLock(currentCallToken);
-	if (call == NULL) {
-		cout << "Could not find call for " << currentCallToken << " to answer" << endl;
-		return;
-	}
-
-	if (response != OpalConnection::AnswerCallNow) {
-		cout << "Clearing call " << *call << endl;
-		call->Clear();
-		return;
-	}
-  }
-
-  if (pcssEP != NULL && !pcssEP->incomingConnectionToken) 
-    pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken);
-}
-
 
 void MyManager::NewSpeedDial(const PString & ostr)
 {
@@ -1339,12 +1315,21 @@ void MyManager::Main(PArgList & args)
         break;
         
       case 'y' :
-        AnswerCall(OpalConnection::AnswerCallNow);
+        if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
+          if (!pcssEP->AcceptIncomingConnection(pcssEP->incomingConnectionToken))
+            cout << "Could not answer connection " << pcssEP->incomingConnectionToken << endl;
+        }
         console.ignore(INT_MAX, '\n');
         break;
-        
+
       case 'n' :
-        AnswerCall(OpalConnection::AnswerCallDenied);
+        if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
+          PSafePtr<OpalConnection> connection = pcssEP->GetConnectionWithLock(pcssEP->incomingConnectionToken);
+          if (connection != NULL) {
+            cout << "Clearing connection " << *connection << endl;
+            connection->Release(OpalConnection::EndedByAnswerDenied);
+          }
+        }
         console.ignore(INT_MAX, '\n');
         break;
 
