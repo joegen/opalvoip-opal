@@ -73,7 +73,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ptlib.lib"
-				OutputFile="$(OutDir)/simple.exe"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
@@ -164,7 +164,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ptlib.lib"
-				OutputFile="$(OutDir)/simple.exe"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
@@ -254,7 +254,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ptlibd.lib"
-				OutputFile="$(OutDir)/simple.exe"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateManifest="true"
