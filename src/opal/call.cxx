@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2057  2007/03/29 05:16:50  csoutheren
+ * Revision 1.2058  2007/04/03 05:27:30  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.56  2007/03/29 05:16:50  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -404,16 +410,12 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
   return ok;
 }
 
-OpalConnection::AnswerCallResponse
-       OpalCall::OnAnswerCall(OpalConnection & /*connection*/,
-                               const PString & /*caller*/)
+OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & /*connection*/,
+                                                          const PString & /*caller*/)
 {
-  return OpalConnection::NumAnswerCallResponses;
+  return OpalConnection::AnswerCallPending;
 }
 
-void OpalCall::AnsweringCall(OpalConnection::AnswerCallResponse /*response*/)
-{
-}
 
 BOOL OpalCall::OnConnected(OpalConnection & connection)
 {

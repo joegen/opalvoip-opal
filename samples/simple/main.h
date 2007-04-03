@@ -22,7 +22,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2026  2007/03/29 05:24:00  csoutheren
+ * Revision 1.2027  2007/04/03 05:27:30  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.25  2007/03/29 05:24:00  csoutheren
  * Add support for T.38
  *
  * Revision 2.24  2006/10/05 07:11:49  csoutheren
@@ -191,10 +197,6 @@ class MyManager : public OpalManager
       const PString & value         /// String value of indication
     );
 
-    OpalConnection::AnswerCallResponse
-      OnAnswerCall(OpalConnection & connection,
-		   const PString & caller);
-
   protected:
     BOOL InitialiseH323EP(PArgList & args, const PString & listenOption, H323EndPoint * h323EP);
 
@@ -230,7 +232,6 @@ class MyManager : public OpalManager
     void HangupCurrentCall();
     void ListSpeedDials();
     void StartCall(const PString & ostr);
-    void AnswerCall(OpalConnection::AnswerCallResponse response);
     void NewSpeedDial(const PString & ostr);
     void SendMessageToRemoteNode(const PString & ostr);
     void SendTone(const char tone);
