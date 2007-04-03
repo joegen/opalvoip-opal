@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2029  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2030  2007/04/03 07:59:13  rjongbloed
+ * Warning: API change to PCSS callbacks:
+ *   changed return on OnShowIncoming to BOOL, now agrees with
+ *     documentation and allows UI to abort calls early.
+ *   added BOOL to AcceptIncomingConnection indicating the
+ *     supplied token is invalid.
+ *   removed redundent OnGetDestination() function, was never required.
+ *
+ * Revision 2.28  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -255,27 +263,20 @@ class OpalPCSSEndPoint : public OpalEndPoint
       PSafetyMode mode = PSafeReadWrite
     ) { return PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode)); }
 
-    /**Call back to get the destination for outgoing call.
-       If FALSE is returned the call is aborted.
-
-       The default implementation is pure.
-      */
-    virtual PString OnGetDestination(
-      const OpalPCSSConnection & connection ///<  Connection having event
-    ) = 0;
-
     /**Call back to indicate that remote is ringing.
        If FALSE is returned the call is aborted.
 
        The default implementation is pure.
       */
-    virtual void OnShowIncoming(
+    virtual BOOL OnShowIncoming(
       const OpalPCSSConnection & connection ///<  Connection having event
     ) = 0;
 
     /**Accept the incoming connection.
+       Returns FALSE if the connection token does not correspond to a valid
+       connection.
       */
-    virtual void AcceptIncomingConnection(
+    virtual BOOL AcceptIncomingConnection(
       const PString & connectionToken ///<  Token of connection to accept call
     );
 
@@ -413,14 +414,6 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetConnected();
-
-    /**Get the destination address of an incoming connection.
-       The default behaviour collects a DTMF number terminated with a '#' or
-       if no digits were entered for a time (default 3 seconds). If no digits
-       are entered within a longer time time (default 30 seconds), then an
-       empty string is returned.
-      */
-    virtual PString GetDestinationAddress();
 
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
