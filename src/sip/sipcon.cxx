@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2212  2007/03/30 14:45:32  hfriederich
+ * Revision 1.2213  2007/04/03 05:27:30  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.211  2007/03/30 14:45:32  hfriederich
  * Reorganization of hte way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -2354,14 +2360,6 @@ BOOL SIPConnection::OnOpenIncomingMediaChannels()
   ownerCall.OnSetUp(*this);
   AnsweringCall(OnAnswerCall(remotePartyAddress));
   return TRUE;
-}
-
-
-OpalConnection::AnswerCallResponse SIPConnection::OnAnswerCall(
-      const PString & callerName      /// Name of caller
-)
-{
-  return OpalConnection::OnAnswerCall(callerName);
 }
 
 
