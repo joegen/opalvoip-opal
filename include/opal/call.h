@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2028  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2029  2007/04/03 05:27:29  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.27  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -257,13 +263,25 @@ class OpalCall : public PSafeObject
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
-    virtual OpalConnection::AnswerCallResponse
-       OnAnswerCall(OpalConnection & connection,
-                     const PString & caller
-    );
+    /**Call back for answering an incoming call.
+       This function is called after the connection has been acknowledged
+       but before the connection is established
 
-    virtual void AnsweringCall(
-      OpalConnection::AnswerCallResponse response ///<  Answer response to incoming call
+       This gives the application time to wait for some event before
+       signalling to the endpoint that the connection is to proceed. For
+       example the user pressing an "Answer call" button.
+
+       If AnswerCallDenied is returned the connection is aborted and the
+       connetion specific end call PDU is sent. If AnswerCallNow is returned 
+       then the connection proceeding, Finally if AnswerCallPending is returned then the
+       protocol negotiations are paused until the AnsweringCall() function is
+       called.
+
+       The default behaviour returns AnswerCallPending.
+     */
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+      OpalConnection & connection,
+      const PString & caller
     );
 
     /**A call back function whenever a connection is "connected".
