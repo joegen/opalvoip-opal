@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2061  2007/03/01 05:51:04  rjongbloed
+ * Revision 1.2062  2007/04/03 05:27:29  rjongbloed
+ * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
+ *   function. The name is innaccurate and exists as a legacy from the
+ *   OpenH323 days. it now only indicates how alerting is done
+ *   (with/without media) and does not actually answer the call.
+ *
+ * Revision 2.60  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
  *   functions on various classes. If an old override returned FALSE
  *   then it will now abort the call as it used to.
@@ -379,25 +385,6 @@ class SIPConnection : public OpalConnection
       */
     virtual void OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch);
 
-
-    /**Call back for answering an incoming call.
-       This function is called from the OnReceivedSignalSetup() function
-       before it sends the 200 OK response. 
-
-       It also gives an application time to wait for some event before
-       signalling to the endpoint that the connection is to proceed. For
-       example the user pressing an "Answer call" button.
-
-       If AnswerCallDenied is returned the connection is aborted and a 200 OK 
-       is sent. If AnswerCallNow is returned then the SIP protocol proceeds. 
-       Finally if AnswerCallPending is returned then the protocol negotiations 
-       are paused until the AnsweringCall() function is called.
-
-       The default behaviour simply returns AnswerNow.
-     */
-    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
-      const PString & callerName      ///<  Name of caller
-    );
 
     /**Indicate the result of answering an incoming call.
        This should only be called if the OnAnswerCall() callback function has
