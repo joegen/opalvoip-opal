@@ -38,7 +38,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opaln.lib ptlib.lib"
-				OutputFile="NoTrace/simpleOPAL.exe"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
@@ -100,7 +100,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opal.lib ptlib.lib"
-				OutputFile="Release/simpleOPAL.exe"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
@@ -161,7 +161,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opald.lib ptlibd.lib"
-				OutputFile="Debug/simpleOPAL.exe"
+				OutputFile="$(OutDir)/simpleOPAL.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
