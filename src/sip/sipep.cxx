@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2155  2007/03/30 14:45:32  hfriederich
+ * Revision 1.2156  2007/04/03 07:40:24  rjongbloed
+ * Fixed CreateCall usage so correct function (with userData) is called on
+ *   incoming connections.
+ *
+ * Revision 2.154  2007/03/30 14:45:32  hfriederich
  * Reorganization of hte way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -1309,7 +1313,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   response.Write(transport);
 
   // ask the endpoint for a connection
-  SIPConnection *connection = CreateConnection(*GetManager().CreateCall(), mime.GetCallID(),
+  SIPConnection *connection = CreateConnection(*manager.CreateCall(NULL), mime.GetCallID(),
                                                NULL, request->GetURI(), &transport, request);
   if (!AddConnection(connection)) {
     PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
