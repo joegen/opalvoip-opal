@@ -22,7 +22,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2086  2007/04/03 07:59:14  rjongbloed
+ * Revision 1.2087  2007/04/03 13:04:23  rjongbloed
+ * Added driverName to PVideoDevice::OpenArgs (so can select YUVFile)
+ * Added new statics to create correct video input/output device object
+ *   given a PVideoDevice::OpenArgs structure.
+ * Fixed incorrect initialisation of default video input device.
+ * Fixed last calls video size changing the default value.
+ *
+ * Revision 2.85  2007/04/03 07:59:14  rjongbloed
  * Warning: API change to PCSS callbacks:
  *   changed return on OnShowIncoming to BOOL, now agrees with
  *     documentation and allows UI to abort calls early.
@@ -480,10 +487,10 @@ void SimpleOpalProcess::Main()
              "-rx-video." "-no-rx-video."
              "-tx-video." "-no-tx-video."
              "-grabber:"
-             "-grabdevice:"
+             "-grabdriver:"
              "-grabchannel:"
              "-display:"
-             "-displaydevice:"
+             "-displaydriver:"
 #if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
@@ -519,11 +526,11 @@ void SimpleOpalProcess::Main()
             "     --tx-video           : Start transmitting video immediately.\n"
             "     --no-rx-video        : Don't start receiving video immediately.\n"
             "     --no-tx-video        : Don't start transmitting video immediately.\n"
-            "     --grabber dev        : Set the video grabber driver.\n"
-            "     --grabdevice dev     : Set the video grabber device.\n"
+            "     --grabber dev        : Set the video grabber device.\n"
+            "     --grabdriver dev     : Set the video grabber driver (if device name is ambiguous).\n"
             "     --grabchannel num    : Set the video grabber device channel.\n"
-            "     --display dev        : Set the video display driver.\n"
-            "     --displaydevice dev  : Set the video display device.\n"
+            "     --display dev        : Set the video display device.\n"
+            "     --displaydriver dev  : Set the video display driver (if device name is ambiguous).\n"
             "\n"
 
 #if OPAL_SIP
@@ -757,7 +764,7 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
     video.deviceName = args.GetOptionString("grabber");
-    video.filename   = args.GetOptionString("grabdevice");
+    video.driverName = args.GetOptionString("grabdriver");
     video.channelNumber = args.GetOptionString("grabchannel").AsInteger();
     if (!SetVideoInputDevice(video)) {
       cerr << "Unknown grabber device " << video.deviceName << endl
@@ -769,7 +776,7 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption("display")) {
     PVideoDevice::OpenArgs video = GetVideoOutputDevice();
     video.deviceName = args.GetOptionString("display");
-    video.filename   = args.GetOptionString("displaydevice");
+    video.driverName   = args.GetOptionString("displaydriver");
     if (!SetVideoOutputDevice(video)) {
       cerr << "Unknown display device " << video.deviceName << endl
            << "options are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
@@ -806,9 +813,7 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption('P'))
     SetMediaFormatOrder(args.GetOptionString('P').Lines());
 
-  cout << "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n"
-          "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
-          "Codec order: " << setfill(',') << GetMediaFormatOrder() << setfill(' ') << '\n';
+  cout << "Jitter buffer: "  << GetMinAudioJitterDelay() << '-' << GetMaxAudioJitterDelay() << " ms\n";
 
   if (args.HasOption("translate")) {
     SetTranslationAddress(args.GetOptionString("translate"));
@@ -859,6 +864,7 @@ BOOL MyManager::Initialise(PArgList & args)
     cout << "None";
   cout << '\n';
 
+  OpalMediaFormatList allMediaFormats;
 
   ///////////////////////////////////////
   // Open the LID if parameter provided, create LID based endpoint
@@ -880,8 +886,10 @@ BOOL MyManager::Initialise(PArgList & args)
         // Create LID protocol handler, automatically adds to manager
         if (potsEP == NULL)
           potsEP = new OpalPOTSEndPoint(*this);
-        if (potsEP->AddDevice(lid))
+        if (potsEP->AddDevice(lid)) {
           cout << "Line interface device \"" << devices[d] << "\" added." << endl;
+          allMediaFormats += potsEP->GetMediaFormats();
+        }
       }
       else {
         cerr << "Could not open device \"" << devices[d] << '"' << endl;
@@ -909,13 +917,15 @@ BOOL MyManager::Initialise(PArgList & args)
     if (!pcssEP->SetSoundDevice(args, "sound-out", PSoundChannel::Player))
       return FALSE;
 
+    allMediaFormats += pcssEP->GetMediaFormats();
+
     cout << "Sound output device: \"" << pcssEP->GetSoundChannelPlayDevice() << "\"\n"
             "Sound  input device: \"" << pcssEP->GetSoundChannelRecordDevice() << "\"\n"
 #if OPAL_VIDEO
             "Video output device: \"" << GetVideoOutputDevice().deviceName << "\"\n"
-            "Video  input device: \"" << GetVideoInputDevice().deviceName << "\"\n"
+            "Video  input device: \"" << GetVideoInputDevice().deviceName << '"'
 #endif
-            "Available codecs: " << setfill(',') << OpalTranscoder::GetPossibleFormats(pcssEP->GetMediaFormats()) << setfill(' ') << endl;
+         << endl;
   }
 
 #if OPAL_H323
@@ -1018,6 +1028,8 @@ BOOL MyManager::Initialise(PArgList & args)
     ivrEP = new OpalIVREndPoint(*this);
     if (args.HasOption('x'))
       ivrEP->SetDefaultVXML(args.GetOptionString('x'));
+
+    allMediaFormats += ivrEP->GetMediaFormats();
 
     PString ttsEngine = args.GetOptionString("tts");
     if (ttsEngine.IsEmpty() && PFactory<PTextToSpeech>::GetKeyList().size() > 0) 
@@ -1127,6 +1139,12 @@ BOOL MyManager::Initialise(PArgList & args)
                                       : h323EP != NULL ? "sip:localhost"
                                     #endif
                                       : "");
+
+  cout << "Local endpoint type: " << srcEP << "\n"
+          "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
+          "Codec order: " << GetMediaFormatOrder() << "\n"
+          "Available codecs: " << OpalTranscoder::GetPossibleFormats(allMediaFormats) << setfill(' ') << endl;
+
   return TRUE;
 }
 
