@@ -22,7 +22,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2085  2007/04/03 05:27:30  rjongbloed
+ * Revision 1.2086  2007/04/03 07:59:14  rjongbloed
+ * Warning: API change to PCSS callbacks:
+ *   changed return on OnShowIncoming to BOOL, now agrees with
+ *     documentation and allows UI to abort calls early.
+ *   added BOOL to AcceptIncomingConnection indicating the
+ *     supplied token is invalid.
+ *   removed redundent OnGetDestination() function, was never required.
+ *
+ * Revision 2.84  2007/04/03 05:27:30  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -1611,24 +1619,7 @@ MyPCSSEndPoint::MyPCSSEndPoint(MyManager & mgr)
 }
 
 
-PString MyPCSSEndPoint::OnGetDestination(const OpalPCSSConnection & /*connection*/)
-{
-  PString destination;
-
-  if (destinationAddress.IsEmpty()) {
-    cout << "Enter destination address? " << flush;
-    cin >> destination;
-  }
-  else {
-    destination = destinationAddress;
-    destinationAddress = PString();
-  }
-
-  return destination;
-}
-
-
-void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+BOOL MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   incomingConnectionToken = connection.GetToken();
 
@@ -1640,6 +1631,8 @@ void MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
          << " from " << connection.GetRemotePartyName()
          << ", answer (Y/N)? " << flush;
   }
+
+  return TRUE;
 }
 
 
