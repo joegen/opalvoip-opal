@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2076  2007/03/29 07:07:23  rjongbloed
+ * Revision 1.2077  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.75  2007/03/29 07:07:23  rjongbloed
  * Fixed deadlock in UDP multi-interface connect algorithm, and getting a SIP retry before completion.
  *
  * Revision 2.74  2007/02/19 08:35:02  csoutheren
@@ -1615,7 +1619,7 @@ BOOL OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   if (ok) {
     PINDEX packetLength = ((header[1] << 8)|header[2]);
     if (packetLength < 4) {
-      PTRACE(1, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
+      PTRACE(2, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
       ok = FALSE;
     } else {
       packetLength -= 4;
@@ -1679,7 +1683,7 @@ BOOL OpalTransportTCP::OnOpen()
   }
 #endif
 
-  PTRACE(1, "OpalTCP\tStarted connection to "
+  PTRACE(3, "OpalTCP\tStarted connection to "
          << remoteAddress << ':' << remotePort
          << " (if=" << localAddress << ':' << localPort << ')');
 
@@ -1819,10 +1823,10 @@ BOOL OpalTransportUDP::Connect()
 
   if (remoteAddress == 0) {
     remoteAddress = INADDR_BROADCAST;
-    PTRACE(2, "OpalUDP\tBroadcast connect to port " << remotePort);
+    PTRACE(3, "OpalUDP\tBroadcast connect to port " << remotePort);
   }
   else {
-	PTRACE(2, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
+    PTRACE(3, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
   }
 
   OpalManager & manager = endpoint.GetManager();
@@ -2085,7 +2089,7 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     if (remoteAddress *= address)
       return TRUE;
 
-    PTRACE(1, "UDP\tReceived PDU from incorrect host: " << address << ':' << port);
+    PTRACE(2, "UDP\tReceived PDU from incorrect host: " << address << ':' << port);
   }
 }
 
@@ -2304,7 +2308,7 @@ BOOL OpalTransportTCPS::OnOpen()
   }
 #endif
 
-  PTRACE(1, "OpalTCPS\tStarted connection to "
+  PTRACE(3, "OpalTCPS\tStarted connection to "
          << remoteAddress << ':' << remotePort
          << " (if=" << localAddress << ':' << localPort << ')');
 

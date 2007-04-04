@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2046  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2047  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.45  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.44  2007/03/29 08:30:21  csoutheren
@@ -219,7 +223,7 @@ OpalMediaPatch::~OpalMediaPatch()
   PWaitAndSignal m(patchThreadMutex);
   inUse.Wait();
   delete patchThread;
-  PTRACE(3, "Patch\tMedia patch thread " << *this << " destroyed.");
+  PTRACE(4, "Patch\tMedia patch thread " << *this << " destroyed.");
 }
 
 
@@ -280,7 +284,7 @@ void OpalMediaPatch::Close()
     RemoveSink(stream);
   }
 
-  PTRACE(3, "Patch\tWaiting for media patch thread to stop " << *this);
+  PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
   if (patchThread != NULL && !patchThread->IsSuspended()) {
     inUse.Signal();
     PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
@@ -337,7 +341,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
     if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE))) {
-      PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
+      PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
               << sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
       return FALSE;
     }
@@ -349,19 +353,19 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     OpalMediaFormat intermediateFormat;
     if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat,
                                                 intermediateFormat)) {
-      PTRACE(2, "Patch\tCould find compatible media format for " << *stream);
+      PTRACE(1, "Patch\tCould find compatible media format for " << *stream);
       return FALSE;
     }
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
     sink->secondaryCodec = OpalTranscoder::Create(intermediateFormat, destinationFormat, (const BYTE *)id, id.GetLength());
 
-    PTRACE(4, "Patch\tcreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
+    PTRACE(4, "Patch\tCreated two stage codec " << sourceFormat << "/" << intermediateFormat << "/" << destinationFormat << " with ID " << id);
 
     sink->secondaryCodec->SetMaxOutputSize(sink->stream->GetDataSize());
 
     if (!stream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(FALSE))) {
-      PTRACE(2, "Patch\tSink stream " << *stream << " cannot support data size "
+      PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
               << sink->secondaryCodec->GetOptimalDataFrameSize(FALSE));
       return FALSE;
     }
@@ -516,7 +520,7 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, BOOL fromSin
 
 void OpalMediaPatch::Main()
 {
-  PTRACE(3, "Patch\tThread started for " << *this);
+  PTRACE(4, "Patch\tThread started for " << *this);
   PINDEX i;
 	
   inUse.Wait();
@@ -568,7 +572,7 @@ void OpalMediaPatch::Main()
     sourceFrame = emptyFrame;
   }
 
-  PTRACE(3, "Patch\tThread ended for " << *this);
+  PTRACE(4, "Patch\tThread ended for " << *this);
 }
 
 

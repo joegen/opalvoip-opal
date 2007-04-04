@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2019  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2020  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.18  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.17  2007/01/15 21:32:54  rjongbloed
@@ -370,7 +374,7 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
     freeFrames = frame;
   }
 
-  PTRACE(2, "RTP\tOpal jitter buffer created:" << *this << " obj=" << this);
+  PTRACE(4, "RTP\tOpal jitter buffer created:" << *this << " obj=" << this);
 
 #if PTRACING && !defined(NO_ANALYSER)
   analyser = new RTP_JitterBufferAnalyser;
@@ -404,7 +408,7 @@ OpalJitterBuffer::~OpalJitterBuffer()
 	  delete jitterThread;
 	  jitterThread = NULL;
       } else {
-	  PTRACE(3, "RTP\tJitter buffer thread is null, when the OpalJitterBuffer destructor runs");
+	  PTRACE(1, "RTP\tJitter buffer thread is null, when the OpalJitterBuffer destructor runs");
       }
   }
   bufferMutex.Wait();
@@ -481,7 +485,7 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
       shuttingDown = FALSE;
       preBuffering = TRUE;
 
-      PTRACE(2, "RTP\tJitter buffer restarted:" << *this);
+      PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
       jitterThread->Restart();
     }
   }
@@ -514,7 +518,7 @@ void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
   OpalJitterBuffer::Entry * currentReadFrame;
   BOOL markerWarning;
 
-  PTRACE(3, "RTP\tJitter RTP receive thread started: " << this);
+  PTRACE(4, "RTP\tJitter RTP receive thread started: " << this);
 
   if (Init(currentReadFrame, markerWarning)) {
 
@@ -529,7 +533,7 @@ void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
     DeInit(currentReadFrame, markerWarning);
   }
 
-  PTRACE(3, "RTP\tJitter RTP receive thread finished: " << this);
+  PTRACE(4, "RTP\tJitter RTP receive thread finished: " << this);
 }
 
 //void OpalJitterBuffer::Main()
@@ -619,7 +623,7 @@ BOOL OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL
       currentReadFrame->SetMarker(FALSE);
     if (!markerWarning && consecutiveMarkerBits == maxConsecutiveMarkerBits) {
       markerWarning = TRUE;
-      PTRACE(3, "RTP\tEvery packet has Marker bit, ignoring them from this client!");
+      PTRACE(2, "RTP\tEvery packet has Marker bit, ignoring them from this client!");
     }
   }
     

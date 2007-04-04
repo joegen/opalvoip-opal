@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2102  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2103  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.101  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.100  2007/03/30 02:09:53  rjongbloed
@@ -720,7 +724,7 @@ void OpalConnection::ClearCallSynchronous(PSyncPoint * sync, CallEndReason reaso
 void OpalConnection::TransferConnection(const PString & PTRACE_PARAM(remoteParty),
                                         const PString & /*callIdentity*/)
 {
-  PTRACE(3, "OpalCon\tCan not transfer connection to " << remoteParty);
+  PTRACE(2, "OpalCon\tCan not transfer connection to " << remoteParty);
 }
 
 
@@ -729,7 +733,7 @@ void OpalConnection::Release(CallEndReason reason)
   {
     PWaitAndSignal m(phaseMutex);
     if (phase >= ReleasingPhase) {
-      PTRACE(3, "OpalCon\tAlready released " << *this);
+      PTRACE(2, "OpalCon\tAlready released " << *this);
       return;
     }
     SetPhase(ReleasingPhase);
@@ -738,7 +742,7 @@ void OpalConnection::Release(CallEndReason reason)
   {
     PSafeLockReadWrite safeLock(*this);
     if (!safeLock.IsLocked()) {
-      PTRACE(3, "OpalCon\tAlready released " << *this);
+      PTRACE(2, "OpalCon\tAlready released " << *this);
       return;
     }
 
@@ -762,7 +766,7 @@ void OpalConnection::OnReleaseThreadMain(PThread &, INT)
 {
   OnReleased();
 
-  PTRACE(3, "OpalCon\tOnRelease thread completed for " << GetToken());
+  PTRACE(4, "OpalCon\tOnRelease thread completed for " << GetToken());
 
   // Dereference on the way out of the thread
   SafeDereference();
@@ -970,7 +974,7 @@ void OpalConnection::StartMediaStreams()
       strm.Start();
     }
   }
-  PTRACE(2, "OpalCon\tMedia stream threads started.");
+  PTRACE(3, "OpalCon\tMedia stream threads started.");
 }
 
 
@@ -985,7 +989,7 @@ void OpalConnection::CloseMediaStreams()
     }
   }
   
-  PTRACE(2, "OpalCon\tMedia stream threads closed.");
+  PTRACE(3, "OpalCon\tMedia stream threads closed.");
 }
 
 
@@ -995,7 +999,7 @@ void OpalConnection::RemoveMediaStreams()
   CloseMediaStreams();
   mediaStreams.RemoveAll();
   
-  PTRACE(2, "OpalCon\tMedia stream threads removed from session.");
+  PTRACE(3, "OpalCon\tMedia stream threads removed from session.");
 }
 
 void OpalConnection::PauseMediaStreams(BOOL paused)
@@ -1076,7 +1080,7 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 
 void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
 {
-  PTRACE(3, "OpalCon\tNew patch created");
+  PTRACE(4, "OpalCon\tNew patch created");
 }
 
 
@@ -1141,7 +1145,7 @@ BOOL OpalConnection::RemoveMediaStream(OpalMediaStream * strm)
 
 BOOL OpalConnection::IsMediaBypassPossible(unsigned /*sessionID*/) const
 {
-  PTRACE(3, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
+  PTRACE(4, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
   return FALSE;
 }
 
@@ -1150,7 +1154,7 @@ BOOL OpalConnection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
 {
   if (!mediaTransportAddresses.Contains(sessionID)) {
-    PTRACE(3, "OpalCon\tGetMediaInformation for session " << sessionID << " - no channel.");
+    PTRACE(2, "OpalCon\tGetMediaInformation for session " << sessionID << " - no channel.");
     return FALSE;
   }
 
@@ -1389,7 +1393,7 @@ BOOL OpalConnection::SetBandwidthUsed(unsigned releasedBandwidth,
 
 void OpalConnection::SetSendUserInputMode(SendUserInputModes mode)
 {
-  PTRACE(2, "OPAL\tSetting default User Input send mode to " << mode);
+  PTRACE(3, "OPAL\tSetting default User Input send mode to " << mode);
   sendUserInputMode = mode;
 }
 
@@ -1482,7 +1486,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
   // Pass the 16 bit PCM audio through the DTMF decoder   
   PString tones = dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/sizeof(short));
   if (!tones.IsEmpty()) {
-    PTRACE(1, "OPAL\tDTMF detected. " << tones);
+    PTRACE(3, "OPAL\tDTMF detected. " << tones);
     PINDEX i;
     for (i = 0; i < tones.GetLength(); i++) {
       OnUserInputTone(tones[i], 0);

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2056  2007/03/29 23:55:46  rjongbloed
+ * Revision 1.2057  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.55  2007/03/29 23:55:46  rjongbloed
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connection class they can create it without
  *   needing to remember to do any more than the new.
@@ -288,7 +292,7 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
-  PTRACE(3, "OpalEP\tCreated endpoint: " << prefixName);
+  PTRACE(4, "OpalEP\tCreated endpoint: " << prefixName);
 
   defaultSecurityMode = mgr.GetDefaultSecurityMode();
 }
@@ -307,7 +311,7 @@ OpalEndPoint::~OpalEndPoint()
   }
 #endif
 
-  PTRACE(3, "OpalEP\t" << prefixName << " endpoint destroyed.");
+  PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
 BOOL OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
