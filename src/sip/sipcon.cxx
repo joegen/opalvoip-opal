@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2213  2007/04/03 05:27:30  rjongbloed
+ * Revision 1.2214  2007/04/04 02:12:02  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.212  2007/04/03 05:27:30  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -934,7 +938,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   sentTrying = FALSE;
 
-  PTRACE(3, "SIP\tCreated connection.");
+  PTRACE(4, "SIP\tCreated connection.");
 }
 
 
@@ -947,7 +951,7 @@ SIPConnection::~SIPConnection()
   if (pduHandler) delete pduHandler;
   if (udpTransport) delete udpTransport;
 
-  PTRACE(3, "SIP\tDeleted connection.");
+  PTRACE(4, "SIP\tDeleted connection.");
 }
 
 //
@@ -1146,7 +1150,7 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia
   if (!safeLock.IsLocked())
     return FALSE;
   
-  PTRACE(2, "SIP\tSetAlerting");
+  PTRACE(3, "SIP\tSetAlerting");
 
   if (phase != SetUpPhase) 
     return FALSE;
@@ -1184,7 +1188,7 @@ BOOL SIPConnection::SetConnected()
     return FALSE;
   }
   
-  PTRACE(2, "SIP\tSetConnected");
+  PTRACE(3, "SIP\tSetConnected");
 
   SDPSessionDescription sdpOut(GetLocalAddress());
 
@@ -1374,7 +1378,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     WORD port;
     mediaAddress.GetIpAndPort(ip, port);
     if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+      PTRACE(2, "SIP\tCannot set remote ports on RTP session");
       Release(EndedByTransportFail);
       delete localMedia;
       return FALSE;
@@ -1604,7 +1608,7 @@ BOOL SIPConnection::SetUpConnection()
 
   SIPURL transportAddress = targetAddress;
 
-  PTRACE(2, "SIP\tSetUpConnection: " << remotePartyAddress);
+  PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
   // Do a DNS SRV lookup
 #if P_DNS
@@ -1649,7 +1653,7 @@ void SIPConnection::HoldConnection()
   if (transport == NULL)
     return;
 
-  PTRACE(2, "SIP\tWill put connection on hold");
+  PTRACE(3, "SIP\tWill put connection on hold");
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
@@ -1676,7 +1680,7 @@ void SIPConnection::RetrieveConnection()
   if (transport == NULL)
     return;
 
-  PTRACE(2, "SIP\tWill retrieve connection from hold");
+  PTRACE(3, "SIP\tWill retrieve connection from hold");
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
@@ -1809,7 +1813,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       if (!localAddress.IsEmpty()) 
         localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Image);
       else {
-        PTRACE(3, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
+        PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
       }
       break;
 
@@ -2169,7 +2173,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (phase == EstablishedPhase 
       && ((!IsOriginating() && originalInvite != NULL)
          || (IsOriginating()))) {
-    PTRACE(2, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
+    PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
     isReinvite = TRUE;
   }
   else
@@ -2338,16 +2342,16 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   
   // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection(0, NULL)) {
-    PTRACE(2, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
+    PTRACE(1, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
   }
 
-  PTRACE(2, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
+  PTRACE(3, "SIP\tOnIncomingConnection succeeded for INVITE from " << request.GetURI() << " for " << *this);
   SetPhase(SetUpPhase);
 
   if (!OnOpenIncomingMediaChannels()) {
-    PTRACE(2, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
+    PTRACE(1, "SIP\tOnOpenIncomingMediaChannels failed for INVITE from " << request.GetURI() << " for " << *this);
     Release();
     return;
   }
@@ -2375,7 +2379,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
           break;
 
         case AnswerCallDenied:
-          PTRACE(1, "SIP\tApplication has declined to answer incoming call");
+          PTRACE(2, "SIP\tApplication has declined to answer incoming call");
           Release(EndedByAnswerDenied);
           break;
 
@@ -2408,7 +2412,7 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
-  PTRACE(2, "SIP\tACK received: " << phase);
+  PTRACE(3, "SIP\tACK received: " << phase);
   
   OnReceivedSDP(response);
 
@@ -2436,7 +2440,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
 void SIPConnection::OnReceivedOPTIONS(SIP_PDU & /*request*/)
 {
-  PTRACE(1, "SIP\tOPTIONS not yet supported");
+  PTRACE(2, "SIP\tOPTIONS not yet supported");
 }
 
 
@@ -2445,7 +2449,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   PCaselessString event, state;
   
   if (referTransaction == NULL){
-    PTRACE(1, "SIP\tNOTIFY in a connection only supported for REFER requests");
+    PTRACE(2, "SIP\tNOTIFY in a connection only supported for REFER requests");
     return;
   }
   
@@ -2510,12 +2514,12 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 {
-  PTRACE(2, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
+  PTRACE(3, "SIP\tBYE received for call " << request.GetMIME().GetCallID());
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   SendPDU(response, request.GetViaAddress(endpoint));
   
   if (phase >= ReleasingPhase) {
-    PTRACE(3, "SIP\tAlready released " << *this);
+    PTRACE(2, "SIP\tAlready released " << *this);
     return;
   }
   releaseMethod = ReleaseWithNothing;
@@ -2547,13 +2551,13 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
       request.GetMIME().GetTo() != origTo || 
       request.GetMIME().GetFrom() != origFrom || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
-    PTRACE(1, "SIP\tUnattached " << request << " received for " << *this);
+    PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
     SendPDU(response, request.GetViaAddress(endpoint));
     return;
   }
 
-  PTRACE(2, "SIP\tCancel received for " << *this);
+  PTRACE(3, "SIP\tCancel received for " << *this);
 
   SIP_PDU response(request, SIP_PDU::Successful_OK);
   SendPDU(response, request.GetViaAddress(endpoint));
@@ -2565,13 +2569,13 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 
 void SIPConnection::OnReceivedTrying(SIP_PDU & /*response*/)
 {
-  PTRACE(2, "SIP\tReceived Trying response");
+  PTRACE(3, "SIP\tReceived Trying response");
 }
 
 
 void SIPConnection::OnReceivedRinging(SIP_PDU & /*response*/)
 {
-  PTRACE(2, "SIP\tReceived Ringing response");
+  PTRACE(3, "SIP\tReceived Ringing response");
 
   if (phase < AlertingPhase)
   {
@@ -2583,7 +2587,7 @@ void SIPConnection::OnReceivedRinging(SIP_PDU & /*response*/)
 
 void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
 {
-  PTRACE(2, "SIP\tReceived Session Progress response");
+  PTRACE(3, "SIP\tReceived Session Progress response");
 
   OnReceivedSDP(response);
 
@@ -2593,7 +2597,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
     OnAlerting();
   }
 
-  PTRACE(3, "SIP\tStarting receive media to annunciate remote progress tones");
+  PTRACE(4, "SIP\tStarting receive media to annunciate remote progress tones");
   OnConnected();                        // start media streams
 }
 
@@ -2628,7 +2632,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     return;
   }
 
-  PTRACE(2, "SIP\tReceived " << proxyTrace << "Authentication Required response");
+  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
 
   // Received authentication required response, try to find authentication
   // for the given realm if no proxy
@@ -2674,7 +2678,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
       && lastUsername == authentication.GetUsername ()
       && lastNonce    == authentication.GetNonce ())) {
 
-    PTRACE(1, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
+    PTRACE(2, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
     releaseMethod = ReleaseWithNothing;    
     Release(EndedBySecurityDenial);
     return;
@@ -2703,7 +2707,7 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   }
   else {
     delete invite;
-    PTRACE(1, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
+    PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
     releaseMethod = ReleaseWithNothing;    
     Release(EndedBySecurityDenial);
   }
@@ -2713,11 +2717,11 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
 void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
-    PTRACE(3, "SIP\tReceived OK response for non INVITE");
+    PTRACE(2, "SIP\tReceived OK response for non INVITE");
     return;
   }
 
-  PTRACE(2, "SIP\tReceived INVITE OK response");
+  PTRACE(3, "SIP\tReceived INVITE OK response");
 
   OnReceivedSDP(response);
 
@@ -2833,7 +2837,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
 
 void SIPConnection::OnCreatingINVITE(SIP_PDU & /*request*/)
 {
-  PTRACE(2, "SIP\tCreating INVITE request");
+  PTRACE(3, "SIP\tCreating INVITE request");
 }
 
 
@@ -2872,7 +2876,7 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
 
 void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 {
-  PTRACE(2, "SIP\tPDU handler thread started.");
+  PTRACE(4, "SIP\tPDU handler thread started.");
 
   while (phase != ReleasedPhase) {
     PTRACE(4, "SIP\tAwaiting next PDU.");
@@ -2895,7 +2899,7 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 
   SafeDereference();
 
-  PTRACE(2, "SIP\tPDU handler thread finished.");
+  PTRACE(4, "SIP\tPDU handler thread finished.");
 }
 
 
@@ -3048,7 +3052,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
 
 void SIPConnection::OnReceivedPING(SIP_PDU & pdu)
 {
-  PTRACE(1, "SIP\tReceived PING");
+  PTRACE(3, "SIP\tReceived PING");
   SIP_PDU response(pdu, SIP_PDU::Successful_OK);
   SendPDU(response, pdu.GetViaAddress(endpoint));
 }
@@ -3071,7 +3075,7 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
 {
   SendUserInputModes mode = GetRealSendUserInputMode();
 
-  PTRACE(2, "SIP\tSendUserInputTime('" << tone << "', " << duration << "), using mode " << mode);
+  PTRACE(3, "SIP\tSendUserInputTone('" << tone << "', " << duration << "), using mode " << mode);
 
   switch (mode) {
     case SendUserInputAsTone:
