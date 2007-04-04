@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2059  2007/04/02 05:51:34  rjongbloed
+ * Revision 1.2060  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.58  2007/04/02 05:51:34  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.57  2007/03/29 23:53:39  rjongbloed
@@ -958,23 +962,23 @@ RTP_Session::RTP_Session(
 RTP_Session::~RTP_Session()
 {
   PTRACE_IF(2, packetsSent != 0 || packetsReceived != 0,
-	    "RTP\tFinal statistics:\n"
-	    "    packetsSent       = " << packetsSent << "\n"
-	    "    octetsSent        = " << octetsSent << "\n"
-	    "    averageSendTime   = " << averageSendTime << "\n"
-	    "    maximumSendTime   = " << maximumSendTime << "\n"
-	    "    minimumSendTime   = " << minimumSendTime << "\n"
-	    "    packetsReceived   = " << packetsReceived << "\n"
-	    "    octetsReceived    = " << octetsReceived << "\n"
-	    "    packetsLost       = " << packetsLost << "\n"
-	    "    packetsTooLate    = " << GetPacketsTooLate() << "\n"
-	    "    packetsOutOfOrder = " << packetsOutOfOrder << "\n"
-	    "    averageReceiveTime= " << averageReceiveTime << "\n"
-	    "    maximumReceiveTime= " << maximumReceiveTime << "\n"
-	    "    minimumReceiveTime= " << minimumReceiveTime << "\n"
-	    "    averageJitter     = " << (jitterLevel >> 7) << "\n"
-	    "    maximumJitter     = " << (maximumJitterLevel >> 7)
-	   );
+      "RTP\tFinal statistics:\n"
+      "    packetsSent       = " << packetsSent << "\n"
+      "    octetsSent        = " << octetsSent << "\n"
+      "    averageSendTime   = " << averageSendTime << "\n"
+      "    maximumSendTime   = " << maximumSendTime << "\n"
+      "    minimumSendTime   = " << minimumSendTime << "\n"
+      "    packetsReceived   = " << packetsReceived << "\n"
+      "    octetsReceived    = " << octetsReceived << "\n"
+      "    packetsLost       = " << packetsLost << "\n"
+      "    packetsTooLate    = " << GetPacketsTooLate() << "\n"
+      "    packetsOutOfOrder = " << packetsOutOfOrder << "\n"
+      "    averageReceiveTime= " << averageReceiveTime << "\n"
+      "    maximumReceiveTime= " << maximumReceiveTime << "\n"
+      "    minimumReceiveTime= " << minimumReceiveTime << "\n"
+      "    averageJitter     = " << (jitterLevel >> 7) << "\n"
+      "    maximumJitter     = " << (maximumJitterLevel >> 7)
+     );
   delete jitter;
   if (autoDeleteUserData)
     delete userData;
@@ -1069,9 +1073,9 @@ void RTP_Session::SetUserData(RTP_UserData * data, BOOL autoDelete)
 
 
 void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
-				      unsigned maxJitterDelay,
-				      unsigned timeUnits,
-				      PINDEX stackSize)
+              unsigned maxJitterDelay,
+              unsigned timeUnits,
+              PINDEX stackSize)
 {
   if (minJitterDelay == 0 && maxJitterDelay == 0) {
     delete jitter;
@@ -1148,13 +1152,13 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
   receiver.dlsr = 0;
 
   PTRACE(3, "RTP\tSentReceiverReport:"
-	 " ssrc=" << receiver.ssrc
-	 << " fraction=" << (unsigned)receiver.fraction
-	 << " lost=" << receiver.GetLostPackets()
-	 << " last_seq=" << receiver.last_seq
-	 << " jitter=" << receiver.jitter
-	 << " lsr=" << receiver.lsr
-	 << " dlsr=" << receiver.dlsr);
+   " ssrc=" << receiver.ssrc
+   << " fraction=" << (unsigned)receiver.fraction
+   << " lost=" << receiver.GetLostPackets()
+   << " last_seq=" << receiver.last_seq
+   << " jitter=" << receiver.jitter
+   << " lsr=" << receiver.lsr
+   << " dlsr=" << receiver.dlsr);
 }
 
 
@@ -1166,15 +1170,15 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   frame.SetSyncSource(syncSourceOut);
 
   PTRACE_IF(2, packetsSent == 0, "RTP\tFirst sent data:"
-	   " ver=" << frame.GetVersion()
-	   << " pt=" << frame.GetPayloadType()
-	   << " psz=" << frame.GetPayloadSize()
-	   << " m=" << frame.GetMarker()
-	   << " x=" << frame.GetExtension()
-	   << " seq=" << frame.GetSequenceNumber()
-	   << " ts=" << frame.GetTimestamp()
-	   << " src=" << frame.GetSyncSource()
-	   << " ccnt=" << frame.GetContribSrcCount());
+     " ver=" << frame.GetVersion()
+     << " pt=" << frame.GetPayloadType()
+     << " psz=" << frame.GetPayloadSize()
+     << " m=" << frame.GetMarker()
+     << " x=" << frame.GetExtension()
+     << " seq=" << frame.GetSequenceNumber()
+     << " ts=" << frame.GetTimestamp()
+     << " src=" << frame.GetSyncSource()
+     << " ccnt=" << frame.GetContribSrcCount());
 
   if (packetsSent != 0 && !frame.GetMarker()) {
     // Only do statistics on subsequent packets
@@ -1214,13 +1218,13 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   maximumSendTimeAccum = 0;
   minimumSendTimeAccum = 0xffffffff;
 
-  PTRACE(2, "RTP\tTransmit statistics: "
-	 " packets=" << packetsSent <<
-	 " octets=" << octetsSent <<
-	 " avgTime=" << averageSendTime <<
-	 " maxTime=" << maximumSendTime <<
-	 " minTime=" << minimumSendTime
-	);
+  PTRACE(3, "RTP\tTransmit statistics: "
+   " packets=" << packetsSent <<
+   " octets=" << octetsSent <<
+   " avgTime=" << averageSendTime <<
+   " maxTime=" << maximumSendTime <<
+   " minTime=" << minimumSendTime
+  );
 
   if (userData != NULL)
     userData->OnTxStatistics(*this);
@@ -1263,26 +1267,26 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
   // Check packet sequence numbers
   if (packetsReceived == 0) {
     expectedSequenceNumber = (WORD)(frame.GetSequenceNumber() + 1);
-    PTRACE(2, "RTP\tFirst receive data:"
-	   " ver=" << frame.GetVersion()
-	   << " pt=" << frame.GetPayloadType()
-	   << " psz=" << frame.GetPayloadSize()
-	   << " m=" << frame.GetMarker()
-	   << " x=" << frame.GetExtension()
-	   << " seq=" << frame.GetSequenceNumber()
-	   << " ts=" << frame.GetTimestamp()
-	   << " src=" << frame.GetSyncSource()
-	   << " ccnt=" << frame.GetContribSrcCount());
+    PTRACE(3, "RTP\tFirst receive data:"
+     " ver=" << frame.GetVersion()
+     << " pt=" << frame.GetPayloadType()
+     << " psz=" << frame.GetPayloadSize()
+     << " m=" << frame.GetMarker()
+     << " x=" << frame.GetExtension()
+     << " seq=" << frame.GetSequenceNumber()
+     << " ts=" << frame.GetTimestamp()
+     << " src=" << frame.GetSyncSource()
+     << " ccnt=" << frame.GetContribSrcCount());
   }
   else {
     if (!ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
       if (allowSyncSourceInChange) {
-	      syncSourceIn = frame.GetSyncSource();
-	      allowSyncSourceInChange = FALSE;
+        syncSourceIn = frame.GetSyncSource();
+        allowSyncSourceInChange = FALSE;
       }
       else {
-      	PTRACE(2, "RTP\tPacket from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
-	      return e_IgnorePacket; // Non fatal error, just ignore
+        PTRACE(2, "RTP\tPacket from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
+        return e_IgnorePacket; // Non fatal error, just ignore
       }
     }
 
@@ -1292,25 +1296,25 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
       consecutiveOutOfOrderPackets = 0;
       // Only do statistics on packets after first received in talk burst
       if (!frame.GetMarker()) {
-	      DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
+        DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
 
-	      averageReceiveTimeAccum += diff;
-	      if (diff > maximumReceiveTimeAccum)
-	        maximumReceiveTimeAccum = diff;
-	      if (diff < minimumReceiveTimeAccum)
-	        minimumReceiveTimeAccum = diff;
-	      rxStatisticsCount++;
+        averageReceiveTimeAccum += diff;
+        if (diff > maximumReceiveTimeAccum)
+          maximumReceiveTimeAccum = diff;
+        if (diff < minimumReceiveTimeAccum)
+          minimumReceiveTimeAccum = diff;
+        rxStatisticsCount++;
 
-	      // The following has the implicit assumption that something that has jitter
-	      // is an audio codec and thus is in 8kHz timestamp units.
-	      diff *= 8;
-	      long variance = diff - lastTransitTime;
-	      lastTransitTime = diff;
-	      if (variance < 0)
-	        variance = -variance;
-	      jitterLevel += variance - ((jitterLevel+8) >> 4);
-	      if (jitterLevel > maximumJitterLevel)
-	        maximumJitterLevel = jitterLevel;
+        // The following has the implicit assumption that something that has jitter
+        // is an audio codec and thus is in 8kHz timestamp units.
+        diff *= 8;
+        long variance = diff - lastTransitTime;
+        lastTransitTime = diff;
+        if (variance < 0)
+          variance = -variance;
+        jitterLevel += variance - ((jitterLevel+8) >> 4);
+        if (jitterLevel > maximumJitterLevel)
+          maximumJitterLevel = jitterLevel;
       }
     }
     else if (allowSequenceChange) {
@@ -1318,27 +1322,27 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
       allowSequenceChange = FALSE;
     }
     else if (sequenceNumber < expectedSequenceNumber) {
-      PTRACE(3, "RTP\tOut of order packet, received "
-	     << sequenceNumber << " expected " << expectedSequenceNumber
-	     << " ssrc=" << syncSourceIn);
+      PTRACE(2, "RTP\tOut of order packet, received "
+       << sequenceNumber << " expected " << expectedSequenceNumber
+       << " ssrc=" << syncSourceIn);
       packetsOutOfOrder++;
 
       // Check for Cisco bug where sequence numbers suddenly start incrementing
       // from a different base.
       if (++consecutiveOutOfOrderPackets > 10) {
         expectedSequenceNumber = (WORD)(sequenceNumber + 1);
-	      PTRACE(1, "RTP\tAbnormal change of sequence numbers, adjusting to expect " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
+        PTRACE(2, "RTP\tAbnormal change of sequence numbers, adjusting to expect " << expectedSequenceNumber << " ssrc=" << syncSourceIn);
       }
 
       if (ignoreOutOfOrderPackets)
-	      return e_IgnorePacket; // Non fatal error, just ignore
+        return e_IgnorePacket; // Non fatal error, just ignore
     }
     else {
       unsigned dropped = sequenceNumber - expectedSequenceNumber;
       packetsLost += dropped;
       packetsLostSinceLastRR += dropped;
-      PTRACE(3, "RTP\tDropped " << dropped << " packet(s) at " << sequenceNumber
-	     << ", ssrc=" << syncSourceIn);
+      PTRACE(2, "RTP\tDropped " << dropped << " packet(s) at " << sequenceNumber
+       << ", ssrc=" << syncSourceIn);
       expectedSequenceNumber = (WORD)(sequenceNumber + 1);
       consecutiveOutOfOrderPackets = 0;
     }
@@ -1370,17 +1374,17 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
   minimumReceiveTimeAccum = 0xffffffff;
 
   PTRACE(4, "RTP\tReceive statistics: "
-	 " packets=" << packetsReceived <<
-	 " octets=" << octetsReceived <<
-	 " lost=" << packetsLost <<
-	 " tooLate=" << GetPacketsTooLate() <<
-	 " order=" << packetsOutOfOrder <<
-	 " avgTime=" << averageReceiveTime <<
-	 " maxTime=" << maximumReceiveTime <<
-	 " minTime=" << minimumReceiveTime <<
-	 " jitter=" << (jitterLevel >> 7) <<
-	 " maxJitter=" << (maximumJitterLevel >> 7)
-	);
+   " packets=" << packetsReceived <<
+   " octets=" << octetsReceived <<
+   " lost=" << packetsLost <<
+   " tooLate=" << GetPacketsTooLate() <<
+   " order=" << packetsOutOfOrder <<
+   " avgTime=" << averageReceiveTime <<
+   " maxTime=" << maximumReceiveTime <<
+   " minTime=" << minimumReceiveTime <<
+   " jitter=" << (jitterLevel >> 7) <<
+   " maxJitter=" << (maximumJitterLevel >> 7)
+  );
 
   if (userData != NULL)
     userData->OnRxStatistics(*this);
@@ -1428,11 +1432,11 @@ BOOL RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
     sender->osent    = octetsSent;
 
     PTRACE(3, "RTP\tSentSenderReport: "
-	   " ssrc=" << syncSourceOut
-	   << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
-	   << " rtp=" << sender->rtp_ts
-	   << " psent=" << sender->psent
-	   << " osent=" << sender->osent);
+     " ssrc=" << syncSourceOut
+     << " ntp=" << sender->ntp_sec << '.' << sender->ntp_frac
+     << " rtp=" << sender->rtp_ts
+     << " psent=" << sender->psent
+     << " osent=" << sender->osent);
 
     if (syncSourceIn != 0) {
       report.SetPayloadSize(4 + sizeof(RTP_ControlFrame::SenderReport) + sizeof(RTP_ControlFrame::ReceiverReport));
@@ -1471,7 +1475,7 @@ BOOL RTP_Session::SendReport()
   InsertReportPacket(report);
 
   // Add the SDES part to compound RTCP packet
-  PTRACE(2, "RTP\tSending SDES: " << canonicalName);
+  PTRACE(3, "RTP\tSending SDES: " << canonicalName);
   report.StartNewPacket();
 
   report.SetCount(0); // will be incremented automatically
@@ -1524,65 +1528,64 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
     switch (frame.GetPayloadType()) {
     case RTP_ControlFrame::e_SenderReport :
       if (size >= sizeof(RTP_ControlFrame::SenderReport)) {
-	      SenderReport sender;
-	      sender.sourceIdentifier = *(const PUInt32b *)payload;
-	      const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+4);
-	      sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
-	      sender.rtpTimestamp = sr.rtp_ts;
-	      sender.packetsSent = sr.psent;
-	      sender.octetsSent = sr.osent;
-	      OnRxSenderReport(sender,
-			  BuildReceiverReportArray(frame, sizeof(RTP_ControlFrame::SenderReport)));
+        SenderReport sender;
+        sender.sourceIdentifier = *(const PUInt32b *)payload;
+        const RTP_ControlFrame::SenderReport & sr = *(const RTP_ControlFrame::SenderReport *)(payload+4);
+        sender.realTimestamp = PTime(sr.ntp_sec-SecondsFrom1900to1970, sr.ntp_frac/4294);
+        sender.rtpTimestamp = sr.rtp_ts;
+        sender.packetsSent = sr.psent;
+        sender.octetsSent = sr.osent;
+        OnRxSenderReport(sender, BuildReceiverReportArray(frame, sizeof(RTP_ControlFrame::SenderReport)));
       }
       else {
-	      PTRACE(2, "RTP\tSenderReport packet truncated");
+        PTRACE(2, "RTP\tSenderReport packet truncated");
       }
       break;
 
     case RTP_ControlFrame::e_ReceiverReport :
       if (size >= 4)
-	      OnRxReceiverReport(*(const PUInt32b *)payload,
-			  BuildReceiverReportArray(frame, sizeof(PUInt32b)));
+        OnRxReceiverReport(*(const PUInt32b *)payload,
+        BuildReceiverReportArray(frame, sizeof(PUInt32b)));
       else {
-	      PTRACE(2, "RTP\tReceiverReport packet truncated");
+        PTRACE(2, "RTP\tReceiverReport packet truncated");
       }
       break;
 
     case RTP_ControlFrame::e_SourceDescription :
       if (size >= frame.GetCount()*sizeof(RTP_ControlFrame::SourceDescription)) {
         SourceDescriptionArray descriptions;
-	      const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
+        const RTP_ControlFrame::SourceDescription * sdes = (const RTP_ControlFrame::SourceDescription *)payload;
         PINDEX srcIdx;
-	      for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
-	        descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
-	        const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
+        for (srcIdx = 0; srcIdx < (PINDEX)frame.GetCount(); srcIdx++) {
+          descriptions.SetAt(srcIdx, new SourceDescription(sdes->src));
+          const RTP_ControlFrame::SourceDescription::Item * item = sdes->item;
           unsigned uiSizeCurrent = 0;   /* current size of the items already parsed */
-	        while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
-	          descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
-	          uiSizeCurrent += item->GetLengthTotal();
-	//    PTRACE(2,"RTP\tSourceDescription item " << item << ", current size = " << uiSizeCurrent);
+          while ((item != NULL) && (item->type != RTP_ControlFrame::e_END)) {
+            descriptions[srcIdx].items.SetAt(item->type, PString(item->data, item->length));
+            uiSizeCurrent += item->GetLengthTotal();
+            PTRACE(4,"RTP\tSourceDescription item " << item << ", current size = " << uiSizeCurrent);
             
-	    /* avoid reading where GetNextItem() shall not */
+            /* avoid reading where GetNextItem() shall not */
             if (uiSizeCurrent >= size){
-              PTRACE(2,"RTP\tSourceDescription end of items");
-	            item = NULL;
-	            break;
-	          } else {
-	            item = item->GetNextItem();
-	          }
+              PTRACE(4,"RTP\tSourceDescription end of items");
+              item = NULL;
+              break;
+            } else {
+              item = item->GetNextItem();
+            }
           }
           /* RTP_ControlFrame::e_END doesn't have a length field, so do NOT call item->GetNextItem()
              otherwise it reads over the buffer */
-	        if((item == NULL) || 
+          if((item == NULL) || 
             (item->type == RTP_ControlFrame::e_END) || 
             ((sdes = (const RTP_ControlFrame::SourceDescription *)item->GetNextItem()) == NULL)){
-	          break;
+            break;
           }
         }
-	      OnRxSourceDescription(descriptions);
+        OnRxSourceDescription(descriptions);
       }
       else {
-	      PTRACE(2, "RTP\tSourceDescription packet truncated");
+        PTRACE(2, "RTP\tSourceDescription packet truncated");
       }
       break;
 
@@ -1606,10 +1609,10 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
         OnRxGoodbye(sources, str);
         }
       else {
-	      PTRACE(2, "RTP\tGoodbye packet truncated");
+        PTRACE(2, "RTP\tGoodbye packet truncated");
       }
       if (closeOnBye) {
-	      PTRACE(2, "RTP\tGoodbye packet closing transport");
+        PTRACE(3, "RTP\tGoodbye packet closing transport");
         return e_AbortTransport;
       }
     break;
@@ -1617,12 +1620,12 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
     }
     case RTP_ControlFrame::e_ApplDefined :
       if (size >= 4) {
-	      PString str((const char *)(payload+4), 4);
-	      OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
-			  payload+8, frame.GetPayloadSize()-8);
+        PString str((const char *)(payload+4), 4);
+        OnRxApplDefined(str, frame.GetCount(), *(const PUInt32b *)payload,
+        payload+8, frame.GetPayloadSize()-8);
       }
       else {
-	      PTRACE(2, "RTP\tApplDefined packet truncated");
+        PTRACE(2, "RTP\tApplDefined packet truncated");
       }
       break;
 
@@ -1636,23 +1639,31 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
 
 
 void RTP_Session::OnRxSenderReport(const SenderReport & PTRACE_PARAM(sender),
-				   const ReceiverReportArray & PTRACE_PARAM(reports))
+           const ReceiverReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
-  PTRACE(3, "RTP\tOnRxSenderReport: " << sender);
-  for (PINDEX i = 0; i < reports.GetSize(); i++)
-    PTRACE(3, "RTP\tOnRxSenderReport RR: " << reports[i]);
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    strm << "RTP\tOnRxSenderReport: " << sender << '\n';
+    for (PINDEX i = 0; i < reports.GetSize(); i++)
+      strm << "  RR: " << reports[i] << '\n';
+    strm << PTrace::End;
+  }
 #endif
 }
 
 
 void RTP_Session::OnRxReceiverReport(DWORD PTRACE_PARAM(src),
-				     const ReceiverReportArray & PTRACE_PARAM(reports))
+             const ReceiverReportArray & PTRACE_PARAM(reports))
 {
 #if PTRACING
-  PTRACE(3, "RTP\tOnReceiverReport: ssrc=" << src);
-  for (PINDEX i = 0; i < reports.GetSize(); i++)
-    PTRACE(3, "RTP\tOnReceiverReport RR: " << reports[i]);
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    strm << "RTP\tOnReceiverReport: ssrc=" << src << '\n';
+    for (PINDEX i = 0; i < reports.GetSize(); i++)
+      strm << "  RR: " << reports[i] << '\n';
+    strm << PTrace::End;
+  }
 #endif
 }
 
@@ -1660,8 +1671,13 @@ void RTP_Session::OnRxReceiverReport(DWORD PTRACE_PARAM(src),
 void RTP_Session::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PARAM(description))
 {
 #if PTRACING
-  for (PINDEX i = 0; i < description.GetSize(); i++)
-    PTRACE(3, "RTP\tOnSourceDescription: " << description[i]);
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    strm << "RTP\tOnSourceDescription: " << description.GetSize() << " entries";
+    for (PINDEX i = 0; i < description.GetSize(); i++)
+      strm << "\n  " << description[i];
+    strm << PTrace::End;
+  }
 #endif
 }
 
@@ -1673,11 +1689,11 @@ void RTP_Session::OnRxGoodbye(const PDWORDArray & PTRACE_PARAM(src), const PStri
 
 
 void RTP_Session::OnRxApplDefined(const PString & PTRACE_PARAM(type),
-				  unsigned PTRACE_PARAM(subtype), DWORD PTRACE_PARAM(src),
-				  const BYTE * /*data*/, PINDEX PTRACE_PARAM(size))
+          unsigned PTRACE_PARAM(subtype), DWORD PTRACE_PARAM(src),
+          const BYTE * /*data*/, PINDEX PTRACE_PARAM(size))
 {
   PTRACE(3, "RTP\tOnApplDefined: \"" << type << "\"-" << subtype
-	 << " " << src << " [" << size << ']');
+   << " " << src << " [" << size << ']');
 }
 
 
@@ -1949,7 +1965,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
         controlSocket->GetLocalAddress(localAddress, localControlPort);
       }
       else {
-        PTRACE(1, "RTP\tSTUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
+        PTRACE(2, "RTP\tSTUN could not create RTP/RTCP socket pair; trying to create RTP socket anyway.");
         if (stun->CreateSocket(dataSocket)) {
           dataSocket->GetLocalAddress(localAddress, localDataPort);
         }
@@ -1998,7 +2014,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
   if (canonicalName.Find('@') == P_MAX_INDEX)
     canonicalName += '@' + GetLocalHostName();
 
-  PTRACE(2, "RTP_UDP\tSession " << sessionID << " created: "
+  PTRACE(3, "RTP_UDP\tSession " << sessionID << " created: "
          << localAddress << ':' << localDataPort << '-' << localControlPort
          << " ssrc=" << syncSourceOut);
   
@@ -2051,7 +2067,7 @@ PString RTP_UDP::GetLocalHostName()
 BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL isDataPort)
 {
   if (remoteIsNAT) {
-    PTRACE(3, "RTP_UDP\tIgnoring remote socket info as remote is behind NAT");
+    PTRACE(2, "RTP_UDP\tIgnoring remote socket info as remote is behind NAT");
     return TRUE;
   }
 
@@ -2128,7 +2144,7 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
         break;
 
       case PSocket::Interrupted:
-        PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Interrupted.");
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", Interrupted.");
         return FALSE;
 
       default :
@@ -2201,16 +2217,16 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       }
 
       if (!remoteTransmitAddress.IsValid())
-      	remoteTransmitAddress = addr;
+        remoteTransmitAddress = addr;
       else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
-      	remoteTransmitAddress = addr;
-      	allowRemoteTransmitAddressChange = FALSE;
+        remoteTransmitAddress = addr;
+        allowRemoteTransmitAddressChange = FALSE;
       }
       else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
-      	PTRACE(1, "RTP_UDP\tSession " << sessionID << ", "
-	             << channelName << " PDU from incorrect host, "
-	            " is " << addr << " should be " << remoteTransmitAddress);
-	      return RTP_Session::e_IgnorePacket;
+        PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
+               << channelName << " PDU from incorrect host, "
+              " is " << addr << " should be " << remoteTransmitAddress);
+        return RTP_Session::e_IgnorePacket;
       }
     }
     if (remoteAddress.IsValid() && !appliedQOS) 

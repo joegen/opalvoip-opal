@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2081  2007/04/03 13:04:24  rjongbloed
+ * Revision 1.2082  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.80  2007/04/03 13:04:24  rjongbloed
  * Added driverName to PVideoDevice::OpenArgs (so can select YUVFile)
  * Added new statics to create correct video input/output device object
  *   given a PVideoDevice::OpenArgs structure.
@@ -457,7 +461,7 @@ OpalManager::OpalManager()
                                      PThread::LowPriority,
                                      "OpalGarbage");
 
-  PTRACE(3, "OpalMan\tCreated manager.");
+  PTRACE(4, "OpalMan\tCreated manager.");
 }
 
 #ifdef _MSC_VER
@@ -485,7 +489,7 @@ OpalManager::~OpalManager()
 
   delete stun;
 
-  PTRACE(3, "OpalMan\tDeleted manager.");
+  PTRACE(4, "OpalMan\tDeleted manager.");
 }
 
 
@@ -563,7 +567,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   }
 
   if (!activeCalls.RemoveAt(token)) {
-    PTRACE(1, "OpalMan\tSetUpCall could not remove call from active call list");
+    PTRACE(2, "OpalMan\tSetUpCall could not remove call from active call list");
   }
 
   token.MakeEmpty();
@@ -1030,7 +1034,7 @@ BOOL OpalManager::AddRouteEntry(const PString & spec)
 
   RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
   if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
-    PTRACE(1, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
+    PTRACE(2, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
     delete entry;
     return FALSE;
   }
@@ -1182,7 +1186,7 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
   if (type != PSTUNClient::BlockedNat)
     stun->GetExternalAddress(translationAddress);
 
-  PTRACE(2, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << translationAddress);
+  PTRACE(3, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << translationAddress);
 
   return type;
 }

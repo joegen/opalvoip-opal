@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2058  2007/04/03 05:27:30  rjongbloed
+ * Revision 1.2059  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.57  2007/04/03 05:27:30  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -542,7 +546,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
                                       const OpalMediaFormatList & mediaFormats,
                                       unsigned sessionID)
 {
-  PTRACE(2, "Call\tOpenSourceMediaStreams for session " << sessionID
+  PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID
          << " with media " << setfill(',') << mediaFormats << setfill(' '));
 
   BOOL startedOne = FALSE;

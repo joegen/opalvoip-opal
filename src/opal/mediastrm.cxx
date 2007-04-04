@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2055  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2056  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.54  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.53  2007/03/29 05:16:50  csoutheren
@@ -826,7 +830,7 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
 
 BOOL OpalRawMediaStream::Close()
 {
-  PTRACE(1, "Media\tClosing raw media stream " << *this);
+  PTRACE(3, "Media\tClosing raw media stream " << *this);
   if (!OpalMediaStream::Close())
     return FALSE;
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2022  2007/03/29 23:55:46  rjongbloed
+ * Revision 1.2023  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.21  2007/03/29 23:55:46  rjongbloed
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connection class they can create it without
  *   needing to remember to do any more than the new.
@@ -148,13 +152,13 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
 
   defaultMediaFormats += OpalPCM16;
 
-  PTRACE(3, "IVR\tCreated endpoint.");
+  PTRACE(4, "IVR\tCreated endpoint.");
 }
 
 
 OpalIVREndPoint::~OpalIVREndPoint()
 {
-  PTRACE(3, "IVR\tDeleted endpoint.");
+  PTRACE(4, "IVR\tDeleted endpoint.");
 }
 
 
@@ -245,13 +249,13 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 {
   phase = SetUpPhase;
 
-  PTRACE(3, "IVR\tConstructed");
+  PTRACE(4, "IVR\tConstructed");
 }
 
 
 OpalIVRConnection::~OpalIVRConnection()
 {
-  PTRACE(3, "IVR\tDestroyed.");
+  PTRACE(4, "IVR\tDestroyed.");
 }
 
 
@@ -265,7 +269,7 @@ BOOL OpalIVRConnection::SetUpConnection()
       return FALSE;
     }
 
-    PTRACE(2, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    PTRACE(3, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return FALSE;
