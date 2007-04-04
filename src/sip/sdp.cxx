@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2044  2007/03/13 02:17:49  csoutheren
+ * Revision 1.2045  2007/04/04 02:12:02  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.43  2007/03/13 02:17:49  csoutheren
  * Remove warnings/errors when compiling with various turned off
  *
  * Revision 2.42  2007/03/13 00:33:11  csoutheren
@@ -218,8 +222,8 @@
 
 
 #define SIP_DEFAULT_SESSION_NAME  "Opal SIP Session"
-#define	SDP_MEDIA_TRANSPORT       "RTP/AVP"
-#define	SDP_MEDIA_TRANSPORT_UDPTL "udptl"
+#define  SDP_MEDIA_TRANSPORT       "RTP/AVP"
+#define  SDP_MEDIA_TRANSPORT_UDPTL "udptl"
 
 #define new PNEW
 
@@ -470,7 +474,7 @@ ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
   : mediaType(_mediaType),
     transportAddress(address),
-	packetTime(0)
+  packetTime(0)
 {
   switch (mediaType) {
     case Audio:
@@ -520,7 +524,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
   if (pos == P_MAX_INDEX) 
     portCount = 1;
   else {
-    PTRACE(1, "SDP\tMedia header contains port count - " << portStr);
+    PTRACE(3, "SDP\tMedia header contains port count - " << portStr);
     portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
     portStr   = portStr.Left(pos);
   }
@@ -532,7 +536,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     PTRACE(4, "SDP\tMedia session port=" << port);
 
     if ((transport != SDP_MEDIA_TRANSPORT) && (transport != SDP_MEDIA_TRANSPORT_UDPTL)) {
-      PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+      PTRACE(2, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
       return FALSE;
     }
 
@@ -751,8 +755,8 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
       if (opalFormat.GetDefaultSessionID() == sessionID && 
           opalFormat.IsValidForProtocol("sip") &&
           opalFormat.GetEncodingName() != NULL) {
-        PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
-	      list += opalFormat;
+        PTRACE(3, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
+        list += opalFormat;
       }
     }
   }
@@ -771,7 +775,7 @@ void SDPMediaDescription::CreateRTPMap(unsigned sessionID, RTP_DataFrame::Payloa
          opalFormat.GetDefaultSessionID() == sessionID &&
          opalFormat.GetPayloadType() != formats[i].GetPayloadType()) {
       map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), formats[i].GetPayloadType()));
-      PTRACE(2, "SIP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
+      PTRACE(3, "SDP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
     }
   }
 }
@@ -900,8 +904,8 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   // encode mandatory session information
   str << "v=" << protocolVersion << "\r\n"
          "o=" << ownerUsername << ' '
-	      << ownerSessionId << ' '
-	      << ownerVersion << ' '
+        << ownerSessionId << ' '
+        << ownerVersion << ' '
               << GetConnectAddressString(ownerAddress)
               << "\r\n"
          "s=" << sessionName << "\r\n";
@@ -913,7 +917,7 @@ void SDPSessionDescription::PrintOn(ostream & str) const
     str << "c=" << GetConnectAddressString(connectionAddress) << "\r\n";
   
   if(bandwidthModifier != "" && bandwidthValue != 0) {
-	  str << "b=" << bandwidthModifier << ":" << bandwidthValue << "\r\n";
+    str << "b=" << bandwidthModifier << ":" << bandwidthValue << "\r\n";
   }
   
   str << "t=" << "0 0" << "\r\n";
@@ -970,7 +974,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
       PString value = line.Mid(pos+1).Trim();
       if (key.GetLength() == 1) {
 
-      	// media name and transport address (mandatory)
+        // media name and transport address (mandatory)
         if (key[0] == 'm') {
           currentMedia = new SDPMediaDescription(defaultConnectAddress);
           if (currentMedia->Decode(value)) {
@@ -980,15 +984,15 @@ BOOL SDPSessionDescription::Decode(const PString & str)
           else
             delete currentMedia;
         }
-	
+  
         /////////////////////////////////
         //
         // Session description
         //
         /////////////////////////////////
-	  
+    
         else if (currentMedia == NULL) {
-	        PINDEX thePos;
+          PINDEX thePos;
           switch (key[0]) {
             case 'v' : // protocol version (mandatory)
               protocolVersion = value.AsInteger();
@@ -1011,28 +1015,28 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             case 'u' : // URI of description
             case 'e' : // email address
             case 'p' : // phone number
-	            break;
+              break;
             case 'b' : // bandwidth information
-	            thePos = value.Find(':');
-	            if (thePos != P_MAX_INDEX) {
-		            bandwidthModifier = value.Left(thePos);
-		            bandwidthValue = value.Mid(thePos+1).AsInteger();
-	            }
-	            break;
+              thePos = value.Find(':');
+              if (thePos != P_MAX_INDEX) {
+                bandwidthModifier = value.Left(thePos);
+                bandwidthValue = value.Mid(thePos+1).AsInteger();
+              }
+              break;
             case 'z' : // time zone adjustments
             case 'k' : // encryption key
             case 'r' : // zero or more repeat times
               break;
             case 'a' : // zero or more session attribute lines
               if (value *= "sendonly")
-		            SetDirection (SDPMediaDescription::SendOnly);
-	            else if (value *= "recvonly")
-		            SetDirection (SDPMediaDescription::RecvOnly);
-	            else if (value *= "sendrecv")
-		            SetDirection (SDPMediaDescription::SendRecv);
-	            else if (value *= "inactive")
-		            SetDirection (SDPMediaDescription::Inactive);
-	            break;
+                SetDirection (SDPMediaDescription::SendOnly);
+              else if (value *= "recvonly")
+                SetDirection (SDPMediaDescription::RecvOnly);
+              else if (value *= "sendrecv")
+                SetDirection (SDPMediaDescription::SendRecv);
+              else if (value *= "inactive")
+                SetDirection (SDPMediaDescription::Inactive);
+              break;
 
             default:
               PTRACE(1, "SDP\tUnknown session information key " << key[0]);
@@ -1044,7 +1048,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
         // media information
         //
         /////////////////////////////////
-	  
+    
         else {
           switch (key[0]) {
             case 'i' : // media title
@@ -1056,7 +1060,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'a' : // zero or more media attribute lines
-	            currentMedia->SetAttribute(value);
+              currentMedia->SetAttribute(value);
               break;
 
             default:
@@ -1076,7 +1080,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
   PStringArray tokens = str.Tokenise(" ");
 
   if (tokens.GetSize() != 6) {
-    PTRACE(1, "SDP\tOrigin has " << tokens.GetSize() << " elements");
+    PTRACE(2, "SDP\tOrigin has incorrect number of elements (" << tokens.GetSize() << ')');
   }
   else {
     ownerUsername    = tokens[0];
@@ -1107,9 +1111,9 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
     if ((mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Video && sessionID == OpalMediaFormat::DefaultVideoSessionID) || (mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Audio && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
       if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
-	      return mediaDescriptions[i].GetDirection();
+        return mediaDescriptions[i].GetDirection();
       else
-	      return direction;
+        return direction;
     }
   }
   

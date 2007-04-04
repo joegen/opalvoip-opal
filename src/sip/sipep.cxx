@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2156  2007/04/03 07:40:24  rjongbloed
+ * Revision 1.2157  2007/04/04 02:12:02  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.155  2007/04/03 07:40:24  rjongbloed
  * Fixed CreateCall usage so correct function (with userData) is called on
  *   incoming connections.
  *
@@ -652,7 +656,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   }
   
   if (registrarTransport == NULL) {
-    PTRACE(2, "SIP\tUnable to create transport for registrar");
+    PTRACE(1, "SIP\tUnable to create transport for registrar");
     OnFailed(SIP_PDU::Failure_BadGateway);
     return FALSE;
   }
@@ -840,7 +844,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
   natMethod = None;
 
-  PTRACE(3, "SIP\tCreated endpoint.");
+  PTRACE(4, "SIP\tCreated endpoint.");
 }
 
 
@@ -883,7 +887,7 @@ SIPEndPoint::~SIPEndPoint()
   activeSIPInfo.DeleteObjectsToBeRemoved();
 
   PWaitAndSignal m(transactionsMutex);
-  PTRACE(3, "SIP\tDeleted endpoint.");
+  PTRACE(4, "SIP\tDeleted endpoint.");
 }
 
 
@@ -914,14 +918,14 @@ BOOL SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 
 void SIPEndPoint::TransportThreadMain(PThread &, INT param)
 {
-  PTRACE(2, "SIP\tRead thread started.");
+  PTRACE(4, "SIP\tRead thread started.");
   OpalTransport * transport = (OpalTransport *)param;
 
   do {
     HandlePDU(*transport);
   } while (transport->IsOpen() && !transport->bad() && !transport->eof());
   
-  PTRACE(2, "SIP\tRead thread finished.");
+  PTRACE(4, "SIP\tRead thread finished.");
 }
 
 
@@ -1038,7 +1042,7 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
       return;
   }
   else if (transport.good()) {
-    PTRACE(1, "SIP\tMalformed request received on " << transport);
+    PTRACE(2, "SIP\tMalformed request received on " << transport);
     SIP_PDU response(*pdu, SIP_PDU::Failure_BadRequest);
     response.Write(transport);
   }
@@ -1301,7 +1305,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   // parse the incoming To field, and check if we accept incoming calls for this address
   SIPURL toAddr(mime.GetTo());
   if (!IsAcceptedAddress(toAddr)) {
-    PTRACE(1, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
+    PTRACE(2, "SIP\tIncoming INVITE from " << request->GetURI() << " for unknown address " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
     return FALSE;
@@ -1316,7 +1320,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   SIPConnection *connection = CreateConnection(*manager.CreateCall(NULL), mime.GetCallID(),
                                                NULL, request->GetURI(), &transport, request);
   if (!AddConnection(connection)) {
-    PTRACE(2, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
+    PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
     return FALSE;
@@ -1324,7 +1328,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
   if (&connection->GetTransport() == NULL) {
     delete connection;
-    PTRACE(2, "SIP\tFailed to create a transport for INVITE from " << request->GetURI() << " for " << toAddr);
+    PTRACE(1, "SIP\tFailed to create a transport for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
     return FALSE;
@@ -1351,7 +1355,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
 #endif
-  PTRACE(2, "SIP\tReceived " << proxyTrace << "Authentication Required response");
+  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
   
   // Only support REGISTER and SUBSCRIBE for now
   if (transaction.GetMethod() != SIP_PDU::Method_REGISTER
@@ -1388,12 +1392,12 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     realm_info = callid_info;
     if (!auth.GetAuthRealm().IsEmpty())
       realm_info->SetAuthRealm(auth.GetAuthRealm());
-    PTRACE(2, "SIP\tUpdated realm to " << auth.GetAuthRealm());
+    PTRACE(3, "SIP\tUpdated realm to " << auth.GetAuthRealm());
   }
   
   // No realm info, weird
   if (realm_info == NULL) {
-    PTRACE(2, "SIP\tNo Authentication info found for that realm, authentication impossible");
+    PTRACE(1, "SIP\tNo Authentication info found for that realm, authentication impossible");
     return;
   }
   
@@ -1416,7 +1420,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
       && lastUsername == callid_info->GetAuthentication().GetUsername ()
       && lastNonce == callid_info->GetAuthentication().GetNonce ()
       && !callid_info->IsRegistered()) {
-    PTRACE(1, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
+    PTRACE(2, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
     callid_info->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
@@ -1534,7 +1538,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 
     // We should reject the NOTIFY here, but some proxies still use
     // the old draft for NOTIFY and send unsollicited NOTIFY.
-    PTRACE(3, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
+    PTRACE(2, "SIP\tCould not find a SUBSCRIBE corresponding to the NOTIFY");
   }
   else {
 
@@ -1723,7 +1727,7 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
         && info->GetTransport() != NULL 
         && info->GetMethod() != SIP_PDU::Method_MESSAGE
         && info->HasExpired()) {
-      PTRACE(2, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
+      PTRACE(3, "SIP\tStarting REGISTER/SUBSCRIBE for binding refresh");
       infoTransport = info->GetTransport(); // Get current transport
       OpalTransportAddress registrarAddress = infoTransport->GetRemoteAddress();
       // Will update the transport if required. For example, if STUN
@@ -2009,7 +2013,7 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
       
       registrarTransport = info->GetTransport();
       if (!info->IsRegistered() || registrarTransport == NULL) {
-        PTRACE(1, "SIP\tRemoving local registration/subscription info for apparently unregistered/subscribed " << adjustedUsername);
+        PTRACE(2, "SIP\tRemoving local registration/subscription info for apparently unregistered/subscribed " << adjustedUsername);
         activeSIPInfo.Remove(info);
         return FALSE;
       }

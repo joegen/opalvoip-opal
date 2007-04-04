@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2120  2007/03/30 14:45:32  hfriederich
+ * Revision 1.2121  2007/04/04 02:12:02  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.119  2007/03/30 14:45:32  hfriederich
  * Reorganization of hte way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -1351,12 +1355,12 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 
   opaque = GetAuthParam(auth, "opaque");
   if (!opaque.IsEmpty()) {
-    PTRACE(1, "SIP\tAuthentication contains opaque data");
+    PTRACE(2, "SIP\tAuthentication contains opaque data");
   }
 
   PString qopStr = GetAuthParam(auth, "qop-options");
   if (!qopStr.IsEmpty()) {
-    PTRACE(1, "SIP\tAuthentication contains qop-options " << qopStr);
+    PTRACE(3, "SIP\tAuthentication contains qop-options " << qopStr);
     PStringList options = qopStr.Tokenise(',', TRUE);
     qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
     qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
@@ -1391,7 +1395,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
     return FALSE;
   }
 
-  PTRACE(2, "SIP\tAdding authentication information");
+  PTRACE(3, "SIP\tAdding authentication information");
 
   PMessageDigest5 digestor;
   PMessageDigest5::Code a1, a2, response;
@@ -1851,7 +1855,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (cmd.IsEmpty()) {
-    PTRACE(1, "SIP\tNo Request-Line or Status-Line received on " << transport);
+    PTRACE(2, "SIP\tNo Request-Line or Status-Line received on " << transport);
     return FALSE;
   }
 
@@ -1859,7 +1863,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     // parse Response version, code & reason (ie: "SIP/2.0 200 OK")
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
-      PTRACE(1, "SIP\tBad Status-Line received on " << transport);
+      PTRACE(2, "SIP\tBad Status-Line received on " << transport);
       return FALSE;
     }
 
@@ -1873,7 +1877,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     // parse the method, URI and version
     PStringArray cmds = cmd.Tokenise( ' ', FALSE);
     if (cmds.GetSize() < 3) {
-      PTRACE(1, "SIP\tBad Request-Line received on " << transport);
+      PTRACE(2, "SIP\tBad Request-Line received on " << transport);
       return FALSE;
     }
 
@@ -1881,7 +1885,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     while (!(cmds[0] *= MethodNames[i])) {
       i++;
       if (i >= NumMethods) {
-        PTRACE(1, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
+        PTRACE(2, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
         return FALSE;
       }
     }
@@ -1894,7 +1898,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (versionMajor < 2) {
-    PTRACE(1, "SIP\tInvalid version received on " << transport);
+    PTRACE(2, "SIP\tInvalid version received on " << transport);
     return FALSE;
   }
 
@@ -2031,7 +2035,7 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
 {
   connection = &conn;
   Construct();
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " created.");
+  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
 
 
@@ -2053,7 +2057,7 @@ SIPTransaction::~SIPTransaction()
   if (state > NotStarted && state < Terminated_Success) {
     PAssertAlways("Destroying transaction that is not yet terminated");
   }
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
+  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
 
@@ -2169,7 +2173,7 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
   // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
-    PTRACE(3, "SIP\tTransaction " << cseq << " response not for " << *this);
+    PTRACE(2, "SIP\tTransaction " << cseq << " response not for " << *this);
     return FALSE;
   }
 
@@ -2240,7 +2244,7 @@ void SIPTransaction::OnRetry(PTimer &, INT)
      timeout can be safely ignored as the PDU states are already handled.
      */
   if (!mutex.Wait(100)) {
-    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout ignored.");
+    PTRACE(2, "SIP\tTransaction " << mime.GetCSeq() << " timeout ignored.");
     return;
   }
 
