@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2021  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2022  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.20  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -814,7 +818,7 @@ H323GatekeeperGRQ::H323GatekeeperGRQ(H323GatekeeperListener & rasChannel,
   }
   else {
     isBehindNAT = TRUE;
-    PTRACE(3, "RAS\tUnsuitable RAS address in GRQ, using " << replyAddresses[0]);
+    PTRACE(2, "RAS\tUnsuitable RAS address in GRQ, using " << replyAddresses[0]);
   }
 }
 
@@ -1740,13 +1744,13 @@ BOOL H323GatekeeperCall::Disengage(int reason)
 
   if (drqReceived) {
     UnlockReadWrite();
-    PTRACE(1, "RAS\tAlready disengaged call " << *this);
+    PTRACE(2, "RAS\tAlready disengaged call " << *this);
     return FALSE;
   }
 
   drqReceived = TRUE;
 
-  PTRACE(2, "RAS\tDisengage of call " << *this);
+  PTRACE(3, "RAS\tDisengage of call " << *this);
 
   UnlockReadWrite();
 
@@ -1840,7 +1844,7 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnInfoResponse(H323Gatekeepe
 {
   PTRACE_BLOCK("H323GatekeeperCall::OnInfoResponse");
 
-  PTRACE(2, "RAS\tIRR received for call " << *this);
+  PTRACE(3, "RAS\tIRR received for call " << *this);
 
   if (!LockReadWrite()) {
     PTRACE(1, "RAS\tIRR rejected, lock failed on call " << *this);
@@ -1923,7 +1927,7 @@ BOOL H323GatekeeperCall::OnHeartbeat()
   UnlockReadOnly();
 
   // Do IRQ and wait for IRR on call
-  PTRACE(2, "RAS\tTimeout on heartbeat, doing IRQ for call "<< *this);
+  PTRACE(3, "RAS\tTimeout on heartbeat, doing IRQ for call "<< *this);
   if (!rasChannel->InfoRequest(*endpoint, this))
     return FALSE;
 
@@ -2137,7 +2141,7 @@ H323RegisteredEndPoint::H323RegisteredEndPoint(H323GatekeeperServer & gk,
 {
   activeCalls.DisallowDeleteObjects();
 
-  PTRACE(3, "RAS\tCreated registered endpoint: " << id);
+  PTRACE(4, "RAS\tCreated registered endpoint: " << id);
 }
 
 
@@ -2756,14 +2760,14 @@ H323GatekeeperListener::H323GatekeeperListener(H323EndPoint & ep,
 
   transport->SetPromiscuous(H323Transport::AcceptFromAny);
 
-  PTRACE(2, "H323gk\tGatekeeper server created.");
+  PTRACE(4, "H323gk\tGatekeeper server created.");
 }
 
 
 H323GatekeeperListener::~H323GatekeeperListener()
 {
   StopChannel();
-  PTRACE(2, "H323gk\tGatekeeper server destroyed.");
+  PTRACE(4, "H323gk\tGatekeeper server destroyed.");
 }
 
 
@@ -3487,7 +3491,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnRegistration(H323Gatekee
   // Have successfully registered, save it
   AddEndPoint(info.endpoint);
 
-  PTRACE(2, "RAS\tRRQ accepted: \"" << *info.endpoint << '"');
+  PTRACE(3, "RAS\tRRQ accepted: \"" << *info.endpoint << '"');
   return H323GatekeeperRequest::Confirm;
 }
 
@@ -3523,7 +3527,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnUnregistration(H323Gatek
                                    info.endpoint->GetAliases(),
                                    info.endpoint->GetSignalAddresses());
     } else {
-      PTRACE(2, "RAS\tRemoving endpoint " << *info.endpoint << " with no aliases");
+      PTRACE(3, "RAS\tRemoving endpoint " << *info.endpoint << " with no aliases");
       RemoveEndPoint(info.endpoint);  // will also remove descriptor if required
     }
   }
@@ -3820,7 +3824,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnAdmission(H323Gatekeeper
         peakCalls = activeCalls.GetSize();
       totalCalls++;
 
-      PTRACE(2, "RAS\tAdded new call (total=" << activeCalls.GetSize() << ") " << *newCall);
+      PTRACE(3, "RAS\tAdded new call (total=" << activeCalls.GetSize() << ") " << *newCall);
       mutex.Signal();
 
       AddCall(oldCall);
@@ -3942,7 +3946,7 @@ void H323GatekeeperServer::RemoveCall(H323GatekeeperCall * call)
   call->SetBandwidthUsed(0);
   PAssert(call->GetEndPoint().RemoveCall(call), PLogicError);
 
-  PTRACE(2, "RAS\tRemoved call (total=" << (activeCalls.GetSize()-1) << ") id=" << *call);
+  PTRACE(3, "RAS\tRemoved call (total=" << (activeCalls.GetSize()-1) << ") id=" << *call);
   PAssert(activeCalls.Remove(call), PLogicError);
 }
 
@@ -4001,7 +4005,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnLocation(H323GatekeeperL
     if (ep != NULL) {
       ep->GetSignalAddress(0).SetPDU(info.lcf.m_callSignalAddress);
       ep->GetRASAddress(0).SetPDU(info.lcf.m_rasAddress);
-      PTRACE(2, "RAS\tLocation of " << H323GetAliasAddressString(info.lrq.m_destinationInfo[i])
+      PTRACE(3, "RAS\tLocation of " << H323GetAliasAddressString(info.lrq.m_destinationInfo[i])
              << " is endpoint " << *ep);
       return H323GatekeeperRequest::Confirm;
     }
@@ -4020,7 +4024,7 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnLocation(H323GatekeeperL
       if (info.lcf.m_destinationInfo.GetSize() > 0)
         info.lcf.IncludeOptionalField(H225_LocationConfirm::e_destinationInfo);
 
-      PTRACE(2, "RAS\tLocation of " << H323GetAliasAddressString(info.lrq.m_destinationInfo[i])
+      PTRACE(3, "RAS\tLocation of " << H323GetAliasAddressString(info.lrq.m_destinationInfo[i])
              << " is " << address);
       return H323GatekeeperRequest::Confirm;
     }
@@ -4044,7 +4048,7 @@ BOOL H323GatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias
       // if AccessRequest returns OK, but no aliases, then all of the aliases
       // must have been wildcards. In this case, add the original aliase back into the list
       if (aliases.GetSize() == 0) {
-        PTRACE(1, "RAS\tAdding original alias to the top of the alias list");
+        PTRACE(3, "RAS\tAdding original alias to the top of the alias list");
         aliases.SetSize(1);
         aliases[0] = alias;
       }
@@ -4072,14 +4076,14 @@ BOOL H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_Alias
   if (isGatekeeperRouted) {
     const H323ListenerList & listeners = ownerEndPoint.GetListeners();
     address = listeners[0].GetTransportAddress();
-    PTRACE(2, "RAS\tTranslating alias " << aliasString << " to " << address << ", gatekeeper routed");
+    PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", gatekeeper routed");
     return TRUE;
   }
 
   PSafePtr<H323RegisteredEndPoint> ep = FindEndPointByAliasAddress(alias, PSafeReadOnly);
   if (ep != NULL) {
     address = ep->GetSignalAddress(0);
-    PTRACE(2, "RAS\tTranslating alias " << aliasString << " to " << address << ", registered endpoint");
+    PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", registered endpoint");
     return TRUE;
   }
 
@@ -4099,7 +4103,7 @@ BOOL H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_Alias
   }
 
   address = H323TransportAddress(ip, port);
-  PTRACE(2, "RAS\tTranslating alias " << aliasString << " to " << address << ", host name");
+  PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", host name");
   return TRUE;
 }
 

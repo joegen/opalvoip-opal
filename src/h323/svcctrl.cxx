@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: svcctrl.cxx,v $
- * Revision 1.2002  2004/02/19 10:47:05  rjongbloed
+ * Revision 1.2003  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.1  2004/02/19 10:47:05  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.1  2003/04/01 01:06:28  robertj
@@ -113,7 +117,7 @@ void H323HTTPServiceControl::OnChange(unsigned type,
                                       H323EndPoint & endpoint,
                                       H323Connection * /*connection*/) const
 {
-  PTRACE(2, "SvcCtrl\tOnChange HTTP service control " << url);
+  PTRACE(3, "SvcCtrl\tOnChange HTTP service control " << url);
 
   endpoint.OnHTTPServiceControl(type, sessionId, url);
 }
@@ -257,7 +261,7 @@ void H323CallCreditServiceControl::OnChange(unsigned /*type*/,
                                              H323EndPoint & endpoint,
                                              H323Connection * connection) const
 {
-  PTRACE(2, "SvcCtrl\tOnChange Call Credit service control "
+  PTRACE(3, "SvcCtrl\tOnChange Call Credit service control "
          << amount << (mode ? " debit " : " credit ") << durationLimit);
 
   endpoint.OnCallCreditServiceControl(amount, mode);

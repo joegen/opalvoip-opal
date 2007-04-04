@@ -23,6 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: silencedetect.cxx,v $
+ * Revision 1.5  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
  * Revision 1.4  2005/07/09 06:52:39  rjongbloed
  * Added print (operator<<) of silence detect mode enum.
  *
@@ -91,7 +95,7 @@ OpalSilenceDetector::OpalSilenceDetector()
   // Initialise the adaptive threshold variables.
   SetParameters(param);
 
-  PTRACE(3, "Silence\tHandler created");
+  PTRACE(4, "Silence\tHandler created");
 }
 
 

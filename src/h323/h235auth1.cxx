@@ -24,7 +24,11 @@
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
  * $Log: h235auth1.cxx,v $
- * Revision 1.2012  2006/07/28 10:41:50  rjongbloed
+ * Revision 1.2013  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.11  2006/07/28 10:41:50  rjongbloed
  * Fixed DevStudio 2005 warnings on time_t conversions.
  *
  * Revision 2.10  2006/02/13 11:09:56  csoutheren
@@ -337,7 +341,7 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   
   if (foundat == -1) {
     //Can't find the search pattern in the ASN1 packet.
-    PTRACE(2, "H235RAS\tPDU not prepared for H235AuthProcedure1");
+    PTRACE(1, "H235RAS\tPDU not prepared for H235AuthProcedure1");
     return FALSE;
   }
   
@@ -439,7 +443,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
   if (lastTimestamp == crHashed.m_hashedVals.m_timeStamp &&
       lastRandomSequenceNumber == crHashed.m_hashedVals.m_random) {
     //a message with this timespamp and the same random number was already verified
-    PTRACE(1, "H235RAS\tConsecutive messages with the same random and timestamp");
+    PTRACE(2, "H235RAS\tConsecutive messages with the same random and timestamp");
     return e_ReplyAttack;
   }
   
@@ -483,7 +487,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
   BYTE RV[HASH_SIZE];
   
   if (crHashed.m_token.m_hash.GetSize() != HASH_SIZE*8) {
-    PTRACE(2, "H235RAS\tH235AuthProcedure1 requires a hash!");
+    PTRACE(1, "H235RAS\tH235AuthProcedure1 requires a hash!");
     return e_Error;
   }
   
@@ -517,7 +521,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
       if (foundat != 0)
         break;
 
-      PTRACE(2, "H235RAS\tH235AuthProcedure1 could not locate embedded hash!");
+      PTRACE(1, "H235RAS\tH235AuthProcedure1 could not locate embedded hash!");
       return e_Error;
     }
     
@@ -548,7 +552,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
     foundat++;
   }
 
-  PTRACE(1, "H235RAS\tH235AuthProcedure1 hash does not match.");
+  PTRACE(2, "H235RAS\tH235AuthProcedure1 hash does not match.");
   return e_BadPassword;
 }
 

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2020  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2021  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.19  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.18  2007/03/29 05:20:17  csoutheren
@@ -1692,14 +1696,14 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
 {
   PluginCodec_GetCodecFunction getCodecs;
   if (!dll.GetFunction(PString(signatureFunctionName), (PDynaLink::Function &)getCodecs)) {
-    PTRACE(3, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
+    PTRACE(2, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
     return;
   }
 
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_FAX);
   if (codecs == NULL || count == 0) {
-    PTRACE(3, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
+    PTRACE(1, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
     return;
   } 
 
@@ -1730,7 +1734,7 @@ void OpalPluginCodecManager::RegisterStaticCodec(
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecFn)(&count, PLUGIN_CODEC_VERSION_FAX);
   if (codecs == NULL || count == 0) {
-    PTRACE(3, "OpalPlugin\nStatic codec " << name << " contains no codec definitions");
+    PTRACE(1, "OpalPlugin\nStatic codec " << name << " contains no codec definitions");
     return;
   } 
 
@@ -1795,7 +1799,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, void * _co
           RegisterPluginPair(&encoder, &decoder);
           found = TRUE;
 
-          PTRACE(2, "OpalPlugin\nPlugin codec " << encoder.descr << " defined");
+          PTRACE(3, "OpalPlugin\nPlugin codec " << encoder.descr << " defined");
           break;
         }
       }
@@ -1865,12 +1869,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   // add the media format
   if (defaultSessionID == 0) {
-    PTRACE(3, "OpalPlugin\nCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(1, "OpalPlugin\nCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec, FALSE);
     OpalMediaFormat existingFormat(fmtName);
     if (existingFormat.IsValid() && existingFormat.GetCodecBaseTime() >= timeStamp) {
-      PTRACE(3, "OpalPlugin\nNewer media format " << fmtName << " already exists");
+      PTRACE(2, "OpalPlugin\nNewer media format " << fmtName << " already exists");
       //AddFormat(existingFormat);
     } else {
       if (existingFormat.IsValid()) {
@@ -1998,7 +2002,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(3, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(1, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
     case PluginCodec_MediaTypeAudioStreamed:
@@ -2013,7 +2017,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(3, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(1, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
 #endif
@@ -2033,7 +2037,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
       (hasCodecControl && (retVal == 0))
        ) {
-    PTRACE(3, "OpalPlugin\nNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
+    PTRACE(2, "OpalPlugin\nNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
     return;
   }
 
@@ -2068,7 +2072,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
   }
 
   if (map == NULL) {
-    PTRACE(3, "OpalPlugin\nCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(1, "OpalPlugin\nCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } 
   else if (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_undefined) {
     for (PINDEX i = 0; map[i].pluginCapType >= 0; i++) {

@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2068  2007/04/03 07:40:24  rjongbloed
+ * Revision 1.2069  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.67  2007/04/03 07:40:24  rjongbloed
  * Fixed CreateCall usage so correct function (with userData) is called on
  *   incoming connections.
  *
@@ -231,7 +235,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
   features.LoadFeatureSet(H460_Feature::FeatureBase);
 #endif
 
-  PTRACE(3, "H323\tCreated endpoint.");
+  PTRACE(4, "H323\tCreated endpoint.");
 }
 
 
@@ -243,7 +247,7 @@ H323EndPoint::~H323EndPoint()
   // Shut down the listeners as soon as possible to avoid race conditions
   listeners.RemoveAll();
 
-  PTRACE(3, "H323\tDeleted endpoint.");
+  PTRACE(4, "H323\tDeleted endpoint.");
 }
 
 
@@ -390,7 +394,7 @@ BOOL H323EndPoint::UseGatekeeper(const PString & address,
       same = gatekeeper->GetTransport().GetLocalAddress().IsEquivalent(localAddress);
 
     if (same) {
-      PTRACE(2, "H323\tUsing existing gatekeeper " << *gatekeeper);
+      PTRACE(3, "H323\tUsing existing gatekeeper " << *gatekeeper);
       return TRUE;
     }
   }
@@ -684,7 +688,7 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
 
   call.RemoveMediaStreams();
 
-  PTRACE(2, "H323\tTransferring call to: " << remoteParty);
+  PTRACE(3, "H323\tTransferring call to: " << remoteParty);
   BOOL ok = InternalMakeCall(call,
 			     oldToken,
 			     callIdentity,
@@ -1094,7 +1098,7 @@ BOOL H323EndPoint::OnAlerting(H323Connection & connection,
                               const H323SignalPDU & /*alertingPDU*/,
                               const PString & /*username*/)
 {
-  PTRACE(1, "H225\tReceived alerting PDU.");
+  PTRACE(3, "H225\tReceived alerting PDU.");
   ((OpalConnection&)connection).OnAlerting();
   return TRUE;
 }
@@ -1157,7 +1161,7 @@ BOOL H323EndPoint::IsConnectionEstablished(const PString & token)
 BOOL H323EndPoint::OnOutgoingCall(H323Connection & /*connection*/,
                                   const H323SignalPDU & /*connectPDU*/)
 {
-  PTRACE(1, "H225\tReceived connect PDU.");
+  PTRACE(3, "H225\tReceived connect PDU.");
   return TRUE;
 }
 
@@ -1186,7 +1190,7 @@ static void OnStartStopChannel(const char * startstop, const H323Channel & chann
       break;
   }
 
-  PTRACE(2, "H323\t" << startstop << "ed "
+  PTRACE(3, "H323\t" << startstop << "ed "
                      << dir << "ing logical channel: "
                      << channel.GetCapability());
 }

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013  2005/03/03 18:31:23  dsandras
+ * Revision 1.2014  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.12  2005/03/03 18:31:23  dsandras
  * Fixed silence detection definition in the logical channel parameters.
  *
  * Revision 2.11  2004/02/24 11:28:46  rjongbloed
@@ -311,7 +315,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
     if (ok && channel.GetDirection() == H323Channel::IsReceiver)
-      PTRACE(3, "RTP_UDP\tIgnoring media transport for " << channel);
+      PTRACE(2, "RTP_UDP\tIgnoring media transport for " << channel);
     else if (!ExtractTransport(param.m_mediaChannel, TRUE, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
       return FALSE;

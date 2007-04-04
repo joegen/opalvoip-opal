@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2028  2006/09/28 07:42:17  csoutheren
+ * Revision 1.2029  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.27  2006/09/28 07:42:17  csoutheren
  * Merge of useful SRTP implementation
  *
  * Revision 2.26  2006/08/11 07:52:01  csoutheren
@@ -2635,7 +2639,7 @@ BOOL H323Capabilities::IsAllowed(const H323Capability & capability1,
 BOOL H323Capabilities::IsAllowed(const unsigned a_capno1, const unsigned a_capno2)
 {
   if (a_capno1 == a_capno2) {
-    PTRACE(1, "H323\tH323Capabilities::IsAllowed() capabilities are the same.");
+    PTRACE(2, "H323\tH323Capabilities::IsAllowed() capabilities are the same.");
     return TRUE;
   }
 

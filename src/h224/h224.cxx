@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224.cxx,v $
+ * Revision 1.6  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
  * Revision 1.5  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
@@ -606,7 +610,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   PINDEX size = frame.GetEncodedSize();
 	
   if(!frame.Encode(transmitFrame->GetPayloadPtr(), size, transmitBitIndex)) {
-    PTRACE(2, "H.224\tFailed to encode frame");
+    PTRACE(1, "H.224\tFailed to encode frame");
     return;
   }
 	
@@ -619,7 +623,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   transmitFrame->SetMarker(TRUE);
 	
   if(!session->WriteData(*transmitFrame)) {
-    PTRACE(2, "H.224\tFailed to write encoded frame");
+    PTRACE(1, "H.224\tFailed to write encoded frame");
   }
 }
 
@@ -662,7 +666,7 @@ void OpalH224ReceiverThread::Main()
         return;
       }
     } else {
-      PTRACE(2, "H.224\tDecoding of frame failed");
+      PTRACE(1, "H.224\tDecoding of frame failed");
     }
 		
     inUse.Signal();
