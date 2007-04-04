@@ -4159,7 +4159,7 @@ EXPORTS
     ??0Opal_PCM_G711_ALaw@@QAE@XZ @3993 NONAME
     ??0Opal_PCM_G711_uLaw@@QAE@XZ @3994 NONAME
     ??0Opal_PCM_Linear16Mono@@QAE@XZ @3995 NONAME
-    ??0OpenArgs@PVideoDevice@@QAE@XZ @3996 NONAME
+    ??0OpenArgs@PVideoDevice@@QAE@ABU01@@Z @34969 NONAME
     ??0Params@OpalEchoCanceler@@QAE@W4Mode@1@@Z @3997 NONAME
     ??0Params@OpalSilenceDetector@@QAE@W4Mode@1@IIII@Z @3998 NONAME
     ??0PASN_GeneralisedTime@@QAE@ABV0@@Z @3999 NONAME
@@ -21500,7 +21500,7 @@ EXPORTS
     ?AcceptIncoming@OpalPCSSConnection@@UAEXXZ @20957 NONAME
     ?AcceptIncomingCall@IAX2CallProcessor@@QAEXXZ @32364 NONAME
     ?AcceptIncomingConnection@OpalFaxEndPoint@@UAEXABVPString@@@Z @34824 NONAME
-    ?AcceptIncomingConnection@OpalPCSSEndPoint@@UAEXABVPString@@@Z @20959 NONAME
+    ?AcceptIncomingConnection@OpalPCSSEndPoint@@UAEHABVPString@@@Z @34970 NONAME
     ?AccessRequest@H323PeerElement@@QAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAV2@I@Z @20960 NONAME
     ?AccessRequest@H323PeerElement@@QAEHABVH225_AliasAddress@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@I@Z @20961 NONAME
     ?AccessRequest@H323PeerElement@@QAEHABVPString@@AAVH225_ArrayOf_AliasAddress@@AAVH323TransportAddress@@I@Z @20962 NONAME
@@ -21613,7 +21613,6 @@ EXPORTS
     ?Answer@OpalT120Protocol@@UAEHAAVOpalTransport@@@Z @21055 NONAME
     ?Answer@OpalT38Protocol@@UAEHXZ @21056 NONAME
     ?AnsweringCall@H323Connection@@UAEXW4AnswerCallResponse@OpalConnection@@@Z @21057 NONAME
-    ?AnsweringCall@OpalCall@@UAEXW4AnswerCallResponse@OpalConnection@@@Z @21058 NONAME
     ?AnsweringCall@OpalConnection@@UAEXW4AnswerCallResponse@1@@Z @21059 NONAME
     ?AnsweringCall@SIPConnection@@UAEXW4AnswerCallResponse@OpalConnection@@@Z @21060 NONAME
     ?AnswerWasAcked@IAX2CallProcessor@@IAEXXZ @32365 NONAME
@@ -29240,7 +29239,6 @@ EXPORTS
     ?GetDestinationAddress@H323GatekeeperCall@@QBE?AVPString@@XZ @28521 NONAME
     ?GetDestinationAddress@OpalConnection@@UAE?AVPString@@XZ @28522 NONAME
     ?GetDestinationAddress@OpalLineConnection@@UAE?AVPString@@XZ @28523 NONAME
-    ?GetDestinationAddress@OpalPCSSConnection@@UAE?AVPString@@XZ @28524 NONAME
     ?GetDestinationAlias@H323SignalPDU@@QBE?AVPString@@H@Z @28525 NONAME
     ?GetDestinationAliases@H323GatekeeperCall@@QBEABVPStringArray@@XZ @28526 NONAME
     ?GetDestinationE164@H323SignalPDU@@QBEHAAVPString@@@Z @28527 NONAME
@@ -30920,7 +30918,6 @@ EXPORTS
     ?OnAnswerCall@OpalConnection@@UAE?AW4AnswerCallResponse@1@ABVPString@@@Z @30143 NONAME
     ?OnAnswerCall@OpalEndPoint@@UAE?AW4AnswerCallResponse@OpalConnection@@AAV3@ABVPString@@@Z @30144 NONAME
     ?OnAnswerCall@OpalManager@@UAE?AW4AnswerCallResponse@OpalConnection@@AAV3@ABVPString@@@Z @30145 NONAME
-    ?OnAnswerCall@SIPConnection@@UAE?AW4AnswerCallResponse@OpalConnection@@ABVPString@@@Z @30146 NONAME
     ?OnBandwidth@H323GatekeeperCall@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperBRQ@@@Z @30147 NONAME
     ?OnBandwidth@H323GatekeeperListener@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperBRQ@@@Z @30148 NONAME
     ?OnBandwidth@H323GatekeeperServer@@UAE?AW4Response@H323Transaction@@AAVH323GatekeeperBRQ@@@Z @30149 NONAME
