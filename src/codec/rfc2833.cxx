@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2005  2007/03/12 23:36:31  csoutheren
+ * Revision 1.2006  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.4  2007/03/12 23:36:31  csoutheren
  * Add support for Cisco NSE
  *
  * Revision 2.3  2006/11/02 21:17:29  hfriederich
@@ -79,7 +83,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(const PNotifier & rx)
 #pragma warning(default:4355)
 #endif
 {
-  PTRACE(3, "RFC2833\tHandler created");
+  PTRACE(4, "RFC2833\tHandler created");
 
   payloadType = RTP_DataFrame::IllegalPayloadType;
   receiveComplete = TRUE;
@@ -160,7 +164,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   PWaitAndSignal m(mutex);
 
   if (frame.GetPayloadSize() < 4) {
-    PTRACE(1, "RFC2833\tIgnoring packet, too small.");
+    PTRACE(2, "RFC2833\tIgnoring packet, too small.");
     return;
   }
 
@@ -192,7 +196,7 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   }
 
   if ((payload[1]&0x80) == 0) {
-    PTRACE(1, "RFC2833\tIgnoring packet, not end of event.");
+    PTRACE(2, "RFC2833\tIgnoring packet, not end of event.");
     return;
   }
 

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2022  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2023  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.21  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.20  2007/03/30 02:09:53  rjongbloed
@@ -383,7 +387,7 @@ void H450ServiceAPDU::BuildCallIntrusionForcedRelease(int invokeId,
 
 X880_ReturnResult& H450ServiceAPDU::BuildCallIntrusionForcedReleaseResult(int invokeId)
 {
-  PTRACE(1 ,"H450.11\tH450ServiceAPDU::BuildCallIntrusionForcedReleaseResult BEGIN");
+  PTRACE(3 ,"H450.11\tH450ServiceAPDU::BuildCallIntrusionForcedReleaseResult BEGIN");
   
   X880_ReturnResult& result = BuildReturnResult(invokeId);
   result.IncludeOptionalField(X880_ReturnResult::e_result);
@@ -635,7 +639,7 @@ BOOL H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke, H4501_Interpretatio
   if (invoke.m_opcode.GetTag() == X880_Code::e_local) {
     int opcode = ((PASN_Integer&) invoke.m_opcode).GetValue();
     if (!opcodeHandler.Contains(opcode)) {
-      PTRACE(2, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);	  
+      PTRACE(3, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);	  
       if (interpretation.GetTag() != H4501_InterpretationApdu::e_discardAnyUnrecognizedInvokePdu)
         SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
       if (interpretation.GetTag() == H4501_InterpretationApdu::e_clearCallIfAnyInvokePduNotRecognized)
@@ -1533,7 +1537,7 @@ void H4502Handler::onReceivedAdmissionReject(const int returnError)
     // Send a FACILITY message back to the transferring party on the primary connection
     PSafePtr<H323Connection> primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
     if (primaryConnection != NULL) {
-      PTRACE(3, "H4502\tReceived an Admission Reject at the Transferred Endpoint - aborting the transfer.");
+      PTRACE(2, "H4502\tReceived an Admission Reject at the Transferred Endpoint - aborting the transfer.");
       primaryConnection->HandleCallTransferFailure(returnError);
     }
   }
@@ -1796,7 +1800,7 @@ BOOL H4507Handler::OnReceivedInvoke(int opcode,
       break;
 
     default:
-      PTRACE(1, "H450.7\tOnReceivedInvoke, not an interrogate");
+      PTRACE(2, "H450.7\tOnReceivedInvoke, not an interrogate");
       currentInvokeId = 0;
       return FALSE;
   }

@@ -23,6 +23,10 @@
  * Contributor(s): Miguel Rodriguez Perez.
  *
  * $Log: echocancel.cxx,v $
+ * Revision 1.19  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
  * Revision 1.18  2006/02/04 14:27:18  dsandras
  * Fixed leak.
  *
@@ -133,7 +137,7 @@ OpalEchoCanceler::OpalEchoCanceler()
   mean = 0;
   clockRate = 8000;
 
-  PTRACE(3, "Echo Canceler\tHandler created");
+  PTRACE(4, "Echo Canceler\tHandler created");
 }
 
 

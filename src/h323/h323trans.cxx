@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2003  2005/01/16 23:07:34  csoutheren
+ * Revision 1.2004  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.2  2005/01/16 23:07:34  csoutheren
  * Fixed problem with IPv6 INADDR_ANY
  *
  * Revision 2.1  2004/02/19 10:47:04  rjongbloed
@@ -285,7 +289,7 @@ BOOL H323Transactor::SetTransport(const H323TransportAddress & iface)
   PIPSocket::Address addr;
   WORD port = defaultLocalPort;
   if (!iface.GetIpAndPort(addr, port)) {
-    PTRACE(2, "Trans\tCannot create listener for " << iface);
+    PTRACE(1, "Trans\tCannot create listener for " << iface);
     return FALSE;
   }
 
@@ -338,7 +342,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
   if (PAssertNULL(transport) == NULL)
     return;
 
-  PTRACE(2, "Trans\tStarting listener thread on " << *transport);
+  PTRACE(4, "Trans\tStarting listener thread on " << *transport);
 
   transport->SetReadTimeout(PMaxTimeInterval);
 
@@ -386,7 +390,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
     AgeResponses();
   }
 
-  PTRACE(2, "Trans\tEnded listener thread on " << *transport);
+  PTRACE(4, "Trans\tEnded listener thread on " << *transport);
 }
 
 
@@ -529,7 +533,7 @@ BOOL H323Transactor::CheckForResponse(unsigned reqTag, unsigned seqNum, const PA
   requestsMutex.Signal();
 
   if (lastRequest == NULL) {
-    PTRACE(3, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
+    PTRACE(2, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
     return FALSE;
   }
 
@@ -549,7 +553,7 @@ BOOL H323Transactor::HandleRequestInProgress(const H323TransactionPDU & pdu,
   requestsMutex.Signal();
 
   if (lastRequest == NULL) {
-    PTRACE(3, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
+    PTRACE(2, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
     return FALSE;
   }
 
@@ -652,7 +656,7 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
           return FALSE;
 
         case BadCryptoTokens :
-          PTRACE(2, "Trans\tResponse to seqnum=" << requestPDU.GetSequenceNumber()
+          PTRACE(1, "Trans\tResponse to seqnum=" << requestPDU.GetSequenceNumber()
                  << " had invalid crypto tokens.");
           return FALSE;
 
@@ -676,7 +680,7 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
 void H323Transactor::Request::CheckResponse(unsigned reqTag, const PASN_Choice * reason)
 {
   if (requestPDU.GetChoice().GetTag() != reqTag) {
-    PTRACE(3, "Trans\tReceived reply for incorrect PDU tag.");
+    PTRACE(2, "Trans\tReceived reply for incorrect PDU tag.");
     responseResult = RejectReceived;
     rejectReason = UINT_MAX;
     return;
@@ -687,7 +691,7 @@ void H323Transactor::Request::CheckResponse(unsigned reqTag, const PASN_Choice *
     return;
   }
 
-  PTRACE(1, "Trans\t" << requestPDU.GetChoice().GetTagName()
+  PTRACE(2, "Trans\t" << requestPDU.GetChoice().GetTagName()
          << " rejected: " << reason->GetTagName());
   responseResult = RejectReceived;
   rejectReason = reason->GetTag();
@@ -846,14 +850,14 @@ BOOL H323Transaction::HandlePDU()
 
 void H323Transaction::SlowHandler(PThread &, INT)
 {
-  PTRACE(3, "Trans\tStarted slow PDU handler thread.");
+  PTRACE(4, "Trans\tStarted slow PDU handler thread.");
 
   while (HandlePDU())
     ;
 
   delete this;
 
-  PTRACE(3, "Trans\tEnded slow PDU handler thread.");
+  PTRACE(4, "Trans\tEnded slow PDU handler thread.");
 }
 
 

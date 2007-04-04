@@ -24,7 +24,11 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2013  2006/07/28 10:41:50  rjongbloed
+ * Revision 1.2014  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.12  2006/07/28 10:41:50  rjongbloed
  * Fixed DevStudio 2005 warnings on time_t conversions.
  *
  * Revision 2.11  2006/02/13 11:09:56  csoutheren
@@ -678,7 +682,7 @@ H235Authenticator::ValidationResult
       !clearToken.HasOptionalField(H235_ClearToken::e_timeStamp) ||
       !clearToken.HasOptionalField(H235_ClearToken::e_random) ||
       !clearToken.HasOptionalField(H235_ClearToken::e_challenge)) {
-    PTRACE(2, "H235RAS\tCAT requires generalID, timeStamp, random and challenge fields");
+    PTRACE(1, "H235RAS\tCAT requires generalID, timeStamp, random and challenge fields");
     return e_Error;
   }
 
@@ -712,7 +716,7 @@ H235Authenticator::ValidationResult
 
   int randomInt = clearToken.m_random;
   if (randomInt < -127 || randomInt > 255) {
-    PTRACE(2, "H235RAS\tCAT requires single byte random field, got " << randomInt);
+    PTRACE(1, "H235RAS\tCAT requires single byte random field, got " << randomInt);
     return e_Error;
   }
 
@@ -728,7 +732,7 @@ H235Authenticator::ValidationResult
   stomach.Complete(digest);
 
   if (clearToken.m_challenge.GetValue().GetSize() != sizeof(digest)) {
-    PTRACE(2, "H235RAS\tCAT requires 16 byte challenge field");
+    PTRACE(1, "H235RAS\tCAT requires 16 byte challenge field");
     return e_Error;
   }
 

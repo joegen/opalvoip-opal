@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2012  2004/02/19 10:47:04  rjongbloed
+ * Revision 1.2013  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.11  2004/02/19 10:47:04  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 2.10  2002/11/10 11:33:19  robertj
@@ -410,7 +414,7 @@ BOOL H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveDeter
   H323ControlPDU reply;
 
   if (newStatus != e_Indeterminate) {
-    PTRACE(2, "H245\tMasterSlaveDetermination: local is "
+    PTRACE(3, "H245\tMasterSlaveDetermination: local is "
                   << (newStatus == e_DeterminedMaster ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
     state = e_Incoming;
@@ -454,7 +458,7 @@ BOOL H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterminat
   H323ControlPDU reply;
   if (state == e_Outgoing) {
     status = newStatus;
-    PTRACE(2, "H245\tMasterSlaveDetermination: remote is "
+    PTRACE(3, "H245\tMasterSlaveDetermination: remote is "
                   << (newStatus == e_DeterminedSlave ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
     if (!connection.WriteControlPDU(reply))
@@ -567,12 +571,12 @@ BOOL H245NegTerminalCapabilitySet::Start(BOOL renegotiate, BOOL empty)
   PWaitAndSignal wait(mutex);
 
   if (state == e_InProgress) {
-    PTRACE(3, "H245\tTerminalCapabilitySet already in progress: outSeq=" << outSequenceNumber);
+    PTRACE(2, "H245\tTerminalCapabilitySet already in progress: outSeq=" << outSequenceNumber);
     return TRUE;
   }
 
   if (!renegotiate && state == e_Sent) {
-    PTRACE(3, "H245\tTerminalCapabilitySet already sent.");
+    PTRACE(2, "H245\tTerminalCapabilitySet already sent.");
     return TRUE;
   }
 
@@ -615,7 +619,7 @@ BOOL H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabilityS
 
   if (pdu.m_sequenceNumber == inSequenceNumber) {
     mutex.Signal();
-    PTRACE(3, "H245\tIgnoring TerminalCapabilitySet, already received sequence number");
+    PTRACE(2, "H245\tIgnoring TerminalCapabilitySet, already received sequence number");
     return TRUE;  // Already had this one
   }
 
@@ -662,7 +666,7 @@ BOOL H245NegTerminalCapabilitySet::HandleAck(const H245_TerminalCapabilitySetAck
 
   replyTimer.Stop();
   state = e_Sent;
-  PTRACE(2, "H245\tTerminalCapabilitySet Sent.");
+  PTRACE(3, "H245\tTerminalCapabilitySet Sent.");
   return TRUE;
 }
 
@@ -771,7 +775,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
                                             unsigned replacementFor)
 {
   if (state != e_Released && state != e_AwaitingRelease) {
-    PTRACE(3, "H245\tOpen of channel currently in negotiations: " << channelNumber);
+    PTRACE(2, "H245\tOpen of channel currently in negotiations: " << channelNumber);
     return FALSE;
   }
 
@@ -789,14 +793,14 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
   H245_OpenLogicalChannel & open = pdu.BuildOpenLogicalChannel(channelNumber);
 
   if (!capability.OnSendingPDU(open.m_forwardLogicalChannelParameters.m_dataType)) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber
+    PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", capability.OnSendingPDU() failed");
     return FALSE;
   }
 
   channel = capability.CreateChannel(connection, H323Channel::IsTransmitter, sessionID, NULL);
   if (channel == NULL) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber
+    PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", capability.CreateChannel() failed");
     return FALSE;
   }
@@ -804,7 +808,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
   channel->SetNumber(channelNumber);
 
   if (!channel->OnSendingPDU(open)) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber
+    PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", channel->OnSendingPDU() failed");
     return FALSE;
   }
@@ -824,7 +828,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
     return FALSE;
 
   if (!channel->SetInitialBandwidth()) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber << ", Insufficient bandwidth");
+    PTRACE(2, "H245\tOpening channel: " << channelNumber << ", Insufficient bandwidth");
     return FALSE;
   }
 
@@ -1512,7 +1516,7 @@ BOOL H245NegRequestMode::StartRequest(const PString & newModes)
 
 BOOL H245NegRequestMode::StartRequest(const H245_ArrayOf_ModeDescription & newModes)
 {
-  PTRACE(1, "H245\tStarted request mode: outSeq=" << outSequenceNumber
+  PTRACE(3, "H245\tStarted request mode: outSeq=" << outSequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
   if (awaitingResponse)

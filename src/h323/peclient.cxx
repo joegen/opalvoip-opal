@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.cxx,v $
- * Revision 1.2004  2007/04/02 05:51:33  rjongbloed
+ * Revision 1.2005  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.3  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.2  2004/06/04 06:54:18  csoutheren
@@ -382,7 +386,7 @@ void H323PeerElement::PrintOn(ostream & strm) const
 
 void H323PeerElement::MonitorMain(PThread &, INT)
 {
-  PTRACE(3, "PeerElement\tBackground thread started");
+  PTRACE(4, "PeerElement\tBackground thread started");
 
   for (;;) {
 
@@ -410,7 +414,7 @@ void H323PeerElement::MonitorMain(PThread &, INT)
         // check to see if expired or needs refresh scheduled
         PTime expireTime = sr->expireTime + 1000 * ServiceRequestGracePeriod;
         if (now >= expireTime) {
-          PTRACE(3, "PeerElement\tService relationship " << sr->serviceID << "expired");
+          PTRACE(2, "PeerElement\tService relationship " << sr->serviceID << "expired");
           localServiceRelationships.Remove(sr);
           {
             PWaitAndSignal m(localPeerListMutex);
@@ -449,12 +453,12 @@ void H323PeerElement::MonitorMain(PThread &, INT)
       break;
   }
 
-  PTRACE(3, "PeerElement\tBackground thread ended");
+  PTRACE(4, "PeerElement\tBackground thread ended");
 }
 
 void H323PeerElement::UpdateAllDescriptors(PThread &, INT)
 {
-  PTRACE(2, "PeerElement\tDescriptor update thread started");
+  PTRACE(4, "PeerElement\tDescriptor update thread started");
 
   for (PSafePtr<H323PeerElementDescriptor> descriptor = GetFirstDescriptor(PSafeReadWrite); descriptor != NULL; descriptor++) {
     PWaitAndSignal m(localPeerListMutex);
@@ -472,7 +476,7 @@ void H323PeerElement::UpdateAllDescriptors(PThread &, INT)
 
   monitorTickle.Signal();
 
-  PTRACE(2, "PeerElement\tDescriptor update thread ended");
+  PTRACE(4, "PeerElement\tDescriptor update thread ended");
 }
 
 void H323PeerElement::TickleMonitor(PTimer &, INT)
@@ -670,7 +674,7 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323Transport
 
   remoteServiceRelationships.Append(sr);
 
-  PTRACE(2, "PeerElement\tNew service relationship established with " << peer << " - next update in " << replyBody.m_timeToLive);
+  PTRACE(3, "PeerElement\tNew service relationship established with " << peer << " - next update in " << replyBody.m_timeToLive);
   OnAddServiceRelationship(peer);
 
   // mark all descriptors as needing an update
@@ -713,7 +717,7 @@ H323PeerElement::Error H323PeerElement::ServiceRequestByID(OpalGloballyUniqueID 
     H501_ServiceConfirmation & replyBody = reply.m_body;
     sr->expireTime = PTime() + 1000 * ((replyBody.m_timeToLive < ServiceRequestRetryTime) ? (int)replyBody.m_timeToLive : ServiceRequestRetryTime);
     sr->lastUpdateTime = PTime();
-    PTRACE(2, "PeerElement\tConfirmed service relationship with " << sr->peer << " - next update in " << replyBody.m_timeToLive);
+    PTRACE(3, "PeerElement\tConfirmed service relationship with " << sr->peer << " - next update in " << replyBody.m_timeToLive);
     return Confirmed;
   }
 
@@ -1040,10 +1044,10 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
 
   // do the update now, or later
   if (now) {
-    PTRACE(2, "PeerElement\tDescriptor " << descriptorID << " added/updated");
+    PTRACE(3, "PeerElement\tDescriptor " << descriptorID << " added/updated");
     UpdateDescriptor(descriptor, updateType);
   } else if (descriptor->state != H323PeerElementDescriptor::Deleted) {
-    PTRACE(2, "PeerElement\tDescriptor " << descriptorID << " queued to be added");
+    PTRACE(3, "PeerElement\tDescriptor " << descriptorID << " queued to be added");
     descriptor->state = H323PeerElementDescriptor::Dirty;
     monitorTickle.Signal();
   }
@@ -1135,10 +1139,10 @@ BOOL H323PeerElement::DeleteDescriptor(const OpalGloballyUniqueID & descriptorID
 
   // delete the descriptor, or mark it as to be deleted
   if (now) {
-    PTRACE(2, "PeerElement\tDescriptor " << descriptorID << " deleted");
+    PTRACE(3, "PeerElement\tDescriptor " << descriptorID << " deleted");
     UpdateDescriptor(descriptor, H501_UpdateInformation_updateType::e_deleted);
   } else {
-    PTRACE(2, "PeerElement\tDescriptor for " << descriptorID << " queued to be deleted");
+    PTRACE(3, "PeerElement\tDescriptor for " << descriptorID << " queued to be deleted");
     descriptor->state = H323PeerElementDescriptor::Deleted;
     monitorTickle.Signal();
   }
@@ -1425,11 +1429,11 @@ BOOL H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias,
         destAliases.SetSize(count);  
 
         transportAddress = contactAddress;
-        PTRACE(2, "Main\tAccessRequest for " << searchAlias << " returned " << transportAddress << " from " << peerAddr);
+        PTRACE(3, "Main\tAccessRequest for " << searchAlias << " returned " << transportAddress << " from " << peerAddr);
         return TRUE;
       }
       else { // H501_RouteInformation_messageType::e_nonExistent
-        PTRACE(2, "Main\tAccessRequest for " << searchAlias << " from " << peerAddr << " returned nonExistent");
+        PTRACE(3, "Main\tAccessRequest for " << searchAlias << " from " << peerAddr << " returned nonExistent");
         break;
       }
 
