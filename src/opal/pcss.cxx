@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2044  2007/04/03 07:59:14  rjongbloed
+ * Revision 1.2045  2007/04/04 02:12:01  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.43  2007/04/03 07:59:14  rjongbloed
  * Warning: API change to PCSS callbacks:
  *   changed return on OnShowIncoming to BOOL, now agrees with
  *     documentation and allows UI to abort calls early.
@@ -246,13 +250,13 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   soundChannelBuffers = 2;
 #endif
 
-  PTRACE(3, "PCSS\tCreated PC sound system endpoint.");
+  PTRACE(4, "PCSS\tCreated PC sound system endpoint.");
 }
 
 
 OpalPCSSEndPoint::~OpalPCSSEndPoint()
 {
-  PTRACE(3, "PCSS\tDeleted PC sound system endpoint.");
+  PTRACE(4, "PCSS\tDeleted PC sound system endpoint.");
 }
 
 
@@ -428,13 +432,13 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   silenceDetector = new OpalPCM16SilenceDetector;
   echoCanceler = new OpalEchoCanceler;
 
-  PTRACE(3, "PCSS\tCreated PC sound system connection with token '" << callToken << "'");
+  PTRACE(4, "PCSS\tCreated PC sound system connection with token '" << callToken << "'");
 }
 
 
 OpalPCSSConnection::~OpalPCSSConnection()
 {
-  PTRACE(3, "PCSS\tDeleted PC sound system connection.");
+  PTRACE(4, "PCSS\tDeleted PC sound system connection.");
 }
 
 
@@ -448,7 +452,7 @@ BOOL OpalPCSSConnection::SetUpConnection()
       return FALSE;
     }
 
-    PTRACE(2, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    PTRACE(3, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return FALSE;
