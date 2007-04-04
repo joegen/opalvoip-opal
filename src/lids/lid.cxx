@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2023  2007/03/30 02:09:53  rjongbloed
+ * Revision 1.2024  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.22  2007/03/30 02:09:53  rjongbloed
  * Fixed various GCC warnings
  *
  * Revision 2.21  2006/11/05 05:04:47  rjongbloed
@@ -920,26 +924,26 @@ BOOL OpalLineInterfaceDevice::StopTone(unsigned)
 
 BOOL OpalLineInterfaceDevice::PlayAudio(unsigned /*line*/, const PString & /*filename*/)
 {
-  PTRACE(3, "LID\tBase Class PlayAudio method called, exiting with FALSE");
+  PTRACE(2, "LID\tBase Class PlayAudio method called, exiting with FALSE");
   return FALSE;
 }
 
 
 BOOL OpalLineInterfaceDevice::StopAudio(unsigned /*line*/)
 {
-  PTRACE(3, "LID\tBase Class StopAudio method called, exiting with FALSE");
+  PTRACE(2, "LID\tBase Class StopAudio method called, exiting with FALSE");
   return FALSE;
 }
 	
 BOOL OpalLineInterfaceDevice::RecordAudioStart(unsigned /*line*/, const PString & /*fn*/)
 {
-  PTRACE(1, "LID\tRecordAudioStart KO, must be implemented in concrete class");
+  PTRACE(2, "LID\tRecordAudioStart must be implemented in concrete class");
   return FALSE;
 }
 
 BOOL OpalLineInterfaceDevice::RecordAudioStop(unsigned /*line*/)
 {
-  PTRACE(1, "LID\tRecordAudioStop KO, must be implemented in concrete class");
+  PTRACE(2, "LID\tRecordAudioStop must be implemented in concrete class");
   return FALSE;
 }
 
@@ -952,7 +956,7 @@ OpalLineInterfaceDevice::CallProgressTones
   PTRACE(3, "LID\tDialOut to " << number << ", line = " << line << ", requireTone = " << requireTone);
 
   if (IsLineTerminal(line)) {
-    PTRACE(1, "LID\tDialOut line is a terminal, do nothing");
+    PTRACE(2, "LID\tDialOut line is a terminal, do nothing");
     return NoTone;
 
   }
@@ -964,7 +968,7 @@ OpalLineInterfaceDevice::CallProgressTones
   /* Wait for dial tone or Message waiting tone */
   CallProgressTones tone = WaitForToneDetect(line, m_uiDialToneTimeout);
   if (tone != DialTone  && tone != MwiTone) {
-    PTRACE(3, "LID\tDialOut dial tone or mwi tone not detected");
+    PTRACE(2, "LID\tDialOut dial tone or mwi tone not detected");
     if (requireTone)
       return tone;
   }
@@ -1259,7 +1263,7 @@ BOOL OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
 
   for (PINDEX i = 0; i < PARRAYSIZE(CountryInfo); i++) {
     if (CountryInfo[i].t35Code == country) {
-      PTRACE(2, "LID\tCountry set to \"" << CountryInfo[i].fullName << '"');
+      PTRACE(3, "LID\tCountry set to \"" << CountryInfo[i].fullName << '"');
       for (line = 0; line < GetLineCount(); line++) {
         for (int tone = 0; tone < NumTones; tone++) {
           const char * toneStr = CountryInfo[i].tone[tone];
@@ -1273,7 +1277,7 @@ BOOL OpalLineInterfaceDevice::SetCountryCode(T35CountryCodes country)
     }
   }
 
-  PTRACE(2, "LID\tCountry could not be set to \"" << GetCountryCodeName(country) <<"\", leaveing as \"" << GetCountryCodeName() << '"');
+  PTRACE(2, "LID\tCountry could not be set to \"" << GetCountryCodeName(country) <<"\", leaving as \"" << GetCountryCodeName() << '"');
   return TRUE;
 }
 
@@ -1408,7 +1412,7 @@ OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * des
     description = descript;
 
   
-  PTRACE(3, "LID\tOpalLine::OpalLine device name " << dev.GetDeviceName() << " num = " << num << 
+  PTRACE(4, "LID\tOpalLine constructed - device name " << dev.GetDeviceName() << " num = " << num << 
             ", descript = " << description);
   
   ringCount = 0;

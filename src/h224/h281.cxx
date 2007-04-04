@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.7  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
  * Revision 1.6  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
@@ -732,18 +736,17 @@ void OpalH281Handler::OnReceivedMessage(const H281_Frame & message)
       OnStopAction();
     }
 
-  }	else if(requestType == H281_Frame::SelectVideoSource) {
-    OnSelectVideoSource(message.GetVideoSourceNumber(),
-						message.GetVideoMode());
-	  
-  }	else if(requestType == H281_Frame::StoreAsPreset) {
+  } else if(requestType == H281_Frame::SelectVideoSource) {
+    OnSelectVideoSource(message.GetVideoSourceNumber(), message.GetVideoMode());
+
+  } else if(requestType == H281_Frame::StoreAsPreset) {
     OnStoreAsPreset(message.GetPresetNumber());
-	  
+
   } else if(requestType == H281_Frame::ActivatePreset) {
-		OnActivatePreset(message.GetPresetNumber());
-	  
-  }	else {
-	PTRACE(3, "H.281\tUnknown Request: " << requestType);
+    OnActivatePreset(message.GetPresetNumber());
+
+  } else {
+    PTRACE(2, "H.281\tUnknown Request: " << requestType);
   }
 }
 

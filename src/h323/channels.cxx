@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2039  2007/03/29 05:16:49  csoutheren
+ * Revision 1.2040  2007/04/04 02:12:00  rjongbloed
+ * Reviewed and adjusted PTRACE log levels
+ *   Now follows 1=error,2=warn,3=info,4+=debug
+ *
+ * Revision 2.38  2007/03/29 05:16:49  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -752,7 +756,7 @@ void H323Channel::Close()
   // Signal to the connection that this channel is on the way out
   connection.OnClosedLogicalChannel(*this);
 
-  PTRACE(3, "LogChan\tCleaned up " << number);
+  PTRACE(4, "LogChan\tCleaned up " << number);
 }
 
 
@@ -914,7 +918,7 @@ void H323UnidirectionalChannel::Close()
   if (terminating)
     return;
 
-  PTRACE(3, "H323RTP\tCleaning up media stream on " << number);
+  PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
   if (mediaStream != NULL)
@@ -1103,7 +1107,7 @@ void H323_RealTimeChannel::OnSendOpenAck(const H245_OpenLogicalChannel & open,
 
   OnSendOpenAck(param);
 
-  PTRACE(2, "H323RTP\tSending open logical channel ACK: sessionID=" << sessionID);
+  PTRACE(3, "H323RTP\tSending open logical channel ACK: sessionID=" << sessionID);
 }
 
 
@@ -1163,7 +1167,7 @@ BOOL H323_RealTimeChannel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & a
 
 BOOL H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
 {
-  PTRACE(1, "H323RTP\tSetting dynamic RTP payload type: " << newType);
+  PTRACE(4, "H323RTP\tAttempting to set dynamic RTP payload type: " << newType);
 
   // This is "no change"
   if (newType == -1)
@@ -1178,7 +1182,7 @@ BOOL H323_RealTimeChannel::SetDynamicRTPPayloadType(int newType)
     return FALSE;
 
   rtpPayloadType = (RTP_DataFrame::PayloadTypes)newType;
-  PTRACE(3, "H323RTP\tSetting dynamic payload type to " << rtpPayloadType);
+  PTRACE(3, "H323RTP\tSet dynamic payload type to " << rtpPayloadType);
   return TRUE;
 }
 
@@ -1427,7 +1431,7 @@ BOOL H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelParame
 BOOL H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
    if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID) && (param.m_sessionID != sessionID)) {
-     PTRACE(1, "LogChan\twarning: Ack for invalid session: " << param.m_sessionID);
+     PTRACE(2, "LogChan\tAck for invalid session: " << param.m_sessionID);
   }
 
 
@@ -1522,7 +1526,7 @@ void H323DataChannel::Close()
   if (terminating)
     return;
 
-  PTRACE(3, "LogChan\tCleaning up data channel " << number);
+  PTRACE(4, "LogChan\tCleaning up data channel " << number);
 
   // Break any I/O blocks and wait for the thread that uses this object to
   // terminate before we allow it to be deleted.
@@ -1629,7 +1633,7 @@ BOOL H323DataChannel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
   if (separateReverseChannel &&
       open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
     errorCode = H245_OpenLogicalChannelReject_cause::e_unsuitableReverseParameters;
-    PTRACE(2, "LogChan\tOnReceivedPDU has unexpected reverse parameters");
+    PTRACE(1, "LogChan\tOnReceivedPDU has unexpected reverse parameters");
     return FALSE;
   }
 
