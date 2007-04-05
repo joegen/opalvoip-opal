@@ -37,6 +37,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.10  2007/04/05 05:47:54  rjongbloed
+ * Fixed crash in H.263 plug in if do not have PWLIBPLUGINDIR environment variable set.
+ *
  * Revision 1.9  2006/11/01 06:57:23  csoutheren
  * Fixed usage of YUV frame header
  *
@@ -247,8 +250,8 @@ class DynaLink
     virtual bool Open(const char *name)
     {
       char * env = ::getenv("PWLIBPLUGINDIR");
-      if (env != NULL) 
-        return InternalOpen(env, name);
+      if (env == NULL) 
+        return InternalOpen(NULL, name);
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
@@ -265,9 +268,11 @@ class DynaLink
     {
       char path[1024];
       memset(path, 0, sizeof(path));
-      strcpy(path, dir);
-      if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
-        strcat(path, DIR_SEPERATOR);
+      if (dir != NULL) {
+        strcpy(path, dir);
+        if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
+          strcat(path, DIR_SEPERATOR);
+      }
       strcat(path, name);
 
 #ifdef _WIN32
