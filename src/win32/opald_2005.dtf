@@ -4256,7 +4256,7 @@ EXPORTS
     ??0RouteEntry@OpalManager@@QAE@ABVPString@@0@Z @4068 NONAME
     ??0RTP_ControlFrame@@QAE@H@Z @4069 NONAME
     ??0RTP_DataFrame@@QAE@H@Z @4070 NONAME
-    ??0RTP_DataFrame@@QAE@PBEH@Z @41483 NONAME
+    ??0RTP_DataFrame@@QAE@PBEHH@Z @42158 NONAME
     ??0RTP_DataFrameQueue@@IAE@HPBV0@@Z @41484 NONAME
     ??0RTP_DataFrameQueue@@QAE@XZ @41485 NONAME
     ??0RTP_JitterBuffer@@QAE@AAVRTP_Session@@IIIH@Z @4071 NONAME
