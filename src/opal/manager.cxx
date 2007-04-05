@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2082  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2083  2007/04/05 02:16:39  rjongbloed
+ * Fixed validation of video devices set on OpalManager, especially in regard to video file driver.
+ *
+ * Revision 2.81  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1297,42 +1300,50 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 
 #if OPAL_VIDEO
-BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
+template<class PVideoXxxDevice>
+static BOOL SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)
 {
-  PStringList drivers = PVideoInputDevice::GetDriverNames();
-  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
-    PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[i]);
-    if (args.deviceName[0] == '#') {
-      PINDEX id = args.deviceName.Mid(1).AsUnsigned();
-      if (id > 0 && id <= devices.GetSize()) {
-        videoInputDevice = args;
-        videoInputDevice.deviceName = devices[id-1];
-        return TRUE;
-      }
-    }
-    else {
-      if (devices.GetValuesIndex(args.deviceName) != P_MAX_INDEX) {
-        videoInputDevice = args;
-        return TRUE;
-      }
-    }
+  // Check that the input device is legal
+  PVideoXxxDevice * pDevice = PVideoXxxDevice::CreateDeviceByName(args.deviceName, args.driverName, args.pluginMgr);
+  if (pDevice != NULL) {
+    delete pDevice;
+    member = args;
+    return TRUE;
   }
 
-  return FALSE;
+  if (args.deviceName[0] != '#')
+    return FALSE;
+
+  // Selected device by ordinal
+  PStringList devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
+  if (devices.IsEmpty())
+    return FALSE;
+
+  PINDEX id = args.deviceName.Mid(1).AsUnsigned();
+  if (id <= 0 || id > devices.GetSize())
+    return FALSE;
+
+  member = args;
+  member.deviceName = devices[id-1];
+  return TRUE;
+}
+
+
+BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
+{
+  return SetVideoDevice<PVideoInputDevice>(args, videoInputDevice);
 }
 
 
 BOOL OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
 {
-  videoPreviewDevice = args;
-  return TRUE;
+  return SetVideoDevice<PVideoOutputDevice>(args, videoPreviewDevice);
 }
 
 
 BOOL OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 {
-  videoOutputDevice = args;
-  return TRUE;
+  return SetVideoDevice<PVideoOutputDevice>(args, videoOutputDevice);
 }
 
 #endif
