@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2039  2007/03/28 05:25:56  csoutheren
+ * Revision 1.2040  2007/04/05 02:41:05  rjongbloed
+ * Added ability to have non-dynamic allocation of memory in RTP data frames.
+ *
+ * Revision 2.38  2007/03/28 05:25:56  csoutheren
  * Add virtual function to wait for incoming data
  * Swallow RTP packets that arrive on the socket before session starts
  *
@@ -367,7 +370,7 @@ class RTP_DataFrame : public PBYTEArray
 
   public:
     RTP_DataFrame(PINDEX payloadSize = 2048);
-    RTP_DataFrame(const BYTE * data, PINDEX len);
+    RTP_DataFrame(const BYTE * data, PINDEX len, BOOL dynamic = TRUE);
 
     enum {
       ProtocolVersion = 2,
