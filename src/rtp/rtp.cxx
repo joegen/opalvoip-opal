@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2060  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2061  2007/04/05 02:41:05  rjongbloed
+ * Added ability to have non-dynamic allocation of memory in RTP data frames.
+ *
+ * Revision 2.59  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -571,8 +574,8 @@ RTP_DataFrame::RTP_DataFrame(PINDEX sz)
 }
 
 
-RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len)
-  : PBYTEArray(data, len)
+RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, BOOL dynamic)
+  : PBYTEArray(data, len, dynamic)
 {
   payloadSize = len - GetHeaderSize();
 }
