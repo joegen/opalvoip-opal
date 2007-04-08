@@ -185,6 +185,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\pwlib\lib\wm5"
+				IgnoreDefaultLibraryNames="shell32.lib"
 				ModuleDefinitionFile="$(IntDir)\opaln.def"
 				DelayLoadDLLs=""
 				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
@@ -369,6 +370,7 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\pwlib\lib\wm5"
+				IgnoreDefaultLibraryNames="shell32.lib"
 				ModuleDefinitionFile="$(IntDir)\opald.def"
 				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
@@ -571,6 +573,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\..\..\pwlib\lib\wm5"
+				IgnoreDefaultLibraryNames="shell32.lib"
 				ModuleDefinitionFile="$(IntDir)\opal.def"
 				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
@@ -777,43 +780,11 @@
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				ExcludedFromBuild="true"
 				>
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
 					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
-					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
-					Outputs="$(IntDir)\$(TargetName).def"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath=".\opal_2005_wm.dtf"
-			>
-			<FileConfiguration
-				Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				ExcludedFromBuild="true"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul"
 					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
