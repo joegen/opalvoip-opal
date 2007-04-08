@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2007  2006/10/02 13:30:52  rjongbloed
+ * Revision 1.2008  2007/04/08 02:59:23  ykiryanov
+ * *** empty log message ***
+ *
+ * Revision 2.6  2006/10/02 13:30:52  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.5  2003/03/24 07:18:30  robertj
@@ -61,9 +64,14 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-HINSTANCE PDllInstance;
 
+#ifndef _WIN32_WCE
+HINSTANCE PDllInstance;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
+#else
+HANDLE PDllInstance;
+BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD fdwReason, LPVOID)
+#endif
 {
   if (fdwReason == DLL_PROCESS_ATTACH)
     PDllInstance = hinstDLL;
