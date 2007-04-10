@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2049  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2050  2007/04/10 05:15:53  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.48  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -85,7 +89,11 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2049  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2050  2007/04/10 05:15:53  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.48  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -826,26 +834,26 @@ class OpalMediaFormat : public PCaselessString
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    bool NeedsJitterBuffer() const { return GetOptionBoolean(NeedsJitterOption); }
-    static const char * const NeedsJitterOption;
+    bool NeedsJitterBuffer() const { return GetOptionBoolean(NeedsJitterOption()); }
+    static const PString & NeedsJitterOption();
 
     /**Get the average bandwidth used in bits/second.
       */
-    unsigned GetBandwidth() const { return GetOptionInteger(MaxBitRateOption); }
-    static const char * const MaxBitRateOption;
+    unsigned GetBandwidth() const { return GetOptionInteger(MaxBitRateOption()); }
+    static const PString & MaxBitRateOption();
 
     /**Get the maximum frame size in bytes. If this returns zero then the
        media format has no intrinsic maximum frame size, eg G.711 would 
        return zero but G.723.1 whoud return 24.
       */
-    PINDEX GetFrameSize() const { return GetOptionInteger(MaxFrameSizeOption); }
-    static const char * const MaxFrameSizeOption;
+    PINDEX GetFrameSize() const { return GetOptionInteger(MaxFrameSizeOption()); }
+    static const PString & MaxFrameSizeOption();
 
     /**Get the frame time in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg T.120
       */
-    unsigned GetFrameTime() const { return GetOptionInteger(FrameTimeOption); }
-    static const char * const FrameTimeOption;
+    unsigned GetFrameTime() const { return GetOptionInteger(FrameTimeOption()); }
+    static const PString & FrameTimeOption();
 
     /**Get the number of RTP timestamp units per millisecond.
       */
@@ -858,8 +866,8 @@ class OpalMediaFormat : public PCaselessString
 
     /**Get the clock rate in Hz for this format.
       */
-    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption); }
-    static const char * const ClockRateOption;
+    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption()); }
+    static const PString & ClockRateOption();
 
     /**Get the number of options this media format has.
       */
@@ -1068,8 +1076,8 @@ class OpalAudioFormat : public OpalMediaFormat
       time_t timeStamp = 0       ///<  timestamp (for versioning)
     );
 
-    static const char * const RxFramesPerPacketOption;
-    static const char * const TxFramesPerPacketOption;
+    static const PString & RxFramesPerPacketOption();
+    static const PString & TxFramesPerPacketOption();
 };
 #endif
 
@@ -1094,12 +1102,12 @@ class OpalVideoFormat : public OpalMediaFormat
 
     virtual bool Merge(const OpalMediaFormat & mediaFormat);
 
-    static const char * const FrameWidthOption;
-    static const char * const FrameHeightOption;
-    static const char * const EncodingQualityOption;
-    static const char * const TargetBitRateOption;
-    static const char * const DynamicVideoQualityOption;
-    static const char * const AdaptivePacketDelayOption;
+    static const PString & FrameWidthOption();
+    static const PString & FrameHeightOption();
+    static const PString & EncodingQualityOption();
+    static const PString & TargetBitRateOption();
+    static const PString & DynamicVideoQualityOption();
+    static const PString & AdaptivePacketDelayOption();
 };
 #endif
 
