@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2021  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2022  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.20  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1478,13 +1482,13 @@ class H323VideoPluginCapability : public H323VideoCapability,
 
     static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
     {
-      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption, frameWidth))
+      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), frameWidth))
         return FALSE;
 
-      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption, frameHeight))
+      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), frameHeight))
         return FALSE;
 
-      if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption, OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
+      if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
         return FALSE;
 
       return TRUE;
@@ -2396,8 +2400,8 @@ H323H261PluginCapability::H323H261PluginCapability(PluginCodec_Definition * _enc
   const OpalMediaFormat & fmt = GetMediaFormat();
   if (!fmt.HasOption(h323_qcifMPI_tag) && !fmt.HasOption(h323_cifMPI_tag)) {
     OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
-    mediaFormat.AddOption(new OpalMediaOptionInteger(h323_cifMPI_tag,                    false, OpalMediaOption::MinMerge, 4));
-    mediaFormat.AddOption(new OpalMediaOptionInteger(OpalMediaFormat::MaxBitRateOption,  false, OpalMediaOption::MinMerge, 621700));
+    mediaFormat.AddOption(new OpalMediaOptionInteger(h323_cifMPI_tag,                      false, OpalMediaOption::MinMerge, 4));
+    mediaFormat.AddOption(new OpalMediaOptionInteger(OpalMediaFormat::MaxBitRateOption(),  false, OpalMediaOption::MinMerge, 621700));
   }
 }
 
@@ -2463,7 +2467,7 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   }
 
   h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
-  h261.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 621700)+50)/100;
+  h261.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700)+50)/100;
   h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
 
   return TRUE;
@@ -2482,7 +2486,7 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
   mode.m_resolution.SetTag(qcifMPI > 0 ? H245_H261VideoMode_resolution::e_qcif
                                        : H245_H261VideoMode_resolution::e_cif);
 
-  mode.m_bitRate                = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 621700) + 50) / 1000;
+  mode.m_bitRate                = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700) + 50) / 1000;
   mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
 
   return TRUE;
@@ -2514,7 +2518,7 @@ BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
       return FALSE;
   }
 
-  mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption,          h261.m_maxBitRate*100);
+  mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(),        h261.m_maxBitRate*100);
   mediaFormat.SetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, h261.m_temporalSpatialTradeOffCapability);
   mediaFormat.SetOptionBoolean(h323_stillImageTransmission_tag,            h261.m_stillImageTransmission);
 
@@ -2604,7 +2608,7 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   SetTransmittedCap(mediaFormat, cap, h323_cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  H245_H263VideoCapability::e_slowCif4MPI,  h263.m_slowCif4MPI);
   SetTransmittedCap(mediaFormat, cap, h323_cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI);
 
-  h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 327600) + 50) / 100;
+  h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
   h263.m_unrestrictedVector	               = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
   h263.m_arithmeticCoding	                 = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
@@ -2650,7 +2654,7 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
 			    :(qcifMPI ? H245_H263VideoMode_resolution::e_qcif
             : H245_H263VideoMode_resolution::e_sqcif))));
 
-  mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 327600) + 50) / 100;
+  mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
   mode.m_arithmeticCoding     = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
   mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
@@ -2714,7 +2718,7 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
   if (!SetReceivedH263Cap(mediaFormat, cap, h323_cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI, CIF16_WIDTH, CIF16_HEIGHT, formatDefined))
     return FALSE;
 
-  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption, h263.m_maxBitRate*100))
+  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), h263.m_maxBitRate*100))
     return FALSE;
 
   mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,      h263.m_unrestrictedVector);

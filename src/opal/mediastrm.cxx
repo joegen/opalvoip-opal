@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2056  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2057  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.55  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1002,8 +1006,8 @@ BOOL OpalVideoMediaStream::Open()
   if (isOpen)
     return TRUE;
 
-  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
+  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 176);
+  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 144);
 
   if (inputDevice != NULL) {
     if (!inputDevice->SetColourFormatConverter(mediaFormat)) {

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2148  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2149  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.147  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -257,23 +261,31 @@ const PTimeInterval MonitorCallStatusTime(0, 10); // Seconds
 
 #if PTRACING
 
-const char * const H323Connection::ConnectionStatesNames[NumConnectionStates] = {
-  "NoConnectionActive",
-  "AwaitingGatekeeperAdmission",
-  "AwaitingTransportConnect",
-  "AwaitingSignalConnect",
-  "AwaitingLocalAnswer",
-  "HasExecutedSignalConnect",
-  "EstablishedConnection",
-  "ShuttingDownConnection"
-};
+const char * H323Connection::GetConnectionStatesName(ConnectionStates s)
+{
+  static const char * const names[NumConnectionStates] = {
+    "NoConnectionActive",
+    "AwaitingGatekeeperAdmission",
+    "AwaitingTransportConnect",
+    "AwaitingSignalConnect",
+    "AwaitingLocalAnswer",
+    "HasExecutedSignalConnect",
+    "EstablishedConnection",
+    "ShuttingDownConnection"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 
-const char * const H323Connection::FastStartStateNames[NumFastStartStates] = {
-  "FastStartDisabled",
-  "FastStartInitiate",
-  "FastStartResponse",
-  "FastStartAcknowledged"
-};
+const char * H323Connection::GetFastStartStateName(FastStartStates s)
+{
+  static const char * const names[NumFastStartStates] = {
+    "FastStartDisabled",
+    "FastStartInitiate",
+    "FastStartResponse",
+    "FastStartAcknowledged"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 #ifdef H323_H460
@@ -3357,7 +3369,7 @@ BOOL H323Connection::OnControlProtocolError(ControlProtocolErrors /*errorSource*
 static void SetRFC2833PayloadType(H323Capabilities & capabilities,
                                   OpalRFC2833Proto & rfc2833handler)
 {
-  H323Capability * capability = capabilities.FindCapability(H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833]);
+  H323Capability * capability = capabilities.FindCapability(H323_UserInputCapability::GetSubTypeName(H323_UserInputCapability::SignalToneRFC2833));
   if (capability != NULL) {
     RTP_DataFrame::PayloadTypes pt = ((H323_UserInputCapability*)capability)->GetPayloadType();
     if (rfc2833handler.GetPayloadType() != pt) {
@@ -4258,7 +4270,7 @@ static BOOL CheckSendUserInputMode(const H323Capabilities & caps,
   if (types[mode] == H323_UserInputCapability::NumSubTypes)
     return mode == H323Connection::SendUserInputAsQ931;
 
-  return caps.FindCapability(H323_UserInputCapability::SubTypeNames[types[mode]]) != NULL;
+  return caps.FindCapability(H323_UserInputCapability::GetSubTypeName(types[mode])) != NULL;
 }
 
 

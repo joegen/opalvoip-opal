@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2045  2007/04/04 02:12:02  rjongbloed
+ * Revision 1.2046  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.44  2007/04/04 02:12:02  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -856,8 +860,8 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 
 //////////////////////////////////////////////////////////////////////////////
 
-const char * const SDPSessionDescription::ConferenceTotalBandwidthModifier = "CT";
-const char * const SDPSessionDescription::ApplicationSpecificBandwidthModifier = "AS";
+const PString & SDPSessionDescription::ConferenceTotalBandwidthModifier()     { static PString s = "CT"; return s; }
+const PString & SDPSessionDescription::ApplicationSpecificBandwidthModifier() { static PString s = "AS"; return s; }
 
 SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
   : sessionName(SIP_DEFAULT_SESSION_NAME),
