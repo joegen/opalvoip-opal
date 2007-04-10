@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2018  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2019  2007/04/10 05:15:53  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.17  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -2012,7 +2016,8 @@ class H323_UserInputCapability : public H323Capability
       SignalToneRFC2833,
       NumSubTypes
     };
-    static const char * const SubTypeNames[NumSubTypes];
+    static const char * GetSubTypeName(SubTypes subType);
+    friend ostream & operator<<(ostream & strm, SubTypes subType) { return strm << GetSubTypeName(subType); }
 
     /**Create the capability for User Input.
        The subType parameter is a value from the enum
