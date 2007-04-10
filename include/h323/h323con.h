@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2063  2007/03/13 03:34:00  csoutheren
+ * Revision 1.2064  2007/04/10 05:15:53  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.62  2007/03/13 03:34:00  csoutheren
  * Fixed use of wrong ifdef
  *
  * Revision 2.61  2007/03/13 02:16:56  csoutheren
@@ -2397,10 +2401,10 @@ class H323Connection : public OpalConnection
     OpalMediaStream      * transmitterMediaStream;
 
 #if PTRACING
-    static const char * const ConnectionStatesNames[NumConnectionStates];
-    friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << ConnectionStatesNames[s]; }
-    static const char * const FastStartStateNames[NumFastStartStates];
-    friend ostream & operator<<(ostream & o, FastStartStates s) { return o << FastStartStateNames[s]; }
+    static const char * GetConnectionStatesName(ConnectionStates s);
+    friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << GetConnectionStatesName(s); }
+    static const char * GetFastStartStateName(FastStartStates s);
+    friend ostream & operator<<(ostream & o, FastStartStates s) { return o << GetFastStartStateName(s); }
 #endif
 
 
