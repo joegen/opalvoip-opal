@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.3  2007/03/30 13:56:37  hfriederich
+ * Revision 1.2117.2.4  2007/04/10 19:00:59  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.116.2.3  2007/03/30 13:56:37  hfriederich
  * Reorganization of the way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -2074,7 +2078,11 @@ BOOL SIPTransaction::Start()
     PAssertAlways(PLogicError);
     return FALSE;
   }
-
+    
+  BOOL success = FALSE;
+    
+  Lock();
+    
   if (connection != NULL) {
     connection->AddTransaction(this);
     connection->GetAuthenticator().Authorise(*this); 
@@ -2084,30 +2092,32 @@ BOOL SIPTransaction::Start()
     //We authorise the PDU when authentication is required
   }
 
-  PWaitAndSignal m(mutex);
-
   state = Trying;
   retry = 0;
   retryTimer = retryTimeoutMin;
   localAddress = transport.GetLocalAddress();
-
-  if (method == Method_INVITE)
-    completionTimer = endpoint.GetInviteTimeout();
-  else
-    completionTimer = endpoint.GetNonInviteTimeout();
+  
+  completionTimer = endpoint.GetNonInviteTimeout();
+  
+  OnStart();
 
   if (connection != NULL) {
     // Use the connection transport to send the request
     if (connection->SendPDU(*this, this->GetSendAddress(*connection)))
-      return TRUE;
+      success = TRUE;
   }
   else {
     if (Write(transport))
-      return TRUE;
+      success = TRUE;
   }
+  
+  if (success == FALSE) {
+    SetTerminated(Terminated_TransportError);
+  }
+  
+  Unlock();
 
-  SetTerminated(Terminated_TransportError);
-  return FALSE;
+  return success;
 }
 
 
@@ -2122,159 +2132,149 @@ void SIPTransaction::WaitForCompletion()
 
 BOOL SIPTransaction::Cancel()
 {
-  PWaitAndSignal m(mutex);
-
-  if (state == NotStarted || state >= Cancelling)
-    return FALSE;
-
-  return ResendCANCEL();
+  BOOL success = TRUE;
+    
+  Lock();
+    
+  if (state == NotStarted || state == Aborting || state >= Cancelling)
+    success = FALSE;
+  
+  // Don't send CANCEL until a provisional response is received
+  if (state == Trying) {
+    PTRACE(3, "Not sending CANCEL for transaction " << GetMIME().GetCSeq() << " since no provisional response received yet");
+    state = Aborting;
+  } else {
+    StartCANCEL();
+  }
+  
+  Unlock();
+  
+  return success;
 }
 
 
 void SIPTransaction::Abort()
 {
-  PWaitAndSignal m(mutex);
+  Lock();
   SetTerminated(Terminated_Aborted);
+  Unlock();
 }
 
 
-BOOL SIPTransaction::ResendCANCEL()
+void SIPTransaction::StartCANCEL()
 {
-  SIP_PDU cancel(Method_CANCEL,
-     uri,
-     mime.GetTo(),
-     mime.GetFrom(),
-     mime.GetCallID(),
-     mime.GetCSeqIndex(),
-     localAddress);
-  // Use the topmost via header from the INVITE we cancel as per 9.1. 
-  PStringList viaList = mime.GetViaList();
-  cancel.GetMIME().SetVia(viaList[0]);
-
-  if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
-    SetTerminated(Terminated_TransportError);
-    return FALSE;
-  }
-
   if (state < Cancelling) {
     state = Cancelling;
-    retry = 0;
-    retryTimer = retryTimeoutMin;
+    
+    SIPCancel * cancel = new SIPCancel(*this);
+    cancel->Start();
   }
-
-  return TRUE;
 }
 
 
 BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
   PString cseq = response.GetMIME().GetCSeq();
-
-  // If is the response to a CANCEl we sent, then just ignore it
-  if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
-    // Lock only if we have not already locked it in SIPInvite::OnReceivedResponse
-    PWaitAndSignal m(mutex, method != Method_INVITE);
-    SetTerminated(Terminated_Cancelled);
-    return FALSE;
-  }
-
+    
   // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
     PTRACE(3, "SIP\tTransaction " << cseq << " response not for " << *this);
     return FALSE;
   }
 
-  if (method != Method_INVITE) mutex.Wait();
-
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
      "issues" according to the spec but
      */
-  if (response.GetStatusCode()/100 == 1) {
-    PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
-
-    state = Proceeding;
-    retry = 0;
-    retryTimer = retryTimeoutMax;
-    completionTimer = endpoint.GetNonInviteTimeout();
-
-    mutex.Signal();
-
-    if (connection != NULL)
-      connection->OnReceivedResponse(*this, response);
-    else
-      endpoint.OnReceivedResponse(*this, response);
-  }
-   else {
-    PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
-       
-    BOOL notCompletedFlag = state < Completed;
-
-    state = Completed;
-    completed.Signal();
-    retryTimer.Stop();
-    completionTimer = endpoint.GetPduCleanUpTimeout();
-
-    mutex.Signal();
-
-    // Forward the final response only once to the connection / endpoint
-    if (notCompletedFlag) {
-      if (connection != NULL)
-        connection->OnReceivedResponse(*this, response);
-      else
-        endpoint.OnReceivedResponse(*this, response);
+  if (response.GetStatusCode()/100 == 1) { // provisional responses
+      
+    if (state == Aborting) {
+      // Got a provisional response, now start sending CANCELs
+      PTRACE(3, "SIP\tProvisional response received for transcation " << cseq << ". Now sending CANCEL");
+      StartCANCEL();
+    } 
+    
+    // Even if the trasaction is being CANCELed, the transaction behaviour
+    // remains the same as if the transaction continues.
+    if (state == Trying || state == Cancelling) {
+      PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
+        
+      // Do not forward responses if transaction is cancelling
+      if (state == Trying) {
+        if (connection != NULL) {
+          connection->OnReceivedResponse(*this, response);
+        } else {
+          endpoint.OnReceivedResponse(*this, response);
+        }
+        state = Proceeding;
+      }
+      
+      retry = 0;
+      retryTimer = retryTimeoutMax;
+      completionTimer = endpoint.GetNonInviteTimeout();
+      
+      OnProceeding(response);
     }
+  }
+  else {
+    
+    if (state < Completed) {
+      PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
+       
+      // Do not forward responses if transaction is cancelling
+      if (state != Cancelling) {
+        if (connection != NULL) {
+          connection->OnReceivedResponse(*this, response);
+        } else {
+          endpoint.OnReceivedResponse(*this, response);
+        }
+        state = Completed;
+      }
 
-    if (!OnCompleted(response))
-      return FALSE;
+      retryTimer.Stop();
+      completionTimer = endpoint.GetPduCleanUpTimeout();
+      
+      OnCompleted(response);
+    }
   }
 
-  // If this is invite then we need to lock it again
-  if (method == Method_INVITE) mutex.Wait();
-
-  return TRUE;
-}
-
-
-BOOL SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
-{
   return TRUE;
 }
 
 
 void SIPTransaction::OnRetry(PTimer &, INT)
 {
-  /* There is a potential deadlock if a reply packet comes in at the exact
-     same time as the timeout. So, put a timeout on the mutex grab, if it
-     fails then we had the deadlock condition, in which case the retry
-     timeout can be safely ignored as the PDU states are already handled.
-     */
-  if (!mutex.Wait(100)) {
-    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout ignored.");
+  SIPTransactionJob * job = new SIPTransactionJob(SIPTransactionJob::Transaction_Retry, this);
+    
+  if (connection != NULL) {
+    connection->QueueTransactionJob(job);
+  } else {
+    endpoint.QueueTransactionJob(job);
+  }
+}
+
+
+void SIPTransaction::HandleRetry()
+{
+  if (state >= Terminated_Success) {
     return;
   }
-
-  PWaitAndSignal m(mutex, false);
-
+    
   retry++;
-
+    
   PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " timeout, making retry " << retry);
-
+    
   if (retry >= endpoint.GetMaxRetries()) {
     SetTerminated(Terminated_RetriesExceeded);
     return;
   }
-
-  if (state == Cancelling) {
-    if (!ResendCANCEL())
-      return;
-  }
+  
   else if (!transport.SetLocalAddress(localAddress) || !Write(transport)) {
     SetTerminated(Terminated_TransportError);
     return;
   }
-
+  
   PTimeInterval timeout = retryTimeoutMin*(1<<retry);
   if (timeout > retryTimeoutMax)
     retryTimer = retryTimeoutMax;
@@ -2285,15 +2285,22 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 
 void SIPTransaction::OnTimeout(PTimer &, INT)
 {
-  /* There is a potential deadlock if a reply packet comes in at the exact
-     same time as the timeout. So, put a timeout on the mutex grab, if it
-     fails then we had the deadlock condition, in which case the retry
-     timeout can be safely ignored as the PDU states are already handled.
-   */
-  if (mutex.Wait(100)) {
-    SetTerminated(state != Completed ? Terminated_Timeout : Terminated_Success);
-    mutex.Signal();
+  SIPTransactionJob * job = new SIPTransactionJob(SIPTransactionJob::Transaction_Timeout, this);
+    
+  if (connection != NULL) {
+    connection->QueueTransactionJob(job);
+  } else {
+    endpoint.QueueTransactionJob(job);
   }
+}
+
+
+void SIPTransaction::HandleTimeout()
+{
+  if (state >= Terminated_Success) { // Transaction already terminated
+    return;
+  }
+  SetTerminated(state != Completed ? Terminated_Timeout : Terminated_Success);
 }
 
 
@@ -2314,7 +2321,6 @@ void SIPTransaction::SetTerminated(States newState)
     "Terminated_Timeout",
     "Terminated_RetriesExceeded",
     "Terminated_TransportError",
-    "Terminated_Cancelled",
     "Terminated_Aborted"
   };
 #endif
@@ -2331,47 +2337,65 @@ void SIPTransaction::SetTerminated(States newState)
   state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
-  // REGISTER or MESSAGE Failed, tell the endpoint
-  if (state != Terminated_Success) {
-    
-    if (GetMethod() == SIP_PDU::Method_REGISTER) {
-      
-      SIPURL url (GetMIME().GetFrom ());
-      PString hosturl;
-      // skip transport identifier
-      PINDEX pos = url.GetHostName().Find('$');
-      if (pos != P_MAX_INDEX)
-        hosturl = url.GetHostName().Mid(pos+1);
-      else
-        hosturl = url.GetHostName();
-      endpoint.OnRegistrationFailed(hosturl, 
-            url.GetUserName(),
-            SIP_PDU::Failure_RequestTimeout,
-            (GetMIME().GetExpires(0) > 0));
-    }
-    else if (GetMethod() == SIP_PDU::Method_MESSAGE) {
-      SIPURL url (GetMIME().GetTo ());
-      endpoint.OnMessageFailed(url, SIP_PDU::Failure_RequestTimeout);
-    }
-  }
-
   if (oldState != Completed) {
     completed.Signal();
   }
+  
+  OnTerminated();
+  
+  SIPTransactionJob * job = new SIPTransactionJob(SIPTransactionJob::Transaction_Destruction, this);
 
-  // Unlock the mutex before calling the connection / endpoint
-  // to avoid possible deadlocks
-  mutex.Signal();
   if (connection != NULL) {
     if (state != Terminated_Success) {
       connection->OnTransactionFailed(*this);
     }
     connection->RemoveTransaction(this);
+    connection->QueueTransactionJob(job);
   }
   else {
     endpoint.RemoveTransaction(this);
+    endpoint.QueueTransactionJob(job);
   }
-  mutex.Wait();
+}
+
+
+void SIPTransaction::OnStart()
+{
+}
+
+
+void SIPTransaction::OnProceeding(SIP_PDU & /*response*/)
+{
+}
+
+
+void SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
+{
+}
+
+
+void SIPTransaction::OnTerminated()
+{
+}
+
+
+void SIPTransaction::Lock()
+{
+  if (connection != NULL) {
+    connection->LockTransactionProcessing();
+  } else {
+    endpoint.LockTransactionProcessing();
+  }
+}
+
+
+void SIPTransaction::Unlock()
+{
+  if (connection != NULL) {
+    connection->UnlockTransactionProcessing();
+  } else {
+    endpoint.UnlockTransactionProcessing();
+  }
 }
 
 
@@ -2408,34 +2432,76 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, cons
   connection.BuildSDP(sdp, rtpSessions, mediaType);
 }
 
+
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  PWaitAndSignal m(mutex);
-	
   States originalState = state;
-
-  if (!SIPTransaction::OnReceivedResponse(response))
+    
+  if (!SIPTransaction::OnReceivedResponse(response)) {
     return FALSE;
-
-  if (response.GetStatusCode()/100 == 1) {
-    retryTimer.Stop();
-    completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  } 
-  else {
-    completionTimer = endpoint.GetAckTimeout();
-
-    // If the state was already 'Completed', ensure that still an
-    // ACK is sent
-    if (originalState >= Completed) {
-      connection->SendACK(*this, response);
-    }
   }
-
-  /* Handle response to outgoing call cancellation */
-  if (response.GetStatusCode() == Failure_RequestTerminated)
-    SetTerminated(Terminated_Success);
-
+    
+  // Ensure that an ACK is sent.
+  // If the state is Cancelling, ACK has to be sent
+  //   as the response isn't forwarded to the connection
+  // Only the first final response is forwarded to the
+  // connection, but an ACK has to be sent for all
+  // responses received
+  if (originalState >= Cancelling && response.GetStatusCode()/100 != 1) {
+    connection->SendACK(*this, response);
+  }
+  
+  // If CANCEL was sent but a 2xx response is received, the
+  // CANCEL has no effect. Thus, one has to close the session
+  // with BYE.
+  if (originalState == Cancelling && response.GetStatusCode()/100 == 2) {
+    connection->SendBYE();
+  }
+  
   return TRUE;
+}
+
+
+void SIPInvite::OnStart()
+{
+  completionTimer = endpoint.GetInviteTimeout();
+}
+
+
+void SIPInvite::OnProceeding(SIP_PDU & /*response*/)
+{
+  // Stop resending the INVITE
+  retryTimer.Stop();
+  completionTimer = PTimeInterval(0, mime.GetExpires(180));
+}
+
+
+void SIPInvite::OnCompleted(SIP_PDU & response)
+{
+  // 2xx responses cause immediate termination of the transaction
+  if (response.GetStatusCode()/100 == 2) {
+    SetTerminated(Terminated_Success); //Needs some code restructuration inside SIPConnection first
+  } else {
+    completionTimer = endpoint.GetInviteTimeout();
+  }
+}
+
+
+SIPCancel::SIPCancel(SIPTransaction & transaction)
+: SIPTransaction(*(transaction.GetConnection()), transaction.GetTransport(), Method_CANCEL)
+{
+    const SIPMIMEInfo & transactionMIME = transaction.GetMIME();
+    SIP_PDU::Construct(Method_CANCEL,
+                       transaction.GetURI(),
+                       transactionMIME.GetTo(),
+                       transactionMIME.GetFrom(),
+                       transactionMIME.GetCallID(),
+                       transactionMIME.GetCSeqIndex(),
+                       transaction.GetLocalAddress());
+    
+    // Use the topmost via header from the INVITE we cancel as per 9.1. 
+    PStringList viaList = transactionMIME.GetViaList();
+    mime.SetVia(viaList[0]);
 }
 
 
@@ -2462,6 +2528,26 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
   SIPURL contact = endpoint.GetLocalURL(trans, address.GetUserName());
   mime.SetContact(contact);
   mime.SetExpires(expires);
+}
+
+
+void SIPRegister::OnTerminated()
+{
+  if (state != Terminated_Success) {
+        
+    SIPURL url (GetMIME().GetFrom ());
+    PString hosturl;
+    // skip transport identifier
+    PINDEX pos = url.GetHostName().Find('$');
+    if (pos != P_MAX_INDEX)
+      hosturl = url.GetHostName().Mid(pos+1);
+    else
+      hosturl = url.GetHostName();
+    endpoint.OnRegistrationFailed(hosturl, 
+                                  url.GetUserName(),
+                                  SIP_PDU::Failure_RequestTimeout,
+                                  (GetMIME().GetExpires(0) > 0));
+  }
 }
 
 
@@ -2560,6 +2646,15 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   mime.SetContentType("text/plain;charset=UTF-8");
 
   entityBody = body;
+}
+
+
+void SIPMessage::OnTerminated()
+{
+  if (state != Terminated_Success) {
+    SIPURL url (GetMIME().GetTo ());
+    endpoint.OnMessageFailed(url, SIP_PDU::Failure_RequestTimeout);
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -2665,4 +2760,26 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                      viaAddress);
   mime.SetAccept("application/sdp");
 }
+
+
+/////////////////////////////////////////////////////////////////////////
+
+
+void SIPTransactionJob::Process(SIPConnection * connection)
+{
+  switch (jobType) {
+    case SIPTransactionJob::Transaction_Retry:
+      PDownCast(SIPTransaction, pdu)->HandleRetry();
+      break;
+    case SIPTransactionJob::Transaction_Timeout:
+      PDownCast(SIPTransaction, pdu)->HandleTimeout();
+      break;
+    case SIPTransactionJob::Transaction_Destruction:
+      delete pdu;
+      break;
+    default:
+      break;
+  }
+}
+
 // End of file ////////////////////////////////////////////////////////////////
