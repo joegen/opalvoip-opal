@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2083  2007/04/05 02:16:39  rjongbloed
+ * Revision 1.2084  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.82  2007/04/05 02:16:39  rjongbloed
  * Fixed validation of video devices set on OpalManager, especially in regard to video file driver.
  *
  * Revision 2.81  2007/04/04 02:12:01  rjongbloed
@@ -864,8 +868,8 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = videoInputDevice;
-  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
+  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 176);
+  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 144);
 
   autoDelete = TRUE;
   device = PVideoInputDevice::CreateOpenedDevice(args);
@@ -881,8 +885,8 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
-  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
+  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 176);
+  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 144);
 
   autoDelete = TRUE;
   device = PVideoOutputDevice::CreateOpenedDevice(args);

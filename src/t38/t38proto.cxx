@@ -24,7 +24,11 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2014  2007/03/30 02:18:24  csoutheren
+ * Revision 1.2015  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.13  2007/03/30 02:18:24  csoutheren
  * Fix obvious error (thanks to Robert)
  *
  * Revision 2.12  2007/03/29 23:13:52  rjongbloed
@@ -199,8 +203,8 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
                     clockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 /////////////////////////////////////////////////////////////////////////////

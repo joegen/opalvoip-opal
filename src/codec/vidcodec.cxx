@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2018  2006/11/01 06:57:23  csoutheren
+ * Revision 1.2019  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.17  2006/11/01 06:57:23  csoutheren
  * Fixed usage of YUV frame header
  *
  * Revision 2.16  2006/09/22 00:58:41  csoutheren
@@ -170,12 +174,12 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
   if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
     return FALSE;
 
-  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, PVideoDevice::CIFWidth);
-  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, PVideoDevice::CIFHeight);
-  videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption, 15);
-  targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption, 64000);
-  dynamicVideoQuality = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption, false);
-  adaptivePacketDelay = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption, false);
+  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoDevice::CIFWidth);
+  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoDevice::CIFHeight);
+  videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption(), 15);
+  targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 64000);
+  dynamicVideoQuality = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption(), false);
+  adaptivePacketDelay = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), false);
   return TRUE;
 }
 
