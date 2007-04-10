@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.9  2007/03/31 22:48:57  hfriederich
+ * Revision 1.2198.2.10  2007/04/10 19:00:58  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.197.2.9  2007/03/31 22:48:57  hfriederich
  * Ensure capabilities are initialized before building the SDP reply
  *
  * Revision 2.197.2.8  2007/03/31 22:28:06  hfriederich
@@ -869,7 +873,7 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalConnection::StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
-    pduSemaphore(0, P_MAX_INDEX)
+    jobSemaphore(0, P_MAX_INDEX)
 {
   SIPURL transportAddress = destination;
   targetAddress = destination;
@@ -912,7 +916,7 @@ SIPConnection::SIPConnection(OpalCall & call,
     lastTransportAddress = transport->GetRemoteAddress();
 
   originalInvite = NULL;
-  pduHandler = NULL;
+  jobHandler = NULL;
   lastSentCSeq = 0;
   releaseMethod = ReleaseWithNothing;
 
@@ -926,6 +930,13 @@ SIPConnection::SIPConnection(OpalCall & call,
   udpTransport = NULL;
   
   sentTrying = FALSE;
+  
+  // Start the job handler thread
+  SafeReference();
+  jobHandler = PThread::Create(PCREATE_NOTIFIER(JobThreadMain), 0,
+                               PThread::NoAutoDeleteThread,
+                               PThread::NormalPriority,
+                               "SIP Handler:%x");
 
   PTRACE(3, "SIP\tCreated connection.");
 }
@@ -941,7 +952,7 @@ SIPConnection::~SIPConnection()
   
   delete referTransaction;
 
-  if (pduHandler) delete pduHandler;
+  delete jobHandler;
   if (udpTransport) delete udpTransport;
 
   PTRACE(3, "SIP\tDeleted connection.");
@@ -1029,17 +1040,6 @@ static SIP_PDU::StatusCodes MapEndReasonToSIPCode(OpalConnection::CallEndReason 
 void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << phase);
-  
-  // OpalConnection::Release sets the phase to Releasing in the SIP Handler 
-  // thread
-  if (GetPhase() >= ReleasedPhase){
-    PTRACE(2, "SIP\tOnReleased: already released");
-    return;
-  };
-
-  SetPhase(ReleasingPhase);
-
-  SIPTransaction * byeTransaction = NULL;
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
@@ -1065,21 +1065,18 @@ void SIPConnection::OnReleased()
       break;
 
     case ReleaseWithBYE :
-      // create BYE now & delete it later to prevent memory access errors
-      byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
+      SendBYE();
       break;
 
     case ReleaseWithCANCEL :
       {
-        PINDEX i;
-        {
-          PWaitAndSignal m(invitationsMutex);
-          for (i = 0; i < invitations.GetSize(); i++) {
-            PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
-            invitations[i].Cancel();
-          }
+        PWaitAndSignal m(invitationsMutex);
+        for (PINDEX i = 0; i < invitations.GetSize(); i++) {
+          PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
+          invitations[i].Cancel();
         }
       }
+      break;
   }
 
   // Close media
@@ -1087,23 +1084,7 @@ void SIPConnection::OnReleased()
   CloseMediaStreams();
   streamsMutex.Signal();
 
-  // Sent a BYE, wait for it to complete
-  if (byeTransaction != NULL) {
-    endpoint.WaitForTransactionCompletion(byeTransaction);
-  }
-
-  SetPhase(ReleasedPhase);
-
-  if (pduHandler != NULL) {
-    pduSemaphore.Signal();
-    pduHandler->WaitForTermination();
-  }
-  
-  // Wait until all INVITEs have completed
-  for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-    endpoint.WaitForTransactionCompletion(&invitations[i]);
-  }
-
+  // Start releasing the other connections
   OpalConnection::OnReleased();
   
   // Wait until all transactions belonging to this connection have terminated
@@ -1111,17 +1092,23 @@ void SIPConnection::OnReleased()
     PThread::Sleep(1000);
   }
   
+  // Close the job handler and clear the job queue
+  SetPhase(ReleasedPhase);
+  jobSemaphore.Signal();
+  jobHandler->WaitForTermination();
+  LockReadOnly();
+  while (ProcessNextJob()) {
+  }
+  UnlockReadOnly();
+  
   // Release the transport
   if (transport != NULL) {
     endpoint.ReleaseTransport(transport);
     transport = NULL;
   }
   
-  // Remove all INVITEs
-  {
-    PWaitAndSignal m(invitationsMutex); 
-    invitations.RemoveAll();
-  }
+  // Remove this connection from the active connections list
+  endpoint.OnReleaseComplete(*this);
 }
 
 void SIPConnection::TransferConnection(const PString & remoteParty, const PString & callIdentity)
@@ -1885,23 +1872,26 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 {
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE)
     return;
-
-  // If we are releasing then I can safely ignore failed
-  // transactions - otherwise I'll deadlock.
-  if (phase >= ReleasingPhase)
-    return;
+    
+  BOOL release = FALSE;
 
   {
-    // The connection stays 'alive' unless all transactions have failed
     PWaitAndSignal m(invitationsMutex); 
     for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-      if (!invitations[i].IsFailed())
-        return;
+      if (&invitations[i] == &transaction) {
+        invitations.RemoveAt(i); 
+        if (invitations.GetSize() == 0) {
+          release = TRUE;
+        }
+        break;
+      }
     }
   }
-
-  // All invitations failed, die now
-  Release(EndedByConnectFail);
+  
+  if (release == TRUE) {
+    // All invitations failed, die now
+    Release(EndedByConnectFail);
+  }
 }
 
 
@@ -1944,10 +1934,10 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       break;
     case SIP_PDU::NumMethods :  // if no method, must be response
       {
-        PWaitAndSignal m(transactionsMutex);
         SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
-        if (transaction != NULL)
+        if (transaction != NULL) {
           transaction->OnReceivedResponse(pdu);
+        }
       }
       break;
   }
@@ -2019,9 +2009,22 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     if (phase < EstablishedPhase) {
       // Have a response to the INVITE, so cancel all the other invitations sent.
       PWaitAndSignal m(invitationsMutex); 
+      for (i = invitations.GetSize(); i > 0; i--) {
+        if (&invitations[i-1] != &transaction) {
+          invitations[i-1].Cancel();
+          invitations.RemoveAt(i-1);
+        }
+      }
+    }
+      
+    if (response.GetStatusCode()/100 != 1) {
+      // Final response received. Remove transaction from invitations list
+      PWaitAndSignal m(invitationsMutex);
       for (i = 0; i < invitations.GetSize(); i++) {
-        if (&invitations[i] != &transaction)
-          invitations[i].Cancel();
+        if (&invitations[i] == &transaction) {
+          invitations.RemoveAt(i);
+          break;
+        }
       }
     }
 
@@ -2062,6 +2065,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     // Send the ack
     if (response.GetStatusCode()/100 != 1) {
+        //cout << "SLEEPING" << endl;
+        //usleep(10000000);
+        //cout << "SLEEPING DONE" << endl;
       SendACK(transaction, response);
     }
   }
@@ -2459,7 +2465,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   
   // The REFER is over
   if (state.Find("terminated") != P_MAX_INDEX) {
-    endpoint.WaitForTransactionCompletion(referTransaction);
+    referTransaction->WaitForCompletion();
     referTransaction = NULL;
 
     // Release the connection
@@ -2496,7 +2502,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   
   // Send a Final NOTIFY,
   notifyTransaction = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
-  endpoint.WaitForTransactionCompletion(notifyTransaction);
+  notifyTransaction->WaitForCompletion();
 }
 
 
@@ -2710,24 +2716,31 @@ void SIPConnection::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & respons
   }
 
   PTRACE(2, "SIP\tReceived INVITE OK response");
-
-  OnReceivedSDP(response);
-
-  releaseMethod = ReleaseWithBYE;
-
-  connectedTime = PTime ();
-  OnConnected();                        // start media streams
-  
-  if (mediaStreams.GetSize() == 0) {
-    Release(EndedByCapabilityExchange);
+    
+  if (!LockReadWrite()) {
     return;
   }
+  
+  if (phase < ReleasingPhase) {
 
-  if (phase == EstablishedPhase)
-    return;
+    OnReceivedSDP(response);
 
-  SetPhase(EstablishedPhase);
-  OnEstablished();
+    releaseMethod = ReleaseWithBYE;
+
+    connectedTime = PTime ();
+    OnConnected();                        // start media streams
+  
+    if (mediaStreams.GetSize() == 0) {
+      Release(EndedByCapabilityExchange);
+    }
+    else if (phase != EstablishedPhase) {
+
+      SetPhase(EstablishedPhase);
+      OnEstablished();
+    }
+  }
+  
+  UnlockReadWrite();
 }
 
 
@@ -2840,7 +2853,7 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
   if (PAssertNULL(pdu) == NULL)
     return;
 
-  if (phase >= ReleasedPhase) {
+  /*if (phase >= ReleasedPhase) {
     if(pdu->GetMethod() != SIP_PDU::NumMethods)
     {
       PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
@@ -2864,36 +2877,85 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
                                    PThread::NormalPriority,
                                    "SIP Handler:%x");
     }
-  }
+  }*/
+    
+  SIPTransactionJob * job = new SIPTransactionJob(SIPTransactionJob::Handle_PDU, pdu);
+    
+  QueueTransactionJob(job);
+}
+
+void SIPConnection::QueueTransactionJob(SIPTransactionJob * job)
+{
+  jobQueueMutex.Wait();
+  jobQueue.Enqueue(job);
+  jobQueueMutex.Signal();
+  jobSemaphore.Signal();
 }
 
 
-void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
+void SIPConnection::LockTransactionProcessing()
 {
-  PTRACE(2, "SIP\tPDU handler thread started.");
+  LockReadOnly();
+  jobProcessingMutex.Wait();
+}
+
+
+void SIPConnection::UnlockTransactionProcessing()
+{
+  jobProcessingMutex.Signal();
+  UnlockReadOnly();
+}
+
+
+void SIPConnection::JobThreadMain(PThread &, INT)
+{
+  PTRACE(2, "SIP\tJob handler thread started.");
 
   while (phase != ReleasedPhase) {
-    PTRACE(4, "SIP\tAwaiting next PDU.");
-    pduSemaphore.Wait();
-
-    if (!LockReadWrite())
-      break;
-
-    SIP_PDU * pdu = pduQueue.Dequeue();
+    PTRACE(4, "SIP\tAwaiting next Job.");
+    jobSemaphore.Wait();
     
-    LockReadOnly();
-    UnlockReadWrite();
-    if (pdu != NULL) {
-      OnReceivedPDU(*pdu);
-      delete pdu;
-    }
+    if (!LockReadOnly())
+      break;
+    
+    ProcessNextJob();
 
     UnlockReadOnly();
   }
 
   SafeDereference();
 
-  PTRACE(2, "SIP\tPDU handler thread finished.");
+  PTRACE(2, "SIP\tJob handler thread finished.");
+}
+
+
+BOOL SIPConnection::ProcessNextJob()
+{
+  BOOL result = TRUE;
+    
+  jobQueueMutex.Wait();
+  SIPTransactionJob * job = jobQueue.Dequeue();
+  jobQueueMutex.Signal();
+  
+  jobProcessingMutex.Wait();
+    
+  if (job != NULL) {
+    if (job->GetJobType() == SIPTransactionJob::Handle_PDU) {
+      SIP_PDU * pdu = job->GetPDU();
+      OnReceivedPDU(*pdu);
+      delete pdu;
+    } else {
+      job->Process();
+    }
+    delete job;
+  }
+  else {
+    result = FALSE;
+  }
+    
+  jobProcessingMutex.Signal();
+  
+  return result;
 }
 
 
@@ -2939,6 +3001,12 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   }
 
   return TRUE;
+}
+
+BOOL SIPConnection::SendBYE()
+{
+  SIPTransaction *byeTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_BYE);
+  return byeTransaction->Start();
 }
 
 BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
@@ -3087,7 +3155,7 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
           str << tone;
         }
         infoTransaction->GetEntityBody() = str;
-        return endpoint.WaitForTransactionCompletion(infoTransaction);
+        infoTransaction->WaitForCompletion();
       }
 
     // anything else - send as RFC 2833

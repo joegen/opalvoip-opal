@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.6  2007/03/30 06:44:45  hfriederich
+ * Revision 1.2051.2.7  2007/04/10 19:00:58  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.50.2.6  2007/03/30 06:44:45  hfriederich
  * (Backport from HEAD)
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connectino class they can create it without
@@ -559,7 +563,7 @@ void OpalEndPoint::OnEstablished(OpalConnection & connection)
 
 void OpalEndPoint::OnReleased(OpalConnection & connection)
 {
-  PTRACE(4, "OpalEP\tOnReleased " << connection);
+  PTRACE(2, "OpalEP\tOnReleased " << connection);
   connectionsActive.RemoveAt(connection.GetToken());
   manager.OnReleased(connection);
 }
