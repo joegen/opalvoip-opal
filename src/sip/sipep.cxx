@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.6  2007/03/30 13:56:37  hfriederich
+ * Revision 1.2142.2.7  2007/04/10 19:00:58  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.141.2.6  2007/03/30 13:56:37  hfriederich
  * Reorganization of the way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -602,19 +606,6 @@ SIPInfo::~SIPInfo()
     ep.ReleaseTransport(registrarTransport);
     registrarTransport = NULL;
   }
-
-  RemoveTransactions();
-}
-
-void SIPInfo::RemoveTransactions()
-{
-  PWaitAndSignal m(registrationsMutex);
-    
-  for (PINDEX i = registrations.GetSize(); i > 0; i--) {
-    // Aborting transactions in case they're still not terminated
-    registrations[i-1].Abort();
-  }
-  registrations.RemoveAll();
 }
 
 
@@ -801,7 +792,8 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
     ackTimeout(0, 32),        // 32 seconds
     registrarTimeToLive(0, 0, 0, 1), // 1 hour
     notifierTimeToLive(0, 0, 0, 1), // 1 hour
-    natBindingTimeout(0, 0, 1) // 1 minute
+    natBindingTimeout(0, 0, 1), // 1 minute
+    jobSemaphore(0, P_MAX_INDEX)
 {
   defaultSignalPort = 5060;
   mimeForm = FALSE;
@@ -824,6 +816,12 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   natMethod = None;
   
   reuseTransports = FALSE;
+  
+  endJobProcessing = FALSE;
+  jobHandler = PThread::Create(PCREATE_NOTIFIER(JobThreadMain), 0,
+                               PThread::NoAutoDeleteThread,
+                               PThread::NormalPriority,
+                               "SIP Handler:%x");
 
   PTRACE(3, "SIP\tCreated endpoint.");
 }
@@ -843,12 +841,10 @@ SIPEndPoint::~SIPEndPoint()
         }
         else if (!info->IsRegistered()) {
           info->SetExpire(-1);
-          info->RemoveTransactions();
         }
       }
       else {
         info->SetExpire(-1);
-        info->RemoveTransactions();
       }
     }
    
@@ -862,11 +858,24 @@ SIPEndPoint::~SIPEndPoint()
   registrationTimer.Stop();
   garbageTimer.Stop();
   
-  // Clean up remaining transactions
+  // Stop pdu / transaction handling
+  endJobProcessing = TRUE;
+  jobSemaphore.Signal();
+  jobHandler->WaitForTermination();
+  delete jobHandler;
+  
+  // Abort pending transactions (if any)
+  for (PINDEX i = transactions.GetSize(); i > 0; i--) {
+    transactions[transactions.GetKeyAt(i-1)].Abort();
+  }
+  
+  // Clean up remaining transaction jobs
+  while(ProcessNextJob()) {
+  }
+  
   GarbageCollect(garbageTimer, 0);
   activeSIPInfo.DeleteObjectsToBeRemoved();
   
-  PWaitAndSignal m(transactionsMutex);
   PTRACE(3, "SIP\tDeleted endpoint.");
 }
 
@@ -1073,8 +1082,26 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 
   PTRACE(4, "SIP\tWaiting for PDU on " << transport);
   if (pdu->Read(transport)) {
-    if (OnReceivedPDU(transport, pdu))
-      return;
+    if (pdu) { 
+      if (pdu->GetMethod() != SIP_PDU::NumMethods) {
+        pdu->AdjustVia(transport);
+      }
+      
+      // Find a corresponding connection
+      PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID(), PSafeReadOnly);
+      if (connection != NULL) {
+        /*SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
+        if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
+          // Have a response to the INVITE, so end Connect mode on the transport
+          transport.EndConnect(transaction->GetLocalAddress());
+        }*/
+        connection->QueuePDU(pdu);
+      } else {
+        // Endpoint has to handle the PDU
+        QueuePDU(transport, pdu);
+      }
+    }
+    return; // PDU deletion is handled in callbacks
   }
   else if (transport.good()) {
     PTRACE(1, "SIP\tMalformed request received on " << transport);
@@ -1197,25 +1224,8 @@ BOOL SIPEndPoint::ForwardConnection(SIPConnection & connection,
 }
 
 
-BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
+void SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
 {
-  // Adjust the Via list 
-  if (pdu && pdu->GetMethod() != SIP_PDU::NumMethods)
-    pdu->AdjustVia(transport);
-
-  // Find a corresponding connection
-  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID(), PSafeReadOnly);
-  if (connection != NULL) {
-    SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
-    if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
-      // Have a response to the INVITE, so end Connect mode on the transport
-      transport.EndConnect(transaction->GetLocalAddress());
-    }
-    connection->QueuePDU(pdu);
-    return TRUE;
-  }
-  
-  // PDUs outside of connection context
   if (!transport.IsReliable()) {
     // Get response address from new request
     if (pdu->GetMethod() != SIP_PDU::NumMethods) {
@@ -1227,7 +1237,6 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   switch (pdu->GetMethod()) {
     case SIP_PDU::NumMethods :
       {
-        PWaitAndSignal m(transactionsMutex);
         SIPTransaction * transaction = transactions.GetAt(pdu->GetTransactionID());
         if (transaction != NULL)
           transaction->OnReceivedResponse(*pdu);
@@ -1235,7 +1244,8 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::Method_INVITE :
-      return OnReceivedINVITE(transport, pdu);
+      OnReceivedINVITE(transport, pdu);
+      break;
 
     case SIP_PDU::Method_REGISTER :
     case SIP_PDU::Method_SUBSCRIBE :
@@ -1247,7 +1257,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       break;
 
     case SIP_PDU::Method_NOTIFY :
-       return OnReceivedNOTIFY(transport, *pdu);
+       OnReceivedNOTIFY(transport, *pdu);
        break;
 
     case SIP_PDU::Method_MESSAGE :
@@ -1279,8 +1289,6 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
         response.Write(transport);
       }
   }
-
-  return FALSE;
 }
 
 
@@ -1485,9 +1493,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
   request->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
-  if (request->Start()) 
-    callid_info->AppendTransaction(request);
-  else {
+  if (!request->Start()) {
     delete request;
     PTRACE(1, "SIP\tCould not restart REGISTER/SUBSCRIBE for Authentication Required");
   }
@@ -1674,6 +1680,22 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
   OnMessageReceived(from, pdu.GetEntityBody());
 }
 
+
+void SIPEndPoint::OnReleased(OpalConnection & connection)
+{
+  PTRACE(2, "SIPEP\tOnReleased " << connection);
+  // Don't remove the connection from the active connection's list yet
+  manager.OnReleased(connection);
+}
+
+
+void SIPEndPoint::OnReleaseComplete(OpalConnection & connection)
+{
+  // Now it's time to remove the connection
+  connectionsActive.RemoveAt(connection.GetToken());
+}
+
+
 void SIPEndPoint::OnRegistrationFailed(const PString & /*host*/, 
 				       const PString & /*userName*/,
 				       SIP_PDU::StatusCodes /*reason*/, 
@@ -1729,19 +1751,6 @@ void SIPEndPoint::GarbageCollect(PTimer &, INT)
       activeSIPInfo.Remove(info); // Was invalid the last time, delete it
     }
   }
-
-  // Delete terminated transactions
-  {
-    PWaitAndSignal m(completedTransactionsMutex);
-    
-    for (PINDEX i = completedTransactions.GetSize(); i > 0; i--) {
-      SIPTransaction & transaction = completedTransactions[i-1];
-        
-      if (transaction.IsTerminated()) {
-        completedTransactions.RemoveAt(i-1);
-      }
-    }
-  }
 }
 
 
@@ -1775,13 +1784,10 @@ void SIPEndPoint::RegistrationRefresh(PTimer &, INT)
         // keep registering the old IP.
         if (info->CreateTransport(registrarAddress)) { 
           infoTransport = info->GetTransport();
-          info->RemoveTransactions();
           info->SetExpire(info->GetExpire()*10/9);
           request = info->CreateTransaction(*infoTransport, FALSE); 
 
-          if (request->Start()) 
-            info->AppendTransaction(request);
-          else {
+          if (!request->Start()) {
             delete request;
             PTRACE(1, "SIP\tCould not start REGISTER/SUBSCRIBE for binding refresh");
             info->SetExpire(-1); // Mark as Invalid
@@ -1817,8 +1823,6 @@ BOOL SIPEndPoint::WriteSIPInfo(OpalTransport & transport, void * _info)
     PTRACE(2, "SIP\tDid not start transaction on " << transport);
     return FALSE;
   }
-
-  info->AppendTransaction(request);
 
   return TRUE;
 }
@@ -2068,7 +2072,6 @@ BOOL SIPEndPoint::TransmitSIPUnregistrationInfo(const PString & host, const PStr
         request = NULL;
         return FALSE;
       }
-      info->AppendTransaction(request);
     }
 
   return TRUE;
@@ -2128,14 +2131,6 @@ void SIPEndPoint::SetProxy(const SIPURL & url)
 PString SIPEndPoint::GetUserAgent() const 
 { 
   return userAgentString;
-}
-
-BOOL SIPEndPoint::WaitForTransactionCompletion(SIPTransaction * transaction)
-{
-  transaction->WaitForCompletion();
-  BOOL success = !transaction->IsFailed();
-  AddCompletedTransaction(transaction);
-  return success;
 }
 
 BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &auth) 
@@ -2219,6 +2214,27 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
 }
 
 
+void SIPEndPoint::QueuePDU(OpalTransport & transport, SIP_PDU * pdu)
+{
+  if (PAssertNULL(pdu) == NULL) {
+    return;
+  }
+    
+  SIPEndpointPDUJob * job = new SIPEndpointPDUJob(transport, pdu);
+    
+  QueueTransactionJob(job);
+}
+
+
+void SIPEndPoint::QueueTransactionJob(SIPTransactionJob * job)
+{
+  jobQueueMutex.Wait();
+  jobQueue.Enqueue(job);
+  jobQueueMutex.Signal();
+  jobSemaphore.Signal();
+}
+
+
 SIPEndPoint::TransportRecord::TransportRecord(OpalTransport * _transport)
 {
   transport = _transport;
@@ -2231,7 +2247,70 @@ SIPEndPoint::TransportRecord::~TransportRecord()
   transport->CloseWait();
   delete transport;
 }
-                                                                                                         
-                                                                                                         
+
+
+void SIPEndPoint::LockTransactionProcessing()
+{
+  jobProcessingMutex.Wait();
+}
+
+
+void SIPEndPoint::UnlockTransactionProcessing()
+{
+  jobProcessingMutex.Signal();
+}
+
+void SIPEndPoint::JobThreadMain(PThread &, INT)
+{
+  PTRACE(2, "SIP\tEndpoint job handler thread started.");
+    
+  while (endJobProcessing == FALSE) {
+    PTRACE(4, "SIP\tAwaiting next Job.");
+    jobSemaphore.Wait();
+    
+    ProcessNextJob();
+  }
+    
+  PTRACE(2, "SIP\tEndpoint job handler thread finished.");
+}
+
+
+BOOL SIPEndPoint::ProcessNextJob()
+{
+  BOOL result = TRUE;
+    
+  jobQueueMutex.Wait();
+  SIPTransactionJob * job = jobQueue.Dequeue();
+  jobQueueMutex.Signal();
+    
+  jobProcessingMutex.Wait();
+    
+  if (job != NULL) {
+    if (job->GetJobType() == SIPTransactionJob::Handle_PDU) {
+      SIPEndpointPDUJob * pduJob = PDownCast(SIPEndpointPDUJob, job);
+      SIP_PDU * pdu = pduJob->GetPDU();
+      OnReceivedPDU(pduJob->GetTransport(), pdu);
+      delete pdu;
+    } else {
+      job->Process();
+    }
+    delete job;
+  }
+  else {
+    result = FALSE;
+  }
+    
+  jobProcessingMutex.Signal();
+    
+  return result;
+}
+
+
+SIPEndPoint::SIPEndpointPDUJob::SIPEndpointPDUJob(OpalTransport & _transport, SIP_PDU * pdu)
+: SIPTransactionJob(SIPTransactionJob::Handle_PDU, pdu),
+  transport(_transport)
+{
+}
+
 
 // End of file ////////////////////////////////////////////////////////////////
