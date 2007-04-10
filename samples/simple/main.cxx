@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2088  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2089  2007/04/10 06:44:07  rjongbloed
+ * Cosmetic change, removed non-wire media formats from print out of "Available Media Formats". Also resorted and removed formats as per -P and -D.
+ *
+ * Revision 2.87  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -1134,10 +1137,18 @@ BOOL MyManager::Initialise(PArgList & args)
                                     #endif
                                       : "");
 
+  allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
+  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
+    if (allMediaFormats[i].GetPayloadType() >= RTP_DataFrame::MaxPayloadType)
+      allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
+  }
+  allMediaFormats.Remove(GetMediaFormatMask());
+  allMediaFormats.Reorder(GetMediaFormatOrder());
+
   cout << "Local endpoint type: " << srcEP << "\n"
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
           "Codec order: " << GetMediaFormatOrder() << "\n"
-          "Available codecs: " << OpalTranscoder::GetPossibleFormats(allMediaFormats) << setfill(' ') << endl;
+          "Available codecs: " << allMediaFormats << setfill(' ') << endl;
 
   return TRUE;
 }
