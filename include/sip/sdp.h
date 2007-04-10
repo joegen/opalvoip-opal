@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2022  2007/03/13 00:32:17  csoutheren
+ * Revision 1.2023  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.21  2007/03/13 00:32:17  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -314,14 +318,14 @@ class SDPSessionDescription : public PObject
       const OpalTransportAddress & address
     ) { defaultConnectAddress = address; }
 	
-	const PString & GetBandwidthModifier() const { return bandwidthModifier; }
-	void SetBandwidthModifier(const PString & modifier) { bandwidthModifier = modifier; }
-	
-	PINDEX GetBandwidthValue() const { return bandwidthValue; }
-	void SetBandwidthValue(PINDEX value) { bandwidthValue = value; }
+    const PString & GetBandwidthModifier() const { return bandwidthModifier; }
+    void SetBandwidthModifier(const PString & modifier) { bandwidthModifier = modifier; }
 
-	static const char * const ConferenceTotalBandwidthModifier;
-	static const char * const ApplicationSpecificBandwidthModifier;
+    PINDEX GetBandwidthValue() const { return bandwidthValue; }
+    void SetBandwidthValue(PINDEX value) { bandwidthValue = value; }
+
+    static const PString & ConferenceTotalBandwidthModifier();
+    static const PString & ApplicationSpecificBandwidthModifier();
 
   protected:
     void ParseOwner(const PString & str);
@@ -338,8 +342,8 @@ class SDPSessionDescription : public PObject
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
 	
-	PString bandwidthModifier;
-	PINDEX bandwidthValue;
+    PString bandwidthModifier;
+    PINDEX bandwidthValue;
 };
 
 /////////////////////////////////////////////////////////

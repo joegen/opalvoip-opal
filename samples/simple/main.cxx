@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2087  2007/04/03 13:04:23  rjongbloed
+ * Revision 1.2088  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.86  2007/04/03 13:04:23  rjongbloed
  * Added driverName to PVideoDevice::OpenArgs (so can select YUVFile)
  * Added new statics to create correct video input/output device object
  *   given a PVideoDevice::OpenArgs structure.
@@ -732,22 +736,11 @@ MyManager::~MyManager()
 
 BOOL MyManager::Initialise(PArgList & args)
 {
-  {
-    OpalMediaFormat fmt(OpalT38);
-    if (!fmt.IsValid()) {
-      cerr << "cannot find t.38" << endl;
-      return false;
-    }
-    else
-    {
-      OpalMediaFormat::SetRegisteredMediaFormat(fmt);
-    }
-  }
 #if OPAL_VIDEO
   OpalMediaFormat fmt("H.261-CIF");
   if (fmt.IsValid()) {
-    fmt.SetOptionInteger(OpalVideoFormat::EncodingQualityOption, 16);
-    fmt.SetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption, TRUE);
+    fmt.SetOptionInteger(OpalVideoFormat::EncodingQualityOption(), 16);
+    fmt.SetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), TRUE);
     OpalMediaFormat::SetRegisteredMediaFormat(fmt);
   }
 
@@ -1043,6 +1036,7 @@ BOOL MyManager::Initialise(PArgList & args)
   ///////////////////////////////////////
   // Create T38 protocol handler
   {
+    OpalMediaFormat fmt(OpalT38); // Force instantiation of T.38 media format
     faxEP = new OpalFaxEndPoint(*this);
     t38EP = new OpalT38EndPoint(*this);
   }

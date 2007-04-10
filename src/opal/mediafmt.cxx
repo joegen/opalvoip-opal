@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2062  2007/03/13 00:33:11  csoutheren
+ * Revision 1.2063  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.61  2007/03/13 00:33:11  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -638,11 +642,11 @@ void OpalMediaOptionString::SetValue(const PString & value)
 
 /////////////////////////////////////////////////////////////////////////////
 
-const char * const OpalMediaFormat::NeedsJitterOption = "Needs Jitter";
-const char * const OpalMediaFormat::MaxBitRateOption = "Max Bit Rate";
-const char * const OpalMediaFormat::MaxFrameSizeOption = "Max Frame Size";
-const char * const OpalMediaFormat::FrameTimeOption = "Frame Time";
-const char * const OpalMediaFormat::ClockRateOption = "Clock Rate";
+const PString & OpalMediaFormat::NeedsJitterOption() { static PString s = "Needs Jitter";   return s; }
+const PString & OpalMediaFormat::MaxBitRateOption()  { static PString s = "Max Bit Rate";   return s; }
+const PString & OpalMediaFormat::MaxFrameSizeOption(){ static PString s = "Max Frame Size"; return s; }
+const PString & OpalMediaFormat::FrameTimeOption()   { static PString s = "Frame Time";     return s; }
+const PString & OpalMediaFormat::ClockRateOption()   { static PString s = "Clock Rate";     return s; }
 
 OpalMediaFormat::OpalMediaFormat()
 {
@@ -711,18 +715,18 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   defaultSessionID = dsid;
 
   if (nj)
-    AddOption(new OpalMediaOptionBoolean(NeedsJitterOption, true, OpalMediaOption::OrMerge, true));
+    AddOption(new OpalMediaOptionBoolean(NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
 
-  AddOption(new OpalMediaOptionInteger(MaxBitRateOption, true, OpalMediaOption::MinMerge, bw, 100));
+  AddOption(new OpalMediaOptionInteger(MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
 
   if (fs > 0)
-    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption, true, OpalMediaOption::NoMerge, fs));
+    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
 
   if (ft > 0)
-    AddOption(new OpalMediaOptionInteger(FrameTimeOption, true, OpalMediaOption::NoMerge, ft));
+    AddOption(new OpalMediaOptionInteger(FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
 
   if (cr > 0)
-    AddOption(new OpalMediaOptionInteger(ClockRateOption, true, OpalMediaOption::AlwaysMerge, cr));
+    AddOption(new OpalMediaOptionInteger(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
@@ -1058,8 +1062,8 @@ time_t OpalMediaFormat::GetCodecBaseTime() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-const char * const OpalAudioFormat::RxFramesPerPacketOption = "Rx Frames Per Packet";
-const char * const OpalAudioFormat::TxFramesPerPacketOption = "Tx Frames Per Packet";
+const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = "Rx Frames Per Packet"; return s; }
+const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = "Tx Frames Per Packet"; return s; }
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1082,8 +1086,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     clockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption, false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption, false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 
@@ -1091,12 +1095,12 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 
 #if OPAL_VIDEO
 
-const char * const OpalVideoFormat::FrameWidthOption = "Frame Width";
-const char * const OpalVideoFormat::FrameHeightOption = "Frame Height";
-const char * const OpalVideoFormat::EncodingQualityOption = "Encoding Quality";
-const char * const OpalVideoFormat::TargetBitRateOption = "Target Bit Rate";
-const char * const OpalVideoFormat::DynamicVideoQualityOption = "Dynamic Video Quality";
-const char * const OpalVideoFormat::AdaptivePacketDelayOption = "Adaptive Packet Delay";
+const PString & OpalVideoFormat::FrameWidthOption()          { static PString s = "Frame Width";           return s; }
+const PString & OpalVideoFormat::FrameHeightOption()         { static PString s = "Frame Height";          return s; }
+const PString & OpalVideoFormat::EncodingQualityOption()     { static PString s = "Encoding Quality";      return s; }
+const PString & OpalVideoFormat::TargetBitRateOption()       { static PString s = "Target Bit Rate";       return s; }
+const PString & OpalVideoFormat::DynamicVideoQualityOption() { static PString s = "Dynamic Video Quality"; return s; }
+const PString & OpalVideoFormat::AdaptivePacketDelayOption() { static PString s = "Adaptive Packet Delay"; return s; }
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1117,17 +1121,17 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(FrameWidthOption,          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionInteger(FrameHeightOption,         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
-  AddOption(new OpalMediaOptionInteger(EncodingQualityOption,     false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionInteger(TargetBitRateOption,       false, OpalMediaOption::MinMerge, 64000,    1000));
-  AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption, false, OpalMediaOption::NoMerge,  false));
-  AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption, false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionInteger(FrameWidthOption(),          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionInteger(FrameHeightOption(),         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionInteger(EncodingQualityOption(),     false, OpalMediaOption::MinMerge, 15,          1, 31));
+  AddOption(new OpalMediaOptionInteger(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
+  AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
 
   // For video the max bit rate and frame rate is adjustable by user
-  FindOption(MaxBitRateOption)->SetReadOnly(false);
-  FindOption(FrameTimeOption)->SetReadOnly(false);
-  FindOption(FrameTimeOption)->SetMerge(OpalMediaOption::MinMerge);
+  FindOption(MaxBitRateOption())->SetReadOnly(false);
+  FindOption(FrameTimeOption())->SetReadOnly(false);
+  FindOption(FrameTimeOption())->SetMerge(OpalMediaOption::MinMerge);
 }
 
 
@@ -1142,10 +1146,10 @@ bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
   if (!OpalMediaFormat::Merge(mediaFormat))
     return false;
 
-  unsigned maxBitRate = GetOptionInteger(MaxBitRateOption);
-  unsigned targetBitRate = GetOptionInteger(TargetBitRateOption);
+  unsigned maxBitRate = GetOptionInteger(MaxBitRateOption());
+  unsigned targetBitRate = GetOptionInteger(TargetBitRateOption());
   if (targetBitRate > maxBitRate)
-    SetOptionInteger(TargetBitRateOption, maxBitRate);
+    SetOptionInteger(TargetBitRateOption(), maxBitRate);
 
   return true;
 }

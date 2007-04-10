@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2013  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2014  2007/04/10 05:15:54  rjongbloed
+ * Fixed issue with use of static C string variables in DLL environment,
+ *   must use functional interface for correct initialisation.
+ *
+ * Revision 2.12  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -542,14 +546,22 @@ void H245NegMasterSlaveDetermination::HandleTimeout(PTimer &, INT)
 
 
 #if PTRACING
-const char * const H245NegMasterSlaveDetermination::StateNames[] = {
-  "Idle", "Outgoing", "Incoming"
-};
+const char * H245NegMasterSlaveDetermination::GetStateName(States s)
+{
+  static const char * const names[] = {
+    "Idle", "Outgoing", "Incoming"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 
 
-const char * const H245NegMasterSlaveDetermination::StatusNames[] = {
-  "Indeterminate", "DeterminedMaster", "DeterminedSlave"
-};
+const char * H245NegMasterSlaveDetermination::GetStatusName(MasterSlaveStatus s)
+{
+  static const char * const names[] = {
+    "Indeterminate", "DeterminedMaster", "DeterminedSlave"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 
@@ -720,9 +732,13 @@ void H245NegTerminalCapabilitySet::HandleTimeout(PTimer &, INT)
 
 
 #if PTRACING
-const char * const H245NegTerminalCapabilitySet::StateNames[] = {
-  "Idle", "InProgress", "Sent"
-};
+const char * H245NegTerminalCapabilitySet::GetStateName(States s)
+{
+  static const char * const names[] = {
+    "Idle", "InProgress", "Sent"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 
@@ -1200,14 +1216,18 @@ H323Channel * H245NegLogicalChannel::GetChannel()
 
 
 #if PTRACING
-const char * const H245NegLogicalChannel::StateNames[] = {
-  "Released",
-  "AwaitingEstablishment",
-  "Established",
-  "AwaitingRelease",
-  "AwatingConfirmation",
-  "AwaitingResponse"
-};
+const char * H245NegLogicalChannel::GetStateName(States s)
+{
+  static const char * const names[] = {
+    "Released",
+    "AwaitingEstablishment",
+    "Established",
+    "AwaitingRelease",
+    "AwatingConfirmation",
+    "AwaitingResponse"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 
