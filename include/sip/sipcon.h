@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.4  2007/03/10 08:34:01  hfriederich
+ * Revision 1.2059.2.5  2007/04/10 19:00:57  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.58.2.4  2007/03/10 08:34:01  hfriederich
  * (Backport from HEAD)
  * Connection-specific jitter buffer values
  *   Thanks to Borko Jandras
@@ -586,7 +590,16 @@ class SIPConnection : public OpalConnection
       const RTP_Session & session         ///<  Session with statistics
     ) const;
   //@}
-
+    
+  /**@name Transaction handling functions */
+  //@{
+    void QueueTransactionJob(
+      SIPTransactionJob * job
+    );
+    void LockTransactionProcessing();
+    void UnlockTransactionProcessing();
+    
+  //@}
 
     /**Forward incoming connection to the specified address.
        This would typically be called from within the OnIncomingConnection()
@@ -630,7 +643,8 @@ class SIPConnection : public OpalConnection
      */
     virtual BOOL SendInviteOK(const SDPSessionDescription & sdp);
 	
-	virtual BOOL SendACK(SIPTransaction & invite, SIP_PDU & response);
+    virtual BOOL SendACK(SIPTransaction & invite, SIP_PDU & response);
+    virtual BOOL SendBYE();
 
     /**Send a response for the received INVITE message.
      */
@@ -646,7 +660,7 @@ class SIPConnection : public OpalConnection
      */
     BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
-    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { PWaitAndSignal m(jobProcessingMutex); return ++lastSentCSeq; }
 	
     virtual BOOL BuildSDP(
       SDPSessionDescription * &,
@@ -663,17 +677,14 @@ class SIPConnection : public OpalConnection
     virtual BOOL BuildSDPReply(
       SDPSessionDescription & sdpOut
     );
-
-    SIPTransaction * GetTransaction (const PString & transactionID) { PWaitAndSignal m(transactionsMutex); return transactions.GetAt(transactionID); }
-
+    
     void AddTransaction(
       SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
 
     void RemoveTransaction(
       SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
-
+    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
 
@@ -702,8 +713,9 @@ class SIPConnection : public OpalConnection
 
     BOOL OnOpenIncomingMediaChannels();
 
-  protected:
-    PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
+    PDECLARE_NOTIFIER(PThread, SIPConnection, JobThreadMain);
+    BOOL ProcessNextJob();
+    
     virtual RTP_UDP *OnUseRTPSession(
       const OpalMediaType & mediaType,
       const OpalTransportAddress & mediaAddress,
@@ -753,11 +765,12 @@ class SIPConnection : public OpalConnection
     SIPAuthentication     authentication;
     BOOL                  sentTrying;
 
-    SIP_PDU_Queue pduQueue;
-    PSemaphore    pduSemaphore;
-    PThread     * pduHandler;
+    SIPTransactionJobQueue jobQueue;
+    PMutex        jobQueueMutex;
+    PMutex        jobProcessingMutex;
+    PSemaphore    jobSemaphore;
+    PThread     * jobHandler;
 
-    PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
     PMutex             invitationsMutex;
     SIPTransactionList invitations;

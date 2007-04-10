@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.2  2007/03/30 13:56:37  hfriederich
+ * Revision 1.2046.2.3  2007/04/10 19:00:57  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.45.2.2  2007/03/30 13:56:37  hfriederich
  * Reorganization of the way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -784,9 +788,6 @@ class SIP_PDU : public PObject
 };
 
 
-PQUEUE(SIP_PDU_Queue, SIP_PDU);
-
-
 /////////////////////////////////////////////////////////////////////////
 // SIPTransaction
 
@@ -824,29 +825,34 @@ class SIPTransaction : public SIP_PDU
     BOOL IsInProgress() const { return state == Trying || state == Proceeding; }
     BOOL IsFailed() const { return state > Terminated_Success; }
     BOOL IsCompleted() const { return state >= Completed; }
-    BOOL IsCanceled() const { return state == Terminated_Cancelled;}
     BOOL IsTerminated() const { return state >= Terminated_Success; }
     void WaitForCompletion();
     BOOL Cancel();
     void Abort();
 
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
-    virtual BOOL OnCompleted(SIP_PDU & response);
 
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
 
     const OpalTransportAddress & GetLocalAddress() const { return localAddress; }
+    
+    // Callbacks to update state
+    void HandleRetry();
+    void HandleTimeout();
 
   protected:
     void Construct(
       const PTimeInterval & minRetryTime = PMaxTimeInterval,
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
-    BOOL ResendCANCEL();
+    void StartCANCEL();
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
+    
+    void Lock();
+    void Unlock();
 
     enum States {
       NotStarted,
@@ -859,11 +865,17 @@ class SIPTransaction : public SIP_PDU
       Terminated_Timeout,
       Terminated_RetriesExceeded,
       Terminated_TransportError,
-      Terminated_Cancelled,
       Terminated_Aborted,
       NumStates
     };
     virtual void SetTerminated(States newState);
+    
+    /**Callbacks that can be overridden by subclasses.
+     */
+    virtual void OnStart();
+    virtual void OnProceeding(SIP_PDU & response);
+    virtual void OnCompleted(SIP_PDU & response);
+    virtual void OnTerminated();
 
     SIPEndPoint   & endpoint;
     OpalTransport & transport;
@@ -875,7 +887,6 @@ class SIPTransaction : public SIP_PDU
     PTimer   completionTimer;
 
     PSyncPoint completed;
-    PTimedMutex mutex;
 
     PTimeInterval retryTimeoutMin; 
     PTimeInterval retryTimeoutMax; 
@@ -915,12 +926,29 @@ class SIPInvite : public SIPTransaction
       const OpalMediaType & mediaType
     );
 
+    RTP_SessionManager & GetSessionManager() { return rtpSessions; }
+    
     virtual BOOL OnReceivedResponse(SIP_PDU & response);
 
-    RTP_SessionManager & GetSessionManager() { return rtpSessions; }
-
   protected:
+    virtual void OnStart();
+    virtual void OnProceeding(SIP_PDU & response);
+    virtual void OnCompleted(SIP_PDU & response);
+        
     RTP_SessionManager rtpSessions;
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPCancel : public SIPTransaction
+{
+    PCLASSINFO(SIPCancel, SIPTransaction);
+  public:
+    
+    SIPCancel(
+      SIPTransaction & transactionToBeCanceled
+    );
 };
 
 
@@ -939,6 +967,8 @@ class SIPRegister : public SIPTransaction
       const PTimeInterval & minRetryTime = PMaxTimeInterval,
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
+  protected:
+    virtual void OnTerminated();
 };
 
 
@@ -1029,6 +1059,8 @@ class SIPMessage : public SIPTransaction
 	       const SIPURL & address,
 	       const PString & body
     );
+  protected:
+    virtual void OnTerminated();
 };
 
 
@@ -1092,6 +1124,36 @@ class SIPPing : public SIPTransaction
    );
 };
 
+
+/////////////////////////////////////////////////////////////////////////
+
+
+class SIPTransactionJob : public PObject
+{
+    PCLASSINFO(SIPTransactionJob, PObject);
+  public:
+    
+    enum JobTypes {
+      Handle_PDU,
+      Transaction_Retry,
+      Transaction_Timeout,
+      Transaction_Destruction,
+      NumJobTypes
+    };
+    
+    SIPTransactionJob(JobTypes _jobType, SIP_PDU * _pdu) { jobType = _jobType; pdu = _pdu; }
+    
+    JobTypes GetJobType() const { return jobType; }
+    SIP_PDU * GetPDU() const { return pdu; }
+    
+    void Process(SIPConnection * connection = NULL);
+    
+  protected:
+    JobTypes jobType;
+    SIP_PDU * pdu;
+};
+
+PQUEUE(SIPTransactionJobQueue, SIPTransactionJob);
 
 #endif // __OPAL_SIPPDU_H
 

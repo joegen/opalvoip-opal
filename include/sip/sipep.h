@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.6  2007/03/30 13:56:36  hfriederich
+ * Revision 1.2069.2.7  2007/04/10 19:00:57  hfriederich
+ * Reorganization of the way transaction and transaction transitions are
+ *   handled. More testing needed.
+ *
+ * Revision 2.68.2.6  2007/03/30 13:56:36  hfriederich
  * Reorganization of the way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -389,11 +393,6 @@ class SIPInfo : public PSafeObject
 
     virtual const SIPURL & GetRegistrationAddress()
     { return registrationAddress; }
-    
-    virtual void AppendTransaction(SIPTransaction * transaction) 
-    { PWaitAndSignal m(registrationsMutex); registrations.Append (transaction); }
-    
-    virtual void RemoveTransactions();
 
     virtual BOOL IsRegistered() 
     { return registered; }
@@ -453,8 +452,6 @@ class SIPInfo : public PSafeObject
       OpalTransportAddress registrarAddress;
       SIPURL             registrationAddress;
       PString            registrationID;
-      SIPTransactionList registrations;
-      PMutex             registrationsMutex;
       PTime              registrationTime;
       BOOL               registered;
       int	               expire;
@@ -698,9 +695,9 @@ class SIPEndPoint : public OpalEndPoint
       OpalTransport & transport
     );
 
-    /**Handle an incoming SIP PDU that has been full decoded
+    /**Handle an incoming SIP PDU that belongs to this endpoint
       */
-    virtual BOOL OnReceivedPDU(
+    virtual void OnReceivedPDU(
       OpalTransport & transport,
       SIP_PDU * pdu
     );
@@ -759,6 +756,18 @@ class SIPEndPoint : public OpalEndPoint
       const SIPConnection & connection,  ///<  Connection for the channel
       const RTP_Session & session         ///<  Session with statistics
     ) const;
+    
+    /**Overrides from OpalConnection. Keeps the connection active for a longer moment.
+      */
+    virtual void OnReleased(
+      OpalConnection & connection
+    );
+    
+    /**Removes the connection from the active connections list
+      */
+    virtual void OnReleaseComplete(
+      OpalConnection & connection
+    );
   //@}
  
 
@@ -946,23 +955,18 @@ class SIPEndPoint : public OpalEndPoint
     
     void SetReuseTransports(BOOL _reuseTransports) { reuseTransports = _reuseTransports; }
     BOOL GetReuseTransports() const { return reuseTransports; }
-
+    
     void AddTransaction(
       SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
 
     void RemoveTransaction(
       SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
+    ) { transactions.SetAt(transaction->GetTransactionID(), NULL); }
     
     /**Return the next CSEQ for the next transaction.
      */
-    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
-    
-    /**Waits until the transaction completes and ensures that the transaction is deleted when terminated.
-       Returns if the transaction succeeded or not.
-      */
-    BOOL WaitForTransactionCompletion(SIPTransaction * transaction);
+    unsigned GetNextCSeq() { PWaitAndSignal m(jobProcessingMutex); return ++lastSentCSeq; }
     
     /**Return the SIPAuthentication for a specific realm.
      */
@@ -1144,12 +1148,39 @@ class SIPEndPoint : public OpalEndPoint
     virtual SIPMWISubscribeInfo * CreateMWISubscribeInfo(const PString & adjustedUsername, int expire);
     virtual SIPPingInfo *         CreatePingInfo(const PString & adjustedUsername, int expire);
     virtual SIPMessageInfo *      CreateMessageInfo(const PString & adjustedUsername, const PString & body);
+    
+    /**Endpoint related PDU / transaction handling
+      */
+    void QueuePDU(
+      OpalTransport & transport,
+      SIP_PDU * pdu
+    );
+    void QueueTransactionJob(
+      SIPTransactionJob * job
+    );
+    void LockTransactionProcessing();
+    void UnlockTransactionProcessing();
 
   protected:
+    class SIPEndpointPDUJob : public SIPTransactionJob
+    {
+        PCLASSINFO(SIPEndpointPDUJob, SIPTransactionJob);
+
+      public:
+        SIPEndpointPDUJob(OpalTransport & transport, SIP_PDU * pdu);
+        
+        OpalTransport & GetTransport() const { return transport; }
+      
+      protected:
+        OpalTransport & transport;
+    };
+    PDECLARE_NOTIFIER(PThread, SIPEndPoint, JobThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, GarbageCollect);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, RegistrationRefresh);
+    
+    BOOL ProcessNextJob();
 
     static BOOL WriteSIPInfo(
       OpalTransport & transport, 
@@ -1174,10 +1205,6 @@ class SIPEndPoint : public OpalEndPoint
       const PString & username, 
       SIP_PDU::Methods method
     );
-    
-    void AddCompletedTransaction(
-      SIPTransaction * transaction
-    ) { PWaitAndSignal m(completedTransactionsMutex); completedTransactions.Append(transaction); }
     
     
     void ParsePartyName(
@@ -1231,13 +1258,14 @@ class SIPEndPoint : public OpalEndPoint
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
 
-    PMutex             transactionsMutex;
-    PMutex             connectionsActiveInUse;
+    SIPTransactionJobQueue jobQueue;
+    PMutex        jobQueueMutex;
+    PMutex        jobProcessingMutex;
+    PSemaphore    jobSemaphore;
+    PThread     * jobHandler;
+    BOOL endJobProcessing;
 
     unsigned           lastSentCSeq;
-    
-    SIPTransactionList completedTransactions;
-    PMutex             completedTransactionsMutex;
     
     BOOL reuseTransports;
     PMutex transportsMutex;
