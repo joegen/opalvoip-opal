@@ -21474,7 +21474,7 @@ EXPORTS
     ?AccessRequest@H323PeerElement@@QAEHABVPString@@AAVPStringArray@@AAVH323TransportAddress@@I@Z @18901 NONAME
     ?Activate@IAX2Processor@@QAEXXZ @38546 NONAME
     ?ActivatePreset@OpalH281Handler@@QAEXE@Z @40839 NONAME
-    ?AdaptivePacketDelayOption@OpalVideoFormat@@2QBDB @38547 NONAME
+    ?AdaptivePacketDelayOption@OpalVideoFormat@@SAABVPString@@XZ @45489 NONAME
     ?Add@H245NegLogicalChannels@@UAEXAAVH323Channel@@@Z @18902 NONAME
     ?Add@H323Capabilities@@QAEXPAVH323Capability@@@Z @18903 NONAME
     ?Add@H460_FeatureNonStd@@QAEAAVH460_FeatureParameter@@VPString@@AAVH460_FeatureContent@@@Z @41477 NONAME
@@ -21603,7 +21603,7 @@ EXPORTS
     ?AppendStringCollection@H323TransportAddressArray@@IAEXABVPCollection@@@Z @18979 NONAME
     ?AppendStringCollection@OpalTransportAddressArray@@IAEXABVPCollection@@@Z @18980 NONAME
     ?AppendTransaction@SIPInfo@@UAEXPAVSIPTransaction@@@Z @36384 NONAME
-    ?ApplicationSpecificBandwidthModifier@SDPSessionDescription@@2QBDB @40842 NONAME
+    ?ApplicationSpecificBandwidthModifier@SDPSessionDescription@@SAABVPString@@XZ @45490 NONAME
     ?ApplyQOS@RTP_UDP@@UAEXABVAddress@PIPSocket@@@Z @45045 NONAME
     ?ApplyRouteTable@OpalManager@@UAE?AVPString@@ABV2@0@Z @18982 NONAME
     ?ApplyStringOptions@OpalConnection@@UAEXXZ @45046 NONAME
@@ -23862,7 +23862,7 @@ EXPORTS
     ?ClearCallSynchronous@OpalManager@@UAEHABVPString@@W4CallEndReason@OpalConnection@@@Z @20941 NONAME
     ?ClearInfoRequestRate@H323Gatekeeper@@IAEXXZ @20942 NONAME
     ?ClearListFlags@IAX2FullFrame@@IAEXXZ @38748 NONAME
-    ?ClockRateOption@OpalMediaFormat@@2QBDB @36408 NONAME
+    ?ClockRateOption@OpalMediaFormat@@SAABVPString@@XZ @45491 NONAME
     ?Clone@?$H235_ENCRYPTED@VH235_EncodedGeneralToken@@@@UBEPAVPObject@@XZ @20943 NONAME
     ?Clone@?$H235_ENCRYPTED@VH235_EncodedKeySyncMaterial@@@@UBEPAVPObject@@XZ @20944 NONAME
     ?Clone@?$H235_ENCRYPTED@VH235_EncodedPwdCertToken@@@@UBEPAVPObject@@XZ @20945 NONAME
@@ -28221,13 +28221,12 @@ EXPORTS
     ?CompareValue@OpalMediaOptionEnum@@UBE?AW4Comparison@PObject@@ABVOpalMediaOption@@@Z @38975 NONAME
     ?CompareValue@OpalMediaOptionString@@UBE?AW4Comparison@PObject@@ABVOpalMediaOption@@@Z @38976 NONAME
     ?CompressSubClass@IAX2FullFrame@@IAEHXZ @38977 NONAME
-    ?ConferenceTotalBandwidthModifier@SDPSessionDescription@@2QBDB @40868 NONAME
+    ?ConferenceTotalBandwidthModifier@SDPSessionDescription@@SAABVPString@@XZ @45492 NONAME
     ?Connect@H323Gatekeeper@@IAEXABVH323TransportAddress@@ABVPString@@@Z @24953 NONAME
     ?Connect@OpalTransportTCP@@UAEHXZ @24954 NONAME
     ?Connect@OpalTransportTCPS@@UAEHXZ @43691 NONAME
     ?Connect@OpalTransportUDP@@UAEHXZ @24955 NONAME
     ?ConnectionForFrameIsAlive@IAX2EndPoint@@QAEHPAVIAX2Frame@@@Z @44870 NONAME
-    ?ConnectionStatesNames@H323Connection@@1QBQBDB @24956 NONAME
     ?ConnectTo@OpalTransport@@QAEHABVOpalTransportAddress@@@Z @24957 NONAME
     ?ConnectToRemoteNode@IAX2CallProcessor@@IAEXAAVPString@@@Z @43293 NONAME
     ?construct@?$allocator@PAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalFaxCallInfo@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalFaxCallInfo@@@std@@@2@$0A@@std@@@std@@@std@@QAEXPAPAU_Node@?$_Tree_nod@V?$_Tmap_traits@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalFaxCallInfo@@U?$less@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@V?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalFaxCallInfo@@@std@@@2@$0A@@std@@@2@ABQAU342@@Z @45373 NONAME
@@ -29867,7 +29866,7 @@ EXPORTS
     ?DispatchFrame@OpalMediaPatch@@IAEXAAVRTP_DataFrame@@@Z @45056 NONAME
     ?DissectRemoteParty@IAX2EndPoint@@SA?AVPStringList@@ABVPString@@@Z @39054 NONAME
     ?DoStatusCheck@IAX2CallProcessor@@IAEXXZ @43322 NONAME
-    ?DynamicVideoQualityOption@OpalVideoFormat@@2QBDB @39056 NONAME
+    ?DynamicVideoQualityOption@OpalVideoFormat@@SAABVPString@@XZ @45493 NONAME
     ?Enable@H235Authenticator@@QAEXH@Z @26424 NONAME
     ?EnableAudio@OpalLine@@UAEHH@Z @26426 NONAME
     ?EnableAudio@OpalLineInterfaceDevice@@UAEHIH@Z @26427 NONAME
@@ -30665,7 +30664,7 @@ EXPORTS
     ?EncodeOctet@Q922_Frame@@ABEXEPAEAAHAAE2@Z @40887 NONAME
     ?EncodeOctetNoEscape@Q922_Frame@@ABEXEPAEAAHAAE@Z @40888 NONAME
     ?EncodeSubType@T38_UDPTLPacket_primary_ifp_packet@@QAEXABVT38_IFPPacket@@@Z @27176 NONAME
-    ?EncodingQualityOption@OpalVideoFormat@@2QBDB @39078 NONAME
+    ?EncodingQualityOption@OpalVideoFormat@@SAABVPString@@XZ @45494 NONAME
     ?EncryptContents@IAX2Frame@@QAEHAAVIAX2Encryption@@@Z @39079 NONAME
     ?EncryptionKey@IAX2Encryption@@QBEABVPString@@XZ @39080 NONAME
     ?end@?$vector@IV?$allocator@I@std@@@std@@QAE?AViterator@12@XZ @44216 NONAME
@@ -30722,7 +30721,6 @@ EXPORTS
     ?Exit@RTP_SessionManager@@QAEXXZ @27187 NONAME
     ?ExtractTransport@H323_H224Channel@@MAEHABVH245_TransportAddress@@HAAI@Z @40889 NONAME
     ?ExtractTransport@H323_RTP_UDP@@MAEHABVH245_TransportAddress@@HAAI@Z @27188 NONAME
-    ?FastStartStateNames@H323Connection@@1QBQBDB @27189 NONAME
     ?featureType@@YA?AVPString@@H@Z @41616 NONAME
     ?FilterFrame@OpalMediaPatch@@UAEXAAVRTP_DataFrame@@ABVOpalMediaFormat@@@Z @27193 NONAME
     ?Finalise@H235Authenticator@@UAEHAAVPBYTEArray@@@Z @27194 NONAME
@@ -30790,10 +30788,10 @@ EXPORTS
     ?ForwardCall@SIPConnection@@UAEHABVPString@@@Z @36449 NONAME
     ?ForwardConnection@H323EndPoint@@UAEHAAVH323Connection@@ABVPString@@ABVH323SignalPDU@@@Z @27240 NONAME
     ?ForwardConnection@SIPEndPoint@@UAEHAAVSIPConnection@@ABVPString@@@Z @40378 NONAME
-    ?FrameHeightOption@OpalVideoFormat@@2QBDB @39095 NONAME
+    ?FrameHeightOption@OpalVideoFormat@@SAABVPString@@XZ @45495 NONAME
     ?FrameIncrementsInSeqNo@IAX2FullFrame@@QAEHXZ @39096 NONAME
-    ?FrameTimeOption@OpalMediaFormat@@2QBDB @36450 NONAME
-    ?FrameWidthOption@OpalVideoFormat@@2QBDB @39097 NONAME
+    ?FrameTimeOption@OpalMediaFormat@@SAABVPString@@XZ @45496 NONAME
+    ?FrameWidthOption@OpalVideoFormat@@SAABVPString@@XZ @45497 NONAME
     ?FromString@OpalMediaOption@@QAE_NABVPString@@@Z @36451 NONAME
     ?GarbageCollect@SIPEndPoint@@MAEXAAVPTimer@@H@Z @45186 NONAME
     ?GarbageCollection@OpalManager@@QAEXXZ @36452 NONAME
@@ -32873,6 +32871,7 @@ EXPORTS
     ?GetConnection@SIPTransaction@@QBEPAVSIPConnection@@XZ @40393 NONAME
     ?GetConnectionEndTime@OpalConnection@@QBE?AVPTime@@XZ @29076 NONAME
     ?GetConnectionStartTime@OpalConnection@@QBE?AVPTime@@XZ @29077 NONAME
+    ?GetConnectionStatesName@H323Connection@@KAPBDW4ConnectionStates@1@@Z @45498 NONAME
     ?GetConnectionToken@IAX2Frame@@QBE?AVPString@@XZ @39253 NONAME
     ?GetConnectionWithLock@OpalEndPoint@@QAE?AV?$PSafePtr@VOpalConnection@@@@ABVPString@@W4PSafetyMode@@@Z @36030 NONAME
     ?GetContact@SIPMIMEInfo@@QBE?AVPString@@XZ @29079 NONAME
@@ -33786,6 +33785,7 @@ EXPORTS
     ?GetExtensionPtr@RTP_DataFrame@@QBEPAEXZ @29909 NONAME
     ?GetExtensionSize@RTP_DataFrame@@QBEHXZ @29910 NONAME
     ?GetExtensionType@RTP_DataFrame@@QBEHXZ @29911 NONAME
+    ?GetFastStartStateName@H323Connection@@KAPBDW4FastStartStates@1@@Z @45499 NONAME
     ?GetFeature@H460_FeatureSet@@QAEPAVH460_Feature@@ABVH460_FeatureID@@@Z @41659 NONAME
     ?GetFeatureFriendlyNames@H460_Feature@@SA?AVPStringList@@ABVPString@@PAVPPluginManager@@@Z @41660 NONAME
     ?GetFeatureID@H460_Feature@@QAE?AVH460_FeatureID@@XZ @41661 NONAME
@@ -34386,9 +34386,13 @@ EXPORTS
     ?GetSSLCertificate@OpalEndPoint@@QBE?AVPString@@XZ @43726 NONAME
     ?GetState@H4502Handler@@QBE?AW4State@1@XZ @30278 NONAME
     ?GetState@H4504Handler@@QBE?AW4State@1@XZ @30279 NONAME
+    ?GetStateName@H245NegLogicalChannel@@KAPBDW4States@1@@Z @45500 NONAME
+    ?GetStateName@H245NegMasterSlaveDetermination@@KAPBDW4States@1@@Z @45501 NONAME
+    ?GetStateName@H245NegTerminalCapabilitySet@@KAPBDW4States@1@@Z @45502 NONAME
     ?GetStatus@OpalSilenceDetector@@QBE?AW4Mode@1@PAHPAI@Z @34636 NONAME
     ?GetStatusCode@SIP_PDU@@QBE?AW4StatusCodes@1@XZ @30280 NONAME
     ?GetStatusCodeDescription@SIP_PDU@@SAPBDH@Z @36896 NONAME
+    ?GetStatusName@H245NegMasterSlaveDetermination@@KAPBDW4MasterSlaveStatus@1@@Z @45503 NONAME
     ?GetStringOptions@OpalConnection@@QBEPAVStringOptions@1@XZ @44989 NONAME
     ?GetSTUN@OpalManager@@QBEPAVPSTUNClient@@ABVAddress@PIPSocket@@@Z @30281 NONAME
     ?GetSubClass@IAX2FullFrame@@QBEHXZ @39445 NONAME
@@ -34421,6 +34425,7 @@ EXPORTS
     ?GetSubType@H323_H224Capability@@UBEIXZ @40926 NONAME
     ?GetSubType@H323_T38Capability@@UBEIXZ @30293 NONAME
     ?GetSubType@H323_UserInputCapability@@UBEIXZ @30294 NONAME
+    ?GetSubTypeName@H323_UserInputCapability@@SAPBDW4SubTypes@1@@Z @45504 NONAME
     ?GetSupported@SIPMIMEInfo@@QBE?AVPString@@XZ @30295 NONAME
     ?GetSupportedCodecs@IAX2Connection@@QAEHXZ @39460 NONAME
     ?GetSupportedCodecs@IAX2EndPoint@@QAEHAAVOpalMediaFormatList@@@Z @39461 NONAME
@@ -36842,8 +36847,8 @@ EXPORTS
     ?MarkVnakSendNow@IAX2FullFrame@@QAEXXZ @45080 NONAME
     ?MassageSequenceForSending@IAX2SequenceNumbers@@QAEXAAVIAX2FullFrame@@@Z @39681 NONAME
     ?MatchingAckPacket@IAX2WaitingForAck@@QAEHPAVIAX2FullFrame@@@Z @39682 NONAME
-    ?MaxBitRateOption@OpalMediaFormat@@2QBDB @36526 NONAME
-    ?MaxFrameSizeOption@OpalMediaFormat@@2QBDB @36527 NONAME
+    ?MaxBitRateOption@OpalMediaFormat@@SAABVPString@@XZ @45505 NONAME
+    ?MaxFrameSizeOption@OpalMediaFormat@@SAABVPString@@XZ @45506 NONAME
     ?max_size@?$allocator@I@std@@QBEIXZ @44221 NONAME
     ?max_size@?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVOpalFaxCallInfo@@@std@@@std@@QBEIXZ @45427 NONAME
     ?max_size@?$allocator@U?$pair@$$CBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@PAVWorkerBase@?$PFactory@VH235Authenticator@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@@std@@@std@@QBEIXZ @44673 NONAME
@@ -36886,7 +36891,7 @@ EXPORTS
     ?MWIUnsubscribe@SIPEndPoint@@QAEHABVPString@@0@Z @36530 NONAME
     ?NATBindingRefresh@SIPEndPoint@@MAEXAAVPTimer@@H@Z @40689 NONAME
     ?NeedsJitterBuffer@OpalMediaFormat@@QBE_NXZ @36531 NONAME
-    ?NeedsJitterOption@OpalMediaFormat@@2QBDB @36532 NONAME
+    ?NeedsJitterOption@OpalMediaFormat@@SAABVPString@@XZ @45507 NONAME
     ?NewFrameFromNetwork@IAX2JitterBuffer@@QAEXPAVRTP_DataFrame@@@Z @44900 NONAME
     ?NewIncomingConnection@H323EndPoint@@UAEHPAVOpalTransport@@@Z @32400 NONAME
     ?NewIncomingConnection@IAX2EndPoint@@QAEXPAVIAX2Frame@@@Z @39692 NONAME
@@ -38950,7 +38955,7 @@ EXPORTS
     ?RingingWasAcked@IAX2CallProcessor@@IAEXXZ @43461 NONAME
     ?RingLine@OpalLineInterfaceDevice@@UAEHIHPBII@Z @44285 NONAME
     ?RingLine@OpalPluginLID@@UAEHIHPBII@Z @44286 NONAME
-    ?RxFramesPerPacketOption@OpalAudioFormat@@2QBDB @36565 NONAME
+    ?RxFramesPerPacketOption@OpalAudioFormat@@SAABVPString@@XZ @45508 NONAME
     ?SelectDefaultLogicalChannel@H323Connection@@UAEXI@Z @34045 NONAME
     ?SelectFastStartChannels@H323Connection@@UAEXIHH@Z @34046 NONAME
     ?SelectFormats@OpalTranscoder@@SAHIABVOpalMediaFormatList@@0AAVOpalMediaFormat@@1@Z @34047 NONAME
@@ -39529,10 +39534,6 @@ EXPORTS
     ?StartTransmit@OpalH224Handler@@UAEXXZ @41018 NONAME
     ?StartVXML@OpalIVRConnection@@UAEHXZ @41040 NONAME
     ?StartVXML@OpalIVREndPoint@@UAEHXZ @41041 NONAME
-    ?StateNames@H245NegLogicalChannel@@1QBQBDB @34452 NONAME
-    ?StateNames@H245NegMasterSlaveDetermination@@1QBQBDB @34453 NONAME
-    ?StateNames@H245NegTerminalCapabilitySet@@1QBQBDB @34454 NONAME
-    ?StatusNames@H245NegMasterSlaveDetermination@@1QBQBDB @34456 NONAME
     ?Stop@H245NegMasterSlaveDetermination@@QAEXXZ @34457 NONAME
     ?Stop@H245NegTerminalCapabilitySet@@QAEXXZ @34458 NONAME
     ?StopAction@OpalH281Handler@@QAEXXZ @41019 NONAME
@@ -39607,10 +39608,9 @@ EXPORTS
     ?StoreDataIn@IAX2IeUserName@@UAEXAAVIAX2IeData@@@Z @40034 NONAME
     ?StoreDataIn@IAX2IeVersion@@UAEXAAVIAX2IeData@@@Z @40035 NONAME
     ?StringsAvailable@SafeStrings@@QAEHXZ @45009 NONAME
-    ?SubTypeNames@H323_UserInputCapability@@2QBQBDB @34480 NONAME
     ?SwapHoldMediaChannels@H323Connection@@AAEPAVPChannel@@PAV2@@Z @34483 NONAME
     ?t38Loader@PWLibStupidLinkerHacks@@3HA @45446 NONAME
-    ?TargetBitRateOption@OpalVideoFormat@@2QBDB @40036 NONAME
+    ?TargetBitRateOption@OpalVideoFormat@@SAABVPString@@XZ @45509 NONAME
     ?Terminate@IAX2IncomingEthernetFrames@@UAEXXZ @40037 NONAME
     ?Terminate@IAX2Processor@@UAEXXZ @40038 NONAME
     ?Terminate@IAX2Receiver@@UAEXXZ @44918 NONAME
@@ -39646,7 +39646,7 @@ EXPORTS
     ?TransmitSIPInfo@SIPEndPoint@@IAEHW4Methods@SIP_PDU@@ABVPString@@11111HABVPTimeInterval@@2@Z @44920 NONAME
     ?TransmitSIPUnregistrationInfo@SIPEndPoint@@IAEHABVPString@@0W4Methods@SIP_PDU@@@Z @36585 NONAME
     ?TransportThreadMain@SIPEndPoint@@MAEXAAVPThread@@H@Z @34501 NONAME
-    ?TxFramesPerPacketOption@OpalAudioFormat@@2QBDB @36586 NONAME
+    ?TxFramesPerPacketOption@OpalAudioFormat@@SAABVPString@@XZ @45510 NONAME
     ?uLawConverter@@3V?$Worker@VPWAVFileConverterULaw@@@?$PFactory@VPWAVFileConverter@@I@@A @35765 NONAME
     ?UnCompressSubClass@IAX2FullFrame@@IAEXE@Z @40046 NONAME
     ?UnLockVXMLChannel@PVXMLSession@@QAEXXZ @36962 NONAME
