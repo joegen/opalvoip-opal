@@ -24,7 +24,12 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2057  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2058  2007/04/13 07:27:47  rjongbloed
+ * Changed to use sound device factory to create PSoundChannel for
+ *   use by endpoint. Allows use of new WAV file sound device.
+ * Changed hard coded numbers for video frame size to use symbols.
+ *
+ * Revision 2.56  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -928,10 +933,11 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                            PINDEX buffers,
                                            const PString & deviceName)
   : OpalRawMediaStream(conn, mediaFormat, sessionID, isSource,
-                       new PSoundChannel(deviceName,
-                                         isSource ? PSoundChannel::Recorder
-                                                  : PSoundChannel::Player,
-                                         1, mediaFormat.GetClockRate(), 16),
+                       PSoundChannel::CreateOpenedChannel(PString::Empty(),
+                                                          deviceName,
+                                                          isSource ? PSoundChannel::Recorder
+                                                                   : PSoundChannel::Player,
+                                                          1, mediaFormat.GetClockRate(), 16),
                        TRUE)
 {
   soundChannelBuffers = buffers;
@@ -1006,15 +1012,15 @@ BOOL OpalVideoMediaStream::Open()
   if (isOpen)
     return TRUE;
 
-  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 176);
-  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 144);
+  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
   if (inputDevice != NULL) {
     if (!inputDevice->SetColourFormatConverter(mediaFormat)) {
       PTRACE(1, "Media\tCould not set colour format in grabber to " << mediaFormat);
       return FALSE;
     }
-    if (!inputDevice->SetFrameSizeConverter(width, height, FALSE)) {
+    if (!inputDevice->SetFrameSizeConverter(width, height)) {
       PTRACE(1, "Media\tCould not set frame size in grabber to " << width << 'x' << height << " in " << mediaFormat);
       return FALSE;
     }
@@ -1030,7 +1036,7 @@ BOOL OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not set colour format in video display to " << mediaFormat);
       return FALSE;
     }
-    if (!outputDevice->SetFrameSizeConverter(width, height, FALSE)) {
+    if (!outputDevice->SetFrameSizeConverter(width, height)) {
       PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
       return FALSE;
     }
