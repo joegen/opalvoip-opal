@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2084  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2085  2007/04/13 07:25:24  rjongbloed
+ * Changed hard coded numbers for video frame size to use symbols.
+ *
+ * Revision 2.83  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -868,8 +871,8 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = videoInputDevice;
-  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 176);
-  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 144);
+  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
   autoDelete = TRUE;
   device = PVideoInputDevice::CreateOpenedDevice(args);
@@ -885,8 +888,8 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
-  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), 176);
-  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), 144);
+  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
   autoDelete = TRUE;
   device = PVideoOutputDevice::CreateOpenedDevice(args);
