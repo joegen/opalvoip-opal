@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2045  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2046  2007/04/13 07:26:46  rjongbloed
+ * Changed to use sound device factory to create PSoundChannel for
+ *   use by endpoint. Allows use of new WAV file sound device.
+ *
+ * Revision 2.44  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -264,17 +268,18 @@ static BOOL SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
                           PString & result)
 {
-  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
-
   if (name[0] == '#') {
+    PStringArray devices = PSoundChannel::GetDeviceNames(dir);
     PINDEX id = name.Mid(1).AsUnsigned();
     if (id == 0 || id > devices.GetSize())
       return FALSE;
     result = devices[id-1];
   }
   else {
-    if (devices.GetValuesIndex(name) == P_MAX_INDEX)
+    PSoundChannel * pChannel = PSoundChannel::CreateChannelByName(name, dir);
+    if (pChannel == NULL)
       return FALSE;
+    delete pChannel;
     result = name;
   }
 
@@ -351,17 +356,24 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
                                                      BOOL isSource)
 {
   PString deviceName;
-  if (isSource)
+  PSoundChannel::Directions dir;
+  if (isSource) {
     deviceName = connection.GetSoundChannelRecordDevice();
-  else
+    dir = PSoundChannel::Recorder;
+  }
+  else {
     deviceName = connection.GetSoundChannelPlayDevice();
+    dir = PSoundChannel::Player;
+  }
 
-  PSoundChannel * soundChannel = new PSoundChannel;
+  PSoundChannel * soundChannel = PSoundChannel::CreateChannelByName(deviceName, dir);
+  if (soundChannel == NULL) {
+    PTRACE(1, "PCSS\tCould not create sound channel \"" << deviceName
+           << "\" for " << (isSource ? "record" : "play") << "ing.");
+    return NULL;
+  }
 
-  if (soundChannel->Open(deviceName,
-                         isSource ? PSoundChannel::Recorder
-                                  : PSoundChannel::Player,
-                         1, mediaFormat.GetClockRate(), 16)) {
+  if (soundChannel->Open(deviceName, dir, 1, mediaFormat.GetClockRate(), 16)) {
     PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
            << "\" for " << (isSource ? "record" : "play") << "ing.");
     return soundChannel;
