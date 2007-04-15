@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2157  2007/04/04 02:12:02  rjongbloed
+ * Revision 1.2158  2007/04/15 10:09:15  dsandras
+ * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
+ * PDUs which is different to the one being used in the original REGISTER request.
+ * Added code to use the same Contact field in both cases if we can determine that
+ * we are registered to that specific account and if there is a transport running.
+ * Fixed problem where the SIP connection was not released with a BYE PDU when
+ * the ACK is received while we are already in EstablishedPhase.
+ *
+ * Revision 2.156  2007/04/04 02:12:02  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -706,7 +714,7 @@ SIPTransaction * SIPRegisterInfo::CreateTransaction(OpalTransport &t, BOOL unreg
 			  registrationAddress, 
 			  registrationID, 
 			  unregister ? 0 : expire,
-        retryTimeoutMin, retryTimeoutMax);
+                          retryTimeoutMin, retryTimeoutMax);
 }
 
 void SIPRegisterInfo::OnSuccess ()
@@ -2131,6 +2139,17 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
   OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
   SIPURL party(partyName, address, localPort);
   return party;
+}
+
+
+SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host)
+{
+  PSafePtr<SIPInfo> info = activeSIPInfo.FindSIPInfoByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  
+  if (info == NULL || info->GetTransport() == NULL) 
+    return GetLocalURL(transport, userName);
+  else
+    return GetLocalURL(*info->GetTransport(), userName);
 }
 
 
