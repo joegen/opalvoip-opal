@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2121  2007/04/04 02:12:02  rjongbloed
+ * Revision 1.2122  2007/04/15 10:09:15  dsandras
+ * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
+ * PDUs which is different to the one being used in the original REGISTER request.
+ * Added code to use the same Contact field in both cases if we can determine that
+ * we are registered to that specific account and if there is a transport running.
+ * Fixed problem where the SIP connection was not released with a BYE PDU when
+ * the ACK is received while we are already in EstablishedPhase.
+ *
+ * Revision 2.120  2007/04/04 02:12:02  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1656,7 +1664,7 @@ void SIP_PDU::Construct(Methods meth,
 {
   SIPEndPoint & endpoint = connection.GetEndPoint();
   PString localPartyName = connection.GetLocalPartyName();
-  SIPURL contact = endpoint.GetLocalURL(transport, localPartyName);
+  SIPURL contact = endpoint.GetContactURL(transport, localPartyName, SIPURL(connection.GetRemotePartyAddress()).GetHostName());
   mime.SetContact(contact);
 
   SIPURL targetAddress = connection.GetTargetAddress();
