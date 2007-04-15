@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2047.2.15  2007/03/27 20:23:22  dsandras
+ * Revision 1.2047.2.16  2007/04/15 09:54:47  dsandras
+ * Some systems like CISCO Call Manager do like having a Contact field in INVITE
+ * PDUs which is different to the one being used in the original REGISTER request.
+ * Added code to use the same Contact field in both cases if we can determine that
+ * we are registered to that specific account and if there is a transport running.
+ * Fixed problem where the SIP connection was not released with a BYE PDU when
+ * the ACK is received while we are already in EstablishedPhase.
+ *
+ * Revision 2.46.2.15  2007/03/27 20:23:22  dsandras
  * Added Garbage collector. Make sure the transport is closed before
  * deleting it. Better handling of SIPInfo objects.
  *
@@ -871,6 +879,20 @@ class SIPEndPoint : public OpalEndPoint
      */
     virtual SIPURL GetDefaultRegisteredPartyName();
     
+
+    /**Return the contact URL for the given host and user name
+     * based on the listening port of the registration to that host.
+     * 
+     * That URL can be used as as contact field in outgoing
+     * requests.
+     *
+     * The URL is translated if required.
+     *
+     * If no active registration is used, return the result of GetLocalURL
+     * on the given transport.
+     */
+    SIPURL GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host);
+
 
     /**Return the local URL for the given transport and user name.
      * That URL can be used as via address, and as contact field in outgoing
