@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2214  2007/04/04 02:12:02  rjongbloed
+ * Revision 1.2215  2007/04/15 10:09:15  dsandras
+ * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
+ * PDUs which is different to the one being used in the original REGISTER request.
+ * Added code to use the same Contact field in both cases if we can determine that
+ * we are registered to that specific account and if there is a transport running.
+ * Fixed problem where the SIP connection was not released with a BYE PDU when
+ * the ACK is received while we are already in EstablishedPhase.
+ *
+ * Revision 2.213  2007/04/04 02:12:02  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -2423,17 +2431,17 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     StartMediaStreams();
   }
   
-  // start all of the media threads for the connection
+  releaseMethod = ReleaseWithBYE;
   if (phase != ConnectedPhase)  
     return;
   
-  releaseMethod = ReleaseWithBYE;
   SetPhase(EstablishedPhase);
   OnEstablished();
 
   // HACK HACK HACK: this is a work-around for a deadlock that can occur
   // during incoming calls. What is needed is a proper resequencing that
   // avoids this problem
+  // start all of the media threads for the connection
   StartMediaStreams();
 }
 
@@ -2918,8 +2926,8 @@ BOOL SIPConnection::ForwardCall (const PString & fwdParty)
 
 BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
-  PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-  SIPURL contact = endpoint.GetLocalURL(*transport, userName);
+  PString userName = endpoint.GetRegisteredPartyName(SIPURL(localPartyAddress).GetHostName()).GetUserName();
+  SIPURL contact = endpoint.GetContactURL(*transport, userName, SIPURL(localPartyAddress).GetHostName());
 
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
 }
