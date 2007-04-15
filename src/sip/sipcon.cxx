@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.26  2007/03/15 21:19:48  dsandras
+ * Revision 1.2121.2.27  2007/04/15 09:54:46  dsandras
+ * Some systems like CISCO Call Manager do like having a Contact field in INVITE
+ * PDUs which is different to the one being used in the original REGISTER request.
+ * Added code to use the same Contact field in both cases if we can determine that
+ * we are registered to that specific account and if there is a transport running.
+ * Fixed problem where the SIP connection was not released with a BYE PDU when
+ * the ACK is received while we are already in EstablishedPhase.
+ *
+ * Revision 2.120.2.26  2007/03/15 21:19:48  dsandras
  * Make sure lastTransportAddress is correctly initialized even when
  * uncompliant SIP PDUs are received.
  *
@@ -931,8 +939,8 @@ BOOL SIPConnection::SetConnected()
   }
 
   // send the 200 OK response
-  PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-  SIPURL contact = endpoint.GetLocalURL(*transport, userName);
+  PString userName = endpoint.GetRegisteredPartyName(SIPURL(localPartyAddress).GetHostName()).GetUserName();
+  SIPURL contact = endpoint.GetContactURL(*transport, userName, SIPURL(localPartyAddress).GetHostName());
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString());
   response.SetSDP(sdpOut);
   SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
@@ -1818,8 +1826,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   
     // send the 200 OK response
-    PString userName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName();
-    SIPURL contact = endpoint.GetLocalURL(*transport, userName);
+    PString userName = endpoint.GetRegisteredPartyName(SIPURL(localPartyAddress).GetHostName()).GetUserName();
+    SIPURL contact = endpoint.GetContactURL(*transport, userName, SIPURL(localPartyAddress).GetHostName());
     SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
     response.SetSDP(sdpOut);
     SendPDU(response, originalInvite->GetViaAddress(endpoint));
@@ -1909,17 +1917,17 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     StartMediaStreams();
   }
   
-  // start all of the media threads for the connection
+  releaseMethod = ReleaseWithBYE;
   if (phase != ConnectedPhase)  
     return;
   
-  releaseMethod = ReleaseWithBYE;
   SetPhase(EstablishedPhase);
   OnEstablished();
 
   // HACK HACK HACK: this is a work-around for a deadlock that can occur
   // during incoming calls. What is needed is a proper resequencing that
   // avoids this problem
+  // start all of the media threads for the connection
   StartMediaStreams();
 }
 
