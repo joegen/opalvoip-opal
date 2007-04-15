@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2018.2.3  2006/12/31 17:00:48  dsandras
+ * Revision 1.2018.2.4  2007/04/15 09:55:35  dsandras
+ * Do not try converting input frames with a payload size of 0.
+ *
+ * Revision 2.17.2.3  2006/12/31 17:00:48  dsandras
  * Do not try transcoding RTP frames if they do not correspond to the formats
  * for which the transcoder was created.
  *
@@ -187,6 +190,9 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
   RTP_DataFrame::PayloadTypes pt;
+
+  if (input.GetPayloadSize()==0)
+    return TRUE;
 
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
