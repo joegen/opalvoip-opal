@@ -34293,7 +34293,7 @@ EXPORTS
     ?GetMediaFormats@H323EndPoint@@UBE?AVOpalMediaFormatList@@XZ @33498 NONAME
     ?GetMediaFormats@IAX2Connection@@UBE?AVOpalMediaFormatList@@XZ @33499 NONAME
     ?GetMediaFormats@IAX2EndPoint@@UBE?AVOpalMediaFormatList@@XZ @33500 NONAME
-    ?GetMediaFormats@OpalCall@@QAE?AVOpalMediaFormatList@@ABVOpalConnection@@H@Z @33501 NONAME
+    ?GetMediaFormats@OpalCall@@UAE?AVOpalMediaFormatList@@ABVOpalConnection@@H@Z @42182 NONAME
     ?GetMediaFormats@OpalFaxConnection@@UBE?AVOpalMediaFormatList@@XZ @42065 NONAME
     ?GetMediaFormats@OpalFaxEndPoint@@UBE?AVOpalMediaFormatList@@XZ @42066 NONAME
     ?GetMediaFormats@OpalIVRConnection@@UBE?AVOpalMediaFormatList@@XZ @33502 NONAME
