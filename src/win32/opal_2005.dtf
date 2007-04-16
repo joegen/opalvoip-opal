@@ -32938,6 +32938,7 @@ EXPORTS
     ?GetConnectionToken@IAX2Frame@@QBE?AVPString@@XZ @32218 NONAME
     ?GetConnectionWithLock@OpalEndPoint@@QAE?AV?$PSafePtr@VOpalConnection@@@@ABVPString@@W4PSafetyMode@@@Z @32219 NONAME
     ?GetContact@SIPMIMEInfo@@QBE?AVPString@@XZ @32220 NONAME
+    ?GetContactURL@SIPEndPoint@@QAE?AVSIPURL@@ABVOpalTransport@@ABVPString@@1@Z @41850 NONAME
     ?GetContentEncoding@SIPMIMEInfo@@QBE?AVPString@@XZ @32221 NONAME
     ?GetContentLength@SIPMIMEInfo@@QBEHXZ @32222 NONAME
     ?GetContentType@SIPMIMEInfo@@QBE?AVPString@@XZ @32223 NONAME
