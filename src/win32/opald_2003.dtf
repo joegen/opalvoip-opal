@@ -32875,6 +32875,7 @@ EXPORTS
     ?GetConnectionToken@IAX2Frame@@QBE?AVPString@@XZ @39253 NONAME
     ?GetConnectionWithLock@OpalEndPoint@@QAE?AV?$PSafePtr@VOpalConnection@@@@ABVPString@@W4PSafetyMode@@@Z @36030 NONAME
     ?GetContact@SIPMIMEInfo@@QBE?AVPString@@XZ @29079 NONAME
+    ?GetContactURL@SIPEndPoint@@QAE?AVSIPURL@@ABVOpalTransport@@ABVPString@@1@Z @45549 NONAME
     ?GetContentEncoding@SIPMIMEInfo@@QBE?AVPString@@XZ @29080 NONAME
     ?GetContentLength@SIPMIMEInfo@@QBEHXZ @29081 NONAME
     ?GetContentType@SIPMIMEInfo@@QBE?AVPString@@XZ @29082 NONAME
@@ -34050,7 +34051,7 @@ EXPORTS
     ?GetMediaFormats@H323EndPoint@@UBE?AVOpalMediaFormatList@@XZ @35618 NONAME
     ?GetMediaFormats@IAX2Connection@@UBE?AVOpalMediaFormatList@@XZ @39380 NONAME
     ?GetMediaFormats@IAX2EndPoint@@UBE?AVOpalMediaFormatList@@XZ @39381 NONAME
-    ?GetMediaFormats@OpalCall@@QAE?AVOpalMediaFormatList@@ABVOpalConnection@@H@Z @30045 NONAME
+    ?GetMediaFormats@OpalCall@@UAE?AVOpalMediaFormatList@@ABVOpalConnection@@H@Z @45550 NONAME
     ?GetMediaFormats@OpalFaxConnection@@UBE?AVOpalMediaFormatList@@XZ @45440 NONAME
     ?GetMediaFormats@OpalFaxEndPoint@@UBE?AVOpalMediaFormatList@@XZ @45441 NONAME
     ?GetMediaFormats@OpalIVRConnection@@UBE?AVOpalMediaFormatList@@XZ @30046 NONAME
