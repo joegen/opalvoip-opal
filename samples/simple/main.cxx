@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2089  2007/04/10 06:44:07  rjongbloed
+ * Revision 1.2090  2007/04/16 04:12:25  rjongbloed
+ * Added ability to set transmitted video frame size (qcif etc).
+ * Added ability to set any media format option.
+ *
+ * Revision 2.88  2007/04/10 06:44:07  rjongbloed
  * Cosmetic change, removed non-wire media formats from print out of "Available Media Formats". Also resorted and removed formats as per -P and -D.
  *
  * Revision 2.87  2007/04/10 05:15:54  rjongbloed
@@ -458,6 +462,7 @@ void SimpleOpalProcess::Main()
 #if PTRACING
              "o-output:"
 #endif
+             "O-option:"
              "P-prefer:"
              "p-password:"
              "-portbase:"
@@ -491,6 +496,7 @@ void SimpleOpalProcess::Main()
              "-udp-base:"
              "-udp-max:"
              "-use-long-mime."
+#if OPAL_VIDEO
              "-rx-video." "-no-rx-video."
              "-tx-video." "-no-tx-video."
              "-grabber:"
@@ -498,6 +504,8 @@ void SimpleOpalProcess::Main()
              "-grabchannel:"
              "-display:"
              "-displaydriver:"
+             "-video-size:"
+#endif
 #if P_EXPAT
              "V-no-ivr."
              "x-vxml:"
@@ -521,6 +529,10 @@ void SimpleOpalProcess::Main()
             "  -p --password pwd       : Set password for user (gk or SIP authorisation).\n"
             "  -D --disable media      : Disable the specified codec (may be used multiple times)\n"
             "  -P --prefer media       : Prefer the specified codec (may be used multiple times)\n"
+            "  -O --option fmt:opt=val : Set codec option (may be used multiple times)\n"
+            "                          :  fmt is name of codec, eg \"H.261\"\n"
+            "                          :  opt is name of option, eg \"Target Bit Rate\"\n"
+            "                          :  val is value of option, eg \"48000\"\n"
             "  --srcep ep              : Set the source endpoint to use for making calls\n"
             "  --disableui             : disable the user interface\n"
             "\n"
@@ -528,6 +540,7 @@ void SimpleOpalProcess::Main()
             "  -j --jitter [min-]max   : Set minimum (optional) and maximum jitter buffer (in milliseconds).\n"
             "  -e --silence            : Disable transmitter silence detection.\n"
             "\n"
+#if OPAL_VIDEO
             "Video options:\n"
             "     --rx-video           : Start receiving video immediately.\n"
             "     --tx-video           : Start transmitting video immediately.\n"
@@ -538,7 +551,10 @@ void SimpleOpalProcess::Main()
             "     --grabchannel num    : Set the video grabber device channel.\n"
             "     --display dev        : Set the video display device.\n"
             "     --displaydriver dev  : Set the video display driver (if device name is ambiguous).\n"
+            "     --video-size size    : Set the size of the video for all video formats, use\n"
+            "                          : \"qcif\", \"cif\", WxH etc\n"
             "\n"
+#endif
 
 #if OPAL_SIP
             "SIP options:\n"
@@ -740,13 +756,6 @@ MyManager::~MyManager()
 BOOL MyManager::Initialise(PArgList & args)
 {
 #if OPAL_VIDEO
-  OpalMediaFormat fmt("H.261-CIF");
-  if (fmt.IsValid()) {
-    fmt.SetOptionInteger(OpalVideoFormat::EncodingQualityOption(), 16);
-    fmt.SetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), TRUE);
-    OpalMediaFormat::SetRegisteredMediaFormat(fmt);
-  }
-
   // Set the various global options
   if (args.HasOption("rx-video"))
     autoStartReceiveVideo = TRUE;
@@ -772,7 +781,7 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption("display")) {
     PVideoDevice::OpenArgs video = GetVideoOutputDevice();
     video.deviceName = args.GetOptionString("display");
-    video.driverName   = args.GetOptionString("displaydriver");
+    video.driverName = args.GetOptionString("displaydriver");
     if (!SetVideoOutputDevice(video)) {
       cerr << "Unknown display device " << video.deviceName << endl
            << "options are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
@@ -1149,6 +1158,54 @@ BOOL MyManager::Initialise(PArgList & args)
           "Codecs removed: " << setfill(',') << GetMediaFormatMask() << "\n"
           "Codec order: " << GetMediaFormatOrder() << "\n"
           "Available codecs: " << allMediaFormats << setfill(' ') << endl;
+
+#if OPAL_VIDEO
+  if (args.HasOption("video-size")) {
+    PString sizeStr = args.GetOptionString("video-size");
+    unsigned width, height;
+    if (PVideoFrameInfo::ParseSize(sizeStr, width, height)) {
+      OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
+      for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
+        OpalMediaFormat mediaFormat = allMediaFormats[i];
+        if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+          mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
+          mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+          OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+        }
+      }
+    }
+    else
+      cerr << "Unknown video size \"" << sizeStr << '"' << endl;
+  }
+#endif
+
+  PStringArray options = args.GetOptionString('O').Lines();
+  for (PINDEX i = 0; i < options.GetSize(); i++) {
+    const PString & optionDescription = options[i];
+    PINDEX colon = optionDescription.Find(':');
+    PINDEX equal = optionDescription.Find('=', colon+2);
+    if (colon == P_MAX_INDEX || equal == P_MAX_INDEX) {
+      cerr << "Invalid option description \"" << optionDescription << '"' << endl;
+      continue;
+    }
+    OpalMediaFormat mediaFormat = optionDescription.Left(colon);
+    if (mediaFormat.IsEmpty()) {
+      cerr << "Invalid media format in option description \"" << optionDescription << '"' << endl;
+      continue;
+    }
+    PString optionName = optionDescription(colon+1, equal-1);
+    if (!mediaFormat.HasOption(optionName)) {
+      cerr << "Invalid option name in description \"" << optionDescription << '"' << endl;
+      continue;
+    }
+    PString valueStr = optionDescription.Mid(equal+1);
+    if (!mediaFormat.SetOptionValue(optionName, valueStr)) {
+      cerr << "Invalid option value in description \"" << optionDescription << '"' << endl;
+      continue;
+    }
+    OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+    cout << "Set option \"" << optionName << "\" to \"" << valueStr << "\" in \"" << mediaFormat << '"' << endl;
+  }
 
   return TRUE;
 }
