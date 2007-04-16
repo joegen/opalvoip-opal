@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2029  2007/04/03 05:27:29  rjongbloed
+ * Revision 1.2030  2007/04/16 06:48:04  rjongbloed
+ * Added virtual to OpalCall::GetMediaFormats to allow user override.
+ *
+ * Revision 2.28  2007/04/03 05:27:29  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -352,7 +355,7 @@ class OpalCall : public PSafeObject
        This will also add to the list all media formats for which there are
        transcoders registered.
       */
-    OpalMediaFormatList GetMediaFormats(
+    virtual OpalMediaFormatList GetMediaFormats(
       const OpalConnection & connection,  ///<  Connection requesting formats
       BOOL includeSpecifiedConnection     ///<  Include parameters media
     );
