@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2158  2007/04/15 10:09:15  dsandras
+ * Revision 1.2159  2007/04/17 21:49:41  dsandras
+ * Fixed Via field in previous commit.
+ * Make sure the correct port is being used.
+ * Improved FindSIPInfoByDomain.
+ *
+ * Revision 2.157  2007/04/15 10:09:15  dsandras
  * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
  * PDUs which is different to the one being used in the original REGISTER request.
  * Added code to use the same Contact field in both cases if we can determine that
@@ -2170,10 +2175,7 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
     PIPSocket::Address remoteIP;
     if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
       GetManager().TranslateIPAddress(localIP, remoteIP); 	 
-      PIPSocket::Address _localIP(localIP);
-      PSTUNClient * stun = manager.GetSTUN(remoteIP);
-      if (stun != NULL || localIP != _localIP)
-	contactPort = localPort;
+      contactPort = localPort;
       contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
     }
   }
