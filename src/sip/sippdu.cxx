@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2122  2007/04/15 10:09:15  dsandras
+ * Revision 1.2123  2007/04/17 21:49:41  dsandras
+ * Fixed Via field in previous commit.
+ * Make sure the correct port is being used.
+ * Improved FindSIPInfoByDomain.
+ *
+ * Revision 2.121  2007/04/15 10:09:15  dsandras
  * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
  * PDUs which is different to the one being used in the original REGISTER request.
  * Added code to use the same Contact field in both cases if we can determine that
@@ -1665,6 +1670,7 @@ void SIP_PDU::Construct(Methods meth,
   SIPEndPoint & endpoint = connection.GetEndPoint();
   PString localPartyName = connection.GetLocalPartyName();
   SIPURL contact = endpoint.GetContactURL(transport, localPartyName, SIPURL(connection.GetRemotePartyAddress()).GetHostName());
+  SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
   mime.SetContact(contact);
 
   SIPURL targetAddress = connection.GetTargetAddress();
@@ -1676,7 +1682,7 @@ void SIP_PDU::Construct(Methods meth,
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
             connection.GetNextCSeq(),
-            contact.GetHostAddress());
+            via.GetHostAddress());
 
   SetRoute(connection); // Possibly adjust the URI and the route
 }
