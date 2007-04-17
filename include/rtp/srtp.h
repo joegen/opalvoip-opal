@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.8  2007/04/17 23:45:08  csoutheren
+ * Fix name of SRTP libraries on Windows
+ *
  * Revision 1.7  2007/02/20 04:26:43  csoutheren
  * Ensure outgoing and incoming SSRC are set for SRTP sessions
  * Fixed problem with sending secure RTCP packets
@@ -103,6 +106,7 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
   public:
     struct KeySalt {
       KeySalt()                                                       { }
+      KeySalt(const PBYTEArray & data)           : key(data)          { }
       KeySalt(const BYTE * data, PINDEX dataLen) : key(data, dataLen) { }
       PBYTEArray key;
       PBYTEArray salt;
