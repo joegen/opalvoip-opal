@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2077  2007/04/15 10:09:14  dsandras
+ * Revision 1.2078  2007/04/17 21:49:41  dsandras
+ * Fixed Via field in previous commit.
+ * Make sure the correct port is being used.
+ * Improved FindSIPInfoByDomain.
+ *
+ * Revision 2.76  2007/04/15 10:09:14  dsandras
  * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
  * PDUs which is different to the one being used in the original REGISTER request.
  * Added code to use the same Contact field in both cases if we can determine that
@@ -1125,10 +1130,25 @@ class SIPEndPoint : public OpalEndPoint
 	     */
 	    PSafePtr <SIPInfo> FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
 	    {
-	      OpalTransportAddress addr = name;
 	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-                if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
+
+                if (name == info->GetRegistrationAddress().GetHostName())
                   return info;
+
+                OpalTransportAddress addr;
+                PIPSocket::Address infoIP;
+                PIPSocket::Address nameIP;
+                WORD port = 5060;
+                addr = name;
+
+                if (addr.GetIpAndPort (nameIP, port)) {
+                  addr = info->GetRegistrationAddress().GetHostName();
+                  if (addr.GetIpAndPort (infoIP, port)) {
+                    if (infoIP == nameIP) {
+                      return info;
+                    }
+                  }
+                }
 	      }
 	      return NULL;
 	    }
