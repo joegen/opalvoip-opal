@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2085  2007/04/13 07:25:24  rjongbloed
+ * Revision 1.2086  2007/04/18 00:01:05  csoutheren
+ * Add hooks for recording call audio
+ *
+ * Revision 2.84  2007/04/13 07:25:24  rjongbloed
  * Changed hard coded numbers for video frame size to use symbols.
  *
  * Revision 2.83  2007/04/10 05:15:54  rjongbloed
@@ -1403,6 +1406,18 @@ BOOL OpalManager::UseRTPAggregation() const
 #else
   return FALSE;
 #endif
+}
+
+void OpalManager::OnStartRecordAudio(OpalConnection & /*conn*/, INT /*id*/, BOOL /*isSource*/)
+{
+}
+
+void OpalManager::OnStopRecordAudio(OpalConnection & /*conn*/)
+{
+}
+
+void OpalManager::OnRecordAudio(OpalConnection & /*conn*/, INT /*id*/, RTP_DataFrame & /*frame*/)
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////
