@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2103  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2104  2007/04/18 00:01:05  csoutheren
+ * Add hooks for recording call audio
+ *
+ * Revision 2.102  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -980,6 +983,8 @@ void OpalConnection::StartMediaStreams()
 
 void OpalConnection::CloseMediaStreams()
 {
+  GetCall().GetManager().OnStopRecordAudio(*this);
+
   PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & strm = mediaStreams[i];
@@ -1078,11 +1083,19 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
+void OpalConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 {
-  PTRACE(4, "OpalCon\tNew patch created");
+  if (patch.GetSinkFormat().GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID) 
+    GetCall().GetManager().OnStartRecordAudio(*this, (INT)(void *)&patch, isSource);
+    patch.AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+
+  PTRACE(3, "OpalCon\tNew patch created");
 }
 
+void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT code)
+{
+  GetCall().GetManager().OnRecordAudio(*this, code, frame);
+}
 
 void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch)
 {
