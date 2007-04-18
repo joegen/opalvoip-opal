@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2078  2007/04/17 21:49:41  dsandras
+ * Revision 1.2079  2007/04/18 03:23:50  rjongbloed
+ * Moved large chunk of code from header to source file.
+ *
+ * Revision 2.77  2007/04/17 21:49:41  dsandras
  * Fixed Via field in previous commit.
  * Make sure the correct port is being used.
  * Improved FindSIPInfoByDomain.
@@ -444,9 +447,9 @@ class SIPInfo : public PSafeObject
     virtual void OnFailed(
       SIP_PDU::StatusCodes
     ) = 0;
-	
-	int GetAuthenticationAttempts() { return authenticationAttempts; };
-	void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
+    
+    int GetAuthenticationAttempts() { return authenticationAttempts; };
+    void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
 
     protected:
       SIPEndPoint      & ep;
@@ -459,11 +462,11 @@ class SIPInfo : public PSafeObject
       PMutex             registrationsMutex;
       PTime              registrationTime;
       BOOL               registered;
-      int	               expire;
-      PString	           authRealm;
+      int                   expire;
+      PString               authRealm;
       PString            authUser;
-      PString 	         password;
-      PString		         body;
+      PString              password;
+      PString                 body;
       PMutex             transportMutex;
       unsigned           authenticationAttempts;
 
@@ -775,9 +778,9 @@ class SIPEndPoint : public OpalEndPoint
     /**Callback for SIP message received
      */
     virtual void OnMessageReceived (const SIPURL & from,
-				    const PString & body);
+                    const PString & body);
 
-				
+                
     /**Register to a registrar. This function is asynchronous to permit
      * several registrations to occur at the same time. It can be
      * called several times for different hosts and users.
@@ -874,7 +877,7 @@ class SIPEndPoint : public OpalEndPoint
      * is synchronous.
      */
     BOOL Unregister(const PString & host,
-		    const PString & user);
+            const PString & user);
 
     
     /**Unsubscribe from a notifier. This function
@@ -1065,93 +1068,36 @@ class SIPEndPoint : public OpalEndPoint
     class RegistrationList : public PSafeList<SIPInfo>
     {
       public:
+        /**
+         * Return the number of registered accounts
+         */
+        unsigned GetRegistrationsCount();
+      
+        /**
+         * Find the SIPInfo object with the specified callID
+         */
+        PSafePtr<SIPInfo> FindSIPInfoByCallID(const PString & callID, PSafetyMode m);
 
-	    /**
-	     * Return the number of registered accounts
-	     */
-	    unsigned GetRegistrationsCount ()
-	    {
-	      unsigned count = 0;
-	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-      		if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
-		        count++;
-	      return count;
-	    }
-	  
-	    /**
-	     * Find the SIPInfo object with the specified callID
-	     */
-	    PSafePtr<SIPInfo> FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-		      if (callID == info->GetRegistrationID())
-		        return info;
-	      return NULL;
-	    }
+        /**
+         * Find the SIPInfo object with the specified authRealm
+         */
+            PSafePtr<SIPInfo> FindSIPInfoByAuthRealm(const PString & authRealm, const PString & userName, PSafetyMode m);
 
-	    /**
-	     * Find the SIPInfo object with the specified authRealm
-	     */
-            PSafePtr<SIPInfo> FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
-            {
-              PIPSocket::Address realmAddress;
+        /**
+         * Find the SIPInfo object with the specified URL. The url is
+         * the registration address, for example, 6001@sip.seconix.com
+         * when registering 6001 to sip.seconix.com with realm seconix.com
+         * or 6001@seconix.com when registering 6001@seconix.com to
+         * sip.seconix.com
+         */
+        PSafePtr<SIPInfo> FindSIPInfoByUrl(const PString & url, SIP_PDU::Methods meth, PSafetyMode m);
 
-              for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-                if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
-                  return info;
-              for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-                if (PIPSocket::GetHostAddress(info->GetAuthentication().GetAuthRealm(), realmAddress))
-                  if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
-                    return info;
-              }
-              return NULL;
-            }
-
-	    /**
-	     * Find the SIPInfo object with the specified URL. The url is
-	     * the registration address, for example, 6001@sip.seconix.com
-	     * when registering 6001 to sip.seconix.com with realm seconix.com
-	     * or 6001@seconix.com when registering 6001@seconix.com to
-	     * sip.seconix.com
-	     */
-	    PSafePtr<SIPInfo> FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-		      if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
-		        return info;
-	      }
-	      return NULL;
-	    }
-
-	    /**
-	     * Find the SIPInfo object with the specified registration host.
-	     * For example, in the above case, the name parameter
-	     * could be "sip.seconix.com" or "seconix.com".
-	     */
-	    PSafePtr <SIPInfo> FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-
-                if (name == info->GetRegistrationAddress().GetHostName())
-                  return info;
-
-                OpalTransportAddress addr;
-                PIPSocket::Address infoIP;
-                PIPSocket::Address nameIP;
-                WORD port = 5060;
-                addr = name;
-
-                if (addr.GetIpAndPort (nameIP, port)) {
-                  addr = info->GetRegistrationAddress().GetHostName();
-                  if (addr.GetIpAndPort (infoIP, port)) {
-                    if (infoIP == nameIP) {
-                      return info;
-                    }
-                  }
-                }
-	      }
-	      return NULL;
-	    }
+        /**
+         * Find the SIPInfo object with the specified registration host.
+         * For example, in the above case, the name parameter
+         * could be "sip.seconix.com" or "seconix.com".
+         */
+        PSafePtr <SIPInfo> FindSIPInfoByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m);
     };
 
     RegistrationList & GetActiveSIPInfo() 
