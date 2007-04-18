@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2059  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2060  2007/04/18 00:00:44  csoutheren
+ * Add hooks for recording call audio
+ *
+ * Revision 2.58  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -1240,6 +1243,10 @@ class OpalManager : public PObject
     { return defaultSecurityMode; }
 
     virtual BOOL UseRTPAggregation() const;
+
+    virtual void OnStartRecordAudio(OpalConnection & conn, INT id, BOOL isSource);
+    virtual void OnStopRecordAudio(OpalConnection & conn);
+    virtual void OnRecordAudio(OpalConnection & conn, INT id, RTP_DataFrame & frame);
 
   protected:
     // Configuration variables

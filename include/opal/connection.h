@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2079  2007/04/03 05:27:29  rjongbloed
+ * Revision 1.2080  2007/04/18 00:00:44  csoutheren
+ * Add hooks for recording call audio
+ *
+ * Revision 2.78  2007/04/03 05:27:29  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -1411,6 +1414,7 @@ class OpalConnection : public PSafeObject
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
 
   // Member variables
     OpalCall             & ownerCall;
