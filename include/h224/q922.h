@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.h,v $
+ * Revision 1.3  2007/04/19 06:17:20  csoutheren
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.2  2006/04/23 18:52:19  dsandras
  * Removed warnings when compiling with gcc on Linux.
  *
@@ -34,7 +37,9 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
 
 #define Q922_HEADER_SIZE 3
 
