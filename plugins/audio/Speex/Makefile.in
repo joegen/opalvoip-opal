@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.5  2007/04/19 06:09:03  csoutheren
+# Fixed plugin build system to use better detection for OSX
+# Resolved 1636262 - Fix for audio plugins for OSX
+#
 # Revision 1.4  2007/03/01 09:16:21  dereksmithies
 # Make certain it optimises the code when building the Speex codec
 #
@@ -61,24 +65,24 @@
 # Updated Makefiles and fixed Linux problems
 #
 #
-STDCCFLAGS += -fPIC
-
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
-H323_SYSTEM_SPEEX=@H323_SYSTEM_SPEEX@
-
-CC=@CC@
-CXX=@CXX@
-LDSO=-O2 @LDSO@
-
-ifndef PREFIX
-PREFIX=/usr/local
-endif
-
-SONAME	= speexccodec
 
 SRCDIR	= ./libspeex
+
+SONAME	= speexcodec
+
+CC	 	=@CC@
+CFLAGS	 	=@CFLAGS@
+CXX	 	=@CXX@
+LDSO	 	=@LDSO@
+PLUGINEXT	=@PLUGINEXT@
+STDCCFLAGS	=@STDCCFLAGS@
+LDFLAGS		=@LDFLAGS@
+
+H323_SYSTEM_SPEEX=@H323_SYSTEM_SPEEX@
+
 SRCS	= speexcodec.cxx 
 
 ifndef H323_SYSTEM_SPEEX
@@ -141,12 +145,12 @@ $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CXX) -g -O2 -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
 
-PLUGIN	= ./speex_audio_pwplugin.so
+PLUGIN	= ./speex_audio_pwplugin.$(PLUGINEXT)
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.cxx,%.o,$(patsubst %.c,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
+	$(CXX) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
 	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/

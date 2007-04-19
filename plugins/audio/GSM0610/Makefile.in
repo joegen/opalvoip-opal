@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2007/04/19 06:09:03  csoutheren
+# Fixed plugin build system to use better detection for OSX
+# Resolved 1636262 - Fix for audio plugins for OSX
+#
 # Revision 1.2  2006/07/31 08:52:09  csoutheren
 # Checkin of validated codec used during development
 #
@@ -67,27 +71,25 @@
 #
 #
 #
-STDCCFLAGS += -fPIC
-
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
+
 H323_SYSTEM_GSM=@H323_SYSTEM_GSM@
+SONAME	= gsm0610
 H323_EMBEDDED_GSM=@H323_EMBEDDED_GSM@
 
-CC=@CC@
-CFLAGS=@CFLAGS@
-CXX=@CXX@
-LDSO=@LDSO@
+SRCDIR		= ./src
+OBJDIR		= ./obj
 
-ifndef PREFIX
-PREFIX=/usr/local
-endif
+CC	 	=@CC@
+CFLAGS	 	=@CFLAGS@
+CXX	 	=@CXX@
+LDSO	 	=@LDSO@
+PLUGINEXT	=@PLUGINEXT@
+STDCCFLAGS	=@STDCCFLAGS@
+LDFLAGS		=@LDFLAGS@
 
-SONAME	= gsm0610
-
-SRCDIR	= ./src
-OBJDIR	= ./obj
 
 SRCS	+= gsm06_10_codec.c
 
@@ -127,8 +129,8 @@ $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -I../../../include -I./inc -DWAV49 -DNeedFunctionPrototypes=1 $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
-PLUGIN	= ./$(SONAME)_audio_pwplugin.so
-STATIC	= ./lib$(SONAME)_audio_s.a
+PLUGIN	= ./gsm0610_audio_pwplugin.$(PLUGINEXT)
+STATIC	= ./libgsm0610_audio_s.a
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
@@ -144,8 +146,7 @@ uninstall:
 else
 
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
-
+	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 endif
 
 install:
