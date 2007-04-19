@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2061  2007/04/05 02:41:05  rjongbloed
+ * Revision 1.2062  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.60  2007/04/05 02:41:05  rjongbloed
  * Added ability to have non-dynamic allocation of memory in RTP data frames.
  *
  * Revision 2.59  2007/04/04 02:12:01  rjongbloed
@@ -894,6 +898,16 @@ void RTP_UserData::OnRxStatistics(const RTP_Session & /*session*/) const
 {
 }
 
+#if OPAL_VIDEO
+void RTP_UserData::OnRxIntraFrameRequest(const RTP_Session & /*session*/) const
+{
+}
+
+void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
+{
+}
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1235,9 +1249,13 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
-RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
+RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & frame, PINDEX & /*len*/)
 {
   rtcpPacketsSent++;
+#if OPAL_VIDEO
+  if(frame.GetPayloadType() == RTP_ControlFrame::e_IntraFrameRequest && userData != NULL)
+    userData->OnTxIntraFrameRequest(*this);
+#endif 
   return e_ProcessPacket;
 }
 
@@ -1631,6 +1649,13 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveControl(RTP_ControlFrame & 
         PTRACE(2, "RTP\tApplDefined packet truncated");
       }
       break;
+
+#if OPAL_VIDEO
+     case RTP_ControlFrame::e_IntraFrameRequest :
+      if(userData != NULL)
+        userData->OnRxIntraFrameRequest(*this);
+      break;
+#endif
 
     default :
       PTRACE(2, "RTP\tUnknown control payload type: " << frame.GetPayloadType());
@@ -2375,6 +2400,23 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
 
   return TRUE;
 }
+
+#if OPAL_VIDEO
+void RTP_Session::SendIntraFrameRequest(){
+    // Create packet
+    RTP_ControlFrame request;
+    request.StartNewPacket();
+    request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
+    request.SetPayloadSize(4);
+    // Insert SSRC
+    request.SetCount(1);
+    BYTE * payload = request.GetPayloadPtr();
+    *(PUInt32b *)payload = syncSourceOut;
+    // Send it
+    request.EndPacket();
+    WriteControl(request);
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 

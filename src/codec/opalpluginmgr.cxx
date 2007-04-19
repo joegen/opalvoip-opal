@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2022  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2023  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.21  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -1085,8 +1089,8 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
     if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
       if (commandNotifier != PNotifier()) {
-        //OpalVideoUpdatePicture updatePictureCommand;
-        //commandNotifier(updatePictureCommand, 0); 
+        OpalVideoUpdatePicture updatePictureCommand;
+        commandNotifier(updatePictureCommand, 0); 
         PTRACE (3, "Video\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }
     }

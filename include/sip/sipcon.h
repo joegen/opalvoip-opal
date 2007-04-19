@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2062  2007/04/03 05:27:29  rjongbloed
+ * Revision 1.2063  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.61  2007/04/03 05:27:29  rjongbloed
  * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
  *   function. The name is innaccurate and exists as a legacy from the
  *   OpenH323 days. it now only indicates how alerting is done
@@ -257,7 +261,10 @@
 
 #include <opal/connection.h>
 #include <sip/sippdu.h>
-
+#if OPAL_VIDEO
+#include <opal/pcss.h>                  // for OpalPCSSConnection
+#include <codec/vidcodec.h>             // for OpalVideoUpdatePicture command
+#endif
 
 class OpalCall;
 class SIPEndPoint;
@@ -766,11 +773,34 @@ class SIP_RTP_Session : public RTP_UserData
     virtual void OnRxStatistics(
       const RTP_Session & session   ///<  Session with statistics
     ) const;
+#if OPAL_VIDEO
+    /**Callback from the RTP session after an IntraFrameRequest is receieved.
+       The default behaviour executes an OpalVideoUpdatePicture command on the
+       connection's source video stream if it exists.
+      */
+    virtual void OnRxIntraFrameRequest(
+      const RTP_Session & session   ///<  Session with statistics
+    ) const;
+
+    /**Callback from the RTP session after an IntraFrameRequest is sent.
+       The default behaviour does nothing.
+      */
+    virtual void OnTxIntraFrameRequest(
+      const RTP_Session & session   ///<  Session with statistics
+    ) const;
+#endif
   //@}
 
 
   protected:
     const SIPConnection & connection; /// Owner of the RTP session
+#if OPAL_VIDEO
+    // Encoding stream to alert with OpalVideoUpdatePicture commands.  Mutable
+    // so functions with constant 'this' pointers (eg: OnRxFrameRequest) can
+    // update it.
+    mutable OpalMediaStream * encodingStream; 
+
+#endif
 };
 
 
