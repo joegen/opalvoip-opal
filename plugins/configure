@@ -5705,6 +5705,10 @@ if test -d video/H.263-ffmpeg ; then
             ac_config_files="$ac_config_files video/H.263-ffmpeg/Makefile"
 
 fi
+if test -d video/MPEG4-ffmpeg ; then
+            ac_config_files="$ac_config_files video/MPEG4-ffmpeg/Makefile"
+
+fi
 if test -d LID/IxJ ; then
             ac_config_files="$ac_config_files LID/IxJ/Makefile"
 
@@ -6283,6 +6287,7 @@ do
   "audio/IMA_ADPCM/Makefile" ) CONFIG_FILES="$CONFIG_FILES audio/IMA_ADPCM/Makefile" ;;
   "video/H.261-vic/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/H.261-vic/Makefile" ;;
   "video/H.263-ffmpeg/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/H.263-ffmpeg/Makefile" ;;
+  "video/MPEG4-ffmpeg/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/MPEG4-ffmpeg/Makefile" ;;
   "LID/IxJ/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
   "LID/VPB/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
   "LID/CAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
@@ -7233,6 +7238,7 @@ do
   "audio/IMA_ADPCM/Makefile" ) CONFIG_FILES="$CONFIG_FILES audio/IMA_ADPCM/Makefile" ;;
   "video/H.261-vic/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/H.261-vic/Makefile" ;;
   "video/H.263-ffmpeg/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/H.263-ffmpeg/Makefile" ;;
+  "video/MPEG4-ffmpeg/Makefile" ) CONFIG_FILES="$CONFIG_FILES video/MPEG4-ffmpeg/Makefile" ;;
   "LID/IxJ/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
   "LID/VPB/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
   "LID/CAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
