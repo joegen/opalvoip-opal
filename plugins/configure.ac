@@ -23,12 +23,24 @@ AC_SUBST(LIBDIR)
 dnl ########################################################################
 AC_CANONICAL_TARGET()
 LDSO=
+PLUGINEXT=so
+STDCCFLAGS=-fPIC
 case "$target_os" in
 	solaris*) LDSO="-Bdynamic -G -h" ;;
-        darwin*)  ;;
-        *)        LDSO="-shared -Wl,-soname,";;
+        darwin*)  
+	  CFLAGS="-fno-common -dynamic"
+          LDSO="-dynamiclib -multiply_defined suppress"
+	  STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
+	  case "$target_cpu" in
+	   x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS=-m486 ;;
+          esac
+	  PLUGINEXT=dylib 
+        ;;
+        *)LDSO="-shared -Wl,-soname,$(SONAME)";;
 esac
 AC_SUBST(LDSO, ${LDSO})
+AC_SUBST(PLUGINEXT, ${PLUGINEXT})
+AC_SUBST(STDCCFLAGS, ${STDCCFLAGS})
 
 dnl ########################################################################
 dnl look for amr-nb_float
@@ -201,7 +213,12 @@ dnl Quicknet xJACK cards
 dnl 
 
 HAS_IXJ=0
-AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/telephony.h, HAS_IXJ=1)
+case "$target_os" in
+        darwin*) ;;
+        *)
+          AC_CHECK_HEADERS(linux/telephony.h sys/telephony.h /usr/local/include/sys/telephony.h, HAS_IXJ=1)
+        ;;
+esac
 if test "x$HAS_IXJ" != "x" ; then
   AC_MSG_CHECKING(if ixjuser.h actually compiles)
   AC_TRY_COMPILE([#include <linux/ixjuser.h>],
@@ -222,11 +239,17 @@ dnl VoiceTronics VPB card
 dnl 
 
 HAS_VPB=0
-vpb=yes
-AC_ARG_ENABLE(vpb,
-       [  --enable-vpb            enable voicetronix vpb],
-       vpb=$enableval)
 AC_MSG_CHECKING(Voicetronix vpb)
+case "$target_os" in
+        darwin*) vpb=no ;;
+        *)
+          vpb=yes
+      	  AC_ARG_ENABLE(vpb,
+	       [  --enable-vpb            enable voicetronix vpb],
+	       vpb=$enableval)
+          ;;
+esac
+
 if test "$vpb" = "yes" ; then
   HAS_VPB=1
   AC_MSG_RESULT(enabled)
@@ -243,11 +266,17 @@ dnl
 
 AC_CHECK_HEADERS(capi20.h, HAS_CAPI20_H=1)
 HAS_CAPI=0
-capi=yes
-AC_ARG_ENABLE(capi,
-       [  --enable-capi            enable CAPI],
-       capi=$enableval)
 AC_MSG_CHECKING(CAPI)
+case "$target_os" in
+        darwin*) capi=no ;;
+        *)
+          capi=yes
+	  AC_ARG_ENABLE(capi,
+	       [  --enable-capi            enable CAPI],
+	       capi=$enableval)
+          ;;
+esac
+
 if test "$capi" = "yes" ; then
   if test "x$HAS_CAPI20_H" != "x" ; then
     HAS_CAPI=1
@@ -262,42 +291,12 @@ AC_SUBST(HAS_CAPI)
 
 
 dnl ########################################################################
-dnl
-dnl Sangoma libraries
-dnl 
 
-OLD_CPPFLAGS=$CPPFLAGS
-CPPFLAGS=-D__LINUX__
-
-HAS_SANGOMA=
-AC_CHECK_HEADERS(/usr/local/include/libpri.h, HAS_SANGOMA=1)
-if test "x$HAS_SANGOMA" != "x" ; then
-  AC_CHECK_HEADERS(/usr/local/include/libsangoma.h, HAS_SANGOMA=1)
-  if test "x$HAS_SANGOMA" != "x" ; then
-    AC_CHECK_LIB(pri, pri_new_cb, HAS_SANGOMA=1)
-    if test "x$HAS_SANGOMA" = "x" ; then
-      AC_MSG_NOTICE(*** If the latest libri is installed in /usr/local/lib, ensure it is not obscured by an older version in /usr/lib)
-    else
-      AC_CHECK_LIB(sangoma, sangoma_create_socket, HAS_SANGOMA=1)
-      if test "x$HAS_SANGOMA" != "x" ; then
-        AC_DEFINE(HAS_SANGOMA, 1)
-        HAS_SANGOMA=1
-      fi
-    fi
-  fi
-fi
-AC_SUBST(HAS_SANGOMA)
-
-CPPFLAGS=$OLD_CPPFLAGS
-
-
-dnl ########################################################################
-
-if test -d audio/gsm-amr ; then
-  AC_CONFIG_FILES(audio/gsm-amr/Makefile)
-fi
 if test -d audio/GSM0610 ; then
   AC_CONFIG_FILES(audio/GSM0610/Makefile)
+fi
+if test -d audio/gsm-amr ; then
+  AC_CONFIG_FILES(audio/gsm-amr/Makefile)
 fi
 if test -d audio/iLBC ; then
   AC_CONFIG_FILES(audio/iLBC/Makefile)
