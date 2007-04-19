@@ -24,6 +24,9 @@
  *
  *
  *  $Log: iax2jitter.h,v $
+ *  Revision 1.2  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.1  2007/01/11 03:07:49  dereksmithies
  *  Remove the jitter.h file, which was erroneously added. Replace it with the
  *  correct iax2jitter.h file.
@@ -39,7 +42,10 @@
 #ifndef IAX2_JITTER_H
 #define IAX2_JITTER_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <rtp/rtp.h>
 #include <rtp/jitter.h>
 

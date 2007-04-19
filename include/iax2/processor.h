@@ -26,6 +26,9 @@
  *
  * 
  *  $Log: processor.h,v $
+ *  Revision 1.16  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.15  2007/01/23 02:08:25  dereksmithies
  *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
  *
@@ -94,7 +97,10 @@
 #ifndef PROCESSOR_H
 #define PROCESSOR_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/connection.h>
 
 #include <iax2/frame.h>

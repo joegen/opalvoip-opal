@@ -24,7 +24,10 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2014  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2015  2007/04/19 06:17:21  csoutheren
+ * Fixes for precompiled headers with gcc
+ *
+ * Revision 2.13  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -153,7 +156,10 @@
 #pragma implementation "h235auth.h"
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptclib/random.h>
 #include <ptclib/cypher.h>
 

@@ -26,6 +26,9 @@
  *
  *
  *  $Log: callprocessor.h,v $
+ *  Revision 1.9  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.8  2007/01/18 04:45:16  csoutheren
  *  Messy, but simple change to add additional options argument to OpalConnection constructor
  *  This allows the provision of non-trivial arguments for connections
@@ -94,7 +97,10 @@
 #ifndef CALLPROCESSOR_H
 #define CALLPROCESSOR_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/connection.h>
 
 #include <iax2/processor.h>

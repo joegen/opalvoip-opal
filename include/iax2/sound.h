@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: sound.h,v $
+ *  Revision 1.3  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.2  2005/08/26 03:07:38  dereksmithies
  *  Change naming convention, so all class names contain the string "IAX2"
  *
@@ -41,9 +44,9 @@
 #ifndef SOUND_H
 #define SOUND_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
-
-
+#endif
 
 #ifdef P_USE_PRAGMA
 #pragma interface

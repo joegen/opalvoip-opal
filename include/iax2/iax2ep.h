@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.13  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.12  2007/03/13 00:32:16  csoutheren
  *  Simple but messy changes to allow compile time removal of protocol
  *  options such as H.450 and H.460
@@ -87,7 +90,9 @@
 #ifndef IAX_ENDPOINT_H
 #define IAX_ENDPOINT_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
 
 #ifdef P_USE_PRAGMA
 #pragma interface

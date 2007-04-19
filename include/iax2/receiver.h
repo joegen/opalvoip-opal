@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: receiver.h,v $
+ *  Revision 1.5  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.4  2007/01/09 03:32:23  dereksmithies
  *  Tidy up and improve the close down process - make it more robust.
  *  Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
@@ -52,7 +55,10 @@
 #ifndef RECEIVER_H
 #define RECEIVER_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptlib/sockets.h>
 
 #ifdef P_USE_PRAGMA

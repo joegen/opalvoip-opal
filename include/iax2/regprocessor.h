@@ -1,7 +1,10 @@
 #ifndef REGPROCESSOR_H
 #define REGPROCESSOR_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptclib/random.h>
 #include <opal/connection.h>
 
