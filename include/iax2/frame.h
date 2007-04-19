@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.11  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.10  2007/01/23 02:08:25  dereksmithies
  *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
  *
@@ -70,6 +73,18 @@
 #ifndef FRAME_H
 #define FRAME_H
 
+#ifndef _PTLIB_H
+#include <ptlib.h>
+#endif
+
+#include <iax2/ies.h>
+#include <iax2/remote.h>
+
+#include <ptlib/sockets.h>
+
+#ifdef P_USE_PRAGMA
+#pragma interface
+#endif
 
 class IAX2Frame;
 class IAX2FrameList;
@@ -90,15 +105,6 @@ class IAX2CallProcessor;
 class IAX2IeList;
 class IAX2MiniFrame;
 class IAX2Transmitter;
-
-#include <iax2/ies.h>
-#include <iax2/remote.h>
-#include <ptlib.h>
-#include <ptlib/sockets.h>
-
-#ifdef P_USE_PRAGMA
-#pragma interface
-#endif
 
 
 

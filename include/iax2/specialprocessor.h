@@ -25,6 +25,9 @@
  * The author of this code is Stephen Cook
  *
  *  $Log: specialprocessor.h,v $
+ *  Revision 1.4  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.3  2007/01/17 03:48:13  dereksmithies
  *  Tidy up comments, remove leaks, improve reporting of packet types.
  *
@@ -37,7 +40,10 @@
 #ifndef SPECIALPROCESSOR_H
 #define SPECIALPROCESSOR_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/connection.h>
 
 #include <iax2/processor.h>
