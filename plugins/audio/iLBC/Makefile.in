@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.4  2007/04/19 06:09:04  csoutheren
+# Fixed plugin build system to use better detection for OSX
+# Resolved 1636262 - Fix for audio plugins for OSX
+#
 # Revision 1.3  2006/08/10 04:10:20  csoutheren
 # Applied 1537305 - fixed build problems on 64 bit machines
 # Thanks to Stanislav Brabec
@@ -55,23 +59,21 @@
 # Updated Makefiles and fixed Linux problems
 #
 #
-STDCCFLAGS += -fPIC $(OPTCCFLAGS)
-
 PREFIX=@INSTALLPREFIX@
+SONAME	= ilbccodec
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
-CC=@CC@
-CXX=@CXX@
-LDSO=@LDSO@
-
-ifndef PREFIX
-PREFIX=/usr/local
-endif
-
-SONAME	= ilbccodec
-
 SRCDIR	= ./iLBC
+
+CC	 	=@CC@
+CFLAGS	 	=@CFLAGS@
+CXX	 	=@CXX@
+LDSO	 	=@LDSO@
+PLUGINEXT	=@PLUGINEXT@
+STDCCFLAGS	=@STDCCFLAGS@
+LDFLAGS		=@LDFLAGS@
+
 SRCS	= ilbccodec.c $(SRCDIR)/anaFilter.c $(SRCDIR)/constants.c $(SRCDIR)/createCB.c $(SRCDIR)/doCPLC.c \
 	  $(SRCDIR)/enhancer.c $(SRCDIR)/filter.c $(SRCDIR)/FrameClassify.c $(SRCDIR)/gainquant.c \
 	  $(SRCDIR)/getCBvec.c $(SRCDIR)/helpfun.c $(SRCDIR)/hpInput.c $(SRCDIR)/hpOutput.c \
@@ -88,12 +90,12 @@ $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -g -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
 
-PLUGIN	= ./ilbc_audio_pwplugin.so
+PLUGIN	= ./ilbc_audio_pwplugin.$(PLUGINEXT)
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^
+	$(CC) $(LDSO) -o $@ $^
 
 install:
 	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/

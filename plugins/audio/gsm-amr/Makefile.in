@@ -3,24 +3,26 @@
 #
 # Copyright (C) 2004 MX Telecom Ltd.
 #
-# $Id: Makefile.in,v 1.4 2006/08/10 04:10:20 csoutheren Exp $
-
-STDCCFLAGS += -fPIC $(OPTCCFLAGS)
+# $Id: Makefile.in,v 1.5 2007/04/19 06:09:04 csoutheren Exp $
 
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 H323_GSMAMR_NB_FLOAT=@H323_GSMAMR_NB_FLOAT@
 
-CC=@CC@
-CXX=@CXX@
-LDSO=@LDSO@
+OBJDIR	= ./obj
+SRCDIR  = ./src
 
-ifndef PREFIX
-PREFIX=/usr/local
-endif
+BASENAME= gsmamrcodec
+SONAME	= $(BASENAME)
 
-SONAME	= gsmamrcodec
+CC	 	=@CC@
+CFLAGS	 	=@CFLAGS@
+CXX	 	=@CXX@
+LDSO	 	=@LDSO@
+PLUGINEXT	=@PLUGINEXT@
+STDCCFLAGS	=@STDCCFLAGS@
+LDFLAGS		=@LDFLAGS@
 
 SRCS	= amrcodec.c \
 	interf_enc.c \
@@ -28,16 +30,13 @@ SRCS	= amrcodec.c \
 	sp_dec.c \
 	sp_enc.c
 
-OBJDIR	= ./obj
-SRCDIR  = ./src
-
 vpath	%.o $(OBJDIR)
 vpath	%.c $(SRCDIR)
 
 CCFLAGS += -I../../../include -I$(SRCDIR)
 CCFLAGS += -DIF2
 
-PLUGIN	= ./$(SONAME)_pwplugin.so
+PLUGIN	= ./$(BASENAME)_pwplugin.$(PLUGINEXT)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
@@ -48,7 +47,7 @@ OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 ifeq ($(H323_GSMAMR_NB_FLOAT),1)
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^
+	$(CC) $(LDSO) -o $@ $^
 
 install:
 	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/

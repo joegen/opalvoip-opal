@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.3 2006/10/17 04:10:12 shorne Exp $
+ * $Id: amrcodec.c,v 1.4 2007/04/19 06:09:04 csoutheren Exp $
  */
 
 
@@ -20,7 +20,10 @@
 
 PLUGIN_CODEC_IMPLEMENT("AMR")
 #include <stdio.h>
+
+#ifdef _WIN32
 #include <malloc.h>
+#endif
 
 /***************************************************************************
  *
