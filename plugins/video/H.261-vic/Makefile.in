@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.5  2007/04/19 06:09:04  csoutheren
+# Fixed plugin build system to use better detection for OSX
+# Resolved 1636262 - Fix for audio plugins for OSX
+#
 # Revision 1.4  2006/10/10 01:42:55  csoutheren
 # Applied patches from Ekiga bug 360869 - fix OpenSolaris build problems
 # Thanks to Boying Lu
@@ -31,25 +35,23 @@
 # Added Linux build for H.261 plug-in.
 #
 
-STDCCFLAGS += -fPIC
-
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
-CC=@CC@
-CFLAGS=@CFLAGS@
-CXX=@CXX@
-LDSO=@LDSO@
-
-ifndef PREFIX
-PREFIX=/usr/local
-endif
-
-SONAME	= h261-vic
-
 SRCDIR	= ./vic
 OBJDIR	= ./obj
+
+BASENAME=h261-vic
+SONAME	=$(BASENAME)
+
+CC	 	=@CC@
+CFLAGS	 	=@CFLAGS@
+CXX	 	=@CXX@
+LDSO	 	=@LDSO@
+PLUGINEXT	=@PLUGINEXT@
+STDCCFLAGS	=@STDCCFLAGS@
+LDFLAGS		=@LDFLAGS@
 
 vpath	%.cxx $(SRCDIR)
 vpath	%.c   $(SRCDIR)
@@ -73,13 +75,13 @@ $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
-PLUGIN	= ./$(SONAME)_video_pwplugin.so
-STATIC	= ./lib$(SONAME)_video_s.a
+PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
+STATIC	= ./lib$(BASENAME)_video_s.a
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^
+	$(CXX) $(LDSO) -o $@ $^
 
 
 install:
