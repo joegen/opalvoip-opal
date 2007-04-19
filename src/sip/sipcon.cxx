@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2215  2007/04/15 10:09:15  dsandras
+ * Revision 1.2216  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.214  2007/04/15 10:09:15  dsandras
  * Some systems like CISCO Call Manager do not like having a Contact field in INVITE
  * PDUs which is different to the one being used in the original REGISTER request.
  * Added code to use the same Contact field in both cases if we can determine that
@@ -3115,8 +3119,11 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
 /////////////////////////////////////////////////////////////////////////////
 
-SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn)
-  : connection(conn)
+SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn) :
+    connection(conn),
+#if OPAL_VIDEO
+    encodingStream(NULL)
+#endif
 {
 }
 
@@ -3132,5 +3139,32 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
   connection.OnRTPStatistics(session);
 }
 
+#if OPAL_VIDEO
+void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
+{
+  // We got an intra frame request control packet, alert the encoder.
+  // We're going to grab the call, find its PCSS connection, then grab the
+  // encoding stream
+  if(encodingStream == NULL){
+    OpalCall & myCall = connection.GetCall();
+    PSafePtr< OpalConnection> myConn = myCall.GetConnection(0, PSafeReference);
+    if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
+      myConn = myCall.GetConnection(1, PSafeReference);
+    if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
+      return; // No PCSS connection.  Bail.
+
+    encodingStream = myConn->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
+    if(!encodingStream)
+      return;
+  }
+  // Found the encoding stream, send an OpalVideoFastUpdatePicture
+  OpalVideoUpdatePicture updatePictureCommand;
+  encodingStream->ExecuteCommand(updatePictureCommand);
+}
+
+void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & session) const
+{
+}
+#endif
 
 // End of file ////////////////////////////////////////////////////////////////

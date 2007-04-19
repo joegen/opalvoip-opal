@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2042  2007/03/29 05:15:48  csoutheren
+ * Revision 1.2043  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.41  2007/03/29 05:15:48  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -624,6 +628,19 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual RTP_Session & GetRtpSession() const
     { return rtpSession; }
+
+#if OPAL_VIDEO
+    /** Sets the media patch for the RTP stream.
+        Default behaviour calls OpalMediaStream::Start, and adds the
+        OnMediaCommand sets the command notifier, updating the patch as well
+      */
+    virtual void OnPatchStart();
+
+    /** Notifier function for OpalVideoUpdatePicture.
+        Calls the SendIntraFrameRequest on the rtp session
+      */
+    PDECLARE_NOTIFIER(OpalMediaCommand, OpalRTPMediaStream, OnMediaCommand);
+#endif
 
   //@}
 
