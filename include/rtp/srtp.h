@@ -27,6 +27,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.9  2007/04/19 06:17:21  csoutheren
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.8  2007/04/17 23:45:08  csoutheren
  * Fix name of SRTP libraries on Windows
  *
@@ -75,7 +78,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/buildopts.h>
 #include <rtp/rtp.h>
 #include <opal/connection.h>

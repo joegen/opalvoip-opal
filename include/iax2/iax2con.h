@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.16  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.15  2007/01/24 04:00:55  csoutheren
  *  Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
  *  Added some pure viritual functions to prevent old code from breaking silently
@@ -95,7 +98,10 @@
 #ifndef IAX_CONNECTION_H
 #define IAX_CONNECTION_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/connection.h>
 
 #include <iax2/frame.h>

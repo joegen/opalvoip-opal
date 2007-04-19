@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: safestrings.h,v $
+ *  Revision 1.4  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.3  2007/01/17 22:27:52  dereksmithies
  *  Correctly sends DTMF to remote node. Tidy up string handling.
  *
@@ -46,7 +49,9 @@
 #ifndef SAFESTRINGS_H
 #define SAFESTRINGS_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
 
 #ifdef P_USE_PRAGMA
 #pragma interface

@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.8  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.7  2006/09/11 03:08:51  dereksmithies
  *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
  *  improve call handling. Notably, IAX2 call transfer. Many thanks.
@@ -62,7 +65,10 @@
 #ifndef IES_H
 #define IES_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptlib/sockets.h>
 #include <iax2/iedata.h>
 

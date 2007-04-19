@@ -27,6 +27,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: transmit.h,v $
+ *  Revision 1.6  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.5  2007/01/23 02:08:25  dereksmithies
  *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
  *
@@ -54,7 +57,10 @@
 #ifndef TRANSMIT_H
 #define TRANSMIT_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptlib/sockets.h>
 
 #include <iax2/frame.h>

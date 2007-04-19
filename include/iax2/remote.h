@@ -26,6 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: remote.h,v $
+ *  Revision 1.8  2007/04/19 06:17:21  csoutheren
+ *  Fixes for precompiled headers with gcc
+ *
  *  Revision 1.7  2007/01/23 02:08:25  dereksmithies
  *  Handle Vnak frames correctly. handle iseqno and oseqno correctly.
  *
@@ -59,7 +62,10 @@
 #ifndef REMOTE_H
 #define REMOTE_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptlib/sockets.h>
 
 #if P_SSL_AES
