@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2040  2007/04/05 02:41:05  rjongbloed
+ * Revision 1.2041  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.39  2007/04/05 02:41:05  rjongbloed
  * Added ability to have non-dynamic allocation of memory in RTP data frames.
  *
  * Revision 2.38  2007/03/28 05:25:56  csoutheren
@@ -480,6 +484,7 @@ class RTP_ControlFrame : public PBYTEArray
     void     SetCount(unsigned count);
 
     enum PayloadTypes {
+      e_IntraFrameRequest = 192,
       e_SenderReport = 200,
       e_ReceiverReport,
       e_SourceDescription,
@@ -602,6 +607,26 @@ class RTP_UserData : public PObject
     virtual void OnRxStatistics(
       const RTP_Session & session   ///<  Session with statistics
     ) const;
+
+#if OPAL_VIDEO
+    /**Callback from the RTP session when an intra frame request control
+       packet is sent.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnTxIntraFrameRequest(
+      const RTP_Session & session   ///<  Session with statistics
+    ) const;
+
+    /**Callback from the RTP session when an intra frame request control
+       packet is received.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnRxIntraFrameRequest(
+      const RTP_Session & session   ///<  Session with statistics
+    ) const;
+#endif
 };
 
 
@@ -969,7 +994,13 @@ class RTP_Session : public PObject
 
     virtual void SendBYE();
     virtual void SetCloseOnBYE(BOOL v)  { closeOnBye = v; }
-
+#if OPAL_VIDEO
+    /** Tell the rtp session to send out an intra frame request control packet.
+        This is called when the media stream receives an OpalVideoUpdatePicture
+        media command.
+      */
+    virtual void SendIntraFrameRequest();
+#endif    
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     BOOL InsertReportPacket(RTP_ControlFrame & report);

@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2058  2007/04/13 07:27:47  rjongbloed
+ * Revision 1.2059  2007/04/19 06:34:12  csoutheren
+ * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.57  2007/04/13 07:27:47  rjongbloed
  * Changed to use sound device factory to create PSoundChannel for
  *   use by endpoint. Allows use of new WAV file sound device.
  * Changed hard coded numbers for video frame size to use symbols.
@@ -755,6 +759,24 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
                                    maxAudioJitterDelay*mediaFormat.GetTimeUnits(),
 				   mediaFormat.GetTimeUnits());
 }
+
+#if OPAL_VIDEO
+void OpalRTPMediaStream::OnPatchStart()
+{
+    OpalMediaStream::OnPatchStart();
+    // We add the command notifer here so that the OpalPluginVideoTranscoder 
+    // patch gets its command notifier updated as well.  This lets us catch 
+    // OpalVideoUpdatePicture commands from the decoder
+    if(sessionID == OpalMediaFormat::DefaultVideoSessionID && isSource)
+      SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
+}
+
+void OpalRTPMediaStream::OnMediaCommand(OpalMediaCommand &command, INT extra)
+{
+  if (PIsDescendant(&command, OpalVideoUpdatePicture))
+    rtpSession.SendIntraFrameRequest();
+}
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
