@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2007/04/19 06:09:03  csoutheren
+# Fixed plugin build system to use better detection for OSX
+# Resolved 1636262 - Fix for audio plugins for OSX
+#
 # Revision 1.2  2006/08/01 13:06:48  rjongbloed
 # Added a raft of unvalidated audio codecs from OpenH323 tree
 #
@@ -43,24 +47,22 @@
 # Added G.726 plugin
 #
 #
-STDCCFLAGS += -fPIC
-
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
-CC=@CC@
-CXX=@CXX@
-LDSO=@LDSO@
-
-ifndef PREFIX
-PREFIX=/usr/local
-endif
-
 SONAME	= g726
+STDCCFLAGS += -fPIC
 
 SRCDIR	= ./g726
 OBJDIR	= ./obj
+
+CC		=@CC@
+CXX		=@CXX@
+LDSO		=@LDSO@
+PLUGINEXT	=@PLUGINEXT@
+STDCCFLAGS	=@STDCCFLAGS@
+LDFLAGS		=@LDFLAGS@
 
 SRCS	+= g726codec.c \
 	   g711.c \
@@ -77,12 +79,12 @@ $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CC) -I../../../include -I./g726 $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
-PLUGIN	= ./g726_audio_pwplugin.so
+PLUGIN	= ./g726_audio_pwplugin.$(PLUGINEXT)
 
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
+	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
 	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/
