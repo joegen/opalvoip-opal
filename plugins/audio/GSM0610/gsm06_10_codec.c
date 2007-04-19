@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gsm06_10_codec.c,v $
+ * Revision 1.9  2007/04/19 06:21:52  csoutheren
+ * Applied 1685064 - RTP payload name for MS-GSM codec
+ *
  * Revision 1.8  2007/01/25 03:16:47  csoutheren
  * Allow encoder and decoder to handle multiple frames
  *
@@ -316,7 +319,8 @@ static const char msGSM[]    = { "MS-GSM" };
 
 static const char sdpGSM[]   = { "gsm" };
 
-static const char sdpMSGSM[] = { "msgsm" };
+// defined in draft-ema-vpim-msgsm-00.txt
+static const char sdpMSGSM[] = { "ms-gsm" };
 
 static struct PluginCodec_H323AudioGSMData gsmCaps = {
   0, // int comfortNoise:1;
@@ -513,7 +517,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] = {
   1,                                  // recommended number of frames per packet
   1,                                  // maximum number of frames per packe
   0,                                  // IANA RTP payload code
-  NULL,                               // RTP payload name
+  sdpMSGSM,                           // RTP payload name
 
   create_codec,                       // create codec function
   destroy_codec,                      // destroy codec
@@ -548,7 +552,7 @@ static struct PluginCodec_Definition gsmCodecDefn[4] = {
   1,                                  // recommended number of frames per packet
   1,                                  // maximum number of frames per packe
   0,                                  // IANA RTP payload code
-  NULL,                               // RTP payload name
+  sdpMSGSM,                           // RTP payload name
 
   create_codec,                       // create codec function
   destroy_codec,                      // destroy codec
