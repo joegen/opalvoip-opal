@@ -319,6 +319,9 @@ fi
 if test -d video/H.263-ffmpeg ; then
   AC_CONFIG_FILES(video/H.263-ffmpeg/Makefile)
 fi
+if test -d video/MPEG4-ffmpeg ; then
+  AC_CONFIG_FILES(video/MPEG4-ffmpeg/Makefile)
+fi
 if test -d LID/IxJ ; then
   AC_CONFIG_FILES(LID/IxJ/Makefile)
 fi
