@@ -19,6 +19,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.h,v $
+ * Revision 1.3  2007/04/19 06:17:20  csoutheren
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.2  2006/04/23 18:52:19  dsandras
  * Removed warnings when compiling with gcc on Linux.
  *
@@ -34,7 +37,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <h224/h224.h>
 
 class H281_Frame : public H224_Frame
