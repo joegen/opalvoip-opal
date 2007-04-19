@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.h,v $
+ * Revision 1.4  2007/04/19 06:17:20  csoutheren
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.3  2006/08/10 05:10:30  csoutheren
  * Various H.323 stability patches merged in from DeimosPrePLuginBranch
  *
@@ -41,7 +44,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <h323/h323caps.h>
 
 #include <h224/h224.h>
