@@ -36,7 +36,7 @@ case "$target_os" in
           esac
 	  PLUGINEXT=dylib 
         ;;
-        *)LDSO="-shared -Wl,-soname,$(SONAME)";;
+        *)LDSO='-shared -Wl,-soname,$(SONAME)';;
 esac
 AC_SUBST(LDSO, ${LDSO})
 AC_SUBST(PLUGINEXT, ${PLUGINEXT})

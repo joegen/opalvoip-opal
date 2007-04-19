@@ -3145,7 +3145,7 @@ case "$target_os" in
           esac
 	  PLUGINEXT=dylib
         ;;
-        *)LDSO="-shared -Wl,-soname,$(SONAME)";;
+        *)LDSO='-shared -Wl,-soname,$(SONAME)';;
 esac
 LDSO=${LDSO}
 
