@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2059  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2060  2007/04/20 06:46:16  csoutheren
+ * Remove compile warning
+ *
+ * Revision 2.58  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -771,7 +774,7 @@ void OpalRTPMediaStream::OnPatchStart()
       SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
 }
 
-void OpalRTPMediaStream::OnMediaCommand(OpalMediaCommand &command, INT extra)
+void OpalRTPMediaStream::OnMediaCommand(OpalMediaCommand &command, INT /*extra*/)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture))
     rtpSession.SendIntraFrameRequest();
