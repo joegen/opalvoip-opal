@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2104  2007/04/18 00:01:05  csoutheren
+ * Revision 1.2105  2007/04/20 02:39:41  rjongbloed
+ * Attempt to fix one of the possible deadlock scenarios between the
+ *   connections in a call, now locks whole call instead of each individual
+ *   connection.
+ *
+ * Revision 2.103  2007/04/18 00:01:05  csoutheren
  * Add hooks for recording call audio
  *
  * Revision 2.102  2007/04/04 02:12:01  rjongbloed
@@ -554,7 +559,8 @@ OpalConnection::OpalConnection(OpalCall & call,
                                const PString & token,
                                unsigned int options,
                                OpalConnection::StringOptions * _stringOptions)
-  : ownerCall(call),
+  : PSafeObject(&call), // Share the lock flag from the call
+    ownerCall(call),
     endpoint(ep),
     phase(UninitialisedPhase),
     callToken(token),
