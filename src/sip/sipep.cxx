@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2160  2007/04/18 03:23:51  rjongbloed
+ * Revision 1.2161  2007/04/20 07:08:55  rjongbloed
+ * Fixed compiler warning
+ *
+ * Revision 2.159  2007/04/18 03:23:51  rjongbloed
  * Moved large chunk of code from header to source file.
  *
  * Revision 2.158  2007/04/17 21:49:41  dsandras
@@ -2263,7 +2266,7 @@ PSafePtr<SIPInfo> SIPEndPoint::RegistrationList::FindSIPInfoByUrl(const PString 
  * For example, in the above case, the name parameter
  * could be "sip.seconix.com" or "seconix.com".
  */
-PSafePtr <SIPInfo> SIPEndPoint::RegistrationList::FindSIPInfoByDomain(const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
+PSafePtr <SIPInfo> SIPEndPoint::RegistrationList::FindSIPInfoByDomain(const PString & name, SIP_PDU::Methods /*meth*/, PSafetyMode m)
 {
   for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
 
