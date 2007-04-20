@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.29  2007/04/20 06:49:24  csoutheren
+ * Really disable video code when video is turned off
+ *
  * Revision 1.28  2007/04/17 23:47:07  csoutheren
  * Fix name of SRTP libraries on Windows
  *
@@ -131,6 +134,7 @@
 #ifndef _OPAL_BUILDOPTS_H
 #define _OPAL_BUILDOPTS_H
 
+#include <ptbuildopts.h>
 
 /////////////////////////////////////////////////
 //
@@ -172,7 +176,11 @@
 //
 
 #undef  OPAL_AUDIO
+
+#if P_VIDEO
 #undef  OPAL_VIDEO
+#endif
+
 #undef  OPAL_T38FAX
 
 #ifndef OPAL_AUDIO
