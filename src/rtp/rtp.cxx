@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2062  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2063  2007/04/20 04:34:12  csoutheren
+ * Only swallow initial RTP packets for audio
+ *
+ * Revision 2.61  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -2188,7 +2191,7 @@ BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
 
 int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
-  if (first) {
+  if (first && (sessionID == 1)) {
     BYTE buffer[1500];
     PINDEX count = 0;
     do {
