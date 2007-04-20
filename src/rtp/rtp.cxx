@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2063  2007/04/20 04:34:12  csoutheren
+ * Revision 1.2064  2007/04/20 06:57:18  rjongbloed
+ * Fixed various log levels
+ *
+ * Revision 2.62  2007/04/20 04:34:12  csoutheren
  * Only swallow initial RTP packets for audio
  *
  * Revision 2.61  2007/04/19 06:34:12  csoutheren
@@ -981,7 +984,7 @@ RTP_Session::RTP_Session(
 
 RTP_Session::~RTP_Session()
 {
-  PTRACE_IF(2, packetsSent != 0 || packetsReceived != 0,
+  PTRACE_IF(3, packetsSent != 0 || packetsReceived != 0,
       "RTP\tFinal statistics:\n"
       "    packetsSent       = " << packetsSent << "\n"
       "    octetsSent        = " << octetsSent << "\n"
@@ -1189,7 +1192,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   frame.SetSequenceNumber(++lastSentSequenceNumber);
   frame.SetSyncSource(syncSourceOut);
 
-  PTRACE_IF(2, packetsSent == 0, "RTP\tFirst sent data:"
+  PTRACE_IF(3, packetsSent == 0, "RTP\tFirst sent data:"
      " ver=" << frame.GetVersion()
      << " pt=" << frame.GetPayloadType()
      << " psz=" << frame.GetPayloadSize()
@@ -1674,7 +1677,7 @@ void RTP_Session::OnRxSenderReport(const SenderReport & PTRACE_PARAM(sender),
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
     strm << "RTP\tOnRxSenderReport: " << sender << '\n';
     for (PINDEX i = 0; i < reports.GetSize(); i++)
       strm << "  RR: " << reports[i] << '\n';
@@ -1703,7 +1706,7 @@ void RTP_Session::OnRxSourceDescription(const SourceDescriptionArray & PTRACE_PA
 {
 #if PTRACING
   if (PTrace::CanTrace(3)) {
-    ostream & strm = PTrace::Begin(2, __FILE__, __LINE__);
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
     strm << "RTP\tOnSourceDescription: " << description.GetSize() << " entries";
     for (PINDEX i = 0; i < description.GetSize(); i++)
       strm << "\n  " << description[i];
@@ -1821,7 +1824,7 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
   PWaitAndSignal m(mutex);
   
   if (session != NULL) {
-    PTRACE(2, "RTP\tAdding session " << *session);
+    PTRACE(3, "RTP\tAdding session " << *session);
     sessions.SetAt(session->GetSessionID(), session);
   }
 }
@@ -1830,7 +1833,7 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
 void RTP_SessionManager::ReleaseSession(unsigned sessionID,
                                         BOOL clearAll)
 {
-  PTRACE(2, "RTP\tReleasing session " << sessionID);
+  PTRACE(3, "RTP\tReleasing session " << sessionID);
 
   mutex.Wait();
 
@@ -2229,7 +2232,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   PIPSocket::Address addr;
   WORD port;
 
-  if (socket.ReadFrom(frame.GetPointer(2048), 2048, addr, port)) {
+  if (socket.ReadFrom(frame.GetPointer(), frame.GetSize(), addr, port)) {
     if (ignoreOtherSources) {
       // If remote address never set from higher levels, then try and figure
       // it out from the first packet received.
