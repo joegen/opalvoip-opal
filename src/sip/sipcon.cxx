@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2216  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2217  2007/04/20 06:48:06  csoutheren
+ * Fix typo
+ *
+ * Revision 2.215  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -3120,9 +3123,9 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
 /////////////////////////////////////////////////////////////////////////////
 
 SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn) :
-    connection(conn),
+    connection(conn)
 #if OPAL_VIDEO
-    encodingStream(NULL)
+    ,encodingStream(NULL)
 #endif
 {
 }
