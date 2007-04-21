@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2016.2.2  2006/04/23 20:17:09  dsandras
+ * Revision 1.2016.2.3  2007/04/21 13:48:49  dsandras
+ * Allow a different connect address per media description. Fixes
+ * Ekiga bug #430870.
+ *
+ * Revision 2.15.2.2  2006/04/23 20:17:09  dsandras
  * Backport from HEAD.
  *
  * Revision 2.19  2006/04/23 20:12:52  dsandras
@@ -228,6 +232,7 @@ class SDPMediaDescription : public PObject
     Direction GetDirection() const { return direction; }
 
     const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
+    BOOL SetTransportAddress(const OpalTransportAddress &t);
 
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
