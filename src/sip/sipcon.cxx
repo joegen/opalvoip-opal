@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.27  2007/04/15 09:54:46  dsandras
+ * Revision 1.2121.2.28  2007/04/21 10:43:16  dsandras
+ * Fixed more interoperability problems due to bugs in Cisco Call Manager.
+ * Do not clear calls if the video transport can not be established.
+ * Only reinitialize the registrar transport if required (STUN is being used
+ * and the public IP address has changed).
+ *
+ * Revision 2.120.2.27  2007/04/15 09:54:46  dsandras
  * Some systems like CISCO Call Manager do like having a Contact field in INVITE
  * PDUs which is different to the one being used in the original REGISTER request.
  * Added code to use the same Contact field in both cases if we can determine that
@@ -1015,6 +1021,11 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     PTRACE(2, "SIP\tCould not find matching media type for session " << rtpSessionId);
     return FALSE;
   }
+
+  if (incomingMedia->GetMediaFormats(rtpSessionId).GetSize() == 0) {
+    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+    return FALSE;
+  }
   
   // Create the list of Opal format names for the remote end.
   // We will answer with the media format that will be opened.
@@ -1043,7 +1054,18 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
   if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    Release(EndedByTransportFail);
+    if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
+      Release(EndedByTransportFail);
+    return FALSE;
+  }
+  
+  // set the remote address
+  PIPSocket::Address ip;
+  WORD port;
+  if (!mediaAddress.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE))) {
+    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+    if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
+      Release(EndedByTransportFail);
     return FALSE;
   }
 
@@ -1060,17 +1082,6 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   // Add in the RFC2833 handler, if used
   if (hasTelephoneEvent) {
     localMedia->AddSDPMediaFormat(new SDPMediaFormat("0-15", rfc2833Handler->GetPayloadType()));
-  }
-  
-  // set the remote address after the stream is opened
-  PIPSocket::Address ip;
-  WORD port;
-  mediaAddress.GetIpAndPort(ip, port);
-  if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    Release(EndedByTransportFail);
-    delete localMedia;
-    return FALSE;
   }
   
   // No stream opened for this session, use the default SDP
@@ -2261,12 +2272,28 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     return FALSE;
   }
 
+  if (mediaDescription->GetMediaFormats(rtpSessionId).GetSize() == 0) {
+    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+    return FALSE;
+  }
+
   // Create the RTPSession
   OpalTransportAddress localAddress;
   OpalTransportAddress address = mediaDescription->GetTransportAddress();
   rtpSession = OnUseRTPSession(rtpSessionId, address, localAddress);
   if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    Release(EndedByTransportFail);
+    if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
+      Release(EndedByTransportFail);
+    return FALSE;
+  }
+  
+  // set the remote address 
+  PIPSocket::Address ip;
+  WORD port;
+  if (!address.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE))) {
+    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+    if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
+      Release(EndedByTransportFail);
     return FALSE;
   }
 
@@ -2280,16 +2307,6 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   
   // Open the streams and the reverse streams
   OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);
-
-  // set the remote address after the stream is opened
-  PIPSocket::Address ip;
-  WORD port;
-  address.GetIpAndPort(ip, port);
-  if (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE)) {
-    PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    Release(EndedByTransportFail);
-    return FALSE;
-  }
 
   return TRUE;
 }
