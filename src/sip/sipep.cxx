@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2161  2007/04/20 07:08:55  rjongbloed
+ * Revision 1.2162  2007/04/21 11:05:56  dsandras
+ * Fixed more interoperability problems due to bugs in Cisco Call Manager.
+ * Do not clear calls if the video transport can not be established.
+ * Only reinitialize the registrar transport if required (STUN is being used
+ * and the public IP address has changed).
+ *
+ * Revision 2.160  2007/04/20 07:08:55  rjongbloed
  * Fixed compiler warning
  *
  * Revision 2.159  2007/04/18 03:23:51  rjongbloed
@@ -661,15 +667,27 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
 
   registrarAddress = transportAddress;
   
-  // Only delete if we are refreshing
-  if (registrarTransport != NULL && HasExpired()) {
-
-    PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (expired)");
-    registrarTransport->CloseWait();
-    delete registrarTransport;
-    registrarTransport = NULL;
+  if (registrarTransport != NULL) {
+    if (!registrarTransport->IsReliable()) {
+      PSTUNClient *stunClient = ep.GetManager().GetSTUN (transportAddress.GetHostName());
+      if (stunClient) {
+        PIPSocket::Address externalAddress;
+        PIPSocket::Address currentAddress;
+        WORD port = 5060;
+        if (registrarTransport->GetLocalAddress().GetIpAndPort (currentAddress, port)) {
+          if (stunClient->GetExternalAddress (externalAddress, 10)) {
+            if (externalAddress != currentAddress) {
+              PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (external IP address changed)");
+              registrarTransport->CloseWait ();
+              delete registrarTransport;
+              registrarTransport = NULL;
+            }
+          }
+        }
+      }
+    }
   }
-
+   
   if (registrarTransport == NULL) {
     registrarTransport = ep.CreateTransport(registrarAddress);
   }
