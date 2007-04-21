@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2098.2.38  2007/04/17 21:50:19  dsandras
+ * Revision 1.2098.2.39  2007/04/21 10:43:17  dsandras
+ * Fixed more interoperability problems due to bugs in Cisco Call Manager.
+ * Do not clear calls if the video transport can not be established.
+ * Only reinitialize the registrar transport if required (STUN is being used
+ * and the public IP address has changed).
+ *
+ * Revision 2.97.2.38  2007/04/17 21:50:19  dsandras
  * Fixed Via field in previous commit.
  * Make sure the correct port is being used.
  * Improved FindSIPInfoByDomain.
@@ -618,15 +624,28 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   PWaitAndSignal m(transportMutex);
 
   registrarAddress = transportAddress;
-  
-  // Only delete if we are refreshing
-  if (registrarTransport != NULL && HasExpired()) {
-    PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (expired)");
-    registrarTransport->CloseWait ();
-    delete registrarTransport;
-    registrarTransport = NULL;
-  }
 
+  if (registrarTransport != NULL) {
+    if (!registrarTransport->IsReliable()) {
+      PSTUNClient *stunClient = ep.GetManager().GetSTUN (transportAddress.GetHostName());
+      if (stunClient) {
+        PIPSocket::Address externalAddress;
+        PIPSocket::Address currentAddress;
+        WORD port = 5060;
+        if (registrarTransport->GetLocalAddress().GetIpAndPort (currentAddress, port)) {
+          if (stunClient->GetExternalAddress (externalAddress, 10)) {
+            if (externalAddress != currentAddress) {
+              PTRACE(4,"SIPInfo\tWill delete transport " << *registrarTransport << " (external IP address changed)");
+              registrarTransport->CloseWait ();
+              delete registrarTransport;
+              registrarTransport = NULL;
+            }
+          }
+        }
+      }
+    }
+  }
+  
   if (registrarTransport == NULL) {
     registrarTransport = ep.CreateTransport(registrarAddress);
   }
