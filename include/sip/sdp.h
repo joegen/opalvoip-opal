@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2023  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2024  2007/04/21 13:49:15  dsandras
+ * Allow a different connect address per media description. Fixes
+ * Ekiga bug #430870.
+ *
+ * Revision 2.22  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -255,6 +259,7 @@ class SDPMediaDescription : public PObject
     Direction GetDirection() const { return direction; }
 
     const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
+    BOOL SetTransportAddress(const OpalTransportAddress &t);
 
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }

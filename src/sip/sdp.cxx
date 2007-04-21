@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2046  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2047  2007/04/21 13:49:15  dsandras
+ * Allow a different connect address per media description. Fixes
+ * Ekiga bug #430870.
+ *
+ * Revision 2.45  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -456,6 +460,17 @@ OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
   return OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
 }
 
+
+BOOL SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
+{
+  PIPSocket::Address ip;
+  WORD port = 0;
+  if (transportAddress.GetIpAndPort(ip, port)) {
+    transportAddress = OpalTransportAddress(t, port);
+    return TRUE;
+  }
+  return FALSE;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -1061,6 +1076,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'c' : // connection information - optional if included at session-level
+              currentMedia->SetTransportAddress(ParseConnectAddress(value));
               break;
 
             case 'a' : // zero or more media attribute lines
