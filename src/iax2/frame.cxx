@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.20  2007/04/22 22:37:59  dereksmithies
+ *  Lower verbosity of PTRACE statements.
+ *
  *  Revision 1.19  2007/01/23 02:10:38  dereksmithies
  *   Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
  *
@@ -1603,7 +1606,7 @@ IAX2Frame *IAX2FrameList::GetLastFrame()
 void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
 {
   PWaitAndSignal m(mutex);
-  PTRACE(4, "Look for a frame that has been sent, which is waiting for a reply/ack");
+  //Look for a frame that has been sent, which is waiting for a reply/ack.
 
   for (PINDEX i = 0; i < GetEntries(); i++) {
     IAX2Frame *frame = (IAX2Frame *)GetAt(i);
@@ -1616,20 +1619,17 @@ void IAX2FrameList::DeleteMatchingSendFrame(IAX2FullFrame *reply)
     IAX2FullFrame *sent = (IAX2FullFrame *)frame;
 
     if (sent->DeleteFrameNow()) {
-      PTRACE(4, "Skip this frame, as it is marked, delete now" << sent->IdString());
+      // Skip this frame, as it is marked, delete now
       continue;
     }
     
     if (!(sent->GetRemoteInfo() *= reply->GetRemoteInfo())) {
-      PTRACE(3, "mismatch in remote info");
+      PTRACE(5, "mismatch in remote info");
       continue;
-    } else {
-      PTRACE(5, "Remotes are the same.. Keep looking for comparison");
-      PTRACE(5, "Compare sent " << sent->IdString() << PString(" and  reply") << reply->IdString());
-    }
+    } 
 
     if (sent->GetSequenceInfo().IsSequenceNosZero() && sent->IsNewFrame()) {
-      PTRACE(4,"Outgoing frame has a zero sequence nos, - delete this one" << sent->IdString());
+      //Outgoing frame has a zero sequence nos, - delete this one
       sent->MarkDeleteNow();
       return;
     } else {
