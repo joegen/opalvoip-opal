@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.12  2007/04/22 22:37:59  dereksmithies
+ * Lower verbosity of PTRACE statements.
+ *
  * Revision 1.11  2007/02/14 00:18:29  dereksmithies
  * Fix no response timer, so calls can last for more than 1 minute.
  *
@@ -944,7 +947,6 @@ void IAX2CallProcessor::CheckForRemoteCapabilities(IAX2FullFrameProtocol *src)
 BOOL IAX2CallProcessor::RemoteSelectedCodecOk()
 {
   selectedCodec = con->ChooseCodec();
-  PTRACE(4, "Sound have decided on the codec " << ::hex << selectedCodec << ::dec);
   
   if (selectedCodec == 0) {
     IAX2FullFrameProtocol * reply;
