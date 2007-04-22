@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.31  2007/04/22 22:39:42  dereksmithies
+ * Lower verbosity of PTRACE statements.
+ * Get G711 to work. NOTE - iax2 requires no silence suppression.
+ *
  * Revision 1.30  2007/04/03 07:40:24  rjongbloed
  * Fixed CreateCall usage so correct function (with userData) is called on
  *   incoming connections.
@@ -331,7 +335,7 @@ BOOL IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
   mutexTokenTable.Signal();
 
   if (tokenTranslated.IsEmpty()) {
-    PTRACE(3, "No matching translation table entry token for \"" << frameToken << "\"");
+    PTRACE(4, "No matching translation table entry token for \"" << frameToken << "\"");
     return FALSE;
   }
 
@@ -341,7 +345,7 @@ BOOL IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
     return TRUE;
   }
 
-  PTRACE(3, "ERR Could not find matching connection for \"" << tokenTranslated 
+  PTRACE(4, "ERR Could not find matching connection for \"" << tokenTranslated 
 	 << "\" or \"" << frameToken << "\"");
   return FALSE;
 }
@@ -582,7 +586,7 @@ PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
 BOOL IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
 {   
   if (!frame->IsFullFrame()) {
-    PTRACE(3, frame->GetConnectionToken() << " is Not a FullFrame, so dont add a translation entry(return now) ");
+    // Do Not have a FullFrame, so dont add a translation entry.
     return FALSE;
   }
   
@@ -591,12 +595,10 @@ BOOL IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
      source call number/dest call number is unwise */ 
 
   PSafePtr<IAX2Connection> connection;
-  for (connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.GetAt(0)); connection != NULL; ++connection) {
-    PTRACE(3, "Compare " << connection->GetRemoteInfo().SourceCallNumber() << " and " <<  destCallNo);
+  for (connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.GetAt(0)); 
+       connection != NULL; 
+       ++connection) {
     if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
-      PTRACE(3, "Need to add translation for " << connection->GetCallToken() 
-	     << " (" << frame->GetConnectionToken() 
-	     << PString(") into token translation table"));
       PWaitAndSignal m(mutexTokenTable);
       tokenTable.SetAt(frame->GetConnectionToken(), connection->GetCallToken());
       return TRUE;
@@ -748,8 +750,8 @@ void IAX2EndPoint::GetCodecLengths(PINDEX codec, PINDEX &compressedBytes, PINDEX
     return;
   case IAX2FullFrameVoice::g711ulaw: 
   case IAX2FullFrameVoice::g711alaw: 
-    compressedBytes = 8;
-    duration = 1;
+    compressedBytes = 160;
+    duration = 20;
     return;
   case IAX2FullFrameVoice::pcm:
     compressedBytes = 16;
