@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.21  2007/04/22 22:37:59  dereksmithies
+ * Lower verbosity of PTRACE statements.
+ *
  * Revision 1.20  2007/03/29 05:16:49  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
@@ -428,11 +431,6 @@ void IAX2Connection::BuildRemoteCapabilityTable(unsigned int remoteCapability, u
     remoteMediaFormats.Reorder(PStringArray(wildcard));
   }
 
-  for (i = 0; i < remoteMediaFormats.GetSize(); i++) {
-    PTRACE(4, "Connection\tRemote codec is " << remoteMediaFormats[i]);
-  }    
-
-  PTRACE(4, "Connection\tREMOTE Codecs are " << remoteMediaFormats);
   AdjustMediaFormats(remoteMediaFormats);
   PTRACE(4, "Connection\tREMOTE Codecs are " << remoteMediaFormats);
 }
@@ -446,8 +444,8 @@ unsigned int IAX2Connection::ChooseCodec()
 {
   int res;
 
-  PTRACE(4, "Local capabilities are  " << localMediaFormats);
-  PTRACE(4, "remote capabilities are " << remoteMediaFormats);
+  PTRACE(4, "Local codecs are  " << localMediaFormats);
+  PTRACE(4, "remote codecs are " << remoteMediaFormats);
   
   if (remoteMediaFormats.GetSize() == 0) {
     PTRACE(0, "No remote media formats supported. Exit now ");
@@ -485,8 +483,7 @@ unsigned int IAX2Connection::ChooseCodec()
 
   PStringStream strm;
   strm << localMediaFormats[res];
-  PTRACE(3, "Connection\t have selected the codec " << strm);
-  PTRACE(3, "Connection\tOn payload type " << opalPayloadType);
+  PTRACE(4, "Connection\t have selected the codec " << strm);
 
   return IAX2FullFrameVoice::OpalNameToIax2Value(strm);
 }
