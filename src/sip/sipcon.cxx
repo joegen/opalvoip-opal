@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2218  2007/04/21 11:05:56  dsandras
+ * Revision 1.2219  2007/04/23 01:18:29  csoutheren
+ * Removed warnings on Windows
+ *
+ * Revision 2.217  2007/04/21 11:05:56  dsandras
  * Fixed more interoperability problems due to bugs in Cisco Call Manager.
  * Do not clear calls if the video transport can not be established.
  * Only reinitialize the registrar transport if required (STUN is being used
@@ -3155,7 +3158,7 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
 }
 
 #if OPAL_VIDEO
-void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
+void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
   // We got an intra frame request control packet, alert the encoder.
   // We're going to grab the call, find its PCSS connection, then grab the
@@ -3177,7 +3180,7 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
   encodingStream->ExecuteCommand(updatePictureCommand);
 }
 
-void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & session) const
+void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
 }
 #endif
