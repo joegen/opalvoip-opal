@@ -222,6 +222,11 @@ int alaw2linear(int	a_val)
  * For further information see John C. Bellamy's Digital Telephony, 1982,
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
+/* 
+ * Original code has been changed to give results symmetric to 0. Before,
+ * negative values would have a small bias towards zero.
+ * Also, use bit scan operators, if available.
+ */
 int linear2ulaw( int	pcm_val)	/* 2's complement (16-bit range) */
 {
 	int		mask;
@@ -229,29 +234,35 @@ int linear2ulaw( int	pcm_val)	/* 2's complement (16-bit range) */
 	int		uval;
 
 	/* Get the sign and the magnitude of the value. */
-	pcm_val = pcm_val >> 2;
 	if (pcm_val < 0) {
 		pcm_val = -pcm_val;
 		mask = 0x7F;
 	} else {
 		mask = 0xFF;
 	}
-        if ( pcm_val > CLIP ) pcm_val = CLIP;		/* clip the magnitude */
-	pcm_val += (BIAS >> 2);
+
+        if ( pcm_val >= (7904<<2) ) { /* Clipped range + last interval */
+		return (0x7F ^ mask);
+	}
 
 	/* Convert the scaled magnitude to segment number. */
-	seg = search(pcm_val, seg_uend, 8);
+#if defined(GCC_HAS_CLZ)
+	seg = 24 - __builtin_clz(pcm_val+131);
+#elif defined(VC_HAS_BSR)
+	_BitScanReverse(&seg, (pcm_val+131));
+	seg -= 8;
+#else
+	seg = 0;
+	if( (pcm_val+131) >= 0x100<<3 ) seg = 4;
+	while( (pcm_val+131) >= 0x100<<seg ) seg++;
+#endif
 
 	/*
 	 * Combine the sign, segment, quantization bits;
 	 * and complement the code word.
 	 */
-	if (seg >= 8)		/* out of range, return maximum value. */
-		return (0x7F ^ mask);
-	else {
-		uval = (seg << 4) | ((pcm_val >> (seg + 1)) & 0xF);
-		return (uval ^ mask);
-	}
+	uval = (seg << 4) | (( (pcm_val+131) >> (seg + 3)) & 0xF);
+	return (uval ^ mask);
 
 }
 
