@@ -178,6 +178,30 @@ if test x$GXX = xyes ; then
   fi
 fi
 
+dnl ########################################################################
+dnl check for BSR instruction
+
+AC_MSG_CHECKING(for working bit scan intrinsic)
+BSR_TEST_SRC="
+#include <stdlib.h>
+int main(int argc, char* argv[]) {
+#ifdef __GNUC__
+	unsigned int val = 0x00000FF0;
+	if (__builtin_clz(val) == 20)
+		exit(0);
+#endif
+	exit(1);
+}"
+AC_TRY_RUN($BSR_TEST_SRC, GCC_HAS_CLZ=1, GCC_HAS_CLZ=0, GCC_HAS_CLZ=1)
+if test "${GCC_HAS_CLZ}" = "1" ; then
+	AC_MSG_RESULT(yes)
+	AC_DEFINE(GCC_HAS_CLZ, 1)
+	GCC_HAS_CLZ=1
+else
+	AC_MSG_RESULT(no)
+fi
+AC_SUBST(GCC_HAS_CLZ)
+
 
 dnl ########################################################################
 dnl Look for system libspeex
