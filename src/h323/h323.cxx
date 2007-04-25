@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2149  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2150  2007/04/25 07:49:06  csoutheren
+ * Fix problem with external RTP channels for incoming H.323 calls
+ *
+ * Revision 2.148  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -3458,7 +3461,7 @@ void H323Connection::OnSetLocalCapabilities()
 
   OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
   if (formats.IsEmpty()) {
-    PTRACE(2, "H323\tSetLocalCapabilities - no formats from other connection(s) in call");
+    PTRACE(2, "H323\tSetLocalCapabilities - no existing formats in call");
     return;
   }
 
@@ -3692,7 +3695,7 @@ void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 
 BOOL H323Connection::IsMediaBypassPossible(unsigned sessionID) const
 {
-  PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
+  //PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
 
   return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
          sessionID == OpalMediaFormat::DefaultVideoSessionID;
@@ -4072,8 +4075,9 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
       MediaInformation info;
       if (!otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
-        return NULL;
-      return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
+        return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
+      else
+        return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
     }
   }
 
