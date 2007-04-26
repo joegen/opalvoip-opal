@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2059  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2060  2007/04/26 07:01:47  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.58  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -608,6 +613,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   OpalMediaPatch * patch = NULL;
 
   {
+    // handle RTP payload translation
     RTP_DataFrame::PayloadMapType map;
     for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
       if (conn != &connection) {
@@ -616,28 +622,31 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     }
     if (map.size() == 0)
       map = connection.GetRTPPayloadMap();
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (conn != &connection) {
-        OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-        if (sink == NULL)
-          return FALSE;
-        if (source.RequiresPatch()) {
-          if (patch == NULL) {
-            patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
-            if (patch == NULL)
-              return FALSE;
+
+    // if not coming from a NULL stream, setup, the patch
+    if (!source.IsNull()) {
+      for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+        if (conn != &connection) {
+          OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
+          if (sink == NULL)
+            return FALSE;
+          if (source.RequiresPatch()) {
+            if (patch == NULL) {
+              patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
+              if (patch == NULL)
+                return FALSE;
+            }
+            patch->AddSink(sink, map);
           }
-          patch->AddSink(sink, map);
         }
       }
     }
   }
 
-  {
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (patch)
-        conn->OnPatchMediaStream(conn == &connection, *patch);
-    }
+  // if a patch was created, make sure the callback is called
+  if (patch) {
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
+      conn->OnPatchMediaStream(conn == &connection, *patch);
   }
   
   return TRUE;
