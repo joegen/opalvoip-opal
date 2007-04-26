@@ -28,7 +28,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2080  2007/04/18 00:00:44  csoutheren
+ * Revision 1.2081  2007/04/26 07:01:01  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.79  2007/04/18 00:00:44  csoutheren
  * Add hooks for recording call audio
  *
  * Revision 2.78  2007/04/03 05:27:29  rjongbloed
@@ -1408,6 +1413,8 @@ class OpalConnection : public PSafeObject
     virtual BOOL OnOpenIncomingMediaChannels();
 
     virtual void ApplyStringOptions();
+
+    virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
