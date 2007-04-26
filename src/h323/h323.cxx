@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2150  2007/04/25 07:49:06  csoutheren
+ * Revision 1.2151  2007/04/26 07:01:46  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.149  2007/04/25 07:49:06  csoutheren
  * Fix problem with external RTP channels for incoming H.323 calls
  *
  * Revision 2.148  2007/04/10 05:15:54  rjongbloed
@@ -1174,6 +1179,49 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
   ApplyStringOptions();
 
   H225_Setup_UUIE & setup = setupPDU->m_h323_uu_pdu.m_h323_message_body;
+
+  // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
+  // before it knows what what formats can support. 
+  if (setup.HasOptionalField(H225_Setup_UUIE::e_fastStart)) {
+
+    OpalMediaFormatList previewFormats;
+
+    // Extract capabilities from the fast start OpenLogicalChannel structures
+    PINDEX i;
+    for (i = 0; i < setup.m_fastStart.GetSize(); i++) {
+      H245_OpenLogicalChannel open;
+      if (setup.m_fastStart[i].DecodeSubType(open)) {
+        const H245_H2250LogicalChannelParameters * param;
+        const H245_DataType * dataType = NULL;
+        H323Channel::Directions direction;
+        if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
+          if (open.m_reverseLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+                H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters::e_h2250LogicalChannelParameters) {
+            PTRACE(3, "H323\tCreateLogicalChannel - reverse channel");
+            dataType = &open.m_reverseLogicalChannelParameters.m_dataType;
+            param = &(const H245_H2250LogicalChannelParameters &)open.m_reverseLogicalChannelParameters.m_multiplexParameters;
+            direction = H323Channel::IsTransmitter;
+          }
+        }
+        else if (open.m_forwardLogicalChannelParameters.m_multiplexParameters.GetTag() ==
+              H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
+                                                      ::e_h2250LogicalChannelParameters) {
+          dataType = &open.m_forwardLogicalChannelParameters.m_dataType;
+          param = &(const H245_H2250LogicalChannelParameters &)
+                      open.m_forwardLogicalChannelParameters.m_multiplexParameters;
+          direction = H323Channel::IsReceiver;
+        }
+        if (dataType != NULL) {
+          H323Capability * capability = endpoint.FindCapability(*dataType);
+          if (capability != NULL)
+            previewFormats += capability->GetMediaFormat();
+        }
+      }
+    }
+
+    if (previewFormats.GetSize() != 0) 
+      ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
+  }
 
   // Get the local capabilities before fast start or tunnelled TCS is handled
   OnSetLocalCapabilities();
@@ -3453,13 +3501,23 @@ void H323Connection::SendCapabilitySet(BOOL empty)
   capabilityExchangeProcedure->Start(TRUE, empty);
 }
 
+OpalMediaFormatList H323Connection::GetLocalMediaFormats()
+{
+  return ownerCall.GetMediaFormats(*this, FALSE);
+}
 
 void H323Connection::OnSetLocalCapabilities()
 {
   if (capabilityExchangeProcedure->HasSentCapabilities())
     return;
 
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+  // create the list of media formats supported locally
+  OpalMediaFormatList formats;
+  if (originating)
+    formats = GetLocalMediaFormats();
+  else
+    formats = ownerCall.GetMediaFormats(*this, FALSE);
+
   if (formats.IsEmpty()) {
     PTRACE(2, "H323\tSetLocalCapabilities - no existing formats in call");
     return;
@@ -3686,7 +3744,7 @@ void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
   OpalConnection::OnPatchMediaStream(isSource, patch);
   if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     AttachRFC2833HandlerToPatch(isSource, patch);
-    if(detectInBandDTMF && isSource) {
+    if (detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
     }
   }
