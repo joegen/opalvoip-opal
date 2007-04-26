@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2064  2007/04/10 05:15:53  rjongbloed
+ * Revision 1.2065  2007/04/26 07:01:00  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.63  2007/04/10 05:15:53  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -2299,6 +2304,8 @@ class H323Connection : public OpalConnection
 #endif
 
     virtual BOOL OnOpenIncomingMediaChannels();
+
+    virtual OpalMediaFormatList GetLocalMediaFormats();
     
   protected:
     /**Internal function to check if call established.
