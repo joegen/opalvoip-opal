@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2105  2007/04/20 02:39:41  rjongbloed
+ * Revision 1.2106  2007/04/26 07:01:47  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.104  2007/04/20 02:39:41  rjongbloed
  * Attempt to fix one of the possible deadlock scenarios between the
  *   connections in a call, now locks whole call instead of each individual
  *   connection.
@@ -1616,5 +1621,8 @@ void OpalConnection::ApplyStringOptions()
   }
 }
 
+void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*/)
+{
+}
 
 /////////////////////////////////////////////////////////////////////////////

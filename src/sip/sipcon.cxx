@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2219  2007/04/23 01:18:29  csoutheren
+ * Revision 1.2220  2007/04/26 07:01:47  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.218  2007/04/23 01:18:29  csoutheren
  * Removed warnings on Windows
  *
  * Revision 2.217  2007/04/21 11:05:56  dsandras
@@ -1281,7 +1286,7 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
     PSafeLockReadOnly m(ownerCall);
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty == NULL) {
-      PTRACE(2, "H323\tCorwardly refusing to create an RTP channel with only one connection");
+      PTRACE(2, "H323\tCowardly refusing to create an RTP channel with only one connection");
       return NULL;
      }
 
@@ -2390,7 +2395,42 @@ BOOL SIPConnection::OnOpenIncomingMediaChannels()
 {
   ApplyStringOptions();
 
+  // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
+  // before it knows what what formats can support. 
+  if (originalInvite != NULL) {
+
+    OpalMediaFormatList previewFormats;
+
+    SDPSessionDescription & sdp = originalInvite->GetSDP();
+    static struct PreviewType {
+      SDPMediaDescription::MediaType mediaType;
+      unsigned sessionID;
+    } previewTypes[] = 
+    { 
+      { SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID },
+#if OPAL_VIDEO
+      { SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID },
+#endif
+#if OPAL_T38FAX
+      { SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID },
+#endif
+    };
+    PINDEX i;
+    for (i = 0; i < (sizeof(previewTypes)/sizeof(previewTypes[0])); ++i) {
+      SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(previewTypes[i].mediaType);
+      if (mediaDescription != NULL) {
+        previewFormats += mediaDescription->GetMediaFormats(previewTypes[i].sessionID);
+        OpalTransportAddress mediaAddress = mediaDescription->GetTransportAddress();
+        mediaTransportAddresses.SetAt(previewTypes[i].sessionID, new OpalTransportAddress(mediaAddress));
+      }
+    }
+
+    if (previewFormats.GetSize() != 0) 
+      ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
+  }
+
   ownerCall.OnSetUp(*this);
+
   AnsweringCall(OnAnswerCall(remotePartyAddress));
   return TRUE;
 }
