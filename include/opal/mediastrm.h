@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2043  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2044  2007/04/26 07:01:01  csoutheren
+ * Add extra code to deal with getting media formats from connections early enough to do proper
+ * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
+ * and local formats standardized, but this will do for now
+ *
+ * Revision 2.42  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -479,6 +484,9 @@ class OpalMediaStream : public PObject
     PString GetID() const
     { return id; }
 
+    virtual BOOL IsNull() const
+    { return FALSE; }
+
   protected:
     OpalMediaFormat mediaFormat;
     unsigned        sessionID;
@@ -555,6 +563,9 @@ class OpalNullMediaStream : public OpalMediaStream
       */
     virtual BOOL IsSynchronous() const;
   //@}
+
+    virtual BOOL IsNull() const
+    { return TRUE; }
 };
 
 
