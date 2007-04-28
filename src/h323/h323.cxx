@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2151  2007/04/26 07:01:46  csoutheren
+ * Revision 1.2152  2007/04/28 12:06:07  vfrolov
+ * Fixed Assertion fail if received h2250LogicalChannelParameters w/o mediaControlChannel
+ *
+ * Revision 2.150  2007/04/26 07:01:46  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -4141,7 +4144,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
   RTP_Session * session;
 
-  if (param != NULL) {
+  if (param != NULL && param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
     // We only support unicast IP at this time.
     if (param->m_mediaControlChannel.GetTag() != H245_TransportAddress::e_unicastAddress)
       return NULL;
@@ -4149,9 +4152,10 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
     const H245_UnicastAddress & uaddr = param->m_mediaControlChannel;
     if (uaddr.GetTag() != H245_UnicastAddress::e_iPAddress)
       return NULL;
-
-    sessionID = param->m_sessionID;
   }
+
+  if (param != NULL)
+    sessionID = param->m_sessionID;
 
   session = UseSession(GetControlChannel(), sessionID, rtpqos);
   if (session == NULL)
