@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2090  2007/04/16 04:12:25  rjongbloed
+ * Revision 1.2091  2007/05/01 05:32:03  rjongbloed
+ * Added display of active SIP listeners
+ *
+ * Revision 2.89  2007/04/16 04:12:25  rjongbloed
  * Added ability to set transmitted video frame size (qcif etc).
  * Added ability to set any media format option.
  *
@@ -1009,6 +1012,7 @@ BOOL MyManager::Initialise(PArgList & args)
             << setfill(',') << listeners << endl;
       return FALSE;
     }
+    cout <<  "SIP started on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
 
     if (args.HasOption('r')) {
       PString registrar = args.GetOptionString('r');
