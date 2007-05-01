@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2162  2007/04/21 11:05:56  dsandras
+ * Revision 1.2163  2007/05/01 05:29:32  csoutheren
+ * Fix problem with bad delete of SIPConnection when transport not available
+ *
+ * Revision 2.161  2007/04/21 11:05:56  dsandras
  * Fixed more interoperability problems due to bugs in Cisco Call Manager.
  * Do not clear calls if the video transport can not be established.
  * Only reinitialize the registrar transport if required (STUN is being used
@@ -1364,7 +1367,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   }
 
   if (&connection->GetTransport() == NULL) {
-    delete connection;
+    connectionsActive.RemoveAt(connection->GetToken());
     PTRACE(1, "SIP\tFailed to create a transport for INVITE from " << request->GetURI() << " for " << toAddr);
     SIP_PDU response(*request, SIP_PDU::Failure_NotFound);
     response.Write(transport);
