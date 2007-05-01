@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2015  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2016  2007/05/01 05:33:57  rjongbloed
+ * Fixed compiler warning
+ *
+ * Revision 2.14  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -1282,9 +1285,8 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
 {
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   phase = SetUpPhase;
-  //forceFaxAudio = FALSE;
 
-  forceFaxAudio = TRUE; //(stringOptions != NULL) && stringOptions->Contains("Force-Fax-Audio");
+  forceFaxAudio = (stringOptions == NULL) || stringOptions->Contains("Force-Fax-Audio");
 }
 
 OpalFaxConnection::~OpalFaxConnection()
