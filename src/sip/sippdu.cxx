@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2123  2007/04/17 21:49:41  dsandras
+ * Revision 1.2124  2007/05/01 05:35:27  rjongbloed
+ * Print received SIP PDU as early as possible, in case of crash.
+ *
+ * Revision 2.122  2007/04/17 21:49:41  dsandras
  * Fixed Via field in previous commit.
  * Make sure the correct port is being used.
  * Improved FindSIPInfoByDomain.
@@ -1949,6 +1952,14 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   ////////////////
   entityBody[contentLength] = '\0';
 
+#if PTRACING
+  if (PTrace::CanTrace(4))
+    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
+           << cmd << '\n' << mime << entityBody);
+  else
+    PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
+#endif
+
   BOOL removeSDP = TRUE;
 
   // 'application/' is case sensitive, 'sdp' is not
@@ -1962,14 +1973,6 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     delete sdp;
     sdp = NULL;
   }
-
-#if PTRACING
-  if (PTrace::CanTrace(4))
-    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
-           << cmd << '\n' << mime << entityBody);
-  else
-    PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
-#endif
 
   return TRUE;
 }
