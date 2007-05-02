@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2060  2007/04/20 06:46:16  csoutheren
+ * Revision 1.2061  2007/05/02 04:13:40  csoutheren
+ * Add delay to OpalFileMediaStream::ReadData and OpalFileMediaStream::WriteData
+ *
+ * Revision 2.59  2007/04/20 06:46:16  csoutheren
  * Remove compile warning
  *
  * Revision 2.58  2007/04/19 06:34:12  csoutheren
@@ -932,6 +935,40 @@ BOOL OpalFileMediaStream::IsSynchronous() const
   return FALSE;
 }
 
+BOOL OpalFileMediaStream::ReadData(
+  BYTE * data,      ///<  Data buffer to read to
+  PINDEX size,      ///<  Size of buffer
+  PINDEX & length   ///<  Length of data actually read
+)
+{
+  if (!OpalRawMediaStream::ReadData(data, size, length))
+    return FALSE;
+
+  // only delay if audio
+  if (sessionID == 1)
+    fileDelay.Delay(length/8);
+
+  return TRUE;
+}
+
+/**Write raw media data to the sink media stream.
+   The default behaviour writes to the PChannel object.
+  */
+BOOL OpalFileMediaStream::WriteData(
+  const BYTE * data,   ///<  Data to write
+  PINDEX length,       ///<  Length of data to read.
+  PINDEX & written     ///<  Length of data actually written
+)
+{
+  if (!OpalRawMediaStream::WriteData(data, length, written))
+    return FALSE;
+
+  // only delay if audio
+  if (sessionID == 1)
+    fileDelay.Delay(written/8);
+
+  return TRUE;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
