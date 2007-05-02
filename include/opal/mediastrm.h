@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2044  2007/04/26 07:01:01  csoutheren
+ * Revision 1.2045  2007/05/02 04:13:21  csoutheren
+ * Add delay to OpalFileMediaStream::ReadData and OpalFileMediaStream::WriteData
+ *
+ * Revision 2.43  2007/04/26 07:01:01  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -191,6 +194,7 @@
 #pragma interface
 #endif
 
+#include <ptclib/delaychan.h>
 
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
@@ -773,8 +777,24 @@ class OpalFileMediaStream : public OpalRawMediaStream
     virtual BOOL IsSynchronous() const;
   //@}
 
+    virtual BOOL ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    );
+
+    /**Write raw media data to the sink media stream.
+       The default behaviour writes to the PChannel object.
+      */
+    virtual BOOL WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
+
   protected:
     PFile file;
+    PAdaptiveDelay fileDelay;
 };
 
 #if OPAL_AUDIO
