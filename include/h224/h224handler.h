@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224handler.h,v $
+ * Revision 1.2.6.3  2007/05/02 17:55:52  hfriederich
+ * (Backport from HEAD)
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.2.6.2  2007/03/29 22:14:58  hfriederich
  * Pass OpalConnection to OpalMediaStream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -51,7 +55,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/connection.h>
 #include <opal/transports.h>
 #include <opal/mediastrm.h>
