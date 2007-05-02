@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h224.cxx,v $
+ * Revision 1.3.6.4  2007/05/02 17:56:53  hfriederich
+ * (Backport from HEAD)
+ * Adjusted PTRACE log levels and category
+ *
  * Revision 1.3.6.3  2007/03/29 22:14:58  hfriederich
  * Pass OpalConnection to OpalMediaStream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -760,7 +764,7 @@ BOOL OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
 {
   if(frame.GetDestinationTerminalAddress() != H224_BROADCAST) {
     // only broadcast frames are handled at the moment
-	PTRACE(3, "Received H.224 frame with non-broadcast address");
+	PTRACE(2, "Received H.224 frame with non-broadcast address");
     return TRUE;
   }
   BYTE clientID = frame.GetClientID();
@@ -971,7 +975,7 @@ BOOL OpalH224Handler::HandleFrame(const RTP_DataFrame & dataFrame)
     BOOL result = OnReceivedFrame(receiveFrame);
     return result;
   } else {
-    PTRACE(3, "Decoding of H.224 frame failed");
+    PTRACE(1, "Decoding of H.224 frame failed");
     return FALSE;
   }
 }
@@ -981,7 +985,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   PINDEX size = frame.GetEncodedSize();
 	
   if(!frame.Encode(transmitFrame.GetPayloadPtr(), size, transmitBitIndex)) {
-    PTRACE(3, "Failed to encode H.224 frame");
+    PTRACE(1, "Failed to encode H.224 frame");
     return;
   }
 	
