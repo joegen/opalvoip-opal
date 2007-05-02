@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281.cxx,v $
+ * Revision 1.3.6.3  2007/05/02 17:56:53  hfriederich
+ * (Backport from HEAD)
+ * Adjusted PTRACE log levels and category
+ *
  * Revision 1.3.6.2  2007/03/20 00:02:13  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.224
@@ -737,7 +741,7 @@ void OpalH281Handler::OnReceivedMessage(const H224_Frame & h224Frame)
 
   }	else if(requestType == H281_Frame::SelectVideoSource) {
     OnSelectVideoSource(message.GetVideoSourceNumber(),
-						message.GetVideoMode());
+                        message.GetVideoMode());
 	  
   }	else if(requestType == H281_Frame::StoreAsPreset) {
     OnStoreAsPreset(message.GetPresetNumber());
@@ -746,7 +750,7 @@ void OpalH281Handler::OnReceivedMessage(const H224_Frame & h224Frame)
 		OnActivatePreset(message.GetPresetNumber());
 	  
   }	else {
-	PTRACE(3, "H.281: Unknown Request: " << requestType);
+	PTRACE(2, "H.281\tUnknown Request: " << requestType);
   }
 }
 

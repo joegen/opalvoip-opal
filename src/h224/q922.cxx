@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q922.cxx,v $
+ * Revision 1.4.6.2  2007/05/02 17:56:53  hfriederich
+ * (Backport from HEAD)
+ * Adjusted PTRACE log levels and category
+ *
  * Revision 1.4.6.1  2007/03/20 00:02:14  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.224
@@ -143,10 +147,10 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
     BYTE decodedByte;
     BYTE result = DecodeByte(data, &decodedByte, octetIndex, bitIndex, onesCounter);
 	
-	if(result == Q922_ERROR) {
+	if(result == Q922_ERROR)
 	  return FALSE;
 
-	} else if(result == Q922_FLAG) {
+	if(result == Q922_FLAG) {
 		
       // Found end flag
       // FCS is contained in firstOctet and secondOctet.
@@ -156,7 +160,7 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
       WORD calculatedFCS = CalculateFCS((const BYTE *)theArray, arrayIndex);
 			
 	  if(fcs != calculatedFCS) {
-	    PTRACE(3, "Q.922 frame has incorrect checksum");
+	    PTRACE(2, "Q.922 frame has incorrect checksum");
 		return FALSE;
       }
 			
@@ -174,10 +178,9 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
     firstOctet = secondOctet;
     secondOctet = decodedByte;
 		
-	// Q922-frames must not exceed an information field size of 260 octets
-    if(arrayIndex >= 260+Q922_HEADER_SIZE) {
+    // Q922-frames must not exceed an information field size of 260 octets
+    if(arrayIndex >= 260+Q922_HEADER_SIZE)
       return FALSE;
-	}
   }
 	
   return FALSE;
