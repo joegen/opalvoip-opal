@@ -20,6 +20,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323h224.h,v $
+ * Revision 1.3.4.2  2007/05/02 17:55:53  hfriederich
+ * (Backport from HEAD)
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.3.4.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
@@ -53,7 +57,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <h323/h323caps.h>
 
 #include <h224/h224mediafmt.h>

@@ -19,6 +19,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h281handler.h,v $
+ * Revision 1.2.6.2  2007/05/02 17:55:53  hfriederich
+ * (Backport from HEAD)
+ * Fixes for precompiled headers with gcc
+ *
  * Revision 1.2.6.1  2007/02/07 08:51:00  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
@@ -46,7 +50,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <h224/h224handler.h>
 #include <h224/h281.h>
 
