@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2041.2.4  2007/03/29 21:45:55  hfriederich
+ * Revision 1.2041.2.5  2007/05/03 10:37:49  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.40.2.4  2007/03/29 21:45:55  hfriederich
  * (Backport from HEAD)
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -204,6 +208,7 @@
 #pragma interface
 #endif
 
+#include <ptclib/delaychan.h>
 
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
@@ -496,6 +501,8 @@ class OpalMediaStream : public PObject
       */
     PString GetID() const
     { return id; }
+    
+    virtual BOOL IsNull() const { return FALSE; }
 
   protected:
     OpalMediaFormat mediaFormat;
@@ -570,6 +577,8 @@ class OpalNullMediaStream : public OpalMediaStream
        Returns FALSE.
       */
     virtual BOOL IsSynchronous() const;
+    
+    virtual BOOL IsNull() const { return TRUE; }
   //@}
 };
 
@@ -597,6 +606,13 @@ class OpalRTPMediaStream : public OpalMediaStream
 
   /**@name Overrides of OpalMediaStream class */
   //@{
+#if OPAL_VIDEO
+    virtual BOOL ExecuteCommand(
+      const OpalMediaCommand & command,
+      BOOL isEndOfChain = FALSE
+    );
+#endif
+    
     /**Open the media stream using the media format.
 
        The default behaviour simply sets the isOpen variable to TRUE.
@@ -644,6 +660,7 @@ class OpalRTPMediaStream : public OpalMediaStream
       */
     virtual RTP_Session & GetRtpSession() const
     { return rtpSession; }
+    
 
   //@}
 
@@ -761,9 +778,25 @@ class OpalFileMediaStream : public OpalRawMediaStream
       */
     virtual BOOL IsSynchronous() const;
   //@}
+    
+    virtual BOOL ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    );
+    
+    /**Write raw media data to the sink media stream.
+       The default behaviour writes to the PChannel object.
+    */
+    virtual BOOL WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
 
   protected:
     PFile file;
+    PAdaptiveDelay fileDelay;
 };
 
 #if OPAL_AUDIO

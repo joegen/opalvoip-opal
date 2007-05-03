@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2018.2.2  2007/03/18 22:38:40  hfriederich
+ * Revision 1.2018.2.3  2007/05/03 10:37:49  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.17.2.2  2007/03/18 22:38:40  hfriederich
  * Fix plugins and MediaType. To be tested.
  *
  * Revision 2.17.2.1  2007/02/07 08:51:01  hfriederich
@@ -1027,8 +1031,8 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
     if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
       if (commandNotifier != PNotifier()) {
-        //OpalVideoUpdatePicture updatePictureCommand;
-        //commandNotifier(updatePictureCommand, 0); 
+        OpalVideoUpdatePicture updatePictureCommand;
+        commandNotifier(updatePictureCommand, 0); 
         PTRACE (3, "H261\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }
     }
@@ -1320,13 +1324,13 @@ class H323VideoPluginCapability : public H323VideoCapability,
 
     static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
     {
-      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption, frameWidth))
+      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), frameWidth))
         return FALSE;
 
-      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption, frameHeight))
+      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), frameHeight))
         return FALSE;
 
-      if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption, OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
+      if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
         return FALSE;
 
       return TRUE;
@@ -1484,9 +1488,9 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       OpalMediaFormat * instance = OpalMediaFormatFactory::CreateInstance(*r);
       if (instance == NULL) {
-        PTRACE(4, "H323PLUGIN\tCannot instantiate opal media format " << *r);
+        PTRACE(4, "OpalPlugin\tCannot instantiate opal media format " << *r);
       } else {
-        PTRACE(4, "H323PLUGIN\tCreating media format " << *r);
+        PTRACE(4, "OpalPlugin\tCreating media format " << *r);
       }
     }
   }
@@ -1498,9 +1502,9 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       H323StaticPluginCodec * instance = PFactory<H323StaticPluginCodec>::CreateInstance(*r);
       if (instance == NULL) {
-        PTRACE(4, "H323PLUGIN\tCannot instantiate static codec plugin " << *r);
+        PTRACE(4, "OpalPlugin\tCannot instantiate static codec plugin " << *r);
       } else {
-        PTRACE(4, "H323PLUGIN\tLoading static codec plugin " << *r);
+        PTRACE(4, "OpalPlugin\tLoading static codec plugin " << *r);
         RegisterStaticCodec(*r, instance->Get_GetAPIFn(), instance->Get_GetCodecFn());
       }
     }
@@ -1538,18 +1542,18 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
 {
   PluginCodec_GetCodecFunction getCodecs;
   if (!dll.GetFunction(PString(signatureFunctionName), (PDynaLink::Function &)getCodecs)) {
-    PTRACE(3, "H323PLUGIN\tPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
+    PTRACE(2, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
     return;
   }
 
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_VIDEO);
   if (codecs == NULL || count == 0) {
-    PTRACE(3, "H323PLUGIN\tPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
+    PTRACE(1, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
     return;
   } 
 
-  PTRACE(3, "H323PLUGIN\tLoading plugin codec " << dll.GetName());
+  PTRACE(3, "OpalPlugin\tLoading plugin codec " << dll.GetName());
 
   switch (code) {
 
@@ -1576,7 +1580,7 @@ void OpalPluginCodecManager::RegisterStaticCodec(
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecFn)(&count, PLUGIN_CODEC_VERSION);
   if (codecs == NULL || count == 0) {
-    PTRACE(3, "H323PLUGIN\tStatic codec " << name << " contains no codec definitions");
+    PTRACE(1, "OpalPlugin\tStatic codec " << name << " contains no codec definitions");
     return;
   } 
 
@@ -1635,13 +1639,13 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, void * _co
           RegisterPluginPair(&encoder, &decoder);
           found = TRUE;
 
-          PTRACE(2, "H323PLUGIN\tPlugin codec " << encoder.descr << " defined");
+          PTRACE(3, "OpalPlugin\tPlugin codec " << encoder.descr << " defined");
           break;
         }
       }
     }
     if (!found && isEncoder) {
-      PTRACE(2, "H323PLUGIN\tCannot find decoder for plugin encoder " << encoder.descr);
+      PTRACE(2, "OpalPlugin\tCannot find decoder for plugin encoder " << encoder.descr);
     }
   }
 }
@@ -1698,15 +1702,15 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   // add the media format
   if (mediaType == OpalUnknownMediaType) {
-    PTRACE(3, "H323PLUGIN\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(1, "OpalPlugin\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec, FALSE);
     OpalMediaFormat existingFormat(fmtName);
     if (existingFormat.IsValid()) {
-      PTRACE(3, "H323PLUGIN\tMedia format " << fmtName << " already exists");
-      AddFormat(existingFormat);
+      PTRACE(2, "OpalPlugin\tNewer Media format " << fmtName << " already exists");
+      //AddFormat(existingFormat);
     } else {
-      PTRACE(3, "H323PLUGIN\tCreating new media format" << fmtName);
+      PTRACE(3, "OpalPlugin\tCreating new media format" << fmtName);
 
       OpalMediaFormat * mediaFormat = NULL;
 
@@ -1802,7 +1806,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(3, "H323PLUGIN\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(1, "OpalPlugin\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
     case PluginCodec_MediaTypeAudioStreamed:
@@ -1817,7 +1821,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(3, "H323PLUGIN\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(1, "OpalPlugin\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
 #endif
@@ -1831,7 +1835,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
       (hasCodecControl && (retVal == 0))
        ) {
-    PTRACE(3, "H323PLUGIN\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
+    PTRACE(2, "OpalPlugin\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
     return;
   }
 
@@ -1866,7 +1870,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
   }
 
   if (map == NULL) {
-    PTRACE(3, "H323PLUGIN\tCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(1, "OpalPlugin\tCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } 
   else if (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_undefined) {
     for (PINDEX i = 0; map[i].pluginCapType >= 0; i++) {
@@ -1948,7 +1952,7 @@ H323Capability *CreateGenericAudioCap(
     PluginCodec_H323GenericCodecData * pluginData = (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData;
 
     if(pluginData == NULL ) {
-	PTRACE(1, "Generic codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
+	PTRACE(1, "OpalPlugin\tGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
 	return NULL;
     }
     return new H323CodecPluginGenericAudioCapability(encoderCodec, decoderCodec, pluginData);
@@ -2007,7 +2011,7 @@ H323Capability *CreateGenericVideoCap(
   PluginCodec_H323GenericCodecData * pluginData = (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData;
 
   if (pluginData == NULL ) {
-	  PTRACE(1, "Generic codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
+	  PTRACE(1, "OpalPlugin\tGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
 	  return NULL;
   }
   return new H323CodecPluginGenericVideoCapability(encoderCodec, decoderCodec, pluginData);
@@ -2120,7 +2124,7 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
 	    case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
 	    default:
-	      PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
+	      PTRACE(1,"OpalPlugin\tUnsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
 	      break;
     }
     ptr++;
@@ -2188,7 +2192,7 @@ H323H261PluginCapability::H323H261PluginCapability(PluginCodec_Definition * _enc
   if (!fmt.HasOption(h323_qcifMPI_tag) && !fmt.HasOption(h323_cifMPI_tag)) {
     OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
     mediaFormat.AddOption(new OpalMediaOptionInteger(h323_cifMPI_tag,                    false, OpalMediaOption::MinMerge, 4));
-    mediaFormat.AddOption(new OpalMediaOptionInteger(OpalMediaFormat::MaxBitRateOption,  false, OpalMediaOption::MinMerge, 621700));
+    mediaFormat.AddOption(new OpalMediaOptionInteger(OpalMediaFormat::MaxBitRateOption(),  false, OpalMediaOption::MinMerge, 621700));
   }
 }
 
@@ -2254,7 +2258,7 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   }
 
   h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
-  h261.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 621700)+50)/100;
+  h261.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700)+50)/100;
   h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
 
   return TRUE;
@@ -2273,7 +2277,7 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
   mode.m_resolution.SetTag(qcifMPI > 0 ? H245_H261VideoMode_resolution::e_qcif
                                        : H245_H261VideoMode_resolution::e_cif);
 
-  mode.m_bitRate                = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 621700) + 50) / 1000;
+  mode.m_bitRate                = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700) + 50) / 1000;
   mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
 
   return TRUE;
@@ -2305,7 +2309,7 @@ BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
       return FALSE;
   }
 
-  mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption,          h261.m_maxBitRate*100);
+  mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(),          h261.m_maxBitRate*100);
   mediaFormat.SetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, h261.m_temporalSpatialTradeOffCapability);
   mediaFormat.SetOptionBoolean(h323_stillImageTransmission_tag,            h261.m_stillImageTransmission);
 
@@ -2395,7 +2399,7 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   SetTransmittedCap(mediaFormat, cap, h323_cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  H245_H263VideoCapability::e_slowCif4MPI,  h263.m_slowCif4MPI);
   SetTransmittedCap(mediaFormat, cap, h323_cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI);
 
-  h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 327600) + 50) / 100;
+  h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
   h263.m_unrestrictedVector	               = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
   h263.m_arithmeticCoding	                 = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
@@ -2441,7 +2445,7 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
 			    :(qcifMPI ? H245_H263VideoMode_resolution::e_qcif
             : H245_H263VideoMode_resolution::e_sqcif))));
 
-  mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption, 327600) + 50) / 100;
+  mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
   mode.m_arithmeticCoding     = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
   mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
@@ -2505,7 +2509,7 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
   if (!SetReceivedH263Cap(mediaFormat, cap, h323_cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI, CIF16_WIDTH, CIF16_HEIGHT, formatDefined))
     return FALSE;
 
-  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption, h263.m_maxBitRate*100))
+  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), h263.m_maxBitRate*100))
     return FALSE;
 
   mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,      h263.m_unrestrictedVector);
@@ -2586,7 +2590,7 @@ H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(
       case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_OctetString:
       case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_GenericParameter:
       default:
-        PTRACE(1,"Unsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
+        PTRACE(1,"OpalPlugin\tUnsupported Generic parameter type "<< ptr->type << " for generic codec " << _encoderCodec->descr );
         break;
     }
     ptr++;
