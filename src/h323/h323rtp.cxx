@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013.10.4  2007/03/11 09:25:58  hfriederich
+ * Revision 1.2013.10.5  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.12.10.4  2007/03/11 09:25:58  hfriederich
  * Fix session ID info in H225_RTPSession
  *
  * Revision 2.12.10.3  2007/03/09 19:15:12  hfriederich
@@ -332,7 +336,7 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
     if (ok && channel.GetDirection() == H323Channel::IsReceiver)
-      PTRACE(3, "RTP_UDP\tIgnoring media transport for " << channel);
+      PTRACE(2, "RTP_UDP\tIgnoring media transport for " << channel);
     else if (!ExtractTransport(param.m_mediaChannel, TRUE, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
       return FALSE;

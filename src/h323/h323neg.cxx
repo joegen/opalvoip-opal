@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2012.10.2  2007/02/12 19:38:39  hfriederich
+ * Revision 1.2012.10.3  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.11.10.2  2007/02/12 19:38:39  hfriederich
  * Give capabilities only access to OLC media packetization parameters.
  * Ensure these callbacks are called before a channel is created
  *
@@ -426,7 +430,7 @@ BOOL H245NegMasterSlaveDetermination::HandleIncoming(const H245_MasterSlaveDeter
   H323ControlPDU reply;
 
   if (newStatus != e_Indeterminate) {
-    PTRACE(2, "H245\tMasterSlaveDetermination: local is "
+    PTRACE(3, "H245\tMasterSlaveDetermination: local is "
                   << (newStatus == e_DeterminedMaster ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
     state = e_Incoming;
@@ -470,7 +474,7 @@ BOOL H245NegMasterSlaveDetermination::HandleAck(const H245_MasterSlaveDeterminat
   H323ControlPDU reply;
   if (state == e_Outgoing) {
     status = newStatus;
-    PTRACE(2, "H245\tMasterSlaveDetermination: remote is "
+    PTRACE(3, "H245\tMasterSlaveDetermination: remote is "
                   << (newStatus == e_DeterminedSlave ? "master" : "slave"));
     reply.BuildMasterSlaveDeterminationAck(newStatus == e_DeterminedMaster);
     if (!connection.WriteControlPDU(reply))
@@ -554,14 +558,22 @@ void H245NegMasterSlaveDetermination::HandleTimeout(PTimer &, INT)
 
 
 #if PTRACING
-const char * const H245NegMasterSlaveDetermination::StateNames[] = {
-  "Idle", "Outgoing", "Incoming"
-};
+const char * H245NegMasterSlaveDetermination::GetStateName(States s)
+{
+  static const char * const names[] = {
+    "Idle", "Outgoing", "Incoming"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 
 
-const char * const H245NegMasterSlaveDetermination::StatusNames[] = {
-  "Indeterminate", "DeterminedMaster", "DeterminedSlave"
-};
+const char * H245NegMasterSlaveDetermination::GetStatusName(MasterSlaveStatus s)
+{
+  static const char * const names[] = {
+    "Indeterminate", "DeterminedMaster", "DeterminedSlave"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 
@@ -583,12 +595,12 @@ BOOL H245NegTerminalCapabilitySet::Start(BOOL renegotiate, BOOL empty)
   PWaitAndSignal wait(mutex);
 
   if (state == e_InProgress) {
-    PTRACE(3, "H245\tTerminalCapabilitySet already in progress: outSeq=" << outSequenceNumber);
+    PTRACE(2, "H245\tTerminalCapabilitySet already in progress: outSeq=" << outSequenceNumber);
     return TRUE;
   }
 
   if (!renegotiate && state == e_Sent) {
-    PTRACE(3, "H245\tTerminalCapabilitySet already sent.");
+    PTRACE(2, "H245\tTerminalCapabilitySet already sent.");
     return TRUE;
   }
 
@@ -631,7 +643,7 @@ BOOL H245NegTerminalCapabilitySet::HandleIncoming(const H245_TerminalCapabilityS
 
   if (pdu.m_sequenceNumber == inSequenceNumber) {
     mutex.Signal();
-    PTRACE(3, "H245\tIgnoring TerminalCapabilitySet, already received sequence number");
+    PTRACE(2, "H245\tIgnoring TerminalCapabilitySet, already received sequence number");
     return TRUE;  // Already had this one
   }
 
@@ -678,7 +690,7 @@ BOOL H245NegTerminalCapabilitySet::HandleAck(const H245_TerminalCapabilitySetAck
 
   replyTimer.Stop();
   state = e_Sent;
-  PTRACE(2, "H245\tTerminalCapabilitySet Sent.");
+  PTRACE(3, "H245\tTerminalCapabilitySet Sent.");
   return TRUE;
 }
 
@@ -732,9 +744,13 @@ void H245NegTerminalCapabilitySet::HandleTimeout(PTimer &, INT)
 
 
 #if PTRACING
-const char * const H245NegTerminalCapabilitySet::StateNames[] = {
-  "Idle", "InProgress", "Sent"
-};
+const char * H245NegTerminalCapabilitySet::GetStateName(States s)
+{
+  static const char * const names[] = {
+    "Idle", "InProgress", "Sent"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 
@@ -787,7 +803,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
                                             unsigned replacementFor)
 {
   if (state != e_Released && state != e_AwaitingRelease) {
-    PTRACE(3, "H245\tOpen of channel currently in negotiations: " << channelNumber);
+    PTRACE(2, "H245\tOpen of channel currently in negotiations: " << channelNumber);
     return FALSE;
   }
 
@@ -805,14 +821,14 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
   H245_OpenLogicalChannel & open = pdu.BuildOpenLogicalChannel(channelNumber);
 
   if (!capability.OnSendingPDU(open.m_forwardLogicalChannelParameters.m_dataType)) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber
+    PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", capability.OnSendingPDU() failed");
     return FALSE;
   }
 
   channel = capability.CreateChannel(connection, H323Channel::IsTransmitter, sessionID, NULL);
   if (channel == NULL) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber
+    PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", capability.CreateChannel() failed");
     return FALSE;
   }
@@ -820,7 +836,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
   channel->SetNumber(channelNumber);
 
   if (!channel->OnSendingPDU(open)) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber
+    PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", channel->OnSendingPDU() failed");
     return FALSE;
   }
@@ -847,7 +863,7 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
     return FALSE;
 
   if (!channel->SetInitialBandwidth()) {
-    PTRACE(3, "H245\tOpening channel: " << channelNumber << ", Insufficient bandwidth");
+    PTRACE(2, "H245\tOpening channel: " << channelNumber << ", Insufficient bandwidth");
     return FALSE;
   }
 
@@ -1219,14 +1235,18 @@ H323Channel * H245NegLogicalChannel::GetChannel()
 
 
 #if PTRACING
-const char * const H245NegLogicalChannel::StateNames[] = {
-  "Released",
-  "AwaitingEstablishment",
-  "Established",
-  "AwaitingRelease",
-  "AwatingConfirmation",
-  "AwaitingResponse"
-};
+const char * H245NegLogicalChannel::GetStateName(States s)
+{
+  static const char * const names[] = {
+    "Released",
+    "AwaitingEstablishment",
+    "Established",
+    "AwaitingRelease",
+    "AwatingConfirmation",
+    "AwaitingResponse"
+  };
+  return s < PARRAYSIZE(names) ? names[s] : "<Unknown>";
+}
 #endif
 
 
@@ -1535,7 +1555,7 @@ BOOL H245NegRequestMode::StartRequest(const PString & newModes)
 
 BOOL H245NegRequestMode::StartRequest(const H245_ArrayOf_ModeDescription & newModes)
 {
-  PTRACE(1, "H245\tStarted request mode: outSeq=" << outSequenceNumber
+  PTRACE(3, "H245\tStarted request mode: outSeq=" << outSequenceNumber
          << (awaitingResponse ? " awaitingResponse" : " idle"));
 
   if (awaitingResponse)

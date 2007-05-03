@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2053.2.5  2007/03/29 21:45:56  hfriederich
+ * Revision 1.2053.2.6  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.52.2.5  2007/03/29 21:45:56  hfriederich
  * (Backport from HEAD)
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -421,15 +425,10 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
   return ok;
 }
 
-OpalConnection::AnswerCallResponse
-       OpalCall::OnAnswerCall(OpalConnection & /*connection*/,
-                               const PString & /*caller*/)
+OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & /*connection*/,
+                                                          const PString & /*caller*/)
 {
-  return OpalConnection::NumAnswerCallResponses;
-}
-
-void OpalCall::AnsweringCall(OpalConnection::AnswerCallResponse /*response*/)
-{
+  return OpalConnection::AnswerCallPending;
 }
 
 BOOL OpalCall::OnConnected(OpalConnection & connection)
@@ -569,7 +568,7 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
                                       const OpalMediaFormatList & mediaFormats,
                                       const OpalMediaType & mediaType)
 {
-  PTRACE(2, "Call\tOpenSourceMediaStreams for media type " << mediaType
+  PTRACE(3, "Call\tOpenSourceMediaStreams for media type " << mediaType
          << " with media " << setfill(',') << mediaFormats << setfill(' '));
 
   BOOL startedOne = FALSE;
@@ -631,6 +630,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   OpalMediaPatch * patch = NULL;
 
   {
+    // handle RTP payload translation
     RTP_DataFrame::PayloadMapType map;
     for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
       if (conn != &connection) {
@@ -639,28 +639,31 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     }
     if (map.size() == 0)
       map = connection.GetRTPPayloadMap();
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (conn != &connection) {
-        OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-        if (sink == NULL)
-          return FALSE;
-        if (source.RequiresPatch()) {
-          if (patch == NULL) {
-            patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
-            if (patch == NULL)
-              return FALSE;
+    
+    // if not coming from a NULL stream, setup the patch
+    if (!source.IsNull()) {
+      for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+        if (conn != &connection) {
+          OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
+          if (sink == NULL)
+            return FALSE;
+          if (source.RequiresPatch()) {
+            if (patch == NULL) {
+              patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
+              if (patch == NULL)
+                return FALSE;
+            }
+            patch->AddSink(sink, map);
           }
-          patch->AddSink(sink, map);
         }
       }
     }
   }
 
-  {
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (patch)
-        conn->OnPatchMediaStream(conn == &connection, *patch);
-    }
+  // if a patch was created, make sure the callback is called
+  if (patch) {
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
+      conn->OnPatchMediaStream(conn == &connection, *patch);
   }
   
   return TRUE;

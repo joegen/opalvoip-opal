@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2019.4.1  2007/03/20 00:32:48  hfriederich
+ * Revision 1.2019.4.2  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.18.4.1  2007/03/20 00:32:48  hfriederich
  * (Backport from HEAD)
  * Add ability to remove H.450
  *
@@ -378,7 +382,7 @@ void H450ServiceAPDU::BuildCallIntrusionForcedRelease(int invokeId,
 
 X880_ReturnResult& H450ServiceAPDU::BuildCallIntrusionForcedReleaseResult(int invokeId)
 {
-  PTRACE(1 ,"H450.11\tH450ServiceAPDU::BuildCallIntrusionForcedReleaseResult BEGIN");
+  PTRACE(3 ,"H450.11\tH450ServiceAPDU::BuildCallIntrusionForcedReleaseResult BEGIN");
   
   X880_ReturnResult& result = BuildReturnResult(invokeId);
   result.IncludeOptionalField(X880_ReturnResult::e_result);
@@ -630,7 +634,7 @@ BOOL H450xDispatcher::OnReceivedInvoke(X880_Invoke & invoke, H4501_Interpretatio
   if (invoke.m_opcode.GetTag() == X880_Code::e_local) {
     int opcode = ((PASN_Integer&) invoke.m_opcode).GetValue();
     if (!opcodeHandler.Contains(opcode)) {
-      PTRACE(2, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);	  
+      PTRACE(3, "H4501\tInvoke of unsupported local opcode:\n  " << invoke);	  
       if (interpretation.GetTag() != H4501_InterpretationApdu::e_discardAnyUnrecognizedInvokePdu)
         SendInvokeReject(invokeId, 1 /*X880_InvokeProblem::e_unrecognisedOperation*/);
       if (interpretation.GetTag() == H4501_InterpretationApdu::e_clearCallIfAnyInvokePduNotRecognized)
@@ -1528,7 +1532,7 @@ void H4502Handler::onReceivedAdmissionReject(const int returnError)
     // Send a FACILITY message back to the transferring party on the primary connection
     PSafePtr<H323Connection> primaryConnection = endpoint.FindConnectionWithLock(transferringCallToken);
     if (primaryConnection != NULL) {
-      PTRACE(3, "H4502\tReceived an Admission Reject at the Transferred Endpoint - aborting the transfer.");
+      PTRACE(2, "H4502\tReceived an Admission Reject at the Transferred Endpoint - aborting the transfer.");
       primaryConnection->HandleCallTransferFailure(returnError);
     }
   }
@@ -1791,7 +1795,7 @@ BOOL H4507Handler::OnReceivedInvoke(int opcode,
       break;
 
     default:
-      PTRACE(1, "H450.7\tOnReceivedInvoke, not an interrogate");
+      PTRACE(2, "H450.7\tOnReceivedInvoke, not an interrogate");
       currentInvokeId = 0;
       return FALSE;
   }
@@ -2474,17 +2478,10 @@ BOOL H45011Handler::OnReceivedInvokeReturnError(int errorCode, const bool timerE
   return result;
 }
 
-
-#if PTRACING
-#define PTRACE_errorCode errorCode
-#else
-#define PTRACE_errorCode
-#endif
-
-BOOL H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_errorCode,
+BOOL H45011Handler::OnReceivedGetCIPLReturnError(int PTRACE_PARAM(errorCode),
                                                  const bool timerExpiry)
 {
-  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode=" << PTRACE_errorCode);
+  PTRACE(4, "H450.11\tOnReceivedGetCIPLReturnError ErrorCode=" << errorCode);
   if(!timerExpiry){
     if (ciTimer.IsRunning()){
       ciTimer.Stop();
@@ -2622,19 +2619,10 @@ void H45011Handler::OnCallIntrudeTimeOut(PTimer &, INT)
   }
 }
 
-
-#if PTRACING
-#define PTRACE_problemType   problemType
-#define PTRACE_problemNumber problemNumber
-#else
-#define PTRACE_problemType
-#define PTRACE_problemNumber
-#endif
-
-BOOL H45011Handler::OnReceivedReject(int PTRACE_problemType, int PTRACE_problemNumber)
+BOOL H45011Handler::OnReceivedReject(int PTRACE_PARAM(problemType), int PTRACE_PARAM(problemNumber))
 {
   PTRACE(4, "H450.11\tH45011Handler::OnReceivedReject - problemType= "
-         << PTRACE_problemType << ", problemNumber= " << PTRACE_problemNumber);
+         << problemType << ", problemNumber= " << problemNumber);
 
   if (ciTimer.IsRunning()){
     ciTimer.Stop();

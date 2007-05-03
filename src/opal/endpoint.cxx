@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.7  2007/04/10 19:00:58  hfriederich
+ * Revision 1.2051.2.8  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.50.2.7  2007/04/10 19:00:58  hfriederich
  * Reorganization of the way transaction and transaction transitions are
  *   handled. More testing needed.
  *
@@ -311,7 +315,7 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   if (defaultLocalPartyName.IsEmpty())
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
-  PTRACE(3, "OpalEP\tCreated endpoint: " << prefixName);
+  PTRACE(4, "OpalEP\tCreated endpoint: " << prefixName);
 
   defaultSecurityMode = mgr.GetDefaultSecurityMode();
   
@@ -332,7 +336,7 @@ OpalEndPoint::~OpalEndPoint()
   }
 #endif
 
-  PTRACE(3, "OpalEP\t" << prefixName << " endpoint destroyed.");
+  PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
 BOOL OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
@@ -563,7 +567,7 @@ void OpalEndPoint::OnEstablished(OpalConnection & connection)
 
 void OpalEndPoint::OnReleased(OpalConnection & connection)
 {
-  PTRACE(2, "OpalEP\tOnReleased " << connection);
+  PTRACE(4, "OpalEP\tOnReleased " << connection);
   connectionsActive.RemoveAt(connection.GetToken());
   manager.OnReleased(connection);
 }

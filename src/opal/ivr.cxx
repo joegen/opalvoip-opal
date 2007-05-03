@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2018.2.5  2007/03/30 06:44:45  hfriederich
+ * Revision 1.2018.2.6  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.17.2.5  2007/03/30 06:44:45  hfriederich
  * (Backport from HEAD)
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connectino class they can create it without
@@ -167,13 +171,13 @@ OpalIVREndPoint::OpalIVREndPoint(OpalManager & mgr, const char * prefix)
 
   defaultMediaFormats += OpalPCM16;
 
-  PTRACE(3, "IVR\tCreated endpoint.");
+  PTRACE(4, "IVR\tCreated endpoint.");
 }
 
 
 OpalIVREndPoint::~OpalIVREndPoint()
 {
-  PTRACE(3, "IVR\tDeleted endpoint.");
+  PTRACE(4, "IVR\tDeleted endpoint.");
 }
 
 
@@ -267,13 +271,13 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
 {
   phase = SetUpPhase;
 
-  PTRACE(3, "IVR\tConstructed");
+  PTRACE(4, "IVR\tConstructed");
 }
 
 
 OpalIVRConnection::~OpalIVRConnection()
 {
-  PTRACE(3, "IVR\tDestroyed.");
+  PTRACE(4, "IVR\tDestroyed.");
 }
 
 
@@ -287,7 +291,7 @@ BOOL OpalIVRConnection::SetUpConnection()
       return FALSE;
     }
 
-    PTRACE(2, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    PTRACE(3, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return FALSE;
