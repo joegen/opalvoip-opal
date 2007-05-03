@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2036.4.1  2007/02/07 08:51:02  hfriederich
+ * Revision 1.2036.4.2  2007/05/03 10:37:49  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.35.4.1  2007/02/07 08:51:02  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -819,7 +823,7 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
   /// don't send GRQ if not requested
   if (!endpoint.GetSendGRQ() && !initialAddress.IsEmpty()) {
     StartChannel();
-    PTRACE(2, "RAS\tSkipping gatekeeper discovery for " << initialAddress);
+    PTRACE(3, "RAS\tSkipping gatekeeper discovery for " << initialAddress);
     return TRUE;
   }
 
@@ -849,7 +853,7 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
   transport->EndConnect(transport->GetLocalAddress());
 
   if (discoveryComplete) {
-    PTRACE(2, "RAS\tGatekeeper discovered at: "
+    PTRACE(3, "RAS\tGatekeeper discovered at: "
            << transport->GetRemoteAddress()
            << " (if=" << transport->GetLocalAddress() << ')');
     StartChannel();
@@ -929,7 +933,7 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
   }
 
   H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
-  PTRACE(2, "RAS\tGatekeeper discovery found " << locatedAddress);
+  PTRACE(3, "RAS\tGatekeeper discovery found " << locatedAddress);
 
   if (!transport->SetRemoteAddress(locatedAddress)) {
     PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
@@ -1171,7 +1175,7 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
       }
     }
     for (i = 0; i < aliasesToChange.GetSize(); i++) {
-      PTRACE(2, "RAS\tGatekeeper add of alias \"" << aliasesToChange[i] << '"');
+      PTRACE(3, "RAS\tGatekeeper add of alias \"" << aliasesToChange[i] << '"');
       endpoint.AddAliasName(aliasesToChange[i]);
     }
 
@@ -1186,7 +1190,7 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
         aliasesToChange.AppendString(currentAliases[i]);
     }
     for (i = 0; i < aliasesToChange.GetSize(); i++) {
-      PTRACE(2, "RAS\tGatekeeper removal of alias \"" << aliasesToChange[i] << '"');
+      PTRACE(3, "RAS\tGatekeeper removal of alias \"" << aliasesToChange[i] << '"');
       endpoint.RemoveAliasName(aliasesToChange[i]);
     }
   }
@@ -1227,7 +1231,7 @@ void H323Gatekeeper::RegistrationTimeToLive()
   PTRACE(3, "RAS\tTime To Live reregistration");
 
   if (requiresDiscovery) {
-    PTRACE(2, "RAS\tRepeating discovery on gatekeepers request.");
+    PTRACE(3, "RAS\tRepeating discovery on gatekeepers request.");
 
     H323RasPDU pdu;
     Request request(SetupGatekeeperRequest(pdu), pdu);
@@ -1333,16 +1337,16 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationReq
   if (!H225_RAS::OnReceiveUnregistrationRequest(urq))
     return FALSE;
 
-  PTRACE(2, "RAS\tUnregistration received");
+  PTRACE(3, "RAS\tUnregistration received");
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_gatekeeperIdentifier) ||
        urq.m_gatekeeperIdentifier.GetValue() != gatekeeperIdentifier) {
-    PTRACE(1, "RAS\tInconsistent gatekeeperIdentifier!");
+    PTRACE(2, "RAS\tInconsistent gatekeeperIdentifier!");
     return FALSE;
   }
 
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_endpointIdentifier) ||
        urq.m_endpointIdentifier.GetValue() != endpointIdentifier) {
-    PTRACE(1, "RAS\tInconsistent endpointIdentifier!");
+    PTRACE(2, "RAS\tInconsistent endpointIdentifier!");
     return FALSE;
   }
 
@@ -1360,7 +1364,7 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationReq
   BOOL ok = WritePDU(response);
 
   if (autoReregister) {
-    PTRACE(3, "RAS\tReregistering by setting timeToLive");
+    PTRACE(4, "RAS\tReregistering by setting timeToLive");
     reregisterNow = TRUE;
     monitorTickle.Signal();
   }
@@ -1694,13 +1698,13 @@ static void ExtractToken(const AdmissionRequestResponseInfo & info,
                          PBYTEArray & accessTokenData)
 {
   if (!info.accessTokenOID1 && tokens.GetSize() > 0) {
-    PTRACE(4, "Looking for OID " << info.accessTokenOID1 << " in ACF to copy.");
+    PTRACE(4, "RAS\tLooking for OID " << info.accessTokenOID1 << " in ACF to copy.");
     for (PINDEX i = 0; i < tokens.GetSize(); i++) {
       if (tokens[i].m_tokenOID == info.accessTokenOID1) {
-        PTRACE(4, "Looking for OID " << info.accessTokenOID2 << " in token to copy.");
+        PTRACE(4, "RAS\tLooking for OID " << info.accessTokenOID2 << " in token to copy.");
         if (tokens[i].HasOptionalField(H235_ClearToken::e_nonStandard) &&
             tokens[i].m_nonStandard.m_nonStandardIdentifier == info.accessTokenOID2) {
-          PTRACE(4, "Copying ACF nonStandard OctetString.");
+          PTRACE(4, "RAS\tCopying ACF nonStandard OctetString.");
           accessTokenData = tokens[i].m_nonStandard.m_data;
           break;
         }
@@ -2244,7 +2248,7 @@ void H323Gatekeeper::SetPassword(const PString & password,
 
 void H323Gatekeeper::MonitorMain(PThread &, INT)
 {
-  PTRACE(3, "RAS\tBackground thread started");
+  PTRACE(4, "RAS\tBackground thread started");
 
   for (;;) {
     monitorTickle.Wait();
@@ -2263,7 +2267,7 @@ void H323Gatekeeper::MonitorMain(PThread &, INT)
     }
   }
 
-  PTRACE(3, "RAS\tBackground thread ended");
+  PTRACE(4, "RAS\tBackground thread ended");
 }
 
 

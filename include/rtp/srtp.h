@@ -27,6 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: srtp.h,v $
+ * Revision 1.5.2.2  2007/05/03 10:37:49  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
  * Revision 1.5.2.1  2007/03/10 10:05:59  hfriederich
  * (Backport from HEAD)
  * SRTP/ZRTP improvements
@@ -66,7 +70,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/buildopts.h>
 #include <rtp/rtp.h>
 #include <opal/connection.h>
@@ -97,6 +104,7 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
   public:
     struct KeySalt {
       KeySalt()                                                       { }
+      KeySalt(const PBYTEArray & data)           : key(data)          { }
       KeySalt(const BYTE * data, PINDEX dataLen) : key(data, dataLen) { }
       PBYTEArray key;
       PBYTEArray salt;

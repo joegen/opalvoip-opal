@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2018.2.1  2007/03/11 11:55:12  hfriederich
+ * Revision 1.2018.2.2  2007/05/03 10:37:49  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.17.2.1  2007/03/11 11:55:12  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -175,12 +179,12 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
   if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
     return FALSE;
 
-  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, PVideoDevice::CIFWidth);
-  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, PVideoDevice::CIFHeight);
-  videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption, 15);
-  targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption, 64000);
-  dynamicVideoQuality = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption, false);
-  adaptivePacketDelay = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption, false);
+  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoDevice::CIFWidth);
+  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoDevice::CIFHeight);
+  videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption(), 15);
+  targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 64000);
+  dynamicVideoQuality = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption(), false);
+  adaptivePacketDelay = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), false);
   return TRUE;
 }
 
