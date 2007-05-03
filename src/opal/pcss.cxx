@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2040.2.4  2007/03/29 21:45:56  hfriederich
+ * Revision 1.2040.2.5  2007/05/03 10:37:51  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.39.2.4  2007/03/29 21:45:56  hfriederich
  * (Backport from HEAD)
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -255,13 +259,13 @@ OpalPCSSEndPoint::OpalPCSSEndPoint(OpalManager & mgr, const char * prefix)
   soundChannelBuffers = 2;
 #endif
 
-  PTRACE(3, "PCSS\tCreated PC sound system endpoint.");
+  PTRACE(4, "PCSS\tCreated PC sound system endpoint.");
 }
 
 
 OpalPCSSEndPoint::~OpalPCSSEndPoint()
 {
-  PTRACE(3, "PCSS\tDeleted PC sound system endpoint.");
+  PTRACE(4, "PCSS\tDeleted PC sound system endpoint.");
 }
 
 
@@ -269,17 +273,19 @@ static BOOL SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
                           PString & result)
 {
-  PStringArray devices = PSoundChannel::GetDeviceNames(dir);
-
   if (name[0] == '#') {
+    PStringArray devices = PSoundChannel::GetDeviceNames(dir);
     PINDEX id = name.Mid(1).AsUnsigned();
     if (id == 0 || id > devices.GetSize())
       return FALSE;
     result = devices[id-1];
   }
   else {
-    if (devices.GetValuesIndex(name) == P_MAX_INDEX)
+    PSoundChannel * pChannel = PSoundChannel::CreateChannelByName(name, dir);
+    if (pChannel == NULL)
       return FALSE;
+    
+    delete pChannel;
     result = name;
   }
 
@@ -356,17 +362,23 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
                                                      BOOL isSource)
 {
   PString deviceName;
-  if (isSource)
+  PSoundChannel::Directions dir;
+  if (isSource) {
     deviceName = connection.GetSoundChannelRecordDevice();
-  else
+    dir = PSoundChannel::Recorder;
+  } else {
     deviceName = connection.GetSoundChannelPlayDevice();
+    dir = PSoundChannel::Player;
+  }
 
-  PSoundChannel * soundChannel = new PSoundChannel;
+  PSoundChannel * soundChannel = PSoundChannel::CreateChannelByName(deviceName, dir);
+  if (soundChannel == NULL) {
+    PTRACE(1, "PCSS\tCould not create sound channel \"" << deviceName << "\" for "
+             << (isSource ? "record" : "play") << "ing.");
+    return NULL;
+  }
 
-  if (soundChannel->Open(deviceName,
-                         isSource ? PSoundChannel::Recorder
-                                  : PSoundChannel::Player,
-                         1, mediaFormat.GetClockRate(), 16)) {
+  if (soundChannel->Open(deviceName, dir, 1, mediaFormat.GetClockRate(), 16)) {
     PTRACE(3, "PCSS\tOpened sound channel \"" << deviceName
            << "\" for " << (isSource ? "record" : "play") << "ing.");
     return soundChannel;
@@ -381,11 +393,14 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 }
 
 
-void OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
+BOOL OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
   PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
-  if (connection != NULL)
-    connection->AcceptIncoming();
+  if (connection == NULL)
+    return FALSE;
+  
+  connection->AcceptIncoming();
+  return TRUE;
 }
 
 
@@ -433,13 +448,13 @@ OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
   silenceDetector = new OpalPCM16SilenceDetector;
   echoCanceler = new OpalEchoCanceler;
 
-  PTRACE(3, "PCSS\tCreated PC sound system connection with token '" << callToken << "'");
+  PTRACE(4, "PCSS\tCreated PC sound system connection with token '" << callToken << "'");
 }
 
 
 OpalPCSSConnection::~OpalPCSSConnection()
 {
-  PTRACE(3, "PCSS\tDeleted PC sound system connection.");
+  PTRACE(4, "PCSS\tDeleted PC sound system connection.");
 }
 
 
@@ -453,7 +468,7 @@ BOOL OpalPCSSConnection::SetUpConnection()
       return FALSE;
     }
 
-    PTRACE(2, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
+    PTRACE(3, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
       return FALSE;
@@ -474,10 +489,9 @@ BOOL OpalPCSSConnection::SetUpConnection()
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
   phase = AlertingPhase;
-  endpoint.OnShowIncoming(*this);
   OnAlerting();
 
-  return TRUE;
+  return endpoint.OnShowIncoming(*this);
 }
 
 
@@ -502,12 +516,6 @@ BOOL OpalPCSSConnection::SetConnected()
   }
 
   return TRUE;
-}
-
-
-PString OpalPCSSConnection::GetDestinationAddress()
-{
-  return endpoint.OnGetDestination(*this);
 }
 
 

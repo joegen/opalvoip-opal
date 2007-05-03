@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.4  2007/03/29 22:07:04  hfriederich
+ * Revision 1.2029.2.5  2007/05/03 10:37:51  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.28.2.4  2007/03/29 22:07:04  hfriederich
  * (Backport from HEAD)
  * Add extra logging
  *
@@ -259,6 +263,9 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
   RTP_DataFrame::PayloadTypes pt;
+    
+  if (input.GetPayloadSize()==0)
+    return TRUE;
 
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
