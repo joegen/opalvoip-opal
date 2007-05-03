@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073.2.4  2007/03/21 16:12:01  hfriederich
+ * Revision 1.2073.2.5  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.72.2.4  2007/03/21 16:12:01  hfriederich
  * Use CallEndReason from connection if call setup fails (Backport from HEAD)
  *
  * Revision 2.72.2.3  2007/03/20 09:33:57  hfriederich
@@ -423,7 +427,7 @@ OpalManager::OpalManager()
   devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
-    if ((devices[i] *= "yuvfile") || (devices[i] *= "fake"))
+    if ((devices[i] *= "*.yuv") || (devices[i] *= "fake"))
       continue;
     videoInputDevice.deviceName = devices[i];
     break;
@@ -432,9 +436,9 @@ OpalManager::OpalManager()
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   for (i = 0; i < devices.GetSize(); ++i) {
-    if ((devices[i] *= "yuvfile") || (devices[i] *= "null"))
+    if ((devices[i] *= "*.yuv") || (devices[i] *= "null"))
       continue;
-    videoInputDevice.deviceName = devices[i];
+    videoOutputDevice.deviceName = devices[i];
     break;
   }
   autoStartReceiveVideo = !videoOutputDevice.deviceName.IsEmpty();
@@ -450,7 +454,7 @@ OpalManager::OpalManager()
                                      PThread::LowPriority,
                                      "OpalGarbage");
 
-  PTRACE(3, "OpalMan\tCreated manager.");
+  PTRACE(4, "OpalMan\tCreated manager.");
 }
 
 #ifdef _MSC_VER
@@ -478,7 +482,7 @@ OpalManager::~OpalManager()
 
   delete stun;
 
-  PTRACE(3, "OpalMan\tDeleted manager.");
+  PTRACE(4, "OpalMan\tDeleted manager.");
 }
 
 
@@ -529,7 +533,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 {
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
-  OpalCall * call = CreateCall();
+  OpalCall * call = CreateCall(userData);
   token = call->GetToken();
 
   call->SetPartyB(partyB);
@@ -539,7 +543,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   // B-Party then SetUpConnection() gets called in the context of the A-party
   // thread.
   if (MakeConnection(*call, partyA, userData, options, stringOptions) && call->GetConnection(0)->SetUpConnection()) {
-    PTRACE(1, "SetUpCall succeeded, call=" << *call);
+    PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
     return TRUE;
   }
 
@@ -556,7 +560,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   }
 
   if (!activeCalls.RemoveAt(token)) {
-    PTRACE(1, "SetUpCall could not remove call from active call list");
+    PTRACE(2, "OpalMan\tSetUpCall could not remove call from active call list");
   }
 
   token.MakeEmpty();
@@ -639,12 +643,12 @@ void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 
 OpalCall * OpalManager::CreateCall()
 {
-  return CreateCall(NULL);
+  return new OpalCall(*this);
 }
 
 OpalCall * OpalManager::CreateCall(void * /*userData*/)
 {
-  return new OpalCall(*this);
+  return CreateCall();
 }
 
 
@@ -848,19 +852,15 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
                                          PVideoInputDevice * & device,
                                          BOOL & autoDelete)
 {
-  autoDelete = TRUE;
+  PVideoDevice::OpenArgs args = videoInputDevice;
+    
+  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
   device = PVideoInputDevice::CreateDeviceByName(videoInputDevice.deviceName);
 
-  if (device != NULL) {
-    videoInputDevice.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-    videoInputDevice.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
-    if (device->OpenFull(videoInputDevice, FALSE))
-      return TRUE;
-
-    delete device;
-  }
-
-  return FALSE;
+  autoDelete = TRUE;
+  device = PVideoInputDevice::CreateOpenedDevice(args);
+  return device != NULL;
 }
 
 
@@ -870,19 +870,14 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
                                           PVideoOutputDevice * & device,
                                           BOOL & autoDelete)
 {
-  const PVideoDevice::OpenArgs & args = preview ? videoPreviewDevice : videoOutputDevice;
+  // Make copy so we can adjust the size
+  PVideoDevice::OpenArgs & args = preview ? videoPreviewDevice : videoOutputDevice;
+  args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+  
   autoDelete = TRUE;
-  device = PVideoOutputDevice::CreateDeviceByName(args.deviceName);
-  if (device != NULL) {
-    videoOutputDevice.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-    videoOutputDevice.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
-    if (device->OpenFull(args, FALSE))
-      return TRUE;
-
-    delete device;
-  }
-
-  return FALSE;
+  device = PVideoOutputDevice::CreateOpenedDevice(args);
+  return device != NULL;
 }
 
 #endif // OPAL_VIDEO
@@ -1016,7 +1011,7 @@ BOOL OpalManager::AddRouteEntry(const PString & spec)
 
   RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
   if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
-    PTRACE(1, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
+    PTRACE(2, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
     delete entry;
     return FALSE;
   }
@@ -1168,7 +1163,7 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
   if (type != PSTUNClient::BlockedNat)
     stun->GetExternalAddress(translationAddress);
 
-  PTRACE(2, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << translationAddress);
+  PTRACE(3, "OPAL\tSTUN server \"" << server << "\" replies " << type << ", external IP " << translationAddress);
 
   return type;
 }
@@ -1279,42 +1274,49 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 
 #if OPAL_VIDEO
+template<class PVideoXxxDevice>
+static BOOL SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)
+{
+  // Check that the input device is legal
+  PVideoXxxDevice * pDevice = PVideoXxxDevice::CreateDeviceByName(args.deviceName, args.driverName, args.pluginMgr);
+  if (pDevice != NULL) {
+    delete pDevice;
+    member = args;
+    return TRUE;
+  }
+    
+  if (args.deviceName[0] != '#')
+    return FALSE;
+    
+  // Selected device by ordinal
+  PStringList devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
+  if (devices.IsEmpty())
+    return FALSE;
+    
+  PINDEX id = args.deviceName.Mid(1).AsUnsigned();
+  if (id <= 0 || id > devices.GetSize())
+    return FALSE;
+    
+  member = args;
+  member.deviceName = devices[id-1];
+  return TRUE;
+}
+
 BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
 {
-  PStringList drivers = PVideoInputDevice::GetDriverNames();
-  for (PINDEX i = 0; i < drivers.GetSize(); i++) {
-    PStringList devices = PVideoInputDevice::GetDriversDeviceNames(drivers[i]);
-    if (args.deviceName[0] == '#') {
-      PINDEX id = args.deviceName.Mid(1).AsUnsigned();
-      if (id > 0 && id <= devices.GetSize()) {
-        videoInputDevice = args;
-        videoInputDevice.deviceName = devices[id-1];
-        return TRUE;
-      }
-    }
-    else {
-      if (devices.GetValuesIndex(args.deviceName) != P_MAX_INDEX) {
-        videoInputDevice = args;
-        return TRUE;
-      }
-    }
-  }
-
-  return FALSE;
+  return SetVideoDevice<PVideoInputDevice>(args, videoInputDevice);
 }
 
 
 BOOL OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
 {
-  videoPreviewDevice = args;
-  return TRUE;
+  return SetVideoDevice<PVideoOutputDevice>(args, videoPreviewDevice);
 }
 
 
 BOOL OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 {
-  videoOutputDevice = args;
-  return TRUE;
+  return SetVideoDevice<PVideoOutputDevice>(args, videoOutputDevice);
 }
 
 #endif
@@ -1367,6 +1369,18 @@ BOOL OpalManager::UseRTPAggregation() const
 #else
   return FALSE;
 #endif
+}
+
+void OpalManager::OnStartRecordAudio(OpalConnection & /*conn*/, INT /*id*/, BOOL /*isSource*/)
+{
+}
+
+void OpalManager::OnStopRecordAudio(OpalConnection & /*conn*/)
+{
+}
+
+void OpalManager::OnRecordAudio(OpalConnection & /*conn*/, INT /*id*/, RTP_DataFrame & /*frame*/)
+{
 }
 
 /////////////////////////////////////////////////////////////////////////////

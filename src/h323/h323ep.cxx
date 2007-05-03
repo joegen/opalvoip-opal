@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062.2.4  2007/03/30 06:44:45  hfriederich
+ * Revision 1.2062.2.5  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.61.2.4  2007/03/30 06:44:45  hfriederich
  * (Backport from HEAD)
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connectino class they can create it without
@@ -162,14 +166,10 @@
 
 #define new PNEW
 
-#if !PTRACING // Stuff to remove unised parameters warning
-#define PTRACE_isEncoding
-#define PTRACE_channel
-#endif
-
 BYTE H323EndPoint::defaultT35CountryCode    = 9; // Country code for Australia
 BYTE H323EndPoint::defaultT35Extension      = 0;
 WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Communications Authority, Oct 2000;
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -240,7 +240,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
   features.LoadFeatureSet(H460_Feature::FeatureBase);
 #endif
 
-  PTRACE(3, "H323\tCreated endpoint.");
+  PTRACE(4, "H323\tCreated endpoint.");
 }
 
 
@@ -252,7 +252,7 @@ H323EndPoint::~H323EndPoint()
   // Shut down the listeners as soon as possible to avoid race conditions
   listeners.RemoveAll();
 
-  PTRACE(3, "H323\tDeleted endpoint.");
+  PTRACE(4, "H323\tDeleted endpoint.");
 }
 
 
@@ -399,7 +399,7 @@ BOOL H323EndPoint::UseGatekeeper(const PString & address,
       same = gatekeeper->GetTransport().GetLocalAddress().IsEquivalent(localAddress);
 
     if (same) {
-      PTRACE(2, "H323\tUsing existing gatekeeper " << *gatekeeper);
+      PTRACE(3, "H323\tUsing existing gatekeeper " << *gatekeeper);
       return TRUE;
     }
   }
@@ -566,7 +566,7 @@ H235Authenticators H323EndPoint::CreateAuthenticators()
   for (r = keyList.begin(); r != keyList.end(); ++r)
     authenticators.Append(PFactory<H235Authenticator>::CreateInstance(*r));
 
-  PTRACE(1, "Authenticator list is size " << (int)authenticators.GetSize());
+  PTRACE(3, "H323\tAuthenticator list is size " << (int)authenticators.GetSize());
 
   return authenticators;
 }
@@ -578,7 +578,7 @@ BOOL H323EndPoint::MakeConnection(OpalCall & call,
                             unsigned int options,
                             OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(2, "H323\tMaking call to: " << remoteParty);
+  PTRACE(3, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
                           PString::Empty(),
                           PString::Empty(),
@@ -616,7 +616,7 @@ BOOL H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
 
   if (connection == NULL) {
-    connection = CreateConnection(*manager.CreateCall(), token, NULL,
+    connection = CreateConnection(*manager.CreateCall(NULL), token, NULL,
                                   *transport, PString::Empty(), PString::Empty(), &pdu);
     if (!AddConnection(connection)) {
       PTRACE(1, "H225\tEndpoint could not create connection, "
@@ -693,7 +693,7 @@ BOOL H323EndPoint::SetupTransfer(const PString & oldToken,
 
   call.RemoveMediaStreams();
 
-  PTRACE(2, "H323\tTransferring call to: " << remoteParty);
+  PTRACE(3, "H323\tTransferring call to: " << remoteParty);
   BOOL ok = InternalMakeCall(call,
 			     oldToken,
 			     callIdentity,
@@ -815,7 +815,7 @@ BOOL H323EndPoint::IntrudeCall(const PString & remoteParty,
                                unsigned capabilityLevel,
                                void * userData)
 {
-  return InternalMakeCall(*manager.CreateCall(),
+  return InternalMakeCall(*manager.CreateCall(NULL),
                           PString::Empty(),
                           PString::Empty(),
                           capabilityLevel,
@@ -1103,7 +1103,7 @@ BOOL H323EndPoint::OnAlerting(H323Connection & connection,
                               const H323SignalPDU & /*alertingPDU*/,
                               const PString & /*username*/)
 {
-  PTRACE(1, "H225\tReceived alerting PDU.");
+  PTRACE(3, "H225\tReceived alerting PDU.");
   ((OpalConnection&)connection).OnAlerting();
   return TRUE;
 }
@@ -1166,7 +1166,7 @@ BOOL H323EndPoint::IsConnectionEstablished(const PString & token)
 BOOL H323EndPoint::OnOutgoingCall(H323Connection & /*connection*/,
                                   const H323SignalPDU & /*connectPDU*/)
 {
-  PTRACE(1, "H225\tReceived connect PDU.");
+  PTRACE(3, "H225\tReceived connect PDU.");
   return TRUE;
 }
 
@@ -1195,7 +1195,7 @@ static void OnStartStopChannel(const char * startstop, const H323Channel & chann
       break;
   }
 
-  PTRACE(2, "H323\t" << startstop << "ed "
+  PTRACE(3, "H323\t" << startstop << "ed "
                      << dir << "ing logical channel: "
                      << channel.GetCapability());
 }
@@ -1203,20 +1203,20 @@ static void OnStartStopChannel(const char * startstop, const H323Channel & chann
 
 
 BOOL H323EndPoint::OnStartLogicalChannel(H323Connection & /*connection*/,
-                                         H323Channel & PTRACE_channel)
+                                         H323Channel & PTRACE_PARAM(channel))
 {
 #if PTRACING
-  OnStartStopChannel("Start", PTRACE_channel);
+  OnStartStopChannel("Start", channel);
 #endif
   return TRUE;
 }
 
 
 void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
-                                          const H323Channel & PTRACE_channel)
+                                          const H323Channel & PTRACE_PARAM(channel))
 {
 #if PTRACING
-  OnStartStopChannel("Stopp", PTRACE_channel);
+  OnStartStopChannel("Stopp", channel);
 #endif
 }
 

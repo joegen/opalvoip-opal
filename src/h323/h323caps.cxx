@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2028.2.3  2007/02/11 09:41:17  hfriederich
+ * Revision 1.2028.2.4  2007/05/03 10:37:50  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.27.2.3  2007/02/11 09:41:17  hfriederich
  * Give capabilities access to media packetization information when sending
  * TCS and OLC
  *
@@ -929,19 +933,19 @@ H323Capability::MainTypes H323AudioCapability::GetMainType() const
 
 void H323AudioCapability::SetTxFramesInPacket(unsigned frames)
 {
-  GetWritableMediaFormat().SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption, frames);
+  GetWritableMediaFormat().SetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), frames);
 }
 
 
 unsigned H323AudioCapability::GetTxFramesInPacket() const
 {
-  return GetMediaFormat().GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption, 1);
+  return GetMediaFormat().GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
 }
 
 
 unsigned H323AudioCapability::GetRxFramesInPacket() const
 {
-  return GetMediaFormat().GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption, 1);
+  return GetMediaFormat().GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), 1);
 }
 
 
@@ -1742,7 +1746,7 @@ BOOL H323_GSM0610Capability::OnReceivedPDU(const H245_AudioCapability & cap,
 
 /////////////////////////////////////////////////////////////////////////////
 
-const char * const H323_UserInputCapability::SubTypeNames[NumSubTypes] = {
+static const char * const UIISubTypeNames[H323_UserInputCapability::NumSubTypes] = {
   "UserInput/basicString",
   "UserInput/iA5String",
   "UserInput/generalString",
@@ -1750,6 +1754,11 @@ const char * const H323_UserInputCapability::SubTypeNames[NumSubTypes] = {
   "UserInput/hookflash",
   OPAL_RFC2833
 };
+
+const char * H323_UserInputCapability::GetSubTypeName(SubTypes s)
+{
+  return s < PARRAYSIZE(UIISubTypeNames) ? UIISubTypeNames[s] : "<Unknown>";
+}
 
 #define DECLARE_USER_INPUT_CLASS(type) \
 class H323_UserInputCapability_##type : public H323_UserInputCapability \
@@ -1762,10 +1771,10 @@ class H323_UserInputCapability_##type : public H323_UserInputCapability \
 #define DEFINE_USER_INPUT(type) \
   DECLARE_USER_INPUT_CLASS(type) \
   const OpalMediaFormat UserInput_##type( \
-    H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type], \
+    UIISubTypeNames[H323_UserInputCapability::type], \
     OpalUnknownMediaType, RTP_DataFrame::IllegalPayloadType, NULL, FALSE, 1, 0, 0, 0 \
   ); \
-  H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::type]) \
+  H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, UIISubTypeNames[H323_UserInputCapability::type]) \
 
 DEFINE_USER_INPUT(BasicString);
 DEFINE_USER_INPUT(IA5String);
@@ -1774,7 +1783,7 @@ DEFINE_USER_INPUT(SignalToneH245);
 DEFINE_USER_INPUT(HookFlashH245);
 
 DECLARE_USER_INPUT_CLASS(SignalToneRFC2833)
-H323_REGISTER_CAPABILITY(H323_UserInputCapability_SignalToneRFC2833, H323_UserInputCapability::SubTypeNames[H323_UserInputCapability::SignalToneRFC2833])
+H323_REGISTER_CAPABILITY(H323_UserInputCapability_SignalToneRFC2833, UIISubTypeNames[H323_UserInputCapability::SignalToneRFC2833])
 
 H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
 {
@@ -1814,7 +1823,7 @@ unsigned  H323_UserInputCapability::GetSubType()  const
 
 PString H323_UserInputCapability::GetFormatName() const
 {
-  return SubTypeNames[subType];
+  return UIISubTypeNames[subType];
 }
 
 
@@ -2697,7 +2706,7 @@ BOOL H323Capabilities::IsAllowed(const H323Capability & capability1,
 BOOL H323Capabilities::IsAllowed(const unsigned a_capno1, const unsigned a_capno2)
 {
   if (a_capno1 == a_capno2) {
-    PTRACE(1, "H323\tH323Capabilities::IsAllowed() capabilities are the same.");
+    PTRACE(2, "H323\tH323Capabilities::IsAllowed() capabilities are the same.");
     return TRUE;
   }
 
