@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2018.4.4  2007/02/12 19:38:38  hfriederich
+ * Revision 1.2018.4.5  2007/05/03 10:37:46  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.17.4.4  2007/02/12 19:38:38  hfriederich
  * Give capabilities only access to OLC media packetization parameters.
  * Ensure these callbacks are called before a channel is created
  *
@@ -2063,7 +2067,8 @@ class H323_UserInputCapability : public H323Capability
       SignalToneRFC2833,
       NumSubTypes
     };
-    static const char * const SubTypeNames[NumSubTypes];
+    static const char * GetSubTypeName(SubTypes subType);
+    friend ostream & operator<<(ostream & strm, SubTypes subType) { return strm << GetSubTypeName(subType); }
 
     /**Create the capability for User Input.
        The subType parameter is a value from the enum
