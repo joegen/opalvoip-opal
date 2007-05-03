@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2028.2.2  2007/02/10 23:07:21  hfriederich
+ * Revision 1.2028.2.3  2007/05/03 10:37:47  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.27.2.2  2007/02/10 23:07:21  hfriederich
  * Allow to adjust media formats between connections.
  * Allow H323 capabilities to update their state based on media formats.
  *
@@ -273,13 +277,25 @@ class OpalCall : public PSafeObject
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
-    virtual OpalConnection::AnswerCallResponse
-       OnAnswerCall(OpalConnection & connection,
-                     const PString & caller
-    );
-
-    virtual void AnsweringCall(
-      OpalConnection::AnswerCallResponse response ///<  Answer response to incoming call
+    /**Call back for answering an incoming call.
+        This function is called after the connection has been acknowledged
+        but before the connection is established
+        
+        This gives the application time to wait for some event before
+        signalling to the endpoint that the connection is to proceed. For
+        example the user pressing an "Answer call" button.
+        
+        If AnswerCallDenied is returned the connection is aborted and the
+        connetion specific end call PDU is sent. If AnswerCallNow is returned 
+        then the connection proceeding, Finally if AnswerCallPending is returned then the
+        protocol negotiations are paused until the AnsweringCall() function is
+        called.
+        
+        The default behaviour returns AnswerCallPending.
+    */
+    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
+      OpalConnection & connection,
+      const PString & caller
     );
 
     /**A call back function whenever a connection is "connected".
@@ -350,7 +366,7 @@ class OpalCall : public PSafeObject
        This will also add to the list all media formats for which there are
        transcoders registered.
       */
-    OpalMediaFormatList GetMediaFormats(
+    virtual OpalMediaFormatList GetMediaFormats(
       const OpalConnection & connection,  ///<  Connection requesting formats
       BOOL includeSpecifiedConnection     ///<  Include parameters media
     );

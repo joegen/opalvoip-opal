@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2008.10.1  2007/02/07 08:51:01  hfriederich
+ * Revision 1.2008.10.2  2007/05/03 10:37:47  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.7.10.1  2007/02/07 08:51:01  hfriederich
  * New branch with major revision of the core Opal media format handling system.
  *
  * - Session IDs have been replaced by new OpalMediaType class.
@@ -238,8 +242,8 @@ class H245NegMasterSlaveDetermination : public H245Negotiator
       e_NumStates
     } state;
 #if PTRACING
-    static const char * const StateNames[e_NumStates];
-    friend ostream & operator<<(ostream & o, States s) { return o << StateNames[s]; }
+    static const char * GetStateName(States s);
+    friend ostream & operator<<(ostream & o, States s) { return o << GetStateName(s); }
 #endif
 
     DWORD    determinationNumber;
@@ -250,8 +254,8 @@ class H245NegMasterSlaveDetermination : public H245Negotiator
       e_NumStatuses
     } status;
 #if PTRACING
-    static const char * const StatusNames[e_NumStatuses];
-    friend ostream & operator<<(ostream & o , MasterSlaveStatus s) { return o << StatusNames[s]; }
+    static const char * GetStatusName(MasterSlaveStatus s);
+    friend ostream & operator<<(ostream & o , MasterSlaveStatus s) { return o << GetStatusName(s); }
 #endif
 };
 
@@ -282,8 +286,8 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
       e_NumStates
     } state;
 #if PTRACING
-    static const char * const StateNames[e_NumStates];
-    friend ostream & operator<<(ostream & o, States s) { return o << StateNames[s]; }
+    static const char * GetStateName(States s);
+    friend ostream & operator<<(ostream & o, States s) { return o << GetStateName(s); }
 #endif
 
     unsigned inSequenceNumber;
@@ -353,8 +357,8 @@ class H245NegLogicalChannel : public H245Negotiator
       e_NumStates
     } state;
 #if PTRACING
-    static const char * const StateNames[e_NumStates];
-    friend ostream & operator<<(ostream & o, States s) { return o << StateNames[s]; }
+    static const char * GetStateName(States s);
+    friend ostream & operator<<(ostream & o, States s) { return o << GetStateName(s); }
 #endif
 
 

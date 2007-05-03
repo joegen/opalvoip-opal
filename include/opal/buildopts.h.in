@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.24.2.4  2007/05/03 10:37:47  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
  * Revision 1.24.2.3  2007/03/20 08:38:07  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
@@ -126,6 +130,7 @@
 #ifndef _OPAL_BUILDOPTS_H
 #define _OPAL_BUILDOPTS_H
 
+#include <ptbuildopts.h>
 
 /////////////////////////////////////////////////
 //
@@ -167,7 +172,11 @@
 //
 
 #undef  OPAL_AUDIO
+
+#if P_VIDEO
 #undef  OPAL_VIDEO
+#endif
+
 #undef  OPAL_T38FAX
 
 #ifndef OPAL_AUDIO
@@ -229,9 +238,9 @@
 
 
 #ifdef _DEBUG
-#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Debug/srtp.lib"
+#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Debug/libsrtp.lib"
 #else
-#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/srtp.lib"
+#define LIBSRTP_LIBRARY "@LIBSRTP_DIR@/Release/libsrtp.lib"
 #endif
 
 #endif

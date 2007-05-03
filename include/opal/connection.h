@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071.2.4  2007/03/20 09:33:57  hfriederich
+ * Revision 1.2071.2.5  2007/05/03 10:37:47  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.70.2.4  2007/03/20 09:33:57  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
  *   such as H.450 and H.460.
@@ -659,7 +663,7 @@ class OpalConnection : public PSafeObject
        protocol negotiations are paused until the AnsweringCall() function is
        called.
 
-       The default behaviour simply returns AnswerNow.
+       The default behaviour calls the endpoint function of the same name.
      */
     virtual AnswerCallResponse OnAnswerCall(
       const PString & callerName        ///<  Name of caller
@@ -1370,12 +1374,15 @@ class OpalConnection : public PSafeObject
     virtual BOOL OnOpenIncomingMediaChannels();
     
     virtual void ApplyStringOptions();
+    
+    virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
+    PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
 
   // Member variables
     OpalCall             & ownerCall;
