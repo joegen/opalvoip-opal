@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.7  2007/03/20 00:46:01  hfriederich
+ * Revision 1.2058.2.8  2007/05/03 10:37:47  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.57.2.7  2007/03/20 00:46:01  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol
  *   options such as H.450 and H.460
@@ -2324,6 +2328,8 @@ class H323Connection : public OpalConnection
 
     virtual BOOL OnOpenIncomingMediaChannels();
     
+    virtual OpalMediaFormatList GetLocalMediaFormats();
+    
     unsigned GetRTPSessionIDForMediaType(const OpalMediaType & mediaType);
     void RegisterRTPSessionIDForMediaType(const OpalMediaType & mediaType, unsigned sessionID);
     
@@ -2426,10 +2432,10 @@ class H323Connection : public OpalConnection
     OpalMediaStream      * transmitterMediaStream;
 
 #if PTRACING
-    static const char * const ConnectionStatesNames[NumConnectionStates];
-    friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << ConnectionStatesNames[s]; }
-    static const char * const FastStartStateNames[NumFastStartStates];
-    friend ostream & operator<<(ostream & o, FastStartStates s) { return o << FastStartStateNames[s]; }
+    static const char * GetConnectionStatesName(ConnectionStates s);
+    friend ostream & operator<<(ostream & o, ConnectionStates s) { return o << GetConnectionStatesName(s); }
+    static const char * GetFastStartStateName(FastStartStates s);
+    friend ostream & operator<<(ostream & o, FastStartStates s) { return o << GetFastStartStateName(s); }
 #endif
 
 

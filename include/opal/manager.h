@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2057.2.2  2007/03/20 09:33:57  hfriederich
+ * Revision 1.2057.2.3  2007/05/03 10:37:47  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.56.2.2  2007/03/20 09:33:57  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol options
  *   such as H.450 and H.460.
@@ -1219,6 +1223,10 @@ class OpalManager : public PObject
     { return defaultSecurityMode; }
 
     virtual BOOL UseRTPAggregation() const;
+    
+    virtual void OnStartRecordAudio(OpalConnection & connection, INT id, BOOL isSource);
+    virtual void OnStopRecordAudio(OpalConnection & connection);
+    virtual void OnRecordAudio(OpalConnection & connection, INT id, RTP_DataFrame & frame);
 
   protected:
     // Configuration variables
