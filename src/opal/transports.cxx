@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.3  2007/03/29 22:11:30  hfriederich
+ * Revision 1.2072.2.4  2007/05/03 10:37:51  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.71.2.3  2007/03/29 22:11:30  hfriederich
  * (Backport from HEAD)
  * Fixed deadlock in UDP multi-interface connect algorithm
  *
@@ -1614,7 +1618,7 @@ BOOL OpalTransportTCP::ReadPDU(PBYTEArray & pdu)
   if (ok) {
     PINDEX packetLength = ((header[1] << 8)|header[2]);
     if (packetLength < 4) {
-      PTRACE(1, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
+      PTRACE(2, "H323TCP\tDwarf PDU received (length " << packetLength << ")");
       ok = FALSE;
     } else {
       packetLength -= 4;
@@ -1678,7 +1682,7 @@ BOOL OpalTransportTCP::OnOpen()
   }
 #endif
 
-  PTRACE(1, "OpalTCP\tStarted connection to "
+  PTRACE(3, "OpalTCP\tStarted connection to "
          << remoteAddress << ':' << remotePort
          << " (if=" << localAddress << ':' << localPort << ')');
 
@@ -1818,10 +1822,10 @@ BOOL OpalTransportUDP::Connect()
 
   if (remoteAddress == 0) {
     remoteAddress = INADDR_BROADCAST;
-    PTRACE(2, "OpalUDP\tBroadcast connect to port " << remotePort);
+    PTRACE(3, "OpalUDP\tBroadcast connect to port " << remotePort);
   }
   else {
-	PTRACE(2, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
+	PTRACE(3, "OpalUDP\tStarted connect to " << remoteAddress << ':' << remotePort);
   }
 
   OpalManager & manager = endpoint.GetManager();
@@ -2084,7 +2088,7 @@ BOOL OpalTransportUDP::Read(void * buffer, PINDEX length)
     if (remoteAddress *= address)
       return TRUE;
 
-    PTRACE(1, "UDP\tReceived PDU from incorrect host: " << address << ':' << port);
+    PTRACE(2, "UDP\tReceived PDU from incorrect host: " << address << ':' << port);
   }
 }
 
@@ -2303,7 +2307,7 @@ BOOL OpalTransportTCPS::OnOpen()
   }
 #endif
 
-  PTRACE(1, "OpalTCPS\tStarted connection to "
+  PTRACE(3, "OpalTCPS\tStarted connection to "
          << remoteAddress << ':' << remotePort
          << " (if=" << localAddress << ':' << localPort << ')');
 

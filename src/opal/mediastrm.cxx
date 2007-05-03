@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.5  2007/03/29 21:45:56  hfriederich
+ * Revision 1.2053.2.6  2007/05/03 10:37:51  hfriederich
+ * Backport from HEAD.
+ * All changes since Apr 1, 2007
+ *
+ * Revision 2.52.2.5  2007/03/29 21:45:56  hfriederich
  * (Backport from HEAD)
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and
@@ -698,6 +702,16 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
 {
 }
 
+#if OPAL_VIDEO
+BOOL OpalRTPMediaStream::ExecuteCommand(const OpalMediaCommand & command,
+                                        BOOL isEndOfChain)
+{
+  if (isEndOfChain && PIsDescendant(&command, OpalVideoUpdatePicture))
+    rtpSession.SendIntraFrameRequest();
+    
+  return OpalMediaStream::ExecuteCommand(command, isEndOfChain);
+}
+#endif
 
 BOOL OpalRTPMediaStream::Open()
 {
@@ -867,7 +881,7 @@ BOOL OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & 
 
 BOOL OpalRawMediaStream::Close()
 {
-  PTRACE(1, "Media\tClosing raw media stream " << *this);
+  PTRACE(3, "Media\tClosing raw media stream " << *this);
   if (!OpalMediaStream::Close())
     return FALSE;
 
@@ -934,6 +948,42 @@ BOOL OpalFileMediaStream::IsSynchronous() const
 }
 
 
+BOOL OpalFileMediaStream::ReadData(
+  BYTE * data,      ///<  Data buffer to read to
+  PINDEX size,      ///<  Size of buffer
+  PINDEX & length   ///<  Length of data actually read
+)
+{
+  if (!OpalRawMediaStream::ReadData(data, size, length))
+    return FALSE;
+    
+  // only delay if audio
+  if (mediaFormat.GetMediaType() == OpalDefaultAudioMediaType)
+    fileDelay.Delay(length/16);
+    
+  return TRUE;
+}
+
+/**Write raw media data to the sink media stream.
+The default behaviour writes to the PChannel object.
+*/
+BOOL OpalFileMediaStream::WriteData(
+  const BYTE * data,   ///<  Data to write
+  PINDEX length,       ///<  Length of data to read.
+  PINDEX & written     ///<  Length of data actually written
+)
+{
+  if (!OpalRawMediaStream::WriteData(data, length, written))
+    return FALSE;
+    
+  // only delay if audio
+  if (mediaFormat.GetMediaType() == OpalDefaultAudioMediaType)
+    fileDelay.Delay(written/16);
+    
+  return TRUE;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_AUDIO
@@ -957,7 +1007,8 @@ OpalAudioMediaStream::OpalAudioMediaStream(OpalConnection & conn,
                                            PINDEX buffers,
                                            const PString & deviceName)
   : OpalRawMediaStream(conn, mediaFormat, isSource,
-                       new PSoundChannel(deviceName,
+                       PSoundChannel::CreateOpenedChannel(PString::Empty(),
+                                                         deviceName,
                                          isSource ? PSoundChannel::Recorder
                                                   : PSoundChannel::Player,
                                          1, mediaFormat.GetClockRate(), 16),
@@ -1034,15 +1085,15 @@ BOOL OpalVideoMediaStream::Open()
   if (isOpen)
     return TRUE;
 
-  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption, 176);
-  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption, 144);
+  unsigned width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+  unsigned height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
   if (inputDevice != NULL) {
     if (!inputDevice->SetColourFormatConverter(mediaFormat)) {
       PTRACE(1, "Media\tCould not set colour format in grabber to " << mediaFormat);
       return FALSE;
     }
-    if (!inputDevice->SetFrameSizeConverter(width, height, FALSE)) {
+    if (!inputDevice->SetFrameSizeConverter(width, height)) {
       PTRACE(1, "Media\tCould not set frame size in grabber to " << width << 'x' << height << " in " << mediaFormat);
       return FALSE;
     }
@@ -1058,7 +1109,7 @@ BOOL OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not set colour format in video display to " << mediaFormat);
       return FALSE;
     }
-    if (!outputDevice->SetFrameSizeConverter(width, height, FALSE)) {
+    if (!outputDevice->SetFrameSizeConverter(width, height)) {
       PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
       return FALSE;
     }
@@ -1178,7 +1229,7 @@ BOOL OpalUDPMediaStream::ReadPacket(RTP_DataFrame & Packet)
 
   PBYTEArray rawData;
   if (!udpTransport.ReadPDU(rawData)) {
-    PTRACE(3, "Read on UDP transport failed: "
+    PTRACE(2, "Media\tRead on UDP transport failed: "
        << udpTransport.GetErrorText() << " transport: " << udpTransport);
     return FALSE;
   }
@@ -1200,7 +1251,7 @@ BOOL OpalUDPMediaStream::WritePacket(RTP_DataFrame & Packet)
 
   if (Packet.GetPayloadSize() > 0) {
     if (!udpTransport.Write(Packet.GetPayloadPtr(), Packet.GetPayloadSize())) {
-      PTRACE(3, "Media\tWrite on UDP transport failed: "
+      PTRACE(2, "Media\tWrite on UDP transport failed: "
          << udpTransport.GetErrorText() << " transport: " << udpTransport);
       return FALSE;
     }
