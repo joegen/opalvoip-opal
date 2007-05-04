@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2047  2007/04/21 13:49:15  dsandras
+ * Revision 1.2048  2007/05/04 15:24:20  vfrolov
+ * Fixed Assertion fail in SetAttribute() if empty formats list
+ *
+ * Revision 2.46  2007/04/21 13:49:15  dsandras
  * Allow a different connect address per media description. Fixes
  * Ekiga bug #430870.
  *
@@ -618,13 +621,14 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // find the format that matches the payload type
-  PINDEX fmt = 0;
-  while (formats[fmt].GetPayloadType() != pt) {
-    fmt++;
+  PINDEX fmt;
+  for (fmt = 0 ;; fmt++) {
     if (fmt >= formats.GetSize()) {
       PTRACE(2, "SDP\tMedia attribute " << attr << " found for unknown RTP type " << pt);
       return;
     }
+    if (formats[fmt].GetPayloadType() == pt)
+      break;
   }
   SDPMediaFormat & format = formats[fmt];
 
