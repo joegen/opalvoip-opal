@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2021.2.2  2007/02/16 10:43:41  hfriederich
+ * Revision 1.2021.2.3  2007/05/04 09:51:29  hfriederich
+ * Backport from HEAD - Changes since Apr 1, 2007
+ *
+ * Revision 2.20.2.2  2007/02/16 10:43:41  hfriederich
  * - Extend SDP capability system for merging local / remote format parameters.
  * - Propagate media format options to the media streams
  *
@@ -217,7 +220,7 @@ class SDPMediaDescription : public PObject
     const OpalMediaType & GetMediaType() const;
     
     const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
-    void SetTransportAddress(const OpalTransportAddress & _transportAddress) { transportAddress = _transportAddress; }
+    BOOL SetTransportAddress(const OpalTransportAddress & _transportAddress);
     
     WORD GetPortCount() const { return portCount; }
     void SetPortCount(WORD _portCount) { portCount = _portCount; }
@@ -314,8 +317,8 @@ class SDPSessionDescription : public PObject
 	PINDEX GetBandwidthValue() const { return bandwidthValue; }
 	void SetBandwidthValue(PINDEX value) { bandwidthValue = value; }
 
-	static const char * const ConferenceTotalBandwidthModifier;
-	static const char * const ApplicationSpecificBandwidthModifier;
+	static const PString & ConferenceTotalBandwidthModifier();
+	static const PString & ApplicationSpecificBandwidthModifier();
 
   protected:
     void ParseOwner(const PString & str);

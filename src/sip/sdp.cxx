@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2042.2.3  2007/03/11 11:55:13  hfriederich
+ * Revision 1.2042.2.4  2007/05/04 09:51:29  hfriederich
+ * Backport from HEAD - Changes since Apr 1, 2007
+ *
+ * Revision 2.41.2.3  2007/03/11 11:55:13  hfriederich
  * Make MaxPayloadType a valid type, use IllegalPayloadType for internal media
  *   formats.
  * If possible, use the payload type specified by the media format
@@ -323,6 +326,18 @@ OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
 }
 
 
+BOOL SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
+{
+  PIPSocket::Address ip;
+  WORD port = 0;
+  if (transportAddress.GetIpAndPort(ip, port)) {
+    transportAddress = OpalTransportAddress(t, port);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 
@@ -449,7 +464,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
   if (pos == P_MAX_INDEX) 
     portCount = 1;
   else {
-    PTRACE(1, "SDP\tMedia header contains port count - " << portStr);
+    PTRACE(3, "SDP\tMedia header contains port count - " << portStr);
     portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
     portStr   = portStr.Left(pos);
   }
@@ -462,7 +477,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
   // parse the transport
   transport = ParseTransport(tokens[2]);
   if ((transport != RTP) && (transport != UDPTL)) {
-    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+    PTRACE(2, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
     return FALSE;
   }
 
@@ -588,7 +603,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(const OpalMediaType & m
       if (opalFormat.GetMediaType() == mediaType && 
           opalFormat.IsValidForProtocol("sip") &&
           opalFormat.GetEncodingName() != NULL) {
-        PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
+        PTRACE(3, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
 	      list += opalFormat;
       }
     }
@@ -653,7 +668,7 @@ void SDPMediaDescription::CreateRTPMap(const OpalMediaType & mediaType, RTP_Data
       opalFormat.GetMediaType() == mediaType &&
       opalFormat.GetPayloadType() != formats[i].GetPayloadType()) {
       map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), formats[i].GetPayloadType()));
-      PTRACE(2, "SIP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
+      PTRACE(3, "SIP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
     }
   }
 }
@@ -686,8 +701,8 @@ SDPMediaDescription::Transport SDPMediaDescription::ParseTransport(const PString
 
 //////////////////////////////////////////////////////////////////////////////
 
-const char * const SDPSessionDescription::ConferenceTotalBandwidthModifier = "CT";
-const char * const SDPSessionDescription::ApplicationSpecificBandwidthModifier = "AS";
+const PString & SDPSessionDescription::ConferenceTotalBandwidthModifier() { static PString s = "CT"; return s; }
+const PString & SDPSessionDescription::ApplicationSpecificBandwidthModifier() { static PString s = "AS"; return s; }
 
 SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & address)
   : sessionName(SIP_DEFAULT_SESSION_NAME),
@@ -888,6 +903,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'c' : // connection information - optional if included at session-level
+              currentMedia->SetTransportAddress(ParseConnectAddress(value));
               break;
 
             case 'a' : // zero or more media attribute lines
@@ -911,7 +927,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
   PStringArray tokens = str.Tokenise(" ");
 
   if (tokens.GetSize() != 6) {
-    PTRACE(1, "SDP\tOrigin has " << tokens.GetSize() << " elements");
+    PTRACE(2, "SDP\tOrigin has " << tokens.GetSize() << " elements");
   }
   else {
     ownerUsername    = tokens[0];
