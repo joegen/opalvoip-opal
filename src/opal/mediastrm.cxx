@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2062  2007/05/02 04:36:42  csoutheren
+ * Revision 1.2063  2007/05/04 15:09:14  vfrolov
+ * Added missing initialization of defaultDataSize
+ *
+ * Revision 2.61  2007/05/02 04:36:42  csoutheren
  * Fixed incorrect divisor in delay for OpalFileMediaStream
  *
  * Revision 2.60  2007/05/02 04:13:40  csoutheren
@@ -285,6 +288,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & connection, const OpalMediaFor
     paused(FALSE), 
     isSource(isSourceStream), 
     isOpen(FALSE), 
+    defaultDataSize(0),
     timestamp(0), 
     marker(TRUE),
     mismatchedPayloadTypes(0),
