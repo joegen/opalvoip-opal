@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.7  2007/04/10 19:00:57  hfriederich
+ * Revision 1.2069.2.8  2007/05/04 09:51:29  hfriederich
+ * Backport from HEAD - Changes since Apr 1, 2007
+ *
+ * Revision 2.68.2.7  2007/04/10 19:00:57  hfriederich
  * Reorganization of the way transaction and transaction transitions are
  *   handled. More testing needed.
  *
@@ -985,6 +988,20 @@ class SIPEndPoint : public OpalEndPoint
      */
     virtual SIPURL GetDefaultRegisteredPartyName();
     
+    
+    /**Return the contact URL for the given host and user name
+     * based on the listening port of the registration to that host.
+     * 
+     * That URL can be used as as contact field in outgoing
+     * requests.
+     *
+     * The URL is translated if required.
+     *
+     * If no active registration is used, return the result of GetLocalURL
+     * on the given transport.
+     */
+    SIPURL GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host);
+    
 
     /**Return the local URL for the given transport and user name.
      * That URL can be used as via address, and as contact field in outgoing
@@ -1061,44 +1078,18 @@ class SIPEndPoint : public OpalEndPoint
 	    /**
 	     * Return the number of registered accounts
 	     */
-	    unsigned GetRegistrationsCount ()
-	    {
-	      unsigned count = 0;
-	      for (PSafePtr<SIPInfo> info(*this, PSafeReference); info != NULL; ++info)
-      		if (info->IsRegistered() && info->GetMethod() == SIP_PDU::Method_REGISTER) 
-		        count++;
-	      return count;
-	    }
+	    unsigned GetRegistrationsCount();
 	  
 	    /**
 	     * Find the SIPInfo object with the specified callID
 	     */
-	    PSafePtr<SIPInfo> FindSIPInfoByCallID (const PString & callID, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-            if (callID == info->GetRegistrationID())
-              return info;
-	      return NULL;
-	    }
+	    PSafePtr<SIPInfo> FindSIPInfoByCallID (const PString & callID, PSafetyMode m);
 
 	    /**
 	     * Find the SIPInfo object with the specified authRealm
 	     */
-        PSafePtr<SIPInfo> FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m)
-        {
-          PIPSocket::Address realmAddress;
-
-          for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info)
-            if (authRealm == info->GetAuthentication().GetAuthRealm() && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
-              return info;
-            for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-              if (PIPSocket::GetHostAddress(info->GetAuthentication().GetAuthRealm(), realmAddress))
-                if (realmAddress == PIPSocket::Address(authRealm) && (userName.IsEmpty() || userName == info->GetAuthentication().GetUsername()))
-                  return info;
-            }
-          return NULL;
-        }
-
+        PSafePtr<SIPInfo> FindSIPInfoByAuthRealm (const PString & authRealm, const PString & userName, PSafetyMode m);
+        
 	    /**
 	     * Find the SIPInfo object with the specified URL. The url is
 	     * the registration address, for example, 6001@sip.seconix.com
@@ -1106,29 +1097,14 @@ class SIPEndPoint : public OpalEndPoint
 	     * or 6001@seconix.com when registering 6001@seconix.com to
 	     * sip.seconix.com
 	     */
-	    PSafePtr<SIPInfo> FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m)
-	    {
-	      for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-            if (SIPURL(url) == info->GetRegistrationAddress() && meth == info->GetMethod())
-              return info;
-          }
-          return NULL;
-	    }
+	    PSafePtr<SIPInfo> FindSIPInfoByUrl (const PString & url, SIP_PDU::Methods meth, PSafetyMode m);
 
 	    /**
 	     * Find the SIPInfo object with the specified registration host.
 	     * For example, in the above case, the name parameter
 	     * could be "sip.seconix.com" or "seconix.com".
 	     */
-	    PSafePtr<SIPInfo> FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m)
-        {
-          OpalTransportAddress addr = name;
-          for (PSafePtr<SIPInfo> info(*this, m); info != NULL; ++info) {
-            if (info->IsRegistered() && (name == info->GetRegistrationAddress().GetHostName() || (info->GetTransport() && addr.GetHostName() == info->GetTransport()->GetRemoteAddress().GetHostName())) && meth == info->GetMethod())
-              return info;
-          }
-          return NULL;
-        }
+	    PSafePtr<SIPInfo> FindSIPInfoByDomain (const PString & name, SIP_PDU::Methods meth, PSafetyMode m);
     };
 
     RegistrationList & GetActiveSIPInfo() 

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.4  2007/04/10 19:00:59  hfriederich
+ * Revision 1.2117.2.5  2007/05/04 09:51:29  hfriederich
+ * Backport from HEAD - Changes since Apr 1, 2007
+ *
+ * Revision 2.116.2.4  2007/04/10 19:00:59  hfriederich
  * Reorganization of the way transaction and transaction transitions are
  *   handled. More testing needed.
  *
@@ -1365,12 +1368,12 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
 
   opaque = GetAuthParam(auth, "opaque");
   if (!opaque.IsEmpty()) {
-    PTRACE(1, "SIP\tAuthentication contains opaque data");
+    PTRACE(2, "SIP\tAuthentication contains opaque data");
   }
 
   PString qopStr = GetAuthParam(auth, "qop-options");
   if (!qopStr.IsEmpty()) {
-    PTRACE(1, "SIP\tAuthentication contains qop-options " << qopStr);
+    PTRACE(3, "SIP\tAuthentication contains qop-options " << qopStr);
     PStringList options = qopStr.Tokenise(',', TRUE);
     qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
     qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
@@ -1405,7 +1408,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
     return FALSE;
   }
 
-  PTRACE(2, "SIP\tAdding authentication information");
+  PTRACE(3, "SIP\tAdding authentication information");
 
   PMessageDigest5 digestor;
   PMessageDigest5::Code a1, a2, response;
@@ -1666,7 +1669,8 @@ void SIP_PDU::Construct(Methods meth,
 {
   SIPEndPoint & endpoint = connection.GetEndPoint();
   PString localPartyName = connection.GetLocalPartyName();
-  SIPURL contact = endpoint.GetLocalURL(transport, localPartyName);
+  SIPURL contact = endpoint.GetContactURL(transport, localPartyName, SIPURL(connection.GetRemotePartyAddress()).GetHostName());
+  SIPURL via = endpoint.GetLocalURL(transport, localPartyName);
   mime.SetContact(contact);
 
   SIPURL targetAddress = connection.GetTargetAddress();
@@ -1678,7 +1682,7 @@ void SIP_PDU::Construct(Methods meth,
             connection.GetLocalPartyAddress(),
             connection.GetToken(),
             connection.GetNextCSeq(),
-            contact.GetHostAddress());
+            via.GetHostAddress());
 
   SetRoute(connection); // Possibly adjust the URI and the route
 }
@@ -1865,7 +1869,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (cmd.IsEmpty()) {
-    PTRACE(1, "SIP\tNo Request-Line or Status-Line received on " << transport);
+    PTRACE(2, "SIP\tNo Request-Line or Status-Line received on " << transport);
     return FALSE;
   }
 
@@ -1873,7 +1877,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     // parse Response version, code & reason (ie: "SIP/2.0 200 OK")
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
-      PTRACE(1, "SIP\tBad Status-Line received on " << transport);
+      PTRACE(2, "SIP\tBad Status-Line received on " << transport);
       return FALSE;
     }
 
@@ -1887,7 +1891,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     // parse the method, URI and version
     PStringArray cmds = cmd.Tokenise( ' ', FALSE);
     if (cmds.GetSize() < 3) {
-      PTRACE(1, "SIP\tBad Request-Line received on " << transport);
+      PTRACE(2, "SIP\tBad Request-Line received on " << transport);
       return FALSE;
     }
 
@@ -1895,7 +1899,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     while (!(cmds[0] *= MethodNames[i])) {
       i++;
       if (i >= NumMethods) {
-        PTRACE(1, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
+        PTRACE(2, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
         return FALSE;
       }
     }
@@ -1908,7 +1912,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
 
   if (versionMajor < 2) {
-    PTRACE(1, "SIP\tInvalid version received on " << transport);
+    PTRACE(2, "SIP\tInvalid version received on " << transport);
     return FALSE;
   }
 
@@ -1944,6 +1948,14 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   ////////////////
   entityBody[contentLength] = '\0';
+  
+#if PTRACING
+  if (PTrace::CanTrace(4))
+    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
+           << cmd << '\n' << mime << entityBody);
+    else
+      PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
+#endif
 
   BOOL removeSDP = TRUE;
 
@@ -1958,14 +1970,6 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     delete sdp;
     sdp = NULL;
   }
-
-#if PTRACING
-  if (PTrace::CanTrace(4))
-    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
-           << cmd << '\n' << mime << entityBody);
-  else
-    PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
-#endif
 
   return TRUE;
 }
@@ -2045,7 +2049,7 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
 {
   connection = &conn;
   Construct();
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " created.");
+  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
 
 
@@ -2068,7 +2072,7 @@ SIPTransaction::~SIPTransaction()
     PAssertAlways("Destroying transaction that is not yet terminated");
   }
 
-  PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
+  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
 
@@ -2178,7 +2182,7 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     
   // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
-    PTRACE(3, "SIP\tTransaction " << cseq << " response not for " << *this);
+    PTRACE(2, "SIP\tTransaction " << cseq << " response not for " << *this);
     return FALSE;
   }
 

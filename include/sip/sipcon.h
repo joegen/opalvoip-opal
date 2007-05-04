@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.5  2007/04/10 19:00:57  hfriederich
+ * Revision 1.2059.2.6  2007/05/04 09:51:29  hfriederich
+ * Backport from HEAD - Changes since Apr 1, 2007
+ *
+ * Revision 2.58.2.5  2007/04/10 19:00:57  hfriederich
  * Reorganization of the way transaction and transaction transitions are
  *   handled. More testing needed.
  *
@@ -278,6 +281,10 @@
 #include <opal/connection.h>
 #include <sip/sippdu.h>
 #include <sip/sdpcaps.h>
+#if OPAL_VIDEO
+#include <opal/pcss.h>
+#include <codec/vidcodec.h>
+#endif
 
 class OpalCall;
 class SIPEndPoint;
@@ -401,25 +408,6 @@ class SIPConnection : public OpalConnection
       */
     virtual void OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch);
 
-
-    /**Call back for answering an incoming call.
-       This function is called from the OnReceivedSignalSetup() function
-       before it sends the 200 OK response. 
-
-       It also gives an application time to wait for some event before
-       signalling to the endpoint that the connection is to proceed. For
-       example the user pressing an "Answer call" button.
-
-       If AnswerCallDenied is returned the connection is aborted and a 200 OK 
-       is sent. If AnswerCallNow is returned then the SIP protocol proceeds. 
-       Finally if AnswerCallPending is returned then the protocol negotiations 
-       are paused until the AnsweringCall() function is called.
-
-       The default behaviour simply returns AnswerNow.
-     */
-    virtual OpalConnection::AnswerCallResponse OnAnswerCall(
-      const PString & callerName      ///<  Name of caller
-    );
 
     /**Indicate the result of answering an incoming call.
        This should only be called if the OnAnswerCall() callback function has
@@ -824,11 +812,33 @@ class SIP_RTP_Session : public RTP_UserData
     virtual void OnRxStatistics(
       const RTP_Session & session   ///<  Session with statistics
     ) const;
+#if OPAL_VIDEO
+    /**Callback from the RTP session after an IntraFrameRequest is receieved.
+       The default behaviour executes an OpalVideoUpdatePicture command on the
+        connection's source video stream if it exists.
+      */
+    virtual void OnRxIntraFrameRequest(
+      const RTP_Session & session   ///<  Session with statistics
+    ) const;
+    
+    /**Callback from the RTP session after an IntraFrameRequest is sent.
+       The default behaviour does nothing.
+      */
+    virtual void OnTxIntraFrameRequest(
+      const RTP_Session & session   ///<  Session with statistics
+    ) const;
+#endif
   //@}
 
 
   protected:
     const SIPConnection & connection; /// Owner of the RTP session
+#if OPAL_VIDEO
+    // Encoding stream to alert with OpalVideoUpdatePicture commands.  Mutable
+    // so functions with constant 'this' pointers (eg: OnRxFrameRequest) can
+    // update it.
+    mutable OpalMediaStream * encodingStream; 
+#endif
 };
 
 
