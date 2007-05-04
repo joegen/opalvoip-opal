@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2015  2007/01/18 12:49:22  csoutheren
+ * Revision 1.2015.2.1  2007/05/04 08:17:54  hfriederich
+ * Fix compilation
+ *
+ * Revision 2.14  2007/01/18 12:49:22  csoutheren
  * Add ability to disable T.38 in compile
  *
  * Revision 2.13  2005/02/21 12:20:08  rjongbloed
@@ -363,7 +366,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
 
   t38handler = NULL;
 
-  H323Channel * chan = connection.FindChannel(sessionID, dir == H323Channel::IsTransmitter);
+  H323Channel * chan = connection.FindChannel(capability.GetMediaFormat().GetMediaType(), dir == H323Channel::IsTransmitter);
   if (chan != NULL) {
     if (PIsDescendant(chan, H323_T38Channel)) {
       PTRACE(3, "H323T38\tConnected to existing T.38 handler");

@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2010.2.2  2007/05/04 07:41:20  hfriederich
+ * Revision 1.2010.2.3  2007/05/04 08:17:54  hfriederich
+ * Fix compilation
+ *
+ * Revision 2.9.2.2  2007/05/04 07:41:20  hfriederich
  * Port to MediaType architecture. Needs testing
  *
  * Revision 2.9.2.1  2007/03/20 00:18:43  hfriederich
@@ -196,7 +199,7 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
                   timeStamp)
 {
   AddOption(new OpalMediaOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOptino::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 
@@ -629,8 +632,8 @@ BOOL OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
 
 /////////////////////////////////////////////////////////////////////////////
 
-T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, unsigned _id, BOOL _remoteIsNAT)
-  : RTP_UDP(_aggregator, _id, _remoteIsNAT)
+T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, const OpalMediaType & _mediaType, BOOL _remoteIsNAT)
+  : RTP_UDP(_aggregator, _mediaType, _remoteIsNAT)
 {
   PTRACE(4, "RTP_T38\tPseudoRTP session created with NAT flag set to " << remoteIsNAT);
 
