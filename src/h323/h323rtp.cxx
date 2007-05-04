@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2014  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2015  2007/05/04 15:32:58  vfrolov
+ * Enabled OLC and OLCAck w/o mediaControlChannel for DefaultDataSessionID
+ *
+ * Revision 2.13  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -330,6 +333,10 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
     return TRUE;
 
   PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
+
+  if (rtp.GetSessionID() == OpalMediaFormat::DefaultDataSessionID)
+    return TRUE;
+
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
   return FALSE;
 }
@@ -346,12 +353,14 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
     PTRACE(1, "RTP_UDP\tAck for invalid session: " << param.m_sessionID);
   }
 
+  unsigned errorCode;
+
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
     PTRACE(1, "RTP_UDP\tNo mediaControlChannel specified");
-    return FALSE;
+    if (rtp.GetSessionID() != OpalMediaFormat::DefaultDataSessionID)
+      return FALSE;
   }
-
-  unsigned errorCode;
+  else
   if (!ExtractTransport(param.m_mediaControlChannel, FALSE, errorCode))
     return FALSE;
 
