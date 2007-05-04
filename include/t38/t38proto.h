@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2009.10.1  2007/05/04 07:41:17  hfriederich
+ * Revision 1.2009.10.2  2007/05/04 08:17:53  hfriederich
+ * Fix compilation
+ *
+ * Revision 2.8.10.1  2007/05/04 07:41:17  hfriederich
  * Port to MediaType architecture. Needs testing
  *
  * Revision 2.8  2005/02/21 12:19:48  rjongbloed
@@ -359,7 +362,6 @@ class OpalFaxMediaStream : public OpalMediaStream
     OpalFaxMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID, 
       BOOL isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename
