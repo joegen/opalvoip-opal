@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2106  2007/04/26 07:01:47  csoutheren
+ * Revision 1.2107  2007/05/07 14:14:31  csoutheren
+ * Add call record capability
+ *
+ * Revision 2.105  2007/04/26 07:01:47  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -994,7 +997,7 @@ void OpalConnection::StartMediaStreams()
 
 void OpalConnection::CloseMediaStreams()
 {
-  GetCall().GetManager().OnStopRecordAudio(*this);
+  GetCall().OnStopRecordAudio(callIdentifier.AsString());
 
   PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
@@ -1094,18 +1097,40 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
+void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
 {
-  if (patch.GetSinkFormat().GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID) 
-    GetCall().GetManager().OnStartRecordAudio(*this, (INT)(void *)&patch, isSource);
-    patch.AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+  if (!recordAudioFilename.IsEmpty())
+    GetCall().StartRecording(recordAudioFilename);
 
+  // TODO - add autorecord functions here
   PTRACE(3, "OpalCon\tNew patch created");
 }
 
-void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT code)
+void OpalConnection::EnableRecording()
 {
-  GetCall().GetManager().OnRecordAudio(*this, code, frame);
+  PWaitAndSignal m(mediaStreamMutex);
+  OpalMediaStream * stream = GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+  if (stream != NULL) {
+    OpalMediaPatch * patch = stream->GetPatch();
+    if (patch != NULL)
+      patch->AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+  }
+}
+
+void OpalConnection::DisableRecording()
+{
+  PWaitAndSignal m(mediaStreamMutex);
+  OpalMediaStream * stream = GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+  if (stream != NULL) {
+    OpalMediaPatch * patch = stream->GetPatch();
+    if (patch != NULL)
+      patch->RemoveFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+  }
+}
+
+void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT)
+{
+  GetCall().GetManager().GetRecordManager().WriteAudio(GetCall().GetToken(), callIdentifier.AsString(), frame);
 }
 
 void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch)
@@ -1618,6 +1643,8 @@ void OpalConnection::ApplyStringOptions()
     str = (*stringOptions)("Min-Jitter");
     if (!str.IsEmpty())
       minAudioJitterDelay = str.AsUnsigned();
+    if (stringOptions->Contains("Record-Audio"))
+      recordAudioFilename = (*stringOptions)("Record-Audio");
   }
 }
 
