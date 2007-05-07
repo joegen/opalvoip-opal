@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2091  2007/05/01 05:32:03  rjongbloed
+ * Revision 1.2092  2007/05/07 14:15:22  csoutheren
+ * Add z and Z commands to start and stop call recording
+ *
+ * Revision 2.90  2007/05/01 05:32:03  rjongbloed
  * Added display of active SIP listeners
  *
  * Revision 2.89  2007/04/16 04:12:25  rjongbloed
@@ -913,6 +916,8 @@ BOOL MyManager::Initialise(PArgList & args)
   if (!args.HasOption('S')) {
     pcssEP = new MyPCSSEndPoint(*this);
 
+    pcssEP->SetSoundChannelBufferDepth(10);
+
     pcssEP->autoAnswer = args.HasOption('a');
     cout << "Auto answer is " << (pcssEP->autoAnswer ? "on" : "off") << "\n";
           
@@ -1405,6 +1410,20 @@ void MyManager::Main(PArgList & args)
       case '?' :       
         cout << help ;
         break;
+
+      case 'z':
+        if (currentCallToken.IsEmpty())
+         cout << "Cannot stop or start record whilst no call in progress\n";
+        else if (ch == 'z') {
+          StartRecording(currentCallToken, "record.wav");
+          cout << "Record started" << endl;
+        }
+        else
+        {
+          StopRecording(currentCallToken);
+          cout << "Record stopped" << endl;
+        }
+        break;
         
       case 'y' :
         if (pcssEP != NULL && !pcssEP->incomingConnectionToken) {
@@ -1755,6 +1774,5 @@ BOOL MyPCSSEndPoint::SetSoundDevice(PArgList & args,
 
   return FALSE;
 }
-
 
 // End of File ///////////////////////////////////////////////////////////////
