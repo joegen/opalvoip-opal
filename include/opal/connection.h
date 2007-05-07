@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2081  2007/04/26 07:01:01  csoutheren
+ * Revision 1.2082  2007/05/07 14:13:51  csoutheren
+ * Add call record capability
+ *
+ * Revision 2.80  2007/04/26 07:01:01  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -1416,6 +1419,9 @@ class OpalConnection : public PSafeObject
 
     virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
 
+    virtual void EnableRecording();
+    virtual void DisableRecording();
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
@@ -1497,6 +1503,7 @@ class OpalConnection : public PSafeObject
     BOOL useRTPAggregation;
 
     StringOptions * stringOptions;
+    PString recordAudioFilename;
 };
 
 class RTP_UDP;
