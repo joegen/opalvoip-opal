@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2030  2007/04/16 06:48:04  rjongbloed
+ * Revision 1.2031  2007/05/07 14:13:51  csoutheren
+ * Add call record capability
+ *
+ * Revision 2.29  2007/04/16 06:48:04  rjongbloed
  * Added virtual to OpalCall::GetMediaFormats to allow user override.
  *
  * Revision 2.28  2007/04/03 05:27:29  rjongbloed
@@ -461,6 +464,9 @@ class OpalCall : public PSafeObject
     const PTime & GetStartTime() const { return startTime; }
   //@}
 
+    virtual BOOL StartRecording(const PFilePath & fn);
+    virtual void StopRecording();
+    void OnStopRecordAudio(const PString & callToken);
 
   protected:
     OpalManager & manager;

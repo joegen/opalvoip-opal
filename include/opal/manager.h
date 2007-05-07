@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2060  2007/04/18 00:00:44  csoutheren
+ * Revision 1.2061  2007/05/07 14:13:51  csoutheren
+ * Add call record capability
+ *
+ * Revision 2.59  2007/04/18 00:00:44  csoutheren
  * Add hooks for recording call audio
  *
  * Revision 2.58  2007/03/13 00:32:16  csoutheren
@@ -243,6 +246,7 @@
 #include <opal/call.h>
 #include <opal/connection.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
+#include <opal/audiorecord.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
@@ -1244,9 +1248,11 @@ class OpalManager : public PObject
 
     virtual BOOL UseRTPAggregation() const;
 
-    virtual void OnStartRecordAudio(OpalConnection & conn, INT id, BOOL isSource);
-    virtual void OnStopRecordAudio(OpalConnection & conn);
-    virtual void OnRecordAudio(OpalConnection & conn, INT id, RTP_DataFrame & frame);
+    OpalRecordManager & GetRecordManager()
+    { return recordManager; }
+
+    virtual BOOL StartRecording(const PString & callToken, const PFilePath & fn);
+    virtual void StopRecording(const PString & callToken);
 
   protected:
     // Configuration variables
@@ -1325,6 +1331,8 @@ class OpalManager : public PObject
 #if OPAL_RTP_AGGREGATE
     BOOL useRTPAggregation; 
 #endif
+
+    OpalRecordManager recordManager;
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::OnReleased(OpalConnection & connection);
