@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2060  2007/04/26 07:01:47  csoutheren
+ * Revision 1.2061  2007/05/07 14:14:31  csoutheren
+ * Add call record capability
+ *
+ * Revision 2.59  2007/04/26 07:01:47  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -311,6 +314,8 @@ OpalCall::OpalCall(OpalManager & mgr)
 OpalCall::~OpalCall()
 {
   PTRACE(3, "Call\t" << *this << " destroyed.");
+
+  manager.GetRecordManager().Close(myToken);
 
   if (endCallSyncPoint != NULL)
     endCallSyncPoint->Signal();
@@ -719,5 +724,31 @@ void OpalCall::OnReleased(OpalConnection & connection)
   }
 }
 
+BOOL OpalCall::StartRecording(const PFilePath & fn)
+{
+  // create the mixer entry
+  if (!manager.GetRecordManager().Open(myToken, fn))
+    return FALSE;
+
+  // tell each connection to start sending data
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadWrite); connection != NULL; ++connection)
+    connection->EnableRecording();
+
+  return TRUE;
+}
+
+void OpalCall::StopRecording()
+{
+  // tell each connection to stop sending data
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadWrite); connection != NULL; ++connection)
+    connection->DisableRecording();
+
+  manager.GetRecordManager().Close(myToken);
+}
+
+void OpalCall::OnStopRecordAudio(const PString & callToken)
+{
+  manager.GetRecordManager().CloseStream(myToken, callToken);
+}
 
 /////////////////////////////////////////////////////////////////////////////
