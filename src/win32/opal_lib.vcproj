@@ -394,6 +394,9 @@
 					RelativePath="..\opal\opalglobalstatics.cxx">
 				</File>
 				<File
+					RelativePath="..\opal\opalmixer.cxx">
+				</File>
+				<File
 					RelativePath="..\opal\opalvxml.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1811,6 +1814,9 @@
 				Name="Opal Headers"
 				Filter="">
 				<File
+					RelativePath="..\..\include\opal\audiorecord.h">
+				</File>
+				<File
 					RelativePath="..\..\include\opal\call.h">
 				</File>
 				<File
@@ -1836,6 +1842,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\mediastrm.h">
+				</File>
+				<File
+					RelativePath="..\..\include\opal\opalmixer.h">
 				</File>
 				<File
 					RelativePath="..\..\include\opal\opalvxml.h">
