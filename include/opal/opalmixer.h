@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalmixer.h,v $
- * Revision 1.2002  2007/05/07 14:13:51  csoutheren
+ * Revision 1.2003  2007/05/08 09:31:23  csoutheren
+ * Removed warnings on Unix
+ *
+ * Revision 2.1  2007/05/07 14:13:51  csoutheren
  * Add call record capability
  *
  */
@@ -35,6 +38,8 @@
 #define _OPALMIXER_H
 
 #include <ptlib.h>
+
+#include <queue>
 
 #include <ptlib/psync.h>
 #include <ptclib/delaychan.h>
@@ -347,6 +352,7 @@ class OpalAudioMixer
 
   public:
     OpalAudioMixer(BOOL realTime = TRUE, BOOL _pushThread = TRUE);
+    virtual ~OpalAudioMixer() { }
     virtual BOOL OnWriteAudio(const MixerFrame &);
     BOOL AddStream(const Key_T & key, OpalAudioMixerStream * stream);
     void RemoveStream(const Key_T & key);
@@ -359,3 +365,4 @@ class OpalAudioMixer
 };
 
 #endif // _OPAL_MIXER
+
