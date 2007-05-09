@@ -1447,7 +1447,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
     time_t now = time(NULL);
     // Should the next frame be an I-Frame?
     if((_forceKeyframeUpdate && (now - _lastKeyframe > _keyframeUpdatePeriod))
-        || flags & PluginCodec_CoderForceIFrame != 0 || _frameNum == 0)
+        || (flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
     {
         _lastKeyframe = now;
         _avpicture->pict_type = FF_I_TYPE;
