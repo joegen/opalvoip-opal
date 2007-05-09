@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2220  2007/04/26 07:01:47  csoutheren
+ * Revision 1.2221  2007/05/09 01:41:46  csoutheren
+ * Ensure CANCEL is sent if incoming call hungup before ACK is received
+ *
+ * Revision 2.219  2007/04/26 07:01:47  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -2259,7 +2262,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (request.HasSDP())
     remoteSDP = request.GetSDP();
   if (!isReinvite)
-    releaseMethod = ReleaseWithResponse;
+    releaseMethod = ReleaseWithCANCEL;
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom(); 
