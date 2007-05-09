@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.8  2007/05/03 10:37:47  hfriederich
+ * Revision 1.2058.2.9  2007/05/09 14:57:03  hfriederich
+ * Make SetRemotePartyInfo() virtual
+ *
+ * Revision 2.57.2.8  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -2213,7 +2216,7 @@ class H323Connection : public OpalConnection
 
     /**Set the name/alias of remote end from information in the PDU.
       */
-    void SetRemotePartyInfo(
+    virtual void SetRemotePartyInfo(
       const H323SignalPDU & pdu ///<  PDU from which to extract party info.
     );
 
