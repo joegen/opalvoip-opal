@@ -760,6 +760,33 @@ static int coder_get_sip_options(
   return get_xcif_options(context, parm, parmLen, &default_sip_mpeg4_options[0][0]);
 }
 
+static int valid_for_sip(
+      const PluginCodec_Definition * , 
+      void * context , 
+      const char * , 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+}
+
+static int valid_for_h323(
+      const PluginCodec_Definition * , 
+      void * , 
+      const char * , 
+      void * parm , 
+      unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "h.323") == 0 ||
+          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // define the encoding context
@@ -1573,6 +1600,7 @@ static int encoder_get_output_data_size(const PluginCodec_Definition * codec, vo
 }
 
 static PluginCodec_ControlDefn cifEncoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
   { "get_codec_options",    coder_get_cif_options },
   { "set_codec_options",    encoder_set_options },
   { "get_output_data_size", encoder_get_output_data_size },
@@ -1580,6 +1608,7 @@ static PluginCodec_ControlDefn cifEncoderControls[] = {
 };
 
 static PluginCodec_ControlDefn qcifEncoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
   { "get_codec_options",    coder_get_qcif_options },
   { "set_codec_options",    encoder_set_options },
   { "get_output_data_size", encoder_get_output_data_size },
@@ -1587,6 +1616,7 @@ static PluginCodec_ControlDefn qcifEncoderControls[] = {
 };
 
 static PluginCodec_ControlDefn sipEncoderControls[] = {
+  { "valid_for_protocol",       valid_for_sip },
   { "get_codec_options",    coder_get_sip_options },
   { "set_codec_options",    encoder_set_options },
   { "get_output_data_size", encoder_get_output_data_size },
@@ -2056,6 +2086,7 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
 // Plugin Codec Definitions
 
 static PluginCodec_ControlDefn cifDecoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
   { "get_codec_options",    coder_get_cif_options },
   { "set_codec_options",    decoder_set_options },
   { "get_output_data_size", decoder_get_output_data_size },
@@ -2063,6 +2094,7 @@ static PluginCodec_ControlDefn cifDecoderControls[] = {
 };
 
 static PluginCodec_ControlDefn qcifDecoderControls[] = {
+  { "valid_for_protocol",       valid_for_h323 },
   { "get_codec_options",    coder_get_qcif_options },
   { "set_codec_options",    decoder_set_options },
   { "get_output_data_size", decoder_get_output_data_size },
@@ -2070,6 +2102,7 @@ static PluginCodec_ControlDefn qcifDecoderControls[] = {
 };
 
 static PluginCodec_ControlDefn sipDecoderControls[] = {
+  { "valid_for_protocol",       valid_for_sip },
   { "get_codec_options",    coder_get_sip_options },
   { "set_codec_options",    decoder_set_options },
   { "get_output_data_size", decoder_get_output_data_size },
@@ -2125,6 +2158,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_RTPTypeShared |
   PluginCodec_RTPTypeDynamic,        // specified RTP type
 
   mpeg4CIFDesc,                        // text decription
@@ -2141,8 +2175,8 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  RTP_DYNAMIC_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  0,                // IANA RTP payload code
+  sdpMPEG4,                            // RTP payload name
 
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
@@ -2158,6 +2192,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_RTPTypeShared |
   PluginCodec_RTPTypeDynamic,        // specified RTP type
 
   mpeg4CIFDesc,                        // text decription
@@ -2174,8 +2209,8 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  RTP_DYNAMIC_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  0,                // IANA RTP payload code
+  sdpMPEG4,                            // RTP payload name
 
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
@@ -2192,6 +2227,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_RTPTypeShared |
   PluginCodec_RTPTypeDynamic,        // specified RTP type
 
   mpeg4QCIFDesc,                       // text decription
@@ -2208,8 +2244,8 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   QCIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  RTP_DYNAMIC_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  0,                // IANA RTP payload code
+  sdpMPEG4,                            // RTP payload name
 
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
@@ -2225,6 +2261,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_RTPTypeShared |
   PluginCodec_RTPTypeDynamic,        // specified RTP type
 
   mpeg4QCIFDesc,                       // text decription
@@ -2241,8 +2278,8 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   QCIF_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  RTP_DYNAMIC_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  0,                // IANA RTP payload code
+  sdpMPEG4,                            // RTP payload name
 
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
@@ -2259,6 +2296,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_RTPTypeShared |
   PluginCodec_RTPTypeDynamic,        // specified RTP type
 
   mpeg4Desc,                           // text decription
@@ -2275,7 +2313,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  RTP_DYNAMIC_PAYLOAD,                // IANA RTP payload code
+  0,                // IANA RTP payload code
   sdpMPEG4,                            // RTP payload name
 
   create_encoder,                     // create codec function
@@ -2292,6 +2330,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_RTPTypeShared |
   PluginCodec_RTPTypeDynamic,        // specified RTP type
 
   mpeg4Desc,                           // text decription
@@ -2308,7 +2347,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   CIF_HEIGHT,                         // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  RTP_DYNAMIC_PAYLOAD,                // IANA RTP payload code
+  0,                // IANA RTP payload code
   sdpMPEG4,                            // RTP payload name
 
   create_decoder,                     // create codec function
