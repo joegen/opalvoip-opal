@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2061  2007/05/07 14:14:31  csoutheren
+ * Revision 1.2062  2007/05/09 01:39:28  csoutheren
+ * Remove redundant patch for NULL source streams
+ *
+ * Revision 2.60  2007/05/07 14:14:31  csoutheren
  * Add call record capability
  *
  * Revision 2.59  2007/04/26 07:01:47  csoutheren
@@ -628,21 +631,18 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     if (map.size() == 0)
       map = connection.GetRTPPayloadMap();
 
-    // if not coming from a NULL stream, setup, the patch
-    if (!source.IsNull()) {
-      for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-        if (conn != &connection) {
-          OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-          if (sink == NULL)
-            return FALSE;
-          if (source.RequiresPatch()) {
-            if (patch == NULL) {
-              patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
-              if (patch == NULL)
-                return FALSE;
-            }
-            patch->AddSink(sink, map);
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
+        if (sink == NULL)
+          return FALSE;
+        if (source.RequiresPatch()) {
+          if (patch == NULL) {
+            patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
+            if (patch == NULL)
+              return FALSE;
           }
+          patch->AddSink(sink, map);
         }
       }
     }
