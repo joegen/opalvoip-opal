@@ -25,7 +25,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2056.2.3  2006/12/08 06:27:20  csoutheren
+ * Revision 1.2056.2.4  2007/05/09 12:39:04  csoutheren
+ * Backport from head
+ *
+ *
+ * Revision 2.104  2007/04/20 02:39:41  rjongbloed
+ * Attempt to fix one of the possible deadlock scenarios between the
+ *   connections in a call, now locks whole call instead of each individual
+ *   connection.
+ *
+ * Revision 2.55.2.3  2006/12/08 06:27:20  csoutheren
  * Fix compilation problem caused by bad patch backports
  * Allow compilation with latest PWLib
  *
@@ -329,7 +338,8 @@ ostream & operator<<(ostream & o, OpalConnection::AnswerCallResponse s)
 OpalConnection::OpalConnection(OpalCall & call,
                                OpalEndPoint  & ep,
                                const PString & token)
-  : ownerCall(call),
+  : PSafeObject(&call), // Share the lock flag from the call
+    ownerCall(call),
     endpoint(ep),
     callToken(token),
     alertingTime(0),
