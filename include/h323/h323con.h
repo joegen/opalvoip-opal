@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2065  2007/04/26 07:01:00  csoutheren
+ * Revision 1.2066  2007/05/09 14:59:19  hfriederich
+ * Make SetRemotePartyInfo() virtual
+ *
+ * Revision 2.64  2007/04/26 07:01:00  csoutheren
  * Add extra code to deal with getting media formats from connections early enough to do proper
  * gatewaying between calls. The SIP and H.323 code need to have the handing of the remote
  * and local formats standardized, but this will do for now
@@ -2190,7 +2193,7 @@ class H323Connection : public OpalConnection
 
     /**Set the name/alias of remote end from information in the PDU.
       */
-    void SetRemotePartyInfo(
+    virtual void SetRemotePartyInfo(
       const H323SignalPDU & pdu ///<  PDU from which to extract party info.
     );
 
