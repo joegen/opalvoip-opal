@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2045  2007/05/02 04:13:21  csoutheren
+ * Revision 1.2046  2007/05/09 01:39:19  csoutheren
+ * Remove redundant patch for NULL source streams
+ *
+ * Revision 2.44  2007/05/02 04:13:21  csoutheren
  * Add delay to OpalFileMediaStream::ReadData and OpalFileMediaStream::WriteData
  *
  * Revision 2.43  2007/04/26 07:01:01  csoutheren
@@ -568,8 +571,6 @@ class OpalNullMediaStream : public OpalMediaStream
     virtual BOOL IsSynchronous() const;
   //@}
 
-    virtual BOOL IsNull() const
-    { return TRUE; }
 };
 
 
