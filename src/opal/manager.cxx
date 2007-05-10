@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2087  2007/05/07 14:14:31  csoutheren
+ * Revision 1.2088  2007/05/10 05:01:18  csoutheren
+ * Increase default number of RTP ports because sometimes, 100 ports is not enough :)
+ *
+ * Revision 2.86  2007/05/07 14:14:31  csoutheren
  * Add call record capability
  *
  * Revision 2.85  2007/04/18 00:01:05  csoutheren
@@ -424,7 +427,7 @@ OpalManager::OpalManager()
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
-  rtpIpPorts.max = 5199;
+  rtpIpPorts.max = 5999;
 
   // use dynamic port allocation by default
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
