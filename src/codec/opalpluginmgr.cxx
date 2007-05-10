@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2023  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2024  2007/05/10 05:34:23  csoutheren
+ * Ensure fax transmission works with reasonable size audio blocks
+ *
+ * Revision 2.22  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -1182,27 +1185,33 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
 
   else {
 
-    if (bufferRTP == NULL)
-      bufferRTP = new RTP_DataFrame(outputDataSize);
-    else
-      bufferRTP->SetPayloadSize(outputDataSize);
-
-    // call the codec function
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
-    unsigned int toLen = bufferRTP->GetSize();
-    flags = 0;
-    BOOL stat = (codec->codecFunction)(codec, context, 
-                                        (const BYTE *)src, &fromLen,
-                                        bufferRTP->GetPointer(), &toLen,
-                                        &flags) != 0;
-    if (!stat)
-      return FALSE;
 
-    if (toLen > (unsigned)bufferRTP->GetHeaderSize() && (flags & PluginCodec_ReturnCoderLastFrame) != 0) {
-      bufferRTP->SetPayloadSize(toLen - bufferRTP->GetHeaderSize());
-      dstList.Append(bufferRTP);
-      bufferRTP = NULL;
-    }
+    do {
+      if (bufferRTP == NULL)
+        bufferRTP = new RTP_DataFrame(outputDataSize);
+      else
+        bufferRTP->SetPayloadSize(outputDataSize);
+
+      // call the codec function
+      unsigned int toLen = bufferRTP->GetSize();
+      flags = 0;
+      BOOL stat = (codec->codecFunction)(codec, context, 
+                                          (const BYTE *)src, &fromLen,
+                                          bufferRTP->GetPointer(), &toLen,
+                                          &flags) != 0;
+      if (!stat)
+        return FALSE;
+
+      if (toLen > (unsigned)bufferRTP->GetHeaderSize()) {
+        bufferRTP->SetPayloadSize(toLen - bufferRTP->GetHeaderSize());
+        dstList.Append(bufferRTP);
+        bufferRTP = NULL;
+      }
+
+      fromLen = 0;
+      
+    } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
   }
 
   return TRUE;
