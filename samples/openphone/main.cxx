@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.17  2007/05/10 01:03:54  rjongbloed
+ * Updated build for wxWidgets 2.8.x
+ *
  * Revision 1.16  2007/04/03 07:59:13  rjongbloed
  * Warning: API change to PCSS callbacks:
  *   changed return on OnShowIncoming to BOOL, now agrees with
@@ -192,6 +195,7 @@
 #include <wx/listctrl.h>
 #include <wx/splitter.h>
 #include <wx/valgen.h>
+#include <wx/notebook.h>
 #undef LoadMenu // Bizarre but necessary before the xml code
 #include <wx/xrc/xmlres.h>
 
@@ -330,7 +334,7 @@ static const char SpeedDialNumberKey[] = "Number";
 static const char SpeedDialDescriptionKey[] = "Description";
 
 static const char RecentCallsGroup[] = "/Recent Calls";
-static const int  MaxSavedRecentCalls = 10;
+static const size_t MaxSavedRecentCalls = 10;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2097,7 +2101,7 @@ bool OptionsDialog::TransferDataFromWindow()
   for (mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm)
     mm->preferenceOrder = -1;
 
-  int codecIndex;
+  size_t codecIndex;
   for (codecIndex = 0; codecIndex < m_selectedCodecs->GetCount(); codecIndex++) {
     PwxString selectedFormat = m_selectedCodecs->GetString(codecIndex);
     for (mm = m_manager.m_mediaInfo.begin(); mm != m_manager.m_mediaInfo.end(); ++mm) {
@@ -2136,7 +2140,7 @@ bool OptionsDialog::TransferDataFromWindow()
   config->SetPath(H323AliasesGroup);
   m_manager.h323EP->SetLocalUserName(m_Username);
   PStringList aliases = m_manager.h323EP->GetAliasNames();
-  for (int i = 0; i < m_Aliases->GetCount(); i++) {
+  for (size_t i = 0; i < m_Aliases->GetCount(); i++) {
     wxString alias = m_Aliases->GetString(i);
     m_manager.h323EP->AddAliasName(alias.c_str());
     wxString key;
@@ -2384,7 +2388,7 @@ void OptionsDialog::MoveDownCodec(wxCommandEvent & /*event*/)
   m_selectedCodecs->InsertItems(1, &value, selections[0]+1);
   m_selectedCodecs->SetSelection(selections[0]+1);
   m_MoveUpCodec->Enable(true);
-  m_MoveDownCodec->Enable(selections[0] < m_selectedCodecs->GetCount()-2);
+  m_MoveDownCodec->Enable(selections[0] < (int)m_selectedCodecs->GetCount()-2);
 }
 
 
@@ -2398,10 +2402,10 @@ void OptionsDialog::SelectedCodecToAdd(wxCommandEvent & /*event*/)
 void OptionsDialog::SelectedCodec(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
-  int count = m_selectedCodecs->GetSelections(selections);
+  size_t count = m_selectedCodecs->GetSelections(selections);
   m_RemoveCodec->Enable(count > 0);
   m_MoveUpCodec->Enable(count == 1 && selections[0] > 0);
-  m_MoveDownCodec->Enable(count == 1 && selections[0] < m_selectedCodecs->GetCount()-1);
+  m_MoveDownCodec->Enable(count == 1 && selections[0] < (int)m_selectedCodecs->GetCount()-1);
 
   m_codecOptions->DeleteAllItems();
   m_codecOptionValue->SetValue("");
@@ -2577,15 +2581,13 @@ CallDialog::CallDialog(wxFrame * parent)
 
 void CallDialog::OnOK(wxCommandEvent & event)
 {
-  wxDialog::OnOK(event);
-
   bool addNewEntry = true;
 
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentCallsGroup);
   config->SetPath(RecentCallsGroup);
 
-  int index;
+  size_t index;
   for (index = 0; index < m_AddressCtrl->GetCount(); ++index) {
     wxString entry = m_AddressCtrl->GetString(index);
 
