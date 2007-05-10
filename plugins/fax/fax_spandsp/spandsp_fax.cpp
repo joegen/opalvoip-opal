@@ -20,6 +20,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: spandsp_fax.cpp,v $
+ * Revision 1.3  2007/05/10 05:32:43  csoutheren
+ * Fix release build
+ * Normalise log output
+ * Add blocking and deblocking
+ *
  * Revision 1.2  2007/03/29 08:28:58  csoutheren
  * Fix shutdown issues
  *
@@ -47,6 +52,7 @@ using namespace std;
   #include <windows.h>
   #include <process.h>
   #include <malloc.h>
+  #include <sys/stat.h>
   #define STRCMPI  _strcmpi
 #else
   #define STRCMPI  strcasecmp
@@ -233,7 +239,7 @@ class FaxInstance
     ~FaxInstance();
 
     bool WritePCM(const void * from, unsigned * fromLen);
-    bool ReadPCM(void * to, unsigned * toLen);
+    bool ReadPCM(void * to, unsigned * toLen, bool & moreToRead);
 
     bool WriteT38(const void * from, unsigned * fromLen);
     bool ReadT38(void * to, unsigned  * toLen);
@@ -256,6 +262,7 @@ class FaxInstance
 #endif
 #endif // USE_EMBEDDED_SPANDSP
     bool Open();
+    bool first;
 };
 
 #if USE_EMBEDDED_SPANDSP
@@ -275,6 +282,7 @@ static unsigned __stdcall GatewayMain_Static(void * userData)
 FaxInstance::FaxInstance()
 { 
   refCount = 0; 
+  first    = true;
 #if _WIN32
   t38Sockets[0] = t38Sockets[1] = INVALID_SOCKET;
   faxSockets[0] = faxSockets[1] = INVALID_SOCKET;
@@ -324,9 +332,7 @@ FaxInstance::~FaxInstance()
 
 void FaxInstance::GatewayMain()
 {
-cerr << "spandsp thread started" << endl;
   t38Gateway.Serve(faxSockets[1], t38Sockets[1]);
-cerr << "spandsp thread finished" << endl;
 }
 
 bool FaxInstance::Open()
@@ -358,8 +364,11 @@ bool FaxInstance::WritePCM(const void * from, unsigned * fromLen)
   return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)*fromLen;
 }
 
-bool FaxInstance::ReadPCM(void * to, unsigned * toLen)
+bool FaxInstance::ReadPCM(void * to, unsigned * toLen, bool & moreToRead)
 {
+  moreToRead = false;
+  static short seq = 0;
+
   if (*toLen < 320+12)
     return false;
   int stat = recvfrom(faxSockets[0], 12+(char *)to, 320, 0, NULL, 0);
@@ -367,21 +376,39 @@ bool FaxInstance::ReadPCM(void * to, unsigned * toLen)
     cerr << "fax read failed" << endl;
     return false;
   }
-  if (stat > 0)
+
+#if WRITE_PCM_FILES
+  static int file = _open("codec_read.pcm", _O_BINARY | _O_CREAT | _O_TRUNC | _O_WRONLY, _S_IREAD | _S_IWRITE);
+  if (file >= 0) {
+    if (_write(file, 12+(char *)to, stat) < stat) {
+      cerr << "cannot write codec read PCM data to file" << endl;
+      file = -1;
+    }
+  }
+#endif
+
+  if (stat == 320)
     *toLen = 320+12;
   else {
     *toLen = 0;
-    cerr << "fax read returned nothing" << endl;
+    cerr << "fax read returned error" << endl;
   }
+
+  fd_set fds;
+  FD_ZERO(&fds);
+  FD_SET(faxSockets[0], &fds);
+
+  timeval timeout;
+  timeout.tv_sec  = 0;
+  timeout.tv_usec = 0;
+  moreToRead = select(faxSockets[0]+1, &fds, NULL, NULL, &timeout) > 0;
 
   return TRUE;
 }
 
 bool FaxInstance::WriteT38(const void * from, unsigned * fromLen)
 {
-  if (*fromLen != 1 || (*(const unsigned char *)from != 0xff))
-    return sendto(t38Sockets[0], (const char *)from, *fromLen, 0, NULL, 0) == (int)*fromLen;
-  return true;
+  return sendto(t38Sockets[0], (const char *)from, *fromLen, 0, NULL, 0) == (int)*fromLen;
 }
 
 bool FaxInstance::ReadT38(void * to, unsigned  * toLen)
@@ -392,10 +419,12 @@ bool FaxInstance::ReadT38(void * to, unsigned  * toLen)
   FD_SET(t38Sockets[0], &fds);
 
   int delay = writeDelay.Calculate(20);
+  if (delay == 0)
+    delay = 1;
   timeval timeout;
   timeout.tv_sec  = 0;
   timeout.tv_usec = delay * 1000;
-  int stat = select(t38Sockets[0], &fds, NULL, NULL, &timeout);
+  int stat = select(t38Sockets[0]+1, &fds, NULL, NULL, &timeout);
 
   if (stat == 0) {
     *toLen = 0;
@@ -538,14 +567,18 @@ static int codec_t38_to_pcm(const struct PluginCodec_Definition * codec,
   if ((context.instance == NULL) && !context.StartCodec())
     return 0;
 
+  // ignore padding frames
+  if ((*fromLen == 13) && (((const unsigned char *)from)[12] == 0xff))
+    ;
   // only write T.38 data if there is a payload
-  if (*toLen > 12)
+  else if (*fromLen > 12)
     context.instance->WriteT38(from, fromLen);
 
-  // but always read PCM
-  context.instance->ReadPCM(to, toLen);
+  // always read PCM
+  bool moreToRead;
+  context.instance->ReadPCM(to, toLen, moreToRead);
 
-  *flag = PluginCodec_ReturnCoderLastFrame;
+  *flag = moreToRead ? 0 : PluginCodec_ReturnCoderLastFrame;
 
   return 1;
 }
