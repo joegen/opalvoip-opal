@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2163  2007/05/01 05:29:32  csoutheren
+ * Revision 1.2164  2007/05/10 04:45:35  csoutheren
+ * Change CSEQ storage to be an atomic integer
+ * Fix hole in transaction mutex handling
+ *
+ * Revision 2.162  2007/05/01 05:29:32  csoutheren
  * Fix problem with bad delete of SIPConnection when transport not available
  *
  * Revision 2.161  2007/04/21 11:05:56  dsandras
@@ -1211,10 +1215,12 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   // Find a corresponding connection
   PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID(), PSafeReadOnly);
   if (connection != NULL) {
-    SIPTransaction * transaction = connection->GetTransaction(pdu->GetTransactionID());
-    if (transaction != NULL && transaction->GetMethod() == SIP_PDU::Method_INVITE) {
+    SIPTransaction * transaction = connection->GetAndLockTransaction(pdu->GetTransactionID());
+    if (transaction != NULL) {
       // Have a response to the INVITE, so end Connect mode on the transport
-      transport.EndConnect(transaction->GetLocalAddress());
+      if (transaction->GetMethod() == SIP_PDU::Method_INVITE) 
+        transport.EndConnect(transaction->GetLocalAddress());
+      connection->GetTransactionsMutex().Signal();
     }
     connection->QueuePDU(pdu);
     return TRUE;
