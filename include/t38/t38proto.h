@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2011  2007/03/29 08:31:25  csoutheren
+ * Revision 1.2012  2007/05/10 05:34:01  csoutheren
+ * Ensure fax transmission works with reasonable size audio blocks
+ *
+ * Revision 2.10  2007/03/29 08:31:25  csoutheren
  * Fix media formats for T.38 endpoint
  *
  * Revision 2.9  2007/03/29 05:19:54  csoutheren
@@ -417,6 +420,8 @@ class OpalFaxMediaStream : public OpalMediaStream
     PString sessionToken;
     OpalFaxCallInfo * faxCallInfo;
     PFilePath filename;
+    BYTE writeBuffer[320];
+    PINDEX writeBufferLen;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
