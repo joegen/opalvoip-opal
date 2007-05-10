@@ -31024,6 +31024,7 @@ EXPORTS
     ?GetAllRegisteredMediaFormats@OpalMediaFormat@@SAXAAVOpalMediaFormatList@@@Z @27268 NONAME
     ?GetAllTypes@OpalLineInterfaceDevice@@SA?AVPStringList@@XZ @27269 NONAME
     ?GetAndDelete@SafeString@@QAE?AVPString@@XZ @39100 NONAME
+    ?GetAndLockTransaction@SIPConnection@@QAEPAVSIPTransaction@@ABVPString@@@Z @45844 NONAME
     ?GetAndLockVXMLChannel@PVXMLSession@@QAEPAVPVXMLChannel@@XZ @36862 NONAME
     ?GetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @27270 NONAME
     ?GetAt@?$PDictionary@VH460_FeatureID@@VH460_Feature@@@@UBEPAVH460_Feature@@ABVH460_FeatureID@@@Z @41617 NONAME
@@ -34664,8 +34665,8 @@ EXPORTS
     ?GetToken@OpalLine@@QBE?AVPString@@XZ @30309 NONAME
     ?GetTone@OpalRFC2833Info@@QBEDXZ @30310 NONAME
     ?GetToolName@RTP_Session@@QBE?AVPString@@XZ @30311 NONAME
-    ?GetTransaction@SIPConnection@@QAEPAVSIPTransaction@@ABVPString@@@Z @41684 NONAME
     ?GetTransactionID@SIP_PDU@@QBE?AVPString@@XZ @30312 NONAME
+    ?GetTransactionsMutex@SIPConnection@@QAEAAVPCriticalSection@@XZ @45845 NONAME
     ?GetTransmitHandler@OpalRFC2833Proto@@QBEABVPNotifier@@XZ @30313 NONAME
     ?GetTransmitMutex@OpalH224Handler@@QAEAAVPCriticalSection@@XZ @40929 NONAME
     ?GetTransport@H323Connection@@UBEAAVOpalTransport@@XZ @39465 NONAME
@@ -36943,7 +36944,6 @@ EXPORTS
     ?IsNonStandardMatch@H323NonStandardDataCapability@@UBEHABVH245_NonStandardParameter@@@Z @32309 NONAME
     ?IsNonStandardMatch@H323NonStandardVideoCapability@@UBEHABVH245_NonStandardParameter@@@Z @32310 NONAME
     ?IsNull@OpalMediaStream@@UBEHXZ @45545 NONAME
-    ?IsNull@OpalNullMediaStream@@UBEHXZ @45546 NONAME
     ?IsOffHook@OpalLine@@UAEHXZ @32312 NONAME
     ?IsOpen@H323Channel@@QBEHXZ @32313 NONAME
     ?IsOpen@OpalLineInterfaceDevice@@UBEHXZ @32314 NONAME
@@ -39623,7 +39623,7 @@ EXPORTS
     ?SetRemoteApplication@H323Connection@@QAEXABVH225_EndpointType@@@Z @34327 NONAME
     ?SetRemoteHasH281@OpalH281Handler@@QAEXH@Z @41005 NONAME
     ?SetRemoteId@H235Authenticator@@QAEXABVPString@@@Z @34328 NONAME
-    ?SetRemotePartyInfo@H323Connection@@QAEXABVH323SignalPDU@@@Z @34329 NONAME
+    ?SetRemotePartyInfo@H323Connection@@UAEXABVH323SignalPDU@@@Z @45846 NONAME
     ?SetRemotePort@IAX2Remote@@QAEXH@Z @39970 NONAME
     ?SetRemoteSocketInfo@RTP_UDP@@UAEHVAddress@PIPSocket@@GH@Z @45097 NONAME
     ?SetRemoteSocketInfo@T38PseudoRTP@@UAEHVAddress@PIPSocket@@GH@Z @45443 NONAME
