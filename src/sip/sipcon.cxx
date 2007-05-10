@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2221  2007/05/09 01:41:46  csoutheren
+ * Revision 1.2222  2007/05/10 04:45:35  csoutheren
+ * Change CSEQ storage to be an atomic integer
+ * Fix hole in transaction mutex handling
+ *
+ * Revision 2.220  2007/05/09 01:41:46  csoutheren
  * Ensure CANCEL is sent if incoming call hungup before ACK is received
  *
  * Revision 2.219  2007/04/26 07:01:47  csoutheren
@@ -956,7 +960,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   originalInvite = NULL;
   pduHandler = NULL;
-  lastSentCSeq = 0;
+  lastSentCSeq.SetValue(0);
   releaseMethod = ReleaseWithNothing;
 
   invitations.DisallowDeleteObjects();
@@ -985,6 +989,16 @@ SIPConnection::~SIPConnection()
 
   PTRACE(4, "SIP\tDeleted connection.");
 }
+
+SIPTransaction * SIPConnection::GetAndLockTransaction(const PString & transactionID)
+{ 
+  transactionsMutex.Wait(); 
+  SIPTransaction * trans = transactions.GetAt(transactionID); 
+  if (trans == NULL)
+    transactionsMutex.Signal(); 
+  return trans;
+}
+
 
 //
 // This table comes from RFC 3398 para 7.2.4.1
