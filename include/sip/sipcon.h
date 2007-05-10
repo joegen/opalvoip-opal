@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2063  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2064  2007/05/10 04:45:10  csoutheren
+ * Change CSEQ storage to be an atomic integer
+ * Fix hole in transaction mutex handling
+ *
+ * Revision 2.62  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -622,7 +626,7 @@ class SIPConnection : public OpalConnection
      */
     BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
-    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
     BOOL BuildSDP(
       SDPSessionDescription * &,     
@@ -630,7 +634,7 @@ class SIPConnection : public OpalConnection
       unsigned rtpSessionId
     );
 
-    SIPTransaction * GetTransaction (const PString & transactionID) { PWaitAndSignal m(transactionsMutex); return transactions.GetAt(transactionID); }
+    SIPTransaction * GetAndLockTransaction (const PString & transactionID);
 
     void AddTransaction(
       SIPTransaction * transaction
@@ -640,6 +644,7 @@ class SIPConnection : public OpalConnection
       SIPTransaction * transaction
     ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
 
+    PMutex & GetTransactionsMutex() { return transactionsMutex; }
 
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
 
@@ -724,7 +729,7 @@ class SIPConnection : public OpalConnection
     PMutex             invitationsMutex;
     SIPTransactionList invitations;
     SIPTransactionDict transactions;
-    unsigned           lastSentCSeq;
+    PAtomicInteger     lastSentCSeq;
 
     enum {
       ReleaseWithBYE,
