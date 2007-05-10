@@ -162,7 +162,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="spandsp\src\debug\libspandsp.lib;libtiff.lib"
+				AdditionalDependencies="spandsp\src\debug\libspandsp.lib libtiff.lib"
 				OutputFile="../../Debug/SpanDSPFax_pwplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
