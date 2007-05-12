@@ -75,6 +75,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common ISDN API LID", "LID\
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\..\pwlib\src\ptlib\msos\PTLib.vcproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL DLL", "..\src\win32\opal_dll.vcproj", "{0BF5DA42-4607-485F-9342-51FD28854F3B}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpalCodecInfo", "..\samples\opalcodecinfo\opalcodecinfo.vcproj", "{7FF55F1C-87EB-4087-8814-FD494BE49170}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -195,6 +207,24 @@ Global
 		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.No Trace.Build.0 = Release|Win32
 		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.Release.ActiveCfg = Release|Win32
 		{A24B5E63-F99A-4D5F-986E-96A94E5DBB31}.Release.Build.0 = Release|Win32
+		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.Debug.ActiveCfg = Debug|Win32
+		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.Debug.Build.0 = Debug|Win32
+		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.No Trace.ActiveCfg = Release|Win32
+		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.No Trace.Build.0 = Release|Win32
+		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.Release.ActiveCfg = Release|Win32
+		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.Release.Build.0 = Release|Win32
+		{0BF5DA42-4607-485F-9342-51FD28854F3B}.Debug.ActiveCfg = Debug|Win32
+		{0BF5DA42-4607-485F-9342-51FD28854F3B}.Debug.Build.0 = Debug|Win32
+		{0BF5DA42-4607-485F-9342-51FD28854F3B}.No Trace.ActiveCfg = No Trace|Win32
+		{0BF5DA42-4607-485F-9342-51FD28854F3B}.No Trace.Build.0 = No Trace|Win32
+		{0BF5DA42-4607-485F-9342-51FD28854F3B}.Release.ActiveCfg = Release|Win32
+		{0BF5DA42-4607-485F-9342-51FD28854F3B}.Release.Build.0 = Release|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug.ActiveCfg = Debug|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Debug.Build.0 = Debug|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.No Trace.ActiveCfg = No Trace|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.No Trace.Build.0 = No Trace|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release.ActiveCfg = Release|Win32
+		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
