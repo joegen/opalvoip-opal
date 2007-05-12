@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2024  2007/05/10 05:34:23  csoutheren
+ * Revision 1.2025  2007/05/12 03:57:34  rjongbloed
+ * Fixed transcoder from plug in not being created correctly due to media format not yet being registered.
+ *
+ * Revision 2.23  2007/05/10 05:34:23  csoutheren
  * Ensure fax transmission works with reasonable size audio blocks
  *
  * Revision 2.22  2007/04/19 06:34:12  csoutheren
@@ -734,7 +737,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
 {
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
-    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = "PCM-16")
+    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = OpalPCM16)
       : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? rawFormat : _codec->sourceFormat,
                               (strcmp(_codec->destFormat, "L16") == 0)   ? rawFormat : _codec->destFormat,
                              _isEncoder ? _codec->samplesPerFrame*2 : _codec->bytesPerFrame,
@@ -849,8 +852,8 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
     OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, unsigned inputBits, unsigned outputBits, PINDEX optimalBits)
-      : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? "PCM-16" : _codec->sourceFormat,
-                               (strcmp(_codec->destFormat, "L16") == 0) ? "PCM-16" : _codec->destFormat,
+      : OpalStreamedTranscoder((strcmp(_codec->sourceFormat, "L16") == 0) ? OpalPCM16 : _codec->sourceFormat,
+                               (strcmp(_codec->destFormat, "L16") == 0) ? OpalPCM16 : _codec->destFormat,
                                inputBits, outputBits, optimalBits), 
         codec(_codec)
     { 
@@ -2009,12 +2012,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
       if (encoderCodec->sampleRate == 8000) {
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair("PCM-16",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
       }
       else if (encoderCodec->sampleRate == 16000)
       {
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair("PCM-16-16kHz",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
         new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
       }
       else
@@ -2024,12 +2027,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
       break;
     case PluginCodec_MediaTypeAudioStreamed:
       if (encoderCodec->sampleRate == 8000) {
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair("PCM-16",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
         new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
       }
       else if (encoderCodec->sampleRate == 16000)
       {
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair("PCM-16-16kHz",                 encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
         new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
       }
       else
