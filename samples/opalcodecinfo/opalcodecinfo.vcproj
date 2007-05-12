@@ -205,6 +205,9 @@
 		<ProjectReference
 			ReferencedProjectIdentifier="{0BF5DA42-4607-485F-9342-51FD28854F3B}"
 			Name="OPAL DLL"/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+			Name="PTLib DLL"/>
 	</References>
 	<Files>
 		<Filter
