@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2017  2007/05/10 05:34:23  csoutheren
+ * Revision 1.2018  2007/05/13 23:51:44  dereksmithies
+ * If t38 is disabled, minimise the work done to compile this file.
+ *
+ * Revision 2.16  2007/05/10 05:34:23  csoutheren
  * Ensure fax transmission works with reasonable size audio blocks
  *
  * Revision 2.15  2007/05/01 05:33:57  rjongbloed
@@ -142,14 +145,16 @@
 #pragma implementation "t38proto.h"
 #endif
 
+#include <opal/buildopts.h>
+
+#if OPAL_T38FAX
+
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <opal/buildopts.h>
 
-#if OPAL_T38FAX
 
 #include <ptlib/pipechan.h>
 
