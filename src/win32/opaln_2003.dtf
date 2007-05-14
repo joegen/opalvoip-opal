@@ -32033,6 +32033,7 @@ EXPORTS
     ?PrintOn@Q931@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @27312 NONAME
     ?PrintOn@ReceiverReport@RTP_Session@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @27313 NONAME
     ?PrintOn@RouteEntry@OpalManager@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @27314 NONAME
+    ?PrintOn@RTP_DataFrame@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @39567 NONAME
     ?PrintOn@SafeString@@UBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @32809 NONAME
     ?PrintOn@SDPMediaDescription@@IBEXAAV?$basic_ostream@DU?$char_traits@D@std@@@std@@ABVPString@@@Z @32810 NONAME
     ?PrintOn@SDPMediaDescription@@QBEXABVOpalTransportAddress@@AAV?$basic_ostream@DU?$char_traits@D@std@@@std@@@Z @32811 NONAME
