@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2041  2007/04/19 06:34:12  csoutheren
+ * Revision 1.2042  2007/05/14 10:44:09  rjongbloed
+ * Added PrintOn function to RTP_DataFrame
+ *
+ * Revision 2.40  2007/04/19 06:34:12  csoutheren
  * Applied 1703206 - OpalVideoFastUpdatePicture over SIP
  * Thanks to Josh Mahonin
  *
@@ -457,6 +460,8 @@ class RTP_DataFrame : public PBYTEArray
     PINDEX GetPayloadSize() const { return payloadSize; }
     BOOL   SetPayloadSize(PINDEX sz);
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
+
+    virtual void PrintOn(ostream & strm) const;
 
   protected:
     PINDEX payloadSize;
