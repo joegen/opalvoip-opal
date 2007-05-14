@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2064  2007/04/20 06:57:18  rjongbloed
+ * Revision 1.2065  2007/05/14 10:44:09  rjongbloed
+ * Added PrintOn function to RTP_DataFrame
+ *
+ * Revision 2.63  2007/04/20 06:57:18  rjongbloed
  * Fixed various log levels
  *
  * Revision 2.62  2007/04/20 04:34:12  csoutheren
@@ -705,6 +708,30 @@ BOOL RTP_DataFrame::SetPayloadSize(PINDEX sz)
 {
   payloadSize = sz;
   return SetMinSize(GetHeaderSize()+payloadSize);
+}
+
+
+void RTP_DataFrame::PrintOn(ostream & strm) const
+{
+  strm <<  "V="  << GetVersion()
+       << " X="  << GetExtension()
+       << " M="  << GetMarker()
+       << " PT=" << GetPayloadType()
+       << " SN=" << GetSequenceNumber()
+       << " TS=" << GetTimestamp()
+       << " SSRC=" << GetSyncSource()
+       << " size=" << GetPayloadSize()
+       << '\n';
+
+  int csrcCount = GetContribSrcCount();
+  for (int csrc = 0; csrc < csrcCount; csrc++)
+    strm << "  CSRC[" << csrc << "]=" << GetContribSource(csrc) << '\n';
+
+  if (GetExtension())
+    strm << "  Header Extension Type: " << GetExtensionType() << '\n'
+         << hex << setfill('0') << PBYTEArray(GetExtensionPtr(), GetExtensionSize(), false) << setfill(' ') << dec << '\n';
+
+  strm << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
 }
 
 
