@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.30  2007/05/15 01:48:57  csoutheren
+ * Fix T.38 compile problems on Linux
+ *
  * Revision 1.29  2007/04/20 06:49:24  csoutheren
  * Really disable video code when video is turned off
  *
@@ -199,7 +202,6 @@
 #undef  OPAL_HAVE_SPEEX_SPEEX_H
 #undef  OPAL_SPEEX_FLOAT_NOISE
 
-
 /////////////////////////////////////////////////
 //
 // VoiceTronic VPB Support
@@ -222,6 +224,7 @@
 // Various options
 //
 //#define OPAL_RTP_AGGREGATE   1
+#undef GCC_HAS_CLZ
 
 /////////////////////////////////////////////////
 //
