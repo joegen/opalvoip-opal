@@ -25,7 +25,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2047  2007/03/30 14:45:32  hfriederich
+ * Revision 1.2048  2007/05/15 20:48:32  dsandras
+ * Added various handlers to manage subscriptions for presence, message
+ * waiting indications, registrations, state publishing,
+ * message conversations, ...
+ * Adds/fixes support for RFC3856, RFC3903, RFC3863, RFC3265, ...
+ * Many improvements over the original SIPInfo code.
+ * Code contributed by NOVACOM (http://www.novacom.be) thanks to
+ * EuroWeb (http://www.euroweb.hu).
+ *
+ * Revision 2.46  2007/03/30 14:45:32  hfriederich
  * Reorganization of hte way transactions are handled. Delete transactions
  *   in garbage collector when they're terminated. Update destructor code
  *   to improve safe destruction of SIPEndPoint instances.
@@ -436,6 +445,11 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetWWWAuthenticate() const;
     void SetWWWAuthenticate(const PString & v);
 
+    PString GetSIPIfMatch() const;
+    void SetSIPIfMatch(const PString & v);
+
+    PString GetSIPETag() const;
+    void SetSIPETag(const PString & v);
 
     /** return the value of a header field parameter, empty if none
      */
@@ -573,6 +587,7 @@ class SIP_PDU : public PObject
       Method_MESSAGE,
       Method_INFO,
       Method_PING,
+      Method_PUBLISH,
       NumMethods
     };
 
@@ -704,11 +719,11 @@ class SIP_PDU : public PObject
       const OpalTransport & transport
     );
 
-    /**Add and populate Route header if connection has routeSet.
-	   If first route is strict, exchange with URI.
-	   Returns TRUE if conection has a routeSet.
-	  */
-    BOOL SetRoute(SIPConnection & connection);
+    /**Add and populate Route header following the given routeSet.
+      If first route is strict, exchange with URI.
+      Returns TRUE if routeSet.
+      */
+    BOOL SetRoute(const PStringList & routeSet);
 
     /**Set mime allow field to all supported methods.
       */
@@ -726,7 +741,7 @@ class SIP_PDU : public PObject
     /**Return the address to which the request PDU should be sent
      * according to the RFC, for a request in a dialog.
      */
-    OpalTransportAddress GetSendAddress(SIPConnection &);
+    OpalTransportAddress GetSendAddress(const PStringList & routeSet);
     
     /**Read PDU from the specified transport.
       */
@@ -739,7 +754,7 @@ class SIP_PDU : public PObject
     BOOL Write(
       OpalTransport & transport
     );
-
+    
     PString GetTransactionID() const;
 
     Methods GetMethod() const                { return method; }
@@ -768,6 +783,7 @@ class SIP_PDU : public PObject
     SIPMIMEInfo mime;
     PString     entityBody;
 
+    OpalTransportAddress    lastTransportAddress;
     SDPSessionDescription * sdp;
 };
 
@@ -921,6 +937,7 @@ class SIPRegister : public SIPTransaction
     SIPRegister(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
+      const PStringList & routeSet,
       const SIPURL & address,
       const PString & id,
       unsigned expires,
@@ -932,12 +949,20 @@ class SIPRegister : public SIPTransaction
 
 /////////////////////////////////////////////////////////////////////////
 
-class SIPMWISubscribe : public SIPTransaction
+class SIPSubscribe : public SIPTransaction
 {
-    PCLASSINFO(SIPMWISubscribe, SIPTransaction);
+    PCLASSINFO(SIPSubscribe, SIPTransaction);
   public:
-   /** Valid types for a MWI
+    /** Valid types for a presence event
      */
+    enum SubscribeType {
+      Unknown,
+      MessageSummary,
+      Presence
+    };
+
+    /** Valid types for a MWI
+    */
     enum MWIType { 
       
       VoiceMessage, 
@@ -947,12 +972,34 @@ class SIPMWISubscribe : public SIPTransaction
       TextMessage, 
       None 
     };
+    SIPSubscribe(
+        SIPEndPoint & ep,
+        OpalTransport & trans,
+        SIPSubscribe::SubscribeType & type,
+        const PStringList & routeSet,
+        const SIPURL & targetAddress,
+        const PString & remotePartyAddress,
+        const PString & localPartyAddress,
+        const PString & id,
+        const unsigned & cseq,
+        unsigned expires
+    );
+};
 
-  SIPMWISubscribe(
-      SIPEndPoint   & endpoint,
-      OpalTransport & transport,
-      const SIPURL & address,
-      const PString & id,
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPPublish : public SIPTransaction
+{
+    PCLASSINFO(SIPPublish, SIPTransaction);
+  public:
+    SIPPublish(
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      const PStringList & routeSet,
+      const SIPURL & targetAddress,
+      const PString & sipIfMatch,
+      const PString & body,
       unsigned expires
     );
 };
@@ -1014,7 +1061,8 @@ class SIPMessage : public SIPTransaction
     SIPMessage(
 	       SIPEndPoint & ep,
 	       OpalTransport & trans,
-	       const SIPURL & address,
+	       const SIPURL & to,
+               const PStringList & routeSet,
 	       const PString & body
     );
 };
