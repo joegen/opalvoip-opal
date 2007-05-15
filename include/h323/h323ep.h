@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2049  2007/03/13 00:32:16  csoutheren
+ * Revision 1.2050  2007/05/15 07:26:38  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.48  2007/03/13 00:32:16  csoutheren
  * Simple but messy changes to allow compile time removal of protocol
  * options such as H.450 and H.460
  * Fix MakeConnection overrides
@@ -429,9 +434,6 @@ class H235SecurityInfo;
 class H323Gatekeeper;
 class H323SignalPDU;
 class H323ServiceControlSession;
-
-class PSTUNClient;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1466,21 +1468,6 @@ class H323EndPoint : public OpalEndPoint
      */
     H460_FeatureSet & GetFeatureSet() { return features; };
 #endif
-
-    /**Return the STUN server to use.
-       Returns NULL if address is a local address as per IsLocalAddress().
-       Always returns the STUN server if address is zero.
-       Note, the pointer is NOT to be deleted by the user.
-      */
-    PSTUNClient * GetSTUN(
-      const PIPSocket::Address & address = 0
-    ) const { return manager.GetSTUN(address); }
-
-    /**Set the STUN server address, is of the form host[:port]
-      */
-    void SetSTUNServer(
-      const PString & server
-    ) { manager.SetSTUNServer(server); }
 
     /**Determine if the address is "local", ie does not need STUN
      */

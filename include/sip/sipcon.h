@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2064  2007/05/10 04:45:10  csoutheren
+ * Revision 1.2065  2007/05/15 07:26:38  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.63  2007/05/10 04:45:10  csoutheren
  * Change CSEQ storage to be an atomic integer
  * Fix hole in transaction mutex handling
  *
@@ -700,8 +705,7 @@ class SIPConnection : public OpalConnection
     SDPMediaDescription::Direction GetDirection(unsigned sessionId);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
-    OpalTransportUDP & GetUDPTransport();
-    OpalTransportUDP * udpTransport;
+    OpalTransport * CreateTransport(const OpalTransportAddress & address, BOOL isLocalAddress = FALSE);
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
