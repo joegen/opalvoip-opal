@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2088  2007/05/10 05:01:18  csoutheren
+ * Revision 1.2089  2007/05/15 05:25:34  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.87  2007/05/10 05:01:18  csoutheren
  * Increase default number of RTP ports because sometimes, 100 ports is not enough :)
  *
  * Revision 2.86  2007/05/07 14:14:31  csoutheren
@@ -1429,6 +1432,14 @@ void OpalManager::StopRecording(const PString & callToken)
   if (call != NULL)
     call->StopRecording();
 }
+
+
+BOOL OpalManager::UseNATForIncomingCall(OpalConnection & /*conn*/, const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr)
+{
+  return (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
+         ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr));
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
