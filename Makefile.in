@@ -22,6 +22,15 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.53  2007/05/15 20:47:20  dsandras
+# Added various handlers to manage subscriptions for presence, message
+# waiting indications, registrations, state publishing,
+# message conversations, ...
+# Adds/fixes support for RFC3856, RFC3903, RFC3863, RFC3265, ...
+# Many improvements over the original SIPInfo code.
+# Code contributed by NOVACOM (http://www.novacom.be) thanks to
+# EuroWeb (http://www.euroweb.hu).
+#
 # Revision 1.52  2007/05/08 09:31:23  csoutheren
 # Removed warnings on Unix
 #
@@ -512,6 +521,8 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sipcon.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
+           $(OPAL_SRCDIR)/sip/handlers.cxx \
+           $(OPAL_SRCDIR)/sip/sharedtransports.cxx \
 
 endif
 endif
