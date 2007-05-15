@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2164  2007/05/10 04:45:35  csoutheren
+ * Revision 1.2165  2007/05/15 07:27:34  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.163  2007/05/10 04:45:35  csoutheren
  * Change CSEQ storage to be an atomic integer
  * Fix hole in transaction mutex handling
  *
@@ -676,7 +681,7 @@ BOOL SIPInfo::CreateTransport (OpalTransportAddress & transportAddress)
   
   if (registrarTransport != NULL) {
     if (!registrarTransport->IsReliable()) {
-      PSTUNClient *stunClient = ep.GetManager().GetSTUN (transportAddress.GetHostName());
+      PSTUNClient *stunClient = ep.GetManager().GetSTUN(transportAddress.GetHostName());
       if (stunClient) {
         PIPSocket::Address externalAddress;
         PIPSocket::Address currentAddress;
