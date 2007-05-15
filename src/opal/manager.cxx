@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2089  2007/05/15 05:25:34  csoutheren
+ * Revision 1.2090  2007/05/15 07:27:34  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.88  2007/05/15 05:25:34  csoutheren
  * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
  *
  * Revision 2.87  2007/05/10 05:01:18  csoutheren
@@ -1434,10 +1439,39 @@ void OpalManager::StopRecording(const PString & callToken)
 }
 
 
-BOOL OpalManager::UseNATForIncomingCall(OpalConnection & /*conn*/, const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr)
+BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
+                    const PIPSocket::Address & localAddr, 
+                    const PIPSocket::Address & peerAddr,
+                    const PIPSocket::Address & sigAddr,
+                                          BOOL incoming)
 {
-  return (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
-         ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr));
+  BOOL remoteIsNAT = FALSE;
+
+  if (incoming) {
+
+    // by default, only check for NAT under two conditions
+    //    1. Peer is not local, but the peer thinks it is
+    //    2. Peer address and local address are both private, but not the same
+    //
+    if ((!peerAddr.IsRFC1918() && sigAddr.IsRFC1918()) ||
+        ((peerAddr.IsRFC1918() && localAddr.IsRFC1918()) && (localAddr != peerAddr))) {
+
+      // given these paramaters, translate the local address
+      PIPSocket::Address trialAddr = localAddr;
+      TranslateIPAddress(trialAddr, peerAddr);
+
+      // if the application specific routine changed the local address, then enable RTP NAT mode
+      if (localAddr != trialAddr) {
+        PTRACE(3, "OPAL\tSource signal address " << sigAddr << " and peer address " << peerAddr << " indicate remote endpoint is behind NAT");
+        remoteIsNAT = TRUE;
+      }
+    }
+  }
+  else
+  {
+  }
+
+  return remoteIsNAT;
 }
 
 
