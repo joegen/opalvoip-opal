@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2008  2007/03/12 23:17:04  csoutheren
+ * Revision 1.2009  2007/05/15 09:39:37  rjongbloed
+ * Fixed various OIDs for H.245 generic capabilities.
+ * Added G.722.2 OID for H.245 generic capabilities.
+ * Changed the H.323 capability "extra info" pointer to be const.
+ *
+ * Revision 2.7  2007/03/12 23:17:04  csoutheren
  * Add new code plugins types (backport from OpenH323)
  *
  * Revision 2.6  2006/11/01 06:57:23  csoutheren
@@ -301,7 +306,7 @@ struct PluginCodec_Definition {
  
   // H323 specific fields
   unsigned char h323CapabilityType;
-  void          * h323CapabilityData;
+  const void  * h323CapabilityData;
 
   // end of version 1 fields
 };
@@ -483,11 +488,14 @@ enum {
 #define OpalPluginCodec_Identifer_AMR             "0.0.8.245.1.1.1"
 
 // AMR-NB\WB  (as defined in H.245v13 Annex R)
-#define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.1.1.9"
-#define OpalPluginCodec_Identifer_AMR_WB          "0.0.8.1.1.10"
+#define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.245.1.1.9"
+#define OpalPluginCodec_Identifer_AMR_WB          "0.0.8.245.1.1.10"
+
+// G.722.2 (aka AMR-WB)
+#define OpalPluginCodec_Identifer_G7222           "0.0.7.7222.1.0"
 
 // iLBC (as defined in H.245v13 Annex S)
-#define OpalPluginCodec_Identifer_iLBC            "0.0.8.1.1.11"
+#define OpalPluginCodec_Identifer_iLBC            "0.0.8.245.1.1.11"
 
 
 // Video Capabilities
