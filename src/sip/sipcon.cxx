@@ -24,7 +24,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2224  2007/05/15 07:27:34  csoutheren
+ * Revision 1.2225  2007/05/15 20:49:21  dsandras
+ * Added various handlers to manage subscriptions for presence, message
+ * waiting indications, registrations, state publishing,
+ * message conversations, ...
+ * Adds/fixes support for RFC3856, RFC3903, RFC3863, RFC3265, ...
+ * Many improvements over the original SIPInfo code.
+ * Code contributed by NOVACOM (http://www.novacom.be) thanks to
+ * EuroWeb (http://www.euroweb.hu).
+ *
+ * Revision 2.223  2007/05/15 07:27:34  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -1981,6 +1990,7 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_MESSAGE :
     case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_REGISTER :
+    case SIP_PDU::Method_PUBLISH :
       // Shouldn't have got this!
       break;
     case SIP_PDU::NumMethods :  // if no method, must be response
@@ -2102,9 +2112,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     }
 
     // Send the ack
-    if (response.GetStatusCode()/100 != 1) {
+    if (response.GetStatusCode()/100 != 1)
       SendACK(transaction, response);
-    }
   }
 
   switch (response.GetStatusCode()) {
@@ -2405,7 +2414,7 @@ BOOL SIPConnection::OnOpenIncomingMediaChannels()
 #endif
     };
     PINDEX i;
-    for (i = 0; i < (sizeof(previewTypes)/sizeof(previewTypes[0])); ++i) {
+    for (i = 0; i < (PINDEX) (sizeof(previewTypes)/sizeof(previewTypes[0])); ++i) {
       SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(previewTypes[i].mediaType);
       if (mediaDescription != NULL) {
         previewFormats += mediaDescription->GetMediaFormats(previewTypes[i].sessionID);
@@ -2976,7 +2985,7 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   }
 
   // Send the PDU using the connection transport
-  if (!SendPDU(ack, ack.GetSendAddress(*this))) {
+  if (!SendPDU(ack, ack.GetSendAddress(GetRouteSet()))) {
     Release(EndedByTransportFail);
     return FALSE;
   }
@@ -3001,6 +3010,7 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
   SIPURL hosturl;
 
   if (transport) {
+    PWaitAndSignal m(transportMutex); 
     if (lastTransportAddress != address) {
       // skip transport identifier
       PINDEX pos = address.Find('$');
@@ -3021,7 +3031,6 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
         lastTransportAddress = hosturl.GetHostAddress();
 
       PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
-      PWaitAndSignal m(transportMutex); 
       transport->SetRemoteAddress(lastTransportAddress);
     }
     
