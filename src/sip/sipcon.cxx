@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2222  2007/05/10 04:45:35  csoutheren
+ * Revision 1.2223  2007/05/15 05:25:34  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.221  2007/05/10 04:45:35  csoutheren
  * Change CSEQ storage to be an atomic integer
  * Fix hole in transaction mutex handling
  *
@@ -2243,11 +2246,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     PIPSocket::Address srcAddr, sigAddr;
     sourceAddress.GetIpAddress(srcAddr);
     transport->GetRemoteAddress().GetIpAddress(sigAddr);
-    if (
-        (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
-        ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
-        )  
-    {
+
+    if (UseNATForIncomingCall(sigAddr, srcAddr)) {
+
       PIPSocket::Address localAddress;
       transport->GetLocalAddress().GetIpAddress(localAddress);
 
