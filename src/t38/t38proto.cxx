@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2018  2007/05/13 23:51:44  dereksmithies
+ * Revision 1.2019  2007/05/15 01:48:57  csoutheren
+ * Fix T.38 compile problems on Linux
+ *
+ * Revision 2.17  2007/05/13 23:51:44  dereksmithies
  * If t38 is disabled, minimise the work done to compile this file.
  *
  * Revision 2.16  2007/05/10 05:34:23  csoutheren
@@ -148,13 +151,6 @@
 #include <opal/buildopts.h>
 
 #if OPAL_T38FAX
-
-#include <io.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-
 
 #include <ptlib/pipechan.h>
 
@@ -1055,7 +1051,7 @@ BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
       BYTE * ptr = packet.GetPayloadPtr();
 
       // if there is more data than spandsp can accept, break it down
-      while ((writeBufferLen + size) >= sizeof(writeBuffer)) {
+      while ((writeBufferLen + size) >= (PINDEX)sizeof(writeBuffer)) {
         PINDEX len;
         if (writeBufferLen == 0) {
           if (!faxCallInfo->socket.WriteTo(ptr, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
