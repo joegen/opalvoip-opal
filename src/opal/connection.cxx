@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2107  2007/05/07 14:14:31  csoutheren
+ * Revision 1.2108  2007/05/15 05:25:33  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.106  2007/05/07 14:14:31  csoutheren
  * Add call record capability
  *
  * Revision 2.105  2007/04/26 07:01:47  csoutheren
@@ -1651,5 +1654,11 @@ void OpalConnection::ApplyStringOptions()
 void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*/)
 {
 }
+
+BOOL OpalConnection::UseNATForIncomingCall(const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr)
+{
+  return endpoint.UseNATForIncomingCall(*this, sigAddr, srcAddr);
+}
+
 
 /////////////////////////////////////////////////////////////////////////////

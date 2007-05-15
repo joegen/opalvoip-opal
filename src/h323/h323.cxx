@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2152  2007/04/28 12:06:07  vfrolov
+ * Revision 1.2153  2007/05/15 05:25:33  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.151  2007/04/28 12:06:07  vfrolov
  * Fixed Assertion fail if received h2250LogicalChannelParameters w/o mediaControlChannel
  *
  * Revision 2.150  2007/04/26 07:01:46  csoutheren
@@ -1066,11 +1069,9 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPD
     PIPSocket::Address srcAddr, sigAddr;
     sourceAddress.GetIpAddress(srcAddr);
     signallingChannel->GetRemoteAddress().GetIpAddress(sigAddr);
-    if (
-        (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
-        ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
-        )  
-    {
+
+    if (UseNATForIncomingCall(sigAddr, srcAddr)) {
+
       PIPSocket::Address localAddress;
       signallingChannel->GetLocalAddress().GetIpAddress(localAddress);
 
