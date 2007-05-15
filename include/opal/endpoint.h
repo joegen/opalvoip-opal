@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2047  2007/03/29 23:55:46  rjongbloed
+ * Revision 1.2048  2007/05/15 05:24:50  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.46  2007/03/29 23:55:46  rjongbloed
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connection class they can create it without
  *   needing to remember to do any more than the new.
@@ -879,6 +882,12 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
                                       PIPSocket::InterfaceTable & interfaceTable);
+
+    virtual BOOL UseNATForIncomingCall(
+      OpalConnection & conn,
+      const PIPSocket::Address & sigAddr, 
+      const PIPSocket::Address & srcAddr
+    );
 
   protected:
     OpalManager   & manager;

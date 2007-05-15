@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2082  2007/05/07 14:13:51  csoutheren
+ * Revision 1.2083  2007/05/15 05:24:50  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.81  2007/05/07 14:13:51  csoutheren
  * Add call record capability
  *
  * Revision 2.80  2007/04/26 07:01:01  csoutheren
@@ -1421,6 +1424,8 @@ class OpalConnection : public PSafeObject
 
     virtual void EnableRecording();
     virtual void DisableRecording();
+
+    virtual BOOL UseNATForIncomingCall(const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2061  2007/05/07 14:13:51  csoutheren
+ * Revision 1.2062  2007/05/15 05:24:50  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.60  2007/05/07 14:13:51  csoutheren
  * Add call record capability
  *
  * Revision 2.59  2007/04/18 00:00:44  csoutheren
@@ -1253,6 +1256,12 @@ class OpalManager : public PObject
 
     virtual BOOL StartRecording(const PString & callToken, const PFilePath & fn);
     virtual void StopRecording(const PString & callToken);
+
+    virtual BOOL UseNATForIncomingCall(
+      OpalConnection & conn,
+      const PIPSocket::Address & sigAddr, 
+      const PIPSocket::Address & srcAddr
+    );
 
   protected:
     // Configuration variables
