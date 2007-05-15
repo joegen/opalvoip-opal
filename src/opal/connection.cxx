@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2108  2007/05/15 05:25:33  csoutheren
+ * Revision 1.2109  2007/05/15 07:27:34  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.107  2007/05/15 05:25:33  csoutheren
  * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
  *
  * Revision 2.106  2007/05/07 14:14:31  csoutheren
@@ -1655,10 +1660,12 @@ void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*
 {
 }
 
-BOOL OpalConnection::UseNATForIncomingCall(const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr)
+BOOL OpalConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
+                           const PIPSocket::Address & peerAddr,
+                           const PIPSocket::Address & sigAddr,
+                                                 BOOL incoming)
 {
-  return endpoint.UseNATForIncomingCall(*this, sigAddr, srcAddr);
+  return endpoint.IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
 }
-
 
 /////////////////////////////////////////////////////////////////////////////

@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2153  2007/05/15 05:25:33  csoutheren
+ * Revision 1.2154  2007/05/15 07:27:34  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.152  2007/05/15 05:25:33  csoutheren
  * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
  *
  * Revision 2.151  2007/04/28 12:06:07  vfrolov
@@ -1057,32 +1062,20 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPD
   // compare the source call signalling address
   if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress)) {
 
-    H323TransportAddress sourceAddress(setup.m_sourceCallSignalAddress);
-
-    //
-    // two condition for detecting remote is behind a NAT
-    //   1. the signalling address is not private, but the TCP source address is
-    //   2. the signalling and TCP source address are both private, but not the same
-    //
-    // but don't enable NAT usage if local endpoint is configured to be behind a NAT
-    //
-    PIPSocket::Address srcAddr, sigAddr;
-    sourceAddress.GetIpAddress(srcAddr);
-    signallingChannel->GetRemoteAddress().GetIpAddress(sigAddr);
-
-    if (UseNATForIncomingCall(sigAddr, srcAddr)) {
-
-      PIPSocket::Address localAddress;
-      signallingChannel->GetLocalAddress().GetIpAddress(localAddress);
-
-      PIPSocket::Address ourAddress = localAddress;
-      endpoint.TranslateTCPAddress(localAddress, sigAddr);
-
-      if (localAddress != ourAddress) {
-        PTRACE(3, "H225\tSource signal address " << srcAddr << " and TCP peer address " << sigAddr << " indicate remote endpoint is behind NAT");
-        remoteIsNAT = TRUE;
-      }
+    // get the address that remote end *thinks* it is using from the sourceCallSignalAddress field
+    PIPSocket::Address sigAddr;
+    {
+      H323TransportAddress sigAddress(setup.m_sourceCallSignalAddress);
+      sigAddress.GetIpAddress(sigAddr);
     }
+
+    // get the local and peer transport addresses
+    PIPSocket::Address peerAddr, localAddr;
+    signallingChannel->GetRemoteAddress().GetIpAddress(peerAddr);
+    signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
+
+    // allow the application to determine if RTP NAT is enabled or not
+    remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, TRUE);
   }
 
   // Anything else we need from setup PDU
@@ -2632,8 +2625,7 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
   
   H323TransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
   if (controlListener == NULL) {
-    controlListener = localSignallingInterface.CreateListener(
-                            endpoint, OpalTransportAddress::HostOnly);
+    controlListener = localSignallingInterface.CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return FALSE;
 

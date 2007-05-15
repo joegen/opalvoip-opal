@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2058  2007/05/15 05:25:34  csoutheren
+ * Revision 1.2059  2007/05/15 07:27:34  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.57  2007/05/15 05:25:34  csoutheren
  * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
  *
  * Revision 2.56  2007/04/04 02:12:01  rjongbloed
@@ -778,9 +783,13 @@ BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/,
 }
 
 
-BOOL OpalEndPoint::UseNATForIncomingCall(OpalConnection & conn, const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr)
+BOOL OpalEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
+                         const PIPSocket::Address & localAddr, 
+                         const PIPSocket::Address & peerAddr,
+                         const PIPSocket::Address & sigAddr,
+                                               BOOL incoming)
 {
-  return GetManager().UseNATForIncomingCall(conn, sigAddr, srcAddr);
+  return GetManager().IsRTPNATEnabled(conn, localAddr, peerAddr, sigAddr, incoming);
 }
 
 
