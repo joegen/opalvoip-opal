@@ -28,7 +28,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2083  2007/05/15 05:24:50  csoutheren
+ * Revision 1.2084  2007/05/15 07:26:38  csoutheren
+ * Remove deprecated  interface to STUN server in H323Endpoint
+ * Change UseNATForIncomingCall to IsRTPNATEnabled
+ * Various cleanups of messy and unused code
+ *
+ * Revision 2.82  2007/05/15 05:24:50  csoutheren
  * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
  *
  * Revision 2.81  2007/05/07 14:13:51  csoutheren
@@ -1425,7 +1430,10 @@ class OpalConnection : public PSafeObject
     virtual void EnableRecording();
     virtual void DisableRecording();
 
-    virtual BOOL UseNATForIncomingCall(const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr);
+    virtual BOOL IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
+                                 const PIPSocket::Address & peerAddr,
+                                 const PIPSocket::Address & sigAddr,
+                                                       BOOL incoming);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
