@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2057  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2058  2007/05/15 05:25:34  csoutheren
+ * Add UseNATForIncomingCall override so applications can optionally implement their own NAT activation strategy
+ *
+ * Revision 2.56  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -774,6 +777,11 @@ BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/,
   return TRUE;
 }
 
+
+BOOL OpalEndPoint::UseNATForIncomingCall(OpalConnection & conn, const PIPSocket::Address & sigAddr, const PIPSocket::Address & srcAddr)
+{
+  return GetManager().UseNATForIncomingCall(conn, sigAddr, srcAddr);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
