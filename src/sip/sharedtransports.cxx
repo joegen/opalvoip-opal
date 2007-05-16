@@ -1,4 +1,3 @@
-
 /*
  * sharedtransports.cxx
  *
@@ -25,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sharedtransports.cxx,v $
+ * Revision 1.2  2007/05/16 01:17:07  csoutheren
+ * Added new files to Windows build
+ * Removed compiler warnings on Windows
+ * Added backwards compatible SIP Register function
+ *
  * Revision 1.1  2007/05/15 20:42:12  dsandras
  * Added basic class allowing to share transports between various SIP
  * handlers. This class should be deprecated soon with the new OpalTransport
@@ -34,6 +38,11 @@
  *
  */
 
+#include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "sharedtransports.h"
+#endif
 
 #include <sip/sharedtransports.h>
 #include <sip/sipep.h>

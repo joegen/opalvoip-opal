@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2166  2007/05/15 20:46:00  dsandras
+ * Revision 1.2167  2007/05/16 01:17:07  csoutheren
+ * Added new files to Windows build
+ * Removed compiler warnings on Windows
+ * Added backwards compatible SIP Register function
+ *
+ * Revision 2.165  2007/05/15 20:46:00  dsandras
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
  * message conversations, ...
@@ -1291,7 +1296,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   if (callid_handler->GetAuthentication().IsValid()
       && lastUsername == callid_handler->GetAuthentication().GetUsername ()
       && lastNonce == callid_handler->GetAuthentication().GetNonce ()
-      && !callid_handler->GetExpire() > 0) {
+      && callid_handler->GetExpire() > 0) {
     PTRACE(2, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
     callid_handler->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
@@ -1328,7 +1333,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 }
 
 
-void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
+void SIPEndPoint::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
   PSafePtr<SIPHandler> handler = NULL;
 
@@ -1457,12 +1462,12 @@ BOOL SIPEndPoint::IsSubscribed(SIPSubscribe::SubscribeType type,
 }
 
 
-BOOL SIPEndPoint::Register(const PString & host,
+BOOL SIPEndPoint::Register(const PString & /*host*/,
                            unsigned expire,
                            const PString & aor,
-			   const PString & authName,
+			                     const PString & authName,
                            const PString & password,
-			   const PString & realm,
+			                     const PString & realm,
                            const PTimeInterval & minRetryTime, 
                            const PTimeInterval & maxRetryTime)
 {
@@ -1501,6 +1506,27 @@ BOOL SIPEndPoint::Register(const PString & host,
   }
 
   return TRUE;
+}
+
+
+BOOL SIPEndPoint::Register(
+      const PString & host,
+      const PString & user,
+      const PString & autName,
+      const PString & password,
+      const PString & authRealm,
+      unsigned expire,
+      const PTimeInterval & minRetryTime, 
+      const PTimeInterval & maxRetryTime
+)
+{
+  PString aor;
+  if (user.Find('@') != P_MAX_INDEX)
+    aor = user;
+  else
+    aor = user + '@' + host;
+  
+  return Register(host, expire, aor, autName, password, authRealm, minRetryTime, maxRetryTime);
 }
 
 

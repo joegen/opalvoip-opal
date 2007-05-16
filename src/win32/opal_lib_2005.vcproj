@@ -3894,6 +3894,10 @@
 				Name="SIP Sources"
 				>
 				<File
+					RelativePath="..\sip\handlers.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\sip\sdp.cxx"
 					>
 					<FileConfiguration
@@ -3952,6 +3956,10 @@
 							PreprocessorDefinitions=""
 						/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sip\sharedtransports.cxx"
+					>
 				</File>
 				<File
 					RelativePath="..\sip\sipcon.cxx"
@@ -4573,7 +4581,15 @@
 				Name="SIP Headers"
 				>
 				<File
+					RelativePath="..\..\include\sip\handlers.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\include\sip\sdp.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\sip\sharedtransports.h"
 					>
 				</File>
 				<File
