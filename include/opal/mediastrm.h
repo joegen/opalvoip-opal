@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2046  2007/05/09 01:39:19  csoutheren
+ * Revision 1.2047  2007/05/16 10:45:17  dsandras
+ * Added 2 new functions to the API thanks to Matthias Schneider <ma30002000
+ * yahoo de>. Thanks!
+ *
+ * Revision 2.45  2007/05/09 01:39:19  csoutheren
  * Remove redundant patch for NULL source streams
  *
  * Revision 2.44  2007/05/02 04:13:21  csoutheren
@@ -932,6 +936,18 @@ class OpalVideoMediaStream : public OpalMediaStream
     virtual BOOL SetDataSize(
      PINDEX dataSize  ///<  New data size
     );
+
+    /** Get the input device (e.g. for statistics)
+      */
+    virtual PVideoInputDevice * GetVideoInputDevice() {
+      return inputDevice;
+    }
+
+    /** Get the output device (e.g. for statistics)
+      */
+    virtual PVideoOutputDevice * GetVideoOutputDevice() {
+      return outputDevice;
+    }
 
   //@}
 
