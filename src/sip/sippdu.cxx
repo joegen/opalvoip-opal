@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2125  2007/05/15 20:47:20  dsandras
+ * Revision 1.2126  2007/05/16 01:17:07  csoutheren
+ * Added new files to Windows build
+ * Removed compiler warnings on Windows
+ * Added backwards compatible SIP Register function
+ *
+ * Revision 2.124  2007/05/15 20:47:20  dsandras
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
  * message conversations, ...
@@ -2554,7 +2559,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
 SIPPublish::SIPPublish(SIPEndPoint & ep,
                        OpalTransport & trans,
-                       const PStringList & routeSet,
+                       const PStringList & /*routeSet*/,
                        const SIPURL & targetAddress,
                        const PString & sipIfMatch,
                        const PString & body,
