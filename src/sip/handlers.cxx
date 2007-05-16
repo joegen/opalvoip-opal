@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.2  2007/05/16 01:17:07  csoutheren
+ * Added new files to Windows build
+ * Removed compiler warnings on Windows
+ * Added backwards compatible SIP Register function
+ *
  * Revision 1.1  2007/05/15 20:45:09  dsandras
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
@@ -151,13 +156,13 @@ BOOL SIPHandler::SendRequest()
 }
 
 
-BOOL SIPHandler::OnReceivedNOTIFY(SIP_PDU & response)
+BOOL SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 {
   return FALSE;
 }
 
 
-void SIPHandler::OnReceivedOK(SIP_PDU & response)
+void SIPHandler::OnReceivedOK(SIP_PDU & /*response*/)
 {
   if (GetState() == Unsubscribing) {
     SetState(Unsubscribed);
@@ -168,7 +173,7 @@ void SIPHandler::OnReceivedOK(SIP_PDU & response)
 }
 
 
-void SIPHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 {
 }
 
@@ -210,7 +215,7 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint,
   transport = ep.CreateSharedTransport(SIPURL(to).GetHostName());
 
   expire = exp;
-  if (expire == 0)
+  if (expire <= 0)
     expire = ep.GetRegistrarTimeToLive().GetSeconds();
 
   password = pass;
@@ -282,7 +287,7 @@ void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
 }
 
 
-void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 {
   OnFailed(SIP_PDU::Failure_RequestTimeout);
   expireTimer = PTimeInterval (0, 30);
@@ -406,7 +411,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIP_PDU & response)
 }
 
 
-void SIPSubscribeHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPSubscribeHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 {
   OnFailed(SIP_PDU::Failure_RequestTimeout);
 }
@@ -673,7 +678,7 @@ void SIPPublishHandler::OnReceivedOK(SIP_PDU & response)
 }
 
 
-void SIPPublishHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPPublishHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 {
   OnFailed(SIP_PDU::Failure_RequestTimeout);
   expireTimer = PTimeInterval (0, 30);
@@ -799,12 +804,12 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
 }
 
 
-void SIPMessageHandler::OnReceivedOK(SIP_PDU & response)
+void SIPMessageHandler::OnReceivedOK(SIP_PDU & /*response*/)
 {
 }
 
 
-void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 {
   if (timeoutRetry > 2)
     OnFailed(SIP_PDU::Failure_RequestTimeout);
@@ -854,17 +859,17 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 }
 
 
-void SIPPingHandler::OnReceivedOK(SIP_PDU & response)
+void SIPPingHandler::OnReceivedOK(SIP_PDU & /*response*/)
 {
 }
 
 
-void SIPPingHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPPingHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 {
 }
 
 
-void SIPPingHandler::OnFailed(SIP_PDU::StatusCodes reason)
+void SIPPingHandler::OnFailed(SIP_PDU::StatusCodes /*reason*/)
 {
 }
 
