@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2167  2007/05/16 01:17:07  csoutheren
+ * Revision 1.2168  2007/05/16 10:25:57  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.166  2007/05/16 01:17:07  csoutheren
  * Added new files to Windows build
  * Removed compiler warnings on Windows
  * Added backwards compatible SIP Register function
@@ -1296,7 +1299,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   if (callid_handler->GetAuthentication().IsValid()
       && lastUsername == callid_handler->GetAuthentication().GetUsername ()
       && lastNonce == callid_handler->GetAuthentication().GetNonce ()
-      && callid_handler->GetExpire() > 0) {
+      && callid_handler->GetState() == SIPHandler::Subscribing) {
     PTRACE(2, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
     callid_handler->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
@@ -1465,9 +1468,9 @@ BOOL SIPEndPoint::IsSubscribed(SIPSubscribe::SubscribeType type,
 BOOL SIPEndPoint::Register(const PString & /*host*/,
                            unsigned expire,
                            const PString & aor,
-			                     const PString & authName,
+                           const PString & authName,
                            const PString & password,
-			                     const PString & realm,
+                           const PString & realm,
                            const PTimeInterval & minRetryTime, 
                            const PTimeInterval & maxRetryTime)
 {
