@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2080  2007/05/15 20:46:00  dsandras
+ * Revision 1.2081  2007/05/16 01:16:20  csoutheren
+ * Added new files to Windows build
+ * Removed compiler warnings on Windows
+ * Added backwards compatible SIP Register function
+ *
+ * Revision 2.79  2007/05/15 20:46:00  dsandras
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
  * message conversations, ...
@@ -660,6 +665,16 @@ class SIPEndPoint : public OpalEndPoint
       const PString & autName = PString::Empty(),
       const PString & password = PString::Empty(),
       const PString & authRealm = PString::Empty(),
+      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+    );
+    BOOL Register(
+      const PString & host,
+      const PString & aor = PString::Empty(),
+      const PString & autName = PString::Empty(),
+      const PString & password = PString::Empty(),
+      const PString & authRealm = PString::Empty(),
+      unsigned expire = 0,
       const PTimeInterval & minRetryTime = PMaxTimeInterval, 
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
