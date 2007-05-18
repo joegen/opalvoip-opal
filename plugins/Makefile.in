@@ -32,6 +32,10 @@ ifeq ($(HAS_CAPI),1)
 SUBDIRS += LID/CAPI
 endif
 
+ifneq (,$(wildcard fax/fax_spandsp))
+SUBDIRS += fax/fax_spandsp
+endif
+
 all debug opt both \
 optshared debugshared bothshared \
 optnoshared debugnoshared bothnoshared:
