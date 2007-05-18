@@ -5721,6 +5721,10 @@ if test -d LID/CAPI ; then
             ac_config_files="$ac_config_files LID/CAPI/Makefile"
 
 fi
+if test -d fax/fax_spandsp ; then
+            ac_config_files="$ac_config_files fax/fax_spandsp/Makefile"
+
+fi
 
           ac_config_files="$ac_config_files Makefile"
 
@@ -6291,6 +6295,7 @@ do
   "LID/IxJ/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
   "LID/VPB/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
   "LID/CAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
+  "fax/fax_spandsp/Makefile" ) CONFIG_FILES="$CONFIG_FILES fax/fax_spandsp/Makefile" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "audio/Speex/libspeex/speex_config_types.h" ) CONFIG_FILES="$CONFIG_FILES audio/Speex/libspeex/speex_config_types.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -7242,6 +7247,7 @@ do
   "LID/IxJ/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/IxJ/Makefile" ;;
   "LID/VPB/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/VPB/Makefile" ;;
   "LID/CAPI/Makefile" ) CONFIG_FILES="$CONFIG_FILES LID/CAPI/Makefile" ;;
+  "fax/fax_spandsp/Makefile" ) CONFIG_FILES="$CONFIG_FILES fax/fax_spandsp/Makefile" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "audio/Speex/libspeex/speex_config_types.h" ) CONFIG_FILES="$CONFIG_FILES audio/Speex/libspeex/speex_config_types.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
