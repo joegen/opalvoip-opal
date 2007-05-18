@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2168  2007/05/16 10:25:57  dsandras
+ * Revision 1.2169  2007/05/18 00:35:24  csoutheren
+ * Normalise Register functions
+ * Add symbol so applications know about presence of presence :)
+ *
+ * Revision 2.167  2007/05/16 10:25:57  dsandras
  * Fixed previous commit.
  *
  * Revision 2.166  2007/05/16 01:17:07  csoutheren
@@ -1464,9 +1468,27 @@ BOOL SIPEndPoint::IsSubscribed(SIPSubscribe::SubscribeType type,
   return (handler->GetState() == SIPHandler::Subscribed);
 }
 
+BOOL SIPEndPoint::Register(
+      const PString & host,
+      const PString & user,
+      const PString & authName,
+      const PString & password,
+      const PString & authRealm,
+      unsigned expire,
+      const PTimeInterval & minRetryTime, 
+      const PTimeInterval & maxRetryTime
+)
+{
+  PString aor;
+  if (user.Find('@') != P_MAX_INDEX)
+    aor = user;
+  else
+    aor = user + '@' + host;
+  
+  return Register(expire, aor, authName, password, authRealm, minRetryTime, maxRetryTime);
+}
 
-BOOL SIPEndPoint::Register(const PString & /*host*/,
-                           unsigned expire,
+BOOL SIPEndPoint::Register(unsigned expire,
                            const PString & aor,
                            const PString & authName,
                            const PString & password,
@@ -1492,46 +1514,28 @@ BOOL SIPEndPoint::Register(const PString & /*host*/,
   } 
   // Otherwise create a new request with this method type
   else {
-    handler = new SIPRegisterHandler(*this, 
-                                     aor, 
-                                     authName, 
-                                     password, 
-                                     realm, 
-                                     expire,
-                                     minRetryTime,
-                                     maxRetryTime);
+    handler = CreateRegisterHandler(aor, authName, password, realm, expire, minRetryTime, maxRetryTime);
     activeSIPHandlers.Append(handler);
   }
 
   if (!handler->SendRequest()) {
-    activeSIPHandlers.Remove (handler);
+    activeSIPHandlers.Remove(handler);
     return FALSE;
   }
 
   return TRUE;
 }
 
-
-BOOL SIPEndPoint::Register(
-      const PString & host,
-      const PString & user,
-      const PString & autName,
-      const PString & password,
-      const PString & authRealm,
-      unsigned expire,
-      const PTimeInterval & minRetryTime, 
-      const PTimeInterval & maxRetryTime
-)
+SIPRegisterHandler * SIPEndPoint::CreateRegisterHandler(const PString & aor,
+                                                        const PString & authName, 
+                                                        const PString & password, 
+                                                        const PString & realm,
+                                                                    int expire,
+                                                  const PTimeInterval & minRetryTime, 
+                                                  const PTimeInterval & maxRetryTime)
 {
-  PString aor;
-  if (user.Find('@') != P_MAX_INDEX)
-    aor = user;
-  else
-    aor = user + '@' + host;
-  
-  return Register(host, expire, aor, autName, password, authRealm, minRetryTime, maxRetryTime);
+  return new SIPRegisterHandler(*this, aor, authName, password, realm, expire, minRetryTime, maxRetryTime);
 }
-
 
 BOOL SIPEndPoint::Unregister(const PString & aor)
 {
