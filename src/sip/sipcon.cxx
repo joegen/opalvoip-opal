@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2224  2007/05/15 07:27:34  csoutheren
+ * Revision 1.2224.2.1  2007/05/18 01:20:04  csoutheren
+ * Ensure remote address is set when new transport created. This fixes problem with Contact field having incorrect address
+ *
+ * Revision 2.223  2007/05/15 07:27:34  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -960,8 +963,11 @@ SIPConnection::SIPConnection(OpalCall & call,
   // Create the transport
   if (inviteTransport == NULL)
     transport = NULL;
-  else 
+  else {
     transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
+    if (transport)
+      transport->SetRemoteAddress(inviteTransport->GetRemoteAddress());
+  }
   
   if (transport)
     lastTransportAddress = transport->GetRemoteAddress();
