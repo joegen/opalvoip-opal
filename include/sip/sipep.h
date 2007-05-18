@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2081  2007/05/16 01:16:20  csoutheren
+ * Revision 1.2082  2007/05/18 00:35:11  csoutheren
+ * Normalise Register functions
+ * Add symbol so applications know about presence of presence :)
+ *
+ * Revision 2.80  2007/05/16 01:16:20  csoutheren
  * Added new files to Windows build
  * Removed compiler warnings on Windows
  * Added backwards compatible SIP Register function
@@ -391,6 +395,11 @@
 #include <sip/sippdu.h>
 #include <sip/handlers.h> 
 #include <sip/sharedtransports.h>
+
+//
+//  provide flag so applications know if presence is available
+//
+#define OPAL_HAS_SIP_PRESENCE   1
     
 
 /////////////////////////////////////////////////////////////////////////
@@ -659,18 +668,17 @@ class SIPEndPoint : public OpalEndPoint
      * occur with the "best guess" of authentication parameters.
      */
     BOOL Register(
-      const PString & host,
       unsigned expire,
-      const PString & aor = PString::Empty(),
-      const PString & autName = PString::Empty(),
-      const PString & password = PString::Empty(),
-      const PString & authRealm = PString::Empty(),
+      const PString & aor = PString::Empty(),                 ///< user@host
+      const PString & authName = PString::Empty(),            ///< authentication user name
+      const PString & password = PString::Empty(),            ///< authentication password
+      const PString & authRealm = PString::Empty(),           ///< authentication realm
       const PTimeInterval & minRetryTime = PMaxTimeInterval, 
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
     BOOL Register(
       const PString & host,
-      const PString & aor = PString::Empty(),
+      const PString & user = PString::Empty(),
       const PString & autName = PString::Empty(),
       const PString & password = PString::Empty(),
       const PString & authRealm = PString::Empty(),
@@ -970,6 +978,14 @@ class SIPEndPoint : public OpalEndPoint
 
     SIPHandlersList & GetactiveSIPHandlers() 
     { return activeSIPHandlers; }
+
+    virtual SIPRegisterHandler * CreateRegisterHandler(const PString & to,
+                                                       const PString & authName, 
+                                                       const PString & password, 
+                                                       const PString & realm,
+                                                                   int expire,
+                                                 const PTimeInterval & minRetryTime, 
+                                                 const PTimeInterval & maxRetryTime);
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
