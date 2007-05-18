@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: spandsp_fax.cpp,v $
+ * Revision 1.3.2.1  2007/05/18 04:24:29  csoutheren
+ * Fixed Linux compile
+ *
  * Revision 1.3  2007/05/10 05:32:43  csoutheren
  * Fix release build
  * Normalise log output
@@ -56,6 +59,10 @@ using namespace std;
   #define STRCMPI  _strcmpi
 #else
   #define STRCMPI  strcasecmp
+  #include <semaphore.h>
+  #include <time.h>
+  #include <signal.h>
+  #include <unistd.h>
 #endif
 
 #include <string.h>
@@ -255,10 +262,10 @@ class FaxInstance
     SOCKET t38Sockets[2];
     SOCKET faxSockets[2];
     HANDLE threadHandle;
-
 #else
-    int t38Socket[2];
-    int faxSocket[2];
+    int t38Sockets[2];
+    int faxSockets[2];
+    pthread_t threadHandle;
 #endif
 #endif // USE_EMBEDDED_SPANDSP
     bool Open();
@@ -267,9 +274,12 @@ class FaxInstance
 
 #if USE_EMBEDDED_SPANDSP
 
-#if _WIN32
 extern "C" {
+#if _WIN32
 static unsigned __stdcall GatewayMain_Static(void * userData)
+#else
+static void * GatewayMain_Static(void * userData)
+#endif
 {
   FaxInstance * fax = (FaxInstance*)userData;
   if (fax != NULL)
@@ -277,7 +287,6 @@ static unsigned __stdcall GatewayMain_Static(void * userData)
   return 0;
 }
 };
-#endif // _WIN32
 
 FaxInstance::FaxInstance()
 { 
@@ -290,6 +299,7 @@ FaxInstance::FaxInstance()
 #else
   t38Sockets[0] = t38Sockets[1] = -1;
   faxSockets[0] = faxSockets[1] = -1;
+  threadHandle = 0;
 #endif
 }
 
@@ -327,6 +337,14 @@ FaxInstance::~FaxInstance()
     close(faxSockets[0]);
   if (faxSockets[1] != -1)
     close(faxSockets[1]);
+  if (threadHandle != 0) {
+    int i = 20;
+    while (i-- > 0) {
+      if (pthread_kill(threadHandle, 0) == 0)
+        break;
+      usleep(100000);
+    }
+  }
 #endif
 }
 
@@ -339,8 +357,6 @@ bool FaxInstance::Open()
 {
   SpanDSP::progmode = "SpanDSP_Fax";
 
-#if _WIN32
-
   // open the sockets
   if ((socketpair(AF_UNIX, SOCK_DGRAM, 0, faxSockets) != 0) || 
       (socketpair(AF_UNIX, SOCK_DGRAM, 0, t38Sockets) != 0))
@@ -352,11 +368,21 @@ bool FaxInstance::Open()
   t38Gateway.Start();
 
   // put gateway into a seperate thread
+
+#if _WIN32
+
   threadHandle = (HANDLE)_beginthreadex(NULL, 10000, &GatewayMain_Static, this, 0, NULL);
+  return TRUE;
+
+#else
+
+  pthread_attr_t threadAttr;
+  pthread_attr_init(&threadAttr);
+  pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
+  return pthread_create(&threadHandle, &threadAttr, &GatewayMain_Static, this) == 0;
 
 #endif
 
-  return TRUE;
 }
 
 bool FaxInstance::WritePCM(const void * from, unsigned * fromLen)
