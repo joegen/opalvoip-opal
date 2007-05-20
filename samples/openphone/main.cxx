@@ -25,6 +25,11 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.18  2007/05/20 08:16:12  rjongbloed
+ * Added various handlers to manage subscriptions for presence, message
+ * waiting indications, registrations, state publishing,
+ * message conversations, ...
+ *
  * Revision 1.17  2007/05/10 01:03:54  rjongbloed
  * Updated build for wxWidgets 2.8.x
  *
@@ -1600,9 +1605,10 @@ bool MyManager::StartRegistrar()
     LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
   }
   else {
-    if (sipEP->IsRegistered(m_registrarName)) {
-      LogWindow << "SIP registration ended for " << m_registrarUser << '@' << m_registrarName << endl;
-      sipEP->Unregister(m_registrarName, m_registrarUser);
+    PString aor = m_registrarUser + '@' + m_registrarName;
+    if (sipEP->IsRegistered(aor)) {
+      LogWindow << "SIP registration ended for " << aor << endl;
+      sipEP->Unregister(aor);
     }
   }
   return true;
