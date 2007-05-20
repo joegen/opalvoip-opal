@@ -1599,6 +1599,9 @@
 				Name="SIP Sources"
 				Filter="">
 				<File
+					RelativePath="..\sip\handlers.cxx">
+				</File>
+				<File
 					RelativePath="..\sip\sdp.cxx">
 					<FileConfiguration
 						Name="Debug|Win32">
@@ -1622,6 +1625,9 @@
 							Optimization="1"
 							PreprocessorDefinitions=""/>
 					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\sip\sharedtransports.cxx">
 				</File>
 				<File
 					RelativePath="..\sip\sipcon.cxx">
@@ -2016,7 +2022,13 @@
 				Name="SIP Headers"
 				Filter="">
 				<File
+					RelativePath="..\..\include\sip\handlers.h">
+				</File>
+				<File
 					RelativePath="..\..\include\sip\sdp.h">
+				</File>
+				<File
+					RelativePath="..\..\include\sip\sharedtransports.h">
 				</File>
 				<File
 					RelativePath="..\..\include\sip\sip.h">
