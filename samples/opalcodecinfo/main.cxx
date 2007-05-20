@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.7  2007/05/20 05:56:26  rjongbloed
+ * Added ability to debug audio plug in codecs encode/decode function.
+ * General clean up.
+ *
  * Revision 1.6  2006/10/02 22:04:19  rjongbloed
  * Added LID plug ins
  *
@@ -65,6 +69,7 @@
 #include <codec/opalplugin.h>
 #include <codec/opalpluginmgr.h>
 #include <opal/transcoders.h>
+#include <ptclib/dtmf.h>
 
 class OpalCodecInfo : public PProcess
 {
@@ -190,7 +195,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
        << "  Userdata:            " << (void *)defn.userData << endl
        << "  Sample rate:         " << defn.sampleRate << endl
        << "  Bits/sec:            " << defn.bitsPerSec << endl
-       << "  Ns/frame:            " << defn.nsPerFrame << endl;
+       << "  Frame time (ns):     " << defn.nsPerFrame << endl;
   if (!isVideo) {
     cout << "  Samples/frame:       " << defn.samplesPerFrame << endl
          << "  Bytes/frame:         " << defn.bytesPerFrame << endl
@@ -403,6 +408,95 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
         cout << "unknown type " << hex << mediaList[i].GetDefaultSessionID() << dec << endl;
     }
   }
+
+  cout << "\n\n";
+}
+
+void DisplayPlugInInfo(const PString & name, const PPluginModuleManager::PluginListType & pluginList)
+{
+  for (int i = 0; i < pluginList.GetSize(); i++) {
+    if (pluginList.GetKeyAt(i) == name) {
+      PDynaLink & dll = pluginList.GetDataAt(i);
+      PluginCodec_GetCodecFunction getCodecs;
+      if (!dll.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
+        cout << "error: " << name << " is missing the function " << PLUGIN_CODEC_GET_CODEC_FN_STR << endl;
+        return;
+      }
+      unsigned int count;
+      PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_VIDEO);
+      if (codecs == NULL || count == 0) {
+        cout << "error: " << name << " does not define any codecs for this version of the plugin API" << endl;
+        return;
+      } 
+      cout << name << " contains " << count << " coders:" << endl;
+      for (unsigned j = 0; j < count; j++) {
+        cout << "---------------------------------------" << endl
+            << "Coder " << j+1 << endl;
+        DisplayCodecDefn(codecs[j]);
+      }
+      return;
+    }
+  }
+
+  cout << "error: plugin \"" << name << "\" not found, specify one of :\n"
+       << setfill('\n') << pluginList << setfill(' ') << endl;
+}
+
+void AudioTest(const PString & fmtName)
+{
+  OpalMediaFormat mediaFormat = fmtName;
+  if (mediaFormat.IsEmpty() || mediaFormat.GetDefaultSessionID() != OpalMediaFormat::DefaultAudioSessionID) {
+    cout << "error: cannot use format name \"" << fmtName << '"' << endl;
+    return;
+  }
+
+  std::auto_ptr<OpalTranscoder> encoder(OpalTranscoder::Create(OpalPCM16, mediaFormat));
+  if (encoder.get() == NULL) {
+    cout << "error: Encoder cannot be instantiated!" << endl;
+    return;
+  }
+
+  std::auto_ptr<OpalTranscoder> decoder(OpalTranscoder::Create(mediaFormat, OpalPCM16));
+  if (decoder.get() == NULL) {
+    cout << "error: Decoder cannot be instantiated!" << endl;
+    return;
+  }
+
+  PINDEX decBlkSize = encoder->GetOptimalDataFrameSize(TRUE);
+  if (decBlkSize != decoder->GetOptimalDataFrameSize(FALSE)) {
+    cout << "error: Encoder and decoder have different frame sizes, mode not supported." << endl;
+    return;
+  }
+
+  PTones tones("110:0.4-0.1/220:0.4-0.1/440:0.4-0.1/880:0.4-0.1/1760:0.4-0.1");
+
+  RTP_DataFrame source, output, encoded;
+  source.SetPayloadSize(decBlkSize);
+  output.SetPayloadSize(decBlkSize);
+  encoded.SetPayloadSize(PMAX(encoder->GetOptimalDataFrameSize(FALSE), decoder->GetOptimalDataFrameSize(TRUE)));
+  encoded.SetPayloadType(mediaFormat.GetPayloadType());
+
+  int count = 0;
+  cout << "Encoded frames: " << endl;
+  for (PINDEX offset = 0; offset < tones.GetSize(); offset += decBlkSize/2) {
+    memcpy(source.GetPayloadPtr(), &tones[offset], decBlkSize);
+
+    if (!encoder->Convert(source, encoded)) {
+      cout << "error: Encoder conversion failed!" << endl;
+      return;
+    }
+
+    cout << "Frame " << ++count << '\n' << encoded << endl;
+
+    if (!decoder->Convert(encoded, output)) {
+      cout << "error: Decoder conversion failed!" << endl;
+      return;
+    }
+
+    cout << "   Done" << endl;
+  }
+
+  cout << "Audio test completed." << endl;
 }
 
 void OpalCodecInfo::Main()
@@ -416,33 +510,63 @@ void OpalCodecInfo::Main()
   // Get and parse all of the command line arguments.
   PArgList & args = GetArguments();
   args.Parse(
-             "t-trace."
-             "o-output:"
              "m-mediaformats."
-             "T-trancoders."
              "p-pluginlist."
              "c-codecs."
              "i-info:"
+             "a-capabilities."
+             "C-caps:"
+             "T-trancoders."
+             "A-audio-test:"
 
+             "t-trace."
+             "o-output:"
              "h-help."
 
-             "a-capabilities:"
-             "C-caps:"
              , FALSE);
 
   PTrace::Initialise(args.GetOptionCount('t'),
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
 
+  bool needHelp = true;
+
+  if (args.HasOption('m')) {
+    OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
+    cout << "Registered media formats:" << endl;
+    DisplayMediaFormats(mediaList);
+    needHelp = false;
+  }
+
+  if (args.HasOption('c')) {
+    OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
+    cout << "Plug In codecs:" << endl;
+    DisplayMediaFormats(stdCodecList);
+    needHelp = false;
+  }
+
   OpalPluginCodecManager & codecMgr = *(OpalPluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("OpalPluginCodecManager");
   PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
+
+  if (args.HasOption('p')) {
+    cout << "Plugin codecs:" << endl;
+    for (int i = 0; i < pluginList.GetSize(); i++)
+      cout << "   " << pluginList.GetKeyAt(i) << endl;
+    cout << "\n\n";
+    needHelp = false;
+  }
+
+  if (args.HasOption('i')) {
+    DisplayPlugInInfo(args.GetOptionString('i'), pluginList);
+    needHelp = false;
+  }
 
   if (args.HasOption('a')) {
     H323CapabilityFactory::KeyList_T keyList = H323CapabilityFactory::GetKeyList();
     cout << "Registered capabilities:" << endl
-         << setfill(',') << PStringArray(keyList) << setfill(' ')
-         << endl;
-    return;
+         << setfill('\n') << PStringArray(keyList) << setfill(' ')
+         << "\n\n";
+    needHelp = false;
   }
 
   if (args.HasOption('C')) {
@@ -450,97 +574,47 @@ void OpalCodecInfo::Main()
     OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
     H323Capabilities caps;
     caps.AddAllCapabilities(0, 0, spec);
-    cout << "Standard capability set:" << caps << endl;
+    cout << "Capability set using \"" << spec << "\" :\n" << caps << endl;
     for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
       PString fmt = stdCodecList[i];
       caps.FindCapability(fmt);
     }
-    return;
-  }
-
-  if (args.HasOption('c')) {
-    OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
-    cout << "Standard codecs:" << endl;
-    DisplayMediaFormats(stdCodecList);
-    return;
-  }
-
-  if (args.HasOption('m')) {
-    OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
-    cout << "Registered media formats:" << endl;
-    DisplayMediaFormats(mediaList);
-    return;
+    needHelp = false;
   }
 
   if (args.HasOption('T')) {
+    cout << "Available trancoders:" << endl;
     OpalTranscoderList keys = OpalTranscoderFactory::GetKeyList();
-    OpalTranscoderList::const_iterator r;
-    for (r = keys.begin(); r != keys.end(); ++r) {
-      const OpalMediaFormatPair & transcoder = *r;
-      cout << "Name: " << transcoder << "\n"
-           << "  Input:  " << transcoder.GetInputFormat() << "\n"
-           << "  Output: " << transcoder.GetOutputFormat() << "\n";
-
-      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder.GetInputFormat(), transcoder.GetOutputFormat());
+    OpalTranscoderList::const_iterator transcoder;
+    for (transcoder = keys.begin(); transcoder != keys.end(); ++transcoder) {
+      cout << "   " << *transcoder << flush;
+      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder->GetInputFormat(), transcoder->GetOutputFormat());
       if (xcoder == NULL)
-        cout << "  CANNOT BE INSTANTIATED\n";
+        cout << "  CANNOT BE INSTANTIATED";
       else
         delete xcoder;
+      cout << endl;
     }
-    return;
+    needHelp = false;
   }
 
-  if (args.HasOption('p')) {
-    cout << "Plugin codecs:" << endl;
-    for (int i = 0; i < pluginList.GetSize(); i++) {
-      cout << "   " << pluginList.GetKeyAt(i) << endl;
-    }
-    return;
+  if (args.HasOption('A')) {
+    AudioTest(args.GetOptionString('A'));
+    needHelp = false;
   }
 
-  if (args.HasOption('i')) {
-    PString name = args.GetOptionString('i');
-    if (name.IsEmpty()) {
-      cout << "error: -i must specify name of plugin" << endl
-           << "specify one of :\n"
-           << setfill('\n') << pluginList << setfill(' ')<< endl;
-
-      return;
-    }
-    for (int i = 0; i < pluginList.GetSize(); i++) {
-      if (pluginList.GetKeyAt(i) == name) {
-        PDynaLink & dll = pluginList.GetDataAt(i);
-        PluginCodec_GetCodecFunction getCodecs;
-        if (!dll.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
-          cout << "error: " << name << " is missing the function " << PLUGIN_CODEC_GET_CODEC_FN_STR << endl;
-          return;
-        }
-        unsigned int count;
-        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_VIDEO);
-        if (codecs == NULL || count == 0) {
-          cout << "error: " << name << " does not define any codecs for this version of the plugin API" << endl;
-          return;
-        } 
-        cout << name << " contains " << count << " coders:" << endl;
-        for (unsigned j = 0; j < count; j++) {
-          cout << "---------------------------------------" << endl
-               << "Coder " << j+1 << endl;
-          DisplayCodecDefn(codecs[j]);
-        }
-        return;
-      }
-    }
-    cout << "error: plugin \"" << name << "\" not found" << endl;
-    return;
+  if (needHelp) {
+    cout << "available options:" << endl
+        << "  -m --mediaformats   display media formats\n"
+        << "  -c --codecs         display standard codecs\n"
+        << "  -p --pluginlist     display codec plugins\n"
+        << "  -i --info name      display info about a plugin\n"
+        << "  -a --capabilities   display all registered capabilities that match the specification\n"
+        << "  -C --caps spec      display capabilities that match the specification\n"
+        << "  -T --transcoders    display available transcoders\n"
+        << "  -A --audio-test fmt Test audio transcoder: PCM-16->fmt then fmt->PCM-16\n"
+        << "  -t --trace          Increment trace level\n"
+        << "  -o --output         Trace output file\n"
+        << "  -h --help           display this help message\n";
   }
-
-  cout << "available options:" << endl
-       << "  -c --codecs         display standard codecs\n"
-       << "  -h --help           display this help message\n"
-       << "  -i --info name      display info about a plugin\n"
-       << "  -m --mediaformats   display media formats\n"
-       << "  -p --pluginlist     display codec plugins\n"
-       << "  -C --caps spec      display capabilities that match the specification\n"
-       //<< "  -f --factory        display codec conversion factories\n"
-  ;
 }
