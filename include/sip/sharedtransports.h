@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sharedtransports.h,v $
+ * Revision 1.2  2007/05/21 04:30:30  dereksmithies
+ * put #ifndef _PTLIB_H protection around the include of ptlib.h
+ *
  * Revision 1.1  2007/05/15 20:42:12  dsandras
  * Added basic class allowing to share transports between various SIP
  * handlers. This class should be deprecated soon with the new OpalTransport
@@ -41,7 +44,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptlib/safecoll.h>
 
 #include <opal/transports.h>

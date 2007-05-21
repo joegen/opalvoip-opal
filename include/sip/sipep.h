@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2082  2007/05/18 00:35:11  csoutheren
+ * Revision 1.2083  2007/05/21 04:30:30  dereksmithies
+ * put #ifndef _PTLIB_H protection around the include of ptlib.h
+ *
+ * Revision 2.81  2007/05/18 00:35:11  csoutheren
  * Normalise Register functions
  * Add symbol so applications know about presence of presence :)
  *
@@ -388,7 +391,9 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
 
 #include <opal/endpoint.h>
 #include <sip/sipcon.h>
