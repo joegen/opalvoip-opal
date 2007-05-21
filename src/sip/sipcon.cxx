@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.28  2007/04/21 10:43:16  dsandras
+ * Revision 1.2121.2.29  2007/05/21 13:41:00  csoutheren
+ * Backport from head
+ *
+ * Revision 2.120.2.28  2007/04/21 10:43:16  dsandras
  * Fixed more interoperability problems due to bugs in Cisco Call Manager.
  * Do not clear calls if the video transport can not be established.
  * Only reinitialize the registrar transport if required (STUN is being used
@@ -690,8 +693,11 @@ SIPConnection::SIPConnection(OpalCall & call,
   // Create the transport
   if (inviteTransport == NULL)
     transport = NULL;
-  else 
+  else {
     transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
+    if (transport)
+      transport->SetRemoteAddress(inviteTransport->GetRemoteAddress());
+  }
   
   if (transport)
     lastTransportAddress = transport->GetRemoteAddress();
