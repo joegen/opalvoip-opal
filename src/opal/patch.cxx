@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2047  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2047.2.1  2007/05/21 08:28:31  csoutheren
+ * Ensure sink format can be obtained when direct media patches are used
+ *
+ * Revision 2.46  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -413,7 +416,8 @@ OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 	if (sink.primaryCodec != NULL)
 		return sink.primaryCodec->GetOutputFormat();
 
-	return fmt;
+  // must be direct patch - return source format
+  return source.GetMediaFormat();
 }
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
