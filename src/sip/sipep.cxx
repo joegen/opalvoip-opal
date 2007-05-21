@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2170  2007/05/21 17:34:49  dsandras
+ * Revision 1.2171  2007/05/21 17:45:11  dsandras
+ * Fixed usage of Register due to recent changes in the API leading to a crash
+ * on exit (when unregistering).
+ *
+ * Revision 2.169  2007/05/21 17:34:49  dsandras
  * Added guard against NULL transport.
  *
  * Revision 2.168  2007/05/18 00:35:24  csoutheren
@@ -1536,9 +1540,9 @@ SIPRegisterHandler * SIPEndPoint::CreateRegisterHandler(const PString & aor,
                                                         const PString & authName, 
                                                         const PString & password, 
                                                         const PString & realm,
-                                                                    int expire,
-                                                  const PTimeInterval & minRetryTime, 
-                                                  const PTimeInterval & maxRetryTime)
+                                                        int expire,
+                                                        const PTimeInterval & minRetryTime, 
+                                                        const PTimeInterval & maxRetryTime)
 {
   return new SIPRegisterHandler(*this, aor, authName, password, realm, expire, minRetryTime, maxRetryTime);
 }
@@ -1558,7 +1562,7 @@ BOOL SIPEndPoint::Unregister(const PString & aor)
     return FALSE;
   }
       
-  return Register(PString::Empty(), 0, aor);
+  return Register(0, aor);
 }
 
 
