@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2169  2007/05/18 00:35:24  csoutheren
+ * Revision 1.2170  2007/05/21 17:34:49  dsandras
+ * Added guard against NULL transport.
+ *
+ * Revision 2.168  2007/05/18 00:35:24  csoutheren
  * Normalise Register functions
  * Add symbol so applications know about presence of presence :)
  *
@@ -784,6 +787,9 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
     OpalTransport *transport = tr->GetTransport();
     BOOL stunTransport = FALSE;
+
+    if (!transport)
+      return;
 
     stunTransport = (!transport->IsReliable() && GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()));
 
