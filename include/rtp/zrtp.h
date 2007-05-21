@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: zrtp.h,v $
- * Revision 1.2002  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2003  2007/05/21 04:30:30  dereksmithies
+ * put #ifndef _PTLIB_H protection around the include of ptlib.h
+ *
+ * Revision 2.1  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  * Revision 2.1  2007/02/10 07:08:41  craigs
@@ -39,7 +42,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <opal/buildopts.h>
 
 #if defined(OPAL_ZRTP)
@@ -92,3 +98,4 @@ class OpalZRTP_UDP : public SecureRTP_UDP
 #endif // OPAL_ZRTP
 
 #endif // __OPAL_ZRTP_H
+

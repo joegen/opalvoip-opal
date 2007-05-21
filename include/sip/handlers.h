@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.2  2007/05/21 04:30:30  dereksmithies
+ * put #ifndef _PTLIB_H protection around the include of ptlib.h
+ *
  * Revision 1.1  2007/05/15 20:45:09  dsandras
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
@@ -43,7 +46,10 @@
 #pragma interface
 #endif
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
+
 #include <ptlib/safecoll.h>
 
 #include <sip/sharedtransports.h>

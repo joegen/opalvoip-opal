@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.38  2007/05/21 04:30:30  dereksmithies
+ * put #ifndef _PTLIB_H protection around the include of ptlib.h
+ *
  * Revision 1.37  2007/04/03 07:59:13  rjongbloed
  * Warning: API change to PCSS callbacks:
  *   changed return on OnShowIncoming to BOOL, now agrees with
@@ -144,7 +147,9 @@
 #ifndef _OpenPhone_MAIN_H
 #define _OpenPhone_MAIN_H
 
+#ifndef _PTLIB_H
 #include <ptlib.h>
+#endif
 
 #include <wx/wx.h>
 
