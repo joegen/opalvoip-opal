@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.3  2007/05/22 18:19:52  dsandras
+ * Added conditional check for P_EXPAT.
+ *
  * Revision 1.2  2007/05/16 01:17:07  csoutheren
  * Added new files to Windows build
  * Removed compiler warnings on Windows
@@ -48,7 +51,11 @@
 #include <ptlib.h>
 
 #include <ptclib/enum.h>
+
+#if P_EXPAT
 #include <ptclib/pxml.h>
+#endif
+
 #include <ptclib/pdns.h>
 
 #include <sip/sipep.h>
@@ -539,6 +546,7 @@ BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 
 BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
+#if P_EXPAT
   PString body = request.GetEntityBody();
   SIPURL from = request.GetMIME().GetFrom();
   PString basic;
@@ -583,6 +591,7 @@ BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 
   from.AdjustForRequestURI();
   ep.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
+#endif
 
   return TRUE;
 }
