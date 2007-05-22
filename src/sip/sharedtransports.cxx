@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sharedtransports.cxx,v $
+ * Revision 1.3  2007/05/22 21:06:13  dsandras
+ * Correctly initialize the shared transport using DNS SRV if required.
+ * This will need to be fixed at the SIPHandler level when we will not
+ * using this class anymore but individual transports with a sockets bundle.
+ *
  * Revision 1.2  2007/05/16 01:17:07  csoutheren
  * Added new files to Windows build
  * Removed compiler warnings on Windows
@@ -39,6 +44,7 @@
  */
 
 #include <ptlib.h>
+#include <ptclib/pdns.h>
 
 #ifdef __GNUC__
 #pragma implementation "sharedtransports.h"
@@ -51,9 +57,18 @@ SharedTransport::SharedTransport (const PString k, SIPEndPoint & ep)
 : endpoint (ep), key (k)
 { 
   WORD port = 5060;
+  OpalTransportAddress transportAddress;
+  
   PWaitAndSignal m(transportMutex);
 
-  OpalTransportAddress transportAddress(key, port, "udp");
+#if P_DNS
+  PIPSocketAddressAndPortVector addrs;
+  if (PDNS::LookupSRV(key, "_sip._udp", port, addrs))  
+    transportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
+  else
+#endif
+    transportAddress = OpalTransportAddress (key, port, "udp");
+
   transport = endpoint.CreateTransport(transportAddress);
   if (transport == NULL) {
     PTRACE(2, "SIP\tUnable to create transport for registrar");
