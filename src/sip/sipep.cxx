@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2171  2007/05/21 17:45:11  dsandras
+ * Revision 1.2172  2007/05/22 21:04:49  dsandras
+ * Fixed issue when PTRACING if the transport could not be created.
+ *
+ * Revision 2.170  2007/05/21 17:45:11  dsandras
  * Fixed usage of Register due to recent changes in the API leading to a crash
  * on exit (when unregistering).
  *
@@ -933,7 +936,8 @@ PSafePtr<SharedTransport> SIPEndPoint::CreateSharedTransport(const PString & dom
     sharedTransport->IncrementReferenceCount();
     sharedTransports.SetAt(domain, sharedTransport);
 
-    PTRACE(4, "SIP\tCreated new transport for " << domain << " : " << *sharedTransport->GetTransport());
+    if (sharedTransport->GetTransport())
+      PTRACE(4, "SIP\tCreated new transport for " << domain << " : " << *sharedTransport->GetTransport());
   }
   else { 
     PTRACE(4, "SIP\tUsing existing transport " << *sharedTransport->GetTransport() << " for " << domain);
