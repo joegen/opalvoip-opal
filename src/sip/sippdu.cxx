@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.15  2007/04/17 21:50:19  dsandras
+ * Revision 1.2084.2.16  2007/05/23 20:52:35  dsandras
+ * We should release the current session if no ACK is received after
+ * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
+ * when sending an ACK, only when not receiving one.
+ *
+ * Revision 2.83.2.15  2007/04/17 21:50:19  dsandras
  * Fixed Via field in previous commit.
  * Make sure the correct port is being used.
  * Improved FindSIPInfoByDomain.
@@ -2409,7 +2414,6 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
   } 
   else {
-    completionTimer = endpoint.GetAckTimeout();
 
     // If the state was already 'Completed', ensure that still an
     // ACK is sent
