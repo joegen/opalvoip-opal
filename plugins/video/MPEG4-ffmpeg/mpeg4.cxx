@@ -36,6 +36,11 @@
  * NOTES:
  * Initial implementation of MPEG4 codec plugin using ffmpeg.
  * Untested under Windows or H.323
+ *
+ * $Log: mpeg4.cxx,v $
+ * Revision 1.4  2007/05/23 08:31:00  csoutheren
+ * Add $Log$
+ *
  */
 
 /*
