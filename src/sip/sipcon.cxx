@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2225  2007/05/15 20:49:21  dsandras
+ * Revision 1.2226  2007/05/23 19:58:04  dsandras
+ * Run garbage collector more often.
+ *
+ * Revision 2.224  2007/05/15 20:49:21  dsandras
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
  * message conversations, ...
@@ -1173,15 +1176,15 @@ void SIPConnection::OnReleased()
   }
 
   OpalConnection::OnReleased();
-  
+
   // Wait until all transactions belonging to this connection have terminated
   while (transactions.GetSize() > 0) {
     PThread::Sleep(1000);
   }
   
   if (transport != NULL)
-      transport->CloseWait();
-  
+    transport->CloseWait();
+
   // Remove all INVITEs
   {
     PWaitAndSignal m(invitationsMutex); 

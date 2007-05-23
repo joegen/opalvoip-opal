@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2172  2007/05/22 21:04:49  dsandras
+ * Revision 1.2173  2007/05/23 19:58:04  dsandras
+ * Run garbage collector more often.
+ *
+ * Revision 2.171  2007/05/22 21:04:49  dsandras
  * Fixed issue when PTRACING if the transport could not be created.
  *
  * Revision 2.170  2007/05/21 17:45:11  dsandras
@@ -687,7 +690,7 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous(natBindingTimeout);
   garbageTimer.SetNotifier(PCREATE_NOTIFIER(GarbageCollector));
-  garbageTimer.RunContinuous(PTimeInterval(0, 5));
+  garbageTimer.RunContinuous(PTimeInterval(0, 1));
 
   natMethod = None;
 
