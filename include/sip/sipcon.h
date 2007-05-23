@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2065  2007/05/15 07:26:38  csoutheren
+ * Revision 1.2066  2007/05/23 20:53:40  dsandras
+ * We should release the current session if no ACK is received after
+ * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
+ * when sending an ACK, only when not receiving one.
+ *
+ * Revision 2.64  2007/05/15 07:26:38  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -680,6 +685,8 @@ class SIPConnection : public OpalConnection
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
+    PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckTimeout);
+
     virtual RTP_UDP *OnUseRTPSession(
       const unsigned rtpSessionId,
       const OpalTransportAddress & mediaAddress,
@@ -728,6 +735,7 @@ class SIPConnection : public OpalConnection
     PSemaphore    pduSemaphore;
     PThread     * pduHandler;
 
+    PTimer             ackTimer;
     PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
     PMutex             invitationsMutex;
