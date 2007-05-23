@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2109  2007/05/15 07:27:34  csoutheren
+ * Revision 1.2110  2007/05/23 11:10:43  dsandras
+ * Added missing check for PDTMFDecoder presence in PWLIB.
+ *
+ * Revision 2.108  2007/05/15 07:27:34  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -1534,6 +1537,7 @@ void OpalConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
   //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
 }
 
+#if P_DTMF
 void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 {
   // This function is set up as an 'audio filter'.
@@ -1550,6 +1554,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
     }
   }
 }
+#endif
 
 #if OPAL_T120DATA
 
