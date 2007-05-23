@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2154  2007/05/15 07:27:34  csoutheren
+ * Revision 1.2154.2.1  2007/05/23 00:32:32  csoutheren
+ * Back ports from HEAD
+ *
+ * Revision 2.154  2007/05/17 15:38:24  vfrolov
+ * Added number to RemotePartyCallbackURL
+ *
+ * Revision 2.153  2007/05/15 07:27:34  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -886,7 +892,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
     PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
     masterSlaveDeterminationProcedure->Stop();
     lastPDUWasH245inSETUP = FALSE;
-    capabilityExchangeProcedure->Stop();
+    capabilityExchangeProcedure->Stop(TRUE);
   } else {
     for (i = 0; i < h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
       PPER_Stream strm = h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control[i].GetValue();
@@ -1356,10 +1362,13 @@ const PString H323Connection::GetRemotePartyCallbackURL() const
     j = remote.FindLast(":");
     if (j != P_MAX_INDEX)
       remote = remote.Left (j);
+
+    if (!GetRemotePartyNumber().IsEmpty())
+      remote = GetRemotePartyNumber() + "@" + remote;
   }
 
-  remote = "h323:" + remote;
-  
+  remote = GetEndPoint().GetPrefixName() + ":" + remote;
+
   return remote;
 }
 
