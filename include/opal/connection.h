@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2084  2007/05/15 07:26:38  csoutheren
+ * Revision 1.2085  2007/05/23 11:10:45  dsandras
+ * Added missing check for PDTMFDecoder presence in PWLIB.
+ *
+ * Revision 2.83  2007/05/15 07:26:38  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -1438,7 +1441,9 @@ class OpalConnection : public PSafeObject
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
+#if P_DTMF
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
+#endif
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
 
@@ -1500,7 +1505,9 @@ class OpalConnection : public PSafeObject
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
+#if P_DTMF
     PDTMFDecoder        dtmfDecoder;
+#endif
 
     PString securityMode;
 
