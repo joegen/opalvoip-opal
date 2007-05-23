@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2226  2007/05/23 19:58:04  dsandras
+ * Revision 1.2227  2007/05/23 20:53:40  dsandras
+ * We should release the current session if no ACK is received after
+ * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
+ * when sending an ACK, only when not receiving one.
+ *
+ * Revision 2.225  2007/05/23 19:58:04  dsandras
  * Run garbage collector more often.
  *
  * Revision 2.224  2007/05/15 20:49:21  dsandras
@@ -991,6 +996,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   remote_hold = FALSE;
 
   sentTrying = FALSE;
+
+  ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
 
   PTRACE(4, "SIP\tCreated connection.");
 }
@@ -2483,6 +2490,8 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
   PTRACE(3, "SIP\tACK received: " << phase);
+
+  ackTimer.Stop();
   
   OnReceivedSDP(response);
 
@@ -2952,6 +2961,13 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 }
 
 
+void SIPConnection::OnAckTimeout(PThread &, INT)
+{
+  releaseMethod = ReleaseWithBYE;
+  Release(EndedByTemporaryFailure);
+}
+
+
 BOOL SIPConnection::ForwardCall (const PString & fwdParty)
 {
   if (fwdParty.IsEmpty ())
@@ -3003,6 +3019,9 @@ BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * c
 
   SIP_PDU response(*originalInvite, code, contact, extra);
   if (NULL != sdp) response.SetSDP(*sdp);
+
+  if (response.GetStatusCode()/100 != 1)
+    ackTimer = endpoint.GetAckTimeout();
   
   return SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
 }
