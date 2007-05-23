@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.29  2007/05/21 13:41:00  csoutheren
+ * Revision 1.2121.2.30  2007/05/23 20:52:32  dsandras
+ * We should release the current session if no ACK is received after
+ * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
+ * when sending an ACK, only when not receiving one.
+ *
+ * Revision 2.120.2.29  2007/05/21 13:41:00  csoutheren
  * Backport from head
  *
  * Revision 2.120.2.28  2007/04/21 10:43:16  dsandras
@@ -713,6 +718,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   local_hold = FALSE;
   remote_hold = FALSE;
 
+  ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
+
   PTRACE(3, "SIP\tCreated connection.");
 }
 
@@ -757,6 +764,7 @@ void SIPConnection::OnReleased()
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::GlobalFailure_Decline);
 	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          ackTimer = endpoint.GetAckTimeout();
 	}
       break;
 
@@ -764,6 +772,7 @@ void SIPConnection::OnReleased()
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_BusyHere);
 	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          ackTimer = endpoint.GetAckTimeout();
 	}
       break;
 
@@ -771,6 +780,7 @@ void SIPConnection::OnReleased()
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_RequestTerminated);
 	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          ackTimer = endpoint.GetAckTimeout();
 	}
       break;
 
@@ -778,6 +788,7 @@ void SIPConnection::OnReleased()
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_UnsupportedMediaType);
 	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          ackTimer = endpoint.GetAckTimeout();
 	}
       break;
 
@@ -785,6 +796,7 @@ void SIPConnection::OnReleased()
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::Redirection_MovedTemporarily, NULL, forwardParty);
 	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          ackTimer = endpoint.GetAckTimeout();
 	}
       break;
 
@@ -792,6 +804,7 @@ void SIPConnection::OnReleased()
 	{
 	  SIP_PDU response(*originalInvite, SIP_PDU::Failure_BadGateway);
 	  SendPDU(response, originalInvite->GetViaAddress(endpoint));
+          ackTimer = endpoint.GetAckTimeout();
 	}
     }
     break;
@@ -956,6 +969,7 @@ BOOL SIPConnection::SetConnected()
   SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString());
   response.SetSDP(sdpOut);
   SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
+  ackTimer = endpoint.GetAckTimeout();
 
   // init DTMF handler
   InitRFC2833Handler();
@@ -1743,6 +1757,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (!isReinvite && IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
     SIP_PDU response(*originalInvite, SIP_PDU::Failure_InternalServerError);
     SendPDU(response, originalInvite->GetViaAddress(endpoint));    
+    ackTimer = endpoint.GetAckTimeout();
     return;
   }
 
@@ -1848,6 +1863,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     SIP_PDU response(*originalInvite, SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString ());
     response.SetSDP(sdpOut);
     SendPDU(response, originalInvite->GetViaAddress(endpoint));
+    ackTimer = endpoint.GetAckTimeout();
 
     return;
   }
@@ -1924,6 +1940,8 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
   PTRACE(2, "SIP\tACK received: " << phase);
+
+  ackTimer.Stop();
   
   OnReceivedSDP(response);
 
@@ -2377,6 +2395,13 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
   SafeDereference();
 
   PTRACE(2, "SIP\tPDU handler thread finished.");
+}
+
+
+void SIPConnection::OnAckTimeout(PThread &, INT)
+{
+  releaseMethod = ReleaseWithBYE;
+  Release(EndedByTemporaryFailure);
 }
 
 

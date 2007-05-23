@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2042.2.3  2007/01/15 22:16:42  dsandras
+ * Revision 1.2042.2.4  2007/05/23 20:52:32  dsandras
+ * We should release the current session if no ACK is received after
+ * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
+ * when sending an ACK, only when not receiving one.
+ *
+ * Revision 2.41.2.3  2007/01/15 22:16:42  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.41.2.2  2006/03/08 21:55:59  dsandras
@@ -557,6 +562,8 @@ class SIPConnection : public OpalConnection
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
+    PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckTimeout);
+
     virtual RTP_UDP *OnUseRTPSession(
       const unsigned rtpSessionId,
       const OpalTransportAddress & mediaAddress,
@@ -604,6 +611,7 @@ class SIPConnection : public OpalConnection
     PSemaphore    pduSemaphore;
     PThread     * pduHandler;
 
+    PTimer             ackTimer;
     PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
     PMutex             invitationsMutex;
