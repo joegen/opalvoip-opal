@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2155  2007/05/17 15:38:24  vfrolov
+ * Revision 1.2156  2007/05/23 00:26:21  csoutheren
+ * Don't increment TCS sequence number if h245InSetup ignored
+ *
+ * Revision 2.154  2007/05/17 15:38:24  vfrolov
  * Added number to RemotePartyCallbackURL
  *
  * Revision 2.153  2007/05/15 07:27:34  csoutheren
@@ -889,7 +892,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
     PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
     masterSlaveDeterminationProcedure->Stop();
     lastPDUWasH245inSETUP = FALSE;
-    capabilityExchangeProcedure->Stop();
+    capabilityExchangeProcedure->Stop(TRUE);
   } else {
     for (i = 0; i < h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
       PPER_Stream strm = h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control[i].GetValue();
