@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2009  2007/04/10 05:15:53  rjongbloed
+ * Revision 1.2010  2007/05/23 00:25:55  csoutheren
+ * Don't increment TCS sequence number if h245InSetup ignored
+ *
+ * Revision 2.8  2007/04/10 05:15:53  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -258,7 +261,7 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     H245NegTerminalCapabilitySet(H323EndPoint & endpoint, H323Connection & connection);
 
     BOOL Start(BOOL renegotiate, BOOL empty = FALSE);
-    void Stop();
+    void Stop(BOOL dec = FALSE);
     BOOL HandleIncoming(const H245_TerminalCapabilitySet & pdu);
     BOOL HandleAck(const H245_TerminalCapabilitySetAck & pdu);
     BOOL HandleReject(const H245_TerminalCapabilitySetReject & pdu);
