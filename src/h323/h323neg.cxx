@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2014  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2015  2007/05/23 00:26:21  csoutheren
+ * Don't increment TCS sequence number if h245InSetup ignored
+ *
+ * Revision 2.13  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -605,7 +608,7 @@ BOOL H245NegTerminalCapabilitySet::Start(BOOL renegotiate, BOOL empty)
 }
 
 
-void H245NegTerminalCapabilitySet::Stop()
+void H245NegTerminalCapabilitySet::Stop(BOOL dec)
 {
   PWaitAndSignal wait(mutex);
 
@@ -617,6 +620,13 @@ void H245NegTerminalCapabilitySet::Stop()
   replyTimer.Stop();
   state = e_Idle;
   receivedCapabilites = FALSE;
+
+  if (dec) {
+    if (outSequenceNumber == 0)
+      outSequenceNumber = 255;
+    else
+      --outSequenceNumber;
+  }
 }
 
 
