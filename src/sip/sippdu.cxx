@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.16  2007/05/23 20:52:35  dsandras
+ * Revision 1.2084.2.17  2007/05/27 12:17:07  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.83.2.16  2007/05/23 20:52:35  dsandras
  * We should release the current session if no ACK is received after
  * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
  * when sending an ACK, only when not receiving one.
@@ -1357,7 +1360,7 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
     PTRACE(1, "SIP\tAuthentication contains opaque data");
   }
 
-  PString qopStr = GetAuthParam(auth, "qop-options");
+  PString qopStr = GetAuthParam(auth, "qop");
   if (!qopStr.IsEmpty()) {
     PTRACE(1, "SIP\tAuthentication contains qop-options " << qopStr);
     PStringList options = qopStr.Tokenise(',', TRUE);
@@ -1453,9 +1456,9 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
     digestor.Process(AsHex(a2));
     digestor.Complete(response);
     auth << ", "
-         << "response=\"" << AsHex(response) << "\""
+         << "response=\"" << AsHex(response) << "\", "
          << "cnonce=\"" << cnonce << "\", "
-         << "nonce-count=\"" << nc << "\", "
+         << "nc=\"" << nc << "\", "
          << "qop=\"" << qop << "\"";
   }
   else {
