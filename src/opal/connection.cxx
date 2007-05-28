@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.8  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2089.2.9  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.88.2.8  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -983,7 +986,7 @@ void OpalConnection::StartMediaStreams()
 
 void OpalConnection::CloseMediaStreams()
 {
-  GetCall().GetManager().OnStopRecordAudio(*this);
+  GetCall().OnStopRecordAudio(callIdentifier.AsString());
     
   PWaitAndSignal mutex(mediaStreamMutex);
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
@@ -1082,18 +1085,40 @@ void OpalConnection::OnClosedMediaStream(const OpalMediaStream & stream)
 }
 
 
-void OpalConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
+void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
 {
-  if (patch.GetSinkFormat().GetMediaType() == OpalDefaultAudioMediaType) {
-    GetCall().GetManager().OnStartRecordAudio(*this, (INT)(void *)&patch, isSource);
-    patch.AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
-  }
+  if (!recordAudioFilename.IsEmpty())
+    GetCall().StartRecording(recordAudioFilename);
+    
+  // TODO - add autorecord functions here
   PTRACE(4, "OpalCon\tNew patch created");
 }
 
-void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT code)
+void OpalConnection::EnableRecording()
 {
-  GetCall().GetManager().OnRecordAudio(*this, code, frame);
+  PWaitAndSignal m(mediaStreamMutex);
+  OpalMediaStream * stream = GetMediaStream(OpalDefaultAudioMediaType, TRUE);
+  if (stream != NULL) {
+    OpalMediaPatch * patch = stream->GetPatch();
+    if (patch != NULL)
+      patch->AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+  }
+}
+
+void OpalConnection::DisableRecording()
+{
+  PWaitAndSignal m(mediaStreamMutex);
+  OpalMediaStream * stream = GetMediaStream(OpalDefaultAudioMediaType, TRUE);
+  if (stream != NULL) {
+    OpalMediaPatch * patch = stream->GetPatch();
+    if (patch != NULL)
+      patch->RemoveFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
+  }
+}
+
+void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT)
+{
+  GetCall().GetManager().GetRecordManager().WriteAudio(GetCall().GetToken(), callIdentifier.AsString(), frame);
 }
 
 void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch)
@@ -1475,7 +1500,7 @@ void OpalConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
     //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
 }
 
-
+#if P_DTMF
 void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 {
   // This function is set up as an 'audio filter'.
@@ -1492,7 +1517,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
     }
   }
 }
-
+#endif
 
 #if OPAL_T120DATA
 OpalT120Protocol * OpalConnection::CreateT120ProtocolHandler()
@@ -1550,37 +1575,47 @@ void OpalConnection::SetPhase(Phases phaseToSet)
 
 BOOL OpalConnection::OnOpenIncomingMediaChannels()
 {
-    return TRUE;
+  return TRUE;
 }
 
 
 void OpalConnection::SetStringOptions(StringOptions * options)
 {
-    PWaitAndSignal m(phaseMutex);
+  PWaitAndSignal m(phaseMutex);
     
-    if (stringOptions != NULL)
-        delete stringOptions;
-    stringOptions = options;
+  if (stringOptions != NULL)
+    delete stringOptions;
+  stringOptions = options;
 }
 
 
 void OpalConnection::ApplyStringOptions()
 {
-    PWaitAndSignal m(phaseMutex);
-    if (stringOptions != NULL) {
-        if (stringOptions->Contains("Disable-Jitter"))
-            maxAudioJitterDelay = minAudioJitterDelay = 0;
-        PString str = (*stringOptions)("Max-Jitter");
-        if (!str.IsEmpty())
-            maxAudioJitterDelay = str.AsUnsigned();
-        str = (*stringOptions)("Min-Jitter");
-        if (!str.IsEmpty())
-            minAudioJitterDelay = str.AsUnsigned();
-    }
+  PWaitAndSignal m(phaseMutex);
+  if (stringOptions != NULL) {
+    if (stringOptions->Contains("Disable-Jitter"))
+      maxAudioJitterDelay = minAudioJitterDelay = 0;
+    PString str = (*stringOptions)("Max-Jitter");
+    if (!str.IsEmpty())
+      maxAudioJitterDelay = str.AsUnsigned();
+    str = (*stringOptions)("Min-Jitter");
+    if (!str.IsEmpty())
+      minAudioJitterDelay = str.AsUnsigned();
+    if (stringOptions->Contains("Record-Audio"))
+      recordAudioFilename = (*stringOptions)("Record-Audio");
+  }
 }
 
 void OpalConnection::PreviewPeerMediaFormats(const OpalMediaFormatList & /*fmts*/)
 {
+}
+
+BOOL OpalConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr,
+                                     const PIPSocket::Address & peerAddr,
+                                     const PIPSocket::Address & sigAddr,
+                                     BOOL incoming)
+{
+  return endpoint.IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
 }
 
 

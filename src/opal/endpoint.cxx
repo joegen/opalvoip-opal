@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.8  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2051.2.9  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.50.2.8  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -777,5 +780,13 @@ BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/,
 }
 
 
+BOOL OpalEndPoint::IsRTPNATEnabled(OpalConnection & connection,
+                                   const PIPSocket::Address & localAddr,
+                                   const PIPSocket::Address & peerAddr,
+                                   const PIPSocket::Address & sigAddr,
+                                   BOOL incoming)
+{
+  return GetManager().IsRTPNATEnabled(connection, localAddr, peerAddr, sigAddr, incoming);
+}
 
 /////////////////////////////////////////////////////////////////////////////

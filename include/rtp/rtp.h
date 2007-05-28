@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.6  2007/05/03 10:37:49  hfriederich
+ * Revision 1.2032.2.7  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.31.2.6  2007/05/03 10:37:49  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -457,6 +460,8 @@ class RTP_DataFrame : public PBYTEArray
     PINDEX GetPayloadSize() const { return payloadSize; }
     BOOL   SetPayloadSize(PINDEX sz);
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
+    
+    virtual void PrintOn(ostream & strm) const;
 
   protected:
     PINDEX payloadSize;
