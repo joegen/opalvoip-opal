@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2007.2.1  2007/03/18 19:35:06  hfriederich
+ * Revision 1.2007.2.2  2007/05/28 16:41:43  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.6.2.1  2007/03/18 19:35:06  hfriederich
  * (Backport from HEAD)
  * Add new code plugin types (backport from OpenH323)
  *
@@ -302,7 +305,7 @@ struct PluginCodec_Definition {
  
   // H323 specific fields
   unsigned char h323CapabilityType;
-  void          * h323CapabilityData;
+  const void * h323CapabilityData;
 
   // end of version 1 fields
 };
@@ -483,11 +486,14 @@ enum {
 #define OpalPluginCodec_Identifer_AMR             "0.0.8.245.1.1.1"
 
 // AMR-NB\WB  (as defined in H.245v13 Annex R)
-#define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.1.1.9"
-#define OpalPluginCodec_Identifer_AMR_WB          "0.0.8.1.1.10"
+#define OpalPluginCodec_Identifer_AMR_NB          "0.0.8.245.1.1.9"
+#define OpalPluginCodec_Identifer_AMR_WB          "0.0.8.245.1.1.10"
+
+// G.722 (aka AMR-WB)
+#define OpalPluginCodec_Identifier_G7222          "0.0.8.7222.1.0"
 
 // iLBC (as defined in H.245v13 Annex S)
-#define OpalPluginCodec_Identifer_iLBC            "0.0.8.1.1.11"
+#define OpalPluginCodec_Identifer_iLBC            "0.0.8.245.1.1.11"
 
 
 // Video Capabilities
