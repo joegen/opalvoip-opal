@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.h,v $
- * Revision 1.2008.10.2  2007/05/03 10:37:47  hfriederich
+ * Revision 1.2008.10.3  2007/05/28 16:41:44  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.7.10.2  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -270,7 +273,7 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     H245NegTerminalCapabilitySet(H323EndPoint & endpoint, H323Connection & connection);
 
     BOOL Start(BOOL renegotiate, BOOL empty = FALSE);
-    void Stop();
+    void Stop(BOOL dec = FALSE);
     BOOL HandleIncoming(const H245_TerminalCapabilitySet & pdu);
     BOOL HandleAck(const H245_TerminalCapabilitySetAck & pdu);
     BOOL HandleReject(const H245_TerminalCapabilitySetReject & pdu);

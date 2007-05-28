@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071.2.5  2007/05/03 10:37:47  hfriederich
+ * Revision 1.2071.2.6  2007/05/28 16:41:44  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.70.2.5  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -1376,11 +1379,21 @@ class OpalConnection : public PSafeObject
     virtual void ApplyStringOptions();
     
     virtual void PreviewPeerMediaFormats(const OpalMediaFormatList & fmts);
+    
+    virtual void EnableRecording();
+    virtual void DisableRecording();
+    
+    virtual BOOL IsRTPNATEnabled(const PIPSocket::Address & localAddr,
+                                 const PIPSocket::Address & peerAddr,
+                                 const PIPSocket::Address & sigAddr,
+                                 BOOL incoming);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
+#if P_DTMF
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnUserInputInBandDTMF);
+#endif
     PDECLARE_NOTIFIER(PThread, OpalConnection, OnReleaseThreadMain);
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalConnection, OnRecordAudio);
 
@@ -1439,7 +1452,9 @@ class OpalConnection : public PSafeObject
 
     // The In-Band DTMF detector. This is used inside an audio filter which is
     // added to the audio channel.
+#if P_DTMF
     PDTMFDecoder        dtmfDecoder;
+#endif
 
     PString securityMode;
 
@@ -1456,6 +1471,7 @@ class OpalConnection : public PSafeObject
     BOOL adjustMediaFormatOptions;
 
     StringOptions * stringOptions;
+    PString recordAudioFilename;
 };
 
 class RTP_UDP;
