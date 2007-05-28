@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2048  2007/05/04 15:24:20  vfrolov
+ * Revision 1.2049  2007/05/28 08:38:01  csoutheren
+ * Don't use deleted media session info when parsing fails
+ *
+ * Revision 2.47  2007/05/04 15:24:20  vfrolov
  * Fixed Assertion fail in SetAttribute() if empty formats list
  *
  * Revision 2.46  2007/04/21 13:49:15  dsandras
@@ -1004,8 +1007,10 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             mediaDescriptions.Append(currentMedia);
             PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
           }
-          else
+          else {
             delete currentMedia;
+            currentMedia = NULL;
+          }
         }
   
         /////////////////////////////////
