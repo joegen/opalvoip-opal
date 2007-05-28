@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.13  2007/05/03 10:37:49  hfriederich
+ * Revision 1.2136.2.14  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.135.2.13  2007/05/03 10:37:49  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -878,7 +881,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
     PTRACE(4, "H225\tH.245 in SETUP ignored - resetting H.245 negotiations");
     masterSlaveDeterminationProcedure->Stop();
     lastPDUWasH245inSETUP = FALSE;
-    capabilityExchangeProcedure->Stop();
+    capabilityExchangeProcedure->Stop(TRUE);
   } else {
     for (i = 0; i < h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control.GetSize(); i++) {
       PPER_Stream strm = h245TunnelRxPDU->m_h323_uu_pdu.m_h245Control[i].GetValue();
@@ -1054,34 +1057,21 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPD
   // compare the source call signalling address
   if (setup.HasOptionalField(H225_Setup_UUIE::e_sourceCallSignalAddress)) {
 
-    H323TransportAddress sourceAddress(setup.m_sourceCallSignalAddress);
-
-    //
-    // two condition for detecting remote is behind a NAT
-    //   1. the signalling address is not private, but the TCP source address is
-    //   2. the signalling and TCP source address are both private, but not the same
-    //
-    // but don't enable NAT usage if local endpoint is configured to be behind a NAT
-    //
-    PIPSocket::Address srcAddr, sigAddr;
-    sourceAddress.GetIpAddress(srcAddr);
-    signallingChannel->GetRemoteAddress().GetIpAddress(sigAddr);
-    if (
-        (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
-        ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
-        )  
+    // get the address that remote end *thinks* it is using from the sourceCallSignalAddress field
+    PIPSocket::Address sigAddr;
     {
-      PIPSocket::Address localAddress;
-      signallingChannel->GetLocalAddress().GetIpAddress(localAddress);
-
-      PIPSocket::Address ourAddress = localAddress;
-      endpoint.TranslateTCPAddress(localAddress, sigAddr);
-
-      if (localAddress != ourAddress) {
-        PTRACE(3, "H225\tSource signal address " << srcAddr << " and TCP peer address " << sigAddr << " indicate remote endpoint is behind NAT");
-        remoteIsNAT = TRUE;
-      }
+      H323TransportAddress sigAddress(setup.m_sourceCallSignalAddress);
+      sigAddress.GetIpAddress(sigAddr);
     }
+    
+    // get the local and peer transport addresses
+    PIPSocket::Address peerAddr, localAddr;
+    signallingChannel->GetRemoteAddress().GetIpAddress(peerAddr);
+    signallingChannel->GetLocalAddress().GetIpAddress(localAddr);
+    
+    // allow the application to determine if RTP NAT is enabled or not
+    remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, TRUE);
+
   }
 
   // Anything else we need from setup PDU
@@ -1362,9 +1352,12 @@ const PString H323Connection::GetRemotePartyCallbackURL() const
     j = remote.FindLast(":");
     if (j != P_MAX_INDEX)
       remote = remote.Left (j);
+    
+    if (!GetRemotePartyNumber().IsEmpty())
+      remote = GetRemotePartyNumber() + "@" + remote;
   }
 
-  remote = "h323:" + remote;
+  remote = GetEndPoint().GetPrefixName() + ":" + remote;
   
   return remote;
 }
@@ -2633,8 +2626,7 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
   
   H323TransportAddress localSignallingInterface = signallingChannel->GetLocalAddress();
   if (controlListener == NULL) {
-    controlListener = localSignallingInterface.CreateListener(
-                            endpoint, OpalTransportAddress::HostOnly);
+    controlListener = localSignallingInterface.CreateListener(endpoint, OpalTransportAddress::HostOnly);
     if (controlListener == NULL)
       return FALSE;
 
@@ -3732,12 +3724,14 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
 void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
+#if P_DTMF
   if(patch.GetSource().GetMediaType() == OpalDefaultAudioMediaType) {
     AttachRFC2833HandlerToPatch(isSource, patch);
     if(detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
     }
   }
+#endif
 }
 
 

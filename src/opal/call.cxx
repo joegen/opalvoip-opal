@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2053.2.6  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2053.2.7  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.52.2.6  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -317,6 +320,8 @@ OpalCall::OpalCall(OpalManager & mgr)
 OpalCall::~OpalCall()
 {
   PTRACE(3, "Call\t" << *this << " destroyed.");
+    
+  manager.GetRecordManager().Close(myToken);
 
   if (endCallSyncPoint != NULL)
     endCallSyncPoint->Signal();
@@ -640,21 +645,18 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
     if (map.size() == 0)
       map = connection.GetRTPPayloadMap();
     
-    // if not coming from a NULL stream, setup the patch
-    if (!source.IsNull()) {
-      for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-        if (conn != &connection) {
-          OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-          if (sink == NULL)
-            return FALSE;
-          if (source.RequiresPatch()) {
-            if (patch == NULL) {
-              patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
-              if (patch == NULL)
-                return FALSE;
-            }
-            patch->AddSink(sink, map);
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+      if (conn != &connection) {
+        OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
+        if (sink == NULL)
+          return FALSE;
+        if (source.RequiresPatch()) {
+          if (patch == NULL) {
+            patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
+            if (patch == NULL)
+              return FALSE;
           }
+          patch->AddSink(sink, map);
         }
       }
     }
@@ -734,6 +736,33 @@ void OpalCall::OnReleased(OpalConnection & connection)
     OnCleared();
     manager.activeCalls.RemoveAt(GetToken());
   }
+}
+
+BOOL OpalCall::StartRecording(const PFilePath & fn)
+{
+  // create the mixer entry
+  if (!manager.GetRecordManager().Open(myToken, fn))
+    return FALSE;
+    
+  // tell each connection to start sending data
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadWrite); connection != NULL; ++connection)
+    connection->EnableRecording();
+    
+  return TRUE;
+}
+
+void OpalCall::StopRecording()
+{
+  // tell each connection to stop sending data
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadWrite); connection != NULL; ++connection)
+    connection->DisableRecording();
+    
+  manager.GetRecordManager().Close(myToken);
+}
+
+void OpalCall::OnStopRecordAudio(const PString & callToken)
+{
+  manager.GetRecordManager().CloseStream(myToken, callToken);
 }
 
 

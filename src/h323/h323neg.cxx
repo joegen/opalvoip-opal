@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2012.10.3  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2012.10.4  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.11.10.3  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -617,7 +620,7 @@ BOOL H245NegTerminalCapabilitySet::Start(BOOL renegotiate, BOOL empty)
 }
 
 
-void H245NegTerminalCapabilitySet::Stop()
+void H245NegTerminalCapabilitySet::Stop(BOOL dec)
 {
   PWaitAndSignal wait(mutex);
 
@@ -629,6 +632,13 @@ void H245NegTerminalCapabilitySet::Stop()
   replyTimer.Stop();
   state = e_Idle;
   receivedCapabilites = FALSE;
+  
+  if (dec) {
+    if (outSequenceNumber == 0)
+      outSequenceNumber = 255;
+    else
+      --outSequenceNumber;
+  }
 }
 
 

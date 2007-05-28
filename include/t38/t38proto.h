@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2009.10.2  2007/05/04 08:17:53  hfriederich
+ * Revision 1.2009.10.3  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.8.10.2  2007/05/04 08:17:53  hfriederich
  * Fix compilation
  *
  * Revision 2.8.10.1  2007/05/04 07:41:17  hfriederich
@@ -417,6 +420,8 @@ class OpalFaxMediaStream : public OpalMediaStream
     PString sessionToken;
     OpalFaxCallInfo * faxCallInfo;
     PFilePath filename;
+    BYTE writeBuffer[320];
+    PINDEX writeBufferLen;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

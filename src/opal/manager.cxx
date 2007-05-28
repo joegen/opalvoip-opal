@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073.2.5  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2073.2.6  2007/05/28 16:41:45  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.72.2.5  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -401,7 +404,7 @@ OpalManager::OpalManager()
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
-  rtpIpPorts.max = 5199;
+  rtpIpPorts.max = 5999;
 
   // use dynamic port allocation by default
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
@@ -1371,16 +1374,156 @@ BOOL OpalManager::UseRTPAggregation() const
 #endif
 }
 
-void OpalManager::OnStartRecordAudio(OpalConnection & /*conn*/, INT /*id*/, BOOL /*isSource*/)
+BOOL OpalManager::StartRecording(const PString & callToken, const PFilePath & fn)
 {
+  PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  if (call == NULL)
+    return FALSE;
+    
+  return call->StartRecording(fn);
 }
 
-void OpalManager::OnStopRecordAudio(OpalConnection & /*conn*/)
+void OpalManager::StopRecording(const PString & callToken)
 {
+  PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
+  if (call != NULL)
+    call->StopRecording();
 }
 
-void OpalManager::OnRecordAudio(OpalConnection & /*conn*/, INT /*id*/, RTP_DataFrame & /*frame*/)
+
+BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
+                                  const PIPSocket::Address & localAddr, 
+                                  const PIPSocket::Address & peerAddr,
+                                  const PIPSocket::Address & sigAddr,
+                                  BOOL incoming)
 {
+  BOOL remoteIsNAT = FALSE;
+    
+  if (incoming) {
+        
+    // by default, only check for NAT under two conditions
+    //    1. Peer is not local, but the peer thinks it is
+    //    2. Peer address and local address are both private, but not the same
+    //
+    if ((!peerAddr.IsRFC1918() && sigAddr.IsRFC1918()) ||
+        ((peerAddr.IsRFC1918() && localAddr.IsRFC1918()) && (localAddr != peerAddr))) {
+            
+      // given these paramaters, translate the local address
+      PIPSocket::Address trialAddr = localAddr;
+      TranslateIPAddress(trialAddr, peerAddr);
+            
+      // if the application specific routine changed the local address, then enable RTP NAT mode
+      if (localAddr != trialAddr) {
+        PTRACE(3, "OPAL\tSource signal address " << sigAddr << " and peer address " << peerAddr << " indicate remote endpoint is behind NAT");
+        remoteIsNAT = TRUE;
+      }
+    }
+  }
+  else
+  {
+  }
+    
+  return remoteIsNAT;
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+OpalRecordManager::Mixer_T::Mixer_T()
+: OpalAudioMixer(TRUE)
+{ 
+  mono = FALSE; 
+  started = FALSE; 
+}
+
+BOOL OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
+{
+  PWaitAndSignal m(mutex);
+    
+  if (!started) {
+    file.SetFormat(OpalWAVFile::fmt_PCM);
+    file.Open(fn, PFile::ReadWrite);
+    if (!mono)
+      file.SetChannels(2);
+    started = TRUE;
+  }
+  return TRUE;
+}
+
+BOOL OpalRecordManager::Mixer_T::Close()
+{
+  PWaitAndSignal m(mutex);
+  file.Close();
+  return TRUE;
+}
+
+BOOL OpalRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
+{
+  if (file.IsOpen()) {
+    OpalAudioMixerStream::StreamFrame frame;
+    if (mono) {
+      mixerFrame.GetMixedFrame(frame);
+      file.Write(frame.GetPointerAndLock(), frame.GetSize());
+      frame.Unlock();
+    } else {
+      mixerFrame.GetStereoFrame(frame);
+      file.Write(frame.GetPointerAndLock(), frame.GetSize());
+      frame.Unlock();
+    }
+  }
+  return TRUE;
+}
+
+OpalRecordManager::OpalRecordManager()
+{
+  started = FALSE;
+}
+
+BOOL OpalRecordManager::Open(const PString & _callToken, const PFilePath & fn)
+{
+  PWaitAndSignal m(mutex);
+    
+  if (_callToken.IsEmpty())
+    return FALSE;
+    
+  if (token.IsEmpty())
+    token = _callToken;
+  else if (_callToken != token)
+    return FALSE;
+    
+  return mixer.Open(fn);
+}
+
+BOOL OpalRecordManager::CloseStream(const PString & _callToken, const std::string & _strm)
+{
+  {
+    PWaitAndSignal m(mutex);
+    if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
+      return FALSE;
+    
+    mixer.RemoveStream(_strm);
+  }
+  return TRUE;
+}
+
+BOOL OpalRecordManager::Close(const PString & _callToken)
+{
+  {
+    PWaitAndSignal m(mutex);
+    if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
+      return FALSE;
+    
+    mixer.RemoveAllStreams();
+  }
+  mixer.Close();
+  return TRUE;
+}
+
+BOOL OpalRecordManager::WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp)
+{ 
+  PWaitAndSignal m(mutex);
+  if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
+    return FALSE;
+    
+  return mixer.Write(strm, rtp);
+}
+
