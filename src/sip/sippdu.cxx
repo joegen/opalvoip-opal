@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2124  2007/05/01 05:35:27  rjongbloed
+ * Revision 1.2124.2.1  2007/05/28 08:39:41  csoutheren
+ * Backports from head
+ *
+ * Revision 2.123  2007/05/01 05:35:27  rjongbloed
  * Print received SIP PDU as early as possible, in case of crash.
  *
  * Revision 2.122  2007/04/17 21:49:41  dsandras
@@ -1374,7 +1377,7 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
     PTRACE(2, "SIP\tAuthentication contains opaque data");
   }
 
-  PString qopStr = GetAuthParam(auth, "qop-options");
+  PString qopStr = GetAuthParam(auth, "qop");
   if (!qopStr.IsEmpty()) {
     PTRACE(3, "SIP\tAuthentication contains qop-options " << qopStr);
     PStringList options = qopStr.Tokenise(',', TRUE);
@@ -1470,9 +1473,9 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
     digestor.Process(AsHex(a2));
     digestor.Complete(response);
     auth << ", "
-         << "response=\"" << AsHex(response) << "\""
+         << "response=\"" << AsHex(response) << "\", "
          << "cnonce=\"" << cnonce << "\", "
-         << "nonce-count=\"" << nc << "\", "
+         << "nc=\"" << nc << "\", "
          << "qop=\"" << qop << "\"";
   }
   else {
@@ -1924,6 +1927,13 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // if no content length is specified (which is not the same as zero length)
   // then read until plausible end of header marker
   PINDEX contentLength = mime.GetContentLength();
+
+  // assume entity bodies can't be longer than a UDP packet
+  if (contentLength > 1500) {
+    PTRACE(2, "SIP\tImplausibly long Content-Length received on " << transport);
+    return FALSE;
+  }
+
   if (contentLength > 0)
     transport.read(entityBody.GetPointer(contentLength+1), contentLength);
 
@@ -1947,6 +1957,8 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     contentLength = PMAX(0,pp.GetSize() - pos);
     if(contentLength > 0)
       memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
+    else
+      contentLength = 0;
   }
 
   ////////////////
@@ -2025,7 +2037,7 @@ PString SIP_PDU::GetTransactionID() const
 {
   // sometimes peers put <> around address, use GetHostAddress on GetFrom to handle all cases
   SIPURL fromURL(mime.GetFrom());
-  return fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeq());
+  return mime.GetCallID() + fromURL.GetHostAddress().ToLower() + PString(mime.GetCSeq());
 }
 
 
