@@ -38,8 +38,16 @@
  * Untested under Windows or H.323
  *
  * $Log: mpeg4.cxx,v $
+ * Revision 1.5  2007/05/28 07:22:15  csoutheren
+ * Changed to use compliant SDP name
+ * Thanks to Matthias Schneider
+ *
  * Revision 1.4  2007/05/23 08:31:00  csoutheren
- * Add $Log$
+ * Add $Log: mpeg4.cxx,v $
+ * Add Revision 1.5  2007/05/28 07:22:15  csoutheren
+ * Add Changed to use compliant SDP name
+ * Add Thanks to Matthias Schneider
+ * Add
  *
  */
 
@@ -2151,7 +2159,7 @@ static const char mpeg4QCIFDesc[]  = { "MPEG4-QCIF" };
 static const char mpeg4CIFDesc[]   = { "MPEG4-CIF" };
 static const char mpeg4Desc[]      = { "MPEG4" };
 
-static const char sdpMPEG4[]   = { "mpeg4" };
+static const char sdpMPEG4[]   = { "MP4V-ES" };
 
 /////////////////////////////////////////////////////////////////////////////
 
