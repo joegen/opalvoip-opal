@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2041.2.5  2007/05/03 10:37:49  hfriederich
+ * Revision 1.2041.2.6  2007/05/28 16:41:44  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.40.2.5  2007/05/03 10:37:49  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -577,8 +580,6 @@ class OpalNullMediaStream : public OpalMediaStream
        Returns FALSE.
       */
     virtual BOOL IsSynchronous() const;
-    
-    virtual BOOL IsNull() const { return TRUE; }
   //@}
 };
 
@@ -930,6 +931,14 @@ class OpalVideoMediaStream : public OpalMediaStream
     virtual BOOL SetDataSize(
      PINDEX dataSize  ///<  New data size
     );
+    
+    /** Get the input device (e.g. for statistics)
+      */
+    virtual PVideoInputDevice * GetVideoInputDevice() { return inputDevice; }
+    
+    /** Get the output device (e.g. for statistics)
+      */
+    virtual PVideoOutputDevice * GetVideoOutputDevice() { return outputDevice; }
 
   //@}
 

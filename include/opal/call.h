@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2028.2.3  2007/05/03 10:37:47  hfriederich
+ * Revision 1.2028.2.4  2007/05/28 16:41:44  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.27.2.3  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -481,6 +484,10 @@ class OpalCall : public PSafeObject
      */
     const PTime & GetStartTime() const { return startTime; }
   //@}
+    
+    virtual BOOL StartRecording(const PFilePath & fn);
+    virtual void StopRecording();
+    void OnStopRecordAudio(const PString & callToken);
 
 
   protected:

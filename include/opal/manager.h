@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2057.2.3  2007/05/03 10:37:47  hfriederich
+ * Revision 1.2057.2.4  2007/05/28 16:41:44  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.56.2.3  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -254,6 +257,7 @@
 #include <opal/call.h>
 #include <opal/connection.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
+#include <opal/audiorecord.h>
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
@@ -1224,9 +1228,19 @@ class OpalManager : public PObject
 
     virtual BOOL UseRTPAggregation() const;
     
-    virtual void OnStartRecordAudio(OpalConnection & connection, INT id, BOOL isSource);
-    virtual void OnStopRecordAudio(OpalConnection & connection);
-    virtual void OnRecordAudio(OpalConnection & connection, INT id, RTP_DataFrame & frame);
+    OpalRecordManager & GetRecordManager() { return recordManager; }
+    
+    virtual BOOL StartRecording(const PString & callToken,
+                                const PFilePath & fn);
+    virtual void StopRecording(const PString & callToken);
+    
+    virtual BOOL IsRTPNATEnabled(
+      OpalConnection & conn,
+      const PIPSocket::Address & localAddr,
+      const PIPSocket::Address & peerAddr,
+      const PIPSocket::Address & sigAddr,
+      BOOL incoming
+    );
 
   protected:
     // Configuration variables
@@ -1305,6 +1319,8 @@ class OpalManager : public PObject
 #if OPAL_RTP_AGGREGATE
     BOOL useRTPAggregation; 
 #endif
+    
+    OpalRecordManager recordManager;
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::OnReleased(OpalConnection & connection);

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043.2.6  2007/03/30 06:44:45  hfriederich
+ * Revision 1.2043.2.7  2007/05/28 16:41:44  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.42.2.6  2007/03/30 06:44:45  hfriederich
  * (Backport from HEAD)
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connectino class they can create it without
@@ -870,6 +873,12 @@ class OpalEndPoint : public PObject
       */
     virtual BOOL AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
                                       PIPSocket::InterfaceTable & interfaceTable);
+    
+    virtual BOOL IsRTPNATEnabled(OpalConnection & connection,
+                                 const PIPSocket::Address & localAddr,
+                                 const PIPSocket::Address & peerAddr,
+                                 const PIPSocket::Address & sigAddr,
+                                 BOOL incoming);
 
 
   protected:
