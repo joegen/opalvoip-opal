@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.24.2.5  2007/05/28 13:23:17  hfriederich
+ * (Backport from HEAD)
+ * Fix T.38 compile problems on Linux
+ *
  * Revision 1.24.2.4  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
@@ -219,6 +223,7 @@
 // Various options
 //
 //#define OPAL_RTP_AGGREGATE   1
+#undef GCC_HAS_CLZ
 
 /////////////////////////////////////////////////
 //
