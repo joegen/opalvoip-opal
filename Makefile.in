@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.54  2007/05/28 14:48:58  dominance
+# fix notrace compile. We already feed the OBJDIR_SUFFIX as 'n', no need to add another suffix.
+#
 # Revision 1.53  2007/05/15 20:47:20  dsandras
 # Added various handlers to manage subscriptions for presence, message
 # waiting indications, registrations, state publishing,
@@ -333,9 +336,6 @@ ANSI_FLAG = -ansi
 endif
 
 OPAL_OBJDIR = $(OPAL_LIBDIR)/$(PT_OBJBASE)
-ifdef NOTRACE
-OPAL_OBJDIR += n
-endif
 
 OBJDIR	=	$(OPAL_OBJDIR)
 LIBDIR  =	$(OPAL_LIBDIR)
