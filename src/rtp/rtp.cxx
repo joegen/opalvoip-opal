@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2065  2007/05/14 10:44:09  rjongbloed
+ * Revision 1.2066  2007/05/28 08:37:02  csoutheren
+ * Protect against sending BYE when RTP session not connected
+ *
+ * Revision 2.64  2007/05/14 10:44:09  rjongbloed
  * Added PrintOn function to RTP_DataFrame
  *
  * Revision 2.63  2007/04/20 06:57:18  rjongbloed
@@ -2401,7 +2404,7 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
 BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
 {
   // Trying to send a PDU before we are set up!
-  if (!remoteAddress.IsValid() || remoteControlPort == 0)
+  if (!remoteAddress.IsValid() || remoteControlPort == 0 || controlSocket == NULL)
     return TRUE;
 
   PINDEX len = frame.GetCompoundSize();
