@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.7  2007/05/03 10:37:51  hfriederich
+ * Revision 1.2041.2.8  2007/05/28 16:41:46  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.40.2.7  2007/05/03 10:37:51  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -320,21 +323,6 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
-
-#if PTRACING
-  ostream & traceStream = PTrace::Begin(4, __FILE__, __LINE__);
-  traceStream << "Patch\tAdded sink\n  from " << sourceFormat << '\n';
-  for (PINDEX i = 0; i < sourceFormat.GetOptionCount(); i++) {
-    const OpalMediaOption & option = sourceFormat.GetOption(i);
-    traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
-  }
-  traceStream << "    to " << destinationFormat << '\n';
-  for (PINDEX i = 0; i < destinationFormat.GetOptionCount(); i++) {
-    const OpalMediaOption & option = destinationFormat.GetOption(i);
-    traceStream << "         " << option.GetName() << " = " << option.AsString() << '\n';
-  }
-  traceStream << PTrace::End;
-#endif
 
   if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);

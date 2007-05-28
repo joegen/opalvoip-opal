@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047.2.8  2007/05/03 10:37:51  hfriederich
+ * Revision 1.2047.2.9  2007/05/28 16:41:46  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.46.2.8  2007/05/03 10:37:51  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -690,6 +693,30 @@ BOOL RTP_DataFrame::SetPayloadSize(PINDEX sz)
 {
   payloadSize = sz;
   return SetMinSize(GetHeaderSize()+payloadSize);
+}
+
+
+void RTP_DataFrame::PrintOn(ostream & strm) const
+{
+  strm <<  "V="  << GetVersion()
+  << " X="  << GetExtension()
+  << " M="  << GetMarker()
+  << " PT=" << GetPayloadType()
+  << " SN=" << GetSequenceNumber()
+  << " TS=" << GetTimestamp()
+  << " SSRC=" << GetSyncSource()
+  << " size=" << GetPayloadSize()
+  << '\n';
+    
+  int csrcCount = GetContribSrcCount();
+  for (int csrc = 0; csrc < csrcCount; csrc++)
+    strm << "  CSRC[" << csrc << "]=" << GetContribSource(csrc) << '\n';
+    
+  if (GetExtension())
+    strm << "  Header Extension Type: " << GetExtensionType() << '\n'
+      << hex << setfill('0') << PBYTEArray(GetExtensionPtr(), GetExtensionSize(), false) << setfill(' ') << dec << '\n';
+    
+  strm << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
 }
 
 
@@ -2362,7 +2389,7 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
 BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
 {
   // Trying to send a PDU before we are set up!
-  if (!remoteAddress.IsValid() || remoteControlPort == 0)
+  if (!remoteAddress.IsValid() || remoteControlPort == 0 || controlSocket == NULL)
     return TRUE;
 
   PINDEX len = frame.GetCompoundSize();
