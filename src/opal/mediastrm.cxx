@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.6  2007/05/03 10:37:51  hfriederich
+ * Revision 1.2053.2.7  2007/05/28 16:41:46  hfriederich
+ * Backport from HEAD, changes since May 3, 2007
+ *
+ * Revision 2.52.2.6  2007/05/03 10:37:51  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -286,6 +289,7 @@ OpalMediaStream::OpalMediaStream(OpalConnection & connection, const OpalMediaFor
     paused(FALSE),
     isSource(isSourceStream),
     isOpen(FALSE),
+    defaultDataSize(0),
     timestamp(0),
     marker(TRUE),
     mismatchedPayloadTypes(0),
