@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2027.2.5  2007/04/21 13:48:49  dsandras
+ * Revision 1.2027.2.6  2007/05/29 21:31:26  dsandras
+ * Fixed Assertion fail in SetAttribute() if empty formats list.
+ * Don't use deleted media session info when parsing fails.
+ * (Backports from HEAD).
+ *
+ * Revision 2.26.2.5  2007/04/21 13:48:49  dsandras
  * Allow a different connect address per media description. Fixes
  * Ekiga bug #430870.
  *
@@ -459,13 +464,14 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // find the format that matches the payload type
-  PINDEX fmt = 0;
-  while (formats[fmt].GetPayloadType() != pt) {
-    fmt++;
+  PINDEX fmt;
+  for (fmt = 0 ;; fmt++) {
     if (fmt >= formats.GetSize()) {
       PTRACE(2, "SDP\tMedia attribute " << attr << " found for unknown RTP type " << pt);
       return;
     }
+    if (formats[fmt].GetPayloadType() == pt)
+      break;
   }
   SDPMediaFormat & format = formats[fmt];
 
@@ -784,8 +790,10 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             mediaDescriptions.Append(currentMedia);
             PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
           }
-          else
+          else {
             delete currentMedia;
+            currentMedia = NULL;
+          }
         }
 	
         /////////////////////////////////
