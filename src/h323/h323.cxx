@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2156  2007/05/23 00:26:21  csoutheren
+ * Revision 1.2157  2007/05/29 21:34:08  dsandras
+ * Fixed previous commit.
+ *
+ * Revision 2.155  2007/05/23 00:26:21  csoutheren
  * Don't increment TCS sequence number if h245InSetup ignored
  *
  * Revision 2.154  2007/05/17 15:38:24  vfrolov
@@ -3749,9 +3752,11 @@ void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
   OpalConnection::OnPatchMediaStream(isSource, patch);
   if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     AttachRFC2833HandlerToPatch(isSource, patch);
+#if P_DTMF
     if (detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
     }
+#endif
   }
 }
 
