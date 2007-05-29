@@ -27,8 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2065.2.1  2007/05/28 08:39:41  csoutheren
+ * Revision 1.2065.2.2  2007/05/29 06:26:48  csoutheren
  * Backports from head
+ *
+ * Revision 2.65  2007/05/28 08:37:02  csoutheren
+ * Protect against sending BYE when RTP session not connected
  *
  * Revision 2.64  2007/05/14 10:44:09  rjongbloed
  * Added PrintOn function to RTP_DataFrame
@@ -787,6 +790,13 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
 RTP_ControlFrame::RTP_ControlFrame(PINDEX sz)
   : PBYTEArray(sz)
 {
+  compoundOffset = 0;
+  payloadSize = 0;
+}
+
+void RTP_ControlFrame::Reset(PINDEX size)
+{
+  SetSize(size);
   compoundOffset = 0;
   payloadSize = 0;
 }
