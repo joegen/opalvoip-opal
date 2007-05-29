@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.17  2007/05/27 12:17:07  dsandras
+ * Revision 1.2084.2.18  2007/05/29 21:36:35  dsandras
+ * Sanity check Content-Length field.
+ * Backport from HEAD.
+ *
+ * Revision 2.83.2.17  2007/05/27 12:17:07  dsandras
  * Backport from HEAD.
  *
  * Revision 2.83.2.16  2007/05/23 20:52:35  dsandras
@@ -1910,6 +1914,13 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // if no content length is specified (which is not the same as zero length)
   // then read until plausible end of header marker
   PINDEX contentLength = mime.GetContentLength();
+
+  // assume entity bodies can't be longer than a UDP packet
+  if (contentLength > 1500) {
+    PTRACE(2, "SIP\tImplausibly long Content-Length received on " << transport);
+    return FALSE;
+  }
+
   if (contentLength > 0)
     transport.read(entityBody.GetPointer(contentLength+1), contentLength);
 
