@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2098.2.3  2007/03/14 23:08:09  csoutheren
+ * Revision 1.2098.2.4  2007/05/29 21:15:13  dsandras
+ * Backport from HEAD.
+ *
+ * Revision 2.97.2.3  2007/03/14 23:08:09  csoutheren
  * Backport fix from head for H.323 problem with known payload types
  *
  * Revision 2.97.2.2  2007/03/10 16:47:04  dsandras
@@ -5035,8 +5038,10 @@ BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
     if (patch != NULL) {
       if (channel.GetNumber().IsFromRemote()) {
         patch->AddFilter(rfc2833Handler->GetReceiveHandler());
+#if P_DTMF
         if (detectInBandDTMF)
           patch->AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
+#endif
       }
       else
         patch->AddFilter(rfc2833Handler->GetTransmitHandler());
