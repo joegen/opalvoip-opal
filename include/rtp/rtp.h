@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2042  2007/05/14 10:44:09  rjongbloed
+ * Revision 1.2042.2.1  2007/05/29 06:26:28  csoutheren
+ * Backports from head
+ *
+ * Revision 2.41  2007/05/14 10:44:09  rjongbloed
  * Added PrintOn function to RTP_DataFrame
  *
  * Revision 2.40  2007/04/19 06:34:12  csoutheren
@@ -513,6 +516,8 @@ class RTP_ControlFrame : public PBYTEArray
 
     BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
     void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
+
+    void Reset(PINDEX size);
 
 #pragma pack(1)
     struct ReceiverReport {
