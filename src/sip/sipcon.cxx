@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.11  2007/05/04 09:51:29  hfriederich
+ * Revision 1.2198.2.12  2007/05/30 08:40:10  hfriederich
+ * (Backport from HEAD)
+ * Changes since May 1, 2007. Including Presence code
+ *
+ * Revision 2.197.2.11  2007/05/04 09:51:29  hfriederich
  * Backport from HEAD - Changes since Apr 1, 2007
  *
  * Revision 2.197.2.10  2007/04/10 19:00:58  hfriederich
@@ -920,7 +924,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   originalInvite = NULL;
   jobHandler = NULL;
-  lastSentCSeq = 0;
+  lastSentCSeq.SetValue(0);
   releaseMethod = ReleaseWithNothing;
 
   invitations.DisallowDeleteObjects();
@@ -929,8 +933,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   referTransaction = NULL;
   local_hold = FALSE;
   remote_hold = FALSE;
-
-  udpTransport = NULL;
   
   sentTrying = FALSE;
   
@@ -956,7 +958,6 @@ SIPConnection::~SIPConnection()
   delete referTransaction;
 
   delete jobHandler;
-  if (udpTransport) delete udpTransport;
 
   PTRACE(4, "SIP\tDeleted connection.");
 }
@@ -1305,7 +1306,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   SDPMediaDescription * localMedia = NULL;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
 
-  //if (mediaType != SDPMediaDescription::Image) {
+  {
     // find the payload type used for telephone-event, if present
     const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
     BOOL hasTelephoneEvent = FALSE;
@@ -1383,23 +1384,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
       }
       return TRUE;
     }
-  /*}
-  else
-  {
-    PIPSocket::Address Ip;
-    WORD Port;
-
-    mediaAddress.GetIpAndPort(Ip, Port);
-    OpalTransportAddress RemoteAddress(Ip, Port, "udp$");
-
-    OpalTransportUDP& Transport = GetUDPTransport();
-    Transport.SetRemoteAddress(RemoteAddress);
-    Transport.Connect();
-
-    localMedia = new SDPMediaDescription(Transport.GetLocalAddress(), rtpMediaType);
-
-    OnOpenSourceMediaStreams(remoteFormatList, mediaType, localMedia);
-  }*/
+  }
 
   localMedia->SetDirection(GetDirection(mediaType));
   sdpOut.AddMediaDescription(localMedia);
@@ -1938,6 +1923,7 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
     case SIP_PDU::Method_MESSAGE :
     case SIP_PDU::Method_SUBSCRIBE :
     case SIP_PDU::Method_REGISTER :
+    case SIP_PDU::Method_PUBLISH :
       // Shouldn't have got this!
       break;
     case SIP_PDU::NumMethods :  // if no method, must be response
@@ -2072,12 +2058,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     }
 
     // Send the ack
-    if (response.GetStatusCode()/100 != 1) {
-        //cout << "SLEEPING" << endl;
-        //usleep(10000000);
-        //cout << "SLEEPING DONE" << endl;
+    if (response.GetStatusCode()/100 != 1)
       SendACK(transaction, response);
-    }
   }
 
   switch (response.GetStatusCode()) {
@@ -2189,36 +2171,21 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   }
   else
   {
-    // get the remote transport address
-    PURL contact(request.GetMIME().GetContact());
-    OpalTransportAddress sourceAddress(contact.GetHostName());
-
-    //
-    // two condition for detecting remote is behind a NAT
-    //   1. the signalling address is not private, but the TCP source address is
-    //   2. the signalling and TCP source address are both private, but not the same
-    //
-    // but don't enable NAT usage if local endpoint is configured to be behind a NAT
-    //
-    PIPSocket::Address srcAddr, sigAddr;
-    sourceAddress.GetIpAddress(srcAddr);
-    transport->GetRemoteAddress().GetIpAddress(sigAddr);
-    if (
-        (!sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) ||                         
-        ((sigAddr.IsRFC1918() && srcAddr.IsRFC1918()) && (sigAddr != srcAddr))
-        )  
+    // get the address that remote end *thinks* it is using from the Contact field
+    PIPSocket::Address sigAddr;
     {
-      PIPSocket::Address localAddress;
-      transport->GetLocalAddress().GetIpAddress(localAddress);
-
-      PIPSocket::Address ourAddress = localAddress;
-      endpoint.GetManager().TranslateIPAddress(localAddress, sigAddr);
-
-      if (localAddress != ourAddress) {
-        PTRACE(3, "SIP\tSource signal address " << srcAddr << " and peer address " << sigAddr << " indicate remote endpoint is behind NAT");
-        remoteIsNAT = TRUE;
-      }
+      PURL contact(request.GetMIME().GetContact());
+      OpalTransportAddress sigAddress(contact.GetHostName());
+      sigAddress.GetIpAddress(sigAddr);
     }
+      
+    // get the local and peer transport addresses
+    PIPSocket::Address peerAddr, localAddr;
+    transport->GetRemoteAddress().GetIpAddress(peerAddr);
+    transport->GetLocalAddress().GetIpAddress(localAddr);
+      
+    // allow the application to determine if RTP NAT is enabled or not
+    remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, TRUE);
   }
 
   // originalInvite should contain the first received INVITE for
@@ -2236,7 +2203,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (request.HasSDP())
     remoteSDP = request.GetSDP();
   if (!isReinvite)
-    releaseMethod = ReleaseWithResponse;
+    releaseMethod = ReleaseWithCANCEL;
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom(); 
@@ -2803,8 +2770,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   
   mediaDescription->UpdateCapabilities(capabilities, sdp);
 
-  //if (mediaType != SDPMediaDescription::Image) {
-    
+  {
     // see if the remote supports this media
     OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats(mediaType);
     if (mediaFormatList.GetSize() == 0) {
@@ -2842,28 +2808,8 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     
     // Open the streams and the reverse streams
     OnOpenSourceMediaStreams(remoteFormatList, mediaType, NULL);
-
-    /*}
-  else
-  {
-    // Open the streams and the reverse streams
-    remoteFormatList += mediaDescription->GetMediaFormats(opalMediaType);
-    OnOpenSourceMediaStreams(remoteFormatList, opalMediaType, NULL);
-
-    PIPSocket::Address Ip;
-    WORD Port;
-    
-    OpalTransportAddress MediaAddress = mediaDescription->GetTransportAddress();
-    MediaAddress.GetIpAndPort(Ip, Port);
-
-    OpalTransportAddress RemoteAddress(Ip, Port, "udp$");
- 
-    // set the remote address after the stream is opened
-    OpalTransportUDP& Transport = GetUDPTransport();
-    Transport.SetRemoteAddress(RemoteAddress);
-    Transport.Connect();
-  }*/
-
+  }
+  
   return TRUE;
 }
 
@@ -3021,7 +2967,7 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   }
 
   // Send the PDU using the connection transport
-  if (!SendPDU(ack, ack.GetSendAddress(*this))) {
+  if (!SendPDU(ack, ack.GetSendAddress(GetRouteSet()))) {
     Release(EndedByTransportFail);
     return FALSE;
   }
@@ -3052,6 +2998,7 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
   SIPURL hosturl;
 
   if (transport) {
+    PWaitAndSignal m(transportMutex);
     if (lastTransportAddress != address) {
       // skip transport identifier
       PINDEX pos = address.Find('$');
@@ -3072,7 +3019,6 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
         lastTransportAddress = hosturl.GetHostAddress();
 
       PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
-      PWaitAndSignal m(transportMutex); 
       transport->SetRemoteAddress(lastTransportAddress);
     }
     
@@ -3080,18 +3026,6 @@ BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
   }
 
   return FALSE;
-}
-
-OpalTransportUDP & SIPConnection::GetUDPTransport()
-{
-  if (!udpTransport) {
-    PIPSocket::Address localIp;
-    GetTransport().GetLocalAddress().GetIpAddress(localIp);
-
-    udpTransport = new OpalTransportUDP(GetEndPoint(), localIp);
-  }
-
-  return *udpTransport;
 }
 
 void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
