@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2042.2.4  2007/05/04 09:51:29  hfriederich
+ * Revision 1.2042.2.5  2007/05/30 08:40:09  hfriederich
+ * (Backport from HEAD)
+ * Changes since May 1, 2007. Including Presence code
+ *
+ * Revision 2.41.2.4  2007/05/04 09:51:29  hfriederich
  * Backport from HEAD - Changes since Apr 1, 2007
  *
  * Revision 2.41.2.3  2007/03/11 11:55:13  hfriederich
@@ -542,13 +546,15 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // find the format that matches the payload type
-  PINDEX fmt = 0;
-  while (formats[fmt].GetPayloadType() != pt) {
+  PINDEX fmt;
+  for (fmt = 0; ; fmt++) {
     fmt++;
     if (fmt >= formats.GetSize()) {
       PTRACE(2, "SDP\tMedia attribute " << attr << " found for unknown RTP type " << pt);
       return;
     }
+    if (formats[fmt].GetPayloadType() == pt)
+      break;
   }
   SDPMediaFormat & format = formats[fmt];
 
@@ -827,8 +833,10 @@ BOOL SDPSessionDescription::Decode(const PString & str)
             mediaDescriptions.Append(currentMedia);
             PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
           }
-          else
+          else {
             delete currentMedia;
+            currentMedia = NULL;
+          }
         }
 	
         /////////////////////////////////

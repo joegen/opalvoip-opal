@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.6  2007/05/04 09:51:29  hfriederich
+ * Revision 1.2059.2.7  2007/05/30 08:40:09  hfriederich
+ * (Backport from HEAD)
+ * Changes since May 1, 2007. Including Presence code
+ *
+ * Revision 2.58.2.6  2007/05/04 09:51:29  hfriederich
  * Backport from HEAD - Changes since Apr 1, 2007
  *
  * Revision 2.58.2.5  2007/04/10 19:00:57  hfriederich
@@ -648,7 +652,7 @@ class SIPConnection : public OpalConnection
      */
     BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
-    unsigned GetNextCSeq() { PWaitAndSignal m(jobProcessingMutex); return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { return ++lastSentCSeq; }
 	
     virtual BOOL BuildSDP(
       SDPSessionDescription * &,
@@ -732,8 +736,8 @@ class SIPConnection : public OpalConnection
     SDPMediaDescription::Direction GetDirection(const OpalMediaType & mediaType);
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
-    OpalTransportUDP & GetUDPTransport();
-    OpalTransportUDP * udpTransport;
+    OpalTransport * CreateTransport(const OpalTransportAddress & address,
+                                    BOOL isLocalAddress = FALSE);
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
@@ -763,7 +767,7 @@ class SIPConnection : public OpalConnection
     PMutex             invitationsMutex;
     SIPTransactionList invitations;
     SIPTransactionDict transactions;
-    unsigned           lastSentCSeq;
+    PAtomicInteger     lastSentCSeq;
 
     enum {
       ReleaseWithBYE,

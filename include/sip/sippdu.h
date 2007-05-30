@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.3  2007/04/10 19:00:57  hfriederich
+ * Revision 1.2046.2.4  2007/05/30 08:40:09  hfriederich
+ * (Backport from HEAD)
+ * Changes since May 1, 2007. Including Presence code
+ *
+ * Revision 2.45.2.3  2007/04/10 19:00:57  hfriederich
  * Reorganization of the way transaction and transaction transitions are
  *   handled. More testing needed.
  *
@@ -451,6 +455,12 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PString GetWWWAuthenticate() const;
     void SetWWWAuthenticate(const PString & v);
+    
+    PString GetSIPIfMatch() const;
+    void SetSIPIfMatch(const PString & v);
+    
+    PString GetSIPETag() const;
+    void SetSIPETag(const PString & v);
 
 
     /** return the value of a header field parameter, empty if none
@@ -589,6 +599,7 @@ class SIP_PDU : public PObject
       Method_MESSAGE,
       Method_INFO,
       Method_PING,
+      Method_PUBLISH,
       NumMethods
     };
 
@@ -720,11 +731,11 @@ class SIP_PDU : public PObject
       const OpalTransport & transport
     );
 
-    /**Add and populate Route header if connection has routeSet.
+    /**Add and populate Route header following the given routeSet.
 	   If first route is strict, exchange with URI.
-	   Returns TRUE if conection has a routeSet.
+	   Returns TRUE if routeSet.
 	  */
-    BOOL SetRoute(SIPConnection & connection);
+    BOOL SetRoute(const PStringList & routeSet);
 
     /**Set mime allow field to all supported methods.
       */
@@ -742,7 +753,7 @@ class SIP_PDU : public PObject
     /**Return the address to which the request PDU should be sent
      * according to the RFC, for a request in a dialog.
      */
-    OpalTransportAddress GetSendAddress(SIPConnection &);
+    OpalTransportAddress GetSendAddress(const PStringList & routeSet);
     
     /**Read PDU from the specified transport.
       */
@@ -784,6 +795,7 @@ class SIP_PDU : public PObject
     SIPMIMEInfo mime;
     PString     entityBody;
 
+    OpalTransportAddress lastTransportAddress;
     SDPSessionDescription * sdp;
 };
 
@@ -961,24 +973,31 @@ class SIPRegister : public SIPTransaction
     SIPRegister(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
+      const PStringList & routeSet,
       const SIPURL & address,
       const PString & id,
       unsigned expires,
       const PTimeInterval & minRetryTime = PMaxTimeInterval,
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
-  protected:
-    virtual void OnTerminated();
 };
 
 
 /////////////////////////////////////////////////////////////////////////
 
-class SIPMWISubscribe : public SIPTransaction
+class SIPSubscribe : public SIPTransaction
 {
-    PCLASSINFO(SIPMWISubscribe, SIPTransaction);
+    PCLASSINFO(SIPSubscribe, SIPTransaction);
   public:
-   /** Valid types for a MWI
+    /** Valid types for a presence event
+     */
+    enum SubscribeType {
+      Unknown,
+      MessageSummary,
+      Presence
+    };
+    
+    /** Valid types for a MWI
      */
     enum MWIType { 
       
@@ -990,11 +1009,35 @@ class SIPMWISubscribe : public SIPTransaction
       None 
     };
 
-  SIPMWISubscribe(
-      SIPEndPoint   & endpoint,
+    SIPSubscribe(
+      SIPEndPoint & endpoint,
       OpalTransport & transport,
-      const SIPURL & address,
+      SIPSubscribe::SubscribeType & type,
+      const PStringList & routeSet,
+      const SIPURL & targetAddress,
+      const PString & remotePartyAddress,
+      const PString & localPartyAddress,
       const PString & id,
+      const unsigned & cseq,
+      unsigned expires
+    );
+};
+
+
+/////////////////////////////////////////////////////////////////////////
+
+class SIPPublish : public SIPTransaction
+{
+  PCLASSINFO(SIPPublish, SIPTransaction);
+    
+  public:
+    SIPPublish(
+      SIPEndPoint & endpoint,
+      OpalTransport & transport,
+      const PStringList & routeSet,
+      const SIPURL & targetAddress,
+      const PString & sipIfMatch,
+      const PString & body,
       unsigned expires
     );
 };
@@ -1054,13 +1097,12 @@ class SIPMessage : public SIPTransaction
     
   public:
     SIPMessage(
-	       SIPEndPoint & ep,
-	       OpalTransport & trans,
-	       const SIPURL & address,
-	       const PString & body
+      SIPEndPoint & ep,
+      OpalTransport & trans,
+      const SIPURL & to,
+      const PStringList & routeSet,
+      const PString & body
     );
-  protected:
-    virtual void OnTerminated();
 };
 
 
