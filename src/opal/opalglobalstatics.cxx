@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2008  2007/03/29 05:20:17  csoutheren
+ * Revision 1.2009  2007/05/31 14:11:45  csoutheren
+ * Add initial support for RFC 4175 uncompressed video encoding
+ *
+ * Revision 2.7  2007/03/29 05:20:17  csoutheren
  * Implement T.38 and fax
  *
  * Revision 2.6  2006/11/20 03:56:37  csoutheren
@@ -61,7 +64,7 @@
 #include <lids/lidpluginmgr.h>
 #include <rtp/srtp.h>
 #include <t38/t38proto.h>
-
+#include <codec/rfc4175.h>
 
 #if defined(P_HAS_PLUGINS)
 class PluginLoader : public PProcessStartup
@@ -78,7 +81,9 @@ class PluginLoader : public PProcessStartup
 #if OPAL_T38FAX
       PWLibStupidLinkerHacks::t38Loader = 1;
 #endif
-
+#if OPAL_RFC4175
+      PWLibStupidLinkerHacks::rfc4175Loader = 1;
+#endif
     }
 };
 

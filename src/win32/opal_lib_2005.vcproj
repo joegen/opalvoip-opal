@@ -2820,6 +2820,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\codec\rfc4175.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\codec\silencedetect.cxx"
 					>
 				</File>
@@ -4498,6 +4502,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\codec\rfc2833.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\codec\rfc4175.h"
 					>
 				</File>
 				<File
