@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2066  2007/05/23 20:53:40  dsandras
+ * Revision 1.2067  2007/06/01 04:23:42  csoutheren
+ * Added handling for SIP video update request as per
+ * draft-levin-mmusic-xml-media-control-10.txt
+ *
+ * Revision 2.65  2007/05/23 20:53:40  dsandras
  * We should release the current session if no ACK is received after
  * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
  * when sending an ACK, only when not receiving one.
@@ -683,6 +687,15 @@ class SIPConnection : public OpalConnection
 
     BOOL OnOpenIncomingMediaChannels();
 
+#if OPAL_VIDEO
+    /**Call when SIP INFO of type application/media_control+xml is received.
+
+       Return FALSE if default reponse of Failure_UnsupportedMediaType is to be returned
+
+      */
+    virtual BOOL OnMediaControlXML(SIP_PDU & pdu);
+#endif
+
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckTimeout);
@@ -790,6 +803,7 @@ class SIP_RTP_Session : public RTP_UserData
     virtual void OnRxStatistics(
       const RTP_Session & session   ///<  Session with statistics
     ) const;
+
 #if OPAL_VIDEO
     /**Callback from the RTP session after an IntraFrameRequest is receieved.
        The default behaviour executes an OpalVideoUpdatePicture command on the
@@ -808,14 +822,13 @@ class SIP_RTP_Session : public RTP_UserData
 #endif
   //@}
 
-
   protected:
     const SIPConnection & connection; /// Owner of the RTP session
 #if OPAL_VIDEO
     // Encoding stream to alert with OpalVideoUpdatePicture commands.  Mutable
     // so functions with constant 'this' pointers (eg: OnRxFrameRequest) can
     // update it.
-    mutable OpalMediaStream * encodingStream; 
+    //mutable OpalMediaStream * encodingStream; 
 
 #endif
 };
