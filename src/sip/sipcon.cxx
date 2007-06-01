@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2227  2007/05/23 20:53:40  dsandras
+ * Revision 1.2228  2007/06/01 04:24:08  csoutheren
+ * Added handling for SIP video update request as per
+ * draft-levin-mmusic-xml-media-control-10.txt
+ *
+ * Revision 2.226  2007/05/23 20:53:40  dsandras
  * We should release the current session if no ACK is received after
  * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
  * when sending an ACK, only when not receiving one.
@@ -920,8 +924,9 @@
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
-static const char ApplicationDTMFRelayKey[] = "application/dtmf-relay";
-static const char ApplicationDTMFKey[]      = "application/dtmf";
+static const char ApplicationDTMFRelayKey[]       = "application/dtmf-relay";
+static const char ApplicationDTMFKey[]            = "application/dtmf";
+static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
 
 #define new PNEW
 
@@ -3094,10 +3099,18 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
       OnUserInputTone(tone, duration == 0 ? 100 : tone);
     status = SIP_PDU::Successful_OK;
   }
+
   else if (contentType *= ApplicationDTMFKey) {
     OnUserInputString(pdu.GetEntityBody().Trim());
     status = SIP_PDU::Successful_OK;
   }
+
+  else if (contentType *= ApplicationMediaControlXMLKey) {
+    if (OnMediaControlXML(pdu))
+      return;
+    status = SIP_PDU::Failure_UnsupportedMediaType;
+  }
+
   else 
     status = SIP_PDU::Failure_UnsupportedMediaType;
 
@@ -3161,13 +3174,139 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
   return OpalConnection::SendUserInputTone(tone, duration);
 }
 
+#if OPAL_VIDEO
+class QDXML 
+{
+  public:
+    struct statedef {
+      int currState;
+      const char * str;
+      int newState;
+    };
+
+    bool ExtractNextElement(std::string & str)
+    {
+      while (isspace(*ptr))
+        ++ptr;
+      if (*ptr != '<')
+        return false;
+      ++ptr;
+      if (*ptr == '\0')
+        return false;
+      const char * start = ptr;
+      while (*ptr != '>') {
+        if (*ptr == '\0')
+          return false;
+        ++ptr;
+      }
+      ++ptr;
+      str = std::string(start, ptr-start-1);
+      return true;
+    }
+
+    int Parse(const std::string & xml, const statedef * states, unsigned numStates)
+    {
+      ptr = xml.c_str(); 
+      state = 0;
+      std::string str;
+      while ((state >= 0) && ExtractNextElement(str)) {
+        cout << state << "  " << str << endl;
+        unsigned i;
+        for (i = 0; i < numStates; ++i) {
+          cout << "comparing '" << str << "' to '" << states[i].str << "'" << endl;
+          if ((state == states[i].currState) && (str.compare(0, strlen(states[i].str), states[i].str) == 0)) {
+            state = states[i].newState;
+            break;
+          }
+        }
+        if (i == numStates) {
+          cout << "unknown string " << str << " in state " << state << endl;
+          state = -1;
+          break;
+        }
+        if (!OnMatch(str)) {
+          state = -1;
+          break; 
+        }
+      }
+      return state;
+    }
+
+    virtual bool OnMatch(const std::string & )
+    { return true; }
+
+  protected:
+    int state;
+    const char * ptr;
+};
+
+class VFUXML : public QDXML
+{
+  public:
+    bool vfu;
+
+    VFUXML()
+    { vfu = false; }
+
+    BOOL Parse(const std::string & xml)
+    {
+      static const struct statedef states[] = {
+        { 0, "?xml",                1 },
+        { 1, "media_control",       2 },
+        { 2, "vc_primitive",        3 },
+        { 3, "to_encoder",          4 },
+        { 4, "picture_fast_update", 5 },
+        { 5, "/to_encoder",         6 },
+        { 6, "/vc_primitive",       7 },
+        { 7, "/media_control",      255 },
+      };
+      const int numStates = sizeof(states)/sizeof(states[0]);
+      return QDXML::Parse(xml, states, numStates) == 255;
+    }
+
+    bool OnMatch(const std::string &)
+    {
+      if (state == 5)
+        vfu = true;
+      return true;
+    }
+};
+
+BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
+{
+  VFUXML vfu;
+  if (!vfu.Parse(pdu.GetEntityBody())) {
+    SIP_PDU response(pdu, SIP_PDU::Failure_Undecipherable);
+    response.GetEntityBody() = 
+      "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
+      "<media_control>\n"
+      "  <general_error>\n"
+      "  Unable to parse XML request\n"
+      "   </general_error>\n"
+      "</media_control>\n";
+    SendPDU(response, pdu.GetViaAddress(endpoint));
+  }
+  else if (vfu.vfu) {
+    PWaitAndSignal m(GetMediaStreamMutex());
+    OpalMediaStream * encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
+
+    if (!encodingStream){
+      OpalVideoUpdatePicture updatePictureCommand;
+      encodingStream->ExecuteCommand(updatePictureCommand);
+    }
+
+    SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+    SendPDU(response, pdu.GetViaAddress(endpoint));
+  }
+
+  return TRUE;
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn) :
     connection(conn)
-#if OPAL_VIDEO
-    ,encodingStream(NULL)
-#endif
 {
 }
 
@@ -3189,21 +3328,24 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & /*session*/) con
   // We got an intra frame request control packet, alert the encoder.
   // We're going to grab the call, find its PCSS connection, then grab the
   // encoding stream
-  if(encodingStream == NULL){
-    OpalCall & myCall = connection.GetCall();
-    PSafePtr< OpalConnection> myConn = myCall.GetConnection(0, PSafeReference);
-    if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
-      myConn = myCall.GetConnection(1, PSafeReference);
-    if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
-      return; // No PCSS connection.  Bail.
+  OpalCall & myCall = connection.GetCall();
+  PSafePtr< OpalConnection> myConn = myCall.GetConnection(0, PSafeReference);
 
-    encodingStream = myConn->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
-    if(!encodingStream)
-      return;
-  }
+  if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
+    myConn = myCall.GetConnection(1, PSafeReference);
+
+  if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
+    return; // No PCSS connection.  Bail.
+
   // Found the encoding stream, send an OpalVideoFastUpdatePicture
-  OpalVideoUpdatePicture updatePictureCommand;
-  encodingStream->ExecuteCommand(updatePictureCommand);
+  {
+    PWaitAndSignal m(myConn->GetMediaStreamMutex());
+    OpalMediaStream * encodingStream = myConn->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
+    if (encodingStream) {
+      OpalVideoUpdatePicture updatePictureCommand;
+      encodingStream->ExecuteCommand(updatePictureCommand);
+    }
+  }
 }
 
 void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
