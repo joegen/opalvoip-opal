@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.55  2007/06/02 13:38:37  dsandras
+# Fixed build on linux which was broken due to partial commit of the RFC4175
+# code.
+#
 # Revision 1.54  2007/05/28 14:48:58  dominance
 # fix notrace compile. We already feed the OBJDIR_SUFFIX as 'n', no need to add another suffix.
 #
@@ -573,6 +577,10 @@ SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
 
 ifeq ($(HAS_VIDEO), 1)
 SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx 
+endif
+
+ifeq ($(OPAL_RFC4175), 1)
+SOURCES += $(OPAL_SRCDIR)/codec/rfc4175.cxx
 endif
 
 SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
