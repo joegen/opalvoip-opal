@@ -291,6 +291,38 @@ AC_SUBST(HAS_CAPI)
 
 
 dnl ########################################################################
+dnl
+dnl MPEG4 plugin - needs ffmpeg source tree
+dnl 
+
+HAS_MPEG4=0
+FFMPEG_SOURCE=
+AC_MSG_CHECKING(MPEG4 plugin)
+AC_ARG_WITH(mpeg4-ffmpeg,
+            AC_HELP_STRING([--with-mpeg4-ffmpeg=<absolute path to ffmpeg source tree>],
+                           [enable MPEG4 video plugin]))
+
+if test "$with_mpeg4_ffmpeg" = "yes" ; then
+  AC_MSG_ERROR([--with-mpeg4-ffmpeg requires an argument])
+elif test "$with_mpeg4_ffmpeg" = "no" ; then
+  AC_MSG_RESULT(disabled)
+elif test "$with_mpeg4_ffmpeg" != "" ; then
+  if test -f "$with_mpeg4_ffmpeg/libavcodec/avcodec.h"
+  then
+    AC_MSG_RESULT(enabled)
+    HAS_MPEG4=1
+    FFMPEG_SOURCE=$with_mpeg4_ffmpeg
+  else
+    AC_MSG_ERROR([$with_mpeg4_ffmpeg doesn't contain an ffmpeg source tree])
+  fi
+else
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(HAS_MPEG4)
+AC_SUBST(FFMPEG_SOURCE)
+
+
+dnl ########################################################################
 
 if test -d audio/GSM0610 ; then
   AC_CONFIG_FILES(audio/GSM0610/Makefile)

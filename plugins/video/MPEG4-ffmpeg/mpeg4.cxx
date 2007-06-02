@@ -38,12 +38,20 @@
  * Untested under Windows or H.323
  *
  * $Log: mpeg4.cxx,v $
+ * Revision 1.6  2007/06/02 12:28:13  dsandras
+ * Fixed various aspects of the build system for the MPEG-4 plugin thanks
+ * to Michael Smith <msmith cbnco com>. Thanks a lot!
+ *
  * Revision 1.5  2007/05/28 07:22:15  csoutheren
  * Changed to use compliant SDP name
  * Thanks to Matthias Schneider
  *
  * Revision 1.4  2007/05/23 08:31:00  csoutheren
  * Add $Log: mpeg4.cxx,v $
+ * Add Revision 1.6  2007/06/02 12:28:13  dsandras
+ * Add Fixed various aspects of the build system for the MPEG-4 plugin thanks
+ * Add to Michael Smith <msmith cbnco com>. Thanks a lot!
+ * Add
  * Add Revision 1.5  2007/05/28 07:22:15  csoutheren
  * Add Changed to use compliant SDP name
  * Add Thanks to Matthias Schneider
@@ -102,21 +110,26 @@ using namespace std;
 
 // FFMPEG specific headers
 extern "C" {
-// stock ffmpeg
-#include <ffmpeg/common.h>
-#include <ffmpeg/avcodec.h>
-#include <ffmpeg/avformat.h>
-#include <ffmpeg/avutil.h>
-#include <ffmpeg/log.h>
-// extra headers that need to be copied to the ffmpeg include directory
-#include <ffmpeg/intreadwrite.h>
-#include <ffmpeg/bswap.h>
-#include <ffmpeg/mpegvideo.h>
+
+// Public ffmpeg headers.
+// We'll pull them in from their locations in the ffmpeg source tree,
+// but it would be possible to get them all from /usr/include/ffmpeg
+// with #include <ffmpeg/...h>.
+#include <libavutil/common.h>
+#include <libavcodec/avcodec.h>
+#include <libavutil/avutil.h>
+#include <libavutil/log.h>
+
+// Private headers from the ffmpeg source tree.
+#include <libavutil/intreadwrite.h>
+#include <libavutil/bswap.h>
+#include <libavcodec/mpegvideo.h>
 }
 
 // Compile time version checking
-// FFMPEG SVN-r7437
-#if LIBAVCODEC_VERSION_INT < ((51<<16)+(28<<8)+0)
+// FFMPEG SVN from 20060817. This is what Packman shipped for SuSE 10.1.
+// Should be recent enough.
+#if LIBAVCODEC_VERSION_INT < ((51<<16)+(11<<8)+0)
 #error Libavcodec too old.
 #endif
 
@@ -264,9 +277,14 @@ class DynaLink
 
     virtual bool Open(const char *name)
     {
+      // Look for the library in MPEG4_AVCODECDIR, if set.
+      // (In that case, LD_LIBRARY_PATH must also be set so the linker can
+      // find libavutil.so.49.)
       char * env = ::getenv("MPEG4_AVCODECDIR");
-      if (env != NULL) 
-        return InternalOpen(env, name);
+      if (env == NULL) {
+        // Try to use the libavcodec.so in /usr/lib.
+        return InternalOpen(NULL, name);
+      }
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
@@ -283,9 +301,11 @@ class DynaLink
     {
       char path[1024];
       memset(path, 0, sizeof(path));
-      strcpy(path, dir);
-      if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
-        strcat(path, DIR_SEPERATOR);
+      if (dir != NULL) {
+        strcpy(path, dir);
+        if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
+          strcat(path, DIR_SEPERATOR);
+      }
       strcat(path, name);
 
 #ifdef _WIN32
@@ -432,20 +452,12 @@ FFMPEGLibrary::FFMPEGLibrary()
 bool FFMPEGLibrary::Load()
 {
     // try open
-  if (!DynaLink::Open("avcodec")
-#if defined(WIN32)
+  if (!DynaLink::Open("libavcodec.so")
+      && !DynaLink::Open("libavcodec.so.51")
       && !DynaLink::Open("libavcodec")
-#else
-      && !DynaLink::Open("libavcodec.so")
-#endif
-    ) {
-    cerr << "FFLINK\tFailed to load a library, some codecs won't operate correctly;" << endl;
-#if !defined(WIN32)
-    cerr << "Ensure that the MPEG4_AVCODECDIR environment variable is set to point to a recent libavcodec.so  " << endl;
-#else
-    // TODO: windows error message
-    cerr << "put avcodec.dll in the current directory (together with this program) and try again" << endl;
-#endif
+      && !DynaLink::Open("avcodec")) {
+    cerr << "MPEG4\tFailed to load ffmpeg library." << endl;
+    cerr << "Ensure that the MPEG4_AVCODECDIR and LD_LIBRARY_PATH environment variables are set to point to a recent libavcodec.so." << endl;
     return false;
   }
  

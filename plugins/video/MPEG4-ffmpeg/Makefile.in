@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.2  2007/06/02 12:28:13  dsandras
+# Fixed various aspects of the build system for the MPEG-4 plugin thanks
+# to Michael Smith <msmith cbnco com>. Thanks a lot!
+#
 # Revision 1.1  2007/04/19 07:40:31  csoutheren
 # Applied 1703212 - MPEG4 plugin
 # Thanks to Josh Mahonin and Michael Smith of Canadian Bank Note, Limited
@@ -44,9 +48,11 @@ LDFLAGS		=@LDFLAGS@
 
 SRCS	+= mpeg4.cxx
 
-FFMPEGDIR = ./ffmpeg
+FFMPEG_SOURCE := @FFMPEG_SOURCE@
 
-CFLAGS	+= -I$(FFMPEGDIR)/libavcodec/include
+# Add FFMPEG_SOURCE to the include path so we can #include <libavcodec/...h>
+# Also add libavutil, so ffmpeg headers can #include "log.h".
+CFLAGS	+= -I$(FFMPEG_SOURCE) -I$(FFMPEG_SOURCE)/libavutil
 
 OBJDIR = ./obj
 
