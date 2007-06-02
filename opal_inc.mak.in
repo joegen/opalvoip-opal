@@ -22,6 +22,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.14  2007/06/02 13:38:37  dsandras
+# Fixed build on linux which was broken due to partial commit of the RFC4175
+# code.
+#
 # Revision 1.13  2006/10/10 07:18:18  csoutheren
 # Allow compilation with and without various options
 #
@@ -105,6 +109,7 @@ OPAL_IVR	  = @OPAL_IVR@
 OPAL_H224         = @OPAL_H224@
 OPAL_SYSTEM_SPEEX = @OPAL_SYSTEM_SPEEX@
 OPAL_SRTP	  = @OPAL_SRTP@
+OPAL_RFC4175	  = @OPAL_RFC4175@
 HAS_LIBSRTP	  = @HAS_LIBSRTP@
 
 H323_H460         = @H323_H460@
