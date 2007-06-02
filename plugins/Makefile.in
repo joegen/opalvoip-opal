@@ -12,10 +12,10 @@ ifeq ($(HAS_FFMPEG),1)
 SUBDIRS += video/H.263-ffmpeg
 endif
 
-#HAS_FFMPEG=@HAS_FFMPEG@
-#ifeq ($(HAS_FFMPEG),1)
-#SUBDIRS += video/MPEG4-ffmpeg
-#endif
+HAS_MPEG4=@HAS_MPEG4@
+ifeq ($(HAS_MPEG4),1)
+SUBDIRS += video/MPEG4-ffmpeg
+endif
 
 HAS_IXJ=@HAS_IXJ@
 ifeq ($(HAS_IXJ),1)
