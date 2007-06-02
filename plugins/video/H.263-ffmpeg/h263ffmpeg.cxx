@@ -37,6 +37,10 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.11  2007/06/02 12:24:28  dsandras
+ * Fixed H.263 plugin search directory thanks to Michael Smith
+ * <msmith cbnco com>. Many thanks!
+ *
  * Revision 1.10  2007/04/05 05:47:54  rjongbloed
  * Fixed crash in H.263 plug in if do not have PWLIBPLUGINDIR environment variable set.
  *
@@ -251,7 +255,7 @@ class DynaLink
     {
       char * env = ::getenv("PWLIBPLUGINDIR");
       if (env == NULL) 
-        return InternalOpen(NULL, name);
+        return InternalOpen(P_DEFAULT_PLUGIN_DIR, name);
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
