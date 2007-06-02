@@ -575,6 +575,25 @@ fi
 AC_SUBST(OPAL_IVR)
 
 
+dnl ########################################################################
+dnl
+dnl RFC4175
+
+OPAL_RFC4175=
+rfc4175=yes
+if test "$rfc4175" = "yes" ; then
+  AC_ARG_ENABLE(rfc4175,
+         [  --disable-rfc4175       disable RFC4175 support],
+         rfc4175=$enableval)
+  AC_MSG_CHECKING(RFC4175 codec)
+  if test "$rfc4175" = "yes" ; then
+    AC_SUBST(OPAL_RFC4175, 1)
+    AC_DEFINE(OPAL_RFC4175)
+    AC_MSG_RESULT(enabled)
+  else
+    AC_MSG_RESULT(disabled)
+  fi
+fi
 
 
 dnl ########################################################################
