@@ -37,6 +37,11 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.12  2007/06/02 12:30:33  dsandras
+ * Added security checks against the FFMpeg version to prevent problems in case
+ * they are not coherent as all our plugins require different versions of
+ * FFMPEG. Thanks Michael Smith <msmith cbnco com>.
+ *
  * Revision 1.11  2007/06/02 12:24:28  dsandras
  * Fixed H.263 plugin search directory thanks to Michael Smith
  * <msmith cbnco com>. Many thanks!
@@ -120,6 +125,10 @@ typedef bool BOOL;
 extern "C" {
 #include "ffmpeg/avcodec.h"
 };
+
+#if LIBAVCODEC_VERSION_INT != 0x000406
+#error Wrong libavcodec version for h.263.
+#endif
 
 #  ifdef  _WIN32
 #    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
@@ -400,6 +409,8 @@ class FFMPEGLibrary
     int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
 
     void (*Favcodec_set_print_fn)(void (*print_fn)(char *));
+    unsigned (*Favcodec_version)(void);
+    unsigned (*Favcodec_build)(void);
 
     bool isLoadedOK;
 };
@@ -506,6 +517,29 @@ bool FFMPEGLibrary::Load()
   if (!GetFunction("av_free", (Function &)Favcodec_free)) {
     //cerr << "Failed to load avcodec_close" << endl;
     return false;
+  }
+
+  if (!GetFunction("avcodec_version", (Function &)Favcodec_version)) {
+    return false;
+  }
+
+  if (!GetFunction("avcodec_build", (Function &)Favcodec_build)) {
+    return false;
+  }
+
+  unsigned libVer = Favcodec_version();
+  unsigned libBuild = Favcodec_build();
+  if (libVer != LIBAVCODEC_VERSION_INT) {
+    fprintf(stderr, "h.263 ffmpeg version mismatch: compiled against headers "
+                    "from ver/build 0x%x/%d, loaded library version "
+                    "0x%x/%d.\n", LIBAVCODEC_VERSION_INT, LIBAVCODEC_BUILD,
+                    libVer, libBuild);
+    return false;
+  }
+  if (libBuild != LIBAVCODEC_BUILD) {
+    fprintf(stderr, "Warning: potential h.263 ffmpeg build mismatch: "
+                    "compiled against build %d, loaded library build %d.\n",
+                    LIBAVCODEC_BUILD, libBuild);
   }
 
   // must be called before using avcodec lib
