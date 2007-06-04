@@ -610,7 +610,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
-			RelativePathToProject="..\opal\src\win32\opal_lib_2005.vcproj"
+			RelativePathToProject=".\src\win32\opal_lib_2005.vcproj"
 		/>
 	</References>
 	<Files>
@@ -773,7 +773,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -799,7 +799,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;"
 					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -884,7 +884,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlibd_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlibd_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -929,7 +929,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlibd_2005_wm.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlibd_2005_wm.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;"
 					AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -1004,7 +1004,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot;&#x0D;&#x0A;copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
@@ -1056,6 +1056,17 @@
 		<File
 			RelativePath=".\opaln_2005_wm.dtf"
 			>
+			<FileConfiguration
+				Name="No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Merging exported library symbols"
+					CommandLine="MergeSym -I &quot;$(SolutionDir)/../pwlib/include&quot; -x ptlib\msos\ptlib_2005.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;"
+					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
+					Outputs="$(IntDir)\$(TargetName).def"
+				/>
+			</FileConfiguration>
 			<FileConfiguration
 				Name="Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I)"
 				ExcludedFromBuild="true"
