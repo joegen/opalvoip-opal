@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2121.2.30  2007/05/23 20:52:32  dsandras
+ * Revision 1.2121.2.31  2007/06/04 09:19:36  dsandras
+ * Backport from HEAD. (Removed redundant locking, patch from Robert).
+ *
+ * Revision 2.120.2.30  2007/05/23 20:52:32  dsandras
  * We should release the current session if no ACK is received after
  * an INVITE answer for a period of 64*T1. Don't trigger the ACK timer
  * when sending an ACK, only when not receiving one.
@@ -2382,14 +2385,12 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 
     SIP_PDU * pdu = pduQueue.Dequeue();
     
-    LockReadOnly();
-    UnlockReadWrite();
     if (pdu != NULL) {
       OnReceivedPDU(*pdu);
       delete pdu;
     }
 
-    UnlockReadOnly();
+    UnlockReadWrite();
   }
 
   SafeDereference();
