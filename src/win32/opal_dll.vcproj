@@ -291,9 +291,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlib_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot;
-copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul
-"
+					CommandLine="MergeSym -I &quot;$(LIB)&quot; -x release\ptlib.def -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;"
 					AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"/>
 			</FileConfiguration>
@@ -332,9 +330,7 @@ copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; 
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlibd_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot;
-copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul
-"
+					CommandLine="MergeSym -I &quot;$(LIB)&quot; -x debug\ptlibd.def -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;"
 					AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"/>
 			</FileConfiguration>
@@ -373,9 +369,7 @@ copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; 
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(INCLUDE)&quot; -x ptlib\msos\ptlib_2003.dtf -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot;
-copy &quot;$(InputPath)&quot;+nul &quot;$(IntDir)\$(TargetName).def&quot;  &gt; nul
-"
+					CommandLine="MergeSym -I &quot;$(LIB)&quot; -x release\ptlib.def -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;"
 					AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"/>
 			</FileConfiguration>
