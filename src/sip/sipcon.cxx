@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2228  2007/06/01 04:24:08  csoutheren
+ * Revision 1.2229  2007/06/04 09:12:52  rjongbloed
+ * Removed too tightly specified connection for I-Frame request, was only for
+ *   PCSS connections which precludes gateways etc.
+ * Also removed some redundent locking.
+ *
+ * Revision 2.227  2007/06/01 04:24:08  csoutheren
  * Added handling for SIP video update request as per
  * draft-levin-mmusic-xml-media-control-10.txt
  *
@@ -2949,15 +2954,12 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
       break;
 
     SIP_PDU * pdu = pduQueue.Dequeue();
-    
-    LockReadOnly();
-    UnlockReadWrite();
     if (pdu != NULL) {
       OnReceivedPDU(*pdu);
       delete pdu;
     }
 
-    UnlockReadOnly();
+    UnlockReadWrite();
   }
 
   SafeDereference();
@@ -3305,8 +3307,8 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 
 /////////////////////////////////////////////////////////////////////////////
 
-SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn) :
-    connection(conn)
+SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn)
+  : connection(conn)
 {
 }
 
@@ -3323,28 +3325,21 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
 }
 
 #if OPAL_VIDEO
-void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & /*session*/) const
+void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
 {
   // We got an intra frame request control packet, alert the encoder.
-  // We're going to grab the call, find its PCSS connection, then grab the
+  // We're going to grab the call, find the other connection, then grab the
   // encoding stream
-  OpalCall & myCall = connection.GetCall();
-  PSafePtr< OpalConnection> myConn = myCall.GetConnection(0, PSafeReference);
-
-  if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
-    myConn = myCall.GetConnection(1, PSafeReference);
-
-  if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
-    return; // No PCSS connection.  Bail.
+  PSafePtr<OpalConnection> otherConnection = connection.GetCall().GetOtherPartyConnection(connection);
+  if (otherConnection == NULL)
+    return; // No other connection.  Bail.
 
   // Found the encoding stream, send an OpalVideoFastUpdatePicture
-  {
-    PWaitAndSignal m(myConn->GetMediaStreamMutex());
-    OpalMediaStream * encodingStream = myConn->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
-    if (encodingStream) {
-      OpalVideoUpdatePicture updatePictureCommand;
-      encodingStream->ExecuteCommand(updatePictureCommand);
-    }
+  PWaitAndSignal m(otherConnection->GetMediaStreamMutex());
+  OpalMediaStream * encodingStream = otherConnection->GetMediaStream(session.GetSessionID(), TRUE);
+  if (encodingStream) {
+    OpalVideoUpdatePicture updatePictureCommand;
+    encodingStream->ExecuteCommand(updatePictureCommand);
   }
 }
 
