@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2229  2007/06/04 09:12:52  rjongbloed
+ * Revision 1.2230  2007/06/05 21:37:28  dsandras
+ * Use the route set directly from the PDU instead of using the route set
+ * from the connection. Make sure the route set is being used when routing
+ * all types of PDUs.
+ *
+ * Revision 2.228  2007/06/04 09:12:52  rjongbloed
  * Removed too tightly specified connection for I-Frame request, was only for
  *   PCSS connections which precludes gateways etc.
  * Also removed some redundent locking.
@@ -3011,7 +3016,7 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   }
 
   // Send the PDU using the connection transport
-  if (!SendPDU(ack, ack.GetSendAddress(GetRouteSet()))) {
+  if (!SendPDU(ack, ack.GetSendAddress(ack.GetMIME().GetRoute()))) {
     Release(EndedByTransportFail);
     return FALSE;
   }
