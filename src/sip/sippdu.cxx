@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2129  2007/05/28 08:38:35  csoutheren
+ * Revision 1.2130  2007/06/05 21:37:28  dsandras
+ * Use the route set directly from the PDU instead of using the route set
+ * from the connection. Make sure the route set is being used when routing
+ * all types of PDUs.
+ *
+ * Revision 2.128  2007/05/28 08:38:35  csoutheren
  * Sanity check Content-Length field
  *
  * Revision 2.127  2007/05/27 02:03:03  csoutheren
@@ -2134,6 +2139,8 @@ SIPTransaction::~SIPTransaction()
 
 BOOL SIPTransaction::Start()
 {
+  PStringList routeSet;
+
   if (state != NotStarted) {
     PAssertAlways(PLogicError);
     return FALSE;
@@ -2160,13 +2167,14 @@ BOOL SIPTransaction::Start()
   else
     completionTimer = endpoint.GetNonInviteTimeout();
 
+  routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
   if (connection != NULL) {
     // Use the connection transport to send the request
-    if (connection->SendPDU(*this, this->GetSendAddress(connection->GetRouteSet())))
+    if (connection->SendPDU(*this, this->GetSendAddress(routeSet)))
       return TRUE;
   }
   else {
-    return endpoint.SendRequest(*this, transport, transport.GetRemoteAddress()); 
+    return endpoint.SendRequest(*this, transport, this->GetSendAddress(routeSet));
   }
 
   SetTerminated(Terminated_TransportError);
