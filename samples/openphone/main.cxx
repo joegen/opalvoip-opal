@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.19  2007/06/06 09:08:56  rjongbloed
+ * Fixed deadlocks in OpenPhone Timer/GUI interaction.
+ *
  * Revision 1.18  2007/05/20 08:16:12  rjongbloed
  * Added various handlers to manage subscriptions for presence, message
  * waiting indications, registrations, state publishing,
@@ -476,13 +479,13 @@ MyManager::MyManager()
 
 MyManager::~MyManager()
 {
+  LogWindow.SetTextCtrl(NULL);
+
   ClearAllCalls();
 
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
-
-  LogWindow.SetTextCtrl(NULL);
 
   delete m_imageListNormal;
   delete m_imageListSmall;
@@ -2670,6 +2673,8 @@ void CallingPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const int VU_UPDATE_TIMER_ID = 1000;
+
 BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
@@ -2688,10 +2693,13 @@ BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
 
   EVT_COMMAND_SCROLL(XRCID("SpeakerVolume"), InCallPanel::SpeakerVolume)
   EVT_COMMAND_SCROLL(XRCID("MicrophoneVolume"), InCallPanel::MicrophoneVolume)
+
+  EVT_TIMER(VU_UPDATE_TIMER_ID, InCallPanel::OnUpdateVU)
 END_EVENT_TABLE()
 
 InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   : m_manager(manager)
+  , m_vuTimer(this, VU_UPDATE_TIMER_ID)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
@@ -2699,8 +2707,6 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, "MicrophoneVolume");
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGauge");
   m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, "MicrophoneGauge");
-
-  m_vuTimer.SetNotifier(PCREATE_NOTIFIER(UpdateVU));
 
   m_FirstTime = true;
 }
@@ -2725,7 +2731,7 @@ bool InCallPanel::Show(bool show)
     SetVolume(true, value);
 
     if (show)
-      m_vuTimer.RunContinuous(250);
+      m_vuTimer.Start(250);
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
@@ -2793,7 +2799,7 @@ static void SetGauge(wxGauge * gauge, int level)
 }
 
 
-void InCallPanel::UpdateVU(PTimer &, INT)
+void InCallPanel::OnUpdateVU(wxTimerEvent& event)
 {
   int micLevel = -1;
   int spkLevel = -1;
