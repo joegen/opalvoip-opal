@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.39  2007/06/06 09:08:56  rjongbloed
+ * Fixed deadlocks in OpenPhone Timer/GUI interaction.
+ *
  * Revision 1.38  2007/05/21 04:30:30  dereksmithies
  * put #ifndef _PTLIB_H protection around the include of ptlib.h
  *
@@ -310,18 +313,18 @@ class InCallPanel : public wxPanel
     void OnUserInputStar(wxCommandEvent & event);
     void OnUserInputHash(wxCommandEvent & event);
     void OnUserInputFlash(wxCommandEvent & event);
+    void OnUpdateVU(wxTimerEvent& event);
 
     void SpeakerVolume(wxScrollEvent & event);
     void MicrophoneVolume(wxScrollEvent & event);
     void SetVolume(bool microphone, int value);
-    PDECLARE_NOTIFIER(PTimer, InCallPanel, UpdateVU);
 
     MyManager & m_manager;
     wxSlider  * m_SpeakerVolume;
     wxSlider  * m_MicrophoneVolume;
     wxGauge   * m_vuSpeaker;
     wxGauge   * m_vuMicrophone;
-    PTimer      m_vuTimer;
+    wxTimer     m_vuTimer;
     bool        m_FirstTime;
 
     DECLARE_EVENT_TABLE()
