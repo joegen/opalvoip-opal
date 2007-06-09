@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2130  2007/06/05 21:37:28  dsandras
+ * Revision 1.2131  2007/06/09 15:40:05  dsandras
+ * Fixed routing of ACK PDUs. Only an ACK sent for a non 2XX response needs
+ * to copy the Route header from the original request.
+ *
+ * Revision 2.129  2007/06/05 21:37:28  dsandras
  * Use the route set directly from the PDU instead of using the route set
  * from the connection. Make sure the route set is being used when routing
  * all types of PDUs.
@@ -2728,8 +2732,8 @@ SIPPing::SIPPing(SIPEndPoint & ep,
 /////////////////////////////////////////////////////////////////////////
 
 SIPAck::SIPAck(SIPEndPoint & ep,
-            SIPTransaction & invite,
-                   SIP_PDU & response)
+               SIPTransaction & invite,
+               SIP_PDU & response)
   : SIP_PDU (SIP_PDU::Method_ACK,
              invite.GetURI(),
              response.GetMIME().GetTo(),
@@ -2740,9 +2744,13 @@ SIPAck::SIPAck(SIPEndPoint & ep,
   transaction(invite)
 {
   Construct();
-  // Use the topmost via header from the INVITE we ACK as per 9.1. 
+  // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
+  // as well as the initial Route
   PStringList viaList = invite.GetMIME().GetViaList();
   mime.SetVia(viaList[0]);
+
+  if (transaction.GetMIME().GetRoute().GetSize() > 0)
+    mime.SetRoute(transaction.GetMIME().GetRoute());
 }
 
 
@@ -2759,9 +2767,6 @@ SIPAck::SIPAck(SIPTransaction & invite)
 
 void SIPAck::Construct()
 {
-  if (transaction.GetMIME().GetRoute().GetSize() > 0)
-    mime.SetRoute(transaction.GetMIME().GetRoute());
-
   // Add authentication if had any on INVITE
   if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
     transaction.GetConnection()->GetAuthenticator().Authorise(*this);

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2230  2007/06/05 21:37:28  dsandras
+ * Revision 1.2231  2007/06/09 15:40:05  dsandras
+ * Fixed routing of ACK PDUs. Only an ACK sent for a non 2XX response needs
+ * to copy the Route header from the original request.
+ *
+ * Revision 2.229  2007/06/05 21:37:28  dsandras
  * Use the route set directly from the PDU instead of using the route set
  * from the connection. Make sure the route set is being used when routing
  * all types of PDUs.
@@ -3010,7 +3014,7 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   SIP_PDU ack;
   // ACK Constructed following 17.1.1.3
   if (response.GetStatusCode()/100 != 2) {
-    ack = SIPAck(endpoint, invite, response);
+    ack = SIPAck(endpoint, invite, response); 
   } else { 
     ack = SIPAck(invite);
   }
