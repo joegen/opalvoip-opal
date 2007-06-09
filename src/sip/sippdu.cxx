@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.18  2007/05/29 21:36:35  dsandras
+ * Revision 1.2084.2.19  2007/06/09 16:08:59  dsandras
+ * Backport from HEAD (routing of ACK requests).
+ *
+ * Revision 2.83.2.18  2007/05/29 21:36:35  dsandras
  * Sanity check Content-Length field.
  * Backport from HEAD.
  *
@@ -2571,8 +2574,8 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
 /////////////////////////////////////////////////////////////////////////
 
 SIPAck::SIPAck(SIPEndPoint & ep,
-            SIPTransaction & invite,
-                   SIP_PDU & response)
+               SIPTransaction & invite,
+               SIP_PDU & response)
   : SIP_PDU (SIP_PDU::Method_ACK,
              invite.GetURI(),
              response.GetMIME().GetTo(),
@@ -2583,9 +2586,13 @@ SIPAck::SIPAck(SIPEndPoint & ep,
   transaction(invite)
 {
   Construct();
-  // Use the topmost via header from the INVITE we ACK as per 9.1. 
+  // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
+  // as well as the initial Route
   PStringList viaList = invite.GetMIME().GetViaList();
   mime.SetVia(viaList[0]);
+
+  if (transaction.GetMIME().GetRoute().GetSize() > 0)
+    mime.SetRoute(transaction.GetMIME().GetRoute());
 }
 
 
@@ -2602,9 +2609,6 @@ SIPAck::SIPAck(SIPTransaction & invite)
 
 void SIPAck::Construct()
 {
-  if (transaction.GetMIME().GetRoute().GetSize() > 0)
-    mime.SetRoute(transaction.GetMIME().GetRoute());
-
   // Add authentication if had any on INVITE
   if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
     transaction.GetConnection()->GetAuthenticator().Authorise(*this);
