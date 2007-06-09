@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2011  2007/02/12 23:55:41  dereksmithies
+ * Revision 1.2012  2007/06/09 07:37:59  rjongbloed
+ * Fixed some bugs in the LID code so USB handsets work correctly.
+ *
+ * Revision 2.10  2007/02/12 23:55:41  dereksmithies
  * Fix GCC warnings about unused enumeration values in switch statements.
  *
  * Revision 2.9  2007/01/24 04:02:46  csoutheren
@@ -162,6 +165,7 @@ OpalPluginLID::OpalPluginLID(const PluginLID_Definition & definition)
 
 OpalPluginLID::~OpalPluginLID()
 {
+  StopTone(0);
   if (m_context != NULL && m_definition.Destroy != NULL)
     m_definition.Destroy(&m_definition, m_context);
 }
@@ -225,7 +229,7 @@ BOOL OpalPluginLID::Open(const PString & device)
         return FALSE;
       }
 
-      if (!m_recorder.Open(device, PSoundChannel::Player)) {
+      if (!m_recorder.Open(device, PSoundChannel::Recorder)) {
         PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
         return FALSE;
       }
@@ -617,6 +621,7 @@ BOOL OpalPluginLID::ReadFrame(unsigned line, void * buffer, PINDEX & count)
   unsigned uiCount = 0;
   switch (CHECK_FN(ReadFrame, (m_context, line, buffer, &uiCount))) {
     case PluginLID_UnimplementedFunction :
+      count = GetReadFrameSize(line);
       if (!m_recorder.Read(buffer, count))
         return FALSE;
       count = m_recorder.GetLastReadCount();

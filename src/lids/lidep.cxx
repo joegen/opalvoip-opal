@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2045  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2046  2007/06/09 07:37:59  rjongbloed
+ * Fixed some bugs in the LID code so USB handsets work correctly.
+ *
+ * Revision 2.44  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -662,11 +665,6 @@ BOOL OpalLineConnection::OnSetUpConnection()
 
 BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 {
-  if (IsOriginating()) {
-    PTRACE(2, "LID Con\tSetAlerting ignored on call we originated.");
-    return TRUE;
-  }
-  
   PTRACE(3, "LID Con\tSetAlerting " << *this);
 
   if (GetPhase() != SetUpPhase) 
@@ -683,21 +681,16 @@ BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 
 BOOL OpalLineConnection::SetConnected()
 {
-  if (IsOriginating()) {
-    PTRACE(2, "LID Con\tSetConnected ignored on call we originated.");
-    return TRUE;
-  }
-  
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
-  if (GetPhase() < ConnectedPhase) {
-      // switch phase 
-      phase = ConnectedPhase;
-      connectedTime = PTime();
+  if (GetPhase() >= ConnectedPhase)
+    return FALSE;
 
-      return line.StopTone();
-  }
-  return FALSE;
+  // switch phase 
+  phase = ConnectedPhase;
+  connectedTime = PTime();
+
+  return line.StopTone();
 }
 
 
