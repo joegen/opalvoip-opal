@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2092  2007/05/07 14:15:22  csoutheren
+ * Revision 1.2093  2007/06/09 06:06:17  rjongbloed
+ * Added check that --srcep parameter has endpoing type existing before selection.
+ *
+ * Revision 2.91  2007/05/07 14:15:22  csoutheren
  * Add z and Z commands to start and stop call recording
  *
  * Revision 2.90  2007/05/01 05:32:03  rjongbloed
@@ -1140,20 +1143,24 @@ BOOL MyManager::Initialise(PArgList & args)
   }
 #endif
 
-  srcEP = args.GetOptionString("srcep", pcssEP != NULL ? "pc:*"
-                                    #if OPAL_LID
-                                      : potsEP != NULL ? "pots:*"
-                                    #endif
-                                    #if P_EXPAT
-                                      : ivrEP != NULL ? "ivr:#"
-                                    #endif
-                                    #if OPAL_SIP
-                                      : sipEP != NULL ? "sip:localhost"
-                                    #endif
-                                    #if OPAL_H323
-                                      : h323EP != NULL ? "sip:localhost"
-                                    #endif
-                                      : "");
+  PString defaultSrcEP = pcssEP != NULL ? "pc:*"
+                                      #if OPAL_LID
+                                        : potsEP != NULL ? "pots:*"
+                                      #endif
+                                      #if P_EXPAT
+                                        : ivrEP != NULL ? "ivr:#"
+                                      #endif
+                                      #if OPAL_SIP
+                                        : sipEP != NULL ? "sip:localhost"
+                                      #endif
+                                      #if OPAL_H323
+                                        : h323EP != NULL ? "sip:localhost"
+                                      #endif
+                                        : "";
+  srcEP = args.GetOptionString("srcep", defaultSrcEP);
+
+  if (FindEndPoint(srcEP.Left(srcEP.Find(':'))) == NULL)
+    srcEP = defaultSrcEP;
 
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
