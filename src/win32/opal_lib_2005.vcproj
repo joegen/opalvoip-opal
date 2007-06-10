@@ -3962,10 +3962,6 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\sip\sharedtransports.cxx"
-					>
-				</File>
-				<File
 					RelativePath="..\sip\sipcon.cxx"
 					>
 					<FileConfiguration
@@ -4594,10 +4590,6 @@
 				</File>
 				<File
 					RelativePath="..\..\include\sip\sdp.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\include\sip\sharedtransports.h"
 					>
 				</File>
 				<File
