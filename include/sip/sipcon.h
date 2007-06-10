@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2067  2007/06/01 04:23:42  csoutheren
+ * Revision 1.2068  2007/06/10 08:55:11  rjongbloed
+ * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
+ *
+ * Revision 2.66  2007/06/01 04:23:42  csoutheren
  * Added handling for SIP video update request as per
  * draft-levin-mmusic-xml-media-control-10.txt
  *
@@ -729,7 +732,6 @@ class SIPConnection : public OpalConnection
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
-    OpalTransportAddress  lastTransportAddress;
 
     PMutex                transportMutex;
     PMutex                streamsMutex;
