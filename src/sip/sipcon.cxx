@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2231  2007/06/09 15:40:05  dsandras
+ * Revision 1.2232  2007/06/10 08:55:12  rjongbloed
+ * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
+ *
+ * Revision 2.230  2007/06/09 15:40:05  dsandras
  * Fixed routing of ACK PDUs. Only an ACK sent for a non 2XX response needs
  * to copy the Route header from the original request.
  *
@@ -955,12 +958,13 @@ SIPConnection::SIPConnection(OpalCall & call,
                              SIPEndPoint & ep,
                              const PString & token,
                              const SIPURL & destination,
-                             OpalTransport * inviteTransport,
+                             OpalTransport * newTransport,
                              unsigned int options,
                              OpalConnection::StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
-    pduSemaphore(0, P_MAX_INDEX)
+    pduSemaphore(0, P_MAX_INDEX),
+    transport(newTransport)
 {
   SIPURL transportAddress = destination;
   targetAddress = destination;
@@ -992,15 +996,6 @@ SIPConnection::SIPConnection(OpalCall & call,
       transportAddress.SetPort(addrs [0].port);
     }
 #endif
-
-  // Create the transport
-  if (inviteTransport == NULL)
-    transport = NULL;
-  else 
-    transport = endpoint.CreateTransport(inviteTransport->GetLocalAddress(), TRUE);
-  
-  if (transport)
-    lastTransportAddress = transport->GetRemoteAddress();
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -1702,7 +1697,6 @@ BOOL SIPConnection::SetUpConnection()
 
   delete transport;
   transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
-  lastTransportAddress = transportAddress.GetHostAddress();
   if (transport == NULL) {
     Release(EndedByTransportFail);
     return FALSE;
@@ -3045,37 +3039,8 @@ BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * c
 
 BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
-  SIPURL hosturl;
-
-  if (transport) {
-    PWaitAndSignal m(transportMutex); 
-    if (lastTransportAddress != address) {
-      // skip transport identifier
-      PINDEX pos = address.Find('$');
-      if (pos != P_MAX_INDEX)
-        hosturl = address.Mid(pos+1);
-      else
-        hosturl = address;
-
-      hosturl = address.Mid(pos+1);
-
-      // Do a DNS SRV lookup
-#if P_DNS
-      PIPSocketAddressAndPortVector addrs;
-      if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
-        lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
-      else  
-#endif
-        lastTransportAddress = hosturl.GetHostAddress();
-
-      PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
-      transport->SetRemoteAddress(lastTransportAddress);
-    }
-    
-    return (pdu.Write(*transport));
-  }
-
-  return FALSE;
+  PWaitAndSignal m(transportMutex); 
+  return transport != NULL && pdu.Write(*transport, address);
 }
 
 void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
