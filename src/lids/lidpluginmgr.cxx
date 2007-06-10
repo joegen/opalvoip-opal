@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2012  2007/06/09 07:37:59  rjongbloed
+ * Revision 1.2013  2007/06/10 08:25:14  rjongbloed
+ * Fixed race condition with tones on LID handset.
+ *
+ * Revision 2.11  2007/06/09 07:37:59  rjongbloed
  * Fixed some bugs in the LID code so USB handsets work correctly.
  *
  * Revision 2.10  2007/02/12 23:55:41  dereksmithies
@@ -254,6 +257,7 @@ BOOL OpalPluginLID::Close()
 {
   OpalLineInterfaceDevice::Close();
 
+  StopTone(0);
   m_player.Close();
   m_recorder.Close();
 
@@ -571,6 +575,7 @@ BOOL OpalPluginLID::SetWriteFrameSize(unsigned line, PINDEX frameSize)
 {
   switch (CHECK_FN(SetWriteFrameSize, (m_context, line, frameSize))) {
     case PluginLID_UnimplementedFunction :
+      StopTone(line);
       return m_player.SetBuffers(frameSize, 1000/frameSize+2); // Want about 125ms of buffering
 
     case PluginLID_NoError :
