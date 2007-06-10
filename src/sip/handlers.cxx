@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.4  2007/06/10 08:55:12  rjongbloed
+ * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
+ *
  * Revision 1.3  2007/05/22 18:19:52  dsandras
  * Added conditional check for P_EXPAT.
  *
@@ -66,21 +69,23 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-SIPHandler::SIPHandler(SIPEndPoint & endpoint, 
+SIPHandler::SIPHandler(SIPEndPoint & ep,
+                       const PString & to,
                        const PTimeInterval & retryMin,
                        const PTimeInterval & retryMax)
-: ep(endpoint), 
+  : endpoint(ep), 
     expire(0),
     retryTimeoutMin(retryMin), 
     retryTimeoutMax(retryMax)
 {
-  SIPURL proxy;
+  targetAddress.Parse(to);
+  remotePartyAddress = targetAddress.AsQuotedString();
 
-  request = NULL;
+  transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+
   authenticationAttempts = 0;
 
-  if (proxy.IsEmpty())
-    proxy = ep.GetProxy();
+  const SIPURL & proxy = endpoint.GetProxy();
 
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
@@ -94,8 +99,7 @@ SIPHandler::SIPHandler(SIPEndPoint & endpoint,
 
 SIPHandler::~SIPHandler() 
 {
-  if (transport != NULL)
-    transport->DecrementReferenceCount();
+  delete transport;
 }
 
 
@@ -117,35 +121,30 @@ void SIPHandler::SetExpire (int e)
 }
 
 
-BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * _request)
+BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 {
-  if (_request == NULL)
+  if (param == NULL)
     return FALSE;
 
-  SIPTransaction *request = (SIPTransaction *) _request;
+  SIPHandler * handler = (SIPHandler *)param;
+
+  SIPTransaction * request = handler->CreateTransaction(transport);
+  if (!request)
+    return FALSE;
 
   if (!request->Start()) {
     PTRACE(2, "SIP\tDid not start transaction on " << transport);
     return FALSE;
   }
 
+  handler->endpoint.AddTransaction(request);
   return TRUE;
 }
 
 
 BOOL SIPHandler::SendRequest()
 {
-  OpalTransport *hostTransport = NULL;
-
   if (transport == NULL)
-    return FALSE;
-
-  hostTransport = transport->GetTransport();
-  if (hostTransport == NULL)
-    return FALSE;
-
-  request = CreateTransaction(*hostTransport);
-  if (!request)
     return FALSE;
 
   if (expire == 0)
@@ -153,13 +152,7 @@ BOOL SIPHandler::SendRequest()
   else
     SetState(Subscribing); 
 
-  if (!hostTransport->WriteConnect(WriteSIPHandler, request)) {
-    delete request;
-    return FALSE;
-  }
-
-  ep.AddTransaction(request);
-  return TRUE;
+  return transport->WriteConnect(WriteSIPHandler, this);
 }
 
 
@@ -214,16 +207,11 @@ SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint,
                                        int exp,
                                        const PTimeInterval & minRetryTime, 
                                        const PTimeInterval & maxRetryTime)
-: SIPHandler(endpoint, minRetryTime, maxRetryTime)
+  : SIPHandler(endpoint, to, minRetryTime, maxRetryTime)
 {
-  targetAddress.Parse(to);
-  remotePartyAddress = targetAddress.AsQuotedString();
-
-  transport = ep.CreateSharedTransport(SIPURL(to).GetHostName());
-
   expire = exp;
   if (expire <= 0)
-    expire = ep.GetRegistrarTimeToLive().GetSeconds();
+    expire = endpoint.GetRegistrarTimeToLive().GetSeconds();
 
   password = pass;
   authUser = authName;
@@ -251,7 +239,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
   if (expire != 0)
     expire = originalExpire;
 
-  return new SIPRegister (ep, 
+  return new SIPRegister (endpoint, 
                           t, 
                           GetRouteSet(),
                           targetAddress, 
@@ -288,7 +276,7 @@ void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
 
   aor = targetAddress.AsString();
   aor = aor.Mid(4);
-  ep.OnRegistered(aor, (GetState() != Unsubscribing)); 
+  endpoint.OnRegistered(aor, (GetState() != Unsubscribing)); 
 
   SIPHandler::OnReceivedOK(response);
 }
@@ -307,7 +295,7 @@ void SIPRegisterHandler::OnFailed (SIP_PDU::StatusCodes r)
 
   aor = targetAddress.AsString();
   aor = aor.Mid(4);
-  ep.OnRegistrationFailed (aor, r, (GetState() != Unsubscribing));
+  endpoint.OnRegistrationFailed (aor, r, (GetState() != Unsubscribing));
 
   SIPHandler::OnFailed(r);
 }
@@ -329,13 +317,8 @@ SIPSubscribeHandler::SIPSubscribeHandler (SIPEndPoint & endpoint,
                                           SIPSubscribe::SubscribeType t,
                                           const PString & to,
                                           int exp)
-: SIPHandler(endpoint)
+  : SIPHandler(endpoint, to)
 {
-  targetAddress.Parse(to);
-  remotePartyAddress = targetAddress.AsQuotedString();
-
-  transport = ep.CreateSharedTransport(SIPURL(to).GetHostName());
-
   lastSentCSeq = 0;
   lastReceivedCSeq = 0;
 
@@ -343,7 +326,7 @@ SIPSubscribeHandler::SIPSubscribeHandler (SIPEndPoint & endpoint,
   originalExpire = exp;
 
   if (expire == 0)
-    expire = ep.GetNotifierTimeToLive().GetSeconds();
+    expire = endpoint.GetNotifierTimeToLive().GetSeconds();
   type = t;
   dialogCreated = FALSE;
 
@@ -367,7 +350,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   if (localPartyAddress.IsEmpty()) {
 
     if (type == SIPSubscribe::Presence)
-      localPartyAddress = ep.GetRegisteredPartyName(targetAddress.GetHostName()).AsQuotedString();
+      localPartyAddress = endpoint.GetRegisteredPartyName(targetAddress.GetHostName()).AsQuotedString();
 
     else
       localPartyAddress = targetAddress.AsQuotedString();
@@ -375,7 +358,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
     localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
   }
 
-  return new SIPSubscribe (ep, 
+  return new SIPSubscribe (endpoint,
                            trans, 
                            type,
                            GetRouteSet(),
@@ -426,7 +409,6 @@ void SIPSubscribeHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 
 BOOL SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 {
-  OpalTransport *subscribeTransport = NULL;
   unsigned requestCSeq = request.GetMIME().GetCSeq().AsUnsigned();
   SIPSubscribe::SubscribeType event = SIPSubscribe::MessageSummary;
 
@@ -438,14 +420,12 @@ BOOL SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   if (lastReceivedCSeq == 0)
     lastReceivedCSeq = requestCSeq;
 
-  if (transport)
-    subscribeTransport = transport->GetTransport();
-  if (subscribeTransport == NULL)
+  if (transport == NULL)
     return FALSE;
 
   else if (requestCSeq < lastReceivedCSeq) {
 
-    ep.SendResponse(SIP_PDU::Failure_InternalServerError, *subscribeTransport, request);
+    endpoint.SendResponse(SIP_PDU::Failure_InternalServerError, *transport, request);
     return FALSE;
   }
   lastReceivedCSeq = requestCSeq;
@@ -493,7 +473,7 @@ BOOL SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
       break;
     }
 
-  return ep.SendResponse(SIP_PDU::Successful_OK, *subscribeTransport, request);
+  return endpoint.SendResponse(SIP_PDU::Successful_OK, *transport, request);
 }
 
 
@@ -526,7 +506,7 @@ BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
           line.Replace (validMessageClasses[z], "");
           line.Replace (":", "");
           msgs = line.Trim ();
-          ep.OnMWIReceived (GetRemotePartyAddress(),
+          endpoint.OnMWIReceived (GetRemotePartyAddress(),
                             (SIPSubscribe::MWIType) z, 
                             msgs);
           return TRUE;
@@ -535,7 +515,7 @@ BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
     }
 
     // Received MWI, unknown messages number
-    ep.OnMWIReceived (GetRemotePartyAddress(),
+    endpoint.OnMWIReceived (GetRemotePartyAddress(),
                       (SIPSubscribe::MWIType) 0, 
                       "1/0");
   } 
@@ -590,7 +570,7 @@ BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
     note = noteElement->GetData();
 
   from.AdjustForRequestURI();
-  ep.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
+  endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
 #endif
 
   return TRUE;
@@ -620,17 +600,12 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
                                      const PString & to,   /* The to field  */
                                      const PString & b,
                                      int exp)
-:SIPHandler(endpoint)
+  : SIPHandler(endpoint, to)
 {
-  targetAddress.Parse(to);
-  remotePartyAddress = targetAddress.AsQuotedString();
-
-  transport = ep.CreateSharedTransport(SIPURL(to).GetHostName());
-
   expire = exp;
   originalExpire = exp;
   if (expire == 0)
-    expire = ep.GetNotifierTimeToLive().GetSeconds();
+    expire = endpoint.GetNotifierTimeToLive().GetSeconds();
 
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 
@@ -649,21 +624,20 @@ SIPPublishHandler::~SIPPublishHandler()
 }
 
 
-SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport &t)
+SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
   SIPTransaction *publishTransaction = NULL;
 
   if (expire != 0)
     expire = originalExpire;
 
-  publishTransaction =  
-    new SIPPublish(ep, 
-                   t, 
-                   GetRouteSet(), 
-                   targetAddress, 
-                   sipETag, 
-                   (GetState() == Refreshing)?PString::Empty():body, 
-                   expire);
+  publishTransaction = new SIPPublish(endpoint,
+                                      t, 
+                                      GetRouteSet(), 
+                                      targetAddress, 
+                                      sipETag, 
+                                      (GetState() == Refreshing)?PString::Empty():body, 
+                                      expire);
   callID = publishTransaction->GetMIME().GetCallID();
 
   return publishTransaction;
@@ -777,13 +751,8 @@ PString SIPPublishHandler::BuildBody(const PString & to,
 SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, 
                                       const PString & to,
                                       const PString & b)
-:SIPHandler(endpoint)
+  : SIPHandler(endpoint, to)
 {
-  targetAddress.Parse(to);
-  remotePartyAddress = targetAddress.AsQuotedString();
-
-  transport = ep.CreateSharedTransport(SIPURL(to).GetHostName());
-
   originalExpire = expire;
   body = b;
 
@@ -805,8 +774,7 @@ SIPMessageHandler::~SIPMessageHandler ()
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
 { 
   SetExpire(expire);
-  SIPMessage * message = 
-    new SIPMessage(ep, t, targetAddress, routeSet, body);
+  SIPMessage * message = new SIPMessage(endpoint, t, targetAddress, routeSet, body);
   callID = message->GetMIME().GetCallID();
 
   return message;
@@ -831,7 +799,7 @@ void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 
 void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 { 
-  ep.OnMessageFailed(targetAddress, reason);
+  endpoint.OnMessageFailed(targetAddress, reason);
 }
 
 
@@ -846,13 +814,8 @@ void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 
 SIPPingHandler::SIPPingHandler (SIPEndPoint & endpoint, 
                                 const PString & to)
-: SIPHandler(endpoint)
+  : SIPHandler(endpoint, to)
 {
-  targetAddress.Parse(to);
-  remotePartyAddress = targetAddress.AsQuotedString();
-
-  transport = ep.CreateSharedTransport(SIPURL(to).GetHostName());
-
   expire = 500; 
   originalExpire = expire;
 
@@ -862,7 +825,7 @@ SIPPingHandler::SIPPingHandler (SIPEndPoint & endpoint,
 
 SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 {
-  SIPPing * message = new SIPPing(ep, t, targetAddress, body);
+  SIPPing * message = new SIPPing(endpoint, t, targetAddress, body);
   callID = message->GetMIME().GetCallID();
   return message;
 }
