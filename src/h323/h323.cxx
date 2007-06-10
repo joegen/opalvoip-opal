@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2157  2007/05/29 21:34:08  dsandras
+ * Revision 1.2158  2007/06/10 08:55:11  rjongbloed
+ * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
+ *
+ * Revision 2.156  2007/05/29 21:34:08  dsandras
  * Fixed previous commit.
  *
  * Revision 2.155  2007/05/23 00:26:21  csoutheren
@@ -2641,7 +2644,7 @@ BOOL H323Connection::CreateIncomingControlChannel(H225_TransportAddress & h245Ad
     if (controlListener == NULL)
       return FALSE;
 
-    if (!controlListener->Open(PCREATE_NOTIFIER(NewIncomingControlChannel), TRUE)) {
+    if (!controlListener->Open(PCREATE_NOTIFIER(NewIncomingControlChannel), OpalListener::HandOffThreadMode)) {
       delete controlListener;
       controlListener = NULL;
       return FALSE;
