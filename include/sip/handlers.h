@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3  2007/06/10 08:55:11  rjongbloed
+ * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
+ *
  * Revision 1.2  2007/05/21 04:30:30  dereksmithies
  * put #ifndef _PTLIB_H protection around the include of ptlib.h
  *
@@ -52,7 +55,6 @@
 
 #include <ptlib/safecoll.h>
 
-#include <sip/sharedtransports.h>
 #include <sip/sippdu.h>
 #include <sip/sipep.h>
 
@@ -63,13 +65,16 @@
 class SIPHandler : public PSafeObject 
 {
   PCLASSINFO(SIPHandler, PSafeObject);
-public:
-  SIPHandler(
-             SIPEndPoint & ep, 
-             const PTimeInterval & retryMin = PMaxTimeInterval,
-             const PTimeInterval & retryMax = PMaxTimeInterval
-            );
 
+protected:
+  SIPHandler(
+    SIPEndPoint & ep, 
+    const PString & to,
+    const PTimeInterval & retryMin = PMaxTimeInterval,
+    const PTimeInterval & retryMax = PMaxTimeInterval
+  );
+
+public:
   ~SIPHandler();
 
   enum State {
@@ -93,12 +98,8 @@ public:
       return state;
     }
 
-  virtual OpalTransport *GetTransport()
-    { 
-      if (transport)
-        return transport->GetTransport();
-      return NULL; 
-    }
+  virtual OpalTransport &GetTransport()
+    { return *transport; }
 
   virtual SIPAuthentication & GetAuthentication()
     { return authentication; }
@@ -137,9 +138,7 @@ public:
   virtual void SetBody(const PString & b)
     { body = b;}
 
-  virtual SIPTransaction * CreateTransaction(
-                                             OpalTransport & t
-                                            ) = 0;
+  virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
 
   virtual SIP_PDU::Methods GetMethod() = 0;
   virtual SIPSubscribe::SubscribeType GetSubscribeType() 
@@ -156,19 +155,19 @@ public:
   const PStringList & GetRouteSet() const { return routeSet; }
 
 protected:
-  SIPEndPoint               & ep;
+  SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
-  PSafePtr<SharedTransport>    transport;
+  OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;
   int                         originalExpire;
-  int	                  expire;
-  PString	                  authRealm;
+  int	                      expire;
+  PString	              authRealm;
   PString                     authUser;
-  PString 	                  password;
+  PString 	              password;
   PStringList                 routeSet;
   PMutex                      stateMutex;
-  PString		          body;
+  PString		      body;
   unsigned                    authenticationAttempts;
   State                       state;
   PTimer                      expireTimer; 
@@ -178,11 +177,9 @@ protected:
 
 private:
   static BOOL WriteSIPHandler(
-                              OpalTransport & transport, 
-                              void * info
-                             );
-
-  SIPTransaction *request;
+    OpalTransport & transport, 
+    void * info
+  );
 };
 
 
