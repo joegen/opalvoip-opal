@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2131  2007/06/09 15:40:05  dsandras
+ * Revision 1.2132  2007/06/10 08:55:13  rjongbloed
+ * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
+ *
+ * Revision 2.130  2007/06/09 15:40:05  dsandras
  * Fixed routing of ACK PDUs. Only an ACK sent for a non 2XX response needs
  * to copy the Route header from the original request.
  *
@@ -515,6 +518,7 @@
 #include <opal/transports.h>
 
 #include <ptclib/cypher.h>
+#include <ptclib/pdns.h>
 
 
 #define  SIP_VER_MAJOR  2
@@ -2041,10 +2045,28 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 }
 
 
-BOOL SIP_PDU::Write(OpalTransport & transport)
+BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
 {
   if (!transport.IsOpen())
     return FALSE;
+
+  if (!remoteAddress.IsEmpty() && transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
+    // skip transport identifier
+    SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
+
+    OpalTransportAddress actualRemoteAddress;
+    // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
+      actualRemoteAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
+    else  
+#endif
+      actualRemoteAddress = hosturl.GetHostAddress();
+
+    PTRACE(3, "SIP\tAdjusting transport remote address to " << actualRemoteAddress);
+    transport.SetRemoteAddress(actualRemoteAddress);
+  }
 
   if (sdp != NULL) {
     entityBody = sdp->Encode();
@@ -2174,11 +2196,11 @@ BOOL SIPTransaction::Start()
   routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
   if (connection != NULL) {
     // Use the connection transport to send the request
-    if (connection->SendPDU(*this, this->GetSendAddress(routeSet)))
+    if (connection->SendPDU(*this, GetSendAddress(routeSet)))
       return TRUE;
   }
   else {
-    return endpoint.SendRequest(*this, transport, this->GetSendAddress(routeSet));
+    return Write(transport, GetSendAddress(routeSet));
   }
 
   SetTerminated(Terminated_TransportError);
@@ -2281,7 +2303,7 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     else
       endpoint.OnReceivedResponse(*this, response);
   }
-   else {
+  else {
     PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
        
     BOOL notCompletedFlag = state < Completed;
@@ -2292,7 +2314,10 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     completionTimer = endpoint.GetPduCleanUpTimeout();
 
     mutex.Signal();
-    
+
+    if (response.GetStatusCode()/100 == 2) // Have a 2xx response, so end Connect mode on the transport
+      transport.EndConnect(GetLocalAddress()); 
+
     if (notCompletedFlag && connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
