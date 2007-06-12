@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.12  2007/05/30 08:40:10  hfriederich
+ * Revision 1.2198.2.13  2007/06/12 16:29:03  hfriederich
+ * (Backport from HEAD)
+ * Major rework of how SIP utilises sockets, using new "socket bundling"
+ *   subsystem
+ * Several other bugfixes
+ *
+ * Revision 2.197.2.12  2007/05/30 08:40:10  hfriederich
  * (Backport from HEAD)
  * Changes since May 1, 2007. Including Presence code
  *
@@ -865,6 +871,7 @@ typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
 static const char ApplicationDTMFRelayKey[] = "application/dtmf-relay";
 static const char ApplicationDTMFKey[]      = "application/dtmf";
+static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
 
 #define new PNEW
 
@@ -875,12 +882,13 @@ SIPConnection::SIPConnection(OpalCall & call,
                              SIPEndPoint & ep,
                              const PString & token,
                              const SIPURL & destination,
-                             OpalTransport * inviteTransport,
+                             OpalTransport * newTransport,
                              unsigned int options,
                              OpalConnection::StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
-    jobSemaphore(0, P_MAX_INDEX)
+    jobSemaphore(0, P_MAX_INDEX),
+    transport(newTransport)
 {
   SIPURL transportAddress = destination;
   targetAddress = destination;
@@ -912,15 +920,6 @@ SIPConnection::SIPConnection(OpalCall & call,
       transportAddress.SetPort(addrs [0].port);
     }
 #endif
-
-  // Create the transport
-  if (inviteTransport == NULL)
-    transport = NULL;
-  else 
-    transport = endpoint.CreateTransport(inviteTransport->GetRemoteAddress(), inviteTransport);
-  
-  if (transport)
-    lastTransportAddress = transport->GetRemoteAddress();
 
   originalInvite = NULL;
   jobHandler = NULL;
@@ -1611,7 +1610,6 @@ BOOL SIPConnection::SetUpConnection()
 
   delete transport;
   transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
-  lastTransportAddress = transportAddress.GetHostAddress();
   if (transport == NULL) {
     Release(EndedByTransportFail);
     return FALSE;
@@ -2824,32 +2822,6 @@ void SIPConnection::QueuePDU(SIP_PDU * pdu)
 {
   if (PAssertNULL(pdu) == NULL)
     return;
-
-  /*if (phase >= ReleasedPhase) {
-    if(pdu->GetMethod() != SIP_PDU::NumMethods)
-    {
-      PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
-    }
-    else
-    {
-      PTRACE(4, "SIP\tProcessing PDU: " << *pdu);
-      OnReceivedPDU(*pdu);
-    }
-    delete pdu;
-  }
-  else {
-    PTRACE(4, "SIP\tQueueing PDU: " << *pdu);
-    pduQueue.Enqueue(pdu);
-    pduSemaphore.Signal();
-
-    if (pduHandler == NULL) {
-      SafeReference();
-      pduHandler = PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
-                                   PThread::NoAutoDeleteThread,
-                                   PThread::NormalPriority,
-                                   "SIP Handler:%x");
-    }
-  }*/
     
   SIPTransactionJob * job = new SIPTransactionJob(SIPTransactionJob::Handle_PDU, pdu);
     
@@ -2967,7 +2939,7 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   }
 
   // Send the PDU using the connection transport
-  if (!SendPDU(ack, ack.GetSendAddress(GetRouteSet()))) {
+  if (!SendPDU(ack, ack.GetSendAddress(ack.GetMIME().GetRoute()))) {
     Release(EndedByTransportFail);
     return FALSE;
   }
@@ -2995,37 +2967,9 @@ BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * c
 
 BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
-  SIPURL hosturl;
+  PWaitAndSignal m(transportMutex);
 
-  if (transport) {
-    PWaitAndSignal m(transportMutex);
-    if (lastTransportAddress != address) {
-      // skip transport identifier
-      PINDEX pos = address.Find('$');
-      if (pos != P_MAX_INDEX)
-        hosturl = address.Mid(pos+1);
-      else
-        hosturl = address;
-
-      hosturl = address.Mid(pos+1);
-
-      // Do a DNS SRV lookup
-#if P_DNS
-      PIPSocketAddressAndPortVector addrs;
-      if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
-        lastTransportAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
-      else  
-#endif
-        lastTransportAddress = hosturl.GetHostAddress();
-
-      PTRACE(3, "SIP\tAdjusting transport to address " << lastTransportAddress);
-      transport->SetRemoteAddress(lastTransportAddress);
-    }
-    
-    return (pdu.Write(*transport));
-  }
-
-  return FALSE;
+  return transport != NULL && pdu.Write(*transport, address);
 }
 
 void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
@@ -3060,10 +3004,18 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
       OnUserInputTone(tone, duration == 0 ? 100 : tone);
     status = SIP_PDU::Successful_OK;
   }
+  
   else if (contentType *= ApplicationDTMFKey) {
     OnUserInputString(pdu.GetEntityBody().Trim());
     status = SIP_PDU::Successful_OK;
   }
+  
+  else if (contentType *= ApplicationMediaControlXMLKey) {
+    if (OnMediaControlXML(pdu))
+      return;
+    status = SIP_PDU::Failure_UnsupportedMediaType;
+  }
+  
   else 
     status = SIP_PDU::Failure_UnsupportedMediaType;
 
@@ -3156,13 +3108,139 @@ BOOL SIPConnection::PopulateCapabilityList()
   return TRUE;
 }
 
+#if OPAL_VIDEO
+class QDXML 
+{
+  public:
+    struct statedef {
+      int currState;
+      const char * str;
+      int newState;
+    };
+    
+    bool ExtractNextElement(std::string & str)
+    {
+      while (isspace(*ptr))
+        ++ptr;
+      if (*ptr != '<')
+        return false;
+      ++ptr;
+      if (*ptr == '\0')
+        return false;
+      const char * start = ptr;
+      while (*ptr != '>') {
+        if (*ptr == '\0')
+          return false;
+        ++ptr;
+      }
+      ++ptr;
+      str = std::string(start, ptr-start-1);
+      return true;
+    }
+    
+    int Parse(const std::string & xml, const statedef * states, unsigned numStates)
+    {
+      ptr = xml.c_str(); 
+      state = 0;
+      std::string str;
+      while ((state >= 0) && ExtractNextElement(str)) {
+        cout << state << "  " << str << endl;
+        unsigned i;
+        for (i = 0; i < numStates; ++i) {
+          cout << "comparing '" << str << "' to '" << states[i].str << "'" << endl;
+          if ((state == states[i].currState) && (str.compare(0, strlen(states[i].str), states[i].str) == 0)) {
+            state = states[i].newState;
+            break;
+          }
+        }
+        if (i == numStates) {
+          cout << "unknown string " << str << " in state " << state << endl;
+          state = -1;
+          break;
+        }
+        if (!OnMatch(str)) {
+          state = -1;
+          break; 
+        }
+      }
+      return state;
+    }
+    
+    virtual bool OnMatch(const std::string & )
+    { return true; }
+    
+  protected:
+    int state;
+    const char * ptr;
+};
+
+class VFUXML : public QDXML
+{
+  public:
+    bool vfu;
+    
+    VFUXML()
+    { vfu = false; }
+    
+    BOOL Parse(const std::string & xml)
+    {
+      static const struct statedef states[] = {
+        { 0, "?xml",                1 },
+        { 1, "media_control",       2 },
+        { 2, "vc_primitive",        3 },
+        { 3, "to_encoder",          4 },
+        { 4, "picture_fast_update", 5 },
+        { 5, "/to_encoder",         6 },
+        { 6, "/vc_primitive",       7 },
+        { 7, "/media_control",      255 },
+      };
+      const int numStates = sizeof(states)/sizeof(states[0]);
+      return QDXML::Parse(xml, states, numStates) == 255;
+    }
+    
+    bool OnMatch(const std::string &)
+    {
+      if (state == 5)
+        vfu = true;
+      return true;
+    }
+};
+
+BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
+{
+  VFUXML vfu;
+  if (!vfu.Parse(pdu.GetEntityBody())) {
+    SIP_PDU response(pdu, SIP_PDU::Failure_Undecipherable);
+    response.GetEntityBody() = 
+      "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
+      "<media_control>\n"
+      "  <general_error>\n"
+      "  Unable to parse XML request\n"
+      "   </general_error>\n"
+      "</media_control>\n";
+    SendPDU(response, pdu.GetViaAddress(endpoint));
+  }
+  else if (vfu.vfu) {
+    PWaitAndSignal m(GetMediaStreamMutex());
+    OpalMediaStream * encodingStream = GetMediaStream(OpalDefaultVideoMediaType, TRUE);
+        
+    if (!encodingStream){
+      OpalVideoUpdatePicture updatePictureCommand;
+      encodingStream->ExecuteCommand(updatePictureCommand);
+    }
+
+    SIP_PDU response(pdu, SIP_PDU::Successful_OK);
+    SendPDU(response, pdu.GetViaAddress(endpoint));
+  }
+    
+  return TRUE;
+}
+#endif
+
 /////////////////////////////////////////////////////////////////////////////
 
 SIP_RTP_Session::SIP_RTP_Session(const SIPConnection & conn)
   : connection(conn)
-#if OPAL_VIDEO
-  , encodingStream(NULL)
-#endif
 {
 }
 
@@ -3182,23 +3260,19 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
 void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
   // We got an intra frame request control packet, alert the encoder.
-  // We're going to grab the call, find its PCSS connection, then grab the
+  // We're going to grab the call, find the other connection, then grab the
   // encoding stream
-  if(encodingStream == NULL){
-    OpalCall & myCall = connection.GetCall();
-    PSafePtr< OpalConnection> myConn = myCall.GetConnection(0, PSafeReference);
-    if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
-      myConn = myCall.GetConnection(1, PSafeReference);
-    if(!PIsDescendant(&(*myConn), OpalPCSSConnection))
-      return; // No PCSS connection.  Bail.
-        
-    encodingStream = myConn->GetMediaStream(OpalDefaultVideoMediaType, TRUE);
-    if(!encodingStream)
-      return;
-  }
+  PSafePtr<OpalConnection> otherConnection = connection.GetCall().GetOtherPartyConnection(connection);
+  if (otherConnection == NULL)
+      return; // No other connection. Bail.
+      
   // Found the encoding stream, send an OpalVideoFastUpdatePicture
-  OpalVideoUpdatePicture updatePictureCommand;
-  encodingStream->ExecuteCommand(updatePictureCommand);
+  PWaitAndSignal m(otherConnection->GetMediaStreamMutex());
+  OpalMediaStream * encodingStream = otherConnection->GetMediaStream(OpalDefaultVideoMediaType, TRUE);
+  if (encodingStream) {
+    OpalVideoUpdatePicture updatePictureCommand;
+    encodingStream->ExecuteCommand(updatePictureCommand);
+  }
 }
 
 void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const

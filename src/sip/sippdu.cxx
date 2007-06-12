@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.6  2007/05/30 08:40:10  hfriederich
+ * Revision 1.2117.2.7  2007/06/12 16:29:03  hfriederich
+ * (Backport from HEAD)
+ * Major rework of how SIP utilises sockets, using new "socket bundling"
+ *   subsystem
+ * Several other bugfixes
+ *
+ * Revision 2.116.2.6  2007/05/30 08:40:10  hfriederich
  * (Backport from HEAD)
  * Changes since May 1, 2007. Including Presence code
  *
@@ -481,6 +487,7 @@
 #include <opal/transports.h>
 
 #include <ptclib/cypher.h>
+#include <ptclib/pdns.h>
 
 
 #define  SIP_VER_MAJOR  2
@@ -2011,10 +2018,28 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 }
 
 
-BOOL SIP_PDU::Write(OpalTransport & transport)
+BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
 {
   if (!transport.IsOpen())
     return FALSE;
+    
+  if (!remoteAddress.IsEmpty() && transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
+    // skip transport identifier
+    SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
+        
+    OpalTransportAddress actualRemoteAddress;
+    // Do a DNS SRV lookup
+#if P_DNS
+    PIPSocketAddressAndPortVector addrs;
+    if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
+      actualRemoteAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
+    else  
+#endif
+      actualRemoteAddress = hosturl.GetHostAddress();
+        
+    PTRACE(3, "SIP\tAdjusting transport remote address to " << actualRemoteAddress);
+    transport.SetRemoteAddress(actualRemoteAddress);
+  }
 
   if (sdp != NULL) {
     entityBody = sdp->Encode();
@@ -2114,6 +2139,8 @@ SIPTransaction::~SIPTransaction()
 
 BOOL SIPTransaction::Start()
 {
+  PStringList routeSet;
+    
   if (state != NotStarted) {
     PAssertAlways(PLogicError);
     return FALSE;
@@ -2139,15 +2166,17 @@ BOOL SIPTransaction::Start()
   
   completionTimer = endpoint.GetNonInviteTimeout();
   
+  routeSet = this->GetMIME().GetRoute(); // get the route set from the PDU
+  
   OnStart();
-
+  
   if (connection != NULL) {
     // Use the connection transport to send the request
-    if (connection->SendPDU(*this, this->GetSendAddress(connection->GetRouteSet())))
+    if (connection->SendPDU(*this, GetSendAddress(routeSet)))
       success = TRUE;
   }
   else {
-    success = endpoint.SendRequest(*this, transport, transport.GetRemoteAddress());
+    success = Write(transport, GetSendAddress(routeSet));
   }
   
   if (success == FALSE) {
@@ -2263,6 +2292,10 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
        
       // Do not forward responses if transaction is cancelling
       if (state != Cancelling) {
+          
+        if (response.GetStatusCode()/100 == 2) // Have a 2xx response, so end Connect mode on the transport
+          transport.EndConnect(GetLocalAddress());
+          
         if (connection != NULL) {
           connection->OnReceivedResponse(*this, response);
         } else {
@@ -2781,9 +2814,13 @@ SIPAck::SIPAck(SIPEndPoint & ep,
   transaction(invite)
 {
   Construct();
-  // Use the topmost via header from the INVITE we ACK as per 9.1. 
+  // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
+  // as well as the initial Route
   PStringList viaList = invite.GetMIME().GetViaList();
   mime.SetVia(viaList[0]);
+  
+  if (transaction.GetMIME().GetRoute().GetSize() > 0)
+    mime.SetRoute(transaction.GetMIME().GetRoute());
 }
 
 
@@ -2800,9 +2837,6 @@ SIPAck::SIPAck(SIPTransaction & invite)
 
 void SIPAck::Construct()
 {
-  if (transaction.GetMIME().GetRoute().GetSize() > 0)
-    mime.SetRoute(transaction.GetMIME().GetRoute());
-
   // Add authentication if had any on INVITE
   if (transaction.GetMIME().Contains("Proxy-Authorization") || transaction.GetMIME().Contains("Authorization"))
     transaction.GetConnection()->GetAuthenticator().Authorise(*this);
