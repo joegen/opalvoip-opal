@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.4  2007/05/30 08:40:09  hfriederich
+ * Revision 1.2046.2.5  2007/06/12 16:29:02  hfriederich
+ * (Backport from HEAD)
+ * Major rework of how SIP utilises sockets, using new "socket bundling"
+ *   subsystem
+ * Several other bugfixes
+ *
+ * Revision 2.45.2.4  2007/05/30 08:40:09  hfriederich
  * (Backport from HEAD)
  * Changes since May 1, 2007. Including Presence code
  *
@@ -764,7 +770,8 @@ class SIP_PDU : public PObject
     /**Write the PDU to the transport.
       */
     BOOL Write(
-      OpalTransport & transport
+      OpalTransport & transport,
+      const OpalTransportAddress & remoteAddress = OpalTransportAddress()
     );
 
     PString GetTransactionID() const;

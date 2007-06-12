@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.7  2007/05/30 08:40:09  hfriederich
+ * Revision 1.2059.2.8  2007/06/12 16:29:02  hfriederich
+ * (Backport from HEAD)
+ * Major rework of how SIP utilises sockets, using new "socket bundling"
+ *   subsystem
+ * Several other bugfixes
+ *
+ * Revision 2.58.2.7  2007/05/30 08:40:09  hfriederich
  * (Backport from HEAD)
  * Changes since May 1, 2007. Including Presence code
  *
@@ -704,6 +710,15 @@ class SIPConnection : public OpalConnection
     const SIPAuthentication & GetAuthenticator() const { return authentication; }
 
     BOOL OnOpenIncomingMediaChannels();
+    
+#if OPAL_VIDEO
+    /**Call when SIP INFO of type application/media_control+xml is received
+        
+       Return FALSE if default response of Failure_UnsupportedMediaType is to be returned
+    
+      */
+    virtual BOOL OnMediaControlXML(SIP_PDU & pdu);
+#endif
 
     PDECLARE_NOTIFIER(PThread, SIPConnection, JobThreadMain);
     BOOL ProcessNextJob();
@@ -741,7 +756,6 @@ class SIPConnection : public OpalConnection
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
-    OpalTransportAddress  lastTransportAddress;
 
     PMutex                transportMutex;
     PMutex                streamsMutex;
@@ -816,6 +830,7 @@ class SIP_RTP_Session : public RTP_UserData
     virtual void OnRxStatistics(
       const RTP_Session & session   ///<  Session with statistics
     ) const;
+    
 #if OPAL_VIDEO
     /**Callback from the RTP session after an IntraFrameRequest is receieved.
        The default behaviour executes an OpalVideoUpdatePicture command on the
@@ -834,14 +849,13 @@ class SIP_RTP_Session : public RTP_UserData
 #endif
   //@}
 
-
   protected:
     const SIPConnection & connection; /// Owner of the RTP session
 #if OPAL_VIDEO
     // Encoding stream to alert with OpalVideoUpdatePicture commands.  Mutable
     // so functions with constant 'this' pointers (eg: OnRxFrameRequest) can
     // update it.
-    mutable OpalMediaStream * encodingStream; 
+    //mutable OpalMediaStream * encodingStream; 
 #endif
 };
 

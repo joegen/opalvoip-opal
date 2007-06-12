@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.9  2007/05/30 08:40:09  hfriederich
+ * Revision 1.2069.2.10  2007/06/12 16:29:02  hfriederich
+ * (Backport from HEAD)
+ * Major rework of how SIP utilises sockets, using new "socket bundling"
+ *   subsystem
+ * Several other bugfixes
+ *
+ * Revision 2.68.2.9  2007/05/30 08:40:09  hfriederich
  * (Backport from HEAD)
  * Changes since May 1, 2007. Including Presence code
  *
@@ -384,7 +390,6 @@
 #include <sip/sipcon.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h>
-#include <sip/sharedtransports.h>
 
 //
 // provide flag so applications know if presence is available
@@ -534,18 +539,12 @@ class SIPEndPoint : public OpalEndPoint
   //@{
 
     /**Creates an OpalTransport instance, based on the
-       information provided in remoteAddress / originalTransport.
-       If originalTransport is non-NULL, it is ensured that the
-       same network interface is used for responses as the one
-       where the originating pdu arrived.
+       address is interpreted as the remote address to which the
+       transport should connect.
       */
     virtual OpalTransport * CreateTransport(
       const OpalTransportAddress & remoteAddress,
-      const OpalTransport * originalTransport = NULL
-    );
-    
-    PSafePtr<SharedTransport> CreateSharedTransport(
-      const PString & domain
+      const OpalTransportAddress & localAddress = OpalTransportAddress()
     );
     
     /**Releases the transport created by CreateTransport()
@@ -930,24 +929,6 @@ class SIPEndPoint : public OpalEndPoint
     /**Set the User Agent for the endpoint.
      */
     void SetUserAgent(const PString & str) { userAgentString = str; }
-
-    BOOL SendRequest(
-      SIP_PDU & pdu, 
-      SharedTransport & transport, 
-      const OpalTransportAddress & address
-    );
-    
-    BOOL SendRequest(
-      SIP_PDU & pdu, 
-      OpalTransport & transport, 
-      const OpalTransportAddress & address
-    );
-    
-    BOOL SendResponse(
-      SIP_PDU::StatusCodes code, 
-      SharedTransport & transport, 
-      SIP_PDU & pdu
-    );
     
     BOOL SendResponse(
       SIP_PDU::StatusCodes code, 
@@ -1072,9 +1053,6 @@ class SIPEndPoint : public OpalEndPoint
     PSemaphore    jobSemaphore;
     PThread     * jobHandler;
     BOOL endJobProcessing;
-    
-    PSafeDictionary<PString, SharedTransport> sharedTransports;
-    PMutex sharedTransportsMutex;
 
     unsigned           lastSentCSeq;
     

@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2003  2005/01/16 23:07:34  csoutheren
+ * Revision 1.2003.10.1  2007/06/12 16:29:02  hfriederich
+ * (Backport from HEAD)
+ * Major rework of how SIP utilises sockets, using new "socket bundling"
+ *   subsystem
+ * Several other bugfixes
+ *
+ * Revision 2.2  2005/01/16 23:07:34  csoutheren
  * Fixed problem with IPv6 INADDR_ANY
  *
  * Revision 2.1  2004/02/19 10:47:04  rjongbloed
@@ -211,7 +217,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
   if (trans != NULL)
     transport = trans;
   else
-    transport = new H323TransportUDP(ep, INADDR_ANY, local_port, remote_port);
+      transport = new H323TransportUDP(ep, PIPSocket::GetDefaultIpAny(), local_port);
 
   Construct();
 }
@@ -230,7 +236,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
   else {
     PIPSocket::Address addr;
     PAssert(iface.GetIpAndPort(addr, local_port), "Cannot parse address");
-    transport = new H323TransportUDP(ep, addr, local_port, remote_port);
+    transport = new H323TransportUDP(ep, addr, local_port);
   }
 
   Construct();
@@ -294,7 +300,7 @@ BOOL H323Transactor::SetTransport(const H323TransportAddress & iface)
     delete transport;
   }
 
-    transport = new H323TransportUDP(endpoint, addr, port, defaultRemotePort);
+  transport = new H323TransportUDP(endpoint, addr, port);
   transport->SetPromiscuous(H323Transport::AcceptFromAny);
   return StartChannel();;
 }
