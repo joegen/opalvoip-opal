@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2038.2.3  2007/03/30 06:44:45  hfriederich
+ * Revision 1.2038.2.4  2007/06/12 12:06:24  hfriederich
+ * (Backport from HEAD)
+ * Fixed some bugs in the LID code so USB handsets work correctly
+ * Reviewed and adjusted PTRACE log levels
+ * Fixed CreateCall usage so correct function (with userData) is called on
+ *   incoming connections.
+ *
+ * Revision 2.37.2.3  2007/03/30 06:44:45  hfriederich
  * (Backport from HEAD)
  * Tidied some code when a new connection is created by an endpoint. Now
  *   if someone needs to derive a connectino class they can create it without
@@ -202,7 +209,7 @@ OpalLIDEndPoint::OpalLIDEndPoint(OpalManager & mgr,
   : OpalEndPoint(mgr, prefix, attributes),
     defaultLine("*")
 {
-  PTRACE(3, "LID EP\tOpalLIDEndPoint " << prefix);
+  PTRACE(4, "LID EP\tOpalLIDEndPoint " << prefix);
   monitorThread = PThread::Create(PCREATE_NOTIFIER(MonitorLines), 0,
                                   PThread::NoAutoDeleteThread,
                                   PThread::LowPriority,
@@ -214,7 +221,7 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
 {
   if(NULL != monitorThread)
   {
-     PTRACE(3, "LID EP\tAwaiting monitor thread termination " << GetPrefixName());
+     PTRACE(4, "LID EP\tAwaiting monitor thread termination " << GetPrefixName());
      exitFlag.Signal();
      monitorThread->WaitForTermination();
      delete monitorThread;
@@ -227,6 +234,7 @@ OpalLIDEndPoint::~OpalLIDEndPoint()
      */
      RemoveAllLines();
   }
+  PTRACE(4, "LID EP\tOpalLIDEndPoint " << GetPrefixName() << " destroyed");
 }
 
 
@@ -520,7 +528,7 @@ void OpalLIDEndPoint::SetDefaultLine(const PString & lineName)
 
 void OpalLIDEndPoint::MonitorLines(PThread &, INT)
 {
-  PTRACE(3, "LID EP\tMonitor thread started for " << GetPrefixName());
+  PTRACE(4, "LID EP\tMonitor thread started for " << GetPrefixName());
 
   while (!exitFlag.Wait(100)) {
     linesMutex.Wait();
@@ -529,7 +537,7 @@ void OpalLIDEndPoint::MonitorLines(PThread &, INT)
     linesMutex.Signal();
   }
 
-  PTRACE(3, "LID EP\tMonitor thread stopped for " << GetPrefixName());
+  PTRACE(4, "LID EP\tMonitor thread stopped for " << GetPrefixName());
 }
 
 
@@ -572,7 +580,7 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
     return;
 
   // Have incoming ring, create a new LID connection and let it handle it
-  connection = CreateConnection(*manager.CreateCall(), line, NULL, PString::Empty());
+  connection = CreateConnection(*manager.CreateCall(NULL), line, NULL, PString::Empty());
   if (AddConnection(connection))
     connection->StartIncoming();
 }
@@ -623,10 +631,10 @@ BOOL OpalLineConnection::OnIncomingConnection(unsigned int options, OpalConnecti
 
 void OpalLineConnection::OnReleased()
 {
-  PTRACE(2, "LID Con\tOnReleased " << *this);
+  PTRACE(3, "LID Con\tOnReleased " << *this);
 
   if (handlerThread != NULL) {
-    PTRACE(3, "LID Con\tAwaiting handler thread termination " << *this);
+    PTRACE(4, "LID Con\tAwaiting handler thread termination " << *this);
     // Stop the signalling handler thread
     SetUserInput(PString()); // Break out of ReadUserInput
     handlerThread->WaitForTermination();
@@ -658,11 +666,6 @@ BOOL OpalLineConnection::OnSetUpConnection()
 
 BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 {
-  if (IsOriginating()) {
-    PTRACE(3, "LID Con\tSetAlerting ignored on call we originated.");
-    return TRUE;
-  }
-  
   PTRACE(3, "LID Con\tSetAlerting " << *this);
 
   if (GetPhase() != SetUpPhase) 
@@ -679,21 +682,16 @@ BOOL OpalLineConnection::SetAlerting(const PString & calleeName, BOOL)
 
 BOOL OpalLineConnection::SetConnected()
 {
-  if (IsOriginating()) {
-    PTRACE(3, "LID Con\tSetConnected ignored on call we originated.");
-    return TRUE;
-  }
-  
   PTRACE(3, "LID Con\tSetConnected " << *this);
 
-  if (GetPhase() < ConnectedPhase) {
-      // switch phase 
-      phase = ConnectedPhase;
-      connectedTime = PTime();
+  if (GetPhase() >= ConnectedPhase)
+    return FALSE;
+  
+  // switch phase 
+  phase = ConnectedPhase;
+  connectedTime = PTime();
 
-      return line.StopTone();
-  }
-  return FALSE;
+  return line.StopTone();
 }
 
 
@@ -819,7 +817,7 @@ void OpalLineConnection::Monitor(BOOL offHook)
           return;
         }
 
-        PTRACE(2, "LID Con\tOutgoing connection " << *this << " routed to \"" << ownerCall.GetPartyB() << '"');
+        PTRACE(3, "LID Con\tOutgoing connection " << *this << " routed to \"" << ownerCall.GetPartyB() << '"');
         if (!ownerCall.OnSetUp(*this)) {
           Release(EndedByNoAccept);
           return;
@@ -851,7 +849,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     do {
       count = line.GetRingCount();
       if (count == 0) {
-        PTRACE(2, "LID Con\tIncoming PSTN call stopped.");
+        PTRACE(3, "LID Con\tIncoming PSTN call stopped.");
         Release(EndedByCallerAbort);
         return;
       }
@@ -885,7 +883,7 @@ void OpalLineConnection::HandleIncoming(PThread &, INT)
     return;
   }
 
-  PTRACE(2, "LID\tIncoming call routed for " << *this);
+  PTRACE(3, "LID\tIncoming call routed for " << *this);
   if (!ownerCall.OnSetUp(*this))
     Release(EndedByNoAccept);
 }
@@ -919,7 +917,7 @@ BOOL OpalLineConnection::SetUpConnection()
         break;
 
       default :
-        PTRACE(3, "LID Con\tError dialling " << remotePartyNumber << " on " << line);
+        PTRACE(1, "LID Con\tError dialling " << remotePartyNumber << " on " << line);
         return FALSE;
     }
   }
