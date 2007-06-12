@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.7  2007/05/28 16:41:45  hfriederich
+ * Revision 1.2032.2.8  2007/06/12 11:54:42  hfriederich
+ * (Backport from HEAD)
+ * Add Reset function so we can reload used control frames
+ *
+ * Revision 2.31.2.7  2007/05/28 16:41:45  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.31.2.6  2007/05/03 10:37:49  hfriederich
@@ -513,6 +517,8 @@ class RTP_ControlFrame : public PBYTEArray
 
     BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
     void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
+    
+    void Reset(PINDEX size);
 
 #pragma pack(1)
     struct ReceiverReport {

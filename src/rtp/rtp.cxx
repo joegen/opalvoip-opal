@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047.2.9  2007/05/28 16:41:46  hfriederich
+ * Revision 1.2047.2.10  2007/06/12 11:54:42  hfriederich
+ * (Backport from HEAD)
+ * Add Reset function so we can reload used control frames
+ *
+ * Revision 2.46.2.9  2007/05/28 16:41:46  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.46.2.8  2007/05/03 10:37:51  hfriederich
@@ -769,6 +773,14 @@ ostream & operator<<(ostream & o, RTP_DataFrame::PayloadTypes t)
 RTP_ControlFrame::RTP_ControlFrame(PINDEX sz)
   : PBYTEArray(sz)
 {
+  compoundOffset = 0;
+  payloadSize = 0;
+}
+
+
+void RTP_ControlFrame::Reset(PINDEX size)
+{
+  SetSize(size);
   compoundOffset = 0;
   payloadSize = 0;
 }
