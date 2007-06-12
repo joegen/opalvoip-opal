@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3.2.1  2007/06/12 16:29:47  hfriederich
+ * Add to MediaTypeBranch
+ *
  * Revision 1.3  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
