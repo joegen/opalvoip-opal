@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2063  2007/05/04 15:09:14  vfrolov
+ * Revision 1.2064  2007/06/13 04:35:03  csoutheren
+ * Leave room for RTP header when grabbing video
+ *
+ * Revision 2.62  2007/05/04 15:09:14  vfrolov
  * Added missing initialization of defaultDataSize
  *
  * Revision 2.61  2007/05/02 04:36:42  csoutheren
@@ -1145,7 +1148,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   frame->width = width;
   frame->height = height;
 
-  PINDEX bytesReturned = size;
+  PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
   if (!inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned))
     return FALSE;
 
