@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.56  2007/06/14 00:43:27  csoutheren
+# Fixed Makefile for new socket bundle code
+#
 # Revision 1.55  2007/06/02 13:38:37  dsandras
 # Fixed build on linux which was broken due to partial commit of the RFC4175
 # code.
@@ -525,8 +528,7 @@ SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
            $(OPAL_SRCDIR)/sip/sipcon.cxx \
            $(OPAL_SRCDIR)/sip/sippdu.cxx \
            $(OPAL_SRCDIR)/sip/sdp.cxx \
-           $(OPAL_SRCDIR)/sip/handlers.cxx \
-           $(OPAL_SRCDIR)/sip/sharedtransports.cxx \
+           $(OPAL_SRCDIR)/sip/handlers.cxx 
 
 endif
 endif
