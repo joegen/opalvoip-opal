@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2232  2007/06/10 08:55:12  rjongbloed
+ * Revision 1.2233  2007/06/14 01:51:07  csoutheren
+ * Remove warnings on Linux
+ *
+ * Revision 2.231  2007/06/10 08:55:12  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.230  2007/06/09 15:40:05  dsandras
@@ -963,8 +966,8 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalConnection::StringOptions * stringOptions)
   : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
-    pduSemaphore(0, P_MAX_INDEX),
-    transport(newTransport)
+    transport(newTransport),
+    pduSemaphore(0, P_MAX_INDEX)
 {
   SIPURL transportAddress = destination;
   targetAddress = destination;
@@ -3159,6 +3162,8 @@ class QDXML
       const char * str;
       int newState;
     };
+
+    virtual ~QDXML() {}
 
     bool ExtractNextElement(std::string & str)
     {
