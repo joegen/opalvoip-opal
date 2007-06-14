@@ -22,6 +22,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: opal_inc.mak.in,v $
+# Revision 1.15  2007/06/14 13:07:47  csoutheren
+# Fix problem with linking system Speex statically
+#
 # Revision 1.14  2007/06/02 13:38:37  dsandras
 # Fixed build on linux which was broken due to partial commit of the RFC4175
 # code.
@@ -133,7 +136,11 @@ LDLIBS	    := -l$(OPAL_BASE)$(LIB_TYPE) $(LDLIBS)
 STDCCFLAGS  += -I$(OPAL_INCDIR)
 
 ifeq ($(HAS_LIBSRTP), 1)
-ENDLDLIBS       += -lsrtp
+ENDLDLIBS       := -lsrtp $(ENDLDLIBS)
+endif
+
+ifeq ($(OPAL_SYSTEM_SPEEX), 1)
+ENDLDLIBS       := -lspeex $(ENDLDLIBS)
 endif
 
 $(TARGET) :	$(OPAL_LIBDIR)/$(OPAL_FILE)
