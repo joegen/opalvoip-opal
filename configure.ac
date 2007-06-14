@@ -278,7 +278,7 @@ C_FILE
     else
       SYSVER=`./t`
       AC_MSG_RESULT($SYSVER)
-      AC_MSG_CHECKING(library Speex version)
+      AC_MSG_CHECKING(OPAL Speex version)
       LIBVER=`grep "#define SPEEX_VERSION" ./src/codec/speex/libspeex/misc.h | sed -e 's/^.*[Ss][Pp][Ee][Ee][Xx]\-//' -e 's/\"//' -e 's/\/.*//'`
       AC_MSG_RESULT($LIBVER)
       AC_MSG_CHECKING(Speex versions)
@@ -298,7 +298,7 @@ C_FILE
       while (\$i < 3) {
         if (@sys[\$i] < @lib[\$i]) {
           print "0";
-          die;
+          exit;
         }
         \$i++;
       }
