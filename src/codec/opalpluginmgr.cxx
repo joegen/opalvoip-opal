@@ -25,7 +25,27 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2025  2007/05/12 03:57:34  rjongbloed
+ * Revision 1.2026  2007/06/16 21:37:01  dsandras
+ * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
+ * Thanks a lot !
+ *
+ * Baseline Profile:
+ * no B-frames
+ * We make use of the baseline profile (which is the designated profile for interactive vide) ,
+ * that means:
+ * no B-Frames (too much latency in interactive video)
+ * CBR (we want to get the max. quality making use of all the bitrate that is available)
+ * We allow one exeption: configuring a bitrate of > 786 kbit/s
+ *
+ * This plugin implements
+ * - Single Time Aggregation Packets A
+ * - Single NAL units
+ * - Fragmentation Units
+ * like described in RFC3984
+ *
+ * It requires x264 and ffmpeg.
+ *
+ * Revision 2.24  2007/05/12 03:57:34  rjongbloed
  * Fixed transcoder from plug in not being created correctly due to media format not yet being registered.
  *
  * Revision 2.23  2007/05/10 05:34:23  csoutheren
@@ -983,7 +1003,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(PluginCodec_Definition * _c
     PluginCodec_ControlDefn * ctl = GetCodecControl(_codec, SET_CODEC_OPTIONS_CONTROL);
     if (ctl != NULL) {
       PStringArray list;
-      const OpalMediaFormat & fmt = GetInputFormat();
+      const OpalMediaFormat & fmt = GetOutputFormat();
       for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
         const OpalMediaOption & option = fmt.GetOption(i);
         list += option.GetName();
