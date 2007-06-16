@@ -25,7 +25,27 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2050  2007/04/10 05:15:53  rjongbloed
+ * Revision 1.2051  2007/06/16 21:36:59  dsandras
+ * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
+ * Thanks a lot !
+ *
+ * Baseline Profile:
+ * no B-frames
+ * We make use of the baseline profile (which is the designated profile for interactive vide) ,
+ * that means:
+ * no B-Frames (too much latency in interactive video)
+ * CBR (we want to get the max. quality making use of all the bitrate that is available)
+ * We allow one exeption: configuring a bitrate of > 786 kbit/s
+ *
+ * This plugin implements
+ * - Single Time Aggregation Packets A
+ * - Single NAL units
+ * - Fragmentation Units
+ * like described in RFC3984
+ *
+ * It requires x264 and ffmpeg.
+ *
+ * Revision 2.49  2007/04/10 05:15:53  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -89,7 +109,27 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2050  2007/04/10 05:15:53  rjongbloed
+ * Revision 1.2051  2007/06/16 21:36:59  dsandras
+ * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
+ * Thanks a lot !
+ *
+ * Baseline Profile:
+ * no B-frames
+ * We make use of the baseline profile (which is the designated profile for interactive vide) ,
+ * that means:
+ * no B-Frames (too much latency in interactive video)
+ * CBR (we want to get the max. quality making use of all the bitrate that is available)
+ * We allow one exeption: configuring a bitrate of > 786 kbit/s
+ *
+ * This plugin implements
+ * - Single Time Aggregation Packets A
+ * - Single NAL units
+ * - Fragmentation Units
+ * like described in RFC3984
+ *
+ * It requires x264 and ffmpeg.
+ *
+ * Revision 2.49  2007/04/10 05:15:53  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -815,6 +855,8 @@ class OpalMediaFormat : public PCaselessString
        uniqueue amongst the registered media formats.
       */
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
+
+    static const PString &  RTPPayloadType();
 
     /**Get the RTP encoding name that is to be used for this media format.
       */
