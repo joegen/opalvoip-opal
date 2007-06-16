@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: audiorecord.h,v $
- * Revision 1.2002  2007/05/07 14:13:51  csoutheren
+ * Revision 1.2002.4.1  2007/06/16 14:39:45  hfriederich
+ * add missing files to branch
+ *
+ * Revision 2.1  2007/05/07 14:13:51  csoutheren
  * Add call record capability
  *
  */
