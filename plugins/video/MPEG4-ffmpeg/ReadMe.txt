@@ -28,6 +28,9 @@ Configure and build ffmpeg:
        $ ./configure --enable-shared
        $ make
 
+Make sure your compiler is recent: gcc 4.1.1 is known to compile properly,
+while gcc 3.3.5 creates stack alignment problems.
+
 Many Linux distributions ship with a version of ffmpeg - check for
 /usr/lib/libavcodec.so*. It is best not to replace these with the new
 versions you've compiled. Instead, copy the new versions to a separate
@@ -54,6 +57,58 @@ libavutil.so.49 and libavcodec.so.51 to /usr/local/opal-mpeg4,
 export LD_LIBRARY_PATH=/usr/local/opal-mpeg4 before running your
 application.
 
+The following settings have been tested together and provide good performance:
+
+LAN (~2 Mbit) @ 704x480, 24 fps:
+ Encoder:
+   - Max Bit Rate: 180000
+   - Minimum Quality: 2
+   - Maximum Quality: 20
+   - Encoding Quality: 2
+   - Dynamic Video Quality: 1        (this is a boolean value)
+   - Bandwidth Throttling: 0         (this is a boolean value)
+   - IQuantFactor: -1.0
+   - Frame Time: 3750                (90000 / 3750 = 24 fps)
+
+  Decoder:
+   - Error Recovery: 1               (this is a boolean value)
+   - Error Threshold: 1
+
+WAN (~0.5 - 1 Mbit) @ 704x480, 24 fps:
+ Encoder:
+   - Max Bit Rate: 512000
+   - Minimum Quality: 2
+   - Maximum Quality: 12
+   - Encoding Quality: 2
+   - Dynamic Video Quality: 1
+   - Bandwidth Throttling: 1
+   - IQuantFactor: default (-0.8)
+   - Frame Time: 3750                (90000 / 3750 = 24 fps)
+
+  Decoder:
+   - Error Recovery: 1
+   - Error Threshold: 4
+
+Internet (256 kbit) @ 352x240, 15 fps:
+ Encoder:
+   - Max Bit Rate: 220000
+   - Minimum Quality: 4
+   - Maximum Quality: 31
+   - Encoding Quality: 4
+   - Dynamic Video Quality: 1
+   - Bandwidth Throttling: 1
+   - IQuantFactor: -2.0
+   - Frame Time: 6000                (90000 / 6000 = 15 fps)
+
+  Decoder:
+   - Error Recovery: 1
+   - Error Threshold: 8
+
+The codec was tested at 128 kbit and 64 kbit, but not recently; just keep
+scaling down the Max Bit Rate and scaling up the Error Threshold, which
+sets the number of corrupted blocks in an I-Frame required to trigger a
+resend.
+
 
 Compatibility with the H.263 plugin
 -----------------------------------
@@ -69,5 +124,5 @@ be no conflict between the plugins.
 Interoperability
 ----------------
 
-The plugin does not use a standardized framing for MPEG4 in RTP, so
-it is not interoperable.
+The plugin has never been tested with other implementations, but it
+advertises itself as MP4V-ES and may comply with RFC 3016.
