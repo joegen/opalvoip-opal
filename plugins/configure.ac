@@ -203,8 +203,8 @@ dnl
 dnl ffmpeg for H.263
 dnl 
 
-HAS_FFMPEG=1
-AC_SUBST(HAS_FFMPEG)
+HAS_H263=1
+AC_SUBST(HAS_H263)
 
 
 dnl ########################################################################
@@ -321,7 +321,54 @@ fi
 AC_SUBST(HAS_MPEG4)
 AC_SUBST(FFMPEG_SOURCE)
 
+dnl ###########################################################################
+dnl Checks for ffmpeg
+dnl ###########################################################################
 
+HAS_FFMPEG=0
+
+AC_ARG_ENABLE(ffmpeg, [  --disable-ffmpeg        Disable ffmpeg],,)
+if test "x${enable_ffmpeg}" != "xno" ; then
+    enable_ffmpeg=yes
+    saved_LIBS="$LIBS"
+    LIBS="$LIBS -lm -lz"
+    AC_CHECK_LIB(avcodec, avcodec_init, [ffmpeg_libs=true], [ffmpeg_libs=false])
+    LIBS=$saved_LIBS
+    if test "x${ffmpeg_libs}" != "xno"; then
+        AC_CHECK_HEADERS([ffmpeg/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
+        if test "x${ffmpeg_headers}" != "xno"; then
+            HAS_FFMPEG=1
+        fi
+    fi
+fi
+AC_SUBST(HAS_FFMPEG)
+
+dnl ###########################################################################
+dnl Checks for x264
+dnl ###########################################################################
+
+HAS_X264=0
+X264_LIBS=
+
+AC_ARG_ENABLE(x264, [  --disable-x264        Disable x264],,)
+if test "x${enable_x264}" != "xno" ; then
+    enable_x264=yes
+
+    saved_LIBS="$LIBS"
+    LIBS="$LIBS -lm -lz -lpthread"
+    AC_CHECK_LIB(x264, x264_encoder_open, [x264_libs=yes], [x264_libs=no])
+    LIBS=$saved_LIBS
+
+    if test "x${x264_libs}" != "xno"; then
+	X264_LIBS="-lx264"
+        AC_CHECK_HEADERS([x264.h], [x264_headers=true], [x264_headers=false])
+        if test "x${x264_headers}" != "xno"; then
+            HAS_X264=1
+        fi
+    fi
+fi
+AC_SUBST(HAS_X264)
+AC_SUBST(X264_LIBS)
 dnl ########################################################################
 
 if test -d audio/GSM0610 ; then
@@ -353,6 +400,12 @@ if test -d video/H.263-ffmpeg ; then
 fi
 if test -d video/MPEG4-ffmpeg ; then
   AC_CONFIG_FILES(video/MPEG4-ffmpeg/Makefile)
+fi
+if test -d video/H.264 ; then
+  AC_CONFIG_FILES(video/H.264/Makefile)
+fi
+if test -d video/H.264/gpl; then
+  AC_CONFIG_FILES(video/H.264/gpl/Makefile)
 fi
 if test -d LID/IxJ ; then
   AC_CONFIG_FILES(LID/IxJ/Makefile)

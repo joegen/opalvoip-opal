@@ -7,14 +7,23 @@ SUBDIRS = audio/GSM0610 \
 	  audio/gsm-amr \
 	  video/H.261-vic
 
-HAS_FFMPEG=@HAS_FFMPEG@
-ifeq ($(HAS_FFMPEG),1)
+HAS_H263=@HAS_H263@
+ifeq ($(HAS_FFMPEG_H263),1)
 SUBDIRS += video/H.263-ffmpeg
 endif
 
 HAS_MPEG4=@HAS_MPEG4@
 ifeq ($(HAS_MPEG4),1)
 SUBDIRS += video/MPEG4-ffmpeg
+endif
+
+HAS_X264=@HAS_X264@
+HAS_FFMPEG=@HAS_FFMPEG@
+ifeq ($(HAS_X264),1)
+ifeq ($(HAS_FFMPEG),1)
+SUBDIRS += video/H.264 \
+	   video/H.264/gpl
+endif
 endif
 
 HAS_IXJ=@HAS_IXJ@
