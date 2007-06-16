@@ -24,7 +24,27 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2063  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2064  2007/06/16 21:37:01  dsandras
+ * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
+ * Thanks a lot !
+ *
+ * Baseline Profile:
+ * no B-frames
+ * We make use of the baseline profile (which is the designated profile for interactive vide) ,
+ * that means:
+ * no B-Frames (too much latency in interactive video)
+ * CBR (we want to get the max. quality making use of all the bitrate that is available)
+ * We allow one exeption: configuring a bitrate of > 786 kbit/s
+ *
+ * This plugin implements
+ * - Single Time Aggregation Packets A
+ * - Single NAL units
+ * - Fragmentation Units
+ * like described in RFC3984
+ *
+ * It requires x264 and ffmpeg.
+ *
+ * Revision 2.62  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -647,6 +667,7 @@ const PString & OpalMediaFormat::MaxBitRateOption()  { static PString s = "Max B
 const PString & OpalMediaFormat::MaxFrameSizeOption(){ static PString s = "Max Frame Size"; return s; }
 const PString & OpalMediaFormat::FrameTimeOption()   { static PString s = "Frame Time";     return s; }
 const PString & OpalMediaFormat::ClockRateOption()   { static PString s = "Clock Rate";     return s; }
+const PString & OpalMediaFormat::RTPPayloadType()    { static PString s = "RTP Payload Type";return s;}
 
 OpalMediaFormat::OpalMediaFormat()
 {
@@ -663,8 +684,10 @@ OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockR
 
   PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name, protocol);
   if (idx != P_MAX_INDEX)
+  {
+    registeredFormats[idx].SetOptionInteger(RTPPayloadType(), pt);
     *this = registeredFormats[idx];
-  else
+  }  else
     *this = OpalMediaFormat();
 }
 
@@ -1127,6 +1150,7 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
   AddOption(new OpalMediaOptionInteger(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
   AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionInteger(RTPPayloadType(),            false, OpalMediaOption::NoMerge,  rtpPayloadType));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(MaxBitRateOption())->SetReadOnly(false);
