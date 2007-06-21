@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.20  2007/06/21 08:16:30  rjongbloed
+ * Fixed various multi-threaded GUI issues.
+ *
  * Revision 1.19  2007/06/06 09:08:56  rjongbloed
  * Fixed deadlocks in OpenPhone Timer/GUI interaction.
  *
@@ -359,30 +362,39 @@ template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * na
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#define ID_LOG_MESSAGE 1001
+
+DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
+DEFINE_EVENT_TYPE(wxEvtLogMessage)
+
 class TextCtrlChannel : public PChannel
 {
     PCLASSINFO(TextCtrlChannel, PChannel)
   public:
-    TextCtrlChannel(wxTextCtrl * textCtrl = NULL)
-      : m_textCtrl(textCtrl)
+    TextCtrlChannel()
+      : m_frame(NULL)
       { }
 
     virtual BOOL Write(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
     ) {
-      if (m_textCtrl == NULL)
+      if (m_frame == NULL)
         return FALSE;
-      m_textCtrl->WriteText(wxString((const wxChar *)buf, (size_t)len));
+
+      wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
+      theEvent.SetEventObject(m_frame);
+      theEvent.SetString(wxString((const wxChar *)buf, (size_t)len));
+      m_frame->GetEventHandler()->AddPendingEvent(theEvent);
       return TRUE;
     }
 
-    void SetTextCtrl(
-      wxTextCtrl * textCtrl
-    ) { m_textCtrl = textCtrl; }
+    void SetFrame(
+      wxFrame * frame
+    ) { m_frame = frame; }
 
   protected:
-    wxTextCtrl * m_textCtrl;
+    wxFrame * m_frame;
 } LogWindow;
 
 
@@ -441,6 +453,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_LIST_ITEM_ACTIVATED(SpeedDialsID, MyManager::OnSpeedDialActivated)
   EVT_LIST_COL_END_DRAG(SpeedDialsID, MyManager::OnSpeedDialColumnResize)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnRightClick) 
+
+  EVT_COMMAND(ID_LOG_MESSAGE, wxEvtLogMessage, MyManager::OnLogMessage)
 END_EVENT_TABLE()
 
 MyManager::MyManager()
@@ -459,13 +473,13 @@ MyManager::MyManager()
 #endif
     m_callState(IdleState)
 {
-
   // Give it an icon
-    SetIcon(wxICON(AppIcon));
+  SetIcon(wxICON(AppIcon));
 
   // Make an image list containing large icons
   m_imageListNormal = new wxImageList(32, 32, true);
- // Order here is important!!
+
+  // Order here is important!!
   m_imageListNormal->Add(wxICON(OtherPhone));
   m_imageListNormal->Add(wxICON(H323Phone));
   m_imageListNormal->Add(wxICON(SIPPhone));
@@ -474,12 +488,14 @@ MyManager::MyManager()
   m_imageListSmall->Add(wxICON(SmallPhone));
 
   m_RingSoundTimer.SetNotifier(PCREATE_NOTIFIER(OnRingSoundAgain));
+
+  LogWindow.SetFrame(this);
 }
 
 
 MyManager::~MyManager()
 {
-  LogWindow.SetTextCtrl(NULL);
+  LogWindow.SetFrame(NULL);
 
   ClearAllCalls();
 
@@ -523,7 +539,6 @@ bool MyManager::Initialise()
   m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString,
                                wxDefaultPosition, wxDefaultSize,
                                wxTE_MULTILINE | wxSUNKEN_BORDER);
-  LogWindow.SetTextCtrl(m_logWindow);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
@@ -1021,6 +1036,12 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameHeightKey, h);
 
   Destroy();
+}
+
+
+void MyManager::OnLogMessage(wxCommandEvent & theEvent)
+{
+    m_logWindow->WriteText(theEvent.GetString());
 }
 
 
@@ -2708,6 +2729,8 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGauge");
   m_vuMicrophone = FindWindowByNameAs<wxGauge>(this, "MicrophoneGauge");
 
+  m_vuTimer.Start(250);
+
   m_FirstTime = true;
 }
 
@@ -2729,15 +2752,10 @@ bool InCallPanel::Show(bool show)
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
     SetVolume(true, value);
-
-    if (show)
-      m_vuTimer.Start(250);
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
     config->Write(MicrophoneVolumeKey, m_MicrophoneVolume->GetValue());
-
-    m_vuTimer.Stop();
   }
 
   return wxPanel::Show(show);
@@ -2799,18 +2817,20 @@ static void SetGauge(wxGauge * gauge, int level)
 }
 
 
-void InCallPanel::OnUpdateVU(wxTimerEvent& event)
+void InCallPanel::OnUpdateVU(wxTimerEvent& WXUNUSED(event))
 {
-  int micLevel = -1;
-  int spkLevel = -1;
-  PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
-  if (connection != NULL) {
-    spkLevel = connection->GetAudioSignalLevel(false);
-    micLevel = connection->GetAudioSignalLevel(true);
-  }
+  if (IsShown()) {
+    int micLevel = -1;
+    int spkLevel = -1;
+    PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
+    if (connection != NULL) {
+      spkLevel = connection->GetAudioSignalLevel(false);
+      micLevel = connection->GetAudioSignalLevel(true);
+    }
 
-  SetGauge(m_vuSpeaker, spkLevel);
-  SetGauge(m_vuMicrophone, micLevel);
+    SetGauge(m_vuSpeaker, spkLevel);
+    SetGauge(m_vuMicrophone, micLevel);
+  }
 }
 
 
