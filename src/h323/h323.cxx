@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2154.2.1  2007/05/23 00:32:32  csoutheren
+ * Revision 1.2154.2.2  2007/06/21 22:16:13  csoutheren
+ * Ensure non-fastStart media channels start when using AnswerAlertingWithMedia
+ *
+ * Revision 2.153.2.1  2007/05/23 00:32:32  csoutheren
  * Back ports from HEAD
  *
  * Revision 2.154  2007/05/17 15:38:24  vfrolov
@@ -2206,6 +2209,8 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
           return FALSE;
         alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
       }
+      if (!StartControlNegotiations())
+        return FALSE;
     }
   }
 
