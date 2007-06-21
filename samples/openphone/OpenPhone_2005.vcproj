@@ -158,6 +158,7 @@
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
+				BrowseInformation="1"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
@@ -216,9 +217,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
+			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 	</References>
 	<Files>
