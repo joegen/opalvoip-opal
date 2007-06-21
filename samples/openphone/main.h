@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.40  2007/06/21 08:16:30  rjongbloed
+ * Fixed various multi-threaded GUI issues.
+ *
  * Revision 1.39  2007/06/06 09:08:56  rjongbloed
  * Fixed deadlocks in OpenPhone Timer/GUI interaction.
  *
@@ -609,7 +612,7 @@ class MyManager : public wxFrame, public OpalManager
 
 
     void OnClose(wxCloseEvent& event);
-
+    void OnLogMessage(wxCommandEvent & event);
     void OnAdjustMenus(wxMenuEvent& event);
 
     void OnMenuQuit(wxCommandEvent& event);
