@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2027  2007/06/22 05:48:09  rjongbloed
+ * Revision 1.2028  2007/06/22 06:29:14  rjongbloed
+ * Fixed GCC warnings.
+ *
+ * Revision 2.26  2007/06/22 05:48:09  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -528,7 +531,7 @@ static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, co
 
     PString name(PString::Printf, "Generic Parameter %u", ptr->id);
 
-    OpalMediaOption * mediaOption = NULL;
+    OpalMediaOption * mediaOption;
     switch (ptr->type) {
       case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_logical :
         mediaOption = new OpalMediaOptionBoolean(name, ptr->readOnly, OpalMediaOption::NoMerge, ptr->value.integer != 0);
@@ -558,6 +561,9 @@ static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, co
       case PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_octetString :
         mediaOption = new OpalMediaOptionString(name, ptr->readOnly, ptr->value.octetstring);
         break;
+
+      default :
+        mediaOption = NULL;
     }
 
     if (mediaOption != NULL) {
