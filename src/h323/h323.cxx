@@ -24,7 +24,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2158  2007/06/10 08:55:11  rjongbloed
+ * Revision 1.2159  2007/06/22 05:49:13  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ * Fixed removal of H.323 capabilities just because media format name is a
+ *   substring of capability name.
+ * Fixed inadequacies in H.245 Generic Capabilities (must be able to
+ *   distinguish between TCS, OLC and ReqMode).
+ *
+ * Revision 2.157  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.156  2007/05/29 21:34:08  dsandras
@@ -3485,8 +3496,6 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
     if (!remoteCapabilities.Merge(remoteCaps))
       return FALSE;
 
-    remoteCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
-
     if (transmitterSidePaused) {
       transmitterSidePaused = FALSE;
       connectionState = HasExecutedSignalConnect;
@@ -3523,12 +3532,7 @@ void H323Connection::OnSetLocalCapabilities()
     return;
 
   // create the list of media formats supported locally
-  OpalMediaFormatList formats;
-  if (originating)
-    formats = GetLocalMediaFormats();
-  else
-    formats = ownerCall.GetMediaFormats(*this, FALSE);
-
+  OpalMediaFormatList formats = GetLocalMediaFormats();
   if (formats.IsEmpty()) {
     PTRACE(2, "H323\tSetLocalCapabilities - no existing formats in call");
     return;
@@ -3558,7 +3562,7 @@ void H323Connection::OnSetLocalCapabilities()
       OpalMediaFormat format = formats[i];
       if (format.GetDefaultSessionID() == sessionOrder[s] &&
           format.GetPayloadType() < RTP_DataFrame::MaxPayloadType)
-        simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format);
+        simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format, TRUE);
     }
   }
   
@@ -3582,8 +3586,6 @@ void H323Connection::OnSetLocalCapabilities()
     else
       localCapabilities.Remove(capability);
   }
-
-  localCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
 
   PTRACE(3, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
