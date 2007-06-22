@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2024  2007/04/21 13:49:15  dsandras
+ * Revision 1.2025  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.23  2007/04/21 13:49:15  dsandras
  * Allow a different connect address per media description. Fixes
  * Ekiga bug #430870.
  *
@@ -149,12 +156,14 @@ class SDPMediaFormat : public PObject
     
     SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType,
-      const char * name = NULL,
-      unsigned rate = 8000,
-      const char * param = ""
+      const char * name = NULL
     );
 
-    SDPMediaFormat(const PString & encodingName, const PString & nteString, RTP_DataFrame::PayloadTypes pt);
+    SDPMediaFormat(
+      const OpalMediaFormat & mediaFormat,
+      RTP_DataFrame::PayloadTypes pt,
+      const char * nteString = NULL
+    );
 
     void PrintOn(ostream & str) const;
 
@@ -169,9 +178,9 @@ class SDPMediaFormat : public PObject
     unsigned GetClockRate(void)                        { return clockRate ; }
     void SetClockRate(unsigned  v)                     { clockRate = v; }
 
-    void SetParameters(const PString & v)              { parameters = v; }
+    void SetParameters(const PString & v) { parameters = v; }
 
-    OpalMediaFormat GetMediaFormat() const;
+    const OpalMediaFormat & GetMediaFormat() const;
 
   protected:
     void AddNTEString(const PString & str);
@@ -188,6 +197,7 @@ class SDPMediaFormat : public PObject
     void AddNXEToken(POrdinalSet & nxeSet, const PString & ostr);
     PString GetNXEString(POrdinalSet & nxeSet) const;
 
+    mutable OpalMediaFormat mediaFormat;
     RTP_DataFrame::PayloadTypes payloadType;
 
     unsigned clockRate;

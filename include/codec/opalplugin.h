@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2009  2007/05/15 09:39:37  rjongbloed
+ * Revision 1.2010  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.8  2007/05/15 09:39:37  rjongbloed
  * Fixed various OIDs for H.245 generic capabilities.
  * Added G.722.2 OID for H.245 generic capabilities.
  * Changed the H.323 capability "extra info" pointer to be const.
@@ -139,6 +146,10 @@ extern "C" {
 
 #include <time.h>
 
+#ifdef _MSC_VER
+#pragma warning(disable:4201)
+#endif
+
 #ifdef _WIN32
 #  ifdef PLUGIN_CODEC_DLL_EXPORTS
 #    define PLUGIN_CODEC_DLL_API __declspec(dllexport)
@@ -154,10 +165,11 @@ extern "C" {
 
 #define PWLIB_PLUGIN_API_VERSION 0
 
-#define	PLUGIN_CODEC_VERSION		         1    // initial version
-#define	PLUGIN_CODEC_VERSION_WIDEBAND		 2    // added wideband
-#define	PLUGIN_CODEC_VERSION_VIDEO		   3    // added video
-#define	PLUGIN_CODEC_VERSION_FAX		     4    // added fax
+#define  PLUGIN_CODEC_VERSION           1    // initial version
+#define  PLUGIN_CODEC_VERSION_WIDEBAND  2    // added wideband
+#define  PLUGIN_CODEC_VERSION_VIDEO     3    // added video
+#define  PLUGIN_CODEC_VERSION_FAX       4    // added fax
+#define  PLUGIN_CODEC_VERSION_OPTIONS   5    // added options handling
 
 #define PLUGIN_CODEC_API_VER_FN       PWLibPlugin_GetAPIVersion
 #define PLUGIN_CODEC_API_VER_FN_STR   "PWLibPlugin_GetAPIVersion"
@@ -260,13 +272,61 @@ struct PluginCodec_Definition;
 
 struct PluginCodec_ControlDefn {
   const char * name;
-  int (*control)(const struct PluginCodec_Definition * codec, void * context, 
+  int (*control)(const struct PluginCodec_Definition * codec, void * context,
                  const char * name, void * parm, unsigned * parmLen);
- 
+
 };
 
+enum PluginCodec_OptionTypes {
+  PluginCodec_StringOption,
+  PluginCodec_BoolOption,
+  PluginCodec_IntegerOption,
+  PluginCodec_RealOption,
+  PluginCodec_EnumOption,
+  PluginCodec_NumOptionTypes,
+};
+
+enum PluginCodec_OptionMerge {
+  PluginCodec_NoMerge,
+  PluginCodec_MinMerge,
+  PluginCodec_MaxMerge,
+  PluginCodec_EqualMerge,
+  PluginCodec_NotEqualMerge,
+  PluginCodec_AlwaysMerge,
+  PluginCodec_NumOptionMerge,
+
+  PluginCodec_AndMerge = PluginCodec_MaxMerge,
+  PluginCodec_OrMerge  = PluginCodec_MinMerge,
+  PluginCodec_XorMerge = PluginCodec_NotEqualMerge,
+  PluginCodec_NotXorMerge = PluginCodec_EqualMerge
+};
+
+#define PluginCodec_H245_Collapsing    0x40000000
+#define PluginCodec_H245_NonCollapsing 0x20000000
+#define PluginCodec_H245_Unsigned32    0x10000000
+#define PluginCodec_H245_BooleanArray  0x08000000
+#define PluginCodec_H245_TCS           0x04000000
+#define PluginCodec_H245_OLC           0x02000000
+#define PluginCodec_H245_ReqMode       0x01000000
+#define PluginCodec_H245_OrdinalMask   0x0000ffff
+
+struct PluginCodec_Option {
+  // start of version 4 fields
+  enum PluginCodec_OptionTypes m_type;
+  const char *                 m_name;
+  unsigned                     m_readOnly;
+  enum PluginCodec_OptionMerge m_merge;
+  const char *                 m_value;
+  const char *                 m_FMTPName;
+  const char *                 m_FMTPDefault;
+  int                          m_H245Generic;
+  const char *                 m_minimum;
+  const char *                 m_maximum;
+};
+
+
 struct PluginCodec_Definition {
-  unsigned int version;			               // codec structure version
+  unsigned int version;                     // codec structure version
 
   // start of version 1 fields
   struct PluginCodec_information * info;   // license information
@@ -277,7 +337,7 @@ struct PluginCodec_Definition {
                                            // b6:   0 = dynamic RTP,  1 = explicit RTP
                                            // b7:   0 = no share RTP, 1 = share RTP
 
-  const char * descr;    		               // text decription
+  const char * descr;                       // text decription
 
   const char * sourceFormat;               // source format
   const char * destFormat;                 // destination format
@@ -285,30 +345,43 @@ struct PluginCodec_Definition {
   const void * userData;                   // user data value
 
   unsigned int sampleRate;                 // samples per second
-  unsigned int bitsPerSec;     		       // raw bits per second
+  unsigned int bitsPerSec;                // raw bits per second
+  unsigned int usPerFrame;                 // microseconds per frame
 
-  unsigned int nsPerFrame;                 // nanoseconds per frame
-  unsigned int samplesPerFrame;		       // audio: samples per frame,                      video: frame width
-  unsigned int bytesPerFrame;              // audio: max bytes per frame,                    video: frame height
-  unsigned int recommendedFramesPerPacket; // audio: recommended number of frames per packet video: recommended frame rate
-  unsigned int maxFramesPerPacket;         // audio: maximum number of frames per packet     video: max frame rate
+  union {
+    struct {
+      unsigned int samplesPerFrame;            // audio: samples per frame
+      unsigned int bytesPerFrame;              // audio: max bytes per frame
+      unsigned int recommendedFramesPerPacket; // audio: recommended number of frames per packet
+      unsigned int maxFramesPerPacket;         // audio: maximum number of frames per packet
+    };
+    struct {
+      unsigned int maxFrameWidth;              // video: frame width
+      unsigned int maxFrameHeight;             // video: frame height
+      unsigned int recommendedFrameRate;       // video: recommended frame rate
+      unsigned int maxFrameRate;               // video: max frame rate
+    };
+  };
 
-  unsigned char rtpPayload;    		         // IANA RTP payload code (if defined)
+  unsigned char rtpPayload;                 // IANA RTP payload code (if defined)
   const char * sdpFormat;                  // SDP format string (or NULL, if no SDP format)
 
-  void * (*createCodec)(const struct PluginCodec_Definition * codec);	                  // create codec 
-  void (*destroyCodec) (const struct PluginCodec_Definition * codec,  void * context); 	// destroy codec
+  void * (*createCodec)(const struct PluginCodec_Definition * codec);                    // create codec
+  void (*destroyCodec) (const struct PluginCodec_Definition * codec,  void * context);   // destroy codec
   int (*codecFunction) (const struct PluginCodec_Definition * codec,  void * context,   // do codec function
                                   const void * from, unsigned * fromLen,
                                         void * to,   unsigned * toLen,
                                         unsigned int * flag);
   struct PluginCodec_ControlDefn * codecControls;
- 
+
   // H323 specific fields
   unsigned char h323CapabilityType;
   const void  * h323CapabilityData;
 
   // end of version 1 fields
+
+  // NOTE!!!!! Due to an error in judgement, you cannot add ANY more fields
+  // to this structure without an API version change!!!!
 };
 
 typedef struct PluginCodec_Definition * (* PluginCodec_GetCodecFunction)(unsigned int *, unsigned int);
@@ -339,44 +412,57 @@ struct PluginCodec_H323NonStandardCodecData {
 
 struct PluginCodec_H323GenericParameterDefinition
 {
-    int collapsing; /* boolean */
-    unsigned int id;
-    enum PluginCodec_H323GenericParameterType {
-	/* these need to be in the same order as the choices in
-	   H245_ParameterValue::Choices, as the value is just cast to that type
-	*/
-	PluginCodec_GenericParameter_Logical = 0,
-	PluginCodec_GenericParameter_BooleanArray,
-	PluginCodec_GenericParameter_unsignedMin,
-	PluginCodec_GenericParameter_unsignedMax,
-	PluginCodec_GenericParameter_unsigned32Min,
-	PluginCodec_GenericParameter_unsigned32Max,
-	PluginCodec_GenericParameter_OctetString,
-	PluginCodec_GenericParameter_GenericParameter
-    } type;
-    union {
-	unsigned long integer;
-	char *octetstring;
-	struct PluginCodec_H323GenericParameterDefinition *genericparameter;
-    } value;
+  /* The followinug used to be a simple integer for the collapsing flag in
+     version 3 and earlier. WEe hope that all those implemtation just used
+     zero and one (a good bet) and thus the blow bit fields will be backward
+     compatible, putting the parameter in all three PDU types.
+   */ 
+  struct {
+    int collapsing:1; /* boolean */
+    int excludeTCS:1;
+    int excludeOLC:1;
+    int excludeReqMode:1;
+    int readOnly:1;
+  };
+
+  unsigned int id;
+
+  enum PluginCodec_H323GenericParameterType {
+    /* these need to be in the same order as the choices in
+      H245_ParameterValue::Choices, as the value is just cast to that type
+    */
+    PluginCodec_GenericParameter_logical = 0,
+    PluginCodec_GenericParameter_booleanArray,
+    PluginCodec_GenericParameter_unsignedMin,
+    PluginCodec_GenericParameter_unsignedMax,
+    PluginCodec_GenericParameter_unsigned32Min,
+    PluginCodec_GenericParameter_unsigned32Max,
+    PluginCodec_GenericParameter_octetString,
+    PluginCodec_GenericParameter_genericParameter
+  } type;
+
+  union {
+    unsigned long integer;
+    const char * octetstring;
+    struct PluginCodec_H323GenericParameterDefinition *genericparameter;
+  } value;
 };
 
-    
-struct PluginCodec_H323GenericCodecData {
-    // XXX need a way of specifying non-standard identifiers?
-    
-    // some cunning structures & lists, and associated logic in 
-    // H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability()
-    const char * standardIdentifier;
-    unsigned int maxBitRate;
+struct PluginCodec_H323GenericCodecData
+{
+  // some cunning structures & lists, and associated logic in
+  // H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability()
+  const char * standardIdentifier;
+  unsigned int maxBitRate; // Zero means use value from OpalMediaFormat
 
-    /* parameters; these are the parameters which are set in the
-       'TerminalCapabilitySet' and 'OpenLogicalChannel' requests */
-    unsigned int nParameters;
-    /* an array of nParameters parameter definitions */
-    const struct PluginCodec_H323GenericParameterDefinition *params; 
+  /* parameters; these are the parameters which are set in the
+     'TerminalCapabilitySet' and 'OpenLogicalChannel' requests */
+  unsigned int nParameters;
+  /* an array of nParameters parameter definitions */
+  const struct PluginCodec_H323GenericParameterDefinition *params;
 };
-    
+
+
 struct PluginCodec_H323AudioGSMData {
   int comfortNoise:1;
   int scrambled:1;
@@ -385,24 +471,24 @@ struct PluginCodec_H323AudioGSMData {
 struct  PluginCodec_H323AudioG7231AnnexC {
   unsigned char maxAl_sduAudioFrames;
   int silenceSuppression:1;
-  int highRateMode0:6;  	      // INTEGER (27..78),	-- units octets
-  int	highRateMode1:6;	        // INTEGER (27..78),	-- units octets
-  int	lowRateMode0:6;		        // INTEGER (23..66),	-- units octets
-  int	lowRateMode1:6;		        // INTEGER (23..66),	-- units octets
-  int	sidMode0:4;		            // INTEGER (6..17),	-- units octets
-  int	sidMode1:4;		            // INTEGER (6..17),	-- units octets
+  int highRateMode0:6;          // INTEGER (27..78),  -- units octets
+  int  highRateMode1:6;          // INTEGER (27..78),  -- units octets
+  int  lowRateMode0:6;            // INTEGER (23..66),  -- units octets
+  int  lowRateMode1:6;            // INTEGER (23..66),  -- units octets
+  int  sidMode0:4;                // INTEGER (6..17),  -- units octets
+  int  sidMode1:4;                // INTEGER (6..17),  -- units octets
 };
 
 /* Following H.261 structure is no longer used */
 /*
 struct PluginCodec_H323VideoH261
 {
-  unsigned char qcifMPI;                           //	INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
-  unsigned char cifMPI;		                         // INTEGER (1..4) OPTIONAL,	-- units 1/29.97 Hz (0 if not present)
-	unsigned char temporalSpatialTradeOffCapability; //	BOOLEAN,
-  unsigned char stillImageTransmission;            //	BOOLEAN,	-- Annex D of H.261
-	int maxBitRate;                                  //	INTEGER (1..19200),	-- units of 100 bit/s
-  unsigned char videoBadMBsCap;                    //	BOOLEAN
+  unsigned char qcifMPI;                           //  INTEGER (1..4) OPTIONAL,  -- units 1/29.97 Hz (0 if not present)
+  unsigned char cifMPI;                             // INTEGER (1..4) OPTIONAL,  -- units 1/29.97 Hz (0 if not present)
+  unsigned char temporalSpatialTradeOffCapability; //  BOOLEAN,
+  unsigned char stillImageTransmission;            //  BOOLEAN,  -- Annex D of H.261
+  int maxBitRate;                                  //  INTEGER (1..19200),  -- units of 100 bit/s
+  unsigned char videoBadMBsCap;                    //  BOOLEAN
 };
 */
 
@@ -410,62 +496,62 @@ struct PluginCodec_H323VideoH261
 /*
 struct PluginCodec_H323VideoH263
 {
-	unsigned char sqcifMPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-	unsigned char qcifMPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-	unsigned char cifMPI;                            // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-	unsigned char cif4MPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-	unsigned char cif16MPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-	unsigned int maxBitRate;                         // INTEGER (1..192400) units 100 bit/s
-	unsigned char unrestrictedVector;                //	BOOLEAN
-	unsigned char arithmeticCoding;                  //	BOOLEAN,
-	unsigned char advancedPrediction;                //	BOOLEAN,
-	unsigned char pbFrames;                          //	BOOLEAN,
-	unsigned char temporalSpatialTradeOffCapability; //	BOOLEAN,
-	int hrdB;                                        // INTEGER (0..524287) OPTIONAL, -- units 128 bits (-1 if not present)
-	int bppMaxKb;                                    // INTEGER (0..65535) OPTIONAL, -- units 1024 bits (-1 if not present)
+  unsigned char sqcifMPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+  unsigned char qcifMPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+  unsigned char cifMPI;                            // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+  unsigned char cif4MPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+  unsigned char cif16MPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
+  unsigned int maxBitRate;                         // INTEGER (1..192400) units 100 bit/s
+  unsigned char unrestrictedVector;                //  BOOLEAN
+  unsigned char arithmeticCoding;                  //  BOOLEAN,
+  unsigned char advancedPrediction;                //  BOOLEAN,
+  unsigned char pbFrames;                          //  BOOLEAN,
+  unsigned char temporalSpatialTradeOffCapability; //  BOOLEAN,
+  int hrdB;                                        // INTEGER (0..524287) OPTIONAL, -- units 128 bits (-1 if not present)
+  int bppMaxKb;                                    // INTEGER (0..65535) OPTIONAL, -- units 1024 bits (-1 if not present)
 
-	unsigned int slowSqcifMPI;                       // INTEGER (1..3600) OPTIONAL, --  units seconds/frame (0 if not present)
-	unsigned int slowQcifMPI;                        //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-	unsigned int slowCifMPI;                         //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-	unsigned int slowCif4MPI;                        //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-	unsigned int slowCif16MPI;                       //	INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-	unsigned char errorCompensation;                 // BOOLEAN,
+  unsigned int slowSqcifMPI;                       // INTEGER (1..3600) OPTIONAL, --  units seconds/frame (0 if not present)
+  unsigned int slowQcifMPI;                        //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+  unsigned int slowCifMPI;                         //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+  unsigned int slowCif4MPI;                        //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+  unsigned int slowCif16MPI;                       //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
+  unsigned char errorCompensation;                 // BOOLEAN,
 
-	void * enhancementLayerInfo;                     // not yet supported (NULL if not present)
-	void * h263Options;                              // not yet support (NULL if not present)
+  void * enhancementLayerInfo;                     // not yet supported (NULL if not present)
+  void * h263Options;                              // not yet support (NULL if not present)
 };
 */
 
 enum {
-  PluginCodec_H323Codec_undefined,			// must be zero, so empty struct is undefined
-  PluginCodec_H323Codec_programmed,			// H323ProgrammedCapability
-  PluginCodec_H323Codec_nonStandard,		// H323NonStandardData
+  PluginCodec_H323Codec_undefined,      // must be zero, so empty struct is undefined
+  PluginCodec_H323Codec_programmed,      // H323ProgrammedCapability
+  PluginCodec_H323Codec_nonStandard,    // H323NonStandardData
   PluginCodec_H323Codec_generic,            // H323GenericCodecData
 
   // audio codecs
-  PluginCodec_H323AudioCodec_g711Alaw_64k,		    // int
-  PluginCodec_H323AudioCodec_g711Alaw_56k,		    // int
-  PluginCodec_H323AudioCodec_g711Ulaw_64k,		    // int
-  PluginCodec_H323AudioCodec_g711Ulaw_56k,		    // int
-  PluginCodec_H323AudioCodec_g722_64k,			      // int
-  PluginCodec_H323AudioCodec_g722_56k,			      // int
-  PluginCodec_H323AudioCodec_g722_48k,			      // int
-  PluginCodec_H323AudioCodec_g7231,			          // H323AudioG7231Data
-  PluginCodec_H323AudioCodec_g728,			          // int
-  PluginCodec_H323AudioCodec_g729,			          // int
-  PluginCodec_H323AudioCodec_g729AnnexA,		      // int
+  PluginCodec_H323AudioCodec_g711Alaw_64k,        // int
+  PluginCodec_H323AudioCodec_g711Alaw_56k,        // int
+  PluginCodec_H323AudioCodec_g711Ulaw_64k,        // int
+  PluginCodec_H323AudioCodec_g711Ulaw_56k,        // int
+  PluginCodec_H323AudioCodec_g722_64k,            // int
+  PluginCodec_H323AudioCodec_g722_56k,            // int
+  PluginCodec_H323AudioCodec_g722_48k,            // int
+  PluginCodec_H323AudioCodec_g7231,                // H323AudioG7231Data
+  PluginCodec_H323AudioCodec_g728,                // int
+  PluginCodec_H323AudioCodec_g729,                // int
+  PluginCodec_H323AudioCodec_g729AnnexA,          // int
   PluginCodec_H323AudioCodec_is11172,             // not yet implemented
   PluginCodec_H323AudioCodec_is13818Audio,        // not yet implemented
-  PluginCodec_H323AudioCodec_g729wAnnexB,		      // int
-  PluginCodec_H323AudioCodec_g729AnnexAwAnnexB,	  // int
+  PluginCodec_H323AudioCodec_g729wAnnexB,          // int
+  PluginCodec_H323AudioCodec_g729AnnexAwAnnexB,    // int
   PluginCodec_H323AudioCodec_g7231AnnexC,         // H323AudioG7231AnnexC
-  PluginCodec_H323AudioCodec_gsmFullRate,		      // H323AudioGSMData
-  PluginCodec_H323AudioCodec_gsmHalfRate,		      // H323AudioGSMData
-  PluginCodec_H323AudioCodec_gsmEnhancedFullRate,	// H323AudioGSMData
+  PluginCodec_H323AudioCodec_gsmFullRate,          // H323AudioGSMData
+  PluginCodec_H323AudioCodec_gsmHalfRate,          // H323AudioGSMData
+  PluginCodec_H323AudioCodec_gsmEnhancedFullRate,  // H323AudioGSMData
   PluginCodec_H323AudioCodec_g729Extensions,      // not yet implemented
 
   // video codecs
-  PluginCodec_H323VideoCodec_h261,                // implemented 
+  PluginCodec_H323VideoCodec_h261,                // implemented
   PluginCodec_H323VideoCodec_h262,                // not yet implemented
   PluginCodec_H323VideoCodec_h263,                // implemented
   PluginCodec_H323VideoCodec_is11172,             // not yet implemented
@@ -508,6 +594,21 @@ enum {
 
 // ISO/IEC 14496-2 MPEG4 part 2 (as defined in H.245v13 Annex E)
 #define OpalPluginCodec_Identifer_MPEG4           "0.0.8.245.1.0.0"
+
+
+/////////////////
+//
+// RTP specific definitions
+//
+
+#define PluginCodec_RTP_GetHeaderLength(ptr)      ((((BYTE*)(ptr))[0] & 0x0f)*4 + 12)
+#define PluginCodec_RTP_GetPayloadPtr(ptr)          ((BYTE*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
+#define PluginCodec_RTP_GetPayloadType(ptr)        (((BYTE*)(ptr))[1] & 0x7f)
+#define PluginCodec_RTP_SetPayloadType(ptr, type)  (((BYTE*)(ptr))[1] = (((BYTE*)(ptr))[1] & 0x80) | (type & 0x7f))
+#define PluginCodec_RTP_GetMarker(ptr)            ((((BYTE*)(ptr))[1] & 0x80) != 0)
+#define PluginCodec_RTP_SetMarker(ptr, mark)       (((BYTE*)(ptr))[1] = (((BYTE*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0))
+#define PluginCodec_RTP_GetTimestamp(ptr)         ((((BYTE*)(ptr))[4] << 24) | (((BYTE*)(ptr))[5] << 16) | (((BYTE*)(ptr))[6] << 8) | ((BYTE*)(ptr))[7])
+#define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((BYTE*)(ptr))[4] = ((ts) >> 24)),(((BYTE*)(ptr))[5] = ((ts) >> 16)),(((BYTE*)(ptr))[6] = ((ts) >> 8)),(((BYTE*)(ptr))[7] = (ts)))
 
 
 /////////////////
@@ -563,11 +664,21 @@ struct PluginCodec_Definition * Opal_StaticCodec_##name##_GetCodecs(unsigned * p
 PLUGIN_CODEC_DLL_API unsigned int PLUGIN_CODEC_API_VER_FN() \
 { return PWLIB_PLUGIN_API_VERSION; } \
 
+#  define PLUGIN_CODEC_IMPLEMENT_ALL(name, table, ver) \
+PLUGIN_CODEC_IMPLEMENT(name) \
+PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version) \
+{ *count = sizeof(table)/sizeof(struct PluginCodec_Definition); return version < ver ? NULL : table; }
+
+
 #endif
 
 #ifdef __cplusplus
 };
 #endif
 
+
+#ifdef _MSC_VER
+#pragma warning(default:4201)
+#endif
 
 #endif // __OPAL_CODECPLUGIN_H

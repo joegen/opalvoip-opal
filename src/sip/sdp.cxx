@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2049  2007/05/28 08:38:01  csoutheren
+ * Revision 1.2050  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.48  2007/05/28 08:38:01  csoutheren
  * Don't use deleted media session info when parsing fails
  *
  * Revision 2.47  2007/05/04 15:24:20  vfrolov
@@ -295,14 +302,10 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 
 /////////////////////////////////////////////////////////
 
-SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
-                               const char * _name,
-                               unsigned _clockRate,
-                               const char * _parms)
+SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _name)
   : payloadType(pt),
-    clockRate(_clockRate),
+    clockRate(0),
     encodingName(_name),
-    parameters(_parms),
     nteSet(TRUE)
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
@@ -311,39 +314,104 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
   else if (encodingName == OpalCiscoNSE.GetEncodingName())
     AddNSEString("192,193");
 #endif
+
+  GetMediaFormat(); // Initialise, if possible
 }
 
 
-SDPMediaFormat::SDPMediaFormat(const PString & _encodingName, const PString & nxeString, RTP_DataFrame::PayloadTypes pt)
-  : payloadType(pt),
-    clockRate(8000),
-    encodingName(_encodingName),
+SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
+                               RTP_DataFrame::PayloadTypes pt,
+                               const char * nxeString)
+  : mediaFormat(fmt),
+    payloadType(pt),
+    clockRate(fmt.GetClockRate()),
+    encodingName(fmt.GetEncodingName()),
     nteSet(TRUE)
 {
+  if (nxeString != NULL) {
 #if OPAL_T38FAX
-  if (encodingName *= "nse")
-    AddNSEString(nxeString);
-  else
+    if (encodingName *= "nse")
+      AddNSEString(nxeString);
+    else
 #endif
-    AddNTEString(nxeString);
+      AddNTEString(nxeString);
+  }
 }
 
 
 void SDPMediaFormat::SetFMTP(const PString & str)
 {
+  if (str.IsEmpty())
+    return;
+
   if (encodingName == OpalRFC2833.GetEncodingName()) {
     nteSet.RemoveAll();
     AddNTEString(str);
+    return;
   }
+
 #if OPAL_T38FAX
   else if (encodingName == OpalCiscoNSE.GetEncodingName()) {
     nseSet.RemoveAll();
     AddNSEString(str);
+    return;
   }
 #endif
-  else {
-    fmtp = str;
+
+  fmtp = str;
+  if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
+    return;
+
+  // Fill in the default values for (possibly) missing FMTP options
+  PINDEX i;
+  for (i = 0; i < mediaFormat.GetOptionCount(); i++) {
+    OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
+    if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
+      option.FromString(option.GetFMTPDefault());
   }
+
+  // See if standard format OPT=VAL;OPT=VAL
+  if (str.FindOneOf(";=") == P_MAX_INDEX) {
+    // Nope, just save the whole string as is
+    mediaFormat.SetOptionString("FMTP", str);
+    return;
+  }
+
+  // Parse the string for option names and values OPT=VAL;OPT=VAL
+  PINDEX sep1prev = 0;
+  do {
+    PINDEX sep1next = str.Find(';', sep1prev);
+    if (sep1next == P_MAX_INDEX)
+      sep1next--; // Implicit assumption string is not a couple of gigabytes long ...
+
+    PINDEX sep2pos = str.Find('=', sep1prev);
+    if (sep2pos > sep1next)
+      sep2pos = sep1next;
+
+    PCaselessString key = str(sep1prev, sep2pos-1).Trim();
+    if (key.IsEmpty()) {
+      PTRACE(2, "SDP\tBadly formed FMTP parameter \"" << str << '"');
+      break;
+    }
+
+    OpalMediaOption * option = mediaFormat.FindOption(key);
+    if (option == NULL || key != option->GetFMTPName()) {
+      for (i = 0; i < mediaFormat.GetOptionCount(); i++) {
+        if (key == mediaFormat.GetOption(i).GetFMTPName()) {
+          option = const_cast<OpalMediaOption *>(&mediaFormat.GetOption(i));
+          break;
+        }
+      }
+    }
+    if (option != NULL) {
+      PString value = str(sep2pos+1, sep1next-1).Trim();
+      if (!option->FromString(value)) {
+        PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
+      }
+    }
+
+    sep1prev = sep1next+1;
+  } while (sep1prev != P_MAX_INDEX);
 }
 
 
@@ -351,12 +419,33 @@ PString SDPMediaFormat::GetFMTP() const
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     return GetNTEString();
+
 #if OPAL_T38FAX
-  else if (encodingName == OpalCiscoNSE.GetEncodingName())
+  if (encodingName == OpalCiscoNSE.GetEncodingName())
     return GetNSEString();
 #endif
-  else
+
+  if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return fmtp;
+
+  PString str = mediaFormat.GetOptionString("FMTP");
+  if (!str.IsEmpty())
+    return str;
+
+  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    const PString & name = option.GetFMTPName();
+    if (!name.IsEmpty()) {
+      PString value = option.AsString();
+      if (value != option.GetFMTPDefault()) {
+        if (!str.IsEmpty())
+          str += ';';
+        str += name + '=' + value;
+      }
+    }
+  }
+
+  return !str ? str : fmtp;
 }
 
 
@@ -461,9 +550,12 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 }
 
 
-OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
+const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
-  return OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  if (mediaFormat.IsEmpty()) {
+    mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  }
+  return mediaFormat;
 }
 
 
@@ -573,7 +665,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     PINDEX i;
     for (i = 3; i < tokens.GetSize(); i++) {
       if (mediaType == Image)
-        formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)RTP_DataFrame::DynamicBase, tokens[i], 0));
+        formats.Append(new SDPMediaFormat(RTP_DataFrame::DynamicBase, tokens[i]));
       else
         formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
     }
@@ -624,14 +716,15 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // find the format that matches the payload type
-  PINDEX fmt;
-  for (fmt = 0 ;; fmt++) {
+  PINDEX fmt = 0;
+  for (;;) {
     if (fmt >= formats.GetSize()) {
       PTRACE(2, "SDP\tMedia attribute " << attr << " found for unknown RTP type " << pt);
       return;
     }
     if (formats[fmt].GetPayloadType() == pt)
       break;
+    fmt++;
   }
   SDPMediaFormat & format = formats[fmt];
 
@@ -792,8 +885,6 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
 
 void SDPMediaDescription::CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const
 {
-  OpalMediaFormatList list;
-
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
@@ -814,41 +905,34 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map)
 {
-  RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
+  if (!mediaFormat.IsValidForProtocol("sip") || encodingName == NULL || *encodingName == '\0')
+    return;
 
-  if (!mediaFormat.IsValidForProtocol("sip") || encodingName == NULL)
+  RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
+  if (map.size() != 0) {
+    RTP_DataFrame::PayloadMapType::const_iterator r = map.find(payloadType);
+    if (r != map.end())
+      payloadType = r->second;
+  }
+
+  if (payloadType >= RTP_DataFrame::MaxPayloadType)
     return;
 
   unsigned clockRate = mediaFormat.GetClockRate();
 
-  RTP_DataFrame::PayloadMapType payloadTypeMap = map;
-  if (payloadTypeMap.size() != 0) {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(payloadType);
-    if (r != payloadTypeMap.end())
-      payloadType = r->second;
-  }
-      
-  if (payloadType >= RTP_DataFrame::MaxPayloadType || encodingName == NULL || *encodingName == '\0')
-    return;
-
-  PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++) {
+  for (PINDEX i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
         ((formats[i].GetEncodingName() *= encodingName) && formats[i].GetClockRate() == clockRate)
         )
       return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(payloadType, encodingName, clockRate);
-  PString fmtp = mediaFormat.GetOptionString("fmtp");
-  if (!fmtp.IsEmpty())
-    sdpFormat->SetFMTP(fmtp);
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat, payloadType);
 
 #if OPAL_T38FAX
   if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) {
-    PINDEX i;
-    for (i = 0; i < mediaFormat.GetOptionCount(); ++i) {
+    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
       const OpalMediaOption & option = mediaFormat.GetOption(i);
       if (option.GetName().Left(3) *= "t38") 
         t38Attributes.SetAt(option.GetName(), option.AsString());
@@ -864,18 +948,10 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat & mediaFormat = mediaFormats[i];
-    if (session == OpalMediaFormat::DefaultDataSessionID) {
-      if (mediaFormat.GetDefaultSessionID() == session &&
-          mediaFormat.GetEncodingName() != NULL)
-        AddMediaFormat(mediaFormat, map);
-    }
-    else
-    {
-      if (mediaFormat.GetDefaultSessionID() == session &&
-          mediaFormat.GetEncodingName() != NULL &&
-          mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType)
+    if (mediaFormat.GetDefaultSessionID() == session &&
+            (session == OpalMediaFormat::DefaultDataSessionID ||
+             mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType))
       AddMediaFormat(mediaFormat, map);
-    }
   }
 }
 

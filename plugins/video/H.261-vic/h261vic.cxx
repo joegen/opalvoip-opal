@@ -26,6 +26,13 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.12  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
  * Revision 1.11  2006/12/19 03:11:54  dereksmithies
  * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
  * This will help memory management - many thanks.
@@ -98,20 +105,14 @@
 
   The decoder can accept either I-frames or P-frames
 
-  There are seperate encoder/decoder pairs for H.323, which ensures that the decoder always knows
-  whether it will be receiving CIF or QCIF data
-
-  There is a seperate encoder/decoder pair for SIP
-
+  There are seperate encoder/decoder pairs which ensures that the encoder/decoder
+  always knows whether it will be receiving CIF or QCIF data, and a third pair
+  which will determine the size from the received data stream.
  */
 
 //#define DEBUG_OUTPUT 1
 
 #include <codec/opalplugin.h>
-
-extern "C" {
-PLUGIN_CODEC_IMPLEMENT(VIC_H261)
-};
 
 #include <stdlib.h>
 #ifdef _WIN32
@@ -338,73 +339,6 @@ class RTPFrame
 
 /////////////////////////////////////////////////////////////////////////////
 
-static const char * default_sip_options[][3] = {
-  { "h323_cifMPI",                               "<4" ,      "i" },
-  { "h323_qcifMPI",                              "<2" ,      "i" },
-//  { "Max Bit Rate",                              "<621700" , "i" },
-  { NULL, NULL, NULL }
-};
-
-static const char * default_cif_h261_options[][3] = {
-  { "h323_cifMPI",                               "<4" ,      "i" },
-//  { "Max Bit Rate",                              "<621700" , "i" },
-  { NULL, NULL, NULL }
-};
-
-static const char * default_qcif_h261_options[][3] = {
-  { "h323_qcifMPI",                              "<2" ,      "i" },
-//  { "Max Bit Rate",                              "<621700" , "i" },
-  { NULL, NULL, NULL }
-};
-
-static int get_xcif_options(void * context, void * parm, unsigned * parmLen, const char ** default_parms)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char **))
-    return 0;
-
-  const char ***options = (const char ***)parm;
-
-  if (context == NULL) {
-    *options = default_parms;
-    return 1;
-  }
-
-  return 0;
-}
-
-static int coder_get_cif_options(
-      const PluginCodec_Definition * , 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_cif_h261_options[0][0]);
-}
-
-static int coder_get_qcif_options(
-      const PluginCodec_Definition * , 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_qcif_h261_options[0][0]);
-}
-
-static int coder_get_sip_options(
-      const PluginCodec_Definition * , 
-      void * context , 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_sip_options[0][0]);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 class H261EncoderContext 
 {
   public:
@@ -412,7 +346,6 @@ class H261EncoderContext
     //PTimeInterval newTime;
     unsigned frameWidth;
     unsigned frameHeight;
-    unsigned maxOutputSize;
     bool forceIFrame;
     int videoQuality;
     unsigned long lastTimeStamp;
@@ -421,7 +354,6 @@ class H261EncoderContext
     H261EncoderContext()
     {
       frameWidth = frameHeight = 0;
-      maxOutputSize = 0;
       videoEncoder = new P64Encoder(BEST_ENCODER_QUALITY, DEFAULT_FILL_LEVEL);
       forceIFrame = false;
       videoQuality = 10;
@@ -437,7 +369,6 @@ class H261EncoderContext
       frameWidth = w;
       frameHeight = h;
       videoEncoder->SetSize(frameWidth, frameHeight);
-      maxOutputSize = (frameWidth * frameHeight * 12) / 8;
     }
 
     int EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -558,14 +489,24 @@ static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
   return new H261EncoderContext;
 }
 
-static int encoder_set_options(
-      const PluginCodec_Definition * , 
-      void *, 
-      const char * , 
-      void *, 
-      unsigned * )
+static int encoder_set_options(const PluginCodec_Definition *, 
+                               void * _context,
+                               const char * , 
+                               void * parm, 
+                               unsigned * parmLen)
 {
-  //H261EncoderContext * context = (H261EncoderContext *)_context;
+  H261EncoderContext * context = (H261EncoderContext *)_context;
+  if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
+    return 0;
+
+  // get the "frame width" media format parameter to use as a hint for the encoder to start off
+  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "Frame Width") == 0)
+      context->frameWidth = atoi(option[1]);
+    if (STRCMPI(option[0], "Frame Height") == 0)
+      context->frameHeight = atoi(option[1]);
+  }
+
   return 1;
 }
 
@@ -587,32 +528,10 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
   return context->EncodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
 }
 
-static int encoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
+static int encoder_get_output_data_size(const PluginCodec_Definition *, void *, const char *, void *, unsigned *)
 {
-  // this is really frame height * frame width;
-  return codec->samplesPerFrame * codec->bytesPerFrame * 3 / 2;
+  return RTP_MTU + RTP_MIN_HEADER_SIZE;
 }
-
-static PluginCodec_ControlDefn cifEncoderControls[] = {
-  { "get_codec_options",    coder_get_cif_options },
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
-  { NULL }
-};
-
-static PluginCodec_ControlDefn qcifEncoderControls[] = {
-  { "get_codec_options",    coder_get_qcif_options },
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
-  { NULL }
-};
-
-static PluginCodec_ControlDefn sipEncoderControls[] = {
-  { "get_codec_options",    coder_get_sip_options },
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
-  { NULL }
-};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -757,20 +676,15 @@ static int decoder_set_options(
 {
   H261DecoderContext * context = (H261DecoderContext *)_context;
 
-  if (parmLen == NULL || *parmLen != sizeof(const char **))
+  if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
     return 0;
 
   // get the "frame width" media format parameter to use as a hint for the encoder to start off
-  if (parm != NULL) {
-    const char ** options = (const char **)parm;
-    int i;
-    int frameWidth = 0;
-    for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "Frame Width") == 0)
-        frameWidth = atoi(options[i+1]);
+  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "Frame Width") == 0) {
+      context->videoDecoder->fmt_ = (atoi(option[1]) == QCIF_WIDTH) ? IT_QCIF : IT_CIF;
+      context->videoDecoder->init();
     }
-    context->videoDecoder->fmt_ = (frameWidth == QCIF_WIDTH) ? IT_QCIF : IT_CIF;
-    context->videoDecoder->init();
   }
 
   return 1;
@@ -797,32 +711,25 @@ static int codec_decoder(const struct PluginCodec_Definition *,
 static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
 {
   // this is really frame height * frame width;
-  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->samplesPerFrame * codec->bytesPerFrame * 3) / 2);
+  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->maxFrameWidth * codec->maxFrameHeight * 3) / 2);
 }
 
-static PluginCodec_ControlDefn cifDecoderControls[] = {
-  { "get_codec_options",    coder_get_cif_options },
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
-  { NULL }
-};
 
-static PluginCodec_ControlDefn qcifDecoderControls[] = {
-  { "get_codec_options",    coder_get_qcif_options },
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
-  { NULL }
-};
+static int get_codec_options(const struct PluginCodec_Definition * codec,
+                             void *, 
+                             const char *,
+                             void * parm,
+                             unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+    return 0;
 
-static PluginCodec_ControlDefn sipDecoderControls[] = {
-  { "get_codec_options",    coder_get_sip_options },
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
-  { NULL }
-};
+  *(const void **)parm = codec->userData;
+  return 1;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
-
 
 static struct PluginCodec_information licenseInfo = {
   1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
@@ -845,8 +752,6 @@ static struct PluginCodec_information licenseInfo = {
   PluginCodec_License_BSD                                        // codec license code
 };
 
-/////////////////////////////////////////////////////////////////////////////
-
 static const char YUV420PDesc[]  = { "YUV420P" };
 
 static const char h261QCIFDesc[]  = { "H.261-QCIF" };
@@ -855,13 +760,60 @@ static const char h261Desc[]      = { "H.261" };
 
 static const char sdpH261[]   = { "h261" };
 
-/////////////////////////////////////////////////////////////////////////////
+static PluginCodec_ControlDefn EncoderControls[] = {
+  { "get_codec_options",    get_codec_options },
+  { "set_codec_options",    encoder_set_options },
+  { "get_output_data_size", encoder_get_output_data_size },
+  { NULL }
+};
 
-static struct PluginCodec_Definition h261CodecDefn[6] = {
+static PluginCodec_ControlDefn DecoderControls[] = {
+  { "get_codec_options",    get_codec_options },
+  { "set_codec_options",    decoder_set_options },
+  { "get_output_data_size", decoder_get_output_data_size },
+  { NULL }
+};
+
+static struct PluginCodec_Option const qcifMPI =
+  { PluginCodec_IntegerOption, "QCIF MPI", false, PluginCodec_MaxMerge, "1", "QCIF", "0", 0, "0", "4" };
+
+static struct PluginCodec_Option const cifMPI =
+  { PluginCodec_IntegerOption, "CIF MPI",  false, PluginCodec_MaxMerge, "1", "CIF",  "0", 0, "0", "4" };
+
+/* The annex below is turned off and set to read/only because this
+   implementation does not support them. It's presence here is so that if
+   someone out there does a different implementation of the codec and copies
+   this file as a template, they will get them and hopefully notice that they
+   can just make it read/write and/or turned on.
+ */
+static struct PluginCodec_Option const annexD =
+  { PluginCodec_BoolOption,    "Annex D",  true,  PluginCodec_AndMerge, "0", "D", "0" };
+
+static struct PluginCodec_Option const * const qcifOptionTable[] = {
+  &qcifMPI,
+  &annexD,
+  NULL
+};
+
+static struct PluginCodec_Option const * const cifOptionTable[] = {
+  &cifMPI,
+  &annexD,
+  NULL
+};
+
+static struct PluginCodec_Option const * const xcifOptionTable[] = {
+  &qcifMPI,
+  &cifMPI,
+  &annexD,
+  NULL
+};
+
+
+static struct PluginCodec_Definition h261CodecDefn[] = {
 
 { 
-  // H.323 CIF encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  // CIF only encoder
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // audio codec
@@ -871,7 +823,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   YUV420PDesc,                        // source format
   h261CIFDesc,                        // destination format
 
-  0,                                  // user data 
+  cifOptionTable,                     // user data 
 
   H261_CLOCKRATE,                     // samples per second
   H261_BITRATE,                       // raw bits per second
@@ -882,19 +834,19 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  sdpH261,                            // RTP payload name
 
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
   codec_encoder,                      // encode/decode
-  cifEncoderControls,                 // codec controls
+  EncoderControls,                    // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
-  // H.323 CIF decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  // CIF only decoder
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // audio codec
@@ -904,7 +856,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   h261CIFDesc,                        // source format
   YUV420PDesc,                        // destination format
 
-  0,                                  // user data 
+  cifOptionTable,                     // user data 
 
   H261_CLOCKRATE,                     // samples per second
   H261_BITRATE,                       // raw bits per second
@@ -915,20 +867,20 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  sdpH261,                            // RTP payload name
 
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
   codec_decoder,                      // encode/decode
-  cifDecoderControls,                 // codec controls
+  DecoderControls,                    // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 
 { 
-  // H.323 QCIF encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  // QCIF only encoder
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // audio codec
@@ -938,7 +890,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   YUV420PDesc,                        // source format
   h261QCIFDesc,                       // destination format
 
-  0,                                  // user data 
+  qcifOptionTable,                    // user data 
 
   H261_CLOCKRATE,                     // samples per second
   H261_BITRATE,                       // raw bits per second
@@ -949,19 +901,19 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  sdpH261,                            // RTP payload name
 
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
   codec_encoder,                      // encode/decode
-  qcifEncoderControls,                // codec controls
+  EncoderControls,                    // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
-  // H.323 QCIF decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  // QCIF only decoder
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // audio codec
@@ -971,7 +923,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   h261QCIFDesc,                       // source format
   YUV420PDesc,                        // destination format
 
-  0,                                  // user data 
+  qcifOptionTable,                    // user data 
 
   H261_CLOCKRATE,                     // samples per second
   H261_BITRATE,                       // raw bits per second
@@ -982,20 +934,20 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2032_PAYLOAD,                // IANA RTP payload code
-  NULL,                               // RTP payload name
+  sdpH261,                            // RTP payload name
 
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
   codec_decoder,                      // encode/decode
-  qcifDecoderControls,                // codec controls
+  DecoderControls,                    // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 
 { 
-  // SIP encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  // Both QCIF and CIF (dynamic) encoder
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // audio codec
@@ -1005,7 +957,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   YUV420PDesc,                        // source format
   h261Desc,                           // destination format
 
-  0,                                  // user data 
+  xcifOptionTable,                    // user data 
 
   H261_CLOCKRATE,                     // samples per second
   H261_BITRATE,                       // raw bits per second
@@ -1021,14 +973,14 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
   codec_encoder,                      // encode/decode
-  sipEncoderControls,                 // codec controls
+  EncoderControls,                    // codec controls
 
-  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
-  // SIP decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  // Both QCIF and CIF (dynamic) decoder
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // audio codec
@@ -1038,7 +990,7 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   h261Desc,                           // source format
   YUV420PDesc,                        // destination format
 
-  0,                                  // user data 
+  xcifOptionTable,                    // user data 
 
   H261_CLOCKRATE,                     // samples per second
   H261_BITRATE,                       // raw bits per second
@@ -1054,28 +1006,16 @@ static struct PluginCodec_Definition h261CodecDefn[6] = {
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
   codec_decoder,                      // encode/decode
-  sipDecoderControls,                 // codec controls
+  DecoderControls,                    // codec controls
 
-  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
+  PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 
 };
 
-#define NUM_DEFNS   (sizeof(h261CodecDefn) / sizeof(struct PluginCodec_Definition))
+extern "C" {
+PLUGIN_CODEC_IMPLEMENT_ALL(VIC_H261, h261CodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
+};
 
 /////////////////////////////////////////////////////////////////////////////
-
-extern "C" {
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  if (version < PLUGIN_CODEC_VERSION_VIDEO) {
-    *count = 0;
-    return NULL;
-  }
-else {
-    *count = NUM_DEFNS;
-    return h261CodecDefn;
-  }
-}
-};

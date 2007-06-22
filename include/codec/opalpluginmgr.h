@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2005  2006/10/02 13:30:50  rjongbloed
+ * Revision 1.2006  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.4  2006/10/02 13:30:50  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.3  2006/09/28 07:42:14  csoutheren
@@ -118,8 +125,8 @@ class OpalPluginCodecManager : public PPluginModuleManager
     static OpalMediaFormatList & GetMediaFormatList();
     static PMutex & GetMediaFormatMutex();
 
-    void RegisterCodecPlugins  (unsigned int count, void * codecList);
-    void UnregisterCodecPlugins(unsigned int count, void * codecList);
+    void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList);
+    void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList);
 
 #if OPAL_H323
     void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);

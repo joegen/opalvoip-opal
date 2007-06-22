@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2064  2007/06/16 21:37:01  dsandras
+ * Revision 1.2065  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.63  2007/06/16 21:37:01  dsandras
  * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
  * Thanks a lot !
  *
@@ -422,11 +429,12 @@ static PMutex & GetMediaFormatsListMutex()
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType merge)
-  : m_name(name),
-    m_readOnly(readOnly),
-    m_merge(merge)
+  : m_name(name)
+  , m_readOnly(readOnly)
+  , m_merge(merge)
 {
   m_name.Replace("=", "_", TRUE);
+  memset(&m_H245Generic, 0, sizeof(m_H245Generic));
 }
 
 
@@ -667,7 +675,6 @@ const PString & OpalMediaFormat::MaxBitRateOption()  { static PString s = "Max B
 const PString & OpalMediaFormat::MaxFrameSizeOption(){ static PString s = "Max Frame Size"; return s; }
 const PString & OpalMediaFormat::FrameTimeOption()   { static PString s = "Frame Time";     return s; }
 const PString & OpalMediaFormat::ClockRateOption()   { static PString s = "Clock Rate";     return s; }
-const PString & OpalMediaFormat::RTPPayloadType()    { static PString s = "RTP Payload Type";return s;}
 
 OpalMediaFormat::OpalMediaFormat()
 {
@@ -684,10 +691,8 @@ OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockR
 
   PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name, protocol);
   if (idx != P_MAX_INDEX)
-  {
-    registeredFormats[idx].SetOptionInteger(RTPPayloadType(), pt);
     *this = registeredFormats[idx];
-  }  else
+  else
     *this = OpalMediaFormat();
 }
 
@@ -909,7 +914,15 @@ int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
   if (option == NULL)
     return dflt;
 
-  return PDownCast(OpalMediaOptionInteger, option)->GetValue();
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL)
+    return optInteger->GetValue();
+
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  if (optUnsigned != NULL)
+    return optUnsigned->GetValue();
+
+  return 0;
 }
 
 
@@ -922,8 +935,19 @@ bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
   if (option == NULL)
     return false;
 
-  PDownCast(OpalMediaOptionInteger, option)->SetValue(value);
-  return true;
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL) {
+    optInteger->SetValue(value);
+    return true;
+  }
+
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  if (optUnsigned != NULL) {
+    optUnsigned->SetValue(value);
+    return true;
+  }
+
+  return false;
 }
 
 
@@ -1002,15 +1026,20 @@ bool OpalMediaFormat::SetOptionString(const PString & name, const PString & valu
 }
 
 
-bool OpalMediaFormat::AddOption(OpalMediaOption * option)
+bool OpalMediaFormat::AddOption(OpalMediaOption * option, BOOL overwrite)
 {
   PWaitAndSignal m(media_format_mutex);
   if (PAssertNULL(option) == NULL)
     return false;
 
-  if (options.GetValuesIndex(*option) != P_MAX_INDEX) {
-    delete option;
-    return false;
+  PINDEX index = options.GetValuesIndex(*option);
+  if (index != P_MAX_INDEX) {
+    if (!overwrite) {
+      delete option;
+      return false;
+    }
+
+    options.RemoveAt(index);
   }
 
   options.MakeUnique();
@@ -1150,7 +1179,6 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
   AddOption(new OpalMediaOptionInteger(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
   AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
-  AddOption(new OpalMediaOptionInteger(RTPPayloadType(),            false, OpalMediaOption::NoMerge,  rtpPayloadType));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(MaxBitRateOption())->SetReadOnly(false);
