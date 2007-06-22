@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.13  2007/06/22 17:58:53  csoutheren
+ * Fixed for gcc
+ *
  * Revision 1.12  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
@@ -711,7 +714,7 @@ static int codec_decoder(const struct PluginCodec_Definition *,
 static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
 {
   // this is really frame height * frame width;
-  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->maxFrameWidth * codec->maxFrameHeight * 3) / 2);
+  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
 }
 
 
