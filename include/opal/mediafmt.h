@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2051  2007/06/16 21:36:59  dsandras
+ * Revision 1.2052  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.50  2007/06/16 21:36:59  dsandras
  * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
  * Thanks a lot !
  *
@@ -109,7 +116,14 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2051  2007/06/16 21:36:59  dsandras
+ * Revision 1.2052  2007/06/22 05:41:47  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ *
+ * Revision 2.50  2007/06/16 21:36:59  dsandras
  * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
  * Thanks a lot !
  *
@@ -549,10 +563,39 @@ class OpalMediaOption : public PObject
     MergeType GetMerge() const { return m_merge; }
     void SetMerge(MergeType merge) { m_merge = merge; }
 
+    const PString & GetFMTPName() const { return m_FMTPName; }
+    void SetFMTPName(const char * name) { m_FMTPName = name; }
+
+    const PString & GetFMTPDefault() const { return m_FMTPDefault; }
+    void SetFMTPDefault(const char * value) { m_FMTPDefault = value; }
+
+    struct H245GenericInfo {
+      unsigned ordinal:16;
+      enum {
+        None,
+        Collapsing,
+        NonCollapsing
+      } mode:2;
+      enum {
+        UnsignedInt,
+        Unsigned32,
+        BooleanArray
+      } integerType:2;
+      bool excludeTCS:1;
+      bool excludeOLC:1;
+      bool excludeReqMode:1;
+    };
+
+    const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
+    void SetH245Generic(const H245GenericInfo & generic) { m_H245Generic = generic; }
+
   protected:
-    PString   m_name;
-    bool      m_readOnly;
-    MergeType m_merge;
+    PCaselessString m_name;
+    bool            m_readOnly;
+    MergeType       m_merge;
+    PCaselessString m_FMTPName;
+    PString         m_FMTPDefault;
+    H245GenericInfo m_H245Generic;
 };
 
 #ifndef __USE_STL__
@@ -634,9 +677,10 @@ class OpalMediaOptionValue : public OpalMediaOption
 };
 
 
-typedef OpalMediaOptionValue<bool>   OpalMediaOptionBoolean;
-typedef OpalMediaOptionValue<int>    OpalMediaOptionInteger;
-typedef OpalMediaOptionValue<double> OpalMediaOptionReal;
+typedef OpalMediaOptionValue<bool>     OpalMediaOptionBoolean;
+typedef OpalMediaOptionValue<int>      OpalMediaOptionInteger;
+typedef OpalMediaOptionValue<unsigned> OpalMediaOptionUnsigned;
+typedef OpalMediaOptionValue<double>   OpalMediaOptionReal;
 
 
 class OpalMediaOptionEnum : public OpalMediaOption
@@ -856,8 +900,6 @@ class OpalMediaFormat : public PCaselessString
       */
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
 
-    static const PString &  RTPPayloadType();
-
     /**Get the RTP encoding name that is to be used for this media format.
       */
     const char * GetEncodingName() const { return rtpEncodingName; }
@@ -1057,11 +1099,23 @@ class OpalMediaFormat : public PCaselessString
       * Add a new option to this media format
       */
     bool AddOption(
-      OpalMediaOption * option
+      OpalMediaOption * option,
+      BOOL overwrite = FALSE
     );
 
+    /**
+      * Determine if media format has the specified option.
+      */
     bool HasOption(const PString & name) const
     { return FindOption(name) != NULL; }
+
+    /**
+      * Get a poiinter to teh specified media format option.
+      * Returns NULL if the option does not exist.
+      */
+    OpalMediaOption * FindOption(
+      const PString & name
+    ) const;
 
     /** Returns TRUE if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for
@@ -1073,10 +1127,6 @@ class OpalMediaFormat : public PCaselessString
     virtual time_t GetCodecBaseTime() const;
 
   protected:
-    OpalMediaOption * FindOption(
-      const PString & name
-    ) const;
-
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     const char *                 rtpEncodingName;
     unsigned                     defaultSessionID;
