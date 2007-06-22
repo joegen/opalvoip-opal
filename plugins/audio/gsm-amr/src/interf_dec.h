@@ -26,11 +26,15 @@
 /*
  * Function prototypes
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Conversion from packed bitstream to endoded parameters
  * Decoding parameters to speech
  */
-void Decoder_Interface_Decode( void *st,
+extern void Decoder_Interface_Decode( void *st,
 
 #ifndef ETSI
       unsigned char *bits,
@@ -44,12 +48,15 @@ void Decoder_Interface_Decode( void *st,
 /*
  * Reserve and init. memory
  */
-void *Decoder_Interface_init( void );
+extern void *Decoder_Interface_init( void );
 
 /*
  * Exit and free memory
  */
-void Decoder_Interface_exit( void *state );
-
+extern void Decoder_Interface_exit( void *state );
+#ifdef __cplusplus
+}
 #endif
+
+#endif // !_interf_dec_h_
 

@@ -143,7 +143,7 @@
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -166,7 +166,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
+				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
 				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
@@ -193,6 +193,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copying codec and debug information to plug in directory"
+				CommandLine="if not exist c:\pwlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\pwlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\pwlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

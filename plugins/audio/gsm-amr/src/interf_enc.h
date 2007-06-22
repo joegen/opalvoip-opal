@@ -23,19 +23,27 @@
 #ifndef _interf_enc_h_
 #define _interf_enc_h_
 
-/*
- * include files
- */
-#include"sp_enc.h"
+#include "sp_enc.h"
 
 /*
  * Function prototypes
  */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define GSMAMR_TX_SPEECH        0X0000
+#define GSMAMR_TX_SID_FIRST     0X0001
+#define GSMAMR_TX_SID_UPDATE    0X0002
+#define GSMAMR_TX_NO_DATA       0X0003
+
+
 /*
  * Encodes one frame of speech
  * Returns packed octets
  */
-int Encoder_Interface_Encode( void *st, enum Mode mode, short *speech,
+extern int Encoder_Interface_Encode( void *st, enum Mode mode, const short *speech,
 
 #ifndef ETSI
       unsigned char *serial,  /* max size 31 bytes */
@@ -49,10 +57,14 @@ int Encoder_Interface_Encode( void *st, enum Mode mode, short *speech,
 /*
  * Reserve and init. memory
  */
-void *Encoder_Interface_init( int dtx );
+extern void *Encoder_Interface_init( int dtx );
 
 /*
  * Exit and free memory
  */
-void Encoder_Interface_exit( void *state );
+extern void Encoder_Interface_exit( void *state );
+#ifdef __cplusplus
+}
 #endif
+
+#endif // !_interf_enc_h_
