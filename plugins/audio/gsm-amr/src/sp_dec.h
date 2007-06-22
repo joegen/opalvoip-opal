@@ -1,8 +1,8 @@
 /*
  * ===================================================================
  *  TS 26.104
- *  REL-5 V5.4.0 2004-03
- *  REL-6 V6.1.0 2004-03
+ *  R99   V3.3.0 2001-09
+ *  REL-4 V4.2.0 2001-09
  *  3GPP AMR Floating-point Speech Codec
  * ===================================================================
  *
@@ -52,30 +52,35 @@ enum RXFrameType { RX_SPEECH_GOOD = 0,
                    RX_N_FRAMETYPES     /* number of frame types */
 };
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
 /*
  * Function prototypes
  */
-
 /*
  * initialize one instance of the speech decoder
  */
-void* Speech_Decode_Frame_init ();
+extern void* Speech_Decode_Frame_init ();
 
 /*
  * free status struct
  */
-void Speech_Decode_Frame_exit (void **st);
+extern void Speech_Decode_Frame_exit (void **st);
 
 /*
  * Decodes one frame from encoded parameters
  */
-void Speech_Decode_Frame (void *st, enum Mode mode, short *serial,
+extern void Speech_Decode_Frame (void *st, enum Mode mode, short *serial,
                    enum RXFrameType frame_type, short *synth);
 
 /*
  * reset speech decoder
  */
-int Speech_Decode_Frame_reset (void **st);
-
+extern int Speech_Decode_Frame_reset (void **st);
+#ifdef  __cplusplus
+}
 #endif
+
+#endif // !_SP_DEC_H_
 

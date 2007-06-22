@@ -1,8 +1,8 @@
 /*
  * ===================================================================
  *  TS 26.104
- *  REL-5 V5.4.0 2004-03
- *  REL-6 V6.1.0 2004-03
+ *  R99   V3.3.0 2001-09
+ *  REL-4 V4.2.0 2001-09
  *  3GPP AMR Floating-point Speech Codec
  * ===================================================================
  *
@@ -40,7 +40,9 @@ enum Mode { MR475 = 0,
             MR122,
             MRDTX
 };
-
+#ifdef  __cplusplus
+extern "C" {
+#endif
 /*
  * Function prototypes
  */
@@ -51,24 +53,27 @@ enum Mode { MR475 = 0,
  * be passed to Speech_Encode_Frame in each call.
  * returns 0 on success
  */
-void *Speech_Encode_Frame_init (int dtx);
+extern void *Speech_Encode_Frame_init (int dtx);
 /*
  * reset speech encoder (i.e. set state memory to zero)
  * returns 0 on success
  */
-int Speech_Encode_Frame_reset(void *st, int dtx);
+extern int Speech_Encode_Frame_reset(void *st, int dtx);
 
 /*
  * de-initialize speech encoder (i.e. free status struct)
  * stores NULL in *st
  */
-void Speech_Encode_Frame_exit (void **st);
+extern void Speech_Encode_Frame_exit (void **st);
 
 /*
  * Encodes one speech frame
  * Returns analysis parameters
  */
-void Speech_Encode_Frame (void *st, enum Mode mode, short *newSpeech,
+extern void Speech_Encode_Frame (void *st, enum Mode mode, const short *newSpeech,
                    short *prm, enum Mode *usedMode);
 
+#ifdef  __cplusplus
+}
 #endif
+#endif // !_SP_ENC_H
