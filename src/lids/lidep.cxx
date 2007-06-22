@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.cxx,v $
- * Revision 1.2046  2007/06/09 07:37:59  rjongbloed
+ * Revision 1.2047  2007/06/22 02:09:54  rjongbloed
+ * Removed asserts where is a valid, though unusual, case.
+ *
+ * Revision 2.45  2007/06/09 07:37:59  rjongbloed
  * Fixed some bugs in the LID code so USB handsets work correctly.
  *
  * Revision 2.44  2007/04/04 02:12:00  rjongbloed
@@ -734,7 +737,7 @@ BOOL OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
 BOOL OpalLineConnection::SetAudioVolume(BOOL source, unsigned percentage)
 {
-  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return FALSE;
 
@@ -745,7 +748,7 @@ BOOL OpalLineConnection::SetAudioVolume(BOOL source, unsigned percentage)
 
 unsigned OpalLineConnection::GetAudioSignalLevel(BOOL source)
 {
-  OpalLineMediaStream * stream = PDownCast(OpalLineMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return UINT_MAX;
 
