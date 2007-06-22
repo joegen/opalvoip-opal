@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2062  2007/05/09 01:39:28  csoutheren
+ * Revision 1.2063  2007/06/22 02:02:56  rjongbloed
+ * Removed extraneous logging.
+ *
+ * Revision 2.61  2007/05/09 01:39:28  csoutheren
  * Remove redundant patch for NULL source streams
  *
  * Revision 2.60  2007/05/07 14:14:31  csoutheren
@@ -531,7 +534,6 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (includeSpecifiedConnection || conn != &connection) {
       OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn->GetMediaFormats());
-PTRACE(4, "Call\tformats for " << *conn << '\n' << setfill('\n') << possibleFormats << setfill(' '));
       if (first) {
         commonFormats = possibleFormats;
         first = FALSE;
@@ -548,7 +550,7 @@ PTRACE(4, "Call\tformats for " << *conn << '\n' << setfill('\n') << possibleForm
 
   connection.AdjustMediaFormats(commonFormats);
 
-  PTRACE(3, "Call\tGetMediaFormats for " << connection << '\n'
+  PTRACE(4, "Call\tGetMediaFormats for " << connection << '\n'
          << setfill('\n') << commonFormats << setfill(' '));
 
   return commonFormats;
