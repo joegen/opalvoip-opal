@@ -1,8 +1,8 @@
 /*
  * ===================================================================
  *  TS 26.104
- *  REL-5 V5.4.0 2004-03
- *  REL-6 V6.1.0 2004-03
+ *  R99   V3.3.0 2001-09
+ *  REL-4 V4.2.0 2001-09
  *  3GPP AMR Floating-point Speech Codec
  * ===================================================================
  *
@@ -152,7 +152,7 @@ static Word8 trackTable[4 * 5] =
       0,
       1,
       - 1,
-      /* subframe 2 */ 0,
+      /* subframe 2 */ 0, 
       - 1,
       1,
       0,
@@ -673,6 +673,7 @@ static const Float32 mean_lsf_5[10] =
 	3104.00F,
 	3344.97F,
 };
+
 
 /* LSF prediction factors (not in MR122) */
 static const Float32 pred_fac[10] =

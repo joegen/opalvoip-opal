@@ -27,8 +27,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <memory.h>
-#include "sp_enc.h"
+#include "interf_enc.h"
 #include "interf_rom.h"
+#include "sp_enc.h"
+
 
 /*
  * Declare structure types
@@ -583,7 +585,7 @@ static void Sid_Sync_reset( enc_interface_State *st )
  * Returns:
  *    number of octets
  */
-int Encoder_Interface_Encode( void *st, enum Mode mode, Word16 *speech,
+int Encoder_Interface_Encode( void *st, enum Mode mode, const Word16 *speech,
 
 #ifndef ETSI
       UWord8 *serial,
@@ -761,8 +763,7 @@ void * Encoder_Interface_init( int dtx )
    /* allocate memory */
    if ( ( s = ( enc_interface_State * ) malloc( sizeof( enc_interface_State ) ) ) ==
          NULL ) {
-      fprintf( stderr, "Encoder_Interface_init: "
-            "can not malloc state structure\n" );
+      //fprintf( stderr, "Encoder_Interface_init: can not malloc state structure\n" );
       return NULL;
    }
    s->encoderState = Speech_Encode_Frame_init( dtx );

@@ -1,9 +1,20 @@
 /*
- * AMR Plugin codec for OpenH323/OPAL
+ *  RFC3267/RFC4867 GSM-AMR Plugin codec for OpenH323/OPAL
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.4 2007/04/19 06:09:04 csoutheren Exp $
+ * $Id: amrcodec.c,v 1.5 2007/06/22 05:46:09 rjongbloed Exp $
+ *
+ * $Log: amrcodec.c,v $
+ * Revision 1.5  2007/06/22 05:46:09  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ * Updated GSM-AMR to be RFC3267/RFC4867 compliant.
+ * Added VAD option.
+ *
  */
 
 
@@ -15,15 +26,30 @@
 
 #include <codec/opalplugin.h>
 
-#include "src/interf_enc.h"
-#include "src/interf_dec.h"
-
-PLUGIN_CODEC_IMPLEMENT("AMR")
 #include <stdio.h>
+#include <stdlib.h>
 
 #ifdef _WIN32
 #include <malloc.h>
+#include <string.h>
+#define STRCMPI  _strcmpi
+#else
+#define STRCMPI  strcasecmp
 #endif
+
+#include "src/interf_enc.h"
+#include "src/interf_dec.h"
+#include "src/interf_rom.h"
+#include "src/rom_dec.h"
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE (!FALSE)
+#endif
+
 
 /***************************************************************************
  *
@@ -38,12 +64,12 @@ PLUGIN_CODEC_IMPLEMENT("AMR")
 /* generic parameters; see H.245 Annex I */
 enum
 {
-    GENERIC_PARAMETER_AMR_MAXAL_SDUFRAMES = 0,
-    GENERIC_PARAMETER_AMR_BITRATE,
-    GENERIC_PARAMETER_AMR_GSMAMRCOMFORTNOISE,
-    GENERIC_PARAMETER_AMR_GSMEFRCOMFORTNOISE,
-    GENERIC_PARAMETER_AMR_IS_641COMFORTNOISE,
-    GENERIC_PARAMETER_AMR_PDCEFRCOMFORTNOISE
+    H245_AMR_MAXAL_SDUFRAMES    = 0 | PluginCodec_H245_Collapsing                               | PluginCodec_H245_TCS | PluginCodec_H245_OLC,
+    H245_AMR_BITRATE            = 1 | PluginCodec_H245_NonCollapsing | PluginCodec_H245_ReqMode,
+    H245_AMR_GSMAMRCOMFORTNOISE = 2 | PluginCodec_H245_Collapsing    | PluginCodec_H245_ReqMode                        | PluginCodec_H245_OLC,
+    H245_AMR_GSMEFRCOMFORTNOISE = 3 | PluginCodec_H245_Collapsing    | PluginCodec_H245_ReqMode | PluginCodec_H245_TCS | PluginCodec_H245_OLC,
+    H245_AMR_IS_641COMFORTNOISE = 4 | PluginCodec_H245_Collapsing    | PluginCodec_H245_ReqMode | PluginCodec_H245_TCS | PluginCodec_H245_OLC,
+    H245_AMR_PDCEFRCOMFORTNOISE = 5 | PluginCodec_H245_Collapsing    | PluginCodec_H245_ReqMode | PluginCodec_H245_TCS | PluginCodec_H245_OLC
 };
 
 /* values of the bit rate parameter */
@@ -56,174 +82,220 @@ enum
     AMR_BITRATE_740,
     AMR_BITRATE_795,
     AMR_BITRATE_1020,
-    AMR_BITRATE_1220
+    AMR_BITRATE_1220,
+    AMR_BITRATE_CN,
+    AMR_BITRATE_EFR,
+    AMR_BITRATE_IS641,
+    AMR_BITRATE_PDCEFR,
+    AMR_BITRATE_DTX = 15
 };
     
-
-/* expected number of bytes, for a given mode */
-static short bytes_per_frame[16]={ 13, 14, 16, 18, 19, 21, 26, 31, 6, 0, 0, 0, 0, 0, 0, 0 };
-
-#define AMR_Mode  7
 
 // this is what we hand back when we are asked to create an encoder
 typedef struct
 {
-    void *encoder_state;  // Encoder interface's opaque state
-    int mode;             // current mode
+  void    * encoder_state;  // Encoder interface's opaque state
+  unsigned  mode;           // current mode
+  int       vad;            // silence suppression
 } AmrEncoderContext;
+
 
 /////////////////////////////////////////////////////////////////////////////
 
 static void * amr_create_encoder(const struct PluginCodec_Definition * codec)
 {
-    AmrEncoderContext *ctx = malloc(sizeof(AmrEncoderContext));
-    if(ctx == NULL ) {
-        fprintf(stderr,"AMR codec: unable to allocate context");
-        return NULL;
-    }
+  AmrEncoderContext * amr = malloc(sizeof(AmrEncoderContext));
+  if (amr == NULL )
+    return NULL;
 
-    ctx->encoder_state = Encoder_Interface_init(0);
-    if(ctx->encoder_state == NULL ) {
-        // Encoder_Interface_init writes an error msg in this case; no need to
-        // repeat
-        free(ctx);
-        return NULL;
-    }
+  amr->encoder_state = Encoder_Interface_init(amr->vad);
+  if (amr->encoder_state == NULL ) {
+    free(amr);
+    return NULL;
+  }
 
-    ctx->mode = (int)codec->userData; // start off in mode 7
-    return ctx;
+  amr->mode = AMR_BITRATE_1220; // start off in mode 12.2kbps mode
+  amr->vad = TRUE;
+  return amr;
 }
+
 
 static void * amr_create_decoder(const struct PluginCodec_Definition * codec)
 {
-    return Decoder_Interface_init();
+  return Decoder_Interface_init();
 }
+
 
 static void amr_destroy_encoder(const struct PluginCodec_Definition * codec, void * context)
 {
-    AmrEncoderContext *ctx = (AmrEncoderContext *)context;
-    Encoder_Interface_exit(ctx->encoder_state);
-    free(ctx);
+  AmrEncoderContext * amr = (AmrEncoderContext *)context;
+  Encoder_Interface_exit(amr->encoder_state);
+  free(amr);
 }
+
 
 static void amr_destroy_decoder(const struct PluginCodec_Definition * codec, void * context)
 {
-    Decoder_Interface_exit(context);
+  Decoder_Interface_exit(context);
 }
+
 
 static int amr_codec_encoder(const struct PluginCodec_Definition * codec, 
-                                           void * context,
-                                     const void * from, 
-                                       unsigned * fromLen,
-                                           void * to,         
-                                       unsigned * toLen,
-                                   unsigned int * flag)
+                                                            void * context,
+                                                      const void * fromPtr, 
+                                                        unsigned * fromLen,
+                                                            void * toPtr,         
+                                                        unsigned * toLen,
+                                                    unsigned int * flag)
 {
-    AmrEncoderContext *ctx = (AmrEncoderContext *)context;
-    unsigned int mode = ctx->mode;
+  AmrEncoderContext * amr = (AmrEncoderContext *)context;
+  int byteCount;
+  unsigned char buffer[100]; // Need this as encoder is very rude and can output more bytes than to pointer might be pointing to
 
-    if( *fromLen != 160*sizeof(short)) {
-	fprintf(stderr,"AMR codec: audio frame of size %u doesn't match expected %u\n",
-		*fromLen,160*sizeof(short));
-	return 0;
-    }
+  if (*fromLen < L_FRAME*sizeof(short))
+    return FALSE;
 
-    if(*toLen < bytes_per_frame[mode]) {
-	fprintf(stderr,"AMR codec: output buffer of size %u too short for mode %u\n", *toLen, mode );
-	return 0;
-    }
+  byteCount = Encoder_Interface_Encode(amr->encoder_state, (enum Mode)amr->mode, (const short *)fromPtr, buffer+1, 0);
+  if (byteCount <= 1 || *toLen <= byteCount) {
+    *toLen = 0;
+    return byteCount == 1; // Is a DTX frame
+  }
 
-  /*   fprintf(stderr,"AMR codec: encoding to mode %u size %u\n", mode, *toLen); */
+  buffer[0] = 0xf0;  // CMR is always this for us
 
-    *toLen = Encoder_Interface_Encode(ctx->encoder_state,mode,(void *)from,to,0);
-    return 1; 
+  memcpy(toPtr, buffer, *toLen);
+  *toLen = byteCount+1;
+  return TRUE; 
 }
 
-#if 0
-static void hexprint(const void *ptr, unsigned len)
-{
-    int i;
-    const char *p = (const char *)ptr;
-    
-    for(i=0; i<len; i++) {
-        fprintf(stderr,"%02x",p[i]);
-    }
-}
-#endif
 
 static int amr_codec_decoder(const struct PluginCodec_Definition * codec, 
-                                           void * context,
-                                     const void * from, 
-                                       unsigned * fromLen,
-                                           void * to,         
-                                       unsigned * toLen,
-                                   unsigned int * flag)
+                                                            void * context,
+                                                      const void * fromPtr, 
+                                                        unsigned * fromLen,
+                                                            void * toPtr,         
+                                                        unsigned * toLen,
+                                                    unsigned int * flag)
 {
-//  unsigned int mode;
-    
-    if( *fromLen < 1 )
-	return 0;
+  unsigned char * packet;
 
-/*   // get the AMR mode from the first nibble of the frame
-    mode = *(char *)from & 0xF;
+  if (*toLen < L_FRAME*sizeof(short))
+    return FALSE;
 
-    // check that the input is long enough for the decoder
-    if( *fromLen != bytes_per_frame[mode] ) {
-	fprintf(stderr,"AMR codec: packet size %u doesn't match expected %u for mode %u\n", *fromLen,bytes_per_frame[mode], mode );
-	return 0;
-    }
-*/  
-    Decoder_Interface_Decode( context, (void *)from, (short *)to, 0 );
-#if 0
-    fprintf(stderr,"Decoded AMR frame [");
-    hexprint(from,*fromLen);
-    fprintf(stderr,"]\nResult: [");
-    hexprint(to,40);
-    fprintf(stderr,"...]\n");
-#endif
+  if (*fromLen == 0) {
+    unsigned char buffer[32];
+    buffer[0] = (AMR_BITRATE_DTX << 3)|4;
+    Decoder_Interface_Decode(context, buffer, (short *)toPtr, 0); // Handle missing data
+    return TRUE;
+  }
 
-    // return the number of decoded bytes to the caller
-    *toLen = 160*sizeof(short);
+  packet = (unsigned char *)fromPtr;
+  Decoder_Interface_Decode(context, packet+1, (short *)toPtr, 0); // Skip over CMR
 
-    return 1;
+  *fromLen = block_size[packet[1] >> 3] + 1; // Actual bytes consumed
+  *toLen = L_FRAME*sizeof(short);
+
+  return TRUE;
 }
+
 
 static int amr_set_quality(const struct PluginCodec_Definition * codec, void * context, 
                            const char * name, void * parm, unsigned * parmLen)
 {
-    AmrEncoderContext *ctx = (AmrEncoderContext *)context;
-    int q;
+  int quality;
 
-    if(*parmLen != sizeof(q))
-        return -1;
-    q = *(int *)parm;
+  if (parm == NULL || *parmLen != sizeof(quality))
+    return FALSE;
 
-    if( q < 1 || q > 31)
-        return -1;
-    /* 1-3   -> mode 7
-       4-7   -> mode 6
-       ...
-       28-31 -> mode 0
-    */
-    ctx->mode = 7-(q/4);
-    return 0;
+  quality = *(int *)parm;
+
+  if (quality < 0)
+    quality = 0;
+  else if (quality > 31)
+    quality = 31;
+
+  /* 1-3   -> mode 7
+     4-7   -> mode 6
+     ...
+     28-31 -> mode 0
+  */
+  ((AmrEncoderContext *)context)->mode = 7 -(quality/4);
+  return TRUE;
 }
+
 
 static int amr_get_quality(const struct PluginCodec_Definition * codec, void * context, 
                            const char * name, void * parm, unsigned * parmLen)
 {
-    AmrEncoderContext *ctx = (AmrEncoderContext *)context;
+  if (parm == NULL || *parmLen != sizeof(int))
+    return FALSE;
 
-    if(*parmLen != sizeof(int))
-        return -1;
-
-    *(int *)parm = (7-ctx->mode)*4;
-    return 0;
+  *(int *)parm = (7 - ((AmrEncoderContext *)context)->mode)*4;
+  return TRUE;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
+static struct PluginCodec_Option const amrRxFramesPerPacket =
+  { PluginCodec_IntegerOption, "Rx Frames Per Packet", 0, PluginCodec_MinMerge, "1", NULL, NULL, H245_AMR_MAXAL_SDUFRAMES, "1", "10" };
+
+static struct PluginCodec_Option const amrInitialMode =
+  { PluginCodec_IntegerOption, "Initial Mode",         0, PluginCodec_NoMerge,  "7", NULL, NULL, H245_AMR_BITRATE,         "0", "7" };
+
+static struct PluginCodec_Option const amrVAD =
+  { PluginCodec_BoolOption,    "VAD",                  0, PluginCodec_AndMerge, "1", NULL, NULL, H245_AMR_GSMAMRCOMFORTNOISE };
+
+static struct PluginCodec_Option const * const amrOptionTable[] = {
+  &amrRxFramesPerPacket,
+  &amrInitialMode,
+  &amrVAD,
+  NULL
+};
+
+static int get_codec_options(const struct PluginCodec_Definition * defn,
+                                                            void * context, 
+                                                      const char * name,
+                                                            void * parm,
+                                                        unsigned * parmLen)
+{
+  if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+    return FALSE;
+
+  *(struct PluginCodec_Option const * const * *)parm = amrOptionTable;
+  return TRUE;
+}
+
+
+static int set_codec_options(const struct PluginCodec_Definition * defn,
+                                                            void * context,
+                                                      const char * name, 
+                                                            void * parm, 
+                                                        unsigned * parmLen)
+{
+  const char * const * option;
+  AmrEncoderContext * amr;
+
+  if (context == NULL || parm == NULL || parmLen == NULL || *parmLen != sizeof(const char **))
+    return FALSE;
+
+  amr = (AmrEncoderContext *)context;
+
+  for (option = (const char * const *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "Initial Mode") == 0) {
+      amr->mode = strtoul(option[1], NULL, 10);
+      if (amr->mode > AMR_BITRATE_1220)
+        amr->mode = AMR_BITRATE_1220;
+    }
+    else if (STRCMPI(option[0], "VAD") == 0)
+      amr->vad = atoi(option[1]) != 0;
+  }
+
+  return TRUE;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_information licenseInfo = {
     // Tue 13 Jul 2004 00:11:32 UTC =
@@ -233,134 +305,105 @@ static struct PluginCodec_information licenseInfo = {
     "$Ver$",                                                     // source code version
     "richardv@mxtelecom.com",                                    // source code email
     "http://www.mxtelecom.com",                                  // source code URL
-    "Copyright (C) 2004 MX Telecom Ltd.", 		                 // source code copyright
+    "Copyright (C) 2004 MX Telecom Ltd.",                          // source code copyright
     "None",                                                      // source code license  // FIXME
     PluginCodec_License_None,                                    // source code license
     
     "GSM-AMR (Adaptive Multirate Codec)",                        // codec description
     "3rd Generation Partnership Project",                        // codec author
     NULL,                                                        // codec version
-    NULL,	                                                     // codec email
-    "http://www.3gpp.org",	                                     // codec URL
-    "",          						                         // codec copyright information
-    "", 							                             // codec license
+    NULL,                                                         // codec email
+    "http://www.3gpp.org",                                         // codec URL
+    "",                                                           // codec copyright information
+    "",                                                          // codec license
     PluginCodec_License_RoyaltiesRequired                        // codec license code
 };
 
-
-static const struct PluginCodec_H323GenericParameterDefinition amr_params[] =
-{
-    {1,
-     GENERIC_PARAMETER_AMR_MAXAL_SDUFRAMES,
-     PluginCodec_GenericParameter_unsignedMin,
-     {1}}
+static struct PluginCodec_ControlDefn amrEncoderControlDefn[] = {
+  { "get_codec_options", get_codec_options },
+  { "set_codec_options", set_codec_options },
+  { "set_quality",       amr_set_quality },
+  { "get_quality",       amr_get_quality },
+  { NULL }
 };
-     
+
 static const struct PluginCodec_H323GenericCodecData amrcap =
 {
-    OpalPluginCodec_Identifer_AMR,						// capability identifier (Ref: Table I.1 in H.245)
-    122,
-    1,
-    amr_params
+    OpalPluginCodec_Identifer_AMR  // capability identifier (Ref: Table I.1 in H.245)
 };
 
-static struct PluginCodec_ControlDefn amrEncoderControlDefn[] = {
-    {"set_quality", amr_set_quality},
-    {"get_quality", amr_get_quality},
-    {NULL, NULL}
+static struct PluginCodec_Definition amrCodecDefn[] = {
+  {
+    // encoder
+    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
+    &licenseInfo,                           // license information
+
+    PluginCodec_MediaTypeAudio |            // audio codec
+    PluginCodec_InputTypeRaw |              // raw input data
+    PluginCodec_OutputTypeRaw |             // raw output data
+    PluginCodec_RTPTypeDynamic,             // dynamic RTP type
+    
+    "GSM-AMR",                              // text decription
+    "L16",                                  // source format
+    "GSM-AMR",                              // destination format
+    
+    NULL,                                   // user data
+
+    8000,                                   // samples per second
+    12200,                                  // raw bits per second
+    20000,                                  // microseconds per frame
+    L_FRAME,                                // samples per frame
+    33,                                     // bytes per frame
+    
+    1,                                      // recommended number of frames per packet
+    1,                                      // maximum number of frames per packet
+    0,                                      // IANA RTP payload code
+    "AMR",                                  // RTP payload name
+    
+    amr_create_encoder,                     // create codec function
+    amr_destroy_encoder,                    // destroy codec
+    amr_codec_encoder,                      // encode/decode
+    amrEncoderControlDefn,                  // codec controls
+
+    PluginCodec_H323Codec_generic,          // h323CapabilityType
+    &amrcap                                 // h323CapabilityData
+  },
+  { 
+    // decoder
+    PLUGIN_CODEC_VERSION_OPTIONS,           // codec API version
+    &licenseInfo,                           // license information
+
+    PluginCodec_MediaTypeAudio |            // audio codec
+    PluginCodec_InputTypeRaw |              // raw input data
+    PluginCodec_OutputTypeRaw |             // raw output data
+    PluginCodec_RTPTypeDynamic,             // dynamic RTP type
+
+    "GSM-AMR",                              // text decription
+    "GSM-AMR",                              // source format
+    "L16",                                  // destination format
+
+    NULL,                                   // user data
+
+    8000,                                   // samples per second
+    12200,                                  // raw bits per second
+    30000,                                  // microseconds per frame
+    L_FRAME,                                // samples per frame
+    33,                                     // bytes per frame
+    1,                                      // recommended number of frames per packet
+    1,                                      // maximum number of frames per packet
+    0,                                      // IANA RTP payload code
+    "AMR",                                  // RTP payload name
+
+    amr_create_decoder,                     // create codec function
+    amr_destroy_decoder,                    // destroy codec
+    amr_codec_decoder,                      // encode/decode
+    NULL,                                   // codec controls
+    
+    PluginCodec_H323Codec_generic,          // h323CapabilityType 
+    &amrcap                                 // h323CapabilityData
+  }
 };
 
-
-
-static const struct PluginCodec_Definition amrCodecDefn[] = {
-    { 
-	// encoder
-	PLUGIN_CODEC_VERSION,               	// codec API version
-	&licenseInfo,                       	// license information
-
-	PluginCodec_MediaTypeAudio |        	// audio codec
-	PluginCodec_InputTypeRaw |          	// raw input data
-	PluginCodec_OutputTypeRaw |         	// raw output data
-	PluginCodec_RTPTypeDynamic,         	// dynamic RTP type
-	
-	"GSM-AMR",	                            // text decription
-	"L16",                              	// source format
-	"GSM-AMR",                             	// destination format
-	
-	(void *)AMR_Mode,                       // user data
-
-	8000,                               	// samples per second
-	0,		                                // raw bits per second
-	20000,                              	// nanoseconds per frame
-	160,                      		        // samples per frame
-	32,                  			        // bytes per frame; 32 because
-						                    // the sample coder stomps on
-						                    // an extra byte
-	
-	1,                                  	// recommended number of frames per packet
-	1,                                  	// maximum number of frames per packet
-	0,                                  	// IANA RTP payload code
-	"AMR",                                  // RTP payload name
-	
-	amr_create_encoder,                    	// create codec function
-	amr_destroy_encoder,                   	// destroy codec
-	amr_codec_encoder,                     	// encode/decode
-	amrEncoderControlDefn,                 	// codec controls
-        
-	PluginCodec_H323Codec_generic,  	// h323CapabilityType
-	(struct PluginCodec_H323GenericCodecData *)&amrcap
-						// h323CapabilityData
-    },
-
-    { 
-	// decoder
-	PLUGIN_CODEC_VERSION,               	// codec API version
-	&licenseInfo,                       	// license information
-
-	PluginCodec_MediaTypeAudio |        	// audio codec
-	PluginCodec_InputTypeRaw |          	// raw input data
-	PluginCodec_OutputTypeRaw |         	// raw output data
-	PluginCodec_RTPTypeDynamic,         	// dynamic RTP type
-
-	"GSM-AMR",                           	// text decription
-	"GSM-AMR",                           	// source format
-	"L16",                            	    // destination format
-
-	(void *)AMR_Mode,                       // user data
-
-	8000,                               	// samples per second
-	0,		                                // raw bits per second
-	30000,                              	// nanoseconds per frame
-	160,                      		        // samples per frame
-	31,                  			        // bytes per frame
-	1,                                  	// recommended number of frames per packet
-	1,                                  	// maximum number of frames per packet
-	0,                                  	// IANA RTP payload code
-	"AMR",                                  // RTP payload name
-
-	amr_create_decoder,                    	// create codec function
-	amr_destroy_decoder,                   	// destroy codec
-	amr_codec_decoder,                     	// encode/decode
-	NULL,                                	// codec controls
-	
-	PluginCodec_H323Codec_generic,  	    // h323CapabilityType 
-	(struct PluginCodec_H323GenericCodecData *)&amrcap
-						// h323CapabilityData
-    }
-};
-
-#define NUM_DEFNS   (sizeof(amrCodecDefn) / sizeof(struct PluginCodec_Definition))
+PLUGIN_CODEC_IMPLEMENT_ALL("AMR", amrCodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
 
 /////////////////////////////////////////////////////////////////////////////
-
-PLUGIN_CODEC_DLL_API const struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return amrCodecDefn;
-}
-
-
-#ifdef _MSC_VER
-#pragma warning(default : 4018)
-#pragma warning(default : 4100)
-#endif
