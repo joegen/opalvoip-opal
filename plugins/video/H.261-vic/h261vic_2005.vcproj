@@ -16,7 +16,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\GSM"
+			IntermediateDirectory="..\..\Release\h261vic"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -41,7 +41,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\..\Release/h261vic.tlb"
+				TypeLibraryName="$(IntDir)/$(TargetName).tlb"
 				HeaderFileName=""
 			/>
 			<Tool
@@ -105,7 +105,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\H261-vic"
+			IntermediateDirectory="..\..\Debug\h261vic"
 			ConfigurationType="2"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -130,7 +130,7 @@
 				MkTypLibCompatible="true"
 				SuppressStartupBanner="true"
 				TargetEnvironment="1"
-				TypeLibraryName=".\..\Debug/h261vic.tlb"
+				TypeLibraryName="$(IntDir)/$(TargetName).tlb"
 				HeaderFileName=""
 			/>
 			<Tool
