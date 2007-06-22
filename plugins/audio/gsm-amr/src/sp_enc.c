@@ -31,103 +31,94 @@
 /*
  * Definition of structures used in encoding process
  */
-typedef struct
-{
+typedef struct {
    Float32 y2;
    Float32 y1;
    Float32 x0;
    Float32 x1;
-
 }Pre_ProcessState;
 
 #ifdef VAD2
 
 /* Defines for VAD2 */
-#define	FRM_LEN1		80
-#define	DELAY0			24
-#define	FFT_LEN1		128
+#define FRM_LEN1        80
+#define DELAY0          24
+#define FFT_LEN1        128
 
-#define	UPDATE_CNT_THLD1	50
+#define UPDATE_CNT_THLD1    50
 
-#define	INIT_FRAMES		4
+#define INIT_FRAMES     4
 
-#define	CNE_SM_FAC1		0.1
-#define	CEE_SM_FAC1		0.55
+#define CNE_SM_FAC1     0.1
+#define CEE_SM_FAC1     0.55
 
-#define	HYSTER_CNT_THLD1	6	/* forced update constants... */
-#define	HIGH_ALPHA1		0.9
-#define	LOW_ALPHA1		0.7
-#define	ALPHA_RANGE1		(HIGH_ALPHA1-LOW_ALPHA1)
+#define HYSTER_CNT_THLD1    6   /* forced update constants... */
+#define HIGH_ALPHA1     0.9
+#define LOW_ALPHA1      0.7
+#define ALPHA_RANGE1        (HIGH_ALPHA1-LOW_ALPHA1)
 
-#define NORM_ENRG		(4.0)	/* account for div by 2 by the HPF */
-#define	MIN_CHAN_ENRG		(0.0625 / NORM_ENRG)
-#define	INE			(16.0 / NORM_ENRG)
-#define	NOISE_FLOOR		(1.0 / NORM_ENRG)
+#define NORM_ENRG       (4.0)   /* account for div by 2 by the HPF */
+#define MIN_CHAN_ENRG       (0.0625 / NORM_ENRG)
+#define INE         (16.0 / NORM_ENRG)
+#define NOISE_FLOOR     (1.0 / NORM_ENRG)
 
-#define	PRE_EMP_FAC1		(-0.8)
+#define PRE_EMP_FAC1        (-0.8)
 
-#define	NUM_CHAN		16
-#define	LO_CHAN			0
-#define	HI_CHAN			15
-#define	UPDATE_THLD		35
+#define NUM_CHAN        16
+#define LO_CHAN         0
+#define HI_CHAN         15
+#define UPDATE_THLD     35
 
-#define	SINE_START_CHAN		2
-#define	P2A_THRESH		10.0
-#define	DEV_THLD1		28.0
+#define SINE_START_CHAN     2
+#define P2A_THRESH      10.0
+#define DEV_THLD1       28.0
 
 /* Defines for the FFT function */
-#define	SIZE			128
-#define	SIZE_BY_TWO		64
-#define	NUM_STAGE		6
+#define SIZE            128
+#define SIZE_BY_TWO     64
+#define NUM_STAGE       6
 
-#define	PI			3.141592653589793
+#define PI          3.141592653589793
 
-#define	TRUE			1
-#define	FALSE			0
+#define TRUE            1
+#define FALSE           0
 
 /* Macros */
-#define	min(a,b)		((a)<(b)?(a):(b))
-#define	max(a,b)		((a)>(b)?(a):(b))
-#define	square(a)		((a)*(a))
+#define square(a)       ((a)*(a))
 
 /* structures */
-typedef struct
-{
-  Float32 pre_emp_mem;
+typedef struct {
+  Float64 pre_emp_mem;
   Word16  update_cnt;
   Word16  hyster_cnt;
   Word16  last_update_cnt;
-  Float32 ch_enrg_long_db[NUM_CHAN];
+  Float64 ch_enrg_long_db[NUM_CHAN];
   Word32  Lframe_cnt;
-  Float32 ch_enrg[NUM_CHAN];
-  Float32 ch_noise[NUM_CHAN];
-  Float32 tsnr;
+  Float64 ch_enrg[NUM_CHAN];
+  Float64 ch_noise[NUM_CHAN];
+  Float64 tsnr;
   Word16  hangover;
   Word16  burstcount;
   Word16  fupdate_flag;
-  Float32 negSNRvar;
-  Float32 negSNRbias;
-  Float32 R0;
-  Float32 Rmax;
+  Float64 negSNRvar;
+  Float64 negSNRbias;
+  Float64 R0;
+  Float64 Rmax;
   Word16  LTP_flag;
 }vadState;
 #else
-typedef struct
-{
+typedef struct {
    Float32 bckr_est[COMPLEN];   /* background noise estimate */
    Float32 ave_level[COMPLEN];
-
 
    /* averaged input components for stationary estimation */
    Float32 old_level[COMPLEN];   /* input levels of the previous frame */
    Float32 sub_level[COMPLEN];
 
-
    /* input levels calculated at the end of a frame (lookahead) */
    Float32 a_data5[3][2];   /* memory for the filter bank */
    Float32 a_data3[5];   /* memory for the filter bank */
    Float32 best_corr_hp;   /* FIP filtered value */
-
 
    /* counts length of a speech burst incl HO addition */
    Float32 corr_hp_fast;   /* filtered value */
@@ -145,15 +136,13 @@ typedef struct
    Word16 complex_hang_timer;   /* hangover initiator, used by CAD */
    Word16 speech_vad_decision;   /* final decision */
    Word16 sp_burst_count;
-
-
 }vadState;
 #endif
+
 #define DTX_HIST_SIZE 8
 #define DTX_ELAPSED_FRAMES_THRESH (24 + 7 -1)
 #define DTX_HANG_CONST 7   /* yields eight frames of SP HANGOVER */
-typedef struct
-{
+typedef struct {
    Float32 lsp_hist[M * DTX_HIST_SIZE];
    Float32 log_en_hist[DTX_HIST_SIZE];
    Word32 init_lsf_vq_index;
@@ -161,102 +150,80 @@ typedef struct
    Word16 log_en_index;
    Word16 lsp_index[3];
 
-
    /* DTX handler stuff */
    Word16 dtxHangoverCount;
    Word16 decAnaElapsedCount;
-
-
 }dtx_encState;
-typedef struct
-{
+
+typedef struct {
    /* gain history */
    Float32 gp[N_FRAME];
 
-
    /* counters */
    Word16 count;
-
-
 }tonStabState;
-typedef struct
-{
+
+typedef struct{
    Word32 past_qua_en[4];
-
-
    /* normal MA predictor memory, (contains 20*log10(qua_err)) */
 }gc_predState;
 
-typedef struct
-{
+typedef struct {
    Float32 prev_alpha;   /* previous adaptor output, */
    Float32 prev_gc;   /* previous code gain, */
    Float32 ltpg_mem[LTPG_MEM_SIZE];   /* LTP coding gain history, */
    Word16 onset;   /* onset state, */
-
-
    /* (ltpg_mem[0] not used for history) */
 }gain_adaptState;
-typedef struct
-{
 
+typedef struct {
    Float32 sf0_target_en;
    Float32 sf0_coeff[5];
    Word32 sf0_gcode0_exp;
    Word32 sf0_gcode0_fra;
    Word16 *gain_idx_ptr;
 
-
    gc_predState * gc_predSt;
    gc_predState * gc_predUncSt;
    gain_adaptState * adaptSt;
 }gainQuantState;
-typedef struct
-{
+
+typedef struct {
    Word32 T0_prev_subframe;   /* integer pitch lag of previous sub-frame */
-
-
 }Pitch_frState;
-typedef struct
-{
+
+typedef struct {
    Pitch_frState * pitchSt;
 }clLtpState;
-typedef struct
-{
+
+typedef struct {
    Float32 ada_w;
    Word32 old_T0_med;
    Word16 wght_flg;
-
-
 }pitchOLWghtState;
-typedef struct
-{
+
+typedef struct {
    Float32 past_rq[M];   /* Past quantized prediction error */
-
-
 }Q_plsfState;
-typedef struct
-{
+
+typedef struct {
    /* Past LSPs */
    Float32 lsp_old[M];
    Float32 lsp_old_q[M];
 
-
    /* Quantization state */
    Q_plsfState * qSt;
 }lspState;
-typedef struct
-{
+
+typedef struct {
    Float32 old_A[M + 1];   /* Last A(z) for case of unstable filter */
-
-
 }LevinsonState;
-typedef struct
-{
-   LevinsonState * LevinsonSt;
+
+typedef struct {
+  LevinsonState * LevinsonSt;
 }lpcState;
-typedef struct
-{
+
+typedef struct {
    /* Speech vector */
    Float32 old_speech[L_TOTAL];
    Float32 *speech, *p_window, *p_window_12k2;
@@ -267,26 +234,21 @@ typedef struct
    Float32 old_wsp[L_FRAME + PIT_MAX];
    Float32 *wsp;
 
-
    /* OL LTP states */
    Word32 old_lags[5];
    Float32 ol_gain_flg[2];
-
 
    /* Excitation vector */
    Float32 old_exc[L_FRAME + PIT_MAX + L_INTERPOL];
    Float32 *exc;
 
-
    /* Zero vector */
    Float32 ai_zero[L_SUBFR + MP1];
    Float32 *zero;
 
-
    /* Impulse response vector */
    Float32 *h1;
    Float32 hvec[L_SUBFR * 2];
-
 
    /* Substates */
    lpcState * lpcSt;
@@ -298,27 +260,19 @@ typedef struct
    vadState * vadSt;
 
    Word32 dtx;
-
-
    dtx_encState * dtxEncSt;
 
    /* Filter's memory */
    Float32 mem_syn[M], mem_w0[M], mem_w[M];
    Float32 mem_err[M + L_SUBFR], *error;
    Float32 sharp;
-
-
 }cod_amrState;
-typedef struct
-{
+
+typedef struct {
    cod_amrState * cod_amr_state;
    Pre_ProcessState * pre_state;
-
    Word32 dtx;
-
-
 }Speech_Encode_FrameState;
-
 
 /*
  * Dotproduct40
@@ -333,10 +287,8 @@ typedef struct
  * Returns:
  *    acc                dot product
  */
-static Float64 Dotproduct40( Float32 *x, Float32 *y )
-{
+static Float64 Dotproduct40( Float32 *x, Float32 *y ) {
    Float64 acc;
-
 
    acc = x[0] * y[0] + x[1] * y[1] + x[2] * y[2] + x[3] * y[3];
    acc += x[4] * y[4] + x[5] * y[5] + x[6] * y[6] + x[7] * y[7];
@@ -813,7 +765,7 @@ static void Lsp_Az( Float32 lsp[], Float32 a[] )
  * Function:
  *    Interpolation of the LPC parameters. Same as the Int_lpc
  *    function but we do not recompute Az() for subframe 2 and
- *	   4 because it is already available.
+ *     4 because it is already available.
  *
  * Returns:
  *    void
@@ -1084,7 +1036,7 @@ static void Reorder_lsf( Float32 *lsf, Float32 min_dist )
  *
  * Parameters:
  *    lsf               I: vector of LSFs
- *    lsp	            O: vector of LSPs
+ *    lsp               O: vector of LSPs
  *
  * Function:
  *    Transformation lsf to lsp, order M
@@ -1363,7 +1315,7 @@ static void Q_plsf_3( enum Mode mode, Float32 *past_rq, Float32 *lsp1, Float32 *
  *    lsp2              I: 2nd LSP vector
  *    lsp1_q            O: quantized 1st LSP vector
  *    lsp2_q            O: quantized 2nd LSP vector
- *    indice	         I: quantization indices of 5 matrices and
+ *    indice             I: quantization indices of 5 matrices and
  *                         one sign for 3rd
  *
  * Function:
@@ -2166,8 +2118,8 @@ static void vad_tone_detection( vadState *st, Float32 T0, Float32 t1 )
  */
 #ifdef VAD2
 static Word16 Lag_max( Float32 corr[], Float32 sig[], Word16 L_frame,
-		       Word32 lag_max, Word32 lag_min, Float32 *cor_max,
-		       Word32 dtx, Float32 *rmax, Float32 *r0 )
+               Word32 lag_max, Word32 lag_min, Float32 *cor_max,
+               Word32 dtx, Float32 *rmax, Float32 *r0 )
 #else
 static Word16 Lag_max( vadState *vadSt, Float32 corr[], Float32 sig[], Word16
       L_frame, Word32 lag_max, Word32 lag_min, Float32 *cor_max, Word32 dtx )
@@ -2404,8 +2356,8 @@ static Word32 Pitch_ol( enum Mode mode, vadState *vadSt, Float32 signal[],
       /* update tone detection */
       if ( ( mode == MR475 ) || ( mode == MR515 ) ) {
          vad_tone_detection_update( vadSt, 1 );
-      }
-      else {
+      } else {
+         //fprintf(stderr, "Pitch_ol - dtx on\n");
          vad_tone_detection_update( vadSt, 0 );
       }
    }
@@ -2419,24 +2371,24 @@ static Word32 Pitch_ol( enum Mode mode, vadState *vadSt, Float32 signal[],
    comp_corr( signal, L_frame, pit_max, pit_min, corr_ptr );
 
 #ifdef VAD2
-   /* Find a maximum for each section.	*/
-   /* Maxima 1	*/
+   /* Find a maximum for each section.  */
+   /* Maxima 1  */
    j = pit_min << 2;
    p_max1 =
      Lag_max( corr_ptr, signal, L_frame, pit_max, j, &max1, dtx, &rmax1, &r01 );
 
-   /* Maxima 2	*/
+   /* Maxima 2  */
    i = j - 1;
    j = pit_min << 1;
    p_max2 = Lag_max( corr_ptr, signal, L_frame, i, j, &max2, dtx, &rmax2, &r02 );
 
-   /* Maxima 3	*/
+   /* Maxima 3  */
    i = j - 1;
    p_max3 =
      Lag_max( corr_ptr, signal, L_frame, i, pit_min, &max3, dtx, &rmax3, &r03 );
 #else
-   /* Find a maximum for each section.	*/
-   /* Maxima 1	*/
+   /* Find a maximum for each section.  */
+   /* Maxima 1  */
    j = pit_min << 2;
    p_max1 = Lag_max( vadSt, corr_ptr, signal, L_frame, pit_max, j, &max1, dtx );
 
@@ -2466,8 +2418,8 @@ static Word32 Pitch_ol( enum Mode mode, vadState *vadSt, Float32 signal[],
       p_max1 = p_max2;
 #ifdef VAD2
       if (dtx) {
-	rmax1 = rmax2;
-	r01 = r02;
+    rmax1 = rmax2;
+    r01 = r02;
       }
 #endif
    }
@@ -2476,8 +2428,8 @@ static Word32 Pitch_ol( enum Mode mode, vadState *vadSt, Float32 signal[],
       p_max1 = p_max3;
 #ifdef VAD2
       if (dtx) {
-	rmax1 = rmax3;
-	r01 = r03;
+    rmax1 = rmax3;
+    r01 = r03;
       }
 #endif
    }
@@ -2767,30 +2719,24 @@ static Word32 Pitch_ol_wgh( Word32 *old_T0_med, Word16 *wght_flg, Float32 *ada_w
  * Returns:
  *    void
  */
-static void ol_ltp( enum Mode mode, vadState *vadSt, Float32 wsp[], Word32 *T_op
+static void ol_ltp(enum Mode mode, vadState *vadSt, Float32 wsp[], Word32 *T_op
       , Float32 ol_gain_flg[], Word32 *old_T0_med, Word16 *wght_flg, Float32 *ada_w
-      , Word32 *old_lags, Word32 dtx, Word16 idx )
-{
-   if ( mode != MR102 ) {
+      , Word32 *old_lags, Word32 dtx, Word16 idx) {
+
+   if (mode != MR102) {
       ol_gain_flg[0] = 0;
       ol_gain_flg[1] = 0;
    }
 
-   if ( ( mode == MR475 ) || ( mode == MR515 ) ) {
-      *T_op = Pitch_ol( mode, vadSt, wsp, PIT_MIN, PIT_MAX, L_FRAME, dtx, idx );
-   }
-   else {
-      if ( mode <= MR795 ) {
-         *T_op = Pitch_ol( mode, vadSt, wsp, PIT_MIN, PIT_MAX, L_FRAME_BY2, dtx,
-               idx );
-      }
-      else if ( mode == MR102 ) {
-         *T_op = Pitch_ol_wgh( old_T0_med, wght_flg, ada_w, vadSt, wsp, old_lags,
-            ol_gain_flg, idx, dtx );
-      }
-      else {
-         *T_op = Pitch_ol( mode, vadSt, wsp, PIT_MIN_MR122, PIT_MAX, L_FRAME_BY2
-               , dtx, idx );
+   if ( (mode == MR475) || (mode == MR515) ) {
+      *T_op = Pitch_ol(mode, vadSt, wsp, PIT_MIN, PIT_MAX, L_FRAME, dtx, idx);
+   } else {
+      if (mode <= MR795) {
+         *T_op = Pitch_ol(mode, vadSt, wsp, PIT_MIN, PIT_MAX, L_FRAME_BY2, dtx, idx);
+      } else if (mode == MR102) {
+         *T_op = Pitch_ol_wgh(old_T0_med, wght_flg, ada_w, vadSt, wsp, old_lags, ol_gain_flg, idx, dtx);
+      } else {
+         *T_op = Pitch_ol(mode, vadSt, wsp, PIT_MIN_MR122, PIT_MAX, L_FRAME_BY2, dtx, idx);
       }
    }
 }
@@ -3134,8 +3080,7 @@ static Float32 Interpol_3or6( Float32 *x, Word32 frac, Word16 flag3 )
  * Returns:
  *    void
  */
-static void searchFrac( Word32 *lag, Word32 *frac, Word16 last_frac, Float32
-      corr[], Word16 flag3 )
+static void searchFrac( Word32 *lag, Word32 *frac, Word16 last_frac, Float32 corr[], Word16 flag3 )
 {
    Float32 max, corr_int;
    Word32 i;
@@ -3162,8 +3107,7 @@ static void searchFrac( Word32 *lag, Word32 *frac, Word16 last_frac, Float32
          *frac = 3;
          *lag -= 1;
       }
-   }
-   else {
+   } else {
       /* limit the fraction value between -1 and 1 */
       if ( *frac == -2 ) {
          *frac = 1;
@@ -3427,8 +3371,7 @@ static Word32 Pitch_fr( Word32 *T0_prev_subframe, enum Mode mode, Word32 T_op[],
 
    if ( ( i_subfr == 0 ) || ( i_subfr == L_FRAME_BY2 ) ) {
       /* Subframe 1 and 3 */
-      if ( ( ( mode != MR475 ) && ( mode != MR515 ) ) || ( i_subfr !=
-            L_FRAME_BY2 ) ) {
+      if ( ( ( mode != MR475 ) && ( mode != MR515 ) ) || ( i_subfr != L_FRAME_BY2 ) ) {
          /*
           * set T0_min, T0_max for full search
           * this is *not* done for mode MR475, MR515 in subframe 3
@@ -3448,22 +3391,17 @@ static Word32 Pitch_fr( Word32 *T0_prev_subframe, enum Mode mode, Word32 T_op[],
           * get T_op from the corresponding half frame and
           * set T0_min, T0_max
           */
-         getRange( T_op[frame_offset], delta_int_low, delta_int_range, pit_min,
-               PIT_MAX, &T0_min, &T0_max );
-      }
-      else {
+         getRange(T_op[frame_offset], delta_int_low, delta_int_range, pit_min, PIT_MAX, &T0_min, &T0_max );
+      } else {
          /* mode MR475, MR515 and 3. Subframe: delta search as well */
-         getRange( *T0_prev_subframe, delta_frc_low, delta_frc_range, pit_min,
-               PIT_MAX, &T0_min, &T0_max );
+         getRange(*T0_prev_subframe, delta_frc_low, delta_frc_range, pit_min, PIT_MAX, &T0_min, &T0_max);
       }
-   }
-   else {
+   } else {
       /*
        * for Subframe 2 and 4
        * get range around T0 of previous subframe for delta search
        */
-      getRange( *T0_prev_subframe, delta_frc_low, delta_frc_range, pit_min,
-            PIT_MAX, &T0_min, &T0_max );
+      getRange(*T0_prev_subframe, delta_frc_low, delta_frc_range, pit_min, PIT_MAX, &T0_min, &T0_max);
    }
 
    /* Find interval to compute normalized correlation */
@@ -3472,14 +3410,14 @@ static Word32 Pitch_fr( Word32 *T0_prev_subframe, enum Mode mode, Word32 T_op[],
    corr = &corr_v[ - t_min];
 
    /* Compute normalized correlation between target and filtered excitation */
-   Norm_Corr( exc, xn, h, t_min, t_max, corr );
+   Norm_Corr(exc, xn, h, t_min, t_max, corr);
 
    /* Find integer pitch */
    max = corr[T0_min];
    lag = T0_min;
 
-   for ( i = T0_min + 1; i <= T0_max; i++ ) {
-      if ( corr[i] >= max ) {
+   for (i = T0_min + 1; i <= T0_max; i++) {
+      if (corr[i] >= max) {
          max = corr[i];
          lag = i;
       }
@@ -3492,14 +3430,12 @@ static Word32 Pitch_fr( Word32 *T0_prev_subframe, enum Mode mode, Word32 T_op[],
        * fractional search is not needed, set fractional to zero
        */
       frac = 0;
-   }
-   else {
+   } else {
       /*
        * if differential search AND mode MR475 OR MR515 OR MR59 OR MR67
        * then search fractional with 4 bits resolution
        */
-      if ( ( delta_search != 0 ) && ( ( mode == MR475 ) || ( mode == MR515 ) ||
-            ( mode == MR59 ) || ( mode == MR67 ) ) ) {
+      if ((delta_search != 0) && ( ( mode == MR475 ) || ( mode == MR515 ) || ( mode == MR59 ) || ( mode == MR67 ) ) ) {
          /*
           * modify frac or last_frac according to position of last
           * integer pitch: either search around integer pitch,
@@ -3516,24 +3452,19 @@ static Word32 Pitch_fr( Word32 *T0_prev_subframe, enum Mode mode, Word32 T_op[],
          if ( ( lag == tmp_lag ) || ( lag == ( tmp_lag - 1 ) ) ) {
             /* normal search in fractions around T0 */
             searchFrac( &lag, &frac, last_frac, corr, flag3 );
-         }
-         else if ( lag == ( tmp_lag - 2 ) ) {
+         } else if ( lag == ( tmp_lag - 2 ) ) {
             /* limit search around T0 to the right side */
             frac = 0;
             searchFrac( &lag, &frac, last_frac, corr, flag3 );
-         }
-         else if ( lag == ( tmp_lag + 1 ) ) {
+         } else if ( lag == ( tmp_lag + 1 ) ) {
             /* limit search around T0 to the left side */
             last_frac = 0;
             searchFrac( &lag, &frac, last_frac, corr, flag3 );
-         }
-         else {
+         } else {
             /* no fractional search */
             frac = 0;
          }
-      }
-      else
-
+      } else
          /* test the fractions around T0 */
          searchFrac( &lag, &frac, last_frac, corr, flag3 );
    }
@@ -3548,18 +3479,15 @@ static Word32 Pitch_fr( Word32 *T0_prev_subframe, enum Mode mode, Word32 T_op[],
        */
       flag4 = 0;
 
-      if ( ( mode == MR475 ) || ( mode == MR515 ) || ( mode == MR59 ) || ( mode
-            == MR67 ) ) {
+      if ( ( mode == MR475 ) || ( mode == MR515 ) || ( mode == MR59 ) || ( mode == MR67 ) ) {
          flag4 = 1;
       }
 
       /* encode with 1/3 subsample resolution */
-      *ana_index = Enc_lag3( lag, frac, *T0_prev_subframe, T0_min, T0_max,
-            delta_search, flag4 );
-   }
-   else {
+      *ana_index = Enc_lag3(lag, frac, *T0_prev_subframe, T0_min, T0_max, delta_search, flag4);
+   } else {
       /* encode with 1/6 subsample resolution */
-      *ana_index = Enc_lag6( lag, frac, T0_min, delta_search );
+      *ana_index = Enc_lag6(lag, frac, T0_min, delta_search);
    }
 
    /*
@@ -3842,27 +3770,26 @@ static Word16 check_gp_clipping( Float32 *gp, Float32 g_pitch )
  *    index             index of quantization
  */
 static Word16 q_gain_pitch( enum Mode mode, Float32 gp_limit, Float32 *gain,
-      Float32 gain_cand[], Word32 gain_cind[] )
-{
+      Float32 gain_cand[], Word32 gain_cind[] ) {
    Float32 err_min, err;
    Word32 i, index;
 
 
-   err_min = ( Float32 )fabs( *gain - qua_gain_pitch[0] );
+   err_min = ( Float32 )fabs(*gain - qua_gain_pitch[0]);
    index = 0;
 
-   for ( i = 1; i < NB_QUA_PITCH; i++ ) {
-      if ( qua_gain_pitch[i] <= gp_limit ) {
-         err = ( Float32 )fabs( *gain - qua_gain_pitch[i] );
+   for (i = 1; i < NB_QUA_PITCH; i++) {
+      if (qua_gain_pitch[i] <= gp_limit) {
+         err = (Float32)fabs(*gain - qua_gain_pitch[i]);
 
-         if ( err < err_min ) {
+         if (err < err_min) {
             err_min = err;
             index = i;
          }
       }
    }
 
-   if ( mode == MR795 ) {
+   if (mode == MR795) {
    /*
     * in MR795 mode, compute three gain_pit candidates around the index
     * found in the quantization loop: the index found and the two direct
@@ -3872,31 +3799,28 @@ static Word16 q_gain_pitch( enum Mode mode, Float32 gp_limit, Float32 *gain,
       Word32 ii;
 
 
-      if ( index == 0 ) {
+      if (index == 0) {
          ii = index;
-      }
-      else {
+      } else {
          ii = index - 1;
 
-         if ( index == ( NB_QUA_PITCH - 1 ) || ( qua_gain_pitch[index + 1] >
-               gp_limit ) ) {
+         if (index == (NB_QUA_PITCH - 1) || (qua_gain_pitch[index + 1] > gp_limit ) ) {
             ii = index - 2;
          }
       }
 
       /* store candidate indices and values */
-      for ( i = 0; i < 3; i++ ) {
+      for (i = 0; i < 3; i++) {
          gain_cind[i] = ii;
          gain_cand[i] = qua_gain_pitch[ii];
          ii++;
       }
       *gain = qua_gain_pitch[index];
-   }
-   else {
+   } else {
       /* return the index and gain pitch found */
       *gain = qua_gain_pitch_MR122[index];
    }
-   return( Word16 )index;
+   return(Word16)index;
 }
 
 
@@ -3955,11 +3879,9 @@ static void cl_ltp( Word32 *T0_prev_subframe, Float32 *gp, enum Mode mode,
 
    exc_tmp_p = exc_tmp + PIT_MAX + L_INTERPOL;
 
-
    /* Closed-loop fractional pitch search */
-   *T0 = Pitch_fr( T0_prev_subframe, mode, T_op, exc, xn, h1, frame_offset,
-         T0_frac, &resu3, &i );
-   *( *anap )++ = ( Word16 )i;
+   *T0 = Pitch_fr(T0_prev_subframe, mode, T_op, exc, xn, h1, frame_offset, T0_frac, &resu3, &i );
+   *(*anap)++ = (Word16)i;
 
    /*
     * Compute the adaptive codebook vector
@@ -3981,7 +3903,6 @@ static void cl_ltp( Word32 *T0_prev_subframe, Float32 *gp, enum Mode mode,
     */
    for ( n = 0; n < L_SUBFR; n++ ) {
       s = 0;
-
       for ( i = 0; i <= n; i++ ) {
          s += exc[i] * h1[n - i];
       }
@@ -3995,7 +3916,7 @@ static void cl_ltp( Word32 *T0_prev_subframe, Float32 *gp, enum Mode mode,
    gpc_flag = 0;
    *gp_limit = 2.0F;
 
-   if ( ( lsp_flag != 0 ) && ( *gain_pit > 0.95F ) ) {
+   if ((lsp_flag != 0 ) && (*gain_pit > 0.95F)) {
       gpc_flag = check_gp_clipping( gp, *gain_pit );
    }
 
@@ -4003,16 +3924,14 @@ static void cl_ltp( Word32 *T0_prev_subframe, Float32 *gp, enum Mode mode,
     * special for the MR475, MR515 mode; limit the gain to 0.85 to
     * cope with bit errors in the decoder in a better way.
     */
-   if ( ( mode == MR475 ) || ( mode == MR515 ) ) {
+   if ((mode == MR475) || (mode == MR515)) {
       if ( *gain_pit > 0.85 ) {
          *gain_pit = 0.85F;
       }
-
       if ( gpc_flag != 0 )
          *gp_limit = GP_CLIP;
-   }
-   else {
-      if ( gpc_flag != 0 ) {
+   } else {
+      if (gpc_flag != 0) {
          *gp_limit = GP_CLIP;
          *gain_pit = GP_CLIP;
       }
@@ -4020,9 +3939,8 @@ static void cl_ltp( Word32 *T0_prev_subframe, Float32 *gp, enum Mode mode,
       /*
        * 12k2 gain_pit is quantized here and not in gainQuant.
        */
-      if ( mode == MR122 ) {
-
-         *( *anap )++ = q_gain_pitch( MR122, *gp_limit, gain_pit, NULL, NULL );
+      if (mode == MR122) {
+         *(*anap )++ = q_gain_pitch(MR122, *gp_limit, gain_pit, NULL, NULL);
       }
    }
 
@@ -4030,7 +3948,7 @@ static void cl_ltp( Word32 *T0_prev_subframe, Float32 *gp, enum Mode mode,
     * Update target vector for codebook search
     * Find LTP residual
     */
-   for ( i = 0; i < L_SUBFR; i++ ) {
+   for (i = 0; i < L_SUBFR; i++) {
       xn2[i] = xn[i] - y1[i] * *gain_pit;
       res2[i] = res2[i] - exc[i] * *gain_pit;
    }
@@ -4121,8 +4039,7 @@ static void set_sign( Float32 dn[], Float32 sign[], Float32 dn2[], Word16 n )
 
       if ( val >= 0 ) {
          sign[i] = 1.0F;
-      }
-      else {
+      } else {
          sign[i] = -1.0F;
          val = -val;
       }
@@ -4515,12 +4432,12 @@ static void search_2i40_9bits( Word16 subNr, Float32 dn[], Float32 rr[][L_CODE],
       codvec[i] = i;
    }
 
-   /* main loop: try 2x4  tracks	*/
+   /* main loop: try 2x4  tracks    */
    for ( track1 = 0; track1 < 2; track1++ ) {
       ipos[0] = startPos[( subNr << 1 ) + ( track1 << 3 )];
       ipos[1] = startPos[( subNr << 1 ) + 1 + ( track1 << 3 )];
 
-      /* i0 loop: try 8 positions	*/
+      /* i0 loop: try 8 positions   */
       for ( i0 = ipos[0]; i0 < L_CODE; i0 += STEP ) {
          ps0 = dn[i0];
          alp0 = rr[i0][i0];
@@ -4542,7 +4459,7 @@ static void search_2i40_9bits( Word16 subNr, Float32 dn[], Float32 rr[][L_CODE],
             }
          }
 
-         /* memorise codevector if this one is better than the last one	*/
+         /* memorise codevector if this one is better than the last one */
          if ( ( alpk * sq ) > ( psk * alp ) ) {
             psk = sq;
             alpk = alp;
@@ -4556,7 +4473,7 @@ static void search_2i40_9bits( Word16 subNr, Float32 dn[], Float32 rr[][L_CODE],
 
 
 /*
- * build_code_2i40_9bits
+ * build_code_2i40_9bits (4.75 & 5.15)
  *
  *
  * Parameters:
@@ -4604,13 +4521,13 @@ static void build_code_2i40_9bits( Word16 subNr, Word32 codvec[], Float32
 
       if ( first == 0 ) {
          if ( k == 0 ) {
-            /*	position of 1st pulse	*/
+            /*  position of 1st pulse   */
             track = 0;
          }
          else {
             track = 1;
 
-            /*	position of 2nd pulse	*/
+            /*  position of 2nd pulse   */
             index <<= 3;
          }
       }
@@ -4618,7 +4535,7 @@ static void build_code_2i40_9bits( Word16 subNr, Word32 codvec[], Float32
          if ( k == 0 ) {
             track = 0;
 
-            /*	position of 1st pulse, subset 2	*/
+            /*  position of 1st pulse, subset 2 */
             index += 64;
          }
          else {
@@ -4631,7 +4548,7 @@ static void build_code_2i40_9bits( Word16 subNr, Word32 codvec[], Float32
          cod[i] = 0.9998779296875F;
          _sign[k] = 1;
 
-         /*	sign information */
+         /* sign information */
          rsign = rsign + ( 1 << track );
       }
       else {
@@ -4798,7 +4715,7 @@ static void search_2i40_11bits( Float32 dn[], Float32 rr[][L_CODE], Word32
 
 
 /*
- * build_code_2i40_11bits
+ * build_code_2i40_11bits (5.90)
  *
  *
  * Parameters:
@@ -5077,7 +4994,7 @@ static void search_3i40( Float32 dn[], Float32 dn2[], Float32 rr[][L_CODE],
 
 
 /*
- * build_code_3i40_14bits
+ * build_code_3i40_14bits (6.70)
  *
  *
  * Parameters:
@@ -5390,7 +5307,7 @@ static void search_4i40( Float32 dn[], Float32 dn2[], Float32 rr[][L_CODE],
 
 
 /*
- * build_code_4i40
+ * build_code_4i40 (7.40 & 7.95)
  *
  *
  * Parameters:
@@ -5415,7 +5332,6 @@ static void build_code_4i40( Word32 codvec[], Float32 dn_sign[], Float32 cod[],
    Float32 *p0, *p1, *p2, *p3;
    Word32 _sign[4];
    Word32 i, j, k, track, index, indx = 0, rsign = 0;
-
 
    memset( cod, 0, 160 );
 
@@ -5466,7 +5382,7 @@ static void build_code_4i40( Word32 codvec[], Float32 dn_sign[], Float32 cod[],
       y[i] = ( Float32 )( s );
    }
    anap[0] = ( Word16 )indx;
-   anap[1] = ( Word16 )rsign;
+   anap[1] = ( Word16 )rsign;   
 }
 
 
@@ -5519,7 +5435,7 @@ static void code_4i40_17bits( Float32 x[], Float32 h[], Word32 T0, Float32
    set_sign( dn, dn_sign, dn2, 4 );
    cor_h( h, dn_sign, rr );
    search_4i40( dn, dn2, rr, codvec );
-   build_code_4i40( codvec, dn_sign, code, h, y, anap );
+   build_code_4i40(codvec, dn_sign, code, h, y, anap);
 
    /*
     * Compute innovation vector gain.
@@ -5628,7 +5544,7 @@ static void set_sign12k2( Float32 dn[], Float32 cn[], Float32 sign[], Word32
       }
    }
 
-   /* Set starting position of each pulse	*/
+   /* Set starting position of each pulse   */
    pos = ipos[0];
    ipos[nb_track] = pos;
 
@@ -5699,7 +5615,7 @@ static void search_8i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       ps0 = dn[i0] + dn[i1];
       alp0 = *p_r + rr[i1][i1] + 2.0F * rr[i0][i1];
 
-      /* i2 and i3 loop	*/
+      /* i2 and i3 loop */
       p_rrv = &rrv[i3];
       p_r0 = &rr[i0][i3];
       p_r1 = &rr[i1][i3];
@@ -5769,7 +5685,7 @@ static void search_8i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       i2 = ia;
       i3 = ib;
 
-      /* i4 and i5 loop	*/
+      /* i4 and i5 loop */
       p_rrv = rrv + i5;
       p_r0 = &rr[i0][i5];
       p_r1 = &rr[i1][i5];
@@ -5848,7 +5764,7 @@ static void search_8i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       i4 = ia;
       i5 = ib;
 
-      /* i6 and i7 loop	*/
+      /* i6 and i7 loop */
       p_rrv = rrv + i7;
       p_r0 = &rr[i0][i7];
       p_r1 = &rr[i1][i7];
@@ -5970,7 +5886,7 @@ static void search_8i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
 
 
 /*
- * build_code_8i40_31bits
+ * build_code_8i40_31bits (10.2)
  *
  *
  * Parameters:
@@ -6341,7 +6257,7 @@ static void search_10i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       ps0 = dn[i0] + dn[i1];
       alp0 = *p_r + rr[i1][i1] + 2.0F * rr[i0][i1];
 
-      /* i2 and i3 loop	*/
+      /* i2 and i3 loop */
       p_rrv = &rrv[i3];
       p_r0 = &rr[i0][i3];
       p_r1 = &rr[i1][i3];
@@ -6407,7 +6323,7 @@ static void search_10i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       i2 = ia;
       i3 = ib;
 
-      /* i4 and i5 loop	*/
+      /* i4 and i5 loop */
       p_rrv = rrv + i5;
       p_r0 = &rr[i0][i5];
       p_r1 = &rr[i1][i5];
@@ -6482,7 +6398,7 @@ static void search_10i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       i4 = ia;
       i5 = ib;
 
-      /* i6 and i7 loop	*/
+      /* i6 and i7 loop */
       p_rrv = rrv + i7;
       p_r0 = &rr[i0][i7];
       p_r1 = &rr[i1][i7];
@@ -6570,7 +6486,7 @@ static void search_10i40( Float32 dn[], Float32 rr[][L_CODE], Word32 ipos[],
       i6 = ia;
       i7 = ib;
 
-      /* i8 and i9 loop	*/
+      /* i8 and i9 loop */
       p_rrv = rrv + i9;
       p_r0 = &rr[i0][i9];
       p_r1 = &rr[i1][i9];
@@ -7204,9 +7120,7 @@ static Word32 Pow2( Word32 exponent, Word32 fraction )
  * Returns:
  *    void
  */
-static void gc_pred( Word32 *past_qua_en, enum Mode mode, Float32 *code,
-      Word32 *gcode0_exp, Word32 *gcode0_fra, Float32 *en )
-{
+static void gc_pred( Word32 *past_qua_en, enum Mode mode, Float32 *code, Word32 *gcode0_exp, Word32 *gcode0_fra, Float32 *en) {
    Float64 ener_code;
    Word32 exp, frac, ener, ener_tmp, tmp;
    int exp_code;
@@ -7241,8 +7155,7 @@ static void gc_pred( Word32 *past_qua_en, enum Mode mode, Float32 *code,
       ener = ( ener_tmp - ener ) >> 1;   /* Q16 */
       *gcode0_exp = ener >> 16;
       *gcode0_fra = ( ener >> 1 ) - ( *gcode0_exp << 15 );
-   }
-   else {
+   } else {
       ener = (Word32)(ener_code * 134217728);
       if (ener < 0)
          ener = 0x7fffffff;
@@ -7258,22 +7171,18 @@ static void gc_pred( Word32 *past_qua_en, enum Mode mode, Float32 *code,
       if ( mode == MR102 ) {
          /* mean = 33 dB */
          tmp += 2134784;   /* Q14 */
-      }
-      else if ( mode == MR795 ) {
+      } else if ( mode == MR795 ) {
          /* mean = 36 dB */
          tmp += 2183936;   /* Q14 */
 
          *en = (Float32)ener_code;
-      }
-      else if ( mode == MR74 ) {
+      } else if ( mode == MR74 ) {
          /* mean = 30 dB */
          tmp += 2085632;   /* Q14 */
-      }
-      else if ( mode == MR67 ) {
+      } else if ( mode == MR67 ) {
          /* mean = 28.75 dB */
          tmp += 2065152;   /* Q14 */
-      }
-      else /* MR59, MR515, MR475 */ {
+      } else /* MR59, MR515, MR475 */ {
          /* mean = 33 dB */
          tmp += 2134784;   /* Q14 */
       }
@@ -7298,15 +7207,14 @@ static void gc_pred( Word32 *past_qua_en, enum Mode mode, Float32 *code,
       if ( mode == MR74 ) {
          /* Q8 * Q15 -> Q24 */
          tmp = tmp * 10878;
-      }
-      else {
+      } else {
          /* Q8 * Q15 -> Q24 */
          tmp = tmp * 10886;
       }
       tmp = tmp >> 9;   /* -> Q15 */
 
       *gcode0_exp = tmp >> 15;
-      *gcode0_fra = tmp - ( *gcode0_exp * 32768 );
+      *gcode0_fra = tmp - (*gcode0_exp * 32768);
    }
 }
 
@@ -7351,7 +7259,6 @@ static void calc_filt_energies( enum Mode mode, Float32 xn[], Float32 xn2[],
 {
    Float32 sum, ener_init = 0.01F;
 
-
    if ( ( mode == MR795 ) || ( mode == MR475 ) )
       ener_init = 0;
    coeff[0] = gCoeff[0];
@@ -7372,14 +7279,13 @@ static void calc_filt_energies( enum Mode mode, Float32 xn[], Float32 xn2[],
    sum += ener_init;
    coeff[4] = 2.0F * sum;
 
-   if ( ( mode == MR475 ) || ( mode == MR795 ) ) {
+   if ( (mode == MR475) || (mode == MR795) ) {
       /* Compute scalar product <xn2[],y2[]> */
       sum = (Float32)Dotproduct40( xn2, y2 );
 
       if ( sum <= 0 ) {
          *cod_gain = 0;
-      }
-      else {
+      } else {
       /*
        * gcu = <xn2, y2> / <y2, y2>
        */
@@ -7848,43 +7754,40 @@ static void MR795_gain_code_quant3( Word32 gcode0_exp, Word32 gcode0_fra, Float3
  * Returns:
  *    void
  */
-static void calc_unfilt_energies( Float32 res[], Float32 exc[], Float32 code[],
-      Float32 gain_pit, Float32 en[], Float32 *ltpg )
-{
+static void calc_unfilt_energies(Float32 res[], Float32 exc[], Float32 code[], Float32 gain_pit, Float32 en[], Float32 *ltpg) {
+   
    Float32 sum, pred_gain;
    Word32 i;
-
 
    /* Compute residual energy */
    en[0] = (Float32)Dotproduct40( res, res );
 
    /* ResEn := 0 if ResEn < 200.0 */
-   if ( en[0] < 200 ) {
+   if (en[0] < 200) {
       en[0] = 0;
    }
 
    /* Compute ltp excitation energy */
-   en[1] = (Float32)Dotproduct40( exc, exc );
+   en[1] = (Float32)Dotproduct40(exc, exc);
 
    /* Compute scalar product <exc[],code[]> */
-   en[2] = (Float32)Dotproduct40( exc, code );
+   en[2] = (Float32)Dotproduct40(exc, code);
 
    /* Compute energy of LTP residual */
    en[3] = 0;
 
-   for ( i = 0; i < L_SUBFR; i++ ) {
+   for (i = 0; i < L_SUBFR; i++) {
       /* LTP residual */
       sum = res[i] - ( exc[i] * gain_pit );
       en[3] += sum * sum;
    }
 
    /* calculate LTP coding gain, i.e. energy reduction LP res -> LTP res */
-   if ( en[3] > 0 && en[0] != 0 ) {
+   if (en[3] > 0 && en[0] != 0) {
       /* gain = ResEn / LTPResEn */
       pred_gain = en[0] / en[3];
       *ltpg = ( Float32 )( log10( pred_gain ) / log10( 2 ) );
-   }
-   else {
+   } else {
       *ltpg = 0;
    }
 }
@@ -7970,22 +7873,19 @@ static Float32 gmed_n_f( Float32 ind[], Word16 n )
  *    void
  */
 static void gain_adapt( Float32 *prev_gc, Word16 *onset, Float32 *ltpg_mem,
-      Float32 *prev_alpha, Float32 ltpg, Float32 gain_cod, Float32 *alpha )
-{
+      Float32 *prev_alpha, Float32 ltpg, Float32 gain_cod, Float32 *alpha ) {
+
    Float32 result, filt;   /* alpha factor, median-filtered LTP coding gain */
    Word32 i;
    Word16 adapt;   /* adaptdation status; 0, 1, or 2 */
 
-
    /* basic adaptation */
    if ( ltpg <= 0.3321928F /*LTP_GAIN_THR1*/ ) {
       adapt = 0;
-   }
-   else {
+   } else {
       if ( ltpg <= 0.6643856 /*LTP_GAIN_THR2*/ ) {
          adapt = 1;
-      }
-      else {
+      } else {
          adapt = 2;
       }
    }
@@ -7995,8 +7895,7 @@ static void gain_adapt( Float32 *prev_gc, Word16 *onset, Float32 *ltpg_mem,
     */
    if ( ( gain_cod > 2.0F * *prev_gc ) && ( gain_cod > 100 ) ) {
       *onset = 8;
-   }
-   else {
+   } else {
       if ( *onset != 0 ) {
          (*onset)--;
       }
@@ -8014,17 +7913,14 @@ static void gain_adapt( Float32 *prev_gc, Word16 *onset, Float32 *ltpg_mem,
    if ( adapt == 0 ) {
       if ( filt > 0.66443 ) {
          result = 0;
-      }
-      else {
+      } else {
          if ( filt < 0 ) {
             result = 0.5;
-         }
-         else {
+         } else {
             result = ( Float32 )( 0.5-0.75257499*filt );
          }
       }
-   }
-   else {
+   } else {
       result = 0;
    }
 
@@ -8210,31 +8106,30 @@ static void MR795_gain_quant( Float32 *prev_gc, Word16 *onset, Float32 *ltpg_mem
     * get list of candidate quantized pitch gain values
     * and corresponding quantization indices
     */
-   gain_pit_index = q_gain_pitch( MR795, gp_limit, gain_pit, g_pitch_cand,
-         g_pitch_cind );
+   gain_pit_index = q_gain_pitch(MR795, gp_limit, gain_pit, g_pitch_cand, g_pitch_cind);
 
    /*
     * pre-quantization of codebook gain
     * (using three pitch gain candidates);
     * result: best guess of pitch gain and code gain
     */
-   MR795_gain_code_quant3( gcode0_exp, gcode0_fra, g_pitch_cand, g_pitch_cind, coeff, gain_pit,
-         &gain_pit_index, gain_cod, &gain_cod_index, qua_ener_index );
+   MR795_gain_code_quant3(gcode0_exp, gcode0_fra, g_pitch_cand, g_pitch_cind, coeff, gain_pit,
+         &gain_pit_index, gain_cod, &gain_cod_index, qua_ener_index);
 
    /* calculation of energy coefficients and LTP coding gain */
-   calc_unfilt_energies( res, exc, code, *gain_pit, en, &ltpg );
+   calc_unfilt_energies(res, exc, code, *gain_pit, en, &ltpg);
 
    /*
     * run gain adaptor, calculate alpha factor to balance LTP/CB gain
     * (this includes the gain adaptor update)
     */
-   gain_adapt( prev_gc, onset, ltpg_mem, prev_alpha, ltpg, *gain_cod, &alpha );
+   gain_adapt(prev_gc, onset, ltpg_mem, prev_alpha, ltpg, *gain_cod, &alpha);
 
    /*
     * if this is a very low energy signal (threshold: see
     * calc_unfilt_energies) or alpha <= 0 then don't run the modified quantizer
     */
-   if ( ( en[0] != 0 ) && ( alpha > 0 ) ) {
+   if ((en[0] != 0) && (alpha > 0)) {
       /*
        * innovation energy <cod cod> was already computed in gc_pred()
        * (this overwrites the LtpResEn which is no longer needed)
@@ -8247,11 +8142,11 @@ static void MR795_gain_quant( Float32 *prev_gc, Word16 *onset, Float32 *ltpg_mem
       gain_cod_unq = cod_gain;
 
       /* run quantization with modified criterion */
-      gain_cod_index = MR795_gain_code_quant_mod( *gain_pit, gcode0_exp, gcode0_fra, en, alpha,
+      gain_cod_index = MR795_gain_code_quant_mod(*gain_pit, gcode0_exp, gcode0_fra, en, alpha,
             gain_cod_unq, gain_cod, qua_ener_index );
    }
-   *( *anap )++ = ( Word16 )gain_pit_index;
-   *( *anap )++ = ( Word16 )gain_cod_index;
+   *(*anap)++ = (Word16)gain_pit_index;
+   *(*anap)++ = (Word16)gain_cod_index;
 }
 
 
@@ -8284,13 +8179,11 @@ static Word16 Qua_gain( enum Mode mode, Word32 gcode0_exp, Word32 gcode0_fra, Fl
 
    gcode0 = (Float32)Pow2( gcode0_exp, gcode0_fra );
 
-
    if ( ( mode == MR102 ) || ( mode == MR74 ) || ( mode == MR67 ) ) {
       table_len = VQ_SIZE_HIGHRATES;
       table_gain = table_highrates;
       *qua_ener_index = NB_QUA_CODE;
-   }
-   else {
+   } else {
       table_len = VQ_SIZE_LOWRATES;
       table_gain = table_lowrates;
       *qua_ener_index = NB_QUA_CODE + VQ_SIZE_HIGHRATES;
@@ -8350,14 +8243,12 @@ static Word16 Qua_gain( enum Mode mode, Word32 gcode0_exp, Word32 gcode0_fra, Fl
    gcode_0 = Pow2( 14, gcode0_fra );
    if ( gcode0_exp < 11 ) {
       *gain_cod = (Float32)((g_code_tmp * gcode_0) >> ( 25 - gcode0_exp ));
-   }
-   else {
+   } else {
       i = ( ( g_code_tmp * gcode_0) << ( gcode0_exp - 9 ) );
 
       if ( ( i >> ( gcode0_exp - 9 ) ) != ( g_code_tmp * gcode_0) ) {
          *gain_cod = 0x7FFF;
-      }
-      else {
+      } else {
          *gain_cod = (Float32)(i >> 16);
       }
    }
@@ -8450,8 +8341,7 @@ static void gainQuant( enum Mode mode, Word32 even_subframe, Word32 *
           * and store them in state structure (will be used
           * in next subframe when real quantizer is run)
           */
-         calc_filt_energies( mode, xn, xn2, y1, y2, gCoeff, sf0_coeff, &cod_gain
-               );
+         calc_filt_energies( mode, xn, xn2, y1, y2, gCoeff, sf0_coeff, &cod_gain);
 
          /* store optimum codebook gain */
          *gain_cod = cod_gain;
@@ -8464,8 +8354,7 @@ static void gainQuant( enum Mode mode, Word32 even_subframe, Word32 *
          MR475_update_unq_pred( past_qua_en_unq, gcode0, cod_gain );
 
          /* the real quantizer is not run here... */
-      }
-      else {
+      } else {
          /*
           * predict codebook gain (using "unquantized" predictor)
           * (note that code[] is unsharpened in MR475)
@@ -8481,8 +8370,7 @@ static void gainQuant( enum Mode mode, Word32 even_subframe, Word32 *
                *sf0_target_en, code, exp, frac, coeff, en, gp_limit, sf0_gain_pit,
                sf0_gain_cod, gain_pit, gain_cod );
       }
-   }
-   else {
+   } else {
       /*
        * predict codebook gain and quantize
        *  (also compute normalized CB innovation energy for MR795)
@@ -8508,8 +8396,7 @@ static void gainQuant( enum Mode mode, Word32 even_subframe, Word32 *
          if ( *gain_cod < 0 )
             *gain_cod = 0.0F;
          *( *anap )++ = q_gain_code( gcode0, gain_cod,&qua_ener_index);
-      }
-      else {
+      } else {
          /* calculate energy coefficients for quantization */
          calc_filt_energies( mode, xn, xn2, y1, y2, gCoeff, coeff, &cod_gain );
 
@@ -8517,11 +8404,8 @@ static void gainQuant( enum Mode mode, Word32 even_subframe, Word32 *
             MR795_gain_quant( prev_gc, onset, ltpg_mem, prev_alpha, res, exc,
                   code, coeff, en, exp, frac , cod_gain, gp_limit, gain_pit,
                   gain_cod, &qua_ener_index, anap );
-         }
-         else {
-
-            *( *anap )++ = Qua_gain( mode, exp, frac, coeff, gp_limit, gain_pit,
-                  gain_cod, &qua_ener_index);
+         } else {
+            *( *anap )++ = Qua_gain( mode, exp, frac, coeff, gp_limit, gain_pit, gain_cod, &qua_ener_index);
          }
       }
 
@@ -8832,7 +8716,7 @@ static Word32 dtx_enc( Word16 *log_en_index, Float32 log_en_hist[], Float32
 
 
    /* VOX mode computation of SID parameters */
-   if ( ( compute_sid_flag != 0 ) ) {
+   if ( ( compute_sid_flag != 0 ) || ( *log_en_index == 0 ) ) {
    /*
     * compute new SID frame if safe i.e don't
     * compute immediately after a talk spurt
@@ -9773,7 +9657,7 @@ static void vad_pitch_detection( vadState *st, Word32 T_op[] )
  *
  *************************************************************************/
 
-int		vad2 (vadState *st, Float32 *farray_ptr)
+int     vad2 (vadState *st, Float32 *farray_ptr)
 {
 
   /* Static variables */
@@ -9784,7 +9668,7 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
      with numbers 0 (DC), 1, and 64 (Foldover frequency).  For
      these coefficients, the gain is always set at 1.0 (0 dB). */
 
-  static int	ch_tbl [NUM_CHAN][2] = {
+  static int    ch_tbl [NUM_CHAN][2] = {
 
     { 2,  3},
     { 4,  5},
@@ -9810,7 +9694,7 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
      index (quantized SNR value) to a number that is a measure
      of voice quality. */
 
-  static int	vm_tbl [90] = {
+  static int    vm_tbl [90] = {
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     3, 3, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 7, 7, 7,
     8, 8, 9, 9, 10, 10, 11, 12, 12, 13, 13, 14, 15,
@@ -9842,34 +9726,34 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
 
   /* Automatic variables */
 
-  float		data_buffer [FFT_LEN1], enrg, snr;
-  float		tne, tce, ftmp;
-  int		ch_snr [NUM_CHAN];
-  int		i, j, j1, j2;
-  int		vm_sum;
-  int		update_flag;
+  double    data_buffer [FFT_LEN1], enrg, snr;
+  double    tne, tce, ftmp;
+  int       ch_snr [NUM_CHAN];
+  int       i, j, j1, j2;
+  int       vm_sum;
+  int       update_flag;
 
-  float		ch_enrg_dev;		/* for forced update... */
-  float		ch_enrg_db [NUM_CHAN];
-  float		alpha;
+  double    ch_enrg_dev;        /* for forced update... */
+  double    ch_enrg_db [NUM_CHAN];
+  double    alpha;
 
 
   /* For detecting sine waves */
-  float		peak, avg, peak2avg;
-  int		sine_wave_flag;
+  double        peak, avg, peak2avg;
+  int       sine_wave_flag;
 
   /* For computing frame SNR and long-term SNR */
-  float		tce_db, tne_db;
-  float		xt;
+  double        tce_db, tne_db;
+  double        xt;
 
   /* More VAD stuff */
-  int	tsnrq;
-  int	ivad;
+  int   tsnrq;
+  int   ivad;
 
 
   /* Functions */
 
-  void real_fft (float *, int);
+  void real_fft (double *, int);
 
 
   /****** Executable code starts here ******/
@@ -9904,7 +9788,7 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
       enrg = 0.0;
       j1 = ch_tbl [i][0], j2 = ch_tbl [i][1];
       for (j = j1; j <= j2; j++)
-	enrg += square(data_buffer [2*j]) + square(data_buffer [2*j+1]);
+    enrg += square(data_buffer [2*j]) + square(data_buffer [2*j+1]);
       enrg /= (float) (j2 - j1 + 1);
       st->ch_enrg [i] = (1 - alpha) * st->ch_enrg [i] + alpha * enrg;
       if (st->ch_enrg [i] < MIN_CHAN_ENRG) st->ch_enrg [i] = MIN_CHAN_ENRG;
@@ -9946,10 +9830,11 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
   }
 
   /* Compute the channel SNR indices */
-  for (i = LO_CHAN; i <= HI_CHAN; i++) {
+  for (i = LO_CHAN; i <= HI_CHAN; i++) 
+  {
     snr = 10.0 * log10 ((double)st->ch_enrg [i] / st->ch_noise [i]);
     if (snr < 0.0) snr = 0.0;
-    ch_snr [i] = (snr + 0.1875) / 0.375;
+    ch_snr [i] = (int)((snr + 0.1875) / 0.375);
   }
 
   /* Compute the sum of voice metrics */
@@ -10089,14 +9974,14 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
   if (update_flag == TRUE) {
     for (i = LO_CHAN; i <= HI_CHAN; i++) {
       st->ch_noise [i] = (1.0 - CNE_SM_FAC1) * st->ch_noise [i] +
-	CNE_SM_FAC1 * st->ch_enrg [i];
+    CNE_SM_FAC1 * st->ch_enrg [i];
       if (st->ch_noise [i] < MIN_CHAN_ENRG) st->ch_noise [i] = MIN_CHAN_ENRG;
     }
   }
 
   return (ivad);
 
-}		/* end vad2 () */
+}       /* end vad2 () */
 
 
 /**************************************************************************
@@ -10115,54 +10000,54 @@ int		vad2 (vadState *st, Float32 *farray_ptr)
  *
  * Input -  There is two inputs to this function:
  *
- *	1) A float pointer to the input data array,
- *	2) A control parameter (isign) specifying forward (+1) or
+ *  1) A float pointer to the input data array,
+ *  2) A control parameter (isign) specifying forward (+1) or
  *         inverse (-1) FFT.
  *
  * Output - There is no return value.
- *	The input data are replaced with transformed data.  If the
- *	input is a real time domain sequence, it is replaced with
- *	the complex FFT for positive frequencies.  The FFT value
- *	for DC and the foldover frequency are combined to form the
- *	first complex number in the array.  The remaining complex
- *	numbers correspond to increasing frequencies.  If the input
- *	is a complex frequency domain sequence arranged	as above,
- *	it is replaced with the corresponding time domain sequence.
+ *  The input data are replaced with transformed data.  If the
+ *  input is a real time domain sequence, it is replaced with
+ *  the complex FFT for positive frequencies.  The FFT value
+ *  for DC and the foldover frequency are combined to form the
+ *  first complex number in the array.  The remaining complex
+ *  numbers correspond to increasing frequencies.  If the input
+ *  is a complex frequency domain sequence arranged as above,
+ *  it is replaced with the corresponding time domain sequence.
  *
  * Notes:
  *
- *	1) This function is designed to be a part of a VAD
- *	   algorithm that requires 128-point FFT of real
- *	   sequences.  This is achieved here through a 64-point
- *	   complex FFT.  Consequently, the FFT size information is
- *	   not transmitted explicitly.  However, some flexibility
- *	   is provided in the function to change the size of the
- *	   FFT by specifying the size information through "define"
- *	   statements.
+ *  1) This function is designed to be a part of a VAD
+ *     algorithm that requires 128-point FFT of real
+ *     sequences.  This is achieved here through a 64-point
+ *     complex FFT.  Consequently, the FFT size information is
+ *     not transmitted explicitly.  However, some flexibility
+ *     is provided in the function to change the size of the
+ *     FFT by specifying the size information through "define"
+ *     statements.
  *
- *	2) The values of the complex sinusoids used in the FFT
- *	   algorithm are stored in a ROM table.
+ *  2) The values of the complex sinusoids used in the FFT
+ *     algorithm are stored in a ROM table.
  *
- *	3) In the c_fft function, the FFT values are divided by
- *	   2 after each stage of computation thus dividing the
- *	   final FFT values by 64.  This is somewhat different
+ *  3) In the c_fft function, the FFT values are divided by
+ *     2 after each stage of computation thus dividing the
+ *     final FFT values by 64.  This is somewhat different
  *         from the usual definition of FFT where the factor 1/N,
  *         i.e., 1/64, used for the IFFT and not the FFT.  No factor
  *         is used in the r_fft function.
  *
  *************************************************************************/
 
-static double	phs_tbl [SIZE];		/* holds the complex sinusoids */
+static double   phs_tbl [SIZE];     /* holds the complex sinusoids */
 
-void		real_fft (float *farray_ptr, int isign)
+void        real_fft (double *farray_ptr, int isign)
 {
 
-  float		ftmp1_real, ftmp1_imag, ftmp2_real, ftmp2_imag;
-  int		i, j;
-  static int	first = TRUE;
+  double     ftmp1_real, ftmp1_imag, ftmp2_real, ftmp2_imag;
+  int       i, j;
+  static int    first = TRUE;
 
-  void		cmplx_fft (float *, int);
-  void		fill_tbl ();
+  void      cmplx_fft (double *, int);
+  void      fill_tbl ();
 
   /* If this is the first call to the function, fill up the
      phase table  */
@@ -10192,13 +10077,13 @@ void		real_fft (float *farray_ptr, int isign)
       ftmp2_imag = *(farray_ptr + j) - *(farray_ptr + i);
 
       *(farray_ptr + i) = (ftmp1_real + phs_tbl [i] * ftmp2_real -
-			   phs_tbl [i + 1] * ftmp2_imag) / 2.0;
+               phs_tbl [i + 1] * ftmp2_imag) / 2.0;
       *(farray_ptr + i + 1) = (ftmp1_imag + phs_tbl [i] * ftmp2_imag +
-			       phs_tbl [i + 1] * ftmp2_real) / 2.0;
+                   phs_tbl [i + 1] * ftmp2_real) / 2.0;
       *(farray_ptr + j) = (ftmp1_real + phs_tbl [j] * ftmp2_real +
-			   phs_tbl [j + 1] * ftmp2_imag) / 2.0;
+               phs_tbl [j + 1] * ftmp2_imag) / 2.0;
       *(farray_ptr + j + 1) = (-ftmp1_imag - phs_tbl [j] * ftmp2_imag +
-			       phs_tbl [j + 1] * ftmp2_real) / 2.0;
+                   phs_tbl [j + 1] * ftmp2_real) / 2.0;
     }
   }
 
@@ -10222,13 +10107,13 @@ void		real_fft (float *farray_ptr, int isign)
       ftmp2_imag = -(*(farray_ptr + j) - *(farray_ptr + i));
 
       *(farray_ptr + i) = (ftmp1_real + phs_tbl [i] * ftmp2_real +
-			   phs_tbl [i + 1] * ftmp2_imag) / 2.0;
+               phs_tbl [i + 1] * ftmp2_imag) / 2.0;
       *(farray_ptr + i + 1) = (ftmp1_imag + phs_tbl [i] * ftmp2_imag -
-			       phs_tbl [i + 1] * ftmp2_real) / 2.0;
+                   phs_tbl [i + 1] * ftmp2_real) / 2.0;
       *(farray_ptr + j) = (ftmp1_real + phs_tbl [j] * ftmp2_real -
-			   phs_tbl [j + 1] * ftmp2_imag) / 2.0;
+               phs_tbl [j + 1] * ftmp2_imag) / 2.0;
       *(farray_ptr + j + 1) = (-ftmp1_imag - phs_tbl [j] * ftmp2_imag -
-			       phs_tbl [j + 1] * ftmp2_real) / 2.0;
+                   phs_tbl [j + 1] * ftmp2_real) / 2.0;
     }
 
     /* Perform the complex IFFT */
@@ -10236,7 +10121,7 @@ void		real_fft (float *farray_ptr, int isign)
   }
 
   return;
-}		/* end real_fft () */
+}       /* end real_fft () */
 
 
 
@@ -10248,10 +10133,10 @@ void		real_fft (float *farray_ptr, int isign)
  * imaginary part for each sample.  The counters are therefore
  * incremented by two to access the complex valued samples.
  */
-void		cmplx_fft (float *farray_ptr, int isign)
+void        cmplx_fft (double *farray_ptr, int isign)
 {
-  int		i, j, k, ii, jj, kk, ji, kj;
-  float		ftmp, ftmp_real, ftmp_imag;
+  int       i, j, k, ii, jj, kk, ji, kj;
+  double    ftmp, ftmp_real, ftmp_imag;
 
   /* Rearrange the input array in bit reversed order */
   for (i = 0, j = 0; i < SIZE-2; i = i + 2) {
@@ -10274,21 +10159,21 @@ void		cmplx_fft (float *farray_ptr, int isign)
 
   /* The FFT part */
   if (isign == 1) {
-    for (i = 0; i < NUM_STAGE; i++) {		/* i is stage counter */
-      jj = (2 << i);				/* FFT size */
-      kk = (jj << 1);				/* 2 * FFT size */
-      ii = SIZE / jj;				/* 2 * number of FFT's */
-      for (j = 0; j < jj; j = j + 2) {		/* j is sample counter */
-        ji = j * ii;				/* ji is phase table index */
-        for (k = j; k < SIZE; k = k + kk) {	/* k is butterfly top */
-          kj = k + jj;				/* kj is butterfly bottom */
+    for (i = 0; i < NUM_STAGE; i++) {       /* i is stage counter */
+      jj = (2 << i);                /* FFT size */
+      kk = (jj << 1);               /* 2 * FFT size */
+      ii = SIZE / jj;               /* 2 * number of FFT's */
+      for (j = 0; j < jj; j = j + 2) {      /* j is sample counter */
+        ji = j * ii;                /* ji is phase table index */
+        for (k = j; k < SIZE; k = k + kk) { /* k is butterfly top */
+          kj = k + jj;              /* kj is butterfly bottom */
 
-	  /* Butterfly computations */
+      /* Butterfly computations */
           ftmp_real = *(farray_ptr + kj) * phs_tbl [ji] -
-	    *(farray_ptr + kj + 1) * phs_tbl [ji + 1];
+        *(farray_ptr + kj + 1) * phs_tbl [ji + 1];
 
           ftmp_imag = *(farray_ptr + kj + 1) * phs_tbl [ji] +
-	    *(farray_ptr + kj) * phs_tbl [ji + 1];
+        *(farray_ptr + kj) * phs_tbl [ji + 1];
 
           *(farray_ptr + kj) = (*(farray_ptr + k) - ftmp_real) / 2.0;
           *(farray_ptr + kj + 1) = (*(farray_ptr + k + 1) - ftmp_imag) / 2.0;
@@ -10302,21 +10187,21 @@ void		cmplx_fft (float *farray_ptr, int isign)
 
   /* The IFFT part */
   else {
-    for (i = 0; i < NUM_STAGE; i++) {		/* i is stage counter */
-      jj = (2 << i);				/* FFT size */
-      kk = (jj << 1);				/* 2 * FFT size */
-      ii = SIZE / jj;				/* 2 * number of FFT's */
-      for (j = 0; j < jj; j = j + 2) {		/* j is sample counter */
-        ji = j * ii;				/* ji is phase table index */
-        for (k = j; k < SIZE; k = k + kk) {	/* k is butterfly top */
-          kj = k + jj;				/* kj is butterfly bottom */
+    for (i = 0; i < NUM_STAGE; i++) {       /* i is stage counter */
+      jj = (2 << i);                /* FFT size */
+      kk = (jj << 1);               /* 2 * FFT size */
+      ii = SIZE / jj;               /* 2 * number of FFT's */
+      for (j = 0; j < jj; j = j + 2) {      /* j is sample counter */
+        ji = j * ii;                /* ji is phase table index */
+        for (k = j; k < SIZE; k = k + kk) { /* k is butterfly top */
+          kj = k + jj;              /* kj is butterfly bottom */
 
-	  /* Butterfly computations */
+      /* Butterfly computations */
           ftmp_real = *(farray_ptr + kj) * phs_tbl [ji] +
-	    *(farray_ptr + kj + 1) * phs_tbl [ji + 1];
+        *(farray_ptr + kj + 1) * phs_tbl [ji + 1];
 
           ftmp_imag = *(farray_ptr + kj + 1) * phs_tbl [ji] -
-	    *(farray_ptr + kj) * phs_tbl [ji + 1];
+        *(farray_ptr + kj) * phs_tbl [ji + 1];
 
           *(farray_ptr + kj) = *(farray_ptr + k) - ftmp_real;
           *(farray_ptr + kj + 1) = *(farray_ptr + k + 1) - ftmp_imag;
@@ -10328,16 +10213,16 @@ void		cmplx_fft (float *farray_ptr, int isign)
     }
   }
   return;
-}		/* end of cmplx_fft () */
+}       /* end of cmplx_fft () */
 
 
 /* Function to fill the phase table values
  */
 
-void		fill_tbl ()
+void        fill_tbl ()
 {
-  int		i;
-  double	delta_f, theta;
+  int       i;
+  double    delta_f, theta;
 
   delta_f = - PI / (double) SIZE_BY_TWO;
   for (i = 0; i < SIZE_BY_TWO; i++) {
@@ -10346,7 +10231,7 @@ void		fill_tbl ()
     phs_tbl[2*i+1] = sin(theta);
   }
   return;
-}		/* end fill_tbl () */
+}       /* end fill_tbl () */
 
 
 /***************************************************************************
@@ -10375,10 +10260,9 @@ void		fill_tbl ()
  *     none
  *
  *************************************************************************/
-
-void LTP_flag_update (vadState * st, Word16 mode)
+void LTP_flag_update (vadState * st, enum Mode mode)
 {
-  Float32 thresh;
+  Float64 thresh;
 
   if ((mode == MR475) || (mode == MR515))
     thresh = 0.55;
@@ -10468,8 +10352,9 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
 
 
    memcpy( st->new_speech, new_speech, L_FRAME <<2 );
+   //fprintf(stdout, "%d %d\n", (L_FRAME), (L_FRAME<<2));
 
-   if ( st->dtx ) {
+   if (st->dtx) {
 #ifdef VAD2
      /* Find VAD decision (option 2) */
      vad_flag = vad2 (st->vadSt, st->new_speech);
@@ -10502,22 +10387,20 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
     * subframes (both quantized and unquantized).
     */
    /* LP analysis */
-   lpc( st->lpcSt->LevinsonSt->old_A, st->p_window, st->p_window_12k2, A_t, mode
-         );
+   lpc(st->lpcSt->LevinsonSt->old_A, st->p_window, st->p_window_12k2, A_t, mode);
 
    /*
     * The LP filter coefficients, are converted to
     * the line spectral pair (LSP) representation for
     * quantization and interpolation purposes.
     */
-   lsp( mode, *used_mode, st->lspSt->lsp_old, st->lspSt->lsp_old_q, st->lspSt->
-         qSt->past_rq, A_t, Aq_t, lsp_new, &ana );
+   lsp(mode, *used_mode, st->lspSt->lsp_old, st->lspSt->lsp_old_q, st->lspSt-> qSt->past_rq, A_t, Aq_t, lsp_new, &ana);
 
    /* Buffer lsp's and energy */
    dtx_buffer( &st->dtxEncSt->hist_ptr, st->dtxEncSt->lsp_hist, lsp_new, st->
          new_speech, st->dtxEncSt->log_en_hist );
 
-   if ( *used_mode == MRDTX ) {
+   if (*used_mode == MRDTX) {
       dtx_enc( &st->dtxEncSt->log_en_index, st->dtxEncSt->log_en_hist, st->
             dtxEncSt->lsp_hist, st->dtxEncSt->lsp_index, &st->dtxEncSt->
             init_lsf_vq_index, compute_sid_flag, &st->lspSt->qSt->past_rq[0], st
@@ -10534,8 +10417,7 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
       /* Reset clLtp states */
       st->clLtpSt->pitchSt->T0_prev_subframe = 0;
       st->sharp = 0;
-   }
-   else {
+   } else {
       /* check resonance in the filter */
       lsp_flag = check_lsp( &st->tonStabSt->count, st->lspSt->lsp_old );
    }
@@ -10547,17 +10429,15 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
    }
 #endif
 
-   for ( subfrNr = 0, i_subfr = 0; subfrNr < 2; subfrNr++, i_subfr +=
-         L_FRAME_BY2 ) {
+   for (subfrNr = 0, i_subfr = 0; subfrNr < 2; subfrNr++, i_subfr += L_FRAME_BY2) {
       /*
        * Pre-processing on 80 samples
        * Find the weighted input speech for the whole speech frame
        */
-      pre_big( mode, gamma1, gamma1_12k2, gamma2, A_t, i_subfr, st->speech, st->
-            mem_w, st->wsp );
+      pre_big( mode, gamma1, gamma1_12k2, gamma2, A_t, i_subfr, st->speech, st->mem_w, st->wsp );
 
       /* Find open loop pitch lag for two subframes */
-      if ( ( mode != MR475 ) && ( mode != MR515 ) ) {
+      if ((mode != MR475) && (mode != MR515)) {
          ol_ltp( mode, st->vadSt, &st->wsp[i_subfr], &T_op[subfrNr], st->
                ol_gain_flg, &st->pitchOLWghtSt->old_T0_med, &st->pitchOLWghtSt->
                wght_flg, &st->pitchOLWghtSt->ada_w, st->old_lags, st->dtx,
@@ -10565,7 +10445,7 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
       }
    }
 
-   if ( ( mode == MR475 ) || ( mode == MR515 ) ) {
+   if ((mode == MR475) || (mode == MR515)) {
       /*
        * Find open loop pitch lag for ONE FRAME ONLY
        * search on 160 samples
@@ -10619,11 +10499,11 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
    evenSubfr = 0;
    subfrNr = -1;
 
-   for ( i_subfr = 0; i_subfr < L_FRAME; i_subfr += L_SUBFR ) {
+   for (i_subfr = 0; i_subfr < L_FRAME; i_subfr += L_SUBFR) {
       subfrNr += 1;
       evenSubfr = 1 - evenSubfr;
 
-      if ( ( evenSubfr != 0 ) && ( *used_mode == MR475 ) ) {
+      if ((evenSubfr != 0) && (*used_mode == MR475)) {
          memcpy( mem_syn_save, st->mem_syn, M <<2 );
          memcpy( mem_w0_save, st->mem_w0, M <<2 );
          memcpy( mem_err_save, st->mem_err, M <<2 );
@@ -10631,15 +10511,12 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
       }
 
       /* Preprocessing of subframe */
-      if ( *used_mode != MR475 ) {
+      if (*used_mode != MR475) {
          subframePreProc( *used_mode, gamma1, gamma1_12k2, gamma2, A, Aq, &st->
                speech[i_subfr], st->mem_err, st->mem_w0, st->zero, st->ai_zero,
                &st->exc[i_subfr], st->h1, xn, res, st->error );
-      }
-
-      /* MR475 */
-      else {
-         subframePreProc( *used_mode, gamma1, gamma1_12k2, gamma2, A, Aq, &st->
+      } else { /* MR475 */
+              subframePreProc( *used_mode, gamma1, gamma1_12k2, gamma2, A, Aq, &st->
                speech[i_subfr], st->mem_err, mem_w0_save, st->zero, st->ai_zero,
                &st->exc[i_subfr], st->h1, xn, res, st->error );
 
@@ -10649,29 +10526,27 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
       }
 
       /* copy the LP residual (res2 is modified in the CL LTP search) */
-      memcpy( res2, res, L_SUBFR <<2 );
+      memcpy(res2, res, L_SUBFR <<2);
 
       /* Closed-loop LTP search */
-      cl_ltp( &st->clLtpSt->pitchSt->T0_prev_subframe, st->tonStabSt->gp, *
-            used_mode, i_subfr, T_op, st->h1, &st->exc[i_subfr], res2, xn,
-            lsp_flag, xn2, y1, &T0, &T0_frac, &gain_pit, gCoeff, &ana, &gp_limit
-            );
+      cl_ltp(&st->clLtpSt->pitchSt->T0_prev_subframe, st->tonStabSt->gp, *used_mode, 
+          i_subfr, T_op, st->h1, &st->exc[i_subfr], res2, xn, lsp_flag, xn2, y1, &T0, &T0_frac, 
+          &gain_pit, gCoeff, &ana, &gp_limit);
 
       /* update LTP lag history */
-      if ( ( subfrNr == 0 ) && ( st->ol_gain_flg[0] > 0 ) ) {
+      if ((subfrNr == 0) && (st->ol_gain_flg[0] > 0)) {
          st->old_lags[1] = T0;
       }
 
-      if ( ( subfrNr == 3 ) && ( st->ol_gain_flg[1] > 0 ) ) {
+      if ( ( subfrNr == 3 ) && ( st->ol_gain_flg[1] > 0)) {
          st->old_lags[0] = T0;
       }
 
       /* Innovative codebook search (find index and gain) */
-      cbsearch( *used_mode, subfrNr, xn2, st->h1, T0, st->sharp, gain_pit, code,
-            y2, res2, &ana );
+      cbsearch(*used_mode, subfrNr, xn2, st->h1, T0, st->sharp, gain_pit, code, y2, res2, &ana);
 
       /* Quantization of gains. */
-      gainQuant( *used_mode, evenSubfr, st->gainQuantSt->gc_predSt->past_qua_en,
+      gainQuant(*used_mode, evenSubfr, st->gainQuantSt->gc_predSt->past_qua_en,
             st->gainQuantSt->gc_predUncSt->past_qua_en, st->gainQuantSt->
             sf0_coeff, &st->gainQuantSt->sf0_target_en, &st->gainQuantSt->
             sf0_gcode0_exp, &st->gainQuantSt->
@@ -10679,7 +10554,9 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
             gain_code_sf0, res, &st->exc[i_subfr], code, xn, xn2, y1, y2, gCoeff
             , gp_limit, &gain_pit, &gain_code, &st->gainQuantSt->adaptSt->
             prev_gc, &st->gainQuantSt->adaptSt->onset, st->gainQuantSt->adaptSt
-            ->ltpg_mem, &st->gainQuantSt->adaptSt->prev_alpha, &ana );
+            ->ltpg_mem, &st->gainQuantSt->adaptSt->prev_alpha, &ana);
+
+      //fprintf(stdout, "enc\t%f\n", gain_code);
 
       /* update gain history */
       for ( i = 0; i < N_FRAME - 1; i++ ) {
@@ -10689,12 +10566,11 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
 
       /* Subframe Post Processing */
       if ( *used_mode != MR475 ) {
-         subframePostProc( st->speech, i_subfr, gain_pit, gain_code, Aq, synth,
+         subframePostProc(st->speech, i_subfr, gain_pit, gain_code, Aq, synth,
                xn, code, y1, y2, st->mem_syn, st->mem_err, st->mem_w0, st->exc,
-               &st->sharp );
-      }
-      else {
-         if ( evenSubfr != 0 ) {
+               &st->sharp);
+      } else {
+         if (evenSubfr != 0) {
             i_subfr_sf0 = i_subfr;
             memcpy( xn_sf0, xn, L_SUBFR <<2 );
             memcpy( y2_sf0, y2, L_SUBFR <<2 );
@@ -10707,21 +10583,19 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
                   synth, xn, code, y1, y2, mem_syn_save, st->mem_err,
                   mem_w0_save, st->exc, &st->sharp );
             st->sharp = sharp_save;
-         }
-         else {
+         } else {
             /*
              * update both subframes for the MR475
              * Restore states for the MR475 mode
              */
-            memcpy( st->mem_err, mem_err_save, M <<2 );
+            memcpy(st->mem_err, mem_err_save, M <<2);
 
             /* re-build excitation for sf 0 */
             Pred_lt_3or6( &st->exc[i_subfr_sf0], T0_sf0, T0_frac_sf0, 1 );
             Convolve( &st->exc[i_subfr_sf0], h1_sf0, y1 );
             Aq -= MP1;
-            subframePostProc( st->speech, i_subfr_sf0, gain_pit_sf0,
-                  gain_code_sf0, Aq, synth, xn_sf0, code_sf0, y1, y2_sf0, st->
-                  mem_syn, st->mem_err, st->mem_w0, st->exc, &sharp_save );
+            subframePostProc(st->speech, i_subfr_sf0, gain_pit_sf0, gain_code_sf0, Aq, synth, xn_sf0,
+                code_sf0, y1, y2_sf0, st->mem_syn, st->mem_err, st->mem_w0, st->exc, &sharp_save);
 
             /* overwrites sharp_save */
             Aq += MP1;
@@ -10730,16 +10604,16 @@ static void cod_amr( cod_amrState *st, enum Mode mode, Float32 new_speech[],
              * re-run pre-processing to get xn right (needed by postproc)
              * (this also reconstructs the unsharpened h1 for sf 1)
              */
-            subframePreProc( *used_mode, gamma1, gamma1_12k2, gamma2, A, Aq, &st
-                  ->speech[i_subfr], st->mem_err, st->mem_w0, st->zero, st->
-                  ai_zero, &st->exc[i_subfr], st->h1, xn, res, st->error );
+            subframePreProc(*used_mode, gamma1, gamma1_12k2, gamma2, A, Aq, &st
+                  ->speech[i_subfr], st->mem_err, st->mem_w0, st->zero, st->ai_zero, 
+                  &st->exc[i_subfr], st->h1, xn, res, st->error);
 
             /* re-build excitation sf 1 (changed if lag < L_SUBFR) */
             Pred_lt_3or6( &st->exc[i_subfr], T0, T0_frac, 1 );
-            Convolve( &st->exc[i_subfr], st->h1, y1 );
-            subframePostProc( st->speech, i_subfr, gain_pit, gain_code, Aq,
+            Convolve(&st->exc[i_subfr], st->h1, y1);
+            subframePostProc(st->speech, i_subfr, gain_pit, gain_code, Aq,
                   synth, xn, code, y1, y2, st->mem_syn, st->mem_err, st->mem_w0,
-                  st->exc, &st->sharp );
+                  st->exc, &st->sharp);
          }
       }
 
@@ -10780,7 +10654,7 @@ the_end:
 static Word32 Pre_Process_reset( Pre_ProcessState *state )
 {
    if ( state == ( Pre_ProcessState * )NULL ) {
-      fprintf( stderr, "Pre_Process_reset: invalid parameter\n" );
+      //fprintf( stderr, "Pre_Process_reset: invalid parameter\n" );
       return-1;
    }
    state->y2 = 0;
@@ -10834,7 +10708,7 @@ static Word32 Pre_Process_init( Pre_ProcessState **state )
    Pre_ProcessState * s;
 
    if ( state == ( Pre_ProcessState * * )NULL ) {
-      fprintf( stderr, "Pre_Process_init: invalid parameter\n" );
+      //fprintf( stderr, "Pre_Process_init: invalid parameter\n" );
       return-1;
    }
    *state = NULL;
@@ -10842,7 +10716,7 @@ static Word32 Pre_Process_init( Pre_ProcessState **state )
    /* allocate memory */
    if ( ( s = ( Pre_ProcessState * ) malloc( sizeof( Pre_ProcessState ) ) ) ==
          NULL ) {
-      fprintf( stderr, "Pre_Process_init: can not malloc state structure\n" );
+      //fprintf( stderr, "Pre_Process_init: can not malloc state structure\n" );
       return-1;
    }
    Pre_Process_reset( s );
@@ -10883,7 +10757,7 @@ static Word32 Pre_Process_init( Pre_ProcessState **state )
  *    void
  */
 static void Pre_Process( Float32 *y2, Float32 *y1, Float32 *x0, Float32
-      *x1, Word16 *speech, Float32 *f_speech )
+      *x1, const Word16 *speech, Float32 *f_speech )
 {
    Word32 i;
    Float32 x2;
@@ -10893,7 +10767,7 @@ static void Pre_Process( Float32 *y2, Float32 *y1, Float32 *x0, Float32
    for ( i = 0; i < 160; i++ ) {
       x2 = *x1;
       *x1 = *x0;
-      *x0 = speech[i];
+      *x0 = (float)(speech[i] & (~0x8));
       tmp = ( Float32 )( 0.4636230465* *x0 - 0.92724705 * *x1 + 0.4636234515 *
             x2 + 1.906005859 * *y1 - 0.911376953 * *y2 );
       f_speech[i] = tmp;
@@ -11050,7 +10924,7 @@ static void cod_amr_reset( cod_amrState *s, Word32 dtx )
    s->speech = s->new_speech - L_NEXT;
    s->p_window = s->old_speech + L_TOTAL - L_WINDOW;
 
-   /* For LPC window				*/
+   /* For LPC window                */
    s->p_window_12k2 = s->p_window - L_NEXT;
 
    /* Initialize static pointers */
@@ -11061,17 +10935,17 @@ static void cod_amr_reset( cod_amrState *s, Word32 dtx )
    s->h1 = &s->hvec[L_SUBFR];
 
    /* Static vectors to zero */
-   memset( s->old_speech, 0, sizeof( Float32 )*L_TOTAL );
-   memset( s->old_exc, 0, sizeof( Float32 )*( PIT_MAX + L_INTERPOL ) );
-   memset( s->old_wsp, 0, sizeof( Float32 )*PIT_MAX );
-   memset( s->mem_syn, 0, sizeof( Float32 )*M );
-   memset( s->mem_w, 0, sizeof( Float32 )*M );
-   memset( s->mem_w0, 0, sizeof( Float32 )*M );
-   memset( s->mem_err, 0, sizeof( Float32 )*M );
-   memset( s->ai_zero, 0, sizeof( Float32 )*L_SUBFR );
-   memset( s->hvec, 0, sizeof( Float32 )*L_SUBFR );
+   memset(s->old_speech, 0, sizeof(Float32)*L_TOTAL );
+   memset(s->old_exc, 0, sizeof(Float32)*(PIT_MAX + L_INTERPOL));
+   memset(s->old_wsp, 0, sizeof(Float32)*PIT_MAX);
+   memset(s->mem_syn, 0, sizeof(Float32)*M);
+   memset(s->mem_w, 0, sizeof(Float32)*M);
+   memset(s->mem_w0, 0, sizeof(Float32)*M);
+   memset(s->mem_err, 0, sizeof(Float32)*M);
+   memset(s->ai_zero, 0, sizeof(Float32)*L_SUBFR);
+   memset(s->hvec, 0, sizeof(Float32)*L_SUBFR);
 
-   for ( i = 0; i < 5; i++ ) {
+   for (i = 0; i < 5; i++) {
       s->old_lags[i] = 40;
    }
    s->sharp = 0.0F;
@@ -11097,100 +10971,100 @@ static Word32 cod_amr_init( cod_amrState **state, Word32 dtx )
    cod_amrState * s;
 
    if ( ( s = ( cod_amrState * ) malloc( sizeof( cod_amrState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init clLtpState */
    if ( ( s->clLtpSt = ( clLtpState * ) malloc( sizeof( clLtpState ) ) ) == NULL
          ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init Pitch_frState */
    if ( ( s->clLtpSt->pitchSt = ( Pitch_frState * ) malloc( sizeof(
          Pitch_frState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init lspState */
    if ( ( s->lspSt = ( lspState * ) malloc( sizeof( lspState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init Q_plsfState */
    if ( ( s->lspSt->qSt = ( Q_plsfState * ) malloc( sizeof( Q_plsfState ) ) ) ==
          NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init gainQuantState */
    if ( ( s->gainQuantSt = ( gainQuantState * ) malloc( sizeof( gainQuantState )
          ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init gc_predState x2 */
    if ( ( s->gainQuantSt->gc_predSt = ( gc_predState * ) malloc( sizeof(
          gc_predState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    if ( ( s->gainQuantSt->gc_predUncSt = ( gc_predState * ) malloc( sizeof(
          gc_predState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init gain_adaptState */
    if ( ( s->gainQuantSt->adaptSt = ( gain_adaptState * ) malloc( sizeof(
          gain_adaptState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init pitchOLWghtState */
    if ( ( s->pitchOLWghtSt = ( pitchOLWghtState * ) malloc( sizeof(
          pitchOLWghtState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init tonStabState */
    if ( ( s->tonStabSt = ( tonStabState * ) malloc( sizeof( tonStabState ) ) )
          == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init lpcState */
    if ( ( s->lpcSt = ( lpcState * ) malloc( sizeof( lpcState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* init LevinsonState */
    if ( ( s->lpcSt->LevinsonSt = ( LevinsonState * ) malloc( sizeof(
          LevinsonState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    if ( ( s->vadSt = ( vadState * ) malloc( sizeof( vadState ) ) ) == NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
 
    /* Init dtx_encState */
    if ( ( s->dtxEncSt = ( dtx_encState * ) malloc( sizeof( dtx_encState ) ) ) ==
          NULL ) {
-      fprintf( stderr, "can not malloc state structure\n" );
+      //fprintf( stderr, "can not malloc state structure\n" );
       return-1;
    }
    cod_amr_reset( s, dtx );
@@ -11259,15 +11133,14 @@ void * Speech_Encode_Frame_init( int dtx )
    /* allocate memory */
    if ( ( s = ( Speech_Encode_FrameState * ) malloc( sizeof(
          Speech_Encode_FrameState ) ) ) == NULL ) {
-      fprintf( stderr, "Speech_Encode_Frame_init: can not malloc state "
-            "structure\n" );
+      //fprintf( stderr, "Speech_Encode_Frame_init: can not malloc state structure\n" );
       return NULL;
    }
    s->pre_state = NULL;
    s->cod_amr_state = NULL;
    s->dtx = dtx;
 
-   if ( Pre_Process_init( &s->pre_state ) || cod_amr_init( &s->cod_amr_state,
+   if (Pre_Process_init( &s->pre_state ) || cod_amr_init( &s->cod_amr_state,
          dtx ) ) {
       Speech_Encode_Frame_exit( ( void ** )( &s ) );
       return NULL;
@@ -11295,7 +11168,7 @@ int Speech_Encode_Frame_reset( void *st, int dtx )
    state = ( Speech_Encode_FrameState * )st;
 
    if ( ( Speech_Encode_FrameState * )state == NULL ) {
-      fprintf( stderr, "Speech_Encode_Frame_reset: invalid parameter\n" );
+      //fprintf( stderr, "Speech_Encode_Frame_reset: invalid parameter\n" );
       return-1;
    }
    Pre_Process_reset( state->pre_state );
@@ -11349,20 +11222,17 @@ void Speech_Encode_Frame_exit( void **st )
  * Returns:
  *    Void
  */
-void Speech_Encode_Frame( void *st, enum Mode mode, Word16 *new_speech, Word16 *
-      prm, enum Mode *used_mode )
+void Speech_Encode_Frame(void *st,
+                         enum Mode mode,
+                         const Word16 *new_speech,
+                         Word16 * prm,
+                         enum Mode *used_mode )
 {
    Float32 syn[L_FRAME];   /* Buffer for synthesis speech */
    Float32 speech[160];
-   Word32 i;
-
 
    Speech_Encode_FrameState * state;
-   state = ( Speech_Encode_FrameState * )st;
-
-   for ( i = 0; i < 160; i++ ) {
-      new_speech[i] = ( Word16 )( new_speech[i] & 0xfff8 );
-   }
+   state = (Speech_Encode_FrameState *)st;
 
    /* filter + downscaling */
    Pre_Process( &state->pre_state->y2, &state->pre_state->y1, &state->pre_state
