@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2020  2007/06/22 05:49:12  rjongbloed
+ * Revision 1.2021  2007/06/22 06:29:13  rjongbloed
+ * Fixed GCC warnings.
+ *
+ * Revision 2.19  2007/06/22 05:49:12  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -680,7 +683,7 @@ class H323GenericCapabilityInfo
       PINDEX maxBitRate = 0   ///< maxBitRate parameter for the GenericCapability
     );
     H323GenericCapabilityInfo(const H323GenericCapabilityInfo & obj);
-    ~H323GenericCapabilityInfo();
+    virtual ~H323GenericCapabilityInfo();
 
   protected:
     virtual BOOL OnSendingGenericPDU(
