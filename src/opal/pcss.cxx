@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2046  2007/04/13 07:26:46  rjongbloed
+ * Revision 1.2047  2007/06/22 02:04:30  rjongbloed
+ * Removed asserts where is a valid, though unusual, case.
+ *
+ * Revision 2.45  2007/04/13 07:26:46  rjongbloed
  * Changed to use sound device factory to create PSoundChannel for
  *   use by endpoint. Allows use of new WAV file sound device.
  *
@@ -581,11 +584,11 @@ OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & sour
 
 BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
 {
-  OpalAudioMediaStream * stream = PDownCast(OpalAudioMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return FALSE;
 
-  PSoundChannel * channel = PDownCast(PSoundChannel, stream->GetChannel());
+  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
     return FALSE;
 
@@ -595,7 +598,7 @@ BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
 
 unsigned OpalPCSSConnection::GetAudioSignalLevel(BOOL source)
 {
-  OpalAudioMediaStream * stream = PDownCast(OpalAudioMediaStream, GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return UINT_MAX;
 
