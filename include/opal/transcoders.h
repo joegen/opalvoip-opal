@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2026  2007/03/29 05:22:32  csoutheren
+ * Revision 1.2027  2007/06/22 05:47:19  rjongbloed
+ * Fixed setting of output RTP payload types on plug in video codecs.
+ *
+ * Revision 2.25  2007/03/29 05:22:32  csoutheren
  * Add extra logging
  *
  * Revision 2.24  2006/11/29 06:28:57  csoutheren
@@ -387,6 +390,16 @@ class OpalTranscoder : public OpalMediaFormatPair
 
     virtual BOOL CallCodecControl(const char *, void *,  unsigned int *, int &)
     { return -1; }
+
+    void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
+    { payloadTypeMap = v; }
+
+    void AddRTPPayloadMapping(RTP_DataFrame::PayloadTypes from, RTP_DataFrame::PayloadTypes to)
+    { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
+
+    RTP_DataFrame::PayloadTypes GetPayloadType(
+      BOOL input      ///<  Flag for input or output data size
+    ) const;
   //@}
 
   protected:
@@ -398,13 +411,6 @@ class OpalTranscoder : public OpalMediaFormatPair
     RTP_DataFrame::PayloadMapType payloadTypeMap;
 
     BOOL outputIsRTP, inputIsRTP;
-
-  public:
-    void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
-    { payloadTypeMap = v; }
-
-    void AddRTPPayloadMapping(RTP_DataFrame::PayloadTypes from, RTP_DataFrame::PayloadTypes to)
-    { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
 };
 
 

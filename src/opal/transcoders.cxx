@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2031  2007/04/15 10:10:23  dsandras
+ * Revision 1.2032  2007/06/22 05:47:19  rjongbloed
+ * Fixed setting of output RTP payload types on plug in video codecs.
+ *
+ * Revision 2.30  2007/04/15 10:10:23  dsandras
  * Do not try converting frames with a payload size of 0.
  *
  * Revision 2.29  2007/03/29 05:22:42  csoutheren
@@ -222,11 +225,22 @@ BOOL OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 }
 
 
+RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
+{
+  RTP_DataFrame::PayloadTypes pt = (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
+  if (payloadTypeMap.size() > 0) {
+    RTP_DataFrame::PayloadMapType::const_iterator iter = payloadTypeMap.find(pt);
+    if (iter != payloadTypeMap.end())
+      pt = iter->second;
+  }
+
+  return pt;
+}
+
+
 BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
-  RTP_DataFrame::PayloadTypes pt;
-
   if (input.GetPayloadSize()==0)
     return TRUE;
 
@@ -237,29 +251,11 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
       output.RemoveAt(1);
   }
 
-  if (payloadTypeMap.size() == 0)
-    output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
-  else {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(outputMediaFormat.GetPayloadType());
-    if (r != payloadTypeMap.end())
-      output[0].SetPayloadType(r->second);
-    else
-      output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
-  }
+  output[0].SetPayloadType(GetPayloadType(FALSE));
   output[0].SetTimestamp(input.GetTimestamp());
   output[0].SetMarker(input.GetMarker());
 
-  if (payloadTypeMap.size() == 0) {
-    pt = inputMediaFormat.GetPayloadType();
-  }
-  else {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(inputMediaFormat.GetPayloadType());
-    if (r != payloadTypeMap.end()) 
-      pt = r->second;
-    else 
-      pt = inputMediaFormat.GetPayloadType();
-  }
-
+  RTP_DataFrame::PayloadTypes pt = GetPayloadType(TRUE);
   if (pt != input.GetPayloadType()) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
     return TRUE;
