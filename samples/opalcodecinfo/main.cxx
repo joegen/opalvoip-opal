@@ -22,6 +22,16 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.8  2007/06/22 05:49:44  rjongbloed
+ * Major codec API update:
+ *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
+ *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
+ *   Largely removed need to distinguish between SIP and H.323 codecs.
+ *   New mechanism for setting OpalMediaOptions from within a plug in.
+ * Added test for video codec, feed simple raw frames and output the
+ *   encoded RTP packets, then feed them back to decoder.
+ * Added display of media format information, epecially option list.
+ *
  * Revision 1.7  2007/05/20 05:56:26  rjongbloed
  * Added ability to debug audio plug in codecs encode/decode function.
  * General clean up.
@@ -66,10 +76,14 @@
 
 #include <ptlib.h>
 
+#include <opal/transcoders.h>
 #include <codec/opalplugin.h>
 #include <codec/opalpluginmgr.h>
-#include <opal/transcoders.h>
+#include <codec/vidcodec.h>
+
 #include <ptclib/dtmf.h>
+#include <ptlib/videoio.h>
+
 
 class OpalCodecInfo : public PProcess
 {
@@ -85,12 +99,15 @@ class OpalCodecInfo : public PProcess
 
 PCREATE_PROCESS(OpalCodecInfo)
 
+
 ///////////////////////////////////////////////////////////////
 
 OpalCodecInfo::OpalCodecInfo()
   : PProcess("Post Increment", "OpalCodecInfo")
 {
 }
+
+
 PString DisplayLicenseType(int type)
 {
   PString str;
@@ -126,12 +143,14 @@ PString DisplayLicenseType(int type)
   return str;
 }
 
+
 PString DisplayableString(const char * str)
 {
   if (str == NULL)
     return PString("(none)");
   return PString(str);
 }
+
 
 PString DisplayLicenseInfo(PluginCodec_information * info)
 {
@@ -161,6 +180,7 @@ PString DisplayLicenseInfo(PluginCodec_information * info)
   }
   return str;
 }
+
 
 void DisplayCodecDefn(PluginCodec_Definition & defn)
 {
@@ -195,7 +215,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
        << "  Userdata:            " << (void *)defn.userData << endl
        << "  Sample rate:         " << defn.sampleRate << endl
        << "  Bits/sec:            " << defn.bitsPerSec << endl
-       << "  Frame time (ns):     " << defn.nsPerFrame << endl;
+       << "  Frame time (us):     " << defn.usPerFrame << endl;
   if (!isVideo) {
     cout << "  Samples/frame:       " << defn.samplesPerFrame << endl
          << "  Bytes/frame:         " << defn.bytesPerFrame << endl
@@ -377,6 +397,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
   }
 }
 
+
 void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
 {
   PINDEX i;
@@ -412,6 +433,7 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
   cout << "\n\n";
 }
 
+
 void DisplayPlugInInfo(const PString & name, const PPluginModuleManager::PluginListType & pluginList)
 {
   for (int i = 0; i < pluginList.GetSize(); i++) {
@@ -441,6 +463,42 @@ void DisplayPlugInInfo(const PString & name, const PPluginModuleManager::PluginL
   cout << "error: plugin \"" << name << "\" not found, specify one of :\n"
        << setfill('\n') << pluginList << setfill(' ') << endl;
 }
+
+
+void DisplayMediaFormat(const PString & fmtName)
+{
+  OpalMediaFormat mediaFormat = fmtName;
+  if (mediaFormat.IsEmpty()) {
+    cout << "error: cannot get info on format name \"" << fmtName << '"' << endl;
+    return;
+  }
+
+  cout << "        Media Format Name       = " << mediaFormat << "\n"
+          "       Default Session ID (R/O) = " << mediaFormat.GetDefaultSessionID() << "\n"
+          "             Payload type (R/O) = " << (unsigned)mediaFormat.GetPayloadType() << "\n"
+          "            Encoding name (R/O) = " << mediaFormat.GetEncodingName() << '\n';
+  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    cout << right << setw(25) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
+         << ") = " << left << setw(10) << option.AsString();
+    if (!option.GetFMTPName().IsEmpty())
+      cout << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
+    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
+    if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
+      cout << "  H.245 Ordinal: " << genericInfo.ordinal
+           << ' ' << (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? "Collapsing" : "Non-Collapsing");
+      if (!genericInfo.excludeTCS)
+        cout << " TCS";
+      if (!genericInfo.excludeOLC)
+        cout << " OLC";
+      if (!genericInfo.excludeReqMode)
+        cout << " RM";
+    }
+    cout << endl;
+  }
+  cout << endl;
+}
+
 
 void AudioTest(const PString & fmtName)
 {
@@ -499,6 +557,70 @@ void AudioTest(const PString & fmtName)
   cout << "Audio test completed." << endl;
 }
 
+
+void VideoTest(const PString & fmtName)
+{
+  OpalMediaFormat mediaFormat = fmtName;
+  if (mediaFormat.IsEmpty() || mediaFormat.GetDefaultSessionID() != OpalMediaFormat::DefaultVideoSessionID) {
+    cout << "error: cannot use format name \"" << fmtName << '"' << endl;
+    return;
+  }
+
+  std::auto_ptr<OpalTranscoder> encoder(OpalTranscoder::Create(OpalYUV420P, mediaFormat));
+  if (encoder.get() == NULL) {
+    cout << "error: Encoder cannot be instantiated!" << endl;
+    return;
+  }
+
+  std::auto_ptr<OpalTranscoder> decoder(OpalTranscoder::Create(mediaFormat, OpalYUV420P));
+  if (decoder.get() == NULL) {
+    cout << "error: Decoder cannot be instantiated!" << endl;
+    return;
+  }
+
+  std::auto_ptr<PVideoInputDevice> fakeVideo(PVideoInputDevice::CreateDevice("FakeVideo"));
+  fakeVideo->SetChannel(0); // Moving blocks
+  fakeVideo->SetColourFormat(OpalYUV420P);
+  fakeVideo->Open("");
+
+  RTP_DataFrame source;
+  source.SetPayloadSize(fakeVideo->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
+
+  RTP_DataFrameList encoded, output;
+
+  cout << "Encoded frames: " << endl;
+  for (unsigned count = 1; count <= 20; count++) {
+    cout << "\nFrame " << count << ' ' << flush;
+    OpalVideoTranscoder::FrameHeader * frame = (OpalVideoTranscoder::FrameHeader *)source.GetPayloadPtr();
+    frame->x = frame->y = 0;
+    fakeVideo->GetFrameSize(frame->width, frame->height);
+    fakeVideo->GetFrameData((BYTE *)(frame+1)); 
+
+    if (!encoder->ConvertFrames(source, encoded)) {
+      cout << "error: Encoder conversion failed!" << endl;
+      return;
+    }
+
+    cout << encoded.GetSize() << " packets." << endl;
+
+    for (PINDEX i = 0; i < encoded.GetSize(); i++) {
+      cout << "Packet " << (i+1) << ": " << encoded[i] << endl;
+
+      if (!decoder->ConvertFrames(encoded[i], output)) {
+        cout << "error: Decoder conversion failed!" << endl;
+        return;
+      }
+      if (output.GetSize() > 0) {
+        frame = (OpalVideoTranscoder::FrameHeader *)output[0].GetPayloadPtr();
+        cout << "Decoded frame: " << frame->width << 'x' << frame->height << endl;
+      }
+    }
+  }
+
+  cout << "\n\nVideo test completed." << endl;
+}
+
+
 void OpalCodecInfo::Main()
 {
   cout << GetName()
@@ -510,19 +632,19 @@ void OpalCodecInfo::Main()
   // Get and parse all of the command line arguments.
   PArgList & args = GetArguments();
   args.Parse(
-             "m-mediaformats."
-             "p-pluginlist."
-             "c-codecs."
-             "i-info:"
+             "A-audio-test:"
              "a-capabilities."
              "C-caps:"
-             "T-trancoders."
-             "A-audio-test:"
-
-             "t-trace."
-             "o-output:"
+             "c-codecs."
+             "f-format:"
              "h-help."
-
+             "i-info:"
+             "m-mediaformats."
+             "o-output:"
+             "p-pluginlist."
+             "T-trancoders."
+             "t-trace."
+             "V-video-test:"
              , FALSE);
 
   PTrace::Initialise(args.GetOptionCount('t'),
@@ -535,6 +657,13 @@ void OpalCodecInfo::Main()
     OpalMediaFormatList mediaList = OpalMediaFormat::GetAllRegisteredMediaFormats();
     cout << "Registered media formats:" << endl;
     DisplayMediaFormats(mediaList);
+    needHelp = false;
+  }
+
+  if (args.HasOption('f')) {
+    PStringArray formats = args.GetOptionString('f').Lines();
+    for (PINDEX i = 0; i < formats.GetSize(); i++)
+      DisplayMediaFormat(formats[i]);
     needHelp = false;
   }
 
@@ -557,7 +686,9 @@ void OpalCodecInfo::Main()
   }
 
   if (args.HasOption('i')) {
-    DisplayPlugInInfo(args.GetOptionString('i'), pluginList);
+    PStringArray plugins = args.GetOptionString('i').Lines();
+    for (PINDEX i = 0; i < plugins.GetSize(); i++)
+      DisplayPlugInInfo(plugins[i], pluginList);
     needHelp = false;
   }
 
@@ -570,14 +701,16 @@ void OpalCodecInfo::Main()
   }
 
   if (args.HasOption('C')) {
-    PString spec = args.GetOptionString('C');
-    OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
-    H323Capabilities caps;
-    caps.AddAllCapabilities(0, 0, spec);
-    cout << "Capability set using \"" << spec << "\" :\n" << caps << endl;
-    for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
-      PString fmt = stdCodecList[i];
-      caps.FindCapability(fmt);
+    PStringArray specs = args.GetOptionString('C').Lines();
+    for (PINDEX s = 0; s < specs.GetSize(); s++) {
+      OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
+      H323Capabilities caps;
+      caps.AddAllCapabilities(0, 0, specs[s]);
+      cout << "Capability set using \"" << specs[s] << "\" :\n" << caps << endl;
+      for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
+        PString fmt = stdCodecList[i];
+        caps.FindCapability(fmt);
+      }
     }
     needHelp = false;
   }
@@ -603,9 +736,15 @@ void OpalCodecInfo::Main()
     needHelp = false;
   }
 
+  if (args.HasOption('V')) {
+    VideoTest(args.GetOptionString('V'));
+    needHelp = false;
+  }
+
   if (needHelp) {
     cout << "available options:" << endl
         << "  -m --mediaformats   display media formats\n"
+        << "  -f --format fmt     display info about a media format\n"
         << "  -c --codecs         display standard codecs\n"
         << "  -p --pluginlist     display codec plugins\n"
         << "  -i --info name      display info about a plugin\n"
@@ -613,6 +752,7 @@ void OpalCodecInfo::Main()
         << "  -C --caps spec      display capabilities that match the specification\n"
         << "  -T --transcoders    display available transcoders\n"
         << "  -A --audio-test fmt Test audio transcoder: PCM-16->fmt then fmt->PCM-16\n"
+        << "  -V --video-test fmt Test video transcoder: YUV420P->fmt then fmt->YUV420P\n"
         << "  -t --trace          Increment trace level\n"
         << "  -o --output         Trace output file\n"
         << "  -h --help           display this help message\n";
