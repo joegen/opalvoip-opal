@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2010  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2011  2007/06/22 17:58:30  csoutheren
+ * Added explicit names to union in plugin defn for gcc
+ *
+ * Revision 2.9  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -348,20 +351,20 @@ struct PluginCodec_Definition {
   unsigned int bitsPerSec;                // raw bits per second
   unsigned int usPerFrame;                 // microseconds per frame
 
-  union {
-    struct {
+  union _parm {
+    struct _audio {
       unsigned int samplesPerFrame;            // audio: samples per frame
       unsigned int bytesPerFrame;              // audio: max bytes per frame
       unsigned int recommendedFramesPerPacket; // audio: recommended number of frames per packet
       unsigned int maxFramesPerPacket;         // audio: maximum number of frames per packet
-    };
-    struct {
+    } audio;
+    struct _video {
       unsigned int maxFrameWidth;              // video: frame width
       unsigned int maxFrameHeight;             // video: frame height
       unsigned int recommendedFrameRate;       // video: recommended frame rate
       unsigned int maxFrameRate;               // video: max frame rate
-    };
-  };
+    } video;
+  } parm;
 
   unsigned char rtpPayload;                 // IANA RTP payload code (if defined)
   const char * sdpFormat;                  // SDP format string (or NULL, if no SDP format)
