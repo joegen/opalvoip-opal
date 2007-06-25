@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2159  2007/06/22 05:49:13  rjongbloed
+ * Revision 1.2160  2007/06/25 21:04:00  csoutheren
+ * Ensure non-fastStart media channels start when using AnswerAlertingWithMedia
+ *
+ * Revision 2.158  2007/06/22 05:49:13  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -2223,6 +2226,8 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
           return FALSE;
         alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
       }
+      if (!StartControlNegotiations())
+        return FALSE;
     }
   }
 
