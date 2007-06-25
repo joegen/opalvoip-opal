@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2026  2007/06/10 08:55:11  rjongbloed
+ * Revision 1.2027  2007/06/25 05:44:45  rjongbloed
+ * Fixed numerous issues with "bound" managed socket, ie associating
+ *   listeners to a specific named interface.
+ *
+ * Revision 2.25  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.24  2006/10/21 11:48:48  hfriederich
@@ -492,6 +496,11 @@ class OpalListenerIP : public OpalListener
       WORD port = 0,                           ///<  TCP port to listen for connections
       BOOL exclusive = TRUE
     );
+    OpalListenerIP(
+      OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
+      const OpalTransportAddress & binding,     ///<  Local interface to listen on
+      OpalTransportAddress::BindOptions option  ///< OPtions for binding
+    );
   //@}
 
   /**@name Overrides from OpalListener */
@@ -531,6 +540,11 @@ class OpalListenerTCP : public OpalListenerIP
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
       BOOL exclusive = TRUE
+    );
+    OpalListenerTCP(
+      OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
+      const OpalTransportAddress & binding,     ///<  Local interface to listen on
+      OpalTransportAddress::BindOptions option  ///< OPtions for binding
     );
 
     /** Destroy the listener thread.
@@ -609,10 +623,9 @@ class OpalListenerUDP : public OpalListenerIP
       BOOL exclusive = TRUE
     );
     OpalListenerUDP(
-      OpalEndPoint & endpoint,  ///<  Endpoint listener is used for
-      const PString & binding,  ///<  Local interface to listen on
-      WORD port = 0,            ///<  TCP port to listen for connections
-      BOOL exclusive = TRUE
+      OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
+      const OpalTransportAddress & binding,     ///<  Local interface to listen on
+      OpalTransportAddress::BindOptions option  ///< OPtions for binding
     );
 
     /** Destroy the listener thread.
@@ -1216,12 +1229,7 @@ class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
       OpalTransportAddress::BindOptions options
     ) const
     {
-      PIPSocket::Address ip;
-      WORD port;
-      BOOL reuseAddr;
-      if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr))
-        return new ListenerType(endpoint, ip, port, reuseAddr);
-      return NULL;
+      return new ListenerType(endpoint, address, options);
     }
 
     OpalTransport * CreateTransport(
@@ -1259,6 +1267,11 @@ class OpalListenerTCPS : public OpalListenerTCP
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
       BOOL exclusive = TRUE
+    );
+    OpalListenerTCPS(
+      OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
+      const OpalTransportAddress & binding,     ///<  Local interface to listen on
+      OpalTransportAddress::BindOptions option  ///< OPtions for binding
     );
 
     /** Destroy the listener thread.
