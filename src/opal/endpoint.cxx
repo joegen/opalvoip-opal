@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2059  2007/05/15 07:27:34  csoutheren
+ * Revision 1.2060  2007/06/25 05:16:19  rjongbloed
+ * Changed GetDefaultTransport() so can return multiple transport names eg udp$ AND tcp$.
+ * Changed listener start up so if no transport is mentioned in the "interface" to listen on
+ *   then will listen on all transports supplied by GetDefaultTransport()
+ *
+ * Revision 2.58  2007/05/15 07:27:34  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -346,9 +351,18 @@ BOOL OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
   BOOL startedOne = FALSE;
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-    OpalTransportAddress iface(interfaces[i], defaultSignalPort, GetDefaultTransport());
-    if (StartListener(iface))
-      startedOne = TRUE;
+    if (interfaces[i].Find('$') != P_MAX_INDEX) {
+      if (StartListener(interfaces[i]))
+        startedOne = TRUE;
+    }
+    else {
+      PStringArray transports = GetDefaultTransport().Tokenise(',');
+      for (PINDEX j = 0; j < transports.GetSize(); j++) {
+        OpalTransportAddress iface(interfaces[i], GetDefaultSignalPort(), transports[j]);
+        if (StartListener(iface))
+          startedOne = TRUE;
+      }
+    }
   }
 
   return startedOne;
@@ -407,8 +421,13 @@ PString OpalEndPoint::GetDefaultTransport() const
 PStringArray OpalEndPoint::GetDefaultListeners() const
 {
   PStringArray listenerAddresses;
-  if (defaultSignalPort != 0) 
-    listenerAddresses.AppendString(GetDefaultTransport() + psprintf("*:%u", defaultSignalPort));
+  PStringArray transports = GetDefaultTransport().Tokenise(',');
+  for (PINDEX i = 0; i < transports.GetSize(); i++) {
+    PString listenerAddress = transports[i] + '*';
+    if (defaultSignalPort != 0)
+      listenerAddress.sprintf(":%u", defaultSignalPort);
+    listenerAddresses += listenerAddress;
+  }
   return listenerAddresses;
 }
 
