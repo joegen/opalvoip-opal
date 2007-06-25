@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2028  2007/06/22 06:29:14  rjongbloed
+ * Revision 1.2029  2007/06/25 04:04:38  rjongbloed
+ * Fixed compile after change to anonymous structure in header (for GCC).
+ *
+ * Revision 2.27  2007/06/22 06:29:14  rjongbloed
  * Fixed GCC warnings.
  *
  * Revision 2.26  2007/06/22 05:48:09  rjongbloed
@@ -605,11 +608,11 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
     : OpalAudioFormat(CreateCodecName(_encoderCodec),
                       (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                       rtpEncodingName,
-                      _encoderCodec->bytesPerFrame,
+                      _encoderCodec->parm.audio.bytesPerFrame,
                       frameTime,
-                      _encoderCodec->recommendedFramesPerPacket,
-                      _encoderCodec->recommendedFramesPerPacket,
-                      _encoderCodec->maxFramesPerPacket,
+                      _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                      _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                      _encoderCodec->parm.audio.maxFramesPerPacket,
                       _encoderCodec->sampleRate,
                       timeStamp  
                     )
@@ -687,9 +690,9 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
       CreateCodecName(_encoderCodec),
                       (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                       rtpEncodingName,
-                      _encoderCodec->maxFrameWidth,
-                      _encoderCodec->maxFrameHeight,
-                      _encoderCodec->maxFrameRate,
+                      _encoderCodec->parm.video.maxFrameWidth,
+                      _encoderCodec->parm.video.maxFrameHeight,
+                      _encoderCodec->parm.video.maxFrameRate,
                       _encoderCodec->bitsPerSec,
                       timeStamp  
                     )
@@ -831,8 +834,8 @@ class OpalPluginFaxMediaFormat : public OpalMediaFormat
                       (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                       rtpEncodingName,
                       FALSE,                                // need jitter
-                      8*_encoderCodec->bytesPerFrame*AudioClockRate/frameTime, // bandwidth
-                      _encoderCodec->bytesPerFrame,         // size of frame in bytes
+                      8*_encoderCodec->parm.audio.bytesPerFrame*AudioClockRate/frameTime, // bandwidth
+                      _encoderCodec->parm.audio.bytesPerFrame,         // size of frame in bytes
                       frameTime,                            // time for frame
                       _encoderCodec->sampleRate,            // clock rate
                       (unsigned int)timeStamp               // timestamp
@@ -897,8 +900,8 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
     OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = OpalPCM16)
       : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? rawFormat : _codec->sourceFormat,
                               (strcmp(_codec->destFormat, "L16") == 0)   ? rawFormat : _codec->destFormat,
-                             _isEncoder ? _codec->samplesPerFrame*2 : _codec->bytesPerFrame,
-                             _isEncoder ? _codec->bytesPerFrame     : _codec->samplesPerFrame*2),
+                             _isEncoder ? _codec->parm.audio.samplesPerFrame*2 : _codec->parm.audio.bytesPerFrame,
+                             _isEncoder ? _codec->parm.audio.bytesPerFrame     : _codec->parm.audio.samplesPerFrame*2),
         codec(_codec), isEncoder(_isEncoder)
     { 
       if (codec->createCodec != NULL) 
@@ -947,7 +950,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
       // for a decoder, this mean that we need to create a silence frame
       // which is easy - ask the decoder, or just create silence
       if (!isEncoder) {
-        unsigned int length = codec->samplesPerFrame*2;
+        unsigned int length = codec->parm.audio.samplesPerFrame*2;
         if ((codec->flags & PluginCodec_DecodeSilence) == 0)
           memset(buffer, 0, length); 
         else {
@@ -961,11 +964,11 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
 
       // for an encoder, we encode silence but set the flag so it can do something special if need be
       else {
-        unsigned int length = codec->bytesPerFrame;
+        unsigned int length = codec->parm.audio.bytesPerFrame;
         if ((codec->flags & PluginCodec_EncodeSilence) == 0) {
-          PShortArray silence(codec->samplesPerFrame);
-          memset(silence.GetPointer(), 0, codec->samplesPerFrame*sizeof(short));
-          unsigned silenceLen = codec->samplesPerFrame * sizeof(short);
+          PShortArray silence(codec->parm.audio.samplesPerFrame);
+          memset(silence.GetPointer(), 0, codec->parm.audio.samplesPerFrame*sizeof(short));
+          unsigned silenceLen = codec->parm.audio.samplesPerFrame * sizeof(short);
           unsigned flags = 0;
           (codec->codecFunction)(codec, context, 
                                  silence, &silenceLen,
@@ -1046,7 +1049,7 @@ class OpalPluginStreamedAudioEncoder : public OpalPluginStreamedAudioTranscoder
   PCLASSINFO(OpalPluginStreamedAudioEncoder, OpalPluginStreamedAudioTranscoder);
   public:
     OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, BOOL)
-      : OpalPluginStreamedAudioTranscoder(_codec, 16, (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos, _codec->recommendedFramesPerPacket)
+      : OpalPluginStreamedAudioTranscoder(_codec, 16, (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos, _codec->parm.audio.recommendedFramesPerPacket)
     {
     }
 
@@ -1073,7 +1076,7 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
   PCLASSINFO(OpalPluginStreamedAudioDecoder, OpalPluginStreamedAudioTranscoder);
   public:
     OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, BOOL)
-      : OpalPluginStreamedAudioTranscoder(_codec, (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos, 16, _codec->recommendedFramesPerPacket)
+      : OpalPluginStreamedAudioTranscoder(_codec, (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos, 16, _codec->parm.audio.recommendedFramesPerPacket)
     {
     }
 
@@ -1421,7 +1424,7 @@ class H323AudioPluginCapability : public H323AudioCapability,
       : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
         pluginSubType(_pluginSubType)
       { 
-        SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+        SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
       }
 
     // this constructor is only used when creating a capability without a codec
@@ -2399,7 +2402,7 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
  : H323NonStandardAudioCapability(compareFunc,data, dataLen), 
    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec)
 {
-  SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
 
   PluginCodec_H323NonStandardCodecData * nonStdData = (PluginCodec_H323NonStandardCodecData *)_encoderCodec->h323CapabilityData;
   if (nonStdData->objectId != NULL) {
@@ -2417,7 +2420,7 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
  : H323NonStandardAudioCapability(data, dataLen), 
    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec)
 {
-  SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
   PluginCodec_H323NonStandardCodecData * nonStdData = (PluginCodec_H323NonStandardCodecData *)_encoderCodec->h323CapabilityData;
   if (nonStdData->objectId != NULL) {
     oid = PString(nonStdData->objectId);
@@ -2436,7 +2439,7 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(con
   : H323GenericAudioCapability(data->standardIdentifier, data->maxBitRate ? data->maxBitRate : _decoderCodec->bitsPerSec),
     H323PluginCapabilityInfo((PluginCodec_Definition *)_encoderCodec, (PluginCodec_Definition *) _decoderCodec)
 {
-  SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
 
   PopulateMediaFormatFromGenericData(GetWritableMediaFormat(), data);
 }
@@ -2465,7 +2468,7 @@ BOOL H323GSMPluginCapability::OnSendingPDU(H245_AudioCapability & cap, unsigned 
 {
   cap.SetTag(pluginSubType);
   H245_GSMAudioCapability & gsm = cap;
-  gsm.m_audioUnitSize = packetSize * encoderCodec->bytesPerFrame;
+  gsm.m_audioUnitSize = packetSize * encoderCodec->parm.audio.bytesPerFrame;
   gsm.m_comfortNoise  = comfortNoise;
   gsm.m_scrambled     = scrambled;
 
@@ -2476,7 +2479,7 @@ BOOL H323GSMPluginCapability::OnSendingPDU(H245_AudioCapability & cap, unsigned 
 BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, unsigned & packetSize)
 {
   const H245_GSMAudioCapability & gsm = cap;
-  packetSize   = gsm.m_audioUnitSize / encoderCodec->bytesPerFrame;
+  packetSize   = gsm.m_audioUnitSize / encoderCodec->parm.audio.bytesPerFrame;
   if (packetSize == 0)
     packetSize = 1;
 
