@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.9  2007/06/25 05:09:09  rjongbloed
+ * Fixed compile after change to anonymous structure in header (for GCC).
+ *
  * Revision 1.8  2007/06/22 05:49:44  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
@@ -217,16 +220,16 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
        << "  Bits/sec:            " << defn.bitsPerSec << endl
        << "  Frame time (us):     " << defn.usPerFrame << endl;
   if (!isVideo) {
-    cout << "  Samples/frame:       " << defn.samplesPerFrame << endl
-         << "  Bytes/frame:         " << defn.bytesPerFrame << endl
-         << "  Frames/packet:       " << defn.recommendedFramesPerPacket << endl
-         << "  Frames/packet (max): " << defn.maxFramesPerPacket << endl;
+    cout << "  Samples/frame:       " << defn.parm.audio.samplesPerFrame << endl
+         << "  Bytes/frame:         " << defn.parm.audio.bytesPerFrame << endl
+         << "  Frames/packet:       " << defn.parm.audio.recommendedFramesPerPacket << endl
+         << "  Frames/packet (max): " << defn.parm.audio.maxFramesPerPacket << endl;
   }
   else {
-    cout << "  Frame width:         " << defn.samplesPerFrame << endl
-         << "  Frame height:        " << defn.bytesPerFrame << endl
-         << "  Frame rate:          " << defn.recommendedFramesPerPacket << endl
-         << "  Frame rate (max):    " << defn.maxFramesPerPacket << endl;
+    cout << "  Frame width:         " << defn.parm.video.maxFrameWidth << endl
+         << "  Frame height:        " << defn.parm.video.maxFrameHeight << endl
+         << "  Frame rate:          " << defn.parm.video.recommendedFrameRate << endl
+         << "  Frame rate (max):    " << defn.parm.video.maxFrameRate << endl;
   }
   cout << "  RTP payload:         ";
 
