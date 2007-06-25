@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2174  2007/06/10 08:55:13  rjongbloed
+ * Revision 1.2175  2007/06/25 05:16:20  rjongbloed
+ * Changed GetDefaultTransport() so can return multiple transport names eg udp$ AND tcp$.
+ * Changed listener start up so if no transport is mentioned in the "interface" to listen on
+ *   then will listen on all transports supplied by GetDefaultTransport()
+ *
+ * Revision 2.173  2007/06/10 08:55:13  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.172  2007/05/23 19:58:04  dsandras
@@ -742,15 +747,6 @@ SIPEndPoint::~SIPEndPoint()
   
   PWaitAndSignal m(transactionsMutex);
   PTRACE(4, "SIP\tDeleted endpoint.");
-}
-
-
-PStringArray SIPEndPoint::GetDefaultListeners() const
-{
-  PStringArray listenerAddresses = OpalEndPoint::GetDefaultListeners();
-  if (!listenerAddresses.IsEmpty())
-    listenerAddresses.AppendString(psprintf("udp$*:%u", defaultSignalPort));
-  return listenerAddresses;
 }
 
 
