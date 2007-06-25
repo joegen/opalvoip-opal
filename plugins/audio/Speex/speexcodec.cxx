@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: speexcodec.cxx,v $
+ * Revision 1.15  2007/06/25 22:49:52  rjongbloed
+ * Fixed compile after change to anonymous structure in header (for GCC).
+ *
  * Revision 1.14  2007/03/01 09:16:59  dereksmithies
  * Cure memory leak.
  *
@@ -214,9 +217,9 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
 
   // encode PCM data in sampleBuffer to buffer
   int i = 0;
-  int frameLen = codec->samplesPerFrame*2;
-  while ((*fromLen >= frameLen) && (((i+1)*codec->bytesPerFrame) <= *toLen) ) {
-    speex_encode_int(context->coderState, sampleBuffer + i*codec->samplesPerFrame, &context->speexBits); 
+  int frameLen = codec->parm.audio.samplesPerFrame*2;
+  while ((*fromLen >= frameLen) && (((i+1)*codec->parm.audio.bytesPerFrame) <= *toLen) ) {
+    speex_encode_int(context->coderState, sampleBuffer + i*codec->parm.audio.samplesPerFrame, &context->speexBits); 
     ++i;
   }
   *fromLen = i*frameLen;
@@ -270,7 +273,7 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
 
   speex_bits_init(&context->speexBits);
 
-  if (*toLen < codec->samplesPerFrame*2) {
+  if (*toLen < codec->parm.audio.samplesPerFrame*2) {
     speex_bits_destroy(&context->speexBits);  
     return 0;
   }
@@ -285,13 +288,13 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   else {
     speex_bits_read_from(&context->speexBits, (char *)from, *fromLen); 
     int i = 0;
-    while (((i+1)*codec->samplesPerFrame*2) <= *toLen)  {
-      int stat = speex_decode_int(context->coderState, &context->speexBits, sampleBuffer + i*codec->samplesPerFrame);
+    while (((i+1)*codec->parm.audio.samplesPerFrame*2) <= *toLen)  {
+      int stat = speex_decode_int(context->coderState, &context->speexBits, sampleBuffer + i*codec->parm.audio.samplesPerFrame);
       if (stat == -1 || stat == -2 || speex_bits_remaining(&context->speexBits) < 0)
         break;
       ++i;
     }
-    *toLen = i*codec->samplesPerFrame*2;
+    *toLen = i*codec->parm.audio.samplesPerFrame*2;
   }
 
   speex_bits_destroy(&context->speexBits);  
