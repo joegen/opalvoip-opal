@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2084  2007/06/10 08:55:11  rjongbloed
+ * Revision 1.2085  2007/06/25 05:16:19  rjongbloed
+ * Changed GetDefaultTransport() so can return multiple transport names eg udp$ AND tcp$.
+ * Changed listener start up so if no transport is mentioned in the "interface" to listen on
+ *   then will listen on all transports supplied by GetDefaultTransport()
+ *
+ * Revision 2.83  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.82  2007/05/21 04:30:30  dereksmithies
@@ -450,10 +455,10 @@ class SIPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
-    /**Get the default listeners for the endpoint type.
-       Overrides the default behaviour to return udp and tcp listeners.
+    /**Get the default transports for the endpoint type.
+       Overrides the default behaviour to return udp and tcp.
       */
-    virtual PStringArray GetDefaultListeners() const;
+    virtual PString GetDefaultTransport() const {  return "udp$,tcp$"; }
 
     /**Handle new incoming connection from listener.
 
