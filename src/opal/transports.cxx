@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2078  2007/06/10 08:55:12  rjongbloed
+ * Revision 1.2079  2007/06/25 05:44:45  rjongbloed
+ * Fixed numerous issues with "bound" managed socket, ie associating
+ *   listeners to a specific named interface.
+ *
+ * Revision 2.77  2007/06/10 08:55:12  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.76  2007/04/04 02:12:01  rjongbloed
@@ -831,7 +835,7 @@ BOOL OpalInternalIPTransport::GetIpAndPort(const OpalTransportAddress & address,
     }
   }
 
-  if (host == "*" || host == "0.0.0.0") {
+  if (host[0] == '*' || host == "0.0.0.0") {
     ip = PIPSocket::GetDefaultIpAny();
     return TRUE;
   }
@@ -1025,6 +1029,15 @@ OpalListenerIP::OpalListenerIP(OpalEndPoint & ep,
 }
 
 
+OpalListenerIP::OpalListenerIP(OpalEndPoint & endpoint,
+                               const OpalTransportAddress & binding,
+                               OpalTransportAddress::BindOptions option)
+  : OpalListener(endpoint)
+{
+  OpalInternalIPTransport::GetAdjustedIpAndPort(binding, endpoint, option, localAddress, listenerPort, exclusiveListener);
+}
+
+
 OpalTransportAddress OpalListenerIP::GetLocalAddress(const OpalTransportAddress & preferredAddress) const
 {
   PString addr;
@@ -1065,7 +1078,14 @@ OpalListenerTCP::OpalListenerTCP(OpalEndPoint & ep,
                                  BOOL exclusive)
   : OpalListenerIP(ep, binding, port, exclusive)
 {
-  listenerPort = port;
+}
+
+
+OpalListenerTCP::OpalListenerTCP(OpalEndPoint & endpoint,
+                                 const OpalTransportAddress & binding,
+                                 OpalTransportAddress::BindOptions option)
+  : OpalListenerIP(endpoint, binding, option)
+{
 }
 
 
@@ -1185,11 +1205,10 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
 
 
 OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
-                                 const PString & binding,
-                                 WORD port,
-                                 BOOL exclusive)
-  : OpalListenerIP(endpoint, binding, port, exclusive),
-    listenerBundle(PMonitoredSockets::Create(binding, !exclusive))
+                                 const OpalTransportAddress & binding,
+                                 OpalTransportAddress::BindOptions option)
+  : OpalListenerIP(endpoint, binding, option),
+    listenerBundle(PMonitoredSockets::Create(binding(binding.Find('$')+1, binding.FindLast(':')-1), !exclusiveListener))
 {
 }
 
@@ -1878,9 +1897,8 @@ OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep,
                                      PIPSocket::Address binding,
                                      WORD port,
                                      BOOL reuseAddr)
-  : OpalTransportTCP(ep, binding, port)
+  : OpalTransportTCP(ep, binding, port, reuseAddr)
 {
-  reuseAddressFlag = reuseAddr;
   sslContext = new PSSLContext;
 }
 
@@ -2030,6 +2048,15 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
     PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
   }
 }
+
+
+OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
+                                    const OpalTransportAddress & binding,
+                                    OpalTransportAddress::BindOptions option)
+  : OpalListenerTCP(ep, binding, option)
+{
+}
+
 
 OpalListenerTCPS::~OpalListenerTCPS()
 {
