@@ -37,7 +37,13 @@
 
 #include "h264-x264.h"
 #include "h264dyna.h"
+
+#ifdef WIN32
+#include "h264pipe_win32.h"
+#else
 #include "h264pipe_unix.h"
+#endif
+
 #include "shared/trace.h"
 #include "shared/rtpframe.h"
 
@@ -311,8 +317,6 @@ static int encoder_set_options(
          context->SetFrameHeight(atoi(options[i+1]));
       if (STRCMPI(options[i], "Frame Width") == 0)
          context->SetFrameWidth(atoi(options[i+1]));
-      if (STRCMPI(options[i], "RTP Payload Type") == 0)
-         context->SetPayloadType(atoi(options[i+1]));
       TRACE (4, "H264\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
       printf ( "H264\tEncoder\tOption %s = %s\n", options[i], options[i+1] );
     }
@@ -340,11 +344,6 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
   return context->EncodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
 }
 
-static int encoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
-{
-  return (int ) (codec->samplesPerFrame * codec->bytesPerFrame * 3 / 2);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -353,29 +352,17 @@ static void * create_decoder(const struct PluginCodec_Definition *)
   return new H264DecoderContext;
 }
 
-static int decoder_set_options(
-      const struct PluginCodec_Definition *, 
-      void * _context, 
-      const char *, 
-      void * parm, 
-      unsigned * parmLen)
+static int get_codec_options(const struct PluginCodec_Definition * codec,
+                                                  void *,
+                                                  const char *,
+                                                  void * parm,
+                                                  unsigned * parmLen)
 {
-  H264DecoderContext * context = (H264DecoderContext *)_context;
+    if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+        return 0;
 
-  if (parmLen == NULL || *parmLen != sizeof(const char **))
-    return 0;
-
-  if (parm != NULL) {
-    const char ** options = (const char **)parm;
-    int i;
-    for (i = 0; options[i] != NULL; i += 2) {
-      //if (STRCMPI(options[i], "Frame Width") == 0)
-      //  frameWidth = atoi(options[i+1]);
-      TRACE (4, "H264\tDecoder\tOption " << options[i] << " = " << atoi(options[i+1]));
-    }
-  }
-
-  return 1;
+    *(const void **)parm = codec->userData;
+    return 1;
 }
 
 static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
@@ -398,87 +385,15 @@ static int codec_decoder(const struct PluginCodec_Definition *,
 
 static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
 {
-  // this is really frame height * frame width;
-  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->samplesPerFrame * codec->bytesPerFrame * 3) / 2);
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-static int get_xcif_options(void * context, void * parm, unsigned * parmLen, const char ** default_parms)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char **))
-    return 0;
-
-  const char ***options = (const char ***)parm;
-
-  if (context == NULL) {
-    *options = default_parms;
-    return 1;
-  }
-
-  return 0;
-}
-
-static int coder_get_cif_options(
-      const PluginCodec_Definition * , 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_cif_h264_options[0][0]);
-}
-
-static int coder_get_qcif_options(
-      const PluginCodec_Definition * , 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_qcif_h264_options[0][0]);
-}
-
-static int coder_get_sip_options(
-      const PluginCodec_Definition * , 
-      void * context , 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_sip_options[0][0]);
-}
-
-static int valid_for_sip(
-      const PluginCodec_Definition * , 
-      void * context , 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
-}
-
-static int valid_for_h323(
-      const PluginCodec_Definition * , 
-      void * , 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  return (STRCMPI((const char *)parm, "h.323") == 0 ||
-          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
+  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
 extern "C" {
+
+PLUGIN_CODEC_IMPLEMENT(H264)
+
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
   WaitAndSignal mFFMPEG(FFMPEGLibraryInstance.processLock);
@@ -502,7 +417,7 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
     return NULL;
   }
   else {
-    *count = NUM_DEFNS;
+    *count = sizeof(h264CodecDefn) / sizeof(struct PluginCodec_Definition);
     return h264CodecDefn;
   }
   
