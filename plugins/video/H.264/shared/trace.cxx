@@ -45,6 +45,10 @@ bool Trace::CanTrace (unsigned level)
 
 ostream & Trace::Start(unsigned level, const char* file, int line)
 {
+#ifdef WIN32
+  cerr << setw(16) << file << '(' << line << ")\t";
+#else
   cerr << setw(16) << basename(file) << '(' << line << ")\t";
+#endif
   return cerr;
 }
