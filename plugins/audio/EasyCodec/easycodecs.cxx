@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: easycodecs.cxx,v $
+ * Revision 1.2  2007/06/26 23:54:42  rjongbloed
+ * Fixed compile after change to anonymous structure in header (for GCC).
+ *
  * Revision 1.1  2006/08/10 07:04:59  csoutheren
  * Added EasyCodec
  *
@@ -115,12 +118,12 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
 {
   struct EasySession * session = (EasySession *)context;
 
-  if (*fromLen != codec->samplesPerFrame *2)
+  if (*fromLen != codec->parm.audio.samplesPerFrame *2)
     return 0;
 
   session->easy->enc(session->hEcoder, (short *)from, (unsigned char *)to);
 
-  *toLen   = codec->bytesPerFrame;
+  *toLen   = codec->parm.audio.bytesPerFrame;
 
   return 1; 
 }
@@ -184,12 +187,12 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
 
   struct EasySession * session = (EasySession *)context;
 
-  if (*fromLen !=  codec->bytesPerFrame)
+  if (*fromLen !=  codec->parm.audio.bytesPerFrame)
     return 0;
 
    session->easy->dec(session->hDcoder,(unsigned char *)from, (short *)to);
 
-  *toLen   = codec->samplesPerFrame * 2;
+  *toLen   = codec->parm.audio.samplesPerFrame * 2;
 
   return 1; 
 }
