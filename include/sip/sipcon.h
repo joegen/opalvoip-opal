@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2068  2007/06/10 08:55:11  rjongbloed
+ * Revision 1.2069  2007/06/27 18:19:49  csoutheren
+ * Fix compile when video disabled
+ *
+ * Revision 2.67  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.66  2007/06/01 04:23:42  csoutheren
@@ -279,7 +282,7 @@
 #pragma interface
 #endif
 
-
+#include <opal/buildopts.h>
 #include <opal/connection.h>
 #include <sip/sippdu.h>
 #if OPAL_VIDEO

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2030  2007/06/27 12:29:45  rjongbloed
+ * Revision 1.2031  2007/06/27 18:19:49  csoutheren
+ * Fix compile when video disabled
+ *
+ * Revision 2.29  2007/06/27 12:29:45  rjongbloed
  * Add new OpalMediaOption for octet strings (simple block of bytes).
  *
  * Revision 2.28  2007/06/25 04:04:38  rjongbloed
@@ -197,6 +200,8 @@
 #endif
 
 #include <ptlib.h>
+
+#include <opal/buildopts.h>
 
 #include <opal/transcoders.h>
 #include <codec/opalpluginmgr.h>
@@ -371,6 +376,7 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
         const char * val = options[1];
         const char * type = options[2];
 
+#if OPAL_VIDEO
         // Backward compatibility tests
         if (strcasecmp(key, h323_qcifMPI_tag) == 0)
           key = qcifMPI_tag;
@@ -382,6 +388,7 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
           key = cif4MPI_tag;
         else if (strcasecmp(key, h323_cif16MPI_tag) == 0)
           key = cif16MPI_tag;
+#endif
 
         OpalMediaOption::MergeType op = OpalMediaOption::NoMerge;
         if (val != NULL && val[0] != '\0' && val[1] != '\0') {

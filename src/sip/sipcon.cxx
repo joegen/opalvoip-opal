@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2234  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2235  2007/06/27 18:19:49  csoutheren
+ * Fix compile when video disabled
+ *
+ * Revision 2.233  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -953,7 +956,10 @@ typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
 static const char ApplicationDTMFRelayKey[]       = "application/dtmf-relay";
 static const char ApplicationDTMFKey[]            = "application/dtmf";
+
+#if OPAL_VIDEO
 static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
+#endif
 
 #define new PNEW
 
@@ -3101,11 +3107,13 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
     status = SIP_PDU::Successful_OK;
   }
 
+#if OPAL_VIDEO
   else if (contentType *= ApplicationMediaControlXMLKey) {
     if (OnMediaControlXML(pdu))
       return;
     status = SIP_PDU::Failure_UnsupportedMediaType;
   }
+#endif
 
   else 
     status = SIP_PDU::Failure_UnsupportedMediaType;
