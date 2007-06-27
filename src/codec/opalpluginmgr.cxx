@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2029  2007/06/25 04:04:38  rjongbloed
+ * Revision 1.2030  2007/06/27 12:29:45  rjongbloed
+ * Add new OpalMediaOption for octet strings (simple block of bytes).
+ *
+ * Revision 2.28  2007/06/25 04:04:38  rjongbloed
  * Fixed compile after change to anonymous structure in header (for GCC).
  *
  * Revision 2.27  2007/06/22 06:29:14  rjongbloed
@@ -486,6 +489,10 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
                                                   valueTokens.GetStringsIndex(option->m_value));
               free(enumValues);
             }
+            break;
+          case PluginCodec_OctetsOption :
+            newOption = new OpalMediaOptionOctets(option->m_name, option->m_readOnly != 0, option->m_minimum != NULL); // Use minimum to indicate Base64
+            newOption->FromString(option->m_value);
             break;
           default : // Huh?
             continue;
