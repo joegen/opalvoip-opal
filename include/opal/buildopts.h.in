@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.32  2007/06/27 18:19:48  csoutheren
+ * Fix compile when video disabled
+ *
  * Revision 1.31  2007/05/31 14:11:14  csoutheren
  * Add initial support for RFC 4175 uncompressed video encoding
  *
@@ -167,7 +170,7 @@
 #undef  OPAL_T120DATA
 #undef  OPAL_H450
 #undef  OPAL_H460
-#define OPAL_RFC4175 1
+#undef  OPAL_RFC4175 
 
 #ifdef OPAL_H450
 #define H323_H450   OPAL_H450
