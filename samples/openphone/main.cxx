@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.21  2007/06/27 12:39:08  rjongbloed
+ * Further de-synchronising OPAL callbacks and GUI to avoid deadlocks.
+ *
  * Revision 1.20  2007/06/21 08:16:30  rjongbloed
  * Fixed various multi-threaded GUI issues.
  *
@@ -348,6 +351,10 @@ static const char RecentCallsGroup[] = "/Recent Calls";
 static const size_t MaxSavedRecentCalls = 10;
 
 
+#define ID_LOG_MESSAGE  1001
+#define ID_STATE_CHANGE 1002
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * name)
@@ -361,8 +368,6 @@ template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * na
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-#define ID_LOG_MESSAGE 1001
 
 DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
 DEFINE_EVENT_TYPE(wxEvtLogMessage)
@@ -400,6 +405,9 @@ class TextCtrlChannel : public PChannel
 
 
 ///////////////////////////////////////////////////////////////////////////////
+
+DECLARE_EVENT_TYPE(wxEvtStateChange, -1)
+DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 IMPLEMENT_APP(OpenPhoneApp)
 
@@ -455,6 +463,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_LIST_ITEM_RIGHT_CLICK(SpeedDialsID, MyManager::OnRightClick) 
 
   EVT_COMMAND(ID_LOG_MESSAGE, wxEvtLogMessage, MyManager::OnLogMessage)
+  EVT_COMMAND(ID_STATE_CHANGE, wxEvtStateChange, MyManager::OnStateChange)
 END_EVENT_TABLE()
 
 MyManager::MyManager()
@@ -1568,18 +1577,26 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 
 void MyManager::SetState(CallState newState)
 {
-  if (m_callState == newState)
+  wxCommandEvent theEvent(wxEvtStateChange, ID_STATE_CHANGE);
+  theEvent.SetEventObject(this);
+  theEvent.SetInt(newState);
+  GetEventHandler()->AddPendingEvent(theEvent);
+}
+
+void MyManager::OnStateChange(wxCommandEvent & event)
+{
+  if (m_callState == event.GetInt())
     return;
 
-  m_callState = newState;
+  m_callState = (CallState)event.GetInt();
 
-  m_speedDials->Show(newState == IdleState);
-  m_answerPanel->Show(newState == RingingState);
-  m_callingPanel->Show(newState == CallingState);
-  m_inCallPanel->Show(newState == InCallState);
+  m_speedDials->Show(m_callState == IdleState);
+  m_answerPanel->Show(m_callState == RingingState);
+  m_callingPanel->Show(m_callState == CallingState);
+  m_inCallPanel->Show(m_callState == InCallState);
 
   wxWindow * newWindow;
-  switch (newState) {
+  switch (m_callState) {
     case RingingState :
       newWindow = m_answerPanel;
       break;
@@ -2912,7 +2929,7 @@ MyH323EndPoint::MyH323EndPoint(MyManager & manager)
 
 void MyH323EndPoint::OnRegistrationConfirm()
 {
-//  LogWindow << "H.323 registration successful." << endl;
+  LogWindow << "H.323 registration successful." << endl;
 }
 
 #endif

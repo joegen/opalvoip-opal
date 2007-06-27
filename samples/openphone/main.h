@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.41  2007/06/27 12:39:08  rjongbloed
+ * Further de-synchronising OPAL callbacks and GUI to avoid deadlocks.
+ *
  * Revision 1.40  2007/06/21 08:16:30  rjongbloed
  * Fixed various multi-threaded GUI issues.
  *
@@ -614,6 +617,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnClose(wxCloseEvent& event);
     void OnLogMessage(wxCommandEvent & event);
     void OnAdjustMenus(wxMenuEvent& event);
+    void OnStateChange(wxCommandEvent & event);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
