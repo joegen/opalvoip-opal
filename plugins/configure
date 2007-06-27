@@ -5721,7 +5721,7 @@ if test -d LID/CAPI ; then
             ac_config_files="$ac_config_files LID/CAPI/Makefile"
 
 fi
-if test -d fax/fax_spandsp ; then
+if test -d fax/fax_spandsp -a -d fax/fax_spandsp/spandsp_util ; then
             ac_config_files="$ac_config_files fax/fax_spandsp/Makefile"
 
 fi
