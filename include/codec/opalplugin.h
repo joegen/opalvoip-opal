@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2011  2007/06/22 17:58:30  csoutheren
+ * Revision 1.2012  2007/06/27 12:29:45  rjongbloed
+ * Add new OpalMediaOption for octet strings (simple block of bytes).
+ *
+ * Revision 2.10  2007/06/22 17:58:30  csoutheren
  * Added explicit names to union in plugin defn for gcc
  *
  * Revision 2.9  2007/06/22 05:41:47  rjongbloed
@@ -286,6 +289,7 @@ enum PluginCodec_OptionTypes {
   PluginCodec_IntegerOption,
   PluginCodec_RealOption,
   PluginCodec_EnumOption,
+  PluginCodec_OctetsOption,
   PluginCodec_NumOptionTypes,
 };
 
