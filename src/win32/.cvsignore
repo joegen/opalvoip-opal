@@ -1,0 +1,2 @@
+*.dep *.opt *.plg *.ncb *.Tags.WW *.vcproj.*.user
+backup
