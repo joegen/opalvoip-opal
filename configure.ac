@@ -12,6 +12,7 @@ sip=yes
 iax=yes
 audio=yes
 video=yes
+rfc4175=yes
 
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
@@ -380,6 +381,7 @@ if test "$video" = "yes" ; then
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
+  rfc4175=no
 fi
 
 
@@ -557,7 +559,6 @@ dnl IVR
 dnl MSWIN_DISPLAY ivr,IVR support
 dnl MSWIN_DEFINE  ivr,OPAL_IVR
 
-OPAL_ivr=
 ivr=yes
 if test "$ivr" = "yes" ; then
   AC_ARG_ENABLE(ivr,
@@ -579,22 +580,20 @@ dnl ########################################################################
 dnl
 dnl RFC4175
 
-OPAL_RFC4175=
-rfc4175=yes
 if test "$rfc4175" = "yes" ; then
   AC_ARG_ENABLE(rfc4175,
          [  --disable-rfc4175       disable RFC4175 support],
          rfc4175=$enableval)
   AC_MSG_CHECKING(RFC4175 codec)
   if test "$rfc4175" = "yes" ; then
-    AC_SUBST(OPAL_RFC4175, 1)
-    AC_DEFINE(OPAL_RFC4175)
+    AC_DEFINE(OPAL_RFC4175, 1)
+    OPAL_RFC4175=1
     AC_MSG_RESULT(enabled)
   else
     AC_MSG_RESULT(disabled)
   fi
 fi
-
+AC_SUBST(OPAL_RFC4175)
 
 dnl ########################################################################
 dnl
