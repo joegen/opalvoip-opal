@@ -2609,6 +2609,7 @@ sip=yes
 iax=yes
 audio=yes
 video=yes
+rfc4175=yes
 
 REQUIRED_PWLIB_MAJOR=1
 REQUIRED_PWLIB_MINOR=11
@@ -5882,6 +5883,7 @@ echo "${ECHO_T}enabled" >&6
 else
   echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6
+  rfc4175=no
 fi
 
 
@@ -6091,7 +6093,6 @@ fi
 
 
 
-OPAL_ivr=
 ivr=yes
 if test "$ivr" = "yes" ; then
   # Check whether --enable-ivr or --disable-ivr was given.
@@ -6118,23 +6119,21 @@ fi
 
 
 
-OPAL_RFC4175=
-rfc4175=yes
 if test "$rfc4175" = "yes" ; then
   # Check whether --enable-rfc4175 or --disable-rfc4175 was given.
 if test "${enable_rfc4175+set}" = set; then
   enableval="$enable_rfc4175"
   rfc4175=$enableval
 fi;
+echo rfc4175 = $rfc4175
   echo "$as_me:$LINENO: checking RFC4175 codec" >&5
 echo $ECHO_N "checking RFC4175 codec... $ECHO_C" >&6
   if test "$rfc4175" = "yes" ; then
-    OPAL_RFC4175=1
-
     cat >>confdefs.h <<\_ACEOF
 #define OPAL_RFC4175 1
 _ACEOF
 
+    OPAL_RFC4175=1
     echo "$as_me:$LINENO: result: enabled" >&5
 echo "${ECHO_T}enabled" >&6
   else
