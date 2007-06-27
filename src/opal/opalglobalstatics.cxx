@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2009  2007/05/31 14:11:45  csoutheren
+ * Revision 1.2010  2007/06/27 18:19:49  csoutheren
+ * Fix compile when video disabled
+ *
+ * Revision 2.8  2007/05/31 14:11:45  csoutheren
  * Add initial support for RFC 4175 uncompressed video encoding
  *
  * Revision 2.7  2007/03/29 05:20:17  csoutheren
@@ -57,6 +60,8 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+
 #include <opal/mediafmt.h>
 #include <codec/opalwavfile.h>
 
@@ -64,7 +69,10 @@
 #include <lids/lidpluginmgr.h>
 #include <rtp/srtp.h>
 #include <t38/t38proto.h>
+
+#if OPAL_RFC4175
 #include <codec/rfc4175.h>
+#endif
 
 #if defined(P_HAS_PLUGINS)
 class PluginLoader : public PProcessStartup
