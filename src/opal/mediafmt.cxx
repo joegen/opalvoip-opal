@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2065  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2066  2007/06/27 07:56:08  rjongbloed
+ * Add new OpalMediaOption for octet strings (simple block of bytes).
+ *
+ * Revision 2.64  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -335,8 +338,11 @@
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 #include <codec/opalwavfile.h>
+#include <ptclib/cypher.h>
+
 
 #define new PNEW
+
 
 namespace PWLibStupidLinkerHacks {
 extern int opalLoader;
@@ -495,6 +501,8 @@ bool OpalMediaOption::FromString(const PString & value)
 }
 
 
+///////////////////////////////////////
+
 OpalMediaOptionEnum::OpalMediaOptionEnum(const char * name,
                                          bool readOnly,
                                          const char * const * enumerations,
@@ -583,6 +591,8 @@ void OpalMediaOptionEnum::SetValue(PINDEX value)
 }
 
 
+///////////////////////////////////////
+
 OpalMediaOptionString::OpalMediaOptionString(const char * name, bool readOnly)
   : OpalMediaOption(name, readOnly, MinMerge)
 {
@@ -665,6 +675,120 @@ void OpalMediaOptionString::SetValue(const PString & value)
 {
   m_value = value;
   m_value.MakeUnique();
+}
+
+
+///////////////////////////////////////
+
+OpalMediaOptionOctets::OpalMediaOptionOctets(const char * name, bool readOnly, bool base64)
+  : OpalMediaOption(name, readOnly, NoMerge)
+  , m_base64(base64)
+{
+}
+
+
+OpalMediaOptionOctets::OpalMediaOptionOctets(const char * name, bool readOnly, bool base64, const PBYTEArray & value)
+  : OpalMediaOption(name, readOnly, NoMerge)
+  , m_value(value)
+  , m_base64(base64)
+{
+}
+
+
+OpalMediaOptionOctets::OpalMediaOptionOctets(const char * name, bool readOnly, bool base64, const BYTE * data, PINDEX length)
+  : OpalMediaOption(name, readOnly, NoMerge)
+  , m_value(data, length)
+  , m_base64(base64)
+{
+}
+
+
+PObject * OpalMediaOptionOctets::Clone() const
+{
+  OpalMediaOptionOctets * newObj = new OpalMediaOptionOctets(*this);
+  newObj->m_value.MakeUnique();
+  return newObj;
+}
+
+
+void OpalMediaOptionOctets::PrintOn(ostream & strm) const
+{
+  if (m_base64)
+    strm << PBase64::Encode(m_value);
+  else {
+    _Ios_Fmtflags flags = strm.flags();
+    char fill = strm.fill();
+
+    strm << hex << setfill('0');
+    for (PINDEX i = 0; i < m_value.GetSize(); i++)
+      strm << setw(2) << (unsigned)m_value[i];
+
+    strm.fill(fill);
+    strm.flags(flags);
+  }
+}
+
+
+void OpalMediaOptionOctets::ReadFrom(istream & strm)
+{
+  if (m_base64) {
+    PString str;
+    strm >> str;
+    PBase64::Decode(str, m_value);
+  }
+  else {
+    char pair[3];
+    pair[2] = '\0';
+
+    PINDEX count = 0;
+
+    while (isxdigit(strm.peek())) {
+      pair[0] = (char)strm.get();
+      if (!isxdigit(strm.peek())) {
+        strm.putback(pair[0]);
+        break;
+      }
+      pair[1] = (char)strm.get();
+      if (!m_value.SetMinSize((count+1+99)%100))
+        break;
+      m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
+    }
+
+    m_value.SetSize(count);
+  }
+}
+
+
+PObject::Comparison OpalMediaOptionOctets::CompareValue(const OpalMediaOption & option) const
+{
+  const OpalMediaOptionOctets * otherOption = PDownCast(const OpalMediaOptionOctets, &option);
+  if (otherOption == NULL)
+    return GreaterThan;
+
+  return m_value.Compare(otherOption->m_value);
+}
+
+
+void OpalMediaOptionOctets::Assign(const OpalMediaOption & option)
+{
+  const OpalMediaOptionOctets * otherOption = PDownCast(const OpalMediaOptionOctets, &option);
+  if (otherOption != NULL) {
+    m_value = otherOption->m_value;
+    m_value.MakeUnique();
+  }
+}
+
+
+void OpalMediaOptionOctets::SetValue(const PBYTEArray & value)
+{
+  m_value = value;
+  m_value.MakeUnique();
+}
+
+
+void OpalMediaOptionOctets::SetValue(const BYTE * data, PINDEX length)
+{
+  m_value = PBYTEArray(data, length);
 }
 
 
@@ -1022,6 +1146,46 @@ bool OpalMediaFormat::SetOptionString(const PString & name, const PString & valu
     return false;
 
   PDownCast(OpalMediaOptionString, option)->SetValue(value);
+  return true;
+}
+
+
+bool OpalMediaFormat::GetOptionOctets(const PString & name, PBYTEArray & octets) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  octets = PDownCast(OpalMediaOptionOctets, option)->GetValue();
+  return true;
+}
+
+
+bool OpalMediaFormat::SetOptionOctets(const PString & name, const PBYTEArray & octets)
+{
+  PWaitAndSignal m(media_format_mutex);
+  options.MakeUnique();
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionOctets, option)->SetValue(octets);
+  return true;
+}
+
+
+bool OpalMediaFormat::SetOptionOctets(const PString & name, const BYTE * data, PINDEX length)
+{
+  PWaitAndSignal m(media_format_mutex);
+  options.MakeUnique();
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionOctets, option)->SetValue(data, length);
   return true;
 }
 

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2031  2007/06/22 05:49:13  rjongbloed
+ * Revision 1.2032  2007/06/27 07:56:08  rjongbloed
+ * Add new OpalMediaOption for octet strings (simple block of bytes).
+ *
+ * Revision 2.30  2007/06/22 05:49:13  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -903,7 +906,11 @@ BOOL H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability & pdu
     }
     else {
       param->m_parameterValue.SetTag(H245_ParameterValue::e_octetString);
-      (PASN_OctetString &)param->m_parameterValue = option.AsString();
+      PASN_OctetString & octetString = param->m_parameterValue;
+      if (PIsDescendant(&option, OpalMediaOptionOctets))
+        octetString = ((const OpalMediaOptionOctets &)option).GetValue();
+      else
+        octetString = option.AsString();
     }
 
     if (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing) {

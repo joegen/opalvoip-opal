@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2052  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2053  2007/06/27 07:56:08  rjongbloed
+ * Add new OpalMediaOption for octet strings (simple block of bytes).
+ *
+ * Revision 2.51  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -116,7 +119,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2052  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2053  2007/06/27 07:56:08  rjongbloed
+ * Add new OpalMediaOption for octet strings (simple block of bytes).
+ *
+ * Revision 2.51  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -741,6 +747,46 @@ class OpalMediaOptionString : public OpalMediaOption
 };
 
 
+class OpalMediaOptionOctets : public OpalMediaOption
+{
+    PCLASSINFO(OpalMediaOptionOctets, OpalMediaOption);
+  public:
+    OpalMediaOptionOctets(
+      const char * name,
+      bool readOnly,
+      bool base64
+    );
+    OpalMediaOptionOctets(
+      const char * name,
+      bool readOnly,
+      bool base64,
+      const PBYTEArray & value
+    );
+    OpalMediaOptionOctets(
+      const char * name,
+      bool readOnly,
+      bool base64,
+      const BYTE * data,
+      PINDEX length
+    );
+
+    virtual PObject * Clone() const;
+    virtual void PrintOn(ostream & strm) const;
+    virtual void ReadFrom(istream & strm);
+
+    virtual Comparison CompareValue(const OpalMediaOption & option) const;
+    virtual void Assign(const OpalMediaOption & option);
+
+    const PBYTEArray & GetValue() const { return m_value; }
+    void SetValue(const PBYTEArray & value);
+    void SetValue(const BYTE * data, PINDEX length);
+
+  protected:
+    PBYTEArray m_value;
+    bool       m_base64;
+};
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /**This class describes a media format as used in the OPAL system. A media
@@ -1079,6 +1125,30 @@ class OpalMediaFormat : public PCaselessString
     bool SetOptionString(
       const PString & name,   ///<  Option name
       const PString & value   ///<  New value for option
+    );
+
+    /**Get the option value of the specified name as an octet array.
+       Returns FALSE if not present.
+      */
+    bool GetOptionOctets(
+      const PString & name, ///<  Option name
+      PBYTEArray & octets   ///<  Octets in option
+    ) const;
+
+    /**Set the option value of the specified name as an octet array.
+       Note the option will not be added if it does not exist, the option
+       must be explicitly added using AddOption().
+
+       Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionOctets(
+      const PString & name,       ///<  Option name
+      const PBYTEArray & octets   ///<  Octets in option
+    );
+    bool SetOptionOctets(
+      const PString & name,       ///<  Option name
+      const BYTE * data,          ///<  Octets in option
+      PINDEX length               ///<  Number of octets
     );
 
     /**Get a copy of the list of media formats that have been registered.
