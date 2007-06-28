@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2063  2007/06/22 02:02:56  rjongbloed
+ * Revision 1.2064  2007/06/28 12:08:26  rjongbloed
+ * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
+ *   to an OpalConnection must be via the PSafeObject locks.
+ *
+ * Revision 2.62  2007/06/22 02:02:56  rjongbloed
  * Removed extraneous logging.
  *
  * Revision 2.61  2007/05/09 01:39:28  csoutheren
@@ -582,7 +586,6 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
         // have a preference for symmetric codecs on subsequent connection(s)
-        PWaitAndSignal m(conn->GetMediaStreamMutex());
         OpalMediaStream * otherStream = conn->GetMediaStream(sessionID, TRUE);
         if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
           adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());

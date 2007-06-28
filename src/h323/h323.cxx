@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2160  2007/06/25 21:04:00  csoutheren
+ * Revision 1.2161  2007/06/28 12:08:26  rjongbloed
+ * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
+ *   to an OpalConnection must be via the PSafeObject locks.
+ *
+ * Revision 2.159  2007/06/25 21:04:00  csoutheren
  * Ensure non-fastStart media channels start when using AnswerAlertingWithMedia
  *
  * Revision 2.158  2007/06/22 05:49:13  rjongbloed
@@ -2432,25 +2436,22 @@ BOOL H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & ar
 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
-  {
-    PWaitAndSignal m(this->GetMediaStreamMutex());
-    for (i = 0; i < fastStartChannels.GetSize(); i++) {
-      if (fastStartChannels[i].IsOpen())
-        logicalChannels->Add(fastStartChannels[i]);
-      else
-        fastStartChannels.RemoveAt(i--);
-    }
-
-    // None left, so didn't open any channels fast
-    if (fastStartChannels.IsEmpty()) {
-      fastStartState = FastStartDisabled;
-      return FALSE;
-    }
-
-    // The channels we just transferred to the logical channels dictionary
-    // should not be deleted via this structure now.
-    fastStartChannels.DisallowDeleteObjects();
+  for (i = 0; i < fastStartChannels.GetSize(); i++) {
+    if (fastStartChannels[i].IsOpen())
+      logicalChannels->Add(fastStartChannels[i]);
+    else
+      fastStartChannels.RemoveAt(i--);
   }
+
+  // None left, so didn't open any channels fast
+  if (fastStartChannels.IsEmpty()) {
+    fastStartState = FastStartDisabled;
+    return FALSE;
+  }
+
+  // The channels we just transferred to the logical channels dictionary
+  // should not be deleted via this structure now.
+  fastStartChannels.DisallowDeleteObjects();
 
   PTRACE(3, "H225\tAccepting fastStart for " << fastStartChannels.GetSize() << " channels");
 
@@ -2691,12 +2692,7 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
   if (param == 0) {
     // If H.245 channel failed to connect and have no media (no fast start)
     // then clear the call as it is useless.
-    BOOL release;
-    {
-      PWaitAndSignal mutex(mediaStreamMutex);
-      release = mediaStreams.IsEmpty();
-    }
-    if (release)
+    if (mediaStreams.IsEmpty())
       Release(EndedByTransportFail);
     return;
   }
@@ -4272,9 +4268,9 @@ BOOL H323Connection::OnClosingLogicalChannel(H323Channel & /*channel*/)
 
 void H323Connection::OnClosedLogicalChannel(const H323Channel & channel)
 {
-  {
-    PWaitAndSignal m(mediaStreamMutex);
+  if (LockReadWrite()) {
     mediaStreams.Remove(channel.GetMediaStream(TRUE));
+    UnlockReadWrite();
   }
   endpoint.OnClosedLogicalChannel(*this, channel);
 }
