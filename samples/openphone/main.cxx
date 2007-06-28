@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.22  2007/06/28 12:06:04  rjongbloed
+ * Fixed endless search for "user" endpoint.
+ *
  * Revision 1.21  2007/06/27 12:39:08  rjongbloed
  * Further de-synchronising OPAL callbacks and GUI to avoid deadlocks.
  *
@@ -1476,7 +1479,7 @@ PSafePtr<OpalConnection> MyManager::GetUserConnection()
     return NULL;
 
   for (int i = 0; ; i++) {
-    PSafePtr<OpalConnection> connection = call->GetConnection(0);
+    PSafePtr<OpalConnection> connection = call->GetConnection(i);
     if (connection == NULL)
       return NULL;
 
