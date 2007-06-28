@@ -28,7 +28,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2085  2007/05/23 11:10:45  dsandras
+ * Revision 1.2086  2007/06/28 12:08:26  rjongbloed
+ * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
+ *   to an OpalConnection must be via the PSafeObject locks.
+ *
+ * Revision 2.84  2007/05/23 11:10:45  dsandras
  * Added missing check for PDTMFDecoder presence in PWLIB.
  *
  * Revision 2.83  2007/05/15 07:26:38  csoutheren
@@ -1406,8 +1410,6 @@ class OpalConnection : public PSafeObject
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
     { return rtpPayloadMap; }
 
-    PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
-
     /** Return TRUE if the remote appears to be behind a NAT firewall
     */
     BOOL RemoteIsNAT() const
@@ -1474,7 +1476,6 @@ class OpalConnection : public PSafeObject
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
-    PMutex                userInputMutex;
     PSyncPoint            userInputAvailable;
     BOOL                  detectInBandDTMF;
     unsigned              q931Cause;
@@ -1494,7 +1495,6 @@ class OpalConnection : public PSafeObject
 #endif
 
     MediaAddressesDict  mediaTransportAddresses;
-    PMutex              mediaStreamMutex;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
     unsigned            minAudioJitterDelay;

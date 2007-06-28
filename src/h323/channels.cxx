@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2040  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2041  2007/06/28 12:08:26  rjongbloed
+ * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
+ *   to an OpalConnection must be via the PSafeObject locks.
+ *
+ * Revision 2.39  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1016,7 +1020,6 @@ void H323UnidirectionalChannel::OnMediaCommand(
 
 OpalMediaStream * H323UnidirectionalChannel::GetMediaStream(BOOL deleted) const
 {
-  PMutex m(connection.GetMediaStreamMutex());
   OpalMediaStream * t = mediaStream;
   if (deleted)
     mediaStream = NULL;
