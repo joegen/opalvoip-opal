@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2235  2007/06/27 18:19:49  csoutheren
+ * Revision 1.2236  2007/06/28 12:08:26  rjongbloed
+ * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
+ *   to an OpalConnection must be via the PSafeObject locks.
+ *
+ * Revision 2.234  2007/06/27 18:19:49  csoutheren
  * Fix compile when video disabled
  *
  * Revision 2.233  2007/06/22 05:41:47  rjongbloed
@@ -3293,7 +3297,9 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
     SendPDU(response, pdu.GetViaAddress(endpoint));
   }
   else if (vfu.vfu) {
-    PWaitAndSignal m(GetMediaStreamMutex());
+    if (!LockReadWrite())
+      return FALSE;
+
     OpalMediaStream * encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
 
     if (!encodingStream){
@@ -3303,6 +3309,8 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 
     SIP_PDU response(pdu, SIP_PDU::Successful_OK);
     SendPDU(response, pdu.GetViaAddress(endpoint));
+    
+    UnlockReadWrite();
   }
 
   return TRUE;
@@ -3339,7 +3347,6 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
     return; // No other connection.  Bail.
 
   // Found the encoding stream, send an OpalVideoFastUpdatePicture
-  PWaitAndSignal m(otherConnection->GetMediaStreamMutex());
   OpalMediaStream * encodingStream = otherConnection->GetMediaStream(session.GetSessionID(), TRUE);
   if (encodingStream) {
     OpalVideoUpdatePicture updatePictureCommand;
