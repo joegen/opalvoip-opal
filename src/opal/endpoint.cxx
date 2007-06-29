@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2060  2007/06/25 05:16:19  rjongbloed
+ * Revision 1.2061  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.59  2007/06/25 05:16:19  rjongbloed
  * Changed GetDefaultTransport() so can return multiple transport names eg udp$ AND tcp$.
  * Changed listener start up so if no transport is mentioned in the "interface" to listen on
  *   then will listen on all transports supplied by GetDefaultTransport()
@@ -287,6 +290,7 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   : manager(mgr),
     prefixName(prefix),
     attributeBits(attributes),
+    productInfo(mgr.GetProductInfo()),
     defaultLocalPartyName(manager.GetDefaultUserName()),
     defaultDisplayName(manager.GetDefaultDisplayName())
 #if OPAL_RTP_AGGREGATE

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2111  2007/06/28 12:08:26  rjongbloed
+ * Revision 1.2112  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.110  2007/06/28 12:08:26  rjongbloed
  * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
  *   to an OpalConnection must be via the PSafeObject locks.
  *
@@ -591,6 +594,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     alertingTime(0),
     connectedTime(0),
     callEndTime(0),
+    productInfo(ep.GetProductInfo()),
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token),

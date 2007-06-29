@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2023  2007/06/29 02:49:42  rjongbloed
+ * Revision 1.2024  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.22  2007/06/29 02:49:42  rjongbloed
  * Added PString::FindSpan() function (strspn equivalent) with slightly nicer semantics.
  *
  * Revision 2.21  2007/04/04 02:12:00  rjongbloed
@@ -2446,7 +2449,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnFullRegistration(H323G
     }
   }
 
-  applicationInfo = H323GetApplicationInfo(info.rrq.m_endpointVendor);
+  H323GetApplicationInfo(productInfo, info.rrq.m_endpointVendor);
 
   canDisplayAmountString = FALSE;
   canEnforceDurationLimit = FALSE;
@@ -2568,7 +2571,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnInfoResponse(H323Gatek
   if (!info.irr.HasOptionalField(H225_InfoRequestResponse::e_perCallInfo)) {
     // Special case for Innovaphone clients that do not contain a perCallInfo
     // field and expects that to mean "all calls a normal".
-    if (protocolVersion < 5 && applicationInfo.Find("innovaphone") != P_MAX_INDEX) {
+    if (protocolVersion < 5 && GetApplicationInfo().Find("innovaphone") != P_MAX_INDEX) {
       H225_InfoRequestResponse_perCallInfo_subtype fakeCallInfo;
       if (!LockReadOnly()) {
         PTRACE(1, "RAS\tIRR rejected, lock failed on endpoint " << *this);
@@ -2737,7 +2740,7 @@ BOOL H323RegisteredEndPoint::CanReceiveRIP() const
 { 
   // H225v1 does not support RIP
   // neither does NetMeeting, even though it says it is H225v2. 
-  return (h225Version > 1) && (applicationInfo.Find("netmeeting") == P_MAX_INDEX);
+  return (h225Version > 1) && (GetApplicationInfo().Find("netmeeting") == P_MAX_INDEX);
 }
 
 BOOL H323RegisteredEndPoint::OnSendDescriptorForEndpoint(
