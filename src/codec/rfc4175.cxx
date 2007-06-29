@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.2  2007/06/29 23:24:25  csoutheren
+ * More RFC4175 implementation
+ *
  * Revision 1.1  2007/05/31 14:11:45  csoutheren
  * Add initial support for RFC 4175 uncompressed video encoding
  *
@@ -50,6 +53,8 @@ OPAL_REGISTER_RFC4175_VIDEO(YUV420P)
 #define   FRAME_WIDTH   1920
 #define   FRAME_HEIGHT  1080
 #define   FRAME_RATE    60
+
+#define   REASONABLE_UDP_PACKET_SIZE  1000
 
 const OpalVideoFormat & GetOpalRFC4175_YUV420P()
 {
@@ -107,6 +112,12 @@ OpalRFC4175Encoder::OpalRFC4175Encoder(
 
 BOOL OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
+  // make sure the incoming frame is big enough for a frame header
+  if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader))) {
+    PTRACE(1,"RFC4175\tPayload of grabbed frame too small for frame header");
+    return FALSE;
+  }
+
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)input.GetPayloadPtr();
   if (header->x != 0 && header->y != 0) {
     PTRACE(1,"RFC4175\tVideo grab of partial frame unsupported");
@@ -125,7 +136,13 @@ BOOL OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   }
 
   // calculate how many scan lines will fit in a reasonable UDP packet
-  PINDEX linesPerPacket = 1000 / frameWidthInBytes;
+  PINDEX linesPerPacket = REASONABLE_UDP_PACKET_SIZE / frameWidthInBytes;
+
+  // if a scan line is longer than a reasonable packet, then return error for now
+  if (linesPerPacket <= 0) {
+    PTRACE(1,"RFC4175\tframe width too large");
+    return FALSE;
+  }
 
   // encode the scan lines
   PINDEX y = 0;
@@ -153,12 +170,20 @@ BOOL OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
     PINDEX j;
     PINDEX offset = 0;
     for (j = 0; j < lineCount; ++j) {
-      *(PUInt16b *)ptr = (WORD)(y+j); // field identifier here
+
+      // scan line length
+      *(PUInt16b *)ptr = (WORD)(PixelsToBytes(frameWidth));  
       ptr += 2;
-      *(PUInt16b *)ptr = (WORD)PixelsToBytes(offset) & ((j == (lineCount-1)) ? 0x8000 : 0x0000);
+
+      // line number +  field flag
+      *(PUInt16b *)ptr = (WORD)((y+j) & 0x7fff); 
       ptr += 2;
-      *(PUInt16b *)ptr = (WORD)(PixelsToBytes(frameWidth) & 0x7fff);
+
+      // pixel offset of scanline start
+      *(PUInt16b *)ptr = (WORD)PixelsToBytes(offset) & ((j == (lineCount-1)) ? 0x8000 : 0x0000); 
       ptr += 2;
+
+      // move to next scan line
       offset += frameWidth;
     }
 
@@ -186,11 +211,85 @@ OpalRFC4175Decoder::OpalRFC4175Decoder(
   const OpalMediaFormat & outputMediaFormat  ///<  Output media format
 ) : OpalRFC4175Transcoder(inputMediaFormat, outputMediaFormat)
 {
+  Initialise();
 }
 
-BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & /*input*/, RTP_DataFrameList & /*output*/)
+BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
 {
+  if (input.GetPayloadSize() < 8) {
+    PTRACE(1,"RFC4175\tinput frame too small for header");
+    return FALSE;
+  }
+
+  // get pointer to scanline table
+  BYTE * ptr = input.GetPayloadPtr() + 2;
+
+  BOOL lastLine = FALSE;
+  PINDEX firstLineLength;
+  BOOL firstLine = TRUE;
+  PINDEX lineCount = 0;
+  PINDEX maxLineNumber = 0;
+
+  do {
+
+    // ensure there is enough payload for this header
+    if ((2 + ((lineCount+1)*6)) >= input.GetPayloadSize())
+      PTRACE(1,"RFC4175\tinput frame too small for scan line table");
+      return FALSE;
+    }
+
+    // scan line length
+    WORD lineLength = BytesToPixels(*(PUInt16b *)ptr);  
+    ptr += 2;
+
+    // line number 
+    WORD lineNumber = (*(PUInt16b *)ptr) & 0x7fff); 
+    ptr += 2;
+
+    // pixel offset of scanline start
+    WORD offset = *(PUInt16b *)ptr;
+    ptr += 2;
+
+    // detect if last scanline in table
+    if (offset & 0x8000) {
+      lastLine = TRUE;
+      offset &= 0x7fff;
+    }
+
+    // we don't handle partial lines or variable length lines
+    if (offset != 0) {
+      PTRACE(1,"RFC4175\tpartial lines not supported");
+      return FALSE;
+    } else if (firstLine) {
+      firstLineLength = lineLength;
+      firstLine = FALSE;
+    } else if (lineLength != firstLineLength) {
+      PTRACE(1,"RFC4175\tline length changed during frame");
+      return FALSE;
+    }
+
+    // keep track of max line number
+    if (lineNumber > maxLineNumber)
+      maxLineNumber = lineNumber;
+
+    // count lines
+    ++lineCount;
+
+  } while (!lastLine);
+
+  // if this is the first frame, allocate the destination frame
+  if (firstFrame) {
+
+  }
+
   return FALSE;
+}
+
+BOOL OpalRFC4175Decoder::Initialise()
+{
+  firstFrame = TRUE;
+  width      = 0;
+  maxY       = 0;
 }
 
 #endif // OPAL_RFC4175
