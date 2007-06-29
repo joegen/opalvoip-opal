@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2133  2007/06/29 06:59:58  rjongbloed
+ * Revision 1.2134  2007/06/29 07:20:26  rjongbloed
+ * Small clean up of User-Agent string.
+ *
+ * Revision 2.132  2007/06/29 06:59:58  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.131  2007/06/10 08:55:13  rjongbloed
@@ -1261,6 +1264,8 @@ void SIPMIMEInfo::SetOrganization(const PString & v)
 }
 
 
+static const char UserAgentTokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
+
 void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
 {
   PCaselessString str = GetUserAgent();
@@ -1276,8 +1281,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
   // tokens are present, then they will end up as the comments too.
   // All other variations just end up as one big comment
 
-  static const char TokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
-  PINDEX endFirstToken = str.FindSpan(TokenChars);
+  PINDEX endFirstToken = str.FindSpan(UserAgentTokenChars);
   if (endFirstToken == 0) {
     info.name = str;
     info.vendor = info.version = PString::Empty();
@@ -1285,7 +1289,7 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
     return;
   }
 
-  PINDEX endSecondToken = str[endFirstToken] == '/' ? str.FindSpan(TokenChars, endFirstToken+1) : endFirstToken;
+  PINDEX endSecondToken = str[endFirstToken] == '/' ? str.FindSpan(UserAgentTokenChars, endFirstToken+1) : endFirstToken;
 
   info.name = str.Left(endFirstToken);
   info.version = str(endFirstToken+1, endSecondToken);
@@ -1297,27 +1301,20 @@ void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & inf
 {
   PString userAgent = ua;
   if (userAgent.IsEmpty()) {
-
-    static const char TokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
-
     PINDEX pos;
     PCaselessString temp = info.name;
-    while ((pos = temp.FindSpan(TokenChars)) != P_MAX_INDEX)
+    temp.Replace(' ', '-', TRUE);
+    while ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX)
       temp.Delete(pos, 1);
     if (!temp.IsEmpty()) {
       userAgent = temp;
 
       temp = info.version;
-      while ((pos = temp.FindSpan(TokenChars)) != P_MAX_INDEX)
+      temp.Replace(' ', '-', TRUE);
+      while ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX)
         temp.Delete(pos, 1);
       if (!temp.IsEmpty())
         userAgent += '/' + temp;
-
-      temp = info.vendor;
-      temp.Replace("(", "\\(", TRUE);
-      temp.Replace(")", "\\)", TRUE);
-      if (!temp.IsEmpty())
-        userAgent += " (" + temp + ')';
     }
   }
 
