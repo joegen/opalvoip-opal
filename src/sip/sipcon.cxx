@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2224.2.1  2007/05/18 01:20:04  csoutheren
+ * Revision 1.2224.2.2  2007/06/29 22:20:44  csoutheren
+ * Add support for SIP 183 commands
+ *
+ * Revision 2.223.2.1  2007/05/18 01:20:04  csoutheren
  * Ensure remote address is set when new transport created. This fixes problem with Contact field having incorrect address
  *
  * Revision 2.223  2007/05/15 07:27:34  csoutheren
@@ -1197,58 +1200,9 @@ void SIPConnection::TransferConnection(const PString & remoteParty, const PStrin
   referTransaction->Start ();
 }
 
-BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/)
+BOOL SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
 {
-  if (IsOriginating()) {
-    PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
-    return TRUE;
-  }
-
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return FALSE;
-  
-  PTRACE(3, "SIP\tSetAlerting");
-
-  if (phase != SetUpPhase) 
-    return FALSE;
-
-  if (!sentTrying) {
-    SendInviteResponse(SIP_PDU::Information_Ringing);
-    sentTrying = TRUE;
-  }
-  SetPhase(AlertingPhase);
-
-  return TRUE;
-}
-
-
-BOOL SIPConnection::SetConnected()
-{
-  if (transport == NULL) {
-    Release(EndedByTransportFail);
-    return FALSE;
-  }
-
   BOOL sdpFailure = TRUE;
-
-  if (IsOriginating()) {
-    PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
-    return TRUE;
-  }
-
-  PSafeLockReadWrite safeLock(*this);
-  if (!safeLock.IsLocked())
-    return FALSE;
-  
-  if (GetPhase() >= ConnectedPhase) {
-    PTRACE(2, "SIP\tSetConnected ignored on already connected call.");
-    return FALSE;
-  }
-  
-  PTRACE(3, "SIP\tSetConnected");
-
-  SDPSessionDescription sdpOut(GetLocalAddress());
 
   // get the remote media formats, if any
   if (originalInvite->HasSDP()) {
@@ -1283,6 +1237,70 @@ BOOL SIPConnection::SetConnected()
   if (phase >= ReleasingPhase) {
     return FALSE;
   }
+
+  return TRUE;
+}
+
+BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
+{
+  if (IsOriginating()) {
+    PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
+    return TRUE;
+  }
+
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
+  PTRACE(3, "SIP\tSetAlerting");
+
+  if (phase != SetUpPhase) 
+    return FALSE;
+
+  if (!sentTrying) {
+    SendInviteResponse(SIP_PDU::Information_Ringing);
+    sentTrying = TRUE;
+  }
+  else if (withMedia) {
+    SDPSessionDescription sdpOut(GetLocalAddress());
+    if (!ConstructSDP(sdpOut) || !SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
+      return FALSE;
+    sentTrying = TRUE;
+  }
+
+  SetPhase(AlertingPhase);
+
+  return TRUE;
+}
+
+
+BOOL SIPConnection::SetConnected()
+{
+  if (transport == NULL) {
+    Release(EndedByTransportFail);
+    return FALSE;
+  }
+
+  if (IsOriginating()) {
+    PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
+    return TRUE;
+  }
+
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
+  if (GetPhase() >= ConnectedPhase) {
+    PTRACE(2, "SIP\tSetConnected ignored on already connected call.");
+    return FALSE;
+  }
+  
+  PTRACE(3, "SIP\tSetConnected");
+
+  SDPSessionDescription sdpOut(GetLocalAddress());
+
+  if (!ConstructSDP(sdpOut))
+    return FALSE;
     
   // update the route set and the target address according to 12.1.1
   // requests in a dialog do not modify the route set according to 12.2
@@ -2996,7 +3014,8 @@ BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * c
     return FALSE;
 
   SIP_PDU response(*originalInvite, code, contact, extra);
-  if (NULL != sdp) response.SetSDP(*sdp);
+  if (NULL != sdp) 
+    response.SetSDP(*sdp);
   
   return SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
 }
