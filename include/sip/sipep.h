@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2085  2007/06/25 05:16:19  rjongbloed
+ * Revision 1.2086  2007/06/29 06:59:56  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.84  2007/06/25 05:16:19  rjongbloed
  * Changed GetDefaultTransport() so can return multiple transport names eg udp$ AND tcp$.
  * Changed listener start up so if no transport is mentioned in the "interface" to listen on
  *   then will listen on all transports supplied by GetDefaultTransport()
@@ -931,13 +934,17 @@ class SIPEndPoint : public OpalEndPoint
 
     
     /**Get the User Agent for this endpoint.
+       Default behaviour returns an empty string so the SIPConnection builds
+       a valid string from the productInfo data.
+
+       These semantics are for backward compatibility.
      */
     virtual PString GetUserAgent() const;
-
-    
+        
     /**Set the User Agent for the endpoint.
      */
     void SetUserAgent(const PString & str) { userAgentString = str; }
+
 
     BOOL SendResponse(
       SIP_PDU::StatusCodes code, 
@@ -986,8 +993,8 @@ class SIPEndPoint : public OpalEndPoint
     );
 
 
-    SIPURL            proxy;
-    PString           userAgentString;
+    SIPURL        proxy;
+    PString       userAgentString;
 
     BOOL          mimeForm;
     unsigned      maxRetries;

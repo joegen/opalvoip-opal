@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2050  2007/05/15 07:26:38  csoutheren
+ * Revision 1.2051  2007/06/29 06:59:56  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.49  2007/05/15 07:26:38  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -1672,14 +1675,6 @@ class H323EndPoint : public OpalEndPoint
 
   //@}
 
-    /**
-     * default settings H.221 settings
-     */
-    static BYTE defaultT35CountryCode;
-    static BYTE defaultT35Extension;
-    static WORD defaultManufacturerCode;
-
-
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
@@ -1710,9 +1705,6 @@ class H323EndPoint : public OpalEndPoint
     unsigned    callIntrusionProtectionLevel;
 #endif
 
-    BYTE          t35CountryCode;
-    BYTE          t35Extension;
-    WORD          manufacturerCode;
     TerminalTypes terminalType;
 
     BOOL          clearCallOnRoundTripFail;

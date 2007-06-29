@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2063  2007/05/15 07:26:38  csoutheren
+ * Revision 1.2064  2007/06/29 06:59:56  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.62  2007/05/15 07:26:38  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -267,6 +270,7 @@ class OpalEndPoint;
 class OpalMediaPatch;
 class OpalH224Handler;
 class OpalH281Handler;
+
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -964,6 +968,16 @@ class OpalManager : public PObject
 
   /**@name Member variable access */
   //@{
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info
+    ) { productInfo = info; }
+
     /**Get the default username for all endpoints.
       */
     const PString & GetDefaultUserName() const { return defaultUserName; }
@@ -1272,6 +1286,8 @@ class OpalManager : public PObject
 
   protected:
     // Configuration variables
+    OpalProductInfo productInfo;
+
     PString       defaultUserName;
     PString       defaultDisplayName;
 
