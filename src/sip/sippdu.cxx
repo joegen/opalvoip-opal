@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2132  2007/06/10 08:55:13  rjongbloed
+ * Revision 1.2133  2007/06/29 06:59:58  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.131  2007/06/10 08:55:13  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.130  2007/06/09 15:40:05  dsandras
@@ -1240,9 +1243,89 @@ PString SIPMIMEInfo::GetUserAgent() const
 }
 
 
-void SIPMIMEInfo::SetUserAgent(const SIPEndPoint & sipep)
+void SIPMIMEInfo::SetUserAgent(const PString & v)
 {
-  SetAt("User-Agent", sipep.GetUserAgent());      // no compact form
+  SetAt("User-Agent",  v);     // no compact form
+}
+
+
+PString SIPMIMEInfo::GetOrganization() const
+{
+  return (*this)(PCaselessString("Organization"));        // no compact form
+}
+
+
+void SIPMIMEInfo::SetOrganization(const PString & v)
+{
+  SetAt("Organization",  v);     // no compact form
+}
+
+
+void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
+{
+  PCaselessString str = GetUserAgent();
+  if (str.IsEmpty()) {
+    str = (*this)("Server");
+    if (str.IsEmpty())
+      return; // Have nothing, change nothing
+  }
+
+  // This is not strictly correct according to he BNF, but we cheat
+  // and assume that the prod/ver tokens are first and if there is an
+  // explicit comment field, it is always last. If any other prod/ver
+  // tokens are present, then they will end up as the comments too.
+  // All other variations just end up as one big comment
+
+  static const char TokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
+  PINDEX endFirstToken = str.FindSpan(TokenChars);
+  if (endFirstToken == 0) {
+    info.name = str;
+    info.vendor = info.version = PString::Empty();
+    info.manufacturerCode = info.t35Extension = info.t35CountryCode = 0;
+    return;
+  }
+
+  PINDEX endSecondToken = str[endFirstToken] == '/' ? str.FindSpan(TokenChars, endFirstToken+1) : endFirstToken;
+
+  info.name = str.Left(endFirstToken);
+  info.version = str(endFirstToken+1, endSecondToken);
+  info.vendor = GetOrganization();
+}
+
+
+void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & info)
+{
+  PString userAgent = ua;
+  if (userAgent.IsEmpty()) {
+
+    static const char TokenChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.!%*_+`'~";
+
+    PINDEX pos;
+    PCaselessString temp = info.name;
+    while ((pos = temp.FindSpan(TokenChars)) != P_MAX_INDEX)
+      temp.Delete(pos, 1);
+    if (!temp.IsEmpty()) {
+      userAgent = temp;
+
+      temp = info.version;
+      while ((pos = temp.FindSpan(TokenChars)) != P_MAX_INDEX)
+        temp.Delete(pos, 1);
+      if (!temp.IsEmpty())
+        userAgent += '/' + temp;
+
+      temp = info.vendor;
+      temp.Replace("(", "\\(", TRUE);
+      temp.Replace(")", "\\)", TRUE);
+      if (!temp.IsEmpty())
+        userAgent += " (" + temp + ')';
+    }
+  }
+
+  if (!userAgent.IsEmpty())
+    SetUserAgent(userAgent);      // no compact form
+
+  if (!info.vendor.IsEmpty())
+    SetOrganization(info.vendor);      // no compact form
 }
 
 
@@ -2459,7 +2542,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now
-  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
 #if OPAL_VIDEO
@@ -2478,7 +2561,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now
-  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   rtpSessions = sm;
   connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
@@ -2497,7 +2580,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsi
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now
-  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   connection.BuildSDP(sdp, rtpSessions, rtpSessionId);
 }
@@ -2552,7 +2635,7 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      viaAddress);
 
-  mime.SetUserAgent(ep); // normally 'OPAL/2.0'
+  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   SIPURL contact = endpoint.GetLocalURL(trans, address.GetUserName());
   mime.SetContact(contact);
   mime.SetExpires(expires);
@@ -2603,7 +2686,7 @@ SIPSubscribe::SIPSubscribe(SIPEndPoint & ep,
 
   SIPURL contact = 
     endpoint.GetLocalURL(trans, SIPURL(localPartyAddress).GetUserName());
-  mime.SetUserAgent(ep); // normally 'OPAL/2.0'
+  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   mime.SetContact(contact);
   mime.SetAccept(acceptField);
   mime.SetEvent(eventField);
@@ -2634,7 +2717,7 @@ SIPPublish::SIPPublish(SIPEndPoint & ep,
                      endpoint.GetNextCSeq(),
                      viaAddress);
 
-  mime.SetUserAgent(ep); 
+  mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
   SIPURL contact = endpoint.GetLocalURL(trans, targetAddress.GetUserName());
   mime.SetContact(contact);
   mime.SetExpires(expires);
@@ -2667,7 +2750,7 @@ SIPRefer::SIPRefer(SIPConnection & connection, OpalTransport & transport, const 
 
 void SIPRefer::Construct(SIPConnection & connection, OpalTransport & /*transport*/, const PString & refer, const PString & referred_by)
 {
-  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
   mime.SetReferTo(refer);
   if(!referred_by.IsEmpty())
     mime.SetReferredBy(referred_by);
@@ -2681,7 +2764,7 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & trans
 {
   PStringStream str;
   
-  mime.SetUserAgent(connection.GetEndPoint()); // normally 'OPAL/2.0'
+  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
   mime.SetSubscriptionState("terminated;reason=noresource"); // Do not keep an internal state
   mime.SetEvent("refer");
   mime.SetContentType("message/sipfrag;version=2.0");
