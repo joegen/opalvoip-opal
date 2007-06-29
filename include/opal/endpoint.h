@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2049  2007/05/15 07:26:38  csoutheren
+ * Revision 1.2050  2007/06/29 06:59:56  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.48  2007/05/15 07:26:38  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -815,6 +818,16 @@ class OpalEndPoint : public PObject
      */
     WORD GetDefaultSignalPort() const { return defaultSignalPort; }
 
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info
+    ) { productInfo = info; }
+
     /**Get the default local party name for all connections on this endpoint.
       */
     const PString & GetDefaultLocalPartyName() const { return defaultLocalPartyName; }
@@ -899,6 +912,7 @@ class OpalEndPoint : public PObject
     PCaselessString prefixName;
     unsigned        attributeBits;
     WORD            defaultSignalPort;
+    OpalProductInfo productInfo;
     PString         defaultLocalPartyName;
     PString         defaultDisplayName;
 

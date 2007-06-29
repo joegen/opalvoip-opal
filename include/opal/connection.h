@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2086  2007/06/28 12:08:26  rjongbloed
+ * Revision 1.2087  2007/06/29 06:59:56  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.85  2007/06/28 12:08:26  rjongbloed
  * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
  *   to an OpalConnection must be via the PSafeObject locks.
  *
@@ -365,6 +368,27 @@ class OpalT120Protocol;
 class OpalT38Protocol;
 class OpalH224Handler;
 class OpalH281Handler;
+
+
+/** Class for carying vendor/product information.
+  */
+class OpalProductInfo
+{
+  public:
+    OpalProductInfo();
+
+    static OpalProductInfo & Default();
+
+    PCaselessString AsString() const;
+
+    PString vendor;
+    PString name;
+    PString version;
+    BYTE    t35CountryCode;
+    BYTE    t35Extension;
+    WORD    manufacturerCode;
+};
+
 
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
@@ -1317,6 +1341,16 @@ class OpalConnection : public PSafeObject
       */
     PTime GetConnectionEndTime() const { return callEndTime; }
 
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info
+    ) { productInfo = info; }
+
     /**Get the local name/alias.
       */
     const PString & GetLocalPartyName() const { return localPartyName; }
@@ -1337,9 +1371,14 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyName() const { return remotePartyName; }
 
-    /**Get the remote application.
+    /**Get the remote application description. This is for backward
+       compatibility and has been supercedded by GeREmoteProductInfo();
       */
-    const PString & GetRemoteApplication() const { return remoteApplication; }
+    PCaselessString GetRemoteApplication() const { return remoteProductInfo.AsString(); }
+
+    /** Get the remote product info.
+      */
+    const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
     
     /**Get the remote party number, if there was one one.
        If the remote party has indicated an e164 number as one of its aliases
@@ -1463,10 +1502,11 @@ class OpalConnection : public PSafeObject
     PTime                alertingTime;
     PTime                connectedTime;
     PTime                callEndTime;
+    OpalProductInfo      productInfo;
     PString              localPartyName;
     PString              displayName;
     PString              remotePartyName;
-    PString              remoteApplication;
+    OpalProductInfo      remoteProductInfo;
     PString              remotePartyNumber;
     PString              remotePartyAddress;
     CallEndReason        callEndReason;

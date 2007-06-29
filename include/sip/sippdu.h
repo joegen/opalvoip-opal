@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2049  2007/06/10 08:55:11  rjongbloed
+ * Revision 1.2050  2007/06/29 06:59:56  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.48  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.47  2007/05/15 20:48:32  dsandras
@@ -217,6 +220,7 @@
  
 class OpalTransport;
 class OpalTransportAddress;
+class OpalProductInfo;
 
 class SIPEndPoint;
 class SIPConnection;
@@ -443,7 +447,13 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetSubscriptionState(const PString & v);
     
     PString GetUserAgent() const;
-    void SetUserAgent(const SIPEndPoint & sipep);        // normally "OPAL/2.0"
+    void SetUserAgent(const PString & v);
+
+    PString GetOrganization() const;
+    void SetOrganization(const PString & v);
+
+    void GetProductInfo(OpalProductInfo & info);
+    void SetProductInfo(const PString & ua, const OpalProductInfo & info);
 
     PString GetWWWAuthenticate() const;
     void SetWWWAuthenticate(const PString & v);
