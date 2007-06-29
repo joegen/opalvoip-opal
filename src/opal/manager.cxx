@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2091  2007/06/29 02:49:42  rjongbloed
+ * Revision 1.2092  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.90  2007/06/29 02:49:42  rjongbloed
  * Added PString::FindSpan() function (strspn equivalent) with slightly nicer semantics.
  *
  * Revision 2.89  2007/05/15 07:27:34  csoutheren
@@ -418,6 +421,37 @@ unsigned OpalGetBuildNumber()
   return BUILD_NUMBER;
 }
 
+
+OpalProductInfo::OpalProductInfo()
+  : vendor(PProcess::Current().GetManufacturer())
+  , name(PProcess::Current().GetName())
+  , version(PProcess::Current().GetVersion())
+  , t35CountryCode(9)     // Country code for Australia
+  , t35Extension(0)       // No extension code for Australia
+  , manufacturerCode(61)  // Allocated by Australian Communications Authority, Oct 2000;
+{
+}
+
+OpalProductInfo & OpalProductInfo::Default()
+{
+  static OpalProductInfo instance;
+  return instance;
+}
+
+
+PCaselessString OpalProductInfo::AsString() const
+{
+  PStringStream str;
+  str << name << '\t' << version << '\t';
+  if (t35CountryCode != 0 && manufacturerCode != 0) {
+    str << (unsigned)t35CountryCode;
+    if (t35Extension != 0)
+      str << '.' << (unsigned)t35Extension;
+    str << '/' << manufacturerCode;
+  }
+  str << '\t' << vendor;
+  return str;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

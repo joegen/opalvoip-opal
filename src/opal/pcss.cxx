@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2047  2007/06/22 02:04:30  rjongbloed
+ * Revision 1.2048  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.46  2007/06/22 02:04:30  rjongbloed
  * Removed asserts where is a valid, though unusual, case.
  *
  * Revision 2.45  2007/04/13 07:26:46  rjongbloed
@@ -483,7 +486,7 @@ BOOL OpalPCSSConnection::SetUpConnection()
 
     remotePartyName    = otherConn->GetRemotePartyName();
     remotePartyAddress = otherConn->GetRemotePartyAddress();
-    remoteApplication  = otherConn->GetRemoteApplication();
+    remoteProductInfo  = otherConn->GetRemoteProductInfo();
   }
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');

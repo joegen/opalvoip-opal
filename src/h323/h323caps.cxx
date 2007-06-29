@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2032  2007/06/27 07:56:08  rjongbloed
+ * Revision 1.2033  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.31  2007/06/27 07:56:08  rjongbloed
  * Add new OpalMediaOption for octet strings (simple block of bytes).
  *
  * Revision 2.30  2007/06/22 05:49:13  rjongbloed
@@ -618,9 +621,9 @@ H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(CompareFuncType _co
                                                              const BYTE * dataPtr,
                                                              PINDEX dataSize)
   :
-    t35CountryCode(0),
-    t35Extension(0),
-    manufacturerCode(0),
+    t35CountryCode(OpalProductInfo::Default().t35CountryCode),
+    t35Extension(OpalProductInfo::Default().t35Extension),
+    manufacturerCode(OpalProductInfo::Default().manufacturerCode),
     nonStandardData(dataPtr, dataSize == 0 && dataPtr != NULL
                                  ? strlen((const char *)dataPtr) : dataSize),
     comparisonOffset(0),
@@ -633,9 +636,9 @@ H323NonStandardCapabilityInfo::H323NonStandardCapabilityInfo(const BYTE * dataPt
                                                              PINDEX dataSize,
                                                              PINDEX _offset,
                                                              PINDEX _len)
-  : t35CountryCode(H323EndPoint::defaultT35CountryCode),
-    t35Extension(H323EndPoint::defaultT35Extension),
-    manufacturerCode(H323EndPoint::defaultManufacturerCode),
+  : t35CountryCode(OpalProductInfo::Default().t35CountryCode),
+    t35Extension(OpalProductInfo::Default().t35Extension),
+    manufacturerCode(OpalProductInfo::Default().manufacturerCode),
     nonStandardData(dataPtr, dataSize == 0 && dataPtr != NULL
                                  ? strlen((const char *)dataPtr) : dataSize),
     comparisonOffset(_offset),

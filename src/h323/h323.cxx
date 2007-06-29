@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2161  2007/06/28 12:08:26  rjongbloed
+ * Revision 1.2162  2007/06/29 06:59:57  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.160  2007/06/28 12:08:26  rjongbloed
  * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
  *   to an OpalConnection must be via the PSafeObject locks.
  *
@@ -796,14 +799,17 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 #endif
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
-  if (remoteApplication.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
+  if (GetRemoteApplication().IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
     for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_nonStandardControl.GetSize(); i++) {
       const H225_NonStandardIdentifier & id = pdu.m_h323_uu_pdu.m_nonStandardControl[i].m_nonStandardIdentifier;
       if (id.GetTag() == H225_NonStandardIdentifier::e_h221NonStandard) {
         const H225_H221NonStandard & h221 = id;
         if (h221.m_t35CountryCode == 181 && h221.m_t35Extension == 0 && h221.m_manufacturerCode == 18) {
-          remoteApplication = "Cisco IOS\t12.x\t181/18";
-          PTRACE(3, "H225\tSet remote application name: \"" << remoteApplication << '"');
+          remoteProductInfo.name = "Cisco IOS";
+          remoteProductInfo.version = "12.x";
+          remoteProductInfo.t35CountryCode = 181;
+          remoteProductInfo.manufacturerCode = 18;
+          PTRACE(3, "H225\tSet remote application name: \"" << GetRemoteApplication() << '"');
           break;
         }
       }
@@ -901,7 +907,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   else {
     /* Compensate for Cisco bug. IOS cannot seem to accept multiple tunnelled
        H.245 PDUs insode the same facility message */
-    if (remoteApplication.Find("Cisco IOS") == P_MAX_INDEX) {
+    if (GetRemoteApplication().Find("Cisco IOS") == P_MAX_INDEX) {
       // Not Cisco, so OK to tunnel multiple PDUs
       localTunnelPDU.BuildFacility(*this, TRUE);
       h245TunnelTxPDU = &localTunnelPDU;
@@ -1359,8 +1365,8 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
 void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
 {
   if (pdu.HasOptionalField(H225_EndpointType::e_vendor)) {
-    remoteApplication = H323GetApplicationInfo(pdu.m_vendor);
-    PTRACE(3, "H225\tSet remote application name: \"" << remoteApplication << '"');
+    H323GetApplicationInfo(remoteProductInfo, pdu.m_vendor);
+    PTRACE(3, "H225\tSet remote application name: \"" << GetRemoteApplication() << '"');
   }
 }
 
