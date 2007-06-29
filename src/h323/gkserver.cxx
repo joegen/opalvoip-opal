@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2022  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2023  2007/06/29 02:49:42  rjongbloed
+ * Added PString::FindSpan() function (strspn equivalent) with slightly nicer semantics.
+ *
+ * Revision 2.21  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1665,7 +1668,7 @@ H323GatekeeperRequest::Response H323GatekeeperCall::OnAdmission(H323GatekeeperAR
 	for (i = 0; i < destEP->GetAliasCount(); i++) {
 	  PString alias = destEP->GetAlias(i);
 	  dstAliases += alias;
-	  if (strspn(alias, "0123456789*#") == strlen(alias))
+	  if (alias.FindSpan("0123456789*#") == P_MAX_INDEX)
 	    dstNumber = alias;
 	}
 	UnlockReadWrite();

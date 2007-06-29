@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixj_win.cpp,v $
+ * Revision 1.5  2007/06/29 02:49:42  rjongbloed
+ * Added PString::FindSpan() function (strspn equivalent) with slightly nicer semantics.
+ *
  * Revision 1.4  2006/11/05 05:04:46  rjongbloed
  * Improved the terminal LID line ringing, epecially for country emulation.
  *
@@ -226,7 +229,7 @@ class Context
           if (dwDeviceId < 100) {
             devicePath = device;
             devicePath.Delete(devicePath.Find(' '), 1000);
-            if (strspn(devicePath, "0123456789") == strlen(devicePath))
+            if (devicePath.FindSpan("0123456789") == P_MAX_INDEX)
               devicePath = DevicePathPrefix + devicePath;
           }
           else {

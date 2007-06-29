@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2090  2007/05/15 07:27:34  csoutheren
+ * Revision 1.2091  2007/06/29 02:49:42  rjongbloed
+ * Added PString::FindSpan() function (strspn equivalent) with slightly nicer semantics.
+ *
+ * Revision 2.89  2007/05/15 07:27:34  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -1124,10 +1127,10 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 
   PINDEX pos;
   if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Left(::strspn(addr, "0123456789*#")), pos, 4);
+    destination.Splice(addr.Left(addr.FindSpan("0123456789*#")), pos, 4);
 
   if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Mid(::strspn(addr, "0123456789*#")), pos, 5);
+    destination.Splice(addr.Mid(addr.FindSpan("0123456789*#")), pos, 5);
 
   // Do meta character substitutions
   if ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
