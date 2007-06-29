@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2236  2007/06/28 12:08:26  rjongbloed
+ * Revision 1.2237  2007/06/29 06:59:58  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.235  2007/06/28 12:08:26  rjongbloed
  * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
  *   to an OpalConnection must be via the PSafeObject locks.
  *
@@ -2115,6 +2118,7 @@ static unsigned RFC3398_MapSIPCodeToQ931(unsigned sipCode)
   return 41; // Temporary Failure
 }
 
+
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
   PINDEX i;
@@ -2139,8 +2143,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     remotePartyAddress = response.GetMIME().GetTo();
     SIPURL url(remotePartyAddress);
     remotePartyName = url.GetDisplayName ();
-    remoteApplication = response.GetMIME().GetUserAgent ();
-    remoteApplication.Replace ('/', '\t'); 
+    response.GetMIME().GetProductInfo(remoteProductInfo);
 
     // get the route set from the Record-Route response field (in reverse order)
     // according to 12.1.2
@@ -2316,8 +2319,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   remotePartyAddress = mime.GetFrom(); 
   SIPURL url(remotePartyAddress);
   remotePartyName = url.GetDisplayName ();
-  remoteApplication = mime.GetUserAgent ();
-  remoteApplication.Replace ('/', '\t'); 
+  mime.GetProductInfo(remoteProductInfo);
   localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
   mime.SetTo(localPartyAddress);
 
@@ -2649,8 +2651,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   remotePartyAddress = request.GetMIME().GetFrom();
   SIPURL url(remotePartyAddress);
   remotePartyName = url.GetDisplayName ();
-  remoteApplication = request.GetMIME ().GetUserAgent ();
-  remoteApplication.Replace ('/', '\t'); 
+  response.GetMIME().GetProductInfo(remoteProductInfo);
 
   Release(EndedByRemoteUser);
 }
@@ -3058,11 +3059,13 @@ BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * c
     return FALSE;
 
   SIP_PDU response(*originalInvite, code, contact, extra);
-  if (NULL != sdp) response.SetSDP(*sdp);
+  if (NULL != sdp)
+    response.SetSDP(*sdp);
+  response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
   if (response.GetStatusCode()/100 != 1)
     ackTimer = endpoint.GetAckTimeout();
-  
+
   return SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
 }
 
