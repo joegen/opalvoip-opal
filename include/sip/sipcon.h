@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2069  2007/06/27 18:19:49  csoutheren
+ * Revision 1.2070  2007/06/29 23:34:04  csoutheren
+ * Add support for SIP 183 messages
+ *
+ * Revision 2.68  2007/06/27 18:19:49  csoutheren
  * Fix compile when video disabled
  *
  * Revision 2.67  2007/06/10 08:55:11  rjongbloed
@@ -732,6 +735,8 @@ class SIPConnection : public OpalConnection
     static BOOL WriteINVITE(OpalTransport & transport, void * param);
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address, BOOL isLocalAddress = FALSE);
+
+    BOOL ConstructSDP(SDPSessionDescription & sdpOut);
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
