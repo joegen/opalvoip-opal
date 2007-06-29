@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2019  2007/05/15 01:48:57  csoutheren
+ * Revision 1.2020  2007/06/29 06:59:59  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.18  2007/05/15 01:48:57  csoutheren
  * Fix T.38 compile problems on Linux
  *
  * Revision 2.17  2007/05/13 23:51:44  dereksmithies
@@ -1404,7 +1407,7 @@ BOOL OpalFaxConnection::SetUpConnection()
 
     remotePartyName    = otherConn->GetRemotePartyName();
     remotePartyAddress = otherConn->GetRemotePartyAddress();
-    remoteApplication  = otherConn->GetRemoteApplication();
+    remoteProductInfo  = otherConn->GetRemoteProductInfo();
   }
 
   PTRACE(3, "FAX\tSetUpConnection(" << remotePartyName << ')');
