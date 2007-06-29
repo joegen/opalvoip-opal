@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2065  2007/05/15 07:26:38  csoutheren
+ * Revision 1.2065.2.1  2007/06/29 22:20:27  csoutheren
+ * Add support for SIP 183 commands
+ *
+ * Revision 2.64  2007/05/15 07:26:38  csoutheren
  * Remove deprecated  interface to STUN server in H323Endpoint
  * Change UseNATForIncomingCall to IsRTPNATEnabled
  * Various cleanups of messy and unused code
@@ -707,6 +710,8 @@ class SIPConnection : public OpalConnection
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address, BOOL isLocalAddress = FALSE);
 
+    BOOL ConstructSDP(SDPSessionDescription & sdpOut);
+
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
     OpalTransportAddress  lastTransportAddress;
@@ -808,7 +813,6 @@ class SIP_RTP_Session : public RTP_UserData
     // so functions with constant 'this' pointers (eg: OnRxFrameRequest) can
     // update it.
     mutable OpalMediaStream * encodingStream; 
-
 #endif
 };
 
