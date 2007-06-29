@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2175  2007/06/25 05:16:20  rjongbloed
+ * Revision 1.2176  2007/06/29 06:59:58  rjongbloed
+ * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
+ *
+ * Revision 2.174  2007/06/25 05:16:20  rjongbloed
  * Changed GetDefaultTransport() so can return multiple transport names eg udp$ AND tcp$.
  * Changed listener start up so if no transport is mentioned in the "interface" to listen on
  *   then will listen on all transports supplied by GetDefaultTransport()
@@ -689,7 +692,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   mimeForm = FALSE;
   maxRetries = 10;
   lastSentCSeq = 0;
-  userAgentString = "OPAL/2.0";
 
   transactions.DisallowDeleteObjects();
   activeSIPHandlers.AllowDeleteObjects();
@@ -1707,7 +1709,7 @@ void SIPEndPoint::SetProxy(const SIPURL & url)
 
 
 PString SIPEndPoint::GetUserAgent() const 
-{ 
+{
   return userAgentString;
 }
 
