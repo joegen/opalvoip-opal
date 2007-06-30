@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2162  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2163  2007/06/30 00:16:57  csoutheren
+ * Fix use of wrong session id
+ *
+ * Revision 2.161  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.160  2007/06/28 12:08:26  rjongbloed
@@ -4154,7 +4157,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
       MediaInformation info;
-      if (!otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+      if (!otherParty->GetMediaInformation(sessionID, info))
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
       else
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
