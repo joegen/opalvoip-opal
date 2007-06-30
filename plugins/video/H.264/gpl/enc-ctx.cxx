@@ -76,7 +76,7 @@ X264EncoderContext::X264EncoderContext()
 
   _txH264Frame = new H264Frame();
   _txH264Frame->SetMaxPayloadSize(H264_PAYLOAD_SIZE);
-  _payloadType = 99;
+  _payloadType = 105;
 
   _inputFrame.i_type = X264_TYPE_AUTO;
   _inputFrame.i_qpplus1 = 0;
@@ -185,21 +185,17 @@ void X264EncoderContext::ApplyOptions()
 
 int X264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
 {
-//  if (!x64LibraryInstance.IsLoaded()) return 0;
-
-//  WaitAndSignal m(_mutex);
-
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
 
   // create RTP frame from destination buffer
-  RTPFrame dstRTP(dst, dstLen, _payloadType);
+  RTPFrame dstRTP(dst, dstLen);
+
   dstLen = 0;
 
   // from here, we are encoding a new frame
   if ((!_codec) || (!_txH264Frame))
   {
-    TRACE(1, "H264\tEncoder\tEncoder not opened ");
     return 0;
   }
 

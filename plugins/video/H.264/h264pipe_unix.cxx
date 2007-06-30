@@ -124,7 +124,7 @@ void H264EncCtx::call(unsigned msg, int value)
   readStream((char*) &msg, sizeof(msg));
 }
      
-void H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags, int & ret)
+void H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret)
 {
   if (startNewFrame) {
 
@@ -132,11 +132,15 @@ void H264EncCtx::call(unsigned msg , const u_char * src, unsigned & srcLen, u_ch
     if (size) {
       writeStream((char*) &size, sizeof(size));
       writeStream((char*) src, size);
+      writeStream((char*) &headerLen, sizeof(headerLen));
+      writeStream((char*) dst, headerLen);
 
     }
     else {
       writeStream((char*) &srcLen, sizeof(srcLen));
       writeStream((char*) src, srcLen);
+      writeStream((char*) &headerLen, sizeof(headerLen));
+      writeStream((char*) dst, headerLen);
     }
   }
   else {

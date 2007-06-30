@@ -38,6 +38,11 @@
  * Untested under Windows or H.323
  *
  * $Log: mpeg4.cxx,v $
+ * Revision 1.8  2007/06/30 09:57:27  dsandras
+ * Added patch from Matthias Schneider <ma30002000 yahoo de> to fix
+ * dynamic payload type for H.264 and MPEG-4 codecs.
+ * Added pipe mechanism for win32 for the H.264 codec.
+ *
  * Revision 1.7  2007/06/16 21:46:40  dsandras
  * Cleanups, stability fixes, and documentation for the codec parameters.
  *
@@ -1522,7 +1527,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
     // create frames frame from their respective buffers
     RTPFrame srcRTP(src, srcLen);
-    RTPFrame dstRTP(dst, MAX_MPEG4_PACKET_SIZE, RTP_DYNAMIC_PAYLOAD);
+    RTPFrame dstRTP(dst, MAX_MPEG4_PACKET_SIZE);
 
     // create the video frame header from the source and update video size
     PluginCodec_Video_FrameHeader * header
@@ -1600,7 +1605,6 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
         // set timestamp and adjust dstLen to include header size
         dstRTP.SetTimestamp(_lastTimeStamp);
-        dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
         dstLen+= dstRTP.GetHeaderSize();
     }
     else
