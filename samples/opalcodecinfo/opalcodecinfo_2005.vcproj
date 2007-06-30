@@ -295,12 +295,6 @@
 		</Configuration>
 	</Configurations>
 	<References>
-		<ProjectReference
-			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
-		/>
-		<ProjectReference
-			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-		/>
 	</References>
 	<Files>
 		<Filter
