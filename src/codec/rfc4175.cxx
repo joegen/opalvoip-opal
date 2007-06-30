@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.3  2007/06/30 14:00:05  dsandras
+ * Fixed previous commit so that things at least compile. Untested.
+ *
  * Revision 1.2  2007/06/29 23:24:25  csoutheren
  * More RFC4175 implementation
  *
@@ -233,7 +236,7 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   do {
 
     // ensure there is enough payload for this header
-    if ((2 + ((lineCount+1)*6)) >= input.GetPayloadSize())
+    if ((2 + ((lineCount+1)*6)) >= input.GetPayloadSize()) {
       PTRACE(1,"RFC4175\tinput frame too small for scan line table");
       return FALSE;
     }
@@ -243,7 +246,7 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
     ptr += 2;
 
     // line number 
-    WORD lineNumber = (*(PUInt16b *)ptr) & 0x7fff); 
+    WORD lineNumber = ((*(PUInt16b *)ptr) & 0x7fff); 
     ptr += 2;
 
     // pixel offset of scanline start
