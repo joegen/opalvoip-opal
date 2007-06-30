@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.h,v $
+ * Revision 1.3  2007/06/30 14:00:05  dsandras
+ * Fixed previous commit so that things at least compile. Untested.
+ *
  * Revision 1.2  2007/06/29 23:24:19  csoutheren
  * More RFC4175 implementation
  *
@@ -108,6 +111,8 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     BOOL ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
+    BOOL Initialise();
+
     BOOL firstFrame;
     PINDEX width, maxY;
     RTP_DataFrame yuvFrame;
