@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2238  2007/06/29 23:34:16  csoutheren
+ * Revision 1.2239  2007/06/30 00:14:17  csoutheren
+ * Remove warning from unused variable
+ *
+ * Revision 2.237  2007/06/29 23:34:16  csoutheren
  * Add support for SIP 183 messages
  *
  * Revision 2.236  2007/06/29 06:59:58  rjongbloed
@@ -1330,8 +1333,6 @@ BOOL SIPConnection::SetConnected()
     Release(EndedByTransportFail);
     return FALSE;
   }
-
-  BOOL sdpFailure = TRUE;
 
   if (IsOriginating()) {
     PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
