@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.4  2007/06/30 16:43:19  dsandras
+ * Make sure transactions are completed before allowing destruction using
+ * WaitForTransactionCompletion. If we have a timeout while unsusbscribing,
+ * then allow deleting the handler.
+ *
  * Revision 1.3  2007/06/10 08:55:11  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
@@ -157,6 +162,7 @@ public:
 protected:
   SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
+  SIPTransaction            * request;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;
