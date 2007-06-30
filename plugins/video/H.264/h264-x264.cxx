@@ -122,7 +122,13 @@ int H264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_ch
   WaitAndSignal m(_mutex);
 
   int ret;
-  H264EncCtxInstance.call(ENCODE_FRAMES, src, srcLen, dst, dstLen, flags, ret);
+  unsigned int headerLen;
+
+  RTPFrame dstRTP(dst, dstLen);
+  headerLen = dstRTP.GetHeaderSize();
+
+  H264EncCtxInstance.call(ENCODE_FRAMES, src, srcLen, dst, dstLen, headerLen, flags, ret);
+
   return ret;
 }
 
