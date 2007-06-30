@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2176  2007/06/29 06:59:58  rjongbloed
+ * Revision 1.2177  2007/06/30 16:43:47  dsandras
+ * Improved exit sequence.
+ *
+ * Revision 2.175  2007/06/29 06:59:58  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.174  2007/06/25 05:16:20  rjongbloed
@@ -709,22 +712,21 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
-
-    PString aor = handler->GetRemotePartyAddress ();
-    if (handler->GetMethod() == SIP_PDU::Method_REGISTER) { 
-      if (handler->GetState() == SIPHandler::Subscribed) {
+  while (activeSIPHandlers.GetSize()>0) {
+    for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+      PString aor = handler->GetRemotePartyAddress ();
+      if (handler->GetMethod() == SIP_PDU::Method_REGISTER 
+          && handler->GetState() == SIPHandler::Subscribed) {
         Unregister(aor);
       }
-      else {
+      else { 
         handler->SetState(SIPHandler::Unsubscribed);
         handler->SetExpire(-1);
       }
     }
-    else {
-      handler->SetState(SIPHandler::Unsubscribed);
-      handler->SetExpire(-1);
-    }
+
+    activeSIPHandlers.DeleteObjectsToBeRemoved();
+    PThread::Current()->Sleep(10); // Let GarbageCollect() do the cleanup
   }
 
   for (PINDEX i = 0; i < transactions.GetSize(); i++) {
@@ -732,11 +734,6 @@ SIPEndPoint::~SIPEndPoint()
     SIPTransaction *transaction = transactions.GetAt(i);
     if (transaction)
       WaitForTransactionCompletion(transaction);
-  }
-
-  while (activeSIPHandlers.GetSize()>0) {
-    activeSIPHandlers.DeleteObjectsToBeRemoved();
-    PThread::Current()->Sleep(10); // Let GarbageCollect() do the cleanup
   }
 
   // Clean up
