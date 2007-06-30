@@ -25,13 +25,12 @@
 
  */
 
-#ifndef __H264PIPE_H__
-#define __H264PIPE_H__ 1
-#include "shared/pipes.h"
-#include <fstream>
+#ifndef __H264PIPE_WIN32_H__
+#define __H264PIPE_WIN32_H__ 1
 
+#include "pipes.h"
+#include <windows.h>
 typedef unsigned char u_char;
-
 class H264EncCtx
 {
   public:
@@ -46,22 +45,23 @@ class H264EncCtx
   protected:
      bool createPipes();
      void closeAndRemovePipes();
-     void writeStream (const char* data, unsigned bytes);
-     void readStream (char* data, unsigned bytes);
+     void writeStream (LPCVOID data, unsigned bytes);
+     void readStream (LPVOID data, unsigned bytes);
      void flushStream ();
      bool findGplProcess();
      bool checkGplProcessExists (const char * dir);
-     void execGplProcess();
+     bool execGplProcess();
+	 const char* ErrorMessage();
 
-     char dlName [512];
-     char ulName [512];
+     char pipeName [512];
      char gplProcess [512];
-     std::ofstream dlStream;
-     std::ifstream ulStream;
+     
+	 HANDLE stream;
      int width;
      int height;
      int size;
      bool startNewFrame;
      bool loaded;
 };
-#endif /* __PIPE_H__ */
+
+#endif /* __PIPE_WIN32_H__ */

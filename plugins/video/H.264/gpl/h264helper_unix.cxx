@@ -35,6 +35,7 @@ int val;
 
 unsigned srcLen;
 unsigned dstLen;
+unsigned headerLen;
 unsigned char src [MAX_FRAME_SIZE];
 unsigned char dst [MAX_FRAME_SIZE];
 unsigned flags;
@@ -137,6 +138,9 @@ int main(int argc, char *argv[])
     case ENCODE_FRAMES:
         readStream(dlStream, (char*)&srcLen, sizeof(srcLen));
         readStream(dlStream, (char*)&src, srcLen);
+        readStream(dlStream, (char*)&headerLen, sizeof(headerLen));
+        readStream(dlStream, (char*)&dst, headerLen);
+
     case ENCODE_FRAMES_BUFFERED:
         ret = (x264->EncodeFrames( src,  srcLen, dst, dstLen, flags));
         writeStream(ulStream,(char*)&msg, sizeof(msg));
