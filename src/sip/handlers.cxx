@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.6  2007/07/01 12:15:45  dsandras
+ * Fixed cut/paste error. Thanks Robert for noticing this!
+ *
  * Revision 1.5  2007/06/30 16:43:18  dsandras
  * Make sure transactions are completed before allowing destruction using
  * WaitForTransactionCompletion. If we have a timeout while unsusbscribing,
@@ -867,7 +870,7 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
   if (request)
     endpoint.WaitForTransactionCompletion(request);
 
-  SIPPing *request = new SIPPing(endpoint, t, targetAddress, body);
+  request = new SIPPing(endpoint, t, targetAddress, body);
   callID = request->GetMIME().GetCallID();
 
   if (request)
