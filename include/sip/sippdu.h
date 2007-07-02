@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2050  2007/06/29 06:59:56  rjongbloed
+ * Revision 1.2051  2007/07/02 04:07:58  rjongbloed
+ * Added hooks to get at PDU strings being read/written.
+ *
+ * Revision 2.49  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.48  2007/06/10 08:55:11  rjongbloed
@@ -768,7 +771,12 @@ class SIP_PDU : public PObject
       OpalTransport & transport,
       const OpalTransportAddress & remoteAddress = OpalTransportAddress()
     );
-    
+
+    /** Construct the PDU string to output.
+        Returns the total length of the PDU.
+      */
+    PString Build();
+
     PString GetTransactionID() const;
 
     Methods GetMethod() const                { return method; }
