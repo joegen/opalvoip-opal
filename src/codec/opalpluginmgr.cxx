@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2031  2007/06/27 18:19:49  csoutheren
+ * Revision 1.2032  2007/07/02 18:53:47  csoutheren
+ * Exposed classes
+ *
+ * Revision 2.30  2007/06/27 18:19:49  csoutheren
  * Fix compile when video disabled
  *
  * Revision 2.29  2007/06/27 12:29:45  rjongbloed
@@ -1398,28 +1401,6 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
 
 #if OPAL_H323
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Helper class for handling plugin capabilities
-//
-
-class H323PluginCapabilityInfo
-{
-  public:
-    H323PluginCapabilityInfo(const PluginCodec_Definition * _encoderCodec,
-                             const PluginCodec_Definition * _decoderCodec);
-
-    H323PluginCapabilityInfo(const PString & _baseName);
-
-    const PString & GetFormatName() const
-    { return capabilityFormatName; }
-
-  protected:
-    const PluginCodec_Definition * encoderCodec;
-    const PluginCodec_Definition * decoderCodec;
-    PString                        capabilityFormatName;
-};
-
 #if OPAL_AUDIO
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1427,100 +1408,43 @@ class H323PluginCapabilityInfo
 // Class for handling most audio plugin capabilities
 //
 
-class H323AudioPluginCapability : public H323AudioCapability,
-                                  public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323AudioPluginCapability, H323AudioCapability);
-  public:
-    H323AudioPluginCapability(const PluginCodec_Definition * _encoderCodec,
+H323AudioPluginCapability::H323AudioPluginCapability(const PluginCodec_Definition * _encoderCodec,
                               const PluginCodec_Definition * _decoderCodec,
                               unsigned _pluginSubType)
-      : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
-        pluginSubType(_pluginSubType)
-      { 
-        SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
+: H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
+  pluginSubType(_pluginSubType)
+{ 
+  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
+}
+
+// this constructor is only used when creating a capability without a codec
+H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaFormat,
+                          const PString & _baseName,
+                          unsigned maxFramesPerPacket,
+                          unsigned /*recommendedFramesPerPacket*/,
+                          unsigned _pluginSubType)
+  : H323PluginCapabilityInfo(_baseName),
+    pluginSubType(_pluginSubType)
+  { 
+    for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
+      if (audioMaps[i].pluginCapType == (int)_pluginSubType) { 
+        h323subType = audioMaps[i].h323SubType;
+        break;
       }
+    }
+    rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
+    SetTxFramesInPacket(maxFramesPerPacket);
+    // recommendedFramesPerPacket
+  }
 
-    // this constructor is only used when creating a capability without a codec
-    H323AudioPluginCapability(const PString & _mediaFormat,
-                              const PString & _baseName,
-                              unsigned maxFramesPerPacket,
-                              unsigned /*recommendedFramesPerPacket*/,
-                              unsigned _pluginSubType)
-      : H323PluginCapabilityInfo(_baseName),
-        pluginSubType(_pluginSubType)
-      { 
-        for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
-          if (audioMaps[i].pluginCapType == (int)_pluginSubType) { 
-            h323subType = audioMaps[i].h323SubType;
-            break;
-          }
-        }
-        rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
-        SetTxFramesInPacket(maxFramesPerPacket);
-        // recommendedFramesPerPacket
-      }
+PObject * H323AudioPluginCapability::Clone() const
+{ return new H323AudioPluginCapability(*this); }
 
-    virtual PObject * Clone() const
-    { return new H323AudioPluginCapability(*this); }
+PString H323AudioPluginCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
 
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-
-    virtual unsigned GetSubType() const
-    { return pluginSubType; }
-
-  protected:
-    unsigned pluginSubType;
-    unsigned h323subType;   // only set if using capability without codec
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling non standard audio capabilities
-//
-
-class H323CodecPluginNonStandardAudioCapability : public H323NonStandardAudioCapability,
-                                                  public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323CodecPluginNonStandardAudioCapability, H323NonStandardAudioCapability);
-  public:
-    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
-                                              H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
-                                              const unsigned char * data, unsigned dataLen);
-
-    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
-                                              const unsigned char * data, unsigned dataLen);
-
-    virtual PObject * Clone() const
-    { return new H323CodecPluginNonStandardAudioCapability(*this); }
-
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling generic audio capabilities
-//
-
-class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
-                                              public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323CodecPluginGenericAudioCapability, H323GenericAudioCapability);
-  public:
-    H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * _encoderCodec,
-                                          const PluginCodec_Definition * _decoderCodec,
-				          const PluginCodec_H323GenericCodecData * data);
-
-    virtual PObject * Clone() const
-    { return new H323CodecPluginGenericAudioCapability(*this); }
-
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-};
+unsigned H323AudioPluginCapability::GetSubType() const
+{ return pluginSubType; }
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -1618,166 +1542,7 @@ class H323GSMPluginCapability : public H323AudioPluginCapability
 
 #endif // OPAL_H323
 
-#if OPAL_VIDEO
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling most audio plugin capabilities
-//
-
-class H323VideoPluginCapability : public H323VideoCapability,
-                             public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323VideoPluginCapability, H323VideoCapability);
-  public:
-    H323VideoPluginCapability(const PluginCodec_Definition * _encoderCodec,
-                              const PluginCodec_Definition * _decoderCodec,
-                              unsigned _pluginSubType)
-      : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
-        pluginSubType(_pluginSubType)
-      { 
-      }
-
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-
-    virtual unsigned GetSubType() const
-    { return pluginSubType; }
-
-    static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
-    {
-      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), frameWidth))
-        return FALSE;
-
-      if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), frameHeight))
-        return FALSE;
-
-      if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
-        return FALSE;
-
-      return TRUE;
-    }
-
-  protected:
-    unsigned pluginSubType;
-    unsigned h323subType;   // only set if using capability without codec
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling non standard video capabilities
-//
-
-class H323CodecPluginNonStandardVideoCapability : public H323NonStandardVideoCapability,
-                                                  public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323CodecPluginNonStandardVideoCapability, H323NonStandardVideoCapability);
-  public:
-    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
-                                              H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
-                                              const unsigned char * data, unsigned dataLen);
-
-    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * _encoderCodec,
-                                              const PluginCodec_Definition * _decoderCodec,
-                                              const unsigned char * data, unsigned dataLen);
-
-    virtual PObject * Clone() const
-    { return new H323CodecPluginNonStandardVideoCapability(*this); }
-
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling generic video capabilities
-//
-
-class H323CodecPluginGenericVideoCapability : public H323GenericVideoCapability,
-                                              public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323CodecPluginGenericVideoCapability, H323GenericVideoCapability);
-  public:
-    H323CodecPluginGenericVideoCapability(const PluginCodec_Definition * _encoderCodec,
-                                          const PluginCodec_Definition * _decoderCodec,
-				          const PluginCodec_H323GenericCodecData * data);
-
-    virtual PObject * Clone() const
-    { return new H323CodecPluginGenericVideoCapability(*this); }
-
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling H.261 plugin capabilities
-//
-
-class H323H261PluginCapability : public H323VideoPluginCapability
-{
-  PCLASSINFO(H323H261PluginCapability, H323VideoPluginCapability);
-  public:
-    H323H261PluginCapability(const PluginCodec_Definition * _encoderCodec,
-                             const PluginCodec_Definition * _decoderCodec);
-
-    Comparison Compare(const PObject & obj) const;
-
-    virtual PObject * Clone() const
-    { 
-      return new H323H261PluginCapability(*this); 
-    }
-
-    virtual BOOL OnSendingPDU(
-      H245_VideoCapability & pdu  /// PDU to set information on
-    ) const;
-
-    virtual BOOL OnSendingPDU(
-      H245_VideoMode & pdu
-    ) const;
-
-    virtual BOOL OnReceivedPDU(
-      const H245_VideoCapability & pdu  /// PDU to get information from
-    );
-};
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Class for handling H.263 plugin capabilities
-//
-
-class H323H263PluginCapability : public H323VideoPluginCapability
-{
-  PCLASSINFO(H323H263PluginCapability, H323VideoPluginCapability);
-  public:
-    H323H263PluginCapability(const PluginCodec_Definition * _encoderCodec,
-                             const PluginCodec_Definition * _decoderCodec);
-
-    Comparison Compare(const PObject & obj) const;
-
-    virtual PObject * Clone() const
-    { return new H323H263PluginCapability(*this); }
-
-    virtual BOOL OnSendingPDU(
-      H245_VideoCapability & pdu  /// PDU to set information on
-    ) const;
-
-    virtual BOOL OnSendingPDU(
-      H245_VideoMode & pdu
-    ) const;
-
-    virtual BOOL OnReceivedPDU(
-      const H245_VideoCapability & pdu  /// PDU to get information from
-    );
-};
-
-/////////////////////////////////////////////////////////////////////////////
-
-#endif //  OPAL_VIDEO
-
 #endif // OPAL_H323
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2445,6 +2210,12 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
   }
 }
 
+PObject * H323CodecPluginNonStandardAudioCapability::Clone() const
+{ return new H323CodecPluginNonStandardAudioCapability(*this); }
+
+PString H323CodecPluginNonStandardAudioCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * _encoderCodec,
@@ -2457,6 +2228,12 @@ H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(con
 
   PopulateMediaFormatFromGenericData(GetWritableMediaFormat(), data);
 }
+
+PObject * H323CodecPluginGenericAudioCapability::Clone() const
+{ return new H323CodecPluginGenericAudioCapability(*this); }
+
+PString H323CodecPluginGenericAudioCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2509,6 +2286,39 @@ BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, un
 
 #if OPAL_VIDEO
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling most videoplugin capabilities
+//
+
+H323VideoPluginCapability::H323VideoPluginCapability(const PluginCodec_Definition * _encoderCodec,
+                          const PluginCodec_Definition * _decoderCodec,
+                          unsigned _pluginSubType)
+  : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
+    pluginSubType(_pluginSubType)
+{ 
+}
+
+PString H323VideoPluginCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
+
+unsigned H323VideoPluginCapability::GetSubType() const
+{ return pluginSubType; }
+
+BOOL H323VideoPluginCapability::SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
+{
+  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), frameWidth))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), frameHeight))
+    return FALSE;
+
+  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
+    return FALSE;
+
+  return TRUE;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323H261PluginCapability::H323H261PluginCapability(const PluginCodec_Definition * _encoderCodec,
@@ -2552,6 +2362,10 @@ PObject::Comparison H323H261PluginCapability::Compare(const PObject & obj) const
   return GreaterThan;
 }
 
+PObject * H323H261PluginCapability::Clone() const
+{ 
+  return new H323H261PluginCapability(*this); 
+}
 
 BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 {
@@ -2692,6 +2506,9 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
 
   return GreaterThan;
 }
+
+PObject * H323H263PluginCapability::Clone() const
+{ return new H323H263PluginCapability(*this); }
 
 static void SetTransmittedCap(const OpalMediaFormat & mediaFormat,
                               H245_H263VideoCapability & h263,
@@ -2889,6 +2706,12 @@ H323CodecPluginNonStandardVideoCapability::H323CodecPluginNonStandardVideoCapabi
   }
 }
 
+PObject * H323CodecPluginNonStandardVideoCapability::Clone() const
+{ return new H323CodecPluginNonStandardVideoCapability(*this); }
+
+PString H323CodecPluginNonStandardVideoCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(const PluginCodec_Definition * _encoderCodec,
@@ -2899,6 +2722,12 @@ H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(con
 {
   PopulateMediaFormatFromGenericData(GetWritableMediaFormat(), data);
 }
+
+PObject * H323CodecPluginGenericVideoCapability::Clone() const
+{ return new H323CodecPluginGenericVideoCapability(*this); }
+
+PString H323CodecPluginGenericVideoCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
 
 /////////////////////////////////////////////////////////////////////////////
 
