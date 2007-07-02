@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2006  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2007  2007/07/02 18:53:36  csoutheren
+ * Exposed classes
+ *
+ * Revision 2.5  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -220,5 +223,235 @@ class OpalFactoryCodec : public PObject {
     /** Return the  sampleRate field of PluginCodec_Definition for this codec*/
     virtual PString      GetSDPFormat() const = 0;
 };
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Helper class for handling plugin capabilities
+//
+
+class H323PluginCapabilityInfo
+{
+  public:
+    H323PluginCapabilityInfo(const PluginCodec_Definition * _encoderCodec,
+                             const PluginCodec_Definition * _decoderCodec);
+
+    H323PluginCapabilityInfo(const PString & _baseName);
+
+    const PString & GetFormatName() const
+    { return capabilityFormatName; }
+
+  protected:
+    const PluginCodec_Definition * encoderCodec;
+    const PluginCodec_Definition * decoderCodec;
+    PString                        capabilityFormatName;
+};
+
+#if OPAL_AUDIO
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling most audio plugin capabilities
+//
+
+class H323AudioPluginCapability : public H323AudioCapability,
+                                  public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323AudioPluginCapability, H323AudioCapability);
+  public:
+    H323AudioPluginCapability(const PluginCodec_Definition * _encoderCodec,
+                              const PluginCodec_Definition * _decoderCodec,
+                              unsigned _pluginSubType);
+
+    // this constructor is only used when creating a capability without a codec
+    H323AudioPluginCapability(const PString & _mediaFormat,
+                              const PString & _baseName,
+                              unsigned maxFramesPerPacket,
+                              unsigned /*recommendedFramesPerPacket*/,
+                              unsigned _pluginSubType);
+
+    virtual PObject * Clone() const;
+
+    virtual PString GetFormatName() const;
+
+    virtual unsigned GetSubType() const;
+
+  protected:
+    unsigned pluginSubType;
+    unsigned h323subType;   // only set if using capability without codec
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling non standard audio capabilities
+//
+
+class H323CodecPluginNonStandardAudioCapability : public H323NonStandardAudioCapability,
+                                                  public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323CodecPluginNonStandardAudioCapability, H323NonStandardAudioCapability);
+  public:
+    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * _encoderCodec,
+                                              const PluginCodec_Definition * _decoderCodec,
+                                              H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
+                                              const unsigned char * data, unsigned dataLen);
+
+    H323CodecPluginNonStandardAudioCapability(const PluginCodec_Definition * _encoderCodec,
+                                              const PluginCodec_Definition * _decoderCodec,
+                                              const unsigned char * data, unsigned dataLen);
+
+    virtual PObject * Clone() const;
+
+    virtual PString GetFormatName() const;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling generic audio capabilities
+//
+
+class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
+                                              public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323CodecPluginGenericAudioCapability, H323GenericAudioCapability);
+  public:
+    H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * _encoderCodec,
+                                          const PluginCodec_Definition * _decoderCodec,
+				          const PluginCodec_H323GenericCodecData * data);
+
+    virtual PObject * Clone() const;
+    virtual PString GetFormatName() const;
+};
+
+#endif
+
+#if OPAL_VIDEO
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling most audio plugin capabilities
+//
+
+class H323VideoPluginCapability : public H323VideoCapability,
+                             public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323VideoPluginCapability, H323VideoCapability);
+  public:
+    H323VideoPluginCapability(const PluginCodec_Definition * _encoderCodec,
+                              const PluginCodec_Definition * _decoderCodec,
+                              unsigned _pluginSubType);
+
+    virtual PString GetFormatName() const;
+
+    virtual unsigned GetSubType() const;
+
+    static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
+
+  protected:
+    unsigned pluginSubType;
+    unsigned h323subType;   // only set if using capability without codec
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling non standard video capabilities
+//
+
+class H323CodecPluginNonStandardVideoCapability : public H323NonStandardVideoCapability,
+                                                  public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323CodecPluginNonStandardVideoCapability, H323NonStandardVideoCapability);
+  public:
+    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * _encoderCodec,
+                                              const PluginCodec_Definition * _decoderCodec,
+                                              H323NonStandardCapabilityInfo::CompareFuncType compareFunc,
+                                              const unsigned char * data, unsigned dataLen);
+
+    H323CodecPluginNonStandardVideoCapability(const PluginCodec_Definition * _encoderCodec,
+                                              const PluginCodec_Definition * _decoderCodec,
+                                              const unsigned char * data, unsigned dataLen);
+
+    virtual PObject * Clone() const;
+
+    virtual PString GetFormatName() const;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling generic video capabilities
+//
+
+class H323CodecPluginGenericVideoCapability : public H323GenericVideoCapability,
+                                              public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323CodecPluginGenericVideoCapability, H323GenericVideoCapability);
+  public:
+    H323CodecPluginGenericVideoCapability(const PluginCodec_Definition * _encoderCodec,
+                                          const PluginCodec_Definition * _decoderCodec,
+				          const PluginCodec_H323GenericCodecData * data);
+
+    virtual PObject * Clone() const;
+
+    virtual PString GetFormatName() const;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling H.261 plugin capabilities
+//
+
+class H323H261PluginCapability : public H323VideoPluginCapability
+{
+  PCLASSINFO(H323H261PluginCapability, H323VideoPluginCapability);
+  public:
+    H323H261PluginCapability(const PluginCodec_Definition * _encoderCodec,
+                             const PluginCodec_Definition * _decoderCodec);
+
+    Comparison Compare(const PObject & obj) const;
+
+    virtual PObject * Clone() const;
+
+    virtual BOOL OnSendingPDU(
+      H245_VideoCapability & pdu  /// PDU to set information on
+    ) const;
+
+    virtual BOOL OnSendingPDU(
+      H245_VideoMode & pdu
+    ) const;
+
+    virtual BOOL OnReceivedPDU(
+      const H245_VideoCapability & pdu  /// PDU to get information from
+    );
+};
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling H.263 plugin capabilities
+//
+
+class H323H263PluginCapability : public H323VideoPluginCapability
+{
+  PCLASSINFO(H323H263PluginCapability, H323VideoPluginCapability);
+  public:
+    H323H263PluginCapability(const PluginCodec_Definition * _encoderCodec,
+                             const PluginCodec_Definition * _decoderCodec);
+
+    Comparison Compare(const PObject & obj) const;
+
+    virtual PObject * Clone() const;
+
+    virtual BOOL OnSendingPDU(
+      H245_VideoCapability & pdu  /// PDU to set information on
+    ) const;
+
+    virtual BOOL OnSendingPDU(
+      H245_VideoMode & pdu
+    ) const;
+
+    virtual BOOL OnReceivedPDU(
+      const H245_VideoCapability & pdu  /// PDU to get information from
+    );
+};
+
+#endif // OPAL_VIDEO
 
 #endif // __OPALPLUGINMGR_H
