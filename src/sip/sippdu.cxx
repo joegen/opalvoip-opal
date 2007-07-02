@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2134  2007/06/29 07:20:26  rjongbloed
+ * Revision 1.2135  2007/07/02 04:07:58  rjongbloed
+ * Added hooks to get at PDU strings being read/written.
+ *
+ * Revision 2.133  2007/06/29 07:20:26  rjongbloed
  * Small clean up of User-Agent string.
  *
  * Revision 2.132  2007/06/29 06:59:58  rjongbloed
@@ -2148,26 +2151,8 @@ BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remo
     transport.SetRemoteAddress(actualRemoteAddress);
   }
 
-  if (sdp != NULL) {
-    entityBody = sdp->Encode();
-    mime.SetContentType("application/sdp");
-  }
 
-  mime.SetContentLength(entityBody.GetLength());
-
-  PStringStream str;
-
-  if (method != NumMethods)
-    str << MethodNames[method] << ' ' << uri << ' ';
-
-  str << "SIP/" << versionMajor << '.' << versionMinor;
-
-  if (method == NumMethods)
-    str << ' ' << (unsigned)statusCode << ' ' << info;
-
-  str << "\r\n"
-      << setfill('\r') << mime << setfill(' ')
-      << entityBody;
+  PString str = Build();
 
 #if PTRACING
   if (PTrace::CanTrace(4))
@@ -2183,6 +2168,32 @@ BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remo
 
   PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
   return FALSE;
+}
+
+
+PString SIP_PDU::Build()
+{
+  PStringStream str;
+
+  if (sdp != NULL) {
+    entityBody = sdp->Encode();
+    mime.SetContentType("application/sdp");
+  }
+
+  mime.SetContentLength(entityBody.GetLength());
+
+  if (method != NumMethods)
+    str << MethodNames[method] << ' ' << uri << ' ';
+
+  str << "SIP/" << versionMajor << '.' << versionMinor;
+
+  if (method == NumMethods)
+    str << ' ' << (unsigned)statusCode << ' ' << info;
+
+  str << "\r\n"
+      << setfill('\r') << mime << setfill(' ')
+      << entityBody;
+  return str;
 }
 
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2070  2007/06/29 23:34:04  csoutheren
+ * Revision 1.2071  2007/07/02 04:07:58  rjongbloed
+ * Added hooks to get at PDU strings being read/written.
+ *
+ * Revision 2.69  2007/06/29 23:34:04  csoutheren
  * Add support for SIP 183 messages
  *
  * Revision 2.68  2007/06/27 18:19:49  csoutheren
@@ -647,7 +650,7 @@ class SIPConnection : public OpalConnection
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
      */
-    BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
+    virtual BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
