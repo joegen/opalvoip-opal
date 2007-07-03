@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.7  2007/07/03 16:27:14  dsandras
+ * Fixed bug reported by Anand R Setlur : crash when registering to
+ * non existant domain (ie no transport).
+ *
  * Revision 1.6  2007/07/01 12:15:45  dsandras
  * Fixed cut/paste error. Thanks Robert for noticing this!
  *
@@ -112,8 +116,10 @@ SIPHandler::~SIPHandler()
   if (request)
     endpoint.WaitForTransactionCompletion(request);
 
-  transport->CloseWait();
-  delete transport;
+  if (transport) {
+    transport->CloseWait();
+    delete transport;
+  }
 }
 
 
