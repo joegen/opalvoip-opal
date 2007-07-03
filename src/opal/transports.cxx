@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2079  2007/06/25 05:44:45  rjongbloed
+ * Revision 1.2080  2007/07/03 08:54:07  rjongbloed
+ * Fixed spurios error log when dropping interface.
+ *
+ * Revision 2.78  2007/06/25 05:44:45  rjongbloed
  * Fixed numerous issues with "bound" managed socket, ie associating
  *   listeners to a specific named interface.
  *
@@ -1257,7 +1260,12 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
     return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
   }
 
-  PTRACE(1, "Listen\tUDP read error.");
+  if (iface.IsEmpty()) {
+    PTRACE(1, "Listen\tUDP read error.");
+  }
+  else {
+    PTRACE(4, "Listen\tDropped interface " << iface);
+  }
   return NULL;
 }
 
