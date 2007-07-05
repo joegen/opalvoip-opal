@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2136  2007/07/05 03:58:22  rjongbloed
+ * Revision 1.2137  2007/07/05 05:42:53  rjongbloed
+ * Removed extraneous transport multiple transmit end connection, not needed
+ *   with new socket bundling changes.
+ *
+ * Revision 2.135  2007/07/05 03:58:22  rjongbloed
  * Cleaned up some odd looking code
  *
  * Revision 2.134  2007/07/02 04:07:58  rjongbloed
@@ -2369,7 +2373,8 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return FALSE;
   }
 
-  if (method != Method_INVITE) mutex.Wait();
+  if (method != Method_INVITE)
+    mutex.Wait();
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
@@ -2403,9 +2408,6 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 
     mutex.Signal();
 
-    if (response.GetStatusCode()/100 == 2) // Have a 2xx response, so end Connect mode on the transport
-      transport.EndConnect(GetLocalAddress()); 
-
     if (notCompletedFlag && connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
@@ -2416,7 +2418,8 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   }
 
   // If this is invite then we need to lock it again
-  if (method == Method_INVITE) mutex.Wait();
+  if (method == Method_INVITE)
+    mutex.Wait();
 
   return TRUE;
 }
