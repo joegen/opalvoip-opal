@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2071  2007/07/02 04:07:58  rjongbloed
+ * Revision 1.2072  2007/07/05 05:40:21  rjongbloed
+ * Changes to correctly distinguish between INVITE types: normal, forked and re-INVITE
+ *   these are all handled slightly differently for handling request and responses.
+ * Tidied the translation of SIP status codes and OPAL call end types and Q.931 cause codes.
+ * Fixed (accidental?) suppression of 180 responses on alerting.
+ *
+ * Revision 2.70  2007/07/02 04:07:58  rjongbloed
  * Added hooks to get at PDU strings being read/written.
  *
  * Revision 2.69  2007/06/29 23:34:04  csoutheren
@@ -548,8 +554,9 @@ class SIPConnection : public OpalConnection
     virtual void OnReceivedSessionProgress(SIP_PDU & pdu);
   
     /**Handle an incoming Proxy Authentication Required response PDU
+       Returns: TRUE if handled, if FALSE is returned connection is released.
       */
-    virtual void OnReceivedAuthenticationRequired(
+    virtual BOOL OnReceivedAuthenticationRequired(
       SIPTransaction & transaction,
       SIP_PDU & response
     );
@@ -691,7 +698,6 @@ class SIPConnection : public OpalConnection
       */
     const PString GetRemotePartyCallbackURL() const;
 
-    PString GetTag() const { return GetIdentifier().AsString(); }
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
@@ -755,7 +761,6 @@ class SIPConnection : public OpalConnection
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
-    BOOL                  sentTrying;
 
     SIP_PDU_Queue pduQueue;
     PSemaphore    pduSemaphore;
@@ -765,7 +770,7 @@ class SIPConnection : public OpalConnection
     PMutex             transactionsMutex;
     SIPTransaction   * referTransaction;
     PMutex             invitationsMutex;
-    SIPTransactionList invitations;
+    SIPTransactionList forkedInvitations; // Not for re-INVITE
     SIPTransactionDict transactions;
     PAtomicInteger     lastSentCSeq;
 
