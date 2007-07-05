@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2135  2007/07/02 04:07:58  rjongbloed
+ * Revision 1.2136  2007/07/05 03:58:22  rjongbloed
+ * Cleaned up some odd looking code
+ *
+ * Revision 2.134  2007/07/02 04:07:58  rjongbloed
  * Added hooks to get at PDU strings being read/written.
  *
  * Revision 2.133  2007/06/29 07:20:26  rjongbloed
@@ -1661,18 +1664,14 @@ SIP_PDU::SIP_PDU(Methods method,
 
 
 SIP_PDU::SIP_PDU(const SIP_PDU & request, 
-     StatusCodes code, 
-     const char * contact,
-     const char * extra)
+                 StatusCodes code, 
+                 const char * contact,
+                 const char * extra)
 {
-  char *extraInfo = NULL;
- 
   method       = NumMethods;
   statusCode   = code;
   versionMajor = request.GetVersionMajor();
   versionMinor = request.GetVersionMinor();
-
-  extraInfo = (char *) extra;
   sdp = NULL;
 
   // add mandatory fields to response (RFC 2543, 11.2)
@@ -1687,21 +1686,19 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
 
   /* Use extra parameter as redirection URL in case of 302 */
   if (code == SIP_PDU::Redirection_MovedTemporarily) {
-    SIPURL contact(extraInfo);
-    mime.SetContact(contact.AsQuotedString ());
-    extraInfo = NULL;
+    SIPURL contact(extra);
+    mime.SetContact(contact.AsQuotedString());
+    extra = NULL;
   }
   else if (contact != NULL) {
     mime.SetContact(PString(contact));
   }
     
   // format response
-  if (extraInfo != NULL) {
-    info = extraInfo;
-  }
+  if (extra != NULL)
+    info = extra;
   else {
-    PINDEX i;
-    for (i = 0; (extraInfo == NULL) && (sipErrorDescriptions[i].code != 0); i++) {
+    for (PINDEX i = 0; sipErrorDescriptions[i].code != 0; i++) {
       if (sipErrorDescriptions[i].code == code) {
         info = sipErrorDescriptions[i].desc;
         break;
