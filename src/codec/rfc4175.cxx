@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.5  2007/07/05 06:36:22  rjongbloed
+ * Fixed MSVC compiler warning.
+ *
  * Revision 1.4  2007/07/05 06:25:13  rjongbloed
  * Fixed GNU compiler warnings.
  *
@@ -231,7 +234,7 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   BYTE * ptr = input.GetPayloadPtr() + 2;
 
   BOOL lastLine = FALSE;
-  PINDEX firstLineLength;
+  PINDEX firstLineLength = 0;
   BOOL firstLine = TRUE;
   PINDEX lineCount = 0;
   PINDEX maxLineNumber = 0;
@@ -245,7 +248,7 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
     }
 
     // scan line length
-    WORD lineLength = BytesToPixels(*(PUInt16b *)ptr);  
+    PINDEX lineLength = BytesToPixels(*(PUInt16b *)ptr);  
     ptr += 2;
 
     // line number 
