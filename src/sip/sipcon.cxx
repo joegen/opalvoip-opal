@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2239  2007/06/30 00:14:17  csoutheren
+ * Revision 1.2240  2007/07/05 05:40:21  rjongbloed
+ * Changes to correctly distinguish between INVITE types: normal, forked and re-INVITE
+ *   these are all handled slightly differently for handling request and responses.
+ * Tidied the translation of SIP status codes and OPAL call end types and Q.931 cause codes.
+ * Fixed (accidental?) suppression of 180 responses on alerting.
+ *
+ * Revision 2.238  2007/06/30 00:14:17  csoutheren
  * Remove warning from unused variable
  *
  * Revision 2.237  2007/06/29 23:34:16  csoutheren
@@ -964,6 +970,11 @@
 #include <ptclib/random.h>              // for local dialog tag
 #include <ptclib/pdns.h>
 
+#if OPAL_T38FAX
+#include <t38/t38proto.h>
+#endif
+
+#define new PNEW
 
 typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 
@@ -974,11 +985,93 @@ static const char ApplicationDTMFKey[]            = "application/dtmf";
 static const char ApplicationMediaControlXMLKey[] = "application/media_control+xml";
 #endif
 
-#define new PNEW
 
-#if OPAL_T38FAX
-#include <t38/t38proto.h>
-#endif
+static const struct {
+  SIP_PDU::StatusCodes          code;
+  OpalConnection::CallEndReason reason;
+  unsigned                      q931Cause;
+}
+//
+// This table comes from RFC 3398 para 7.2.4.1
+//
+ReasonToSIPCode[] = {
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,   1 }, // Unallocated number
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,   2 }, // no route to network
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,   3 }, // no route to destination
+  { SIP_PDU::Failure_BusyHere                   , OpalConnection::EndedByLocalBusy         ,  17 }, // user busy                            
+  { SIP_PDU::Failure_RequestTimeout             , OpalConnection::EndedByNoUser            ,  18 }, // no user responding                   
+  { SIP_PDU::Failure_TemporarilyUnavailable     , OpalConnection::EndedByNoAnswer          ,  19 }, // no answer from the user              
+  { SIP_PDU::Failure_TemporarilyUnavailable     , OpalConnection::EndedByNoUser            ,  20 }, // subscriber absent                    
+  { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  21 }, // call rejected                        
+  { SIP_PDU::Failure_Gone                       , OpalConnection::EndedByNoUser            ,  22 }, // number changed (w/o diagnostic)      
+  { SIP_PDU::Redirection_MovedPermanently       , OpalConnection::EndedByNoUser            ,  22 }, // number changed (w/ diagnostic)       
+  { SIP_PDU::Failure_Gone                       , OpalConnection::EndedByNoUser            ,  23 }, // redirection to new destination       
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,  26 }, // non-selected user clearing           
+  { SIP_PDU::Failure_BadGateway                 , OpalConnection::EndedByNoUser            ,  27 }, // destination out of order             
+  { SIP_PDU::Failure_AddressIncomplete          , OpalConnection::EndedByNoUser            ,  28 }, // address incomplete                   
+  { SIP_PDU::Failure_NotImplemented             , OpalConnection::EndedByNoUser            ,  29 }, // facility rejected                    
+  { SIP_PDU::Failure_TemporarilyUnavailable     , OpalConnection::EndedByNoUser            ,  31 }, // normal unspecified                   
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  34 }, // no circuit available                 
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  38 }, // network out of order                 
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  41 }, // temporary failure                    
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  42 }, // switching equipment congestion       
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  47 }, // resource unavailable                 
+  { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  55 }, // incoming calls barred within CUG     
+  { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  57 }, // bearer capability not authorized     
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  58 }, // bearer capability not presently available
+  { SIP_PDU::Failure_NotAcceptableHere          , OpalConnection::EndedByNoUser            ,  65 }, // bearer capability not implemented
+  { SIP_PDU::Failure_NotAcceptableHere          , OpalConnection::EndedByNoUser            ,  70 }, // only restricted digital avail    
+  { SIP_PDU::Failure_NotImplemented             , OpalConnection::EndedByNoUser            ,  79 }, // service or option not implemented
+  { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedByNoUser            ,  87 }, // user not member of CUG           
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByNoUser            ,  88 }, // incompatible destination         
+  { SIP_PDU::Failure_ServerTimeout              , OpalConnection::EndedByNoUser            , 102 }, // recovery of timer expiry         
+  { SIP_PDU::Failure_InternalServerError        , OpalConnection::EndedByNoUser            , 111 }, // protocol error                   
+  { SIP_PDU::Failure_InternalServerError        , OpalConnection::EndedByNoUser            , 127 }, // interworking unspecified         
+  { SIP_PDU::Failure_RequestTerminated          , OpalConnection::EndedByCallerAbort             },
+  { SIP_PDU::Failure_UnsupportedMediaType       , OpalConnection::EndedByCapabilityExchange      },
+  { SIP_PDU::Redirection_MovedTemporarily       , OpalConnection::EndedByCallForwarded           },
+  { SIP_PDU::GlobalFailure_Decline              , OpalConnection::EndedByAnswerDenied            },
+},
+
+//
+// This table comes from RFC 3398 para 8.2.6.1
+//
+SIPCodeToReason[] = {
+  { SIP_PDU::Failure_BadRequest                 , OpalConnection::EndedByQ931Cause         ,  41 }, // Temporary Failure
+  { SIP_PDU::Failure_UnAuthorised               , OpalConnection::EndedBySecurityDenial    ,  21 }, // Call rejected (*)
+  { SIP_PDU::Failure_PaymentRequired            , OpalConnection::EndedByQ931Cause         ,  21 }, // Call rejected
+  { SIP_PDU::Failure_Forbidden                  , OpalConnection::EndedBySecurityDenial    ,  21 }, // Call rejected
+  { SIP_PDU::Failure_NotFound                   , OpalConnection::EndedByNoUser            ,   1 }, // Unallocated number
+  { SIP_PDU::Failure_MethodNotAllowed           , OpalConnection::EndedByQ931Cause         ,  63 }, // Service or option unavailable
+  { SIP_PDU::Failure_NotAcceptable              , OpalConnection::EndedByQ931Cause         ,  79 }, // Service/option not implemented (+)
+  { SIP_PDU::Failure_ProxyAuthenticationRequired, OpalConnection::EndedByQ931Cause         ,  21 }, // Call rejected (*)
+  { SIP_PDU::Failure_RequestTimeout             , OpalConnection::EndedByTemporaryFailure  , 102 }, // Recovery on timer expiry
+  { SIP_PDU::Failure_Gone                       , OpalConnection::EndedByQ931Cause         ,  22 }, // Number changed (w/o diagnostic)
+  { SIP_PDU::Failure_RequestEntityTooLarge      , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_RequestURITooLong          , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_UnsupportedMediaType       , OpalConnection::EndedByCapabilityExchange,  79 }, // Service/option not implemented (+)
+  { SIP_PDU::Failure_UnsupportedURIScheme       , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_BadExtension               , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_ExtensionRequired          , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_IntervalTooBrief           , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_TemporarilyUnavailable     , OpalConnection::EndedByTemporaryFailure  ,  18 }, // No user responding
+  { SIP_PDU::Failure_TransactionDoesNotExist    , OpalConnection::EndedByQ931Cause         ,  41 }, // Temporary Failure
+  { SIP_PDU::Failure_LoopDetected               , OpalConnection::EndedByQ931Cause         ,  25 }, // Exchange - routing error
+  { SIP_PDU::Failure_TooManyHops                , OpalConnection::EndedByQ931Cause         ,  25 }, // Exchange - routing error
+  { SIP_PDU::Failure_AddressIncomplete          , OpalConnection::EndedByQ931Cause         ,  28 }, // Invalid Number Format (+)
+  { SIP_PDU::Failure_Ambiguous                  , OpalConnection::EndedByNoUser            ,   1 }, // Unallocated number
+  { SIP_PDU::Failure_BusyHere                   , OpalConnection::EndedByRemoteBusy        ,  17 }, // User busy
+  { SIP_PDU::Failure_InternalServerError        , OpalConnection::EndedByQ931Cause         ,  41 }, // Temporary failure
+  { SIP_PDU::Failure_NotImplemented             , OpalConnection::EndedByQ931Cause         ,  79 }, // Not implemented, unspecified
+  { SIP_PDU::Failure_BadGateway                 , OpalConnection::EndedByQ931Cause         ,  38 }, // Network out of order
+  { SIP_PDU::Failure_ServiceUnavailable         , OpalConnection::EndedByQ931Cause         ,  41 }, // Temporary failure
+  { SIP_PDU::Failure_ServerTimeout              , OpalConnection::EndedByQ931Cause         , 102 }, // Recovery on timer expiry
+  { SIP_PDU::Failure_SIPVersionNotSupported     , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::Failure_MessageTooLarge            , OpalConnection::EndedByQ931Cause         , 127 }, // Interworking (+)
+  { SIP_PDU::GlobalFailure_BusyEverywhere       , OpalConnection::EndedByQ931Cause         ,  17 }, // User busy
+  { SIP_PDU::GlobalFailure_Decline              , OpalConnection::EndedByRefusal           ,  21 }, // Call rejected
+  { SIP_PDU::GlobalFailure_DoesNotExistAnywhere , OpalConnection::EndedByNoUser            ,   1 }, // Unallocated number
+};
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1031,14 +1124,12 @@ SIPConnection::SIPConnection(OpalCall & call,
   lastSentCSeq.SetValue(0);
   releaseMethod = ReleaseWithNothing;
 
-  invitations.DisallowDeleteObjects();
+  forkedInvitations.DisallowDeleteObjects();
   transactions.DisallowDeleteObjects();
 
   referTransaction = NULL;
   local_hold = FALSE;
   remote_hold = FALSE;
-
-  sentTrying = FALSE;
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
 
@@ -1068,85 +1159,6 @@ SIPTransaction * SIPConnection::GetAndLockTransaction(const PString & transactio
 }
 
 
-//
-// This table comes from RFC 3398 para 7.2.4.1
-//
-static struct Q931ReasonMapEntry {
-  unsigned q931Cause;
-  unsigned sipCode;
-} Q931ReasonToSIPCode[] = {
-  {   1, 404 }, // unallocated number                   404 Not Found
-  {   2, 404 }, // no route to network                  404 Not found
-  {   3, 404 }, // no route to destination              404 Not found
-  //{ 16, -- }, // normal call clearing                 --- (*)
-  {  17, 486 }, // user busy                            486 Busy here
-  {  18, 408 }, // no user responding                   408 Request Timeout
-  {  19, 480 }, // no answer from the user              480 Temporarily unavailable
-  {  20, 480 }, // subscriber absent                    480 Temporarily unavailable
-  {  21, 403 }, // call rejected                        403 Forbidden (+)
-  {  22, 410 }, // number changed (w/o diagnostic)      410 Gone
-  {  22, 301 }, // number changed (w/ diagnostic)       301 Moved Permanently
-  {  23, 410 }, // redirection to new destination       410 Gone
-  {  26, 404 }, // non-selected user clearing           404 Not Found (=)
-  {  27, 502 }, // destination out of order             502 Bad Gateway
-  {  28, 484 }, // address incomplete                   484 Address incomplete
-  {  29, 501 }, // facility rejected                    501 Not implemented
-  {  31, 480 }, // normal unspecified                   480 Temporarily unavailable
-  {  34, 503 }, // no circuit available                 503 Service unavailable
-  {  38, 503 }, // network out of order                 503 Service unavailable
-  {  41, 503 }, // temporary failure                    503 Service unavailable
-  {  42, 503 }, // switching equipment congestion       503 Service unavailable
-  {  47, 503 }, // resource unavailable                 503 Service unavailable
-  {  55, 403 }, // incoming calls barred within CUG     403 Forbidden
-  {  57, 403 }, // bearer capability not authorized     403 Forbidden
-  {  58, 503 }, // bearer capability not presently available     503 Service unavailable
-  {  65, 488 }, // bearer capability not implemented    488 Not Acceptable Here
-  {  70, 488 }, // only restricted digital avail        488 Not Acceptable Here
-  {  79, 501 }, // service or option not implemented    501 Not implemented
-  {  87, 403 }, // user not member of CUG               403 Forbidden
-  {  88, 503 }, // incompatible destination             503 Service unavailable
-  { 102, 504 }, // recovery of timer expiry             504 Gateway timeout
-  { 111, 500 }, // protocol error                       500 Server internal error
-  { 127, 500 }, // interworking unspecified             500 Server internal error
-};
-
-#define NUM_Q931_END_REASON_MAP_ENTRIES (sizeof(Q931ReasonToSIPCode) / sizeof(Q931ReasonToSIPCode[0]))
-
-static SIP_PDU::StatusCodes RFC3398_MapQ931ToSIPCode(unsigned q931Cause)
-{
-  unsigned int i;
-  for (i = 0; i < NUM_Q931_END_REASON_MAP_ENTRIES; ++i)
-    if (Q931ReasonToSIPCode[i].q931Cause == q931Cause)
-      return (SIP_PDU::StatusCodes)Q931ReasonToSIPCode[i].sipCode;
-
-  return SIP_PDU::Failure_BadGateway;
-}
-
-static struct CallEndReasonMapEntry {
-  OpalConnection::CallEndReason reason;
-  SIP_PDU::StatusCodes          sipCode;
-} EndReasonToSIPCode[] = {
-  { OpalConnection::EndedByAnswerDenied,       SIP_PDU::GlobalFailure_Decline },        // 603
-  { OpalConnection::EndedByLocalBusy,          SIP_PDU::Failure_BusyHere },             // 486
-  { OpalConnection::EndedByCallerAbort,        SIP_PDU::Failure_RequestTerminated },    // 487
-  { OpalConnection::EndedByCapabilityExchange, SIP_PDU::Failure_UnsupportedMediaType }, // 415
-  { OpalConnection::EndedByCallForwarded,      SIP_PDU::Redirection_MovedTemporarily },  // 302
-  { OpalConnection::EndedByNoAnswer,           SIP_PDU::Failure_TemporarilyUnavailable } // 480
-};
-
-#define NUM_CALL_END_REASON_MAP_ENTRIES (sizeof(EndReasonToSIPCode) / sizeof(EndReasonToSIPCode[0]))
-
-static SIP_PDU::StatusCodes MapEndReasonToSIPCode(OpalConnection::CallEndReason callEndReason)
-{
-  unsigned int i;
-  for (i = 0; i < NUM_CALL_END_REASON_MAP_ENTRIES; ++i)
-    if (EndReasonToSIPCode[i].reason == callEndReason)
-      return EndReasonToSIPCode[i].sipCode;
-
-  return SIP_PDU::Failure_BadGateway;
-}
-
-
 void SIPConnection::OnReleased()
 {
   PTRACE(3, "SIP\tOnReleased: " << *this << ", phase = " << phase);
@@ -1168,20 +1180,22 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithResponse :
       {
-        SIP_PDU::StatusCodes sipCode;
-        // if Q.931 code has been set and is not normal call clearing, then implement mapping specified 
-        // Otherwise implement default mapping
-        if (GetQ931Cause() != 0x100 && GetQ931Cause() != 0x16)
-          sipCode = RFC3398_MapQ931ToSIPCode(q931Cause);
-        else
-          sipCode = MapEndReasonToSIPCode(callEndReason);
+        SIP_PDU::StatusCodes sipCode = SIP_PDU::Failure_BadGateway;
 
-        // EndedByCallForwarded is a special case because it needs different paramaters
-        if (callEndReason == (int)EndedByCallForwarded) {
-          SendInviteResponse(sipCode, NULL, forwardParty);
-        } else {
-          SendInviteResponse(sipCode);
+        // Try find best match for return code
+        for (PINDEX i = 0; i < PARRAYSIZE(ReasonToSIPCode); i++) {
+          if (ReasonToSIPCode[i].q931Cause == GetQ931Cause()) {
+            sipCode = ReasonToSIPCode[i].code;
+            break;
+          }
+          if (ReasonToSIPCode[i].reason == callEndReason) {
+            sipCode = ReasonToSIPCode[i].code;
+            break;
+          }
         }
+
+        // EndedByCallForwarded is a special case because it needs extra paramater
+        SendInviteResponse(sipCode, NULL, callEndReason == EndedByCallForwarded ? (const char *)forwardParty : NULL);
       }
       break;
 
@@ -1195,9 +1209,9 @@ void SIPConnection::OnReleased()
         PINDEX i;
         {
           PWaitAndSignal m(invitationsMutex);
-          for (i = 0; i < invitations.GetSize(); i++) {
-            PTRACE(3, "SIP\tCancelling transaction " << i << " of " << invitations.GetSize());
-            invitations[i].Cancel();
+          for (i = 0; i < forkedInvitations.GetSize(); i++) {
+            PTRACE(3, "SIP\tCancelling transaction " << i << " of " << forkedInvitations.GetSize());
+            forkedInvitations[i].Cancel();
           }
         }
       }
@@ -1221,8 +1235,8 @@ void SIPConnection::OnReleased()
   }
   
   // Wait until all INVITEs have completed
-  for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-    endpoint.WaitForTransactionCompletion(&invitations[i]);
+  for (PINDEX i = 0; i < forkedInvitations.GetSize(); i++) {
+    endpoint.WaitForTransactionCompletion(&forkedInvitations[i]);
   }
 
   OpalConnection::OnReleased();
@@ -1238,7 +1252,7 @@ void SIPConnection::OnReleased()
   // Remove all INVITEs
   {
     PWaitAndSignal m(invitationsMutex); 
-    invitations.RemoveAll();
+    forkedInvitations.RemoveAll();
   }
 }
 
@@ -1310,15 +1324,14 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
   if (phase != SetUpPhase) 
     return FALSE;
 
-  if (!sentTrying) {
-    SendInviteResponse(SIP_PDU::Information_Ringing);
-    sentTrying = TRUE;
-  }
-  else if (withMedia) {
+  if (withMedia) {
     SDPSessionDescription sdpOut(GetLocalAddress());
     if (!ConstructSDP(sdpOut) || !SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
       return FALSE;
-    sentTrying = TRUE;
+  }
+  else {
+    if (!SendInviteResponse(SIP_PDU::Information_Ringing))
+      return FALSE;
   }
 
   SetPhase(AlertingPhase);
@@ -1578,13 +1591,15 @@ SDPMediaDescription::Direction SIPConnection::GetDirection(
 {
   if (remote_hold)
     return SDPMediaDescription::RecvOnly;
-  else if (local_hold)
+
+  if (local_hold)
     return SDPMediaDescription::SendOnly;
+
 #if OPAL_VIDEO
-  else if (sessionId == OpalMediaFormat::DefaultVideoSessionID) {
+  if (sessionId == OpalMediaFormat::DefaultVideoSessionID) {
     if (endpoint.GetManager().CanAutoStartTransmitVideo() && !endpoint.GetManager().CanAutoStartReceiveVideo())
       return SDPMediaDescription::SendOnly;
-    else if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
+    if (!endpoint.GetManager().CanAutoStartTransmitVideo() && endpoint.GetManager().CanAutoStartReceiveVideo())
       return SDPMediaDescription::RecvOnly;
   }
 #endif
@@ -1708,7 +1723,7 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   
   if (invite->Start()) {
     PWaitAndSignal m(connection.invitationsMutex); 
-    connection.invitations.Append(invite);
+    connection.forkedInvitations.Append(invite);
     return TRUE;
   }
 
@@ -1759,28 +1774,23 @@ BOOL SIPConnection::SetUpConnection()
 
 void SIPConnection::HoldConnection()
 {
-  if (local_hold)
-    return;
-  else
-    local_hold = TRUE;
-
-  if (transport == NULL)
+  if (local_hold || transport == NULL)
     return;
 
   PTRACE(3, "SIP\tWill put connection on hold");
 
+  local_hold = TRUE;
+
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
-    {
-      PWaitAndSignal m(invitationsMutex); 
-      invitations.Append(invite);
-    }
     // Pause the media streams
     PauseMediaStreams(TRUE);
     
     // Signal the manager that there is a hold
     endpoint.OnHold(*this);
   }
+  else
+    local_hold = FALSE;
 }
 
 
@@ -1788,8 +1798,8 @@ void SIPConnection::RetrieveConnection()
 {
   if (!local_hold)
     return;
-  else
-    local_hold = FALSE;
+
+  local_hold = FALSE;
 
   if (transport == NULL)
     return;
@@ -1798,11 +1808,6 @@ void SIPConnection::RetrieveConnection()
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
-    {
-      PWaitAndSignal m(invitationsMutex); 
-      invitations.Append(invite);
-    }
-    
     // Un-Pause the media streams
     PauseMediaStreams(FALSE);
 
@@ -1974,29 +1979,8 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 
 void SIPConnection::SetLocalPartyAddress()
 {
-  OpalTransportAddress taddr = transport->GetLocalAddress();
-  PIPSocket::Address addr; 
-  WORD port;
-  taddr.GetIpAndPort(addr, port);
-  PString displayName = endpoint.GetDefaultDisplayName();
-  PString localName = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetUserName(); 
-  PString domain = endpoint.GetRegisteredPartyName(SIPURL(remotePartyAddress).GetHostName()).GetHostName();
-
-  // If no domain, use the local domain as default
-  if (domain.IsEmpty()) {
-
-    domain = addr.AsString();
-    if (port != endpoint.GetDefaultSignalPort())
-      domain += psprintf(":%d", port);
-  }
-
-  if (!localName.IsEmpty())
-    SetLocalPartyName (localName);
-
-  SIPURL myAddress("\"" + displayName + "\" <" + GetLocalPartyName() + "@" + domain + ">"); 
-
-  // add displayname, <> and tag
-  SetLocalPartyAddress(myAddress.AsQuotedString() + ";tag=" + GetTag());
+  SIPURL registeredPartyName = endpoint.GetRegisteredPartyName(remotePartyAddress);
+  localPartyAddress = registeredPartyName.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
 }
 
 
@@ -2021,13 +2005,14 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
   {
     // The connection stays alive unless all INVITEs have failed
     PWaitAndSignal m(invitationsMutex); 
-    for (PINDEX i = 0; i < invitations.GetSize(); i++) {
-      if (!invitations[i].IsFailed())
+    for (PINDEX i = 0; i < forkedInvitations.GetSize(); i++) {
+      if (!forkedInvitations[i].IsFailed())
         return;
     }
   }
 
   // All invitations failed, die now
+  releaseMethod = ReleaseWithNothing;
   Release(EndedByConnectFail);
 }
 
@@ -2081,106 +2066,62 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
   }
 }
 
-//
-// This table comes from RFC 3398 para 8.2.6.1
-//
-static struct SIPCodeToQ931ReasonMapEntry {
-  unsigned  sipCode;
-  unsigned  q931Cause;
-} SIPCodeToQ931Reason[] = {
-  { 400 /* Bad Request                    */, 41 }, // Temporary Failure
-  { 401 /* Unauthorized                   */,   21 }, // Call rejected (*)
-  { 402 /* Payment required               */,   21 }, // Call rejected
-  { 403 /* Forbidden                      */,   21 }, // Call rejected
-  { 404 /* Not found                      */,    1 }, // Unallocated number
-  { 405 /* Method not allowed             */,   63 }, // Service or option unavailable
-  { 406 /* Not acceptable                 */,   79 }, // Service/option not implemented (+)
-  { 407 /* Proxy authentication required  */,   21 }, // Call rejected (*)
-  { 408 /* Request timeout                */,  102 }, // Recovery on timer expiry
-  { 410 /* Gone                           */,   22 }, // Number changed (w/o diagnostic)
-  { 413 /* Request Entity too long        */,  127 }, // Interworking (+)
-  { 414 /* Request-URI too long           */,  127 }, // Interworking (+)
-  { 415 /* Unsupported media type         */,   79 }, // Service/option not implemented (+)
-  { 416 /* Unsupported URI Scheme         */,  127 }, // Interworking (+)
-  { 420 /* Bad extension                  */,  127 }, // Interworking (+)
-  { 421 /* Extension Required             */,  127 }, // Interworking (+)
-  { 423 /* Interval Too Brief             */,  127 }, // Interworking (+)
-  { 480 /* Temporarily unavailable        */,   18 }, // No user responding
-  { 481 /* Call/Transaction Does not Exist*/,   41 }, // Temporary Failure
-  { 482 /* Loop Detected                  */,   25 }, // Exchange - routing error
-  { 483 /* Too many hops                  */,   25 }, // Exchange - routing error
-  { 484 /* Address incomplete             */,   28 }, // Invalid Number Format (+)
-  { 485 /* Ambiguous                      */,    1 }, // Unallocated number
-  { 486 /* Busy here                      */,   17 }, // User busy
-//  { 487 /* Request Terminated             */,  --- }, // (no mapping)
-  //{ 488 /* Not Acceptable here            */,  --- }, // by Warning header
-  { 500 /* Server internal error          */,   41 }, // Temporary failure
-  { 501 /* Not implemented                */,   79 }, // Not implemented, unspecified
-  { 502 /* Bad gateway                    */,   38 }, // Network out of order
-  { 503 /* Service unavailable            */,   41 }, // Temporary failure
-  { 504 /* Server time-out                */,  102 }, // Recovery on timer expiry
-  { 504 /* Version Not Supported          */,  127 }, // Interworking (+)
-  { 513 /* Message Too Large              */,  127 }, // Interworking (+)
-  { 600 /* Busy everywhere                */,   17 }, // User busy
-  { 603 /* Decline                        */,   21 }, // Call rejected
-  { 604 /* Does not exist anywhere        */,    1 }, // Unallocated number
-  //{ 606 /* Not acceptable                 */,  --- }, // by Warning header
-};
-
-#define NUM_SIPCODE_END_REASON_MAP_ENTRIES (sizeof(SIPCodeToQ931Reason) / sizeof(SIPCodeToQ931Reason[0]))
-
-static unsigned RFC3398_MapSIPCodeToQ931(unsigned sipCode)
-{
-  unsigned int i;
-  for (i = 0; i < NUM_SIPCODE_END_REASON_MAP_ENTRIES; ++i)
-    if (SIPCodeToQ931Reason[i].sipCode == sipCode)
-      return SIPCodeToQ931Reason[i].q931Cause;
-
-  return 41; // Temporary Failure
-}
-
 
 void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
   PINDEX i;
+  BOOL ignoreErrorResponse = FALSE;
+  BOOL reInvite = FALSE;
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-    if (phase < EstablishedPhase) {
-      // Have a response to the INVITE, so cancel all the other invitations sent.
-      PWaitAndSignal m(invitationsMutex); 
-      for (i = 0; i < invitations.GetSize(); i++) {
-        if (&invitations[i] != &transaction)
-          invitations[i].Cancel();
+    PWaitAndSignal m(invitationsMutex);
+
+    // See if this is an initial INVITE or a re-INVITE
+    reInvite = TRUE;
+    for (i = 0; i < forkedInvitations.GetSize(); i++) {
+      if (&forkedInvitations[i] == &transaction) {
+        reInvite = FALSE;
+        break;
       }
     }
 
-    // Save the sessions etc we are actually using
-    // If we are in the EstablishedPhase, then the 
-    // sessions are kept identical because the response is the
-    // response to a hold/retrieve
-    if (phase != EstablishedPhase)
+    if (!reInvite && response.GetStatusCode()/100 <= 2) {
+      if (response.GetStatusCode()/100 == 2) {
+        // Have a final response to the INVITE, so cancel all the other invitations sent.
+        for (i = 0; i < forkedInvitations.GetSize(); i++) {
+          if (&forkedInvitations[i] != &transaction)
+            forkedInvitations[i].Cancel();
+        }
+
+        // And end connect mode on the transport
+        transport->EndConnect(GetLocalAddress());
+      }
+
+      // Save the sessions etc we are actually using
+      // If we are in the EstablishedPhase, then the 
+      // sessions are kept identical because the response is the
+      // response to a hold/retrieve
       rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
-    localPartyAddress = transaction.GetMIME().GetFrom();
-    remotePartyAddress = response.GetMIME().GetTo();
-    SIPURL url(remotePartyAddress);
-    remotePartyName = url.GetDisplayName ();
-    response.GetMIME().GetProductInfo(remoteProductInfo);
+      localPartyAddress = transaction.GetMIME().GetFrom();
+      remotePartyAddress = response.GetMIME().GetTo();
+      SIPURL url(remotePartyAddress);
+      remotePartyName = url.GetDisplayName ();
+      response.GetMIME().GetProductInfo(remoteProductInfo);
 
-    // get the route set from the Record-Route response field (in reverse order)
-    // according to 12.1.2
-    // requests in a dialog do not modify the initial route set fo according 
-    // to 12.2
-    if (phase < ConnectedPhase) {
-      PStringList recordRoute = response.GetMIME().GetRecordRoute();
-      routeSet.RemoveAll();
-      for (i = recordRoute.GetSize(); i > 0; i--)
-        routeSet.AppendString(recordRoute[i-1]);
-    }
+      // get the route set from the Record-Route response field (in reverse order)
+      // according to 12.1.2
+      // requests in a dialog do not modify the initial route set fo according 
+      // to 12.2
+      if (phase < ConnectedPhase) {
+        PStringList recordRoute = response.GetMIME().GetRecordRoute();
+        routeSet.RemoveAll();
+        for (i = recordRoute.GetSize(); i > 0; i--)
+          routeSet.AppendString(recordRoute[i-1]);
+      }
 
-    // If we are in a dialog or create one, then targetAddress needs to be set
-    // to the contact field in the 2xx/1xx response for a target refresh 
-    // request
-    if (response.GetStatusCode()/100 == 2 || response.GetStatusCode()/100 == 1) {
+      // If we are in a dialog or create one, then targetAddress needs to be set
+      // to the contact field in the 2xx/1xx response for a target refresh 
+      // request
       PString contact = response.GetMIME().GetContact();
       if (!contact.IsEmpty()) {
         targetAddress = contact;
@@ -2188,11 +2129,27 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       }
     }
 
-    // Send the ack
+    // Send the ack if not pending
     if (response.GetStatusCode()/100 != 1)
       SendACK(transaction, response);
+
+    if (phase < ConnectedPhase) {
+      // Final check to see if we have forked INVITEs still running, don't
+      // release connection until all of them have failed.
+      for (i = 0; i < forkedInvitations.GetSize(); i++) {
+        if (forkedInvitations[i].IsInProgress()) {
+          ignoreErrorResponse = TRUE;
+          break;
+        }
+      }
+    }
+    else {
+      // This INVITE is from a different "dialog", any errors do not cause a release
+      ignoreErrorResponse = localPartyAddress != response.GetMIME().GetFrom() || remotePartyAddress != response.GetMIME().GetTo();
+    }
   }
 
+  // Break out to virtual functions for some special cases.
   switch (response.GetStatusCode()) {
     case SIP_PDU::Information_Trying :
       OnReceivedTrying(response);
@@ -2208,73 +2165,47 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
-      OnReceivedAuthenticationRequired(transaction, response);
+      if (OnReceivedAuthenticationRequired(transaction, response))
+        return;
       break;
 
     case SIP_PDU::Redirection_MovedTemporarily :
       OnReceivedRedirection(response);
       break;
+  }
 
-/////////////////////
+  switch (response.GetStatusCode()/100) {
+    case 1 : // Do nothing for Provisional responses
+      return;
 
-    // for each of the following cases, map the SIP release code to the correct Q931 code as per RFC 3398
+    case 2 : // Successful esponse - there really is only 200 OK
+      OnReceivedOK(transaction, response);
+      return;
 
-    case SIP_PDU::Failure_NotFound :
-      Release(EndedByNoUser);
-      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_NotFound);
+    case 3 : // Redirection response
+      return;
+  }
+
+  // If we are doing a local hold, and fail, we do not release the conneciton
+  if (reInvite && local_hold) {
+    local_hold = FALSE;       // It failed
+    PauseMediaStreams(FALSE); // Un-Pause the media streams
+    endpoint.OnHold(*this);   // Signal the manager that there is no more hold
+    return;
+  }
+
+  // We don't always release the connection, eg not till all forked invites have completed
+  if (ignoreErrorResponse)
+    return;
+
+  // All other responses are errors, see if they should cause a Release()
+  for (i = 0; i < PARRAYSIZE(SIPCodeToReason); i++) {
+    if (response.GetStatusCode() == SIPCodeToReason[i].code) {
+      releaseMethod = ReleaseWithNothing;
+      SetQ931Cause(SIPCodeToReason[i].q931Cause);
+      Release(SIPCodeToReason[i].reason);
       break;
-
-    case SIP_PDU::Failure_RequestTimeout :
-      Release(EndedByTemporaryFailure);
-      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_RequestTimeout);
-      break;
-
-    case SIP_PDU::Failure_TemporarilyUnavailable :
-      Release(EndedByTemporaryFailure);
-      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_TemporarilyUnavailable);
-      break;
-      
-    case SIP_PDU::Failure_Forbidden :
-      Release(EndedBySecurityDenial);
-      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_Forbidden);
-      break;
-
-    case SIP_PDU::Failure_BusyHere :
-      Release(EndedByRemoteBusy);
-      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_BusyHere);
-      break;
-
-    case SIP_PDU::Failure_UnsupportedMediaType :
-      Release(EndedByCapabilityExchange);
-      q931Cause = RFC3398_MapSIPCodeToQ931(SIP_PDU::Failure_UnsupportedMediaType);
-      break;
-
-///////////////
-
-    default :
-      switch (response.GetStatusCode()/100) {
-        case 1 :
-          // old: Do nothing on 1xx
-          PTRACE(2, "SIP\tReceived unknown informational response " << response.GetStatusCode());
-          break;
-        case 2 :
-          OnReceivedOK(transaction, response);
-          break;
-        default :
-          // All other final responses cause a call end, if it is not a
-          // local hold.
-          if (!local_hold) {
-            Release(EndedByRefusal);
-            q931Cause = RFC3398_MapSIPCodeToQ931(response.GetStatusCode());
-          }
-          else {
-            local_hold = FALSE; // It failed
-            // Un-Pause the media streams
-            PauseMediaStreams(FALSE);
-            // Signal the manager that there is no more hold
-            endpoint.OnHold(*this);
-          }
-      }
+    }
   }
 }
 
@@ -2283,29 +2214,52 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
   BOOL isReinvite = FALSE;
   BOOL sdpFailure = TRUE;
- 
-  if (originalInvite != NULL) {
 
-    // Ignore duplicate INVITEs
-    if (originalInvite->GetMIME().GetCSeq() == request.GetMIME().GetCSeq()) {
-      PTRACE(2, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
+  const SIPMIMEInfo & requestMIME = request.GetMIME();
+  if (originalInvite != NULL) {
+    // Have received multiple INVITEs, three possibilities
+    const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
+
+    if (originalMIME.GetCSeq() == requestMIME.GetCSeq()) {
+      // Same sequence number means it is a retransmission
+      PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
       return;
     }
+
+    if (originalMIME.GetTo()   != requestMIME.GetTo() ||
+        originalMIME.GetFrom() != requestMIME.GetFrom()) {
+      // Different "dialog" determined by the tags in the to and from fields indicate forking
+      PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
+      SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
+      response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
+      SendPDU(response, request.GetViaAddress(endpoint));
+      return;
+    }
+
+    // A new INVITE in the same "dialog" but different cseq must be a re-INVITE
+    isReinvite = TRUE;
+  }
+  else if (IsOriginating()) {
+    // We originated the call, so an INVITE must be a re-INVITE, 
+    isReinvite = TRUE;
   }
 
   // Is Re-INVITE?
-  if (phase == EstablishedPhase 
-      && ((!IsOriginating() && originalInvite != NULL)
-         || (IsOriginating()))) {
+  if (isReinvite) {
+    if (phase != EstablishedPhase) {
+      PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received before initial INVITE completed on " << *this);
+      SIP_PDU response(request, SIP_PDU::Failure_NotAcceptableHere);
+      SendPDU(response, request.GetViaAddress(endpoint));
+      return;
+    }
     PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
-    isReinvite = TRUE;
   }
   else
   {
     // get the address that remote end *thinks* it is using from the Contact field
     PIPSocket::Address sigAddr;
     {
-      PURL contact(request.GetMIME().GetContact());
+      PURL contact(requestMIME.GetContact());
       OpalTransportAddress sigAddress(contact.GetHostName());
       sigAddress.GetIpAddress(sigAddr);
     }
@@ -2321,12 +2275,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // originalInvite should contain the first received INVITE for
   // this connection
-  if (originalInvite)
-    delete originalInvite;
-
+  delete originalInvite;
   originalInvite = new SIP_PDU(request);
-  // Special case auto calling
-  if (!isReinvite && IsOriginating() && invitations.GetSize() > 0 && invitations[0].GetMIME().GetCallID() == request.GetMIME().GetCallID()) {
+
+  // Special case for when we call our self
+  if (!isReinvite && IsOriginating() && forkedInvitations.GetSize() > 0 && forkedInvitations[0].GetMIME().GetCallID() == requestMIME.GetCallID()) {
     SendInviteResponse(SIP_PDU::Failure_InternalServerError);
     return;
   }
@@ -2334,14 +2287,14 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   if (request.HasSDP())
     remoteSDP = request.GetSDP();
   if (!isReinvite)
-    releaseMethod = ReleaseWithCANCEL;
+    releaseMethod = ReleaseWithResponse;
 
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom(); 
   SIPURL url(remotePartyAddress);
   remotePartyName = url.GetDisplayName ();
   mime.GetProductInfo(remoteProductInfo);
-  localPartyAddress  = mime.GetTo() + ";tag=" + GetTag(); // put a real random 
+  localPartyAddress  = mime.GetTo() + ";tag=" + OpalGloballyUniqueID().AsString(); // put a real random 
   mime.SetTo(localPartyAddress);
 
   // get the called destination
@@ -2355,9 +2308,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   targetAddress.AdjustForRequestURI();
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
-  // flag Trying as already sent (either has or soon will be)
-  sentTrying = TRUE;
-
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
 
@@ -2373,7 +2323,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       SDPSessionDescription & sdpIn = originalInvite->GetSDP();
       // The Re-INVITE can be sent to change the RTP Session parameters,
       // the current codecs, or to put the call on hold
-      if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly && sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
+      if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly &&
+          sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
 
         PTRACE(3, "SIP\tRemote hold detected");
         remote_hold = TRUE;
@@ -2555,6 +2506,17 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
+  if (originalInvite == NULL) {
+    PTRACE(2, "SIP\tACK from " << response.GetURI() << " received before INVITE!");
+    return;
+  }
+
+  if (originalInvite->GetMIME().GetTo()   != response.GetMIME().GetTo() ||
+      originalInvite->GetMIME().GetFrom() != response.GetMIME().GetFrom()) {
+    PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
+    return;
+  }
+
   PTRACE(3, "SIP\tACK received: " << phase);
 
   ackTimer.Stop();
@@ -2681,19 +2643,17 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
 void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
 {
   PString origTo;
-  PString origFrom;
 
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
   // Ignore the tag added by OPAL
   if (originalInvite != NULL) {
     origTo = originalInvite->GetMIME().GetTo();
-    origFrom = originalInvite->GetMIME().GetFrom();
-    origTo.Replace (";tag=" + GetTag (), "");
+    origTo.Delete(origTo.Find(";tag="), P_MAX_INDEX);
   }
   if (originalInvite == NULL || 
       request.GetMIME().GetTo() != origTo || 
-      request.GetMIME().GetFrom() != origFrom || 
+      request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
@@ -2758,7 +2718,7 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 }
 
 
-void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
+BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
                                                      SIP_PDU & response)
 {
   BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
@@ -2773,20 +2733,17 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
     PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non INVITE");
-    return;
+    return FALSE;
   }
 
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
 
+  PCaselessString authenticateTag = isProxy ? "Proxy-Authenticate" : "WWW-Authenticate";
+
   // Received authentication required response, try to find authentication
   // for the given realm if no proxy
-  if (!auth.Parse(response.GetMIME()(isProxy 
-                                     ? "Proxy-Authenticate"
-                                     : "WWW-Authenticate"),
-                                     isProxy)) {
-    releaseMethod = ReleaseWithNothing;
-    Release(EndedBySecurityDenial);
-    return;
+  if (!auth.Parse(response.GetMIME()(authenticateTag), isProxy)) {
+    return FALSE;
   }
 
   // Save the username, realm and nonce
@@ -2796,36 +2753,21 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   // Try to find authentication parameters for the given realm,
   // if not, use the proxy authentication parameters (if any)
   if (!endpoint.GetAuthentication(auth.GetAuthRealm(), authentication)) {
-    PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetAuthRealm() << ", will use SIP Outbound Proxy authentication settings, if any");
-    if (!endpoint.GetProxy().IsEmpty()) {
-      authentication.SetUsername(endpoint.GetProxy().GetUserName());
-      authentication.SetPassword(endpoint.GetProxy().GetPassword());
-    }
-    else {
-      releaseMethod = ReleaseWithNothing;
-      Release(EndedBySecurityDenial);
-      return;
-    }
+    PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetAuthRealm()
+            << ", will use SIP Outbound Proxy authentication settings, if any");
+    if (endpoint.GetProxy().IsEmpty())
+      return FALSE;
+
+    authentication.SetUsername(endpoint.GetProxy().GetUserName());
+    authentication.SetPassword(endpoint.GetProxy().GetPassword());
   }
 
-  if (!authentication.Parse(response.GetMIME()(isProxy 
-                                             ? "Proxy-Authenticate"
-                                             : "WWW-Authenticate"),
-                                               isProxy)) {
-    releaseMethod = ReleaseWithNothing;
-    Release(EndedBySecurityDenial);
-    return;
-  }
+  if (!authentication.Parse(response.GetMIME()(authenticateTag), isProxy))
+    return FALSE;
   
-  if (!authentication.IsValid() 
-      || (authentication.IsValid()
-      && lastUsername == authentication.GetUsername ()
-      && lastNonce    == authentication.GetNonce ())) {
-
+  if (!authentication.IsValid() || (lastUsername == authentication.GetUsername() && lastNonce == authentication.GetNonce())) {
     PTRACE(2, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
-    releaseMethod = ReleaseWithNothing;    
-    Release(EndedBySecurityDenial);
-    return;
+    return FALSE;
   }
 
   // Restart the transaction with new authentication info
@@ -2847,14 +2789,13 @@ void SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   if (invite->Start())
   {
     PWaitAndSignal m(invitationsMutex); 
-    invitations.Append(invite);
+    forkedInvitations.Append(invite);
+    return TRUE;
   }
-  else {
-    delete invite;
-    PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
-    releaseMethod = ReleaseWithNothing;    
-    Release(EndedBySecurityDenial);
-  }
+
+  delete invite;
+  PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
+  return FALSE;
 }
 
 
@@ -3045,8 +2986,9 @@ BOOL SIPConnection::ForwardCall (const PString & fwdParty)
 
 BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
-  PString userName = endpoint.GetRegisteredPartyName(SIPURL(localPartyAddress).GetHostName()).GetUserName();
-  SIPURL contact = endpoint.GetContactURL(*transport, userName, SIPURL(localPartyAddress).GetHostName());
+  SIPURL localPartyURL(GetLocalPartyAddress());
+  PString userName = endpoint.GetRegisteredPartyName(localPartyURL.GetHostName()).GetUserName();
+  SIPURL contact = endpoint.GetContactURL(*transport, userName, localPartyURL.GetHostName());
 
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
 }
