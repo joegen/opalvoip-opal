@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.4  2007/07/05 06:25:13  rjongbloed
+ * Fixed GNU compiler warnings.
+ *
  * Revision 1.3  2007/06/30 14:00:05  dsandras
  * Fixed previous commit so that things at least compile. Untested.
  *
@@ -293,6 +296,7 @@ BOOL OpalRFC4175Decoder::Initialise()
   firstFrame = TRUE;
   width      = 0;
   maxY       = 0;
+  return TRUE;
 }
 
 #endif // OPAL_RFC4175
