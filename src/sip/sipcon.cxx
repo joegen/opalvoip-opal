@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2240  2007/07/05 05:40:21  rjongbloed
+ * Revision 1.2241  2007/07/05 06:25:14  rjongbloed
+ * Fixed GNU compiler warnings.
+ *
+ * Revision 2.239  2007/07/05 05:40:21  rjongbloed
  * Changes to correctly distinguish between INVITE types: normal, forked and re-INVITE
  *   these are all handled slightly differently for handling request and responses.
  * Tidied the translation of SIP status codes and OPAL call end types and Q.931 cause codes.
@@ -2171,6 +2174,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
     case SIP_PDU::Redirection_MovedTemporarily :
       OnReceivedRedirection(response);
+      break;
+
+    default :
       break;
   }
 
