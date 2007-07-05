@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2177  2007/06/30 16:43:47  dsandras
+ * Revision 1.2178  2007/07/05 05:44:16  rjongbloed
+ * Simplified the default local party name, prevents it from ever returning 0.0.0.0 as host.
+ *
+ * Revision 2.176  2007/06/30 16:43:47  dsandras
  * Improved exit sequence.
  *
  * Revision 2.175  2007/06/29 06:59:58  rjongbloed
@@ -1745,17 +1748,9 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
 
 SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 {
-  PString partyName = GetDefaultLocalPartyName();
-
-  PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
-  WORD localPort = GetDefaultSignalPort();
-  if (!GetListeners().IsEmpty())
-    GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
-  if (localIP.IsAny())
-    localIP = PIPSocket::GetHostName();
-  OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
-  SIPURL party(partyName, address, localPort);
-  return party;
+  SIPURL rpn(GetDefaultLocalPartyName(), PIPSocket::GetHostName(), GetDefaultSignalPort());
+  rpn.SetDisplayName(GetDefaultDisplayName());
+  return rpn;
 }
 
 
