@@ -580,6 +580,9 @@ dnl ########################################################################
 dnl
 dnl RFC4175
 
+dnl MSWIN_DISPLAY rfc4175,RFC4175 Raw Video support
+dnl MSWIN_DEFINE  rfc4175,OPAL_RFC4175
+
 if test "$rfc4175" = "yes" ; then
   AC_ARG_ENABLE(rfc4175,
          [  --disable-rfc4175       disable RFC4175 support],
