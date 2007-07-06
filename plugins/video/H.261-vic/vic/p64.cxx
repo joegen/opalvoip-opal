@@ -54,6 +54,9 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
+ * Revision 1.8  2007/07/06 12:54:44  dsandras
+ * Added guard against possibly NULL pointer (Ekiga report 367981).
+ *
  * Revision 1.7  2006/12/19 03:11:55  dereksmithies
  * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
  * This will help memory management - many thanks.
@@ -377,7 +380,10 @@ int P64Decoder::parse_block(short* blk, u_int* mask)
 		int v;
 		GET_BITS(bs_, 2, nbb, bb, v);
 		/*XXX quantize?*/
-		blk[0] = qt[(v & 1) ? 0xff : 1];
+                if (qt)
+                  blk[0] = qt[(v & 1) ? 0xff : 1];
+                else
+                  blk[0] = 0;
 		k = 1;
 		m0 |= 1;
 	} else {
