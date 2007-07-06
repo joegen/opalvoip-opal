@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2241  2007/07/05 06:25:14  rjongbloed
+ * Revision 1.2242  2007/07/06 07:01:37  rjongbloed
+ * Fixed borken re-INVITE handling (Hold and Retrieve)
+ *
+ * Revision 2.240  2007/07/05 06:25:14  rjongbloed
  * Fixed GNU compiler warnings.
  *
  * Revision 2.239  2007/07/05 05:40:21  rjongbloed
@@ -2218,11 +2221,22 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  BOOL isReinvite = FALSE;
-  BOOL sdpFailure = TRUE;
+  BOOL isReinvite;
 
   const SIPMIMEInfo & requestMIME = request.GetMIME();
-  if (originalInvite != NULL) {
+  if (IsOriginating()) {
+    // Special case for when we call our self
+    if (forkedInvitations.GetSize() > 0 && forkedInvitations[0].GetMIME().GetCallID() == requestMIME.GetCallID()) {
+      SendInviteResponse(SIP_PDU::Failure_InternalServerError);
+      return;
+    }
+
+    // We originated the call, so an INVITE must be a re-INVITE, 
+    isReinvite = TRUE;
+  }
+  else if (originalInvite == NULL)
+    isReinvite = FALSE; // First time incoming call
+  else {
     // Have received multiple INVITEs, three possibilities
     const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
 
@@ -2245,56 +2259,25 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     // A new INVITE in the same "dialog" but different cseq must be a re-INVITE
     isReinvite = TRUE;
   }
-  else if (IsOriginating()) {
-    // We originated the call, so an INVITE must be a re-INVITE, 
-    isReinvite = TRUE;
-  }
-
-  // Is Re-INVITE?
-  if (isReinvite) {
-    if (phase != EstablishedPhase) {
-      PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received before initial INVITE completed on " << *this);
-      SIP_PDU response(request, SIP_PDU::Failure_NotAcceptableHere);
-      SendPDU(response, request.GetViaAddress(endpoint));
-      return;
-    }
-    PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
-  }
-  else
-  {
-    // get the address that remote end *thinks* it is using from the Contact field
-    PIPSocket::Address sigAddr;
-    {
-      PURL contact(requestMIME.GetContact());
-      OpalTransportAddress sigAddress(contact.GetHostName());
-      sigAddress.GetIpAddress(sigAddr);
-    }
-
-    // get the local and peer transport addresses
-    PIPSocket::Address peerAddr, localAddr;
-    transport->GetRemoteAddress().GetIpAddress(peerAddr);
-    transport->GetLocalAddress().GetIpAddress(localAddr);
-
-    // allow the application to determine if RTP NAT is enabled or not
-    remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, TRUE);
-  }
+   
 
   // originalInvite should contain the first received INVITE for
   // this connection
   delete originalInvite;
   originalInvite = new SIP_PDU(request);
 
-  // Special case for when we call our self
-  if (!isReinvite && IsOriginating() && forkedInvitations.GetSize() > 0 && forkedInvitations[0].GetMIME().GetCallID() == requestMIME.GetCallID()) {
-    SendInviteResponse(SIP_PDU::Failure_InternalServerError);
-    return;
-  }
-
   if (request.HasSDP())
     remoteSDP = request.GetSDP();
-  if (!isReinvite)
-    releaseMethod = ReleaseWithResponse;
 
+  // We received a Re-INVITE for a current connection
+  if (isReinvite) { 
+    OnReceivedReINVITE(request);
+    return;
+  }
+  
+  releaseMethod = ReleaseWithResponse;
+
+  // Fill in all the various connection info
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom(); 
   SIPURL url(remotePartyAddress);
@@ -2313,98 +2296,23 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     targetAddress = contact;
   targetAddress.AdjustForRequestURI();
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
-  
-  // We received a Re-INVITE for a current connection
-  if (isReinvite) { 
 
-    // always send Trying for Re-INVITE
-    SendInviteResponse(SIP_PDU::Information_Trying);
-
-    remoteFormatList.RemoveAll();
-    SDPSessionDescription sdpOut(GetLocalAddress());
-
-    // get the remote media formats, if any
-    if (originalInvite->HasSDP()) {
-
-      SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-      // The Re-INVITE can be sent to change the RTP Session parameters,
-      // the current codecs, or to put the call on hold
-      if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly &&
-          sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
-
-        PTRACE(3, "SIP\tRemote hold detected");
-        remote_hold = TRUE;
-        PauseMediaStreams(TRUE);
-        endpoint.OnHold(*this);
-      }
-      else {
-
-        // If we receive a consecutive reinvite without the SendOnly
-        // parameter, then we are not on hold anymore
-        if (remote_hold) {
-          PTRACE(3, "SIP\tRemote retrieve from hold detected");
-          remote_hold = FALSE;
-          PauseMediaStreams(FALSE);
-          endpoint.OnHold(*this);
-        }
-      }
-    }
-    else {
-      if (remote_hold) {
-        PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
-        remote_hold = FALSE;
-        PauseMediaStreams(FALSE);
-        endpoint.OnHold(*this);
-      }
-    }
-    
-    // If it is a RE-INVITE that doesn't correspond to a HOLD, then
-    // Close all media streams, they will be reopened.
-    if (!IsConnectionOnHold()) {
-      PWaitAndSignal m(streamsMutex);
-      GetCall().RemoveMediaStreams();
-      ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
-#if OPAL_VIDEO
-      ReleaseSession(OpalMediaFormat::DefaultVideoSessionID, TRUE);
-#endif
-#if OPAL_T38FAX
-      ReleaseSession(OpalMediaFormat::DefaultDataSessionID, TRUE);
-#endif
-    }
- 
-    if (originalInvite->HasSDP()) {
-      // Try to send SDP media description for audio and video
-      SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
-#if OPAL_VIDEO
-      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
-#endif
-#if OPAL_T38FAX
-      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
-#endif
-    }
-
-    if (sdpFailure) {
-      SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
-#endif
-#if OPAL_T38FAX
-      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID) && sdpFailure;
-#endif
-      if (sdpFailure) {
-        // Ignore a failed reInvite
-        return;
-      }
-    }
-  
-    // send the 200 OK response
-    SendInviteOK(sdpOut);
-
-    return;
+  // get the address that remote end *thinks* it is using from the Contact field
+  PIPSocket::Address sigAddr;
+  {
+    PURL contact(contact);
+    OpalTransportAddress sigAddress(contact.GetHostName());
+    sigAddress.GetIpAddress(sigAddr);
   }
-  
+
+  // get the local and peer transport addresses
+  PIPSocket::Address peerAddr, localAddr;
+  transport->GetRemoteAddress().GetIpAddress(peerAddr);
+  transport->GetLocalAddress().GetIpAddress(localAddr);
+
+  // allow the application to determine if RTP NAT is enabled or not
+  remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, TRUE);
+
   // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection(0, NULL)) {
     PTRACE(1, "SIP\tOnIncomingConnection failed for INVITE from " << request.GetURI() << " for " << *this);
@@ -2421,6 +2329,106 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     return;
   }
 }
+
+
+void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
+{
+  if (phase != EstablishedPhase) {
+    PTRACE(2, "SIP\tRe-INVITE from " << request.GetURI() << " received before initial INVITE completed on " << *this);
+    SIP_PDU response(request, SIP_PDU::Failure_NotAcceptableHere);
+    SendPDU(response, request.GetViaAddress(endpoint));
+    return;
+  }
+
+  PTRACE(3, "SIP\tReceived re-INVITE from " << request.GetURI() << " for " << *this);
+
+  // always send Trying for Re-INVITE
+  SendInviteResponse(SIP_PDU::Information_Trying);
+
+  remoteFormatList.RemoveAll();
+  SDPSessionDescription sdpOut(GetLocalAddress());
+
+  // get the remote media formats, if any
+  if (originalInvite->HasSDP()) {
+
+    SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+    // The Re-INVITE can be sent to change the RTP Session parameters,
+    // the current codecs, or to put the call on hold
+    if (sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID) == SDPMediaDescription::SendOnly &&
+        sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
+
+      PTRACE(3, "SIP\tRemote hold detected");
+      remote_hold = TRUE;
+      PauseMediaStreams(TRUE);
+      endpoint.OnHold(*this);
+    }
+    else {
+
+      // If we receive a consecutive reinvite without the SendOnly
+      // parameter, then we are not on hold anymore
+      if (remote_hold) {
+        PTRACE(3, "SIP\tRemote retrieve from hold detected");
+        remote_hold = FALSE;
+        PauseMediaStreams(FALSE);
+        endpoint.OnHold(*this);
+      }
+    }
+  }
+  else {
+    if (remote_hold) {
+      PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
+      remote_hold = FALSE;
+      PauseMediaStreams(FALSE);
+      endpoint.OnHold(*this);
+    }
+  }
+  
+  // If it is a RE-INVITE that doesn't correspond to a HOLD, then
+  // Close all media streams, they will be reopened.
+  if (!IsConnectionOnHold()) {
+    PWaitAndSignal m(streamsMutex);
+    GetCall().RemoveMediaStreams();
+    ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+#if OPAL_VIDEO
+    ReleaseSession(OpalMediaFormat::DefaultVideoSessionID, TRUE);
+#endif
+#if OPAL_T38FAX
+    ReleaseSession(OpalMediaFormat::DefaultDataSessionID, TRUE);
+#endif
+  }
+
+  BOOL sdpFailure = TRUE;
+  if (originalInvite->HasSDP()) {
+    // Try to send SDP media description for audio and video
+    SDPSessionDescription & sdpIn = originalInvite->GetSDP();
+    sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+#if OPAL_VIDEO
+    sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
+#endif
+#if OPAL_T38FAX
+    sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
+#endif
+  }
+
+  if (sdpFailure) {
+    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
+    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+#if OPAL_VIDEO
+    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
+#endif
+#if OPAL_T38FAX
+    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID) && sdpFailure;
+#endif
+    if (sdpFailure) {
+      // Ignore a failed reInvite
+      return;
+    }
+  }
+
+  // send the 200 OK response
+  SendInviteOK(sdpOut);
+}
+
 
 BOOL SIPConnection::OnOpenIncomingMediaChannels()
 {
