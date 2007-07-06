@@ -54,7 +54,10 @@
 /************ Change log
  *
  * $Log: p64.cxx,v $
- * Revision 1.2008  2006/01/12 17:56:37  dsandras
+ * Revision 1.2008.2.1  2007/07/06 12:53:17  dsandras
+ * Added guard against NULL pointer (Ekiga report #367981).
+ *
+ * Revision 2.7  2006/01/12 17:56:37  dsandras
  * Added initialization as in Mimas branch of openh323.
  *
  * Revision 2.6  2005/11/25 00:14:29  csoutheren
@@ -346,7 +349,10 @@ int P64Decoder::parse_block(short* blk, u_int* mask)
 		int v;
 		GET_BITS(bs_, 2, nbb, bb, v);
 		/*XXX quantize?*/
-		blk[0] = qt[(v & 1) ? 0xff : 1];
+                if (qt)
+                  blk[0] = qt[(v & 1) ? 0xff : 1];
+                else
+                  blk[0] = 0;
 		k = 1;
 		m0 |= 1;
 	} else {
