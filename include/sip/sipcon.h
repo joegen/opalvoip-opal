@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2072  2007/07/05 05:40:21  rjongbloed
+ * Revision 1.2073  2007/07/06 07:01:36  rjongbloed
+ * Fixed borken re-INVITE handling (Hold and Retrieve)
+ *
+ * Revision 2.71  2007/07/05 05:40:21  rjongbloed
  * Changes to correctly distinguish between INVITE types: normal, forked and re-INVITE
  *   these are all handled slightly differently for handling request and responses.
  * Tidied the translation of SIP status codes and OPAL call end types and Q.931 cause codes.
@@ -501,6 +504,10 @@ class SIPConnection : public OpalConnection
     /**Handle an incoming INVITE request
       */
     virtual void OnReceivedINVITE(SIP_PDU & pdu);
+
+    /**Handle an incoming Re-INVITE request
+      */
+    virtual void OnReceivedReINVITE(SIP_PDU & pdu);
 
     /**Handle an incoming ACK PDU
       */
