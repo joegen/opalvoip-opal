@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.23  2007/07/08 13:12:47  rjongbloed
+ * Fixed being able to make a call to arbitrary address from dialog.
+ *
  * Revision 1.22  2007/06/28 12:06:04  rjongbloed
  * Fixed endless search for "user" endpoint.
  *
@@ -2657,6 +2660,8 @@ void CallDialog::OnOK(wxCommandEvent & event)
     key.sprintf("%u", index+1);
     config->Write(key, m_Address);
   }
+
+  EndModal(wxID_OK);
 }
 
 
