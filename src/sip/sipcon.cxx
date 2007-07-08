@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2242  2007/07/06 07:01:37  rjongbloed
+ * Revision 1.2243  2007/07/08 13:11:25  rjongbloed
+ * Fixed accepting re-INVITE from the side of call that did not send the original INVITE.
+ *
+ * Revision 2.241  2007/07/06 07:01:37  rjongbloed
  * Fixed borken re-INVITE handling (Hold and Retrieve)
  *
  * Revision 2.240  2007/07/05 06:25:14  rjongbloed
@@ -2225,17 +2228,21 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   const SIPMIMEInfo & requestMIME = request.GetMIME();
   if (IsOriginating()) {
-    // Special case for when we call our self
-    if (forkedInvitations.GetSize() > 0 && forkedInvitations[0].GetMIME().GetCallID() == requestMIME.GetCallID()) {
-      SendInviteResponse(SIP_PDU::Failure_InternalServerError);
+    if (remotePartyAddress != requestMIME.GetTo() ||
+        localPartyAddress  != requestMIME.GetFrom()) {
+      PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
+      SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
+      SendPDU(response, request.GetViaAddress(endpoint));
       return;
     }
 
-    // We originated the call, so an INVITE must be a re-INVITE, 
+    // We originated the call, so any INVITE must be a re-INVITE, 
     isReinvite = TRUE;
   }
-  else if (originalInvite == NULL)
+  else if (originalInvite == NULL) {
     isReinvite = FALSE; // First time incoming call
+    PTRACE(4, "SIP\tInitial INVITE from " << request.GetURI());
+  }
   else {
     // Have received multiple INVITEs, three possibilities
     const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
