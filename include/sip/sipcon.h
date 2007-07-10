@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2065.2.1  2007/06/29 22:20:27  csoutheren
+ * Revision 1.2065.2.2  2007/07/10 06:28:48  csoutheren
+ * Remove all vestiges of sentTrying variable and fix transmission of 180 Trying
+ * when using AnswerCallDeferred
+ *
+ * Revision 2.64.2.1  2007/06/29 22:20:27  csoutheren
  * Add support for SIP 183 commands
  *
  * Revision 2.64  2007/05/15 07:26:38  csoutheren
@@ -727,7 +731,6 @@ class SIPConnection : public OpalConnection
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
-    BOOL                  sentTrying;
 
     SIP_PDU_Queue pduQueue;
     PSemaphore    pduSemaphore;
