@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2243  2007/07/08 13:11:25  rjongbloed
+ * Revision 1.2244  2007/07/10 06:46:32  csoutheren
+ * Remove all vestiges of sentTrying variable and fix transmission of 180 Trying
+ * when using AnswerCallDeferred
+ *
+ * Revision 2.242  2007/07/08 13:11:25  rjongbloed
  * Fixed accepting re-INVITE from the side of call that did not send the original INVITE.
  *
  * Revision 2.241  2007/07/06 07:01:37  rjongbloed
@@ -1333,13 +1337,11 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
   if (phase != SetUpPhase) 
     return FALSE;
 
-  if (withMedia) {
+  if (!withMedia) 
+    SendInviteResponse(SIP_PDU::Information_Ringing);
+  else {
     SDPSessionDescription sdpOut(GetLocalAddress());
     if (!ConstructSDP(sdpOut) || !SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
-      return FALSE;
-  }
-  else {
-    if (!SendInviteResponse(SIP_PDU::Information_Ringing))
       return FALSE;
   }
 
