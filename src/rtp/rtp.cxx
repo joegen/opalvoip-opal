@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2067  2007/05/29 06:26:21  csoutheren
+ * Revision 1.2068  2007/07/10 06:25:39  csoutheren
+ * Allow any number of SSRC changes if ignoreOtherSources is set to false
+ *
+ * Revision 2.66  2007/05/29 06:26:21  csoutheren
  * Add Reset function so we can reload used control frames
  *
  * Revision 2.65  2007/05/28 08:37:02  csoutheren
@@ -1346,8 +1349,11 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
      << " ccnt=" << frame.GetContribSrcCount());
   }
   else {
-    if (!ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
-      if (allowSyncSourceInChange) {
+    if (frame.GetSyncSource() != syncSourceIn) {
+      if (!ignoreOtherSources)
+        syncSourceIn = frame.GetSyncSource();
+      else if (allowSyncSourceInChange) {
+        PTRACE(2, "RTP\tAllowed one SSRC change from SSRC=" << syncSourceIn << " to =" << frame.GetSyncSource());
         syncSourceIn = frame.GetSyncSource();
         allowSyncSourceInChange = FALSE;
       }
