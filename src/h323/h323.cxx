@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2154.2.2  2007/06/21 22:16:13  csoutheren
+ * Revision 1.2154.2.3  2007/07/10 05:51:56  csoutheren
+ * Fix compilation when H450 not enabled
+ *
+ * Revision 2.153.2.2  2007/06/21 22:16:13  csoutheren
  * Ensure non-fastStart media channels start when using AnswerAlertingWithMedia
  *
  * Revision 2.153.2.1  2007/05/23 00:32:32  csoutheren
@@ -1283,8 +1286,8 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
-#if OPAL_H450
   if (connectionState == NoConnectionActive) {
+#if OPAL_H450
     /** If Call Intrusion is allowed we must answer the call*/
     if (IsCallIntrusion()) {
       AnsweringCall(AnswerCallDeferred);
@@ -1293,14 +1296,16 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
       if (isConsultationTransfer)
         AnsweringCall(AnswerCallNow);
       else {
+#endif
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
         SetPhase(AlertingPhase);
         AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
+#if OPAL_H450
       }
     }
-  }
 #endif
+  }
 
   return connectionState != ShuttingDownConnection;
 }
