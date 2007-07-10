@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2163  2007/06/30 00:16:57  csoutheren
+ * Revision 1.2164  2007/07/10 06:20:27  csoutheren
+ * Fix problem with compiling without H.450
+ *
+ * Revision 2.162  2007/06/30 00:16:57  csoutheren
  * Fix use of wrong session id
  *
  * Revision 2.161  2007/06/29 06:59:57  rjongbloed
@@ -1313,8 +1316,8 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
-#if OPAL_H450
   if (connectionState == NoConnectionActive) {
+#if OPAL_H450
     /** If Call Intrusion is allowed we must answer the call*/
     if (IsCallIntrusion()) {
       AnsweringCall(AnswerCallDeferred);
@@ -1323,14 +1326,16 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
       if (isConsultationTransfer)
         AnsweringCall(AnswerCallNow);
       else {
+#endif
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
         SetPhase(AlertingPhase);
         AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
+#if OPAL_H450
       }
     }
-  }
 #endif
+  }
 
   return connectionState != ShuttingDownConnection;
 }
