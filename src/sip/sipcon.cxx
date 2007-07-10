@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2224.2.2  2007/06/29 22:20:44  csoutheren
+ * Revision 1.2224.2.3  2007/07/10 06:30:18  csoutheren
+ * Remove all vestiges of sentTrying variable and fix transmission of 180 Trying
+ * when using AnswerCallDeferred
+ *
+ * Revision 2.223.2.2  2007/06/29 22:20:44  csoutheren
  * Add support for SIP 183 commands
  *
  * Revision 2.223.2.1  2007/05/18 01:20:04  csoutheren
@@ -987,8 +991,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   local_hold = FALSE;
   remote_hold = FALSE;
 
-  sentTrying = FALSE;
-
   PTRACE(4, "SIP\tCreated connection.");
 }
 
@@ -1257,15 +1259,12 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
   if (phase != SetUpPhase) 
     return FALSE;
 
-  if (!sentTrying) {
+  if (!withMedia) 
     SendInviteResponse(SIP_PDU::Information_Ringing);
-    sentTrying = TRUE;
-  }
-  else if (withMedia) {
+  else {
     SDPSessionDescription sdpOut(GetLocalAddress());
     if (!ConstructSDP(sdpOut) || !SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
       return FALSE;
-    sentTrying = TRUE;
   }
 
   SetPhase(AlertingPhase);
@@ -2294,9 +2293,6 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   targetAddress.AdjustForRequestURI();
   PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
   
-  // flag Trying as already sent (either has or soon will be)
-  sentTrying = TRUE;
-
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
 
