@@ -24,7 +24,11 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2019  2007/05/15 01:48:57  csoutheren
+ * Revision 1.2019.2.1  2007/07/16 05:31:08  csoutheren
+ * Set payload type and SSRC for fake RTP packets
+ * Set PDU size before populating RTP fields to avoid memory overrun
+ *
+ * Revision 2.18  2007/05/15 01:48:57  csoutheren
  * Fix T.38 compile problems on Linux
  *
  * Revision 2.17  2007/05/13 23:51:44  dereksmithies
@@ -821,12 +825,14 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
     return e_IgnorePacket;
   }
 
+  PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
+  frame.SetPayloadSize(ifp.GetDataLength());
+
   frame[0] = 0x80;
   frame.SetPayloadType((RTP_DataFrame::PayloadTypes)96);
   frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
+  frame.SetSyncSource(syncSourceIn);
 
-  PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
-  frame.SetPayloadSize(ifp.GetDataLength());
   memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
 
   PTRACE(3, "T38_RTP\tReading RTP payload size " << frame.GetPayloadSize());
@@ -1003,6 +1009,7 @@ BOOL OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
     }
 
     PINDEX len = faxCallInfo->socket.GetLastReadCount();
+    packet.SetPayloadType(RTP_DataFrame::MaxPayloadType);
     packet.SetPayloadSize(len);
 
 #if WRITE_PCM_FILE
