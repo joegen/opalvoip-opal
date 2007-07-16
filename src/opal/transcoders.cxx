@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2032  2007/06/22 05:47:19  rjongbloed
+ * Revision 1.2033  2007/07/16 06:26:02  csoutheren
+ * Better organise payload type checks
+ * Remove bug whereby 2048 byte RTP packets are send when payload types are incorrect
+ * Add two-stage transcoders for video codecs
+ *
+ * Revision 2.31  2007/06/22 05:47:19  rjongbloed
  * Fixed setting of output RTP payload types on plug in video codecs.
  *
  * Revision 2.30  2007/04/15 10:10:23  dsandras
@@ -241,9 +246,11 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
 BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
-  if (input.GetPayloadSize()==0)
+  // if no input payload, then nothing to convert
+  if (input.GetPayloadSize() == 0)
     return TRUE;
 
+  // make sure there is at least one output frame available
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
   else {
@@ -251,13 +258,33 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
       output.RemoveAt(1);
   }
 
-  output[0].SetPayloadType(GetPayloadType(FALSE));
+  // set the output timestamp and marker bit
   output[0].SetTimestamp(input.GetTimestamp());
   output[0].SetMarker(input.GetMarker());
 
-  RTP_DataFrame::PayloadTypes pt = GetPayloadType(TRUE);
+  // set the output payload type directly from the output media format
+  // and the input payload directly from the input media format
+  output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  RTP_DataFrame::PayloadTypes pt = inputMediaFormat.GetPayloadType();
+
+  // map payload using payload map
+  if (payloadTypeMap.size() > 0) {
+
+    // map output payload type
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(outputMediaFormat.GetPayloadType());
+    if (r != payloadTypeMap.end())
+      output[0].SetPayloadType(r->second);
+
+    // map input payload type
+    r = payloadTypeMap.find(inputMediaFormat.GetPayloadType());
+    if (r != payloadTypeMap.end()) 
+      pt = r->second;
+  }
+
+  // do not transcode if no match
   if (pt != input.GetPayloadType()) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
+    output.RemoveAll();
     return TRUE;
   }
 
@@ -408,8 +435,18 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
     possibleFormats += format;
     OpalMediaFormatList srcFormats = GetSourceFormats(format);
     for (PINDEX i = 0; i < srcFormats.GetSize(); i++) {
-      if (GetDestinationFormats(srcFormats[i]).GetSize() > 0)
+      OpalMediaFormatList dstFormats = GetDestinationFormats(srcFormats[i]);
+      if (dstFormats.GetSize() > 0) {
         possibleFormats += srcFormats[i];
+
+        // if using video, check for two step encoders
+        if (format.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+          for (PINDEX j = 0; j < dstFormats.GetSize(); ++j) {
+            if (dstFormats[j].GetSize() > 0)
+              possibleFormats += dstFormats[j];
+          }
+        }
+      }
     }
   }
 
@@ -426,8 +463,6 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFor
 {
   inputBytesPerFrame = inputBytes;
   outputBytesPerFrame = outputBytes;
-  //partialFrame = inputBytes;
-  //partialBytes = 0;
 }
 
 
@@ -498,6 +533,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   PINDEX outLen = 0;
 
   while (inputLength > 0) {
+
     PINDEX consumed = inputLength; // PMIN(inputBytesPerFrame, inputLength);
     PINDEX created  = output.GetPayloadSize() - outLen;
 
