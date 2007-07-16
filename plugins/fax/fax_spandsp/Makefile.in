@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.1.2.2  2007/07/16 06:48:27  csoutheren
+# Make sure spanDSP compiles on Linux
+#
 # Revision 1.1.2.1  2007/05/18 04:24:29  csoutheren
 # Fixed Linux compile
 #
@@ -43,11 +46,13 @@ LDSO		=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
+EXTRALIBS       = -lspandsp -ltiff
 
-SRCS	+= spandsp_fax.cpp
+SRCS	+= spandsp_fax.cpp spandsp_util/spandsp_if.cpp
 
 vpath	%.o $(OBJDIR)
 vpath	%.cpp $(SRCDIR)
+vpath	%.cpp spandsp_util
 
 $(OBJDIR)/%.o : %.cpp
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
