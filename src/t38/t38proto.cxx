@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2021  2007/07/16 05:52:30  csoutheren
+ * Revision 1.2022  2007/07/19 03:48:53  csoutheren
+ * Ensure fake padding RTP packets are handled correctly
+ *
+ * Revision 2.20  2007/07/16 05:52:30  csoutheren
  * Set payload type and SSRC for fake RTP packets
  * Set PDU size before populating RTP fields to avoid memory overrun
  *
@@ -810,36 +813,41 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
 {
   PTRACE(4, "T38_RTP\tReading raw T.38 of size " << frame.GetSize());
 
-  PPER_Stream rawData(frame.GetPointer(), frame.GetSize());
-
-  // Decode the PDU
-  T38_UDPTLPacket udptl;
-  if (udptl.Decode(rawData))
-    consecutiveBadPackets = 0;
-  else {
-    consecutiveBadPackets++;
-    PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
-           << setprecision(2) << rawData << "\n  UDPTL = "
-           << setprecision(2) << udptl);
-    if (consecutiveBadPackets > 100) {
-      PTRACE(1, "RTP_T38\tRaw data decode failed multiple times, aborting!");
-      return e_AbortTransport;
-    }
-    return e_IgnorePacket;
+  if ((frame.GetPayloadSize() == 1) && (frame.GetPayloadPtr()[0] == 0xff)) {
+    // allow fake timing frames to pass through
   }
+  else {
+    PPER_Stream rawData(frame.GetPointer(), frame.GetSize());
 
-  PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
-  frame.SetPayloadSize(ifp.GetDataLength());
+    // Decode the PDU
+    T38_UDPTLPacket udptl;
+    if (udptl.Decode(rawData))
+      consecutiveBadPackets = 0;
+    else {
+      consecutiveBadPackets++;
+      PTRACE(2, "RTP_T38\tRaw data decode failure:\n  "
+             << setprecision(2) << rawData << "\n  UDPTL = "
+             << setprecision(2) << udptl);
+      if (consecutiveBadPackets > 100) {
+        PTRACE(1, "RTP_T38\tRaw data decode failed multiple times, aborting!");
+        return e_AbortTransport;
+      }
+      return e_IgnorePacket;
+    }
+
+    PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
+    frame.SetPayloadSize(ifp.GetDataLength());
+
+    memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
+    frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
+    PTRACE(4, "T38_RTP\tT38 decode :\n  " << setprecision(2) << udptl);
+  }
 
   frame[0] = 0x80;
   frame.SetPayloadType((RTP_DataFrame::PayloadTypes)96);
-  frame.SetSequenceNumber((WORD)(udptl.m_seq_number & 0xffff));
   frame.SetSyncSource(syncSourceIn);
 
-  memcpy(frame.GetPayloadPtr(), ifp.GetPointer(), ifp.GetDataLength());
-
   PTRACE(3, "T38_RTP\tReading RTP payload size " << frame.GetPayloadSize());
-  PTRACE(4, "T38_RTP\tT38 decode :\n  " << setprecision(2) << udptl);
 
   return RTP_UDP::OnReceiveData(frame);
 }
