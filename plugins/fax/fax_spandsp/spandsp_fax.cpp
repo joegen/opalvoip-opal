@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: spandsp_fax.cpp,v $
+ * Revision 1.3.2.2  2007/07/19 08:25:22  csoutheren
+ * Fix length check problem
+ *
  * Revision 1.3.2.1  2007/05/18 04:24:29  csoutheren
  * Fixed Linux compile
  *
@@ -387,7 +390,7 @@ bool FaxInstance::Open()
 
 bool FaxInstance::WritePCM(const void * from, unsigned * fromLen)
 {
-  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)*fromLen;
+  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)(*fromLen-12);
 }
 
 bool FaxInstance::ReadPCM(void * to, unsigned * toLen, bool & moreToRead)
