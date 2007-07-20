@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2032  2007/07/02 18:53:47  csoutheren
+ * Revision 1.2033  2007/07/20 05:45:45  rjongbloed
+ * Fixed incorrect maxBitRate field in Generic Audio Capabilities
+ *
+ * Revision 2.31  2007/07/02 18:53:47  csoutheren
  * Exposed classes
  *
  * Revision 2.30  2007/06/27 18:19:49  csoutheren
@@ -2221,7 +2224,7 @@ PString H323CodecPluginNonStandardAudioCapability::GetFormatName() const
 H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * _encoderCodec,
                                                                              const PluginCodec_Definition * _decoderCodec,
                                                                              const PluginCodec_H323GenericCodecData *data )
-  : H323GenericAudioCapability(data->standardIdentifier, data->maxBitRate ? data->maxBitRate : _decoderCodec->bitsPerSec),
+  : H323GenericAudioCapability(data->standardIdentifier, data->maxBitRate ? data->maxBitRate : 0),
     H323PluginCapabilityInfo((PluginCodec_Definition *)_encoderCodec, (PluginCodec_Definition *) _decoderCodec)
 {
   SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
