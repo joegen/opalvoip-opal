@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2092  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2093  2007/07/20 05:49:58  rjongbloed
+ * Added member variable for stun server name in OpalManager, so can be remembered
+ *   in original form so change in IP address or temporary STUN server failures do not
+ *   lose the server being selected by the user.
+ *
+ * Revision 2.91  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.90  2007/06/29 02:49:42  rjongbloed
@@ -1236,16 +1241,21 @@ PSTUNClient * OpalManager::GetSTUN(const PIPSocket::Address & ip) const
 
 PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
 {
-  delete stun;
+  stunServer = server;
 
   if (server.IsEmpty()) {
+    delete stun;
     stun = NULL;
     return PSTUNClient::UnknownNat;
   }
 
+  if (stun == NULL)
     stun = new PSTUNClient(server,
                            GetUDPPortBase(), GetUDPPortMax(),
                            GetRtpIpPortBase(), GetRtpIpPortMax());
+  else
+    stun->SetServer(server);
+
   PSTUNClient::NatTypes type = stun->GetNatType();
   if (type != PSTUNClient::BlockedNat)
     stun->GetExternalAddress(translationAddress);
