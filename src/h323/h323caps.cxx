@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2033  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2034  2007/07/20 05:46:20  rjongbloed
+ * Fixed incorrect maxBitRate field in Generic Audio Capabilities.
+ * Implemented H323GenericCapabilityInfo::OnReceivedGenericPDU()
+ *
+ * Revision 2.32  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.31  2007/06/27 07:56:08  rjongbloed
@@ -938,7 +942,91 @@ BOOL H323GenericCapabilityInfo::OnReceivedGenericPDU(OpalMediaFormat & mediaForm
 
   if (pdu.HasOptionalField(H245_GenericCapability::e_maxBitRate)) {
     maxBitRate = pdu.m_maxBitRate;
-    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate);
+    mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate*100);
+  }
+
+  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    OpalMediaOption::H245GenericInfo genericInfo = option.GetH245Generic();
+    if (genericInfo.mode == OpalMediaOption::H245GenericInfo::None)
+      continue;
+    switch (type) {
+      case H323Capability::e_TCS :
+        if (genericInfo.excludeTCS)
+          continue;
+        break;
+      case H323Capability::e_OLC :
+        if (genericInfo.excludeOLC)
+          continue;
+        break;
+      case H323Capability::e_ReqMode :
+        if (genericInfo.excludeReqMode)
+          continue;
+        break;
+    }
+
+    const H245_ArrayOf_GenericParameter * params;
+    if (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing) {
+      if (!pdu.HasOptionalField(H245_GenericCapability::e_collapsing))
+        continue;
+      params = &pdu.m_collapsing;
+    }
+    else {
+      if (!pdu.HasOptionalField(H245_GenericCapability::e_nonCollapsing))
+        continue;
+      params = &pdu.m_nonCollapsing;
+    }
+
+    if (PIsDescendant(&option, OpalMediaOptionBoolean))
+      ((OpalMediaOptionBoolean &)option).SetValue(false);
+
+    for (PINDEX j = 0; j < params->GetSize(); j++) {
+      const H245_GenericParameter & param = (*params)[j];
+      if (param.m_parameterIdentifier.GetTag() == H245_ParameterIdentifier::e_standard &&
+                         (const PASN_Integer &)param.m_parameterIdentifier == genericInfo.ordinal) {
+        if (PIsDescendant(&option, OpalMediaOptionBoolean)) {
+          if (param.m_parameterValue.GetTag() == H245_ParameterValue::e_logical) {
+            ((OpalMediaOptionBoolean &)option).SetValue(true);
+            break;
+          }
+        }
+        else if (PIsDescendant(&option, OpalMediaOptionUnsigned)) {
+          unsigned tag;
+          switch (genericInfo.integerType) {
+            default :
+            case OpalMediaOption::H245GenericInfo::UnsignedInt :
+              tag = option.GetMerge() == OpalMediaOption::MinMerge ? H245_ParameterValue::e_unsignedMin : H245_ParameterValue::e_unsignedMax;
+              break;
+ 
+            case OpalMediaOption::H245GenericInfo::Unsigned32 :
+              tag = option.GetMerge() == OpalMediaOption::MinMerge ? H245_ParameterValue::e_unsigned32Min : H245_ParameterValue::e_unsigned32Max;
+              break;
+ 
+            case OpalMediaOption::H245GenericInfo::BooleanArray :
+              tag = H245_ParameterValue::e_booleanArray;
+              break;
+          }
+ 
+          if (param.m_parameterValue.GetTag() == tag) {
+            ((OpalMediaOptionUnsigned &)option).SetValue((const PASN_Integer &)param.m_parameterValue);
+            break;
+          }
+        }
+        else {
+          if (param.m_parameterValue.GetTag() == H245_ParameterValue::e_octetString) {
+            const PASN_OctetString & octetString = param.m_parameterValue;
+            if (PIsDescendant(&option, OpalMediaOptionOctets))
+              ((OpalMediaOptionOctets &)option).SetValue(octetString);
+            else
+              ((OpalMediaOption &)option).FromString(octetString.AsString());
+            break;
+          }
+        }
+
+        PTRACE(2, "Invalid generic parameter type (" << param.m_parameterValue.GetTagName()
+               << ") for option \"" << option.GetName() << "\" (" << option.GetClass() << ')');
+      }
+    }
   }
 
   return TRUE;
