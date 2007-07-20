@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2064  2007/06/29 06:59:56  rjongbloed
+ * Revision 1.2065  2007/07/20 05:49:57  rjongbloed
+ * Added member variable for stun server name in OpalManager, so can be remembered
+ *   in original form so change in IP address or temporary STUN server failures do not
+ *   lose the server being selected by the user.
+ *
+ * Revision 2.63  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.62  2007/05/15 07:26:38  csoutheren
@@ -1066,6 +1071,10 @@ class OpalManager : public PObject
       const PString & server
     );
 
+    /**Get the current host name and optional port for the STUN server.
+      */
+    const PString & GetSTUNServer() const { return stunServer; }
+
     /**Get the TCP port number base for H.245 channels
      */
     WORD GetTCPPortBase() const { return tcpPorts.base; }
@@ -1332,6 +1341,7 @@ class OpalManager : public PObject
     } tcpPorts, udpPorts, rtpIpPorts;
 
     PIPSocket::Address translationAddress;
+    PString            stunServer;
     PSTUNClient      * stun;
 
     RouteTable routeTable;
