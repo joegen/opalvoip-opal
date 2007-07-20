@@ -25,6 +25,12 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.24  2007/07/20 05:50:47  rjongbloed
+ * Added member variable for stun server name in OpalManager, so can be remembered
+ *   in original form so change in IP address or temporary STUN server failures do not
+ *   lose the server being selected by the user.
+ * Tidied the look of the main window while searching for STUN server.
+ *
  * Revision 1.23  2007/07/08 13:12:47  rjongbloed
  * Fixed being able to make a call to arbitrary address from dialog.
  *
@@ -539,21 +545,20 @@ bool MyManager::Initialise()
   wxConfigBase * config = wxConfig::Get();
   config->SetPath(AppearanceGroup);
 
-  int x, y = 0;
-  if (config->Read(MainFrameXKey, &x) && config->Read(MainFrameYKey, &y))
-    Move(x, y);
+  wxPoint initalPosition = wxDefaultPosition;
+  if (config->Read(MainFrameXKey, &initalPosition.x) && config->Read(MainFrameYKey, &initalPosition.y))
+    Move(initalPosition);
 
-  int w, h = 0;
-  if (config->Read(MainFrameWidthKey, &w) && config->Read(MainFrameHeightKey, &h))
-    SetSize(w, h);
+  wxSize initialSize(512, 384);
+  if (config->Read(MainFrameWidthKey, &initialSize.x) && config->Read(MainFrameHeightKey, &initialSize.y))
+    SetSize(initialSize);
 
   // Make the content of the main window, speed dial and log panes inside a splitter
-  m_splitter = new wxSplitterWindow(this, SplitterID, wxDefaultPosition, wxDefaultSize, wxSP_3D);
+  m_splitter = new wxSplitterWindow(this, SplitterID, wxPoint(), initialSize, wxSP_3D);
 
   // Log window - gets informative text
-  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString,
-                               wxDefaultPosition, wxDefaultSize,
-                               wxTE_MULTILINE | wxSUNKEN_BORDER);
+  initialSize.y /= 2;
+  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxSUNKEN_BORDER);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
@@ -658,7 +663,8 @@ bool MyManager::Initialise()
   if (config->Read(NATRouterKey, &str))
     SetTranslationAddress(str);
   if (config->Read(STUNServerKey, &str) && !str.IsEmpty()) {
-    LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
+    m_logWindow->WriteText("STUN server \"" + str + "\" being contacted ...\n");
+    Update();
     LogWindow << "STUN server \"" << str << "\" replies " << SetSTUNServer(str) << endl;
   }
 
@@ -995,15 +1001,15 @@ void MyManager::RecreateSpeedDials(SpeedDialViews view)
   }
 
   // Now either replace the top half of the splitter or set it for the first time
-  if (oldSpeedDials == NULL)
-    m_splitter->SplitHorizontally(m_speedDials, m_logWindow);
+  if (oldSpeedDials == NULL) {
+    width = 0;
+    config->Read(SashPositionKey, &width);
+    m_splitter->SplitHorizontally(m_speedDials, m_logWindow, width);
+  }
   else {
     m_splitter->ReplaceWindow(oldSpeedDials, m_speedDials);
     delete oldSpeedDials;
   }
-
-  if (config->Read(SashPositionKey, &width))
-    m_splitter->SetSashPosition(width);
 
   // Read the speed dials from the configuration
   config->SetPath(SpeedDialsGroup);
@@ -1802,7 +1808,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RTPPortBase, m_manager.GetRtpIpPortBase());
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
   INIT_FIELD(RTPTOS, m_manager.GetRtpIpTypeofService());
-  INIT_FIELD(STUNServer, m_manager.GetSTUN() != NULL ? m_manager.GetSTUN()->GetServer() : PString());
+  INIT_FIELD(STUNServer, m_manager.GetSTUNServer());
   PwxString natRouter;
   if (m_manager.GetTranslationAddress().IsValid())
     natRouter = m_manager.GetTranslationAddress().AsString();
