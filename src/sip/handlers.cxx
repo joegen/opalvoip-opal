@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.8  2007/07/22 05:07:40  rjongbloed
+ * Fixed incorrect disable of time to live timer when get unauthorised error.
+ *
  * Revision 1.7  2007/07/03 16:27:14  dsandras
  * Fixed bug reported by Anand R Setlur : crash when registering to
  * non existant domain (ie no transport).
@@ -201,14 +204,21 @@ void SIPHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 
 void SIPHandler::OnFailed(SIP_PDU::StatusCodes r)
 {
+  switch (r) {
+    case SIP_PDU::Failure_UnAuthorised :
+    case SIP_PDU::Failure_ProxyAuthenticationRequired :
+      return;
+    case SIP_PDU::Failure_RequestTimeout :
+      if (GetState() != Subscribed)
+        break;
+    default :
+      expire = -1;
+  }
+
   if (GetState() == Unsubscribing)
     SetState(Subscribed);
   else if (GetState() == Subscribing)
     SetState(Unsubscribed);
-
-  if (r != SIP_PDU::Failure_RequestTimeout 
-      || (r == SIP_PDU::Failure_RequestTimeout && GetState() == Subscribed))
-    expire = -1;
 }
 
 
@@ -283,19 +293,18 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
 void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
 {
   PString aor;
-  int sec = 3600;
   PString contact = response.GetMIME().GetContact();
 
-  sec = SIPURL(contact).GetParamVars()("expires").AsUnsigned();  
-  if (!sec) {
+  int newExpiryTime = SIPURL(contact).GetParamVars()("expires").AsUnsigned();
+  if (newExpiryTime == 0) {
     if (response.GetMIME().HasFieldParameter("expires", contact))
-      sec = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
+      newExpiryTime = response.GetMIME().GetFieldParameter("expires", contact).AsUnsigned();
     else
-      sec = response.GetMIME().GetExpires(3600);
+      newExpiryTime = response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds());
   }
 
-  if (sec < expire && sec > 0)
-    expire = sec;
+  if (newExpiryTime > 0 && newExpiryTime < expire)
+    expire = newExpiryTime;
 
   SetExpire(expire);
 
