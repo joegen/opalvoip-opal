@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2027  2007/06/25 05:44:45  rjongbloed
+ * Revision 1.2028  2007/07/22 04:03:46  rjongbloed
+ * Fixed issues with STUN usage in socket bundling, now OpalTransport indicates
+ *   if it wants local or NAT address/port for inclusion to outgoing PDUs.
+ *
+ * Revision 2.26  2007/06/25 05:44:45  rjongbloed
  * Fixed numerous issues with "bound" managed socket, ie associating
  *   listeners to a specific named interface.
  *
@@ -161,6 +165,7 @@
 #include <ptclib/psockbun.h>
 
 
+class OpalManager;
 class OpalEndPoint;
 class OpalListener;
 class OpalTransport;
@@ -199,7 +204,7 @@ class OpalTransportAddress : public PString
       */
     BOOL IsEquivalent(
       const OpalTransportAddress & address
-    );
+    ) const;
 
     /**Extract the ip address from transport address.
        Returns FALSE, if the address is not an IP transport address.
@@ -1162,7 +1167,8 @@ class OpalTransportUDP : public OpalTransportIP
     virtual const char * GetProtoPrefix() const;
 
 
-    PBYTEArray preReadPacket;
+    OpalManager & manager;
+    PBYTEArray    preReadPacket;
 };
 
 
