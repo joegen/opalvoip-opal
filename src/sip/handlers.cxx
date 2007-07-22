@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.9  2007/07/22 13:02:13  rjongbloed
+ * Cleaned up selection of registered name usage of URL versus host name.
+ *
  * Revision 1.8  2007/07/22 05:07:40  rjongbloed
  * Fixed incorrect disable of time to live timer when get unauthorised error.
  *
@@ -389,7 +392,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
   if (localPartyAddress.IsEmpty()) {
 
     if (type == SIPSubscribe::Presence)
-      localPartyAddress = endpoint.GetRegisteredPartyName(targetAddress.GetHostName()).AsQuotedString();
+      localPartyAddress = endpoint.GetRegisteredPartyName(targetAddress).AsQuotedString();
 
     else
       localPartyAddress = targetAddress.AsQuotedString();
@@ -994,7 +997,7 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & nam
 {
   for (PSafePtr<SIPHandler> handler(*this, m); handler != NULL; ++handler) {
 
-    if (name == handler->GetTargetAddress().GetHostName())
+    if (name *= handler->GetTargetAddress().GetHostName())
       return handler;
 
     OpalTransportAddress addr;
