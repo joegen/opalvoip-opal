@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2138  2007/07/22 11:18:12  rjongbloed
+ * Revision 1.2139  2007/07/22 13:02:19  rjongbloed
+ * Cleaned up selection of registered name usage of URL versus host name.
+ *
+ * Revision 2.137  2007/07/22 11:18:12  rjongbloed
  * Fixed crash if get "unusual" User-Agent field.
  *
  * Revision 2.136  2007/07/05 05:42:53  rjongbloed
@@ -2802,7 +2805,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
     
   // Build the correct From field
   PString displayName = ep.GetDefaultDisplayName();
-  PString partyName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).AsString(); 
+  PString partyName = endpoint.GetRegisteredPartyName(address).AsString(); 
 
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
   
@@ -2832,7 +2835,7 @@ SIPPing::SIPPing(SIPEndPoint & ep,
     
   // Build the correct From field
   PString displayName = ep.GetDefaultDisplayName();
-  PString partyName = endpoint.GetRegisteredPartyName(SIPURL(address).GetHostName()).AsString(); 
+  PString partyName = endpoint.GetRegisteredPartyName(address).AsString(); 
 
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
   
