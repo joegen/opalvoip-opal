@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2080  2007/07/03 08:54:07  rjongbloed
+ * Revision 1.2081  2007/07/22 04:03:46  rjongbloed
+ * Fixed issues with STUN usage in socket bundling, now OpalTransport indicates
+ *   if it wants local or NAT address/port for inclusion to outgoing PDUs.
+ *
+ * Revision 2.79  2007/07/03 08:54:07  rjongbloed
  * Fixed spurios error log when dropping interface.
  *
  * Revision 2.78  2007/06/25 05:44:45  rjongbloed
@@ -626,13 +630,13 @@ OpalTransportAddress::OpalTransportAddress(const PIPSocket::Address & addr, WORD
 PString OpalTransportAddress::GetHostName() const
 {
   if (transport == NULL)
-    return PString();
+    return *this;
 
   return transport->GetHostName(*this);
 }
   
 
-BOOL OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address)
+BOOL OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address) const
 {
   if (*this == address)
     return TRUE;
@@ -753,7 +757,7 @@ PString OpalInternalTransport::GetHostName(const OpalTransportAddress & address)
   // skip transport identifier
   PINDEX pos = address.Find('$');
   if (pos == P_MAX_INDEX)
-    return PString();
+    return address;
 
   return address.Mid(pos+1);
 }
@@ -1202,7 +1206,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  WORD port,
                                  BOOL exclusive)
   : OpalListenerIP(endpoint, binding, port, exclusive),
-    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive))
+    listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive, endpoint.GetManager().GetSTUN()))
 {
 }
 
@@ -1211,7 +1215,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
                                  const OpalTransportAddress & binding,
                                  OpalTransportAddress::BindOptions option)
   : OpalListenerIP(endpoint, binding, option),
-    listenerBundle(PMonitoredSockets::Create(binding(binding.Find('$')+1, binding.FindLast(':')-1), !exclusiveListener))
+    listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetSTUN()))
 {
 }
 
@@ -1636,6 +1640,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    WORD localPort,
                                    BOOL reuseAddr)
   : OpalTransportIP(ep, binding, localPort)
+  , manager(ep.GetManager())
 {
   Open(new PMonitoredSocketChannel(PMonitoredSockets::Create(binding.AsString(), reuseAddr)));
 
@@ -1651,6 +1656,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    WORD remPort)
   : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
   , preReadPacket(packet)
+  , manager(ep.GetManager())
 {
   remoteAddress = remAddr;
   remotePort = remPort;
@@ -1658,7 +1664,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener);
   socket->SetRemote(remAddr, remPort);
   socket->SetInterface(iface);
-  socket->GetLocal(localAddress, localPort);
+  socket->GetLocal(localAddress, localPort, manager.IsLocalAddress(remoteAddress));
   Open(socket);
 
   PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
@@ -1739,18 +1745,19 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 OpalTransportAddress OpalTransportUDP::GetLocalAddress() const
 {
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
-  if (socket == NULL)
-    return OpalTransportAddress();
-
-  PIPSocket::Address addr;
-  WORD port;
-  socket->GetLocal(addr, port);
-  return OpalTransportAddress(addr, port, UdpPrefix);
+  if (socket != NULL) {
+    OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
+    socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, manager.IsLocalAddress(remoteAddress));
+  }
+  return OpalTransportIP::GetLocalAddress();
 }
 
 
 BOOL OpalTransportUDP::SetLocalAddress(const OpalTransportAddress & newLocalAddress)
 {
+  if (OpalTransportIP::GetLocalAddress().IsEquivalent(newLocalAddress))
+    return TRUE;
+
   if (!IsCompatibleTransport(newLocalAddress))
     return FALSE;
 
