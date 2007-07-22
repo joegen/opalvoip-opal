@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2178  2007/07/05 05:44:16  rjongbloed
+ * Revision 1.2179  2007/07/22 03:25:18  rjongbloed
+ * Assured that if no expiry time is specified for REGISTER, the endpoint default is used.
+ *
+ * Revision 2.177  2007/07/05 05:44:16  rjongbloed
  * Simplified the default local party name, prevents it from ever returning 0.0.0.0 as host.
  *
  * Revision 2.176  2007/06/30 16:43:47  dsandras
@@ -1436,7 +1439,9 @@ BOOL SIPEndPoint::Register(
     aor = user;
   else
     aor = user + '@' + host;
-  
+
+  if (expire == 0)
+    expire = GetRegistrarTimeToLive().GetSeconds();
   return Register(expire, aor, authName, password, authRealm, minRetryTime, maxRetryTime);
 }
 
