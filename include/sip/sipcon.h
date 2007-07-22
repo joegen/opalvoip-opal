@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2073  2007/07/06 07:01:36  rjongbloed
+ * Revision 1.2074  2007/07/22 12:25:23  rjongbloed
+ * Removed redundent mutex
+ *
+ * Revision 2.72  2007/07/06 07:01:36  rjongbloed
  * Fixed borken re-INVITE handling (Hold and Retrieve)
  *
  * Revision 2.71  2007/07/05 05:40:21  rjongbloed
@@ -758,7 +761,6 @@ class SIPConnection : public OpalConnection
     OpalTransport       * transport;
 
     PMutex                transportMutex;
-    PMutex                streamsMutex;
     BOOL                  local_hold;
     BOOL                  remote_hold;
     PString               localPartyAddress;
