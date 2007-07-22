@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2086  2007/06/29 06:59:56  rjongbloed
+ * Revision 1.2087  2007/07/22 13:02:11  rjongbloed
+ * Cleaned up selection of registered name usage of URL versus host name.
+ *
+ * Revision 2.85  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.84  2007/06/25 05:16:19  rjongbloed
@@ -877,7 +880,7 @@ class SIPEndPoint : public OpalEndPoint
      * That URL can be used in the FORM field of the PDU's. 
      * The host part can be different from the registration domain.
      */
-    virtual SIPURL GetRegisteredPartyName(const PString &);
+    virtual SIPURL GetRegisteredPartyName(const SIPURL &);
 
 
     /**Return the default registered party name URL.
