@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2093  2007/07/20 05:49:58  rjongbloed
+ * Revision 1.2094  2007/07/22 03:22:11  rjongbloed
+ * Added INADDR_ANY to addressess that qualify as "local" for NAT purposes.
+ *
+ * Revision 2.92  2007/07/20 05:49:58  rjongbloed
  * Added member variable for stun server name in OpalManager, so can be remembered
  *   in original form so change in IP address or temporary STUN server failures do not
  *   lose the server being selected by the user.
@@ -1208,7 +1211,7 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
   /* Check if the remote address is a private IP, broadcast, or us */
-  return ip.IsRFC1918() || ip.IsBroadcast() || PIPSocket::IsLocalHost(ip);
+  return ip.IsAny() || ip.IsBroadcast() || ip.IsRFC1918() || PIPSocket::IsLocalHost(ip);
 }
 
 
