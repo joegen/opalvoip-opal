@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2245  2007/07/22 12:25:24  rjongbloed
+ * Revision 1.2246  2007/07/22 13:02:14  rjongbloed
+ * Cleaned up selection of registered name usage of URL versus host name.
+ *
+ * Revision 2.244  2007/07/22 12:25:24  rjongbloed
  * Removed redundent mutex
  *
  * Revision 2.243  2007/07/10 06:46:32  csoutheren
@@ -3007,7 +3010,7 @@ BOOL SIPConnection::ForwardCall (const PString & fwdParty)
 BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
   SIPURL localPartyURL(GetLocalPartyAddress());
-  PString userName = endpoint.GetRegisteredPartyName(localPartyURL.GetHostName()).GetUserName();
+  PString userName = endpoint.GetRegisteredPartyName(localPartyURL).GetUserName();
   SIPURL contact = endpoint.GetContactURL(*transport, userName, localPartyURL.GetHostName());
 
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
