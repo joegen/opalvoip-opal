@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2179  2007/07/22 03:25:18  rjongbloed
+ * Revision 1.2180  2007/07/22 13:02:14  rjongbloed
+ * Cleaned up selection of registered name usage of URL versus host name.
+ *
+ * Revision 2.178  2007/07/22 03:25:18  rjongbloed
  * Assured that if no expiry time is specified for REGISTER, the endpoint default is used.
  *
  * Revision 2.177  2007/07/05 05:44:16  rjongbloed
@@ -1740,9 +1743,9 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
 }
 
 
-SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
+SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
   
   if (handler == NULL) 
     return GetDefaultRegisteredPartyName();
