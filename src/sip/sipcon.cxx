@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2244  2007/07/10 06:46:32  csoutheren
+ * Revision 1.2245  2007/07/22 12:25:24  rjongbloed
+ * Removed redundent mutex
+ *
+ * Revision 2.243  2007/07/10 06:46:32  csoutheren
  * Remove all vestiges of sentTrying variable and fix transmission of 180 Trying
  * when using AnswerCallDeferred
  *
@@ -1231,9 +1234,7 @@ void SIPConnection::OnReleased()
   }
 
   // Close media
-  streamsMutex.Wait();
   CloseMediaStreams();
-  streamsMutex.Signal();
 
   // Sent a BYE, wait for it to complete
   if (byeTransaction != NULL) {
@@ -1563,10 +1564,7 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
 {
   BOOL reverseStreamsFailed = TRUE;
 
-  {
-    PWaitAndSignal m(streamsMutex);
-    ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
-  }
+  ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
 
   OpalMediaFormatList otherList;
   {
@@ -2395,7 +2393,6 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   // If it is a RE-INVITE that doesn't correspond to a HOLD, then
   // Close all media streams, they will be reopened.
   if (!IsConnectionOnHold()) {
-    PWaitAndSignal m(streamsMutex);
     GetCall().RemoveMediaStreams();
     ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
 #if OPAL_VIDEO
