@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2137  2007/07/05 05:42:53  rjongbloed
+ * Revision 1.2138  2007/07/22 11:18:12  rjongbloed
+ * Fixed crash if get "unusual" User-Agent field.
+ *
+ * Revision 2.136  2007/07/05 05:42:53  rjongbloed
  * Removed extraneous transport multiple transmit end connection, not needed
  *   with new socket bundling changes.
  *
@@ -1299,7 +1302,9 @@ void SIPMIMEInfo::GetProductInfo(OpalProductInfo & info)
     return;
   }
 
-  PINDEX endSecondToken = str[endFirstToken] == '/' ? str.FindSpan(UserAgentTokenChars, endFirstToken+1) : endFirstToken;
+  PINDEX endSecondToken = endFirstToken;
+  if (endFirstToken != P_MAX_INDEX && str[endFirstToken] == '/')
+    endSecondToken = str.FindSpan(UserAgentTokenChars, endFirstToken+1);
 
   info.name = str.Left(endFirstToken);
   info.version = str(endFirstToken+1, endSecondToken);
