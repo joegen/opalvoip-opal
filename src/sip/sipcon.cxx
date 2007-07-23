@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2247  2007/07/23 04:58:57  csoutheren
+ * Revision 1.2248  2007/07/23 06:34:19  csoutheren
+ * Stop re-creation of new RTP sessions after SIP authentication fails
+ * Do not create video RTP sessions if no video media formats
+ *
+ * Revision 2.246  2007/07/23 04:58:57  csoutheren
  * Always check return value of OnOpenSourceMediaStreams
  *
  * Revision 2.245  2007/07/22 13:02:14  rjongbloed
@@ -1889,7 +1893,10 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   // See if any media formats of this session id, so don't create unused RTP session
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
-    if (formats[i].GetDefaultSessionID() == rtpSessionId)
+    OpalMediaFormat & fmt = formats[i];
+    if (fmt.GetDefaultSessionID() == rtpSessionId &&
+            (rtpSessionId == OpalMediaFormat::DefaultDataSessionID ||
+             fmt.GetPayloadType() < RTP_DataFrame::MaxPayloadType))
       break;
   }
   if (i >= formats.GetSize()) {
@@ -2811,7 +2818,8 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
     routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
-  SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
+  SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
   if (invite->Start())
   {
     PWaitAndSignal m(invitationsMutex); 
