@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2246  2007/07/22 13:02:14  rjongbloed
+ * Revision 1.2247  2007/07/23 04:58:57  csoutheren
+ * Always check return value of OnOpenSourceMediaStreams
+ *
+ * Revision 2.245  2007/07/22 13:02:14  rjongbloed
  * Cleaned up selection of registered name usage of URL versus host name.
  *
  * Revision 2.244  2007/07/22 12:25:24  rjongbloed
@@ -2915,7 +2918,8 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     mediaDescription->CreateRTPMap(rtpSessionId, rtpPayloadMap);
     
     // Open the streams and the reverse streams
-    OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL);
+    if (!OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL))
+      return FALSE;
   }
 
   return TRUE;
