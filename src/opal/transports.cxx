@@ -29,7 +29,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2081  2007/07/22 04:03:46  rjongbloed
+ * Revision 1.2082  2007/07/23 06:32:52  csoutheren
+ * Temporary hack to avoid problem with new bundle code.
+ * This change results in PDUs being sent on multiple interfaces and will be removed
+ * once further debugging has been performed
+ *
+ * Revision 2.80  2007/07/22 04:03:46  rjongbloed
  * Fixed issues with STUN usage in socket bundling, now OpalTransport indicates
  *   if it wants local or NAT address/port for inclusion to outgoing PDUs.
  *
@@ -1734,9 +1739,9 @@ void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
 {
   PAssert(theLocalAddress.GetIpAndPort(localAddress, localPort), PInvalidParameter);
 
-  PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
-  if (socket != NULL)
-    socket->SetInterface(localAddress);
+  //PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
+  //if (socket != NULL)
+  //  socket->SetInterface(localAddress);
 
   OpalTransport::EndConnect(theLocalAddress);
 }
