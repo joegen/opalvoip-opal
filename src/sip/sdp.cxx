@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2050  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2051  2007/07/23 06:34:19  csoutheren
+ * Stop re-creation of new RTP sessions after SIP authentication fails
+ * Do not create video RTP sessions if no video media formats
+ *
+ * Revision 2.49  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -950,7 +954,7 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
     OpalMediaFormat & mediaFormat = mediaFormats[i];
     if (mediaFormat.GetDefaultSessionID() == session &&
             (session == OpalMediaFormat::DefaultDataSessionID ||
-             mediaFormat.GetPayloadType() != RTP_DataFrame::IllegalPayloadType))
+             mediaFormat.GetPayloadType() < RTP_DataFrame::MaxPayloadType))
       AddMediaFormat(mediaFormat, map);
   }
 }
