@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2066  2007/06/27 07:56:08  rjongbloed
+ * Revision 1.2067  2007/07/24 12:57:55  rjongbloed
+ * Made sure all integer OpalMediaOptions are unsigned so is compatible with H.245 generic capabilities.
+ *
+ * Revision 2.65  2007/06/27 07:56:08  rjongbloed
  * Add new OpalMediaOption for octet strings (simple block of bytes).
  *
  * Revision 2.64  2007/06/22 05:41:47  rjongbloed
@@ -869,16 +872,16 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   if (nj)
     AddOption(new OpalMediaOptionBoolean(NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
 
-  AddOption(new OpalMediaOptionInteger(MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
+  AddOption(new OpalMediaOptionUnsigned(MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
 
   if (fs > 0)
-    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
+    AddOption(new OpalMediaOptionUnsigned(MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
 
   if (ft > 0)
-    AddOption(new OpalMediaOptionInteger(FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
+    AddOption(new OpalMediaOptionUnsigned(FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
 
   if (cr > 0)
-    AddOption(new OpalMediaOptionInteger(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
+    AddOption(new OpalMediaOptionUnsigned(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
@@ -1038,13 +1041,13 @@ int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
   if (option == NULL)
     return dflt;
 
-  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
-  if (optInteger != NULL)
-    return optInteger->GetValue();
-
   OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
   if (optUnsigned != NULL)
     return optUnsigned->GetValue();
+
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL)
+    return optInteger->GetValue();
 
   return 0;
 }
@@ -1059,15 +1062,15 @@ bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
   if (option == NULL)
     return false;
 
-  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
-  if (optInteger != NULL) {
-    optInteger->SetValue(value);
-    return true;
-  }
-
   OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
   if (optUnsigned != NULL) {
     optUnsigned->SetValue(value);
+    return true;
+  }
+
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL) {
+    optInteger->SetValue(value);
     return true;
   }
 
@@ -1302,8 +1305,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     clockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 
@@ -1337,10 +1340,10 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(FrameWidthOption(),          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionInteger(FrameHeightOption(),         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
-  AddOption(new OpalMediaOptionInteger(EncodingQualityOption(),     false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionInteger(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
+  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),         true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),        true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
+  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 64000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
   AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
 
