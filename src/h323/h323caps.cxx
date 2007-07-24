@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2034  2007/07/20 05:46:20  rjongbloed
+ * Revision 1.2035  2007/07/24 12:55:52  rjongbloed
+ * Fixed correct setting of outgoing bit rate in H.245 generic capabilities.
+ *
+ * Revision 2.33  2007/07/20 05:46:20  rjongbloed
  * Fixed incorrect maxBitRate field in Generic Audio Capabilities.
  * Implemented H323GenericCapabilityInfo::OnReceivedGenericPDU()
  *
@@ -856,7 +859,7 @@ BOOL H323GenericCapabilityInfo::OnSendingGenericPDU(H245_GenericCapability & pdu
   unsigned bitRate = maxBitRate != 0 ? maxBitRate : ((mediaFormat.GetBandwidth()+99)/100);
   if (bitRate != 0) {
     pdu.IncludeOptionalField(H245_GenericCapability::e_maxBitRate);
-    pdu.m_maxBitRate = maxBitRate;
+    pdu.m_maxBitRate = bitRate;
   }
 
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
