@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2033  2007/07/20 05:45:45  rjongbloed
+ * Revision 1.2034  2007/07/24 12:59:44  rjongbloed
+ * Fixed G.723.1 plug in capability matching, should not include Annex A option.
+ * Made sure all integer OpalMediaOptions are unsigned so is compatible with H.245 generic capabilities.
+ *
+ * Revision 2.32  2007/07/20 05:45:45  rjongbloed
  * Fixed incorrect maxBitRate field in Generic Audio Capabilities
  *
  * Revision 2.31  2007/07/02 18:53:47  csoutheren
@@ -442,9 +446,9 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
               break;
             case 'I':
               if (tokens.GetSize() < 2)
-                format.AddOption(new OpalMediaOptionInteger(key, false, op, PString(val).AsInteger()));
+                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()));
               else
-                format.AddOption(new OpalMediaOptionInteger(key, false, op, PString(val).AsInteger(), tokens[0].AsInteger(), tokens[1].AsInteger()));
+                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()));
               break;
             case 'S':
             default:
@@ -1465,23 +1469,6 @@ class H323PluginG7231Capability : public H323AudioPluginCapability
         annexA(_annexA)
       { }
 
-    Comparison Compare(const PObject & obj) const
-    {
-      if (!PIsDescendant(&obj, H323PluginG7231Capability))
-        return LessThan;
-
-      Comparison result = H323AudioCapability::Compare(obj);
-      if (result != EqualTo)
-        return result;
-
-      PINDEX otherAnnexA = ((const H323PluginG7231Capability &)obj).annexA;
-      if (annexA < otherAnnexA)
-        return LessThan;
-      if (annexA > otherAnnexA)
-        return GreaterThan;
-      return EqualTo;
-    }
-
     virtual PObject * Clone() const
     { return new H323PluginG7231Capability(*this); }
 
@@ -2329,11 +2316,8 @@ H323H261PluginCapability::H323H261PluginCapability(const PluginCodec_Definition 
   : H323VideoPluginCapability(_encoderCodec, _decoderCodec, H245_VideoCapability::e_h261VideoCapability)
 { 
   const OpalMediaFormat & fmt = GetMediaFormat();
-  if (!fmt.HasOption(qcifMPI_tag) && !fmt.HasOption(cifMPI_tag)) {
-    OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
-    mediaFormat.AddOption(new OpalMediaOptionInteger(cifMPI_tag,                      false, OpalMediaOption::MinMerge, 4));
-    mediaFormat.AddOption(new OpalMediaOptionInteger(OpalMediaFormat::MaxBitRateOption(),  false, OpalMediaOption::MinMerge, 621700));
-  }
+  if (!fmt.HasOption(qcifMPI_tag) && !fmt.HasOption(cifMPI_tag))
+    GetWritableMediaFormat().AddOption(new OpalMediaOptionUnsigned(cifMPI_tag, false, OpalMediaOption::MinMerge, 4));
 }
 
 PObject::Comparison H323H261PluginCapability::Compare(const PObject & obj) const
@@ -2727,10 +2711,15 @@ H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(con
 }
 
 PObject * H323CodecPluginGenericVideoCapability::Clone() const
-{ return new H323CodecPluginGenericVideoCapability(*this); }
+{
+  return new H323CodecPluginGenericVideoCapability(*this);
+}
 
 PString H323CodecPluginGenericVideoCapability::GetFormatName() const
-{ return H323PluginCapabilityInfo::GetFormatName();}
+{
+  return H323PluginCapabilityInfo::GetFormatName();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
