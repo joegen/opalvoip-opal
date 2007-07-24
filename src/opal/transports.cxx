@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2082  2007/07/23 06:32:52  csoutheren
+ * Revision 1.2083  2007/07/24 13:46:45  rjongbloed
+ * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
+ *
+ * Revision 2.81  2007/07/23 06:32:52  csoutheren
  * Temporary hack to avoid problem with new bundle code.
  * This change results in PDUs being sent on multiple interfaces and will be removed
  * once further debugging has been performed
@@ -1316,7 +1319,13 @@ void OpalTransport::PrintOn(ostream & strm) const
 }
 
 
-void OpalTransport::EndConnect(const OpalTransportAddress &)
+PString OpalTransport::GetInterface() const
+{
+  return GetLocalAddress().GetHostName();
+}
+
+
+void OpalTransport::EndConnect(const PString &)
 {
 }
 
@@ -1735,15 +1744,23 @@ BOOL OpalTransportUDP::Connect()
 }
 
 
-void OpalTransportUDP::EndConnect(const OpalTransportAddress & theLocalAddress)
+PString OpalTransportUDP::GetInterface() const
 {
-  PAssert(theLocalAddress.GetIpAndPort(localAddress, localPort), PInvalidParameter);
+  PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
+  if (socket != NULL)
+    return socket->GetInterface();
 
-  //PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
-  //if (socket != NULL)
-  //  socket->SetInterface(localAddress);
+  return OpalTransportIP::GetInterface();
+}
 
-  OpalTransport::EndConnect(theLocalAddress);
+
+void OpalTransportUDP::EndConnect(const PString & iface)
+{
+  PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
+  if (socket != NULL)
+    socket->SetInterface(iface);
+
+  OpalTransportIP::EndConnect(iface);
 }
 
 

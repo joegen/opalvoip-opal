@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2248  2007/07/23 06:34:19  csoutheren
+ * Revision 1.2249  2007/07/24 13:46:45  rjongbloed
+ * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
+ *
+ * Revision 2.247  2007/07/23 06:34:19  csoutheren
  * Stop re-creation of new RTP sessions after SIP authentication fails
  * Do not create video RTP sessions if no video media formats
  *
@@ -2116,7 +2119,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         }
 
         // And end connect mode on the transport
-        transport->EndConnect(GetLocalAddress());
+        transport->EndConnect(transaction.GetTransport().GetInterface());
       }
 
       // Save the sessions etc we are actually using
