@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2053  2007/06/27 07:56:08  rjongbloed
+ * Revision 1.2054  2007/07/24 12:51:26  rjongbloed
+ * Fixed odd problem where need to allow for sign bit on an unsigned enum in a struct bitfield.
+ *
+ * Revision 2.52  2007/06/27 07:56:08  rjongbloed
  * Add new OpalMediaOption for octet strings (simple block of bytes).
  *
  * Revision 2.51  2007/06/22 05:41:47  rjongbloed
@@ -119,7 +122,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2053  2007/06/27 07:56:08  rjongbloed
+ * Revision 1.2054  2007/07/24 12:51:26  rjongbloed
+ * Fixed odd problem where need to allow for sign bit on an unsigned enum in a struct bitfield.
+ *
+ * Revision 2.52  2007/06/27 07:56:08  rjongbloed
  * Add new OpalMediaOption for octet strings (simple block of bytes).
  *
  * Revision 2.51  2007/06/22 05:41:47  rjongbloed
@@ -577,16 +583,16 @@ class OpalMediaOption : public PObject
 
     struct H245GenericInfo {
       unsigned ordinal:16;
-      enum {
+      enum Modes {
         None,
         Collapsing,
         NonCollapsing
-      } mode:2;
-      enum {
+      } mode:3;
+      enum IntegerTypes {
         UnsignedInt,
         Unsigned32,
         BooleanArray
-      } integerType:2;
+      } integerType:3;
       bool excludeTCS:1;
       bool excludeOLC:1;
       bool excludeReqMode:1;
