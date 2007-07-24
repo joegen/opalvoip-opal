@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2022  2007/07/19 03:48:53  csoutheren
+ * Revision 1.2023  2007/07/24 12:57:55  rjongbloed
+ * Made sure all integer OpalMediaOptions are unsigned so is compatible with H.245 generic capabilities.
+ *
+ * Revision 2.21  2007/07/19 03:48:53  csoutheren
  * Ensure fake padding RTP packets are handled correctly
  *
  * Revision 2.20  2007/07/16 05:52:30  csoutheren
@@ -227,8 +230,8 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
                     clockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 /////////////////////////////////////////////////////////////////////////////
