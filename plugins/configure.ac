@@ -416,6 +416,9 @@ fi
 if test -d LID/CAPI ; then
   AC_CONFIG_FILES(LID/CAPI/Makefile)
 fi
+if test -d fax/fax_spandsp -a -d fax/fax_spandsp/spandsp_util ; then
+  AC_CONFIG_FILES(fax/fax_spandsp/Makefile)
+fi
 
 AC_CONFIG_FILES(Makefile)
 

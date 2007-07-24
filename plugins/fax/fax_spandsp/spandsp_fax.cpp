@@ -20,8 +20,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: spandsp_fax.cpp,v $
- * Revision 1.4  2007/05/21 01:16:49  csoutheren
- * Now working on Linux
+ * Revision 1.5  2007/07/24 04:37:35  csoutheren
+ * MIgrated fax code from PrePresenceBranch
+ *
+ * Revision 1.3.2.2  2007/07/19 08:25:22  csoutheren
+ * Fix length check problem
  *
  * Revision 1.3.2.1  2007/05/18 04:24:29  csoutheren
  * Fixed Linux compile
@@ -60,15 +63,12 @@ using namespace std;
   #include <malloc.h>
   #include <sys/stat.h>
   #define STRCMPI  _strcmpi
-  #define __closesocket closesocket
 #else
   #define STRCMPI  strcasecmp
   #include <semaphore.h>
   #include <time.h>
   #include <signal.h>
   #include <unistd.h>
-  #define INVALID_SOCKET -1
-  #define __closesocket close
 #endif
 
 #include <string.h>
@@ -165,7 +165,8 @@ class WaitAndSignal {
 };
 
 #if USE_EMBEDDED_SPANDSP
-int __socketpair(int d, int type, int protocol, socket_t fds[2])
+#if _WIN32
+int socketpair(int d, int type, int protocol, socket_t fds[2])
 {
   fds[0] = fds[1] = INVALID_SOCKET;
 
@@ -176,7 +177,7 @@ int __socketpair(int d, int type, int protocol, socket_t fds[2])
   in_addr hostAddress;
   {
     char hostname[80];
-    if (gethostname(hostname, sizeof(hostname)) != 0)
+    if (gethostname(hostname, sizeof(hostname)) == SOCKET_ERROR)
       return -1;
     struct hostent * he = gethostbyname(hostname);
     if (he == 0)
@@ -194,7 +195,7 @@ int __socketpair(int d, int type, int protocol, socket_t fds[2])
 
   // windows does not support AF_UNIX, so use localhost instead
   sockaddr_in sockAddrs[2];
-  socklen_t sockLens[2];
+  int sockLens[2];
   
   int i;
 
@@ -226,13 +227,16 @@ int __socketpair(int d, int type, int protocol, socket_t fds[2])
     }
   }
 
-  __closesocket(fds[0]);
-  __closesocket(fds[1]);
+  cerr << "last error is " << WSAGetLastError() << endl;
+
+  closesocket(fds[0]);
+  closesocket(fds[1]);
 
   fds[0] = fds[1] = INVALID_SOCKET;
 
   return -1;
 }
+#endif
 #endif
 
 /////////////////////////////////////////////////////////////////
@@ -307,16 +311,15 @@ FaxInstance::FaxInstance()
 
 FaxInstance::~FaxInstance()
 {
-  if (t38Sockets[0] != INVALID_SOCKET)
-    __closesocket(t38Sockets[0]);
-  if (t38Sockets[1] != INVALID_SOCKET)
-    __closesocket(t38Sockets[1]);
-  if (faxSockets[0] != INVALID_SOCKET)
-    __closesocket(faxSockets[0]);
-  if (faxSockets[1] != INVALID_SOCKET)
-    __closesocket(faxSockets[1]);
-
 #if _WIN32
+  if (t38Sockets[0] != INVALID_SOCKET)
+    closesocket(t38Sockets[0]);
+  if (t38Sockets[1] != INVALID_SOCKET)
+    closesocket(t38Sockets[1]);
+  if (faxSockets[0] != INVALID_SOCKET)
+    closesocket(faxSockets[0]);
+  if (faxSockets[1] != INVALID_SOCKET)
+    closesocket(faxSockets[1]);
   if (threadHandle != NULL) {
     DWORD result;
     int retries = 10;
@@ -332,6 +335,14 @@ FaxInstance::~FaxInstance()
     CloseHandle(threadHandle);
   }
 #else
+  if (t38Sockets[0] != -1)
+    close(t38Sockets[0]);
+  if (t38Sockets[1] != -1)
+    close(t38Sockets[1]);
+  if (faxSockets[0] != -1)
+    close(faxSockets[0]);
+  if (faxSockets[1] != -1)
+    close(faxSockets[1]);
   if (threadHandle != 0) {
     int i = 20;
     while (i-- > 0) {
@@ -353,8 +364,8 @@ bool FaxInstance::Open()
   SpanDSP::progmode = "SpanDSP_Fax";
 
   // open the sockets
-  if ((__socketpair(AF_UNIX, SOCK_DGRAM, 0, faxSockets) != 0) || 
-      (__socketpair(AF_UNIX, SOCK_DGRAM, 0, t38Sockets) != 0))
+  if ((socketpair(AF_UNIX, SOCK_DGRAM, 0, faxSockets) != 0) || 
+      (socketpair(AF_UNIX, SOCK_DGRAM, 0, t38Sockets) != 0))
     return false;
 
   t38Gateway.SetVersion(0);
@@ -382,7 +393,7 @@ bool FaxInstance::Open()
 
 bool FaxInstance::WritePCM(const void * from, unsigned * fromLen)
 {
-  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)*fromLen;
+  return sendto(faxSockets[0], 12+(const char *)from, *fromLen-12, 0, NULL, 0) == (int)(*fromLen-12);
 }
 
 bool FaxInstance::ReadPCM(void * to, unsigned * toLen, bool & moreToRead)
