@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2038  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2039  2007/07/24 13:46:45  rjongbloed
+ * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
+ *
+ * Revision 2.37  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -841,7 +844,7 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
       break;
   }
 
-  transport->EndConnect(transport->GetLocalAddress());
+  transport->EndConnect(transport->GetInterface());
 
   if (discoveryComplete) {
     PTRACE(3, "RAS\tGatekeeper discovered at: "

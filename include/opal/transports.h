@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2028  2007/07/22 04:03:46  rjongbloed
+ * Revision 1.2029  2007/07/24 13:46:45  rjongbloed
+ * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
+ *
+ * Revision 2.27  2007/07/22 04:03:46  rjongbloed
  * Fixed issues with STUN usage in socket bundling, now OpalTransport indicates
  *   if it wants local or NAT address/port for inclusion to outgoing PDUs.
  *
@@ -730,6 +733,10 @@ class OpalTransport : public PIndirectChannel
       */
     virtual BOOL IsReliable() const = 0;
 
+    /** Get the interface this transport is bound to.
+      */
+    virtual PString GetInterface() const;
+
     /**Get the transport dependent name of the local endpoint.
       */
     virtual OpalTransportAddress GetLocalAddress() const = 0;
@@ -772,7 +779,7 @@ class OpalTransport : public PIndirectChannel
        The default behaviour does nothing.
       */
     virtual void EndConnect(
-      const OpalTransportAddress & localAddress  ///<  Resultant local address
+      const PString & iface  ///< Interface to finally use
     );
 
     /**Close the channel.
@@ -1081,8 +1088,12 @@ class OpalTransportUDP : public OpalTransportIP
        parameter.
       */
     virtual void EndConnect(
-      const OpalTransportAddress & localAddress  ///<  Resultant local address
+      const PString & iface  ///< Interface to finally use
     );
+
+    /** Get the interface this transport is bound to.
+      */
+    virtual PString GetInterface() const;
 
     /**Get the transport dependent name of the local endpoint.
       */
