@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2250  2007/07/25 01:16:03  csoutheren
+ * Revision 1.2251  2007/07/25 03:42:55  csoutheren
+ * Fix extraction of remote signal address from Contact field
+ *
+ * Revision 2.249  2007/07/25 01:16:03  csoutheren
  * Fix problem with reinvite and loop detection
  *
  * Revision 2.248  2007/07/24 13:46:45  rjongbloed
@@ -2328,11 +2331,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
-  {
-    PURL contact(contact);
-    OpalTransportAddress sigAddress(contact.GetHostName());
-    sigAddress.GetIpAddress(sigAddr);
-  }
+  PIPSocket::GetHostAddress(PURL(contact).GetHostName(), sigAddr);  
 
   // get the local and peer transport addresses
   PIPSocket::Address peerAddr, localAddr;
