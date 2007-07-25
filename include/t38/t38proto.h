@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2012  2007/05/10 05:34:01  csoutheren
+ * Revision 1.2013  2007/07/25 01:14:52  csoutheren
+ * Add support for receiving faxes into a TIFF file
+ *
+ * Revision 2.11  2007/05/10 05:34:01  csoutheren
  * Ensure fax transmission works with reasonable size audio blocks
  *
  * Revision 2.10  2007/03/29 08:31:25  csoutheren
@@ -367,7 +370,8 @@ class OpalFaxMediaStream : public OpalMediaStream
       unsigned sessionID, 
       BOOL isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
-      const PString & filename
+      const PString & filename,
+      BOOL receive
     );
   //@}
 
@@ -420,6 +424,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     PString sessionToken;
     OpalFaxCallInfo * faxCallInfo;
     PFilePath filename;
+    BOOL receive;
     BYTE writeBuffer[320];
     PINDEX writeBufferLen;
 };
@@ -438,7 +443,8 @@ class OpalT38MediaStream : public OpalFaxMediaStream
       unsigned sessionID, 
       BOOL isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
-      const PString & filename             ///<  filename
+      const PString & filename,            ///<  filename
+      BOOL receive
     );
 
     PString GetSpanDSPCommandLine(OpalFaxCallInfo &);
@@ -484,6 +490,7 @@ class OpalFaxEndPoint : public OpalEndPoint
     virtual OpalFaxConnection * CreateConnection(
       OpalCall & call,          ///< Owner of connection
       const PString & filename, ///< filename to send/receive
+      BOOL receive,
       void * userData = NULL,   ///< Arbitrary data to pass to connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
@@ -533,9 +540,10 @@ class OpalFaxConnection : public OpalConnection
     /**Create a new endpoint.
      */
     OpalFaxConnection(
-      OpalCall & call,                 ///<  Owner calll for connection
-      OpalFaxEndPoint & endpoint,      ///<  Owner endpoint for connection
-      const PString & filename,        ///<  filename to send/receive
+      OpalCall & call,                 ///<   Owner calll for connection
+      OpalFaxEndPoint & endpoint,      ///<   Owner endpoint for connection
+      const PString & filename,        ///<   filename to send/receive
+      BOOL receive,                    ///<   TRUE if receiving a fax
       const PString & _token,           ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
@@ -625,6 +633,7 @@ class OpalFaxConnection : public OpalConnection
   protected:
     OpalFaxEndPoint & endpoint;
     PString filename;
+    BOOL receive;
     BOOL forceFaxAudio;
 };
 
@@ -648,7 +657,7 @@ class OpalT38EndPoint : public OpalFaxEndPoint
     );
     OpalMediaFormatList GetMediaFormats() const;
     PString MakeToken();
-    virtual OpalFaxConnection * CreateConnection(OpalCall & call, const PString & filename, void * /*userData*/, OpalConnection::StringOptions * stringOptions);
+    virtual OpalFaxConnection * CreateConnection(OpalCall & call, const PString & filename, BOOL receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -667,6 +676,7 @@ class OpalT38Connection : public OpalFaxConnection
       OpalCall & call,                 ///<  Owner calll for connection
       OpalT38EndPoint & endpoint,      ///<  Owner endpoint for connection
       const PString & filename,        ///<  filename to send/receive
+      BOOL receive,
       const PString & _token,           ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
