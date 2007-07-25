@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2249  2007/07/24 13:46:45  rjongbloed
+ * Revision 1.2250  2007/07/25 01:16:03  csoutheren
+ * Fix problem with reinvite and loop detection
+ *
+ * Revision 2.248  2007/07/24 13:46:45  rjongbloed
  * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
  *
  * Revision 2.247  2007/07/23 06:34:19  csoutheren
@@ -2244,8 +2247,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   const SIPMIMEInfo & requestMIME = request.GetMIME();
   if (IsOriginating()) {
-    if (remotePartyAddress != requestMIME.GetTo() ||
-        localPartyAddress  != requestMIME.GetFrom()) {
+    PString to = requestMIME.GetTo();
+    PString from = requestMIME.GetFrom();
+
+    if (remotePartyAddress != requestMIME.GetFrom() ||
+        localPartyAddress  != requestMIME.GetTo()) {
       PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
       SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
       SendPDU(response, request.GetViaAddress(endpoint));

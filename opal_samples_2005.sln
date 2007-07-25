@@ -1,5 +1,5 @@
 Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual Studio 2005
+# Visual C++ Express 2005
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OpenPhone", "samples\openphone\OpenPhone_2005.vcproj", "{56E04FF6-6AEB-4917-B8FC-6C0C1F5831F1}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_dll", "src\win32\opal_dll_2005.vcproj", "{C7546C76-E010-4105-AEAE-48FCD6C09527}"
@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_dll", "src\win32\opal_
 		{85F4F26A-1A5D-4685-A48A-448102C5C5BC} = {85F4F26A-1A5D-4685-A48A-448102C5C5BC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_lib", "src\win32\opal_lib_2005.vcproj", "{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "src\win32\opal_lib_2005.vcproj", "{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Simple OPAL Static", "samples\simple\simple_2005.vcproj", "{F5F40674-6CBD-459A-A2AA-EB3C084EE879}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -30,6 +30,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jester", "samples\jester\jester_2005.vcproj", "{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfc", "samples\mfc\mfc_2005.vcproj", "{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Opal T38", "samples\opalt38\opalt38_2005.vcproj", "{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -104,6 +106,12 @@ Global
 		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.No Trace|Win32.Build.0 = Release|Win32
 		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Release|Win32.ActiveCfg = Release|Win32
 		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Release|Win32.Build.0 = Release|Win32
+		{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}.Debug|Win32.Build.0 = Debug|Win32
+		{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}.No Trace|Win32.ActiveCfg = No Trace|Win32
+		{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}.No Trace|Win32.Build.0 = No Trace|Win32
+		{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}.Release|Win32.ActiveCfg = Release|Win32
+		{E914C78B-13AE-4667-A4FB-122CE2AB9C5D}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
