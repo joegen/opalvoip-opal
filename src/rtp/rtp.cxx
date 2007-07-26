@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2068  2007/07/10 06:25:39  csoutheren
+ * Revision 1.2069  2007/07/26 00:39:30  csoutheren
+ * Make transmission of RFC2833 independent of the media stream
+ *
+ * Revision 2.67  2007/07/10 06:25:39  csoutheren
  * Allow any number of SSRC changes if ignoreOtherSources is set to false
  *
  * Revision 2.66  2007/05/29 06:26:21  csoutheren
@@ -981,6 +984,13 @@ RTP_Session::RTP_Session(
   ignoreOutOfOrderPackets = TRUE;
   ignorePayloadTypeChanges = TRUE;
   syncSourceOut = PRandom::Number();
+
+  timeStampOut = PRandom::Number();
+  timeStampOffs = 0;
+  timeStampOffsetEstablished = FALSE;
+  timeStampIsPremedia = FALSE;
+  lastSentPacketTime = PTimer::Tick();
+
   syncSourceIn = 0;
   allowSyncSourceInChange = FALSE;
   allowRemoteTransmitAddressChange = FALSE;
@@ -1227,15 +1237,25 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
    << " dlsr=" << receiver.dlsr);
 }
 
-
 RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal m(sendDataMutex);
+
   PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
   frame.SetSequenceNumber(++lastSentSequenceNumber);
   frame.SetSyncSource(syncSourceOut);
 
-  PTRACE_IF(3, packetsSent == 0, "RTP\tFirst sent data:"
+  // special handling for first packet
+  if (packetsSent == 0) {
+    if (!timeStampIsPremedia) {
+      DWORD fs = frame.GetTimestamp();
+      timeStampOffs = frame.GetTimestamp() - timeStampOut;
+      timeStampOffsetEstablished = TRUE;
+    }
+    frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+
+    PTRACE(3, "RTP\tFirst sent data:"
      " ver=" << frame.GetVersion()
      << " pt=" << frame.GetPayloadType()
      << " psz=" << frame.GetPayloadSize()
@@ -1245,20 +1265,23 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
      << " ts=" << frame.GetTimestamp()
      << " src=" << frame.GetSyncSource()
      << " ccnt=" << frame.GetContribSrcCount());
+  }
+  else {
+    frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
 
-  if (packetsSent != 0 && !frame.GetMarker()) {
     // Only do statistics on subsequent packets
-    DWORD diff = (tick - lastSentPacketTime).GetInterval();
+    if (!frame.GetMarker()) {
+      DWORD diff = (tick - lastSentPacketTime).GetInterval();
 
-    averageSendTimeAccum += diff;
-    if (diff > maximumSendTimeAccum)
-      maximumSendTimeAccum = diff;
-    if (diff < minimumSendTimeAccum)
-      minimumSendTimeAccum = diff;
-    txStatisticsCount++;
+      averageSendTimeAccum += diff;
+      if (diff > maximumSendTimeAccum)
+        maximumSendTimeAccum = diff;
+      if (diff < minimumSendTimeAccum)
+        minimumSendTimeAccum = diff;
+      txStatisticsCount++;
+    }
   }
 
-  lastSentTimestamp = frame.GetTimestamp();
   lastSentPacketTime = tick;
 
   octetsSent += frame.GetPayloadSize();
@@ -1825,6 +1848,10 @@ DWORD RTP_Session::GetPacketsTooLate() const
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
+BOOL RTP_Session::WriteOOBData(RTP_DataFrame &)
+{
+  return TRUE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2373,6 +2400,24 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
   return OnReceiveControl(frame);
 }
 
+BOOL RTP_UDP::WriteOOBData(RTP_DataFrame & frame)
+{
+  PWaitAndSignal m(sendDataMutex);
+
+  // if media has not already established a timestamp, ensure that OnSendData does not use this one
+  if (!timeStampOffsetEstablished) {
+    timeStampOffs = 0;
+    timeStampIsPremedia = TRUE;
+  }
+
+  // set the timestamp
+  frame.SetTimestamp(timeStampOffs + timeStampOut + (PTimer::Tick() - lastSentPacketTime).GetInterval() * 8);
+
+  // write the data
+  BOOL stat = WriteData(frame);
+  timeStampIsPremedia = FALSE;
+  return stat;
+}
 
 BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
 {
