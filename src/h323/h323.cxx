@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2164  2007/07/10 06:20:27  csoutheren
+ * Revision 1.2165  2007/07/26 00:41:52  csoutheren
+ * Remove functions which are identical to ancestor
+ *
+ * Revision 2.163  2007/07/10 06:20:27  csoutheren
  * Fix problem with compiling without H.450
  *
  * Revision 2.162  2007/06/30 00:16:57  csoutheren
@@ -4507,12 +4510,6 @@ void H323Connection::OnUserInputIndication(const H245_UserInputIndication & ind)
       break;
     }
   }
-}
-
-
-RTP_Session * H323Connection::GetSession(unsigned sessionID) const
-{
-  return rtpSessions.GetSession(sessionID);
 }
 
 
