@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2112  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2113  2007/07/26 00:39:30  csoutheren
+ * Make transmission of RFC2833 independent of the media stream
+ *
+ * Revision 2.111  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.110  2007/06/28 12:08:26  rjongbloed
@@ -645,9 +648,9 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
   }
   
-  rfc2833Handler  = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
+  rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 #if OPAL_T38FAX
-  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
+  ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
 #endif
 
   securityMode = ep.GetDefaultSecurityMode();
@@ -1180,10 +1183,7 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
       PTRACE(3, "OpalCon\tAdding RFC2833 receive handler");
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-    } else {
-      PTRACE(3, "OpalCon\tAdding RFC2833 transmit handler");
-      patch.AddFilter(rfc2833Handler->GetTransmitHandler(), patch.GetSinkFormat());
-    }
+    } 
   }
 
 #if OPAL_T38FAX
@@ -1192,10 +1192,7 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
       PTRACE(3, "OpalCon\tAdding Cisco NSE receive handler");
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(ciscoNSEHandler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-    } else {
-      PTRACE(3, "OpalCon\tAdding Cisco NSE transmit handler");
-      patch.AddFilter(ciscoNSEHandler->GetTransmitHandler(), patch.GetSinkFormat());
-    }
+    } 
   }
 #endif
 }
@@ -1314,6 +1311,10 @@ RTP_Session * OpalConnection::GetSession(unsigned sessionID) const
   return rtpSessions.GetSession(sessionID);
 }
 
+RTP_Session * OpalConnection::UseSession(unsigned sessionID)
+{
+  return rtpSessions.UseSession(sessionID);
+}
 
 RTP_Session * OpalConnection::UseSession(const OpalTransport & transport,
                                          unsigned sessionID,
@@ -1507,7 +1508,7 @@ BOOL OpalConnection::SendUserInputTone(char tone, unsigned duration)
   if (duration == 0)
     duration = 180;
 
-  return rfc2833Handler->SendTone(tone, duration);
+  return rfc2833Handler->SendToneAsync(tone, duration);
 }
 
 
