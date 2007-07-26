@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2007  2007/03/12 23:36:23  csoutheren
+ * Revision 1.2008  2007/07/26 00:38:56  csoutheren
+ * Make transmission of RFC2833 independent of the media stream
+ *
+ * Revision 2.6  2007/03/12 23:36:23  csoutheren
  * Add support for Cisco NSE
  *
  * Revision 2.5  2005/11/30 13:35:26  csoutheren
@@ -82,17 +85,20 @@ class OpalRFC2833Info : public PObject {
     unsigned timestamp;
 };
 
+class OpalConnection;
 
 class OpalRFC2833Proto : public PObject {
     PCLASSINFO(OpalRFC2833Proto, PObject);
   public:
     OpalRFC2833Proto(
+      OpalConnection & conn,
       const PNotifier & receiveNotifier
     );
+    ~OpalRFC2833Proto();
 
-    virtual BOOL SendTone(
-      char tone,              ///<  DTMF tone code
-      unsigned duration       ///<  Duration of tone in milliseconds
+    virtual BOOL SendToneAsync(
+      char tone, 
+      unsigned duration
     );
 
     virtual BOOL BeginTransmit(
@@ -116,13 +122,16 @@ class OpalRFC2833Proto : public PObject {
     ) { payloadType = type; }
 
     const PNotifier & GetReceiveHandler() const { return receiveHandler; }
-    const PNotifier & GetTransmitHandler() const { return transmitHandler; }
 
   protected:
+    void SendAsyncFrame();
+    void TransmitPacket(RTP_DataFrame & frame);
+
+    OpalConnection & conn;
+
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, ReceivedPacket);
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, TransmitPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
-    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, TransmitEnded);
+    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
 
     RTP_DataFrame::PayloadTypes payloadType;
 
@@ -142,9 +151,13 @@ class OpalRFC2833Proto : public PObject {
       TransmitEnding
     }         transmitState;
     BYTE      transmitCode;
-    unsigned  transmitTimestamp;
-    PTimer    transmitTimer;
-    PNotifier transmitHandler;
+
+    RTP_Session * rtpSession;
+    PTimer        asyncTransmitTimer;
+    PTimer        asyncDurationTimer;
+    DWORD         transmitTimestamp;
+    BOOL          transmitTimestampSet;
+    PTimeInterval asyncStart;
 };
 
 

@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2087  2007/06/29 06:59:56  rjongbloed
+ * Revision 1.2088  2007/07/26 00:38:56  csoutheren
+ * Make transmission of RFC2833 independent of the media stream
+ *
+ * Revision 2.86  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.85  2007/06/28 12:08:26  rjongbloed
@@ -1056,6 +1059,9 @@ class OpalConnection : public PSafeObject
        The type of RTP session that is created will be compatible with the
        transport. At this time only IP (RTp over UDP) is supported.
       */
+    virtual RTP_Session * UseSession(
+      unsigned sessionID
+    );
     virtual RTP_Session * UseSession(
       const OpalTransport & transport,  ///<  Transport of signalling
       unsigned sessionID,               ///<  RTP session number
