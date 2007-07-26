@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2066  2007/05/09 14:59:19  hfriederich
+ * Revision 1.2067  2007/07/26 00:41:17  csoutheren
+ * Remove functions which are identical to ancestor
+ *
+ * Revision 2.65  2007/05/09 14:59:19  hfriederich
  * Make SetRemotePartyInfo() virtual
  *
  * Revision 2.64  2007/04/26 07:01:00  csoutheren
@@ -1989,13 +1992,6 @@ class H323Connection : public OpalConnection
 
   /**@name RTP Session Management */
   //@{
-    /**Get an RTP session for the specified ID.
-       If there is no session of the specified ID, NULL is returned.
-      */
-    virtual RTP_Session * GetSession(
-      unsigned sessionID
-    ) const;
-
     /**Get an H323 RTP session for the specified ID.
        If there is no session of the specified ID, NULL is returned.
       */
