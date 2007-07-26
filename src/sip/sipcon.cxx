@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2251  2007/07/25 03:42:55  csoutheren
+ * Revision 1.2252  2007/07/26 01:05:44  rjongbloed
+ * Code tidy up.
+ *
+ * Revision 2.250  2007/07/25 03:42:55  csoutheren
  * Fix extraction of remote signal address from Contact field
  *
  * Revision 2.249  2007/07/25 01:16:03  csoutheren
@@ -2249,12 +2252,11 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   BOOL isReinvite;
 
   const SIPMIMEInfo & requestMIME = request.GetMIME();
-  if (IsOriginating()) {
-    PString to = requestMIME.GetTo();
-    PString from = requestMIME.GetFrom();
+  PString requestTo = requestMIME.GetTo();
+  PString requestFrom = requestMIME.GetFrom();
 
-    if (remotePartyAddress != requestMIME.GetFrom() ||
-        localPartyAddress  != requestMIME.GetTo()) {
+  if (IsOriginating()) {
+    if (remotePartyAddress != requestFrom || localPartyAddress != requestTo) {
       PTRACE(2, "SIP\tIgnoring INVITE from " << request.GetURI() << " when originated call.");
       SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
       SendPDU(response, request.GetViaAddress(endpoint));
@@ -2278,8 +2280,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       return;
     }
 
-    if (originalMIME.GetTo()   != requestMIME.GetTo() ||
-        originalMIME.GetFrom() != requestMIME.GetFrom()) {
+    if (originalMIME.GetTo() != requestTo || originalMIME.GetFrom() != requestFrom) {
       // Different "dialog" determined by the tags in the to and from fields indicate forking
       PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
       SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
