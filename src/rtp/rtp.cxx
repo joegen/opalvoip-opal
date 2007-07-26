@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2069  2007/07/26 00:39:30  csoutheren
+ * Revision 1.2070  2007/07/26 11:39:38  rjongbloed
+ * Removed redundent code
+ *
+ * Revision 2.68  2007/07/26 00:39:30  csoutheren
  * Make transmission of RFC2833 independent of the media stream
  *
  * Revision 2.67  2007/07/10 06:25:39  csoutheren
@@ -1249,7 +1252,6 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   // special handling for first packet
   if (packetsSent == 0) {
     if (!timeStampIsPremedia) {
-      DWORD fs = frame.GetTimestamp();
       timeStampOffs = frame.GetTimestamp() - timeStampOut;
       timeStampOffsetEstablished = TRUE;
     }
