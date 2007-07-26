@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2093  2007/06/09 06:06:17  rjongbloed
+ * Revision 1.2094  2007/07/26 00:42:57  csoutheren
+ * Don't send zero length tones
+ *
+ * Revision 2.92  2007/06/09 06:06:17  rjongbloed
  * Added check that --srcep parameter has endpoing type existing before selection.
  *
  * Revision 2.91  2007/05/07 14:15:22  csoutheren
@@ -428,9 +431,33 @@ SimpleOpalProcess::SimpleOpalProcess()
 {
 }
 
+#include <codec/opalpluginmgr.h>
 
 void SimpleOpalProcess::Main()
 {
+  {
+    OpalPluginCodecManager & codecMgr = *(OpalPluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("OpalPluginCodecManager");
+    PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
+    for (int i = 0; i < pluginList.GetSize(); i++) {
+      std::string codecName = pluginList.GetKeyAt(i);
+      if (codecName == "h.263") {
+        PDynaLink & dll = pluginList.GetDataAt(i);
+        PluginCodec_GetCodecFunction getCodecs;
+        if (!dll.GetFunction(PLUGIN_CODEC_GET_CODEC_FN_STR, (PDynaLink::Function &)getCodecs)) {
+          cout << "error: " << codecName << " is missing the function " << PLUGIN_CODEC_GET_CODEC_FN_STR << endl;
+          return;
+        }
+        unsigned int count;
+        PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_VIDEO);
+        if (codecs == NULL || count == 0) {
+          cout << "error: " << codecName << " does not define any codecs for this version of the plugin API" << endl;
+          return;
+        } 
+      }
+    }
+  }
+
+
   cout << GetName()
        << " Version " << GetVersion(TRUE)
        << " by " << GetManufacturer()
@@ -1555,7 +1582,7 @@ void MyManager::SendTone(const char tone)
     for(PINDEX j  = 0; j < res.GetSize(); j++) {
       PSafePtr< OpalConnection >  conn = endpoints[i].GetConnectionWithLock (res[j]);
       if (conn != NULL) {
-	conn->SendUserInputTone(tone, 0);
+	conn->SendUserInputTone(tone, 180);
 	cout << "Send \"" << tone << "\" to " << res[j] << endl;
       }
     }
