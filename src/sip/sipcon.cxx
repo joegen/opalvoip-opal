@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2252  2007/07/26 01:05:44  rjongbloed
+ * Revision 1.2253  2007/07/27 05:56:10  csoutheren
+ * Fix problem with SIP NAT detection
+ *
+ * Revision 2.251  2007/07/26 01:05:44  rjongbloed
  * Code tidy up.
  *
  * Revision 2.250  2007/07/25 03:42:55  csoutheren
@@ -2332,7 +2335,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // get the address that remote end *thinks* it is using from the Contact field
   PIPSocket::Address sigAddr;
-  PIPSocket::GetHostAddress(PURL(contact).GetHostName(), sigAddr);  
+  PIPSocket::GetHostAddress(targetAddress.GetHostName(), sigAddr);  
 
   // get the local and peer transport addresses
   PIPSocket::Address peerAddr, localAddr;
