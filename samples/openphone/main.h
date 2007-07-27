@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.42  2007/07/27 01:42:10  rjongbloed
+ * Added cut, copy, paste and most important DELETE of speed dials.
+ *
  * Revision 1.41  2007/06/27 12:39:08  rjongbloed
  * Further de-synchronising OPAL callbacks and GUI to avoid deadlocks.
  *
@@ -355,6 +358,7 @@ class SpeedDialDialog : public wxDialog
     wxButton     * m_ok;
     wxTextCtrl   * m_nameCtrl;
     wxTextCtrl   * m_numberCtrl;
+    wxTextCtrl   * m_addressCtrl;
     wxStaticText * m_inUse;
     wxStaticText * m_ambiguous;
 
@@ -630,6 +634,10 @@ class MyManager : public wxFrame, public OpalManager
     void OnViewList(wxCommandEvent& event);
     void OnViewDetails(wxCommandEvent& event);
     void OnEditSpeedDial(wxCommandEvent& event);
+    void OnCutSpeedDial(wxCommandEvent& event);
+    void OnCopySpeedDial(wxCommandEvent& event);
+    void OnPasteSpeedDial(wxCommandEvent& event);
+    void OnDeleteSpeedDial(wxCommandEvent& event);
     void OnOptions(wxCommandEvent& event);
     void OnSashPositioned(wxSplitterEvent& event);
     void OnSpeedDialActivated(wxListEvent& event);
@@ -649,7 +657,8 @@ class MyManager : public wxFrame, public OpalManager
       SpeedDialViews view
     );
     void EditSpeedDial(
-      int index
+      int index,
+      bool newItem
     );
 
     enum {
@@ -674,6 +683,7 @@ class MyManager : public wxFrame, public OpalManager
     wxPanel          * m_answerPanel;
     wxPanel          * m_callingPanel;
     wxPanel          * m_inCallPanel;
+    wxDataFormat       m_ClipboardFormat;
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
