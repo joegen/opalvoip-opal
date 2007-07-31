@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.cxx,v $
+ *  Revision 1.21  2007/07/31 23:15:42  dereksmithies
+ *  Reduce verbosity in generated log file.
+ *
  *  Revision 1.20  2007/04/22 22:37:59  dereksmithies
  *  Lower verbosity of PTRACE statements.
  *
@@ -217,7 +220,6 @@ BOOL IAX2Frame::Read1Byte(BYTE & result)
     return FALSE;
   
   result = data[currentReadIndex];
-  PTRACE(6, "Read byte at " << currentReadIndex << " of 0x" << ::hex << ((int)result) << ::dec);
   currentReadIndex++;
   return TRUE;
 }
