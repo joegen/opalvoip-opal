@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.22  2007/07/31 23:17:16  dereksmithies
+ * Add code to set payload size, which enables it to work. This is required
+ * because we are generating RTP_DataFrames so we can use the OpalJitterBuffer
+ *
  * Revision 1.21  2007/04/22 22:37:59  dereksmithies
  * Lower verbosity of PTRACE statements.
  *
@@ -590,7 +594,12 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 BOOL IAX2Connection::ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet)
 { 
   BOOL success = jitterBuffer.ReadData(timestamp, packet); 
-  return success;
+  if (success) {
+    packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 /* The comment below is magic for those who use emacs to edit this file. */
