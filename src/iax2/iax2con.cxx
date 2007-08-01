@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.25  2007/08/01 05:16:03  dereksmithies
+ * Work on getting the different phases right.
+ *
  * Revision 1.24  2007/08/01 04:30:22  dereksmithies
  * When connecting a call (at the iax layer), make sure the Opal layer knows
  * about the state change to connected.
@@ -276,7 +279,6 @@ void IAX2Connection::OnAlerting()
   PTRACE(3, "IAX2Con\tOnAlerting()");
   PTRACE(3, "IAX2Con\t ON ALERTING " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
-  phase = AlertingPhase;
   PTRACE(3, "IAX2Con\tOn Alerting. Phone is ringing at  " << GetRemotePartyName());
   OpalConnection::OnAlerting();
 
@@ -286,9 +288,27 @@ void IAX2Connection::OnAlerting()
   jitterBuffer.Resume(NULL);
 }
 
-BOOL IAX2Connection::SetAlerting(const PString & /*calleeName*/, BOOL /*withMedia*/) 
+BOOL IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), BOOL /*withMedia*/) 
 { 
-  PTRACE(3, "IAX2Con\tSetAlerting " << *this); 
+  if (IsOriginating()) {
+    PTRACE(2, "IAX2\tSetAlerting ignored on call we originated.");
+    return TRUE;
+  }
+
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+
+  PTRACE(3, "IAX2Con\tSetAlerting  from " << calleeName << " " << *this); 
+
+  if (phase == AlertingPhase)
+    return FALSE;
+
+  alertingTime = PTime();
+  phase = AlertingPhase;
+
+  OnAlerting();
+
   return TRUE;
 }
 
