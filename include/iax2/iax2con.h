@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.17  2007/08/01 02:20:24  dereksmithies
+ *  Change the way we accept/reject incoming iax2 calls. This change makes us
+ *  more compliant to the OPAL standard. Thanks Craig for pointing this out.
+ *
  *  Revision 1.16  2007/04/19 06:17:21  csoutheren
  *  Fixes for precompiled headers with gcc
  *
@@ -210,6 +214,16 @@ class IAX2Connection : public OpalConnection
      Note that this method is called from the endpoint thread, (not this IAX2Connection's thread*/
   void AcceptIncomingCall();
   
+
+  /**Indicate the result of answering an incoming call.
+       This should only be called if the OnAnswerCall() callback function has
+       returned a AnswerCallPending or AnswerCallDeferred response.
+
+       Sending a AnswerCallDeferred response would have no effect.
+      */
+  virtual void AnsweringCall(AnswerCallResponse response);
+
+
   /**Report if this Connection is still active */
   BOOL IsCallTerminating() { return iax2Processor.IsCallTerminating(); }
   
