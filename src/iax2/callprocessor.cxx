@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.13  2007/08/01 05:16:03  dereksmithies
+ * Work on getting the different phases right.
+ *
  * Revision 1.12  2007/04/22 22:37:59  dereksmithies
  * Lower verbosity of PTRACE statements.
  *
@@ -968,15 +971,14 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   remote.SetRemoteAddress(src->GetRemoteInfo().RemoteAddress());
   remote.SetRemotePort(src->GetRemoteInfo().RemotePort());
 
-  con->OnSetUp();   //ONLY the  callee (person receiving call) does ownerCall.OnSetUp();
-
-  IAX2FullFrameProtocol * reply;
-  
   if (IsCallHappening()) {
     PTRACE(3, "Remote node has sent us a second new message. ignore");
     delete src;
     return;
   }
+
+  IAX2FullFrameProtocol * reply;
+  
   
   if (!RemoteSelectedCodecOk()) {
     PTRACE(3, "Remote node sected a bad codec, hangup call ");
@@ -996,6 +998,10 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   }
   
   SetCallNewed();
+
+  con->OnSetUp();   //ONLY the  callee (person receiving call) does ownerCall.OnSetUp();
+  PString emptyCalleeName;
+  con->SetAlerting(emptyCalleeName, TRUE);
 
   con->GetEndPoint().GetCodecLengths(selectedCodec, audioCompressedBytes, audioFrameDuration);
   PTRACE(4, "codec frame play duration is " << audioFrameDuration << " ms, which compressed to "
