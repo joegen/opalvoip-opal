@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2224.2.3  2007/07/10 06:30:18  csoutheren
+ * Revision 1.2224.2.4  2007/08/01 13:10:34  csoutheren
+ * Fix problem with early shutdown SIP call not returning response code
+ *
+ * Revision 2.223.2.3  2007/07/10 06:30:18  csoutheren
  * Remove all vestiges of sentTrying variable and fix transmission of 180 Trying
  * when using AnswerCallDeferred
  *
@@ -2382,6 +2385,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
     return;
   }
+
+  // any exit from now should return a response code
+  releaseMethod = ReleaseWithResponse;
   
   // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection(0, NULL)) {
