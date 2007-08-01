@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.23  2007/08/01 02:20:24  dereksmithies
+ * Change the way we accept/reject incoming iax2 calls. This change makes us
+ * more compliant to the OPAL standard. Thanks Craig for pointing this out.
+ *
  * Revision 1.22  2007/07/31 23:17:16  dereksmithies
  * Add code to set payload size, which enables it to work. This is required
  * because we are generating RTP_DataFrames so we can use the OpalJitterBuffer
@@ -559,7 +563,32 @@ void IAX2Connection::TransferConnection(
     PTRACE(1, "Cannot transfer call, hosts do not match");
   }
 }
-    
+
+void IAX2Connection::AnsweringCall(AnswerCallResponse response)
+{
+  PTRACE(3, "IAX2\tAnswering call: " << response);
+
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || GetPhase() >= ReleasingPhase)
+    return;
+
+  switch (response) {
+    case AnswerCallDenied :
+      // If response is denied, abort the call
+      PTRACE(2, "IAX2\tApplication has declined to answer incoming call");
+      Release(EndedByAnswerDenied);
+      break;
+
+    case AnswerCallNow :
+      PTRACE(2, "IAX2\tApplication has Accepted answer incoming call");
+      SetConnected();
+
+    default : // AnswerCallDeferred
+      PTRACE(2, "IAX2\tAnswering call: has been deferred");
+      break;
+  }
+}
+
 BOOL IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
 {
   PTRACE(3, "Forward call to " + forwardParty);
