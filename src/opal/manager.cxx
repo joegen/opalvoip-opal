@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2094  2007/07/22 03:22:11  rjongbloed
+ * Revision 1.2095  2007/08/01 23:56:54  csoutheren
+ * Add extra logging
+ *
+ * Revision 2.93  2007/07/22 03:22:11  rjongbloed
  * Added INADDR_ANY to addressess that qualify as "local" for NAT purposes.
  *
  * Revision 2.92  2007/07/20 05:49:58  rjongbloed
@@ -1496,6 +1499,8 @@ BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
                                           BOOL incoming)
 {
   BOOL remoteIsNAT = FALSE;
+
+  PTRACE(4, "OPAL\tChecking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ",peer=" << peerAddr << ",sig=" << sigAddr);
 
   if (incoming) {
 
