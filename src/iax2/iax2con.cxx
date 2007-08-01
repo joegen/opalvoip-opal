@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.24  2007/08/01 04:30:22  dereksmithies
+ * When connecting a call (at the iax layer), make sure the Opal layer knows
+ * about the state change to connected.
+ *
  * Revision 1.23  2007/08/01 02:20:24  dereksmithies
  * Change the way we accept/reject incoming iax2 calls. This change makes us
  * more compliant to the OPAL standard. Thanks Craig for pointing this out.
@@ -293,18 +297,18 @@ BOOL IAX2Connection::SetConnected()
   PTRACE(3, "IAX2Con\tSetConnected " << *this);
   PTRACE(3, "IAX2Con\tSETCONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
-  if (!originating)
+
+  if (!originating) {
+    PTRACE(3, "IAX2Con\tGet the iax2 code to mark us as connected\n");
     iax2Processor.SetConnected();
-
-  connectedTime = PTime ();
-
- if (mediaStreams.IsEmpty())
-    phase = ConnectedPhase;
-  else {
-    phase = EstablishedPhase;
-    OnEstablished();
+  } else {
+    PTRACE(3, "IAX2Con\tNot originator, so don't Get the iax2 code to mark us as connected\n");    
   }
 
+  // Set flag that we are up to CONNECT stage
+  connectedTime = PTime();
+  SetPhase(ConnectedPhase);
+  OnConnected();
   return TRUE;
 }
 
@@ -313,8 +317,8 @@ void IAX2Connection::OnConnected()
   PTRACE(3, "IAX2Con\tOnConnected()");
   PTRACE(3, "IAX2Con\t ON CONNECTED " 
 	 << PString(IsOriginating() ? " Originating" : "Receiving"));
-  phase = ConnectedPhase;
   PTRACE(3, "IAX2Con\tThis call has been connected");
+
   OpalConnection::OnConnected();
 }
 
@@ -577,6 +581,14 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
       // If response is denied, abort the call
       PTRACE(2, "IAX2\tApplication has declined to answer incoming call");
       Release(EndedByAnswerDenied);
+      break;
+
+    case AnswerCallAlertWithMedia :
+      SetAlerting(localPartyName, TRUE);
+      break;
+
+    case AnswerCallPending :
+      SetAlerting(localPartyName, FALSE);
       break;
 
     case AnswerCallNow :
