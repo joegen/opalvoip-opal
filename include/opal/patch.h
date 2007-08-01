@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2016  2007/02/12 02:44:27  csoutheren
+ * Revision 1.2017  2007/08/01 08:37:46  csoutheren
+ * Add function to lock sink transcoders so options can be set
+ *
+ * Revision 2.15  2007/02/12 02:44:27  csoutheren
  * Start of support for ZRTP
  *
  * Revision 2.14  2007/02/05 19:43:17  dsandras
@@ -243,6 +246,10 @@ class OpalMediaPatch : public PObject
 
     virtual BOOL PushFrame(RTP_DataFrame & /*frame*/) { return FALSE; };
 
+    /**Get the transcoder used within a sink stream
+      */
+    virtual OpalTranscoder * GetAndLockSinkTranscoder(PINDEX i = 0) const;
+    virtual void UnLockSinkTranscoder() const;
   //@}
 
   protected:
