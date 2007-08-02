@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2067  2007/07/24 12:57:55  rjongbloed
+ * Revision 1.2068  2007/08/02 07:54:49  csoutheren
+ * Add function to print options on media format
+ *
+ * Revision 2.66  2007/07/24 12:57:55  rjongbloed
  * Made sure all integer OpalMediaOptions are unsigned so is compatible with H.245 generic capabilities.
  *
  * Revision 2.65  2007/06/27 07:56:08  rjongbloed
@@ -1278,6 +1281,31 @@ time_t OpalMediaFormat::GetCodecBaseTime() const
   return codecBaseTime;
 }
 
+ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
+{
+  for (PINDEX i = 0; i < GetOptionCount(); i++) {
+    const OpalMediaOption & option = GetOption(i);
+    strm << right << setw(25) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
+         << ") = " << left << setw(10) << option.AsString();
+    if (!option.GetFMTPName().IsEmpty())
+      strm << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
+    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
+    if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
+      strm << "  H.245 Ordinal: " << genericInfo.ordinal
+           << ' ' << (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? "Collapsing" : "Non-Collapsing");
+      if (!genericInfo.excludeTCS)
+        strm << " TCS";
+      if (!genericInfo.excludeOLC)
+        strm << " OLC";
+      if (!genericInfo.excludeReqMode)
+        strm << " RM";
+    }
+    strm << endl;
+  }
+  strm << endl;
+
+  return strm;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
