@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2054  2007/07/24 12:51:26  rjongbloed
+ * Revision 1.2055  2007/08/02 07:54:15  csoutheren
+ * Add function to print options on media format
+ *
+ * Revision 2.53  2007/07/24 12:51:26  rjongbloed
  * Fixed odd problem where need to allow for sign bit on an unsigned enum in a struct bitfield.
  *
  * Revision 2.52  2007/06/27 07:56:08  rjongbloed
@@ -122,7 +125,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2054  2007/07/24 12:51:26  rjongbloed
+ * Revision 1.2055  2007/08/02 07:54:15  csoutheren
+ * Add function to print options on media format
+ *
+ * Revision 2.53  2007/07/24 12:51:26  rjongbloed
  * Fixed odd problem where need to allow for sign bit on an unsigned enum in a struct bitfield.
  *
  * Revision 2.52  2007/06/27 07:56:08  rjongbloed
@@ -1201,6 +1207,8 @@ class OpalMediaFormat : public PCaselessString
     virtual bool IsValidForProtocol(const PString & protocol) const;
 
     virtual time_t GetCodecBaseTime() const;
+
+    virtual ostream & PrintOptions(ostream & strm) const;
 
   protected:
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
