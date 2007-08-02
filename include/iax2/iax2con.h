@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.18  2007/08/02 23:25:07  dereksmithies
+ *  Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
+ *  will correctly advise on receiving an incoming call.
+ *
  *  Revision 1.17  2007/08/01 02:20:24  dereksmithies
  *  Change the way we accept/reject incoming iax2 calls. This change makes us
  *  more compliant to the OPAL standard. Thanks Craig for pointing this out.
@@ -340,8 +344,15 @@ class IAX2Connection : public OpalConnection
      
      This method is called right at the very beginning of the call sequence 
   */
-  virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
-  
+  virtual BOOL OnIncomingConnection(unsigned int options, 
+				    OpalConnection::StringOptions * stringOptions);
+
+  /**A convenience function to immitate the above */
+  virtual BOOL OnIncomingConnection(unsigned int options);
+
+  /**A second convenience function to immitate the above function */
+  virtual BOOL OnIncomingConnection();
+   
     /**We have received a packet from the remote iax endpoint, requeting a call.
        Now, we use this method to invoke the opal components to do their bit.
 

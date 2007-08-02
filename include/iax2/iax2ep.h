@@ -25,6 +25,10 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.14  2007/08/02 23:25:07  dereksmithies
+ *  Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
+ *  will correctly advise on receiving an incoming call.
+ *
  *  Revision 1.13  2007/04/19 06:17:21  csoutheren
  *  Fixes for precompiled headers with gcc
  *
@@ -150,6 +154,8 @@ public:
   /**Flag to indicate if this receiver thread should keep listening for network data */
   BOOL           keepGoing;
 };
+
+
 
 
 /** A class to manage global variables. There is one Endpoint per application. */
@@ -297,9 +303,6 @@ class IAX2EndPoint : public OpalEndPoint
   /**We have an incoming call. Do we accept ? */
   void StartRinging(PString remoteCaller);
   
-  /**Call back for when a connection has closed */
-  void OnConnectionClose(IAX2Connection & con);
-
     /**Handle new incoming connection from listener.
        
     A return value of TRUE indicates that the transport object should be
@@ -314,6 +317,14 @@ class IAX2EndPoint : public OpalEndPoint
   void NewIncomingConnection(IAX2Frame *f  /// Frame carrying the new request.
 			     );
 
+  /**Call back for when a connection has closed */
+  virtual void OnConnectionClose(IAX2Connection & con);
+
+  /*After receiving a New packet, and having decoded it, and worked out who the other person is,
+    we can send a question up to the manager asking if we should accept this call */
+  virtual BOOL OnIncomingConnection(OpalConnection & connection, 
+				    unsigned options, 
+				    OpalConnection::StringOptions * stringOptions);
 
   /**Call back for when a connections is established (we have received
      the first media packet) */

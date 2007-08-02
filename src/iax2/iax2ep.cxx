@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.32  2007/08/02 23:25:07  dereksmithies
+ * Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
+ * will correctly advise on receiving an incoming call.
+ *
  * Revision 1.31  2007/04/22 22:39:42  dereksmithies
  * Lower verbosity of PTRACE statements.
  * Get G711 to work. NOTE - iax2 requires no silence suppression.
@@ -231,9 +235,7 @@ IAX2EndPoint::~IAX2EndPoint()
   if (sock != NULL)
     delete sock; 
   
-
-
-  PTRACE(3, "Endpoint\tDESTRUCTOR of IAX2 endpoint has Finished.");  
+  PTRACE(6, "Endpoint\tDESTRUCTOR of IAX2 endpoint has Finished.");  
 }
 
 void IAX2EndPoint::ReportTransmitterLists()
@@ -245,6 +247,15 @@ BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
   return TRUE;
 }
+
+BOOL IAX2EndPoint::OnIncomingConnection(OpalConnection & connection, 
+					unsigned options, 
+					OpalConnection::StringOptions * stringOptions)
+{
+  PTRACE(3, "IAX2EP\tOnIncomingConnection");
+  return manager.OnIncomingConnection(connection, options, stringOptions);
+}
+
 
 void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 {
@@ -280,20 +291,25 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
     }
   }
   
+  /* take the info in the NEW packet and use it to build information about the
+     person who is calling us */
   IAX2IeData ieData;
   ffp.CopyDataFromIeListTo(ieData);
-
   PString url = BuildUrl(host, userName, ieData.callingNumber);
-/* We have completed the extraction of information process. Now we can build the matching connection */
 
-  IAX2Connection *connection = CreateConnection(*manager.CreateCall(NULL), f->GetConnectionToken(), NULL, url, ieData.callingName);
+/* We have completed the extraction of information process. Now we can 
+   build the matching connection */
+  IAX2Connection *connection = CreateConnection(*manager.CreateCall(NULL), 
+						f->GetConnectionToken(), NULL, 
+						url, ieData.callingName);
   if (!AddConnection(connection)) {
-    PTRACE(2, "IAX2\tFailed to create IAX2Connection for NEW request from " << f->GetConnectionToken());
+    PTRACE(2, "IAX2\tFailed to create IAX2Connection for NEW request from " 
+	   << f->GetConnectionToken());
     delete f;
+    delete connection;
+
     return;
   }
-  
-  connection->OnIncomingConnection(0, NULL);
 
   connection->IncomingEthernetFrame(f);
 }
