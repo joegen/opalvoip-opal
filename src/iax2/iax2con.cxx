@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.26  2007/08/02 23:25:07  dereksmithies
+ * Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
+ * will correctly advise on receiving an incoming call.
+ *
  * Revision 1.25  2007/08/01 05:16:03  dereksmithies
  * Work on getting the different phases right.
  *
@@ -271,8 +275,21 @@ BOOL IAX2Connection::OnIncomingConnection(unsigned int options, OpalConnection::
   originating = FALSE;
   PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
-  return OpalConnection::OnIncomingConnection(options, stringOptions);
+  return endpoint.OnIncomingConnection(*this, options, stringOptions);
 }
+
+BOOL IAX2Connection::OnIncomingConnection(unsigned int options)
+{
+  OpalConnection::StringOptions stringOptions;
+  return IAX2Connection::OnIncomingConnection(options, &stringOptions);
+}
+
+BOOL IAX2Connection::OnIncomingConnection()
+{
+  unsigned int options = 0;
+  return IAX2Connection::OnIncomingConnection(options);
+}
+
 
 void IAX2Connection::OnAlerting()
 {

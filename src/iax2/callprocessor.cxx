@@ -27,6 +27,10 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.14  2007/08/02 23:25:07  dereksmithies
+ * Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
+ * will correctly advise on receiving an incoming call.
+ *
  * Revision 1.13  2007/08/01 05:16:03  dereksmithies
  * Work on getting the different phases right.
  *
@@ -1000,8 +1004,10 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   SetCallNewed();
 
   con->OnSetUp();   //ONLY the  callee (person receiving call) does ownerCall.OnSetUp();
-  PString emptyCalleeName;
-  con->SetAlerting(emptyCalleeName, TRUE);
+
+  PString calleeName = con->GetRemotePartyName();
+  con->SetAlerting(calleeName, TRUE);
+
 
   con->GetEndPoint().GetCodecLengths(selectedCodec, audioCompressedBytes, audioFrameDuration);
   PTRACE(4, "codec frame play duration is " << audioFrameDuration << " ms, which compressed to "
@@ -1019,6 +1025,8 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   r = new IAX2FullFrameSessionControl(this, IAX2FullFrameSessionControl::ringing);
   TransmitFrameToRemoteEndpoint(r, IAX2WaitingForAck::RingingAcked);
   delete src;
+
+  con->OnIncomingConnection();
 }
 
 void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
