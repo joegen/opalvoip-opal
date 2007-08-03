@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2085  2007/08/03 11:00:51  dsandras
+ * Revision 1.2086  2007/08/03 18:43:15  dsandras
+ * Fixed remaining STUN issues.
+ *
+ * Revision 2.84  2007/08/03 11:00:51  dsandras
  * Removed comment. Ooops.
  *
  * Revision 2.83  2007/08/03 10:54:37  dsandras
@@ -1775,7 +1778,7 @@ OpalTransportAddress OpalTransportUDP::GetLocalAddress() const
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL) {
     OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
-    socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, manager.IsLocalAddress(remoteAddress));
+    socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, !manager.IsLocalAddress(remoteAddress));
   }
   return OpalTransportIP::GetLocalAddress();
 }
