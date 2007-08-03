@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.15  2007/08/03 01:24:06  dereksmithies
+ *  Tidyups so it compiles...
+ *
  *  Revision 1.14  2007/08/02 23:25:07  dereksmithies
  *  Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
  *  will correctly advise on receiving an incoming call.
@@ -316,9 +319,6 @@ class IAX2EndPoint : public OpalEndPoint
     */
   void NewIncomingConnection(IAX2Frame *f  /// Frame carrying the new request.
 			     );
-
-  /**Call back for when a connection has closed */
-  virtual void OnConnectionClose(IAX2Connection & con);
 
   /*After receiving a New packet, and having decoded it, and worked out who the other person is,
     we can send a question up to the manager asking if we should accept this call */
