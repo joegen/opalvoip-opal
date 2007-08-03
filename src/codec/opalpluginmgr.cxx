@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2037  2007/08/03 08:05:16  csoutheren
+ * Revision 1.2038  2007/08/03 08:23:22  csoutheren
+ * Cleanups
+ *
+ * Revision 2.36  2007/08/03 08:05:16  csoutheren
  * Add PrintOn for plugin video caps
  *
  * Revision 2.35  2007/08/03 07:20:33  csoutheren
@@ -2338,7 +2341,7 @@ BOOL H323VideoPluginCapability::SetCommonOptions(OpalMediaFormat & mediaFormat, 
 
 void H323VideoPluginCapability::PrintOn(std::ostream & strm) const
 {
-  strm << *this << " pluginSubType=" << pluginSubType << ",options=\n";
+  strm << GetMediaFormat() << " pluginSubType=" << pluginSubType << ",options=\n";
   GetMediaFormat().PrintOptions(strm);
 }
 
@@ -2676,14 +2679,19 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
   if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI, CIF16_WIDTH, CIF16_HEIGHT, formatDefined))
     return FALSE;
 
-  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), h263.m_maxBitRate*100))
+  unsigned maxBitRate = h263.m_maxBitRate*100;
+  if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate))
     return FALSE;
+  unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
+  if (targetBitRate > maxBitRate)
+    mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(),     maxBitRate);
 
-  mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,      h263.m_unrestrictedVector);
-  mediaFormat.SetOptionBoolean(h323_arithmeticCoding_tag,        h263.m_arithmeticCoding);
-  mediaFormat.SetOptionBoolean(h323_advancedPrediction_tag,      h263.m_advancedPrediction);
-  mediaFormat.SetOptionBoolean(h323_pbFrames_tag,                h263.m_pbFrames);
-  mediaFormat.SetOptionBoolean(h323_errorCompensation_tag,       h263.m_errorCompensation);
+  mediaFormat.SetOptionBoolean(h323_unrestrictedVector_tag,                h263.m_unrestrictedVector);
+  mediaFormat.SetOptionBoolean(h323_arithmeticCoding_tag,                  h263.m_arithmeticCoding);
+  mediaFormat.SetOptionBoolean(h323_advancedPrediction_tag,                h263.m_advancedPrediction);
+  mediaFormat.SetOptionBoolean(h323_pbFrames_tag,                          h263.m_pbFrames);
+  mediaFormat.SetOptionBoolean(h323_errorCompensation_tag,                 h263.m_errorCompensation);
+  mediaFormat.SetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, h263.m_temporalSpatialTradeOffCapability);
 
   if (h263.HasOptionalField(H245_H263VideoCapability::e_hrd_B))
     mediaFormat.SetOptionInteger(h323_hrdB_tag, h263.m_hrd_B);
