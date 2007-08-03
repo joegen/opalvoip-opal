@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2007  2007/07/02 18:53:36  csoutheren
+ * Revision 1.2008  2007/08/03 08:04:56  csoutheren
+ * Add PrintOn for plugin video caps
+ *
+ * Revision 2.6  2007/07/02 18:53:36  csoutheren
  * Exposed classes
  *
  * Revision 2.5  2007/06/22 05:41:47  rjongbloed
@@ -345,6 +348,8 @@ class H323VideoPluginCapability : public H323VideoCapability,
     virtual unsigned GetSubType() const;
 
     static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
+
+    virtual void PrintOn(std::ostream & strm) const;
 
   protected:
     unsigned pluginSubType;
