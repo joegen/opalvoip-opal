@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.33  2007/08/03 01:43:15  rjongbloed
+ * Added missing function implementation to IAX2 code so DLL can link.
+ *
  * Revision 1.32  2007/08/02 23:25:07  dereksmithies
  * Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
  * will correctly advise on receiving an incoming call.
@@ -246,6 +249,10 @@ void IAX2EndPoint::ReportTransmitterLists()
 BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
   return TRUE;
+}
+
+void IAX2EndPoint::OnConnectionClose(IAX2Connection & /*con*/)
+{
 }
 
 BOOL IAX2EndPoint::OnIncomingConnection(OpalConnection & connection, 
