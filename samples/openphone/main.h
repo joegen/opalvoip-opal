@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.43  2007/08/03 01:00:47  rjongbloed
+ * Fixed compile on DevStudio 2003
+ *
  * Revision 1.42  2007/07/27 01:42:10  rjongbloed
  * Added cut, copy, paste and most important DELETE of speed dials.
  *
@@ -164,6 +167,7 @@
 #endif
 
 #include <wx/wx.h>
+#include <wx/dataobj.h>
 
 #include <opal/manager.h>
 #include <opal/pcss.h>
