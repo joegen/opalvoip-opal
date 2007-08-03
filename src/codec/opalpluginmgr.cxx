@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2036  2007/08/03 07:20:33  csoutheren
+ * Revision 1.2037  2007/08/03 08:05:16  csoutheren
+ * Add PrintOn for plugin video caps
+ *
+ * Revision 2.35  2007/08/03 07:20:33  csoutheren
  * Add extra constructor initialisations for plugin capabilities with multiple ancestors
  *
  * Revision 2.34  2007/08/03 03:41:59  csoutheren
@@ -2331,6 +2334,12 @@ BOOL H323VideoPluginCapability::SetCommonOptions(OpalMediaFormat & mediaFormat, 
     return FALSE;
 
   return TRUE;
+}
+
+void H323VideoPluginCapability::PrintOn(std::ostream & strm) const
+{
+  strm << *this << " pluginSubType=" << pluginSubType << ",options=\n";
+  GetMediaFormat().PrintOptions(strm);
 }
 
 /////////////////////////////////////////////////////////////////////////////
