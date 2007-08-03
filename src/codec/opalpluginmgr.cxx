@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2035  2007/08/03 03:41:59  csoutheren
+ * Revision 1.2036  2007/08/03 07:20:33  csoutheren
+ * Add extra constructor initialisations for plugin capabilities with multiple ancestors
+ *
+ * Revision 2.34  2007/08/03 03:41:59  csoutheren
  * Fixed usage of tolower in codec control parsing
  * Ensure plugin media options can override existing values
  * Add extra logging
@@ -310,6 +313,7 @@ static BOOL CallCodecControl(const PluginCodec_Definition * codec,
   if (codecControls == NULL)
     return FALSE;
 
+  // look for explicit named control
   while (codecControls->name != NULL) {
     if (strcasecmp(codecControls->name, name) == 0) {
       retVal = (*codecControls->control)(codec, context, name, parm, parmLen);
@@ -1187,6 +1191,7 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
         const OpalMediaOption & option = fmt.GetOption(i);
         list += option.GetName();
         list += option.AsString();
+        PTRACE(5, "OpalPlugin\tSetting codec control '" << option.GetName() << "'=" << option.AsString());
       }
       char ** _options = list.ToCharArray();
       unsigned int optionsLen = sizeof(_options);
@@ -1433,7 +1438,7 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
 H323AudioPluginCapability::H323AudioPluginCapability(const PluginCodec_Definition * _encoderCodec,
                               const PluginCodec_Definition * _decoderCodec,
                               unsigned _pluginSubType)
-: H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
+: H323AudioCapability(), H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
   pluginSubType(_pluginSubType)
 { 
   SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
@@ -1445,7 +1450,7 @@ H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaForma
                           unsigned maxFramesPerPacket,
                           unsigned /*recommendedFramesPerPacket*/,
                           unsigned _pluginSubType)
-  : H323PluginCapabilityInfo(_baseName),
+  : H323AudioCapability(), H323PluginCapabilityInfo(_baseName),
     pluginSubType(_pluginSubType)
   { 
     for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
@@ -2303,7 +2308,7 @@ BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, un
 H323VideoPluginCapability::H323VideoPluginCapability(const PluginCodec_Definition * _encoderCodec,
                           const PluginCodec_Definition * _decoderCodec,
                           unsigned _pluginSubType)
-  : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
+  : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec), H323VideoCapability(),
     pluginSubType(_pluginSubType)
 { 
 }
