@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.6  2007/08/03 07:21:02  csoutheren
+ * Remove warnings
+ *
  * Revision 1.5  2007/07/05 06:36:22  rjongbloed
  * Fixed MSVC compiler warning.
  *
@@ -223,7 +226,7 @@ OpalRFC4175Decoder::OpalRFC4175Decoder(
   Initialise();
 }
 
-BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output)
+BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & /*output*/)
 {
   if (input.GetPayloadSize() < 8) {
     PTRACE(1,"RFC4175\tinput frame too small for header");
@@ -288,7 +291,6 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 
   // if this is the first frame, allocate the destination frame
   if (firstFrame) {
-
   }
 
   return FALSE;
