@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.34  2007/08/03 02:31:44  rjongbloed
+ * Duelling patches! Removed previous code.
+ *
  * Revision 1.33  2007/08/03 01:43:15  rjongbloed
  * Added missing function implementation to IAX2 code so DLL can link.
  *
@@ -249,10 +252,6 @@ void IAX2EndPoint::ReportTransmitterLists()
 BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
   return TRUE;
-}
-
-void IAX2EndPoint::OnConnectionClose(IAX2Connection & /*con*/)
-{
 }
 
 BOOL IAX2EndPoint::OnIncomingConnection(OpalConnection & connection, 
