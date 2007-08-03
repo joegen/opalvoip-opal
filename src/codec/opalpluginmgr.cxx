@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2034  2007/07/24 12:59:44  rjongbloed
+ * Revision 1.2035  2007/08/03 03:41:59  csoutheren
+ * Fixed usage of tolower in codec control parsing
+ * Ensure plugin media options can override existing values
+ * Add extra logging
+ *
+ * Revision 2.33  2007/07/24 12:59:44  rjongbloed
  * Fixed G.723.1 plug in capability matching, should not include Annex A option.
  * Made sure all integer OpalMediaOptions are unsigned so is compatible with H.245 generic capabilities.
  *
@@ -379,6 +384,7 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
   int retVal;
   if (CallCodecControl(_encoderCodec, NULL, GET_CODEC_OPTIONS_CONTROL, &_options, &optionsLen, retVal) && (_options != NULL)) {
     if (_encoderCodec->version < PLUGIN_CODEC_VERSION_OPTIONS) {
+      PTRACE(5, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using old style method");
       // Old scheme
       char const * const * options = (char **)_options;
       while (options[0] != NULL && options[1] != NULL && options[2] != NULL) {
@@ -433,26 +439,31 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
           char ** array = tokens.ToCharArray();
           switch (toupper(type[0])) {
             case 'E':
-              format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)));
+              PTRACE(4, "OpalPlugin\tAdding enum option '" << key << "' " << tokens.GetSize() << " options");
+              format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)), TRUE);
               break;
             case 'B':
-              format.AddOption(new OpalMediaOptionBoolean(key, false, op, val != NULL && (val[0] == '1' || toupper(val[0] == 'T'))));
+              PTRACE(5, "OpalPlugin\tAdding boolean option '" << key << "'=" << val);
+              format.AddOption(new OpalMediaOptionBoolean(key, false, op, (val != NULL) && ((val[0] == '1') || (toupper(val[0]) == 'T'))), TRUE);
               break;
             case 'R':
+              PTRACE(5, "OpalPlugin\tAdding real option '" << key << "'=" << val);
               if (tokens.GetSize() < 2)
                 format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal()));
               else
-                format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal(), tokens[0].AsReal(), tokens[1].AsReal()));
+                format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal(), tokens[0].AsReal(), tokens[1].AsReal()), TRUE);
               break;
             case 'I':
+              PTRACE(5, "OpalPlugin\tAdding integer option '" << key << "'=" << val);
               if (tokens.GetSize() < 2)
-                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()));
+                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()), TRUE);
               else
-                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()));
+                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()), TRUE);
               break;
             case 'S':
             default:
-              format.AddOption(new OpalMediaOptionString(key, false, val));
+              PTRACE(5, "OpalPlugin\tAdding string option '" << key << "'=" << val);
+              format.AddOption(new OpalMediaOptionString(key, false, val), TRUE);
               break;
           }
           free(array);
@@ -463,6 +474,7 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
     else {
       // New scheme
       struct PluginCodec_Option const * const * options = (struct PluginCodec_Option const * const *)_options;
+      PTRACE_IF(5, options != NULL, "Adding options to OpalMediaFormat " << format << " using new style method");
       while (*options != NULL) {
         struct PluginCodec_Option const * option = *options++;
         OpalMediaOption * newOption;
@@ -542,6 +554,9 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
     }
     CallCodecControl(_encoderCodec, NULL, FREE_CODEC_OPTIONS_CONTROL, _options, &optionsLen, retVal);
   }
+
+  PStringStream str; format.PrintOptions(str);
+  PTRACE(5, "OpalPlugin\tOpalMediaFormat " << format << " has options\n" << str);
 }
 
 static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, const PluginCodec_H323GenericCodecData * genericData)
@@ -1552,9 +1567,9 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       OpalMediaFormat * instance = OpalMediaFormatFactory::CreateInstance(*r);
       if (instance == NULL) {
-        PTRACE(4, "OpalPlugin\nCannot instantiate opal media format " << *r);
+        PTRACE(4, "OpalPlugin\tCannot instantiate opal media format " << *r);
       } else {
-        PTRACE(4, "OpalPlugin\nCreating media format " << *r);
+        PTRACE(4, "OpalPlugin\tCreating media format " << *r);
       }
     }
   }
@@ -1566,9 +1581,9 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
     for (r = keyList.begin(); r != keyList.end(); ++r) {
       H323StaticPluginCodec * instance = PFactory<H323StaticPluginCodec>::CreateInstance(*r);
       if (instance == NULL) {
-        PTRACE(4, "OpalPlugin\nCannot instantiate static codec plugin " << *r);
+        PTRACE(4, "OpalPlugin\tCannot instantiate static codec plugin " << *r);
       } else {
-        PTRACE(4, "OpalPlugin\nLoading static codec plugin " << *r);
+        PTRACE(4, "OpalPlugin\tLoading static codec plugin " << *r);
         RegisterStaticCodec(*r, instance->Get_GetAPIFn(), instance->Get_GetCodecFn());
       }
     }
@@ -1606,18 +1621,18 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
 {
   PluginCodec_GetCodecFunction getCodecs;
   if (!dll.GetFunction(PString(signatureFunctionName), (PDynaLink::Function &)getCodecs)) {
-    PTRACE(2, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
+    PTRACE(2, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " is not a plugin codec");
     return;
   }
 
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecs)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
   if (codecs == NULL || count == 0) {
-    PTRACE(1, "OpalPlugin\nPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
+    PTRACE(1, "OpalPlugin\tPlugin Codec DLL " << dll.GetName() << " contains no codec definitions");
     return;
   } 
 
-  PTRACE(3, "OpalPlugin\nLoading plugin codec " << dll.GetName());
+  PTRACE(3, "OpalPlugin\tLoading plugin codec " << dll.GetName());
 
   switch (code) {
 
@@ -1644,7 +1659,7 @@ void OpalPluginCodecManager::RegisterStaticCodec(
   unsigned int count;
   PluginCodec_Definition * codecs = (*getCodecFn)(&count, PLUGIN_CODEC_VERSION_OPTIONS);
   if (codecs == NULL || count == 0) {
-    PTRACE(1, "OpalPlugin\nStatic codec " << name << " contains no codec definitions");
+    PTRACE(1, "OpalPlugin\tStatic codec " << name << " contains no codec definitions");
     return;
   } 
 
@@ -1708,13 +1723,13 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
           RegisterPluginPair(&encoder, &decoder);
           found = TRUE;
 
-          PTRACE(3, "OpalPlugin\nPlugin codec " << encoder.descr << " defined");
+          PTRACE(3, "OpalPlugin\tPlugin codec " << encoder.descr << " defined");
           break;
         }
       }
     }
     if (!found && isEncoder) {
-      PTRACE(2, "OpalPlugin\nCannot find decoder for plugin encoder " << encoder.descr);
+      PTRACE(2, "OpalPlugin\tCannot find decoder for plugin encoder " << encoder.descr);
     }
   }
 }
@@ -1778,12 +1793,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   // add the media format
   if (defaultSessionID == 0) {
-    PTRACE(1, "OpalPlugin\nCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(1, "OpalPlugin\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec);
     OpalMediaFormat existingFormat(fmtName);
     if (existingFormat.IsValid() && existingFormat.GetCodecBaseTime() >= timeStamp) {
-      PTRACE(2, "OpalPlugin\nNewer media format " << fmtName << " already exists");
+      PTRACE(2, "OpalPlugin\tNewer media format " << fmtName << " already exists");
       //AddFormat(existingFormat);
     } else {
       if (existingFormat.IsValid()) {
@@ -1791,7 +1806,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
         GetMediaFormatList() -= existingFormat;
       }
 
-      PTRACE(3, "OpalPlugin\nCreating new media format" << fmtName);
+      PTRACE(3, "OpalPlugin\tCreating new media format " << fmtName);
 
       OpalMediaFormat * mediaFormat = NULL;
 
@@ -1911,7 +1926,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(1, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(1, "OpalPlugin\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
     case PluginCodec_MediaTypeAudioStreamed:
@@ -1926,7 +1941,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       }
       else
       {
-        PTRACE(1, "OpalPlugin\nAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
+        PTRACE(1, "OpalPlugin\tAudio plugin defines unsupported clock rate " << encoderCodec->sampleRate);
       }
       break;
 #endif
@@ -1946,11 +1961,12 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
       (hasCodecControl && (retVal == 0))
        ) {
-    PTRACE(2, "OpalPlugin\nNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
+    PTRACE(2, "OpalPlugin\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
     return;
   }
 
 #if OPAL_H323
+  PTRACE(4, "OpalPlugin\tDeferring creation of H.323 capability for plugin codec " << encoderCodec->destFormat);
   capabilityCreateList.push_back(CapabilityListCreateEntry(encoderCodec, decoderCodec));
 #endif
 }
@@ -1981,7 +1997,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
   }
 
   if (map == NULL) {
-    PTRACE(1, "OpalPlugin\nCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
+    PTRACE(1, "OpalPlugin\tCannot create capability for unknown plugin codec media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } 
   else if (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_undefined) {
     for (PINDEX i = 0; map[i].pluginCapType >= 0; i++) {
@@ -2000,6 +2016,7 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
 
 #if OPAL_VIDEO
             case PluginCodec_MediaTypeVideo:
+              PTRACE(4, "OpalPlugin\tWarning - no capability creation function for " << CreateCodecName(encoderCodec));
               // all video caps are created using the create functions
               break;
 #endif // OPAL_VIDEO
@@ -2068,7 +2085,7 @@ H323Capability *CreateGenericAudioCap(const PluginCodec_Definition * encoderCode
   if (pluginData != NULL )
     return new H323CodecPluginGenericAudioCapability(encoderCodec, decoderCodec, pluginData);
 
-  PTRACE(1, "OpalPlugin\nGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
+  PTRACE(1, "OpalPlugin\tGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
   return NULL;
 }
 
@@ -2122,7 +2139,7 @@ H323Capability *CreateGenericVideoCap(const PluginCodec_Definition * encoderCode
   if (pluginData != NULL )
     return new H323CodecPluginGenericVideoCapability(encoderCodec, decoderCodec, pluginData);
 
-  PTRACE(1, "OpalPlugin\nGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
+  PTRACE(1, "OpalPlugin\tGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
   return NULL;
 }
 
@@ -2131,6 +2148,7 @@ H323Capability * CreateH261Cap(const PluginCodec_Definition * encoderCodec,
                                const PluginCodec_Definition * decoderCodec,
                                int /*subType*/) 
 {
+  PTRACE(4, "OpalPlugin\tCreating H.261 plugin capability");
   return new H323H261PluginCapability(encoderCodec, decoderCodec);
 }
 
@@ -2138,6 +2156,7 @@ H323Capability * CreateH263Cap(const PluginCodec_Definition * encoderCodec,
                                const PluginCodec_Definition * decoderCodec,
                                int /*subType*/) 
 {
+  PTRACE(4, "OpalPlugin\tCreating H.263 plugin capability");
   return new H323H263PluginCapability(encoderCodec, decoderCodec);
 }
 
@@ -2523,6 +2542,9 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   H245_H263VideoCapability & h263 = cap;
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
+
+  PStringStream str; mediaFormat.PrintOptions(str);
+  PTRACE(5, "OpalPlugin\tCreating capability for " << mediaFormat << ", options=" << str);
 
   SetTransmittedCap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, H245_H263VideoCapability::e_slowSqcifMPI, h263.m_slowSqcifMPI);
   SetTransmittedCap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  H245_H263VideoCapability::e_slowQcifMPI,  h263.m_slowQcifMPI);
