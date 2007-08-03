@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2083  2007/07/24 13:46:45  rjongbloed
+ * Revision 1.2084  2007/08/03 10:54:37  dsandras
+ * Fixed warning on GNU/Linux.
+ *
+ * Revision 2.82  2007/07/24 13:46:45  rjongbloed
  * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
  *
  * Revision 2.81  2007/07/23 06:32:52  csoutheren
@@ -1216,6 +1219,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, port, exclusive),
     listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive, endpoint.GetManager().GetSTUN()))
 {
+  std::cout << endpoint.GetManager().GetSTUN() << endl << std::flush;
 }
 
 
@@ -1225,6 +1229,7 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, option),
     listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetSTUN()))
 {
+  std::cout << endpoint.GetManager().GetSTUN() << std::endl << std::flush;
 }
 
 
@@ -1669,8 +1674,8 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    PIPSocket::Address remAddr,
                                    WORD remPort)
   : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
-  , preReadPacket(packet)
   , manager(ep.GetManager())
+  , preReadPacket(packet)
 {
   remoteAddress = remAddr;
   remotePort = remPort;
