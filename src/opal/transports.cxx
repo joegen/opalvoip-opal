@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2084  2007/08/03 10:54:37  dsandras
+ * Revision 1.2085  2007/08/03 11:00:51  dsandras
+ * Removed comment. Ooops.
+ *
+ * Revision 2.83  2007/08/03 10:54:37  dsandras
  * Fixed warning on GNU/Linux.
  *
  * Revision 2.82  2007/07/24 13:46:45  rjongbloed
@@ -1219,7 +1222,6 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, port, exclusive),
     listenerBundle(PMonitoredSockets::Create(binding.AsString(), !exclusive, endpoint.GetManager().GetSTUN()))
 {
-  std::cout << endpoint.GetManager().GetSTUN() << endl << std::flush;
 }
 
 
@@ -1229,7 +1231,6 @@ OpalListenerUDP::OpalListenerUDP(OpalEndPoint & endpoint,
   : OpalListenerIP(endpoint, binding, option),
     listenerBundle(PMonitoredSockets::Create(binding.GetHostName(), !exclusiveListener, endpoint.GetManager().GetSTUN()))
 {
-  std::cout << endpoint.GetManager().GetSTUN() << std::endl << std::flush;
 }
 
 
