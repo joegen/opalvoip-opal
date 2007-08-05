@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2017  2006/06/21 04:53:15  csoutheren
+ * Revision 1.2017.6.1  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.16  2006/06/21 04:53:15  csoutheren
  * Updated H.245 to version 13
  *
  * Revision 2.15  2006/06/20 05:21:39  csoutheren
@@ -718,7 +721,7 @@ Q931::CauseValues H323TranslateFromCallEndReason(
   H225_ReleaseCompleteReason & rcReason
 );
 
-PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor);
+void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor);
 
 
 #if PTRACING

@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: buildopts.h.in,v $
+ * Revision 1.24.2.7  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
  * Revision 1.24.2.6  2007/06/12 16:29:02  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
@@ -167,7 +170,7 @@
 #undef  OPAL_T120DATA
 #undef  OPAL_H450
 #undef  OPAL_H460
-#define OPAL_RFC4175 1
+#undef  OPAL_RFC4175
 
 #ifdef OPAL_H450
 #define H323_H450 OPAL_H450

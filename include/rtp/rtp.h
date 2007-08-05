@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.8  2007/06/12 11:54:42  hfriederich
+ * Revision 1.2032.2.9  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.31.2.8  2007/06/12 11:54:42  hfriederich
  * (Backport from HEAD)
  * Add Reset function so we can reload used control frames
  *
@@ -725,6 +728,13 @@ class RTP_Session : public PObject
     virtual BOOL WriteData(
       RTP_DataFrame & frame   ///<  Frame to write to the RTP session
     ) = 0;
+    
+    /** Write data frame to the RTP channel outside the normal stream of media
+      * Used for RFC2833 packets
+      */
+    virtual BOOL WriteOOBData(
+      RTP_DataFrame & frame
+    );
 
     /**Write a control frame from the RTP channel.
       */
@@ -1030,6 +1040,7 @@ class RTP_Session : public PObject
     BOOL          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
+    DWORD         lastSentTimestamp;
     BOOL	  allowSyncSourceInChange;
     BOOL	  allowRemoteTransmitAddressChange;
     BOOL	  allowSequenceChange;
@@ -1038,11 +1049,16 @@ class RTP_Session : public PObject
     unsigned      rxStatisticsInterval;
     WORD          lastSentSequenceNumber;
     WORD          expectedSequenceNumber;
-    DWORD         lastSentTimestamp;
     PTimeInterval lastSentPacketTime;
     PTimeInterval lastReceivedPacketTime;
     WORD          lastRRSequenceNumber;
     PINDEX        consecutiveOutOfOrderPackets;
+    
+    PMutex        sendDataMutex;
+    DWORD         timeStampOut;               // current timestamp for this session
+    DWORD         timeStampOffs;              // offset between incoming media timestamp and timeStampOut
+    BOOL          timeStampOffsetEstablished; // TRUE if timeStampOffs has been established by media
+    BOOL          timeStampIsPremedia;        // TRUE if timeStampOutTick has been initialised
 
     // Statistics
     DWORD packetsSent;
@@ -1219,9 +1235,14 @@ class RTP_UDP : public RTP_Session
       */
     virtual BOOL ReadData(RTP_DataFrame & frame, BOOL loop);
 
-    /**Write a data frame from the RTP channel.
+    /**Write a data frame to the RTP channel.
       */
     virtual BOOL WriteData(RTP_DataFrame & frame);
+    
+    /** Write data frame to the RTP channel outside the normal stream of media
+      * Used for RFC2833 packets
+      */
+    virtual BOOL WriteOOBData(RTP_DataFrame & frame);
 
     /**Write a control frame from the RTP channel.
       */

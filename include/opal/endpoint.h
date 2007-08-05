@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.h,v $
- * Revision 1.2043.2.7  2007/05/28 16:41:44  hfriederich
+ * Revision 1.2043.2.8  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.42.2.7  2007/05/28 16:41:44  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.42.2.6  2007/03/30 06:44:45  hfriederich
@@ -797,6 +800,17 @@ class OpalEndPoint : public PObject
     /**Get the initial bandwidth parameter.
      */
     WORD GetDefaultSignalPort() const { return defaultSignalPort; }
+    
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info
+    ) { productInfo = info; }
+    
 
     /**Get the default local party name for all connections on this endpoint.
       */
@@ -886,6 +900,7 @@ class OpalEndPoint : public PObject
     PCaselessString prefixName;
     unsigned        attributeBits;
     WORD            defaultSignalPort;
+    OpalProductInfo productInfo;
     PString         defaultLocalPartyName;
     PString         defaultDisplayName;
 

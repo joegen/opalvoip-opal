@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2025.2.3  2007/03/29 22:07:04  hfriederich
+ * Revision 1.2025.2.4  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.24.2.3  2007/03/29 22:07:04  hfriederich
  * (Backport from HEAD)
  * Add extra logging
  *
@@ -416,6 +419,16 @@ class OpalTranscoder : public OpalMediaFormatPair
 
     virtual BOOL CallCodecControl(const char *, void *,  unsigned int *, int &)
     { return -1; }
+    
+    void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
+    { payloadTypeMap = v; }
+    
+    void AddRTPPayloadMapping(RTP_DataFrame::PayloadTypes from, RTP_DataFrame::PayloadTypes to)
+    { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
+    
+    RTP_DataFrame::PayloadTypes GetPayloadType(
+      BOOL input      ///<  Flag for input or output data size
+    ) const;
   //@}
 
   protected:
@@ -427,13 +440,6 @@ class OpalTranscoder : public OpalMediaFormatPair
     RTP_DataFrame::PayloadMapType payloadTypeMap;
     
     BOOL outputIsRTP, inputIsRTP;
-
-  public:
-    void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
-    { payloadTypeMap = v; }
-
-    void AddRTPPayloadMapping(RTP_DataFrame::PayloadTypes from, RTP_DataFrame::PayloadTypes to)
-    { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
 };
 
 
