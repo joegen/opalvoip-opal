@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.10  2007/06/12 16:29:03  hfriederich
+ * Revision 1.2142.2.11  2007/08/05 13:12:20  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.141.2.10  2007/06/12 16:29:03  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
  *   subsystem
@@ -611,7 +614,6 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   mimeForm = FALSE;
   maxRetries = 10;
   lastSentCSeq = 0;
-  userAgentString = "OPAL/2.0";
 
   transactions.DisallowDeleteObjects();
   activeSIPHandlers.AllowDeleteObjects();
@@ -679,15 +681,6 @@ SIPEndPoint::~SIPEndPoint()
   GarbageCollector(garbageTimer, 0);
   
   PTRACE(3, "SIP\tDeleted endpoint.");
-}
-
-
-PStringArray SIPEndPoint::GetDefaultListeners() const
-{
-  PStringArray listenerAddresses = OpalEndPoint::GetDefaultListeners();
-  if (!listenerAddresses.IsEmpty())
-    listenerAddresses.AppendString(psprintf("udp$*:%u", defaultSignalPort));
-  return listenerAddresses;
 }
 
 
@@ -1366,6 +1359,9 @@ BOOL SIPEndPoint::Register(
     aor = user;
   else
     aor = user + '@' + host;
+  
+  if (expire == 0)
+    expire = GetRegistrarTimeToLive().GetSeconds();
     
   return Register(expire, aor, authName, password, authRealm, minRetryTime, maxRetryTime);
 }
@@ -1650,30 +1646,22 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
 }
 
 
-SIPURL SIPEndPoint::GetRegisteredPartyName(const PString & host)
+SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 {
-  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
   
   if (handler == NULL) 
     return GetDefaultRegisteredPartyName();
-
+  
   return handler->GetTargetAddress();
 }
 
 
 SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 {
-  PString partyName = GetDefaultLocalPartyName();
-
-  PIPSocket::Address localIP(PIPSocket::GetDefaultIpAny());
-  WORD localPort = GetDefaultSignalPort();
-  if (!GetListeners().IsEmpty())
-    GetListeners()[0].GetLocalAddress().GetIpAndPort(localIP, localPort);
-  if (localIP.IsAny())
-    localIP = PIPSocket::GetHostName();
-  OpalTransportAddress address = OpalTransportAddress(localIP, localPort, "udp");
-  SIPURL party(partyName, address, localPort);
-  return party;
+  SIPURL rpn(GetDefaultLocalPartyName(), PIPSocket::GetHostName(), GetDefaultSignalPort());
+  rpn.SetDisplayName(GetDefaultDisplayName());
+  return rpn;
 }
 
 
