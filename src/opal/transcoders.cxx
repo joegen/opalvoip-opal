@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.5  2007/05/03 10:37:51  hfriederich
+ * Revision 1.2029.2.6  2007/08/05 13:12:19  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.28.2.5  2007/05/03 10:37:51  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -259,14 +262,27 @@ BOOL OpalTranscoder::IssueCommand(const OpalMediaCommand & command,
 }
 
 
+RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
+{
+  RTP_DataFrame::PayloadTypes pt = (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
+  if (payloadTypeMap.size() > 0) {
+    RTP_DataFrame::PayloadMapType::const_iterator iter = payloadTypeMap.find(pt);
+    if (iter != payloadTypeMap.end())
+      pt = iter->second;
+  }
+  
+  return pt;
+}
+
+
 BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
-  RTP_DataFrame::PayloadTypes pt;
-    
-  if (input.GetPayloadSize()==0)
+  // if no input payload, then nothing to convert
+  if (input.GetPayloadSize() == 0)
     return TRUE;
-
+  
+  // make sure there is at least one output frame available
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
   else {
@@ -274,37 +290,36 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
       output.RemoveAt(1);
   }
   
-  pt = outputMediaFormat.GetPayloadType();
-  
-  if (pt >= RTP_DataFrame::IllegalPayloadType)
-    output[0].SetPayloadType(RTP_DataFrame::MaxPayloadType);
-  else if (payloadTypeMap.size() == 0)
-    output[0].SetPayloadType(pt);
-  else {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(pt);
-    if (r != payloadTypeMap.end())
-      output[0].SetPayloadType(r->second);
-    else
-      output[0].SetPayloadType(pt);
-  }
+  // set the output timestamp and marker bit
   output[0].SetTimestamp(input.GetTimestamp());
   output[0].SetMarker(input.GetMarker());
-
-  pt = inputMediaFormat.GetPayloadType();
-  if (pt >= RTP_DataFrame::IllegalPayloadType) {
-    pt = RTP_DataFrame::MaxPayloadType;
-  }
-  if (payloadTypeMap.size() != 0) {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(pt);
+  
+  // set the output payload type directly from the output media format
+  // and the input payload directly from the input media format
+  output[0].SetPayloadType(outputMediaFormat.GetPayloadType());
+  RTP_DataFrame::PayloadTypes pt = inputMediaFormat.GetPayloadType();
+  
+  // map payload using payload map
+  if (payloadTypeMap.size() > 0) {
+    
+    // map output payload type
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(outputMediaFormat.GetPayloadType());
+    if (r != payloadTypeMap.end())
+      output[0].SetPayloadType(r->second);
+    
+    // map input payload type
+    r = payloadTypeMap.find(inputMediaFormat.GetPayloadType());
     if (r != payloadTypeMap.end()) 
       pt = r->second;
   }
-
+  
+  // do not transcode if no match
   if (pt != input.GetPayloadType()) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
+    output.RemoveAll();
     return TRUE;
   }
-
+  
   return Convert(input, output[0]);
 }
 
@@ -446,7 +461,7 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
 OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList & formats)
 {
   OpalMediaFormatList possibleFormats;
-
+  
   // Run through the formats connection can do directly and calculate all of
   // the possible formats, including ones via a transcoder
   for (PINDEX f = 0; f < formats.GetSize(); f++) {
@@ -454,11 +469,21 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
     possibleFormats += format;
     OpalMediaFormatList srcFormats = GetSourceFormats(format);
     for (PINDEX i = 0; i < srcFormats.GetSize(); i++) {
-      if (GetDestinationFormats(srcFormats[i]).GetSize() > 0)
+      OpalMediaFormatList dstFormats = GetDestinationFormats(srcFormats[i]);
+      if (dstFormats.GetSize() > 0) {
         possibleFormats += srcFormats[i];
+        
+        // if using video, check for two step encoders
+        if (format.GetMediaType() == OpalDefaultVideoMediaType) {
+          for (PINDEX j = 0; j < dstFormats.GetSize(); ++j) {
+            if (dstFormats[j].GetSize() > 0)
+              possibleFormats += dstFormats[j];
+          }
+        }
+      }
     }
   }
-
+  
   return possibleFormats;
 }
 
@@ -472,8 +497,6 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFor
 {
   inputBytesPerFrame = inputBytes;
   outputBytesPerFrame = outputBytes;
-  //partialFrame = inputBytes;
-  //partialBytes = 0;
 }
 
 

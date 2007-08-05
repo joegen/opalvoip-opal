@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2042.2.5  2007/05/30 08:40:09  hfriederich
+ * Revision 1.2042.2.6  2007/08/05 13:12:19  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.41.2.5  2007/05/30 08:40:09  hfriederich
  * (Backport from HEAD)
  * Changes since May 1, 2007. Including Presence code
  *
@@ -299,15 +302,12 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 
 /////////////////////////////////////////////////////////
 
-SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt,
-                               const char * _name,
-                               unsigned _clockRate,
-                               const char * _parms)
+SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _name)
   : payloadType(pt),
-    clockRate(_clockRate),
-    encodingName(_name),
-    parameters(_parms)
+    clockRate(0),
+    encodingName(_name)
 {
+  GetMediaFormat(); // Initialise, if possible
 }
 
 void SDPMediaFormat::PrintOn(ostream & strm) const
@@ -324,9 +324,12 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
 }
 
 
-OpalMediaFormat SDPMediaFormat::GetMediaFormat() const
+const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
-  return OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  if (mediaFormat.IsEmpty()) {
+    mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+  }
+  return mediaFormat;
 }
 
 
@@ -489,7 +492,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
   PINDEX i;
   for (i = 3; i < tokens.GetSize(); i++) {
     if (transport == UDPTL)
-      formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)RTP_DataFrame::DynamicBase, tokens[i], 0));
+      formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)RTP_DataFrame::DynamicBase, tokens[i]));
     else
       formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
   }
@@ -546,8 +549,8 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // find the format that matches the payload type
-  PINDEX fmt;
-  for (fmt = 0; ; fmt++) {
+  PINDEX fmt = 0;
+  for (;;) {
     fmt++;
     if (fmt >= formats.GetSize()) {
       PTRACE(2, "SDP\tMedia attribute " << attr << " found for unknown RTP type " << pt);
@@ -555,6 +558,7 @@ void SDPMediaDescription::SetAttribute(const PString & ostr)
     }
     if (formats[fmt].GetPayloadType() == pt)
       break;
+    fmt++;
   }
   SDPMediaFormat & format = formats[fmt];
 
@@ -619,22 +623,22 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(const OpalMediaType & m
 }
 
 
-void SDPMediaDescription::AddCapabilityFormat(const SDPCapability & capability, const RTP_DataFrame::PayloadMapType & map)
+void SDPMediaDescription::AddMediaFormat(const SDPCapability & capability, const RTP_DataFrame::PayloadMapType & map)
 {
   const OpalMediaFormat & mediaFormat = capability.GetMediaFormat();
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
   const char * encodingName = mediaFormat.GetEncodingName();
-  unsigned clockRate = mediaFormat.GetClockRate();
-
-  RTP_DataFrame::PayloadMapType payloadTypeMap = map;
-  if (payloadTypeMap.size() != 0) {
-    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(payloadType);
-    if (r != payloadTypeMap.end())
+  
+  if (map.size() != 0) {
+    RTP_DataFrame::PayloadMapType::const_iterator r = map.find(payloadType);
+    if (r != map.end())
       payloadType = r->second;
   }
       
-  if (payloadType > RTP_DataFrame::MaxPayloadType || *encodingName == '\0')
+  if (payloadType > RTP_DataFrame::MaxPayloadType)
     return;
+  
+  unsigned clockRate = mediaFormat.GetClockRate();
 
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
@@ -644,7 +648,7 @@ void SDPMediaDescription::AddCapabilityFormat(const SDPCapability & capability, 
       return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(payloadType, encodingName, clockRate);
+  SDPMediaFormat * sdpFormat = new SDPMediaFormat(payloadType, encodingName);
   capability.OnSendingSDP(*sdpFormat);
   AddSDPMediaFormat(sdpFormat);
 }
@@ -665,8 +669,6 @@ void SDPMediaDescription::UpdateCapabilities(SDPCapabilityList & capabilities,
 
 void SDPMediaDescription::CreateRTPMap(const OpalMediaType & mediaType, RTP_DataFrame::PayloadMapType & map) const
 {
-  OpalMediaFormatList list;
-    
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat opalFormat = formats[i].GetMediaFormat();

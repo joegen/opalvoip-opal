@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2047.2.10  2007/06/12 11:54:42  hfriederich
+ * Revision 1.2047.2.11  2007/08/05 13:12:19  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.46.2.10  2007/06/12 11:54:42  hfriederich
  * (Backport from HEAD)
  * Add Reset function so we can reload used control frames
  *
@@ -963,6 +966,13 @@ RTP_Session::RTP_Session(
   ignoreOutOfOrderPackets = TRUE;
   ignorePayloadTypeChanges = TRUE;
   syncSourceOut = PRandom::Number();
+  
+  timeStampOut = PRandom::Number();
+  timeStampOffs = 0;
+  timeStampOffsetEstablished = FALSE;
+  timeStampIsPremedia = FALSE;
+  lastSentPacketTime = PTimer::Tick();
+  
   syncSourceIn = 0;
   allowSyncSourceInChange = FALSE;
   allowRemoteTransmitAddressChange = FALSE;
@@ -1209,74 +1219,86 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
 	 << " dlsr=" << receiver.dlsr);
 }
 
-
 RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal m(sendDataMutex);
+  
   PTimeInterval tick = PTimer::Tick();  // Timestamp set now
 
   frame.SetSequenceNumber(++lastSentSequenceNumber);
   frame.SetSyncSource(syncSourceOut);
 
-  PTRACE_IF(3, packetsSent == 0, "RTP\tFirst sent data:"
-	   " ver=" << frame.GetVersion()
-	   << " pt=" << frame.GetPayloadType()
-	   << " psz=" << frame.GetPayloadSize()
-	   << " m=" << frame.GetMarker()
-	   << " x=" << frame.GetExtension()
-	   << " seq=" << frame.GetSequenceNumber()
-	   << " ts=" << frame.GetTimestamp()
-	   << " src=" << frame.GetSyncSource()
-	   << " ccnt=" << frame.GetContribSrcCount());
-
-  if (packetsSent != 0 && !frame.GetMarker()) {
-    // Only do statistics on subsequent packets
-    DWORD diff = (tick - lastSentPacketTime).GetInterval();
-
-    averageSendTimeAccum += diff;
-    if (diff > maximumSendTimeAccum)
-      maximumSendTimeAccum = diff;
-    if (diff < minimumSendTimeAccum)
-      minimumSendTimeAccum = diff;
-    txStatisticsCount++;
+  // special handling for first packet
+  if (packetsSent == 0) {
+    if (!timeStampIsPremedia) {
+      timeStampOffs = frame.GetTimestamp() - timeStampOut;
+      timeStampOffsetEstablished = TRUE;
+    }
+    frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+    
+    PTRACE(3, "RTP\tFirst sent data:"
+      " ver=" << frame.GetVersion() <<
+      " pt=" << frame.GetPayloadType() <<
+      " psz=" << frame.GetPayloadSize() <<
+      " m=" << frame.GetMarker() <<
+      " x=" << frame.GetExtension() <<
+      " seq=" << frame.GetSequenceNumber() <<
+      " ts=" << frame.GetTimestamp() <<
+      " src=" << frame.GetSyncSource() <<
+      " ccnt=" << frame.GetContribSrcCount());
   }
-
-  lastSentTimestamp = frame.GetTimestamp();
+  else {
+    frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
+    
+    // Only do statistics on subsequent packets
+    if (!frame.GetMarker()) {
+      DWORD diff = (tick - lastSentPacketTime).GetInterval();
+      
+      averageSendTimeAccum += diff;
+      if (diff > maximumSendTimeAccum)
+        maximumSendTimeAccum = diff;
+      if (diff < minimumSendTimeAccum)
+        minimumSendTimeAccum = diff;
+      txStatisticsCount++;
+    }
+  }
+  
   lastSentPacketTime = tick;
-
+  
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
-
+  
   // Call the statistics call-back on the first PDU with total count == 1
   if (packetsSent == 1 && userData != NULL)
     userData->OnTxStatistics(*this);
-
+  
   if (!SendReport())
     return e_AbortTransport;
-
+  
   if (txStatisticsCount < txStatisticsInterval)
     return e_ProcessPacket;
-
+  
   txStatisticsCount = 0;
-
+  
   averageSendTime = averageSendTimeAccum/txStatisticsInterval;
   maximumSendTime = maximumSendTimeAccum;
   minimumSendTime = minimumSendTimeAccum;
-
+  
   averageSendTimeAccum = 0;
   maximumSendTimeAccum = 0;
   minimumSendTimeAccum = 0xffffffff;
-
+  
   PTRACE(3, "RTP\tTransmit statistics: "
-	 " packets=" << packetsSent <<
-	 " octets=" << octetsSent <<
-	 " avgTime=" << averageSendTime <<
-	 " maxTime=" << maximumSendTime <<
-	 " minTime=" << minimumSendTime
-	);
-
+    " packets=" << packetsSent <<
+    " octets=" << octetsSent <<
+    " avgTime=" << averageSendTime <<
+    " maxTime=" << maximumSendTime <<
+    " minTime=" << minimumSendTime
+  );
+  
   if (userData != NULL)
     userData->OnTxStatistics(*this);
-
+  
   return e_ProcessPacket;
 }
 
@@ -1327,16 +1349,19 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
 	   << " ccnt=" << frame.GetContribSrcCount());
   }
   else {
-    if (!ignoreOtherSources && frame.GetSyncSource() != syncSourceIn) {
-      if (allowSyncSourceInChange) {
-	      syncSourceIn = frame.GetSyncSource();
-	      allowSyncSourceInChange = FALSE;
+    if (frame.GetSyncSource() != syncSourceIn) {
+      if (!ignoreOtherSources)
+        syncSourceIn = frame.GetSyncSource();
+      else if (allowSyncSourceInChange) {
+        PTRACE(2, "RTP\tAllowed one SSRC change from SSRC=" << syncSourceIn << " to =" << frame.GetSyncSource());
+        syncSourceIn = frame.GetSyncSource();
+        allowSyncSourceInChange = FALSE;
       }
       else {
-      	PTRACE(2, "RTP\tPacket from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
-	      return e_IgnorePacket; // Non fatal error, just ignore
+        PTRACE(2, "RTP\tPacket from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
+        return e_IgnorePacket; // Non fatal error, just ignore
       }
-    }
+    }    
 
     WORD sequenceNumber = frame.GetSequenceNumber();
     if (sequenceNumber == expectedSequenceNumber) {
@@ -1800,6 +1825,10 @@ DWORD RTP_Session::GetPacketsTooLate() const
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
+BOOL RTP_Session::WriteOOBData(RTP_DataFrame &)
+{
+  return TRUE;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2352,6 +2381,25 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 
   frame.SetSize(pduSize);
   return OnReceiveControl(frame);
+}
+
+BOOL RTP_UDP::WriteOOBData(RTP_DataFrame & frame)
+{
+  PWaitAndSignal m(sendDataMutex);
+  
+  // if media has not already established a timestamp, ensure that OnSendData does not use this one
+  if (!timeStampOffsetEstablished) {
+    timeStampOffs = 0;
+    timeStampIsPremedia = TRUE;
+  }
+  
+  // set the timestamp
+  frame.SetTimestamp(timeStampOffs + timeStampOut + (PTimer::Tick() - lastSentPacketTime).GetInterval() * 8);
+  
+  // write the data
+  BOOL stat = WriteData(frame);
+  timeStampIsPremedia = FALSE;
+  return stat;
 }
 
 
