@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2006.10.1  2007/03/19 23:54:16  hfriederich
+ * Revision 1.2006.10.2  2007/08/05 13:12:14  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.5.10.1  2007/03/19 23:54:16  hfriederich
  * (Backport from HEAD)
  * Add support for Cisco NSE
  *
@@ -83,15 +86,19 @@ class OpalRFC2833Info : public PObject {
     unsigned timestamp;
 };
 
+class OpalConnection;
+
 
 class OpalRFC2833Proto : public PObject {
     PCLASSINFO(OpalRFC2833Proto, PObject);
   public:
     OpalRFC2833Proto(
+      OpalConnection & conn,
       const PNotifier & receiveNotifier
     );
+  ~OpalRFC2833Proto();
 
-    virtual BOOL SendTone(
+    virtual BOOL SendToneAsync(
       char tone,              ///<  DTMF tone code
       unsigned duration       ///<  Duration of tone in milliseconds
     );
@@ -117,13 +124,16 @@ class OpalRFC2833Proto : public PObject {
     ) { payloadType = type; }
 
     const PNotifier & GetReceiveHandler() const { return receiveHandler; }
-    const PNotifier & GetTransmitHandler() const { return transmitHandler; }
 
   protected:
+    void SendAsyncFrame();
+    void TransmitPacket(RTP_DataFrame & frame);
+    
+    OpalConnection & conn;
+    
     PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, ReceivedPacket);
-    PDECLARE_NOTIFIER(RTP_DataFrame, OpalRFC2833Proto, TransmitPacket);
     PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, ReceiveTimeout);
-    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, TransmitEnded);
+    PDECLARE_NOTIFIER(PTimer, OpalRFC2833Proto, AsyncTimeout);
 
     RTP_DataFrame::PayloadTypes payloadType;
 
@@ -143,9 +153,13 @@ class OpalRFC2833Proto : public PObject {
       TransmitEnding
     }         transmitState;
     BYTE      transmitCode;
-    unsigned  transmitTimestamp;
-    PTimer    transmitTimer;
-    PNotifier transmitHandler;
+
+    RTP_Session * rtpSession;
+    PTimer        asyncTransmitTimer;
+    PTimer        asyncDurationTimer;
+    DWORD         transmitTimestamp;
+    BOOL          transmitTimestampSet;
+    PTimeInterval asyncStart;
 };
 
 
