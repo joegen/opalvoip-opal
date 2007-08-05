@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.8  2007/06/12 16:29:02  hfriederich
+ * Revision 1.2059.2.9  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.58.2.8  2007/06/12 16:29:02  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
  *   subsystem
@@ -288,6 +291,7 @@
 #endif
 
 
+#include <opal/buildopts.h>
 #include <opal/connection.h>
 #include <sip/sippdu.h>
 #include <sip/sdpcaps.h>
@@ -491,6 +495,10 @@ class SIPConnection : public OpalConnection
     /**Handle an incoming INVITE request
       */
     virtual void OnReceivedINVITE(SIP_PDU & pdu);
+    
+    /**Handle an incoming Re-INVITE request
+      */
+    virtual void OnReceivedReINVITE(SIP_PDU & pdu);
 
     /**Handle an incoming ACK PDU
       */
@@ -544,8 +552,9 @@ class SIPConnection : public OpalConnection
     virtual void OnReceivedSessionProgress(SIP_PDU & pdu);
   
     /**Handle an incoming Proxy Authentication Required response PDU
+       Returns: TRUE if handled, if FALSE is returned connection is released.
       */
-    virtual void OnReceivedAuthenticationRequired(
+    virtual BOOL OnReceivedAuthenticationRequired(
       SIPTransaction & transaction,
       SIP_PDU & response
     );
@@ -656,7 +665,7 @@ class SIPConnection : public OpalConnection
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
      */
-    BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
+    virtual BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 	
@@ -669,11 +678,6 @@ class SIPConnection : public OpalConnection
       SDPSessionDescription * &,     
       RTP_SessionManager & rtpSessions,
       const OpalMediaType & mediaType
-    );
-	
-    /**Tries to build an SDP answer if an offer was received. Else builds a new SDP offer */
-    virtual BOOL BuildSDPReply(
-      SDPSessionDescription & sdpOut
     );
     
     void AddTransaction(
@@ -703,7 +707,6 @@ class SIPConnection : public OpalConnection
       */
     const PString GetRemotePartyCallbackURL() const;
 
-    PString GetTag() const { return GetIdentifier().AsString(); }
     SIPEndPoint & GetEndPoint() const { return endpoint; }
     const SIPURL & GetTargetAddress() const { return targetAddress; }
     const PStringList & GetRouteSet() const { return routeSet; }
@@ -753,12 +756,13 @@ class SIPConnection : public OpalConnection
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address,
                                     BOOL isLocalAddress = FALSE);
+    
+    BOOL ConstructSDP(SDPSessionDescription & sdpOut, BOOL releaseOnFailure = TRUE);
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
 
     PMutex                transportMutex;
-    PMutex                streamsMutex;
     BOOL                  local_hold;
     BOOL                  remote_hold;
     PString               localPartyAddress;
@@ -769,7 +773,6 @@ class SIPConnection : public OpalConnection
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
-    BOOL                  sentTrying;
 
     SIPTransactionJobQueue jobQueue;
     PMutex        jobQueueMutex;
@@ -779,7 +782,7 @@ class SIPConnection : public OpalConnection
 
     SIPTransaction   * referTransaction;
     PMutex             invitationsMutex;
-    SIPTransactionList invitations;
+    SIPTransactionList forkedInvitations; // Not for re-INVITE
     SIPTransactionDict transactions;
     PAtomicInteger     lastSentCSeq;
 

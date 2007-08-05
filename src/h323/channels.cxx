@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.10  2007/05/03 10:37:49  hfriederich
+ * Revision 1.2036.2.11  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.35.2.10  2007/05/03 10:37:49  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -1060,7 +1063,6 @@ void H323UnidirectionalChannel::OnMediaCommand(
 
 OpalMediaStream * H323UnidirectionalChannel::GetMediaStream(BOOL deleted) const
 {
-  PMutex m(connection.GetMediaStreamMutex());
   OpalMediaStream * t = mediaStream;
   if (deleted)
     mediaStream = NULL;

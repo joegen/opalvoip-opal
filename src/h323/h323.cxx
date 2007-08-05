@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.15  2007/06/12 16:29:02  hfriederich
+ * Revision 1.2136.2.16  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.135.2.15  2007/06/12 16:29:02  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
  *   subsystem
@@ -767,14 +770,17 @@ BOOL H323Connection::HandleSignalPDU(H323SignalPDU & pdu)
 #endif
 
   // Add special code to detect if call is from a Cisco and remoteApplication needs setting
-  if (remoteApplication.IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
+  if (GetRemoteApplication().IsEmpty() && pdu.m_h323_uu_pdu.HasOptionalField(H225_H323_UU_PDU::e_nonStandardControl)) {
     for (PINDEX i = 0; i < pdu.m_h323_uu_pdu.m_nonStandardControl.GetSize(); i++) {
       const H225_NonStandardIdentifier & id = pdu.m_h323_uu_pdu.m_nonStandardControl[i].m_nonStandardIdentifier;
       if (id.GetTag() == H225_NonStandardIdentifier::e_h221NonStandard) {
         const H225_H221NonStandard & h221 = id;
         if (h221.m_t35CountryCode == 181 && h221.m_t35Extension == 0 && h221.m_manufacturerCode == 18) {
-          remoteApplication = "Cisco IOS\t12.x\t181/18";
-          PTRACE(3, "H225\tSet remote application name: \"" << remoteApplication << '"');
+          remoteProductInfo.name = "Cisco IOS";
+          remoteProductInfo.version = "12.x";
+          remoteProductInfo.t35CountryCode = 181;
+          remoteProductInfo.manufacturerCode = 18;
+          PTRACE(3, "H225\tSet remote application name: \"" << GetRemoteApplication() << '"');
           break;
         }
       }
@@ -872,7 +878,7 @@ void H323Connection::HandleTunnelPDU(H323SignalPDU * txPDU)
   else {
     /* Compensate for Cisco bug. IOS cannot seem to accept multiple tunnelled
        H.245 PDUs insode the same facility message */
-    if (remoteApplication.Find("Cisco IOS") == P_MAX_INDEX) {
+    if (GetRemoteApplication().Find("Cisco IOS") == P_MAX_INDEX) {
       // Not Cisco, so OK to tunnel multiple PDUs
       localTunnelPDU.BuildFacility(*this, TRUE);
       h245TunnelTxPDU = &localTunnelPDU;
@@ -1276,8 +1282,8 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
   // OK are now ready to send SETUP to remote protocol
   ownerCall.OnSetUp(*this);
 
-#if OPAL_H450
   if (connectionState == NoConnectionActive) {
+#if OPAL_H450
     /** If Call Intrusion is allowed we must answer the call*/
     if (IsCallIntrusion()) {
       AnsweringCall(AnswerCallDeferred);
@@ -1286,14 +1292,16 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
       if (isConsultationTransfer)
         AnsweringCall(AnswerCallNow);
       else {
+#endif
         // call the application callback to determine if to answer the call or not
         connectionState = AwaitingLocalAnswer;
         SetPhase(AlertingPhase);
         AnsweringCall(OnAnswerCall(remotePartyName, *setupPDU, *connectPDU, *progressPDU));
+#if OPAL_H450
       }
     }
-  }
 #endif
+  }
 
   return connectionState != ShuttingDownConnection;
 }
@@ -1331,8 +1339,8 @@ void H323Connection::SetRemotePartyInfo(const H323SignalPDU & pdu)
 void H323Connection::SetRemoteApplication(const H225_EndpointType & pdu)
 {
   if (pdu.HasOptionalField(H225_EndpointType::e_vendor)) {
-    remoteApplication = H323GetApplicationInfo(pdu.m_vendor);
-    PTRACE(3, "H225\tSet remote application name: \"" << remoteApplication << '"');
+    H323GetApplicationInfo(remoteProductInfo, pdu.m_vendor);
+    PTRACE(3, "H225\tSet remote application name: \"" << GetRemoteApplication() << '"');
   }
 }
 
@@ -2204,6 +2212,8 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
           return FALSE;
         alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
       }
+      if (!StartControlNegotiations())
+        return FALSE;
     }
   }
 
@@ -2408,25 +2418,22 @@ BOOL H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & ar
 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
-  {
-    PWaitAndSignal m(this->GetMediaStreamMutex());
-    for (i = 0; i < fastStartChannels.GetSize(); i++) {
-      if (fastStartChannels[i].IsOpen())
-        logicalChannels->Add(fastStartChannels[i]);
-      else
-        fastStartChannels.RemoveAt(i--);
-    }
-
-    // None left, so didn't open any channels fast
-    if (fastStartChannels.IsEmpty()) {
-      fastStartState = FastStartDisabled;
-      return FALSE;
-    }
-
-    // The channels we just transferred to the logical channels dictionary
-    // should not be deleted via this structure now.
-    fastStartChannels.DisallowDeleteObjects();
+  for (i = 0; i < fastStartChannels.GetSize(); i++) {
+    if (fastStartChannels[i].IsOpen())
+      logicalChannels->Add(fastStartChannels[i]);
+    else
+      fastStartChannels.RemoveAt(i--);
   }
+
+  // None left, so didn't open any channels fast
+  if (fastStartChannels.IsEmpty()) {
+    fastStartState = FastStartDisabled;
+    return FALSE;
+  }
+
+  // The channels we just transferred to the logical channels dictionary
+  // should not be deleted via this structure now.
+  fastStartChannels.DisallowDeleteObjects();
 
   PTRACE(3, "H225\tAccepting fastStart for " << fastStartChannels.GetSize() << " channels");
 
@@ -2667,13 +2674,7 @@ void H323Connection::NewIncomingControlChannel(PThread & listener, INT param)
   if (param == 0) {
     // If H.245 channel failed to connect and have no media (no fast start)
     // then clear the call as it is useless.
-    BOOL release;
-    {
-      PWaitAndSignal mutex(mediaStreamMutex);
-      release = mediaStreams.IsEmpty();
-    }
-    if (release)
-      Release(EndedByTransportFail);
+    Release(EndedByTransportFail);
     return;
   }
 
@@ -3478,8 +3479,6 @@ BOOL H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remoteCaps
     if (!remoteCapabilities.Merge(remoteCaps))
       return FALSE;
 
-    remoteCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
-
     if (transmitterSidePaused) {
       transmitterSidePaused = FALSE;
       connectionState = HasExecutedSignalConnect;
@@ -3518,11 +3517,7 @@ void H323Connection::OnSetLocalCapabilities()
     return;
 
   // create the list of media formats supported locally
-  OpalMediaFormatList formats;
-  if (originating)
-    formats = GetLocalMediaFormats();
-  else
-    formats = ownerCall.GetMediaFormats(*this, FALSE);
+  OpalMediaFormatList formats = GetLocalMediaFormats();
   
   if (formats.IsEmpty()) {
     PTRACE(2, "H323\tSetLocalCapabilities - no existing formats in call");
@@ -3553,7 +3548,7 @@ void H323Connection::OnSetLocalCapabilities()
         if (adjustMediaFormatOptions == TRUE) {
           ownerCall.AdjustMediaFormatOptions(format, *this);
         }
-        simultaneous = localCapabilities.AddAllCapabilitiesWithFormat(0, simultaneous, format);
+        simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format, TRUE);
       }
     }
   }
@@ -3571,8 +3566,6 @@ void H323Connection::OnSetLocalCapabilities()
     else
       localCapabilities.Remove(capability);
   }
-  
-  localCapabilities.Remove(GetCall().GetManager().GetMediaFormatMask());
 
   PTRACE(2, "H323\tSetLocalCapabilities:\n" << setprecision(2) << localCapabilities);
 }
@@ -4102,7 +4095,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
   if (param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization)) {
     const H245_H2250LogicalChannelParameters_mediaPacketization & mediaPacketization = 
       param->m_mediaPacketization;
-    capability->OnReceivedPDU(mediaPacketization);
+      capability->OnReceivedPDU(mediaPacketization);
   }
 
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))
@@ -4144,7 +4137,7 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
     if (ownerCall.IsMediaBypassPossible(*this, mediaType)) {
       MediaInformation info;
-      if (!otherParty->GetMediaInformation(OpalDefaultAudioMediaType, info))
+      if (!otherParty->GetMediaInformation(mediaType, info))
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
       else
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
@@ -4270,8 +4263,10 @@ BOOL H323Connection::OnClosingLogicalChannel(H323Channel & /*channel*/)
 void H323Connection::OnClosedLogicalChannel(const H323Channel & channel)
 {
   {
-    PWaitAndSignal m(mediaStreamMutex);
-    mediaStreams.Remove(channel.GetMediaStream(TRUE));
+    if (LockReadWrite()) {
+      mediaStreams.Remove(channel.GetMediaStream(TRUE));
+      UnlockReadWrite();
+    }
   }
   endpoint.OnClosedLogicalChannel(*this, channel);
 }

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.cxx,v $
- * Revision 1.2021  2006/08/21 05:29:25  csoutheren
+ * Revision 1.2021.4.1  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.20  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
@@ -2439,7 +2442,7 @@ H323GatekeeperRequest::Response H323RegisteredEndPoint::OnFullRegistration(H323G
     }
   }
 
-  applicationInfo = H323GetApplicationInfo(info.rrq.m_endpointVendor);
+  H323GetApplicationInfo(productInfo, info.rrq.m_endpointVendor);
 
   canDisplayAmountString = FALSE;
   canEnforceDurationLimit = FALSE;

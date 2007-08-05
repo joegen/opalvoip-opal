@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3.2.2  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
  * Revision 1.3.2.1  2007/06/12 16:29:47  hfriederich
  * Add to MediaTypeBranch
  *
@@ -160,6 +163,7 @@ public:
 protected:
   SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
+  SIPTransaction            * request;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;
