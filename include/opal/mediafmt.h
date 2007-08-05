@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.5  2007/05/03 10:37:47  hfriederich
+ * Revision 1.2046.2.6  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.45.2.5  2007/05/03 10:37:47  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -488,8 +491,8 @@ public:
   OpalMediaType(const OpalMediaType & mediaType);
   
   OpalMediaType & operator=(
-                            const OpalMediaType & type ///<  other media type
-                            );
+    const OpalMediaType & type ///<  other media type
+  );
   
   const PString & GetName() const { return name; }
   MIMEMediaType GetMIMEMediaType() const { return mimeMediaType; }
@@ -497,8 +500,8 @@ public:
   
   static OpalMediaTypeList GetAllRegisteredMediaTypes();
   static void GetAllRegisteredMediaTypes(
-                                         OpalMediaTypeList & copy    ///<  List to receive the copy of the master list
-                                         );
+    OpalMediaTypeList & copy    ///<  List to receive the copy of the master list
+  );
   
   static PString GetMIMETypeString(MIMEMediaType mimeType);
   static MIMEMediaType ParseMIMEMediaType(const PString & typeString);
@@ -689,11 +692,40 @@ class OpalMediaOption : public PObject
 
     MergeType GetMerge() const { return m_merge; }
     void SetMerge(MergeType merge) { m_merge = merge; }
+    
+    const PString & GetFMTPName() const { return m_FMTPName; }
+    void SetFMTPName(const char * name) { m_FMTPName = name; }
+    
+    const PString & GetFMTPDefault() const { return m_FMTPDefault; }
+    void SetFMTPDefault(const char * value) { m_FMTPDefault = value; }
+    
+    struct H245GenericInfo {
+      unsigned ordinal:16;
+      enum Modes {
+        None,
+        Collapsing,
+        NonCollapsing
+      } mode:3;
+      enum IntegerTypes {
+        UnsignedInt,
+        Unsigned32,
+        BooleanArray
+      } integerType:3;
+      bool excludeTCS:1;
+      bool excludeOLC:1;
+      bool excludeReqMode:1;
+    };
+    
+    const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
+    void SetH245Generic(const H245GenericInfo & generic) { m_H245Generic = generic; }
 
   protected:
-    PString   m_name;
-    bool      m_readOnly;
-    MergeType m_merge;
+    PCaselessString m_name;
+    bool            m_readOnly;
+    MergeType       m_merge;
+    PCaselessString m_FMTPName;
+    PCaselessString m_FMTPDefault;
+    H245GenericInfo m_H245Generic;
 };
 
 #ifndef __USE_STL__
@@ -775,9 +807,10 @@ class OpalMediaOptionValue : public OpalMediaOption
 };
 
 
-typedef OpalMediaOptionValue<bool>   OpalMediaOptionBoolean;
-typedef OpalMediaOptionValue<int>    OpalMediaOptionInteger;
-typedef OpalMediaOptionValue<double> OpalMediaOptionReal;
+typedef OpalMediaOptionValue<bool>     OpalMediaOptionBoolean;
+typedef OpalMediaOptionValue<int>      OpalMediaOptionInteger;
+typedef OpalMediaOptionValue<unsigned> OpalMediaOptionUnsigned;
+typedef OpalMediaOptionValue<double>   OpalMediaOptionReal;
 
 
 class OpalMediaOptionEnum : public OpalMediaOption
@@ -835,6 +868,46 @@ class OpalMediaOptionString : public OpalMediaOption
 
   protected:
     PString m_value;
+};
+
+
+class OpalMediaOptionOctets : public OpalMediaOption
+{
+  PCLASSINFO(OpalMediaOptionOctets, OpalMediaOption);
+public:
+  OpalMediaOptionOctets(
+    const char * name,
+    bool readOnly,
+    bool base64
+  );
+  OpalMediaOptionOctets(
+    const char * name,
+    bool readOnly,
+    bool base64,
+    const PBYTEArray & value
+  );
+  OpalMediaOptionOctets(
+    const char * name,
+    bool readOnly,
+    bool base64,
+    const BYTE * data,
+    PINDEX length
+  );
+  
+  virtual PObject * Clone() const;
+  virtual void PrintOn(ostream & strm) const;
+  virtual void ReadFrom(istream & strm);
+  
+  virtual Comparison CompareValue(const OpalMediaOption & option) const;
+  virtual void Assign(const OpalMediaOption & option);
+  
+  const PBYTEArray & GetValue() const { return m_value; }
+  void SetValue(const PBYTEArray & value);
+  void SetValue(const BYTE * data, PINDEX length);
+  
+protected:
+    PBYTEArray m_value;
+  bool       m_base64;
 };
 
 
@@ -1166,6 +1239,31 @@ class OpalMediaFormat : public PCaselessString
       const PString & name,   ///<  Option name
       const PString & value   ///<  New value for option
     );
+    
+    /**Get the option value of the specified name as an octet array.
+      Returns FALSE if not present.
+      */
+    bool GetOptionOctets(
+      const PString & name, ///<  Option name
+      PBYTEArray & octets   ///<  Octets in option
+    ) const;
+    
+    /**Set the option value of the specified name as an octet array.
+      Note the option will not be added if it does not exist, the option
+      must be explicitly added using AddOption().
+      
+      Returns false of the option is not present or is not of the same type.
+      */
+    bool SetOptionOctets(
+      const PString & name,       ///<  Option name
+      const PBYTEArray & octets   ///<  Octets in option
+    );
+    bool SetOptionOctets(
+      const PString & name,       ///<  Option name
+      const BYTE * data,          ///<  Octets in option
+      PINDEX length               ///<  Number of octets
+    );
+    
 
     /**Get a copy of the list of media formats that have been registered.
       */
@@ -1185,11 +1283,23 @@ class OpalMediaFormat : public PCaselessString
       * Add a new option to this media format
       */
     bool AddOption(
-      OpalMediaOption * option
+      OpalMediaOption * option,
+      BOOL overwrite = FALSE
     );
 
+    /**
+      * Determine if media format has the specified option
+      */
     bool HasOption(const PString & name) const
     { return FindOption(name) != NULL; }
+    
+    /**
+      * Get a pointer to heh specified media format option.
+      * Returns NULL if the option does not exist.
+      */
+    OpalMediaOption * FindOption(
+      const PString & name
+    ) const;
 
     /** Returns TRUE if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for
@@ -1199,11 +1309,10 @@ class OpalMediaFormat : public PCaselessString
     virtual bool IsValidForProtocol(const PString & protocol) const;
     
     virtual time_t GetCodecBaseTime() const;
+    
+    virtual ostream & PrintOptions(ostream & strm) const;
 
   protected:
-    OpalMediaOption * FindOption(
-      const PString & name
-    ) const;
 
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     const char *                 rtpEncodingName;

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2015.2.2  2007/03/11 12:26:15  hfriederich
+ * Revision 1.2015.2.3  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.14.2.2  2007/03/11 12:26:15  hfriederich
  * Add rtp payload map for sinks without transcoders.
  *
  * Revision 2.14.2.1  2007/02/12 15:32:01  hfriederich
@@ -236,7 +239,12 @@ class OpalMediaPatch : public PObject
       const OpalMediaStream & mediaStream ///<  The caller media stream
     );
 
-    virtual BOOL PushFrame(RTP_DataFrame & frame) { return FALSE; };
+    virtual BOOL PushFrame(RTP_DataFrame & /*frame*/) { return FALSE; };
+    
+    /**Get the transcoder used within a sink stream
+      */
+    virtual OpalTranscoder * GetAndLockSinkTranscoder(PINDEX i = 0) const;
+    virtual void UnLockSinkTranscoder() const;
 
   //@}
 

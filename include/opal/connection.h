@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071.2.6  2007/05/28 16:41:44  hfriederich
+ * Revision 1.2071.2.7  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.70.2.6  2007/05/28 16:41:44  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.70.2.5  2007/05/03 10:37:47  hfriederich
@@ -340,6 +343,27 @@ class OpalRFC2833Proto;
 class OpalRFC2833Info;
 class OpalT120Protocol;
 class OpalT38Protocol;
+
+
+/** Class for carying vendor/product information.
+  */
+class OpalProductInfo
+{
+public:
+  OpalProductInfo();
+  
+  static OpalProductInfo & Default();
+  
+  PCaselessString AsString() const;
+  
+  PString vendor;
+  PString name;
+  PString version;
+  BYTE    t35CountryCode;
+  BYTE    t35Extension;
+  WORD    manufacturerCode;
+};
+
 
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
@@ -1011,6 +1035,9 @@ class OpalConnection : public PSafeObject
        transport. At this time only IP (RTp over UDP) is supported.
       */
     virtual RTP_Session * UseSession(
+      const OpalMediaType & mediaType
+    );
+    virtual RTP_Session * UseSession(
       const OpalTransport & transport,  ///<  Transport of signalling
       const OpalMediaType & mediaType,  ///<  media type
       RTP_QOS * rtpqos = NULL           ///<  Quiality of Service information
@@ -1262,6 +1289,16 @@ class OpalConnection : public PSafeObject
     /**Get the time at which the connection was cleared
       */
     PTime GetConnectionEndTime() const { return callEndTime; }
+    
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info
+    ) { productInfo = info; }
 
     /**Get the local name/alias.
       */
@@ -1283,9 +1320,14 @@ class OpalConnection : public PSafeObject
       */
     const PString & GetRemotePartyName() const { return remotePartyName; }
 
-    /**Get the remote application.
+    /**Get the remote application. This is for backward
+       compatibility and has been superceded by GetRemoteProductInfo();
       */
-    const PString & GetRemoteApplication() const { return remoteApplication; }
+    const PCaselessString GetRemoteApplication() const { return remoteProductInfo.AsString(); }
+    
+    /** Get the remote product info
+      */
+    const OpalProductInfo & GetRemoteProductInfo() const { return remoteProductInfo; }
     
     /**Get the remote party number, if there was one one.
        If the remote party has indicated an e164 number as one of its aliases
@@ -1356,8 +1398,6 @@ class OpalConnection : public PSafeObject
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
     { return rtpPayloadMap; }
 
-    PMutex & GetMediaStreamMutex() { return mediaStreamMutex; }
-
     /** Return TRUE if the remote appears to be behind a NAT firewall
     */
     BOOL RemoteIsNAT() const
@@ -1411,10 +1451,11 @@ class OpalConnection : public PSafeObject
     PTime                alertingTime;
     PTime                connectedTime;
     PTime                callEndTime;
+    OpalProductInfo      productInfo;
     PString              localPartyName;
     PString              displayName;
     PString              remotePartyName;
-    PString              remoteApplication;
+    OpalProductInfo      remoteProductInfo;
     PString              remotePartyNumber;
     PString              remotePartyAddress;
     CallEndReason        callEndReason;
@@ -1424,7 +1465,6 @@ class OpalConnection : public PSafeObject
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
-    PMutex                userInputMutex;
     PSyncPoint            userInputAvailable;
     BOOL                  detectInBandDTMF;
     unsigned              q931Cause;
@@ -1441,7 +1481,6 @@ class OpalConnection : public PSafeObject
 #endif
 
     MediaAddressesDict  mediaTransportAddresses;
-    PMutex              mediaStreamMutex;
     OpalMediaStreamList mediaStreams;
     RTP_SessionManager  rtpSessions;
     unsigned            minAudioJitterDelay;

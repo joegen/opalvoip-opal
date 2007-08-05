@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2057.2.4  2007/05/28 16:41:44  hfriederich
+ * Revision 1.2057.2.5  2007/08/05 13:12:16  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.56.2.4  2007/05/28 16:41:44  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.56.2.3  2007/05/03 10:37:47  hfriederich
@@ -268,6 +271,7 @@
 
 class OpalEndPoint;
 class OpalMediaPatch;
+
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -936,6 +940,16 @@ class OpalManager : public PObject
 
   /**@name Member variable access */
   //@{
+    /**Get the product info for all endpoints.
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
+    
+    /**Set the product info for all endpoints.
+      */
+    void SetProductInfo(
+      const OpalProductInfo & info
+    ) { productInfo = info; }
+    
     /**Get the default username for all endpoints.
       */
     const PString & GetDefaultUserName() const { return defaultUserName; }
@@ -1023,6 +1037,10 @@ class OpalManager : public PObject
     PSTUNClient::NatTypes SetSTUNServer(
       const PString & server
     );
+    
+    /** Get the current host name and optional port for the STUN server.
+      */
+    const PString & GetSTUNServer() const { return stunServer; }
 
     /**Get the TCP port number base for H.245 channels
      */
@@ -1244,6 +1262,8 @@ class OpalManager : public PObject
 
   protected:
     // Configuration variables
+    OpalProductInfo productInfo;
+    
     PString       defaultUserName;
     PString       defaultDisplayName;
 
@@ -1288,6 +1308,7 @@ class OpalManager : public PObject
     } tcpPorts, udpPorts, rtpIpPorts;
 
     PIPSocket::Address translationAddress;
+    PString            stunServer;
     PSTUNClient      * stun;
 
     RouteTable routeTable;
