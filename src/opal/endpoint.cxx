@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2051.2.9  2007/05/28 16:41:45  hfriederich
+ * Revision 1.2051.2.10  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.50.2.9  2007/05/28 16:41:45  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.50.2.8  2007/05/03 10:37:50  hfriederich
@@ -300,6 +303,7 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
   : manager(mgr),
     prefixName(prefix),
     attributeBits(attributes),
+    productInfo(mgr.GetProductInfo()),
     defaultLocalPartyName(manager.GetDefaultUserName()),
     defaultDisplayName(manager.GetDefaultDisplayName())
 #if OPAL_RTP_AGGREGATE
@@ -366,9 +370,18 @@ BOOL OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
   BOOL startedOne = FALSE;
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
-    OpalTransportAddress iface(interfaces[i], defaultSignalPort, GetDefaultTransport());
-    if (StartListener(iface))
-      startedOne = TRUE;
+    if (interfaces[i].Find('$') != P_MAX_INDEX) {
+      if (StartListener(interfaces[i]))
+        startedOne = TRUE;
+    }
+    else {
+      PStringArray transports = GetDefaultTransport().Tokenise(',');
+      for (PINDEX j = 0; j < transports.GetSize(); j++) {
+        OpalTransportAddress iface(interfaces[i], GetDefaultSignalPort(), transports[j]);
+        if (StartListener(iface))
+          startedOne = TRUE;
+      }
+    }
   }
 
   return startedOne;
@@ -427,8 +440,13 @@ PString OpalEndPoint::GetDefaultTransport() const
 PStringArray OpalEndPoint::GetDefaultListeners() const
 {
   PStringArray listenerAddresses;
-  if (defaultSignalPort != 0) 
-    listenerAddresses.AppendString(GetDefaultTransport() + psprintf("*:%u", defaultSignalPort));
+  PStringArray transports = GetDefaultTransport().Tokenise(',');
+  for (PINDEX i = 0; i < transports.GetSize(); i++) {
+    PString listenerAddress = transports[i] + '*';
+    if (defaultSignalPort != 0)
+      listenerAddress.sprintf(":%u", defaultSignalPort);
+    listenerAddresses += listenerAddress;
+  }
   return listenerAddresses;
 }
 

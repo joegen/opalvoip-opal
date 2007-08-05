@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.9  2007/05/28 16:41:45  hfriederich
+ * Revision 1.2089.2.10  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.88.2.9  2007/05/28 16:41:45  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.88.2.8  2007/05/03 10:37:50  hfriederich
@@ -562,6 +565,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     alertingTime(0),
     connectedTime(0),
     callEndTime(0),
+    productInfo(ep.GetProductInfo()),
     localPartyName(ep.GetDefaultLocalPartyName()),
     displayName(ep.GetDefaultDisplayName()),
     remotePartyName(token),
@@ -609,9 +613,9 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
   }
   
-  rfc2833Handler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
+  rfc2833Handler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
 #if OPAL_T38FAX
-  ciscoNSEHandler = new OpalRFC2833Proto(PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
+  ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
 #endif
 
   securityMode = ep.GetDefaultSecurityMode();
@@ -647,10 +651,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 
 OpalConnection::~OpalConnection()
 {
-  {
-    PWaitAndSignal mutex(mediaStreamMutex);
-    mediaStreams.RemoveAll();
-  }
+  mediaStreams.RemoveAll();
 
   delete silenceDetector;
   delete echoCanceler;
@@ -854,58 +855,58 @@ void OpalConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) cons
 
 BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType)
 {
-  {
-    PWaitAndSignal m(mediaStreamMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return NULL;
+  
+  // See if already opened
+  OpalMediaStream * stream = GetMediaStream(mediaType, TRUE);
 
-    // See if already opened
-    OpalMediaStream * stream = GetMediaStream(mediaType, TRUE);
+  if (stream != NULL && stream->IsOpen()) {
+    PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for media type "
+               << mediaType << " on " << *this);
+    return TRUE;
+  }
 
-    if (stream != NULL && stream->IsOpen()) {
-      PTRACE(3, "OpalCon\tOpenSourceMediaStream (already opened) for media type "
-             << mediaType << " on " << *this);
+  PTRACE(3, "OpalCon\tOpenSourceMediaStream for media type " << mediaType << " on " << *this);
+
+  OpalMediaFormat sourceFormat, destinationFormat;
+  if (!OpalTranscoder::SelectFormats(mediaType,
+                                     GetMediaFormats(),
+                                     mediaFormats,
+                                     sourceFormat,
+                                     destinationFormat)) {
+    PTRACE(2, "OpalCon\tOpenSourceMediaStream media type " << mediaType
+           << ", could not find compatible media format:\n"
+              "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
+              "   sink  formats=" << mediaFormats << setfill(' '));
+    return FALSE;
+  }
+
+  PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
+    
+  if (stream == NULL)
+    stream = CreateMediaStream(sourceFormat, TRUE);
+
+  if (stream == NULL) {
+    PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
+          << mediaType << " on " << *this);
+    return FALSE;
+  }
+
+  if (stream->Open()) {
+    if (OnOpenMediaStream(*stream)) {
+      PTRACE(3, "OpalCon\tOpened source stream " << stream->GetID());
       return TRUE;
     }
-
-    PTRACE(3, "OpalCon\tOpenSourceMediaStream for media type " << mediaType << " on " << *this);
-
-    OpalMediaFormat sourceFormat, destinationFormat;
-    if (!OpalTranscoder::SelectFormats(mediaType,
-                                       GetMediaFormats(),
-                                       mediaFormats,
-                                       sourceFormat,
-                                       destinationFormat)) {
-      PTRACE(2, "OpalCon\tOpenSourceMediaStream media type " << mediaType
-            << ", could not find compatible media format:\n"
-                "  source formats=" << setfill(',') << GetMediaFormats() << "\n"
-                "   sink  formats=" << mediaFormats << setfill(' '));
-      return FALSE;
-    }
-
-    PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
-    
-    if (stream == NULL)
-      stream = CreateMediaStream(sourceFormat, TRUE);
-
-    if (stream == NULL) {
-      PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
-            << mediaType << " on " << *this);
-      return FALSE;
-    }
-
-    if (stream->Open()) {
-      if (OnOpenMediaStream(*stream)) {
-        PTRACE(3, "OpalCon\tOpened source stream " << stream->GetID());
-        return TRUE;
-      }
-      PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
-    }
-    else {
-      PTRACE(2, "OpalCon\tSource media stream open of " << sourceFormat << " failed.");
-    }
-
-    if (!RemoveMediaStream(stream))
-      delete stream;
+    PTRACE(2, "OpalCon\tSource media OnOpenMediaStream open of " << sourceFormat << " failed.");
   }
+  else {
+    PTRACE(2, "OpalCon\tSource media stream open of " << sourceFormat << " failed.");
+  }
+
+  if (!RemoveMediaStream(stream))
+    delete stream;
 
   return FALSE;
 }
@@ -925,47 +926,48 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   PStringArray order = sourceFormat;
   // Second preference is given to the previous media stream already
   // opened to maintain symmetric codecs, if possible.
-  {
-    PWaitAndSignal m(mediaStreamMutex);
-    OpalMediaStream * otherStream = GetMediaStream(mediaType, TRUE);
-    if (otherStream != NULL)
-      order += otherStream->GetMediaFormat();
-    destinationFormats.Reorder(order);
 
-    OpalMediaFormat destinationFormat;
-    if (!OpalTranscoder::SelectFormats(mediaType,
-                                       sourceFormat, // Only use selected format on source
-                                       destinationFormats,
-                                       sourceFormat,
-                                       destinationFormat)) {
-      PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
-                "  source formats=" << setfill(',') << sourceFormat << "\n"
-                "   sink  formats=" << destinationFormats << setfill(' '));
-      return NULL;
-    }
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return NULL;
+  
+  OpalMediaStream * otherStream = GetMediaStream(mediaType, TRUE);
+  if (otherStream != NULL)
+    order += otherStream->GetMediaFormat();
+  destinationFormats.Reorder(order);
 
-    PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
-
-    OpalMediaStream * stream = CreateMediaStream(destinationFormat, FALSE);
-    if (stream == NULL) {
-      PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
-      return NULL;
-    }
-
-    if (stream->Open()) {
-      if (OnOpenMediaStream(*stream)) {
-        PTRACE(3, "OpalCon\tOpened sink stream " << stream->GetID());
-        return stream;
-      }
-      PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
-    }
-    else {
-      PTRACE(2, "OpalCon\tSink media stream open of " << destinationFormat << " failed.");
-    }
-
-    if (!RemoveMediaStream(stream))
-      delete stream;
+  OpalMediaFormat destinationFormat;
+  if (!OpalTranscoder::SelectFormats(mediaType,
+                                     sourceFormat, // Only use selected format on source
+                                     destinationFormats,
+                                     sourceFormat,
+                                     destinationFormat)) {
+    PTRACE(2, "OpalCon\tOpenSinkMediaStream, could not find compatible media format:\n"
+              "  source formats=" << setfill(',') << sourceFormat << "\n"
+              "   sink  formats=" << destinationFormats << setfill(' '));
+    return NULL;
   }
+
+  PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
+
+  OpalMediaStream * stream = CreateMediaStream(destinationFormat, FALSE);
+  if (stream == NULL) {
+    PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
+    return NULL;
+  }
+
+  if (stream->Open()) {
+    if (OnOpenMediaStream(*stream)) {
+      PTRACE(3, "OpalCon\tOpened sink stream " << stream->GetID());
+      return stream;
+    }
+    PTRACE(2, "OpalCon\tSink media stream OnOpenMediaStream of " << destinationFormat << " failed.");
+  }
+  else {
+    PTRACE(2, "OpalCon\tSink media stream open of " << destinationFormat << " failed.");
+  }
+  if (!RemoveMediaStream(stream))
+    delete stream;
 
   return NULL;
 }
@@ -973,13 +975,18 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
 void OpalConnection::StartMediaStreams()
 {
-  PWaitAndSignal mutex(mediaStreamMutex);
+  if (!LockReadWrite())
+    return;
+  
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     if (mediaStreams[i].IsOpen()) {
       OpalMediaStream & strm = mediaStreams[i];
       strm.Start();
     }
   }
+  
+  UnlockReadWrite();
+  
   PTRACE(3, "OpalCon\tMedia stream threads started.");
 }
 
@@ -988,7 +995,9 @@ void OpalConnection::CloseMediaStreams()
 {
   GetCall().OnStopRecordAudio(callIdentifier.AsString());
     
-  PWaitAndSignal mutex(mediaStreamMutex);
+  if (!LockReadWrite())
+    return;
+  
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     OpalMediaStream & strm = mediaStreams[i];
     if (strm.IsOpen()) {
@@ -997,24 +1006,34 @@ void OpalConnection::CloseMediaStreams()
     }
   }
   
+  UnlockReadWrite();
+  
   PTRACE(3, "OpalCon\tMedia stream threads closed.");
 }
 
 
 void OpalConnection::RemoveMediaStreams()
 {
-  PWaitAndSignal mutex(mediaStreamMutex);
+  if (!LockReadWrite())
+    return;
+  
   CloseMediaStreams();
   mediaStreams.RemoveAll();
+  
+  UnlockReadWrite();
   
   PTRACE(3, "OpalCon\tMedia stream threads removed from session.");
 }
 
 void OpalConnection::PauseMediaStreams(BOOL paused)
 {
-  PWaitAndSignal mutex(mediaStreamMutex);
+  if (!LockReadWrite())
+    return;
+  
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++)
     mediaStreams[i].SetPaused(paused);
+  
+  UnlockReadWrite();
 }
 
 
@@ -1062,11 +1081,8 @@ BOOL OpalConnection::OnOpenMediaStream(OpalMediaStream & stream)
   if (!LockReadWrite())
     return FALSE;
 
-  {
-    PWaitAndSignal m(mediaStreamMutex);
-    if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
-      mediaStreams.Append(&stream);
-  }
+  if (mediaStreams.GetObjectsIndex(&stream) == P_MAX_INDEX)
+    mediaStreams.Append(&stream);
 
   if (GetPhase() == ConnectedPhase) {
     SetPhase(EstablishedPhase);
@@ -1096,24 +1112,32 @@ void OpalConnection::OnPatchMediaStream(BOOL /*isSource*/, OpalMediaPatch & /*pa
 
 void OpalConnection::EnableRecording()
 {
-  PWaitAndSignal m(mediaStreamMutex);
+  if (!LockReadWrite())
+    return;
+  
   OpalMediaStream * stream = GetMediaStream(OpalDefaultAudioMediaType, TRUE);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
       patch->AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
   }
+  
+  UnlockReadWrite();
 }
 
 void OpalConnection::DisableRecording()
 {
-  PWaitAndSignal m(mediaStreamMutex);
+  if (!LockReadWrite())
+    return;
+  
   OpalMediaStream * stream = GetMediaStream(OpalDefaultAudioMediaType, TRUE);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
       patch->RemoveFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
   }
+  
+  UnlockReadWrite();
 }
 
 void OpalConnection::OnRecordAudio(RTP_DataFrame & frame, INT)
@@ -1128,9 +1152,6 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
       PTRACE(3, "OpalCon\tAdding RFC2833 receive handler");
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(rfc2833Handler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-    } else {
-      PTRACE(3, "OpalCon\tAdding RFC2833 transmit handler");
-      patch.AddFilter(rfc2833Handler->GetTransmitHandler(), patch.GetSinkFormat());
     }
   }
     
@@ -1140,9 +1161,6 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
       PTRACE(3, "OpalCon\tAdding Cisco NSE receive handler");
       OpalMediaStream & mediaStream = patch.GetSource();
       patch.AddFilter(ciscoNSEHandler->GetReceiveHandler(), mediaStream.GetMediaFormat());
-    } else {
-      PTRACE(3, "OpalCon\tAdding Cisco NSE transmit handler");
-      patch.AddFilter(ciscoNSEHandler->GetTransmitHandler(), patch.GetSinkFormat());
     }
   }
 #endif
@@ -1151,7 +1169,10 @@ void OpalConnection::AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch &
 
 OpalMediaStream * OpalConnection::GetMediaStream(const OpalMediaType & mediaType, BOOL source) const
 {
-  PWaitAndSignal mutex(mediaStreamMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return NULL;
+  
   for (PINDEX i = 0; i < mediaStreams.GetSize(); i++) {
     if (mediaStreams[i].GetMediaType() == mediaType &&
         mediaStreams[i].IsSource() == source)
@@ -1163,7 +1184,10 @@ OpalMediaStream * OpalConnection::GetMediaStream(const OpalMediaType & mediaType
 
 BOOL OpalConnection::RemoveMediaStream(OpalMediaStream * strm)
 {
-  PWaitAndSignal mutex(mediaStreamMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
   PINDEX index = mediaStreams.GetObjectsIndex(strm);
   if (index == P_MAX_INDEX) 
     return FALSE;
@@ -1255,6 +1279,12 @@ unsigned OpalConnection::GetAudioSignalLevel(BOOL /*source*/)
 RTP_Session * OpalConnection::GetSession(const OpalMediaType & mediaType) const
 {
   return rtpSessions.GetSession(mediaType);
+}
+
+
+RTP_Session * OpalConnection::UseSession(const OpalMediaType & mediaType)
+{
+  return rtpSessions.UseSession(mediaType);
 }
 
 
@@ -1434,7 +1464,7 @@ BOOL OpalConnection::SendUserInputTone(char tone, unsigned duration)
   if (duration == 0)
     duration = 180;
 
-  return rfc2833Handler->SendTone(tone, duration);
+  return rfc2833Handler->SendToneAsync(tone, duration);
 }
 
 
@@ -1453,11 +1483,10 @@ void OpalConnection::OnUserInputTone(char tone, unsigned duration)
 PString OpalConnection::GetUserInput(unsigned timeout)
 {
   PString reply;
-  if (userInputAvailable.Wait(PTimeInterval(0, timeout))) {
-    userInputMutex.Wait();
+  if (userInputAvailable.Wait(PTimeInterval(0, timeout)) && LockReadWrite()) {
     reply = userInputString;
     userInputString = PString();
-    userInputMutex.Signal();
+    UnlockReadWrite();
   }
   return reply;
 }
@@ -1465,10 +1494,11 @@ PString OpalConnection::GetUserInput(unsigned timeout)
 
 void OpalConnection::SetUserInput(const PString & input)
 {
-  userInputMutex.Wait();
-  userInputString += input;
-  userInputMutex.Signal();
-  userInputAvailable.Signal();
+  if (LockReadWrite()) {
+    userInputString += input;
+    userInputAvailable.Signal();
+    UnlockReadWrite();
+  }
 }
 
 
@@ -1581,18 +1611,19 @@ BOOL OpalConnection::OnOpenIncomingMediaChannels()
 
 void OpalConnection::SetStringOptions(StringOptions * options)
 {
-  PWaitAndSignal m(phaseMutex);
+  if (LockReadWrite()) {
     
-  if (stringOptions != NULL)
-    delete stringOptions;
-  stringOptions = options;
+    if (stringOptions != NULL)
+      delete stringOptions;
+    stringOptions = options;
+    UnlockReadWrite();
+  }
 }
 
 
 void OpalConnection::ApplyStringOptions()
 {
-  PWaitAndSignal m(phaseMutex);
-  if (stringOptions != NULL) {
+  if (stringOptions != NULL && LockReadWrite()) {
     if (stringOptions->Contains("Disable-Jitter"))
       maxAudioJitterDelay = minAudioJitterDelay = 0;
     PString str = (*stringOptions)("Max-Jitter");
@@ -1603,6 +1634,7 @@ void OpalConnection::ApplyStringOptions()
       minAudioJitterDelay = str.AsUnsigned();
     if (stringOptions->Contains("Record-Audio"))
       recordAudioFilename = (*stringOptions)("Record-Audio");
+    UnlockReadWrite();
   }
 }
 

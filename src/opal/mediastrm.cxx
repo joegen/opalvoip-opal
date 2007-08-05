@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.7  2007/05/28 16:41:46  hfriederich
+ * Revision 1.2053.2.8  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.52.2.7  2007/05/28 16:41:46  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.52.2.6  2007/05/03 10:37:51  hfriederich
@@ -1153,7 +1156,7 @@ BOOL OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length)
   frame->width = width;
   frame->height = height;
 
-  PINDEX bytesReturned = size;
+  PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
   if (!inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned))
     return FALSE;
 
