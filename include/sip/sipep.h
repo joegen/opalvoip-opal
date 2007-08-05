@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.10  2007/06/12 16:29:02  hfriederich
+ * Revision 1.2069.2.11  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.68.2.10  2007/06/12 16:29:02  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
  *   subsystem
@@ -437,10 +440,10 @@ class SIPEndPoint : public OpalEndPoint
 
   /**@name Overrides from OpalEndPoint */
   //@{
-    /**Get the default listeners for the endpoint type.
-       Overrides the default behaviour to return udp and tcp listeners.
+    /**Get the default transports for the endpoint type.
+       Overrides the default behaviour to return udp and tcp.
       */
-    virtual PStringArray GetDefaultListeners() const;
+    virtual PString GetDefaultTransport() const { return "udp$,tcp$"; }
 
     /**Handle new incoming connection from listener.
 
@@ -865,7 +868,7 @@ class SIPEndPoint : public OpalEndPoint
      * That URL can be used in the FORM field of the PDU's. 
      * The host part can be different from the registration domain.
      */
-    virtual SIPURL GetRegisteredPartyName(const PString &);
+    virtual SIPURL GetRegisteredPartyName(const SIPURL &);
 
 
     /**Return the default registered party name URL.
@@ -922,13 +925,17 @@ class SIPEndPoint : public OpalEndPoint
 
     
     /**Get the User Agent for this endpoint.
+       Default behaviour returns an empty string so the SIPConnection builds
+       a valid string from the productInfo data.
+      
+       These semantics are for backward compatibility.
      */
     virtual PString GetUserAgent() const;
 
-    
     /**Set the User Agent for the endpoint.
      */
     void SetUserAgent(const PString & str) { userAgentString = str; }
+    
     
     BOOL SendResponse(
       SIP_PDU::StatusCodes code, 

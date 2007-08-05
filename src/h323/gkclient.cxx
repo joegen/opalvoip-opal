@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2036.4.2  2007/05/03 10:37:49  hfriederich
+ * Revision 1.2036.4.3  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.35.4.2  2007/05/03 10:37:49  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -850,7 +853,7 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
       break;
   }
 
-  transport->EndConnect(transport->GetLocalAddress());
+  transport->EndConnect(transport->GetInterface());
 
   if (discoveryComplete) {
     PTRACE(3, "RAS\tGatekeeper discovered at: "

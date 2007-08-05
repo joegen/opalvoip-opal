@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2021.2.3  2007/05/04 09:51:29  hfriederich
+ * Revision 1.2021.2.4  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.20.2.3  2007/05/04 09:51:29  hfriederich
  * Backport from HEAD - Changes since Apr 1, 2007
  *
  * Revision 2.20.2.2  2007/02/16 10:43:41  hfriederich
@@ -141,9 +144,7 @@ class SDPMediaFormat : public PObject
     
     SDPMediaFormat(
       RTP_DataFrame::PayloadTypes payloadType, ///< RTP Payload type for this media format.
-      const char * name = NULL,                ///< RTP Payload type name
-      unsigned rate = 8000,                    ///< Clock rate
-      const char * param = ""                  ///< encoding parameters
+      const char * name = NULL                 ///< RTP Payload type name
     );
 
     void PrintOn(ostream & str) const;
@@ -165,10 +166,12 @@ class SDPMediaFormat : public PObject
 
     /**Tries to find a media format matching this SDP media format
       */
-    OpalMediaFormat GetMediaFormat() const;
+    const OpalMediaFormat & GetMediaFormat() const;
 
   protected:
 
+    mutable OpalMediaFormat mediaFormat;
+    
     RTP_DataFrame::PayloadTypes payloadType;
     unsigned clockRate;
     PString encodingName;
@@ -239,7 +242,7 @@ class SDPMediaDescription : public PObject
     void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
     
     OpalMediaFormatList GetMediaFormats(const OpalMediaType & mediaType) const;
-    void AddCapabilityFormat(const SDPCapability & capability, const RTP_DataFrame::PayloadMapType & map);
+    void AddMediaFormat(const SDPCapability & capability, const RTP_DataFrame::PayloadMapType & map);
     void UpdateCapabilities(SDPCapabilityList & capabilities, 
                             const SDPSessionDescription & sessionDescription) const;
     void CreateRTPMap(const OpalMediaType & mediaType, RTP_DataFrame::PayloadMapType & map) const;

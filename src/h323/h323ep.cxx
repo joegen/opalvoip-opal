@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2062.2.5  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2062.2.6  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.61.2.5  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -166,10 +169,6 @@
 
 #define new PNEW
 
-BYTE H323EndPoint::defaultT35CountryCode    = 9; // Country code for Australia
-BYTE H323EndPoint::defaultT35Extension      = 0;
-WORD H323EndPoint::defaultManufacturerCode  = 61; // Allocated by Australian Communications Authority, Oct 2000;
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -221,10 +220,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
 
   terminalType = e_TerminalOnly;
   clearCallOnRoundTripFail = FALSE;
-
-  t35CountryCode   = defaultT35CountryCode;   // Country code for Australia
-  t35Extension     = defaultT35Extension;
-  manufacturerCode = defaultManufacturerCode; // Allocated by Australian Communications Authority, Oct 2000
 
   masterSlaveDeterminationRetries = 10;
   gatekeeperRequestRetries = 2;
@@ -294,20 +289,20 @@ void H323EndPoint::SetVendorIdentifierInfo(H225_VendorIdentifier & info) const
   SetH221NonStandardInfo(info.m_vendor);
 
   info.IncludeOptionalField(H225_VendorIdentifier::e_productId);
-  info.m_productId = PProcess::Current().GetManufacturer() & PProcess::Current().GetName();
+  info.m_productId = productInfo.vendor & productInfo.name;
   info.m_productId.SetSize(info.m_productId.GetSize()+2);
 
   info.IncludeOptionalField(H225_VendorIdentifier::e_versionId);
-  info.m_versionId = PProcess::Current().GetVersion(TRUE) + " (OPAL v" + OpalGetVersion() + ')';
+  info.m_versionId = productInfo.version + " (OPAL v" + OpalGetVersion() + ')';
   info.m_versionId.SetSize(info.m_versionId.GetSize()+2);
 }
 
 
 void H323EndPoint::SetH221NonStandardInfo(H225_H221NonStandard & info) const
 {
-  info.m_t35CountryCode = t35CountryCode;
-  info.m_t35Extension = t35Extension;
-  info.m_manufacturerCode = manufacturerCode;
+  info.m_t35CountryCode = productInfo.t35CountryCode;
+  info.m_t35Extension = productInfo.t35Extension;
+  info.m_manufacturerCode = productInfo.manufacturerCode;
 }
 
 

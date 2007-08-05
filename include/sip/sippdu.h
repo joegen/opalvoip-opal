@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.5  2007/06/12 16:29:02  hfriederich
+ * Revision 1.2046.2.6  2007/08/05 13:12:17  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.45.2.5  2007/06/12 16:29:02  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
  *   subsystem
@@ -231,6 +234,7 @@
  
 class OpalTransport;
 class OpalTransportAddress;
+class OpalProductInfo;
 
 class SIPEndPoint;
 class SIPConnection;
@@ -457,7 +461,13 @@ class SIPMIMEInfo : public PMIMEInfo
     void SetSubscriptionState(const PString & v);
     
     PString GetUserAgent() const;
-    void SetUserAgent(const SIPEndPoint & sipep);        // normally "OPAL/2.0"
+    void SetUserAgent(const PString & v);
+    
+    PString GetOrganization() const;
+    void SetOrganization(const PString & v);
+    
+    void GetProductInfo(OpalProductInfo & info);
+    void SetProductInfo(const PString & ua, const OpalProductInfo & info);
 
     PString GetWWWAuthenticate() const;
     void SetWWWAuthenticate(const PString & v);
@@ -773,6 +783,11 @@ class SIP_PDU : public PObject
       OpalTransport & transport,
       const OpalTransportAddress & remoteAddress = OpalTransportAddress()
     );
+    
+    /** Construct the PDU string to output.
+        Returns the total length of the PDU.
+      */
+    PString Build();
 
     PString GetTransactionID() const;
 
