@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2047.2.3  2007/03/20 00:46:01  hfriederich
+ * Revision 1.2047.2.4  2007/08/05 13:12:15  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.46.2.3  2007/03/20 00:46:01  hfriederich
  * (Backport from HEAD)
  * Simple but messy changes to allow compile time removal of protocol
  *   options such as H.450 and H.460
@@ -445,9 +448,6 @@ class H235SecurityInfo;
 class H323Gatekeeper;
 class H323SignalPDU;
 class H323ServiceControlSession;
-
-class PSTUNClient;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1473,21 +1473,6 @@ class H323EndPoint : public OpalEndPoint
     H460_FeatureSet & GetFeatureSet() { return features; };
 #endif
 
-    /**Return the STUN server to use.
-       Returns NULL if address is a local address as per IsLocalAddress().
-       Always returns the STUN server if address is zero.
-       Note, the pointer is NOT to be deleted by the user.
-      */
-    PSTUNClient * GetSTUN(
-      const PIPSocket::Address & address = 0
-    ) const { return manager.GetSTUN(address); }
-
-    /**Set the STUN server address, is of the form host[:port]
-      */
-    void SetSTUNServer(
-      const PString & server
-    ) { manager.SetSTUNServer(server); }
-
     /**Determine if the address is "local", ie does not need STUN
      */
     virtual BOOL IsLocalAddress(
@@ -1691,13 +1676,6 @@ class H323EndPoint : public OpalEndPoint
 
   //@}
 
-    /**
-     * default settings H.221 settings
-     */
-    static BYTE defaultT35CountryCode;
-    static BYTE defaultT35Extension;
-    static WORD defaultManufacturerCode;
-
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
     BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
@@ -1727,9 +1705,6 @@ class H323EndPoint : public OpalEndPoint
     unsigned    callIntrusionProtectionLevel;
 #endif
 
-    BYTE          t35CountryCode;
-    BYTE          t35Extension;
-    WORD          manufacturerCode;
     TerminalTypes terminalType;
 
     BOOL          clearCallOnRoundTripFail;

@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2017  2006/08/21 04:52:40  csoutheren
+ * Revision 1.2017.4.1  2007/08/05 13:12:15  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.16  2006/08/21 04:52:40  csoutheren
  * Fixed spelling error in documentation
  *
  * Revision 2.15  2006/04/25 07:48:07  rjongbloed
@@ -1204,7 +1207,11 @@ class H323RegisteredEndPoint : public PSafeObject
 
     /**Get application info (name/version etc) for endpoint.
       */
-    const PCaselessString & GetApplicationInfo() const { return applicationInfo; }
+    const PCaselessString GetApplicationInfo() const { return productInfo.AsString(); }
+    
+    /**Get application info (name/version etc) for endpoint
+      */
+    const OpalProductInfo & GetProductInfo() const { return productInfo; }
 
     /**Get the protocol version the endpoint registered with.
       */
@@ -1258,6 +1265,7 @@ class H323RegisteredEndPoint : public PSafeObject
     H323TransportAddressArray signalAddresses;
     PStringArray              aliases;
     PStringArray              voicePrefixes;
+    OpalProductInfo           productInfo;
     PCaselessString           applicationInfo;
     unsigned                  protocolVersion;
     BOOL                      isBehindNAT;
