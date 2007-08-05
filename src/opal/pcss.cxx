@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2040.2.5  2007/05/03 10:37:51  hfriederich
+ * Revision 1.2040.2.6  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.39.2.5  2007/05/03 10:37:51  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -484,7 +487,7 @@ BOOL OpalPCSSConnection::SetUpConnection()
 
     remotePartyName    = otherConn->GetRemotePartyName();
     remotePartyAddress = otherConn->GetRemotePartyAddress();
-    remoteApplication  = otherConn->GetRemoteApplication();
+    remoteProductInfo  = otherConn->GetRemoteProductInfo();
   }
 
   PTRACE(3, "PCSS\tSetUpConnection(" << remotePartyName << ')');
@@ -585,11 +588,11 @@ OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & sour
 
 BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
 {
-  OpalAudioMediaStream * stream = PDownCast(OpalAudioMediaStream, GetMediaStream(OpalDefaultAudioMediaType, source));
+  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalDefaultAudioMediaType, source));
   if (stream == NULL)
     return FALSE;
 
-  PSoundChannel * channel = PDownCast(PSoundChannel, stream->GetChannel());
+  PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
     return FALSE;
 
@@ -599,7 +602,7 @@ BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
 
 unsigned OpalPCSSConnection::GetAudioSignalLevel(BOOL source)
 {
-  OpalAudioMediaStream * stream = PDownCast(OpalAudioMediaStream, GetMediaStream(OpalDefaultAudioMediaType, source));
+  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalDefaultAudioMediaType, source));
   if (stream == NULL)
     return UINT_MAX;
 

@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.8  2007/05/28 16:41:46  hfriederich
+ * Revision 1.2041.2.9  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.40.2.8  2007/05/28 16:41:46  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.40.2.7  2007/05/03 10:37:51  hfriederich
@@ -398,21 +401,43 @@ void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
 
 OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 {
-	OpalMediaFormat fmt;
+  OpalMediaFormat fmt;
+  
+  OpalTranscoder * xcoder = GetAndLockSinkTranscoder(i);
+  if (xcoder != NULL) {
+    fmt = xcoder->GetOutputFormat();
+    UnLockSinkTranscoder();
+  }
+  
+  return fmt;
+}
 
-  PWaitAndSignal mutex(inUse);
+OpalTranscoder * OpalMediaPatch::GetAndLockSinkTranscoder(PINDEX i) const
+{
+  OpalMediaFormat fmt;
+  
+  inUse.Wait();
+  
+  if (i >= sinks.GetSize()) {
+    UnLockSinkTranscoder();
+    return NULL;
+  }
+  
+  Sink & sink = sinks[i];
+  if (sink.secondaryCodec != NULL) 
+    return sink.secondaryCodec;
+  
+  if (sink.primaryCodec != NULL)
+    return sink.primaryCodec;
+  
+  UnLockSinkTranscoder();
+  
+  return NULL;
+}
 
-	if (i >= sinks.GetSize())
-		return fmt;
-
-	Sink & sink = sinks[i];
-	if (sink.secondaryCodec != NULL) 
-		return sink.secondaryCodec->GetOutputFormat();
-
-	if (sink.primaryCodec != NULL)
-		return sink.primaryCodec->GetOutputFormat();
-    
-    return sink.stream->GetMediaFormat();
+void OpalMediaPatch::UnLockSinkTranscoder() const
+{
+  inUse.Signal();
 }
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)

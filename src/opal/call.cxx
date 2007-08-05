@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2053.2.7  2007/05/28 16:41:45  hfriederich
+ * Revision 1.2053.2.8  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.52.2.7  2007/05/28 16:41:45  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.52.2.6  2007/05/03 10:37:50  hfriederich
@@ -533,7 +536,6 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (includeSpecifiedConnection || conn != &connection) {
       OpalMediaFormatList possibleFormats = OpalTranscoder::GetPossibleFormats(conn->GetMediaFormats());
-      PTRACE(4, "Call\tformats for " << *conn << '\n' << setfill('\n') << possibleFormats << setfill(' '));
       if (first) {
         commonFormats = possibleFormats;
         first = FALSE;
@@ -550,7 +552,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 
   connection.AdjustMediaFormats(commonFormats);
 
-  PTRACE(3, "Call\tGetMediaFormats for " << connection << '\n'
+  PTRACE(4, "Call\tGetMediaFormats for " << connection << '\n'
          << setfill('\n') << commonFormats << setfill(' '));
 
   return commonFormats;
@@ -594,7 +596,6 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
         startedOne = TRUE;
         // If opened the source stream, then reorder the media formats so we
         // have a preference for symmetric codecs on subsequent connection(s)
-        PWaitAndSignal m(conn->GetMediaStreamMutex());
         OpalMediaStream * otherStream = conn->GetMediaStream(mediaType, TRUE);
         if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
           adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());

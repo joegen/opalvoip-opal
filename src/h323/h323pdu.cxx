@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2021  2007/01/18 04:45:16  csoutheren
+ * Revision 1.2021.2.1  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.20  2007/01/18 04:45:16  csoutheren
  * Messy, but simple change to add additional options argument to OpalConnection constructor
  * This allows the provision of non-trivial arguments for connections
  *
@@ -814,30 +817,24 @@ PString H323GetAliasAddressE164(const H225_ArrayOf_AliasAddress & aliases)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PString H323GetApplicationInfo(const H225_VendorIdentifier & vendor)
+void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor)
 {
-  PStringStream str;
-
-  PString product = vendor.m_productId.AsString();
-  PString version = vendor.m_versionId.AsString();
-
+  info.name = vendor.m_productId.AsString();
+  info.version = vendor.m_versionId.AsString();
+  
   // Special case, Cisco IOS does not put in the product and version fields
   if (vendor.m_vendor.m_t35CountryCode == 181 &&
       vendor.m_vendor.m_t35Extension == 0 &&
       vendor.m_vendor.m_manufacturerCode == 18) {
-    if (product.IsEmpty())
-      product = "Cisco IOS";
-    if (version.IsEmpty())
-      version = "12.2";
+    if (info.name.IsEmpty())
+      info.name = "Cisco IOS";
+    if (info.version.IsEmpty())
+      info.version = "12.2";
   }
-
-  str << product << '\t' << version << '\t' << vendor.m_vendor.m_t35CountryCode;
-  if (vendor.m_vendor.m_t35Extension != 0)
-    str << '.' << vendor.m_vendor.m_t35Extension;
-  str << '/' << vendor.m_vendor.m_manufacturerCode;
-
-  str.MakeMinimumSize();
-  return str;
+  
+  info.t35CountryCode   = (BYTE)vendor.m_vendor.m_t35CountryCode.GetValue();
+  info.t35Extension     = (BYTE)vendor.m_vendor.m_t35Extension.GetValue();
+  info.manufacturerCode = (WORD)vendor.m_vendor.m_manufacturerCode.GetValue();
 }
 
 

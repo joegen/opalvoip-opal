@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059.2.6  2007/05/03 10:37:51  hfriederich
+ * Revision 1.2059.2.7  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.58.2.6  2007/05/03 10:37:51  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -328,12 +331,14 @@
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
 #include <codec/opalwavfile.h>
+#include <ptclib/cypher.h>
 
 #define new PNEW
 
 #define OPAL_UNKNOWN_MEDIA_TYPE_STRING "UnknownMedia"
 #define OPAL_DEFAULT_AUDIO_MEDIA_TYPE_STRING "DefaultAudioMedia"
 #define OPAL_DEFAULT_VIDEO_MEDIA_TYPE_STRING "DefaultVideoMedia"
+
 
 namespace PWLibStupidLinkerHacks {
 extern int opalLoader;
@@ -728,11 +733,12 @@ void OpalMediaTypeList::Reorder(const PStringArray & order)
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType merge)
-  : m_name(name),
-    m_readOnly(readOnly),
-    m_merge(merge)
+  : m_name(name)
+  , m_readOnly(readOnly)
+  , m_merge(merge)
 {
   m_name.Replace("=", "_", TRUE);
+  memset(&m_H245Generic, 0, sizeof(m_H245Generic));
 }
 
 
@@ -792,6 +798,8 @@ bool OpalMediaOption::FromString(const PString & value)
   return !strm.fail();
 }
 
+
+///////////////////////////////////////
 
 OpalMediaOptionEnum::OpalMediaOptionEnum(const char * name,
                                          bool readOnly,
@@ -881,6 +889,8 @@ void OpalMediaOptionEnum::SetValue(PINDEX value)
 }
 
 
+///////////////////////////////////////
+
 OpalMediaOptionString::OpalMediaOptionString(const char * name, bool readOnly)
   : OpalMediaOption(name, readOnly, MinMerge)
 {
@@ -966,6 +976,120 @@ void OpalMediaOptionString::SetValue(const PString & value)
 }
 
 
+///////////////////////////////////////
+
+OpalMediaOptionOctets::OpalMediaOptionOctets(const char * name, bool readOnly, bool base64)
+: OpalMediaOption(name, readOnly, NoMerge)
+, m_base64(base64)
+{
+}
+
+
+OpalMediaOptionOctets::OpalMediaOptionOctets(const char * name, bool readOnly, bool base64, const PBYTEArray & value)
+: OpalMediaOption(name, readOnly, NoMerge)
+, m_value(value)
+, m_base64(base64)
+{
+}
+
+
+OpalMediaOptionOctets::OpalMediaOptionOctets(const char * name, bool readOnly, bool base64, const BYTE * data, PINDEX length)
+: OpalMediaOption(name, readOnly, NoMerge)
+, m_value(data, length)
+, m_base64(base64)
+{
+}
+
+
+PObject * OpalMediaOptionOctets::Clone() const
+{
+  OpalMediaOptionOctets * newObj = new OpalMediaOptionOctets(*this);
+  newObj->m_value.MakeUnique();
+  return newObj;
+}
+
+
+void OpalMediaOptionOctets::PrintOn(ostream & strm) const
+{
+  if (m_base64)
+    strm << PBase64::Encode(m_value);
+  else {
+    _Ios_Fmtflags flags = strm.flags();
+    char fill = strm.fill();
+    
+    strm << hex << setfill('0');
+    for (PINDEX i = 0; i < m_value.GetSize(); i++)
+      strm << setw(2) << (unsigned)m_value[i];
+    
+    strm.fill(fill);
+    strm.flags(flags);
+  }
+}
+
+
+void OpalMediaOptionOctets::ReadFrom(istream & strm)
+{
+  if (m_base64) {
+    PString str;
+    strm >> str;
+    PBase64::Decode(str, m_value);
+  }
+  else {
+    char pair[3];
+    pair[2] = '\0';
+    
+    PINDEX count = 0;
+    
+    while (isxdigit(strm.peek())) {
+      pair[0] = (char)strm.get();
+      if (!isxdigit(strm.peek())) {
+        strm.putback(pair[0]);
+        break;
+      }
+      pair[1] = (char)strm.get();
+      if (!m_value.SetMinSize((count+1+99)%100))
+        break;
+      m_value[count++] = (BYTE)strtoul(pair, NULL, 16);
+    }
+    
+    m_value.SetSize(count);
+  }
+}
+
+
+PObject::Comparison OpalMediaOptionOctets::CompareValue(const OpalMediaOption & option) const
+{
+  const OpalMediaOptionOctets * otherOption = PDownCast(const OpalMediaOptionOctets, &option);
+  if (otherOption == NULL)
+    return GreaterThan;
+  
+  return m_value.Compare(otherOption->m_value);
+}
+
+
+void OpalMediaOptionOctets::Assign(const OpalMediaOption & option)
+{
+  const OpalMediaOptionOctets * otherOption = PDownCast(const OpalMediaOptionOctets, &option);
+  if (otherOption != NULL) {
+    m_value = otherOption->m_value;
+    m_value.MakeUnique();
+  }
+}
+
+
+void OpalMediaOptionOctets::SetValue(const PBYTEArray & value)
+{
+  m_value = value;
+  m_value.MakeUnique();
+}
+
+
+void OpalMediaOptionOctets::SetValue(const BYTE * data, PINDEX length)
+{
+  m_value = PBYTEArray(data, length);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 const PString & OpalMediaFormat::NeedsJitterOption() { static PString s = "Needs Jitter"; return s; }
@@ -1043,16 +1167,16 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   if (nj)
     AddOption(new OpalMediaOptionBoolean(NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
 
-  AddOption(new OpalMediaOptionInteger(MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
+  AddOption(new OpalMediaOptionUnsigned(MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
 
   if (fs > 0)
-    AddOption(new OpalMediaOptionInteger(MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
+    AddOption(new OpalMediaOptionUnsigned(MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
 
   if (ft > 0)
-    AddOption(new OpalMediaOptionInteger(FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
+    AddOption(new OpalMediaOptionUnsigned(FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
 
   if (cr > 0)
-    AddOption(new OpalMediaOptionInteger(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
+    AddOption(new OpalMediaOptionUnsigned(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
   if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::IllegalPayloadType) {
@@ -1210,7 +1334,15 @@ int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
   if (option == NULL)
     return dflt;
 
-  return PDownCast(OpalMediaOptionInteger, option)->GetValue();
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  if (optUnsigned != NULL)
+    return optUnsigned->GetValue();
+  
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL)
+    return optInteger->GetValue();
+  
+  return 0;
 }
 
 
@@ -1223,8 +1355,19 @@ bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
   if (option == NULL)
     return false;
 
-  PDownCast(OpalMediaOptionInteger, option)->SetValue(value);
-  return true;
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  if (optUnsigned != NULL) {
+    optUnsigned->SetValue(value);
+    return true;
+  }
+  
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL) {
+    optInteger->SetValue(value);
+    return true;
+  }
+  
+  return false;
 }
 
 
@@ -1303,17 +1446,62 @@ bool OpalMediaFormat::SetOptionString(const PString & name, const PString & valu
 }
 
 
-bool OpalMediaFormat::AddOption(OpalMediaOption * option)
+bool OpalMediaFormat::GetOptionOctets(const PString & name, PBYTEArray & octets) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+  
+  octets = PDownCast(OpalMediaOptionOctets, option)->GetValue();
+  return true;
+}
+
+
+bool OpalMediaFormat::SetOptionOctets(const PString & name, const PBYTEArray & octets)
+{
+  PWaitAndSignal m(media_format_mutex);
+  options.MakeUnique();
+  
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+  
+  PDownCast(OpalMediaOptionOctets, option)->SetValue(octets);
+  return true;
+}
+
+
+bool OpalMediaFormat::SetOptionOctets(const PString & name, const BYTE * data, PINDEX length)
+{
+  PWaitAndSignal m(media_format_mutex);
+  options.MakeUnique();
+  
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+  
+  PDownCast(OpalMediaOptionOctets, option)->SetValue(data, length);
+  return true;
+}
+
+
+bool OpalMediaFormat::AddOption(OpalMediaOption * option, BOOL overwrite)
 {
   PWaitAndSignal m(media_format_mutex);
   if (PAssertNULL(option) == NULL)
     return false;
-
-  if (options.GetValuesIndex(*option) != P_MAX_INDEX) {
-    delete option;
-    return false;
+  
+  PINDEX index = options.GetValuesIndex(*option);
+  if (index != P_MAX_INDEX) {
+    if (!overwrite) {
+      delete option;
+      return false;
+    }
+    
+    options.RemoveAt(index);
   }
-
+  
   options.MakeUnique();
   options.Append(option);
   return true;
@@ -1383,6 +1571,32 @@ time_t OpalMediaFormat::GetCodecBaseTime() const
   return codecBaseTime;
 }
 
+ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
+{
+  for (PINDEX i = 0; i < GetOptionCount(); i++) {
+    const OpalMediaOption & option = GetOption(i);
+    strm << right << setw(25) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
+      << ") = " << left << setw(10) << option.AsString();
+    if (!option.GetFMTPName().IsEmpty())
+      strm << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
+    const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
+    if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
+      strm << "  H.245 Ordinal: " << genericInfo.ordinal
+      << ' ' << (genericInfo.mode == OpalMediaOption::H245GenericInfo::Collapsing ? "Collapsing" : "Non-Collapsing");
+      if (!genericInfo.excludeTCS)
+        strm << " TCS";
+      if (!genericInfo.excludeOLC)
+        strm << " OLC";
+      if (!genericInfo.excludeReqMode)
+        strm << " RM";
+    }
+    strm << endl;
+  }
+  strm << endl;
+  
+  return strm;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = "Rx Frames Per Packet"; return s; }
@@ -1409,8 +1623,8 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                     clockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionInteger(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
 
@@ -1444,10 +1658,10 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionInteger(FrameWidthOption(),          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionInteger(FrameHeightOption(),         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
-  AddOption(new OpalMediaOptionInteger(EncodingQualityOption(),     false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionInteger(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
+  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),     false, OpalMediaOption::MinMerge, 15,          1, 31));
+  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
   AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
 

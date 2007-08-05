@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2073.2.6  2007/05/28 16:41:45  hfriederich
+ * Revision 1.2073.2.7  2007/08/05 13:12:18  hfriederich
+ * Backport from HEAD - Changes since last commit
+ *
+ * Revision 2.72.2.6  2007/05/28 16:41:45  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.72.2.5  2007/05/03 10:37:50  hfriederich
@@ -384,6 +387,37 @@ unsigned OpalGetBuildNumber()
   return BUILD_NUMBER;
 }
 
+
+OpalProductInfo::OpalProductInfo()
+: vendor(PProcess::Current().GetManufacturer())
+, name(PProcess::Current().GetName())
+, version(PProcess::Current().GetVersion())
+, t35CountryCode(9)     // Country code for Australia
+, t35Extension(0)       // No extension code for Australia
+, manufacturerCode(61)  // Allocated by Australian Communications Authority, Oct 2000;
+{
+}
+
+OpalProductInfo & OpalProductInfo::Default()
+{
+  static OpalProductInfo instance;
+  return instance;
+}
+
+
+PCaselessString OpalProductInfo::AsString() const
+{
+  PStringStream str;
+  str << name << '\t' << version << '\t';
+  if (t35CountryCode != 0 && manufacturerCode != 0) {
+    str << (unsigned)t35CountryCode;
+    if (t35Extension != 0)
+      str << '.' << (unsigned)t35Extension;
+    str << '/' << manufacturerCode;
+  }
+  str << '\t' << vendor;
+  return str;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1077,10 +1111,10 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 
   PINDEX pos;
   if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Left(::strspn(addr, "0123456789*#")), pos, 4);
+    destination.Splice(addr.Left(addr.FindSpan("0123456789*#")), pos, 4);
 
   if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Mid(::strspn(addr, "0123456789*#")), pos, 5);
+    destination.Splice(addr.Mid(addr.FindSpan("0123456789*#")), pos, 5);
 
   // Do meta character substitutions
   if ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
@@ -1119,7 +1153,7 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
   /* Check if the remote address is a private IP, broadcast, or us */
-  return ip.IsRFC1918() || ip.IsBroadcast() || PIPSocket::IsLocalHost(ip);
+  return ip.IsAny() || ip.IsBroadcast() || ip.IsRFC1918() || PIPSocket::IsLocalHost(ip);
 }
 
 
@@ -1152,16 +1186,21 @@ PSTUNClient * OpalManager::GetSTUN(const PIPSocket::Address & ip) const
 
 PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
 {
-  delete stun;
+  stunServer = server;
 
   if (server.IsEmpty()) {
+    delete stun;
     stun = NULL;
     return PSTUNClient::UnknownNat;
   }
 
+  if (stun == NULL)
     stun = new PSTUNClient(server,
                            GetUDPPortBase(), GetUDPPortMax(),
                            GetRtpIpPortBase(), GetRtpIpPortMax());
+  else
+    stun->SetServer(server);
+  
   PSTUNClient::NatTypes type = stun->GetNatType();
   if (type != PSTUNClient::BlockedNat)
     stun->GetExternalAddress(translationAddress);
@@ -1398,6 +1437,8 @@ BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
                                   BOOL incoming)
 {
   BOOL remoteIsNAT = FALSE;
+  
+  PTRACE(4, "OPAL\tChecking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ",peer=" << peerAddr << ",sig=" << sigAddr);
     
   if (incoming) {
         
