@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2064  2007/06/13 04:35:03  csoutheren
+ * Revision 1.2065  2007/08/06 15:05:43  csoutheren
+ * Fix problem with media format settings not being applied to plugin
+ * video transcoders on startup
+ *
+ * Revision 2.63  2007/06/13 04:35:03  csoutheren
  * Leave room for RTP header when grabbing video
  *
  * Revision 2.62  2007/05/04 15:09:14  vfrolov
@@ -336,15 +340,23 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 }
 
 
-BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   PWaitAndSignal mutex(patchMutex);
 
-  if (mediaPatch == NULL)
-    return FALSE;
-
   // If we are source, then update the sink side, and vice versa
-  return mediaPatch->UpdateMediaFormat(mediaFormat, IsSink());
+  if (mediaPatch != NULL) {
+    if (!mediaPatch->UpdateMediaFormat(newMediaFormat, IsSink())) {
+      PTRACE(2, "Media\tPatch did not allow media format update of " << *this);
+      return FALSE;
+    }
+  }
+
+  mediaFormat = newMediaFormat;
+
+  PTRACE(4, "Media\tMedia format updated on " << *this);
+
+  return TRUE;
 }
 
 
