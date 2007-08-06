@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2039  2007/08/06 07:14:23  csoutheren
+ * Revision 1.2040  2007/08/06 15:05:43  csoutheren
+ * Fix problem with media format settings not being applied to plugin
+ * video transcoders on startup
+ *
+ * Revision 2.38  2007/08/06 07:14:23  csoutheren
  * Fix logging
  * Correct matching of H.263 capabilities
  *
@@ -1177,6 +1181,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder
     BOOL ExecuteCommand(const OpalMediaCommand & /*command*/);
     PINDEX GetOptimalDataFrameSize(BOOL input) const;
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
 
   protected:
     void * context;
@@ -1191,27 +1196,30 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
 { 
   if (codec == NULL || codec->createCodec == NULL) 
     context = NULL;
-  else {
+  else 
     context = (*codec->createCodec)(codec); 
-    PluginCodec_ControlDefn * ctl = GetCodecControl(_codec, SET_CODEC_OPTIONS_CONTROL);
-    if (ctl != NULL) {
-      PStringArray list;
-      const OpalMediaFormat & fmt = GetOutputFormat();
-      for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
-        const OpalMediaOption & option = fmt.GetOption(i);
-        list += option.GetName();
-        list += option.AsString();
-        PTRACE(5, "OpalPlugin\tSetting codec control '" << option.GetName() << "'=" << option.AsString());
-      }
-      char ** _options = list.ToCharArray();
-      unsigned int optionsLen = sizeof(_options);
-      (*ctl->control)(_codec, context, SET_CODEC_OPTIONS_CONTROL, _options, &optionsLen);
-      free(_options);
-    }
-  }
 
   bufferRTP = NULL;
 }
+
+BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
+{
+  PluginCodec_ControlDefn * ctl = GetCodecControl(codec, SET_CODEC_OPTIONS_CONTROL);
+  if (ctl != NULL) {
+    PStringArray list;
+    for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
+      const OpalMediaOption & option = fmt.GetOption(i);
+      list += option.GetName();
+      list += option.AsString();
+      PTRACE(5, "OpalPlugin\tSetting codec control '" << option.GetName() << "'=" << option.AsString());
+    }
+    char ** _options = list.ToCharArray();
+    unsigned int optionsLen = sizeof(_options);
+    (*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, _options, &optionsLen);
+    free(_options);
+  }
+}
+
 
 OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 { 
