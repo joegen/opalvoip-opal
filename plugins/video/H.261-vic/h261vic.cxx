@@ -26,6 +26,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.14  2007/08/06 09:22:28  dsandras
+ * Reintroduces the adaptive packet delay from the old OPAL. Patch from
+ * Matthias Schneider <ma30002000 yahoo de>. Thanks !
+ *
  * Revision 1.13  2007/06/22 17:58:53  csoutheren
  * Fixed for gcc
  *
@@ -122,10 +126,14 @@
   #include <malloc.h>
   #define STRCMPI  _strcmpi
 #else
+  #include <sys/time.h>
+  #include <unistd.h>
   #include <semaphore.h>
   #define STRCMPI  strcasecmp
 #endif
 #include <string.h>
+
+#include <stdio.h>
 
 //#ifdef _MSC_VER
 //#pragma warning(disable:4100)
@@ -133,6 +141,7 @@
 
 #define BEST_ENCODER_QUALITY   1
 #define WORST_ENCODER_QUALITY 31
+#define DEFAULT_ENCODER_QUALITY 15
 
 #define DEFAULT_FILL_LEVEL     5
 
@@ -346,9 +355,17 @@ class H261EncoderContext
 {
   public:
     P64Encoder * videoEncoder;
-    //PTimeInterval newTime;
     unsigned frameWidth;
     unsigned frameHeight;
+    long waitFactor;
+    bool packetDelay;
+    unsigned frameLength;
+    #ifdef _WIN32
+      long newTime;
+    #else
+      timeval newTime;
+    #endif
+
     bool forceIFrame;
     int videoQuality;
     unsigned long lastTimeStamp;
@@ -357,9 +374,19 @@ class H261EncoderContext
     H261EncoderContext()
     {
       frameWidth = frameHeight = 0;
-      videoEncoder = new P64Encoder(BEST_ENCODER_QUALITY, DEFAULT_FILL_LEVEL);
+      videoEncoder = new P64Encoder(DEFAULT_ENCODER_QUALITY, DEFAULT_FILL_LEVEL);
       forceIFrame = false;
-      videoQuality = 10;
+      videoQuality = DEFAULT_ENCODER_QUALITY;
+      waitFactor = 0;
+      packetDelay = false;
+
+    #ifdef _WIN32
+      newTime = 0;
+    #else
+      newTime.tv_sec = 0;
+      newTime.tv_usec = 0;
+    #endif
+      frameLength = 0;
     }
 
     ~H261EncoderContext()
@@ -372,6 +399,18 @@ class H261EncoderContext
       frameWidth = w;
       frameHeight = h;
       videoEncoder->SetSize(frameWidth, frameHeight);
+    }
+
+    void SetTargetBitRate(unsigned bitrate) 
+    {
+      #ifdef _WIN32
+        waitFactor = bitrate;
+      #else
+        if (bitrate==0)
+          waitFactor = 0;
+         else
+          waitFactor = 8000000 / bitrate;  // on UNIX we deal with usecs
+      #endif
     }
 
     int EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -469,6 +508,7 @@ debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPa
 
   protected:
     unsigned SetEncodedPacket(RTPFrame & dstRTP, bool isLast, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned payloadLength, unsigned & flags);
+    void adaptiveDelay(unsigned totalLength);
 };
 
 
@@ -484,7 +524,52 @@ unsigned H261EncoderContext::SetEncodedPacket(RTPFrame & dstRTP, bool isLast, un
   flags |= isLast ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
   flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
 
+  frameLength += dstRTP.GetPacketLen();
+
+  if (isLast) {
+    if (packetDelay) adaptiveDelay(frameLength);
+    frameLength = 0;
+  }
+
   return dstRTP.GetPacketLen();
+}
+
+void H261EncoderContext::adaptiveDelay(unsigned totalLength) {
+  #ifdef _WIN32
+    long waitBeforeSending =  0; 
+    if (newTime!= 0) { // calculate delay and wait
+      waitBeforeSending = newTime - GetTickCount();
+      if (waitBeforeSending > 0)
+        Sleep(waitBeforeSending);
+    }
+    if (waitFactor) {
+      newTime = GetTickCount() +  8000 / waitFactor  * totalLength;
+    }
+    else {
+      newTime = 0;
+    }
+  #else
+    struct timeval currentTime;
+    long waitBeforeSending;
+    long waitAtNextFrame;
+  
+    if ((newTime.tv_sec != 0)  || (newTime.tv_usec != 0) ) { // calculate delay and wait
+      gettimeofday(&currentTime, NULL); 
+      waitBeforeSending = ((newTime.tv_sec - currentTime.tv_sec) * 1000000) + ((newTime.tv_usec - currentTime.tv_usec));  // in useconds
+      if (waitBeforeSending > 0) 
+        usleep(waitBeforeSending);
+    }
+    gettimeofday(&currentTime, NULL); 
+    if (waitFactor) {
+      waitAtNextFrame = waitFactor * totalLength ; // in us in ms
+      newTime.tv_sec = currentTime.tv_sec + (int)((waitAtNextFrame  + currentTime.tv_usec) / 1000000);
+      newTime.tv_usec = (int)((waitAtNextFrame + currentTime.tv_usec) % 1000000);
+    }
+    else {
+      newTime.tv_sec = 0;
+      newTime.tv_usec = 0;
+    }
+  #endif
 }
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
@@ -499,17 +584,24 @@ static int encoder_set_options(const PluginCodec_Definition *,
                                unsigned * parmLen)
 {
   H261EncoderContext * context = (H261EncoderContext *)_context;
-  if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
+  if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
 
-  // get the "frame width" media format parameter to use as a hint for the encoder to start off
-  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], "Frame Width") == 0)
-      context->frameWidth = atoi(option[1]);
-    if (STRCMPI(option[0], "Frame Height") == 0)
-      context->frameHeight = atoi(option[1]);
+  if (parm != NULL) {
+    const char ** options = (const char **)parm;
+    int i;
+    for (i = 0; options[i] != NULL; i += 2) {
+      if (STRCMPI(options[i], "Target Bit Rate") == 0)
+         context->SetTargetBitRate(atoi(options[i+1]));
+      if (STRCMPI(options[i], "Frame Height") == 0)
+        context->frameHeight = atoi(options[i+1]);
+      if (STRCMPI(options[i], "Frame Width") == 0)
+        context->frameWidth = atoi(options[i+1]);
+      if (STRCMPI(options[i], "Adaptive Packet Delay") == 0)
+        context->packetDelay = atoi(options[i+1]);
+      printf ("%s = %s - %d\n", options[i], options[i+1], atoi(options[i+1]));
+    }
   }
-
   return 1;
 }
 
