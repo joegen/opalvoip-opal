@@ -49,6 +49,8 @@ extern "C" {
   #include <ffmpeg/avcodec.h>
 };
 
+#define CIF4_WIDTH 704
+#define CIF4_HEIGHT 576
 #define CIF_WIDTH 352
 #define CIF_HEIGHT 288
 #define QCIF_WIDTH 176
@@ -67,10 +69,9 @@ class H264EncoderContext
     ~H264EncoderContext ();
 
     void SetTargetBitRate (int rate);
-    void SetEncodingQuality (int quality);
+    void SetFrameRate (int rate);
     void SetFrameWidth (int width);
     void SetFrameHeight (int height);
-    void SetPayloadType (int payloadType);
     void ApplyOptions ();
 
     int EncodeFrames (const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags);
@@ -148,12 +149,9 @@ static struct PluginCodec_information licenseInfo = {
 /////////////////////////////////////////////////////////////////////////////
 
 static const char YUV420PDesc[]  = { "YUV420P" };
-
-static const char h264QCIFDesc[]  = { "H.264-QCIF" };
-static const char h264CIFDesc[]   = { "H.264-CIF" };
 static const char h264Desc[]      = { "H.264" };
+static const char sdpH264[]       = { "h264" };
 
-static const char sdpH264[]   = { "h264" };
 #define H264_CLOCKRATE        90000
 #define H264_BITRATE         768000
 #define H264_PAYLOAD_SIZE      1400
@@ -175,71 +173,23 @@ static PluginCodec_ControlDefn DecoderControls[] = {
   { NULL }
 };
 
-static struct PluginCodec_Option const qcifMPI =
-  { PluginCodec_IntegerOption, "QCIF MPI", false, PluginCodec_MaxMerge, "1", "QCIF", "0", 0, "0", "4" };
+/*
+Still to consider
+       sprop-parameter-sets: this may be a NAL
+       max-mbps, max-fs, max-cpb, max-dpb, and max-br
+       parameter-add
+       max-rcmd-nalu-size:
+*/
 
-static struct PluginCodec_Option const cifMPI =
-  { PluginCodec_IntegerOption, "CIF MPI",  false, PluginCodec_MaxMerge, "1", "CIF",  "0", 0, "0", "4" };
+static struct PluginCodec_Option const packetizationMode =
+  { PluginCodec_IntegerOption, "CAP Packetization Mode", false, PluginCodec_NoMerge, "1", "packetization-mode", "0", 0, "1", "2" };
 
-static struct PluginCodec_Option const sqcifMPI =
-  { PluginCodec_IntegerOption, "SQCIF MPI", false, PluginCodec_MaxMerge, "1", "SQCIF", "0", 0, "0", "4" };
+static struct PluginCodec_Option const profileLevel =
+  { PluginCodec_OctetsOption, "CAP Profile Level", false, PluginCodec_NoMerge, "42E015", "profile-level-id", "42E015", 0};
 
-static struct PluginCodec_Option const cif4MPI =
-  { PluginCodec_IntegerOption, "CIF4 MPI",  false, PluginCodec_MaxMerge, "0", "CIF4", "0", 0, "0", "4" };
-
-static struct PluginCodec_Option const cif16MPI =
-  { PluginCodec_IntegerOption, "CIF16 MPI", false, PluginCodec_MaxMerge, "0", "CIF16", "0", 0, "0", "4" };
-
-/* All of the annexes below are turned off and set to read/only because this
-   implementation does not support them. Their presence here is so that if
-   someone out there does a different implementation of the codec and copies
-   this file as a template, they will get them and hopefully notice that they
-   can just make them read/write and/or turned on.
- */
-static struct PluginCodec_Option const annexF =
-  { PluginCodec_BoolOption,    "Annex F",   true,  PluginCodec_AndMerge, "0", "F", "0" };
-
-static struct PluginCodec_Option const annexI =
-  { PluginCodec_BoolOption,    "Annex I",   true,  PluginCodec_AndMerge, "0", "I", "0" };
-
-static struct PluginCodec_Option const annexJ =
-  { PluginCodec_BoolOption,    "Annex J",   true,  PluginCodec_AndMerge, "0", "J", "0" };
-
-static struct PluginCodec_Option const annexK =
-  { PluginCodec_IntegerOption, "Annex K",   true,  PluginCodec_EqualMerge, "0", "K", "0", 0, "0", "4" };
-
-static struct PluginCodec_Option const annexN =
-  { PluginCodec_BoolOption,    "Annex N",   true,  PluginCodec_AndMerge, "0", "N", "0" };
-
-static struct PluginCodec_Option const annexP =
-  { PluginCodec_BoolOption,    "Annex P",   true,  PluginCodec_AndMerge, "0", "P", "0" };
-
-static struct PluginCodec_Option const annexT =
-  { PluginCodec_BoolOption,    "Annex T",   true,  PluginCodec_AndMerge, "0", "T", "0" };
-
-static struct PluginCodec_Option const * const qcifOptionTable[] = {
-  &qcifMPI,
-  NULL
-};
-
-static struct PluginCodec_Option const * const cifOptionTable[] = {
-  &cifMPI,
-  NULL
-};
-
-static struct PluginCodec_Option const * const xcifOptionTable[] = {
-  &qcifMPI,
-  &cifMPI,
-  &sqcifMPI,
-  &cif4MPI,
-  &cif16MPI,
-  &annexF,
-  &annexI,
-  &annexJ,
-  &annexK,
-  &annexN,
-  &annexP,
-  &annexT,
+static struct PluginCodec_Option const * const optionTable[] = {
+  &packetizationMode,
+  &profileLevel,
   NULL
 };
 
@@ -261,17 +211,17 @@ static struct PluginCodec_Definition h264CodecDefn[2] = {
   YUV420PDesc,                        // source format
   h264Desc,                           // destination format
 
-   xcifOptionTable,                   // user data 
+  optionTable,                        // user data 
 
   H264_CLOCKRATE,                     // samples per second
   H264_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
+  CIF4_WIDTH,                         // frame width
+  CIF4_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
-  0,                // IANA RTP payload code
+  0,                                  // IANA RTP payload code
   sdpH264,                            // RTP payload name
 
   create_encoder,                     // create codec function
@@ -279,7 +229,7 @@ static struct PluginCodec_Definition h264CodecDefn[2] = {
   codec_encoder,                      // encode/decode
   EncoderControls,                    // codec controls
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 { 
@@ -295,14 +245,14 @@ static struct PluginCodec_Definition h264CodecDefn[2] = {
   h264Desc,                           // source format
   YUV420PDesc,                        // destination format
 
-  xcifOptionTable,                    // user data 
+  optionTable,                        // user data 
 
   H264_CLOCKRATE,                     // samples per second
   H264_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
+  CIF4_WIDTH,                         // frame width
+  CIF4_HEIGHT,                        // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   0,                                  // IANA RTP payload code
@@ -313,7 +263,7 @@ static struct PluginCodec_Definition h264CodecDefn[2] = {
   codec_decoder,                      // encode/decode
   DecoderControls,                    // codec controls
 
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
+  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
 };
