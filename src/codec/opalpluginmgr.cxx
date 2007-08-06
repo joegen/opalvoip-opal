@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2038  2007/08/03 08:23:22  csoutheren
+ * Revision 1.2039  2007/08/06 07:14:23  csoutheren
+ * Fix logging
+ * Correct matching of H.263 capabilities
+ *
+ * Revision 2.37  2007/08/03 08:23:22  csoutheren
  * Cleanups
  *
  * Revision 2.36  2007/08/03 08:05:16  csoutheren
@@ -565,8 +569,8 @@ static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCo
     CallCodecControl(_encoderCodec, NULL, FREE_CODEC_OPTIONS_CONTROL, _options, &optionsLen, retVal);
   }
 
-  PStringStream str; format.PrintOptions(str);
-  PTRACE(5, "OpalPlugin\tOpalMediaFormat " << format << " has options\n" << str);
+//  PStringStream str; format.PrintOptions(str);
+//  PTRACE(5, "OpalPlugin\tOpalMediaFormat " << format << " has options\n" << str);
 }
 
 static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, const PluginCodec_H323GenericCodecData * genericData)
@@ -2314,7 +2318,7 @@ BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, un
 H323VideoPluginCapability::H323VideoPluginCapability(const PluginCodec_Definition * _encoderCodec,
                           const PluginCodec_Definition * _decoderCodec,
                           unsigned _pluginSubType)
-  : H323PluginCapabilityInfo(_encoderCodec, _decoderCodec), H323VideoCapability(),
+  : H323VideoCapability(), H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
     pluginSubType(_pluginSubType)
 { 
 }
@@ -2341,8 +2345,7 @@ BOOL H323VideoPluginCapability::SetCommonOptions(OpalMediaFormat & mediaFormat, 
 
 void H323VideoPluginCapability::PrintOn(std::ostream & strm) const
 {
-  strm << GetMediaFormat() << " pluginSubType=" << pluginSubType << ",options=\n";
-  GetMediaFormat().PrintOptions(strm);
+  H323VideoCapability::PrintOn(strm);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2517,16 +2520,20 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
       (qcifMPI && other_qcifMPI) ||
       (cifMPI && other_cifMPI) ||
       (cif4MPI && other_cif4MPI) ||
-      (cif16MPI && other_cif16MPI))
+      (cif16MPI && other_cif16MPI)) {
+    PTRACE(1, "H263: " << *this << " == " << other);
     return EqualTo;
+  }
 
   if ((!cif16MPI && other_cif16MPI) ||
       (!cif4MPI && other_cif4MPI) ||
       (!cifMPI && other_cifMPI) ||
       (!qcifMPI && other_qcifMPI) ||
       (!sqcifMPI && other_sqcifMPI))
+    PTRACE(1, "H263: " << *this << " < " << other);
     return LessThan;
 
+  PTRACE(1, "H263: " << *this << " > " << other << " are equal");
   return GreaterThan;
 }
 
@@ -2560,8 +2567,8 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
-  PStringStream str; mediaFormat.PrintOptions(str);
-  PTRACE(5, "OpalPlugin\tCreating capability for " << mediaFormat << ", options=" << str);
+  //PStringStream str; mediaFormat.PrintOptions(str);
+  //PTRACE(5, "OpalPlugin\tCreating capability for " << mediaFormat << ", options=\n" << str);
 
   SetTransmittedCap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, H245_H263VideoCapability::e_slowSqcifMPI, h263.m_slowSqcifMPI);
   SetTransmittedCap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  H245_H263VideoCapability::e_slowQcifMPI,  h263.m_slowQcifMPI);
@@ -2571,10 +2578,10 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 
   h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
-  h263.m_unrestrictedVector	               = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
-  h263.m_arithmeticCoding	                 = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
-  h263.m_advancedPrediction	               = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
-  h263.m_pbFrames	                         = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
+  h263.m_unrestrictedVector	           = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
+  h263.m_arithmeticCoding	           = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
+  h263.m_advancedPrediction	           = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
+  h263.m_pbFrames	                   = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
   h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
 
   {
@@ -2638,16 +2645,61 @@ static BOOL SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
   if (h263.HasOptionalField(mpiEnum)) {
     if (!mediaFormat.SetOptionInteger(mpiTag, mpi))
       return FALSE;
-    if (!H323VideoPluginCapability::SetCommonOptions(mediaFormat, frameWidth, frameHeight, mpi))
-      return FALSE;
-    formatDefined = TRUE;
-  } else if (h263.HasOptionalField(slowMpiEnum)) {
+    if (mpi != 0) {
+      if (!H323VideoPluginCapability::SetCommonOptions(mediaFormat, frameWidth, frameHeight, mpi))
+        return FALSE;
+      formatDefined = TRUE;
+    }
+  }
+  else if (h263.HasOptionalField(slowMpiEnum)) {
     if (!mediaFormat.SetOptionInteger(mpiTag, -(signed)slowMpi))
       return FALSE;
-    if (!H323VideoPluginCapability::SetCommonOptions(mediaFormat, frameWidth, frameHeight, -(signed)slowMpi))
-      return FALSE;
-    formatDefined = TRUE;
+    if (slowMpi != 0) {
+      if (!H323VideoPluginCapability::SetCommonOptions(mediaFormat, frameWidth, frameHeight, -(signed)slowMpi))
+        return FALSE;
+      formatDefined = TRUE;
+    }
   } 
+  else
+    mediaFormat.SetOptionInteger(mpiTag, 0);
+
+  return TRUE;
+}
+
+BOOL H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
+{
+  if (!H323Capability::IsMatch(subTypePDU))
+    return FALSE;
+
+  H245_VideoCapability & video    = (H245_VideoCapability &)subTypePDU;
+  H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
+
+#define COMPARE_MPI(field, slowField) \
+  if ( \
+      ((GetMediaFormat().GetOptionInteger(field##_tag) > 0) ? TRUE : FALSE) \
+      != \
+      (h263.HasOptionalField(H245_H263VideoCapability::e_##field) ? (h263.m_##field != 0) : FALSE) \
+      ) \
+    return FALSE; \
+  if ( \
+      ((GetMediaFormat().GetOptionInteger(field##_tag) < 0) ? TRUE : FALSE) \
+      != \
+      (h263.HasOptionalField(H245_H263VideoCapability::e_##slowField) ? (h263.m_##slowField != 0) : FALSE) \
+      ) \
+    return FALSE; \
+  if ( \
+      ((GetMediaFormat().GetOptionInteger(field##_tag) < 0) ? TRUE : FALSE) \
+      != \
+      (h263.HasOptionalField(H245_H263VideoCapability::e_##slowField) ? (h263.m_##slowField != 0) : FALSE) \
+      ) \
+    return FALSE; \
+
+  COMPARE_MPI(sqcifMPI,  slowSqcifMPI);
+  COMPARE_MPI(qcifMPI,   slowQcifMPI);
+  COMPARE_MPI(cifMPI,    slowCifMPI);
+  COMPARE_MPI(cif4MPI,   slowCif4MPI);
+  COMPARE_MPI(cif16MPI,  slowCif16MPI);
+
 
   return TRUE;
 }
@@ -2679,6 +2731,9 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
   if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI, CIF16_WIDTH, CIF16_HEIGHT, formatDefined))
     return FALSE;
 
+  if (!formatDefined)
+    return FALSE;
+
   unsigned maxBitRate = h263.m_maxBitRate*100;
   if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate))
     return FALSE;
@@ -2698,6 +2753,9 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
 
   if (h263.HasOptionalField(H245_H263VideoCapability::e_bppMaxKb))
     mediaFormat.SetOptionInteger(h323_bppMaxKb_tag, h263.m_bppMaxKb);
+
+//PStringStream str; mediaFormat.PrintOptions(str);
+//PTRACE(4, "OpalPlugin\tCreated H.263 cap from incoming PDU with format " << mediaFormat << " and options\n" << str);
 
   return TRUE;
 }
