@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2008  2007/08/03 08:04:56  csoutheren
+ * Revision 1.2009  2007/08/06 07:14:22  csoutheren
+ * Fix logging
+ * Correct matching of H.263 capabilities
+ *
+ * Revision 2.7  2007/08/03 08:04:56  csoutheren
  * Add PrintOn for plugin video caps
  *
  * Revision 2.6  2007/07/02 18:53:36  csoutheren
@@ -455,6 +459,7 @@ class H323H263PluginCapability : public H323VideoPluginCapability
     virtual BOOL OnReceivedPDU(
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
+    virtual BOOL IsMatch(const PASN_Choice & subTypePDU) const;
 };
 
 #endif // OPAL_VIDEO
