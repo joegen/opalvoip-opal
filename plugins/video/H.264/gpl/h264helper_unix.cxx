@@ -110,9 +110,9 @@ int main(int argc, char *argv[])
         writeStream(ulStream,(char*)&msg, sizeof(msg)); 
         flushStream(ulStream);
       break;
-    case SET_ENCODING_QUALITY:
+    case SET_FRAME_RATE:
         readStream(dlStream, (char*)&val, sizeof(val));
-        x264->SetEncodingQuality (val);
+        x264->SetFrameRate (val);
         writeStream(ulStream,(char*)&msg, sizeof(msg)); 
         flushStream(ulStream);
       break;
@@ -127,13 +127,6 @@ int main(int argc, char *argv[])
         x264->SetFrameHeight (val);
         writeStream(ulStream,(char*)&msg, sizeof(msg)); 
         flushStream(ulStream);
-      break;
-    case SET_PAYLOAD_TYPE:
-        readStream(dlStream, (char*)&val, sizeof(val));
-        x264->SetPayloadType (val);
-        writeStream(ulStream,(char*)&msg, sizeof(msg)); 
-        flushStream(ulStream);
-
       break;
     case ENCODE_FRAMES:
         readStream(dlStream, (char*)&srcLen, sizeof(srcLen));

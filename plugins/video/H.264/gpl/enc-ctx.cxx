@@ -1,38 +1,22 @@
-/*7
+/*
  * H.264 Plugin codec for OpenH323/OPAL
  *
- * Copyright (C) Matthias Schneider, All Rights Reserved
+ * Copyright (C) 2007 Matthias Schneider, All Rights Reserved
  *
- * This code is based on the file h261codec.cxx from the OPAL project released
- * under the MPL 1.0 license which contains the following:
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * Copyright (c) 1998-2000 Equivalence Pty. Ltd.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * The contents of this file are subject to the Mozilla Public License
- * Version 1.0 (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * Software distributed under the License is distributed on an "AS IS"
- * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
- * the License for the specific language governing rights and limitations
- * under the License.
- *
- * The Original Code is Open H323 Library.
- *
- * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
- *
- * Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
- *                 Michele Piccini (michele@piccini.com)
- *                 Derek Smithies (derek@indranet.co.nz)
- *
- *
- */
-
-/*
-  Notes
-  -----
-
  */
 
 #include "enc-ctx.h"
@@ -67,8 +51,6 @@ static void logCallbackX264 (void *priv, int level, const char *fmt, va_list arg
 
 X264EncoderContext::X264EncoderContext()
 {
-//  if (!X264LibraryInstance.IsLoaded()) return;
-
   _frameCounter=0;
   _PFramesSinceLastIFrame = 0;
   _IFrameInterval = _context.i_keyint_max = (int)(H264_FRAME_RATE * H264_KEY_FRAME_INTERVAL);
@@ -76,13 +58,11 @@ X264EncoderContext::X264EncoderContext()
 
   _txH264Frame = new H264Frame();
   _txH264Frame->SetMaxPayloadSize(H264_PAYLOAD_SIZE);
-  _payloadType = 105;
 
   _inputFrame.i_type = X264_TYPE_AUTO;
   _inputFrame.i_qpplus1 = 0;
   _inputFrame.img.i_csp = X264_CSP_I420;
  
- // X264LibraryInstance.X264ParamDefault(&_context);
    x264_param_default(&_context);
 
   // We make use of the baseline profile, that means:
@@ -135,7 +115,6 @@ X264EncoderContext::X264EncoderContext()
 
 X264EncoderContext::~X264EncoderContext()
 {
-
     if (_codec != NULL)
     {
       x264_encoder_close(_codec);
@@ -150,9 +129,12 @@ void X264EncoderContext::SetTargetBitRate(int rate)
   _context.rc.i_bitrate = rate;
 }
 
-void X264EncoderContext::SetEncodingQuality(int quality)
+void X264EncoderContext::SetFrameRate(int rate)
 {
-// Quality is from 1 (worst) to 25 (best)
+  _IFrameInterval = _context.i_keyint_max = (int)(rate * H264_KEY_FRAME_INTERVAL);
+  _PFramesSinceLastIFrame = _IFrameInterval + 1; // force a keyframe on the first frame
+  _context.i_fps_num = (int)((rate + .5) * 1000);
+  _context.i_fps_den = 1000;
 }
 
 void X264EncoderContext::SetFrameWidth(int width)
@@ -163,11 +145,6 @@ void X264EncoderContext::SetFrameWidth(int width)
 void X264EncoderContext::SetFrameHeight(int height)
 {
   _context.i_height = height;
-}
-
-void X264EncoderContext::SetPayloadType(int payloadType)
-{
-  _payloadType = payloadType;
 }
 
 void X264EncoderContext::ApplyOptions()
@@ -183,7 +160,7 @@ void X264EncoderContext::ApplyOptions()
   }
 }
 
-int X264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
+int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLen, unsigned char * dst, unsigned & dstLen, unsigned int & flags)
 {
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
