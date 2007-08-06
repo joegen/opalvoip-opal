@@ -36,11 +36,10 @@
 #define H264ENCODERCONTEXT_DELETE 2
 #define APPLY_OPTIONS             3
 #define SET_TARGET_BITRATE        4
-#define SET_ENCODING_QUALITY      5
+#define SET_FRAME_RATE            5
 #define SET_FRAME_WIDTH           6
 #define SET_FRAME_HEIGHT          7
-#define SET_PAYLOAD_TYPE          8
-#define ENCODE_FRAMES             9
-#define ENCODE_FRAMES_BUFFERED    10
+#define ENCODE_FRAMES             8
+#define ENCODE_FRAMES_BUFFERED    9
 
 #endif /* __PIPE_H__ */

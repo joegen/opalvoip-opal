@@ -201,9 +201,9 @@ int main(int argc, char *argv[])
           writeStream(stream,(LPCVOID)&msg, sizeof(msg)); 
           flushStream(stream);
         break;
-      case SET_ENCODING_QUALITY:
+      case SET_FRAME_RATE:
           readStream(stream, (LPVOID)&val, sizeof(val));
-          x264->SetEncodingQuality (val);
+          x264->SetFrameRate (val);
           writeStream(stream,(LPCVOID)&msg, sizeof(msg)); 
           flushStream(stream);
         break;
@@ -218,13 +218,6 @@ int main(int argc, char *argv[])
           x264->SetFrameHeight (val);
           writeStream(stream,(LPCVOID)&msg, sizeof(msg)); 
           flushStream(stream);
-        break;
-      case SET_PAYLOAD_TYPE:
-          readStream(stream, (LPVOID)&val, sizeof(val));
-          x264->SetPayloadType (val);
-          writeStream(stream,(LPCVOID)&msg, sizeof(msg)); 
-          flushStream(stream);
-  
         break;
       case ENCODE_FRAMES:
           readStream(stream, (LPVOID)&srcLen, sizeof(srcLen));
