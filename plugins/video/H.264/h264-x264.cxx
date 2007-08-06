@@ -97,9 +97,9 @@ void H264EncoderContext::SetTargetBitRate(int rate)
   H264EncCtxInstance.call(SET_TARGET_BITRATE, rate);
 }
 
-void H264EncoderContext::SetEncodingQuality(int quality)
+void H264EncoderContext::SetFrameRate(int rate)
 {
-  H264EncCtxInstance.call(SET_ENCODING_QUALITY, quality);
+  H264EncCtxInstance.call(SET_FRAME_RATE, rate);
 }
 
 void H264EncoderContext::SetFrameWidth(int width)
@@ -110,11 +110,6 @@ void H264EncoderContext::SetFrameWidth(int width)
 void H264EncoderContext::SetFrameHeight(int height)
 {
   H264EncCtxInstance.call(SET_FRAME_HEIGHT, height);
-}
-
-void H264EncoderContext::SetPayloadType(int payloadType)
-{
-  H264EncCtxInstance.call(SET_PAYLOAD_TYPE, payloadType);
 }
 
 int H264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -317,8 +312,8 @@ static int encoder_set_options(
     for (i = 0; options[i] != NULL; i += 2) {
       if (STRCMPI(options[i], "Target Bit Rate") == 0)
          context->SetTargetBitRate((int) (atoi(options[i+1]) / 1024) );
-      if (STRCMPI(options[i], "Encoding Quality") == 0)
-         context->SetEncodingQuality(atoi(options[i+1]));
+      if (STRCMPI(options[i], "Frame Time") == 0)
+         context->SetFrameRate((int)(H264_CLOCKRATE / atoi(options[i+1])));
       if (STRCMPI(options[i], "Frame Height") == 0)
          context->SetFrameHeight(atoi(options[i+1]));
       if (STRCMPI(options[i], "Frame Width") == 0)
