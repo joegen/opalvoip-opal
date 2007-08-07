@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2181  2007/08/07 17:23:14  hfriederich
+ * Revision 1.2182  2007/08/07 19:44:41  dsandras
+ * Fixed typo. Ideally, the NAT binding refresh code should move to
+ * OpalTransportUDP.
+ *
+ * Revision 2.180  2007/08/07 17:23:14  hfriederich
  * Re-enable NAT binding refreshes.
  *
  * Revision 2.179  2007/07/22 13:02:14  rjongbloed
@@ -799,7 +803,7 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
   for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
-    OpalTransport & transport = tr->GetTransport();
+    OpalTransport & transport = handler->GetTransport();
     BOOL stunTransport = FALSE;
 
     if (!transport)
