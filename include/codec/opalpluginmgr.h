@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2010  2007/08/07 08:25:16  csoutheren
+ * Revision 1.2011  2007/08/07 09:04:02  csoutheren
+ * Export more functions
+ *
+ * Revision 2.9  2007/08/07 08:25:16  csoutheren
  * Expose plugin media format classes
  *
  * Revision 2.8  2007/08/06 07:14:22  csoutheren
@@ -181,6 +184,12 @@ class OpalPluginCodecManager : public PPluginModuleManager
 //  base classes for plugin media formats
 //
 
+class OpalPluginMediaFormat {
+  public:
+    static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format);
+    static bool IsValidForProtocol(const PluginCodec_Definition * encoderCodec, const PString & _protocol);
+};
+
 #if OPAL_AUDIO
 
 class OpalPluginAudioMediaFormat : public OpalAudioFormat
@@ -217,6 +226,7 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
     PObject * Clone() const;
     bool IsValidForProtocol(const PString & protocol) const;
     const PluginCodec_Definition * encoderCodec;
+
 };
 
 #endif
