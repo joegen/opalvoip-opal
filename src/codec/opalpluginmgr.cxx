@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2042  2007/08/07 08:25:36  csoutheren
+ * Revision 1.2043  2007/08/07 09:04:25  csoutheren
+ * Export more functions
+ *
+ * Revision 2.41  2007/08/07 08:25:36  csoutheren
  * Expose plugin media format classes
  *
  * Revision 2.40  2007/08/07 00:13:57  csoutheren
@@ -401,7 +404,7 @@ static PString CreateCodecName(const PluginCodec_Definition * codec)
 }
 
 
-static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format)
+void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format)
 {
   void ** _options = NULL;
   unsigned int optionsLen = sizeof(_options);
@@ -640,7 +643,7 @@ static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, co
 }
 
 
-static bool IsValidForProtocol(const PluginCodec_Definition * encoderCodec, const PString & _protocol) 
+bool OpalPluginMediaFormat::IsValidForProtocol(const PluginCodec_Definition * encoderCodec, const PString & _protocol) 
 {
   PString protocol(_protocol.ToLower());
   int retVal;
@@ -676,7 +679,7 @@ OpalPluginAudioMediaFormat::OpalPluginAudioMediaFormat(const PluginCodec_Definit
                 )
 , encoderCodec(_encoderCodec)
 {
-  PopulateMediaFormatOptions(_encoderCodec, *this);
+  OpalPluginMediaFormat::PopulateMediaFormatOptions(_encoderCodec, *this);
 
   // Override calculated value if we have an explicit bit rate
   if (_encoderCodec->bitsPerSec > 0)
@@ -693,7 +696,7 @@ OpalPluginAudioMediaFormat::~OpalPluginAudioMediaFormat()
 
 bool OpalPluginAudioMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
-  return ::IsValidForProtocol(encoderCodec, protocol);
+  return OpalPluginMediaFormat::IsValidForProtocol(encoderCodec, protocol);
 }
 
 PObject * OpalPluginAudioMediaFormat::Clone() const
@@ -748,7 +751,7 @@ OpalPluginVideoMediaFormat::OpalPluginVideoMediaFormat(
                 )
 , encoderCodec(_encoderCodec)
 {
-  PopulateMediaFormatOptions(_encoderCodec, *this);
+  OpalPluginMediaFormat::PopulateMediaFormatOptions(_encoderCodec, *this);
 
   // manually register the new singleton type, as we do not have a concrete type
   OpalMediaFormatFactory::Register(*this, this);
@@ -766,7 +769,7 @@ PObject * OpalPluginVideoMediaFormat::Clone() const
 
 bool OpalPluginVideoMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
-  return ::IsValidForProtocol(encoderCodec, protocol);
+  return OpalPluginMediaFormat::IsValidForProtocol(encoderCodec, protocol);
 }
 
 #if OPAL_H323
@@ -887,7 +890,7 @@ OpalPluginFaxMediaFormat::OpalPluginFaxMediaFormat(
                 )
 , encoderCodec(_encoderCodec)
 {
-  PopulateMediaFormatOptions(_encoderCodec, *this);
+  OpalPluginMediaFormat::PopulateMediaFormatOptions(_encoderCodec, *this);
 
   // manually register the new singleton type, as we do not have a concrete type
   OpalMediaFormatFactory::Register(*this, this);
@@ -902,7 +905,7 @@ PObject * OpalPluginFaxMediaFormat::Clone() const
 
 bool OpalPluginFaxMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
-  return ::IsValidForProtocol(encoderCodec, protocol);
+  return OpalPluginMediaFormat::IsValidForProtocol(encoderCodec, protocol);
 }
 
 #endif // OPAL_T38FAX
