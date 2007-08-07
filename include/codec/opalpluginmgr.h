@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2009  2007/08/06 07:14:22  csoutheren
+ * Revision 1.2010  2007/08/07 08:25:16  csoutheren
+ * Expose plugin media format classes
+ *
+ * Revision 2.8  2007/08/06 07:14:22  csoutheren
  * Fix logging
  * Correct matching of H.263 capabilities
  *
@@ -138,6 +141,28 @@ class OpalPluginCodecManager : public PPluginModuleManager
     void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList);
     void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList);
 
+#if OPAL_AUDIO
+    virtual OpalMediaFormat * OnCreateAudioFormat(const PluginCodec_Definition * encoderCodec,
+                                                                                const char * rtpEncodingName,
+                                                                                    unsigned frameTime,
+                                                                                    unsigned timeUnits,
+                                                                                      time_t timeStamp);
+#endif
+
+#if OPAL_VIDEO
+    virtual OpalMediaFormat * OnCreateVideoFormat(const PluginCodec_Definition * encoderCodec,
+                                                                                const char * rtpEncodingName,
+                                                                                      time_t timeStamp);
+#endif
+
+#if OPAL_T38FAX
+    virtual OpalMediaFormat * OnCreateFaxFormat(const PluginCodec_Definition * encoderCodec,
+                                                                              const char * rtpEncodingName,
+                                                                                  unsigned frameTime,
+                                                                                  unsigned timeUnits,
+                                                                                    time_t timeStamp);
+#endif
+
 #if OPAL_H323
     void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);
     struct CapabilityListCreateEntry {
@@ -150,6 +175,79 @@ class OpalPluginCodecManager : public PPluginModuleManager
     CapabilityCreateListType capabilityCreateList;
 #endif
 };
+
+//////////////////////////////////////////////////////
+//
+//  base classes for plugin media formats
+//
+
+#if OPAL_AUDIO
+
+class OpalPluginAudioMediaFormat : public OpalAudioFormat
+{
+  public:
+    friend class OpalPluginCodecManager;
+
+    OpalPluginAudioMediaFormat(const PluginCodec_Definition * _encoderCodec,
+                               const char * rtpEncodingName, /// rtp encoding name
+                               unsigned frameTime,           /// Time for frame in RTP units (if applicable)
+                               unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
+                               time_t timeStamp              /// timestamp (for versioning)
+    );
+    ~OpalPluginAudioMediaFormat();
+    bool IsValidForProtocol(const PString & protocol) const;
+    PObject * Clone() const;
+    const PluginCodec_Definition * encoderCodec;
+};
+
+#endif
+
+#if OPAL_VIDEO
+
+class OpalPluginVideoMediaFormat : public OpalVideoFormat
+{
+  public:
+    friend class OpalPluginCodecManager;
+    OpalPluginVideoMediaFormat(
+      const PluginCodec_Definition * _encoderCodec,
+      const char * rtpEncodingName, /// rtp encoding name
+      time_t timeStamp              /// timestamp (for versioning)
+    );
+    ~OpalPluginVideoMediaFormat();
+    PObject * Clone() const;
+    bool IsValidForProtocol(const PString & protocol) const;
+    const PluginCodec_Definition * encoderCodec;
+};
+
+#endif
+
+#if OPAL_T38FAX
+
+class OpalPluginFaxMediaFormat : public OpalMediaFormat
+{
+  public:
+    friend class OpalPluginCodecManager;
+
+    OpalPluginFaxMediaFormat(
+      const PluginCodec_Definition * _encoderCodec,
+      const char * rtpEncodingName, /// rtp encoding name
+      unsigned frameTime,
+      unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
+      time_t timeStamp              /// timestamp (for versioning)
+    );
+    ~OpalPluginFaxMediaFormat();
+    PObject * Clone() const;
+    bool IsValidForProtocol(const PString & protocol) const;
+    const PluginCodec_Definition * encoderCodec;
+};
+
+#endif // OPAL_T38FAX
+
+
+//////////////////////////////////////////////////////
+//
+//  base class for plugin 
+//
 
 class OPALDynaLink : public PDynaLink
 {
@@ -169,6 +267,7 @@ protected:
   const char * baseName;
   const char * reason;
 };
+
 
 //////////////////////////////////////////////////////
 //
