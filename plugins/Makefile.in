@@ -26,6 +26,15 @@ SUBDIRS += video/H.264 \
 endif
 endif
 
+ifeq ($(HAS_FFMPEG),1)
+SUBDIRS += video/H.263-1998
+endif
+
+HAS_THEORA=@HAS_THEORA@
+ifeq ($(HAS_THEORA),1)
+SUBDIRS += video/THEORA
+endif
+
 HAS_IXJ=@HAS_IXJ@
 ifeq ($(HAS_IXJ),1)
 SUBDIRS += LID/IxJ
