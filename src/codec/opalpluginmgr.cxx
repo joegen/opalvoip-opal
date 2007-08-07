@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2041  2007/08/07 00:13:57  csoutheren
+ * Revision 1.2042  2007/08/07 08:25:36  csoutheren
+ * Expose plugin media format classes
+ *
+ * Revision 2.40  2007/08/07 00:13:57  csoutheren
  * Fix compile error on Windows
  *
  * Revision 2.39  2007/08/06 15:05:43  csoutheren
@@ -654,55 +657,47 @@ static bool IsValidForProtocol(const PluginCodec_Definition * encoderCodec, cons
 
 #if OPAL_AUDIO
 
-class OpalPluginAudioMediaFormat : public OpalAudioFormat
+OpalPluginAudioMediaFormat::OpalPluginAudioMediaFormat(const PluginCodec_Definition * _encoderCodec,
+                           const char * rtpEncodingName, /// rtp encoding name
+                           unsigned frameTime,           /// Time for frame in RTP units (if applicable)
+                           unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
+                           time_t timeStamp              /// timestamp (for versioning)
+)
+: OpalAudioFormat(CreateCodecName(_encoderCodec),
+                  (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                  rtpEncodingName,
+                  _encoderCodec->parm.audio.bytesPerFrame,
+                  frameTime,
+                  _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                  _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                  _encoderCodec->parm.audio.maxFramesPerPacket,
+                  _encoderCodec->sampleRate,
+                  timeStamp  
+                )
+, encoderCodec(_encoderCodec)
 {
-  public:
-    friend class OpalPluginCodecManager;
+  PopulateMediaFormatOptions(_encoderCodec, *this);
 
-    OpalPluginAudioMediaFormat(const PluginCodec_Definition * _encoderCodec,
-                               const char * rtpEncodingName, /// rtp encoding name
-                               unsigned frameTime,           /// Time for frame in RTP units (if applicable)
-                               unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
-                               time_t timeStamp              /// timestamp (for versioning)
-    )
-    : OpalAudioFormat(CreateCodecName(_encoderCodec),
-                      (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                      rtpEncodingName,
-                      _encoderCodec->parm.audio.bytesPerFrame,
-                      frameTime,
-                      _encoderCodec->parm.audio.recommendedFramesPerPacket,
-                      _encoderCodec->parm.audio.recommendedFramesPerPacket,
-                      _encoderCodec->parm.audio.maxFramesPerPacket,
-                      _encoderCodec->sampleRate,
-                      timeStamp  
-                    )
-    , encoderCodec(_encoderCodec)
-    {
-      PopulateMediaFormatOptions(_encoderCodec, *this);
+  // Override calculated value if we have an explicit bit rate
+  if (_encoderCodec->bitsPerSec > 0)
+    SetOptionInteger(MaxBitRateOption(), _encoderCodec->bitsPerSec);
 
-      // Override calculated value if we have an explicit bit rate
-      if (_encoderCodec->bitsPerSec > 0)
-        SetOptionInteger(MaxBitRateOption(), _encoderCodec->bitsPerSec);
+  // manually register the new singleton type, as we do not have a concrete type
+  OpalMediaFormatFactory::Register(*this, this);
+}
 
-      // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(*this, this);
-    }
+OpalPluginAudioMediaFormat::~OpalPluginAudioMediaFormat()
+{
+  OpalMediaFormatFactory::Unregister(*this);
+}
 
-    ~OpalPluginAudioMediaFormat()
-    {
-      OpalMediaFormatFactory::Unregister(*this);
-    }
+bool OpalPluginAudioMediaFormat::IsValidForProtocol(const PString & protocol) const
+{
+  return ::IsValidForProtocol(encoderCodec, protocol);
+}
 
-    bool IsValidForProtocol(const PString & protocol) const
-    {
-      return ::IsValidForProtocol(encoderCodec, protocol);
-    }
-
-    PObject * Clone() const
-    { return new OpalPluginAudioMediaFormat(*this); }
-
-    const PluginCodec_Definition * encoderCodec;
-};
+PObject * OpalPluginAudioMediaFormat::Clone() const
+{ return new OpalPluginAudioMediaFormat(*this); }
 
 #if OPAL_H323
 
@@ -736,48 +731,43 @@ static H323Capability * CreateGSMCap(
 
 #if OPAL_VIDEO
 
-class OpalPluginVideoMediaFormat : public OpalVideoFormat
+OpalPluginVideoMediaFormat::OpalPluginVideoMediaFormat(
+  const PluginCodec_Definition * _encoderCodec,
+  const char * rtpEncodingName, /// rtp encoding name
+  time_t timeStamp              /// timestamp (for versioning)
+)
+: OpalVideoFormat(
+  CreateCodecName(_encoderCodec),
+                  (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                  rtpEncodingName,
+                  _encoderCodec->parm.video.maxFrameWidth,
+                  _encoderCodec->parm.video.maxFrameHeight,
+                  _encoderCodec->parm.video.maxFrameRate,
+                  _encoderCodec->bitsPerSec,
+                  timeStamp  
+                )
+, encoderCodec(_encoderCodec)
 {
-  public:
-    friend class OpalPluginCodecManager;
+  PopulateMediaFormatOptions(_encoderCodec, *this);
 
-    OpalPluginVideoMediaFormat(
-      const PluginCodec_Definition * _encoderCodec,
-      const char * rtpEncodingName, /// rtp encoding name
-      time_t timeStamp              /// timestamp (for versioning)
-    )
-    : OpalVideoFormat(
-      CreateCodecName(_encoderCodec),
-                      (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                      rtpEncodingName,
-                      _encoderCodec->parm.video.maxFrameWidth,
-                      _encoderCodec->parm.video.maxFrameHeight,
-                      _encoderCodec->parm.video.maxFrameRate,
-                      _encoderCodec->bitsPerSec,
-                      timeStamp  
-                    )
-    , encoderCodec(_encoderCodec)
-    {
-      PopulateMediaFormatOptions(_encoderCodec, *this);
+  // manually register the new singleton type, as we do not have a concrete type
+  OpalMediaFormatFactory::Register(*this, this);
+}
 
-      // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(*this, this);
-    }
-    ~OpalPluginVideoMediaFormat()
-    {
-      OpalMediaFormatFactory::Unregister(*this);
-    }
+OpalPluginVideoMediaFormat::~OpalPluginVideoMediaFormat()
+{
+  OpalMediaFormatFactory::Unregister(*this);
+}
 
-    PObject * Clone() const
-    { return new OpalPluginVideoMediaFormat(*this); }
+PObject * OpalPluginVideoMediaFormat::Clone() const
+{ 
+  return new OpalPluginVideoMediaFormat(*this); 
+}
 
-    bool IsValidForProtocol(const PString & protocol) const
-    {
-      return ::IsValidForProtocol(encoderCodec, protocol);
-    }
-
-    const PluginCodec_Definition * encoderCodec;
-};
+bool OpalPluginVideoMediaFormat::IsValidForProtocol(const PString & protocol) const
+{
+  return ::IsValidForProtocol(encoderCodec, protocol);
+}
 
 #if OPAL_H323
 
@@ -877,51 +867,43 @@ static H323CodecPluginCapabilityMapEntry videoMaps[] = {
 
 #if OPAL_T38FAX
 
-class OpalPluginFaxMediaFormat : public OpalMediaFormat
+OpalPluginFaxMediaFormat::OpalPluginFaxMediaFormat(
+  const PluginCodec_Definition * _encoderCodec,
+  const char * rtpEncodingName, /// rtp encoding name
+  unsigned frameTime,
+  unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
+  time_t timeStamp              /// timestamp (for versioning)
+)
+: OpalMediaFormat(CreateCodecName(_encoderCodec),
+                  OpalMediaFormat::DefaultDataSessionID,
+                  (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                  rtpEncodingName,
+                  FALSE,                                // need jitter
+                  8*_encoderCodec->parm.audio.bytesPerFrame*AudioClockRate/frameTime, // bandwidth
+                  _encoderCodec->parm.audio.bytesPerFrame,         // size of frame in bytes
+                  frameTime,                            // time for frame
+                  _encoderCodec->sampleRate,            // clock rate
+                  (unsigned int)timeStamp               // timestamp
+                )
+, encoderCodec(_encoderCodec)
 {
-  public:
-    friend class OpalPluginCodecManager;
+  PopulateMediaFormatOptions(_encoderCodec, *this);
 
-    OpalPluginFaxMediaFormat(
-      const PluginCodec_Definition * _encoderCodec,
-      const char * rtpEncodingName, /// rtp encoding name
-      unsigned frameTime,
-      unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
-      time_t timeStamp              /// timestamp (for versioning)
-    )
-    : OpalMediaFormat(CreateCodecName(_encoderCodec),
-                      OpalMediaFormat::DefaultDataSessionID,
-                      (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                      rtpEncodingName,
-                      FALSE,                                // need jitter
-                      8*_encoderCodec->parm.audio.bytesPerFrame*AudioClockRate/frameTime, // bandwidth
-                      _encoderCodec->parm.audio.bytesPerFrame,         // size of frame in bytes
-                      frameTime,                            // time for frame
-                      _encoderCodec->sampleRate,            // clock rate
-                      (unsigned int)timeStamp               // timestamp
-                    )
-    , encoderCodec(_encoderCodec)
-    {
-      PopulateMediaFormatOptions(_encoderCodec, *this);
+  // manually register the new singleton type, as we do not have a concrete type
+  OpalMediaFormatFactory::Register(*this, this);
+}
+OpalPluginFaxMediaFormat::~OpalPluginFaxMediaFormat()
+{
+  OpalMediaFormatFactory::Unregister(*this);
+}
 
-      // manually register the new singleton type, as we do not have a concrete type
-      OpalMediaFormatFactory::Register(*this, this);
-    }
-    ~OpalPluginFaxMediaFormat()
-    {
-      OpalMediaFormatFactory::Unregister(*this);
-    }
+PObject * OpalPluginFaxMediaFormat::Clone() const
+{ return new OpalPluginFaxMediaFormat(*this); }
 
-    PObject * Clone() const
-    { return new OpalPluginFaxMediaFormat(*this); }
-
-    bool IsValidForProtocol(const PString & protocol) const
-    {
-      return ::IsValidForProtocol(encoderCodec, protocol);
-    }
-
-    const PluginCodec_Definition * encoderCodec;
-};
+bool OpalPluginFaxMediaFormat::IsValidForProtocol(const PString & protocol) const
+{
+  return ::IsValidForProtocol(encoderCodec, protocol);
+}
 
 #endif // OPAL_T38FAX
 
@@ -1209,6 +1191,22 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
 {
   PluginCodec_ControlDefn * ctl = GetCodecControl(codec, SET_CODEC_OPTIONS_CONTROL);
   if (ctl != NULL) {
+    for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
+      const OpalMediaOption & option = fmt.GetOption(i);
+      PString name = option.GetName();
+      PString val  = option.AsString();
+      const char * options[3];
+      options[0] = (const char *)name;
+      options[1] = (const char *)val;
+      options[2] = (const char *)NULL;
+      unsigned int optionsLen = sizeof(&options[0]);
+      if (!(*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, options, &optionsLen)) {
+        PTRACE(5, "OpalPlugin\tSetting codec control '" << option.GetName() << "'=" << option.AsString() << " failed");
+      } else {
+        PTRACE(5, "OpalPlugin\tSetting codec control '" << name << "'=" << val);
+      }
+    }
+/*
     PStringArray list;
     for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
       const OpalMediaOption & option = fmt.GetOption(i);
@@ -1220,6 +1218,7 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
     unsigned int optionsLen = sizeof(_options);
     (*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, _options, &optionsLen);
     free(_options);
+*/
   }
 
   return TRUE;
@@ -1842,31 +1841,18 @@ void OpalPluginCodecManager::RegisterPluginPair(
       switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
         case PluginCodec_MediaTypeVideo:
-          mediaFormat = new OpalPluginVideoMediaFormat(
-                                  encoderCodec, 
-                                  encoderCodec->sdpFormat,
-                                  timeStamp);
+          mediaFormat = OnCreateVideoFormat(encoderCodec, encoderCodec->sdpFormat, timeStamp);
           break;
 #endif
 #if OPAL_AUDIO
         case PluginCodec_MediaTypeAudio:
         case PluginCodec_MediaTypeAudioStreamed:
-          mediaFormat = new OpalPluginAudioMediaFormat(
-                                   encoderCodec,
-                                   encoderCodec->sdpFormat,
-                                   frameTime,
-                                   clockRate,
-                                   timeStamp);
+          mediaFormat = OnCreateAudioFormat(encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
 #endif
 #if OPAL_T38FAX
         case PluginCodec_MediaTypeFax:
-          mediaFormat = new OpalPluginFaxMediaFormat(
-                                  encoderCodec, 
-                                  encoderCodec->sdpFormat,
-                                  frameTime,
-                                  clockRate,
-                                  timeStamp);
+          mediaFormat = OnCreateFaxFormat(encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
 #endif
         default:
@@ -1998,6 +1984,42 @@ void OpalPluginCodecManager::RegisterPluginPair(
   capabilityCreateList.push_back(CapabilityListCreateEntry(encoderCodec, decoderCodec));
 #endif
 }
+#if OPAL_AUDIO
+
+OpalMediaFormat * OpalPluginCodecManager::OnCreateAudioFormat(const PluginCodec_Definition * encoderCodec,
+                                                                                const char * rtpEncodingName,
+                                                                                    unsigned frameTime,
+                                                                                    unsigned timeUnits,
+                                                                                      time_t timeStamp)
+{
+  return new OpalPluginAudioMediaFormat(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
+}
+
+#endif
+
+#if OPAL_VIDEO
+
+OpalMediaFormat * OpalPluginCodecManager::OnCreateVideoFormat(const PluginCodec_Definition * encoderCodec,
+                                                                                const char * rtpEncodingName,
+                                                                                      time_t timeStamp)
+{
+  return new OpalPluginVideoMediaFormat(encoderCodec, rtpEncodingName, timeStamp);
+}
+
+#endif
+
+#if OPAL_T38FAX
+
+OpalMediaFormat * OpalPluginCodecManager::OnCreateFaxFormat(const PluginCodec_Definition * encoderCodec,
+                                                                              const char * rtpEncodingName,
+                                                                                  unsigned frameTime,
+                                                                                  unsigned timeUnits,
+                                                                                    time_t timeStamp)
+{
+  return new OpalPluginFaxMediaFormat(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
+}
+
+#endif
 
 #if OPAL_H323
 
