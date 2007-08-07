@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2055  2007/08/02 07:54:15  csoutheren
+ * Revision 1.2056  2007/08/07 01:38:40  csoutheren
+ * Fix problem with rtpEncodingName member going out of scope
+ *
+ * Revision 2.54  2007/08/02 07:54:15  csoutheren
  * Add function to print options on media format
  *
  * Revision 2.53  2007/07/24 12:51:26  rjongbloed
@@ -125,7 +128,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2055  2007/08/02 07:54:15  csoutheren
+ * Revision 1.2056  2007/08/07 01:38:40  csoutheren
+ * Fix problem with rtpEncodingName member going out of scope
+ *
+ * Revision 2.54  2007/08/02 07:54:15  csoutheren
  * Add function to print options on media format
  *
  * Revision 2.53  2007/07/24 12:51:26  rjongbloed
@@ -1212,7 +1218,7 @@ class OpalMediaFormat : public PCaselessString
 
   protected:
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
-    const char *                 rtpEncodingName;
+    PString                      rtpEncodingName;
     unsigned                     defaultSessionID;
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
