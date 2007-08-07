@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2180  2007/07/22 13:02:14  rjongbloed
+ * Revision 1.2181  2007/08/07 17:23:14  hfriederich
+ * Re-enable NAT binding refreshes.
+ *
+ * Revision 2.179  2007/07/22 13:02:14  rjongbloed
  * Cleaned up selection of registered name usage of URL versus host name.
  *
  * Revision 2.178  2007/07/22 03:25:18  rjongbloed
@@ -794,39 +797,37 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
   if (natMethod == None)
     return;
 
-#if 0 // RJJ
-  for (PSafePtr<SharedTransport> tr(sharedTransports, PSafeReadOnly); tr != NULL; ++tr) {
+  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
-    OpalTransport *transport = tr->GetTransport();
+    OpalTransport & transport = tr->GetTransport();
     BOOL stunTransport = FALSE;
 
     if (!transport)
       return;
 
-    stunTransport = (!transport->IsReliable() && GetManager().GetSTUN(transport->GetRemoteAddress().GetHostName()));
+    stunTransport = (!transport.IsReliable() && GetManager().GetSTUN(transport.GetRemoteAddress().GetHostName()));
 
     if (!stunTransport)
       return;
 
     switch (natMethod) {
 
-    case Options: 
+      case Options: 
         {
           PStringList emptyRouteSet;
-          SIPOptions options(*this, *transport, SIPURL(transport->GetRemoteAddress()).GetHostName());
-          options.Write(*transport, options.GetSendAddress(emptyRouteSet));
+          SIPOptions options(*this, transport, SIPURL(transport.GetRemoteAddress()).GetHostName());
+          options.Write(transport, options.GetSendAddress(emptyRouteSet));
         }
-      break;
-    case EmptyRequest:
+        break;
+      case EmptyRequest:
         {
-          transport->Write("\r\n", 2);
+          transport.Write("\r\n", 2);
         }
-      break;
-    default:
-      break;
+        break;
+      default:
+        break;
     }
   }
-#endif
 
   PTRACE(5, "SIP\tNAT Binding refresh finished.");
 }
