@@ -336,7 +336,7 @@ if test "x${enable_ffmpeg}" != "xno" ; then
     LIBS=$saved_LIBS
     if test "x${ffmpeg_libs}" != "xno"; then
         AC_CHECK_HEADERS([ffmpeg/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
-        if test "x${ffmpeg_headers}" != "xno"; then
+        if test "x${ffmpeg_headers}" = "xtrue"; then
             HAS_FFMPEG=1
         fi
     fi
@@ -350,7 +350,7 @@ dnl ###########################################################################
 HAS_X264=0
 X264_LIBS=
 
-AC_ARG_ENABLE(x264, [  --disable-x264        Disable x264],,)
+AC_ARG_ENABLE(x264, [  --disable-x264          Disable x264],,)
 if test "x${enable_x264}" != "xno" ; then
     enable_x264=yes
 
@@ -362,13 +362,40 @@ if test "x${enable_x264}" != "xno" ; then
     if test "x${x264_libs}" != "xno"; then
 	X264_LIBS="-lx264"
         AC_CHECK_HEADERS([x264.h], [x264_headers=true], [x264_headers=false])
-        if test "x${x264_headers}" != "xno"; then
+        if test "x${x264_headers}" = "xtrue"; then
             HAS_X264=1
         fi
     fi
 fi
 AC_SUBST(HAS_X264)
 AC_SUBST(X264_LIBS)
+
+dnl ###########################################################################
+dnl Checks for libtheora
+dnl ###########################################################################
+
+HAS_THEORA=0
+THEORA_LIBS=
+
+AC_ARG_ENABLE(theora, [  --disable-theora        Disable theora],,)
+if test "x${enable_theora}" != "xno" ; then
+    enable_theora=yes
+
+    saved_LIBS="$LIBS"
+    LIBS="$LIBS -lm -lz -lpthread"
+    AC_CHECK_LIB(theora, theora_encode_init, [theora_libs=yes], [theora_libs=no])
+    LIBS=$saved_LIBS
+
+    if test "x${theora_libs}" != "xno"; then
+	THEORA_LIBS="-ltheora"
+        AC_CHECK_HEADERS([theora/theora.h], [theora_headers=true], [theora_headers=false])
+        if test "x${theora_headers}" = "xtrue"; then
+            HAS_THEORA=1
+        fi
+    fi
+fi
+AC_SUBST(HAS_THEORA)
+AC_SUBST(THEORA_LIBS)
 dnl ########################################################################
 
 if test -d audio/GSM0610 ; then
@@ -398,6 +425,9 @@ fi
 if test -d video/H.263-ffmpeg ; then
   AC_CONFIG_FILES(video/H.263-ffmpeg/Makefile)
 fi
+if test -d video/H.263-1998 ; then
+  AC_CONFIG_FILES(video/H.263-1998/Makefile)
+fi
 if test -d video/MPEG4-ffmpeg ; then
   AC_CONFIG_FILES(video/MPEG4-ffmpeg/Makefile)
 fi
@@ -406,6 +436,9 @@ if test -d video/H.264 ; then
 fi
 if test -d video/H.264/gpl; then
   AC_CONFIG_FILES(video/H.264/gpl/Makefile)
+fi
+if test -d video/THEORA ; then
+  AC_CONFIG_FILES(video/THEORA/Makefile)
 fi
 if test -d LID/IxJ ; then
   AC_CONFIG_FILES(LID/IxJ/Makefile)
@@ -431,3 +464,44 @@ dnl Output configured files
 AC_OUTPUT(audio/Speex/libspeex/speex_config_types.h)
 AC_OUTPUT()
 
+dnl ########################################################################
+dnl Summary
+dnl ########################################################################
+echo ""
+echo "================ Codec Plugin configuration ==================="
+echo "          Installing into prefix  :  $INSTALLPREFIX"
+echo ""
+echo "                           H.261  :  enabled"
+if test "x${HAS_H263}" = "x1" ; then
+echo "                           H.263  :  enabled"
+else
+echo "                           H.263  :  disabled"
+fi
+if test "x${HAS_FFMPEG}" = "x1" ; then
+echo "                           H.263+ :  enabled"
+fi
+if test "x${HAS_X264}" = "x1" ; then
+if test "x${HAS_FFMPEG}" = "x1" ; then
+echo "                           H.264  :  enabled"
+else
+echo "                           H.264  :  disabled"
+fi
+else
+echo "                           H.264  :  disabled"
+fi
+if test "x${HAS_THEORA}" = "x1" ; then
+echo "                          THEORA  :  enabled"
+else
+echo "                          THEORA  :  disabled"
+fi
+if test "x${HAS_MPEG4}" = "x1" ; then
+echo "                    MPEG4 Part 2  :  enabled"
+else
+echo "                    MPEG4 Part 2  :  disabled"
+fi
+echo ""
+echo "                         OS Type  :  $target_os"
+echo "                    Machine Type  :  $target_cpu"
+echo ""
+echo " If all settings are OK, type make and make install "
+echo "========================================================"
