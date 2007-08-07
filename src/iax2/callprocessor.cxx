@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.15  2007/08/07 03:10:17  dereksmithies
+ * Modify comments. Reduce some of the verbosity of the PTRACE messages.
+ *
  * Revision 1.14  2007/08/02 23:25:07  dereksmithies
  * Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
  * will correctly advise on receiving an incoming call.
@@ -794,7 +797,9 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
 
 BOOL IAX2CallProcessor::SetUpConnection()
 {
-  PTRACE(3, "IAX2\tSet Up Connection to remote node " << con->GetRemotePartyAddress());
+  PTRACE(3, "IAX2\tSet Up Connection to remote node " 
+	 << con->GetRemotePartyName() << " " 
+	 << con->GetRemotePartyAddress());
    
   callList.AppendString(con->GetRemotePartyAddress());
   
