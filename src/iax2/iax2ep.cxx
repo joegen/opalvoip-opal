@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.35  2007/08/07 03:10:18  dereksmithies
+ * Modify comments. Reduce some of the verbosity of the PTRACE messages.
+ *
  * Revision 1.34  2007/08/03 02:31:44  rjongbloed
  * Duelling patches! Removed previous code.
  *
@@ -486,6 +489,9 @@ BOOL IAX2EndPoint::MakeConnection(
 				 unsigned int /*options*/,
          OpalConnection::StringOptions * /*stringOptions*/)
 {
+  /* This method is called as Step 1 of making an IAX call to some remote destination 
+    this method is invoked by the OpalManager, who controls everything, in response by a 
+     users desire to talk to someone else */
 
   PTRACE(3, "IaxEp\tTry to make iax2 call to " << rParty);
   PTRACE(4, "IaxEp\tParty A=\"" << call.GetPartyA() << "\"  and party B=\"" <<  call.GetPartyB() << "\"");
@@ -534,8 +540,10 @@ BOOL IAX2EndPoint::MakeConnection(
   // If we are the A-party then need to initiate a call now in this thread. If
   // we are the B-Party then SetUpConnection() gets called in the context of
   // the A-party thread.
-  if (call.GetConnection(0) == (OpalConnection*)connection) 
+  if (call.GetConnection(0) == (OpalConnection*)connection) {
+    PTRACE(3, "IAX2Ep\tInitiate a call to the other party");
     connection->SetUpConnection();
+  }
 
   return TRUE;
 }

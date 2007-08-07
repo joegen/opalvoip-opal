@@ -26,6 +26,9 @@
  *
  *
  *  $Log: transmit.cxx,v $
+ *  Revision 1.7  2007/08/07 03:10:18  dereksmithies
+ *  Modify comments. Reduce some of the verbosity of the PTRACE messages.
+ *
  *  Revision 1.6  2007/01/23 02:10:39  dereksmithies
  *   Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
  *
@@ -75,7 +78,7 @@ IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   
   keepGoing = TRUE;
   
-  PTRACE(6,"Successfully constructed");
+  PTRACE(6,"Constructor - IAX2 Transmitter");
   Resume();
 }
 
@@ -97,7 +100,6 @@ void IAX2Transmit::SendFrame(IAX2Frame *newFrame)
   PTRACE(5,"Process request to send frame " << newFrame->IdString());
   
   sendNowFrames.AddNewFrame(newFrame);
-  PTRACE(5, "Transmit, sendNowFrames has " << sendNowFrames.GetSize() << " entries");
   
   activate.Signal();
 }
@@ -136,8 +138,6 @@ void IAX2Transmit::Main()
 
 void IAX2Transmit::ProcessAckingList()
 {
-  PTRACE(4,"TASK 1 of 2: ackingFrameList");
-  
   IAX2FrameList framesToSend;
   framesToSend.Initialise();
   
@@ -158,17 +158,11 @@ void IAX2Transmit::ReportLists()
 
 void IAX2Transmit::ProcessSendList()
 {
-  PTRACE(5, "TASK 2 of 2: ProcessSendList");
-  PTRACE(5, "SendList has " << sendNowFrames.GetSize() << " elements");
-  
   for(;;) {
     IAX2Frame * active = sendNowFrames.GetLastFrame();
-    if (active == NULL) {
-      PTRACE(5, "IAX2Transmit has emptied the sendNowFrames list, so finish (for now)");
+    if (active == NULL) 
       break;
-    }
-    PTRACE(5, "IAX2Transmit\tProcess (or send) frame " << active->IdString());
-
+    
     BOOL isFullFrame = FALSE;
     if (PIsDescendant(active, IAX2FullFrame)) {
       isFullFrame = TRUE;
@@ -194,20 +188,16 @@ void IAX2Transmit::ProcessSendList()
     
     IAX2FullFrame *f= (IAX2FullFrame *)active;
     if (f->IsAckFrame() || f->IsVnakFrame()) {
-      PTRACE(4, "Delete this frame as it is an ack/vnak frame, and continue" << f->IdString());
       delete f;
       continue;
     }
     
     if (!active->CanRetransmitFrame()) {
-      PTRACE(4, "Delete this frame now as it does not need to be retransmitted." << f->IdString());
       delete f;
       continue;
     }
     
-    PTRACE(5, "Put " << f->IdString() << " onto acking list");
     ackingFrames.AddNewFrame(active);
-    PTRACE(5, "Acking frames has " << ackingFrames.GetSize() << " elements");
   }
 }
 
