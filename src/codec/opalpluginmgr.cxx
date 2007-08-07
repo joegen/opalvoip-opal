@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2040  2007/08/06 15:05:43  csoutheren
+ * Revision 1.2041  2007/08/07 00:13:57  csoutheren
+ * Fix compile error on Windows
+ *
+ * Revision 2.39  2007/08/06 15:05:43  csoutheren
  * Fix problem with media format settings not being applied to plugin
  * video transcoders on startup
  *
@@ -1218,6 +1221,8 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
     (*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, _options, &optionsLen);
     free(_options);
   }
+
+  return TRUE;
 }
 
 
