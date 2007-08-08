@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2046  2007/08/08 11:18:47  csoutheren
+ * Revision 1.2047  2007/08/08 17:35:16  csoutheren
+ * Final plugin manager changes
+ *
+ * Revision 2.45  2007/08/08 11:18:47  csoutheren
  * Fixed Linux compile errors
  *
  * Revision 2.44  2007/08/08 08:59:30  csoutheren
@@ -334,7 +337,7 @@ static const char * h323_errorCompensation_tag                 = H323CAP_TAG_PRE
 // Helper functions for codec control operators
 //
 
-static BOOL CallCodecControl(const PluginCodec_Definition * codec, 
+BOOL OpalPluginTranscoder::CallCodecControl(const PluginCodec_Definition * codec, 
                                                      void * context,
                                                const char * name,
                                                      void * parm, 
@@ -357,7 +360,7 @@ static BOOL CallCodecControl(const PluginCodec_Definition * codec,
   return FALSE;
 }
 
-static BOOL HasCodecControl(const PluginCodec_Definition * codec, const char * name)
+BOOL OpalPluginTranscoder::HasCodecControl(const PluginCodec_Definition * codec, const char * name)
 {
   PluginCodec_ControlDefn * codecControls = codec->codecControls;
   if (codecControls == NULL)
@@ -372,7 +375,7 @@ static BOOL HasCodecControl(const PluginCodec_Definition * codec, const char * n
   return FALSE;
 }
 
-static PluginCodec_ControlDefn * GetCodecControl(const PluginCodec_Definition * codec, const char * name)
+PluginCodec_ControlDefn * OpalPluginTranscoder::GetCodecControl(const PluginCodec_Definition * codec, const char * name)
 {
   PluginCodec_ControlDefn * codecControls = codec->codecControls;
   if (codecControls == NULL)
@@ -412,13 +415,22 @@ static PString CreateCodecName(const PluginCodec_Definition * codec)
   return codec->destFormat != NULL ? codec->destFormat : codec->descr;
 }
 
+BOOL OpalPluginMediaFormat::CallCodecControl(const PluginCodec_Definition * codec,
+                                               const char * name,
+                                                     void * parm,
+                                             unsigned int * parmLen,
+                                                      int & retVal)
+{
+  return OpalPluginTranscoder::CallCodecControl(codec, NULL, name, parm, parmLen, retVal);
+}
+
 
 void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format)
 {
   void ** _options = NULL;
   unsigned int optionsLen = sizeof(_options);
   int retVal;
-  if (CallCodecControl(_encoderCodec, NULL, GET_CODEC_OPTIONS_CONTROL, &_options, &optionsLen, retVal) && (_options != NULL)) {
+  if (CallCodecControl(_encoderCodec, GET_CODEC_OPTIONS_CONTROL, &_options, &optionsLen, retVal) && (_options != NULL)) {
     if (_encoderCodec->version < PLUGIN_CODEC_VERSION_OPTIONS) {
       PTRACE(3, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using old style method");
       // Old scheme
@@ -588,7 +600,7 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
         format.AddOption(newOption, TRUE);
       }
     }
-    CallCodecControl(_encoderCodec, NULL, FREE_CODEC_OPTIONS_CONTROL, _options, &optionsLen, retVal);
+    CallCodecControl(_encoderCodec, FREE_CODEC_OPTIONS_CONTROL, _options, &optionsLen, retVal);
   }
 
 //  PStringStream str; format.PrintOptions(str);
@@ -657,7 +669,7 @@ bool OpalPluginMediaFormat::IsValidForProtocol(const PluginCodec_Definition * en
   PString protocol(_protocol.ToLower());
   int retVal;
   unsigned int parmLen = sizeof(const char *);
-  if (CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
+  if (CallCodecControl(encoderCodec, "valid_for_protocol", (void *)(const char *)protocol, &parmLen, retVal))
     return retVal != 0;
   if (protocol == "h.323" || protocol == "h323")
     return (encoderCodec->h323CapabilityType != PluginCodec_H323Codec_undefined) &&
@@ -920,34 +932,12 @@ bool OpalPluginFaxMediaFormat::IsValidForProtocol(const PString & protocol) cons
 #endif // OPAL_T38FAX
 
 //////////////////////////////////////////////////////////////////////////////
-
-template<class TranscoderClass>
-class OpalPluginTranscoderFactory : public OpalTranscoderFactory
-{
-  public:
-    class Worker : public OpalTranscoderFactory::WorkerBase 
-    {
-      public:
-        Worker(const OpalMediaFormatPair & key, PluginCodec_Definition * _codecDefn, BOOL _isEncoder)
-          : OpalTranscoderFactory::WorkerBase(), codecDefn(_codecDefn), isEncoder(_isEncoder)
-        { OpalTranscoderFactory::Register(key, this); }
-
-      protected:
-        virtual OpalTranscoder * Create(const OpalMediaFormatPair &) const
-        { return new TranscoderClass(codecDefn, isEncoder); }
-
-        PluginCodec_Definition * codecDefn;
-        BOOL isEncoder;
-    };
-};
-
-//////////////////////////////////////////////////////////////////////////////
 //
 // Plugin framed audio codec classes
 //
 
 #if OPAL_AUDIO
-class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
+class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public OpalPluginTranscoder
 {
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
@@ -1042,13 +1032,13 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
     }
 
     BOOL HasCodecControl(const char * name)
-    { return ::HasCodecControl(codec, name); }
+    { return OpalPluginTranscoder::HasCodecControl(codec, name); }
 
     BOOL CallCodecControl(const char * name,
                                 void * parm, 
                         unsigned int * parmLen,
                                  int & retVal)
-    { return ::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
+    { return OpalPluginTranscoder::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
 
   protected:
     void * context;
@@ -1061,7 +1051,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder
 // Plugin streamed audio codec classes
 //
 
-class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder
+class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public OpalPluginTranscoder
 {
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
@@ -1085,13 +1075,13 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder
     }
 
     BOOL HasCodecControl(const char * name)
-    { return ::HasCodecControl(codec, name); }
+    { return OpalPluginTranscoder::HasCodecControl(codec, name); }
 
     BOOL CallCodecControl(const char * name,
                                 void * parm, 
                         unsigned int * parmLen,
                                  int & retVal)
-    { return ::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
+    { return OpalPluginTranscoder::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
 
   protected:
     void * context;
@@ -1159,6 +1149,7 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if 0
 class OpalPluginVideoTranscoder : public OpalVideoTranscoder
 {
   PCLASSINFO(OpalPluginVideoTranscoder, OpalVideoTranscoder);
@@ -1186,6 +1177,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder
     BOOL isEncoder;
     RTP_DataFrame * bufferRTP;
 };
+#endif
 
 OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, BOOL _isEncoder)
   : OpalVideoTranscoder(_codec->sourceFormat, _codec->destFormat),
@@ -1199,26 +1191,19 @@ OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definitio
   bufferRTP = NULL;
 }
 
+BOOL OpalPluginVideoTranscoder::CallCodecControl(const char * name,
+                            void * parm, 
+                    unsigned int * parmLen,
+                             int & retVal)
+{ return OpalPluginTranscoder::CallCodecControl(codec, context, name, parm, parmLen, retVal); }
+
+BOOL OpalPluginVideoTranscoder::HasCodecControl(const char * name)
+{ return OpalPluginTranscoder::HasCodecControl(codec, name); }
+
 BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
 {
   PluginCodec_ControlDefn * ctl = GetCodecControl(codec, SET_CODEC_OPTIONS_CONTROL);
   if (ctl != NULL) {
-    for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
-      const OpalMediaOption & option = fmt.GetOption(i);
-      PString name = option.GetName();
-      PString val  = option.AsString();
-      const char * options[3];
-      options[0] = (const char *)name;
-      options[1] = (const char *)val;
-      options[2] = (const char *)NULL;
-      unsigned int optionsLen = sizeof(&options[0]);
-      if (!(*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, options, &optionsLen)) {
-        PTRACE(5, "OpalPlugin\tSetting codec control '" << option.GetName() << "'=" << option.AsString() << " failed");
-      } else {
-        PTRACE(5, "OpalPlugin\tSetting codec control '" << name << "'=" << val);
-      }
-    }
-/*
     PStringArray list;
     for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
       const OpalMediaOption & option = fmt.GetOption(i);
@@ -1230,7 +1215,6 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
     unsigned int optionsLen = sizeof(_options);
     (*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, _options, &optionsLen);
     free(_options);
-*/
   }
 
   return TRUE;
@@ -1956,8 +1940,10 @@ void OpalPluginCodecManager::RegisterPluginPair(
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(OpalYUV420P,                encoderCodec->destFormat), encoderCodec, TRUE);
-      new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalYUV420P),                decoderCodec, FALSE);
+      handler->CreateVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, TRUE);
+      handler->CreateVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, TRUE);
+      //new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(OpalYUV420P,                encoderCodec->destFormat), encoderCodec, TRUE);
+      //new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalYUV420P),                decoderCodec, FALSE);
       break;
 #endif
 #if OPAL_AUDIO
@@ -2004,7 +1990,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
 
   int retVal;
   unsigned int parmLen = sizeof(const char *);
-  BOOL hasCodecControl = CallCodecControl(encoderCodec, NULL, "valid_for_protocol", (void *)"h323", &parmLen, retVal);
+  BOOL hasCodecControl = OpalPluginMediaFormat::CallCodecControl(encoderCodec, "valid_for_protocol", (void *)"h323", &parmLen, retVal);
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 || 
       (hasCodecControl && (retVal == 0))
        ) {
@@ -2118,6 +2104,12 @@ OpalMediaFormat * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPluginCodecMan
 {
   return new OpalPluginVideoMediaFormat(encoderCodec, rtpEncodingName, timeStamp);
 }
+
+void OpalPluginCodecHandler::CreateVideoTranscoder(const OpalMediaFormat & src, const OpalMediaFormat & dst, PluginCodec_Definition * codec, BOOL v)
+{
+  new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(src, dst), codec, v);
+}
+
 #endif
 
 #if OPAL_T38FAX
