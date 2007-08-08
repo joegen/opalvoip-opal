@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2068  2007/08/02 07:54:49  csoutheren
+ * Revision 1.2069  2007/08/08 11:17:50  csoutheren
+ * Removed warning
+ *
+ * Revision 2.67  2007/08/02 07:54:49  csoutheren
  * Add function to print options on media format
  *
  * Revision 2.66  2007/07/24 12:57:55  rjongbloed
@@ -809,7 +812,6 @@ const PString & OpalMediaFormat::ClockRateOption()   { static PString s = "Clock
 OpalMediaFormat::OpalMediaFormat()
 {
   rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
-  rtpEncodingName = NULL;
   defaultSessionID = 0;
 }
 
