@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2014  2007/08/08 11:18:47  csoutheren
+ * Revision 1.2015  2007/08/08 17:35:15  csoutheren
+ * Final plugin manager changes
+ *
+ * Revision 2.13  2007/08/08 11:18:47  csoutheren
  * Fixed Linux compile errors
  *
  * Revision 2.12  2007/08/08 08:59:06  csoutheren
@@ -104,6 +107,11 @@
 #include <h323/h323caps.h>
 #endif
 
+#if OPAL_VIDEO
+#include <codec/vidcodec.h>
+#endif
+
+
 class H323Capability;
 
 class H323StaticPluginCodec
@@ -113,6 +121,20 @@ class H323StaticPluginCodec
     virtual PluginCodec_GetAPIVersionFunction Get_GetAPIFn() = 0;
     virtual PluginCodec_GetCodecFunction Get_GetCodecFn() = 0;
 };
+
+class OpalPluginTranscoder {
+  public:
+    static BOOL CallCodecControl(const PluginCodec_Definition * codec, 
+                                                         void * context,
+                                                   const char * name,
+                                                         void * parm, 
+                                                 unsigned int * parmLen,
+                                                          int & retVal);
+    static BOOL HasCodecControl(const PluginCodec_Definition * codec, const char * name);
+
+    static PluginCodec_ControlDefn * GetCodecControl(const PluginCodec_Definition * codec, const char * name);
+};
+
 
 typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
 
@@ -139,6 +161,7 @@ class OpalPluginCodecHandler : public PObject
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
                                                                     time_t timeStamp);
+    virtual void CreateVideoTranscoder(const OpalMediaFormat & src, const OpalMediaFormat & dst, PluginCodec_Definition * codec, BOOL v);
 #endif
 
 #if OPAL_T38FAX
@@ -215,6 +238,7 @@ class OpalPluginMediaFormat {
   public:
     static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format);
     static bool IsValidForProtocol(const PluginCodec_Definition * encoderCodec, const PString & _protocol);
+    static BOOL CallCodecControl(const PluginCodec_Definition * codec, const char * name, void * parm, unsigned int * parmLen, int & retVal);
 };
 
 #if OPAL_AUDIO
@@ -254,6 +278,32 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
     bool IsValidForProtocol(const PString & protocol) const;
     const PluginCodec_Definition * encoderCodec;
 
+};
+
+class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginTranscoder
+{
+  PCLASSINFO(OpalPluginVideoTranscoder, OpalVideoTranscoder);
+  public:
+    OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, BOOL _isEncoder);
+    ~OpalPluginVideoTranscoder();
+
+    BOOL HasCodecControl(const char * name);
+
+    BOOL CallCodecControl(const char * name,
+                                void * parm,
+                        unsigned int * parmLen,
+                                 int & retVal);
+
+    BOOL ExecuteCommand(const OpalMediaCommand & /*command*/);
+    PINDEX GetOptimalDataFrameSize(BOOL input) const;
+    BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
+
+  protected:
+    void * context;
+    const PluginCodec_Definition * codec;
+    BOOL isEncoder;
+    RTP_DataFrame * bufferRTP;
 };
 
 #endif
@@ -368,6 +418,28 @@ class OpalFactoryCodec : public PObject {
 };
 
 //////////////////////////////////////////////////////////////////////////////
+
+template<class TranscoderClass>
+class OpalPluginTranscoderFactory : public OpalTranscoderFactory
+{
+  public:
+    class Worker : public OpalTranscoderFactory::WorkerBase 
+    {
+      public:
+        Worker(const OpalMediaFormatPair & key, PluginCodec_Definition * _codecDefn, BOOL _isEncoder)
+          : OpalTranscoderFactory::WorkerBase(), codecDefn(_codecDefn), isEncoder(_isEncoder)
+        { OpalTranscoderFactory::Register(key, this); }
+
+      protected:
+        virtual OpalTranscoder * Create(const OpalMediaFormatPair &) const
+        { return new TranscoderClass(codecDefn, isEncoder); }
+
+        PluginCodec_Definition * codecDefn;
+        BOOL isEncoder;
+    };
+};
+
+//////////////////////////////////////////////////////////////////////////////
 //
 // Helper class for handling plugin capabilities
 //
@@ -388,6 +460,7 @@ class H323PluginCapabilityInfo
     const PluginCodec_Definition * decoderCodec;
     PString                        capabilityFormatName;
 };
+
 
 #if OPAL_AUDIO
 
