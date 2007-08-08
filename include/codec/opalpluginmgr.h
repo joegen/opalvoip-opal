@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2012  2007/08/08 07:12:38  csoutheren
+ * Revision 1.2013  2007/08/08 08:59:06  csoutheren
+ * More plugin manager changes, as the last approach dead-ended :(
+ *
+ * Revision 2.11  2007/08/08 07:12:38  csoutheren
  * #ifdef out unused code - to be removed later if nobody complains :)
  *
  * Revision 2.10  2007/08/07 09:04:02  csoutheren
@@ -106,6 +109,39 @@ class H323StaticPluginCodec
 
 typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
 
+
+class OpalPluginCodecHandler : public PObject
+{
+  PCLASSINFO(OpalPluginCodecHandler, PObject);
+  public:
+    OpalPluginCodecHandler();
+
+#if OPAL_AUDIO
+    virtual OpalMediaFormat * OnCreateAudioFormat(OpalPluginCodecManager & mgr,
+                                            const PluginCodec_Definition * encoderCodec,
+                                                              const char * rtpEncodingName,
+                                                                  unsigned frameTime,
+                                                                  unsigned timeUnits,
+                                                                    time_t timeStamp);
+#endif
+
+#if OPAL_VIDEO
+    virtual OpalMediaFormat * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
+                                            const PluginCodec_Definition * encoderCodec,
+                                                              const char * rtpEncodingName,
+                                                                    time_t timeStamp);
+#endif
+
+#if OPAL_T38FAX
+    virtual OpalMediaFormat * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
+                                          const PluginCodec_Definition * encoderCodec,
+                                                            const char * rtpEncodingName,
+                                                                unsigned frameTime,
+                                                                unsigned timeUnits,
+                                                                  time_t timeStamp);
+#endif
+};
+
 class OpalPluginCodecManager : public PPluginModuleManager
 {
   PCLASSINFO(OpalPluginCodecManager, PPluginModuleManager);
@@ -137,37 +173,16 @@ class OpalPluginCodecManager : public PPluginModuleManager
   protected:
     void RegisterPluginPair(
       PluginCodec_Definition * _encoderCodec,
-      PluginCodec_Definition * _decoderCodec
+      PluginCodec_Definition * _decoderCodec,
+      OpalPluginCodecHandler * handler
     );
 
     static void AddFormat(const OpalMediaFormat & fmt);
     static OpalMediaFormatList & GetMediaFormatList();
     static PMutex & GetMediaFormatMutex();
 
-    void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList);
-    void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList);
-
-#if OPAL_AUDIO
-    virtual OpalMediaFormat * OnCreateAudioFormat(const PluginCodec_Definition * encoderCodec,
-                                                                                const char * rtpEncodingName,
-                                                                                    unsigned frameTime,
-                                                                                    unsigned timeUnits,
-                                                                                      time_t timeStamp);
-#endif
-
-#if OPAL_VIDEO
-    virtual OpalMediaFormat * OnCreateVideoFormat(const PluginCodec_Definition * encoderCodec,
-                                                                                const char * rtpEncodingName,
-                                                                                      time_t timeStamp);
-#endif
-
-#if OPAL_T38FAX
-    virtual OpalMediaFormat * OnCreateFaxFormat(const PluginCodec_Definition * encoderCodec,
-                                                                              const char * rtpEncodingName,
-                                                                                  unsigned frameTime,
-                                                                                  unsigned timeUnits,
-                                                                                    time_t timeStamp);
-#endif
+    void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
+    void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
 
 #if OPAL_H323
     void RegisterCapability(PluginCodec_Definition * encoderCodec, PluginCodec_Definition * decoderCodec);
