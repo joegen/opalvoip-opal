@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2045  2007/08/08 08:59:30  csoutheren
+ * Revision 1.2046  2007/08/08 11:18:47  csoutheren
+ * Fixed Linux compile errors
+ *
+ * Revision 2.44  2007/08/08 08:59:30  csoutheren
  * More plugin manager changes, as the last approach dead-ended :(
  *
  * Revision 2.43  2007/08/08 07:13:01  csoutheren
@@ -417,7 +420,7 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
   int retVal;
   if (CallCodecControl(_encoderCodec, NULL, GET_CODEC_OPTIONS_CONTROL, &_options, &optionsLen, retVal) && (_options != NULL)) {
     if (_encoderCodec->version < PLUGIN_CODEC_VERSION_OPTIONS) {
-      PTRACE(5, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using old style method");
+      PTRACE(3, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using old style method");
       // Old scheme
       char const * const * options = (char **)_options;
       while (options[0] != NULL && options[1] != NULL && options[2] != NULL) {
@@ -472,7 +475,7 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
           char ** array = tokens.ToCharArray();
           switch (toupper(type[0])) {
             case 'E':
-              PTRACE(4, "OpalPlugin\tAdding enum option '" << key << "' " << tokens.GetSize() << " options");
+              PTRACE(5, "OpalPlugin\tAdding enum option '" << key << "' " << tokens.GetSize() << " options");
               format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)), TRUE);
               break;
             case 'B':

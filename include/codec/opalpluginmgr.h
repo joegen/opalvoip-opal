@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2013  2007/08/08 08:59:06  csoutheren
+ * Revision 1.2014  2007/08/08 11:18:47  csoutheren
+ * Fixed Linux compile errors
+ *
+ * Revision 2.12  2007/08/08 08:59:06  csoutheren
  * More plugin manager changes, as the last approach dead-ended :(
  *
  * Revision 2.11  2007/08/08 07:12:38  csoutheren
@@ -88,6 +91,10 @@
 #pragma interface
 #endif
 
+#include <ptlib/object.h>
+
+#include <opal/buildopts.h>
+
 #include <ptlib/pluginmgr.h>
 #include <ptlib/pfactory.h>
 #include <codec/opalplugin.h>
@@ -109,6 +116,8 @@ class H323StaticPluginCodec
 
 typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
 
+class OpalMediaFormat;
+class OpalPluginCodecManager;
 
 class OpalPluginCodecHandler : public PObject
 {
