@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2011  2007/08/07 09:04:02  csoutheren
+ * Revision 1.2012  2007/08/08 07:12:38  csoutheren
+ * #ifdef out unused code - to be removed later if nobody complains :)
+ *
+ * Revision 2.10  2007/08/07 09:04:02  csoutheren
  * Export more functions
  *
  * Revision 2.9  2007/08/07 08:25:16  csoutheren
@@ -253,7 +256,7 @@ class OpalPluginFaxMediaFormat : public OpalMediaFormat
 
 #endif // OPAL_T38FAX
 
-
+#if 0
 //////////////////////////////////////////////////////
 //
 //  base class for plugin 
@@ -277,7 +280,7 @@ protected:
   const char * baseName;
   const char * reason;
 };
-
+#endif
 
 //////////////////////////////////////////////////////
 //
