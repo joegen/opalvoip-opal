@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2086  2007/08/03 18:43:15  dsandras
+ * Revision 1.2087  2007/08/08 12:43:25  rjongbloed
+ * Incorrect test for STUN local address.
+ *
+ * Revision 2.85  2007/08/03 18:43:15  dsandras
  * Fixed remaining STUN issues.
  *
  * Revision 2.84  2007/08/03 11:00:51  dsandras
@@ -1687,7 +1690,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener);
   socket->SetRemote(remAddr, remPort);
   socket->SetInterface(iface);
-  socket->GetLocal(localAddress, localPort, manager.IsLocalAddress(remoteAddress));
+  socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
   Open(socket);
 
   PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
