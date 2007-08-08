@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2044  2007/08/08 07:13:01  csoutheren
+ * Revision 1.2045  2007/08/08 08:59:30  csoutheren
+ * More plugin manager changes, as the last approach dead-ended :(
+ *
+ * Revision 2.43  2007/08/08 07:13:01  csoutheren
  * #ifdef out unused code - to be removed later if nobody complains :)
  *
  * Revision 2.42  2007/08/07 09:04:25  csoutheren
@@ -1665,23 +1668,41 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
     return;
   } 
 
-  PTRACE(3, "OpalPlugin\tLoading plugin codec " << dll.GetName());
+  // get handler for this plugin type
+  PString name = dll.GetName();
+  PFactory<OpalPluginCodecHandler>::KeyList_T keys = PFactory<OpalPluginCodecHandler>::GetKeyList();
+  PFactory<OpalPluginCodecHandler>::KeyList_T::const_iterator r;
+  OpalPluginCodecHandler * handler = NULL;
+  for (r = keys.begin(); r != keys.end(); ++r) {
+    if (name.Right(r->length()) *= *r) {
+      PTRACE(3, "OpalPlugin\tUsing customer handler for codec " << name);
+      handler = PFactory<OpalPluginCodecHandler>::CreateInstance(*r);
+      break;
+    }
+  }
+
+  if (handler == NULL) {
+    PTRACE(3, "OpalPlugin\tUsing default handler for plugin codec " << name);
+    handler = new OpalPluginCodecHandler;
+  }
 
   switch (code) {
 
     // plugin loaded
     case 0:
-      RegisterCodecPlugins(count, codecs);
+      RegisterCodecPlugins(count, codecs, handler);
       break;
 
     // plugin unloaded
     case 1:
-      UnregisterCodecPlugins(count, codecs);
+      UnregisterCodecPlugins(count, codecs, handler);
       break;
 
     default:
       break;
   }
+
+  delete handler;
 }
 
 void OpalPluginCodecManager::RegisterStaticCodec(
@@ -1696,10 +1717,12 @@ void OpalPluginCodecManager::RegisterStaticCodec(
     return;
   } 
 
-  RegisterCodecPlugins(count, codecs);
+  OpalPluginCodecHandler * handler = new OpalPluginCodecHandler;
+  RegisterCodecPlugins(count, codecs, handler);
+  delete handler;
 }
 
-void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList)
+void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler)
 {
   // make sure all non-timestamped codecs have the same concept of "now"
   static time_t codecNow = ::time(NULL);
@@ -1753,7 +1776,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
             timeStamp = codecNow;
 
           // create the media format, transcoder and capability associated with this plugin
-          RegisterPluginPair(&encoder, &decoder);
+          RegisterPluginPair(&encoder, &decoder, handler);
           found = TRUE;
 
           PTRACE(3, "OpalPlugin\tPlugin codec " << encoder.descr << " defined");
@@ -1767,7 +1790,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
   }
 }
 
-void OpalPluginCodecManager::UnregisterCodecPlugins(unsigned int /*count*/, PluginCodec_Definition * /*codecList*/)
+void OpalPluginCodecManager::UnregisterCodecPlugins(unsigned int, PluginCodec_Definition *, OpalPluginCodecHandler * )
 {
 }
 
@@ -1785,7 +1808,8 @@ OpalMediaFormatList OpalPluginCodecManager::GetMediaFormats()
 
 void OpalPluginCodecManager::RegisterPluginPair(
        PluginCodec_Definition * encoderCodec,
-       PluginCodec_Definition * decoderCodec
+       PluginCodec_Definition * decoderCodec,
+       OpalPluginCodecHandler * handler
 ) 
 {
   // make sure all non-timestamped codecs have the same concept of "now"
@@ -1847,18 +1871,18 @@ void OpalPluginCodecManager::RegisterPluginPair(
       switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
         case PluginCodec_MediaTypeVideo:
-          mediaFormat = OnCreateVideoFormat(encoderCodec, encoderCodec->sdpFormat, timeStamp);
+          mediaFormat = handler->OnCreateVideoFormat(*this, encoderCodec, encoderCodec->sdpFormat, timeStamp);
           break;
 #endif
 #if OPAL_AUDIO
         case PluginCodec_MediaTypeAudio:
         case PluginCodec_MediaTypeAudioStreamed:
-          mediaFormat = OnCreateAudioFormat(encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
+          mediaFormat = handler->OnCreateAudioFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
 #endif
 #if OPAL_T38FAX
         case PluginCodec_MediaTypeFax:
-          mediaFormat = OnCreateFaxFormat(encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
+          mediaFormat = handler->OnCreateFaxFormat(*this, encoderCodec, encoderCodec->sdpFormat, frameTime, clockRate, timeStamp);
           break;
 #endif
         default:
@@ -1990,42 +2014,6 @@ void OpalPluginCodecManager::RegisterPluginPair(
   capabilityCreateList.push_back(CapabilityListCreateEntry(encoderCodec, decoderCodec));
 #endif
 }
-#if OPAL_AUDIO
-
-OpalMediaFormat * OpalPluginCodecManager::OnCreateAudioFormat(const PluginCodec_Definition * encoderCodec,
-                                                                                const char * rtpEncodingName,
-                                                                                    unsigned frameTime,
-                                                                                    unsigned timeUnits,
-                                                                                      time_t timeStamp)
-{
-  return new OpalPluginAudioMediaFormat(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
-}
-
-#endif
-
-#if OPAL_VIDEO
-
-OpalMediaFormat * OpalPluginCodecManager::OnCreateVideoFormat(const PluginCodec_Definition * encoderCodec,
-                                                                                const char * rtpEncodingName,
-                                                                                      time_t timeStamp)
-{
-  return new OpalPluginVideoMediaFormat(encoderCodec, rtpEncodingName, timeStamp);
-}
-
-#endif
-
-#if OPAL_T38FAX
-
-OpalMediaFormat * OpalPluginCodecManager::OnCreateFaxFormat(const PluginCodec_Definition * encoderCodec,
-                                                                              const char * rtpEncodingName,
-                                                                                  unsigned frameTime,
-                                                                                  unsigned timeUnits,
-                                                                                    time_t timeStamp)
-{
-  return new OpalPluginFaxMediaFormat(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
-}
-
-#endif
 
 #if OPAL_H323
 
@@ -2101,6 +2089,45 @@ void OpalPluginCodecManager::AddFormat(const OpalMediaFormat & fmt)
   }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+OpalPluginCodecHandler::OpalPluginCodecHandler()
+{
+}
+
+#if OPAL_AUDIO
+OpalMediaFormat * OpalPluginCodecHandler::OnCreateAudioFormat(OpalPluginCodecManager & /*mgr*/,
+                                                     const PluginCodec_Definition * encoderCodec,
+                                                                       const char * rtpEncodingName,
+                                                                           unsigned frameTime,
+                                                                           unsigned timeUnits,
+                                                                             time_t timeStamp)
+{
+  return new OpalPluginAudioMediaFormat(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
+}
+#endif
+
+#if OPAL_VIDEO
+OpalMediaFormat * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPluginCodecManager & /*mgr*/,
+                                                     const PluginCodec_Definition * encoderCodec,
+                                                                       const char * rtpEncodingName,
+                                                                             time_t timeStamp)
+{
+  return new OpalPluginVideoMediaFormat(encoderCodec, rtpEncodingName, timeStamp);
+}
+#endif
+
+#if OPAL_T38FAX
+OpalMediaFormat * OpalPluginCodecHandler::OnCreateFaxFormat(OpalPluginCodecManager & /*mgr*/,
+                                                   const PluginCodec_Definition * encoderCodec,
+                                                                     const char * rtpEncodingName,
+                                                                         unsigned frameTime,
+                                                                         unsigned timeUnits,
+                                                                           time_t timeStamp)
+{
+  return new OpalPluginFaxMediaFormat(encoderCodec, rtpEncodingName, frameTime, timeUnits, timeStamp);
+}
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -2869,43 +2896,6 @@ PString H323CodecPluginGenericVideoCapability::GetFormatName() const
 #endif  // OPAL_VIDEO
 
 #endif // OPAL_H323
-
-/////////////////////////////////////////////////////////////////////////////
-
-#if 0
-
-OPALDynaLink::OPALDynaLink(const char * _baseName, const char * _reason)
-  : baseName(_baseName), reason(_reason)
-{
-  isLoadedOK = FALSE;
-}
-
-void OPALDynaLink::Load()
-{
-  PStringArray dirs = PPluginManager::GetPluginDirs();
-  PINDEX i;
-  for (i = 0; !PDynaLink::IsLoaded() && i < dirs.GetSize(); i++)
-    PLoadPluginDirectory<OPALDynaLink>(*this, dirs[i]);
-  
-  if (!PDynaLink::IsLoaded()) {
-    cerr << "Cannot find " << baseName << " as required for " << ((reason != NULL) ? reason : " a code module") << "." << endl
-         << "This function may appear to be installed, but will not operate correctly." << endl
-         << "Please put the file " << baseName << PDynaLink::GetExtension() << " into one of the following directories:" << endl
-         << "     " << setfill(',') << dirs << setfill(' ') << endl
-         << "This list of directories can be set using the PWLIBPLUGINDIR environment variable." << endl;
-    return;
-  }
-}
-
-BOOL OPALDynaLink::LoadPlugin(const PString & filename)
-{
-  PFilePath fn = filename;
-  if (fn.GetTitle() *= "libavcodec")
-    return PDynaLink::Open(filename);
-  return TRUE;
-}
-
-#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
