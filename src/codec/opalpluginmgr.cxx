@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2043  2007/08/07 09:04:25  csoutheren
+ * Revision 1.2044  2007/08/08 07:13:01  csoutheren
+ * #ifdef out unused code - to be removed later if nobody complains :)
+ *
+ * Revision 2.42  2007/08/07 09:04:25  csoutheren
  * Export more functions
  *
  * Revision 2.41  2007/08/07 08:25:36  csoutheren
@@ -2869,6 +2872,8 @@ PString H323CodecPluginGenericVideoCapability::GetFormatName() const
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 OPALDynaLink::OPALDynaLink(const char * _baseName, const char * _reason)
   : baseName(_baseName), reason(_reason)
 {
@@ -2899,6 +2904,8 @@ BOOL OPALDynaLink::LoadPlugin(const PString & filename)
     return PDynaLink::Open(filename);
   return TRUE;
 }
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
