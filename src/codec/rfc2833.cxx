@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2007  2007/07/26 00:39:30  csoutheren
+ * Revision 1.2008  2007/08/09 08:22:47  csoutheren
+ * Fix typo
+ *
+ * Revision 2.6  2007/07/26 00:39:30  csoutheren
  * Make transmission of RFC2833 independent of the media stream
  *
  * Revision 2.5  2007/04/04 02:12:00  rjongbloed
@@ -138,7 +141,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
     if (transmitTimestampSet)
       frame.SetTimestamp(transmitTimestamp);
     rtpSession->WriteOOBData(frame);
-    if (!transmitTimestampSet, !transmitTimestampSet)
+    if (!transmitTimestampSet)
       transmitTimestamp = frame.GetTimestamp();
   }
 }
