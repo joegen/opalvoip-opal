@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2139  2007/07/22 13:02:19  rjongbloed
+ * Revision 1.2140  2007/08/09 08:20:44  csoutheren
+ * Fix problem with incorrect contact address being used
+ *
+ * Revision 2.138  2007/07/22 13:02:19  rjongbloed
  * Cleaned up selection of registered name usage of URL versus host name.
  *
  * Revision 2.137  2007/07/22 11:18:12  rjongbloed
@@ -2142,7 +2145,7 @@ BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remo
   if (!transport.IsOpen())
     return FALSE;
 
-  if (!remoteAddress.IsEmpty() && transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
+  if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
     // skip transport identifier
     SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
 
