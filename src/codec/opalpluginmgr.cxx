@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2047  2007/08/08 17:35:16  csoutheren
+ * Revision 1.2048  2007/08/09 08:21:25  csoutheren
+ * Add missing braces
+ *
+ * Revision 2.46  2007/08/08 17:35:16  csoutheren
  * Final plugin manager changes
  *
  * Revision 2.45  2007/08/08 11:18:47  csoutheren
@@ -2592,9 +2595,10 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
       (!cif4MPI && other_cif4MPI) ||
       (!cifMPI && other_cifMPI) ||
       (!qcifMPI && other_qcifMPI) ||
-      (!sqcifMPI && other_sqcifMPI))
+      (!sqcifMPI && other_sqcifMPI)) {
     PTRACE(1, "H263: " << *this << " < " << other);
     return LessThan;
+  }
 
   PTRACE(1, "H263: " << *this << " > " << other << " are equal");
   return GreaterThan;
