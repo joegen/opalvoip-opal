@@ -77,7 +77,14 @@ int main(int argc, char *argv[])
 {
   if (argc != 2) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
 
-  Trace::SetLevel(H264_TRACELEVEL);
+  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  if (debug_level!=NULL) {
+      Trace::SetLevel(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevel(0);
+  }
+		      
   x264 = NULL;
   dstLen=1400;
   dlStream.open(argv[0], std::ios::binary);
@@ -141,6 +148,12 @@ int main(int argc, char *argv[])
         writeStream(ulStream,(char*)&dst, dstLen);
         writeStream(ulStream,(char*)&flags, sizeof(flags));
         writeStream(ulStream,(char*)&ret, sizeof(ret));
+        flushStream(ulStream);
+      break;
+    case SET_MAX_FRAME_SIZE:
+        readStream(dlStream, (char*)&val, sizeof(val));
+        x264->SetMaxRTPFrameSize (val);
+        writeStream(ulStream,(char*)&msg, sizeof(msg)); 
         flushStream(ulStream);
       break;
     default:

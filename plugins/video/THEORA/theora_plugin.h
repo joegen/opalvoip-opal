@@ -65,6 +65,7 @@ class theoraEncoderContext
     theoraEncoderContext ();
     ~theoraEncoderContext ();
 
+    void SetMaxRTPFrameSize (int size);
     void SetTargetBitrate (int rate);
     void SetFrameRate (int rate);
     void SetFrameWidth (int width);
@@ -158,7 +159,6 @@ static const char sdpTHEORA[]    = { "theora" };
 #define THEORA_PAYLOAD_SIZE      1400
 #define THEORA_FRAME_RATE          25
 #define THEORA_KEY_FRAME_INTERVAL 2.0
-#define THEORA_TRACELEVEL 4
 
 /////////////////////////////////////////////////////////////////////////////
 

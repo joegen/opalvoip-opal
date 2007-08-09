@@ -233,6 +233,11 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   }
 }
 
+void theoraEncoderContext::SetMaxRTPFrameSize (int size)
+{
+  _txTheoraFrame->SetMaxPayloadSize(size);
+}
+
 theoraDecoderContext::theoraDecoderContext()
 {
   _frameCounter = 0; 
@@ -490,8 +495,9 @@ static int encoder_set_options(
          context->SetFrameHeight(atoi(options[i+1]));
       if (STRCMPI(options[i], "Frame Width") == 0)
          context->SetFrameWidth(atoi(options[i+1]));
+      if (STRCMPI(options[i], "Max Frame Size") == 0)
+	 context->SetMaxRTPFrameSize (atoi(options[i+1]));
       TRACE (4, "THEORA\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
-      printf ( "THEORA\tEncoder\tOption %s = %s\n", options[i], options[i+1] );
     }
     context->ApplyOptions();
 
@@ -569,7 +575,13 @@ PLUGIN_CODEC_IMPLEMENT(THEORA)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  Trace::SetLevel(THEORA_TRACELEVEL);
+  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  if (debug_level!=NULL) {
+    Trace::SetLevel(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevel(0);
+  }
 
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {
     *count = 0;
