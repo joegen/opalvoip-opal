@@ -71,7 +71,7 @@ H264EncCtx::Load()
   
   if (!findGplProcess()) { 
 
-    fprintf(stderr, "H.264 Plugin: Couldn't find GPL process executable: %s\n", GPL_PROCESS_FILENAME); 
+    TRACE(1, "H264\tIPC\tPP: Couldn't find GPL process executable " << GPL_PROCESS_FILENAME);
     closeAndRemovePipes(); 
     return false;
   }  
@@ -85,13 +85,13 @@ H264EncCtx::Load()
   if (!ConnectNamedPipe(stream, NULL)) {
 	if (GetLastError() != ERROR_PIPE_CONNECTED) {
 
-	  fprintf(stderr, "H.264 Plugin: Could not establish communication with child process (%d)", ErrorMessage());
+          TRACE(1, "H264\tIPC\tPP: Could not establish communication with child process (" << ErrorMessage() << ")");
 	  closeAndRemovePipes(); 
 	  return false;
 	}
   } 
 
-  fprintf(stderr, "H.264 Plugin: Successfully established communication with child process\n");
+  TRACE(1, "H264\tIPC\tPP: Successfully established communication with child process");
   return true;
 }
 
@@ -172,7 +172,8 @@ bool H264EncCtx::createPipes()
   );
 
   if (stream == INVALID_HANDLE_VALUE) {
-    fprintf(stderr, "H.264 Plugin: Failure on creating Pipe - terminating (%s)", ErrorMessage());
+
+    TRACE(1, "H264\tIPC\tPP: Failure on creating Pipe - terminating (" << ErrorMessage() << ")");
     return false;
   }
   return true;
@@ -272,12 +273,12 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
 
   fin.open(gplProcess,ios::in);
   if( !fin.is_open() ){
-    fprintf(stderr, "H.264 Plugin: Couldn't find GPL process executable in %s\n", gplProcess); 
+    TRACE(1, "H264\tIPC\tPP: Couldn't find GPL process executable in " << gplProcess);
     fin.close();
     return false;
   }
   fin.close();
-  fprintf(stderr, "H.264 Plugin: Found GPL process executable in %s\n", gplProcess); 
+  TRACE(1, "H264\tIPC\tPP: Found GPL process executable in " << gplProcess);
   return true;
 }
 
@@ -304,10 +305,10 @@ bool H264EncCtx::execGplProcess()
                       &si,         // Pointer to STARTUPINFO structure
                       &pi ))       // Pointer to PROCESS_INFORMATION structure
   {
-      fprintf(stderr, "H.264 Plugin: Couldn't create child process: %s\n", ErrorMessage()); 
+      TRACE(1, "H264\tIPC\tPP: Couldn't create child process: " << ErrorMessage());
       return false;
   }
-  fprintf(stderr, "H.264 Plugin: Successfully created child process %d\n", pi.dwProcessId);
+  TRACE(1, "H264\tIPC\tPP: Successfully created child process " << pi.dwProcessId);
   return true;
 }
 

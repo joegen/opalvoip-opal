@@ -171,7 +171,14 @@ void flushStream (HANDLE stream)
 int main(int argc, char *argv[])
 {
   if (argc != 2) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
-  Trace::SetLevel(H264_TRACELEVEL);
+
+  if (debug_level!=NULL) {
+    Trace::SetLevel(atoi(debug_level));
+  }
+  else {
+    Trace::SetLevel(0);
+  }
+		  
   x264 = NULL;
   dstLen=1400;
 
@@ -235,6 +242,12 @@ int main(int argc, char *argv[])
           writeStream(stream,(LPCVOID)&dst, dstLen);
           writeStream(stream,(LPCVOID)&flags, sizeof(flags));
           writeStream(stream,(LPCVOID)&ret, sizeof(ret));
+          flushStream(stream);
+        break;
+      case SET_MAX_FRAME_SIZE:
+          readStream(stream, (LPVOID)&val, sizeof(val));
+          x264->SetMaxRTPFrameSize (val);
+          writeStream(stream,(LPCVOID)&msg, sizeof(msg)); 
           flushStream(stream);
         break;
       default:

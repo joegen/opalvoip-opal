@@ -20,7 +20,7 @@
 # Contributor(s): Matthias Schneider.
 #
 
-PREFIX=/usr/local
+PREFIX=/usr
 exec_prefix = ${PREFIX}
 LIBDIR=${exec_prefix}/lib
 

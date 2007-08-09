@@ -63,7 +63,6 @@ typedef bool BOOL;
 #define H263P_PAYLOAD_SIZE      1400
 #define H263P_FRAME_RATE          25
 #define H263P_KEY_FRAME_INTERVAL 2.0
-#define H263P_TRACELEVEL           4
 
 #define CIF_WIDTH       352
 #define CIF_HEIGHT      288
@@ -89,6 +88,7 @@ class H263PEncoderContext
     ~H263PEncoderContext();
     int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
     unsigned _frameWidth, _frameHeight;
+    void SetMaxRTPFrameSize(int size);
 
   protected:
     BOOL OpenCodec();

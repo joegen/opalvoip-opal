@@ -63,8 +63,9 @@ typedef unsigned char BYTE;
 
 extern "C" {
 #include "ffmpeg/avcodec.h"
-#include "x264.h"
 };
+
+#include "shared/trace.h"
 
 #  ifdef  _WIN32
 #    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
@@ -81,15 +82,10 @@ extern "C" {
 // if defined, the FFMPEG code is access via another DLL
 // otherwise, the FFMPEG code is assumed to be statically linked into this plugin
 
-#define USE_DLL_AVCODEC   1
-#define USE_DLL_X264      1
-
 /////////////////////////////////////////////////////////////////
 //
 // define a class to simplify handling a DLL library
 // based on PDynaLink from PWLib
-
-#if USE_DLL_AVCODEC
 
 class DynaLink
 {
@@ -137,14 +133,14 @@ class DynaLink
 #else
       _hDLL = dlopen((const char *)path, RTLD_NOW);
       if (_hDLL == NULL) {
-        fprintf(stderr, "H.264 plugin: error loading %s", path);
         char * err = dlerror();
         if (err != NULL)
-          fprintf(stderr, " - %s", err);
-        fprintf(stderr, "\n");
+          TRACE(1, "H264\tDYNA\tError loading " << path << " - " << err)
+         else
+          TRACE(1, "H264\tDYNA\tError loading " << path);
       }
 #endif // _WIN32
-      if (_hDLL != NULL) fprintf(stderr, "H.264 plugin: successfully loaded %s\n", path);
+      if (_hDLL != NULL) TRACE(1, "H264\tDYNA\tSuccessfully loaded " << path);
       return _hDLL != NULL;
     }
 
@@ -198,18 +194,12 @@ class DynaLink
 #endif // _WIN32
 };
 
-#endif  // USE_DLL_AVCODEC 
-
 /////////////////////////////////////////////////////////////////
 //
 // define a class to interface to the FFMpeg library
 
 
-class FFMPEGLibrary
-
-#if USE_DLL_AVCODEC
-                   : public DynaLink
-#endif // USE_DLL_AVCODEC
+class FFMPEGLibrary : public DynaLink
 {
   public:
     FFMPEGLibrary();

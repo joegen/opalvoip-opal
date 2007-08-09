@@ -269,6 +269,12 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   return 1;
 }
 
+void H263PEncoderContext::SetMaxRTPFrameSize (int size)
+{
+  _txH263PFrame->SetMaxPayloadSize(size);
+}
+
+
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
 {
   return new H263PEncoderContext;
@@ -290,7 +296,9 @@ static int encoder_set_options(const PluginCodec_Definition *,
       context->_frameWidth = atoi(option[1]);
     if (STRCMPI(option[0], "Frame Height") == 0)
       context->_frameHeight = atoi(option[1]);
-    printf ("Setting encoder options: %s = %s\n", option[0], option[1]);
+    if (STRCMPI(option[0], "Max Frame Size") == 0)
+       context->SetMaxRTPFrameSize (atoi(option[1]));
+    TRACE (4, "H263+\tEncoder\tOption " << option[0] << " = " << option[1]);
   }
   return 1;
 }
@@ -546,7 +554,7 @@ static int get_codec_options(const struct PluginCodec_Definition * codec,
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
     return 0;
   for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
-    printf ("Getting decoder options: %s = %s\n", option[0], option[1]);
+      TRACE (4, "THEORA\tDecoder\tGetting Option " << option[0] << " = " << option[1]);
   }
   *(const void **)parm = codec->userData;
   return 1;
@@ -559,7 +567,14 @@ extern "C" {
 
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
   {
-    Trace::SetLevel(H263P_TRACELEVEL);
+    char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+    if (debug_level!=NULL) {
+      Trace::SetLevel(atoi(debug_level));
+    } 
+    else {
+      Trace::SetLevel(0);
+    }
+		    
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;
       return NULL;
