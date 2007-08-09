@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.16  2007/08/09 22:15:44  dereksmithies
+ *  Formatting tidyup. No functional difference.
+ *
  *  Revision 1.15  2007/08/03 01:24:06  dereksmithies
  *  Tidyups so it compiles...
  *
@@ -218,11 +221,11 @@ class IAX2EndPoint : public OpalEndPoint
      The default behaviour is pure.
   */
   virtual BOOL MakeConnection(
-			      OpalCall & call,          /// Owner of connection
-			      const PString & party,    /// Remote party to call
-			      void * userData = NULL,   /// Arbitrary data to pass to connection
-            unsigned int options = 0, ///<  options to pass to connection
-            OpalConnection::StringOptions * stringOptions = NULL
+			      OpalCall & call,          ///<  Owner of connection
+			      const PString & party,    ///<  Remote party to call
+			      void * userData = NULL,   ///<  Arbitrary data to pass to connection
+			      unsigned int options = 0, ///<  options to pass to connection
+			      OpalConnection::StringOptions * stringOptions = NULL
 			      );
   
   /**Create a connection for the IAX endpoint.
