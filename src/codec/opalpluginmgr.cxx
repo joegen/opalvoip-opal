@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2025  2007/05/12 03:57:34  rjongbloed
+ * Revision 1.2025.2.1  2007/08/09 00:54:04  csoutheren
+ * Removed unused code
+ *
+ * Revision 2.24  2007/05/12 03:57:34  rjongbloed
  * Fixed transcoder from plug in not being created correctly due to media format not yet being registered.
  *
  * Revision 2.23  2007/05/10 05:34:23  csoutheren
@@ -2830,6 +2833,8 @@ H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 OPALDynaLink::OPALDynaLink(const char * _baseName, const char * _reason)
   : baseName(_baseName), reason(_reason)
 {
@@ -2860,6 +2865,8 @@ BOOL OPALDynaLink::LoadPlugin(const PString & filename)
     return PDynaLink::Open(filename);
   return TRUE;
 }
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
