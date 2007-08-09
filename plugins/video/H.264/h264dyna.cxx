@@ -41,7 +41,6 @@
 #include "h264dyna.h"
 
 //////////////////////////////////////////////////////////////////////////////
-#ifdef USE_DLL_AVCODEC
 
 FFMPEGLibrary::FFMPEGLibrary()
 {
@@ -145,21 +144,18 @@ FFMPEGLibrary::~FFMPEGLibrary()
 AVCodec *FFMPEGLibrary::AvcodecFindDecoder(enum CodecID id)
 {
   AVCodec *res = Favcodec_find_decoder(id);
-  //TRACE_IF(6, res, "FFLINK\tFound decoder " << res->name << " @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
 AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
 {
   AVCodecContext *res = Favcodec_alloc_context();
-  //TRACE_IF(6, res, "FFLINK\tAllocated context @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
 AVFrame *FFMPEGLibrary::AvcodecAllocFrame(void)
 {
   AVFrame *res = Favcodec_alloc_frame();
-  //TRACE_IF(6, res, "FFLINK\tAllocated frame @ " << ::hex << (int)res << ::dec);
   return res;
 }
 
@@ -167,13 +163,11 @@ int FFMPEGLibrary::AvcodecOpen(AVCodecContext *ctx, AVCodec *codec)
 {
   WaitAndSignal m(processLock);
 
-  //TRACE(6, "FFLINK\tNow open context @ " << ::hex << (int)ctx << ", codec @ " << (int)codec << ::dec);
   return Favcodec_open(ctx, codec);
 }
 
 int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 {
-  //TRACE(6, "FFLINK\tNow close context @ " << ::hex << (int)ctx << ::dec);
   return Favcodec_close(ctx);
 }
 
@@ -181,11 +175,8 @@ int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *g
 {
   WaitAndSignal m(processLock);
 
-//  TRACE(6, "FFLINK\tNow decode video for ctxt @ " << ::hex << (int)ctx << ", pict @ " << (int)pict
-//	 << ", buf @ " << (int)buf << ::dec << " (" << buf_size << " bytes)");
   int res = Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
-
-  TRACE(6, "FFLINK\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
+  TRACE(4, "FFLINK\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
   return res;
 }
 
@@ -208,9 +199,3 @@ bool FFMPEGLibrary::IsLoaded()
 {
   return isLoadedOK;
 }
-
-#else
-
-#error "Not yet able to use statically linked libavcodec"
-
-#endif // USE_DLL_AVCODEC

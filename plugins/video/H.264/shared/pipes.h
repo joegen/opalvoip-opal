@@ -41,5 +41,6 @@
 #define SET_FRAME_HEIGHT          7
 #define ENCODE_FRAMES             8
 #define ENCODE_FRAMES_BUFFERED    9
+#define SET_MAX_FRAME_SIZE        10
 
 #endif /* __PIPE_H__ */

@@ -20,7 +20,7 @@
 # Contributor(s): ______________________________________.
 #
 
-PREFIX=/usr/local
+PREFIX=/usr
 exec_prefix = ${PREFIX}
 LIBDIR=${exec_prefix}/lib
 
@@ -36,7 +36,7 @@ LDSO	 	=-shared -Wl,-soname,$(SONAME)
 PLUGINEXT	=so
 STDCCFLAGS	=-fPIC
 LDFLAGS		=
-THEORA_LIBS     =-ltheora
+THEORA_LIBS     =
 
 CFLAGS        +=
 

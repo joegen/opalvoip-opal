@@ -92,6 +92,11 @@ void H264EncoderContext::ApplyOptions()
   H264EncCtxInstance.call(APPLY_OPTIONS);
 }
 
+void H264EncoderContext::SetMaxRTPFrameSize(int size)
+{
+  H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, size);
+}
+
 void H264EncoderContext::SetTargetBitRate(int rate)
 {
   H264EncCtxInstance.call(SET_TARGET_BITRATE, rate);
@@ -318,8 +323,9 @@ static int encoder_set_options(
          context->SetFrameHeight(atoi(options[i+1]));
       if (STRCMPI(options[i], "Frame Width") == 0)
          context->SetFrameWidth(atoi(options[i+1]));
+      if (STRCMPI(options[i], "Max Frame Size") == 0)
+         context->SetMaxRTPFrameSize(atoi(options[i+1]));
       TRACE (4, "H264\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
-      printf ( "H264\tEncoder\tOption %s = %s\n", options[i], options[i+1] );
     }
     context->ApplyOptions();
 
@@ -398,7 +404,15 @@ PLUGIN_CODEC_IMPLEMENT(H264)
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
   WaitAndSignal mFFMPEG(FFMPEGLibraryInstance.processLock);
-  Trace::SetLevel(H264_TRACELEVEL);
+
+  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  if (debug_level!=NULL) {
+    Trace::SetLevel(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevel(0);
+  }  
+
   if (!FFMPEGLibraryInstance.IsLoaded()) {
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;

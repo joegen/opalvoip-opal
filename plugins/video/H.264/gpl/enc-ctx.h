@@ -41,7 +41,6 @@ extern "C" {
 #define H264_PAYLOAD_SIZE      1400
 #define H264_FRAME_RATE          25
 #define H264_KEY_FRAME_INTERVAL 2.0
-#define H264_TRACELEVEL 4
 
 static void logCallbackX264   (void *priv, int level, const char *fmt, va_list arg);
 
@@ -51,6 +50,7 @@ class X264EncoderContext
     X264EncoderContext ();
     ~X264EncoderContext ();
 
+    void SetMaxRTPFrameSize (int size);
     void SetTargetBitRate (int rate);
     void SetFrameRate (int rate);
     void SetFrameWidth (int width);

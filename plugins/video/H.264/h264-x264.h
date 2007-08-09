@@ -72,6 +72,7 @@ class H264EncoderContext
     void SetFrameRate (int rate);
     void SetFrameWidth (int width);
     void SetFrameHeight (int height);
+    void SetMaxRTPFrameSize (int size);
     void ApplyOptions ();
 
     int EncodeFrames (const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags);
@@ -157,7 +158,6 @@ static const char sdpH264[]       = { "h264" };
 #define H264_PAYLOAD_SIZE      1400
 #define H264_FRAME_RATE          25
 #define H264_KEY_FRAME_INTERVAL 2.0
-#define H264_TRACELEVEL 4
 
 /////////////////////////////////////////////////////////////////////////////
 

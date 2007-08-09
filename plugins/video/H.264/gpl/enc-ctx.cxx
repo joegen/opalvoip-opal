@@ -123,6 +123,11 @@ X264EncoderContext::~X264EncoderContext()
   if (_txH264Frame) delete _txH264Frame;
 }
 
+void X264EncoderContext::SetMaxRTPFrameSize(int size)
+{
+  _txH264Frame->SetMaxPayloadSize(size);
+}
+
 void X264EncoderContext::SetTargetBitRate(int rate)
 {
   _context.rc.i_vbv_max_bitrate = rate;

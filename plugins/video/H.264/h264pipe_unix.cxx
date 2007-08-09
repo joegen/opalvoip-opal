@@ -30,6 +30,7 @@
 #include "shared/trace.h"
 #include "shared/rtpframe.h"
 #include "h264pipe_unix.h"
+#include "shared/trace.h"
 
 #define HAS_MKFIFO 1
 #define GPL_PROCESS_FILENAME "pwlib/codecs/video/h264_video_pwplugin_helper"
@@ -64,11 +65,11 @@ H264EncCtx::Load()
   
   if (!findGplProcess()) { 
 
-    fprintf(stderr, "H.264 Plugin: Couldn't find GPL process executable: %s", GPL_PROCESS_FILENAME); 
+    TRACE(1, "H264\tIPC\tPP: Couldn't find GPL process executable: " << GPL_PROCESS_FILENAME)
     closeAndRemovePipes(); 
     return false;
   }
-  // Check if file is executable!!!!
+    // Check if file is executable!!!!
   int pid = fork();
 
   if(pid == 0) 
@@ -77,7 +78,7 @@ H264EncCtx::Load()
 
   else if(pid < 0) {
 
-    fprintf(stderr, "H.264 Plugin: Error when trying to fork\n");
+    TRACE(1, "H264\tIPC\tPP: Error when trying to for");
     closeAndRemovePipes(); 
     return false;
   }
@@ -85,19 +86,19 @@ H264EncCtx::Load()
   dlStream.open(dlName, std::ios::binary);
   if (dlStream.fail()) { 
 
-    fprintf(stderr, "H.264 Plugin: Error when opening DL named pipe\n"); 
+    TRACE(1, "H264\tIPC\tPP: Error when opening DL named pipe");
     closeAndRemovePipes(); 
     return false;
   }
   ulStream.open(ulName, std::ios::binary);
   if (ulStream.fail()) { 
 
-  fprintf(stderr, "H.264 Plugin: Error when opening UL named pipe\n"); 
+    TRACE(1, "H264\tIPC\tPP: Error when opening UL named pipe")
     closeAndRemovePipes(); 
     return false;
   }
 
-  fprintf(stderr, "H.264 Plugin: Successfully forked child process %d and established communication\n", pid);
+  TRACE(1, "H264\tIPC\tPP: Successfully forked child process "<<  pid << " and established communication")
   loaded = true;  
   return true;
 }
@@ -169,23 +170,23 @@ bool H264EncCtx::createPipes()
 #ifdef HAS_MKFIFO
   if (mkfifo((const char*) &dlName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
 
-    fprintf (stderr, "H.264 Plugin: Error when trying to create DL named pipe\n");
+    TRACE(1, "H264\tIPC\tPP: Error when trying to create DL named pipe");
     return false;
   }
   if (mkfifo((const char*) &ulName, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)) {
 
-    fprintf (stderr, "H.264 Plugin: Error when trying to create UL named pipe\n");
+    TRACE(1, "H264\tIPC\tPP: Error when trying to create UL named pipe");
     return false;
   }
 #else
   if (mknod((const char*) &dlName, S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, 0)) {
 
-    fprintf (stderr, "H.264 Plugin: Error when trying to create named pipe\n");
+    TRACE(1, "H264\tIPC\tPP: Error when trying to create named pipe");
     return false;
   }
   if (mknod((const char*) &ulName, S_IFIFO | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP, 0)) {
 
-    fprintf (stderr, "H.264 Plugin: Error when trying to create named pipe\n");
+    TRACE(1, "H264\tIPC\tPP: Error when trying to create named pipe");
     return false;
   }
 #endif
@@ -249,11 +250,11 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
 
   if (stat(gplProcess, &buffer ) ) { 
 
-    fprintf(stderr, "H.264 Plugin: Couldn't find GPL process executable in %s\n", gplProcess); 
+    TRACE(1, "H264\tIPC\tPP: Couldn't find GPL process executable in " << gplProcess);
     return false;
   }
 
-  fprintf(stderr, "H.264 Plugin: Found GPL process executable in %s\n", gplProcess); 
+  TRACE(1, "H264\tIPC\tPP: Found GPL process executable in  " << gplProcess);
 
   return true;
 }
@@ -261,7 +262,7 @@ bool H264EncCtx::checkGplProcessExists (const char * dir)
 void H264EncCtx::execGplProcess() 
 {
   if (execl(gplProcess,dlName,ulName, NULL) == -1) {
-    fprintf(stderr, "H.264 Plugin: Error when trying to execute GPL process %s\n", gplProcess);
+    TRACE(1, "H264\tIPC\tPP: Error when trying to execute GPL process  " << gplProcess);
     exit(1);
   }
 }

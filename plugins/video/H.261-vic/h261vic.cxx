@@ -26,6 +26,10 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.15  2007/08/09 08:28:54  dsandras
+ * Committed patch from Matthias Schneider <ma30002000 yahoo de> to add
+ * debug tracing to video codecs. Thanks a lot ! (as usual).
+ *
  * Revision 1.14  2007/08/06 09:22:28  dsandras
  * Reintroduces the adaptive packet delay from the old OPAL. Patch from
  * Matthias Schneider <ma30002000 yahoo de>. Thanks !
@@ -141,7 +145,7 @@
 
 #define BEST_ENCODER_QUALITY   1
 #define WORST_ENCODER_QUALITY 31
-#define DEFAULT_ENCODER_QUALITY 15
+#define DEFAULT_ENCODER_QUALITY 10
 
 #define DEFAULT_FILL_LEVEL     5
 
@@ -586,7 +590,7 @@ static int encoder_set_options(const PluginCodec_Definition *,
   H261EncoderContext * context = (H261EncoderContext *)_context;
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
-
+  int width, height;
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     int i;
@@ -594,14 +598,16 @@ static int encoder_set_options(const PluginCodec_Definition *,
       if (STRCMPI(options[i], "Target Bit Rate") == 0)
          context->SetTargetBitRate(atoi(options[i+1]));
       if (STRCMPI(options[i], "Frame Height") == 0)
-        context->frameHeight = atoi(options[i+1]);
+        height = atoi(options[i+1]);
       if (STRCMPI(options[i], "Frame Width") == 0)
-        context->frameWidth = atoi(options[i+1]);
+        width = atoi(options[i+1]);
       if (STRCMPI(options[i], "Adaptive Packet Delay") == 0)
         context->packetDelay = atoi(options[i+1]);
       printf ("%s = %s - %d\n", options[i], options[i+1], atoi(options[i+1]));
     }
   }
+  context->SetFrameSize (width, height);
+
   return 1;
 }
 
