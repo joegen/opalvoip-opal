@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2012  2007/06/27 12:29:45  rjongbloed
+ * Revision 1.2013  2007/08/10 09:04:57  rjongbloed
+ * Fixed numerous spelling errors.
+ * Added extra symbols for backward compatibility.
+ * Removed unused (and commented out) code.
+ *
+ * Revision 2.11  2007/06/27 12:29:45  rjongbloed
  * Add new OpalMediaOption for octet strings (simple block of bytes).
  *
  * Revision 2.10  2007/06/22 17:58:30  csoutheren
@@ -419,9 +424,9 @@ struct PluginCodec_H323NonStandardCodecData {
 
 struct PluginCodec_H323GenericParameterDefinition
 {
-  /* The followinug used to be a simple integer for the collapsing flag in
-     version 3 and earlier. WEe hope that all those implemtation just used
-     zero and one (a good bet) and thus the blow bit fields will be backward
+  /* The following used to be a simple integer for the collapsing flag in
+     version 3 and earlier. We hope that all those implementations just used
+     zero and one (a good bet) and thus the below bit fields will be backward
      compatible, putting the parameter in all three PDU types.
    */ 
   struct {
@@ -438,6 +443,15 @@ struct PluginCodec_H323GenericParameterDefinition
     /* these need to be in the same order as the choices in
       H245_ParameterValue::Choices, as the value is just cast to that type
     */
+	PluginCodec_GenericParameter_Logical = 0,
+	PluginCodec_GenericParameter_BooleanArray,
+	PluginCodec_GenericParameter_UnsignedMin,
+	PluginCodec_GenericParameter_UnsignedMax,
+	PluginCodec_GenericParameter_Unsigned32Min,
+	PluginCodec_GenericParameter_Unsigned32Max,
+	PluginCodec_GenericParameter_OctetString,
+	PluginCodec_GenericParameter_GenericParameter,
+	
     PluginCodec_GenericParameter_logical = 0,
     PluginCodec_GenericParameter_booleanArray,
     PluginCodec_GenericParameter_unsignedMin,
@@ -486,48 +500,6 @@ struct  PluginCodec_H323AudioG7231AnnexC {
   int  sidMode1:4;                // INTEGER (6..17),  -- units octets
 };
 
-/* Following H.261 structure is no longer used */
-/*
-struct PluginCodec_H323VideoH261
-{
-  unsigned char qcifMPI;                           //  INTEGER (1..4) OPTIONAL,  -- units 1/29.97 Hz (0 if not present)
-  unsigned char cifMPI;                             // INTEGER (1..4) OPTIONAL,  -- units 1/29.97 Hz (0 if not present)
-  unsigned char temporalSpatialTradeOffCapability; //  BOOLEAN,
-  unsigned char stillImageTransmission;            //  BOOLEAN,  -- Annex D of H.261
-  int maxBitRate;                                  //  INTEGER (1..19200),  -- units of 100 bit/s
-  unsigned char videoBadMBsCap;                    //  BOOLEAN
-};
-*/
-
-/* Following H.263 structure is no longer used */
-/*
-struct PluginCodec_H323VideoH263
-{
-  unsigned char sqcifMPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-  unsigned char qcifMPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-  unsigned char cifMPI;                            // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-  unsigned char cif4MPI;                           // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-  unsigned char cif16MPI;                          // INTEGER (1..32) OPTIONAL, -- units 1/29.97 Hz (0 if not present)
-  unsigned int maxBitRate;                         // INTEGER (1..192400) units 100 bit/s
-  unsigned char unrestrictedVector;                //  BOOLEAN
-  unsigned char arithmeticCoding;                  //  BOOLEAN,
-  unsigned char advancedPrediction;                //  BOOLEAN,
-  unsigned char pbFrames;                          //  BOOLEAN,
-  unsigned char temporalSpatialTradeOffCapability; //  BOOLEAN,
-  int hrdB;                                        // INTEGER (0..524287) OPTIONAL, -- units 128 bits (-1 if not present)
-  int bppMaxKb;                                    // INTEGER (0..65535) OPTIONAL, -- units 1024 bits (-1 if not present)
-
-  unsigned int slowSqcifMPI;                       // INTEGER (1..3600) OPTIONAL, --  units seconds/frame (0 if not present)
-  unsigned int slowQcifMPI;                        //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-  unsigned int slowCifMPI;                         //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-  unsigned int slowCif4MPI;                        //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-  unsigned int slowCif16MPI;                       //  INTEGER (1..3600) OPTIONAL, -- units seconds/frame (0 if not present)
-  unsigned char errorCompensation;                 // BOOLEAN,
-
-  void * enhancementLayerInfo;                     // not yet supported (NULL if not present)
-  void * h263Options;                              // not yet support (NULL if not present)
-};
-*/
 
 enum {
   PluginCodec_H323Codec_undefined,      // must be zero, so empty struct is undefined
