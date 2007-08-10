@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2056  2007/08/07 01:38:40  csoutheren
+ * Revision 1.2057  2007/08/10 09:30:18  rjongbloed
+ * Fixed typos in comments
+ *
+ * Revision 2.55  2007/08/07 01:38:40  csoutheren
  * Fix problem with rtpEncodingName member going out of scope
  *
  * Revision 2.54  2007/08/02 07:54:15  csoutheren
@@ -128,7 +131,10 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2056  2007/08/07 01:38:40  csoutheren
+ * Revision 1.2057  2007/08/10 09:30:18  rjongbloed
+ * Fixed typos in comments
+ *
+ * Revision 2.55  2007/08/07 01:38:40  csoutheren
  * Fix problem with rtpEncodingName member going out of scope
  *
  * Revision 2.54  2007/08/02 07:54:15  csoutheren
@@ -811,8 +817,6 @@ class OpalMediaOptionOctets : public OpalMediaOption
    format is the type of any media data that is trasferred between OPAL
    entities. For example an audio codec such as G.723.1 is a media format, a
    video codec such as H.261 is also a media format.
-
-   There
   */
 class OpalMediaFormat : public PCaselessString
 {
@@ -1198,8 +1202,8 @@ class OpalMediaFormat : public PCaselessString
     { return FindOption(name) != NULL; }
 
     /**
-      * Get a poiinter to teh specified media format option.
-      * Returns NULL if the option does not exist.
+      * Get a pointer to the specified media format option.
+      * Returns NULL if thee option does not exist.
       */
     OpalMediaOption * FindOption(
       const PString & name
