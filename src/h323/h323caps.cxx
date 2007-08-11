@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2035  2007/07/24 12:55:52  rjongbloed
+ * Revision 1.2036  2007/08/11 00:03:23  rjongbloed
+ * Fixed incorrect cast in H.323 request mode.
+ *
+ * Revision 2.34  2007/07/24 12:55:52  rjongbloed
  * Fixed correct setting of outgoing bit rate in H.245 generic capabilities.
  *
  * Revision 2.33  2007/07/20 05:46:20  rjongbloed
@@ -1102,7 +1105,7 @@ BOOL H323AudioCapability::OnSendingPDU(H245_DataType & dataType) const
 BOOL H323AudioCapability::OnSendingPDU(H245_ModeElement & mode) const
 {
   mode.m_type.SetTag(H245_ModeElementType::e_audioMode);
-  return OnSendingPDU((H245_AudioMode &)mode);
+  return OnSendingPDU((H245_AudioMode &)mode.m_type);
 }
 
 
@@ -1428,7 +1431,7 @@ BOOL H323VideoCapability::OnReceivedPDU(const H245_Capability & cap)
 }
 
 
-BOOL H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL receiver)
+BOOL H323VideoCapability::OnReceivedPDU(const H245_DataType & dataType, BOOL)
 {
   if (dataType.GetTag() != H245_DataType::e_videoData)
     return FALSE;
