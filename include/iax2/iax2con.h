@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2con.h,v $
+ *  Revision 1.19  2007/08/13 04:24:26  csoutheren
+ *  Normalise IAX2 answer logic
+ *
  *  Revision 1.18  2007/08/02 23:25:07  dereksmithies
  *  Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
  *  will correctly advise on receiving an incoming call.
@@ -321,38 +324,6 @@ class IAX2Connection : public OpalConnection
   /**Get the call start time */
   const PTimeInterval & GetCallStartTick() { return iax2Processor.GetCallStartTick(); } 
 
-  /**Call back for an incoming call.
-     This function is used for an application to control the answering of
-     incoming calls.
-     
-     If TRUE is returned then the connection continues. If FALSE then the
-     connection is aborted.
-     
-     Note this function should not block for any length of time. If the
-     decision to answer the call may take some time eg waiting for a user to
-     pick up the phone, then AnswerCallPending or AnswerCallDeferred should
-     be returned.
-     
-     If an application overrides this function, it should generally call the
-     ancestor version to complete calls. Unless the application completely
-     takes over that responsibility. Generally, an application would only
-     intercept this function if it wishes to do some form of logging. For
-     this you can obtain the name of the caller by using the function
-     OpalConnection::GetRemotePartyName().
-     
-     The default behaviour calls the OpalManager function of the same name.
-     
-     This method is called right at the very beginning of the call sequence 
-  */
-  virtual BOOL OnIncomingConnection(unsigned int options, 
-				    OpalConnection::StringOptions * stringOptions);
-
-  /**A convenience function to immitate the above */
-  virtual BOOL OnIncomingConnection(unsigned int options);
-
-  /**A second convenience function to immitate the above function */
-  virtual BOOL OnIncomingConnection();
-   
     /**We have received a packet from the remote iax endpoint, requeting a call.
        Now, we use this method to invoke the opal components to do their bit.
 
@@ -376,6 +347,10 @@ class IAX2Connection : public OpalConnection
      */
   virtual void OnAlerting();
 
+  virtual BOOL OnIncomingCall(
+    unsigned int options, 
+    OpalConnection::StringOptions * stringOptions
+  );
 
   /**A call back function whenever a connection is "connected".  This
      indicates that an iax link to an endpoint has been made &
