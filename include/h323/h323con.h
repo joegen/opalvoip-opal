@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2067  2007/07/26 00:41:17  csoutheren
+ * Revision 1.2068  2007/08/13 16:19:08  csoutheren
+ * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
+ *
+ * Revision 2.66  2007/07/26 00:41:17  csoutheren
  * Remove functions which are identical to ancestor
  *
  * Revision 2.65  2007/05/09 14:59:19  hfriederich
@@ -2434,6 +2437,8 @@ class H323Connection : public OpalConnection
 #ifdef H323_H460
 	H460_FeatureSet & features;
 #endif
+
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource);
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
