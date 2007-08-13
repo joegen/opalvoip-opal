@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: iax2ep.h,v $
+ *  Revision 1.17  2007/08/13 04:24:26  csoutheren
+ *  Normalise IAX2 answer logic
+ *
  *  Revision 1.16  2007/08/09 22:15:44  dereksmithies
  *  Formatting tidyup. No functional difference.
  *
@@ -320,18 +323,15 @@ class IAX2EndPoint : public OpalEndPoint
     is void, as no value is returned.  Further, in iax2, we process the
     incoming frame.
     */
-  void NewIncomingConnection(IAX2Frame *f  /// Frame carrying the new request.
-			     );
+    void NewIncomingConnection(
+      IAX2Frame *f  /// Frame carrying the new request.
+		);
 
-  /*After receiving a New packet, and having decoded it, and worked out who the other person is,
-    we can send a question up to the manager asking if we should accept this call */
-  virtual BOOL OnIncomingConnection(OpalConnection & connection, 
-				    unsigned options, 
-				    OpalConnection::StringOptions * stringOptions);
-
-  /**Call back for when a connections is established (we have received
-     the first media packet) */
-  void OnEstablished(OpalConnection & con);
+    /**Call back for when a connections is established (we have received
+       the first media packet) */
+    void OnEstablished(
+       OpalConnection & con
+    );
 
    /**Get the data formats this endpoint is capable of operating.  This
        provides a list of media data format names that may be used by an
@@ -342,7 +342,9 @@ class IAX2EndPoint : public OpalEndPoint
 
        The default behaviour is pure.
       */
-    virtual OpalMediaFormatList GetMediaFormats() const;
+  virtual OpalMediaFormatList GetMediaFormats() const;
+
+  virtual BOOL OnIncomingCall(IAX2Connection & conn);
 
   /**Return the bitmask which specifies the possible codecs we support */
   PINDEX GetSupportedCodecs(OpalMediaFormatList & list);
