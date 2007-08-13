@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2048  2007/08/09 08:21:25  csoutheren
+ * Revision 1.2049  2007/08/13 06:08:08  csoutheren
+ * Expose more functions
+ *
+ * Revision 2.47  2007/08/09 08:21:25  csoutheren
  * Add missing braces
  *
  * Revision 2.46  2007/08/08 17:35:16  csoutheren
@@ -438,87 +441,8 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
       PTRACE(3, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using old style method");
       // Old scheme
       char const * const * options = (char **)_options;
-      while (options[0] != NULL && options[1] != NULL && options[2] != NULL) {
-        const char * key = options[0];
-        const char * val = options[1];
-        const char * type = options[2];
-
-#if OPAL_VIDEO
-        // Backward compatibility tests
-        if (strcasecmp(key, h323_qcifMPI_tag) == 0)
-          key = qcifMPI_tag;
-        else if (strcasecmp(key, h323_cifMPI_tag) == 0)
-          key = cifMPI_tag;
-        else if (strcasecmp(key, h323_sqcifMPI_tag) == 0)
-          key = sqcifMPI_tag;
-        else if (strcasecmp(key, h323_cif4MPI_tag) == 0)
-          key = cif4MPI_tag;
-        else if (strcasecmp(key, h323_cif16MPI_tag) == 0)
-          key = cif16MPI_tag;
-#endif
-
-        OpalMediaOption::MergeType op = OpalMediaOption::NoMerge;
-        if (val != NULL && val[0] != '\0' && val[1] != '\0') {
-          switch (val[0]) {
-            case '<':
-              op = OpalMediaOption::MinMerge;
-              ++val;
-              break;
-            case '>':
-              op = OpalMediaOption::MaxMerge;
-              ++val;
-              break;
-            case '=':
-              op = OpalMediaOption::EqualMerge;
-              ++val;
-              break;
-            case '!':
-              op = OpalMediaOption::NotEqualMerge;
-              ++val;
-              break;
-            case '*':
-              op = OpalMediaOption::AlwaysMerge;
-              ++val;
-              break;
-            default:
-              break;
-          }
-        }
-  
-        if (type != NULL && type[0] != '\0') {
-          PStringArray tokens = PString(val+1).Tokenise(':', FALSE);
-          char ** array = tokens.ToCharArray();
-          switch (toupper(type[0])) {
-            case 'E':
-              PTRACE(5, "OpalPlugin\tAdding enum option '" << key << "' " << tokens.GetSize() << " options");
-              format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)), TRUE);
-              break;
-            case 'B':
-              PTRACE(5, "OpalPlugin\tAdding boolean option '" << key << "'=" << val);
-              format.AddOption(new OpalMediaOptionBoolean(key, false, op, (val != NULL) && ((val[0] == '1') || (toupper(val[0]) == 'T'))), TRUE);
-              break;
-            case 'R':
-              PTRACE(5, "OpalPlugin\tAdding real option '" << key << "'=" << val);
-              if (tokens.GetSize() < 2)
-                format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal()));
-              else
-                format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal(), tokens[0].AsReal(), tokens[1].AsReal()), TRUE);
-              break;
-            case 'I':
-              PTRACE(5, "OpalPlugin\tAdding integer option '" << key << "'=" << val);
-              if (tokens.GetSize() < 2)
-                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()), TRUE);
-              else
-                format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()), TRUE);
-              break;
-            case 'S':
-            default:
-              PTRACE(5, "OpalPlugin\tAdding string option '" << key << "'=" << val);
-              format.AddOption(new OpalMediaOptionString(key, false, val), TRUE);
-              break;
-          }
-          free(array);
-        }
+      while (options[0] != NULL && options[1] != NULL && options[2] != NULL)  {
+        SetOldStyleFormatOption(format, options[0], options[1], options[2]);
         options += 3;
       }
     }
@@ -609,6 +533,90 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
 //  PStringStream str; format.PrintOptions(str);
 //  PTRACE(5, "OpalPlugin\tOpalMediaFormat " << format << " has options\n" << str);
 }
+
+void OpalPluginMediaFormat::SetOldStyleFormatOption(OpalMediaFormat & format, const PString & _key, const PString & _val, const PString & type)
+{
+  PString key(_key);
+  const char * val = _val;
+
+#if OPAL_VIDEO
+  // Backward compatibility tests
+  if (strcasecmp(key, h323_qcifMPI_tag) == 0)
+    key = qcifMPI_tag;
+  else if (strcasecmp(key, h323_cifMPI_tag) == 0)
+    key = cifMPI_tag;
+  else if (strcasecmp(key, h323_sqcifMPI_tag) == 0)
+    key = sqcifMPI_tag;
+  else if (strcasecmp(key, h323_cif4MPI_tag) == 0)
+    key = cif4MPI_tag;
+  else if (strcasecmp(key, h323_cif16MPI_tag) == 0)
+    key = cif16MPI_tag;
+#endif
+
+  OpalMediaOption::MergeType op = OpalMediaOption::NoMerge;
+  if (val[0] != '\0' && val[1] != '\0') {
+    switch (val[0]) {
+      case '<':
+        op = OpalMediaOption::MinMerge;
+        ++val;
+        break;
+      case '>':
+        op = OpalMediaOption::MaxMerge;
+        ++val;
+        break;
+      case '=':
+        op = OpalMediaOption::EqualMerge;
+        ++val;
+        break;
+      case '!':
+        op = OpalMediaOption::NotEqualMerge;
+        ++val;
+        break;
+      case '*':
+        op = OpalMediaOption::AlwaysMerge;
+        ++val;
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (type[0] != '\0') {
+    PStringArray tokens = PString(val+1).Tokenise(':', FALSE);
+    char ** array = tokens.ToCharArray();
+    switch (toupper(type[0])) {
+      case 'E':
+        PTRACE(5, "OpalPlugin\tAdding enum option '" << key << "' " << tokens.GetSize() << " options");
+        format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)), TRUE);
+        break;
+      case 'B':
+        PTRACE(5, "OpalPlugin\tAdding boolean option '" << key << "'=" << val);
+        format.AddOption(new OpalMediaOptionBoolean(key, false, op, (val[0] == '1') || (toupper(val[0]) == 'T')), TRUE);
+        break;
+      case 'R':
+        PTRACE(5, "OpalPlugin\tAdding real option '" << key << "'=" << val);
+        if (tokens.GetSize() < 2)
+          format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal()));
+        else
+          format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal(), tokens[0].AsReal(), tokens[1].AsReal()), TRUE);
+        break;
+      case 'I':
+        PTRACE(5, "OpalPlugin\tAdding integer option '" << key << "'=" << val);
+        if (tokens.GetSize() < 2)
+          format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()), TRUE);
+        else
+          format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()), TRUE);
+        break;
+      case 'S':
+      default:
+        PTRACE(5, "OpalPlugin\tAdding string option '" << key << "'=" << val);
+        format.AddOption(new OpalMediaOptionString(key, false, val), TRUE);
+        break;
+    }
+    free(array);
+  }
+}
+
 
 static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, const PluginCodec_H323GenericCodecData * genericData)
 {
