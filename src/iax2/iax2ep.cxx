@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2ep.cxx,v $
+ * Revision 1.36  2007/08/13 04:24:41  csoutheren
+ * Normalise IAX2 answer logic
+ *
  * Revision 1.35  2007/08/07 03:10:18  dereksmithies
  * Modify comments. Reduce some of the verbosity of the PTRACE messages.
  *
@@ -256,15 +259,6 @@ BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
   return TRUE;
 }
-
-BOOL IAX2EndPoint::OnIncomingConnection(OpalConnection & connection, 
-					unsigned options, 
-					OpalConnection::StringOptions * stringOptions)
-{
-  PTRACE(3, "IAX2EP\tOnIncomingConnection");
-  return manager.OnIncomingConnection(connection, options, stringOptions);
-}
-
 
 void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
 {
@@ -934,8 +928,15 @@ PINDEX IAX2EndPoint::GetRegistrationsCount() {
   PWaitAndSignal m(regProcessorsMutex);
   return regProcessors.GetSize();
 }
+
+BOOL IAX2EndPoint::OnIncomingCall(IAX2Connection & conn)
+{
+  return conn.OnIncomingCall(0, NULL);
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
+
 IAX2IncomingEthernetFrames::IAX2IncomingEthernetFrames() 
   : PThread(1000, NoAutoDeleteThread)
 {
