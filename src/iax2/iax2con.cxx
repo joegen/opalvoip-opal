@@ -28,6 +28,9 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.28  2007/08/13 04:24:41  csoutheren
+ * Normalise IAX2 answer logic
+ *
  * Revision 1.27  2007/08/13 04:02:48  csoutheren
  * Allow override of SIP display name using StringOptions
  * Normalise setting of local party name
@@ -272,28 +275,15 @@ void IAX2Connection::OnSetUp()
   ownerCall.OnSetUp(*this); 
 }
 
-BOOL IAX2Connection::OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions)
+BOOL IAX2Connection::OnIncomingCall(unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
-  PTRACE(3, "IAX2Con\tOnIncomingConnection()");
+  PTRACE(3, "IAX2Con\tOnIncomingCall()");
   phase = SetUpPhase;
   originating = FALSE;
   PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
-  return endpoint.OnIncomingConnection(*this, options, stringOptions);
+  return OnIncomingConnection(options, stringOptions);
 }
-
-BOOL IAX2Connection::OnIncomingConnection(unsigned int options)
-{
-  OpalConnection::StringOptions stringOptions;
-  return IAX2Connection::OnIncomingConnection(options, &stringOptions);
-}
-
-BOOL IAX2Connection::OnIncomingConnection()
-{
-  unsigned int options = 0;
-  return IAX2Connection::OnIncomingConnection(options);
-}
-
 
 void IAX2Connection::OnAlerting()
 {
