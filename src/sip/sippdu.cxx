@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2124.2.1  2007/05/28 08:39:41  csoutheren
+ * Revision 1.2124.2.2  2007/08/13 11:50:19  csoutheren
+ * Guard against ridiculous values in SIP headers
+ *
+ * Revision 2.123.2.1  2007/05/28 08:39:41  csoutheren
  * Backports from head
  *
  * Revision 2.123  2007/05/01 05:35:27  rjongbloed
@@ -758,7 +761,7 @@ OpalTransportAddress SIPURL::GetHostAddress() const
   else
     addr += hostname;
 
-  if (port != 0)
+  if (port > 0)
     addr.sprintf(":%u", port);
 
   return addr;
@@ -1930,7 +1933,11 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   // assume entity bodies can't be longer than a UDP packet
   if (contentLength > 1500) {
-    PTRACE(2, "SIP\tImplausibly long Content-Length received on " << transport);
+    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received on " << transport);
+    return FALSE;
+  }
+  else if (contentLength < 0) {
+    PTRACE(2, "SIP\tImpossible negative Content-Length on " << transport);
     return FALSE;
   }
 
