@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2015  2007/08/08 17:35:15  csoutheren
+ * Revision 1.2016  2007/08/13 06:07:51  csoutheren
+ * Expose more functions
+ *
+ * Revision 2.14  2007/08/08 17:35:15  csoutheren
  * Final plugin manager changes
  *
  * Revision 2.13  2007/08/08 11:18:47  csoutheren
@@ -239,6 +242,7 @@ class OpalPluginMediaFormat {
     static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format);
     static bool IsValidForProtocol(const PluginCodec_Definition * encoderCodec, const PString & _protocol);
     static BOOL CallCodecControl(const PluginCodec_Definition * codec, const char * name, void * parm, unsigned int * parmLen, int & retVal);
+    static void SetOldStyleFormatOption(OpalMediaFormat & format, const PString & key, const PString & val, const PString & type);
 };
 
 #if OPAL_AUDIO
