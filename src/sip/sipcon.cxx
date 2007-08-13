@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2253  2007/07/27 05:56:10  csoutheren
+ * Revision 1.2254  2007/08/13 04:02:49  csoutheren
+ * Allow override of SIP display name using StringOptions
+ * Normalise setting of local party name
+ *
+ * Revision 2.252  2007/07/27 05:56:10  csoutheren
  * Fix problem with SIP NAT detection
  *
  * Revision 2.251  2007/07/26 01:05:44  rjongbloed
@@ -1131,6 +1135,10 @@ SIPConnection::SIPConnection(OpalCall & call,
 {
   SIPURL transportAddress = destination;
   targetAddress = destination;
+
+  // allow callers to override the calling party name
+  if (stringOptions != NULL && stringOptions->Contains("Calling-Party-Name"))
+    SetLocalPartyName((*stringOptions)("Calling-Party-Name"));
 
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = targetAddress.GetParamVars();
@@ -2523,11 +2531,11 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
           break;
 
         case AnswerCallPending:
-          SetAlerting(localPartyName, FALSE);
+          SetAlerting(GetLocalPartyName(), FALSE);
           break;
 
         case AnswerCallAlertWithMedia:
-          SetAlerting(localPartyName, TRUE);
+          SetAlerting(GetLocalPartyName(), TRUE);
           break;
 
         default:
