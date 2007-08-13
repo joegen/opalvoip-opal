@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2113  2007/07/26 00:39:30  csoutheren
+ * Revision 1.2114  2007/08/13 16:19:08  csoutheren
+ * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
+ *
+ * Revision 2.112  2007/07/26 00:39:30  csoutheren
  * Make transmission of RFC2833 independent of the media stream
  *
  * Revision 2.111  2007/06/29 06:59:57  rjongbloed
@@ -915,7 +918,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
   PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
   
   if (stream == NULL)
-    stream = CreateMediaStream(sourceFormat, sessionID, TRUE);
+    stream = InternalCreateMediaStream(sourceFormat, sessionID, TRUE);
 
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
@@ -979,7 +982,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
   PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
 
-  OpalMediaStream * stream = CreateMediaStream(destinationFormat, sessionID, FALSE);
+  OpalMediaStream * stream = InternalCreateMediaStream(destinationFormat, sessionID, FALSE);
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
     return NULL;
@@ -1708,6 +1711,11 @@ BOOL OpalConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr,
                                                  BOOL incoming)
 {
   return endpoint.IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
+}
+
+OpalMediaStream * OpalConnection::InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource)
+{
+  return CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
 /////////////////////////////////////////////////////////////////////////////

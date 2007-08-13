@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2166  2007/08/13 04:02:48  csoutheren
+ * Revision 1.2167  2007/08/13 16:19:08  csoutheren
+ * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
+ *
+ * Revision 2.165  2007/08/13 04:02:48  csoutheren
  * Allow override of SIP display name using StringOptions
  * Normalise setting of local party name
  *
@@ -3748,18 +3751,27 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFo
   return TRUE;
 }
 
+
+
+OpalMediaStream * H323Connection::InternalCreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                    unsigned sessionID,
+                                                    BOOL isSource)
+{
+  if (!isSource && (transmitterMediaStream != NULL)) {
+    OpalMediaStream * stream = transmitterMediaStream;
+    transmitterMediaStream = NULL;
+    return stream;
+  }
+
+  return CreateMediaStream(mediaFormat, sessionID, isSource);
+}
+
 OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                     unsigned sessionID,
                                                     BOOL isSource)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID))
     return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-
-  if (!isSource) {
-    OpalMediaStream * stream = transmitterMediaStream;
-    transmitterMediaStream = NULL;
-    return stream;
-  }
 
   RTP_Session * session = GetSession(sessionID);
   if (session == NULL) {
