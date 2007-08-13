@@ -28,6 +28,10 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.27  2007/08/13 04:02:48  csoutheren
+ * Allow override of SIP display name using StringOptions
+ * Normalise setting of local party name
+ *
  * Revision 1.26  2007/08/02 23:25:07  dereksmithies
  * Rework iax2 handling of incoming calls. This should ensure that woomera/simpleopal etc
  * will correctly advise on receiving an incoming call.
@@ -621,11 +625,11 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallAlertWithMedia :
-      SetAlerting(localPartyName, TRUE);
+      SetAlerting(GetLocalPartyName(), TRUE);
       break;
 
     case AnswerCallPending :
-      SetAlerting(localPartyName, FALSE);
+      SetAlerting(GetLocalPartyName(), FALSE);
       break;
 
     case AnswerCallNow :

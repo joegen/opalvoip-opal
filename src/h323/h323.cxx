@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2165  2007/07/26 00:41:52  csoutheren
+ * Revision 1.2166  2007/08/13 04:02:48  csoutheren
+ * Allow override of SIP display name using StringOptions
+ * Normalise setting of local party name
+ *
+ * Revision 2.164  2007/07/26 00:41:52  csoutheren
  * Remove functions which are identical to ancestor
  *
  * Revision 2.163  2007/07/10 06:20:27  csoutheren
@@ -1346,9 +1350,8 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
 
 void H323Connection::SetLocalPartyName(const PString & name)
 {
-  localPartyName = name;
-
   if (!name.IsEmpty()) {
+    OpalConnection::SetLocalPartyName(name);
     localAliasNames.RemoveAll();
     localAliasNames.AppendString(name);
   }
@@ -1886,11 +1889,11 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallAlertWithMedia :
-      SetAlerting(localPartyName, TRUE);
+      SetAlerting(GetLocalPartyName(), TRUE);
       break;
 
     case AnswerCallPending :
-      SetAlerting(localPartyName, FALSE);
+      SetAlerting(GetLocalPartyName(), FALSE);
       break;
 
     case AnswerCallDenied :
