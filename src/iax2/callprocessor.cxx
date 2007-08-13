@@ -27,6 +27,9 @@
  *
  *
  * $Log: callprocessor.cxx,v $
+ * Revision 1.16  2007/08/13 04:24:41  csoutheren
+ * Normalise IAX2 answer logic
+ *
  * Revision 1.15  2007/08/07 03:10:17  dereksmithies
  * Modify comments. Reduce some of the verbosity of the PTRACE messages.
  *
@@ -1031,7 +1034,7 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   TransmitFrameToRemoteEndpoint(r, IAX2WaitingForAck::RingingAcked);
   delete src;
 
-  con->OnIncomingConnection();
+  con->GetEndPoint().OnIncomingCall(*con);
 }
 
 void IAX2CallProcessor::ProcessIaxCmdAck(IAX2FullFrameProtocol *src)
