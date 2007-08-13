@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2140  2007/08/09 08:20:44  csoutheren
+ * Revision 1.2141  2007/08/13 04:02:49  csoutheren
+ * Allow override of SIP display name using StringOptions
+ * Normalise setting of local party name
+ *
+ * Revision 2.139  2007/08/09 08:20:44  csoutheren
  * Fix problem with incorrect contact address being used
  *
  * Revision 2.138  2007/07/22 13:02:19  rjongbloed
@@ -1813,7 +1817,7 @@ void SIP_PDU::Construct(Methods meth,
     str << ip << ':' << port;
   else
     str << via.Mid(dollar+1);
-  str << ";branch=z9hG4bK" << branch << ";rport";
+  str << ";branch=" << branch << ";rport";
 
   mime.SetVia(str);
 
