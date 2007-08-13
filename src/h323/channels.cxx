@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2041  2007/06/28 12:08:26  rjongbloed
+ * Revision 1.2042  2007/08/13 16:19:08  csoutheren
+ * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
+ *
+ * Revision 2.40  2007/06/28 12:08:26  rjongbloed
  * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
  *   to an OpalConnection must be via the PSafeObject locks.
  *
@@ -1200,9 +1203,13 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpSession(r),
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
-  mediaStream = new OpalRTPMediaStream(conn, capability->GetMediaFormat(), receiver, rtpSession,
-                                       conn.GetMinAudioJitterDelay(),
-                                       conn.GetMaxAudioJitterDelay());
+  {
+    PStringStream str; capability->GetMediaFormat().PrintOptions(str);
+    PTRACE(1, "Creating H323_RTPChannel with options\n" <<  str);
+  }
+
+  mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), GetSessionID(), receiver);
+
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }

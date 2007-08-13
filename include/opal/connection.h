@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2088  2007/07/26 00:38:56  csoutheren
+ * Revision 1.2089  2007/08/13 16:19:08  csoutheren
+ * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
+ *
+ * Revision 2.87  2007/07/26 00:38:56  csoutheren
  * Make transmission of RFC2833 independent of the media stream
  *
  * Revision 2.86  2007/06/29 06:59:56  rjongbloed
@@ -1570,6 +1573,8 @@ class OpalConnection : public PSafeObject
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
+
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource);
 };
 
 class RTP_UDP;
