@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
 {
   if (argc != 2) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
 
+  char * debug_level = getenv ("PWLIB_TRACE_CODECS"); 
   if (debug_level!=NULL) {
     Trace::SetLevel(atoi(debug_level));
   }
