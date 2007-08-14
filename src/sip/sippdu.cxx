@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2141  2007/08/13 04:02:49  csoutheren
+ * Revision 1.2142  2007/08/14 13:14:29  csoutheren
+ * Guard against ridiculous values in SIP headers
+ *
+ * Revision 2.140  2007/08/13 04:02:49  csoutheren
  * Allow override of SIP display name using StringOptions
  * Normalise setting of local party name
  *
@@ -2085,6 +2088,10 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // assume entity bodies can't be longer than a UDP packet
   if (contentLength > 1500) {
     PTRACE(2, "SIP\tImplausibly long Content-Length received on " << transport);
+    return FALSE;
+  }
+  else if (contentLength < 0) {
+    PTRACE(2, "SIP\tImpossible negative Content-Length on " << transport);
     return FALSE;
   }
 
