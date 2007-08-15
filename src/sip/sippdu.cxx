@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2084.2.19  2007/06/09 16:08:59  dsandras
+ * Revision 1.2084.2.20  2007/08/15 09:51:01  dsandras
+ * Backport from PrePresenceBranch.
+ *
+ * Revision 2.83.2.19  2007/06/09 16:08:59  dsandras
  * Backport from HEAD (routing of ACK requests).
  *
  * Revision 2.83.2.18  2007/05/29 21:36:35  dsandras
@@ -748,7 +751,7 @@ OpalTransportAddress SIPURL::GetHostAddress() const
   else
     addr += hostname;
 
-  if (port != 0)
+  if (port > 0)
     addr.sprintf(":%u", port);
 
   return addr;
@@ -1920,13 +1923,17 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   // assume entity bodies can't be longer than a UDP packet
   if (contentLength > 1500) {
-    PTRACE(2, "SIP\tImplausibly long Content-Length received on " << transport);
+    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received on " << transport);
+    return FALSE;
+  }
+  else if (contentLength < 0) {
+    PTRACE(2, "SIP\tImpossible negative Content-Length on " << transport);
     return FALSE;
   }
 
-  if (contentLength > 0)
+  if (contentLength > 0) {
     transport.read(entityBody.GetPointer(contentLength+1), contentLength);
-
+  }
   else if (!mime.IsContentLengthPresent()) {
     PBYTEArray pp;
 
