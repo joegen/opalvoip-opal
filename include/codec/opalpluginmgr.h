@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2005  2006/10/02 13:30:50  rjongbloed
+ * Revision 1.2005.4.1  2007/08/15 06:21:39  csoutheren
+ * Fix link problem on old compilers caused by PWLib change
+ *
+ * Revision 2.4  2006/10/02 13:30:50  rjongbloed
  * Added LID plug ins
  *
  * Revision 2.3  2006/09/28 07:42:14  csoutheren
@@ -132,25 +135,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
     typedef vector<CapabilityListCreateEntry> CapabilityCreateListType;
     CapabilityCreateListType capabilityCreateList;
 #endif
-};
-
-class OPALDynaLink : public PDynaLink
-{
-  PCLASSINFO(OPALDynaLink, PDynaLink)
-    
- public:
-  OPALDynaLink(const char * basename, const char * reason = NULL);
-
-  virtual void Load();
-  virtual BOOL IsLoaded()
-  { PWaitAndSignal m(processLock); return isLoadedOK; }
-  virtual BOOL LoadPlugin (const PString & fileName);
-
-protected:
-  PMutex processLock;
-  BOOL isLoadedOK;
-  const char * baseName;
-  const char * reason;
 };
 
 //////////////////////////////////////////////////////
