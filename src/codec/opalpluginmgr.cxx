@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2050  2007/08/16 00:22:43  csoutheren
+ * Revision 1.2051  2007/08/16 00:47:04  rjongbloed
+ * Also bad boy Craig for leaving debugging in the code. :-)
+ *
+ * Revision 2.49  2007/08/16 00:22:43  csoutheren
  * Fixed cut and paste error. Thanks to Matthias Schneider for noticing the
  * problem, and Robert Jongbloed for providing the fix. Bad boy Craig for making it
  *
@@ -1320,8 +1323,6 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = bufferRTP->GetSize();
     flags = 0;
-
-PTRACE(4, "Plugin video decoder: fromLen = " << fromLen);
 
     if (!(codec->codecFunction)(codec, context, 
                                 (const BYTE *)src, &fromLen,
