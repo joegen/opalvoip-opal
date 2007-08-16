@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2042  2007/08/13 16:19:08  csoutheren
+ * Revision 1.2043  2007/08/16 03:10:35  rjongbloed
+ * Fixed setting of dynamic RTP in OLC on rx channel for slow start, only worked for fast cononect.
+ * Also fixed sending dynamic RTP type in OLC for Tx channel.
+ *
+ * Revision 2.41  2007/08/13 16:19:08  csoutheren
  * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
  *
  * Revision 2.40  2007/06/28 12:08:26  rjongbloed
@@ -896,12 +900,13 @@ BOOL H323UnidirectionalChannel::Open()
     return FALSE;
   }
 
-  if (mediaStream->IsSource()) {
-    if (!connection.OnOpenMediaStream(*mediaStream))
-      return FALSE;
-  }
+  if (!H323Channel::Open())
+    return FALSE;
 
-  return H323Channel::Open();
+  if (!mediaStream->IsSource())
+    return TRUE;
+
+  return connection.OnOpenMediaStream(*mediaStream);
 }
 
 
@@ -1058,7 +1063,7 @@ H323_RealTimeChannel::H323_RealTimeChannel(H323Connection & connection,
                                            Directions direction)
   : H323UnidirectionalChannel(connection, capability, direction)
 {
-  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
+  rtpPayloadType = capability.GetMediaFormat().GetPayloadType();
 }
 
 
