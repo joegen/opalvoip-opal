@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2049  2007/08/13 06:08:08  csoutheren
+ * Revision 1.2050  2007/08/16 00:22:43  csoutheren
+ * Fixed cut and paste error. Thanks to Matthias Schneider for noticing the
+ * problem, and Robert Jongbloed for providing the fix. Bad boy Craig for making it
+ *
+ * Revision 2.48  2007/08/13 06:08:08  csoutheren
  * Expose more functions
  *
  * Revision 2.47  2007/08/09 08:21:25  csoutheren
@@ -1316,6 +1320,9 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
     unsigned int toLen = bufferRTP->GetSize();
     flags = 0;
+
+PTRACE(4, "Plugin video decoder: fromLen = " << fromLen);
+
     if (!(codec->codecFunction)(codec, context, 
                                 (const BYTE *)src, &fromLen,
                                 bufferRTP->GetPointer(), &toLen,
@@ -1952,7 +1959,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
       handler->CreateVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, TRUE);
-      handler->CreateVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, TRUE);
+      handler->CreateVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, FALSE);
       //new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(OpalYUV420P,                encoderCodec->destFormat), encoderCodec, TRUE);
       //new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalYUV420P),                decoderCodec, FALSE);
       break;
