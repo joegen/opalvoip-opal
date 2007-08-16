@@ -3,9 +3,13 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.5 2007/06/22 05:46:09 rjongbloed Exp $
+ * $Id: amrcodec.c,v 1.6 2007/08/16 03:13:36 rjongbloed Exp $
  *
  * $Log: amrcodec.c,v $
+ * Revision 1.6  2007/08/16 03:13:36  rjongbloed
+ * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
+ *   so plug ins can provide it as required.
+ *
  * Revision 1.5  2007/06/22 05:46:09  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
@@ -246,10 +250,14 @@ static struct PluginCodec_Option const amrInitialMode =
 static struct PluginCodec_Option const amrVAD =
   { PluginCodec_BoolOption,    "VAD",                  0, PluginCodec_AndMerge, "1", NULL, NULL, H245_AMR_GSMAMRCOMFORTNOISE };
 
+static struct PluginCodec_Option const amrMediaPacketization =
+  { PluginCodec_StringOption,  "Media Packetization",  0, PluginCodec_EqualMerge, "RFC3267" };
+
 static struct PluginCodec_Option const * const amrOptionTable[] = {
   &amrRxFramesPerPacket,
   &amrInitialMode,
   &amrVAD,
+  &amrMediaPacketization,
   NULL
 };
 
