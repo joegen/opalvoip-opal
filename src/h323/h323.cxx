@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2167  2007/08/13 16:19:08  csoutheren
+ * Revision 1.2168  2007/08/16 03:10:36  rjongbloed
+ * Fixed setting of dynamic RTP in OLC on rx channel for slow start, only worked for fast cononect.
+ * Also fixed sending dynamic RTP type in OLC for Tx channel.
+ *
+ * Revision 2.166  2007/08/13 16:19:08  csoutheren
  * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
  *
  * Revision 2.165  2007/08/13 04:02:48  csoutheren
@@ -2536,15 +2540,6 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
-                  {
-                    H323_RealTimeChannel * rtp = dynamic_cast<H323_RealTimeChannel *>(&channelToStart);
-                    if (rtp != NULL) {
-                      RTP_DataFrame::PayloadTypes inpt  = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
-                      RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
-                      if ((inpt != outpt) && (outpt != RTP_DataFrame::IllegalPayloadType))
-                        rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt,outpt));
-                    }
-                  }
                   if (channelToStart.Open()) {
                     BOOL started = FALSE;
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
@@ -4264,6 +4259,16 @@ BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
 
 BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
+  H323_RealTimeChannel * rtpChannel = dynamic_cast<H323_RealTimeChannel *>(&channel);
+  if (rtpChannel != NULL) {
+    RTP_DataFrame::PayloadTypes internalPayloadType = rtpChannel->GetMediaStream()->GetMediaFormat().GetPayloadType();
+    RTP_DataFrame::PayloadTypes actualPayloadType   = rtpChannel->GetDynamicRTPPayloadType();
+    if (actualPayloadType != internalPayloadType &&
+        actualPayloadType   != RTP_DataFrame::IllegalPayloadType &&
+        internalPayloadType != RTP_DataFrame::IllegalPayloadType)
+      rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(internalPayloadType, actualPayloadType));
+  }
+
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 
