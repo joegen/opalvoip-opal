@@ -37,6 +37,10 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.15  2007/08/16 03:13:36  rjongbloed
+ * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
+ *   so plug ins can provide it as required.
+ *
  * Revision 1.14  2007/06/25 22:49:52  rjongbloed
  * Fixed compile after change to anonymous structure in header (for GCC).
  *
@@ -1492,6 +1496,10 @@ static struct PluginCodec_Option const cif4MPI =
 static struct PluginCodec_Option const cif16MPI =
   { PluginCodec_IntegerOption, "CIF16 MPI", false, PluginCodec_MaxMerge, "0", "CIF16", "0", 0, "0", "4" };
 
+// The following is optional for H.263, but not for H.263+ where the value should be RFC2429
+static struct PluginCodec_Option const mediaPacketization =
+  { PluginCodec_StringOption,  "Media Packetization",  0, PluginCodec_EqualMerge, "RFC2190" };
+
 /* All of the annexes below are turned off and set to read/only because this
    implementation does not support them. Their presence here is so that if
    someone out there does a different implementation of the codec and copies
@@ -1520,16 +1528,19 @@ static struct PluginCodec_Option const annexT =
   { PluginCodec_BoolOption,    "Annex T",   true,  PluginCodec_AndMerge, "0", "T", "0" };
 
 static struct PluginCodec_Option const * const qcifOptionTable[] = {
+  &mediaPacketization,
   &qcifMPI,
   NULL
 };
 
 static struct PluginCodec_Option const * const cifOptionTable[] = {
+  &mediaPacketization,
   &cifMPI,
   NULL
 };
 
 static struct PluginCodec_Option const * const xcifOptionTable[] = {
+  &mediaPacketization,
   &qcifMPI,
   &cifMPI,
   &sqcifMPI,
