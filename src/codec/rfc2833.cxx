@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2008  2007/08/09 08:22:47  csoutheren
+ * Revision 1.2009  2007/08/17 08:59:20  csoutheren
+ * Changed logging message
+ *
+ * Revision 2.7  2007/08/09 08:22:47  csoutheren
  * Fix typo
  *
  * Revision 2.6  2007/07/26 00:39:30  csoutheren
@@ -115,7 +118,7 @@ BOOL OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
   if (rtpSession == NULL) {
     rtpSession = conn.UseSession(1);
     if (rtpSession == NULL) {
-      PTRACE(1, "RFC2833\tCannot get RTP session for RFC2833");
+      PTRACE(4, "RFC2833\tNo RTP session suitable for RFC2833");
       return FALSE;
     }
   }
