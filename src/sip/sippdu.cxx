@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2143  2007/08/15 09:51:21  dsandras
+ * Revision 1.2144  2007/08/17 07:55:57  rjongbloed
+ * Added more error reporting.
+ *
+ * Revision 2.142  2007/08/15 09:51:21  dsandras
  * Backport from prePresenceBranch.
  *
  * Revision 2.141  2007/08/14 13:14:29  csoutheren
@@ -1861,20 +1864,21 @@ BOOL SIP_PDU::SetRoute(const PStringList & set)
 {
   PStringList routeSet = set;
 
-  if (!routeSet.IsEmpty()) {
-    SIPURL firstRoute = routeSet[0];
-    if (!firstRoute.GetParamVars().Contains("lr")) {
-      // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
-      routeSet.MakeUnique();
-      routeSet.RemoveAt(0);
-      routeSet.AppendString(uri.AsString());
-      uri = firstRoute;
-      uri.AdjustForRequestURI();
-    }
-    mime.SetRoute(routeSet);
-    return TRUE;
+  if (routeSet.IsEmpty())
+    return FALSE;
+
+  SIPURL firstRoute = routeSet[0];
+  if (!firstRoute.GetParamVars().Contains("lr")) {
+    // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
+    routeSet.MakeUnique();
+    routeSet.RemoveAt(0);
+    routeSet.AppendString(uri.AsString());
+    uri = firstRoute;
+    uri.AdjustForRequestURI();
   }
-  return FALSE;
+
+  mime.SetRoute(routeSet);
+  return TRUE;
 }
 
 
@@ -2017,8 +2021,10 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 #endif                  
     transport.clear(ios::badbit);
 
-  if (!transport.IsOpen())
+  if (!transport.IsOpen()) {
+    PTRACE(1, "SIP\tAttempt to read PDU from closed tansport " << transport);
     return FALSE;
+  }
 
   // get the message from transport into cmd and parse MIME
   transport.clear();
@@ -2155,8 +2161,10 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
 BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
 {
-  if (!transport.IsOpen())
+  if (!transport.IsOpen()) {
+    PTRACE(1, "SIP\tAttempt to write PDU to closed tansport " << transport);
     return FALSE;
+  }
 
   if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
     // skip transport identifier
@@ -2316,7 +2324,8 @@ BOOL SIPTransaction::Start()
       return TRUE;
   }
   else {
-    return Write(transport, GetSendAddress(routeSet));
+    if (Write(transport, GetSendAddress(routeSet)))
+      return TRUE;
   }
 
   SetTerminated(Terminated_TransportError);
@@ -2337,8 +2346,10 @@ BOOL SIPTransaction::Cancel()
 {
   PWaitAndSignal m(mutex);
 
-  if (state == NotStarted || state >= Cancelling)
+  if (state == NotStarted || state >= Cancelling) {
+    PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " cannot be cancelled.");
     return FALSE;
+  }
 
   return ResendCANCEL();
 }
