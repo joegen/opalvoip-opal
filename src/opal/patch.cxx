@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2049  2007/08/01 08:37:57  csoutheren
+ * Revision 1.2050  2007/08/17 07:39:56  rjongbloed
+ * Removed extraneous piece of code and fixed formatting.
+ *
+ * Revision 2.48  2007/08/01 08:37:57  csoutheren
  * Add function to lock sink transcoders so options can be set
  *
  * Revision 2.47  2007/05/23 14:39:31  dsandras
@@ -388,46 +391,48 @@ void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
   }
 }
 
+
 OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 {
-	OpalMediaFormat fmt;
+  OpalMediaFormat fmt;
 
   OpalTranscoder * xcoder = GetAndLockSinkTranscoder(i);
   if (xcoder != NULL) {
-		fmt = xcoder->GetOutputFormat();
+    fmt = xcoder->GetOutputFormat();
     UnLockSinkTranscoder();
   }
 
-	return fmt;
+  return fmt;
 }
+
 
 OpalTranscoder * OpalMediaPatch::GetAndLockSinkTranscoder(PINDEX i) const
 {
-	OpalMediaFormat fmt;
-
   inUse.Wait();
 
   if (i >= sinks.GetSize()) {
     UnLockSinkTranscoder();
-		return NULL;
+    return NULL;
   }
 
-	Sink & sink = sinks[i];
-	if (sink.secondaryCodec != NULL) 
-		return sink.secondaryCodec;
+  Sink & sink = sinks[i];
+  if (sink.secondaryCodec != NULL) 
+    return sink.secondaryCodec;
 
-	if (sink.primaryCodec != NULL)
-		return sink.primaryCodec;
+  if (sink.primaryCodec != NULL)
+    return sink.primaryCodec;
 
   UnLockSinkTranscoder();
 
-	return NULL;
+  return NULL;
 }
+
 
 void OpalMediaPatch::UnLockSinkTranscoder() const
 {
   inUse.Signal();
 }
+
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
   : patch(p)
