@@ -3,9 +3,12 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.6 2007/08/16 03:13:36 rjongbloed Exp $
+ * $Id: amrcodec.c,v 1.7 2007/08/17 08:56:59 rjongbloed Exp $
  *
  * $Log: amrcodec.c,v $
+ * Revision 1.7  2007/08/17 08:56:59  rjongbloed
+ * Tiny change to make closer to specification
+ *
  * Revision 1.6  2007/08/16 03:13:36  rjongbloed
  * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
  *   so plug ins can provide it as required.
@@ -337,7 +340,8 @@ static struct PluginCodec_ControlDefn amrEncoderControlDefn[] = {
 
 static const struct PluginCodec_H323GenericCodecData amrcap =
 {
-    OpalPluginCodec_Identifer_AMR  // capability identifier (Ref: Table I.1 in H.245)
+  OpalPluginCodec_Identifer_AMR,  // capability identifier (Ref: Table I.1 in H.245)
+  122                             // Must always be this regardless of "Max Bit Rate" option
 };
 
 static struct PluginCodec_Definition amrCodecDefn[] = {
