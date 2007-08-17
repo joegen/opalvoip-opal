@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2019  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2020  2007/08/17 11:14:17  csoutheren
+ * Add OnLostPicture and OnLostPartialPicture commands
+ *
+ * Revision 2.18  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -209,6 +212,16 @@ PString OpalVideoUpdatePicture::GetName() const
 PString OpalTemporalSpatialTradeOff::GetName() const
 {
   return "Temporal Spatial Trade Off";
+}
+
+PString OpalLostPartialPicture::GetName() const
+{
+  return "Lost Partial Picture";
+}
+
+PString OpalLostPicture::GetName() const
+{
+  return "Lost Picture";
 }
 
 ///////////////////////////////////////////////////////////////////////////////

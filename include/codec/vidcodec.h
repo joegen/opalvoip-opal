@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2015  2007/02/16 07:56:02  dereksmithies
+ * Revision 1.2016  2007/08/17 11:14:17  csoutheren
+ * Add OnLostPicture and OnLostPartialPicture commands
+ *
+ * Revision 2.14  2007/02/16 07:56:02  dereksmithies
  * Change flag used so H.323 capabiliites are included  if H.323 was enabled
  * when the library was configured.
  *
@@ -224,6 +227,24 @@ class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 
   protected:
     int m_quality;
+};
+
+
+class OpalLostPartialPicture : public OpalMediaCommand
+{
+  PCLASSINFO(OpalLostPartialPicture, OpalMediaCommand);
+  public:
+    OpalLostPartialPicture() { }
+    virtual PString GetName() const;
+};
+
+
+class OpalLostPicture : public OpalMediaCommand
+{
+  PCLASSINFO(OpalLostPicture, OpalMediaCommand);
+  public:
+    OpalLostPicture() { }
+    virtual PString GetName() const;
 };
 
 
