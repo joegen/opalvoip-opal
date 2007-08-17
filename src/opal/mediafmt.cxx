@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2069  2007/08/08 11:17:50  csoutheren
+ * Revision 1.2070  2007/08/17 07:01:18  csoutheren
+ * Shortcut media format copy when src and dest are the same
+ *
+ * Revision 2.68  2007/08/08 11:17:50  csoutheren
  * Removed warning
  *
  * Revision 2.67  2007/08/02 07:54:49  csoutheren
@@ -922,6 +925,9 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 
 OpalMediaFormat & OpalMediaFormat::operator=(const OpalMediaFormat &format)
 {
+  if (this == &format)
+    return *this;
+
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(format.media_format_mutex);
   *static_cast<PCaselessString *>(this) = *static_cast<const PCaselessString *>(&format);
@@ -939,10 +945,10 @@ OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   PINDEX idx = registeredFormats.FindFormat(pt);
-  if (idx != P_MAX_INDEX)
-    *this = registeredFormats[idx];
-  else
+  if (idx == P_MAX_INDEX)
     *this = OpalMediaFormat();
+  else if (this != &registeredFormats[idx])
+    *this = registeredFormats[idx];
 
   return *this;
 }
