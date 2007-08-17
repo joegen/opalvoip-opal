@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2070  2007/08/17 07:01:18  csoutheren
+ * Revision 1.2071  2007/08/17 07:50:09  dsandras
+ * Applied patch from Matthias Schneider <ma30002000 yahoo.de>. Thanks!
+ *
+ * Revision 2.69  2007/08/17 07:01:18  csoutheren
  * Shortcut media format copy when src and dest are the same
  *
  * Revision 2.68  2007/08/08 11:17:50  csoutheren
@@ -1379,7 +1382,7 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),         true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
   AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),        true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
   AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 64000,    1000));
+  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
   AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
 
