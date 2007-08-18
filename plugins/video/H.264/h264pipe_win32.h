@@ -28,7 +28,11 @@
 #ifndef __H264PIPE_WIN32_H__
 #define __H264PIPE_WIN32_H__ 1
 
+#ifdef _MSC_VER
+#include "shared/pipes.h"
+#else
 #include "pipes.h"
+#endif
 #include <windows.h>
 typedef unsigned char u_char;
 class H264EncCtx

@@ -39,7 +39,11 @@
 #define __H264_X264_H__ 1
 
 #include <stdarg.h>
-#include <stdint.h>
+#ifdef _MSC_VER
+ #include "shared/vs-stdint.h"
+#else
+ #include <stdint.h>
+#endif
 #include <codec/opalplugin.h>
 #include "shared/h264frame.h"
 #include "critsect.h"
@@ -49,12 +53,16 @@ extern "C" {
   #include <ffmpeg/avcodec.h>
 };
 
+#define 720P_WIDTH 720
+#define 720P_HEIGHT 480
 #define CIF4_WIDTH 704
 #define CIF4_HEIGHT 576
 #define CIF_WIDTH 352
 #define CIF_HEIGHT 288
 #define QCIF_WIDTH 176
 #define QCIF_HEIGHT 144
+#define SQCIF_WIDTH 128
+#define SQCIF_HEIGHT 96
 #define IT_QCIF 0
 #define IT_CIF 1
 
@@ -147,19 +155,7 @@ static struct PluginCodec_information licenseInfo = {
   PluginCodec_License_GPL                                       // codec license code
 };
 
-/////////////////////////////////////////////////////////////////////////////
-
 static const char YUV420PDesc[]  = { "YUV420P" };
-static const char h264Desc[]      = { "H.264" };
-static const char sdpH264[]       = { "h264" };
-
-#define H264_CLOCKRATE        90000
-#define H264_BITRATE         768000
-#define H264_PAYLOAD_SIZE      1400
-#define H264_FRAME_RATE          25
-#define H264_KEY_FRAME_INTERVAL 2.0
-
-/////////////////////////////////////////////////////////////////////////////
 
 static PluginCodec_ControlDefn EncoderControls[] = {
   { "get_codec_options", get_codec_options },
@@ -173,6 +169,8 @@ static PluginCodec_ControlDefn DecoderControls[] = {
   { NULL }
 };
 
+/////////////////////////////////////////////////////////////////////////////
+// SIP definitions
 /*
 Still to consider
        sprop-parameter-sets: this may be a NAL
@@ -180,6 +178,17 @@ Still to consider
        parameter-add
        max-rcmd-nalu-size:
 */
+
+static const char h264Desc[]      = { "H.264" };
+static const char sdpH264[]       = { "h264" };
+
+#define H264_CLOCKRATE        90000
+#define H264_BITRATE         768000
+#define H264_PAYLOAD_SIZE      1400
+#define H264_FRAME_RATE          25
+#define H264_KEY_FRAME_INTERVAL 2.0
+
+/////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Option const packetizationMode =
   { PluginCodec_IntegerOption, "CAP Packetization Mode", false, PluginCodec_NoMerge, "1", "packetization-mode", "0", 0, "1", "2" };
@@ -193,13 +202,175 @@ static struct PluginCodec_Option const * const optionTable[] = {
   NULL
 };
 
+//#define H323_H264_TEST 1
+#ifdef H323_H264_TEST
+///////////////////////////////////////////////////////////////////////////
+// H.323 Definitions
+
+static struct PluginCodec_Option const * const h323_OptionTable[] = {
+  NULL 
+};
+
+// MACROS
+#define DECLARE_GENERIC_OPTIONS(prefix) \
+static const struct PluginCodec_H323GenericParameterDefinition prefix##_params[] = \
+{   \
+	{1,41, PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_BooleanArray,{prefix##_Profile}}, \
+	{1,42, PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMin,{prefix##_level}}     \
+}; \
+struct PluginCodec_H323GenericCodecData  * prefix##_GenericData[] = { \
+    OpalPluginCodec_Identifer_H264_RFC3984,		\				
+    prefix##_MaxBitRate,                        \
+    sizeof(prefix##_params),                    \
+	prefix##_params                             \
+};
+
+#define DECLARE_H323PARAM(prefix) \
+{ \
+  /* encoder */ \
+  PLUGIN_CODEC_VERSION_OPTIONS,	      /* codec API version */ \
+  &licenseInfo,                       /* license information */ \
+  prefix##_VideoType |                /* video type */ \
+  PluginCodec_RTPTypeShared |         /* specified RTP type */ \
+  PluginCodec_RTPTypeDynamic,         /* specified RTP type */ \
+  prefix##_Desc,                      /* text decription */ \
+  YUV420PDesc,                        /* source format */ \
+  prefix##_MediaFmt,                  /* destination format */ \
+  h323_OptionTable,			          /* user data */ \
+  H264_CLOCKRATE,                     /* samples per second */ \
+  H264_BITRATE,				          /* raw bits per second */ \
+  20000,                              /* nanoseconds per frame */ \
+  prefix##_FrameHeight,               /* samples per frame */ \
+  prefix##_FrameWidth,			      /* bytes per frame */ \
+  10,                                 /* recommended number of frames per packet */ \
+  60,                                 /* maximum number of frames per packet  */ \
+  0,                                  /* IANA RTP payload code */ \
+  NULL,                               /* RTP payload name */ \
+  create_encoder,                     /* create codec function */ \
+  destroy_encoder,                    /* destroy codec */ \
+  codec_encoder,                      /* encode/decode */ \
+  EncoderControls,                    /* codec controls */ \
+  PluginCodec_H323Codec_generic,      /* h323CapabilityType */ \
+  (struct PluginCodec_H323GenericCodecData *)&prefix##_GenericData /* h323CapabilityData */ \
+}, \
+{  \
+  /* decoder */ \
+  PLUGIN_CODEC_VERSION_OPTIONS,	      /* codec API version */ \
+  &licenseInfo,                       /* license information */ \
+  PluginCodec_MediaTypeVideo |        /* audio codec */ \
+  PluginCodec_RTPTypeShared |         /* specified RTP type */ \
+  PluginCodec_RTPTypeDynamic,         /* specified RTP type */ \
+  prefix##_Desc,                      /* text decription */ \
+  prefix##_MediaFmt,                  /* source format */ \
+  YUV420PDesc,                        /* destination format */ \
+  h323_OptionTable,			          /* user data */ \
+  H264_CLOCKRATE,                     /* samples per second */ \
+  H264_BITRATE,				          /* raw bits per second */ \
+  20000,                              /* nanoseconds per frame */ \
+  prefix##_FrameHeight,               /* samples per frame */ \
+  prefix##_FrameWidth,			      /* bytes per frame */ \
+  10,                                 /* recommended number of frames per packet */ \
+  60,                                 /* maximum number of frames per packet  */ \
+  0,                                  /* IANA RTP payload code */ \
+  NULL,                               /* RTP payload name */ \
+  create_decoder,                     /* create codec function */ \
+  destroy_decoder,                    /* destroy codec */ \
+  codec_decoder,                      /* encode/decode */ \
+  DecoderControls,                  /* codec controls */ \
+  PluginCodec_H323Codec_generic,      /* h323CapabilityType */ \
+  (struct PluginCodec_H323GenericCodecData *)&prefix##_GenericData /* h323CapabilityData */ \
+} \
 
 
 /////////////////////////////////////////////////////////////////////////////
+// Codec Definitions
 
-static struct PluginCodec_Definition h264CodecDefn[2] = {
+// SIP 42E015 is 
+//  Profile : H264_PROFILE_BASE + H264_PROFILE_MAIN 
+//  Level : 2:1  compatible H.323 codec is 4CIF.
+
+#define H264_PROFILE_BASE      64   // only do base and main at this stage
+#define H264_PROFILE_MAIN      32
+#define H264_PROFILE_EXTENDED  16
+#define H264_PROFILE_HIGH       8   
+
+// NOTE: All these values are subject to change Values need to be confirmed!
+#define H264_LEVEL1           15      // SQCIF  30 fps
+#define H264_LEVEL1_MBPS      64000
+#define H264_LEVEL1b          19      // QCIF 15 fps
+#define H264_LEVEL1b_MBPS     128000
+#define H264_LEVEL1_2         29      //  CIF 15 fps / QCIF 30 fps 
+#define H264_LEVEL1_2_MBPS    384000
+#define H264_LEVEL2_1         50      // 4CIF 15fps / cif 30fps - To Match SIP 42E015
+#define H264_LEVEL2_1_MBPS    4000000
+#define H264_LEVEL3           64      // 720P 30fps ? Need to confirm
+#define H264_LEVEL3_MBPS      10000000
+
+// H.264 SCIF
+static const char     H264SQCIF_Desc[]          = { "H.264-SQCIF" };
+static const char     H264SQCIF_MediaFmt[]      = { "H.264-SQCIF" };                             
+static unsigned int   H264SQCIF_FrameHeight     = SQCIF_HEIGHT;               
+static unsigned int   H264SQCIF_FrameWidth      = SQCIF_WIDTH; 
+static unsigned int   H264SQCIF_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
+static unsigned int   H264SQCIF_Level           = H264_LEVEL1;
+static unsigned int   H264SQCIF_MaxBitRate      = H264_LEVEL1_MBPS;
+static unsigned int   H264SQCIF_VideoType       = PluginCodec_MediaTypeVideo;
+DECLARE_GENERIC_OPTIONS(H264SQCIF)
+
+// H.264 QCIF
+static const char     H264QCIF_Desc[]          = { "H.264-QCIF" };
+static const char     H264QCIF_MediaFmt[]      = { "H.264-QCIF" };                             
+static unsigned int   H264QCIF_FrameHeight     = QCIF_HEIGHT;               
+static unsigned int   H264QCIF_FrameWidth      = QCIF_WIDTH;
+static unsigned int   H264QCIF_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
+static unsigned int   H264QCIF_Level           = H264_LEVEL1;
+static unsigned int   H264QCIF_MaxBitRate      = H264_LEVEL1_MBPS;
+static unsigned int   H264QCIF_VideoType       = PluginCodec_MediaTypeVideo;
+DECLARE_GENERIC_OPTIONS(H264QCIF)
+
+
+// H.264 CIF
+static const char     H264CIF_Desc[]          = { "H.264-CIF" };
+static const char     H264CIF_MediaFmt[]      = { "H.264-CIF" };                             
+static unsigned int   H264CIF_FrameHeight     = CIF_HEIGHT;               
+static unsigned int   H264CIF_FrameWidth      = CIF_WIDTH; 
+static unsigned int   H264CIF_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
+static unsigned int   H264CIF_Level           = H264_LEVEL1_2;
+static unsigned int   H264CIF_MaxBitRate      = H264_LEVEL1_2_MBPS;
+static unsigned int   H264CIF_VideoType       = PluginCodec_MediaTypeVideo | PluginCodec_MediaTypeExtVideo;
+DECLARE_GENERIC_OPTIONS(H264CIF)
+
+
+// H.264 CIF4   // compatible SIP profile
+static const char     H264CIF4_Desc[]          = { "H.264-4CIF" };
+static const char     H264CIF4_MediaFmt[]      = { "H.264-4CIF" };                             
+static unsigned int   H264CIF4_FrameHeight     = CIF4_HEIGHT;               
+static unsigned int   H264CIF4_FrameWidth      = CIF4_WIDTH;
+static unsigned int   H264CIF4_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
+static unsigned int   H264CIF4_Level           = H264_LEVEL2_1;
+static unsigned int   H264CIF4_MaxBitRate      = H264_LEVEL2_1_MBPS;
+static unsigned int   H264CIF4_VideoType       = PluginCodec_MediaTypeVideo | PluginCodec_MediaTypeExtVideo;
+DECLARE_GENERIC_OPTIONS(H264CIF4)
+
+
+// H.264 720P
+static const char     H264720P_Desc[]          = { "H.264-720P" };
+static const char     H264720P_MediaFmt[]      = { "H.264-720P" };                             
+static unsigned int   H264720P_FrameHeight     = 720P_HEIGHT;               
+static unsigned int   H264720P_FrameWidth      = 720P_WIDTH; 
+static unsigned int   H264720P_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
+static unsigned int   H264720P_Level           = H264_LEVEL3;
+static unsigned int   H264720P_MaxBitRate      = H264_LEVEL3_MBPS;
+static unsigned int   H264720P_VideoType       = /*PluginCodec_MediaTypeVideo |*/PluginCodec_MediaTypeExtVideo;
+DECLARE_GENERIC_OPTIONS(H264720P)
+
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+
+static struct PluginCodec_Definition h264CodecDefn[] = {
 { 
-  // SIP encoder#define NUM_DEFNS   (sizeof(h264CodecDefn) / sizeof(struct PluginCodec_Definition))
+
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
@@ -266,6 +437,13 @@ static struct PluginCodec_Definition h264CodecDefn[2] = {
   PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
   NULL                                // h323CapabilityData
 },
+#ifdef H323_H264_TEST
+  DECLARE_H323PARAM(H264SQCIF),
+  DECLARE_H323PARAM(H264QCIF),
+  DECLARE_H323PARAM(H264CIF),
+  DECLARE_H323PARAM(H264CIF4),
+  DECLARE_H323PARAM(H264720P)
+#endif
 };
 
 #endif /* __H264-X264_H__ */

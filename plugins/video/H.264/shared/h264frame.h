@@ -33,7 +33,12 @@
 #ifndef __H264FRAME_H__
 #define __H264FRAME_H__ 1
 
+#ifdef _MSC_VER
+#include "vs-stdint.h"
+#else
 #include <stdint.h>
+#endif
+
 #include "rtpframe.h"
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
@@ -55,7 +60,11 @@
 #ifdef LICENCE_GPL
 extern "C"
 {
+#ifdef _MSC_VER
+  #include "x264/x264.h"
+#else
   #include <x264.h>
+#endif
 }
 #endif
 
