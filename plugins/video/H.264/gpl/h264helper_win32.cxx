@@ -19,7 +19,11 @@
  *
  */
 
+#ifdef _MSC_VER
+#include "../shared/pipes.h"
+#else
 #include "pipes.h"
+#endif
 #include "enc-ctx.h"
 #include "trace.h"
 #include <windows.h>

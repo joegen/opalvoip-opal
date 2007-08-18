@@ -32,6 +32,10 @@
 #ifndef __RTPFRAME_H__
 #define __RTPFRAME_H__ 1
 
+#ifdef _MSC_VER
+#pragma warning(disable:4800)  // disable performance warning
+#endif
+
 class RTPFrame {
 public:
   RTPFrame (const unsigned char* frame, int frameLen) {
