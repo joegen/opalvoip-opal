@@ -28,7 +28,11 @@
 #include "h264pipe_win32.h"
 #include "shared/rtpframe.h"
 #include <string.h>
+#ifdef _MSC_VER
+#include "shared/trace.h"
+#else
 #include "trace.h"
+#endif
 #include <stdio.h>
 #include <tchar.h>
 #include <stdio.h> 
@@ -42,6 +46,10 @@
 #define GPL_PROCESS_FILENAME "plugins\\libH264_pwplugin_helper.exe"
 #define DIR_SEPERATOR "\\"
 #define DIR_TOKENISER ";"
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#endif
 
 H264EncCtx::H264EncCtx()
 {
@@ -57,8 +65,7 @@ H264EncCtx::~H264EncCtx()
   closeAndRemovePipes();
 }
 
-bool 
-H264EncCtx::Load()
+bool H264EncCtx::Load()
 {
 
   snprintf(pipeName, sizeof(pipeName), "\\\\.\\pipe\\x264-%d", GetCurrentProcessId());

@@ -23,11 +23,19 @@
 #define __ENC_CTX_H__ 1
 
 #include <stdarg.h>
-#include <stdint.h>
+#ifdef _MSC_VER
+  #include "../shared/vs-stdint.h"
+#else
+  #include <stdint.h>
+#endif
 #include "../shared/h264frame.h"
 
 extern "C" {
+#ifdef _MSC_VER
+  #include "../ffmpeg/x264.h"
+#else
   #include <x264.h>
+#endif
 };
 
 #define CIF_WIDTH 352
