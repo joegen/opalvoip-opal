@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.44  2007/08/19 02:05:01  rjongbloed
+ * Made sure deregister from previous regisrar when changed in options dialog.
+ *
  * Revision 1.43  2007/08/03 01:00:47  rjongbloed
  * Fixed compile on DevStudio 2003
  *
@@ -711,6 +714,7 @@ class MyManager : public wxFrame, public OpalManager
     PwxString       m_registrarUser;
     PwxString       m_registrarPassword;
     bool StartRegistrar();
+    bool StopRegistrar();
 #endif
 
 #if P_EXPAT
