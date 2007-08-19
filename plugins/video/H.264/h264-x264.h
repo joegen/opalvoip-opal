@@ -25,6 +25,7 @@
  * Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
  *                 Michele Piccini (michele@piccini.com)
  *                 Derek Smithies (derek@indranet.co.nz)
+ *                 Simon Horne (s.horne@packetizer.com)
  *
  *
  */
@@ -50,11 +51,15 @@
 
 
 extern "C" {
+#ifdef _MSC_VER
+  #include "ffmpeg/avcodec.h"
+#else
   #include <ffmpeg/avcodec.h>
+#endif
 };
 
-#define 720P_WIDTH 720
-#define 720P_HEIGHT 480
+#define P720_WIDTH 720
+#define P720_HEIGHT 480
 #define CIF4_WIDTH 704
 #define CIF4_HEIGHT 576
 #define CIF_WIDTH 352
@@ -207,23 +212,29 @@ static struct PluginCodec_Option const * const optionTable[] = {
 ///////////////////////////////////////////////////////////////////////////
 // H.323 Definitions
 
-static struct PluginCodec_Option const * const h323_OptionTable[] = {
-  NULL 
-};
-
-// MACROS
+// MEGA MACRO to set options
 #define DECLARE_GENERIC_OPTIONS(prefix) \
-static const struct PluginCodec_H323GenericParameterDefinition prefix##_params[] = \
-{   \
-	{1,41, PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_BooleanArray,{prefix##_Profile}}, \
-	{1,42, PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMin,{prefix##_level}}     \
+static struct PluginCodec_Option const prefix##_h323profile = \
+  { PluginCodec_IntegerOption, "Profile", false, PluginCodec_NoMerge, (const char *)prefix##_Profile , "profile", "0", 0, "0", "0" }; \
+static struct PluginCodec_Option const prefix##_h323level = \
+ { PluginCodec_IntegerOption, "Level", false, PluginCodec_NoMerge, (const char *)prefix##_Level , "level", "0", 0, "0", "0" }; \
+static struct PluginCodec_Option const * const prefix##_OptionTable[] = { \
+  &prefix##_h323profile, \
+  &prefix##_h323level, \
+  NULL \
 }; \
-struct PluginCodec_H323GenericCodecData  * prefix##_GenericData[] = { \
-    OpalPluginCodec_Identifer_H264_RFC3984,		\				
-    prefix##_MaxBitRate,                        \
-    sizeof(prefix##_params),                    \
-	prefix##_params                             \
-};
+static const struct PluginCodec_H323GenericParameterDefinition prefix##_h323params[] = \
+{ \
+	{1,41, PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_BooleanArray,{prefix##_Profile}}, \
+	{1,42, PluginCodec_H323GenericParameterDefinition::PluginCodec_GenericParameter_unsignedMin,{prefix##_Level}}, \
+	NULL \
+}; \
+static struct PluginCodec_H323GenericCodecData prefix##_h323GenericData[] = { \
+    OpalPluginCodec_Identifer_H264_RFC3984, \
+	prefix##_MaxBitRate, \
+    sizeof(prefix##_h323params), \
+	prefix##_h323params \
+}; \
 
 #define DECLARE_H323PARAM(prefix) \
 { \
@@ -236,7 +247,7 @@ struct PluginCodec_H323GenericCodecData  * prefix##_GenericData[] = { \
   prefix##_Desc,                      /* text decription */ \
   YUV420PDesc,                        /* source format */ \
   prefix##_MediaFmt,                  /* destination format */ \
-  h323_OptionTable,			          /* user data */ \
+  prefix##_OptionTable,			      /* user data */ \
   H264_CLOCKRATE,                     /* samples per second */ \
   H264_BITRATE,				          /* raw bits per second */ \
   20000,                              /* nanoseconds per frame */ \
@@ -251,7 +262,7 @@ struct PluginCodec_H323GenericCodecData  * prefix##_GenericData[] = { \
   codec_encoder,                      /* encode/decode */ \
   EncoderControls,                    /* codec controls */ \
   PluginCodec_H323Codec_generic,      /* h323CapabilityType */ \
-  (struct PluginCodec_H323GenericCodecData *)&prefix##_GenericData /* h323CapabilityData */ \
+  (struct PluginCodec_H323GenericCodecData *)&prefix##_h323GenericData /* h323CapabilityData */ \
 }, \
 {  \
   /* decoder */ \
@@ -263,7 +274,7 @@ struct PluginCodec_H323GenericCodecData  * prefix##_GenericData[] = { \
   prefix##_Desc,                      /* text decription */ \
   prefix##_MediaFmt,                  /* source format */ \
   YUV420PDesc,                        /* destination format */ \
-  h323_OptionTable,			          /* user data */ \
+  prefix##_OptionTable,			      /* user data */ \
   H264_CLOCKRATE,                     /* samples per second */ \
   H264_BITRATE,				          /* raw bits per second */ \
   20000,                              /* nanoseconds per frame */ \
@@ -278,7 +289,7 @@ struct PluginCodec_H323GenericCodecData  * prefix##_GenericData[] = { \
   codec_decoder,                      /* encode/decode */ \
   DecoderControls,                  /* codec controls */ \
   PluginCodec_H323Codec_generic,      /* h323CapabilityType */ \
-  (struct PluginCodec_H323GenericCodecData *)&prefix##_GenericData /* h323CapabilityData */ \
+  (struct PluginCodec_H323GenericCodecData *)&prefix##_h323GenericData /* h323CapabilityData */ \
 } \
 
 
@@ -323,8 +334,8 @@ static const char     H264QCIF_MediaFmt[]      = { "H.264-QCIF" };
 static unsigned int   H264QCIF_FrameHeight     = QCIF_HEIGHT;               
 static unsigned int   H264QCIF_FrameWidth      = QCIF_WIDTH;
 static unsigned int   H264QCIF_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
-static unsigned int   H264QCIF_Level           = H264_LEVEL1;
-static unsigned int   H264QCIF_MaxBitRate      = H264_LEVEL1_MBPS;
+static unsigned int   H264QCIF_Level           = H264_LEVEL1b;
+static unsigned int   H264QCIF_MaxBitRate      = H264_LEVEL1b_MBPS;
 static unsigned int   H264QCIF_VideoType       = PluginCodec_MediaTypeVideo;
 DECLARE_GENERIC_OPTIONS(H264QCIF)
 
@@ -356,8 +367,8 @@ DECLARE_GENERIC_OPTIONS(H264CIF4)
 // H.264 720P
 static const char     H264720P_Desc[]          = { "H.264-720P" };
 static const char     H264720P_MediaFmt[]      = { "H.264-720P" };                             
-static unsigned int   H264720P_FrameHeight     = 720P_HEIGHT;               
-static unsigned int   H264720P_FrameWidth      = 720P_WIDTH; 
+static unsigned int   H264720P_FrameHeight     = P720_HEIGHT;               
+static unsigned int   H264720P_FrameWidth      = P720_WIDTH; 
 static unsigned int   H264720P_Profile         = H264_PROFILE_BASE + H264_PROFILE_MAIN;
 static unsigned int   H264720P_Level           = H264_LEVEL3;
 static unsigned int   H264720P_MaxBitRate      = H264_LEVEL3_MBPS;
