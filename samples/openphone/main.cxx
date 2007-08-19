@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.26  2007/08/19 02:05:00  rjongbloed
+ * Made sure deregister from previous regisrar when changed in options dialog.
+ *
  * Revision 1.25  2007/07/27 01:42:10  rjongbloed
  * Added cut, copy, paste and most important DELETE of speed dials.
  *
@@ -527,8 +530,6 @@ MyManager::MyManager()
 MyManager::~MyManager()
 {
   LogWindow.SetFrame(NULL);
-
-  ClearAllCalls();
 
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
@@ -1077,6 +1078,9 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   GetSize(&w, &h);
   config->Write(MainFrameWidthKey, w);
   config->Write(MainFrameHeightKey, h);
+
+  ClearAllCalls();
+  StopRegistrar();
 
   Destroy();
 }
@@ -1810,20 +1814,26 @@ bool MyManager::StartGatekeeper()
 
 bool MyManager::StartRegistrar()
 {
-  if (m_registrarUsed) {
-    if (!sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword))
-      return false;
+  if (sipEP == NULL || !m_registrarUsed)
+    return false;
 
-    LogWindow << "SIP registration started for " << m_registrarUser << '@' << m_registrarName << endl;
-  }
-  else {
-    PString aor = m_registrarUser + '@' + m_registrarName;
-    if (sipEP->IsRegistered(aor)) {
-      LogWindow << "SIP registration ended for " << aor << endl;
-      sipEP->Unregister(aor);
-    }
-  }
-  return true;
+  BOOL ok = sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword);
+  LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << m_registrarUser << '@' << m_registrarName << endl;
+  return ok;
+}
+
+
+bool MyManager::StopRegistrar()
+{
+  if (sipEP == NULL)
+    return false;
+
+  PString aor = m_registrarUser + '@' + m_registrarName;
+  if (!sipEP->IsRegistered(aor))
+    return false;
+
+  LogWindow << "SIP registration ended for " << aor << endl;
+  return sipEP->Unregister(aor);
 }
 
 
@@ -2407,6 +2417,7 @@ bool OptionsDialog::TransferDataFromWindow()
       m_manager.m_registrarName != m_RegistrarName ||
       m_manager.m_registrarUser != m_RegistrarUsername ||
       m_manager.m_registrarPassword != m_RegistrarPassword) {
+    m_manager.StopRegistrar();
     SAVE_FIELD(RegistrarUsed, m_manager.m_registrarUsed =);
     SAVE_FIELD(RegistrarName, m_manager.m_registrarName =);
     SAVE_FIELD(RegistrarUsername, m_manager.m_registrarUser =);
