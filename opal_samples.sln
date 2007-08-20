@@ -51,6 +51,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\pwlib\src\p
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecTest", "samples\codectest\codectest_2003.vcproj", "{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -122,6 +126,12 @@ Global
 		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.No Trace.Build.0 = Release|Win32
 		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.Release.ActiveCfg = Release|Win32
 		{85F4F26A-1A5D-4685-A48A-448102C5C5BC}.Release.Build.0 = Release|Win32
+		{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}.Debug.ActiveCfg = Debug|Win32
+		{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}.Debug.Build.0 = Debug|Win32
+		{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}.No Trace.ActiveCfg = Debug|Win32
+		{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}.No Trace.Build.0 = Debug|Win32
+		{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}.Release.ActiveCfg = Release|Win32
+		{986E93C5-2F54-4D5A-8CD4-6EBF566E8DDC}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
