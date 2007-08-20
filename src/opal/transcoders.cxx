@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2033  2007/07/16 06:26:02  csoutheren
+ * Revision 1.2034  2007/08/20 06:30:38  rjongbloed
+ * Don't validate input paylaod type if transcoding from raw media.
+ *
+ * Revision 2.32  2007/07/16 06:26:02  csoutheren
  * Better organise payload type checks
  * Remove bug whereby 2048 byte RTP packets are send when payload types are incorrect
  * Add two-stage transcoders for video codecs
@@ -282,7 +285,7 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
   }
 
   // do not transcode if no match
-  if (pt != input.GetPayloadType()) {
+  if (pt != RTP_DataFrame::MaxPayloadType && pt != input.GetPayloadType()) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
     output.RemoveAll();
     return TRUE;
