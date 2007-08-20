@@ -31,6 +31,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jester", "samples\jester\je
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfc", "samples\mfc\mfc_2005.vcproj", "{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecTest", "samples\codectest\codectest_2005.vcproj", "{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -104,6 +106,12 @@ Global
 		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.No Trace|Win32.Build.0 = Release|Win32
 		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Release|Win32.ActiveCfg = Release|Win32
 		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Release|Win32.Build.0 = Release|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.Build.0 = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Win32.Build.0 = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Release|Win32.ActiveCfg = Release|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
