@@ -3,6 +3,7 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="CodecTest"
+	ProjectGUID="{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
 	>
 	<Platforms>
 		<Platform
@@ -197,7 +198,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject=".\src\ptlib\msos\PTLib_2005.vcproj"
+			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
+			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
 		/>
 	</References>
 	<Files>
@@ -266,15 +271,6 @@
 				RelativePath="precompile.h"
 				>
 			</File>
-			<File
-				RelativePath="version.h"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
-			>
 		</Filter>
 	</Files>
 	<Globals>
