@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2182  2007/08/07 19:44:41  dsandras
+ * Revision 1.2183  2007/08/21 03:12:03  csoutheren
+ * Fix problem with From having wrong protocol
+ *
+ * Revision 2.181  2007/08/07 19:44:41  dsandras
  * Fixed typo. Ideally, the NAT binding refresh code should move to
  * OpalTransportUDP.
  *
@@ -1761,7 +1764,8 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 
 SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 {
-  SIPURL rpn(GetDefaultLocalPartyName(), PIPSocket::GetHostName(), GetDefaultSignalPort());
+  OpalTransportAddress addr(PIPSocket::GetHostName(), GetDefaultSignalPort(), "udp");
+  SIPURL rpn(GetDefaultLocalPartyName(), addr, GetDefaultSignalPort());
   rpn.SetDisplayName(GetDefaultDisplayName());
   return rpn;
 }
