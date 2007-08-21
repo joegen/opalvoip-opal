@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2044  2007/08/17 09:00:40  csoutheren
+ * Revision 1.2045  2007/08/21 00:19:46  rjongbloed
+ * Fixed previous check in which mysteriously changed a flag.
+ *
+ * Revision 2.43  2007/08/17 09:00:40  csoutheren
  * Remove commented-out code
  *
  * Revision 2.42  2007/08/16 03:10:35  rjongbloed
@@ -1211,7 +1214,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpSession(r),
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
-  mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), GetSessionID(), !receiver);
+  // If we are the receiver of RTP data then we create a source media stream
+  mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), GetSessionID(), receiver);
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }
