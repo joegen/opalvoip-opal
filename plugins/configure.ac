@@ -298,28 +298,39 @@ dnl
 HAS_MPEG4=0
 FFMPEG_SOURCE=
 AC_MSG_CHECKING(MPEG4 plugin)
-AC_ARG_WITH(mpeg4-ffmpeg,
-            AC_HELP_STRING([--with-mpeg4-ffmpeg=<absolute path to ffmpeg source tree>],
-                           [enable MPEG4 video plugin]))
+AC_ARG_WITH(ffmpeg-src-dir,
+            AC_HELP_STRING([--with-ffmpeg-src-dir],[Directory with ffmpeg source code, needed for MPEG 4 plugin]))
 
 if test "$with_mpeg4_ffmpeg" = "yes" ; then
-  AC_MSG_ERROR([--with-mpeg4-ffmpeg requires an argument])
+  AC_MSG_ERROR([--with-ffmpeg-src-dir requires an argument])
 elif test "$with_mpeg4_ffmpeg" = "no" ; then
   AC_MSG_RESULT(disabled)
-elif test "$with_mpeg4_ffmpeg" != "" ; then
-  if test -f "$with_mpeg4_ffmpeg/libavcodec/avcodec.h"
+elif test "$with_ffmpeg_src_dir" != "" ; then
+  if test -f "$with_ffmpeg_src_dir/libavcodec/avcodec.h"
   then
     AC_MSG_RESULT(enabled)
     HAS_MPEG4=1
-    FFMPEG_SOURCE=$with_mpeg4_ffmpeg
+    FFMPEG_SOURCE=$with_ffmpeg_src_dir
   else
-    AC_MSG_ERROR([$with_mpeg4_ffmpeg doesn't contain an ffmpeg source tree])
+    AC_MSG_ERROR([$with_ffmpeg_src_dir doesn't contain an ffmpeg source tree])
   fi
 else
   AC_MSG_RESULT(disabled)
 fi
+
+AC_ARG_ENABLE(ffmpeg-stackalign-hack,
+            AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
+if test "${ffmpeg_stackalign_hack}" = "yes" ; then
+  AC_MSG_NOTICE(FFMPEG stack align hack enabled)
+  FFMPEG_STACKALIGN_HACK="-DWITH_STACKALIGN_HACK"
+else
+  AC_MSG_NOTICE(FFMPEG stack align hack disabled)
+  FFMPEG_STACKALIGN_HACK=""
+fi
+
 AC_SUBST(HAS_MPEG4)
 AC_SUBST(FFMPEG_SOURCE)
+AC_SUBST(FFMPEG_STACKALIGN_HACK)
 
 dnl ###########################################################################
 dnl Checks for ffmpeg
@@ -497,7 +508,7 @@ fi
 if test "x${HAS_MPEG4}" = "x1" ; then
 echo "                    MPEG4 Part 2  :  enabled"
 else
-echo "                    MPEG4 Part 2  :  disabled"
+echo "                    MPEG4 Part 2  :  disabled (needs ffmpeg sources)"
 fi
 echo ""
 echo "                         OS Type  :  $target_os"

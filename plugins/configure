@@ -691,6 +691,7 @@ HAS_VPB
 HAS_CAPI
 HAS_MPEG4
 FFMPEG_SOURCE
+FFMPEG_STACKALIGN_HACK
 HAS_FFMPEG
 HAS_X264
 X264_LIBS
@@ -1288,6 +1289,8 @@ Optional Features:
   --enable-localspeex       use local version of Speex library rather than system version
   --enable-vpb            enable voicetronix vpb
   --enable-capi            enable CAPI
+  --enable-ffmpeg-stackalign-hack
+                          Enable FFMPEG stack align hack for MPEG 4
   --disable-ffmpeg        Disable ffmpeg
   --disable-x264          Disable x264
   --disable-theora        Disable theora
@@ -1295,8 +1298,8 @@ Optional Features:
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-mpeg4-ffmpeg=<absolute path to ffmpeg source tree>
-                          enable MPEG4 video plugin
+  --with-ffmpeg-src-dir   Directory with ffmpeg source code, needed for MPEG 4
+                          plugin
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -6240,35 +6243,52 @@ FFMPEG_SOURCE=
 { echo "$as_me:$LINENO: checking MPEG4 plugin" >&5
 echo $ECHO_N "checking MPEG4 plugin... $ECHO_C" >&6; }
 
-# Check whether --with-mpeg4-ffmpeg was given.
-if test "${with_mpeg4_ffmpeg+set}" = set; then
-  withval=$with_mpeg4_ffmpeg;
+# Check whether --with-ffmpeg-src-dir was given.
+if test "${with_ffmpeg_src_dir+set}" = set; then
+  withval=$with_ffmpeg_src_dir;
 fi
 
 
 if test "$with_mpeg4_ffmpeg" = "yes" ; then
-  { { echo "$as_me:$LINENO: error: --with-mpeg4-ffmpeg requires an argument" >&5
-echo "$as_me: error: --with-mpeg4-ffmpeg requires an argument" >&2;}
+  { { echo "$as_me:$LINENO: error: --with-ffmpeg-src-dir requires an argument" >&5
+echo "$as_me: error: --with-ffmpeg-src-dir requires an argument" >&2;}
    { (exit 1); exit 1; }; }
 elif test "$with_mpeg4_ffmpeg" = "no" ; then
   { echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6; }
-elif test "$with_mpeg4_ffmpeg" != "" ; then
-  if test -f "$with_mpeg4_ffmpeg/libavcodec/avcodec.h"
+elif test "$with_ffmpeg_src_dir" != "" ; then
+  if test -f "$with_ffmpeg_src_dir/libavcodec/avcodec.h"
   then
     { echo "$as_me:$LINENO: result: enabled" >&5
 echo "${ECHO_T}enabled" >&6; }
     HAS_MPEG4=1
-    FFMPEG_SOURCE=$with_mpeg4_ffmpeg
+    FFMPEG_SOURCE=$with_ffmpeg_src_dir
   else
-    { { echo "$as_me:$LINENO: error: $with_mpeg4_ffmpeg doesn't contain an ffmpeg source tree" >&5
-echo "$as_me: error: $with_mpeg4_ffmpeg doesn't contain an ffmpeg source tree" >&2;}
+    { { echo "$as_me:$LINENO: error: $with_ffmpeg_src_dir doesn't contain an ffmpeg source tree" >&5
+echo "$as_me: error: $with_ffmpeg_src_dir doesn't contain an ffmpeg source tree" >&2;}
    { (exit 1); exit 1; }; }
   fi
 else
   { echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6; }
 fi
+
+# Check whether --enable-ffmpeg-stackalign-hack was given.
+if test "${enable_ffmpeg_stackalign_hack+set}" = set; then
+  enableval=$enable_ffmpeg_stackalign_hack; ffmpeg_stackalign_hack=$enableval
+fi
+
+if test "${ffmpeg_stackalign_hack}" = "yes" ; then
+  { echo "$as_me:$LINENO: FFMPEG stack align hack enabled" >&5
+echo "$as_me: FFMPEG stack align hack enabled" >&6;}
+  FFMPEG_STACKALIGN_HACK="-DWITH_STACKALIGN_HACK"
+else
+  { echo "$as_me:$LINENO: FFMPEG stack align hack disabled" >&5
+echo "$as_me: FFMPEG stack align hack disabled" >&6;}
+  FFMPEG_STACKALIGN_HACK=""
+fi
+
+
 
 
 
@@ -7777,6 +7797,7 @@ HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
 HAS_MPEG4!$HAS_MPEG4$ac_delim
 FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
+FFMPEG_STACKALIGN_HACK!$FFMPEG_STACKALIGN_HACK$ac_delim
 HAS_FFMPEG!$HAS_FFMPEG$ac_delim
 HAS_X264!$HAS_X264$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
@@ -7786,7 +7807,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 85; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 86; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8838,6 +8859,7 @@ HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
 HAS_MPEG4!$HAS_MPEG4$ac_delim
 FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
+FFMPEG_STACKALIGN_HACK!$FFMPEG_STACKALIGN_HACK$ac_delim
 HAS_FFMPEG!$HAS_FFMPEG$ac_delim
 HAS_X264!$HAS_X264$ac_delim
 X264_LIBS!$X264_LIBS$ac_delim
@@ -8847,7 +8869,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 85; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 86; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -9205,7 +9227,7 @@ fi
 if test "x${HAS_MPEG4}" = "x1" ; then
 echo "                    MPEG4 Part 2  :  enabled"
 else
-echo "                    MPEG4 Part 2  :  disabled"
+echo "                    MPEG4 Part 2  :  disabled (needs ffmpeg sources)"
 fi
 echo ""
 echo "                         OS Type  :  $target_os"
