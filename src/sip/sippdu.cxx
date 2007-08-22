@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2144  2007/08/17 07:55:57  rjongbloed
+ * Revision 1.2145  2007/08/22 09:02:19  csoutheren
+ * Allow setting of explicit From field in SIP
+ *
+ * Revision 2.143  2007/08/17 07:55:57  rjongbloed
  * Added more error reporting.
  *
  * Revision 2.142  2007/08/15 09:51:21  dsandras
@@ -1851,7 +1854,7 @@ void SIP_PDU::Construct(Methods meth,
   Construct(meth,
             targetAddress,
             connection.GetRemotePartyAddress(),
-            connection.GetLocalPartyAddress(),
+            connection.GetExplicitFrom(),
             connection.GetToken(),
             connection.GetNextCSeq(),
             via.GetHostAddress());

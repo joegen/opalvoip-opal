@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2022  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2023  2007/08/22 09:02:19  csoutheren
+ * Allow setting of explicit From field in SIP
+ *
+ * Revision 2.21  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.20  2007/01/18 04:45:16  csoutheren
@@ -1569,6 +1572,8 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
     if (stringOptions != NULL) {
       strLocal   = (*stringOptions)("Calling-Party-Name");
       strDisplay = (*stringOptions)("Calling-Display-Name");
+      if (strDisplay.IsEmpty())
+        strDisplay = strLocal;
     }
 
     if (!strLocal.IsEmpty())
