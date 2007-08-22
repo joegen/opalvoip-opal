@@ -43,7 +43,7 @@ bool Trace::CanTrace (unsigned level)
   return level <= TraceLevel;
 }
 
-ostream & Trace::Start(unsigned /*level*/, const char* file, int line)
+ostream & Trace::Start(const char* file, int line)
 {
 #ifdef WIN32
   cerr << setw(16) << file << '(' << line << ")\t";

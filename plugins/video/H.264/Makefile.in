@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.2  2007/08/22 21:51:26  dsandras
+# Applied patch from Matthias Schneider <ma30002000 yahoo de> to share
+# things between codecs. Huge thanks!
+#
 # Revision 1.1  2007/06/16 21:36:59  dsandras
 # Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
 # Thanks a lot !
@@ -60,6 +64,7 @@ exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
 SHAREDDIR	= ./shared
+COMMONDIR	= ../common
 OBJDIR	= ./obj
 
 BASENAME=h264
@@ -72,26 +77,24 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
+FFMPEG_STACKALIGN_HACK := @FFMPEG_STACKALIGN_HACK@
 
-CFLAGS        +=-DLICENCE_MPL
+CFLAGS        +=-DLICENCE_MPL -I $(COMMONDIR) $(FFMPEG_STACKALIGN_HACK)
 
 vpath	%.cxx $(SHAREDDIR)
+vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
 
 SRCS    += $(SHAREDDIR)/h264frame.cxx \
-           $(SHAREDDIR)/trace.cxx \
-           h264dyna.cxx \
            h264-x264.cxx \
-           h264pipe_unix.cxx
+           h264pipe_unix.cxx \
+           $(COMONDIR)/dyna.cxx \
+           $(COMONDIR)/trace.cxx
 
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
 	$(CXX) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
-
-$(OBJDIR)/%.o : %.c
-	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin.$(PLUGINEXT)
 STATIC	= ./lib$(BASENAME)_video_s.a

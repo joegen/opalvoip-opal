@@ -20,6 +20,10 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.2  2007/08/22 21:51:26  dsandras
+# Applied patch from Matthias Schneider <ma30002000 yahoo de> to share
+# things between codecs. Huge thanks!
+#
 # Revision 1.1  2007/06/16 21:37:00  dsandras
 # Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
 # Thanks a lot !
@@ -60,6 +64,7 @@ exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
 SHAREDDIR	= ../shared
+COMMONDIR       = ../../common
 OBJDIR	= ./obj
 
 BASENAME=h264
@@ -74,11 +79,14 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 X264_LIBS	=@X264_LIBS@
 
+CFLAGS 		+= -I $(COMMONDIR) 
+
 vpath	%.cxx $(SHAREDDIR)
+vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
 
 SRCS   += $(SHAREDDIR)/h264frame.cxx \
-	  $(SHAREDDIR)/trace.cxx \
+	  $(COMMONDIR)/trace.cxx \
 	  enc-ctx.cxx  \
 	  h264helper_unix.cxx
 

@@ -27,10 +27,9 @@
 
 #include <stdlib.h>
 #include <sys/stat.h>
-#include "shared/trace.h"
-#include "shared/rtpframe.h"
+#include "trace.h"
+#include "rtpframe.h"
 #include "h264pipe_unix.h"
-#include "shared/trace.h"
 
 #define HAS_MKFIFO 1
 #define GPL_PROCESS_FILENAME "pwlib/codecs/video/h264_video_pwplugin_helper"
@@ -236,6 +235,13 @@ bool H264EncCtx::findGplProcess()
       token = strtok(NULL, DIR_TOKENISER);
     }
   }
+
+  if (checkGplProcessExists("/usr/lib")) 
+    return true;
+
+  if (checkGplProcessExists("/usr/local/lib")) 
+    return true;
+
   return checkGplProcessExists(".");
 }
 

@@ -20,8 +20,8 @@
  */
 
 #include "enc-ctx.h"
-#include "../shared/trace.h"
-#include "../shared/rtpframe.h"
+#include "trace.h"
+#include "rtpframe.h"
 
 #include <stdlib.h>
 #ifdef _WIN32

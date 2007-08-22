@@ -23,7 +23,7 @@
 #include "enc-ctx.h"
 #include <sys/stat.h>
 #include <fstream>
-#include "shared/trace.h"
+#include "trace.h"
 
 #define MAX_FRAME_SIZE 608286
 

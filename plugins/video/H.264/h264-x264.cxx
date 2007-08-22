@@ -36,7 +36,7 @@
  */
 
 #include "h264-x264.h"
-#include "h264dyna.h"
+#include "dyna.h"
 
 #ifdef WIN32
 #include "h264pipe_win32.h"
@@ -44,8 +44,8 @@
 #include "h264pipe_unix.h"
 #endif
 
-#include "shared/trace.h"
-#include "shared/rtpframe.h"
+#include "trace.h"
+#include "rtpframe.h"
 
 #include <stdlib.h>
 #ifdef _WIN32
@@ -141,15 +141,17 @@ H264DecoderContext::H264DecoderContext()
   _skippedFrameCounter=0;
   _rxH264Frame = new H264Frame();
 
+  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
 
   if ((_codec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_H264)) == NULL) {
-    TRACE(1, "H264\tDecoder\tCodec not found for encoder");
+    TRACE(1, "H264\tDecoder\tCodec not found for decoder");
     return;
   }
 
   _context = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_context == NULL) {
-    TRACE(1, "H264\tDecoder\tFailed to allocate context for encoder");
+    TRACE(1, "H264\tDecoder\tFailed to allocate context for decoder");
     return;
   }
 
@@ -159,15 +161,13 @@ H264DecoderContext::H264DecoderContext()
     return;
   }
 
-  FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
-  FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
   if (FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) < 0) {
     TRACE(1, "H264\tDecoder\tFailed to open H.264 decoder");
     return;
   }
   else
   {
-    TRACE(1, "H264\tDecoder\tffmpeg decoder successfully opened");
+    TRACE(1, "H264\tDecoder\tDecoder successfully opened");
   }
 }
 
@@ -193,7 +193,6 @@ H264DecoderContext::~H264DecoderContext()
 int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
 {
   if (!FFMPEGLibraryInstance.IsLoaded()) return 0;
-  WaitAndSignal m(_mutex);
 
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
@@ -224,7 +223,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   {
     if (!_rxH264Frame->IsSync())
     {
-      TRACE(1, "H264\tDecoder\tWating for an I-Frame");
+      TRACE(1, "H264\tDecoder\tWaiting for an I-Frame");
       _rxH264Frame->BeginNewFrame();
       return 0;
     }
@@ -238,7 +237,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   _rxH264Frame->BeginNewFrame();
   if (!gotPicture) 
   {
-    TRACE(1, "H264\tDecoder\tDecodedc "<< bytesDecoded << " bytes without getting a Picture..."); 
+    TRACE(1, "H264\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
     _skippedFrameCounter++;
     return 0;
   }
@@ -403,8 +402,6 @@ PLUGIN_CODEC_IMPLEMENT(H264)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  WaitAndSignal mFFMPEG(FFMPEGLibraryInstance.processLock);
-
   char * debug_level = getenv ("PWLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
     Trace::SetLevel(atoi(debug_level));
@@ -413,6 +410,9 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
     Trace::SetLevel(0);
   }  
 
+#ifdef WITH_STACKALIGN_HACK
+  STACKALIGN_HACK()
+#endif  
   if (!FFMPEGLibraryInstance.IsLoaded()) {
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;
