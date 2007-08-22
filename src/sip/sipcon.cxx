@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2254  2007/08/13 04:02:49  csoutheren
+ * Revision 1.2255  2007/08/22 09:02:19  csoutheren
+ * Allow setting of explicit From field in SIP
+ *
+ * Revision 2.253  2007/08/13 04:02:49  csoutheren
  * Allow override of SIP display name using StringOptions
  * Normalise setting of local party name
  *
@@ -1136,9 +1139,20 @@ SIPConnection::SIPConnection(OpalCall & call,
   SIPURL transportAddress = destination;
   targetAddress = destination;
 
-  // allow callers to override the calling party name
-  if (stringOptions != NULL && stringOptions->Contains("Calling-Party-Name"))
-    SetLocalPartyName((*stringOptions)("Calling-Party-Name"));
+  // allow callers to override the From field
+  if (stringOptions != NULL) {
+    SIPURL newFrom(GetLocalPartyAddress());
+
+    PString number((*stringOptions)("Calling-Party-Number"));
+    if (!number.IsEmpty())
+      newFrom.SetUserName(number);
+
+    PString name((*stringOptions)("Calling-Party-Name"));
+    if (!name.IsEmpty())
+      newFrom.SetDisplayName(name);
+
+    explicitFrom = newFrom.AsString();
+  }
 
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = targetAddress.GetParamVars();
@@ -1157,7 +1171,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
-  remotePartyName = SIPURL (remotePartyAddress).GetDisplayName ();
+  UpdateRemotePartyNameAndNumber();
   
   // Do a DNS SRV lookup
 #if P_DNS
@@ -1185,6 +1199,13 @@ SIPConnection::SIPConnection(OpalCall & call,
   PTRACE(4, "SIP\tCreated connection.");
 }
 
+
+void SIPConnection::UpdateRemotePartyNameAndNumber()
+{
+  SIPURL url(remotePartyAddress);
+  remotePartyName   = url.GetDisplayName ();
+  remotePartyNumber = url.GetUserName();
+}
 
 SIPConnection::~SIPConnection()
 {
@@ -2149,8 +2170,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
       localPartyAddress = transaction.GetMIME().GetFrom();
       remotePartyAddress = response.GetMIME().GetTo();
-      SIPURL url(remotePartyAddress);
-      remotePartyName = url.GetDisplayName ();
+      UpdateRemotePartyNameAndNumber();
+
       response.GetMIME().GetProductInfo(remoteProductInfo);
 
       // get the route set from the Record-Route response field (in reverse order)
@@ -2324,8 +2345,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom(); 
-  SIPURL url(remotePartyAddress);
-  remotePartyName = url.GetDisplayName ();
+  UpdateRemotePartyNameAndNumber();
   mime.GetProductInfo(remoteProductInfo);
   localPartyAddress  = mime.GetTo() + ";tag=" + OpalGloballyUniqueID().AsString(); // put a real random 
   mime.SetTo(localPartyAddress);
@@ -2685,8 +2705,7 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   releaseMethod = ReleaseWithNothing;
   
   remotePartyAddress = request.GetMIME().GetFrom();
-  SIPURL url(remotePartyAddress);
-  remotePartyName = url.GetDisplayName ();
+  UpdateRemotePartyNameAndNumber();
   response.GetMIME().GetProductInfo(remoteProductInfo);
 
   Release(EndedByRemoteUser);
@@ -3337,6 +3356,14 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
   return TRUE;
 }
 #endif
+
+
+PString SIPConnection::GetExplicitFrom() const
+{
+  if (!explicitFrom.IsEmpty())
+    return explicitFrom;
+  return GetLocalPartyAddress();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
