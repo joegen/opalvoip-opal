@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2051  2007/08/16 00:47:04  rjongbloed
+ * Revision 1.2052  2007/08/22 05:18:09  rjongbloed
+ * Changed size of RTP packet to be slightlysmaller, the true MTU for ethernet.
+ * Also some code clean ups.
+ *
+ * Revision 2.50  2007/08/16 00:47:04  rjongbloed
  * Also bad boy Craig for leaving debugging in the code. :-)
  *
  * Revision 2.49  2007/08/16 00:22:43  csoutheren
@@ -1273,7 +1277,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
   // get the size of the output buffer
   int outputDataSize;
   if (!CallCodecControl(GET_OUTPUT_DATA_SIZE_CONTROL, NULL, NULL, outputDataSize))
-    outputDataSize = 1500;
+    outputDataSize = 1518-14-4-8-20-16;  // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP headers
 
   unsigned flags;
 
@@ -2453,12 +2457,12 @@ PObject::Comparison H323H261PluginCapability::Compare(const PObject & obj) const
   const H323H261PluginCapability & other = (const H323H261PluginCapability &)obj;
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
+  int qcifMPI = mediaFormat.GetOptionInteger(qcifMPI_tag);
+  int  cifMPI = mediaFormat.GetOptionInteger(cifMPI_tag);
 
-  int qcifMPI = mediaFormat.HasOption(qcifMPI_tag) ? mediaFormat.GetOptionInteger(qcifMPI_tag) : mediaFormat.GetOptionInteger("QCIF MPI");
-  int cifMPI =  mediaFormat.HasOption(cifMPI_tag)  ? mediaFormat.GetOptionInteger(cifMPI_tag)  : mediaFormat.GetOptionInteger("CIF MPI");
-
-  int other_qcifMPI = other.GetMediaFormat().GetOptionInteger(qcifMPI_tag);
-  int other_cifMPI = other.GetMediaFormat().GetOptionInteger(cifMPI_tag);
+  const OpalMediaFormat & otherFormat = other.GetMediaFormat();
+  int other_qcifMPI = otherFormat.GetOptionInteger(qcifMPI_tag);
+  int other_cifMPI  = otherFormat.GetOptionInteger(cifMPI_tag);
 
   if (((qcifMPI > 0) && (other_qcifMPI > 0)) ||
       ((cifMPI  > 0) && (other_cifMPI > 0)))
@@ -2592,18 +2596,19 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
   int cif4MPI  = mediaFormat.GetOptionInteger(cif4MPI_tag);
   int cif16MPI = mediaFormat.GetOptionInteger(cif16MPI_tag);
 
-  int other_sqcifMPI = other.GetMediaFormat().GetOptionInteger(sqcifMPI_tag);
-  int other_qcifMPI  = other.GetMediaFormat().GetOptionInteger(qcifMPI_tag);
-  int other_cifMPI   = other.GetMediaFormat().GetOptionInteger(cifMPI_tag);
-  int other_cif4MPI  = other.GetMediaFormat().GetOptionInteger(cif4MPI_tag);
-  int other_cif16MPI = other.GetMediaFormat().GetOptionInteger(cif16MPI_tag);
+  const OpalMediaFormat & otherFormat = other.GetMediaFormat();
+  int other_sqcifMPI = otherFormat.GetOptionInteger(sqcifMPI_tag);
+  int other_qcifMPI  = otherFormat.GetOptionInteger(qcifMPI_tag);
+  int other_cifMPI   = otherFormat.GetOptionInteger(cifMPI_tag);
+  int other_cif4MPI  = otherFormat.GetOptionInteger(cif4MPI_tag);
+  int other_cif16MPI = otherFormat.GetOptionInteger(cif16MPI_tag);
 
   if ((sqcifMPI && other_sqcifMPI) ||
       (qcifMPI && other_qcifMPI) ||
       (cifMPI && other_cifMPI) ||
       (cif4MPI && other_cif4MPI) ||
       (cif16MPI && other_cif16MPI)) {
-    PTRACE(1, "H263: " << *this << " == " << other);
+    PTRACE(5, "H.263\t" << *this << " == " << other);
     return EqualTo;
   }
 
@@ -2612,11 +2617,11 @@ PObject::Comparison H323H263PluginCapability::Compare(const PObject & obj) const
       (!cifMPI && other_cifMPI) ||
       (!qcifMPI && other_qcifMPI) ||
       (!sqcifMPI && other_sqcifMPI)) {
-    PTRACE(1, "H263: " << *this << " < " << other);
+    PTRACE(5, "H.263\t" << *this << " < " << other);
     return LessThan;
   }
 
-  PTRACE(1, "H263: " << *this << " > " << other << " are equal");
+  PTRACE(5, "H.263\t" << *this << " > " << other << " are equal");
   return GreaterThan;
 }
 
