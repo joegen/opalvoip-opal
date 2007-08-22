@@ -1,5 +1,5 @@
 /*
- * H.264 Plugin codec for OpenH323/OPAL
+ * Common Plugin code for OpenH323/OPAL
  *
  * Copyright (C) 2005 Post Increment, All Rights Reserved
  *
