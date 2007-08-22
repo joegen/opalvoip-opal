@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2074  2007/07/22 12:25:23  rjongbloed
+ * Revision 1.2075  2007/08/22 09:01:18  csoutheren
+ * Allow setting of explicit From field in SIP
+ *
+ * Revision 2.73  2007/07/22 12:25:23  rjongbloed
  * Removed redundent mutex
  *
  * Revision 2.72  2007/07/06 07:01:36  rjongbloed
@@ -693,7 +696,8 @@ class SIPConnection : public OpalConnection
 
     OpalTransport & GetTransport() const { return *transport; }
 
-    PString GetLocalPartyAddress() const { return localPartyAddress; }
+    virtual PString GetLocalPartyAddress() const { return localPartyAddress; }
+    virtual PString GetExplicitFrom() const;
 
     /** Create full SIPURI - with display name, URL in <> and tag, suitable for From:
       */
@@ -757,6 +761,8 @@ class SIPConnection : public OpalConnection
 
     BOOL ConstructSDP(SDPSessionDescription & sdpOut);
 
+    void UpdateRemotePartyNameAndNumber();
+
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
 
@@ -791,6 +797,8 @@ class SIPConnection : public OpalConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
+
+    PString explicitFrom;
 };
 
 
