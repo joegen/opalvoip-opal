@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2168  2007/08/16 03:10:36  rjongbloed
+ * Revision 1.2169  2007/08/22 01:32:54  csoutheren
+ * Don't set an empty called destination name to string form of transport address
+ *
+ * Revision 2.167  2007/08/16 03:10:36  rjongbloed
  * Fixed setting of dynamic RTP in OLC on rx channel for slow start, only worked for fast cononect.
  * Also fixed sending dynamic RTP type in OLC for Tx channel.
  *
@@ -1104,9 +1107,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPD
   remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway
-  if (setup.m_destinationAddress.GetSize() == 0)
-    calledDestinationName = signallingChannel->GetLocalAddress();
-  else 
+  if (setup.m_destinationAddress.GetSize() != 0)
     calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
   setupPDU->GetQ931().GetCalledPartyNumber(calledDestinationNumber);
 
