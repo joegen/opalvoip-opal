@@ -1,5 +1,5 @@
 /*
- * H.264 Plugin codec for OpenH323/OPAL
+ * Common Plugin code for OpenH323/OPAL
  *
  * This code is based on the following files from the OPAL project which
  * have been removed from the current build and distributions but are still
@@ -38,8 +38,8 @@
  *                 Matthias Schneider (ma30002000@yahoo.de)
  */
 
-#ifndef __H264DYNA_H__
-#define __H264DYNA_H__ 1
+#ifndef __DYNA_H__
+#define __DYNA_H__ 1
 #include <codec/opalplugin.h>
 
 #include <stdlib.h>
@@ -52,36 +52,39 @@
 #include <dlfcn.h>
 #define STRCMPI  strcasecmp
 typedef unsigned char BYTE;
-//typedef bool BOOL;
-#define FALSE false
-#define TRUE  true
 
 #endif
 
 #include <string.h>
 #include "critsect.h"
+#include "trace.h"
 
 extern "C" {
 #include "ffmpeg/avcodec.h"
 };
 
-#include "shared/trace.h"
-
-#  ifdef  _WIN32
-#    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
-#    define DIR_SEPERATOR "\\"
-#    define DIR_TOKENISER ";"
-#  else
-#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/pwlib"
-#    define DIR_SEPERATOR "/"
-#    define DIR_TOKENISER ":"
-#  endif
-
 #include <vector>
 
-// if defined, the FFMPEG code is access via another DLL
-// otherwise, the FFMPEG code is assumed to be statically linked into this plugin
+// Compile time version checking
+#if LIBAVCODEC_VERSION_INT < ((51<<16)+(11<<8)+0)
+#error Libavcodec too old.
+#endif
 
+#define STACKALIGN_HACK() \
+{                                                               \
+     (void)__builtin_alloca(16);                                \
+      __asm__ __volatile__ ("andl $-16, %esp");                 \
+}
+
+#ifdef  _WIN32
+# define DIR_SEPARATOR "\\"
+# define DIR_TOKENISER ";"
+#else
+# define DIR_SEPARATOR "/"
+# define DIR_TOKENISER ":"
+#endif
+	  
+	  
 /////////////////////////////////////////////////////////////////
 //
 // define a class to simplify handling a DLL library
@@ -98,100 +101,20 @@ class DynaLink
     ~DynaLink()
     { Close(); }
 
-    virtual bool Open(const char *name)
-    {
-      char * env = ::getenv("PWLIBPLUGINDIR");
-      if (env != NULL) {
-        const char * token = strtok(env, DIR_TOKENISER);
-        while (token != NULL) {
-          if (InternalOpen(token, name))
-            return true;
-          token = strtok(NULL, DIR_TOKENISER);
-        }
-      }
-      return InternalOpen(".", name);
-    }
-
-  // split into directories on correct seperator
-
-    bool InternalOpen(const char * dir, const char *name)
-    {
-      char path[1024];
-      memset(path, 0, sizeof(path));
-      strcpy(path, dir);
-      if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
-        strcat(path, DIR_SEPERATOR);
-      strcat(path, name);
-
-#ifdef _WIN32
-# ifdef UNICODE
-      USES_CONVERSION;
-      _hDLL = LoadLibrary(A2T(path));
-# else
-      _hDLL = LoadLibrary(name);
-# endif // UNICODE
-#else
-      _hDLL = dlopen((const char *)path, RTLD_NOW);
-      if (_hDLL == NULL) {
-        char * err = dlerror();
-        if (err != NULL)
-          TRACE(1, "H264\tDYNA\tError loading " << path << " - " << err)
-         else
-          TRACE(1, "H264\tDYNA\tError loading " << path);
-      }
-#endif // _WIN32
-      if (_hDLL != NULL) TRACE(1, "H264\tDYNA\tSuccessfully loaded " << path);
-      return _hDLL != NULL;
-    }
-
-    virtual void Close()
-    {
-      if (_hDLL != NULL) {
-#ifdef _WIN32
-        FreeLibrary(_hDLL);
-#else
-        dlclose(_hDLL);
-#endif // _WIN32
-        _hDLL = NULL;
-      }
-    }
-
-
     virtual bool IsLoaded() const
     { return _hDLL != NULL; }
 
-    bool GetFunction(const char * name, Function & func)
-    {
-      if (_hDLL == NULL)
-        return FALSE;
-#ifdef _WIN32
-
-# ifdef UNICODE
-      USES_CONVERSION;
-      FARPROC p = GetProcAddress(_hDLL, A2T(name));
-# else
-      FARPROC p = GetProcAddress(_hDLL, name);
-# endif // UNICODE
-      if (p == NULL)
-        return FALSE;
-
-      func = (Function)p;
-      return TRUE;
-#else
-      void * p = dlsym(_hDLL, (const char *)name);
-      if (p == NULL)
-        return FALSE;
-      func = (Function &)p;
-      return TRUE;
-#endif // _WIN32
-    }
-
+    virtual bool Open(const char *name);
+    bool InternalOpen(const char * dir, const char *name);
+    virtual void Close();
+    bool GetFunction(const char * name, Function & func);
+    
   protected:
 #if defined(_WIN32)
     HINSTANCE _hDLL;
 #else
     void * _hDLL;
-#endif // _WIN32
+#endif /* _WIN32 */
 };
 
 /////////////////////////////////////////////////////////////////
@@ -207,31 +130,44 @@ class FFMPEGLibrary : public DynaLink
 
     bool Load();
 
+    AVCodec *AvcodecFindEncoder(enum CodecID id);
     AVCodec *AvcodecFindDecoder(enum CodecID id);
     AVCodecContext *AvcodecAllocContext(void);
     AVFrame *AvcodecAllocFrame(void);
     int AvcodecOpen(AVCodecContext *ctx, AVCodec *codec);
     int AvcodecClose(AVCodecContext *ctx);
+    int AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
     int AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
     void AvcodecFree(void * ptr);
 
     void AvLogSetLevel(int level);
     void AvLogSetCallback(void (*callback)(void*, int, const char*, va_list));
+    int (*Fff_check_alignment)(void);
 
     bool IsLoaded();
     CriticalSection processLock;
 
   protected:
     void (*Favcodec_init)(void);
+    AVCodec *Favcodec_h263_encoder;
+    AVCodec *Favcodec_h263p_encoder;
+    AVCodec *Favcodec_h263_decoder;
     AVCodec *Favcodec_h264_decoder;
+    AVCodec *mpeg4_encoder;
+    AVCodec *mpeg4_decoder;
+
     void (*Favcodec_register)(AVCodec *format);
+    AVCodec *(*Favcodec_find_encoder)(enum CodecID id);
     AVCodec *(*Favcodec_find_decoder)(enum CodecID id);
     AVCodecContext *(*Favcodec_alloc_context)(void);
     void (*Favcodec_free)(void *);
     AVFrame *(*Favcodec_alloc_frame)(void);
     int (*Favcodec_open)(AVCodecContext *ctx, AVCodec *codec);
     int (*Favcodec_close)(AVCodecContext *ctx);
+    int (*Favcodec_encode_video)(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
     int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
+    unsigned (*Favcodec_version)(void);
+    unsigned (*Favcodec_build)(void);
 
     void (*FAv_log_set_level)(int level);
     void (*FAv_log_set_callback)(void (*callback)(void*, int, const char*, va_list));
@@ -241,4 +177,4 @@ class FFMPEGLibrary : public DynaLink
 
 //////////////////////////////////////////////////////////////////////////////
 
-#endif /* __H264DYNA_H__ */
+#endif /* __DYNA_H__ */

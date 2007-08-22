@@ -41,7 +41,7 @@ using namespace std;
 class Trace
 {
 public:
-  static ostream & Start(unsigned level, const char* fileName, int lineNum);
+  static ostream & Start(const char* file, int line);
   static bool CanTrace(unsigned level);
   static void SetLevel(unsigned level);
 };
@@ -53,7 +53,7 @@ public:
 #else   /* TRACING */
 
 #define TRACE(level, text) \
-    if (Trace::CanTrace(level)) Trace::Start(level, __FILE__, __LINE__) << text << endl;
+    if (Trace::CanTrace(level)) Trace::Start( __FILE__, __LINE__) << text << endl;
 #endif /* TRACING */
 
-#endif /* __H264TRACE_H__ */
+#endif /* __TRACE_H__ */

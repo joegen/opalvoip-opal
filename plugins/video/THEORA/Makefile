@@ -20,7 +20,7 @@
 # Contributor(s): ______________________________________.
 #
 
-PREFIX=/usr
+PREFIX=/usr/
 exec_prefix = ${PREFIX}
 LIBDIR=${exec_prefix}/lib
 
