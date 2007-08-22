@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2036  2007/08/11 00:03:23  rjongbloed
+ * Revision 1.2037  2007/08/22 05:09:48  rjongbloed
+ * Improved logging
+ *
+ * Revision 2.35  2007/08/11 00:03:23  rjongbloed
  * Fixed incorrect cast in H.323 request mode.
  *
  * Revision 2.34  2007/07/24 12:55:52  rjongbloed
@@ -2546,8 +2549,6 @@ H323Capability * H323Capabilities::FindCapability(const H323Capability & capabil
 
 H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) const
 {
-  PTRACE(4, "H323\tFindCapability: " << cap.GetTagName());
-
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     switch (cap.GetTag()) {
@@ -2556,6 +2557,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitAudioCapability :
         if (capability.GetMainType() == H323Capability::e_Audio) {
           const H245_AudioCapability & audio = cap;
+          PTRACE(4, "H323\tFindCapability: " << audio.GetTagName());
           if (capability.IsMatch(audio))
             return &capability;
         }
@@ -2566,6 +2568,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitVideoCapability :
         if (capability.GetMainType() == H323Capability::e_Video) {
           const H245_VideoCapability & video = cap;
+          PTRACE(4, "H323\tFindCapability: " << video.GetTagName());
           if (capability.IsMatch(video))
             return &capability;
         }
@@ -2576,6 +2579,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitDataApplicationCapability :
         if (capability.GetMainType() == H323Capability::e_Data) {
           const H245_DataApplicationCapability & data = cap;
+          PTRACE(4, "H323\tFindCapability: " << data.m_application.GetTagName());
           if (capability.IsMatch(data.m_application))
             return &capability;
         }
@@ -2586,15 +2590,18 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitUserInputCapability :
         if (capability.GetMainType() == H323Capability::e_UserInput) {
           const H245_UserInputCapability & ui = cap;
+          PTRACE(4, "H323\tFindCapability: " << ui.GetTagName());
           if (capability.IsMatch(ui))
             return &capability;
         }
         break;
 
       case H245_Capability::e_receiveRTPAudioTelephonyEventCapability :
+        PTRACE(4, "H323\tFindCapability: " << cap.GetTagName());
         return FindCapability(H323Capability::e_UserInput, SignalToneRFC2833_SubType);
 
       default :
+        PTRACE(4, "H323\tFindCapability: " << cap.GetTagName());
         break;
     }
   }
