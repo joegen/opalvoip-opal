@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2007/08/23 19:20:15  dominance
+# fix compilation of H.264 if CFLAGS is present from make
+#
 # Revision 1.2  2007/08/22 21:51:26  dsandras
 # Applied patch from Matthias Schneider <ma30002000 yahoo de> to share
 # things between codecs. Huge thanks!
@@ -79,7 +82,7 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 X264_LIBS	=@X264_LIBS@
 
-CFLAGS 		+= -I $(COMMONDIR) 
+EXTRACCFLAGS	+= -I$(COMMONDIR) 
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
@@ -93,11 +96,11 @@ SRCS   += $(SHAREDDIR)/h264frame.cxx \
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CXX) -I../../../include -I .. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CXX) -I../../../include -I.. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -I../../../include  -I .. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) -I../../../include  -I.. $(EXTRACCFLAGS) $(STDCCFLAGS) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
 
 PLUGIN	= ./$(BASENAME)_video_pwplugin_helper
 
