@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.27  2007/08/24 09:35:35  rjongbloed
+ * Fixed GNU compiler compatibility.
+ *
  * Revision 1.26  2007/08/19 02:05:00  rjongbloed
  * Made sure deregister from previous regisrar when changed in options dialog.
  *
@@ -1828,7 +1831,8 @@ bool MyManager::StopRegistrar()
   if (sipEP == NULL)
     return false;
 
-  PString aor = m_registrarUser + '@' + m_registrarName;
+  PStringStream aor;
+  aor << m_registrarUser << '@' << m_registrarName;
   if (!sipEP->IsRegistered(aor))
     return false;
 
