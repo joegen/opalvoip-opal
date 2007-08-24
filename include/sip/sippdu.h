@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2051  2007/07/02 04:07:58  rjongbloed
+ * Revision 1.2052  2007/08/24 06:38:17  csoutheren
+ * Add way to get empty DisplayName without always using default
+ *
+ * Revision 2.50  2007/07/02 04:07:58  rjongbloed
  * Added hooks to get at PDU strings being read/written.
  *
  * Revision 2.49  2007/06/29 06:59:56  rjongbloed
@@ -278,7 +281,7 @@ class SIPURL : public PURL
 
     /** Returns display name only
       */
-    PString GetDisplayName() const;
+    PString GetDisplayName(BOOL useDefault = TRUE) const;
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }
