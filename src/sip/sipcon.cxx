@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2256  2007/08/24 06:38:53  csoutheren
+ * Revision 1.2257  2007/08/24 07:49:22  csoutheren
+ * Get access to called URL
+ *
+ * Revision 2.255  2007/08/24 06:38:53  csoutheren
  * Add way to get empty DisplayName without always using default
  *
  * Revision 2.254  2007/08/22 09:02:19  csoutheren
@@ -2357,6 +2360,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // get the called destination
   calledDestinationName   = originalInvite->GetURI().GetDisplayName(FALSE);   
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
+  calledDestinationURL    = originalInvite->GetURI().AsString();
 
   // update the target address
   PString contact = mime.GetContact();
