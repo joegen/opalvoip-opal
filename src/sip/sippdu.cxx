@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2145  2007/08/22 09:02:19  csoutheren
+ * Revision 1.2146  2007/08/24 06:38:53  csoutheren
+ * Add way to get empty DisplayName without always using default
+ *
+ * Revision 2.144  2007/08/22 09:02:19  csoutheren
  * Allow setting of explicit From field in SIP
  *
  * Revision 2.143  2007/08/17 07:55:57  rjongbloed
@@ -803,14 +806,14 @@ PString SIPURL::AsQuotedString() const
 }
 
 
-PString SIPURL::GetDisplayName () const
+PString SIPURL::GetDisplayName (BOOL useDefault) const
 {
   PString s;
   PINDEX tag;
     
   s = displayName;
 
-  if (displayName.IsEmpty ()) {
+  if (displayName.IsEmpty () && useDefault) {
 
     s = AsString ();
     s.Replace ("sip:", "");

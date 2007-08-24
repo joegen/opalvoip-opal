@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2255  2007/08/22 09:02:19  csoutheren
+ * Revision 1.2256  2007/08/24 06:38:53  csoutheren
+ * Add way to get empty DisplayName without always using default
+ *
+ * Revision 2.254  2007/08/22 09:02:19  csoutheren
  * Allow setting of explicit From field in SIP
  *
  * Revision 2.253  2007/08/13 04:02:49  csoutheren
@@ -1139,21 +1142,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   SIPURL transportAddress = destination;
   targetAddress = destination;
 
-  // allow callers to override the From field
-  if (stringOptions != NULL) {
-    SIPURL newFrom(GetLocalPartyAddress());
-
-    PString number((*stringOptions)("Calling-Party-Number"));
-    if (!number.IsEmpty())
-      newFrom.SetUserName(number);
-
-    PString name((*stringOptions)("Calling-Party-Name"));
-    if (!name.IsEmpty())
-      newFrom.SetDisplayName(name);
-
-    explicitFrom = newFrom.AsString();
-  }
-
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = targetAddress.GetParamVars();
   SIPURL proxy;
@@ -2047,6 +2035,22 @@ void SIPConnection::SetLocalPartyAddress()
 {
   SIPURL registeredPartyName = endpoint.GetRegisteredPartyName(remotePartyAddress);
   localPartyAddress = registeredPartyName.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
+
+  // allow callers to override the From field
+  if (stringOptions != NULL) {
+    SIPURL newFrom(GetLocalPartyAddress());
+    PString number((*stringOptions)("Calling-Party-Number"));
+    if (!number.IsEmpty())
+      newFrom.SetUserName(number);
+
+    PString name((*stringOptions)("Calling-Party-Name"));
+    if (!name.IsEmpty())
+      newFrom.SetDisplayName(name);
+
+    explicitFrom = newFrom.AsQuotedString();
+
+    PTRACE(1, "SIP\tChanging From from " << GetLocalPartyAddress() << " to " << explicitFrom << " using " << name << " and " << number);
+  }
 }
 
 
@@ -2351,7 +2355,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   mime.SetTo(localPartyAddress);
 
   // get the called destination
-  calledDestinationName   = originalInvite->GetURI().GetDisplayName();
+  calledDestinationName   = originalInvite->GetURI().GetDisplayName(FALSE);   
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
 
   // update the target address
