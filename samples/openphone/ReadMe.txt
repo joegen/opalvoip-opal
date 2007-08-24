@@ -17,23 +17,30 @@ already have PWLib and OPAL installed, AND BUILT.
 
 For Windows:
 ------------
-  1.  Download the installer, eg wxMSW-2.6.3-Setup-1.exe
+  1.  Download the installer for wxWidgets, eg wxMSW-2.6.3-Setup-1.exe or
+      wxMSW-2.8.3-Setup.exe
 
-  2.  Run the installer
+  2.  Run the installer.
 
   3.  Set the environment variable WXDIR to the directory that you installed
-      wxWidgets into in step 2. Be sure to restart 
+      wxWidgets into in step 2. Also set WXVER to 26 or 28 depending on the
+      version of wxWidgets you installed. Be sure to restart DevStudio.
 
   4.  Open the DevStudio workspace %WXDIR%\build\msw\wx.dsw
-      If you are using Visual Studio .NET 2003 or Visual C++ Express 2005, you will be asked whether
-      to convert project files. Let it do the conversion, use the converted projects.
+      If you are using Visual Studio .NET 2003 or Visual C++ Express 2005, you
+      will be asked whether to convert project files. Let it do the conversion
+      and use the converted projects.
 
-  5.  Build the Release and Debug versions of everything
+  5.  Build the Release and Debug versions of everything. The safest way is to
+      simply select "Debug", go "Build Solution", then select "Release" and go
+      "Build Solution" again.
 
-  6.  Open the DevStudio workspace %WXDIR%\utils\wxrc\wxrc.dsw
+  6.  Open the DevStudio workspace %WXDIR%\utils\wxrc\wxrc.dsw, let it convert
+      the projects as before.
 
-  7.  Build the release version. (Note: when using VC Express 2005, you may get a large number of undefined symbols
-      when linking. To fix this, add the following libraries to the linker command line:
+  7.  Build the release version. Note: when using VC Express 2005, you may get
+      a large number of undefined symbols when linking. To fix this, add the
+      following libraries to the linker command line:
 
                  user32.lib ole32.lib advapi32.lib shell32.lib
 
@@ -43,9 +50,6 @@ For Windows:
 
 You should now be able to open %OPALDIR%/opal_samples.sln and build OpenPhone. 
 
-If you have not included the Expat library in your PWLib build, you will get errors from
-the linker complaining about multiple defined defined starting with "XML_" . 
-This can be fixed by adding the library wxexpat.lib to the link input list.
 
 
 For Linux:
