@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2089  2007/08/13 16:19:08  csoutheren
+ * Revision 1.2090  2007/08/24 07:47:46  csoutheren
+ * Get access to called URL
+ *
+ * Revision 2.88  2007/08/13 16:19:08  csoutheren
  * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
  *
  * Revision 2.87  2007/07/26 00:38:56  csoutheren
@@ -1416,6 +1419,11 @@ class OpalConnection : public PSafeObject
       */
     virtual const PString & GetCalledDestinationName() const { return calledDestinationName; }
 
+    /**Get the called URL (for incoming calls). This is useful for gateway
+       applications where the destination number may not be the same as the local number
+      */
+    virtual const PString & GetCalledDestinationURL() const { return calledDestinationURL; }
+
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
      */
@@ -1521,6 +1529,7 @@ class OpalConnection : public PSafeObject
     CallEndReason        callEndReason;
     PString              calledDestinationNumber;
     PString              calledDestinationName;
+    PString              calledDestinationURL;
     BOOL                 remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
