@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2013.10.5  2007/05/03 10:37:50  hfriederich
+ * Revision 1.2013.10.6  2007/08/25 17:05:01  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.12.10.5  2007/05/03 10:37:50  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -264,6 +267,34 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
     param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
     param.m_dynamicRTPPayloadType = rtpPayloadType;
   }
+  
+  // Set the media packetization field if have an option to describe it.
+  PString mediaPacketization = channel.GetMediaStream()->GetMediaFormat().GetOptionString("Media Packetization");
+  if (!mediaPacketization) {
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
+    param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
+    H245_RTPPayloadType & rtpPacketization = param.m_mediaPacketization;
+    if (mediaPacketization.NumCompare("RFC") == EqualTo) {
+      rtpPacketization.m_payloadDescriptor.SetTag(H245_RTPPayloadType_payloadDescriptor::e_rfc_number);
+      ((PASN_Integer &)rtpPacketization.m_payloadDescriptor) = mediaPacketization.Mid(3).AsUnsigned();
+    }
+    else if (mediaPacketization.FindSpan("0123456789.") == P_MAX_INDEX) {
+      rtpPacketization.m_payloadDescriptor.SetTag(H245_RTPPayloadType_payloadDescriptor::e_oid);
+      ((PASN_ObjectId &)rtpPacketization.m_payloadDescriptor) = mediaPacketization;
+    }
+    else {
+      rtpPacketization.m_payloadDescriptor.SetTag(H245_RTPPayloadType_payloadDescriptor::e_nonStandardIdentifier);
+      H245_NonStandardParameter & nonstd = rtpPacketization.m_payloadDescriptor;
+      nonstd.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_h221NonStandard);
+      H245_NonStandardIdentifier_h221NonStandard & h221 = nonstd.m_nonStandardIdentifier;
+      h221.m_t35CountryCode = (unsigned)OpalProductInfo::Default().t35CountryCode;
+      h221.m_t35Extension = (unsigned)OpalProductInfo::Default().t35Extension;
+      h221.m_manufacturerCode = (unsigned)OpalProductInfo::Default().manufacturerCode;
+      nonstd.m_data = mediaPacketization;
+    }
+    rtpPacketization.IncludeOptionalField(H245_RTPPayloadType::e_payloadType);
+    rtpPacketization.m_payloadType = rtpPayloadType;
+  }  
 
   return TRUE;
 }
@@ -346,6 +377,28 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
     channel.SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
+  
+  if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization) &&
+      param.m_mediaPacketization.GetTag() == H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType) {
+    const H245_RTPPayloadType & rtpPacketization = param.m_mediaPacketization;
+    PString mediaPacketization;
+    switch (rtpPacketization.m_payloadDescriptor.GetTag()) {
+      case H245_RTPPayloadType_payloadDescriptor::e_rfc_number :
+        mediaPacketization.sprintf("RFC%u", ((const PASN_Integer &)rtpPacketization.m_payloadDescriptor).GetValue());
+        break;
+      case H245_RTPPayloadType_payloadDescriptor::e_oid :
+        mediaPacketization = ((const PASN_ObjectId &)rtpPacketization.m_payloadDescriptor).AsString();
+        break;
+      case H245_RTPPayloadType_payloadDescriptor::e_nonStandardIdentifier :
+        mediaPacketization = ((const H245_NonStandardParameter &)rtpPacketization.m_payloadDescriptor).m_data.AsString();
+        break;
+      default :
+        PTRACE(1, "RTP_UDP\tUnknown packetization type.");
+        break;
+    }
+    if (!mediaPacketization)
+      channel.GetMediaStream()->GetMediaFormat().SetOptionString("Media Packetization", mediaPacketization);
+  }
 
   if (ok)
     return TRUE;
