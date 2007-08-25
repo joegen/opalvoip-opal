@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2046.2.6  2007/08/05 13:12:16  hfriederich
+ * Revision 1.2046.2.7  2007/08/25 17:04:57  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.45.2.6  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.45.2.5  2007/05/03 10:37:47  hfriederich
@@ -1315,7 +1318,7 @@ class OpalMediaFormat : public PCaselessString
   protected:
 
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
-    const char *                 rtpEncodingName;
+    PString                      rtpEncodingName;
     const OpalMediaType *        mediaType;
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;

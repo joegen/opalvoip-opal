@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2058.2.9  2007/05/09 14:57:03  hfriederich
+ * Revision 1.2058.2.10  2007/08/25 17:04:57  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.57.2.9  2007/05/09 14:57:03  hfriederich
  * Make SetRemotePartyInfo() virtual
  *
  * Revision 2.57.2.8  2007/05/03 10:37:47  hfriederich
@@ -2462,6 +2465,9 @@ class H323Connection : public OpalConnection
 #ifdef H323_H460
 	H460_FeatureSet & features;
 #endif
+    
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                        BOOL isSource);
     
     typedef std::map<OpalMediaType, unsigned> SessionIDMap;
     SessionIDMap sessionIDMap;

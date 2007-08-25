@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2041.2.6  2007/05/28 16:41:44  hfriederich
+ * Revision 1.2041.2.7  2007/08/25 17:04:57  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.40.2.6  2007/05/28 16:41:44  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.40.2.5  2007/05/03 10:37:49  hfriederich
@@ -272,7 +275,7 @@ class OpalMediaStream : public PObject
 
        The default behaviour simply returns the member variable "mediaFormat".
       */
-    virtual const OpalMediaFormat & GetMediaFormat() const;
+    virtual OpalMediaFormat GetMediaFormat() const;
 
     /**Update the media format. This can be used to adjust the
        parameters of a codec at run time. Note you cannot change the basic

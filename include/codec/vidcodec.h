@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2014.4.1  2007/03/10 10:43:10  hfriederich
+ * Revision 1.2014.4.2  2007/08/25 17:04:57  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.13.4.1  2007/03/10 10:43:10  hfriederich
  * (Backport from HEAD)
  * Change flag used so H.323 capabilities if H.323 was enabled when the
  * library was configured
@@ -225,6 +228,22 @@ class OpalTemporalSpatialTradeOff : public OpalMediaCommand
 
   protected:
     int m_quality;
+};
+
+class OpalLostPartialPicture : public OpalMediaCommand
+{
+  PCLASSINFO(OpalLostPartialPicture, OpalMediaCommand);
+public:
+  OpalLostPartialPicture() { }
+  virtual PString GetName() const;
+};
+
+class OpalLostPicture : public OpalMediaCommand
+{
+  PCLASSINFO(OpalLostPicture, OpalMediaCommand);
+public:
+  OpalLostPicture() { }
+  virtual PString GetName() const;
 };
 
 

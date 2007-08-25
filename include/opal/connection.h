@@ -28,7 +28,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2071.2.7  2007/08/05 13:12:16  hfriederich
+ * Revision 1.2071.2.8  2007/08/25 17:04:57  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.70.2.7  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.70.2.6  2007/05/28 16:41:44  hfriederich
@@ -1355,6 +1358,11 @@ class OpalConnection : public PSafeObject
        applications where the destination name may not be the same as the local username
       */
     virtual const PString & GetCalledDestinationName() const { return calledDestinationName; }
+    
+    /**Get the called URL (for incoming calls). This is useful for gateway
+       applications where the destination number may not be the same as the local number
+      */
+    virtual const PString & GetCalledDestinationURL() const { return calledDestinationURL; }
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
@@ -1461,6 +1469,7 @@ class OpalConnection : public PSafeObject
     CallEndReason        callEndReason;
     PString              calledDestinationNumber;
     PString              calledDestinationName;
+    PString              calledDestinationURL;
     BOOL                 remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
@@ -1511,6 +1520,9 @@ class OpalConnection : public PSafeObject
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
+    
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                        BOOL isSource);
 };
 
 class RTP_UDP;
