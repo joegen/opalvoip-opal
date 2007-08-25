@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.6  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2046.2.7  2007/08/25 17:04:58  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.45.2.6  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.45.2.5  2007/06/12 16:29:02  hfriederich
@@ -289,7 +292,7 @@ class SIPURL : public PURL
 
     /** Returns display name only
       */
-    PString GetDisplayName() const;
+    PString GetDisplayName(BOOL useDefault = TRUE) const;
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2018.2.2  2007/05/03 10:37:49  hfriederich
+ * Revision 1.2018.2.3  2007/08/25 17:04:58  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.17.2.2  2007/05/03 10:37:49  hfriederich
  * Backport from HEAD.
  * All changes since Apr 1, 2007
  *
@@ -214,6 +217,16 @@ PString OpalVideoUpdatePicture::GetName() const
 PString OpalTemporalSpatialTradeOff::GetName() const
 {
   return "Temporal Spatial Trade Off";
+}
+
+PString OpalLostPartialPicture::GetName() const
+{
+  return "Lost Partial Picture";
+}
+
+PString OpalLostPicture::GetName() const
+{
+  return "Lost Picture";
 }
 
 ///////////////////////////////////////////////////////////////////////////////

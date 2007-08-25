@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2004.2.3  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2004.2.4  2007/08/25 17:04:58  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.3.2.3  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.3.2.2  2007/05/03 10:37:49  hfriederich
@@ -114,7 +117,7 @@ BOOL OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
   if (rtpSession == NULL) {
     rtpSession = conn.UseSession(OpalDefaultAudioMediaType);
     if (rtpSession == NULL) {
-      PTRACE(1, "RFC2833\tCannot get RTP session for RFC2833");
+      PTRACE(4, "RFC2833\tNo RTP session suitable for RFC2833");
       return FALSE;
     }
   }
@@ -140,7 +143,7 @@ void OpalRFC2833Proto::SendAsyncFrame()
     if (transmitTimestampSet)
       frame.SetTimestamp(transmitTimestamp);
     rtpSession->WriteOOBData(frame);
-    if (!transmitTimestampSet, !transmitTimestampSet)
+    if (!transmitTimestampSet)
       transmitTimestamp = frame.GetTimestamp();
   }
 }

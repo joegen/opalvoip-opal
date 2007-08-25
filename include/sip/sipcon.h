@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.9  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2059.2.10  2007/08/25 17:04:58  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.58.2.9  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.58.2.8  2007/06/12 16:29:02  hfriederich
@@ -692,7 +695,8 @@ class SIPConnection : public OpalConnection
 
     OpalTransport & GetTransport() const { return *transport; }
 
-    PString GetLocalPartyAddress() const { return localPartyAddress; }
+    virtual PString GetLocalPartyAddress() const { return localPartyAddress; }
+    virtual PString GetExplicitFrom() const;
 
     /** Create full SIPURI - with display name, URL in <> and tag, suitable for From:
       */
@@ -758,6 +762,8 @@ class SIPConnection : public OpalConnection
                                     BOOL isLocalAddress = FALSE);
     
     BOOL ConstructSDP(SDPSessionDescription & sdpOut, BOOL releaseOnFailure = TRUE);
+    
+    void UpdateRemotePartyNameAndNumber();
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
@@ -794,6 +800,8 @@ class SIPConnection : public OpalConnection
     } releaseMethod;
 
     OpalMediaFormatList remoteFormatList;
+    
+    PString explicitFrom;
 };
 
 
