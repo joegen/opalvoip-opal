@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.8  2007/08/05 13:12:18  hfriederich
+ * Revision 1.2053.2.9  2007/08/25 17:05:01  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.52.2.8  2007/08/05 13:12:18  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.52.2.7  2007/05/28 16:41:46  hfriederich
@@ -331,21 +334,29 @@ void OpalMediaStream::PrintOn(ostream & strm) const
 }
 
 
-const OpalMediaFormat & OpalMediaStream::GetMediaFormat() const
+OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 {
   return mediaFormat;
 }
 
 
-BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
+BOOL OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
   PWaitAndSignal mutex(patchMutex);
 
-  if (mediaPatch == NULL)
-    return FALSE;
-
   // If we are source, then update the sink side, and vice versa
-  return mediaPatch->UpdateMediaFormat(mediaFormat, IsSink());
+  if (mediaPatch != NULL) {
+    if (!mediaPatch->UpdateMediaFormat(newMediaFormat, IsSink())) {
+      PTRACE(2, "Media\tPatch did not allow media format update of " << *this);
+      return FALSE;
+    }
+  }
+  
+  mediaFormat = newMediaFormat;
+  
+  PTRACE(4, "Media\tMedia format updated on " << *this);
+  
+  return TRUE;
 }
 
 

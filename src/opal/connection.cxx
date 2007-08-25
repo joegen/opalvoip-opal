@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2089.2.10  2007/08/05 13:12:18  hfriederich
+ * Revision 1.2089.2.11  2007/08/25 17:05:01  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.88.2.10  2007/08/05 13:12:18  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.88.2.9  2007/05/28 16:41:45  hfriederich
@@ -886,7 +889,7 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
   PTRACE(3, "OpalCon\tSelected media stream " << sourceFormat << " -> " << destinationFormat);
     
   if (stream == NULL)
-    stream = CreateMediaStream(sourceFormat, TRUE);
+    stream = InternalCreateMediaStream(sourceFormat, TRUE);
 
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream returned NULL for session "
@@ -950,7 +953,7 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
   PTRACE(3, "OpalCon\tOpenSinkMediaStream, selected " << sourceFormat << " -> " << destinationFormat);
 
-  OpalMediaStream * stream = CreateMediaStream(destinationFormat, FALSE);
+  OpalMediaStream * stream = InternalCreateMediaStream(destinationFormat, FALSE);
   if (stream == NULL) {
     PTRACE(1, "OpalCon\tCreateMediaStream " << *this << " returned NULL");
     return NULL;
@@ -1648,6 +1651,12 @@ BOOL OpalConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr,
                                      BOOL incoming)
 {
   return endpoint.IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
+}
+
+OpalMediaStream * OpalConnection::InternalCreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                            BOOL isSource)
+{
+  return CreateMediaStream(mediaFormat, isSource);
 }
 
 

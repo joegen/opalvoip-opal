@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059.2.7  2007/08/05 13:12:18  hfriederich
+ * Revision 1.2059.2.8  2007/08/25 17:05:01  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.58.2.7  2007/08/05 13:12:18  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.58.2.6  2007/05/03 10:37:51  hfriederich
@@ -1101,7 +1104,6 @@ const PString & OpalMediaFormat::ClockRateOption() { static PString s = "Clock R
 OpalMediaFormat::OpalMediaFormat()
 {
   rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
-  rtpEncodingName = NULL;
   mediaType = &(OpalUnknownMediaType);
 }
 
@@ -1210,6 +1212,9 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
 
 OpalMediaFormat & OpalMediaFormat::operator=(const OpalMediaFormat &format)
 {
+  if (this == &format)
+    return *this;
+  
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(format.media_format_mutex);
   *static_cast<PCaselessString *>(this) = *static_cast<const PCaselessString *>(&format);
@@ -1227,10 +1232,11 @@ OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   PINDEX idx = registeredFormats.FindFormat(pt);
-  if (idx != P_MAX_INDEX)
-    *this = registeredFormats[idx];
-  else
+  if (idx == P_MAX_INDEX)
     *this = OpalMediaFormat();
+  else if (this != &registeredFormats[idx])
+    *this = registeredFormats[idx];
+
 
   return *this;
 }
@@ -1661,7 +1667,7 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),          true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
   AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),         true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
   AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),     false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 64000,    1000));
+  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),       false, OpalMediaOption::MinMerge, 10000000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
   AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
 

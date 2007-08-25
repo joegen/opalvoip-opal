@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.9  2007/08/05 13:12:18  hfriederich
+ * Revision 1.2041.2.10  2007/08/25 17:05:01  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.40.2.9  2007/08/05 13:12:18  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.40.2.8  2007/05/28 16:41:46  hfriederich
@@ -399,6 +402,7 @@ void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
   }
 }
 
+
 OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
 {
   OpalMediaFormat fmt;
@@ -412,10 +416,9 @@ OpalMediaFormat OpalMediaPatch::GetSinkFormat(PINDEX i) const
   return fmt;
 }
 
+
 OpalTranscoder * OpalMediaPatch::GetAndLockSinkTranscoder(PINDEX i) const
 {
-  OpalMediaFormat fmt;
-  
   inUse.Wait();
   
   if (i >= sinks.GetSize()) {
@@ -435,10 +438,12 @@ OpalTranscoder * OpalMediaPatch::GetAndLockSinkTranscoder(PINDEX i) const
   return NULL;
 }
 
+
 void OpalMediaPatch::UnLockSinkTranscoder() const
 {
   inUse.Signal();
 }
+
 
 OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
   : patch(p)
