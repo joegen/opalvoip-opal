@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.6  2007/08/05 13:12:19  hfriederich
+ * Revision 1.2029.2.7  2007/08/25 17:05:02  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.28.2.6  2007/08/05 13:12:19  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.28.2.5  2007/05/03 10:37:51  hfriederich
@@ -314,7 +317,7 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
   }
   
   // do not transcode if no match
-  if (pt != input.GetPayloadType()) {
+  if (pt != RTP_DataFrame::MaxPayloadType && pt != input.GetPayloadType()) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
     output.RemoveAll();
     return TRUE;

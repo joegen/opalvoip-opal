@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.14  2007/08/05 13:12:19  hfriederich
+ * Revision 1.2198.2.15  2007/08/25 17:05:02  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.197.2.14  2007/08/05 13:12:19  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.197.2.13  2007/06/12 16:29:03  hfriederich
@@ -1001,7 +1004,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
-  remotePartyName = SIPURL (remotePartyAddress).GetDisplayName ();
+  UpdateRemotePartyNameAndNumber();
   
   // Do a DNS SRV lookup
 #if P_DNS
@@ -1032,6 +1035,14 @@ SIPConnection::SIPConnection(OpalCall & call,
                                "SIP Handler:%x");
 
   PTRACE(4, "SIP\tCreated connection.");
+}
+
+
+void SIPConnection::UpdateRemotePartyNameAndNumber()
+{
+  SIPURL url(remotePartyAddress);
+  remotePartyName = url.GetDisplayName();
+  remotePartyNumber = url.GetUserName();
 }
 
 
@@ -1842,6 +1853,22 @@ void SIPConnection::SetLocalPartyAddress()
 {
   SIPURL registeredPartyName = endpoint.GetRegisteredPartyName(remotePartyAddress);
   localPartyAddress = registeredPartyName.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
+  
+  // allow callers to override the From field
+  if (stringOptions != NULL) {
+    SIPURL newFrom(GetLocalPartyAddress());
+    PString number((*stringOptions)("Calling-Party-Number"));
+    if (!number.IsEmpty())
+      newFrom.SetUserName(number);
+    
+    PString name((*stringOptions)("Calling-Party-Name"));
+    if (!name.IsEmpty())
+      newFrom.SetDisplayName(name);
+    
+    explicitFrom = newFrom.AsQuotedString();
+    
+    PTRACE(1, "SIP\tChanging From from " << GetLocalPartyAddress() << " to " << explicitFrom << " using " << name << " and " << number);
+  }
 }
 
 
@@ -1982,8 +2009,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       rtpSessions = ((SIPInvite &)transaction).GetSessionManager();
       localPartyAddress = transaction.GetMIME().GetFrom();
       remotePartyAddress = response.GetMIME().GetTo();
-      SIPURL url(remotePartyAddress);
-      remotePartyName = url.GetDisplayName ();
+      UpdateRemotePartyNameAndNumber();
+      
       response.GetMIME().GetProductInfo(remoteProductInfo);
     
       // get the route set from the Record-Route response field (in reverse order)
@@ -2157,15 +2184,16 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // Fill in all the various connection info
   SIPMIMEInfo & mime = originalInvite->GetMIME();
   remotePartyAddress = mime.GetFrom(); 
-  SIPURL url(remotePartyAddress);
-  remotePartyName = url.GetDisplayName ();
+  UpdateRemotePartyNameAndNumber();
+  
   mime.GetProductInfo(remoteProductInfo);
   localPartyAddress  = mime.GetTo() + ";tag=" + OpalGloballyUniqueID().AsString(); // put a real random 
   mime.SetTo(localPartyAddress);
   
   // get the called destination
-  calledDestinationName   = originalInvite->GetURI().GetDisplayName();
+  calledDestinationName   = originalInvite->GetURI().GetDisplayName(FALSE);
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
+  calledDestinationURL    = originalInvite->GetURI().AsString();
   
   // update the target address
   PString contact = mime.GetContact();
@@ -2323,11 +2351,11 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
           break;
 
         case AnswerCallPending:
-          SetAlerting(localPartyName, FALSE);
+          SetAlerting(GetLocalPartyName(), FALSE);
           break;
 
         case AnswerCallAlertWithMedia:
-          SetAlerting(localPartyName, TRUE);
+          SetAlerting(GetLocalPartyName(), TRUE);
           break;
 
         default:
@@ -2475,8 +2503,8 @@ void SIPConnection::OnReceivedBYE(SIP_PDU & request)
   releaseMethod = ReleaseWithNothing;
   
   remotePartyAddress = request.GetMIME().GetFrom();
-  SIPURL url(remotePartyAddress);
-  remotePartyName = url.GetDisplayName ();
+  UpdateRemotePartyNameAndNumber();
+  
   response.GetMIME().GetProductInfo(remoteProductInfo);
 
   Release(EndedByRemoteUser);
@@ -3192,6 +3220,14 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
   return TRUE;
 }
 #endif
+
+
+PString SIPConnection::GetExplicitFrom() const
+{
+  if (!explicitFrom.IsEmpty())
+    return explicitFrom;
+  return GetLocalPartyAddress();
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
