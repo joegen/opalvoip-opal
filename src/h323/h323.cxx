@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.16  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2136.2.17  2007/08/25 17:04:58  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.135.2.16  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.135.2.15  2007/06/12 16:29:02  hfriederich
@@ -1055,9 +1058,7 @@ BOOL H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSetupPD
   remotePartyName = setupPDU->GetSourceAliases(signallingChannel);
 
   // get the destination number and name, just in case we are a gateway
-  if (setup.m_destinationAddress.GetSize() == 0)
-    calledDestinationName = signallingChannel->GetLocalAddress();
-  else 
+  if (setup.m_destinationAddress.GetSize() != 0)
     calledDestinationName = H323GetAliasAddressString(setup.m_destinationAddress[0]);
   setupPDU->GetQ931().GetCalledPartyNumber(calledDestinationNumber);
 
@@ -1309,9 +1310,8 @@ BOOL H323Connection::OnOpenIncomingMediaChannels()
 
 void H323Connection::SetLocalPartyName(const PString & name)
 {
-  localPartyName = name;
-
   if (!name.IsEmpty()) {
+    OpalConnection::SetLocalPartyName(name);
     localAliasNames.RemoveAll();
     localAliasNames.AppendString(name);
   }
@@ -1850,11 +1850,11 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallAlertWithMedia :
-      SetAlerting(localPartyName, TRUE);
+      SetAlerting(GetLocalPartyName(), TRUE);
       break;
 
     case AnswerCallPending :
-      SetAlerting(localPartyName, FALSE);
+      SetAlerting(GetLocalPartyName(), FALSE);
       break;
 
     case AnswerCallDenied :
@@ -2495,15 +2495,6 @@ BOOL H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_OctetStr
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
-                  {
-                    H323_RealTimeChannel * rtp = dynamic_cast<H323_RealTimeChannel *>(&channelToStart);
-                    if (rtp != NULL) {
-                      RTP_DataFrame::PayloadTypes inpt = rtp->GetMediaStream()->GetMediaFormat().GetPayloadType();
-                      RTP_DataFrame::PayloadTypes outpt = rtp->GetDynamicRTPPayloadType();
-                      if (inpt != outpt && outpt < RTP_DataFrame::IllegalPayloadType)
-                        rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(inpt, outpt));
-                    }
-                  }
                   if (channelToStart.Open()) {
                     BOOL started = FALSE;
                     if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
@@ -3695,18 +3686,24 @@ BOOL H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFo
   return TRUE;
 }
 
+OpalMediaStream * H323Connection::InternalCreateMediaStream(const OpalMediaFormat & mediaFormat,
+                                                            BOOL isSource)
+{
+  if (!isSource && (transmitterMediaStream != NULL)) {
+    OpalMediaStream * stream = transmitterMediaStream;
+    transmitterMediaStream = NULL;
+    return stream;
+  }
+  
+  return CreateMediaStream(mediaFormat, isSource);
+}
+
 OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                     BOOL isSource)
 {
   const OpalMediaType & mediaType = mediaFormat.GetMediaType();
   if (ownerCall.IsMediaBypassPossible(*this, mediaType))
     return new OpalNullMediaStream(*this, mediaFormat, isSource);
-
-  if (!isSource) {
-    OpalMediaStream * stream = transmitterMediaStream;
-    transmitterMediaStream = NULL;
-    return stream;
-  }
 
   RTP_Session * session = GetSession(mediaType);
   if (session == NULL) {
@@ -4226,6 +4223,15 @@ BOOL H323Connection::OnCreateLogicalChannel(const H323Capability & capability,
 
 BOOL H323Connection::OnStartLogicalChannel(H323Channel & channel)
 {
+  H323_RealTimeChannel * rtpChannel = dynamic_cast<H323_RealTimeChannel *>(&channel);
+  if (rtpChannel != NULL) {
+    RTP_DataFrame::PayloadTypes internalPayloadType = rtpChannel->GetMediaStream()->GetMediaFormat().GetPayloadType();
+    RTP_DataFrame::PayloadTypes actualPayloadType = rtpChannel->GetDynamicRTPPayloadType();
+    if (actualPayloadType != internalPayloadType &&
+        actualPayloadType != RTP_DataFrame::IllegalPayloadType &&
+        internalPayloadType != RTP_DataFrame::IllegalPayloadType)
+      rtpPayloadMap.insert(RTP_DataFrame::PayloadMapType::value_type(internalPayloadType, actualPayloadType));
+  }
   return endpoint.OnStartLogicalChannel(*this, channel);
 }
 

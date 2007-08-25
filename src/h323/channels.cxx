@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.11  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2036.2.12  2007/08/25 17:04:58  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.35.2.11  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.35.2.10  2007/05/03 10:37:49  hfriederich
@@ -936,12 +939,13 @@ BOOL H323UnidirectionalChannel::Open()
     return FALSE;
   }
 
-  if (mediaStream->IsSource()) {
-    if (!connection.OnOpenMediaStream(*mediaStream))
-      return FALSE;
-  }
+  if (!H323Channel::Open())
+    return FALSE;
 
-  return H323Channel::Open();
+  if (!mediaStream->IsSource())
+    return TRUE;
+  
+  return connection.OnOpenMediaStream(*mediaStream);
 }
 
 
@@ -1098,7 +1102,7 @@ H323_RealTimeChannel::H323_RealTimeChannel(H323Connection & connection,
                                            Directions direction)
   : H323UnidirectionalChannel(connection, capability, direction)
 {
-  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
+  rtpPayloadType = capability.GetMediaFormat().GetPayloadType();
 }
 
 
@@ -1254,9 +1258,8 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
     rtpCallbacks(*(H323_RTP_Session *)r.GetUserData())
 {
   sessionID = id;
-  mediaStream = new OpalRTPMediaStream(conn, capability->GetMediaFormat(), receiver, rtpSession,
-                                       conn.GetMinAudioJitterDelay(),
-                                       conn.GetMaxAudioJitterDelay());
+  // If we are the receiver of RTP data then we create a source media stream
+  mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), receiver);
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
          << " created using session " << GetSessionID());
 }
