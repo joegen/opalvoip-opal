@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.11  2007/08/05 13:12:20  hfriederich
+ * Revision 1.2142.2.12  2007/08/25 17:05:02  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.141.2.11  2007/08/05 13:12:20  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.141.2.10  2007/06/12 16:29:03  hfriederich
@@ -719,6 +722,38 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
   if (natMethod == None)
     return;
+  
+  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+    
+    OpalTransport & transport = handler->GetTransport();
+    BOOL stunTransport = FALSE;
+    
+    if (!transport)
+      return;
+    
+    stunTransport = (!transport.IsReliable() && GetManager().GetSTUN(transport.GetRemoteAddress().GetHostName()));
+    
+    if (!stunTransport)
+      return;
+    
+    switch (natMethod) {
+      
+      case Options: 
+      {
+        PStringList emptyRouteSet;
+        SIPOptions options(*this, transport, SIPURL(transport.GetRemoteAddress()).GetHostName());
+        options.Write(transport, options.GetSendAddress(emptyRouteSet));
+      }
+        break;
+      case EmptyRequest:
+      {
+        transport.Write("\r\n", 2);
+      }
+        break;
+      default:
+        break;
+    }
+  }
 
   PTRACE(5, "SIP\tNAT Binding refresh finished.");
 }
@@ -1659,7 +1694,8 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 
 SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 {
-  SIPURL rpn(GetDefaultLocalPartyName(), PIPSocket::GetHostName(), GetDefaultSignalPort());
+  OpalTransportAddress addr(PIPSocket::GetHostName(), GetDefaultSignalPort(), "udp");
+  SIPURL rpn(GetDefaultLocalPartyName(), addr, GetDefaultSignalPort());
   rpn.SetDisplayName(GetDefaultDisplayName());
   return rpn;
 }
