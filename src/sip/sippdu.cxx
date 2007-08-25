@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.8  2007/08/05 13:12:20  hfriederich
+ * Revision 1.2117.2.9  2007/08/25 17:05:03  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.116.2.8  2007/08/05 13:12:20  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.116.2.7  2007/06/12 16:29:03  hfriederich
@@ -734,14 +737,14 @@ PString SIPURL::AsQuotedString() const
 }
 
 
-PString SIPURL::GetDisplayName () const
+PString SIPURL::GetDisplayName (BOOL useDefault) const
 {
   PString s;
   PINDEX tag;
     
   s = displayName;
 
-  if (displayName.IsEmpty ()) {
+  if (displayName.IsEmpty () && useDefault) {
 
     s = AsString ();
     s.Replace ("sip:", "");
@@ -767,7 +770,7 @@ OpalTransportAddress SIPURL::GetHostAddress() const
   else
     addr += hostname;
 
-  if (port != 0)
+  if (port > 0)
     addr.sprintf(":%u", port);
 
   return addr;
@@ -1767,7 +1770,7 @@ void SIP_PDU::Construct(Methods meth,
     str << ip << ':' << port;
   else
     str << via.Mid(dollar+1);
-  str << ";branch=z9hG4bK" << branch << ";rport";
+  str << ";branch=" << branch << ";rport";
 
   mime.SetVia(str);
 
@@ -1792,7 +1795,7 @@ void SIP_PDU::Construct(Methods meth,
   Construct(meth,
             targetAddress,
             connection.GetRemotePartyAddress(),
-            connection.GetLocalPartyAddress(),
+            connection.GetExplicitFrom(),
             connection.GetToken(),
             connection.GetNextCSeq(),
             via.GetHostAddress());
@@ -1804,20 +1807,20 @@ void SIP_PDU::Construct(Methods meth,
 BOOL SIP_PDU::SetRoute(const PStringList & set)
 {
   PStringList routeSet = set;
-  if (!routeSet.IsEmpty()) {
-    SIPURL firstRoute = routeSet[0];
-    if (!firstRoute.GetParamVars().Contains("lr")) {
-      // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
-      routeSet.MakeUnique();
-      routeSet.RemoveAt(0);
-      routeSet.AppendString(uri.AsString());
-      uri = firstRoute;
-      uri.AdjustForRequestURI();
-    }
-    mime.SetRoute(routeSet);
-    return TRUE;
+  if (routeSet.IsEmpty())
+    return FALSE;
+  
+  SIPURL firstRoute = routeSet[0];
+  if (!firstRoute.GetParamVars().Contains("lr")) {
+    // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
+    routeSet.MakeUnique();
+    routeSet.RemoveAt(0);
+    routeSet.AppendString(uri.AsString());
+    uri = firstRoute;
+    uri.AdjustForRequestURI();
   }
-  return FALSE;
+  mime.SetRoute(routeSet);
+  return TRUE;
 }
 
 
@@ -1960,8 +1963,10 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 #endif                  
     transport.clear(ios::badbit);
 
-  if (!transport.IsOpen())
+  if (!transport.IsOpen()) {
+    PTRACE(1, "SIP\tAttempt to read PDU from closed transport " << transport);
     return FALSE;
+  }
 
   // get the message from transport into cmd and parse MIME
   transport.clear();
@@ -2033,13 +2038,16 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   
   // assume entity bodies can't be longer than a UDP packet
   if (contentLength > 1500) {
-    PTRACE(2, "SIP\tImplausibly long Content-Length received on " << transport);
+    PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received on " << transport);
+    return FALSE;
+  }
+  else if (contentLength < 0) {
+    PTRACE(2, "SIP\tImpossible negative Content-Length on " << transport);
     return FALSE;
   }
   
   if (contentLength > 0)
     transport.read(entityBody.GetPointer(contentLength+1), contentLength);
-
   else if (!mime.IsContentLengthPresent()) {
     PBYTEArray pp;
 
@@ -2095,10 +2103,12 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
 BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
 {
-  if (!transport.IsOpen())
+  if (!transport.IsOpen()) {
+    PTRACE(1, "SIP\tAttempt to write PDU on closed transport " << transport);
     return FALSE;
+  }
   
-  if (!remoteAddress.IsEmpty() && transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
+  if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
     // skip transport identifier
     SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
     
