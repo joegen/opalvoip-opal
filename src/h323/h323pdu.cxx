@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2021.2.1  2007/08/05 13:12:18  hfriederich
+ * Revision 1.2021.2.2  2007/08/25 17:04:59  hfriederich
+ * Backport from HEAD
+ *
+ * Revision 2.20.2.1  2007/08/05 13:12:18  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.20  2007/01/18 04:45:16  csoutheren
@@ -1569,6 +1572,8 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
     if (stringOptions != NULL) {
       strLocal   = (*stringOptions)("Calling-Party-Name");
       strDisplay = (*stringOptions)("Calling-Display-Name");
+      if (strDisplay.IsEmpty())
+        strDisplay = strLocal;
     }
 
     if (!strLocal.IsEmpty())
