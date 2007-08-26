@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.7  2007/08/25 17:05:02  hfriederich
+ * Revision 1.2072.2.8  2007/08/26 20:04:28  hfriederich
+ * Allow to filter interfaces based on destination address
+ *
+ * Revision 2.71.2.7  2007/08/25 17:05:02  hfriederich
  * Backport from HEAD
  *
  * Revision 2.71.2.6  2007/08/05 13:12:19  hfriederich
@@ -1863,7 +1866,9 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * userDa
     return FALSE;
     
   PMonitoredSocketsPtr bundle = socket->GetMonitoredSockets();
-  PStringArray interfaces = bundle->GetInterfaces();
+  PIPSocket::Address address;
+  GetRemoteAddress().GetIpAddress(address);
+  PStringArray interfaces = bundle->GetInterfaces(FALSE, address);
     
   BOOL ok = FALSE;
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
