@@ -57,7 +57,7 @@
 #endif
 #include <string.h>
 
-FFMPEGLibrary FFMPEGLibraryInstance;
+FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H264);
 H264EncCtx H264EncCtxInstance;
 
 static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg) {
