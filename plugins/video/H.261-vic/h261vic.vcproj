@@ -209,6 +209,13 @@
 				</File>
 			</Filter>
 		</Filter>
+		<Filter
+			Name="common"
+			Filter="">
+			<File
+				RelativePath="..\common\trace.cxx">
+			</File>
+		</Filter>
 		<File
 			RelativePath=".\h261vic.cxx">
 			<FileConfiguration
