@@ -1,5 +1,5 @@
 #
-# Makefile for GSM 06.10
+# Makefile for THEORA
 #
 # Copyright (C) 2004 Post Increment, All Rights Reserved
 #
@@ -17,7 +17,7 @@
 #
 # The Initial Developer of the Original Code is Post Increment
 #
-# Contributor(s): ______________________________________.
+# Contributor(s): Matthias Schneider (ma30002000@yahoo.de)
 #
 
 PREFIX=@INSTALLPREFIX@
@@ -28,6 +28,7 @@ OBJDIR	= ./obj
 
 BASENAME=theora
 SONAME	=$(BASENAME)
+COMMONDIR=../common
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -38,13 +39,14 @@ STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 THEORA_LIBS     =@THEORA_LIBS@
 
-CFLAGS        +=
+EXTRACCFLAGS    +=-I$(COMMONDIR)
 
+vpath	%.cxx $(COMMONDIR)
 vpath	%.o   $(OBJDIR)
 
 SRCS    += theora_frame.cxx \
-           trace.cxx \
-           theora_plugin.cxx
+           theora_plugin.cxx \
+           $(COMMONDIR)/trace.cxx
 
 
 $(OBJDIR)/%.o : %.cxx
