@@ -24,8 +24,10 @@ PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
-BASENAME= h263-1998
-SONAME	=$(BASENAME)
+BASENAME	=h263-1998
+SONAME		=$(BASENAME)
+COMMONDIR	=../common
+OBJDIR 		=./obj
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -34,12 +36,17 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
+FFMPEG_STACKALIGN_HACK := @FFMPEG_STACKALIGN_HACK@
+
+EXTRACCFLAGS    += -I$(COMMONDIR) $(FFMPEG_STACKALIGN_HACK)
+
+vpath   %.cxx $(COMMONDIR)
+vpath   %.o   $(OBJDIR)
 
 SRCS	+= h263-1998.cxx \
 	   h263pframe.cxx \
-	   trace.cxx \
-	   dyna.cxx
-OBJDIR = ./obj
+	   $(COMMONDIR)/trace.cxx \
+	   $(COMMONDIR)/dyna.cxx
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1

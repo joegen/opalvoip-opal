@@ -176,9 +176,9 @@ static struct PluginCodec_information licenseInfo = {
 
 static const char YUV420PDesc[]  = { "YUV420P" };
 
-static const char h263QCIFDesc[]  = { "H.263-QCIF" };
-static const char h263CIFDesc[]   = { "H.263-CIF" };
-static const char h263Desc[]      = { "H.263" };
+static const char h263QCIFDesc[]  = { "H.263P-QCIF" };
+static const char h263CIFDesc[]   = { "H.263P-CIF" };
+static const char h263Desc[]      = { "H.263P" };
 
 static const char sdpH263[]   = { "h263-1998" };
 

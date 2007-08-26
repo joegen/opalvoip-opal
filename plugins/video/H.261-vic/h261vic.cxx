@@ -26,6 +26,26 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.16  2007/08/26 09:27:33  dominance
+ * Large video codecs cleanup by Matthias Schneider (ma30002000 _at_ yahoo.de),
+ * consisting of:
+ *
+ * plugins/common:
+ *  * Add display calling plugin in debug output
+ *  * Only check for ffmpeg functions the calling plugin really depends on
+ * plugins/H.261-vic:
+ *  * Introduce debug tracing
+ * plugins/H.263+:
+ *  * Check for correct codec initialization
+ *  * Really drop frame if it doesn't contain a picture header
+ *  * Change description from H.263 to H.263P (p as in plus)
+ *  * Make use of shared code
+ * plugins/H.264:
+ *  * Fix include of x264.h for MPL build
+ *  * Allow disabling of sending STAP-A packets
+ * plugins/THEORA:
+ *  * Make use of shared code
+ *
  * Revision 1.15  2007/08/09 08:28:54  dsandras
  * Committed patch from Matthias Schneider <ma30002000 yahoo de> to add
  * debug tracing to video codecs. Thanks a lot ! (as usual).
@@ -161,6 +181,7 @@ typedef unsigned int u_int;
 
 #include "vic/p64.h"
 #include "vic/p64encoder.h"
+#include "trace.h"
 
 
 #if DEBUG_OUTPUT
@@ -452,19 +473,19 @@ debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPa
 
       // get and validate header
       if (srcRTP.GetPayloadSize() < sizeof(PluginCodec_Video_FrameHeader)) {
-        //PTRACE(1,"H261\tVideo grab too small");
+        TRACE(1,"H261\tVideo grab too small");
         return 0;
       } 
 
       PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
       if (header->x != 0 && header->y != 0) {
-        //PTRACE(1,"H261\tVideo grab of partial frame unsupported");
+        TRACE(1,"H261\tVideo grab of partial frame unsupported");
         return 0;
       }
 
       // make sure the incoming frame is big enough for the specified frame size
       if (srcRTP.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + frameWidth*frameHeight*12/8)) {
-        //PTRACE(1,"H261\tPayload of grabbed frame too small for full frame");
+        TRACE(1,"H261\tPayload of grabbed frame too small for full frame");
         return 0;
       }
 
@@ -690,9 +711,9 @@ class H261DecoderContext
       bool lostPreviousPacket = false;
       if ((expectedSequenceNumber == 0) || (expectedSequenceNumber != srcRTP.GetSequenceNumber())) {
         lostPreviousPacket = true;
-        //PTRACE(3,"H261\tDetected loss of one video packet. "
-        //      << expectedSequenceNumber << " != "
-        //      << src.GetSequenceNumber() << " Will recover.");
+        TRACE(3,"H261\tDetected loss of one video packet. "
+    	      << expectedSequenceNumber << " != "
+              << srcRTP.GetSequenceNumber() << " Will recover.");
       }
       expectedSequenceNumber = (u_short)(srcRTP.GetSequenceNumber()+1);
 
@@ -1116,7 +1137,22 @@ static struct PluginCodec_Definition h261CodecDefn[] = {
 };
 
 extern "C" {
-PLUGIN_CODEC_IMPLEMENT_ALL(VIC_H261, h261CodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
+  PLUGIN_CODEC_IMPLEMENT(VIC_H261)
+
+  PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
+  {
+    char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+    if (debug_level!=NULL) {
+      Trace::SetLevel(atoi(debug_level));
+    }
+    else {
+      Trace::SetLevel(0);
+    }
+
+    *count = sizeof(h261CodecDefn) / sizeof(struct PluginCodec_Definition);
+    return h261CodecDefn;
+  }
+
 };
 
 /////////////////////////////////////////////////////////////////////////////
