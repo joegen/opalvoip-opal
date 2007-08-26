@@ -55,9 +55,9 @@
 #define H264_NAL_TYPE_FILLER_DATA 0xc
 #define H264_NAL_TYPE_SEQ_EXTENSION 0xd
 
-#define LICENCE_GPL 1
+#define SEND_STAP_PACKETS 1
 
-#ifdef LICENCE_GPL
+#ifndef LICENCE_MPL
 extern "C"
 {
 #ifdef _MSC_VER
@@ -94,7 +94,9 @@ public:
   ~H264Frame();
 
   void BeginNewFrame();
+#ifndef LICENCE_MPL
   void SetFromFrame (x264_nal_t *NALs, int numberOfNALs);
+#endif
   void SetMaxPayloadSize (uint16_t maxPayloadSize) 
   {
     _maxPayloadSize = maxPayloadSize;

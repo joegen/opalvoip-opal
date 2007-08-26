@@ -69,6 +69,7 @@ H264Frame::~H264Frame ()
   if (_NALs) free(_NALs);
 }
 
+#ifndef LICENCE_MPL
 void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
   int vopBufferLen;
   int currentNAL = 0;
@@ -84,9 +85,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
   // read the nals out of the encoder and create meta data about their location and size in the frame
   for (currentNAL = 0; currentNAL < numberOfNALs; currentNAL++) {
     int currentNALLen;
-#ifndef LICENCE_MPL
     currentNALLen = x264_nal_encode(currentPositionInFrame, &vopBufferLen, 1, &NALs[currentNAL]);
-#endif
     if (currentNALLen > 0) 
     {
       _NALs[_numberOfNALsInFrame].length = currentNALLen;
@@ -108,12 +107,11 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
     else
     {
       printf("[enc] Need to increase vop buffer size by %d\n", -currentNALLen);
-      //log_message(x264_context, CODEC_LOG_ERROR, "Need to increase vop buffer size by %d", -currentNALLen);
     }
   }
   TRACE(4, "H264\tEncap\tLoaded an encoded frame of " << _encodedFrameLen << " bytes consisiting of " << numberOfNALs << " NAL units");
-  //if (data_len == 0) return false;
 }
+#endif
 
 bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
@@ -140,9 +138,11 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
     else 
     {
       // it is the last NAL of that frame or doesnt fit into an STAP packet with next nal ?
+#ifdef SEND_STAP_PACKETS
       if (((_currentNAL + 1) >= _numberOfNALsInFrame)  ||  
 	  ((curNALLen + _NALs[_currentNAL + 1].length + 5) > _maxPayloadSize)) 
       { 
+#endif
         // single nal unit packet
 
         frame.SetPayloadSize(curNALLen);
@@ -154,11 +154,13 @@ bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
         TRACE(4, "H264\tEncap\tEncapsulating NAL unit #" << _currentNAL << "/" << (_numberOfNALsInFrame-1) << " of " << curNALLen << " bytes as a regular NAL unit");
         _currentNAL++;
         return true;
+#ifdef SEND_STAP_PACKETS
       } 
       else
       {
         return EncapsulateSTAP(frame, flags); 
       }
+#endif
     }
   } 
   else 
