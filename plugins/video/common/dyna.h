@@ -115,6 +115,8 @@ class DynaLink
 #else
     void * _hDLL;
 #endif /* _WIN32 */
+    CodecID _codec;
+    char _codecString [32];
 };
 
 /////////////////////////////////////////////////////////////////
@@ -125,7 +127,7 @@ class DynaLink
 class FFMPEGLibrary : public DynaLink
 {
   public:
-    FFMPEGLibrary();
+    FFMPEGLibrary(CodecID codec);
     ~FFMPEGLibrary();
 
     bool Load();
