@@ -57,7 +57,7 @@ extern "C" {
 #include "ffmpeg/avcodec.h"
 };
 
-static FFMPEGLibrary FFMPEGLibraryInstance;
+static FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_H263P);
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -117,6 +117,10 @@ H263PEncoderContext::~H263PEncoderContext()
 
 BOOL H263PEncoderContext::OpenCodec()
 {
+  if (_codec == NULL) {
+    TRACE(1, "H263+\tEncoder\tCodec not initialized");
+    return false;
+  }
 
   _context->width  = _frameWidth;
   _context->height = _frameHeight;
@@ -192,6 +196,11 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   if (!FFMPEGLibraryInstance.IsLoaded())
     return 0;
 
+  if (_codec == NULL) {
+    TRACE(1, "H263+\tEncoder\tCodec not initialized");
+    return 0;
+  }
+
   // create RTP frame from source buffer
   RTPFrame srcRTP(src, srcLen);
 
@@ -199,8 +208,6 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   RTPFrame dstRTP(dst, dstLen);
   dstLen = 0;
   flags = 0;
-
-  WaitAndSignal m(_mutex);
 
   // if there are RTP packets to return, return them
   if  (_txH263PFrame->HasRTPFrames())
@@ -374,6 +381,11 @@ H263PDecoderContext::~H263PDecoderContext()
 
 bool H263PDecoderContext::OpenCodec()
 {
+  if (_codec == NULL) {
+    TRACE(1, "H263+\tDecoder\tCodec not initialized");
+    return 0;
+  }
+
   // avoid copying input/output
   _context->flags |= CODEC_FLAG_INPUT_PRESERVED; // we guarantee to preserve input for max_b_frames+1 frames
   _context->flags |= CODEC_FLAG_EMU_EDGE; // don't draw edges
@@ -428,6 +440,8 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   if (!_rxH263PFrame->hasPicHeader()) {
     TRACE(1, "H263+\tDecoder\tReceived frame has no picture header - dropping");
+    _rxH263PFrame->BeginNewFrame();
+    return 0;
   }
 
   // look and see if we have read an I frame.
@@ -554,7 +568,7 @@ static int get_codec_options(const struct PluginCodec_Definition * codec,
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
     return 0;
   for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
-      TRACE (4, "THEORA\tDecoder\tGetting Option " << option[0] << " = " << option[1]);
+      TRACE (4, "H263+\tDecoder\tGetting Option " << option[0] << " = " << option[1]);
   }
   *(const void **)parm = codec->userData;
   return 1;
@@ -563,7 +577,7 @@ static int get_codec_options(const struct PluginCodec_Definition * codec,
 
 
 extern "C" {
-  PLUGIN_CODEC_IMPLEMENT(FFMPEG_H263)
+  PLUGIN_CODEC_IMPLEMENT(FFMPEG_H263P)
 
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
   {
@@ -575,6 +589,9 @@ extern "C" {
       Trace::SetLevel(0);
     }
 		    
+#ifdef WITH_STACKALIGN_HACK
+  STACKALIGN_HACK()
+#endif
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;
       return NULL;

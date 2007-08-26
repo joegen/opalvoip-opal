@@ -20,6 +20,26 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.6  2007/08/26 09:27:33  dominance
+# Large video codecs cleanup by Matthias Schneider (ma30002000 _at_ yahoo.de),
+# consisting of:
+#
+# plugins/common:
+#  * Add display calling plugin in debug output
+#  * Only check for ffmpeg functions the calling plugin really depends on
+# plugins/H.261-vic:
+#  * Introduce debug tracing
+# plugins/H.263+:
+#  * Check for correct codec initialization
+#  * Really drop frame if it doesn't contain a picture header
+#  * Change description from H.263 to H.263P (p as in plus)
+#  * Make use of shared code
+# plugins/H.264:
+#  * Fix include of x264.h for MPL build
+#  * Allow disabling of sending STAP-A packets
+# plugins/THEORA:
+#  * Make use of shared code
+#
 # Revision 1.5  2007/04/19 06:09:04  csoutheren
 # Fixed plugin build system to use better detection for OSX
 # Resolved 1636262 - Fix for audio plugins for OSX
@@ -44,6 +64,7 @@ OBJDIR	= ./obj
 
 BASENAME=h261-vic
 SONAME	=$(BASENAME)
+COMMONDIR       =../common
 
 CC	 	=@CC@
 CFLAGS	 	=@CFLAGS@
@@ -53,11 +74,15 @@ PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 
+EXTRACCFLAGS    += -I$(COMMONDIR)
+
+vpath   %.cxx $(COMMONDIR)
 vpath	%.cxx $(SRCDIR)
 vpath	%.c   $(SRCDIR)
 vpath	%.o   $(OBJDIR)
 
 SRCS	+= h261vic.cxx \
+	   $(COMMONDIR)/trace.cxx \
            $(SRCDIR)/encoder-h261.cxx \
 	   $(SRCDIR)/transmitter.cxx \
            $(SRCDIR)/vid_coder.cxx \
