@@ -40,14 +40,18 @@
 #define __H264_X264_H__ 1
 
 #include <stdarg.h>
+#include <codec/opalplugin.h>
+
 #ifdef _MSC_VER
- #include "shared/vs-stdint.h"
+ #include "../common/vs-stdint.h"
+ #include "../common/critsect.h"
 #else
  #include <stdint.h>
+ #include "critsect.h"
 #endif
-#include <codec/opalplugin.h>
+
 #include "shared/h264frame.h"
-#include "critsect.h"
+
 
 
 extern "C" {

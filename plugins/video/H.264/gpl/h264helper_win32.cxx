@@ -21,11 +21,14 @@
 
 #ifdef _MSC_VER
 #include "../shared/pipes.h"
+#include "../../common/trace.h"
 #else
 #include "pipes.h"
-#endif
-#include "enc-ctx.h"
 #include "trace.h"
+#endif
+
+#include "enc-ctx.h"
+
 #include <windows.h>
 #include <stdio.h>
 

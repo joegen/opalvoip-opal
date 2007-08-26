@@ -26,13 +26,16 @@
  */
 
 #include "h264pipe_win32.h"
-#include "shared/rtpframe.h"
-#include <string.h>
+
 #ifdef _MSC_VER
-#include "shared/trace.h"
+#include "../common/rtpframe.h"
+#include "../common/trace.h"
 #else
+#include "rtpframe.h"
 #include "trace.h"
 #endif
+
+#include <string.h>
 #include <stdio.h>
 #include <tchar.h>
 #include <stdio.h> 

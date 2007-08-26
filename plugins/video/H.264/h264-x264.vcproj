@@ -146,9 +146,6 @@
 				RelativePath=".\h264-x264.cxx">
 			</File>
 			<File
-				RelativePath=".\h264dyna.cxx">
-			</File>
-			<File
 				RelativePath=".\h264pipe_win32.cxx">
 			</File>
 		</Filter>
@@ -165,26 +162,16 @@
 		<Filter
 			Name="shared"
 			Filter="">
-			<Filter
-				Name="Source Files"
-				Filter="">
-				<File
-					RelativePath=".\shared\h264frame.cxx">
-				</File>
-				<File
-					RelativePath=".\shared\trace.cxx">
-				</File>
-			</Filter>
-			<Filter
-				Name="Header Files"
-				Filter="">
-				<File
-					RelativePath=".\shared\h264frame.h">
-				</File>
-				<File
-					RelativePath=".\shared\trace.h">
-				</File>
-			</Filter>
+			<File
+				RelativePath=".\shared\h264frame.cxx">
+			</File>
+		</Filter>
+		<Filter
+			Name="common"
+			Filter="">
+			<File
+				RelativePath="..\common\trace.cxx">
+			</File>
 		</Filter>
 	</Files>
 	<Globals>

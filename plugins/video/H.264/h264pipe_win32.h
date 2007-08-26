@@ -33,6 +33,7 @@
 #else
 #include "pipes.h"
 #endif
+
 #include <windows.h>
 typedef unsigned char u_char;
 class H264EncCtx
