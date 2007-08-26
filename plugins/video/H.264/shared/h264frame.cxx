@@ -30,7 +30,11 @@
 /*****************************************************************************/
 
 #include "h264frame.h"
-#include "trace.h"
+#ifdef _MSC_VER
+ #include "../../common/trace.h"
+#else
+ #include "trace.h"
+#endif
 #include <stdlib.h>
 #include <string.h>
 

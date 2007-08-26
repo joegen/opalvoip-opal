@@ -36,7 +36,6 @@
  */
 
 #include "h264-x264.h"
-#include "dyna.h"
 
 #ifdef WIN32
 #include "h264pipe_win32.h"
@@ -44,8 +43,16 @@
 #include "h264pipe_unix.h"
 #endif
 
-#include "trace.h"
-#include "rtpframe.h"
+#ifdef _MSC_VER
+ #include "../common/dyna.h"
+ #include "../common/trace.h"
+ #include "shared/rtpframe.h"
+#else
+ #include "dyna.h"
+ #include "trace.h"
+ #include "rtpframe.h"
+#endif
+
 
 #include <stdlib.h>
 #ifdef _WIN32

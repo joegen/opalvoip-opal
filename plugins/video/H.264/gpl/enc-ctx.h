@@ -32,7 +32,7 @@
 
 extern "C" {
 #ifdef _MSC_VER
-  #include "../ffmpeg/x264.h"
+  #include "../x264/x264.h"
 #else
   #include <x264.h>
 #endif
