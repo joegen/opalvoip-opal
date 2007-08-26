@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2087  2007/08/08 12:43:25  rjongbloed
+ * Revision 1.2088  2007/08/26 20:17:44  hfriederich
+ * Allow to filter interfaces based on destination address
+ *
+ * Revision 2.86  2007/08/08 12:43:25  rjongbloed
  * Incorrect test for STUN local address.
  *
  * Revision 2.85  2007/08/03 18:43:15  dsandras
@@ -1890,7 +1893,9 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * userDa
     return FALSE;
 
   PMonitoredSocketsPtr bundle = socket->GetMonitoredSockets();
-  PStringArray interfaces = bundle->GetInterfaces();
+  PIPSocket::Address address;
+  GetRemoteAddress().GetIpAddress(address);
+  PStringArray interfaces = bundle->GetInterfaces(FALSE, address);
 
   BOOL ok = FALSE;
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
