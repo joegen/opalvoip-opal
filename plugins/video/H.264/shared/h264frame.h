@@ -34,12 +34,13 @@
 #define __H264FRAME_H__ 1
 
 #ifdef _MSC_VER
-#include "vs-stdint.h"
+#include "../../common/vs-stdint.h"
+#include "../../common/rtpframe.h"
 #else
 #include <stdint.h>
+#include "rtpframe.h"
 #endif
 
-#include "rtpframe.h"
 
 #define H264_NAL_TYPE_NON_IDR_SLICE 1
 #define H264_NAL_TYPE_DP_A_SLICE 2
