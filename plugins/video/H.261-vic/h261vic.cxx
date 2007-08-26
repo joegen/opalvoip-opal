@@ -26,6 +26,9 @@
  *                 Derek Smithies (derek@indranet.co.nz)
  *
  * $Log: h261vic.cxx,v $
+ * Revision 1.17  2007/08/26 19:06:03  shorne
+ * Added VS2003 trace support removed compile warnings
+ *
  * Revision 1.16  2007/08/26 09:27:33  dominance
  * Large video codecs cleanup by Matthias Schneider (ma30002000 _at_ yahoo.de),
  * consisting of:
@@ -159,9 +162,9 @@
 
 #include <stdio.h>
 
-//#ifdef _MSC_VER
-//#pragma warning(disable:4100)
-//#endif
+#ifdef _MSC_VER
+#pragma warning(disable:4800)
+#endif
 
 #define BEST_ENCODER_QUALITY   1
 #define WORST_ENCODER_QUALITY 31
@@ -181,7 +184,12 @@ typedef unsigned int u_int;
 
 #include "vic/p64.h"
 #include "vic/p64encoder.h"
-#include "trace.h"
+
+#ifdef _MSC_VER
+   #include "../common/trace.h"
+#else
+   #include "trace.h"
+#endif
 
 
 #if DEBUG_OUTPUT
@@ -611,7 +619,7 @@ static int encoder_set_options(const PluginCodec_Definition *,
   H261EncoderContext * context = (H261EncoderContext *)_context;
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
-  int width, height;
+  int width=0, height=0;
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     int i;
@@ -1139,7 +1147,7 @@ static struct PluginCodec_Definition h261CodecDefn[] = {
 extern "C" {
   PLUGIN_CODEC_IMPLEMENT(VIC_H261)
 
-  PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
+  PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned /*version*/)
   {
     char * debug_level = getenv ("PWLIB_TRACE_CODECS");
     if (debug_level!=NULL) {
