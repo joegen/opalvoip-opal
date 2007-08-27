@@ -115,7 +115,7 @@ H263PEncoderContext::~H263PEncoderContext()
   }
 }
 
-BOOL H263PEncoderContext::OpenCodec()
+bool H263PEncoderContext::OpenCodec()
 {
   if (_codec == NULL) {
     TRACE(1, "H263+\tEncoder\tCodec not initialized");
@@ -225,7 +225,7 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
   if (header->x != 0 || header->y != 0) {
     TRACE(1, "H263+\tEncoder\tVideo grab of partial frame unsupported, closing down video transmission thread.");
-    return FALSE;
+    return false;
   }
 
   // if this is the first frame, or the frame size has changed, deal wth it
@@ -240,7 +240,7 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
     CloseCodec();
     if (!OpenCodec()) {
       TRACE(1,  "H263+\tEncoder\tReopening codec failed");
-      return FALSE;
+      return false;
     }
   }
 
@@ -271,7 +271,7 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   {
     _txH263PFrame->GetRTPFrame(dstRTP, flags);
     dstLen = dstRTP.GetFrameLen();
-    return TRUE;
+    return true;
   }
   return 1;
 }
@@ -395,10 +395,10 @@ bool H263PDecoderContext::OpenCodec()
 
   if (FFMPEGLibraryInstance.AvcodecOpen(_context, _codec) < 0) {
     TRACE(1, "H263+\tDecoder\tFailed to open H.263 decoder");
-    return FALSE;
+    return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 void H263PDecoderContext::CloseCodec()
@@ -518,7 +518,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
   dstRTP.SetTimestamp(srcRTP.GetTimestamp());
-  dstRTP.SetMarker(TRUE);
+  dstRTP.SetMarker(true);
 
   dstLen = dstRTP.GetFrameLen();
 
