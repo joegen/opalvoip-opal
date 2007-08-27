@@ -53,10 +53,6 @@
 #include "critsect.h"
 
 typedef unsigned char BYTE;
-typedef bool BOOL;
-
-#define FALSE false
-#define TRUE  true
 
 #define H263P_CLOCKRATE        90000
 #define H263P_BITRATE         327600
@@ -91,7 +87,7 @@ class H263PEncoderContext
     void SetMaxRTPFrameSize(int size);
 
   protected:
-    BOOL OpenCodec();
+    bool OpenCodec();
     void CloseCodec();
 
     unsigned char _inputFrameBuffer[MAX_YUV420P_FRAME_SIZE];
