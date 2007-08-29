@@ -32,12 +32,20 @@
  *                 Michael Smith (msmith@cbnco.com)
  *                 Guilhem Tardy (gtardy@salyens.com)
  *                 Craig Southeren (craigs@postincrement.com)
+ *                 Matthias Schneider (ma30002000@yahoo.de)
  *
  * NOTES:
  * Initial implementation of MPEG4 codec plugin using ffmpeg.
  * Untested under Windows or H.323
  *
  * $Log: mpeg4.cxx,v $
+ * Revision 1.9  2007/08/29 19:32:20  dsandras
+ * Applied cleanup patch from Matthias Schneider <ma30002000 yahoo de> :
+ * * make use of common plugin code
+ * * added debug traces
+ * * switch to new plugin capability API
+ * Thanks !
+ *
  * Revision 1.8  2007/06/30 09:57:27  dsandras
  * Added patch from Matthias Schneider <ma30002000 yahoo de> to fix
  * dynamic payload type for H.264 and MPEG-4 codecs.
@@ -95,23 +103,14 @@ PLUGIN_CODEC_IMPLEMENT(FFMPEG_MPEG4)
 
 
 #include <stdlib.h>
+#include "trace.h"
+#include "dyna.h"
+#include "rtpframe.h"
 
-// Win32 or other
-#ifdef _WIN32
-#include <windows.h>
-#include <malloc.h>
-#define STRCMPI  _strcmpi
-#else
-#include <semaphore.h>
-#include <dlfcn.h>
-#define __STDC_CONSTANT_MACROS
-#define STRCMPI  strcasecmp
 #define FALSE false
 #define TRUE  true
 typedef unsigned char BYTE;
 typedef bool BOOL;
-
-#endif
 
 // Needed C++ headers
 #include <string.h>
@@ -142,57 +141,6 @@ extern "C" {
 #include <libavcodec/mpegvideo.h>
 }
 
-// Compile time version checking
-// FFMPEG SVN from 20060817. This is what Packman shipped for SuSE 10.1.
-// Should be recent enough.
-#if LIBAVCODEC_VERSION_INT < ((51<<16)+(11<<8)+0)
-#error Libavcodec too old.
-#endif
-
-
-/*
- * Some combination of gcc 3.3.5, glibc 2.3.5 and PWLib 1.11.3 is throwing
- * off stack alignment for ffmpeg when it is dynamically loaded by PWLib.
- * Wrapping all ffmpeg calls in this macro should ensure the stack is aligned
- * when it reaches ffmpeg. ffmpeg still needs to be compiled with a more
- * recent gcc (we used 4.1.1) to ensure it preserves stack boundaries
- * internally.
- *
- * This macro comes from FFTW 3.1.2, kernel/ifft.h. See:
- *     http://www.fftw.org/fftw3_doc/Stack-alignment-on-x86.html
- * Used with permission.
- */
-#define WITH_ALIGNED_STACK(what)                                \
-{                                                               \
-     /*                                                         \
-      * Use alloca to allocate some memory on the stack.        \
-      * This alerts gcc that something funny is going           \
-      * on, so that it does not omit the frame pointer          \
-      * etc.                                                    \
-      */                                                        \
-     (void)__builtin_alloca(16);                                \
-                                                                \
-     /*                                                         \
-      * Now align the stack pointer                             \
-      */                                                        \
-     __asm__ __volatile__ ("andl $-16, %esp");                  \
-                                                                \
-     what                                                       \
-}
-
-
-
-// WIN32 plugin path
-#  ifdef  _WIN32
-#    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
-#    define DIR_SEPERATOR "\\"
-#    define DIR_TOKENISER ";"
-#  else
-#    define P_DEFAULT_PLUGIN_DIR "/usr/local/lib/pwlib"
-#    define DIR_SEPERATOR "/"
-#    define DIR_TOKENISER ":"
-#  endif
-
 #define RTP_DYNAMIC_PAYLOAD  96
 
 #define MPEG4_CLOCKRATE     90000
@@ -215,692 +163,25 @@ extern "C" {
 
 #define MAX_MPEG4_PACKET_SIZE     2048
 
+FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_MPEG4);
 
-
-
-
-static void ffmpeg_printon(void * ptr, int level, const char *fmt, va_list vl)
-{
-    // Skip common decoder errors:
-    // marker does not match f_code
-    static const char * match = "marker do";
-    if (strncmp(fmt, match, strlen(match)) == 0)
-        return;
-
-    char fmtbuf[256];
-    if(ptr)
+static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg) {
+  char buffer[512];
+  int severity = 0;
+  if (v) {
+    switch (level)
     {
-        AVClass * avc = *(AVClass**) ptr;
-        snprintf(fmtbuf, sizeof(fmtbuf), "[%s @ %p] %s",
-                 avc->item_name(ptr), ptr, fmt);
+      case AV_LOG_QUIET: severity = 0; break;
+      case AV_LOG_ERROR: severity = 1; break;
+      case AV_LOG_INFO:  severity = 4; break;
+      case AV_LOG_DEBUG: severity = 4; break;
     }
-    else
-    {
-        strncpy(fmtbuf, fmt, sizeof(fmtbuf));
-    }
-    fmtbuf[sizeof(fmtbuf)-1] = '\0';
-    vprintf(fmtbuf, vl);
-}
-
-
-/////////////////////////////////////////////////////////////////
-//
-// define a class to implement a critical section mutex
-// based on PCriticalSection from PWLib
-
-class CriticalSection
-{
-  public:
-    CriticalSection()
-    { 
-#ifdef _WIN32
-      ::InitializeCriticalSection(&criticalSection); 
-#else
-      ::sem_init(&sem, 0, 1);
-#endif
-    }
-
-    ~CriticalSection()
-    { 
-#ifdef _WIN32
-      ::DeleteCriticalSection(&criticalSection); 
-#else
-      ::sem_destroy(&sem);
-#endif
-    }
-
-    void Wait()
-    { 
-#ifdef _WIN32
-      ::EnterCriticalSection(&criticalSection); 
-#else
-      ::sem_wait(&sem);
-#endif
-    }
-
-    void Signal()
-    { 
-#ifdef _WIN32
-      ::LeaveCriticalSection(&criticalSection); 
-#else
-      ::sem_post(&sem); 
-#endif
-    }
-
-  private:
-    CriticalSection(const CriticalSection &)
-    { }
-    CriticalSection & operator=(const CriticalSection &) { return *this; }
-#ifdef _WIN32
-    mutable CRITICAL_SECTION criticalSection; 
-#else
-    mutable sem_t sem;
-#endif
-};
-    
-class WaitAndSignal {
-  public:
-    inline WaitAndSignal(const CriticalSection & cs)
-      : sync((CriticalSection &)cs)
-    { sync.Wait(); }
-
-    ~WaitAndSignal()
-    { sync.Signal(); }
-
-    WaitAndSignal & operator=(const WaitAndSignal &) 
-    { return *this; }
-
-  protected:
-    CriticalSection & sync;
-};
-
-/////////////////////////////////////////////////////////////////
-//
-// define a class to simplify handling a DLL library
-// based on PDynaLink from PWLib
-
-class DynaLink
-{
-  public:
-    typedef void (*Function)();
-
-    DynaLink()
-    { _hDLL = NULL; }
-
-    ~DynaLink()
-    { Close(); }
-
-    virtual bool Open(const char *name)
-    {
-      // Look for the library in MPEG4_AVCODECDIR, if set.
-      // (In that case, LD_LIBRARY_PATH must also be set so the linker can
-      // find libavutil.so.49.)
-      char * env = ::getenv("MPEG4_AVCODECDIR");
-      if (env == NULL) {
-        // Try to use the libavcodec.so in /usr/lib.
-        return InternalOpen(NULL, name);
-      }
-
-      const char * token = strtok(env, DIR_TOKENISER);
-      while (token != NULL) {
-        if (InternalOpen(token, name))
-          return true;
-        token = strtok(NULL, DIR_TOKENISER);
-      }
-      return false;
-    }
-
-  // split into directories on correct seperator
-
-    bool InternalOpen(const char * dir, const char *name)
-    {
-      char path[1024];
-      memset(path, 0, sizeof(path));
-      if (dir != NULL) {
-        strcpy(path, dir);
-        if (path[strlen(path)-1] != DIR_SEPERATOR[0]) 
-          strcat(path, DIR_SEPERATOR);
-      }
-      strcat(path, name);
-
-#ifdef _WIN32
-# ifdef UNICODE
-      USES_CONVERSION;
-      _hDLL = LoadLibrary(A2T(path));
-# else
-      _hDLL = LoadLibrary(name);
-# endif // UNICODE
-#else
-      _hDLL = dlopen((const char *)path, RTLD_NOW);
-      if (_hDLL == NULL) {
-        fprintf(stderr, "error loading %s", path);
-        char * err = dlerror();
-        if (err != NULL)
-          fprintf(stderr, " - %s", err);
-        fprintf(stderr, "\n");
-      }
-#endif // _WIN32
-      return _hDLL != NULL;
-    }
-
-    virtual void Close()
-    {
-      if (_hDLL != NULL) {
-#ifdef _WIN32
-        FreeLibrary(_hDLL);
-#else
-        dlclose(_hDLL);
-#endif // _WIN32
-        _hDLL = NULL;
-      }
-    }
-
-
-    virtual bool IsLoaded() const
-    { return _hDLL != NULL; }
-
-    bool GetFunction(const char * name, Function & func)
-    {
-      if (_hDLL == NULL)
-        return FALSE;
-#ifdef _WIN32
-
-# ifdef UNICODE
-      USES_CONVERSION;
-      FARPROC p = GetProcAddress(_hDLL, A2T(name));
-# else
-      FARPROC p = GetProcAddress(_hDLL, name);
-# endif // UNICODE
-      if (p == NULL)
-        return FALSE;
-
-      func = (Function)p;
-      return TRUE;
-#else
-      void * p = dlsym(_hDLL, (const char *)name);
-      if (p == NULL)
-        return FALSE;
-      func = (Function &)p;
-      return TRUE;
-#endif // _WIN32
-    }
-
-  protected:
-#if defined(_WIN32)
-    HINSTANCE _hDLL;
-#else
-    void * _hDLL;
-#endif // _WIN32
-};
-
-/////////////////////////////////////////////////////////////////
-//
-// define a class to interface to the FFMpeg library
-
-
-class FFMPEGLibrary : public DynaLink
-{
-  public:
-    FFMPEGLibrary();
-    ~FFMPEGLibrary();
-
-    bool Load();
-
-    AVCodecContext *AvcodecAllocContext(void);
-    AVFrame *AvcodecAllocFrame(void);
-    int AvcodecOpen(AVCodecContext *ctx, AVCodec *codec);
-    int AvcodecClose(AVCodecContext *ctx);
-    int AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
-    int AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
-    void AvcodecFree(void * ptr);
-    AVCodec *mpeg4_encoder;
-    AVCodec *mpeg4_decoder;
-
-    void AvcodecSetLogCallback(void (*print_fn)(void *, int, const char*, va_list));
-    void AvcodecSetLogLevel(int);
-    int (*Fff_check_alignment)(void);
-
-    bool IsLoaded();
-    CriticalSection processLock;
-
-  protected:
-    void (*Favcodec_init)(void);
-    void (*Favcodec_register)(AVCodec *format);
-    AVCodecContext *(*Favcodec_alloc_context)(void);
-    void (*Favcodec_free)(void *);
-    AVFrame *(*Favcodec_alloc_frame)(void);
-    int (*Favcodec_open)(AVCodecContext *ctx, AVCodec *codec);
-    int (*Favcodec_close)(AVCodecContext *ctx);
-    int (*Favcodec_encode_video)(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict);
-    int (*Favcodec_decode_video)(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size);
-    void (*Favcodec_set_log_callback)(void (*log_callback)(void *, int, const char*, va_list));
-    void (*Favcodec_set_log_level)(int);
-    unsigned (*Favcodec_version)(void);
-    unsigned (*Favcodec_build)(void);
-    bool isLoadedOK;
-};
-
-static FFMPEGLibrary FFMPEGLibraryInstance;
-
-//////////////////////////////////////////////////////////////////////////////
-
-FFMPEGLibrary::FFMPEGLibrary()
-:	Favcodec_init(NULL),
-	Favcodec_register(NULL),
-	Favcodec_alloc_context(NULL),
-	Favcodec_free(NULL),
-	Favcodec_alloc_frame(NULL),
-	Favcodec_close(NULL),
-	Favcodec_encode_video(NULL),
-	Favcodec_decode_video(NULL),
-	Favcodec_set_log_callback(NULL),
-	Favcodec_set_log_level(NULL),
-	Favcodec_version(NULL),
-	Favcodec_build(NULL)
-{
-  isLoadedOK = FALSE;
-}
-
-
-// This must be called when the processLock mutex is held 
-// Called by PLUGIN_CODEC_GET_CODEC_FN from the plugin DLL
-
-bool FFMPEGLibrary::Load()
-{
-    // try open
-  if (!DynaLink::Open("libavcodec.so")
-      && !DynaLink::Open("libavcodec.so.51")
-      && !DynaLink::Open("libavcodec")
-      && !DynaLink::Open("avcodec")) {
-    cerr << "MPEG4\tFailed to load ffmpeg library." << endl;
-    cerr << "Ensure that the MPEG4_AVCODECDIR and LD_LIBRARY_PATH environment variables are set to point to a recent libavcodec.so." << endl;
-    return false;
+    AVClass * avc = *(AVClass**) v;
+    snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t[%s @ %p] %s", avc->item_name(v), v, fmt);
+    vsprintf(buffer + strlen(buffer), fmt, arg);
+    TRACE (severity, buffer);
   }
- 
-  // load functions
-
-  if(!GetFunction("avcodec_version", (Function &)Favcodec_version)){
-    cerr << "Failed to load avcodec_version" << endl;
-    return false;
-  }
-  
-  if(!GetFunction("avcodec_build", (Function &)Favcodec_build)){
-    cerr << "Failed to load avcodec_build" << endl;
-    return false;
-  }
-
-  // make sure version's OK
-  unsigned libVer = Favcodec_version();
-  unsigned libBuild = Favcodec_build();
-  if (libVer < LIBAVCODEC_VERSION_INT || libBuild < LIBAVCODEC_BUILD) {
-    cerr << "Version mismatch: compiled against headers from ver/build "
-         << std::hex << LIBAVCODEC_VERSION_INT << "/"
-         << std::dec << LIBAVCODEC_BUILD
-         << ", loaded " << std::hex << libVer << "/"
-         << std::dec << libBuild << "." << endl;
-    return false;
-  }
-
-  // continue loading
-  if (!GetFunction("avcodec_init", (Function &)Favcodec_init)) {
-    cerr << "Failed to load avcodec_int" << endl;
-    return false;
-  }
-
-  if (!GetFunction("mpeg4_encoder", (Function &)mpeg4_encoder)) {
-    cerr << "Failed to load mpeg4_encoder" << endl;
-    return false;
-  }
-
-  if (!GetFunction("mpeg4_decoder", (Function &)mpeg4_decoder)) {
-    cerr << "Failed to load mpeg4_decoder" << endl;
-    return false;
-  }
-
-  if (!GetFunction("register_avcodec", (Function &)Favcodec_register)) {
-    cerr << "Failed to load register_avcodec" << endl;
-    return false;
-  }
-
-  if (!GetFunction("avcodec_alloc_context", (Function &)Favcodec_alloc_context))
-  {
-    cerr << "Failed to load avcodec_alloc_context" << endl;
-    return false;
-  }
-
-  if (!GetFunction("avcodec_alloc_frame", (Function &)Favcodec_alloc_frame)) {
-    cerr << "Failed to load avcodec_alloc_frame" << endl;
-    return false;
-  }
-
-  if (!GetFunction("avcodec_open", (Function &)Favcodec_open)) {
-    cerr << "Failed to load avcodec_open" << endl;
-    return false;
-  }
-
-  if (!GetFunction("avcodec_close", (Function &)Favcodec_close)) {
-    cerr << "Failed to load avcodec_close" << endl;
-    return false;
-  }
-
-  if (!GetFunction("avcodec_encode_video", (Function &)Favcodec_encode_video)) {
-    cerr << "Failed to load avcodec_encode_video" << endl;
-    return false;
-  }
-
-  if (!GetFunction("avcodec_decode_video", (Function &)Favcodec_decode_video)) {
-    cerr << "Failed to load avcodec_decode_video" << endl;
-    return false;
-  }
-
-
-  if (!GetFunction("av_log_set_callback",
-                   (Function &)Favcodec_set_log_callback))
-  {
-    cerr << "Failed to load av_log_set_callback" << endl;
-    return false;
-  }
-
-  if (!GetFunction("av_log_set_level", (Function &)Favcodec_set_log_level)) {
-    cerr << "Failed to load av_log_set_level" << endl;
-    return false;
-  }
-   
-  if (!GetFunction("av_free", (Function &)Favcodec_free)) {
-    cerr << "Failed to load avcodec_close" << endl;
-    return false;
-  }
-
-  if (!GetFunction("ff_check_alignment", (Function &) Fff_check_alignment)) {
-    cerr << "Failed to load ff_check_alignment" << endl;
-    return false;
-  }
-
-  WITH_ALIGNED_STACK({
-    // must be called before using avcodec lib
-    Favcodec_init();
-
-    // register only the codecs needed (to have smaller code)
-    Favcodec_register(mpeg4_encoder);
-    Favcodec_register(mpeg4_decoder);
-
-    Favcodec_set_log_callback(ffmpeg_printon);
-    Favcodec_set_log_level(AV_LOG_QUIET); // QUIET, INFO, ERROR, DEBUG 
-  })
-
-  isLoadedOK = TRUE;
-
-  return true;
 }
-
-FFMPEGLibrary::~FFMPEGLibrary()
-{
-  DynaLink::Close();
-}
-
-AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
-{
-  WITH_ALIGNED_STACK({
-    return Favcodec_alloc_context();
-  })
-}
-
-AVFrame *FFMPEGLibrary::AvcodecAllocFrame(void)
-{
-  WITH_ALIGNED_STACK({
-    return Favcodec_alloc_frame();
-  })
-}
-
-int FFMPEGLibrary::AvcodecOpen(AVCodecContext *ctx, AVCodec *codec)
-{
-  WaitAndSignal m(processLock);
-  WITH_ALIGNED_STACK({
-    return Favcodec_open(ctx, codec);
-  })
-}
-
-int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
-{
-  WaitAndSignal m(processLock);
-  WITH_ALIGNED_STACK({
-    return Favcodec_close(ctx);
-  })
-}
-
-int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf,
-                                      int buf_size, const AVFrame *pict)
-{
-  WITH_ALIGNED_STACK({
-    return Favcodec_encode_video(ctx, buf, buf_size, pict);
-  })
-}
-
-int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict,
-                                      int *got_picture_ptr,
-                                      BYTE *buf, int buf_size)
-{
-  WITH_ALIGNED_STACK({
-    return Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
-  })
-}
-
-void FFMPEGLibrary::AvcodecSetLogCallback
-                      (void (*log_callback)(void *, int, const char*, va_list))
-{
-  WITH_ALIGNED_STACK({
-    Favcodec_set_log_callback(log_callback);
-  })
-}
-
-void FFMPEGLibrary::AvcodecSetLogLevel(int log_level)
-{
-  WITH_ALIGNED_STACK({
-    Favcodec_set_log_level(log_level);
-  })
-}
-
-void FFMPEGLibrary::AvcodecFree(void * ptr)
-{
-  WITH_ALIGNED_STACK({
-    Favcodec_free(ptr);
-  })
-}
-
-bool FFMPEGLibrary::IsLoaded()
-{
-  return isLoadedOK;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// define some simple RTP packet routines
-//
-
-#define RTP_MIN_HEADER_SIZE 12
-
-class RTPFrame
-{
-  public:
-    RTPFrame(const unsigned char * _packet, int _maxPacketLen)
-      : packet((unsigned char *)_packet), maxPacketLen(_maxPacketLen), packetLen(_maxPacketLen)
-    {
-    }
-
-    RTPFrame(unsigned char * _packet, int _maxPacketLen, unsigned char payloadType)
-      : packet(_packet), maxPacketLen(_maxPacketLen), packetLen(_maxPacketLen)
-    { 
-      if (packetLen > 0)
-        packet[0] = 0x80;    // set version, no extensions, zero contrib count
-      SetPayloadType(payloadType);
-    }
-
-    inline unsigned long GetLong(unsigned offs) const
-    {
-      if (offs + 4 > packetLen)
-        return 0;
-      return (packet[offs + 0] << 24) + (packet[offs+1] << 16) + (packet[offs+2] << 8) + packet[offs+3]; 
-    }
-
-    inline void SetLong(unsigned offs, unsigned long n)
-    {
-      if (offs + 4 <= packetLen) {
-        packet[offs + 0] = (BYTE)((n >> 24) & 0xff);
-        packet[offs + 1] = (BYTE)((n >> 16) & 0xff);
-        packet[offs + 2] = (BYTE)((n >> 8) & 0xff);
-        packet[offs + 3] = (BYTE)(n & 0xff);
-      }
-    }
-
-    inline unsigned short GetShort(unsigned offs) const
-    { 
-      if (offs + 2 > packetLen)
-        return 0;
-      return (packet[offs + 0] << 8) + packet[offs + 1]; 
-    }
-
-    inline void SetShort(unsigned offs, unsigned short n) 
-    { 
-      if (offs + 2 <= packetLen) {
-        packet[offs + 0] = (BYTE)((n >> 8) & 0xff);
-        packet[offs + 1] = (BYTE)(n & 0xff);
-      }
-    }
-
-    inline int GetPacketLen() const                    { return packetLen; }
-    inline int GetMaxPacketLen() const                 { return maxPacketLen; }
-    inline unsigned GetVersion() const                 { return (packetLen < 1) ? 0 : (packet[0]>>6)&3; }
-    inline bool GetExtension() const                   { return (packetLen < 1) ? 0 : (packet[0]&0x10) != 0; }
-    inline bool GetMarker()  const                     { return (packetLen < 2) ? FALSE : ((packet[1]&0x80) != 0); }
-    inline unsigned char GetPayloadType() const        { return (packetLen < 2) ? FALSE : (packet[1] & 0x7f);  }
-    inline unsigned short GetSequenceNumber() const    { return GetShort(2); }
-    inline unsigned long GetTimestamp() const          { return GetLong(4); }
-    inline unsigned long GetSyncSource() const         { return GetLong(8); }
-    inline int GetContribSrcCount() const              { return (packetLen < 1) ? 0  : (packet[0]&0xf); }
-    inline int GetExtensionSize() const                { return !GetExtension() ? 0  : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2); }
-    inline int GetExtensionType() const                { return !GetExtension() ? -1 : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount()); }
-    inline int GetPayloadSize() const                  { return packetLen - GetHeaderSize(); }
-    inline unsigned char * GetPayloadPtr() const       { return packet + GetHeaderSize(); }
-
-    inline unsigned int GetHeaderSize() const    
-    { 
-      unsigned int sz = RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount();
-      if (GetExtension())
-        sz += 4 + GetExtensionSize();
-      return sz;
-    }
-
-    inline void SetMarker(bool m)                    { if (packetLen >= 2) packet[1] = (packet[1] & 0x7f) | (m ? 0x80 : 0x00); }
-    inline void SetPayloadType(unsigned char t)      { if (packetLen >= 2) packet[1] = (packet[1] & 0x80) | (t & 0x7f); }
-    inline void SetSequenceNumber(unsigned short v)  { SetShort(2, v); }
-    inline void SetTimestamp(unsigned long n)        { SetLong(4, n); }
-    inline void SetSyncSource(unsigned long n)       { SetLong(8, n); }
-
-    inline bool SetPayloadSize(int payloadSize)      
-    { 
-      if (GetHeaderSize() + payloadSize > maxPacketLen)
-        return true; 
-      packetLen = GetHeaderSize() + payloadSize;
-      return true;
-    }
-
-  protected:
-    unsigned char * packet;
-    unsigned maxPacketLen;
-    unsigned packetLen;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// Beginning of codec options, H323 untested
-
-static const char * default_cif_mpeg4_options[][3] = {
-//  { "h323_cifMPI",                               "<2" ,      "i" },
-//  { "Max Bit Rate",                              "<327600" , "i" },
-  { NULL, NULL, NULL }
-};
-
-static const char * default_qcif_mpeg4_options[][3] = {
-//  { "h323_qcifMPI",                              "<1" ,      "i" },
-//  { "Max Bit Rate",                              "<327600" , "i" },
-  { NULL, NULL, NULL }
-};
-
-static const char * default_sip_mpeg4_options[][3] = {
-  { NULL, NULL, NULL }
-};
-
-static int get_xcif_options(void * context, void * parm, unsigned * parmLen, const char ** default_parms)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char **))
-    return 0;
-
-  const char ***options = (const char ***)parm;
-
-  if (context == NULL) {
-    *options = default_parms;
-    return 1;
-  }
-
-  return 0;
-}
-
-static int coder_get_cif_options(
-      const PluginCodec_Definition * , 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_cif_mpeg4_options[0][0]);
-}
-
-static int coder_get_qcif_options(
-      const PluginCodec_Definition * , 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_qcif_mpeg4_options[0][0]);
-}
-
-static int coder_get_sip_options(
-      const PluginCodec_Definition *, 
-      void * context, 
-      const char * , 
-      void * parm, 
-      unsigned * parmLen)
-{
-  return get_xcif_options(context, parm, parmLen, &default_sip_mpeg4_options[0][0]);
-}
-
-static int valid_for_sip(
-      const PluginCodec_Definition * , 
-      void * context , 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
-}
-
-static int valid_for_h323(
-      const PluginCodec_Definition * , 
-      void * , 
-      const char * , 
-      void * parm , 
-      unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
-    return 0;
-
-  return (STRCMPI((const char *)parm, "h.323") == 0 ||
-          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // define the encoding context
@@ -1445,15 +726,18 @@ BOOL MPEG4EncoderContext::OpenCodec()
 {
   _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_avcontext == NULL) {
+    TRACE(1, "MPEG4\tEncoder\tFailed to allocate context for encoder");
     return FALSE;
   }
 
   _avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_avpicture == NULL) {
+    TRACE(1, "MPEG4\tEncoder\tFailed to allocate frame for encoder");
     return FALSE;
   }
 
-  if((_avcodec = FFMPEGLibraryInstance.mpeg4_encoder) == NULL){
+  if((_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
+    TRACE(1, "MPEG4\tEncoder\tCodec not found for encoder");
     return FALSE;
   }
 
@@ -1466,6 +750,7 @@ BOOL MPEG4EncoderContext::OpenCodec()
   SetDynamicEncodingParams(false);    // don't force a restart, it's not open
   if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0)
   {
+    TRACE(1, "MPEG4\tEncoder\tCould not open codec");
     return FALSE;
   }
   return TRUE;
@@ -1540,7 +825,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
     // then divide by 2 for a half second period
     if (_doThrottle && _throttle->throttle(_bitRateHighLimit >> 4)) {
         // Throttled, don't generate packets
-        fprintf(stderr, "mpeg4: throttling frame\n");
+        TRACE(1, "MPEG4\tEncoder\tThrottling frame");
     }
     else if (_packetSizes.empty()) {
         if (_avcontext == NULL) {
@@ -1576,6 +861,8 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         int total = FFMPEGLibraryInstance.AvcodecEncodeVideo
                             (_avcontext, _encFrameBuffer, _encFrameLen,
                              _avpicture);
+        TRACE(4, "MPEG4\tEncoded " << _encFrameLen << " bytes of YUV420P raw data into " << total << " bytes");
+
         if (total > 0) {
             _frameNum++; // increment the number of frames encoded
             ResetBitCounter(8); // Fix ffmpeg rate control
@@ -1642,7 +929,7 @@ static int encoder_set_options(
   // Scan the options passed in and check for:
   // 1) "Frame Width" sets the encoding frame width
   // 2) "Frame Height" sets the encoding frame height
-  // 3) "Max Bit Rate" sets the bitrate upper limit
+  // 3) "Target Bit Rate" sets the bitrate upper limit
   // 4) "Minimum Quality" sets the minimum encoding quality
   // 5) "Maximum Quality" sets the maximum encoding quality
   // 6) "Encoding Quality" sets the default encoding quality
@@ -1660,7 +947,7 @@ static int encoder_set_options(
         context->SetFrameWidth(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Frame Height") == 0)
         context->SetFrameHeight(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Max Bit Rate") == 0)
+      else if(STRCMPI(options[i], "Target Bit Rate") == 0)
         context->SetMaxBitrate(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Minimum Quality") == 0)
         context->SetQMin(atoi(options[i+1]));
@@ -1680,6 +967,7 @@ static int encoder_set_options(
         context->SetKeyframeUpdatePeriod(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Frame Time") == 0)
         context->SetFPS(atoi(options[i+1]));
+      TRACE (4, "MPEG4\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
   }
   return 1;
@@ -1711,25 +999,7 @@ static int encoder_get_output_data_size(const PluginCodec_Definition * codec, vo
   return context->GetFrameBytes() * 3 / 2;
 }
 
-static PluginCodec_ControlDefn cifEncoderControls[] = {
-  { "valid_for_protocol",       valid_for_h323 },
-  { "get_codec_options",    coder_get_cif_options },
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
-  { NULL }
-};
-
-static PluginCodec_ControlDefn qcifEncoderControls[] = {
-  { "valid_for_protocol",       valid_for_h323 },
-  { "get_codec_options",    coder_get_qcif_options },
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
-  { NULL }
-};
-
 static PluginCodec_ControlDefn sipEncoderControls[] = {
-  { "valid_for_protocol",       valid_for_sip },
-  { "get_codec_options",    coder_get_sip_options },
   { "set_codec_options",    encoder_set_options },
   { "get_output_data_size", encoder_get_output_data_size },
   { NULL }
@@ -1967,17 +1237,23 @@ void MPEG4DecoderContext::ResizeDecodingFrame(bool restartCodec) {
 
 bool MPEG4DecoderContext::OpenCodec()
 {
-    if ((_avcodec = FFMPEGLibraryInstance.mpeg4_decoder) == NULL) {
+    FFMPEGLibraryInstance.AvLogSetLevel(AV_LOG_DEBUG);
+    FFMPEGLibraryInstance.AvLogSetCallback(&logCallbackFFMPEG);
+
+    if ((_avcodec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_MPEG4)) == NULL) {
+        TRACE(1, "MPEG4\tDecoder\tCodec not found for encoder");
         return FALSE;
     }
         
     _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
     if (_avcontext == NULL) {
+        TRACE(1, "MPEG4\tDecoder\tFailed to allocate context for encoder");
         return FALSE;
     }
 
     _avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
     if (_avpicture == NULL) {
+        TRACE(1, "MPEG4\tDecoder\tFailed to allocate frame for decoder");
         return FALSE;
     }
 
@@ -1986,8 +1262,10 @@ bool MPEG4DecoderContext::OpenCodec()
     SetStaticDecodingParams();
     SetDynamicDecodingParams(false);    // don't force a restart, it's not open
     if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0) {
+        TRACE(1, "MPEG4\tDecoder\tFailed to open MPEG4 decoder");
         return FALSE;
     }
+    TRACE(1, "MPEG4\tDecoder\tDecoder successfully opened");
     return TRUE;
 }
 
@@ -2054,6 +1332,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
         // throw the data away and ask for an IFrame
         flags |= PluginCodec_ReturnCoderRequestIFrame;
         _lastPktOffset = 0;
+        TRACE(1, "MPEG4\tDecoder\tWating for an I-Frame");
         return 0;
     }
 
@@ -2070,6 +1349,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                 // ask for an IFrame update, but still show what we've got
                 flags |= PluginCodec_ReturnCoderRequestIFrame;
             }
+            TRACE(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << _avcontext->width << "x" << _avcontext->height);
             // If the decoding size changes on us, we can catch it and resize
             if (!_disableResize
                 && (_frameWidth != (unsigned)_avcontext->width
@@ -2116,12 +1396,13 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
             dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
             dstRTP.SetTimestamp(srcRTP.GetTimestamp());
             dstRTP.SetMarker(TRUE);
-            dstLen = dstRTP.GetPacketLen();
+            dstLen = dstRTP.GetFrameLen();
             flags |= PluginCodec_ReturnCoderLastFrame;
         }
         else {
             // decoding error, ask for an IFrame update
             flags |= PluginCodec_ReturnCoderRequestIFrame;
+            TRACE(1, "MPEG4\tDecoder\tDecoded "<< len << " bytes without getting a Picture..."); 
         }
         _lastPktOffset = 0;
     }
@@ -2174,6 +1455,7 @@ static int decoder_set_options(
         context->SetErrorThresh(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Disable Resize") == 0)
         context->SetDisableResize(atoi(options[i+1]));
+      TRACE (4, "MPEG4\tDecoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
   }
   return 1;
@@ -2205,25 +1487,7 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
 
 // Plugin Codec Definitions
 
-static PluginCodec_ControlDefn cifDecoderControls[] = {
-  { "valid_for_protocol",       valid_for_h323 },
-  { "get_codec_options",    coder_get_cif_options },
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
-  { NULL }
-};
-
-static PluginCodec_ControlDefn qcifDecoderControls[] = {
-  { "valid_for_protocol",       valid_for_h323 },
-  { "get_codec_options",    coder_get_qcif_options },
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
-  { NULL }
-};
-
 static PluginCodec_ControlDefn sipDecoderControls[] = {
-  { "valid_for_protocol",       valid_for_sip },
-  { "get_codec_options",    coder_get_sip_options },
   { "set_codec_options",    decoder_set_options },
   { "get_output_data_size", decoder_get_output_data_size },
   { NULL }
@@ -2261,155 +1525,22 @@ static struct PluginCodec_information licenseInfo = {
 /////////////////////////////////////////////////////////////////////////////
 
 static const char YUV420PDesc[]  = { "YUV420P" };
-
-static const char mpeg4QCIFDesc[]  = { "MPEG4-QCIF" };
-static const char mpeg4CIFDesc[]   = { "MPEG4-CIF" };
 static const char mpeg4Desc[]      = { "MPEG4" };
-
 static const char sdpMPEG4[]   = { "MP4V-ES" };
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
+static struct PluginCodec_Option const profileLevel =
+  { PluginCodec_IntegerOption, "CAP Profile Level", false, PluginCodec_NoMerge, "145", "packetization-mode", "145", 0, "1", "255" };
 
-{ 
-  // H.323 CIF encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
-  &licenseInfo,                       // license information
+static struct PluginCodec_Option const * const optionTable[] = {
+  &profileLevel,
+  NULL
+};
 
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_RTPTypeShared |
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
+/////////////////////////////////////////////////////////////////////////////
 
-  mpeg4CIFDesc,                       // text decription
-  YUV420PDesc,                        // source format
-  mpeg4CIFDesc,                       // destination format
-
-  0,                                  // user data 
-
-  MPEG4_CLOCKRATE,                    // samples per second
-  MPEG4_BITRATE,                      // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpMPEG4,                           // RTP payload name
-
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  cifEncoderControls,                 // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // H.323 CIF decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_RTPTypeShared |
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  mpeg4CIFDesc,                       // text decription
-  mpeg4CIFDesc,                       // source format
-  YUV420PDesc,                        // destination format
-
-  0,                                  // user data 
-
-  MPEG4_CLOCKRATE,                    // samples per second
-  MPEG4_BITRATE,                      // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpMPEG4,                           // RTP payload name
-
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  cifDecoderControls,                 // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-
-{ 
-  // H.323 QCIF encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_RTPTypeShared |
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  mpeg4QCIFDesc,                      // text decription
-  YUV420PDesc,                        // source format
-  mpeg4QCIFDesc,                      // destination format
-
-  0,                                  // user data 
-
-  MPEG4_CLOCKRATE,                    // samples per second
-  MPEG4_BITRATE,                      // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpMPEG4,                           // RTP payload name
-
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  qcifEncoderControls,                // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // H.323 QCIF decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_RTPTypeShared |
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  mpeg4QCIFDesc,                      // text decription
-  mpeg4QCIFDesc,                      // source format
-  YUV420PDesc,                        // destination format
-
-  0,                                  // user data 
-
-  MPEG4_CLOCKRATE,                    // samples per second
-  MPEG4_BITRATE,                      // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpMPEG4,                           // RTP payload name
-
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  qcifDecoderControls,                // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-
+static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
 { 
   // SIP encoder
   PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
@@ -2423,7 +1554,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   YUV420PDesc,                        // source format
   mpeg4Desc,                          // destination format
 
-  0,                                  // user data 
+  optionTable,                        // user data 
 
   MPEG4_CLOCKRATE,                    // samples per second
   MPEG4_BITRATE,                      // raw bits per second
@@ -2457,7 +1588,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
   mpeg4Desc,                          // source format
   YUV420PDesc,                        // destination format
 
-  0,                                  // user data 
+  optionTable,                        // user data 
 
   MPEG4_CLOCKRATE,                    // samples per second
   MPEG4_BITRATE,                      // raw bits per second
@@ -2481,28 +1612,24 @@ static struct PluginCodec_Definition mpeg4CodecDefn[6] = {
 
 };
 
-#define NUM_DEFNS   (sizeof(mpeg4CodecDefn) / sizeof(struct PluginCodec_Definition))
-
 /////////////////////////////////////////////////////////////////////////////
 
 extern "C" {
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition *
 PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
-  // load the library.
-  WITH_ALIGNED_STACK({
-    WaitAndSignal m(FFMPEGLibraryInstance.processLock);
-    if (!FFMPEGLibraryInstance.IsLoaded()) {
-      if (!FFMPEGLibraryInstance.Load()) {
-        *count = 0;
-        return NULL;
-      }
-      if (FFMPEGLibraryInstance.Fff_check_alignment() != 0) {
-        fprintf(stderr, "MPEG4 plugin: ff_check_alignment() reports failure; "
-                "stack alignment is not correct\n");
-      }
-    }
-  })
+  char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+  if (debug_level!=NULL) {
+    Trace::SetLevel(atoi(debug_level));
+  } 
+  else {
+    Trace::SetLevel(0);
+  }
+
+  if (!FFMPEGLibraryInstance.Load()) {
+    *count = 0;
+    return NULL;
+  }
 
   // check version numbers etc
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {
@@ -2510,7 +1637,7 @@ PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
     return NULL;
   }
   else {
-    *count = NUM_DEFNS;
+    *count = sizeof(mpeg4CodecDefn) / sizeof(struct PluginCodec_Definition);
     return mpeg4CodecDefn;
   }
 }
