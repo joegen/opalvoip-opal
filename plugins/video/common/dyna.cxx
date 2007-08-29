@@ -170,104 +170,104 @@ bool FFMPEGLibrary::Load()
 #endif
       && !DynaLink::Open("avcodec"))
     {
-    TRACE (1, _codecString << "DYNA\tFailed to load a library, some codecs won't operate correctly;");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load a library, some codecs won't operate correctly;");
     return false;
   }
 
   if (!GetFunction("avcodec_init", (Function &)Favcodec_init)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_init");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_init");
     return false;
   }
 
   if (_codec==CODEC_ID_H264) {
     if (!GetFunction("h264_decoder", (Function &)Favcodec_h264_decoder)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load h264_decoder");
+      TRACE (1, _codecString << "\tDYNA\tFailed to load h264_decoder");
       return false;
     }
   }
   
   if (_codec==CODEC_ID_H263P) {
     if (!GetFunction("h263_encoder", (Function &)Favcodec_h263_encoder)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load h263_encoder" );
+      TRACE (1, _codecString << "\tDYNA\tFailed to load h263_encoder" );
       return false;
     }
   
     if (!GetFunction("h263p_encoder", (Function &)Favcodec_h263p_encoder)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load h263p_encoder" );
+      TRACE (1, _codecString << "\tDYNA\tFailed to load h263p_encoder" );
       return false;
     }
 
     if (!GetFunction("h263_decoder", (Function &)Favcodec_h263_decoder)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load h263_decoder" );
+      TRACE (1, _codecString << "\tDYNA\tFailed to load h263_decoder" );
       return false;
     }
   }
 
   if (_codec==CODEC_ID_MPEG4) {
     if (!GetFunction("mpeg4_encoder", (Function &)mpeg4_encoder)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load mpeg4_encoder");
+      TRACE (1, _codecString << "\tDYNA\tFailed to load mpeg4_encoder");
       return false;
     }
 
     if (!GetFunction("mpeg4_decoder", (Function &)mpeg4_decoder)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load mpeg4_decoder");
+      TRACE (1, _codecString << "\tDYNA\tFailed to load mpeg4_decoder");
       return false;
     }
   }
 
     if (!GetFunction("register_avcodec", (Function &)Favcodec_register)) {
-      TRACE (1, _codecString << "DYNA\tFailed to load register_avcodec");
+      TRACE (1, _codecString << "\tDYNA\tFailed to load register_avcodec");
       return false;
     }
   
   if (!GetFunction("avcodec_find_encoder", (Function &)Favcodec_find_encoder)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_find_encoder");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_find_encoder");
     return false;
   }
 
   if (!GetFunction("avcodec_find_decoder", (Function &)Favcodec_find_decoder)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_find_decoder");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_find_decoder");
     return false;
   }
 
   if (!GetFunction("avcodec_alloc_context", (Function &)Favcodec_alloc_context)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_alloc_context");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_alloc_context");
     return false;
   }
 
   if (!GetFunction("avcodec_alloc_frame", (Function &)Favcodec_alloc_frame)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_alloc_frame");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_alloc_frame");
     return false;
   }
 
   if (!GetFunction("avcodec_open", (Function &)Favcodec_open)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_open");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_open");
     return false;
   }
 
   if (!GetFunction("avcodec_close", (Function &)Favcodec_close)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_close");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_close");
     return false;
   }
 
   if (!GetFunction("avcodec_encode_video", (Function &)Favcodec_encode_video)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_encode_video" );
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_encode_video" );
     return false;
   }
 
   if (!GetFunction("avcodec_decode_video", (Function &)Favcodec_decode_video)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_decode_video");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_decode_video");
     return false;
   }
 
   if (!GetFunction("av_free", (Function &)Favcodec_free)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_close");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_close");
     return false;
   }
 
   if (!GetFunction("ff_check_alignment", (Function &) Fff_check_alignment)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load ff_check_alignment");
-    return false;
+    TRACE (1, _codecString << "\tDYNA\tFailed to load ff_check_alignment - alignment checks will be skipped");
+    Fff_check_alignment = NULL;
   }
 
   if(!GetFunction("avcodec_version", (Function &)Favcodec_version)){
@@ -276,14 +276,14 @@ bool FFMPEGLibrary::Load()
   }
   
   if(!GetFunction("avcodec_build", (Function &)Favcodec_build)){
-    TRACE (1, _codecString << "DYNA\tFailed to load avcodec_build");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_build");
     return false;
   }
 
   unsigned libVer = Favcodec_version();
   unsigned libBuild = Favcodec_build();
   if (libVer != LIBAVCODEC_VERSION_INT || libBuild != LIBAVCODEC_BUILD) {
-    TRACE (1, _codecString << "DYNA\tWarning: compiled against libavcodec headers from ver/build "
+    TRACE (1, _codecString << "\tDYNA\tWarning: compiled against libavcodec headers from ver/build "
            << std::hex << LIBAVCODEC_VERSION_INT << "/"
            << std::dec << LIBAVCODEC_BUILD
            << ", loaded " 
@@ -292,39 +292,40 @@ bool FFMPEGLibrary::Load()
   }
 
   if (!GetFunction("av_log_set_level", (Function &)FAv_log_set_level)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load av_log_set_level");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load av_log_set_level");
     return false;
   }
 
   if (!GetFunction("av_log_set_callback", (Function &)FAv_log_set_callback)) {
-    TRACE (1, _codecString << "DYNA\tFailed to load av_log_set_callback");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load av_log_set_callback");
     return false;
   }
 
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  // must be called before using avcodec lib
-  Favcodec_init();
+  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
+    Favcodec_init();
 
-  // register only the codecs needed (to have smaller code)
+    // register only the codecs needed (to have smaller code)
+    if (_codec==CODEC_ID_H264) 
+      Favcodec_register(Favcodec_h264_decoder);
 
-  if (_codec==CODEC_ID_H264) 
-    Favcodec_register(Favcodec_h264_decoder);
+    if (_codec==CODEC_ID_H263P) {
+      Favcodec_register(Favcodec_h263_encoder);
+      Favcodec_register(Favcodec_h263p_encoder);
+      Favcodec_register(Favcodec_h263_decoder);
+    }
 
-  if (_codec==CODEC_ID_H263P) {
-    Favcodec_register(Favcodec_h263_encoder);
-    Favcodec_register(Favcodec_h263p_encoder);
-    Favcodec_register(Favcodec_h263_decoder);
-  }
-  
-  if (_codec==CODEC_ID_MPEG4) {
-    Favcodec_register(mpeg4_encoder);
-    Favcodec_register(mpeg4_decoder);
-  }
-  
+    if (_codec==CODEC_ID_MPEG4) {
+      Favcodec_register(mpeg4_encoder);
+      Favcodec_register(mpeg4_decoder);
+    }
+
+    if (FFCheckAlignment() != 0) {
+      TRACE(1, _codecString << "\tDYNA\tff_check_alignment() reports failure - stack alignment is not correct");
+    }	    
+  });
+
   isLoadedOK = true;
-  TRACE (4, _codecString << "DYNA\tSuccessfully loaded libavcodec library");
+  TRACE (4, _codecString << "\tDYNA\tSuccessfully loaded libavcodec library");
 
   return true;
 }
@@ -336,100 +337,106 @@ FFMPEGLibrary::~FFMPEGLibrary()
 
 AVCodec *FFMPEGLibrary::AvcodecFindEncoder(enum CodecID id)
 {
-  AVCodec *res = Favcodec_find_encoder(id);
-  return res;
+  WITH_ALIGNED_STACK({
+    AVCodec *res = Favcodec_find_encoder(id);
+    return res;
+  });
 }
 
 AVCodec *FFMPEGLibrary::AvcodecFindDecoder(enum CodecID id)
 {
-  AVCodec *res = Favcodec_find_decoder(id);
-  return res;
+  WITH_ALIGNED_STACK({
+    AVCodec *res = Favcodec_find_decoder(id);
+    return res;
+  });
 }
 
 AVCodecContext *FFMPEGLibrary::AvcodecAllocContext(void)
 {
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  AVCodecContext *res = Favcodec_alloc_context();
-  return res;
+  WITH_ALIGNED_STACK({
+    AVCodecContext *res = Favcodec_alloc_context();
+    return res;
+  });
 }
 
 AVFrame *FFMPEGLibrary::AvcodecAllocFrame(void)
 {
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  AVFrame *res = Favcodec_alloc_frame();
-  return res;
+  WITH_ALIGNED_STACK({
+    AVFrame *res = Favcodec_alloc_frame();
+    return res;
+  });
 }
 
 int FFMPEGLibrary::AvcodecOpen(AVCodecContext *ctx, AVCodec *codec)
 {
   WaitAndSignal m(processLock);
 
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  return Favcodec_open(ctx, codec);
+  WITH_ALIGNED_STACK({
+    return Favcodec_open(ctx, codec);
+  });
 }
 
 int FFMPEGLibrary::AvcodecClose(AVCodecContext *ctx)
 {
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  return Favcodec_close(ctx);
+  WITH_ALIGNED_STACK({
+    return Favcodec_close(ctx);
+  });
 }
 
 int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_size, const AVFrame *pict)
 {
   WaitAndSignal m(processLock);
 
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  int res = Favcodec_encode_video(ctx, buf, buf_size, pict);
+  WITH_ALIGNED_STACK({
+    int res = Favcodec_encode_video(ctx, buf, buf_size, pict);
 
-  TRACE(4, _codecString << "DYNA\tEncoded video into " << res << " bytes");
-  return res;
+    TRACE(4, _codecString << "\tDYNA\tEncoded video into " << res << " bytes");
+    return res;
+  });
 }
 
 int FFMPEGLibrary::AvcodecDecodeVideo(AVCodecContext *ctx, AVFrame *pict, int *got_picture_ptr, BYTE *buf, int buf_size)
 {
   WaitAndSignal m(processLock);
 
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  int res = Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
+  WITH_ALIGNED_STACK({
+    int res = Favcodec_decode_video(ctx, pict, got_picture_ptr, buf, buf_size);
 
-  TRACE(4, _codecString << "DYNA\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
-  return res;
+    TRACE(4, _codecString << "\tDYNA\tDecoded video of " << res << " bytes, got_picture=" << *got_picture_ptr);
+    return res;
+  });
 }
 
 void FFMPEGLibrary::AvcodecFree(void * ptr)
 {
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  Favcodec_free(ptr);
+  WITH_ALIGNED_STACK({
+    Favcodec_free(ptr);
+  });
 }
 
 void FFMPEGLibrary::AvLogSetLevel(int level)
 {
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  FAv_log_set_level(level);
+  WITH_ALIGNED_STACK({
+    FAv_log_set_level(level);
+  });
 }
 
 void FFMPEGLibrary::AvLogSetCallback(void (*callback)(void*, int, const char*, va_list))
 {
-#ifdef WITH_STACKALIGN_HACK
-    STACKALIGN_HACK()
-#endif
-  FAv_log_set_callback(callback);
+  WITH_ALIGNED_STACK({
+    FAv_log_set_callback(callback);
+  });
+}
+
+int FFMPEGLibrary::FFCheckAlignment(void)
+{
+  if (Fff_check_alignment == NULL) {
+    TRACE(1, _codecString << "\tDYNA\tff_check_alignment is not supported by libavcodec.so - skipping check");
+    return 0;
+  }
+  else {
+    return (Fff_check_alignment());
+  }
 }
 
 bool FFMPEGLibrary::IsLoaded()

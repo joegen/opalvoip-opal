@@ -415,16 +415,11 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
   } 
   else {
     Trace::SetLevel(0);
-  }  
+  }
 
-#ifdef WITH_STACKALIGN_HACK
-  STACKALIGN_HACK()
-#endif  
-  if (!FFMPEGLibraryInstance.IsLoaded()) {
-    if (!FFMPEGLibraryInstance.Load()) {
-      *count = 0;
-      return NULL;
-    }
+  if (!FFMPEGLibraryInstance.Load()) {
+    *count = 0;
+    return NULL;
   }
 
   if (!H264EncCtxInstance.isLoaded()) {
