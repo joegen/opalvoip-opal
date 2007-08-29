@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.7  2007/08/29 00:46:13  csoutheren
+ * Change base class for RFC4175 transcoder
+ *
  * Revision 1.6  2007/08/03 07:21:02  csoutheren
  * Remove warnings
  *
@@ -100,17 +103,12 @@ OpalRFC4175Transcoder::OpalRFC4175Transcoder(
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
       const OpalMediaFormat & outputMediaFormat  ///<  Output media format
 )
- : OpalVideoTranscoder(inputMediaFormat, outputMediaFormat)
+ : OpalUncompVideoTranscoder(inputMediaFormat, outputMediaFormat)
 {
 }
 
 PINDEX OpalRFC4175Transcoder::RFC4175HeaderSize(PINDEX lines)
 { return 2 + lines*6; }
-
-PINDEX OpalRFC4175Transcoder::GetOptimalDataFrameSize(BOOL /*input*/) const
-{
-  return 0;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 
