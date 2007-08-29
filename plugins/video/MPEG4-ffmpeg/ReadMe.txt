@@ -29,7 +29,10 @@ Configure and build ffmpeg:
        $ make
 
 Make sure your compiler is recent: gcc 4.1.1 is known to compile properly,
-while gcc 3.3.5 creates stack alignment problems.
+while gcc 3.3.5 creates stack alignment problems. In case gcc 3.3.5 has 
+to be used, the plugin may be configured with the 
+--enable-ffmpeg-stackalign-hack
+option in order to circumvent these problems.
 
 Many Linux distributions ship with a version of ffmpeg - check for
 /usr/lib/libavcodec.so*. It is best not to replace these with the new
@@ -45,7 +48,7 @@ Building the plugin
 -------------------
 
 When you configure OPAL, pass the argument
-       --with-mpeg4-ffmpeg=<path to your ffmpeg source directory>
+       --with-ffmpeg-src-dir=<path to your ffmpeg source directory>
 
 
 Using the plugin
@@ -110,19 +113,19 @@ sets the number of corrupted blocks in an I-Frame required to trigger a
 resend.
 
 
-Compatibility with the H.263 plugin
+Compatibility with other FFMPEG-based plugins (H.264, H.263, H.263+)
 -----------------------------------
 
-The H.263 video plugin loads a patched version of ffmpeg 0.4.7, using the
+The H.263 (without + or 1998) video plugin loads a patched version of ffmpeg 0.4.7, using the
 PWLIBPLUGINDIR environment variable (default /usr/local/lib/pwlib) to find
 libavcodec.so. Put the patched libavcodec.so for H.263 in
 /usr/local/lib/pwlib, put the new libavutil and libavcodec in
 /usr/local/opal-mpeg4, set LD_LIBRARY_PATH appropriately, and there should
-be no conflict between the plugins.
+be no conflict between the plugins. H.264 and H.263+ can make use of the same
+FFMPEG used for MPEG4 and will look in the same directories.
 
 
 Interoperability
 ----------------
 
-The plugin has never been tested with other implementations, but it
-advertises itself as MP4V-ES and may comply with RFC 3016.
+This plugins has been tested with linphone and should comply with RFC 3016.
