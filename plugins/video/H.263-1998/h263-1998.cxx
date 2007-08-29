@@ -588,15 +588,12 @@ extern "C" {
     else {
       Trace::SetLevel(0);
     }
-		    
-#ifdef WITH_STACKALIGN_HACK
-  STACKALIGN_HACK()
-#endif
+
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;
       return NULL;
     }
-
+  
     *count = sizeof(h263CodecDefn) / sizeof(struct PluginCodec_Definition);
     return h263CodecDefn;
   }
