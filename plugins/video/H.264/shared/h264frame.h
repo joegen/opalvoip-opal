@@ -56,7 +56,8 @@
 #define H264_NAL_TYPE_FILLER_DATA 0xc
 #define H264_NAL_TYPE_SEQ_EXTENSION 0xd
 
-#define SEND_STAP_PACKETS 1
+// GVX 3000 does not like STAP packets... So we waste 40 bytes per connection...
+//#define SEND_STAP_PACKETS 1
 
 #ifndef LICENCE_MPL
 extern "C"
