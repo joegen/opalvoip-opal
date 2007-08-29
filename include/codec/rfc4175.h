@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.h,v $
+ * Revision 1.4  2007/08/29 00:45:57  csoutheren
+ * Change base class for RFC4175 transcoder
+ *
  * Revision 1.3  2007/06/30 14:00:05  dsandras
  * Fixed previous commit so that things at least compile. Untested.
  *
@@ -65,9 +68,9 @@ extern const OpalVideoFormat & GetOpalRFC4175_RGB24();
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalRFC4175Transcoder : public OpalVideoTranscoder
+class OpalRFC4175Transcoder : public OpalUncompVideoTranscoder
 {
-  PCLASSINFO(OpalRFC4175Transcoder, OpalVideoTranscoder);
+  PCLASSINFO(OpalRFC4175Transcoder, OpalUncompVideoTranscoder);
   public:
     OpalRFC4175Transcoder(      
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
@@ -75,7 +78,6 @@ class OpalRFC4175Transcoder : public OpalVideoTranscoder
     );
     virtual PINDEX PixelsToBytes(PINDEX pixels) const = 0;
     PINDEX RFC4175HeaderSize(PINDEX lines);
-    PINDEX GetOptimalDataFrameSize(BOOL input) const;
 };
 
 /////////////////////////////////////////////////////////////////////////////
