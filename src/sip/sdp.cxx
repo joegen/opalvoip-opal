@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2051  2007/07/23 06:34:19  csoutheren
+ * Revision 1.2052  2007/08/31 05:28:16  rjongbloed
+ * Allow for boolean FMTP parameters to not include the =1 part, its mere presence is a "true".
+ *
+ * Revision 2.50  2007/07/23 06:34:19  csoutheren
  * Stop re-creation of new RTP sessions after SIP authentication fails
  * Do not create video RTP sessions if no video media formats
  *
@@ -409,6 +412,8 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     }
     if (option != NULL) {
       PString value = str(sep2pos+1, sep1next-1).Trim();
+      if (value.IsEmpty())
+        value = "1"; // Assume it is a boolean
       if (!option->FromString(value)) {
         PTRACE(2, "SDP\tCould not set FMTP parameter \"" << key << "\" to value \"" << value << '"');
       }
