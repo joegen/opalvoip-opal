@@ -207,6 +207,14 @@
 				RelativePath=".\h261vic.cxx"
 				>
 			</File>
+			<File
+				RelativePath="..\common\trace.cxx"
+				>
+			</File>
+			<File
+				RelativePath="..\common\trace.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="VIC Files"
