@@ -37,6 +37,9 @@
  *                 Craig Southeren (craigs@postincrement.com)
  *
  * $Log: h263ffmpeg.cxx,v $
+ * Revision 1.16  2007/08/31 07:01:06  rjongbloed
+ * Fixed incorrect search directory for avcodec DLL
+ *
  * Revision 1.15  2007/08/16 03:13:36  rjongbloed
  * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
  *   so plug ins can provide it as required.
@@ -302,7 +305,7 @@ class DynaLink
       USES_CONVERSION;
       _hDLL = LoadLibrary(A2T(path));
 # else
-      _hDLL = LoadLibrary(name);
+      _hDLL = LoadLibrary(path);
 # endif // UNICODE
 #else
       _hDLL = dlopen((const char *)path, RTLD_NOW);
