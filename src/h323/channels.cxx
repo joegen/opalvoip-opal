@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2045  2007/08/21 00:19:46  rjongbloed
+ * Revision 1.2046  2007/08/31 11:36:13  csoutheren
+ * Fix usage of GetOtherPartyConnection without PSafePtr
+ *
+ * Revision 2.44  2007/08/21 00:19:46  rjongbloed
  * Fixed previous check in which mysteriously changed a flag.
  *
  * Revision 2.43  2007/08/17 09:00:40  csoutheren
@@ -1341,7 +1344,7 @@ BOOL H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress & da
 
 BOOL H323_ExternalRTPChannel::Start()
 {
-  OpalConnection * otherParty = connection.GetCall().GetOtherPartyConnection(connection);
+  PSafePtr<OpalConnection> otherParty = connection.GetCall().GetOtherPartyConnection(connection);
   if (otherParty == NULL)
     return FALSE;
 
