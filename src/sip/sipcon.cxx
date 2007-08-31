@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2257  2007/08/24 07:49:22  csoutheren
+ * Revision 1.2258  2007/08/31 11:36:13  csoutheren
+ * Fix usage of GetOtherPartyConnection without PSafePtr
+ *
+ * Revision 2.256  2007/08/24 07:49:22  csoutheren
  * Get access to called URL
  *
  * Revision 2.255  2007/08/24 06:38:53  csoutheren
@@ -1940,7 +1943,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(rtpSessionId, info)) {
