@@ -39,6 +39,10 @@
  * Untested under Windows or H.323
  *
  * $Log: mpeg4.cxx,v $
+ * Revision 1.10  2007/08/31 07:55:09  dsandras
+ * Applied patch from Matthias Schneider <ma30002000 yahoo de> to fix
+ * compilation on WIN32.
+ *
  * Revision 1.9  2007/08/29 19:32:20  dsandras
  * Applied cleanup patch from Matthias Schneider <ma30002000 yahoo de> :
  * * make use of common plugin code
@@ -107,10 +111,7 @@ PLUGIN_CODEC_IMPLEMENT(FFMPEG_MPEG4)
 #include "dyna.h"
 #include "rtpframe.h"
 
-#define FALSE false
-#define TRUE  true
 typedef unsigned char BYTE;
-typedef bool BOOL;
 
 // Needed C++ headers
 #include <string.h>
@@ -299,10 +300,10 @@ class MPEG4EncoderContext
                     if (_numSlots == 1 || _slots[(_index - 1) % _numSlots] != 0)
                     {
                         record(0);
-                        return TRUE;
+                        return true;
                     }
                 }
-                return FALSE;
+                return false;
             }
             void record(int bytes){
                 _total -= _slots[_index];
@@ -727,18 +728,18 @@ BOOL MPEG4EncoderContext::OpenCodec()
   _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_avcontext == NULL) {
     TRACE(1, "MPEG4\tEncoder\tFailed to allocate context for encoder");
-    return FALSE;
+    return false;
   }
 
   _avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
   if (_avpicture == NULL) {
     TRACE(1, "MPEG4\tEncoder\tFailed to allocate frame for encoder");
-    return FALSE;
+    return false;
   }
 
   if((_avcodec = FFMPEGLibraryInstance.AvcodecFindEncoder(CODEC_ID_MPEG4)) == NULL){
     TRACE(1, "MPEG4\tEncoder\tCodec not found for encoder");
-    return FALSE;
+    return false;
   }
 
   // debugging flags
@@ -751,9 +752,9 @@ BOOL MPEG4EncoderContext::OpenCodec()
   if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0)
   {
     TRACE(1, "MPEG4\tEncoder\tCould not open codec");
-    return FALSE;
+    return false;
   }
-  return TRUE;
+  return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -886,7 +887,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         // If there are no more packet sizes left, we've reached the last packet
         // for the frame, set the marker bit and flags
         if (_packetSizes.empty()) {
-            dstRTP.SetMarker(TRUE);
+            dstRTP.SetMarker(true);
             flags |= PluginCodec_ReturnCoderLastFrame;
         }
 
@@ -899,7 +900,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         // throttled, tell OPAL to send a 0 length packet
         dstLen = 0;
         dstRTP.SetPayloadSize(0);
-        dstRTP.SetMarker(TRUE);
+        dstRTP.SetMarker(true);
     }
     return 1;
 }
@@ -1242,19 +1243,19 @@ bool MPEG4DecoderContext::OpenCodec()
 
     if ((_avcodec = FFMPEGLibraryInstance.AvcodecFindDecoder(CODEC_ID_MPEG4)) == NULL) {
         TRACE(1, "MPEG4\tDecoder\tCodec not found for encoder");
-        return FALSE;
+        return false;
     }
         
     _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
     if (_avcontext == NULL) {
         TRACE(1, "MPEG4\tDecoder\tFailed to allocate context for encoder");
-        return FALSE;
+        return false;
     }
 
     _avpicture = FFMPEGLibraryInstance.AvcodecAllocFrame();
     if (_avpicture == NULL) {
         TRACE(1, "MPEG4\tDecoder\tFailed to allocate frame for decoder");
-        return FALSE;
+        return false;
     }
 
     _avcontext->codec = NULL;
@@ -1263,10 +1264,10 @@ bool MPEG4DecoderContext::OpenCodec()
     SetDynamicDecodingParams(false);    // don't force a restart, it's not open
     if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0) {
         TRACE(1, "MPEG4\tDecoder\tFailed to open MPEG4 decoder");
-        return FALSE;
+        return false;
     }
     TRACE(1, "MPEG4\tDecoder\tDecoder successfully opened");
-    return TRUE;
+    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1395,7 +1396,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                                   + frameBytes);
             dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
             dstRTP.SetTimestamp(srcRTP.GetTimestamp());
-            dstRTP.SetMarker(TRUE);
+            dstRTP.SetMarker(true);
             dstLen = dstRTP.GetFrameLen();
             flags |= PluginCodec_ReturnCoderLastFrame;
         }
@@ -1406,7 +1407,7 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
         }
         _lastPktOffset = 0;
     }
-    return TRUE;
+    return true;
 }
 
 
