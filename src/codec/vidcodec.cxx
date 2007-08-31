@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2020  2007/08/17 11:14:17  csoutheren
+ * Revision 1.2021  2007/08/31 07:56:19  dsandras
+ * Applied patch from Matthias Schneider <ma30002000 yahoo de> :
+ * * allow higher resolutions
+ * * code cleanup
+ * Thanks!
+ *
+ * Revision 2.19  2007/08/17 11:14:17  csoutheren
  * Add OnLostPicture and OnLostPartialPicture commands
  *
  * Revision 2.18  2007/04/10 05:15:54  rjongbloed
@@ -112,9 +118,9 @@
 #include <ptlib/videoio.h>
 #include <ptlib/vconvert.h>
 
-#define FRAME_WIDTH  PVideoDevice::CIFWidth
-#define FRAME_HEIGHT PVideoDevice::CIFHeight
-#define FRAME_RATE   25 // PAL
+#define FRAME_WIDTH  PVideoDevice::CIF16Width
+#define FRAME_HEIGHT PVideoDevice::CIF16Height
+#define FRAME_RATE   30 // NTSC
 
 const OpalVideoFormat & GetOpalRGB24()
 {
@@ -177,12 +183,6 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
   if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
     return FALSE;
 
-  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoDevice::CIFWidth);
-  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoDevice::CIFHeight);
-  videoQuality = outputMediaFormat.GetOptionInteger(OpalVideoFormat::EncodingQualityOption(), 15);
-  targetBitRate = outputMediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 64000);
-  dynamicVideoQuality = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption(), false);
-  adaptivePacketDelay = outputMediaFormat.GetOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), false);
   return TRUE;
 }
 
