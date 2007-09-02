@@ -96,7 +96,7 @@ void theoraFrame::SetFromFrame (ogg_packet* framePacket) {
   _encodedData.len = framePacket->bytes;
   _encodedData.pos = 0;
   _frameCount++;
-  if (_frameCount > THEORA_SEND_CONFIG_INTERVAL) _configSent = false;
+  if ((_frameCount % THEORA_SEND_CONFIG_INTERVAL) == 0) _configSent = false;
 }
 
 void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool sendPackedConfig) {
