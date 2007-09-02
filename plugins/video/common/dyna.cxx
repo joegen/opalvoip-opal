@@ -165,12 +165,14 @@ bool FFMPEGLibrary::Load()
 #if defined(WIN32)
       !DynaLink::Open("libavcodec")
 #else
+#ifdef LIBAVCODEC_LIB_NAME
+      !DynaLink::Open(LIBAVCODEC_LIB_NAME) &&
+#endif
       !DynaLink::Open("libavcodec.so")
-// && !DynaLink::Open("libavcodec.so.51") !!!!!!!!!!!!!!!!!!!!!!1
 #endif
       && !DynaLink::Open("avcodec"))
     {
-    TRACE (1, _codecString << "\tDYNA\tFailed to load a library, some codecs won't operate correctly;");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load libavcodec library");
     return false;
   }
 
@@ -325,7 +327,7 @@ bool FFMPEGLibrary::Load()
   });
 
   isLoadedOK = true;
-  TRACE (4, _codecString << "\tDYNA\tSuccessfully loaded libavcodec library");
+  TRACE (4, _codecString << "\tDYNA\tSuccessfully loaded libavcodec library and verified functions");
 
   return true;
 }

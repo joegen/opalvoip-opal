@@ -591,10 +591,12 @@ extern "C" {
 
     if (!FFMPEGLibraryInstance.Load()) {
       *count = 0;
+      TRACE(1, "H263+\tCodec\tDisabled");
       return NULL;
     }
   
     *count = sizeof(h263CodecDefn) / sizeof(struct PluginCodec_Definition);
+    TRACE(1, "H263+\tCodec\tEnabled");
     return h263CodecDefn;
   }
 
