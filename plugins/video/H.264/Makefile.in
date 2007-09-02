@@ -20,6 +20,12 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.4  2007/09/02 12:03:19  dominance
+# * dynamically load libx264 at runtime on *nix
+# * Improved error handling
+#
+# Patch received from and thus thanks goes to Matthias Schneider.
+#
 # Revision 1.3  2007/08/23 19:20:14  dominance
 # fix compilation of H.264 if CFLAGS is present from make
 #
@@ -80,9 +86,10 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
+FFMPEG_CFLAGS   =@FFMPEG_CFLAGS@
 FFMPEG_STACKALIGN_HACK := @FFMPEG_STACKALIGN_HACK@
 
-EXTRACCFLAGS    +=-DLICENCE_MPL -I$(COMMONDIR) $(FFMPEG_STACKALIGN_HACK)
+EXTRACCFLAGS    +=-DLICENCE_MPL $(FFMPEG_CFLAGS) -I$(COMMONDIR) $(FFMPEG_STACKALIGN_HACK)
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)

@@ -409,6 +409,7 @@ PLUGIN_CODEC_IMPLEMENT(H264)
 
 PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 {
+
   char * debug_level = getenv ("PWLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
     Trace::SetLevel(atoi(debug_level));
@@ -419,22 +420,26 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
 
   if (!FFMPEGLibraryInstance.Load()) {
     *count = 0;
+    TRACE(1, "H264\tCodec\tDisabled");
     return NULL;
   }
 
   if (!H264EncCtxInstance.isLoaded()) {
     if (!H264EncCtxInstance.Load()) {
       *count = 0;
+      TRACE(1, "H264\tCodec\tDisabled");
       return NULL;
     }
   }
 
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {
     *count = 0;
+    TRACE(1, "H264\tCodec\tDisabled");
     return NULL;
   }
   else {
     *count = sizeof(h264CodecDefn) / sizeof(struct PluginCodec_Definition);
+    TRACE(1, "H264\tCodec\tEnabled");
     return h264CodecDefn;
   }
   

@@ -52,6 +52,7 @@ class H264EncCtx
      bool findGplProcess();
      bool checkGplProcessExists (const char * dir);
      void execGplProcess();
+     void cpCloseAndExit();
 
      char dlName [512];
      char ulName [512];
@@ -63,5 +64,11 @@ class H264EncCtx
      int size;
      bool startNewFrame;
      bool loaded;
+     bool pipesCreated;
+     bool pipesOpened;
+     
+     // only for signaling failed execution of helper process
+     std::ifstream cpDLStream;
+     std::ofstream cpULStream;
 };
 #endif /* __PIPE_H__ */
