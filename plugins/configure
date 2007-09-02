@@ -6785,20 +6785,20 @@ done
 
         if test "x${ffmpeg_headers}" = "xtrue"; then
 
-          { echo "$as_me:$LINENO: checking for libavcodec version >= 51.11.0" >&5
+            { echo "$as_me:$LINENO: checking for libavcodec version >= 51.11.0" >&5
 echo $ECHO_N "checking for libavcodec version >= 51.11.0... $ECHO_C" >&6; }
-          cat >conftest.$ac_ext <<_ACEOF
+            cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <ffmpeg/avcodec.h>
-	   #ifdef LIBAVCODEC_VERSION_INT
-             #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
-               yes
+  	     #ifdef LIBAVCODEC_VERSION_INT
+               #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
+                 yes
+               #endif
              #endif
-           #endif
 
 _ACEOF
 if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
@@ -6809,22 +6809,27 @@ else
 fi
 rm -f conftest*
 
-          if test "x${ffmpeg_version}" = "xtrue"; then
-              { echo "$as_me:$LINENO: result: yes" >&5
+            if test "x${ffmpeg_version}" = "xtrue"; then
+                { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
-              HAS_FFMPEG=1
-              { echo "$as_me:$LINENO: checking location of libavcodec library" >&5
-echo $ECHO_N "checking location of libavcodec library... $ECHO_C" >&6; }
-              ffmpeg_lib_dir=`pkg-config --libs libavcodec | awk '{ print $1 }' | cut -c3-`
-              { echo "$as_me:$LINENO: result: $ffmpeg_lib_dir" >&5
-echo "${ECHO_T}$ffmpeg_lib_dir" >&6; }
-              { echo "$as_me:$LINENO: checking filename of libavcodec library" >&5
+                HAS_FFMPEG=1
+                { echo "$as_me:$LINENO: checking filename of libavcodec library" >&5
 echo $ECHO_N "checking filename of libavcodec library... $ECHO_C" >&6; }
-              ffmpeg_lib_name=`objdump -x ${ffmpeg_lib_dir}/libavcodec.so | grep SONAME | awk '{ print $2 }'`
-              { echo "$as_me:$LINENO: result: $ffmpeg_lib_name" >&5
+                cat > t.c <<C_FILE
+                  int main () {}
+C_FILE
+                cc -o t t.c -lavcodec > /dev/null 2>&1
+                if test \! -x t ; then
+                    { echo "$as_me:$LINENO: result: cannot determine - using defaults" >&5
+echo "${ECHO_T}cannot determine - using defaults" >&6; }
+                 else
+                    ffmpeg_lib_name=`ldd ./t  | grep libavcodec | awk '{ print $1; }'`
+                    rm -f t t.c
+                    { echo "$as_me:$LINENO: result: $ffmpeg_lib_name" >&5
 echo "${ECHO_T}$ffmpeg_lib_name" >&6; }
-              FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
-            else
+                    FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
+                fi
+             else
               { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
     	    fi
@@ -7093,16 +7098,22 @@ rm -f conftest*
               { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
               HAS_X264=1
-              { echo "$as_me:$LINENO: checking location of x264 library" >&5
-echo $ECHO_N "checking location of x264 library... $ECHO_C" >&6; }
-              x264_lib_dir=`pkg-config --libs x264 | awk '{ print $1 }' | cut -c3-`
-              { echo "$as_me:$LINENO: result: $x264_lib_dir" >&5
-echo "${ECHO_T}$x264_lib_dir" >&6; }
               { echo "$as_me:$LINENO: checking filename of x264 library" >&5
 echo $ECHO_N "checking filename of x264 library... $ECHO_C" >&6; }
-              x264_lib_name=`objdump -x ${x264_lib_dir}/libx264.so | grep SONAME | awk '{ print $2 }'`
-              { echo "$as_me:$LINENO: result: $x264_lib_name" >&5
+              cat > t.c <<C_FILE
+                int main () {}
+C_FILE
+              cc -o t t.c -lx264 > /dev/null 2>&1
+              if test \! -x t ; then
+                  { echo "$as_me:$LINENO: result: cannot determine - using defaults" >&5
+echo "${ECHO_T}cannot determine - using defaults" >&6; }
+                else
+                  x264_lib_name=`ldd ./t  | grep libx264 | awk '{ print $1; }'`
+                  rm -f t t.c
+                  { echo "$as_me:$LINENO: result: $x264_lib_name" >&5
 echo "${ECHO_T}$x264_lib_name" >&6; }
+                  X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+              fi
               X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
 	    else
               { echo "$as_me:$LINENO: result: no" >&5
