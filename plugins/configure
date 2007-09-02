@@ -689,12 +689,15 @@ HAS_H263
 HAS_IXJ
 HAS_VPB
 HAS_CAPI
+HAS_LIBDL
 HAS_MPEG4
 FFMPEG_SOURCE
 FFMPEG_STACKALIGN_HACK
+FFMPEG_CFLAGS
 HAS_FFMPEG
 HAS_X264
-X264_LIBS
+X264_CFLAGS
+H264_LIBS
 HAS_THEORA
 THEORA_LIBS
 LIBOBJS
@@ -6237,6 +6240,271 @@ fi
 
 
 
+HAS_LIBDL=0
+
+for ac_header in dlfcn.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval echo '${'$as_ac_Header'}'`
+	       { echo "$as_me:$LINENO: result: $ac_res" >&5
+echo "${ECHO_T}$ac_res" >&6; }
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ HAS_DLFCN=yes
+else
+  HAS_DLFCN=no
+fi
+
+done
+
+if test "$HAS_DLFCN" = yes ; then
+  { echo "$as_me:$LINENO: checking if dlopen is available" >&5
+echo $ECHO_N "checking if dlopen is available... $ECHO_C" >&6; }
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <dlfcn.h>
+int
+main ()
+{
+void * p = dlopen("lib", 0);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  HAS_DLOPEN=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	HAS_DLOPEN=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  if test "$HAS_DLOPEN" = no ; then
+    { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+  else
+    { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+    { echo "$as_me:$LINENO: checking for dlopen in -ldl" >&5
+echo $ECHO_N "checking for dlopen in -ldl... $ECHO_C" >&6; }
+if test "${ac_cv_lib_dl_dlopen+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldl  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dlopen ();
+int
+main ()
+{
+return dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  ac_cv_lib_dl_dlopen=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_dl_dlopen=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ echo "$as_me:$LINENO: result: $ac_cv_lib_dl_dlopen" >&5
+echo "${ECHO_T}$ac_cv_lib_dl_dlopen" >&6; }
+if test $ac_cv_lib_dl_dlopen = yes; then
+  HAS_LIBDL=1
+else
+  HAS_LIBDL=0
+fi
+
+  fi
+fi
+
+
+
 
 HAS_MPEG4=0
 FFMPEG_SOURCE=
@@ -6516,10 +6784,54 @@ fi
 done
 
         if test "x${ffmpeg_headers}" = "xtrue"; then
-            HAS_FFMPEG=1
+
+          { echo "$as_me:$LINENO: checking for libavcodec version >= 51.11.0" >&5
+echo $ECHO_N "checking for libavcodec version >= 51.11.0... $ECHO_C" >&6; }
+          cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <ffmpeg/avcodec.h>
+	   #ifdef LIBAVCODEC_VERSION_INT
+             #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
+               yes
+             #endif
+           #endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "yes" >/dev/null 2>&1; then
+  ffmpeg_version=true
+else
+  ffmpeg_version=false
+fi
+rm -f conftest*
+
+          if test "x${ffmpeg_version}" = "xtrue"; then
+              { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+              HAS_FFMPEG=1
+              { echo "$as_me:$LINENO: checking location of libavcodec library" >&5
+echo $ECHO_N "checking location of libavcodec library... $ECHO_C" >&6; }
+              ffmpeg_lib_dir=`pkg-config --libs libavcodec | awk '{ print $1 }' | cut -c3-`
+              { echo "$as_me:$LINENO: result: $ffmpeg_lib_dir" >&5
+echo "${ECHO_T}$ffmpeg_lib_dir" >&6; }
+              { echo "$as_me:$LINENO: checking filename of libavcodec library" >&5
+echo $ECHO_N "checking filename of libavcodec library... $ECHO_C" >&6; }
+              ffmpeg_lib_name=`objdump -x ${ffmpeg_lib_dir}/libavcodec.so | grep SONAME | awk '{ print $2 }'`
+              { echo "$as_me:$LINENO: result: $ffmpeg_lib_name" >&5
+echo "${ECHO_T}$ffmpeg_lib_name" >&6; }
+              FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
+            else
+              { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+    	    fi
         fi
     fi
 fi
+
 
 
 
@@ -6606,7 +6918,6 @@ fi
     LIBS=$saved_LIBS
 
     if test "x${x264_libs}" != "xno"; then
-	X264_LIBS="-lx264"
 
 for ac_header in x264.h
 do
@@ -6750,7 +7061,53 @@ fi
 done
 
         if test "x${x264_headers}" = "xtrue"; then
-            HAS_X264=1
+          if test "x$HAS_LIBDL" != "x0" ; then
+	    H264_LIBS="-ldl"
+          fi
+
+          { echo "$as_me:$LINENO: checking for x264 version >= 48" >&5
+echo $ECHO_N "checking for x264 version >= 48... $ECHO_C" >&6; }
+          cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <x264.h>
+	   #ifdef X264_BUILD
+             #if X264_BUILD >= 48
+               yes
+             #endif
+           #endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "yes" >/dev/null 2>&1; then
+  x264_version=true
+else
+  x264_version=false
+fi
+rm -f conftest*
+
+          if test "x${x264_version}" = "xtrue"; then
+              { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+              HAS_X264=1
+              { echo "$as_me:$LINENO: checking location of x264 library" >&5
+echo $ECHO_N "checking location of x264 library... $ECHO_C" >&6; }
+              x264_lib_dir=`pkg-config --libs x264 | awk '{ print $1 }' | cut -c3-`
+              { echo "$as_me:$LINENO: result: $x264_lib_dir" >&5
+echo "${ECHO_T}$x264_lib_dir" >&6; }
+              { echo "$as_me:$LINENO: checking filename of x264 library" >&5
+echo $ECHO_N "checking filename of x264 library... $ECHO_C" >&6; }
+              x264_lib_name=`objdump -x ${x264_lib_dir}/libx264.so | grep SONAME | awk '{ print $2 }'`
+              { echo "$as_me:$LINENO: result: $x264_lib_name" >&5
+echo "${ECHO_T}$x264_lib_name" >&6; }
+              X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+	    else
+              { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+	    fi
         fi
     fi
 fi
@@ -6758,7 +7115,8 @@ fi
 
 
 
-HAS_THEORA=0
+
+HAS_THEORA=022
 THEORA_LIBS=
 
 # Check whether --enable-theora was given.
@@ -7795,19 +8153,22 @@ HAS_H263!$HAS_H263$ac_delim
 HAS_IXJ!$HAS_IXJ$ac_delim
 HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
+HAS_LIBDL!$HAS_LIBDL$ac_delim
 HAS_MPEG4!$HAS_MPEG4$ac_delim
 FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
 FFMPEG_STACKALIGN_HACK!$FFMPEG_STACKALIGN_HACK$ac_delim
+FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
 HAS_FFMPEG!$HAS_FFMPEG$ac_delim
 HAS_X264!$HAS_X264$ac_delim
-X264_LIBS!$X264_LIBS$ac_delim
+X264_CFLAGS!$X264_CFLAGS$ac_delim
+H264_LIBS!$H264_LIBS$ac_delim
 HAS_THEORA!$HAS_THEORA$ac_delim
 THEORA_LIBS!$THEORA_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 86; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 89; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8857,19 +9218,22 @@ HAS_H263!$HAS_H263$ac_delim
 HAS_IXJ!$HAS_IXJ$ac_delim
 HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
+HAS_LIBDL!$HAS_LIBDL$ac_delim
 HAS_MPEG4!$HAS_MPEG4$ac_delim
 FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
 FFMPEG_STACKALIGN_HACK!$FFMPEG_STACKALIGN_HACK$ac_delim
+FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
 HAS_FFMPEG!$HAS_FFMPEG$ac_delim
 HAS_X264!$HAS_X264$ac_delim
-X264_LIBS!$X264_LIBS$ac_delim
+X264_CFLAGS!$X264_CFLAGS$ac_delim
+H264_LIBS!$H264_LIBS$ac_delim
 HAS_THEORA!$HAS_THEORA$ac_delim
 THEORA_LIBS!$THEORA_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 86; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 89; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -9209,15 +9573,21 @@ echo "                           H.263  :  disabled"
 fi
 if test "x${HAS_FFMPEG}" = "x1" ; then
 echo "                           H.263+ :  enabled"
+else
+echo "                           H.263+ :  disabled (needs libavcodec)"
 fi
+if test "x${HAS_LIBDL}" = "x1" ; then
 if test "x${HAS_X264}" = "x1" ; then
 if test "x${HAS_FFMPEG}" = "x1" ; then
 echo "                           H.264  :  enabled"
 else
-echo "                           H.264  :  disabled"
+echo "                           H.264  :  disabled (needs libavcodec)"
 fi
 else
-echo "                           H.264  :  disabled"
+echo "                           H.264  :  disabled (needs libx264)"
+fi
+else
+echo "                           H.264  :  disabled (needs libdl)"
 fi
 if test "x${HAS_THEORA}" = "x1" ; then
 echo "                          THEORA  :  enabled"
