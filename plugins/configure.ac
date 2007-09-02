@@ -289,6 +289,24 @@ else
 fi
 AC_SUBST(HAS_CAPI)
 
+dnl ########################################################################
+dnl check for dynamic library code (dlopen and friends)
+
+HAS_LIBDL=0
+AC_CHECK_HEADERS([dlfcn.h], [HAS_DLFCN=yes], [HAS_DLFCN=no])
+if test "$HAS_DLFCN" = yes ; then
+  AC_MSG_CHECKING(if dlopen is available)
+  AC_TRY_COMPILE([#include <dlfcn.h>],
+                  [void * p = dlopen("lib", 0);], [HAS_DLOPEN=yes], [HAS_DLOPEN=no])
+  if test "$HAS_DLOPEN" = no ; then
+    AC_MSG_RESULT(no)
+  else
+    AC_MSG_RESULT(yes)
+    AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+  fi
+fi
+AC_SUBST(HAS_LIBDL)
+
 
 dnl ########################################################################
 dnl
@@ -348,10 +366,34 @@ if test "x${enable_ffmpeg}" != "xno" ; then
     if test "x${ffmpeg_libs}" != "xno"; then
         AC_CHECK_HEADERS([ffmpeg/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
         if test "x${ffmpeg_headers}" = "xtrue"; then
-            HAS_FFMPEG=1
+
+          AC_MSG_CHECKING(for libavcodec version >= 51.11.0)
+          AC_EGREP_CPP([yes],
+          [#include <ffmpeg/avcodec.h>
+	   #ifdef LIBAVCODEC_VERSION_INT
+             #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
+               yes
+             #endif
+           #endif
+          ],
+ 	   [ffmpeg_version=true], [ffmpeg_version=false])
+          if test "x${ffmpeg_version}" = "xtrue"; then
+              AC_MSG_RESULT([yes])
+              HAS_FFMPEG=1
+              AC_MSG_CHECKING(location of libavcodec library)
+              ffmpeg_lib_dir=`pkg-config --libs libavcodec | awk '{ print $1 }' | cut -c3-`
+              AC_MSG_RESULT($ffmpeg_lib_dir)
+              AC_MSG_CHECKING(filename of libavcodec library)
+              ffmpeg_lib_name=`objdump -x ${ffmpeg_lib_dir}/libavcodec.so | grep SONAME | awk '{ print $2 }'`
+              AC_MSG_RESULT($ffmpeg_lib_name)
+              FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
+            else
+              AC_MSG_RESULT([no])
+    	    fi
         fi
     fi
 fi
+AC_SUBST(FFMPEG_CFLAGS)
 AC_SUBST(HAS_FFMPEG)
 
 dnl ###########################################################################
@@ -371,21 +413,47 @@ if test "x${enable_x264}" != "xno" ; then
     LIBS=$saved_LIBS
 
     if test "x${x264_libs}" != "xno"; then
-	X264_LIBS="-lx264"
         AC_CHECK_HEADERS([x264.h], [x264_headers=true], [x264_headers=false])
         if test "x${x264_headers}" = "xtrue"; then
-            HAS_X264=1
+          if test "x$HAS_LIBDL" != "x0" ; then
+	    H264_LIBS="-ldl"
+          fi
+
+          AC_MSG_CHECKING(for x264 version >= 48)
+          AC_EGREP_CPP([yes],
+          [#include <x264.h>
+	   #ifdef X264_BUILD
+             #if X264_BUILD >= 48
+               yes
+             #endif
+           #endif
+          ],
+ 	  [x264_version=true], [x264_version=false])
+          if test "x${x264_version}" = "xtrue"; then
+              AC_MSG_RESULT([yes])
+              HAS_X264=1
+              AC_MSG_CHECKING(location of x264 library)
+              x264_lib_dir=`pkg-config --libs x264 | awk '{ print $1 }' | cut -c3-`
+              AC_MSG_RESULT($x264_lib_dir)
+              AC_MSG_CHECKING(filename of x264 library)
+              x264_lib_name=`objdump -x ${x264_lib_dir}/libx264.so | grep SONAME | awk '{ print $2 }'`
+              AC_MSG_RESULT($x264_lib_name)
+              X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+	    else
+              AC_MSG_RESULT([no])
+	    fi
         fi
     fi
 fi
 AC_SUBST(HAS_X264)
-AC_SUBST(X264_LIBS)
+AC_SUBST(X264_CFLAGS)
+AC_SUBST(H264_LIBS)
 
 dnl ###########################################################################
 dnl Checks for libtheora
 dnl ###########################################################################
 
-HAS_THEORA=0
+HAS_THEORA=022
 THEORA_LIBS=
 
 AC_ARG_ENABLE(theora, [  --disable-theora        Disable theora],,)
@@ -490,15 +558,21 @@ echo "                           H.263  :  disabled"
 fi
 if test "x${HAS_FFMPEG}" = "x1" ; then
 echo "                           H.263+ :  enabled"
+else
+echo "                           H.263+ :  disabled (needs libavcodec)"
 fi
+if test "x${HAS_LIBDL}" = "x1" ; then
 if test "x${HAS_X264}" = "x1" ; then
 if test "x${HAS_FFMPEG}" = "x1" ; then
 echo "                           H.264  :  enabled"
 else
-echo "                           H.264  :  disabled"
+echo "                           H.264  :  disabled (needs libavcodec)"
 fi
 else
-echo "                           H.264  :  disabled"
+echo "                           H.264  :  disabled (needs libx264)"
+fi
+else
+echo "                           H.264  :  disabled (needs libdl)"
 fi
 if test "x${HAS_THEORA}" = "x1" ; then
 echo "                          THEORA  :  enabled"

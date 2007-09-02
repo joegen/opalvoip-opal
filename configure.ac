@@ -366,6 +366,24 @@ else
   AC_MSG_RESULT(disabled)
 fi
 
+dnl ########################################################################
+dnl check for dynamic library code (dlopen and friends)
+
+HAS_LIBDL=0
+AC_CHECK_HEADERS([dlfcn.h], [HAS_DLFCN=yes], [HAS_DLFCN=no])
+if test "$HAS_DLFCN" = yes ; then
+  AC_MSG_CHECKING(if dlopen is available)
+  AC_TRY_COMPILE([#include <dlfcn.h>],
+                  [void * p = dlopen("lib", 0);], [HAS_DLOPEN=yes], [HAS_DLOPEN=no])
+  if test "$HAS_DLOPEN" = no ; then
+    AC_MSG_RESULT(no)
+  else
+    AC_MSG_RESULT(yes)
+    AC_CHECK_LIB([dl],[dlopen],[HAS_LIBDL=1], [HAS_LIBDL=0])
+  fi
+fi
+AC_SUBST(HAS_LIBDL)
+
 
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
