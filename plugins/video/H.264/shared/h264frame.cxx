@@ -38,6 +38,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef LICENCE_MPL
+  #ifndef _WIN32
+    #include "../gpl/enc-ctx.h"
+    #include "../gpl/x264loader_unix.h"
+    extern X264Library X264Lib;
+  #else
+    #define X264_NAL_ENCODE x264_nal_encode 
+  #endif
+#endif
 #define MAX_FRAME_SIZE 128 * 1024
 
 H264Frame::H264Frame ()
@@ -89,7 +98,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
   // read the nals out of the encoder and create meta data about their location and size in the frame
   for (currentNAL = 0; currentNAL < numberOfNALs; currentNAL++) {
     int currentNALLen;
-    currentNALLen = x264_nal_encode(currentPositionInFrame, &vopBufferLen, 1, &NALs[currentNAL]);
+    currentNALLen = X264_NAL_ENCODE(currentPositionInFrame, &vopBufferLen, 1, &NALs[currentNAL]);
     if (currentNALLen > 0) 
     {
       _NALs[_numberOfNALsInFrame].length = currentNALLen;

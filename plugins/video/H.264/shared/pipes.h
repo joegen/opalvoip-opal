@@ -32,6 +32,7 @@
 #ifndef __PIPES_H__
 #define __PIPES_H__ 1
 
+#define INIT                      0
 #define H264ENCODERCONTEXT_CREATE 1
 #define H264ENCODERCONTEXT_DELETE 2
 #define APPLY_OPTIONS             3
