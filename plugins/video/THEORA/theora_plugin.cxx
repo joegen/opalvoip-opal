@@ -270,10 +270,11 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
   _rxTheoraFrame->SetFromRTPFrame(srcRTP, flags);
 
 // linphone does not send markers so for now we ignore them (should be fixed)
-//   if (srcRTP.GetMarker()==0)
-//   {
-//      return 1;
-//   } 
+//if (srcRTP.GetMarker()==0)
+//  return 1;
+
+  if (!_rxTheoraFrame->HasOggPackets())
+    return 1;
 
   yuv_buffer yuv;
   ogg_packet oggPacket;
@@ -313,6 +314,8 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
         _gotTable = true;
 
       if (_gotHeader && _gotTable) theora_decode_init( &_theoraState, &_theoraInfo );
+      if (!_rxTheoraFrame->HasOggPackets())
+        return 1;
     } 
     else {
 
