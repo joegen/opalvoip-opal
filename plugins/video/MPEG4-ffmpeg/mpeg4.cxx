@@ -39,6 +39,12 @@
  * Untested under Windows or H.323
  *
  * $Log: mpeg4.cxx,v $
+ * Revision 1.11  2007/09/02 12:00:50  dominance
+ * * Improved x264 and libavcodec detection: version check & library name check
+ * * changed BOOL to bool in mpeg4 ( completion of previous commit)
+ *
+ * patch received from and thus thanks goes to Matthias Schneider.
+ *
  * Revision 1.10  2007/08/31 07:55:09  dsandras
  * Applied patch from Matthias Schneider <ma30002000 yahoo de> to fix
  * compilation on WIN32.
@@ -216,7 +222,7 @@ class MPEG4EncoderContext
     int GetFrameBytes();
 
   protected:
-    BOOL OpenCodec();
+    bool OpenCodec();
     void CloseCodec();
 
     // sets encoding paramters
@@ -231,14 +237,14 @@ class MPEG4EncoderContext
     float _iQuantFactor;
 
     // Automatic IFrame updates.  Defaults to false
-    BOOL _forceKeyframeUpdate;
+    bool _forceKeyframeUpdate;
 
     // Interval in seconds between forced IFrame updates if enabled
     int _keyframeUpdatePeriod;
 
 
     // Bandwidth throttling.  Defaults to false.
-    BOOL _doThrottle;
+    bool _doThrottle;
 
     // Modifiable upper limit for bits/s transferred
     int _bitRateHighLimit;
@@ -294,7 +300,7 @@ class MPEG4EncoderContext
             ~Throttle(){
                 delete[] _slots;
             }
-            BOOL throttle(int maxbytes) {
+            bool throttle(int maxbytes) {
                 if(_total > maxbytes) {
                     // Don't drop two in a row
                     if (_numSlots == 1 || _slots[(_index - 1) % _numSlots] != 0)
@@ -723,7 +729,7 @@ void MPEG4EncoderContext::ResizeEncodingFrame(bool restartCodec) {
 // Initializes codec parameters and opens the encoder
 //
 
-BOOL MPEG4EncoderContext::OpenCodec()
+bool MPEG4EncoderContext::OpenCodec()
 {
   _avcontext = FFMPEGLibraryInstance.AvcodecAllocContext();
   if (_avcontext == NULL) {
@@ -1021,7 +1027,7 @@ class MPEG4DecoderContext
                       BYTE * dst, unsigned & dstLen, unsigned int & flags);
 
     bool DecoderError(int threshold);
-    void SetErrorRecovery(BOOL error);
+    void SetErrorRecovery(bool error);
     void SetErrorThresh(int thresh);
     void SetDisableResize(bool disable);
 
@@ -1119,7 +1125,7 @@ int MPEG4DecoderContext::GetFrameBytes() {
 // the user passes the "Error Recovery" option.
 //
 
-void MPEG4DecoderContext::SetErrorRecovery(BOOL error) {
+void MPEG4DecoderContext::SetErrorRecovery(bool error) {
     _doError = error;
 }
 
@@ -1629,16 +1635,19 @@ PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
 
   if (!FFMPEGLibraryInstance.Load()) {
     *count = 0;
+    TRACE(1, "MPEG4\tCodec\tDisabled");
     return NULL;
   }
 
   // check version numbers etc
   if (version < PLUGIN_CODEC_VERSION_VIDEO) {
     *count = 0;
+    TRACE(1, "MPEG4\tCodec\tDisabled");
     return NULL;
   }
   else {
     *count = sizeof(mpeg4CodecDefn) / sizeof(struct PluginCodec_Definition);
+    TRACE(1, "MPEG4\tCodec\tEnabled");
     return mpeg4CodecDefn;
   }
 }
