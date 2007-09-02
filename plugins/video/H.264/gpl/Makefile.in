@@ -20,6 +20,12 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.4  2007/09/02 12:03:19  dominance
+# * dynamically load libx264 at runtime on *nix
+# * Improved error handling
+#
+# Patch received from and thus thanks goes to Matthias Schneider.
+#
 # Revision 1.3  2007/08/23 19:20:15  dominance
 # fix compilation of H.264 if CFLAGS is present from make
 #
@@ -80,9 +86,10 @@ LDSO	 	=@LDSO@
 PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
-X264_LIBS	=@X264_LIBS@
+X264_CFLAGS     =@X264_CFLAGS@
+H264_LIBS	=@H264_LIBS@
 
-EXTRACCFLAGS	+= -I$(COMMONDIR) 
+EXTRACCFLAGS	+= $(X264_CFLAGS) -I$(COMMONDIR) 
 
 vpath	%.cxx $(SHAREDDIR)
 vpath	%.cxx $(COMMONDIR)
@@ -91,7 +98,8 @@ vpath	%.o   $(OBJDIR)
 SRCS   += $(SHAREDDIR)/h264frame.cxx \
 	  $(COMMONDIR)/trace.cxx \
 	  enc-ctx.cxx  \
-	  h264helper_unix.cxx
+	  h264helper_unix.cxx \
+	  x264loader_unix.cxx
 
 
 $(OBJDIR)/%.o : %.cxx
@@ -107,7 +115,7 @@ PLUGIN	= ./$(BASENAME)_video_pwplugin_helper
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(X264_LIBS) -o $@ $^
+	$(CXX) $(H264_LIBS) -o $@ $^
 
 
 install:
