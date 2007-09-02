@@ -367,27 +367,33 @@ if test "x${enable_ffmpeg}" != "xno" ; then
         AC_CHECK_HEADERS([ffmpeg/avcodec.h], [ffmpeg_headers=true], [ffmpeg_headers=false])
         if test "x${ffmpeg_headers}" = "xtrue"; then
 
-          AC_MSG_CHECKING(for libavcodec version >= 51.11.0)
-          AC_EGREP_CPP([yes],
-          [#include <ffmpeg/avcodec.h>
-	   #ifdef LIBAVCODEC_VERSION_INT
-             #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
-               yes
+            AC_MSG_CHECKING(for libavcodec version >= 51.11.0)
+            AC_EGREP_CPP([yes],
+            [#include <ffmpeg/avcodec.h>
+  	     #ifdef LIBAVCODEC_VERSION_INT
+               #if LIBAVCODEC_VERSION_INT >= ((51<<16)+(11<<8)+0)
+                 yes
+               #endif
              #endif
-           #endif
-          ],
- 	   [ffmpeg_version=true], [ffmpeg_version=false])
-          if test "x${ffmpeg_version}" = "xtrue"; then
-              AC_MSG_RESULT([yes])
-              HAS_FFMPEG=1
-              AC_MSG_CHECKING(location of libavcodec library)
-              ffmpeg_lib_dir=`pkg-config --libs libavcodec | awk '{ print $1 }' | cut -c3-`
-              AC_MSG_RESULT($ffmpeg_lib_dir)
-              AC_MSG_CHECKING(filename of libavcodec library)
-              ffmpeg_lib_name=`objdump -x ${ffmpeg_lib_dir}/libavcodec.so | grep SONAME | awk '{ print $2 }'`
-              AC_MSG_RESULT($ffmpeg_lib_name)
-              FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
-            else
+            ],
+   	    [ffmpeg_version=true], [ffmpeg_version=false])
+            if test "x${ffmpeg_version}" = "xtrue"; then
+                AC_MSG_RESULT([yes])
+                HAS_FFMPEG=1
+                AC_MSG_CHECKING(filename of libavcodec library)
+                cat > t.c <<C_FILE
+                  int main () {}
+C_FILE
+                cc -o t t.c -lavcodec > /dev/null 2>&1
+                if test \! -x t ; then
+                    AC_MSG_RESULT(cannot determine - using defaults)
+                 else
+                    ffmpeg_lib_name=`ldd ./t  | grep libavcodec | awk '{ print $1; }'`
+                    rm -f t t.c
+                    AC_MSG_RESULT($ffmpeg_lib_name)
+                    FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
+                fi
+             else
               AC_MSG_RESULT([no])
     	    fi
         fi
@@ -432,12 +438,19 @@ if test "x${enable_x264}" != "xno" ; then
           if test "x${x264_version}" = "xtrue"; then
               AC_MSG_RESULT([yes])
               HAS_X264=1
-              AC_MSG_CHECKING(location of x264 library)
-              x264_lib_dir=`pkg-config --libs x264 | awk '{ print $1 }' | cut -c3-`
-              AC_MSG_RESULT($x264_lib_dir)
               AC_MSG_CHECKING(filename of x264 library)
-              x264_lib_name=`objdump -x ${x264_lib_dir}/libx264.so | grep SONAME | awk '{ print $2 }'`
-              AC_MSG_RESULT($x264_lib_name)
+              cat > t.c <<C_FILE
+                int main () {}
+C_FILE
+              cc -o t t.c -lx264 > /dev/null 2>&1
+              if test \! -x t ; then
+                  AC_MSG_RESULT(cannot determine - using defaults)
+                else
+                  x264_lib_name=`ldd ./t  | grep libx264 | awk '{ print $1; }'`
+                  rm -f t t.c
+                  AC_MSG_RESULT($x264_lib_name)
+                  X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
+              fi
               X264_CFLAGS="-DLIBX264_LIB_NAME='\"${x264_lib_name}\"'"
 	    else
               AC_MSG_RESULT([no])
