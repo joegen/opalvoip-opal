@@ -17,12 +17,15 @@ ifeq ($(HAS_MPEG4),1)
 SUBDIRS += video/MPEG4-ffmpeg
 endif
 
+HAS_LIBDL=@HAS_LIBDL@
 HAS_X264=@HAS_X264@
 HAS_FFMPEG=@HAS_FFMPEG@
+ifeq ($(HAS_LIBDL),1)
 ifeq ($(HAS_X264),1)
 ifeq ($(HAS_FFMPEG),1)
 SUBDIRS += video/H.264 \
 	   video/H.264/gpl
+endif
 endif
 endif
 
