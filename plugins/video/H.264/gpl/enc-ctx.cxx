@@ -33,6 +33,10 @@
 #endif
 #include <string.h>
 
+#ifndef _WIN32
+X264Library X264Lib;
+#endif
+
 static void logCallbackX264 (void *priv, int level, const char *fmt, va_list arg) {
   char buffer[512];
   int severity = 0;
@@ -63,7 +67,7 @@ X264EncoderContext::X264EncoderContext()
   _inputFrame.i_qpplus1 = 0;
   _inputFrame.img.i_csp = X264_CSP_I420;
  
-   x264_param_default(&_context);
+   X264_PARAM_DEFAULT(&_context);
 
   // We make use of the baseline profile, that means:
   // no B-Frames (too much latency in interactive video)
@@ -102,8 +106,8 @@ X264EncoderContext::X264EncoderContext()
   // auto detect number of CPUs
   _context.i_threads = 0;  
 
-  _codec = x264_encoder_open(&_context);
-
+  _codec = X264_ENCODER_OPEN(&_context);
+  
   if (_codec == NULL) {
     TRACE(1, "H264\tEncoder\tCouldn't init x264 encoder");
   } 
@@ -117,7 +121,7 @@ X264EncoderContext::~X264EncoderContext()
 {
     if (_codec != NULL)
     {
-      x264_encoder_close(_codec);
+      X264_ENCODER_CLOSE(_codec);
       TRACE(4, "H264\tEncoder\tClosed H.264 encoder, encoded " << _frameCounter << " Frames" );
     }
   if (_txH264Frame) delete _txH264Frame;
@@ -154,8 +158,8 @@ void X264EncoderContext::SetFrameHeight(int height)
 
 void X264EncoderContext::ApplyOptions()
 {
-  x264_encoder_close(_codec);
-  _codec = x264_encoder_open(&_context);
+  X264_ENCODER_CLOSE(_codec);
+  _codec = X264_ENCODER_OPEN(&_context);
   if (_codec == NULL) {
     TRACE(1, "H264\tEncoder\tCouldn't init x264 encoder");
   } 
@@ -206,10 +210,10 @@ int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLe
   // if the incoming data has changed size, tell the encoder
   if (_context.i_width != header->width || _context.i_height != header->height)
   {
-    x264_encoder_close(_codec);
+    X264_ENCODER_CLOSE(_codec);
     _context.i_width = header->width;
     _context.i_height = header->height;
-    _codec = x264_encoder_open(&_context);
+    _codec = X264_ENCODER_OPEN(&_context);
   } 
 
   bool wantIFrame = false;
@@ -236,7 +240,7 @@ int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLe
   _inputFrame.i_type = wantIFrame ? X264_TYPE_IDR : X264_TYPE_AUTO;
 
   while (numberOfNALs==0) { // workaround for first 2 packets being 0
-    if (x264_encoder_encode(_codec, &NALs, &numberOfNALs, &_inputFrame, &dummyOutput) < 0) {
+    if (X264_ENCODER_ENCODE(_codec, &NALs, &numberOfNALs, &_inputFrame, &dummyOutput) < 0) {
       TRACE (1,"H264\tEncoder\tEncoding failed");
       return 0;
     } 
