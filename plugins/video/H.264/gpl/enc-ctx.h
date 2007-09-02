@@ -38,6 +38,10 @@ extern "C" {
 #endif
 };
 
+#ifndef _WIN32
+#include "x264loader_unix.h"
+#endif
+
 #define CIF_WIDTH 352
 #define CIF_HEIGHT 288
 #define QCIF_WIDTH 176
@@ -49,6 +53,30 @@ extern "C" {
 #define H264_PAYLOAD_SIZE      1400
 #define H264_FRAME_RATE          25
 #define H264_KEY_FRAME_INTERVAL 2.0
+
+#ifdef _WIN32
+  #define X264_ENCODER_OPEN x264_encoder_open 
+  #define X264_PARAM_DEFAULT x264_param_default
+  #define X264_ENCODER_ENCODE x264_encoder_encode
+  #define X264_NAL_ENCODE x264_nal_encode
+  #define X264_ENCODER_RECONFIG x264_encoder_reconfig
+  #define X264_ENCODER_HEADERS x264_encoder_headers
+  #define X264_ENCODER_CLOSE x264_encoder_close
+  #define X264_PICTURE_ALLOC x264_picture_alloc
+  #define X264_PICTURE_CLEAN x264_picture_clean
+  #define X264_ENCODER_CLOSE x264_encoder_close
+#else
+  #define X264_ENCODER_OPEN X264Lib.Xx264_encoder_open 
+  #define X264_PARAM_DEFAULT X264Lib.Xx264_param_default
+  #define X264_ENCODER_ENCODE X264Lib.Xx264_encoder_encode
+  #define X264_NAL_ENCODE X264Lib.Xx264_nal_encode
+  #define X264_ENCODER_RECONFIG X264Lib.Xx264_encoder_reconfig
+  #define X264_ENCODER_HEADERS X264Lib.Xx264_encoder_headers
+  #define X264_ENCODER_CLOSE X264Lib.Xx264_encoder_close
+  #define X264_PICTURE_ALLOC X264Lib.Xx264_picture_alloc
+  #define X264_PICTURE_CLEAN X264Lib.Xx264_picture_clean
+  #define X264_ENCODER_CLOSE X264Lib.Xx264_encoder_close
+#endif
 
 static void logCallbackX264   (void *priv, int level, const char *fmt, va_list arg);
 
@@ -79,4 +107,5 @@ class X264EncoderContext
     int _frameCounter;
 } ;
 
-#endif /* __H264-X264_H__ */
+
+#endif /* __ENC_CTX_H__ */

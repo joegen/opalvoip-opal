@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include "trace.h"
-
+#include "x264loader_unix.h"
 #define MAX_FRAME_SIZE 608286
 
 std::ifstream dlStream;
@@ -43,12 +43,12 @@ int ret;
 
 X264EncoderContext* x264;
 
+extern X264Library X264Lib;
+
 void closeAndExit()
 {
   dlStream.close();
-  if (dlStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when closing DL named pipe"); }
   ulStream.close();
-  if (ulStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when closing UL named pipe"); }
   exit(1);
 }
 
@@ -61,9 +61,9 @@ void writeStream (std::ofstream & stream, const char* data, unsigned bytes)
 void readStream (std::ifstream & stream, char* data, unsigned bytes)
 {
   stream.read(data, bytes);
-  if (stream.fail()) { TRACE (1, "H264\tIPC\tCP: Failure on reading - terminating"); closeAndExit();      }
+  if (stream.fail()) { TRACE (1, "H264\tIPC\tCP: Terminating");                           closeAndExit(); }
   if (stream.bad())  { TRACE (1, "H264\tIPC\tCP: Bad flag set on reading - terminating"); closeAndExit(); }
-  if (stream.eof())  { TRACE (1, "H264\tIPC\tCP: Received EOF - terminating"); closeAndExit();            }
+  if (stream.eof())  { TRACE (1, "H264\tIPC\tCP: Received EOF - terminating");            closeAndExit(); }
 }
 
 void flushStream (std::ofstream & stream)
@@ -75,7 +75,8 @@ void flushStream (std::ofstream & stream)
 
 int main(int argc, char *argv[])
 {
-  if (argc != 2) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
+  unsigned status;
+  if (argc != 3) { fprintf(stderr, "Not to be executed directly - exiting\n"); exit (1); }
 
   char * debug_level = getenv ("PWLIB_TRACE_CODECS");
   if (debug_level!=NULL) {
@@ -84,13 +85,28 @@ int main(int argc, char *argv[])
   else {
     Trace::SetLevel(0);
   }
-		      
+
   x264 = NULL;
   dstLen=1400;
-  dlStream.open(argv[0], std::ios::binary);
+  dlStream.open(argv[1], std::ios::binary);
   if (dlStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when opening DL named pipe"); exit (1); }
-  ulStream.open(argv[1],std::ios::binary);
+  ulStream.open(argv[2],std::ios::binary);
   if (ulStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when opening UL named pipe"); exit (1); }
+
+  if (X264Lib.Load()) 
+    status = 1;
+  else 
+    status = 0;
+
+  readStream(dlStream, (char*)&msg, sizeof(msg));
+  writeStream(ulStream,(char*)&msg, sizeof(msg)); 
+  writeStream(ulStream,(char*)&status, sizeof(status)); 
+  flushStream(ulStream);
+
+  if (status == 0) {
+    TRACE (1, "H264\tIPC\tCP: Failed to load dynamic library - exiting"); 
+    closeAndExit();
+  }
 
   while (1) {
     readStream(dlStream, (char*)&msg, sizeof(msg));
