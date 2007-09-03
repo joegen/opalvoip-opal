@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.28  2007/09/03 09:48:27  rjongbloed
+ * Fixed assert when run OpenPhone for first time.
+ *
  * Revision 1.27  2007/08/24 09:35:35  rjongbloed
  * Fixed GNU compiler compatibility.
  *
@@ -2130,6 +2133,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     m_Aliases->Append((const char *)aliases[i]);
 
   INIT_FIELD(DTMFSendMode, m_manager.h323EP->GetSendUserInputMode());
+  if (m_DTMFSendMode > OpalConnection::SendUserInputAsInlineRFC2833)
+    m_DTMFSendMode = OpalConnection::SendUserInputAsString;
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
   INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != FALSE);
   INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != FALSE);
