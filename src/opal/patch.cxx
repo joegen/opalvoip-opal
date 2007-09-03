@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2050  2007/08/17 07:39:56  rjongbloed
+ * Revision 1.2051  2007/09/03 06:40:36  rjongbloed
+ * Assured data frame has zero payload size so if source media stream does not
+ *   alter it the default will be to ignore the frame.
+ *
+ * Revision 2.49  2007/08/17 07:39:56  rjongbloed
  * Removed extraneous piece of code and fixed formatting.
  *
  * Revision 2.48  2007/08/01 08:37:57  csoutheren
@@ -559,6 +563,7 @@ void OpalMediaPatch::Main()
   RTP_DataFrame emptyFrame(source.GetDataSize());
 	
   while (source.IsOpen()) {
+    sourceFrame.SetPayloadSize(0); 
     if (!source.ReadPacket(sourceFrame))
       break;
  
