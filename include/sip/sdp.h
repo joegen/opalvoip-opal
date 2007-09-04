@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2025  2007/06/22 05:41:47  rjongbloed
+ * Revision 1.2026  2007/09/04 08:27:45  rjongbloed
+ * Added ptime and maxptime SDP attributes.
+ *
+ * Revision 2.24  2007/06/22 05:41:47  rjongbloed
  * Major codec API update:
  *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
  *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
@@ -180,6 +183,8 @@ class SDPMediaFormat : public PObject
 
     void SetParameters(const PString & v) { parameters = v; }
 
+    void SetPacketTime(const PString & optionName, unsigned ptime);
+
     const OpalMediaFormat & GetMediaFormat() const;
 
   protected:
@@ -263,7 +268,7 @@ class SDPMediaDescription : public PObject
     void AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map);
     void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map);
 
-    void SetAttribute(const PString & attr);
+    void SetAttribute(const PString & attr, const PString & value);
 
     void SetDirection(const Direction & d) { direction = d; }
     Direction GetDirection() const { return direction; }
@@ -274,11 +279,11 @@ class SDPMediaDescription : public PObject
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
 
-	  PINDEX GetPacketTime () const            { return packetTime; }
-	  void SetPacketTime (PINDEX milliseconds) { packetTime = milliseconds; }
-
   protected:
     void PrintOn(ostream & strm, const PString & str) const;
+    SDPMediaFormat * FindFormat(PString & str) const;
+    void SetPacketTime(const PString & optionName, const PString & value);
+
     MediaType mediaType;
     WORD portCount;
     PCaselessString media;
@@ -288,7 +293,6 @@ class SDPMediaDescription : public PObject
     Direction direction;
 
     SDPMediaFormatList formats;
-    PINDEX packetTime;                  // ptime attribute, in milliseconds
 
 #if OPAL_T38FAX
     PStringToString t38Attributes;
