@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2013  2007/08/10 09:04:57  rjongbloed
+ * Revision 1.2014  2007/09/04 02:05:03  rjongbloed
+ * Fixed benign warning trace on API level for codec plug ins.
+ *
+ * Revision 2.12  2007/08/10 09:04:57  rjongbloed
  * Fixed numerous spelling errors.
  * Added extra symbols for backward compatibility.
  * Removed unused (and commented out) code.
@@ -174,7 +177,7 @@ extern "C" {
 
 #endif
 
-#define PWLIB_PLUGIN_API_VERSION 0
+#define PWLIB_PLUGIN_API_VERSION 1
 
 #define  PLUGIN_CODEC_VERSION           1    // initial version
 #define  PLUGIN_CODEC_VERSION_WIDEBAND  2    // added wideband
