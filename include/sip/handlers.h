@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.6  2007/09/04 11:54:49  csoutheren
+ * Fixed compilation on Linux
+ *
  * Revision 1.5  2007/09/04 05:42:55  rjongbloed
  * Added OnRegistrationStatus() call back function so can distinguish
  *   between initial registration and refreshes.
@@ -96,12 +99,12 @@ public:
     Unsubscribed      // The registrating is inactive
   };
 
-  _inline void SetState (SIPHandler::State s) 
+  inline void SetState (SIPHandler::State s) 
     {
       state = s;
     }
 
-  _inline SIPHandler::State GetState () 
+  inline SIPHandler::State GetState () 
     {
       return state;
     }
