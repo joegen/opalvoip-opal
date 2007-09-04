@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2034  2007/08/20 06:30:38  rjongbloed
+ * Revision 1.2035  2007/09/04 08:24:27  rjongbloed
+ * Fixed being able to transmit more than one frame per packet audio.
+ *
+ * Revision 2.33  2007/08/20 06:30:38  rjongbloed
  * Don't validate input paylaod type if transcoding from raw media.
  *
  * Revision 2.32  2007/07/16 06:26:02  csoutheren
@@ -464,8 +467,9 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFor
                                            PINDEX inputBytes, PINDEX outputBytes)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
-  inputBytesPerFrame = inputBytes;
-  outputBytesPerFrame = outputBytes;
+  PINDEX framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+  inputBytesPerFrame = inputBytes*framesPerPacket;
+  outputBytesPerFrame = outputBytes*framesPerPacket;
 }
 
 
