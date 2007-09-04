@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2018  2007/09/04 04:48:13  csoutheren
+ * Revision 1.2019  2007/09/04 07:46:24  csoutheren
+ * Fixed tts
+ *
+ * Revision 2.17  2007/09/04 04:48:13  csoutheren
  * Fix state machine problems
  *
  * Revision 2.16  2007/03/29 05:15:48  csoutheren
@@ -193,7 +196,8 @@ class OpalIVREndPoint : public OpalEndPoint
       OpalCall & call,        ///<  Owner of connection
       const PString & token,  ///<  Call token for new connection
       void * userData,        ///<  Arbitrary data to pass to connection
-      const PString & vxml    ///<  vxml to execute
+      const PString & vxml,   ///<  vxml to execute
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Create a unique token for a new conection.
@@ -266,7 +270,8 @@ class OpalIVRConnection : public OpalConnection
       OpalIVREndPoint & endpoint, ///<  Owner endpoint for connection
       const PString & token,      ///<  Token for connection
       void * userData,            ///<  Arbitrary data to pass to connection
-      const PString & vxml        ///<  vxml to execute
+      const PString & vxml,       ///<  vxml to execute
+      OpalConnection::StringOptions * stringOptions = NULL
     );
 
     /**Destroy endpoint.
