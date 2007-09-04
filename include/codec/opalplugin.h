@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2014  2007/09/04 02:05:03  rjongbloed
+ * Revision 1.2015  2007/09/04 02:21:20  rjongbloed
+ * Allow for plug in API versions other than zero.
+ *
+ * Revision 2.13  2007/09/04 02:05:03  rjongbloed
  * Fixed benign warning trace on API level for codec plug ins.
  *
  * Revision 2.12  2007/08/10 09:04:57  rjongbloed
@@ -177,6 +180,9 @@ extern "C" {
 
 #endif
 
+#ifdef PWLIB_PLUGIN_API_VERSION
+#undef PWLIB_PLUGIN_API_VERSION
+#endif
 #define PWLIB_PLUGIN_API_VERSION 1
 
 #define  PLUGIN_CODEC_VERSION           1    // initial version
