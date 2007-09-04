@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidplugin.h,v $
- * Revision 1.2006  2006/11/05 05:04:46  rjongbloed
+ * Revision 1.2007  2007/09/04 02:21:20  rjongbloed
+ * Allow for plug in API versions other than zero.
+ *
+ * Revision 2.5  2006/11/05 05:04:46  rjongbloed
  * Improved the terminal LID line ringing, epecially for country emulation.
  *
  * Revision 2.4  2006/10/25 22:26:14  rjongbloed
@@ -65,7 +68,10 @@ extern "C" {
 
 #endif
 
-#define PWLIB_PLUGIN_API_VERSION 0
+#ifdef PWLIB_PLUGIN_API_VERSION
+#undef PWLIB_PLUGIN_API_VERSION
+#endif
+#define PWLIB_PLUGIN_API_VERSION 1
 
 ////////////////////////////////////////////////////////////////////////////////
 //
