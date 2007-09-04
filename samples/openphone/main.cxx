@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.31  2007/09/04 07:12:28  rjongbloed
+ * Fixed crash when change a media format option after moving it in dialog.
+ *
  * Revision 1.30  2007/09/04 06:22:50  rjongbloed
  * Fixed OpenPhone auto answer (threading issue)
  *
@@ -2618,11 +2621,14 @@ void OptionsDialog::MoveUpCodec(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
   m_selectedCodecs->GetSelections(selections);
-  wxString value = m_selectedCodecs->GetString(selections[0]);
-  m_selectedCodecs->Delete(selections[0]);
-  m_selectedCodecs->InsertItems(1, &value, selections[0]-1);
-  m_selectedCodecs->SetSelection(selections[0]-1);
-  m_MoveUpCodec->Enable(selections[0] > 1);
+  int selection = selections[0];
+  wxString value = m_selectedCodecs->GetString(selection);
+  MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selection);
+  m_selectedCodecs->Delete(selection);
+  m_selectedCodecs->InsertItems(1, &value, --selection);
+  m_selectedCodecs->SetClientData(selection, media);
+  m_selectedCodecs->SetSelection(selection);
+  m_MoveUpCodec->Enable(selection > 0);
   m_MoveDownCodec->Enable(true);
 }
 
@@ -2631,12 +2637,15 @@ void OptionsDialog::MoveDownCodec(wxCommandEvent & /*event*/)
 {
   wxArrayInt selections;
   m_selectedCodecs->GetSelections(selections);
-  wxString value = m_selectedCodecs->GetString(selections[0]);
-  m_selectedCodecs->Delete(selections[0]);
-  m_selectedCodecs->InsertItems(1, &value, selections[0]+1);
-  m_selectedCodecs->SetSelection(selections[0]+1);
+  int selection = selections[0];
+  wxString value = m_selectedCodecs->GetString(selection);
+  MyMedia * media = (MyMedia *)m_selectedCodecs->GetClientData(selection);
+  m_selectedCodecs->Delete(selection);
+  m_selectedCodecs->InsertItems(1, &value, ++selection);
+  m_selectedCodecs->SetClientData(selection, media);
+  m_selectedCodecs->SetSelection(selection);
   m_MoveUpCodec->Enable(true);
-  m_MoveDownCodec->Enable(selections[0] < (int)m_selectedCodecs->GetCount()-2);
+  m_MoveDownCodec->Enable(selection < (int)m_selectedCodecs->GetCount()-1);
 }
 
 
