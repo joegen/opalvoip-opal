@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2087  2007/07/22 13:02:11  rjongbloed
+ * Revision 1.2088  2007/09/04 05:40:15  rjongbloed
+ * Added OnRegistrationStatus() call back function so can distinguish
+ *   between initial registration and refreshes.
+ *
+ * Revision 2.86  2007/07/22 13:02:11  rjongbloed
  * Cleaned up selection of registered name usage of URL versus host name.
  *
  * Revision 2.85  2007/06/29 06:59:56  rjongbloed
@@ -756,6 +760,17 @@ class SIPEndPoint : public OpalEndPoint
       const PString & note);
 
     
+    /**Callback called when a registration to a SIP registrar status.
+     * The BOOL indicates if the operation that failed was a REGISTER or 
+     * an (UN)REGISTER.
+     */
+    virtual void OnRegistrationStatus(
+      const PString & aor,
+      BOOL wasRegistering,
+      BOOL reRegistering,
+      SIP_PDU::StatusCodes reason
+    );
+
     /**Callback called when a registration to a SIP registrars fails.
      * The BOOL indicates if the operation that failed was a REGISTER or 
      * an (UN)REGISTER.
@@ -763,16 +778,17 @@ class SIPEndPoint : public OpalEndPoint
     virtual void OnRegistrationFailed(
       const PString & aor,
       SIP_PDU::StatusCodes reason,
-      BOOL wasRegistering);
-    
-      
+      BOOL wasRegistering
+    );
+
     /**Callback called when a registration or an unregistration is successful.
      * The BOOL indicates if the operation that failed was a registration or
      * not.
      */
     virtual void OnRegistered(
       const PString & aor,
-      BOOL wasRegistering);
+      BOOL wasRegistering
+    );
 
     
     /**Returns TRUE if the given URL has been registered 

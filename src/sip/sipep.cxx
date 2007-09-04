@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2183  2007/08/21 03:12:03  csoutheren
+ * Revision 1.2184  2007/09/04 05:40:15  rjongbloed
+ * Added OnRegistrationStatus() call back function so can distinguish
+ *   between initial registration and refreshes.
+ *
+ * Revision 2.182  2007/08/21 03:12:03  csoutheren
  * Fix problem with From having wrong protocol
  *
  * Revision 2.181  2007/08/07 19:44:41  dsandras
@@ -1396,6 +1400,18 @@ void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/,
     from += '>';
 
   OnMessageReceived(from, pdu.GetEntityBody());
+}
+
+
+void SIPEndPoint::OnRegistrationStatus(const PString & aor,
+                                       BOOL wasRegistering,
+                                       BOOL /*reRegistering*/,
+                                       SIP_PDU::StatusCodes reason)
+{
+  if (reason == SIP_PDU::Successful_OK)
+    OnRegistered(aor, wasRegistering);
+  else
+    OnRegistrationFailed(aor, reason, wasRegistering);
 }
 
 
