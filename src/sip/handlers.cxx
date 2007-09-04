@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.10  2007/09/04 05:42:55  rjongbloed
+ * Added OnRegistrationStatus() call back function so can distinguish
+ *   between initial registration and refreshes.
+ * Fixed handler states so Refreshing state is actually used!
+ *
  * Revision 1.9  2007/07/22 13:02:13  rjongbloed
  * Cleaned up selection of registered name usage of URL versus host name.
  *
@@ -169,15 +174,12 @@ BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 }
 
 
-BOOL SIPHandler::SendRequest()
+BOOL SIPHandler::SendRequest(SIPHandler::State s)
 {
   if (transport == NULL)
     return FALSE;
 
-  if (expire == 0)
-    SetState(Unsubscribing); 
-  else
-    SetState(Subscribing); 
+  SetState(expire != 0 ? s : Unsubscribing); 
 
   return transport->WriteConnect(WriteSIPHandler, this);
 }
@@ -191,12 +193,20 @@ BOOL SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 
 void SIPHandler::OnReceivedOK(SIP_PDU & /*response*/)
 {
-  if (GetState() == Unsubscribing) {
-    SetState(Unsubscribed);
-    expire = -1;
+  switch (GetState()) {
+    case Unsubscribing :
+      SetState(Unsubscribed);
+      expire = -1;
+      break;
+
+    case Subscribing :
+    case Refreshing :
+      SetState(Subscribed);
+      break;
+
+    default :
+      PTRACE(2, "SIP\tUnexpected OK in handler.");
   }
-  else if (GetState() == Subscribing)
-    SetState(Subscribed);
 }
 
 
@@ -218,10 +228,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes r)
       expire = -1;
   }
 
-  if (GetState() == Unsubscribing)
-    SetState(Subscribed);
-  else if (GetState() == Subscribing)
-    SetState(Unsubscribed);
+  SetState(GetState() == Unsubscribing ? Subscribed : Unsubscribed);
 }
 
 
@@ -316,9 +323,8 @@ void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
     PTRACE(2, "SIP\tUpdated realm to " << authentication.GetAuthRealm());
   }
 
-  aor = targetAddress.AsString();
-  aor = aor.Mid(4);
-  endpoint.OnRegistered(aor, (GetState() != Unsubscribing)); 
+  aor = targetAddress.AsString().Mid(4);
+  endpoint.OnRegistrationStatus(aor, GetState() != Unsubscribing, GetState() == Refreshing, SIP_PDU::Successful_OK);
 
   SIPHandler::OnReceivedOK(response);
 }
@@ -337,7 +343,7 @@ void SIPRegisterHandler::OnFailed (SIP_PDU::StatusCodes r)
 
   aor = targetAddress.AsString();
   aor = aor.Mid(4);
-  endpoint.OnRegistrationFailed (aor, r, (GetState() != Unsubscribing));
+  endpoint.OnRegistrationStatus(aor, GetState() != Unsubscribing, FALSE, r);
 
   SIPHandler::OnFailed(r);
 }
@@ -347,8 +353,7 @@ void SIPRegisterHandler::OnExpireTimeout(PTimer &, INT)
 {
   PTRACE(2, "SIP\tStarting REGISTER for binding refresh");
 
-  SetState(Refreshing);
-  if (!SendRequest())
+  if (!SendRequest(Refreshing))
     SetState(Unsubscribed);
 }
 
@@ -637,8 +642,7 @@ void SIPSubscribeHandler::OnExpireTimeout(PTimer &, INT)
 {
   PTRACE(2, "SIP\tStarting SUBSCRIBE for binding refresh");
 
-  SetState(Refreshing);
-  if (!SendRequest())
+  if (!SendRequest(Refreshing))
     SetState(Unsubscribed);
 }
 
@@ -732,8 +736,7 @@ void SIPPublishHandler::OnExpireTimeout(PTimer &, INT)
 {
   PTRACE(2, "SIP\tStarting PUBLISH for binding refresh");
 
-  SetState(Refreshing); 
-  if (!SendRequest())
+  if (!SendRequest(Refreshing))
     SetState(Unsubscribed);
 }
 
@@ -742,7 +745,6 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
 {
   if (GetState() == Subscribed) {
     if (stateChanged) {
-      SetState(Subscribing); 
       if (!SendRequest())
         SetState(Unsubscribed);
       stateChanged = FALSE;
