@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2052  2007/08/31 05:28:16  rjongbloed
+ * Revision 1.2053  2007/09/04 08:27:45  rjongbloed
+ * Added ptime and maxptime SDP attributes.
+ *
+ * Revision 2.51  2007/08/31 05:28:16  rjongbloed
  * Allow for boolean FMTP parameters to not include the =1 part, its mere presence is a "true".
  *
  * Revision 2.50  2007/07/23 06:34:19  csoutheren
@@ -553,7 +556,6 @@ void SDPMediaFormat::PrintOn(ostream & strm) const
   strm << "\r\n";
 
   PString fmtpString = GetFMTP();
-
   if (!fmtpString.IsEmpty())
     strm << "a=fmtp:" << (int)payloadType << ' ' << fmtpString << "\r\n";
 }
@@ -565,6 +567,17 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
     mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
   }
   return mediaFormat;
+}
+
+
+void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
+{
+  if (mediaFormat.HasOption(optionName)) {
+    unsigned frameTime = mediaFormat.GetFrameTime();
+    unsigned newCount = (ptime*mediaFormat.GetTimeUnits()+frameTime-1)/frameTime;
+    mediaFormat.SetOptionInteger(optionName, newCount);
+    PTRACE(4, "SDP\tMedia fromat " << optionName << " set to " << newCount << " packets from " << ptime << " milliseconds");
+  }
 }
 
 
@@ -599,8 +612,7 @@ ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
 
 SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
   : mediaType(_mediaType),
-    transportAddress(address),
-  packetTime(0)
+    transportAddress(address)
 {
   switch (mediaType) {
     case Audio:
@@ -684,88 +696,117 @@ BOOL SDPMediaDescription::Decode(const PString & str)
 }
 
 
-void SDPMediaDescription::SetAttribute(const PString & ostr)
+void SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
   // get the attribute type
-  PINDEX pos = ostr.Find(":");
-  if (pos == P_MAX_INDEX) {
-    if (ostr *= "sendonly")
-      direction = SendOnly;
-    else if (ostr *= "recvonly")
-      direction = RecvOnly;
-    else if (ostr *= "sendrecv")
-      direction = SendRecv;
-    else if (ostr *= "inactive")
-      direction = Inactive;
-    else
-      PTRACE(2, "SDP\tMalformed media attribute " << ostr);
+  if (attr *= "sendonly") {
+    direction = SendOnly;
     return;
   }
-  PString attr = ostr.Left(pos);
-  PString str  = ostr.Mid(pos+1);
 
-  if (attr *= "ptime") {                // caseless comparison
-    packetTime = str.AsUnsigned() ;
+  if (attr *= "recvonly") {
+    direction = RecvOnly;
+    return;
+  }
+
+  if (attr *= "sendrecv") {
+    direction = SendRecv;
+    return;
+  }
+
+  if (attr *= "inactive") {
+    direction = Inactive;
     return;
   }
 
 #if OPAL_T38FAX
   if (attr.Left(3) *= "t38") {
-    t38Attributes.SetAt(attr, str);
+    t38Attributes.SetAt(attr, value);
     return;
   }
 #endif
 
-  // extract the RTP payload type
-  pos = str.Find(" ");
-  if (pos == P_MAX_INDEX) {
-    PTRACE(2, "SDP\tMalformed media attribute " << ostr);
-    return;
-  }
-  RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
-
-  // find the format that matches the payload type
-  PINDEX fmt = 0;
-  for (;;) {
-    if (fmt >= formats.GetSize()) {
-      PTRACE(2, "SDP\tMedia attribute " << attr << " found for unknown RTP type " << pt);
-      return;
-    }
-    if (formats[fmt].GetPayloadType() == pt)
-      break;
-    fmt++;
-  }
-  SDPMediaFormat & format = formats[fmt];
-
-  // extract the attribute argument
-  str = str.Mid(pos+1).Trim();
-
   // handle rtpmap attribute
   if (attr *= "rtpmap") {
+    PString params = value;
+    SDPMediaFormat * format = FindFormat(params);
+    if (format != NULL) {
+      PStringArray tokens = value.Tokenise('/');
+      if (tokens.GetSize() < 2) {
+        PTRACE(2, "SDP\tMalformed rtpmap attribute for " << format->GetEncodingName());
+        return;
+      }
 
-    PStringArray tokens = str.Tokenise('/');
-    if (tokens.GetSize() < 2) {
-      PTRACE(2, "SDP\tMalformed rtpmap attribute for " << pt);
-      return;
+      format->SetEncodingName(tokens[0]);
+      format->SetClockRate(tokens[1].AsUnsigned());
+      if (tokens.GetSize() > 2)
+        format->SetParameters(tokens[2]);
     }
-
-    format.SetEncodingName(tokens[0]);
-    format.SetClockRate(tokens[1].AsUnsigned());
-    if (tokens.GetSize() > 2)
-      format.SetParameters(tokens[2]);
-
     return;
   }
 
   // handle fmtp attributes
   if (attr *= "fmtp") {
-    format.SetFMTP(str);
+    PString params = value;
+    SDPMediaFormat * format = FindFormat(params);
+    if (format != NULL)
+      format->SetFMTP(params);
+    return;
+  }
+
+  if (attr *= "ptime") {
+    SetPacketTime(OpalAudioFormat::TxFramesPerPacketOption(), value);
+    return;
+  }
+
+  if (attr *= "maxptime") {
+    SetPacketTime(OpalAudioFormat::RxFramesPerPacketOption(), value);
     return;
   }
 
   // unknown attriutes
-  PTRACE(2, "SDP\tUnknown media attribute " << ostr);
+  PTRACE(2, "SDP\tUnknown media attribute " << attr);
   return;
+}
+
+
+SDPMediaFormat * SDPMediaDescription::FindFormat(PString & str) const
+{
+  // extract the RTP payload type
+  PINDEX pos = str.FindSpan("0123456789");
+  if (str.GetLength() > pos && !isspace(str[pos])) {
+    PTRACE(2, "SDP\tMalformed media attribute requiring format " << str);
+    return NULL;
+  }
+
+  RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
+
+  // extract the attribute argument
+  while (isspace(str[pos+1]))
+    pos++;
+  str.Delete(0, pos);
+
+  // find the format that matches the payload type
+  for (PINDEX fmt = 0; fmt < formats.GetSize(); fmt++) {
+    if (formats[fmt].GetPayloadType() == pt)
+      return &formats[fmt];
+  }
+
+  PTRACE(2, "SDP\tMedia attribute found for unknown RTP type " << pt);
+  return NULL;
+}
+
+
+void SDPMediaDescription::SetPacketTime(const PString & optionName, const PString & value)
+{
+  unsigned newTime = value.AsUnsigned();
+  if (newTime < 10) {
+    PTRACE(2, "SDP\tMalformed (max)ptime attribute value " << value);
+    return;
+  }
+
+  for (PINDEX i = 0; i < formats.GetSize(); i++)
+   formats[i].SetPacketTime(optionName, newTime);
 }
 
 
@@ -819,12 +860,32 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
       str << ' ' << (int)formats[i].GetPayloadType();
     str << "\r\n";
 
+    // Fill in the ptime  as maximum tx packets of all media formats
+    // and maxptime as minimum rx packets of all media formats
+    unsigned ptime = 0;
+    unsigned maxptime = UINT_MAX;
+
     // output attributes for each payload type
-    for (i = 0; i < formats.GetSize(); i++)
+    for (i = 0; i < formats.GetSize(); i++) {
       str << formats[i];
 
-    if (packetTime)
-      str << "a=ptime:" << packetTime << "\r\n";
+      const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
+      if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
+        unsigned ptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+        if (ptime < ptime1)
+          ptime = ptime1;
+      }
+      if (mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
+        unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+        if (maxptime > maxptime1)
+          maxptime = maxptime1;
+      }
+    }
+
+    if (ptime > 0)
+      str << "a=ptime:" << ptime << "\r\n";
+    if (maxptime < UINT_MAX)
+      str << "a=maxptime:" << maxptime << "\r\n";
 
     // media format direction
     switch (direction) {
@@ -1174,11 +1235,16 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'a' : // zero or more media attribute lines
-              currentMedia->SetAttribute(value);
+              pos = value.FindSpan("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"); // Legal chars from RFC
+              if (value.GetLength() == pos || value[pos] == ':')
+                currentMedia->SetAttribute(value.Left(pos), value.Mid(pos+1));
+              else {
+                PTRACE(2, "SDP\tMalformed media attribute " << value);
+              }
               break;
 
             default:
-              PTRACE(1, "SDP\tUnknown mediainformation key " << key[0]);
+              PTRACE(1, "SDP\tUnknown media information key " << key[0]);
           }
         }
       }
