@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2024  2007/09/04 04:48:41  csoutheren
+ * Revision 1.2025  2007/09/04 05:36:42  csoutheren
+ * Add tone generator capability to IVR
+ *
+ * Revision 2.23  2007/09/04 04:48:41  csoutheren
  * Fix state machine problems
  *
  * Revision 2.22  2007/04/04 02:12:01  rjongbloed
@@ -323,8 +326,13 @@ BOOL OpalIVRConnection::StartVXML()
     return vxmlSession.LoadVXML(vxmlToLoad);
 
   else {
-    if (vxmlToLoad.Find("file://") == 0)
-      vxmlSession.PlayFile(vxmlToLoad.Mid(7), FALSE);
+    if (vxmlToLoad.Find("tone=") == 0) 
+      vxmlSession.PlayTone(vxmlToLoad.Mid(5));
+
+
+    else if (vxmlToLoad.Find("file://") == 0)
+      vxmlSession.PlayFile(vxmlToLoad.Mid(7));
+
     else
       vxmlSession.PlayText(vxmlToLoad, PTextToSpeech::Default, FALSE);
 
