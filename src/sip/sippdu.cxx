@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2146  2007/08/24 06:38:53  csoutheren
+ * Revision 1.2147  2007/09/04 03:10:28  rjongbloed
+ * Make sure late arriving 1xx responses do not "reset" the transaction state when
+ *   it is already completed. Also assure a completed transaction only passes the
+ *   response that did the completion on to connection/endpoint so multiple
+ *   responses do not confuse higher level logic.
+ *
+ * Revision 2.145  2007/08/24 06:38:53  csoutheren
  * Add way to get empty DisplayName without always using default
  *
  * Revision 2.144  2007/08/22 09:02:19  csoutheren
@@ -2417,44 +2423,43 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   if (method != Method_INVITE)
     mutex.Wait();
 
+  BOOL notCompletedFlag = state < Completed;
+
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
      and one only host, so anything coming back with that CSeq is OK. This has
      "issues" according to the spec but
      */
-  if (response.GetStatusCode()/100 == 1) {
+  if (notCompletedFlag && response.GetStatusCode()/100 == 1) {
     PTRACE(3, "SIP\tTransaction " << cseq << " proceeding.");
 
-    state = Proceeding;
+    if (state == Trying)
+      state = Proceeding;
+
     retry = 0;
     retryTimer = retryTimeoutMax;
     completionTimer = endpoint.GetNonInviteTimeout();
+  }
+  else {
+    if (notCompletedFlag) {
+      PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
+      state = Completed;
+    }
 
-    mutex.Signal();
+    completed.Signal();
+    retryTimer.Stop();
+    completionTimer = endpoint.GetPduCleanUpTimeout();
+  }
 
+  mutex.Signal();
+
+  if (notCompletedFlag) {
     if (connection != NULL)
       connection->OnReceivedResponse(*this, response);
     else
       endpoint.OnReceivedResponse(*this, response);
-  }
-  else {
-    PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
-       
-    BOOL notCompletedFlag = state < Completed;
 
-    state = Completed;
-    completed.Signal();
-    retryTimer.Stop();
-    completionTimer = endpoint.GetPduCleanUpTimeout();
-
-    mutex.Signal();
-
-    if (notCompletedFlag && connection != NULL)
-      connection->OnReceivedResponse(*this, response);
-    else
-      endpoint.OnReceivedResponse(*this, response);
-    
-    if (!OnCompleted(response))
+    if (state == Completed && !OnCompleted(response))
       return FALSE;
   }
 
