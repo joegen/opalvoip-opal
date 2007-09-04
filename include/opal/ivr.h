@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2017  2007/03/29 05:15:48  csoutheren
+ * Revision 1.2018  2007/09/04 04:48:13  csoutheren
+ * Fix state machine problems
+ *
+ * Revision 2.16  2007/03/29 05:15:48  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *
@@ -301,6 +304,8 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour does nothing.
       */
     virtual BOOL SetConnected();
+
+    void OnEstablished();
 
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
