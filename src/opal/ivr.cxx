@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2023  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2024  2007/09/04 04:48:41  csoutheren
+ * Fix state machine problems
+ *
+ * Revision 2.22  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -174,6 +177,8 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
     prefixLength = GetPrefixName().GetLength()+1;
 
   PString vxml = remoteParty.Mid(prefixLength);
+  if (vxml.Left(2) == "//")
+    vxml = vxml.Mid(2);
   if (vxml.IsEmpty() || vxml == "*")
     vxml = defaultVXML;
 
@@ -284,11 +289,11 @@ BOOL OpalIVRConnection::SetUpConnection()
 
   // load the vxml file before calling OnAlerting() in case of h323 is used with faststart,
   // in this case, the media will be opened ealier and the vxml file needs to be already loaded 
-  if (!StartVXML()) {
-    PTRACE(1, "IVR\tVXML session not loaded, aborting.");
-    Release(EndedByLocalUser);
-    return FALSE;
-  }
+  //if (!StartVXML()) {
+  //  PTRACE(1, "IVR\tVXML session not loaded, aborting.");
+  //  Release(EndedByLocalUser);
+  //  return FALSE;
+  //}
 
   phase = AlertingPhase;
   OnAlerting();
@@ -296,12 +301,13 @@ BOOL OpalIVRConnection::SetUpConnection()
   phase = ConnectedPhase;
   OnConnected();
 
-  if (!mediaStreams.IsEmpty()) {
-    phase = EstablishedPhase;
-    OnEstablished();
-  }
-
   return TRUE;
+}
+
+void OpalIVRConnection::OnEstablished()
+{
+  OpalConnection::OnEstablished();
+  StartVXML();
 }
 
 
@@ -317,8 +323,8 @@ BOOL OpalIVRConnection::StartVXML()
     return vxmlSession.LoadVXML(vxmlToLoad);
 
   else {
-    if (vxmlToLoad.Find("file:") == 0)
-      vxmlSession.PlayFile(vxmlToLoad.Mid(5), FALSE);
+    if (vxmlToLoad.Find("file://") == 0)
+      vxmlSession.PlayFile(vxmlToLoad.Mid(7), FALSE);
     else
       vxmlSession.PlayText(vxmlToLoad, PTextToSpeech::Default, FALSE);
 
