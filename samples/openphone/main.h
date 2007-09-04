@@ -25,6 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.45  2007/09/04 05:40:15  rjongbloed
+ * Added OnRegistrationStatus() call back function so can distinguish
+ *   between initial registration and refreshes.
+ *
  * Revision 1.44  2007/08/19 02:05:01  rjongbloed
  * Made sure deregister from previous regisrar when changed in options dialog.
  *
@@ -254,7 +258,12 @@ class MySIPEndPoint : public SIPEndPoint
     MySIPEndPoint(MyManager & manager);
 
   private:
-    virtual void OnRegistered();
+    virtual void OnRegistrationStatus(
+      const PString & aor,
+      BOOL wasRegistering,
+      BOOL reRegistering,
+      SIP_PDU::StatusCodes reason
+    );
 
     MyManager & m_manager;
 };

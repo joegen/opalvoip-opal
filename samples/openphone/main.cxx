@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.29  2007/09/04 05:40:15  rjongbloed
+ * Added OnRegistrationStatus() call back function so can distinguish
+ *   between initial registration and refreshes.
+ *
  * Revision 1.28  2007/09/03 09:48:27  rjongbloed
  * Fixed assert when run OpenPhone for first time.
  *
@@ -3141,9 +3145,13 @@ MySIPEndPoint::MySIPEndPoint(MyManager & manager)
 }
 
 
-void MySIPEndPoint::OnRegistered()
+void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
+                                         BOOL wasRegistering,
+                                         BOOL reRegistering,
+                                         SIP_PDU::StatusCodes reason)
 {
-  LogWindow << "SIP registration successful." << endl;
+  if (!reRegistering)
+    LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << " successful." << endl;
 }
 
 #endif
