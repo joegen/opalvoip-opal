@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.30  2007/09/04 06:22:50  rjongbloed
+ * Fixed OpenPhone auto answer (threading issue)
+ *
  * Revision 1.29  2007/09/04 05:40:15  rjongbloed
  * Added OnRegistrationStatus() call back function so can distinguish
  *   between initial registration and refreshes.
@@ -1516,21 +1519,17 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
   m_ringingConnectionToken = connection.GetToken();
   m_currentCallToken = connection.GetCall().GetToken();
 
-  if (m_autoAnswer)
-    AnswerCall();
-  else {
-    PTime now;
-    LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
-              << " from " << connection.GetRemotePartyName() << endl;
+  PTime now;
+  LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
+            << " from " << connection.GetRemotePartyName() << endl;
 
-    if (!m_RingSoundFileName.empty()) {
-      m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
-      m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
-      m_RingSoundTimer.RunContinuous(5000);
-    }
-
-    SetState(RingingState);
+  if (!m_RingSoundFileName.empty()) {
+    m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
+    m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
+    m_RingSoundTimer.RunContinuous(5000);
   }
+
+  SetState(RingingState);
 }
 
 
@@ -1775,14 +1774,16 @@ void MyManager::OnStateChange(wxCommandEvent & event)
 
   m_callState = (CallState)event.GetInt();
 
-  m_speedDials->Show(m_callState == IdleState);
-  m_answerPanel->Show(m_callState == RingingState);
-  m_callingPanel->Show(m_callState == CallingState);
-  m_inCallPanel->Show(m_callState == InCallState);
-
   wxWindow * newWindow;
   switch (m_callState) {
     case RingingState :
+      if (m_autoAnswer) {
+        m_callState = AnsweringState;
+        pcssEP->AcceptIncomingConnection(m_ringingConnectionToken);
+      }
+      // Do next state
+
+    case AnsweringState :
       newWindow = m_answerPanel;
       break;
 
@@ -1797,6 +1798,11 @@ void MyManager::OnStateChange(wxCommandEvent & event)
     default :
       newWindow = m_speedDials;
   }
+
+  m_speedDials->Show(m_callState == IdleState);
+  m_answerPanel->Show(m_callState == RingingState);
+  m_callingPanel->Show(m_callState == CallingState);
+  m_inCallPanel->Show(m_callState == InCallState);
 
   m_splitter->ReplaceWindow(m_splitter->GetWindow1(), newWindow);
 }
