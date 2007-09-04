@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2048  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2049  2007/09/04 06:31:20  rjongbloed
+ * Fixed correct return of "Busy" if PCSS devices are already in use.
+ *
+ * Revision 2.47  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.46  2007/06/22 02:04:30  rjongbloed
@@ -320,8 +323,11 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     recordDevice = soundChannelRecordDevice;
 
   PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(MakeToken(playDevice, recordDevice));
-  if (connection != NULL)
+  if (connection != NULL) {
+    PTRACE(2, "PCSS\tConnection already exists for " << *connection);
+    call.Clear(OpalConnection::EndedByLocalBusy);
     return FALSE;
+  }
 
   connection = CreateConnection(call, playDevice, recordDevice, userData);
   if (connection == NULL)
