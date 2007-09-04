@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2025  2007/09/04 05:36:42  csoutheren
+ * Revision 1.2026  2007/09/04 07:46:32  csoutheren
+ * Fixed tts
+ *
+ * Revision 2.24  2007/09/04 05:36:42  csoutheren
  * Add tone generator capability to IVR
  *
  * Revision 2.23  2007/09/04 04:48:41  csoutheren
@@ -172,7 +175,7 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
                                      void * userData,
                                unsigned int /*options*/,
-                               OpalConnection::StringOptions *)
+                               OpalConnection::StringOptions * stringOptions)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -185,7 +188,7 @@ BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
   if (vxml.IsEmpty() || vxml == "*")
     vxml = defaultVXML;
 
-  return AddConnection(CreateConnection(call, CreateConnectionToken(), userData, vxml));
+  return AddConnection(CreateConnection(call, CreateConnectionToken(), userData, vxml, stringOptions));
 }
 
 
@@ -199,9 +202,10 @@ OpalMediaFormatList OpalIVREndPoint::GetMediaFormats() const
 OpalIVRConnection * OpalIVREndPoint::CreateConnection(OpalCall & call,
                                                       const PString & token,
                                                       void * userData,
-                                                      const PString & vxml)
+                                                      const PString & vxml,
+                                                      OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalIVRConnection(call, *this, token, userData, vxml);
+  return new OpalIVRConnection(call, *this, token, userData, vxml, stringOptions);
 }
 
 
@@ -241,8 +245,9 @@ OpalIVRConnection::OpalIVRConnection(OpalCall & call,
                                      OpalIVREndPoint & ep,
                                      const PString & token,
                                      void * /*userData*/,
-                                     const PString & vxml)
-  : OpalConnection(call, ep, token),
+                                     const PString & vxml,
+                                     OpalConnection::StringOptions * stringOptions)
+  : OpalConnection(call, ep, token, 0, stringOptions),
     endpoint(ep),
     vxmlToLoad(vxml),
     vxmlMediaFormats(ep.GetMediaFormats()),
@@ -316,6 +321,18 @@ void OpalIVRConnection::OnEstablished()
 
 BOOL OpalIVRConnection::StartVXML()
 {
+  PStringToString & vars = vxmlSession.GetSessionVars();
+
+  if (stringOptions != NULL) {
+    PString originator = (*stringOptions)("Originator-Address");
+    if (originator.IsEmpty())
+      originator = (*stringOptions)("Remote-Address");
+    if (!originator.IsEmpty()) {
+      PIPSocketAddressAndPort ap(originator);
+      vars.SetAt("Source-IP-Address", ap.address.AsString());
+    }
+  }
+
   if (vxmlToLoad.IsEmpty()) 
     vxmlToLoad = endpoint.GetDefaultVXML();
 
@@ -329,9 +346,13 @@ BOOL OpalIVRConnection::StartVXML()
     if (vxmlToLoad.Find("tone=") == 0) 
       vxmlSession.PlayTone(vxmlToLoad.Mid(5));
 
+    else if (vxmlToLoad.Find("file://") == 0) {
+      PString fn = vxmlToLoad.Mid(7).Trim();
+      if (fn.Right(5) *= ".vxml")
+        return vxmlSession.LoadFile(fn);
 
-    else if (vxmlToLoad.Find("file://") == 0)
-      vxmlSession.PlayFile(vxmlToLoad.Mid(7));
+      vxmlSession.PlayFile(fn);
+    }
 
     else
       vxmlSession.PlayText(vxmlToLoad, PTextToSpeech::Default, FALSE);
