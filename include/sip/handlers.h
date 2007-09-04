@@ -24,6 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.5  2007/09/04 05:42:55  rjongbloed
+ * Added OnRegistrationStatus() call back function so can distinguish
+ *   between initial registration and refreshes.
+ * Fixed handler states so Refreshing state is actually used!
+ *
  * Revision 1.4  2007/06/30 16:43:19  dsandras
  * Make sure transactions are completed before allowing destruction using
  * WaitForTransactionCompletion. If we have a timeout while unsusbscribing,
@@ -91,15 +96,13 @@ public:
     Unsubscribed      // The registrating is inactive
   };
 
-  void SetState (SIPHandler::State s) 
+  _inline void SetState (SIPHandler::State s) 
     {
-      PWaitAndSignal m(stateMutex);
       state = s;
     }
 
-  SIPHandler::State GetState () 
+  _inline SIPHandler::State GetState () 
     {
-      PWaitAndSignal m(stateMutex);
       return state;
     }
 
@@ -153,7 +156,7 @@ public:
   virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
-  virtual BOOL SendRequest();
+  virtual BOOL SendRequest(SIPHandler::State s = Subscribing);
 
   int GetAuthenticationAttempts() { return authenticationAttempts; };
   void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
@@ -172,7 +175,6 @@ protected:
   PString                     authUser;
   PString 	              password;
   PStringList                 routeSet;
-  PMutex                      stateMutex;
   PString		      body;
   unsigned                    authenticationAttempts;
   State                       state;
