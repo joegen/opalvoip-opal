@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2053  2007/09/04 08:27:45  rjongbloed
+ * Revision 1.2054  2007/09/05 04:04:49  csoutheren
+ * Fixed spelling mistakes
+ *
+ * Revision 2.52  2007/09/04 08:27:45  rjongbloed
  * Added ptime and maxptime SDP attributes.
  *
  * Revision 2.51  2007/08/31 05:28:16  rjongbloed
@@ -576,7 +579,7 @@ void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
     unsigned frameTime = mediaFormat.GetFrameTime();
     unsigned newCount = (ptime*mediaFormat.GetTimeUnits()+frameTime-1)/frameTime;
     mediaFormat.SetOptionInteger(optionName, newCount);
-    PTRACE(4, "SDP\tMedia fromat " << optionName << " set to " << newCount << " packets from " << ptime << " milliseconds");
+    PTRACE(4, "SDP\tMedia format " << optionName << " set to " << newCount << " packets from " << ptime << " milliseconds");
   }
 }
 
