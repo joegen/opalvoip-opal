@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2071  2007/09/05 13:06:44  csoutheren
+ * Revision 1.2072  2007/09/05 14:00:32  csoutheren
+ * Applied 1783430 - Closing jitter buffer when releasing a session
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.70  2007/09/05 13:06:44  csoutheren
  * Applied 1720918 - Track marker packets sent/received
  * Thanks to Josh Mahonin
  *
@@ -1925,9 +1929,11 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID,
   mutex.Wait();
 
   while (sessions.Contains(sessionID)) {
-    if (sessions[sessionID].DecrementReference()) {
+    RTP_Session * session = &sessions[sessionID];
+    if (session->DecrementReference()) {
       PTRACE(3, "RTP\tDeleting session " << sessionID);
-      sessions[sessionID].SetJitterBufferSize(0, 0);
+      session->Close(TRUE);
+      session->SetJitterBufferSize(0, 0);
       sessions.SetAt(sessionID, NULL);
     }
     if (!clearAll)
