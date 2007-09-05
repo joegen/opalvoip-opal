@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2055  2007/09/05 05:39:11  csoutheren
+ * Revision 1.2056  2007/09/05 07:53:14  csoutheren
+ * Repaired parsing of parameters for codecs with dynamic payload types
+ *
+ * Revision 2.54  2007/09/05 05:39:11  csoutheren
  * Fix problem with parsing a= lines with no attribute values
  *
  * Revision 2.53  2007/09/05 04:04:49  csoutheren
@@ -737,7 +740,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     PString params = value;
     SDPMediaFormat * format = FindFormat(params);
     if (format != NULL) {
-      PStringArray tokens = value.Tokenise('/');
+      PStringArray tokens = params.Tokenise('/');
       if (tokens.GetSize() < 2) {
         PTRACE(2, "SDP\tMalformed rtpmap attribute for " << format->GetEncodingName());
         return;
@@ -788,7 +791,7 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & str) const
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // extract the attribute argument
-  while (isspace(str[pos+1]))
+  while (isspace(str[pos]))
     pos++;
   str.Delete(0, pos);
 
