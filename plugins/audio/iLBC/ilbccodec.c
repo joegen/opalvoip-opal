@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.c,v $
+ * Revision 1.5  2007/09/05 07:49:07  csoutheren
+ * Set output buffers correctly and check input buffers correctly
+ *
  * Revision 1.4  2007/09/05 06:22:32  rjongbloed
  * Update iLBC plug in to latest API so get FMTP parameter for mode.
  *
@@ -113,7 +116,7 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
   struct iLBC_Enc_Inst_t_ * encoder = (struct iLBC_Enc_Inst_t_ *)context;
   const short * sampleBuffer = (const short *)from;
 
-  if ((*fromLen)/2 != (unsigned)encoder->blockl)
+  if ((*fromLen)/2 < (unsigned)encoder->blockl)
     return 0;
 
   /* convert signal to float */
@@ -122,6 +125,8 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
 
   /* do the actual encoding */
   iLBC_encode(to, block, encoder);
+
+  // set output length
   *toLen = encoder->no_of_bytes;
 
   return 1; 
@@ -147,7 +152,7 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   /* do actual decoding of block */ 
   iLBC_decode(block, (unsigned char *)from, decoder, 1);
 
-  if (*toLen/2 != (unsigned)decoder->blockl)
+  if (*toLen < (unsigned)decoder->blockl*2)
     return 0;
 
   /* convert to short */     
@@ -159,6 +164,8 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
       tmp = MAX_SAMPLE;
     sampleBuffer[i] = (short)tmp;
   }
+
+  *toLen = decoder->blockl*2;
 
   return 1;
 }
