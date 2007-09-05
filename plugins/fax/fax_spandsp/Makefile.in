@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.5  2007/09/05 11:52:56  csoutheren
+# Fix compilation on MacOSX
+#
 # Revision 1.4  2007/07/19 03:47:08  csoutheren
 # Fixed on Linux
 #
@@ -35,7 +38,7 @@ exec_prefix = ${PREFIX}
 LIBDIR=@LIBDIR@
 
 SONAME	= spandsp
-STDCCFLAGS += -fPIC
+STDCCFLAGS += -fPIC @STDCCFLAGS@
 
 SRCDIR	= .
 OBJDIR	= ./obj

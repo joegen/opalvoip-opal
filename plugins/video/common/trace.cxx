@@ -31,6 +31,10 @@
 
 #include "trace.h"
 
+#ifdef __MACOSX__
+#include <libgen.h>
+#endif
+
 unsigned TraceLevel = 0;
 
 void Trace::SetLevel (unsigned level)
