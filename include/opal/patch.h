@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2017  2007/08/01 08:37:46  csoutheren
+ * Revision 1.2018  2007/09/05 13:43:04  csoutheren
+ * Applied 1748637 - RTP payload translation
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.16  2007/08/01 08:37:46  csoutheren
  * Add function to lock sink transcoders so options can be set
  *
  * Revision 2.15  2007/02/12 02:44:27  csoutheren
@@ -263,7 +267,7 @@ class OpalMediaPatch : public PObject
     class Sink : public PObject {
         PCLASSINFO(Sink, PObject);
       public:
-        Sink(OpalMediaPatch & p, OpalMediaStream * s);
+        Sink(OpalMediaPatch & p, OpalMediaStream * s, const RTP_DataFrame::PayloadMapType & m);
         ~Sink();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
         bool ExecuteCommand(const OpalMediaCommand & command);
@@ -272,6 +276,7 @@ class OpalMediaPatch : public PObject
 
         OpalMediaPatch  & patch;
         OpalMediaStream * stream;
+        RTP_DataFrame::PayloadMapType payloadTypeMap;
         OpalTranscoder  * primaryCodec;
         OpalTranscoder  * secondaryCodec;
         RTP_DataFrameList intermediateFrames;
