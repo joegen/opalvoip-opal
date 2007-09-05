@@ -32,7 +32,7 @@ case "$target_os" in
           LDSO="-dynamiclib -multiply_defined suppress"
 	  STDCCFLAGS="$STDCCFLAGS -D__MACOSX__"
 	  case "$target_cpu" in
-	   x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS=-m486 ;;
+	   x86 | i686 | i586 | i486 | i386 ) STDCCFLAGS="${STDCCFLAGS} -m486" ;;
           esac
 	  PLUGINEXT=dylib 
         ;;

@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.5  2007/09/05 11:52:55  csoutheren
+# Fix compilation on MacOSX
+#
 # Revision 1.4  2007/04/19 06:09:03  csoutheren
 # Fixed plugin build system to use better detection for OSX
 # Resolved 1636262 - Fix for audio plugins for OSX
@@ -36,7 +39,7 @@
 #
 #
 
-STDCCFLAGS += -fPIC
+STDCCFLAGS += -fPIC @STDCCFLAGS@
 
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
