@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2052  2007/09/05 13:23:39  csoutheren
+ * Revision 1.2053  2007/09/05 13:43:04  csoutheren
+ * Applied 1748637 - RTP payload translation
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.51  2007/09/05 13:23:39  csoutheren
  * Applied 1704162 - Opal mediastrm.cxx added IsOpen check to SetPatch
  * Thanks to Drazen Dimoti
  *
@@ -324,7 +328,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   if (!stream->SetPatch(this))
     return FALSE;
 
-  Sink * sink = new Sink(*this, stream);
+  Sink * sink = new Sink(*this, stream, rtpMap);
   sinks.Append(sink);
 
   // Find the media formats than can be used to get from source to sink
@@ -443,10 +447,11 @@ void OpalMediaPatch::UnLockSinkTranscoder() const
 }
 
 
-OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
+OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s, const RTP_DataFrame::PayloadMapType & m)
   : patch(p)
 {
   stream = s;
+  payloadTypeMap = m;
   primaryCodec = NULL;
   secondaryCodec = NULL;
   intermediateFrames.Append(new RTP_DataFrame);
@@ -655,8 +660,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (!writeSuccessful)
     return false;
 
-  if (primaryCodec == NULL)
+  if (primaryCodec == NULL) {
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
+    if (r != payloadTypeMap.end())
+      sourceFrame.SetPayloadType(r->second);
     return writeSuccessful = stream->WritePacket(sourceFrame);
+  }
 
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
