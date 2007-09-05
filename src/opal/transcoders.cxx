@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2035  2007/09/04 08:24:27  rjongbloed
+ * Revision 1.2036  2007/09/05 13:36:59  csoutheren
+ * Applied 1748268 - Linear-16 coder/decoder bug
+ * Thanks to Hrvoje Zeba
+ *
+ * Revision 2.34  2007/09/04 08:24:27  rjongbloed
  * Fixed being able to transmit more than one frame per packet audio.
  *
  * Revision 2.33  2007/08/20 06:30:38  rjongbloed
@@ -717,10 +721,12 @@ Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM()
 
 int Opal_Linear16Mono_PCM::ConvertOne(int sample) const
 {
+  unsigned short tmp_sample = sample;
+  
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-  return (sample>>8)|(sample<<8);
+  return (tmp_sample>>8)|(tmp_sample<<8);
 #else
-  return sample;
+  return tmp_sample;
 #endif
 }
 
@@ -735,10 +741,12 @@ Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono()
 
 int Opal_PCM_Linear16Mono::ConvertOne(int sample) const
 {
+  unsigned short tmp_sample = sample;
+  
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-  return (sample>>8)|(sample<<8);
+  return (tmp_sample>>8)|(tmp_sample<<8);
 #else
-  return sample;
+  return tmp_sample;
 #endif
 }
 
