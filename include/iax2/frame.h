@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: frame.h,v $
+ *  Revision 1.12  2007/09/05 04:04:35  csoutheren
+ *  Fixed spelling mistakes
+ *
  *  Revision 1.11  2007/04/19 06:17:21  csoutheren
  *  Fixes for precompiled headers with gcc
  *
@@ -775,7 +778,7 @@ class IAX2FullFrameVideo : public IAX2FullFrame
     jpeg  = 0x10000,   /*!< Jpeg video format in this frame     */
     png   = 0x20000,   /*!< PNG video format in this frame      */
     h261  = 0x40000,   /*!< H.261 video format in this frame    */
-    h263  = 0x80000    /*!< H.263 video fromat in this frame    */
+    h263  = 0x80000    /*!< H.263 video format in this frame    */
   };
   
   /**Return the FullFrame type represented here (voice, protocol, session etc*/
