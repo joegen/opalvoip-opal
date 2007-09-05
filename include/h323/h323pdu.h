@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2018  2007/06/29 06:59:56  rjongbloed
+ * Revision 1.2019  2007/09/05 01:36:00  rjongbloed
+ * Added media packetization fields to H.323 TCS.
+ *
+ * Revision 2.17  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.16  2006/06/21 04:53:15  csoutheren
@@ -314,6 +317,7 @@
 #include <h323/q931.h>
 #include <h323/h235auth.h>
 #include <h323/h323trans.h>
+#include <rtp/rtp.h>
 #include <asn/h225.h>
 #include <asn/h245.h>
 
@@ -723,6 +727,15 @@ Q931::CauseValues H323TranslateFromCallEndReason(
 
 void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor);
 
+BOOL H323SetRTPPacketization(
+  H245_RTPPayloadType & rtpPacketization,
+  const OpalMediaFormat & mediaFormat,
+  RTP_DataFrame::PayloadTypes payloadType
+);
+BOOL H323GetRTPPacketization(
+  OpalMediaFormat & mediaFormat,
+  const H245_RTPPayloadType & rtpPacketization
+);
 
 #if PTRACING
 void H323TraceDumpPDU(
