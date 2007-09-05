@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2039  2007/07/24 13:46:45  rjongbloed
+ * Revision 1.2040  2007/09/05 13:32:35  csoutheren
+ * Applied 1743378 - Gatekeeper TryAlternate
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.38  2007/07/24 13:46:45  rjongbloed
  * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
  *
  * Revision 2.37  2007/04/04 02:12:00  rjongbloed
@@ -2389,7 +2393,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
     WORD localPort;
     do {
       if (alt >= alternates.GetSize()) {
-        if (!alternatePermanent) 
+        if (!alternatePermanent && alt > 0) 
           Connect(tempAddr,tempIdentifier);
         requestMutex.Signal();
         return FALSE;
