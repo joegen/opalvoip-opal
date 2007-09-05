@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2170  2007/09/05 03:58:00  csoutheren
+ * Revision 1.2171  2007/09/05 13:10:45  csoutheren
+ * Applied 1686620 - Couple of locks in H323Connection class
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.169  2007/09/05 03:58:00  csoutheren
  * Fixed problem with slow start H.323 channels and AnswerCallAlertWithMedia
  *
  * Revision 2.168  2007/08/22 01:32:54  csoutheren
@@ -2242,6 +2246,10 @@ BOOL H323Connection::OnAlerting(const H323SignalPDU & alertingPDU,
 
 BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+
   PTRACE(3, "H323\tSetAlerting " << *this);
   if (alertingPDU == NULL)
     return FALSE;
@@ -2298,6 +2306,10 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
 
 BOOL H323Connection::SetConnected()
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || GetPhase() >= ConnectedPhase)
+    return FALSE;
+
   mediaWaitForConnect = FALSE;
 
   PTRACE(3, "H323CON\tSetConnected " << *this);
@@ -2367,6 +2379,10 @@ BOOL H323Connection::SetConnected()
 
 BOOL H323Connection::SetProgressed()
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+
   mediaWaitForConnect = FALSE;
 
   PTRACE(3, "H323\tSetProgressed " << *this);
