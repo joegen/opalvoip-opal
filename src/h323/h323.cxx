@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2169  2007/08/22 01:32:54  csoutheren
+ * Revision 1.2170  2007/09/05 03:58:00  csoutheren
+ * Fixed problem with slow start H.323 channels and AnswerCallAlertWithMedia
+ *
+ * Revision 2.168  2007/08/22 01:32:54  csoutheren
  * Don't set an empty called destination name to string form of transport address
  *
  * Revision 2.167  2007/08/16 03:10:36  rjongbloed
@@ -1876,17 +1879,18 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
             break;
 
           // Do early H.245 start
-          H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
-          fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
-          earlyStart = TRUE;
-          if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
-            if (!CreateIncomingControlChannel(fac.m_h245Address))
-              break;
-
-            fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
-          } 
-          else
-            sendPDU = FALSE;
+          if (!endpoint.IsH245Disabled()) {
+            H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
+            fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
+            earlyStart = TRUE;
+            if (!h245Tunneling && (controlChannel == NULL)) {
+              if (!CreateIncomingControlChannel(fac.m_h245Address))
+                break;
+              fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
+            } 
+            else
+              sendPDU = FALSE;
+          }
         }
 
         if (sendPDU) {
@@ -2252,14 +2256,17 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
         return FALSE;
 
       // Do early H.245 start
-      earlyStart = TRUE;
-      if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
-        if (!CreateIncomingControlChannel(alerting.m_h245Address))
-          return FALSE;
-        alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+      if (!endpoint.IsH245Disabled()) {
+        earlyStart = TRUE;
+        if (h245Tunneling || (controlChannel != NULL)) {
+          if (!StartControlNegotiations())
+            return FALSE;
+        } else {
+          if (!CreateIncomingControlChannel(alerting.m_h245Address))
+            return FALSE;
+          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+        }
       }
-      if (!StartControlNegotiations())
-        return FALSE;
     }
   }
 
