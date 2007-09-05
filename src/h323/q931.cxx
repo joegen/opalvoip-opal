@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2013  2006/08/12 04:00:28  csoutheren
+ * Revision 1.2014  2007/09/05 13:47:53  csoutheren
+ * Applied 1749010 - Fix Q.931 Channel Information for D-Channel only
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.12  2006/08/12 04:00:28  csoutheren
  * Added additional Q.931 message types
  * Thanks to ii7@bk.ru
  *
@@ -1274,7 +1278,7 @@ void Q931::SetChannelIdentification(unsigned interfaceType,
       bytes[0] = 0x80 | 0x04 | 0x03;
     }
     if (channelNumber == 0) { // D channel
-      bytes[0] = 0x80;
+      bytes[0] = 0x80 | 0x08 | 0x04;
     }    
     if (channelNumber > 0) { // B channel
       bytes[0] = (BYTE)(0x80 | 0x04 | ((preferredOrExclusive & 0x01) << 3) | (channelNumber & 0x03));
@@ -1286,7 +1290,7 @@ void Q931::SetChannelIdentification(unsigned interfaceType,
       bytes[0] = 0x80 | 0x20 | 0x04 | 0x03;
     }
     if (channelNumber == 0) { // D channel
-      bytes[0] = 0x80 | 0x20;
+      bytes[0] = 0x80 | 0x20 | 0x08 | 0x04;
     }    
     if (channelNumber > 0) { // B channel
       bytes.SetSize(3);
