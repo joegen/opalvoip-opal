@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ilbccodec.c,v $
+ * Revision 1.4  2007/09/05 06:22:32  rjongbloed
+ * Update iLBC plug in to latest API so get FMTP parameter for mode.
+ *
  * Revision 1.3  2006/08/28 01:21:54  csoutheren
  * Disable 15k for SIP
  *
@@ -58,8 +61,6 @@
 
 #include <codec/opalplugin.h>
 
-PLUGIN_CODEC_IMPLEMENT("iLBC")
-
 #include <stdlib.h>
 #ifdef _WIN32
   #define _CRT_SECURE_NO_DEPRECATE
@@ -75,8 +76,6 @@ PLUGIN_CODEC_IMPLEMENT("iLBC")
 
 #define	SPEED_30MS	NO_OF_BYTES_30MS*8*8000/BLOCKL_30MS
 #define	SPEED_20MS	NO_OF_BYTES_20MS*8*8000/BLOCKL_20MS
-
-#define	SAMPLES_PER_SEC_30MS	30
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -194,17 +193,62 @@ static int valid_for_sip_or_h323(
           STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
 }
 
+static struct PluginCodec_Option const PreferredMode =
+  { PluginCodec_IntegerOption, "Preferred Mode", 0, PluginCodec_NoMerge,  "30", "mode", NULL, 0, "0", "30" };
+
+static struct PluginCodec_Option const * const OptionTable[] = {
+  &PreferredMode,
+  NULL
+};
+
+static int get_codec_options(const struct PluginCodec_Definition * defn,
+                                                            void * context, 
+                                                      const char * name,
+                                                            void * parm,
+                                                        unsigned * parmLen)
+{
+  if (parm == NULL || parmLen == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+    return 0;
+
+  *(struct PluginCodec_Option const * const * *)parm = OptionTable;
+  return 1;
+}
+
+
+static int set_codec_options(const struct PluginCodec_Definition * defn,
+                                                            void * context,
+                                                      const char * name, 
+                                                            void * parm, 
+                                                        unsigned * parmLen)
+{
+  const char * const * option;
+  struct iLBC_Enc_Inst_t_ * encoder;
+
+  if (context == NULL || parm == NULL || parmLen == NULL || *parmLen != sizeof(const char **))
+    return 0;
+
+  encoder = (struct iLBC_Enc_Inst_t_ *)context;
+
+  for (option = (const char * const *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "Preferred Mode") == 0)
+      initEncode(context, atoi(option[1]) == SPEED_30MS ? 30 : 20); 
+  }
+
+  return 1;
+}
+
+
 static struct PluginCodec_ControlDefn h323CoderControls[] = {
-  { "valid_for_protocol",       valid_for_h323 },
-  //{ "get_codec_options",      encoder_get_options },
-  //{ "set_codec_options",      encoder_set_options },
+  { "valid_for_protocol", valid_for_h323 },
+  { "get_codec_options",  get_codec_options },
+  { "set_codec_options",  set_codec_options },
   { NULL }
 };
 
 static struct PluginCodec_ControlDefn h323AndSIPCoderControls[] = {
-  { "valid_for_protocol",       valid_for_sip_or_h323 },
-  //{ "get_codec_options",      decoder_get_options },
-  //{ "set_codec_options",      decoder_set_options },
+  { "valid_for_protocol", valid_for_sip_or_h323 },
+  { "get_codec_options",  get_codec_options },
+  { "set_codec_options",  set_codec_options },
   { NULL }
 };
 
@@ -268,7 +312,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
 
 { 
   // encoder
-  PLUGIN_CODEC_VERSION,               // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,               // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeAudio |        // audio codec
@@ -304,7 +348,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
 
 { 
   // decoder
-  PLUGIN_CODEC_VERSION,               // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,               // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeAudio |        // audio codec
@@ -340,7 +384,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
 
 { 
   // encoder
-  PLUGIN_CODEC_VERSION,               // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,               // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeAudio |        // audio codec
@@ -376,7 +420,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
 
 { 
   // decoder
-  PLUGIN_CODEC_VERSION,               // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,               // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeAudio |        // audio codec
@@ -411,12 +455,7 @@ static struct PluginCodec_Definition iLBCCodecDefn[4] = {
 }
 };
 
-#define NUM_DEFNS   (sizeof(iLBCCodecDefn) / sizeof(struct PluginCodec_Definition))
 
 /////////////////////////////////////////////////////////////////////////////
 
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_DEFNS;
-  return iLBCCodecDefn;
-}
+PLUGIN_CODEC_IMPLEMENT_ALL("iLBC", iLBCCodecDefn, PLUGIN_CODEC_VERSION_OPTIONS)
