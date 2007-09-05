@@ -20,6 +20,9 @@
 # Contributor(s): ______________________________________.
 #
 # $Log: Makefile.in,v $
+# Revision 1.3  2007/09/05 11:52:55  csoutheren
+# Fix compilation on MacOSX
+#
 # Revision 1.2  2006/10/03 09:42:03  rjongbloed
 # Start of unix support for LID plug ins
 #
@@ -28,7 +31,7 @@
 #
 #
 
-STDCCFLAGS += -fPIC
+STDCCFLAGS += -fPIC @STDCCFLAGS@
 
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
