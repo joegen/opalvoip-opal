@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2051  2007/09/03 06:40:36  rjongbloed
+ * Revision 1.2052  2007/09/05 13:23:39  csoutheren
+ * Applied 1704162 - Opal mediastrm.cxx added IsOpen check to SetPatch
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.50  2007/09/03 06:40:36  rjongbloed
  * Assured data frame has zero payload size so if source media stream does not
  *   alter it the default will be to ignore the frame.
  *
@@ -310,17 +314,18 @@ void OpalMediaPatch::Close()
 
 BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
 {
+  PWaitAndSignal mutex(inUse);
+
   if (PAssertNULL(stream) == NULL)
     return FALSE;
 
   PAssert(stream->IsSink(), "Attempt to set source stream as sink!");
 
-  PWaitAndSignal mutex(inUse);
+  if (!stream->SetPatch(this))
+    return FALSE;
 
   Sink * sink = new Sink(*this, stream);
   sinks.Append(sink);
-
-  stream->SetPatch(this);
 
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
