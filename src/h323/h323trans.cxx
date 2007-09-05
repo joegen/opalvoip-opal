@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2005  2007/06/10 08:55:12  rjongbloed
+ * Revision 1.2006  2007/09/05 13:32:35  csoutheren
+ * Applied 1743378 - Gatekeeper TryAlternate
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.4  2007/06/10 08:55:12  rjongbloed
  * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
  *
  * Revision 2.3  2007/04/04 02:12:00  rjongbloed
@@ -656,6 +660,7 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
           return TRUE;
 
         case RejectReceived :
+        case TryAlternate :
           return FALSE;
 
         case BadCryptoTokens :
