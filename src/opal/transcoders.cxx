@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2036  2007/09/05 13:36:59  csoutheren
+ * Revision 1.2037  2007/09/05 14:19:27  csoutheren
+ * Remove warning on Windows
+ *
+ * Revision 2.35  2007/09/05 13:36:59  csoutheren
  * Applied 1748268 - Linear-16 coder/decoder bug
  * Thanks to Hrvoje Zeba
  *
@@ -721,7 +724,7 @@ Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM()
 
 int Opal_Linear16Mono_PCM::ConvertOne(int sample) const
 {
-  unsigned short tmp_sample = sample;
+  unsigned short tmp_sample = (unsigned short)sample;
   
 #if PBYTE_ORDER==PLITTLE_ENDIAN
   return (tmp_sample>>8)|(tmp_sample<<8);
@@ -741,7 +744,7 @@ Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono()
 
 int Opal_PCM_Linear16Mono::ConvertOne(int sample) const
 {
-  unsigned short tmp_sample = sample;
+  unsigned short tmp_sample = (unsigned short)sample;
   
 #if PBYTE_ORDER==PLITTLE_ENDIAN
   return (tmp_sample>>8)|(tmp_sample<<8);
