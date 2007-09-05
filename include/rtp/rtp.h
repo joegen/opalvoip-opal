@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2044  2007/07/26 00:38:56  csoutheren
+ * Revision 1.2045  2007/09/05 13:06:44  csoutheren
+ * Applied 1720918 - Track marker packets sent/received
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.43  2007/07/26 00:38:56  csoutheren
  * Make transmission of RFC2833 independent of the media stream
  *
  * Revision 2.42  2007/05/29 06:26:00  csoutheren
@@ -962,6 +966,18 @@ class RTP_Session : public PObject
       */
     DWORD GetAverageSendTime() const { return averageSendTime; }
 
+    /**Get the number of marker packets received this session.
+       This can be used to find out the number of frames received in a video
+       RTP stream.
+      */
+    DWORD GetMarkerRecvCount() const { return markerRecvCount; }
+
+    /**Get the number of marker packets sent this session.
+       This can be used to find out the number of frames sent in a video
+       RTP stream.
+      */
+    DWORD GetMarkerSendCount() const { return markerSendCount; }
+
     /**Get maximum time between sent packets.
        This is over the last txStatisticsInterval packets and is in
        milliseconds.
@@ -1073,6 +1089,9 @@ class RTP_Session : public PObject
     DWORD minimumReceiveTime;
     DWORD jitterLevel;
     DWORD maximumJitterLevel;
+
+    DWORD markerSendCount;
+    DWORD markerRecvCount;
 
     unsigned txStatisticsCount;
     unsigned rxStatisticsCount;

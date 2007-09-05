@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2070  2007/07/26 11:39:38  rjongbloed
+ * Revision 1.2071  2007/09/05 13:06:44  csoutheren
+ * Applied 1720918 - Track marker packets sent/received
+ * Thanks to Josh Mahonin
+ *
+ * Revision 2.69  2007/07/26 11:39:38  rjongbloed
  * Removed redundent code
  *
  * Revision 2.68  2007/07/26 00:39:30  csoutheren
@@ -1020,6 +1024,8 @@ RTP_Session::RTP_Session(
   minimumReceiveTime = 0;
   jitterLevel = 0;
   maximumJitterLevel = 0;
+  markerRecvCount = 0;
+  markerSendCount = 0;
 
   txStatisticsCount = 0;
   rxStatisticsCount = 0;
@@ -1289,6 +1295,9 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
 
+  if(frame.GetMarker())
+    markerSendCount++;
+
   // Call the statistics call-back on the first PDU with total count == 1
   if (packetsSent == 1 && userData != NULL)
     userData->OnTxStatistics(*this);
@@ -1413,6 +1422,9 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
         jitterLevel += variance - ((jitterLevel+8) >> 4);
         if (jitterLevel > maximumJitterLevel)
           maximumJitterLevel = jitterLevel;
+      }
+      else {
+        markerRecvCount++;
       }
     }
     else if (allowSequenceChange) {
