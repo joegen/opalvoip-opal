@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2071  2007/08/17 07:50:09  dsandras
+ * Revision 1.2072  2007/09/05 07:56:03  csoutheren
+ * Change default frame size for PCM-16 to 1
+ *
+ * Revision 2.70  2007/08/17 07:50:09  dsandras
  * Applied patch from Matthias Schneider <ma30002000 yahoo.de>. Thanks!
  *
  * Revision 2.69  2007/08/17 07:01:18  csoutheren
@@ -383,8 +386,8 @@ static class InstantiateMe
     return name; \
   }
 
-AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     16, 8,  240, 30, 256, 16000);
+AUDIO_FORMAT(PCM16,          MaxPayloadType, "",     16, 8,  240,  1, 256,  8000);
+AUDIO_FORMAT(PCM16_16KHZ,    MaxPayloadType, "",     16, 8,  240,  1, 256, 16000);
 AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  16, 4,  120, 15, 256, 16000);
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
@@ -1498,7 +1501,11 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
     // if it doesn't match, then don't bother comparing payload codes
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
-      if (otherName != NULL && strcasecmp(otherName, name) == 0)
+      if (otherName == NULL) 
+        continue;
+      PString n(otherName);
+      int v = strcasecmp((const char *)n, name);
+      if (v == 0)
         return idx;
       continue;
     }
