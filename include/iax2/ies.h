@@ -25,6 +25,9 @@
  * The author of this code is Derek J Smithies
  *
  *  $Log: ies.h,v $
+ *  Revision 1.9  2007/09/05 04:04:35  csoutheren
+ *  Fixed spelling mistakes
+ *
  *  Revision 1.8  2007/04/19 06:17:21  csoutheren
  *  Fixes for precompiled headers with gcc
  *
@@ -1980,7 +1983,7 @@ class IAX2IeList : public IAX2Ie *
   /**Destructor, so all eleents are destroyed on destruction */
   ~IAX2IeList();
   
-  /**Access method, get pointer to infromation element at index. 
+  /**Access method, get pointer to information element at index. 
      Returns NULL if index is out of bounds.
      This will remove the specified IAX2Ie from the list. */
   IAX2Ie *RemoveIeAt(PINDEX i);
