@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2154.2.3  2007/07/10 05:51:56  csoutheren
+ * Revision 1.2154.2.4  2007/09/05 03:57:41  csoutheren
+ * Fixed problem with slow start H.323 channels and AnswerCallAlertWithMedia
+ *
+ * Revision 2.153.2.3  2007/07/10 05:51:56  csoutheren
  * Fix compilation when H450 not enabled
  *
  * Revision 2.153.2.2  2007/06/21 22:16:13  csoutheren
@@ -1832,17 +1835,18 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
             break;
 
           // Do early H.245 start
-          H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
-          fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
-          earlyStart = TRUE;
-          if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
-            if (!CreateIncomingControlChannel(fac.m_h245Address))
-              break;
-
-            fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
-          } 
-          else
-            sendPDU = FALSE;
+          if (!endpoint.IsH245Disabled()) {
+            H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
+            fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
+            earlyStart = TRUE;
+            if (!h245Tunneling && (controlChannel == NULL)) {
+              if (!CreateIncomingControlChannel(fac.m_h245Address))
+                break;
+              fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
+            } 
+            else
+              sendPDU = FALSE;
+          }
         }
 
         if (sendPDU) {
@@ -2208,14 +2212,17 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
         return FALSE;
 
       // Do early H.245 start
-      earlyStart = TRUE;
-      if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
-        if (!CreateIncomingControlChannel(alerting.m_h245Address))
-          return FALSE;
-        alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+      if (!endpoint.IsH245Disabled()) {
+        earlyStart = TRUE;
+        if (h245Tunneling || (controlChannel != NULL)) {
+          if (!StartControlNegotiations())
+            return FALSE;
+        } else {
+          if (!CreateIncomingControlChannel(alerting.m_h245Address))
+            return FALSE;
+          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+        }
       }
-      if (!StartControlNegotiations())
-        return FALSE;
     }
   }
 
@@ -3757,7 +3764,7 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
 void H323Connection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     AttachRFC2833HandlerToPatch(isSource, patch);
     if (detectInBandDTMF && isSource) {
       patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
