@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2037  2007/08/22 05:09:48  rjongbloed
+ * Revision 1.2038  2007/09/05 01:36:00  rjongbloed
+ * Added media packetization fields to H.323 TCS.
+ *
+ * Revision 2.36  2007/08/22 05:09:48  rjongbloed
  * Improved logging
  *
  * Revision 2.35  2007/08/11 00:03:23  rjongbloed
@@ -2728,6 +2731,9 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
   // Set the table of capabilities
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityTable);
 
+  H245_H2250Capability & h225_0 = pdu.m_multiplexCapability;
+  PINDEX rtpPacketizationCount = 0;
+
   // encode the capabilities
   PINDEX count = 0;
   PINDEX i;
@@ -2739,7 +2745,18 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
       capability.OnSendingPDU(entry.m_capability);
+      
+      h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount+1);
+      if (H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount],
+                                                    capability.GetMediaFormat(), RTP_DataFrame::MaxPayloadType))
+        rtpPacketizationCount++;
     }
+  }
+
+// Have some mediaPacketizations to include.
+  if (rtpPacketizationCount > 0) {
+    h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount);
+    h225_0.m_mediaPacketizationCapability.IncludeOptionalField(H245_MediaPacketizationCapability::e_rtpPayloadType);
   }
 
   // Set the sets of compatible capabilities
