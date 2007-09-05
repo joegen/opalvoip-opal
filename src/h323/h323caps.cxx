@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2038  2007/09/05 01:36:00  rjongbloed
+ * Revision 1.2039  2007/09/05 04:13:32  rjongbloed
+ * Fixed getting same media packetization information in TCS multiple times.
+ *
+ * Revision 2.37  2007/09/05 01:36:00  rjongbloed
  * Added media packetization fields to H.323 TCS.
  *
  * Revision 2.36  2007/08/22 05:09:48  rjongbloed
@@ -2745,15 +2748,23 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
       capability.OnSendingPDU(entry.m_capability);
-      
+
       h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount+1);
       if (H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount],
-                                                    capability.GetMediaFormat(), RTP_DataFrame::MaxPayloadType))
-        rtpPacketizationCount++;
+                                                    capability.GetMediaFormat(), RTP_DataFrame::MaxPayloadType)) {
+        // Check if already in list
+        PINDEX test;
+        for (test = 0; test < rtpPacketizationCount; test++) {
+          if (h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[test] == h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount])
+            break;
+        }
+        if (test == rtpPacketizationCount)
+          rtpPacketizationCount++;
+      }
     }
   }
 
-// Have some mediaPacketizations to include.
+  // Have some mediaPacketizations to include.
   if (rtpPacketizationCount > 0) {
     h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount);
     h225_0.m_mediaPacketizationCapability.IncludeOptionalField(H245_MediaPacketizationCapability::e_rtpPayloadType);
