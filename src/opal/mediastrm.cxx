@@ -24,7 +24,11 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2065  2007/08/06 15:05:43  csoutheren
+ * Revision 1.2066  2007/09/05 13:23:39  csoutheren
+ * Applied 1704162 - Opal mediastrm.cxx added IsOpen check to SetPatch
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.64  2007/08/06 15:05:43  csoutheren
  * Fix problem with media format settings not being applied to plugin
  * video transcoders on startup
  *
@@ -616,11 +620,14 @@ void OpalMediaStream::EnableJitterBuffer() const
 }
 
 
-void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
+BOOL OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  patchMutex.Wait();
-  mediaPatch = patch;
-  patchMutex.Signal();
+  PWaitAndSignal m(patchMutex);
+  if (IsOpen()) {
+    mediaPatch = patch;
+    return TRUE;
+  }
+  return FALSE;
 }
 
 

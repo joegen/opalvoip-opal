@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2047  2007/05/16 10:45:17  dsandras
+ * Revision 1.2048  2007/09/05 13:23:39  csoutheren
+ * Applied 1704162 - Opal mediastrm.cxx added IsOpen check to SetPatch
+ * Thanks to Drazen Dimoti
+ *
+ * Revision 2.46  2007/05/16 10:45:17  dsandras
  * Added 2 new functions to the API thanks to Matthias Schneider <ma30002000
  * yahoo de>. Thanks!
  *
@@ -459,7 +463,7 @@ class OpalMediaStream : public PObject
     
     /**Set the patch thread that is using this stream.
       */
-    virtual void SetPatch(
+    virtual BOOL SetPatch(
       OpalMediaPatch * patch  ///<  Media patch thread
     );
 
