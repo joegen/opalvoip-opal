@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2020  2007/04/04 02:12:01  rjongbloed
+ * Revision 1.2021  2007/09/05 13:58:29  csoutheren
+ * Applied 1783417 - Restarting the jitter buffer thread
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.19  2007/04/04 02:12:01  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -467,7 +471,8 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
     Entry * frame = new Entry;
     frame->prev = NULL;
     frame->next = freeFrames;
-    freeFrames->prev = frame;
+    if (freeFrames != NULL)
+      freeFrames->prev = frame;
     freeFrames = frame;
     bufferSize++;
   }
@@ -479,6 +484,18 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
       consecutiveBufferOverruns = 0;
       consecutiveMarkerBits = 0;
       consecutiveEarlyPacketStartTime = 0;
+
+      // return used frames to free list
+      while (oldestFrame != NULL) {
+        Entry * frame = oldestFrame;
+        oldestFrame = oldestFrame->next;
+
+        frame->prev = NULL;
+        frame->next = freeFrames;
+        if (freeFrames != NULL)
+          freeFrames->prev = frame;
+        freeFrames = frame;
+      }
 
       oldestFrame = newestFrame = currentWriteFrame = NULL;
 
