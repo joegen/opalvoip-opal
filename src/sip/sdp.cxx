@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2054  2007/09/05 04:04:49  csoutheren
+ * Revision 1.2055  2007/09/05 05:39:11  csoutheren
+ * Fix problem with parsing a= lines with no attribute values
+ *
+ * Revision 2.53  2007/09/05 04:04:49  csoutheren
  * Fixed spelling mistakes
  *
  * Revision 2.52  2007/09/04 08:27:45  rjongbloed
@@ -1239,7 +1242,9 @@ BOOL SDPSessionDescription::Decode(const PString & str)
 
             case 'a' : // zero or more media attribute lines
               pos = value.FindSpan("!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz{|}~"); // Legal chars from RFC
-              if (value.GetLength() == pos || value[pos] == ':')
+              if (pos == P_MAX_INDEX)
+                currentMedia->SetAttribute(value, "1");
+              else if (value[pos] == ':')
                 currentMedia->SetAttribute(value.Left(pos), value.Mid(pos+1));
               else {
                 PTRACE(2, "SDP\tMalformed media attribute " << value);
