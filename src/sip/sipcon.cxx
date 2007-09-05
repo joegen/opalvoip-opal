@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2258  2007/08/31 11:36:13  csoutheren
+ * Revision 1.2259  2007/09/05 14:03:37  csoutheren
+ * Applied 1783448 - Removing media streams when releasing session
+ * Thanks to Borko Jandras
+ *
+ * Revision 2.257  2007/08/31 11:36:13  csoutheren
  * Fix usage of GetOtherPartyConnection without PSafePtr
  *
  * Revision 2.256  2007/08/24 07:49:22  csoutheren
@@ -2457,6 +2461,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   // If it is a RE-INVITE that doesn't correspond to a HOLD, then
   // Close all media streams, they will be reopened.
   if (!IsConnectionOnHold()) {
+    RemoveMediaStreams();
     GetCall().RemoveMediaStreams();
     ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
 #if OPAL_VIDEO
