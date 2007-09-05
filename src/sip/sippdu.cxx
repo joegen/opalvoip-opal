@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2147  2007/09/04 03:10:28  rjongbloed
+ * Revision 1.2148  2007/09/05 13:45:29  csoutheren
+ * Applied 1748937 - SIP support for combined Via header
+ * Thanks to Simon Zwahlen
+ *
+ * Revision 2.146  2007/09/04 03:10:28  rjongbloed
  * Make sure late arriving 1xx responses do not "reset" the transaction state when
  *   it is already completed. Also assure a completed transaction only passes the
  *   response that did the completion on to connection/endpoint so multiple
@@ -992,7 +996,7 @@ PStringList SIPMIMEInfo::GetViaList() const
   if (s.FindOneOf("\r\n") != P_MAX_INDEX)
     viaList = s.Lines();
   else
-    viaList.AppendString(s);
+    viaList = s.Tokenise(",", FALSE);
 
   return viaList;
 }
