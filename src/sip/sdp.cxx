@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2056  2007/09/05 07:53:14  csoutheren
+ * Revision 1.2057  2007/09/06 04:58:49  csoutheren
+ * Fix problem with SDP parsing
+ *
+ * Revision 2.55  2007/09/05 07:53:14  csoutheren
  * Repaired parsing of parameters for codecs with dynamic payload types
  *
  * Revision 2.54  2007/09/05 05:39:11  csoutheren
@@ -783,7 +786,7 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & str) const
 {
   // extract the RTP payload type
   PINDEX pos = str.FindSpan("0123456789");
-  if (str.GetLength() > pos && !isspace(str[pos])) {
+  if ((pos != P_MAX_INDEX) && !isspace(str[pos])) {
     PTRACE(2, "SDP\tMalformed media attribute requiring format " << str);
     return NULL;
   }
@@ -791,9 +794,11 @@ SDPMediaFormat * SDPMediaDescription::FindFormat(PString & str) const
   RTP_DataFrame::PayloadTypes pt = (RTP_DataFrame::PayloadTypes)str.Left(pos).AsUnsigned();
 
   // extract the attribute argument
-  while (isspace(str[pos]))
-    pos++;
-  str.Delete(0, pos);
+  if (pos != P_MAX_INDEX) {
+    while (isspace(str[pos]))
+      pos++;
+    str.Delete(0, pos);
+  }
 
   // find the format that matches the payload type
   for (PINDEX fmt = 0; fmt < formats.GetSize(); fmt++) {
