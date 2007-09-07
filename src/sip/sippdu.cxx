@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.9  2007/08/25 17:05:03  hfriederich
+ * Revision 1.2117.2.10  2007/09/07 12:56:18  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.116.2.9  2007/08/25 17:05:03  hfriederich
  * Backport from HEAD
  *
  * Revision 2.116.2.8  2007/08/05 13:12:20  hfriederich
@@ -917,7 +920,7 @@ PStringList SIPMIMEInfo::GetViaList() const
   if (s.FindOneOf("\r\n") != P_MAX_INDEX)
     viaList = s.Lines();
   else
-    viaList.AppendString(s);
+    viaList = s.Tokenise(",", FALSE);
 
   return viaList;
 }
