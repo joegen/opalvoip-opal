@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2016  2007/08/13 06:07:51  csoutheren
+ * Revision 1.2017  2007/09/07 17:49:47  ykiryanov
+ * File was missing transcoders.h include. This had an effect while building code with no video.
+ *
+ * Revision 2.15  2007/08/13 06:07:51  csoutheren
  * Expose more functions
  *
  * Revision 2.14  2007/08/08 17:35:15  csoutheren
@@ -105,6 +108,7 @@
 #include <ptlib/pfactory.h>
 #include <codec/opalplugin.h>
 #include <opal/mediafmt.h>
+#include <opal/transcoders.h>
 
 #if OPAL_H323
 #include <h323/h323caps.h>
