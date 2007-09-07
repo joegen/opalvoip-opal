@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2015.2.3  2007/08/05 13:12:16  hfriederich
+ * Revision 1.2015.2.4  2007/09/07 11:08:30  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.14.2.3  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.14.2.2  2007/03/11 12:26:15  hfriederich
@@ -259,7 +262,7 @@ class OpalMediaPatch : public PObject
     class Sink : public PObject {
         PCLASSINFO(Sink, PObject);
       public:
-        Sink(OpalMediaPatch & p, OpalMediaStream * s);
+        Sink(OpalMediaPatch & p, OpalMediaStream * s, const RTP_DataFrame::PayloadMapType & m);
         ~Sink();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
         BOOL ExecuteCommand(const OpalMediaCommand & command, BOOL fromSink);
@@ -273,13 +276,12 @@ class OpalMediaPatch : public PObject
 
         OpalMediaPatch  & patch;
         OpalMediaStream * stream;
+        RTP_DataFrame::PayloadMapType payloadTypeMap;
         OpalTranscoder  * primaryCodec;
         OpalTranscoder  * secondaryCodec;
         RTP_DataFrameList intermediateFrames;
         RTP_DataFrameList finalFrames;
         bool              writeSuccessful;
-        
-        RTP_DataFrame::PayloadMapType payloadTypeMap;
     };
     PList<Sink> sinks;
 

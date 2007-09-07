@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2025.2.2  2007/08/05 13:12:16  hfriederich
+ * Revision 1.2025.2.3  2007/09/07 11:08:30  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.24.2.2  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.24.2.1  2007/06/12 16:29:02  hfriederich
@@ -1297,6 +1300,8 @@ class OpalListenerTCPS : public OpalListenerTCP
     const char * GetProtoPrefix() const;
 
     protected:
+      void Construct();
+    
       PSSLContext * sslContext;
 };
 
