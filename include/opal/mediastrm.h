@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2041.2.7  2007/08/25 17:04:57  hfriederich
+ * Revision 1.2041.2.8  2007/09/07 11:08:30  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.40.2.7  2007/08/25 17:04:57  hfriederich
  * Backport from HEAD
  *
  * Revision 2.40.2.6  2007/05/28 16:41:44  hfriederich
@@ -472,7 +475,7 @@ class OpalMediaStream : public PObject
     
     /**Set the patch thread that is using this stream.
       */
-    virtual void SetPatch(
+    virtual BOOL SetPatch(
       OpalMediaPatch * patch  ///<  Media patch thread
     );
 
