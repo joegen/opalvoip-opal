@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.h,v $
- * Revision 1.2032.2.9  2007/08/05 13:12:16  hfriederich
+ * Revision 1.2032.2.10  2007/09/07 11:21:40  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.31.2.9  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.31.2.8  2007/06/12 11:54:42  hfriederich
@@ -964,6 +967,18 @@ class RTP_Session : public PObject
        milliseconds.
       */
     DWORD GetAverageSendTime() const { return averageSendTime; }
+    
+    /**Get the number of marker packets received this session.
+       This can be used to find out the number of frames received in a video
+       RTP stream.
+      */
+    DWORD GetMarkerRecvCount() const { return markerRecvCount; }
+    
+    /**Get the number of marker packets sent this session.
+       This can be used to find out the number of frames sent in a video
+       RTP stream.
+      */
+    DWORD GetMarkerSendCount() const { return markerSendCount; }
 
     /**Get maximum time between sent packets.
        This is over the last txStatisticsInterval packets and is in
@@ -1076,6 +1091,9 @@ class RTP_Session : public PObject
     DWORD minimumReceiveTime;
     DWORD jitterLevel;
     DWORD maximumJitterLevel;
+    
+    DWORD markerSendCount;
+    DWORD markerRecvCount;
 
     unsigned txStatisticsCount;
     unsigned rxStatisticsCount;
