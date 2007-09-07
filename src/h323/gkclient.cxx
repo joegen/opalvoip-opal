@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2036.4.3  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2036.4.4  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.35.4.3  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.35.4.2  2007/05/03 10:37:49  hfriederich
@@ -2398,7 +2401,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
     WORD localPort;
     do {
       if (alt >= alternates.GetSize()) {
-        if (!alternatePermanent) 
+        if (!alternatePermanent && alt > 0) 
           Connect(tempAddr,tempIdentifier);
         requestMutex.Signal();
         return FALSE;

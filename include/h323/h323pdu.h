@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2017.6.1  2007/08/05 13:12:16  hfriederich
+ * Revision 1.2017.6.2  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.16.6.1  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.16  2006/06/21 04:53:15  csoutheren
@@ -314,6 +317,7 @@
 #include <h323/q931.h>
 #include <h323/h235auth.h>
 #include <h323/h323trans.h>
+#include <rtp/rtp.h>
 #include <asn/h225.h>
 #include <asn/h245.h>
 
@@ -722,6 +726,16 @@ Q931::CauseValues H323TranslateFromCallEndReason(
 );
 
 void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor);
+
+BOOL H323SetRTPPacketization(
+  H245_RTPPayloadType & rtpPacketization,
+  const OpalMediaFormat & mediaFormat,
+  RTP_DataFrame::PayloadTypes payloadType
+);
+BOOL H323GetRTPPacketization(
+  OpalMediaFormat & mediaFormat,
+  const H245_RTPPayloadType & rtpPacketization
+);
 
 
 #if PTRACING

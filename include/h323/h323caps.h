@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2018.4.6  2007/08/05 13:12:15  hfriederich
+ * Revision 1.2018.4.7  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.17.4.6  2007/08/05 13:12:15  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.20  2007/06/22 06:29:13  rjongbloed
@@ -282,7 +285,6 @@ class H245_DataApplicationCapability;
 class H245_DataMode;
 class H245_DataProtocolCapability;
 class H245_H2250LogicalChannelParameters;
-class H245_H2250LogicalChannelParameters_mediaPacketization;
 class H245_TerminalCapabilitySet;
 class H245_NonStandardParameter;
 class H323Connection;
@@ -290,7 +292,6 @@ class H323Capabilities;
 class H245_CapabilityIdentifier;
 class H245_GenericCapability;
 class H245_GenericParameter;
-class H245_MediaPacketizationCapability;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -478,62 +479,6 @@ class H323Capability : public PObject
       const H245_DataType & pdu,  ///<  PDU to get information from
       BOOL receiver               ///<  Is receiver OLC
     ) = 0;
-    
-    /**This function is called whenever an outgoing TerminalCapabilitySet
-      PDU is being constructed for the control channel.
-      It allows the capability to alter values in the media packetization
-      capability. Note that the media packetization capability is shared
-      with other capabilities. The code used to modify values should take
-      this into account and especially not take any assumptions whether 
-      certain fields are already present or not.
-      
-      The default behaviour does nothing
-    */
-    virtual void OnSendingPDU(
-      H245_MediaPacketizationCapability & mediaPacketizationCapability
-    ) const {}
-    
-    /**This function is called whenever an incoming TerminalCapabilitySet
-      PDU is received on the control channel. It allows the capability
-      to inspect media packetization information.
-      
-      The default behaviour does nothing
-    */
-    virtual void OnReceivedPDU(
-      const H245_MediaPacketizationCapability & mediaPacketizationCapability
-    ) {}
-    
-    /**This function is called whenever an outgoing OpenLogicalChannel PDU
-      is being constructed for the control channel. It allows the capability
-      to indicate whether it has special media packetization information or
-      not. If TRUE is returned, the corresponding OnSendingPDU() callback
-      will be called so that the capability can specify the media 
-      packetization information.
-      
-      The default behaviour returns FALSE.
-    */
-    virtual BOOL HasMediaPacketizationParameters() const { return FALSE; }
-    
-    /**This function is called whenever the capability returns TRUE for
-      HasMediaPacketizationParameters(), allowing the capability to
-      adjust the media packetization parameters.
-      
-      The default behaviour does nothing
-    */
-    virtual void OnSendingPDU(
-      H245_H2250LogicalChannelParameters_mediaPacketization & mediaPacketization
-    ) const {}
-    
-    /**This function is called whenever an incoming OpenLogicalChannel PDU
-      is received on the control channel. It allows the capability to
-      inspect media packetization details.
-      
-      The default behaviour does nothing
-    */
-    virtual void OnReceivedPDU(
-      const H245_H2250LogicalChannelParameters_mediaPacketization & mediaPacketization
-    ) {}
-    
 
     /**Compare the PDU part of the capability.
       */

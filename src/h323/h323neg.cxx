@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2012.10.4  2007/05/28 16:41:45  hfriederich
+ * Revision 1.2012.10.5  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.11.10.4  2007/05/28 16:41:45  hfriederich
  * Backport from HEAD, changes since May 3, 2007
  *
  * Revision 2.11.10.3  2007/05/03 10:37:50  hfriederich
@@ -849,13 +852,6 @@ BOOL H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
     PTRACE(1, "H245\tOpening channel: " << channelNumber
            << ", channel->OnSendingPDU() failed");
     return FALSE;
-  }
-  
-  // Add media packetization information if needed
-  if (capability.HasMediaPacketizationParameters()) {
-      H245_H2250LogicalChannelParameters & param = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-      param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
-      capability.OnSendingPDU(param.m_mediaPacketization);
   }
 
   if (replacementFor > 0) {
