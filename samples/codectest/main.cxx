@@ -24,6 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2  2007/09/07 04:06:39  rjongbloed
+ * Added bit rate parameter
+ * Fixed propagating frame size, frame rate and bit rate to codec via OpalMediaOptions.
+ * Added VideoFastUpdate command.
+ * Made end statistics nicer, including bit rate of teh encoding.
+ *
  * Revision 1.1  2007/08/20 06:28:15  rjongbloed
  * Added new application to test audio and video codecs by taking real media
  *   (camera/YUV file/microphone/WAV file etc) encoding it, decoding it and playing
@@ -64,8 +70,9 @@ void CodecTest::Main()
              "-grab-channel:"
              "-display-driver:"
              "D-display-device:"
-             "S-frame-size:"
-             "R-frame-rate:"
+             "s-frame-size:"
+             "r-frame-rate:"
+             "b-bit-rate:"
              "C-crop."
 #if PTRACING
              "o-output:"             "-no-output."
@@ -98,6 +105,7 @@ void CodecTest::Main()
               "  -D --display-device dev : video display device to use.\n"
               "  -S --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
               "  -R --frame-rate size    : video frame rate (frames/second)\n"
+              "  -B --bit-rate size      : video bit rate (bits/second)\n"
               "  -C --crop               : crop rather than scale if resizing\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
@@ -125,14 +133,26 @@ void CodecTest::Main()
     if (cmd == "q" || cmd == "x" || cmd == "quit" || cmd == "exit")
       break;
 
+    if (cmd == "vfu") {
+      if (video.encoder == NULL)
+        cout << "\nNo video encoder running!" << endl;
+      else
+        video.encoder->ExecuteCommand(OpalVideoUpdatePicture());
+      continue;
+    }
+
     if (cmd == "fg") {
-      if (!video.grabber->SetVFlipState(!video.grabber->GetVFlipState()))
+      if (video.grabber == NULL)
+        cout << "\nNo video grabber running!" << endl;
+      else if (!video.grabber->SetVFlipState(!video.grabber->GetVFlipState()))
         cout << "\nCould not toggle Vflip state of video grabber device" << endl;
       continue;
     }
 
     if (cmd == "fd") {
-      if (!video.display->SetVFlipState(!video.display->GetVFlipState()))
+      if (video.display == NULL)
+        cout << "\nNo video display running!" << endl;
+      else if (!video.display->SetVFlipState(!video.display->GetVFlipState()))
         cout << "\nCould not toggle Vflip state of video display device" << endl;
       continue;
     }
@@ -140,15 +160,20 @@ void CodecTest::Main()
     unsigned width, height;
     if (PVideoFrameInfo::ParseSize(cmd, width, height)) {
       video.pause.Signal();
-      if  (!video.grabber->SetFrameSizeConverter(width, height))
+      if (video.grabber == NULL)
+        cout << "\nNo video grabber running!" << endl;
+      else if (!video.grabber->SetFrameSizeConverter(width, height))
         cout << "Video grabber device could not be set to size " << width << 'x' << height << endl;
-      if  (!video.display->SetFrameSizeConverter(width, height))
+      if (video.display == NULL)
+        cout << "\nNo video display running!" << endl;
+      else if (!video.display->SetFrameSizeConverter(width, height))
         cout << "Video display device could not be set to size " << width << 'x' << height << endl;
       video.resume.Signal();
       continue;
     }
 
     cout << "Select:\n"
+            "  vfu    : Vide Fast Update (forece I-Frame)\n"
             "  fg     : Flip video grabber top to bottom\n"
             "  fd     : Flip video display top to bottom\n"
             "  qcif   : Set size of grab & display to qcif\n"
@@ -314,6 +339,8 @@ bool VideoThread::Initialise(PArgList & args)
       return true;
   }
 
+  OpalMediaFormat mediaFormat = encoder->GetOutputFormat();
+
   // Video grabber
   PString grabDriverName = args.GetOptionString("grab-driver");
   if (!grabDriverName.IsEmpty()) {
@@ -393,16 +420,19 @@ bool VideoThread::Initialise(PArgList & args)
   cout << "Grabber grabber channel set to " << grabber->GetChannel() << endl;
 
   
-  int frameRate;
+  unsigned frameRate;
   if (args.HasOption("frame-rate"))
-    frameRate = args.GetOptionString("frame-rate").AsInteger();
+    frameRate = args.GetOptionString("frame-rate").AsUnsigned();
   else
     frameRate = grabber->GetFrameRate();
+
+  mediaFormat.SetOptionInteger(OpalVideoFormat::FrameTimeOption(), mediaFormat.GetClockRate()/frameRate);
 
   if (!grabber->SetFrameRate(frameRate)) {
     cerr << "Video grabber device could not be set to frame rate " << frameRate << endl;
     return false;
   }
+
   cout << "Grabber frame rate set to " << grabber->GetFrameRate() << endl;
 
 
@@ -465,9 +495,11 @@ bool VideoThread::Initialise(PArgList & args)
       return false;
     }
   }
-  else {
+  else
     grabber->GetFrameSize(width, height);
-  }
+
+  mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
+  mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
 
   PVideoFrameInfo::ResizeMode resizeMode = args.HasOption("crop") ? PVideoFrameInfo::eCropCentre : PVideoFrameInfo::eScale;
   if (!grabber->SetFrameSizeConverter(width, height, resizeMode)) {
@@ -509,6 +541,11 @@ bool VideoThread::Initialise(PArgList & args)
   cout << ')' << endl;
 
 
+  if (args.HasOption("bit-rate"))
+    mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), args.GetOptionString("bit-rate").AsUnsigned());
+
+  encoder->UpdateOutputMediaFormat(mediaFormat);
+
   return true;
 }
 
@@ -539,41 +576,49 @@ void TranscoderThread::Main()
   if (encoder == NULL || decoder == NULL)
     return;
 
+  unsigned byteCount = 0;
   unsigned frameCount = 0;
   unsigned packetCount = 0;
   bool oldSrcState = true;
   bool oldOutState = true;
+  bool oldEncState = true;
+  bool oldDecState = true;
 
   RTP_DataFrame srcFrame;
 
   PTimeInterval startTick = PTimer::Tick();
   while (running) {
-    bool srcState = Read(srcFrame);
-    if (oldSrcState != srcState) {
-      oldSrcState = srcState;
-      cerr << "Source " << (srcState ? "restored." : "failed!") << endl;
+    bool state = Read(srcFrame);
+    if (oldSrcState != state) {
+      oldSrcState = state;
+      cerr << "Source " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
     }
 
     RTP_DataFrameList encFrames;
-    if (!encoder->ConvertFrames(srcFrame, encFrames)) {
-      cerr << "Error in encoder!" << endl;
-      return;
+    state = encoder->ConvertFrames(srcFrame, encFrames);
+    if (oldEncState != state) {
+      oldEncState = state;
+      cerr << "Encoder " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
+      continue;
     }
 
     for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
       RTP_DataFrameList outFrames;
-      if (!decoder->ConvertFrames(encFrames[i], outFrames)) {
-        cerr << "Error in decoder!" << endl;
-        return;
+      state = decoder->ConvertFrames(encFrames[i], outFrames);
+      if (oldDecState != state) {
+        oldDecState = state;
+        cerr << "Decoder " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
+        continue;
       }
       for (PINDEX j = 0; j < outFrames.GetSize(); j++) {
-        bool outState = Write(outFrames[j]);
-        if (oldOutState != outState)
+        state = Write(outFrames[j]);
+        if (oldOutState != state)
         {
-          oldOutState = outState;
-          cerr << "Frame display " << (outState ? "restored." : "failed!") << endl;
+          oldOutState = state;
+          cerr << "Frame display " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
         }
       }
+      byteCount += encFrames[i].GetPayloadSize();
       packetCount++;
     }
 
@@ -586,7 +631,26 @@ void TranscoderThread::Main()
   }
 
   PTimeInterval duration = PTimer::Tick() - startTick;
-  cout << frameCount << " frames over " << duration << " seconds at " << (frameCount*1000.0/duration.GetMilliSeconds()) << " fps." << endl;
+
+  cout << fixed << setprecision(1);
+  if (byteCount < 10000)
+    cout << byteCount << ' ';
+  else if (byteCount < 10000000)
+    cout << byteCount/1000.0 << " k";
+  else if (byteCount < 10000000000)
+    cout << byteCount/1000000.0 << " M";
+  cout << "bytes, "
+       << frameCount << " frames over " << duration << " seconds at "
+       << (frameCount*1000.0/duration.GetMilliSeconds()) << " f/s and ";
+
+  double bitRate = byteCount*8.0/duration.GetSeconds();
+  if (bitRate < 10000)
+    cout << bitRate << ' ';
+  else if (bitRate < 10000000)
+    cout << bitRate/1000.0 << " k";
+  else if (bitRate < 10000000000)
+    cout << bitRate/1000000.0 << " M";
+  cout << "bits/s." << endl;
 }
 
 
