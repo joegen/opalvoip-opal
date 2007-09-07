@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.15  2007/08/25 17:05:02  hfriederich
+ * Revision 1.2198.2.16  2007/09/07 12:56:17  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.197.2.15  2007/08/25 17:05:02  hfriederich
  * Backport from HEAD
  *
  * Revision 2.197.2.14  2007/08/05 13:12:19  hfriederich
@@ -1241,13 +1244,10 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const OpalMediaType & mediaType, const O
     // if doing media bypass, we need to set the local address
     // otherwise create an RTP session
     if (ownerCall.IsMediaBypassPossible(*this, mediaType)) {
-      OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
-      if (otherParty != NULL) {
-        MediaInformation info;
-        if (otherParty->GetMediaInformation(mediaType, info)) {
-          localAddress = info.data;
-          ntePayloadCode = info.payloadType;
-        }
+      MediaInformation info;
+      if (otherParty->GetMediaInformation(mediaType, info)) {
+        localAddress = info.data;
+        ntePayloadCode = info.payloadType;
       }
       mediaTransportAddresses.SetAt(mediaType.GetUniqueID(), new OpalTransportAddress(mediaAddress));
     }
@@ -1735,7 +1735,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, mediaType)) {
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
+    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty != NULL) {
       MediaInformation info;
       if (otherParty->GetMediaInformation(mediaType, info)) {
@@ -2288,6 +2288,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   // If it is a RE-INVITE that doesn't correspond to a HOLD, then
   // Close all media streams, they will be reopened.
   if (!IsConnectionOnHold()) {
+    RemoveMediaStreams();
     GetCall().RemoveMediaStreams();
     for(PINDEX i = 0; i < mediaTypes.GetSize(); i++) {
       ReleaseSession(mediaTypes[i], TRUE);
