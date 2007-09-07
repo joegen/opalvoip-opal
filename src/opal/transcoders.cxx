@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2029.2.7  2007/08/25 17:05:02  hfriederich
+ * Revision 1.2029.2.8  2007/09/07 11:08:31  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.28.2.7  2007/08/25 17:05:02  hfriederich
  * Backport from HEAD
  *
  * Revision 2.28.2.6  2007/08/05 13:12:19  hfriederich
@@ -498,8 +501,9 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFor
                                            PINDEX inputBytes, PINDEX outputBytes)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
 {
-  inputBytesPerFrame = inputBytes;
-  outputBytesPerFrame = outputBytes;
+  PINDEX framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+  inputBytesPerFrame = inputBytes*framesPerPacket;
+  outputBytesPerFrame = outputBytes*framesPerPacket;
 }
 
 
@@ -746,10 +750,12 @@ Opal_Linear16Mono_PCM::Opal_Linear16Mono_PCM()
 
 int Opal_Linear16Mono_PCM::ConvertOne(int sample) const
 {
+  unsigned short tmp_sample = (unsigned short)sample;
+  
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-  return (sample>>8)|(sample<<8);
+  return (tmp_sample>>8)|(tmp_sample<<8);
 #else
-  return sample;
+  return tmp_sample;
 #endif
 }
 
@@ -764,10 +770,12 @@ Opal_PCM_Linear16Mono::Opal_PCM_Linear16Mono()
 
 int Opal_PCM_Linear16Mono::ConvertOne(int sample) const
 {
+  unsigned short tmp_sample = (unsigned short)sample;
+  
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-  return (sample>>8)|(sample<<8);
+  return (tmp_sample>>8)|(tmp_sample<<8);
 #else
-  return sample;
+  return tmp_sample;
 #endif
 }
 

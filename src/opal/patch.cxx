@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.cxx,v $
- * Revision 1.2041.2.10  2007/08/25 17:05:01  hfriederich
+ * Revision 1.2041.2.11  2007/09/07 11:08:31  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.40.2.10  2007/08/25 17:05:01  hfriederich
  * Backport from HEAD
  *
  * Revision 2.40.2.9  2007/08/05 13:12:18  hfriederich
@@ -314,17 +317,18 @@ void OpalMediaPatch::Close()
 
 BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
 {
+  PWaitAndSignal mutex(inUse);
+  
   if (PAssertNULL(stream) == NULL)
     return FALSE;
 
   PAssert(stream->IsSink(), "Attempt to set source stream as sink!");
 
-  PWaitAndSignal mutex(inUse);
+  if (!stream->SetPatch(this))
+    return FALSE;
 
-  Sink * sink = new Sink(*this, stream);
+  Sink * sink = new Sink(*this, stream, rtpMap);
   sinks.Append(sink);
-
-  stream->SetPatch(this);
 
   // Find the media formats than can be used to get from source to sink
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
@@ -332,7 +336,6 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
 
   if (sourceFormat == destinationFormat && source.GetDataSize() <= stream->GetDataSize()) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
-    sink->payloadTypeMap = rtpMap;
     return TRUE;
   }
 
@@ -445,10 +448,11 @@ void OpalMediaPatch::UnLockSinkTranscoder() const
 }
 
 
-OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s)
+OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s, const RTP_DataFrame::PayloadMapType & m)
   : patch(p)
 {
   stream = s;
+  payloadTypeMap = m;
   primaryCodec = NULL;
   secondaryCodec = NULL;
   intermediateFrames.Append(new RTP_DataFrame);
@@ -575,6 +579,7 @@ void OpalMediaPatch::Main()
   RTP_DataFrame emptyFrame(source.GetDataSize());
 	
   while (source.IsOpen()) {
+    sourceFrame.SetPayloadSize(0);
     if (!source.ReadPacket(sourceFrame))
       break;
       
@@ -717,13 +722,9 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return false;
 
   if (primaryCodec == NULL) {
-    if (payloadTypeMap.size() != 0) {
-      RTP_DataFrame::PayloadTypes payloadType = sourceFrame.GetPayloadType();
-      RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(payloadType);
-      if (r != payloadTypeMap.end()) {
-        sourceFrame.SetPayloadType(r->second);
-      }
-    }
+    RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
+    if (r != payloadTypeMap.end())
+      sourceFrame.SetPayloadType(r->second);
     return writeSuccessful = stream->WritePacket(sourceFrame);
   }
 
