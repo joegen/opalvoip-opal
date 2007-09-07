@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.8  2007/08/26 20:04:28  hfriederich
+ * Revision 1.2072.2.9  2007/09/07 11:08:31  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.71.2.8  2007/08/26 20:04:28  hfriederich
  * Allow to filter interfaces based on destination address
  *
  * Revision 2.71.2.7  2007/08/25 17:05:02  hfriederich
@@ -2068,12 +2071,7 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
                                  BOOL exclusive)
   : OpalListenerTCP(ep, binding, port, exclusive)
 {
-  listenerPort = port;
-  sslContext = new PSSLContext();
-  PString certificateFile = endpoint.GetSSLCertificate();
-  if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
-    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
-  }
+  Construct();
 }
 
 OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
@@ -2081,11 +2079,23 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
                                    OpalTransportAddress::BindOptions option)
 : OpalListenerTCP(ep, binding, option)
 {
+  Construct();
 }
 
 OpalListenerTCPS::~OpalListenerTCPS()
 {
   delete sslContext;
+}
+
+
+void OpalListenerTCPS::Construct()
+{
+  sslContext = new PSSLContext();
+  
+  PString certificateFile = endpoint.GetSSLCertificate();
+  if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
+    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
+  }
 }
 
 OpalTransport * OpalListenerTCPS::Accept(const PTimeInterval & timeout)

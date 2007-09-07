@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2059.2.8  2007/08/25 17:05:01  hfriederich
+ * Revision 1.2059.2.9  2007/09/07 11:08:31  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.58.2.8  2007/08/25 17:05:01  hfriederich
  * Backport from HEAD
  *
  * Revision 2.58.2.7  2007/08/05 13:12:18  hfriederich
@@ -394,8 +397,8 @@ const OpalMediaType & GetDefaultVideoMediaType()
     return name; \
   }
 
-AUDIO_FORMAT(PCM16,          IllegalPayloadType, "",     16, 8,  240, 30, 256,  8000);
-AUDIO_FORMAT(PCM16_16KHZ,    IllegalPayloadType, "",     16, 8,  240, 30, 256, 16000);
+AUDIO_FORMAT(PCM16,          IllegalPayloadType, "",     16, 8,  240,  1, 256,  8000);
+AUDIO_FORMAT(PCM16_16KHZ,    IllegalPayloadType, "",     16, 8,  240,  1, 256, 16000);
 AUDIO_FORMAT(L16_MONO_8KHZ,  L16_Mono,       "L16",  16, 8,  240, 30, 256,  8000);
 AUDIO_FORMAT(L16_MONO_16KHZ, L16_Mono,       "L16",  16, 4,  120, 15, 256, 16000);
 AUDIO_FORMAT(G711_ULAW_64K,  PCMU,           "PCMU",  8, 8,  240, 30, 256,  8000);
@@ -462,7 +465,15 @@ static PMutex & GetMediaTypesListMutex()
 
 static OpalMediaFormatList & GetMediaFormatsList()
 {
-  static OpalMediaFormatList registeredFormats;
+  static class OpalMediaFormatListMaster : public OpalMediaFormatList
+  {
+    public:
+      OpalMediaFormatListMaster()
+      {
+        DisallowDeleteObjects();
+      }
+  } registeredFormats;
+
   PWaitAndSignal m(GetMediaTypesListMutex());
   return registeredFormats;
 }
@@ -1540,7 +1551,7 @@ void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
-    copy.OpalMediaFormatBaseList::Append(registeredFormats[i].Clone());
+    copy += registeredFormats[i];
 }
 
 
@@ -1703,29 +1714,19 @@ bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
 
 OpalMediaFormatList::OpalMediaFormatList()
 {
-  DisallowDeleteObjects();
 }
 
 
 OpalMediaFormatList::OpalMediaFormatList(const OpalMediaFormat & format)
 {
-  DisallowDeleteObjects();
   *this += format;
 }
 
 
 OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & format)
 {
-  if (!format) {
-    if (!HasFormat(format)) {
-      PWaitAndSignal mutex(GetMediaFormatsListMutex());
-      const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
-      PINDEX idx = registeredFormats.FindFormat(format);
-      if (idx != P_MAX_INDEX) {
-        OpalMediaFormatBaseList::Append(&registeredFormats[idx]);
-      }
-    }
-  }
+  if (format.IsValid() && !HasFormat(format))
+    OpalMediaFormatBaseList::Append(format.Clone());
   return *this;
 }
 
@@ -1850,6 +1851,7 @@ PINDEX OpalMediaFormatList::FindFormat(const PString & search, PINDEX pos) const
 
 void OpalMediaFormatList::Reorder(const PStringArray & order)
 {
+  DisallowDeleteObjects();
   PINDEX nextPos = 0;
   for (PINDEX i = 0; i < order.GetSize(); i++) {
     PStringArray wildcards = order[i].Tokenise('*', TRUE);
@@ -1864,6 +1866,7 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
       findPos++;
     }
   }
+  AllowDeleteObjects();
 }
 
 

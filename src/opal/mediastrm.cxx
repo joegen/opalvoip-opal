@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2053.2.9  2007/08/25 17:05:01  hfriederich
+ * Revision 1.2053.2.10  2007/09/07 11:08:31  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.52.2.9  2007/08/25 17:05:01  hfriederich
  * Backport from HEAD
  *
  * Revision 2.52.2.8  2007/08/05 13:12:18  hfriederich
@@ -636,11 +639,14 @@ void OpalMediaStream::EnableJitterBuffer() const
 }
 
 
-void OpalMediaStream::SetPatch(OpalMediaPatch * patch)
+BOOL OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  patchMutex.Wait();
-  mediaPatch = patch;
-  patchMutex.Signal();
+  PWaitAndSignal m(patchMutex);
+  if (IsOpen()) {
+    mediaPatch = patch;
+    return TRUE;
+  }
+  return FALSE;
 }
 
 
