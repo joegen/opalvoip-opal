@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.11  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2069.2.12  2007/09/07 12:56:17  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.68.2.11  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.68.2.10  2007/06/12 16:29:02  hfriederich
@@ -750,6 +753,18 @@ class SIPEndPoint : public OpalEndPoint
       const PString & basic,
       const PString & note
     );
+    
+    
+    /**Callback called when a registration to a SIP registrar status.
+     * The BOOL indicates if the operation that failed was a REGISTER or
+     * an (UN)REGISTER.
+     */
+    virtual void OnRegistrationStatus(
+      const PString & aor,
+      BOOL wasRegistering,
+      BOOL reRegistering,
+      SIP_PDU::StatusCodes reason
+    );
    
     
     /**Callback called when a registration to a SIP registrars fails.
@@ -759,7 +774,8 @@ class SIPEndPoint : public OpalEndPoint
     virtual void OnRegistrationFailed(
       const PString & aor,
       SIP_PDU::StatusCodes reason,
-      BOOL wasRegistering);
+      BOOL wasRegistering
+    );
     
       
     /**Callback called when a registration or an unregistration is successful.
@@ -768,7 +784,8 @@ class SIPEndPoint : public OpalEndPoint
      */
     virtual void OnRegistered(
       const PString & aor,
-      BOOL wasRegistering);
+      BOOL wasRegistering
+    );
 
     
     /**Returns TRUE if the given URL has been registered 

@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3.2.3  2007/09/07 12:56:17  hfriederich
+ * Backports from HEAD
+ *
  * Revision 1.3.2.2  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
@@ -92,15 +95,13 @@ public:
     Unsubscribed      // The registrating is inactive
   };
 
-  void SetState (SIPHandler::State s) 
+  inline void SetState (SIPHandler::State s) 
     {
-      PWaitAndSignal m(stateMutex);
       state = s;
     }
 
-  SIPHandler::State GetState () 
+  inline SIPHandler::State GetState () 
     {
-      PWaitAndSignal m(stateMutex);
       return state;
     }
 
@@ -154,7 +155,7 @@ public:
   virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
-  virtual BOOL SendRequest();
+  virtual BOOL SendRequest(SIPHandler::State s = Subscribing);
 
   int GetAuthenticationAttempts() { return authenticationAttempts; };
   void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
@@ -173,7 +174,6 @@ protected:
   PString                     authUser;
   PString 	              password;
   PStringList                 routeSet;
-  PMutex                      stateMutex;
   PString		      body;
   unsigned                    authenticationAttempts;
   State                       state;

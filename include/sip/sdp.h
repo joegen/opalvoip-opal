@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2021.2.4  2007/08/05 13:12:17  hfriederich
+ * Revision 1.2021.2.5  2007/09/07 12:56:17  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.20.2.4  2007/08/05 13:12:17  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.20.2.3  2007/05/04 09:51:29  hfriederich
@@ -163,6 +166,8 @@ class SDPMediaFormat : public PObject
     
     const PString & GetFMTP() const     { return fmtp; }
     void SetFMTP(const PString & _fmtp) { fmtp = _fmtp; } 
+    
+    void SetPacketTime(const PString & optionName, unsigned ptime);
 
     /**Tries to find a media format matching this SDP media format
       */

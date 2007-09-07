@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.12  2007/08/25 17:05:02  hfriederich
+ * Revision 1.2142.2.13  2007/09/07 12:56:17  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.141.2.12  2007/08/25 17:05:02  hfriederich
  * Backport from HEAD
  *
  * Revision 2.141.2.11  2007/08/05 13:12:20  hfriederich
@@ -1339,6 +1342,18 @@ void SIPEndPoint::OnReleaseComplete(OpalConnection & connection)
 {
   // Now it's time to remove the connection
   connectionsActive.RemoveAt(connection.GetToken());
+}
+
+
+void SIPEndPoint::OnRegistrationStatus(const PString & aor,
+                                       BOOL wasRegistering,
+                                       BOOL /*reRegistering*/,
+                                       SIP_PDU::StatusCodes reason)
+{
+  if (reason == SIP_PDU::Successful_OK)
+    OnRegistered(aor, wasRegistering);
+  else
+    OnRegistrationFailed(aor, reason, wasRegistering);
 }
 
 
