@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2029  2007/07/24 13:46:45  rjongbloed
+ * Revision 1.2030  2007/09/07 05:44:14  rjongbloed
+ * Fixed initialisation of SSL context in both OpalListenerTCPS contructors.
+ *
+ * Revision 2.28  2007/07/24 13:46:45  rjongbloed
  * Fixed correct selection of interface after forked INVITE reply arrives on bundled socket.
  *
  * Revision 2.27  2007/07/22 04:03:46  rjongbloed
@@ -1298,8 +1301,10 @@ class OpalListenerTCPS : public OpalListenerTCP
     OpalTransport * Accept(const PTimeInterval & timeout);
     const char * GetProtoPrefix() const;
 
-    protected:
-      PSSLContext * sslContext;
+  protected:
+    void Construct();
+
+    PSSLContext * sslContext;
 };
 
 class OpalTransportTCPS : public OpalTransportTCP
