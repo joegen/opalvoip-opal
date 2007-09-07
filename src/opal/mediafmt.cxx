@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2072  2007/09/05 07:56:03  csoutheren
+ * Revision 1.2073  2007/09/07 05:40:12  rjongbloed
+ * Fixed issue where OpalMediaOptions are lost when an OpalMediaFormat
+ *    is added to an OpalMediaFormatList.
+ * Also fixes a memory leak in GetAllRegisteredMediaFormats().
+ *
+ * Revision 2.71  2007/09/05 07:56:03  csoutheren
  * Change default frame size for PCM-16 to 1
  *
  * Revision 2.70  2007/08/17 07:50:09  dsandras
@@ -438,7 +443,15 @@ const OpalMediaFormat & GetOpalCiscoNSE()
 
 static OpalMediaFormatList & GetMediaFormatsList()
 {
-  static OpalMediaFormatList registeredFormats;
+  static class OpalMediaFormatListMaster : public OpalMediaFormatList
+  {
+    public:
+      OpalMediaFormatListMaster()
+      {
+        DisallowDeleteObjects();
+      }
+  } registeredFormats;
+
   return registeredFormats;
 }
 
@@ -1258,7 +1271,7 @@ void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
-    copy.OpalMediaFormatBaseList::Append(registeredFormats[i].Clone());
+    copy += registeredFormats[i];
 }
 
 
@@ -1370,7 +1383,7 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  unsigned frameHeight,
                                  unsigned frameRate,
                                  unsigned bitRate,
-                                   time_t timeStamp)
+                                 time_t timeStamp)
   : OpalMediaFormat(fullName,
                     OpalMediaFormat::DefaultVideoSessionID,
                     rtpPayloadType,
@@ -1421,28 +1434,19 @@ bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
 
 OpalMediaFormatList::OpalMediaFormatList()
 {
-  DisallowDeleteObjects();
 }
 
 
 OpalMediaFormatList::OpalMediaFormatList(const OpalMediaFormat & format)
 {
-  DisallowDeleteObjects();
   *this += format;
 }
 
 
 OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & format)
 {
-  if (!format) {
-    if (!HasFormat(format)) {
-      PWaitAndSignal mutex(GetMediaFormatsListMutex());
-      const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
-      PINDEX idx = registeredFormats.FindFormat(format);
-      if (idx != P_MAX_INDEX)
-        OpalMediaFormatBaseList::Append(&registeredFormats[idx]);
-    }
-  }
+  if (format.IsValid() && !HasFormat(format))
+    OpalMediaFormatBaseList::Append(format.Clone());
   return *this;
 }
 
@@ -1501,11 +1505,7 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
     // if it doesn't match, then don't bother comparing payload codes
     if (name != NULL && *name != '\0') {
       const char * otherName = mediaFormat.GetEncodingName();
-      if (otherName == NULL) 
-        continue;
-      PString n(otherName);
-      int v = strcasecmp((const char *)n, name);
-      if (v == 0)
+      if (otherName != NULL && strcasecmp(otherName, name) == 0)
         return idx;
       continue;
     }
@@ -1571,6 +1571,7 @@ PINDEX OpalMediaFormatList::FindFormat(const PString & search, PINDEX pos) const
 
 void OpalMediaFormatList::Reorder(const PStringArray & order)
 {
+  DisallowDeleteObjects();
   PINDEX nextPos = 0;
   for (PINDEX i = 0; i < order.GetSize(); i++) {
     PStringArray wildcards = order[i].Tokenise('*', TRUE);
@@ -1585,6 +1586,7 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
       findPos++;
     }
   }
+  AllowDeleteObjects();
 }
 
 
