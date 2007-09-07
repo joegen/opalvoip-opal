@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2088  2007/08/26 20:17:44  hfriederich
+ * Revision 1.2089  2007/09/07 05:44:15  rjongbloed
+ * Fixed initialisation of SSL context in both OpalListenerTCPS contructors.
+ *
+ * Revision 2.87  2007/08/26 20:17:44  hfriederich
  * Allow to filter interfaces based on destination address
  *
  * Revision 2.86  2007/08/08 12:43:25  rjongbloed
@@ -2095,12 +2098,7 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
                                  BOOL exclusive)
   : OpalListenerTCP(ep, binding, port, exclusive)
 {
-  listenerPort = port;
-  sslContext = new PSSLContext();
-  PString certificateFile = endpoint.GetSSLCertificate();
-  if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
-    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
-  }
+  Construct();
 }
 
 
@@ -2109,6 +2107,7 @@ OpalListenerTCPS::OpalListenerTCPS(OpalEndPoint & ep,
                                     OpalTransportAddress::BindOptions option)
   : OpalListenerTCP(ep, binding, option)
 {
+  Construct();
 }
 
 
@@ -2116,6 +2115,18 @@ OpalListenerTCPS::~OpalListenerTCPS()
 {
   delete sslContext;
 }
+
+
+void OpalListenerTCPS::Construct()
+{
+  sslContext = new PSSLContext();
+
+  PString certificateFile = endpoint.GetSSLCertificate();
+  if (!SetSSLCertificate(*sslContext, certificateFile, TRUE)) {
+    PTRACE(1, "OpalTCPS\tCould not load certificate \"" << certificateFile << '"');
+  }
+}
+
 
 OpalTransport * OpalListenerTCPS::Accept(const PTimeInterval & timeout)
 {
