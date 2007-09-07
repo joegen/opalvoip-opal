@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2021.2.2  2007/08/25 17:04:59  hfriederich
+ * Revision 1.2021.2.3  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.20.2.2  2007/08/25 17:04:59  hfriederich
  * Backport from HEAD
  *
  * Revision 2.20.2.1  2007/08/05 13:12:18  hfriederich
@@ -838,6 +841,79 @@ void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier 
   info.t35CountryCode   = (BYTE)vendor.m_vendor.m_t35CountryCode.GetValue();
   info.t35Extension     = (BYTE)vendor.m_vendor.m_t35Extension.GetValue();
   info.manufacturerCode = (WORD)vendor.m_vendor.m_manufacturerCode.GetValue();
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+BOOL H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
+                             const OpalMediaFormat & mediaFormat,
+                             RTP_DataFrame::PayloadTypes payloadType)
+{
+  PString mediaPacketization = mediaFormat.GetOptionString("Media Packetization");
+  if (mediaPacketization.IsEmpty())
+    return FALSE;
+  
+  if (mediaPacketization.NumCompare("RFC") == PObject::EqualTo) {
+    rtpPacketization.m_payloadDescriptor.SetTag(H245_RTPPayloadType_payloadDescriptor::e_rfc_number);
+    ((PASN_Integer &)rtpPacketization.m_payloadDescriptor) = mediaPacketization.Mid(3).AsUnsigned();
+  }
+  else if (mediaPacketization.FindSpan("0123456789.") == P_MAX_INDEX) {
+    rtpPacketization.m_payloadDescriptor.SetTag(H245_RTPPayloadType_payloadDescriptor::e_oid);
+    ((PASN_ObjectId &)rtpPacketization.m_payloadDescriptor) = mediaPacketization;
+  }
+  else {
+    rtpPacketization.m_payloadDescriptor.SetTag(H245_RTPPayloadType_payloadDescriptor::e_nonStandardIdentifier);
+    H245_NonStandardParameter & nonstd = rtpPacketization.m_payloadDescriptor;
+    nonstd.m_nonStandardIdentifier.SetTag(H245_NonStandardIdentifier::e_h221NonStandard);
+    H245_NonStandardIdentifier_h221NonStandard & h221 = nonstd.m_nonStandardIdentifier;
+    h221.m_t35CountryCode = (unsigned)OpalProductInfo::Default().t35CountryCode;
+    h221.m_t35Extension = (unsigned)OpalProductInfo::Default().t35Extension;
+    h221.m_manufacturerCode = (unsigned)OpalProductInfo::Default().manufacturerCode;
+    nonstd.m_data = mediaPacketization;
+  }
+  
+  if (payloadType == RTP_DataFrame::MaxPayloadType)
+    payloadType = mediaFormat.GetPayloadType();
+  
+  rtpPacketization.IncludeOptionalField(H245_RTPPayloadType::e_payloadType);
+  rtpPacketization.m_payloadType = payloadType;
+  
+  return TRUE;
+}
+
+
+BOOL H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloadType & rtpPacketization)
+{
+  PString mediaPacketization;
+  
+  switch (rtpPacketization.m_payloadDescriptor.GetTag()) {
+    case H245_RTPPayloadType_payloadDescriptor::e_rfc_number :
+      mediaPacketization.sprintf("RFC%u", ((const PASN_Integer &)rtpPacketization.m_payloadDescriptor).GetValue());
+      break;
+      
+    case H245_RTPPayloadType_payloadDescriptor::e_oid :
+      mediaPacketization = ((const PASN_ObjectId &)rtpPacketization.m_payloadDescriptor).AsString();
+      if (mediaPacketization.IsEmpty()) {
+        PTRACE(1, "RTP_UDP\tInvalid OID in packetization type.");
+        return FALSE;
+      }
+        break;
+    case H245_RTPPayloadType_payloadDescriptor::e_nonStandardIdentifier :
+      mediaPacketization = ((const H245_NonStandardParameter &)rtpPacketization.m_payloadDescriptor).m_data.AsString();
+      if (mediaPacketization.IsEmpty()) {
+        PTRACE(1, "RTP_UDP\tInvalid non-standard identifier in packetization type.");
+        return FALSE;
+      }
+        break;
+      
+    default :
+      PTRACE(1, "RTP_UDP\tUnknown packetization type.");
+      return FALSE;
+  }
+  
+  mediaFormat.SetOptionString("Media Packetization", mediaPacketization);
+  return TRUE;
 }
 
 

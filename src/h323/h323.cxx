@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2136.2.17  2007/08/25 17:04:58  hfriederich
+ * Revision 1.2136.2.18  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.135.2.17  2007/08/25 17:04:58  hfriederich
  * Backport from HEAD
  *
  * Revision 2.135.2.16  2007/08/05 13:12:17  hfriederich
@@ -1829,17 +1832,18 @@ void H323Connection::AnsweringCall(AnswerCallResponse response)
             break;
 
           // Do early H.245 start
-          H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
-          fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
-          earlyStart = TRUE;
-          if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
-            if (!CreateIncomingControlChannel(fac.m_h245Address))
-              break;
-
-            fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
-          } 
-          else
-            sendPDU = FALSE;
+          if (!endpoint.IsH245Disabled()) {
+            H225_Facility_UUIE & fac = *want245PDU.BuildFacility(*this, FALSE);
+            fac.m_reason.SetTag(H225_FacilityReason::e_startH245);
+            earlyStart = TRUE;
+            if (!h245Tunneling && (controlChannel == NULL)) {
+              if (!CreateIncomingControlChannel(fac.m_h245Address))
+                break;
+              fac.IncludeOptionalField(H225_Facility_UUIE::e_h245Address);
+            } 
+            else
+              sendPDU = FALSE;
+          }
         }
 
         if (sendPDU) {
@@ -2192,6 +2196,10 @@ BOOL H323Connection::OnAlerting(const H323SignalPDU & alertingPDU,
 
 BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
   PTRACE(3, "H323\tSetAlerting " << *this);
   if (alertingPDU == NULL)
     return FALSE;
@@ -2206,14 +2214,17 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
         return FALSE;
 
       // Do early H.245 start
-      earlyStart = TRUE;
-      if (!h245Tunneling && (controlChannel == NULL) && !endpoint.IsH245Disabled()) {
-        if (!CreateIncomingControlChannel(alerting.m_h245Address))
-          return FALSE;
-        alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+      if (!endpoint.IsH245Disabled()) {
+        earlyStart = TRUE;
+        if (h245Tunneling || (controlChannel != NULL)) {
+          if (!StartControlNegotiations())
+            return FALSE;
+        } else {
+          if (!CreateIncomingControlChannel(alerting.m_h245Address))
+            return FALSE;
+          alerting.IncludeOptionalField(H225_Alerting_UUIE::e_h245Address);
+        }
       }
-      if (!StartControlNegotiations())
-        return FALSE;
     }
   }
 
@@ -2245,6 +2256,10 @@ BOOL H323Connection::SetAlerting(const PString & calleeName, BOOL withMedia)
 
 BOOL H323Connection::SetConnected()
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked() || GetPhase() >= ConnectedPhase)
+    return FALSE;
+  
   mediaWaitForConnect = FALSE;
 
   PTRACE(3, "H323CON\tSetConnected " << *this);
@@ -2314,6 +2329,10 @@ BOOL H323Connection::SetConnected()
 
 BOOL H323Connection::SetProgressed()
 {
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return FALSE;
+  
   mediaWaitForConnect = FALSE;
 
   PTRACE(3, "H323\tSetProgressed " << *this);
@@ -4086,13 +4105,6 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
       
     // assign the sessionID value
     sessionID = GetRTPSessionIDForMediaType(capability->GetMediaFormat().GetMediaType());
-  }
-
-  // Give the capability access to the media packetization information
-  if (param->HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization)) {
-    const H245_H2250LogicalChannelParameters_mediaPacketization & mediaPacketization = 
-      param->m_mediaPacketization;
-      capability->OnReceivedPDU(mediaPacketization);
   }
 
   if (!OnCreateLogicalChannel(*capability, direction, errorCode))

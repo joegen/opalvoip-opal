@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2003.10.1  2007/06/12 16:29:02  hfriederich
+ * Revision 1.2003.10.2  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.2.10.1  2007/06/12 16:29:02  hfriederich
  * (Backport from HEAD)
  * Major rework of how SIP utilises sockets, using new "socket bundling"
  *   subsystem
@@ -655,6 +658,7 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
           return TRUE;
 
         case RejectReceived :
+        case TryAlternate:
           return FALSE;
 
         case BadCryptoTokens :

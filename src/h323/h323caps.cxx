@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2028.2.6  2007/08/25 17:04:58  hfriederich
+ * Revision 1.2028.2.7  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.27.2.6  2007/08/25 17:04:58  hfriederich
  * Backport from HEAD
  *
  * Revision 2.27.2.5  2007/08/05 13:12:17  hfriederich
@@ -2193,17 +2196,6 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
     allCapabilities.Add(allCapabilities.Copy(localCapabilities[c]));
   allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
   H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
-  
-  const H245_MediaPacketizationCapability * mediaPacketizationCapability = NULL;
-  const H245_MultiplexCapability * muxCap = NULL;
-  if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability)) {
-    muxCap = &pdu.m_multiplexCapability;
-    
-    if (muxCap->GetTag() == H245_MultiplexCapability::e_h2250Capability) {
-      const H245_H2250Capability & h2250 = *muxCap;
-      mediaPacketizationCapability = &h2250.m_mediaPacketizationCapability;
-    }
-  }
 
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
@@ -2213,12 +2205,8 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
         if (capability != NULL) {
           H323Capability * copy = (H323Capability *)capability->Clone();
           copy->SetCapabilityNumber(pdu.m_capabilityTable[i].m_capabilityTableEntryNumber);
-          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability)) {
-            if (mediaPacketizationCapability != NULL) {
-              copy->OnReceivedPDU(*mediaPacketizationCapability);
-            }
+          if (copy->OnReceivedPDU(pdu.m_capabilityTable[i].m_capability))
             table.Append(copy);
-          }
           else
             delete copy;
         }
@@ -2720,12 +2708,12 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
   PAssert((tableSize > 0) == (setSize > 0), PLogicError);
   if (tableSize == 0 || setSize == 0)
     return;
-  
-  H245_H2250Capability & h2250 = pdu.m_multiplexCapability;
-  H245_MediaPacketizationCapability & mediaPacketizationCapability = h2250.m_mediaPacketizationCapability;
 
   // Set the table of capabilities
   pdu.IncludeOptionalField(H245_TerminalCapabilitySet::e_capabilityTable);
+  
+  H245_H2250Capability & h225_0 = pdu.m_multiplexCapability;
+  PINDEX rtpPacketizationCount = 0;
 
   // encode the capabilities
   PINDEX count = 0;
@@ -2738,8 +2726,27 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
       entry.m_capabilityTableEntryNumber = capability.GetCapabilityNumber();
       entry.IncludeOptionalField(H245_CapabilityTableEntry::e_capability);
       capability.OnSendingPDU(entry.m_capability);
-      capability.OnSendingPDU(mediaPacketizationCapability);
+      
+      h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount+1);
+      if (H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount],
+                                  capability.GetMediaFormat(), RTP_DataFrame::MaxPayloadType)) {
+        // Check if already in list
+        PINDEX test;
+        for (test = 0; test < rtpPacketizationCount; test++) {
+          if (h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[test] == h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount])
+            break;
+        }
+        if (test == rtpPacketizationCount)
+          rtpPacketizationCount++;
+      }
     }
+  }
+  
+  // Have some mediaPacketization to include.
+  if (rtpPacketizationCount > 0) {
+    h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount);
+    
+    h225_0.m_mediaPacketizationCapability.IncludeOptionalField(H245_MediaPacketizationCapability::e_rtpPayloadType);
   }
 
   // Set the sets of compatible capabilities

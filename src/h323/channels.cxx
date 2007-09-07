@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2036.2.12  2007/08/25 17:04:58  hfriederich
+ * Revision 1.2036.2.13  2007/09/07 08:51:25  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.35.2.12  2007/08/25 17:04:58  hfriederich
  * Backport from HEAD
  *
  * Revision 2.35.2.11  2007/08/05 13:12:17  hfriederich
@@ -1391,7 +1394,7 @@ BOOL H323_ExternalRTPChannel::GetMediaTransportAddress(OpalTransportAddress & da
 
 BOOL H323_ExternalRTPChannel::Start()
 {
-  OpalConnection * otherParty = connection.GetCall().GetOtherPartyConnection(connection);
+  PSafePtr<OpalConnection> otherParty = connection.GetCall().GetOtherPartyConnection(connection);
   if (otherParty == NULL)
     return FALSE;
 
