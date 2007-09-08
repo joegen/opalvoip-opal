@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all plugins"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION PTLIB_CONFIG PWLIBDIR CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX H323_H460 OPAL_LID OPAL_IVR OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION PTLIB_CONFIG PWLIBDIR CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX OPAL_H450 OPAL_H460 OPAL_LID OPAL_IVR OPAL_ZRTP HAS_LIBZRTP OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -858,6 +858,7 @@ Optional Features:
   --disable-iax           disable IAX2 protocol support
   --disable-h224          disable H.224 protocol support
   --disable-t38           disable T.38 protocol support
+  --disable-h450          disable H.450
   --disable-h460          disable H.460
   --disable-lid           disable LID support
   --disable-ivr           disable IVR support
@@ -2598,6 +2599,16 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+h323=yes
+t38=yes
+h224=yes
+h450=yes
+h460=yes
+sip=yes
+iax=yes
+audio=yes
+video=yes
+
 REQUIRED_PWLIB_MAJOR=1
 REQUIRED_PWLIB_MINOR=11
 REQUIRED_PWLIB_BUILD=0
@@ -2846,6 +2857,70 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+        else
+          as_ac_File=`echo "ac_cv_file_${prefix}/include/ptlib.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${prefix}/include/ptlib.h" >&5
+echo $ECHO_N "checking for ${prefix}/include/ptlib.h... $ECHO_C" >&6
+if eval "test \"\${$as_ac_File+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  test "$cross_compiling" = yes &&
+  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
+echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
+   { (exit 1); exit 1; }; }
+if test -r "${prefix}/include/ptlib.h"; then
+  eval "$as_ac_File=yes"
+else
+  eval "$as_ac_File=no"
+fi
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
+if test `eval echo '${'$as_ac_File'}'` = yes; then
+  HAS_PTLIB=1
+fi
+
+          if test "${HAS_PTLIB:-unset}" != "unset" ; then
+            # Extract the first word of "ptlib-config", so it can be a program name with args.
+set dummy ptlib-config; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_PTLIB_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PTLIB_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PTLIB_CONFIG="$PTLIB_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${prefix}/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PTLIB_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+PTLIB_CONFIG=$ac_cv_path_PTLIB_CONFIG
+
+if test -n "$PTLIB_CONFIG"; then
+  echo "$as_me:$LINENO: result: $PTLIB_CONFIG" >&5
+echo "${ECHO_T}$PTLIB_CONFIG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+          fi
         fi
       fi
     fi
@@ -2872,6 +2947,9 @@ if test "x$PWLIBDIR" = "x/usr" -o "x$PWLIBDIR" = "x/usr/"; then
 fi
 if test "x$PWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
   PWLIBDIR="/usr/local/share/pwlib/"
+fi
+if test "x$PWLIBDIR" = "x${prefix}"; then
+  PWLIBDIR="${prefix}/share/pwlib/"
 fi
 
 
@@ -5700,7 +5778,6 @@ fi
 
 
 
-audio=yes
 # Check whether --enable-audio or --disable-audio was given.
 if test "${enable_audio+set}" = set; then
   enableval="$enable_audio"
@@ -5724,7 +5801,7 @@ fi
 
 
 
-video=yes
+
 # Check whether --enable-video or --disable-video was given.
 if test "${enable_video+set}" = set; then
   enableval="$enable_video"
@@ -5748,7 +5825,6 @@ fi
 
 
 
-sip=yes
 # Check whether --enable-sip or --disable-sip was given.
 if test "${enable_sip+set}" = set; then
   enableval="$enable_sip"
@@ -5772,10 +5848,6 @@ fi
 
 
 
-h323=yes
-t38=yes
-h224=yes
-h460=yes
 # Check whether --enable-h323 or --disable-h323 was given.
 if test "${enable_h323+set}" = set; then
   enableval="$enable_h323"
@@ -5797,7 +5869,6 @@ else
 
   echo "$as_me:$LINENO: result: disabled (T.38, H.224, H.460 also disabled)" >&5
 echo "${ECHO_T}disabled (T.38, H.224, H.460 also disabled)" >&6
-  t38=no
   h224=no
   h460=no
 fi
@@ -5806,7 +5877,6 @@ OPAL_H323=$OPAL_H323
 
 
 
-iax=yes
 # Check whether --enable-iax or --disable-iax was given.
 if test "${enable_iax+set}" = set; then
   enableval="$enable_iax"
@@ -5827,6 +5897,7 @@ else
   echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6
 fi
+
 
 
 # Check whether --enable-h224 or --disable-h224 was given.
@@ -5878,7 +5949,34 @@ fi
 
 
 
-H323_460=
+OPAL_450=
+if test "$h450" = "yes" ; then
+  # Check whether --enable-h450 or --disable-h450 was given.
+if test "${enable_h450+set}" = set; then
+  enableval="$enable_h450"
+  h450=$enableval
+fi;
+  echo "$as_me:$LINENO: checking H.450 support" >&5
+echo $ECHO_N "checking H.450 support... $ECHO_C" >&6
+  if test "$h450" = "yes" ; then
+    OPAL_H450=1
+
+    cat >>confdefs.h <<\_ACEOF
+#define OPAL_H450 1
+_ACEOF
+
+    echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6
+  else
+    echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6
+  fi
+fi
+
+
+
+
+OPAL_460=
 if test "$h460" = "yes" ; then
   # Check whether --enable-h460 or --disable-h460 was given.
 if test "${enable_h460+set}" = set; then
@@ -5888,10 +5986,10 @@ fi;
   echo "$as_me:$LINENO: checking H.460 support" >&5
 echo $ECHO_N "checking H.460 support... $ECHO_C" >&6
   if test "$h460" = "yes" ; then
-    H323_H460=1
+    OPAL_H460=1
 
     cat >>confdefs.h <<\_ACEOF
-#define H323_H460 1
+#define OPAL_H460 1
 _ACEOF
 
     echo "$as_me:$LINENO: result: enabled" >&5
@@ -5960,6 +6058,15 @@ fi
 
 
 
+
+
+HAS_LIBZRTP=
+
+
+
+
+
+
 HAS_LIBSRTP=
 echo "$as_me:$LINENO: checking for libSRTP" >&5
 echo $ECHO_N "checking for libSRTP... $ECHO_C" >&6
@@ -6020,8 +6127,6 @@ else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
-
-
 
 
 
@@ -6799,9 +6904,12 @@ s,@OPAL_H323@,$OPAL_H323,;t t
 s,@OPAL_IAX2@,$OPAL_IAX2,;t t
 s,@OPAL_H224@,$OPAL_H224,;t t
 s,@OPAL_T38FAX@,$OPAL_T38FAX,;t t
-s,@H323_H460@,$H323_H460,;t t
+s,@OPAL_H450@,$OPAL_H450,;t t
+s,@OPAL_H460@,$OPAL_H460,;t t
 s,@OPAL_LID@,$OPAL_LID,;t t
 s,@OPAL_IVR@,$OPAL_IVR,;t t
+s,@OPAL_ZRTP@,$OPAL_ZRTP,;t t
+s,@HAS_LIBZRTP@,$HAS_LIBZRTP,;t t
 s,@OPAL_SRTP@,$OPAL_SRTP,;t t
 s,@HAS_LIBSRTP@,$HAS_LIBSRTP,;t t
 s,@STDCCFLAGS@,$STDCCFLAGS,;t t
