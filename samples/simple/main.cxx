@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2095  2007/07/26 01:03:38  csoutheren
+ * Revision 1.2096  2007/09/08 12:01:34  rjongbloed
+ * Improved memory checking (leaks etc), especially when using MSVC debug library.
+ *
+ * Revision 2.94  2007/07/26 01:03:38  csoutheren
  * Remove debug code
  *
  * Revision 2.93  2007/07/26 00:42:57  csoutheren
@@ -416,6 +419,7 @@
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
 #include <ptlib/config.h>
+#include <codec/opalpluginmgr.h>
 
 #include "main.h"
 #include "../../version.h"
@@ -434,7 +438,6 @@ SimpleOpalProcess::SimpleOpalProcess()
 {
 }
 
-#include <codec/opalpluginmgr.h>
 
 void SimpleOpalProcess::Main()
 {
