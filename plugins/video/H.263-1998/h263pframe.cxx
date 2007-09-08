@@ -61,10 +61,9 @@ uint32_t Bitstream::PeekBits(uint32_t numBits) {
     uint32_t result = 0;
     uint32_t offset = _data.pos / 8;
     uint8_t  offsetBits = _data.pos % 8;
-
-    if (((_data.len << 4) -_ebits - _sbits) < (_data.pos << 4) + numBits) {
-      TRACE(1, "H263+\tDeencap\tFrame too short, trying to read " << numBits << " bits at position " << (_data.pos << 4) 
-                           << " when frame is only " << ((_data.len << 4) -_ebits - _sbits) << " bits long");
+    if (((_data.len << 3) -_ebits - _sbits) < (_data.pos  + numBits)) {
+      TRACE(1, "H263+\tDeencap\tFrame too short, trying to read " << numBits << " bits at position " << _data.pos 
+                           << " when frame is only " << ((_data.len << 3) -_ebits - _sbits) << " bits long");
       return 0;
     }
 
@@ -273,6 +272,9 @@ bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
       uint32_t hdrLen = parseHeader(dataPtr + (headerP ? 0 : 2), frame.GetPayloadSize()- 2 - (headerP ? 0 : 2));
       TRACE(4, "H263+\tDeencap\tFrame includes a picture header of " << hdrLen << " bits");
     }
+    else {
+      TRACE(1, "H263+\tDeencap\tFrame does not seem to include a picture header");
+    }
   }
 
   return true;
@@ -351,7 +353,7 @@ uint32_t H263PFrame::parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen)
       RPS = headerBits.GetBits(1);
       TRACE(4, "H263+\tHeader\tSS: "  << SS
                           << " RPS: " << RPS
-                          << " ISD: " << headerBits.GetBits( 1)
+                          << " ISD: " << headerBits.GetBits(1)
                           << " AIV: " << headerBits.GetBits(1)
                           << " MQ: "  << headerBits.GetBits(1));
       headerBits.GetBits(4);                                                      // skip 1 0 0 0
