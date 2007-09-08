@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.13  2007/09/07 12:56:17  hfriederich
+ * Revision 1.2142.2.14  2007/09/08 10:15:45  hfriederich
+ * Fix propagation of transaction failures (timeouts, retries exceeded)
+ * and some code cleanup
+ *
+ * Revision 2.141.2.13  2007/09/07 12:56:17  hfriederich
  * Backports from HEAD
  *
  * Revision 2.141.2.12  2007/08/25 17:05:02  hfriederich
@@ -1064,7 +1068,7 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
       break;
     case SIP_PDU::Failure_RequestTimeout :
       {
-        handler->OnTransactionTimeout(transaction);
+        handler->OnTransactionFailed(transaction);
       }
       break;
 
@@ -1252,7 +1256,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respo
 }
 
 
-void SIPEndPoint::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 {
   PSafePtr<SIPHandler> handler = NULL;
     
@@ -1260,7 +1264,7 @@ void SIPEndPoint::OnTransactionTimeout(SIPTransaction & transaction)
   if (handler == NULL) 
     return;
     
-  handler->OnTransactionTimeout(transaction);
+  handler->OnTransactionFailed(transaction);
 }
 
 

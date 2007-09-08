@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.4.2.4  2007/09/08 10:15:45  hfriederich
+ * Fix propagation of transaction failures (timeouts, retries exceeded)
+ * and some code cleanup
+ *
  * Revision 1.4.2.3  2007/09/07 12:56:17  hfriederich
  * Backports from HEAD
  *
@@ -211,8 +215,9 @@ void SIPHandler::OnReceivedOK(SIP_PDU & /*response*/)
 }
 
 
-void SIPHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPHandler::OnTransactionFailed(SIPTransaction & /*transaction*/)
 {
+  OnFailed(SIP_PDU::Failure_RequestTimeout);
 }
 
 
@@ -332,9 +337,9 @@ void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
 }
 
 
-void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPRegisterHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
+  SIPHandler::OnTransactionFailed(transaction);
   expireTimer = PTimeInterval (0, 30);
 }
 
@@ -455,12 +460,6 @@ void SIPSubscribeHandler::OnReceivedOK(SIP_PDU & response)
   remotePartyAddress = response.GetMIME().GetTo();
 
   SIPHandler::OnReceivedOK(response);
-}
-
-
-void SIPSubscribeHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
-{
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
 }
 
 
@@ -721,9 +720,9 @@ void SIPPublishHandler::OnReceivedOK(SIP_PDU & response)
 }
 
 
-void SIPPublishHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPPublishHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
+  SIPHandler:OnTransactionFailed(transaction);
   expireTimer = PTimeInterval (0, 30);
 }
 
@@ -850,7 +849,7 @@ void SIPMessageHandler::OnReceivedOK(SIP_PDU & /*response*/)
 }
 
 
-void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPMessageHandler::OnTransactionFailed(SIPTransaction & /*transaction*/)
 {
   if (timeoutRetry > 2)
     OnFailed(SIP_PDU::Failure_RequestTimeout);
@@ -907,7 +906,7 @@ void SIPPingHandler::OnReceivedOK(SIP_PDU & /*response*/)
 }
 
 
-void SIPPingHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPPingHandler::OnTransactionFailed(SIPTransaction & /*transaction*/)
 {
 }
 

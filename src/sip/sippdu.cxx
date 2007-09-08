@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.10  2007/09/07 12:56:18  hfriederich
+ * Revision 1.2117.2.11  2007/09/08 10:15:45  hfriederich
+ * Fix propagation of transaction failures (timeouts, retries exceeded)
+ * and some code cleanup
+ *
+ * Revision 2.116.2.10  2007/09/07 12:56:18  hfriederich
  * Backports from HEAD
  *
  * Revision 2.116.2.9  2007/08/25 17:05:03  hfriederich
@@ -2511,13 +2515,16 @@ void SIPTransaction::SetTerminated(States newState)
   SIPTransactionJob * job = new SIPTransactionJob(SIPTransactionJob::Transaction_Destruction, this);
 
   if (connection != NULL) {
-    if (state != Terminated_Success) {
+    if (state != Terminated_Success && state != Terminated_Aborted) {
       connection->OnTransactionFailed(*this);
     }
     connection->RemoveTransaction(this);
     connection->QueueTransactionJob(job);
   }
   else {
+    if (state != Terminated_Success && state != Terminated_Aborted) {
+      endpoint.OnTransactionFailed(*this);
+    }
     endpoint.RemoveTransaction(this);
     endpoint.QueueTransactionJob(job);
   }
