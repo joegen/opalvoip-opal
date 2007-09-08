@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3.2.4  2007/09/08 10:15:44  hfriederich
+ * Fix propagation of transaction failures (timeouts, retries exceeded)
+ * and some code cleanup
+ *
  * Revision 1.3.2.3  2007/09/07 12:56:17  hfriederich
  * Backports from HEAD
  *
@@ -152,7 +156,7 @@ public:
     { return SIPSubscribe::Unknown; }
 
   virtual void OnReceivedOK(SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
+  virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
   virtual BOOL SendRequest(SIPHandler::State s = Subscribing);
@@ -208,7 +212,7 @@ public:
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
+  virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_REGISTER; }
 
@@ -230,7 +234,6 @@ public:
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual BOOL OnReceivedNOTIFY(SIP_PDU & response);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
@@ -266,7 +269,7 @@ public:
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
+  virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_PUBLISH; }
   virtual void OnFailed(SIP_PDU::StatusCodes r);
@@ -294,7 +297,7 @@ public:
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
+  virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);
@@ -312,7 +315,7 @@ public:
                  const PString & to);
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
+  virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);

@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.12  2007/09/07 12:56:17  hfriederich
+ * Revision 1.2069.2.13  2007/09/08 10:15:44  hfriederich
+ * Fix propagation of transaction failures (timeouts, retries exceeded)
+ * and some code cleanup
+ *
+ * Revision 2.68.2.12  2007/09/07 12:56:17  hfriederich
  * Backports from HEAD
  *
  * Revision 2.68.2.11  2007/08/05 13:12:17  hfriederich
@@ -611,9 +615,9 @@ class SIPEndPoint : public OpalEndPoint
       SIP_PDU & response
     );
     
-    /**Handle a timeout
+    /**Handle a transaction failure
       */
-    virtual void OnTransactionTimeout(
+    virtual void OnTransactionFailed(
       SIPTransaction & transaction
     );
     
