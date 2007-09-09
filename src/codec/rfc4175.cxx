@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.8  2007/09/09 23:44:15  rjongbloed
+ * Fixed payload type and encoding name
+ *
  * Revision 1.7  2007/08/29 00:46:13  csoutheren
  * Change base class for RFC4175 transcoder
  *
@@ -75,8 +78,8 @@ const OpalVideoFormat & GetOpalRFC4175_YUV420P()
 {
   static const OpalVideoFormat RFC4175YUV420P(
     OPAL_RFC4175_YUV420P,
-    RTP_DataFrame::MaxPayloadType,
-    OPAL_RFC4175_YUV420P,
+    RTP_DataFrame::DynamicBase,
+    "raw",
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
     0xffffffff  //12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
@@ -88,8 +91,8 @@ const OpalVideoFormat & GetOpalRFC4175_RGB24()
 {
   static const OpalVideoFormat RFC4175RGB24(
     OPAL_RFC4175_RGB24,
-    RTP_DataFrame::MaxPayloadType,
-    OPAL_RFC4175_RGB24,
+    RTP_DataFrame::DynamicBase,
+    "raw",
     32767, 32767,
     FRAME_RATE,
     0xffffffff  //24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
