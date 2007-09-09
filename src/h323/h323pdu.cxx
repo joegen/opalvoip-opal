@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2024  2007/09/05 01:36:00  rjongbloed
+ * Revision 1.2025  2007/09/09 23:37:19  rjongbloed
+ * Fixed confusion over MaxPayloadType meaning
+ *
+ * Revision 2.23  2007/09/05 01:36:00  rjongbloed
  * Added media packetization fields to H.323 TCS.
  *
  * Revision 2.22  2007/08/22 09:02:19  csoutheren
@@ -873,7 +876,7 @@ BOOL H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
     nonstd.m_data = mediaPacketization;
   }
 
-  if (payloadType == RTP_DataFrame::MaxPayloadType)
+  if (payloadType == RTP_DataFrame::IllegalPayloadType)
     payloadType = mediaFormat.GetPayloadType();
 
   rtpPacketization.IncludeOptionalField(H245_RTPPayloadType::e_payloadType);
