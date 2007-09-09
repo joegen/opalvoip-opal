@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2021  2007/08/31 07:56:19  dsandras
+ * Revision 1.2022  2007/09/09 23:46:28  rjongbloed
+ * There is no encoding name for internal formats
+ *
+ * Revision 2.20  2007/08/31 07:56:19  dsandras
  * Applied patch from Matthias Schneider <ma30002000 yahoo de> :
  * * allow higher resolutions
  * * code cleanup
@@ -127,7 +130,7 @@ const OpalVideoFormat & GetOpalRGB24()
   static const OpalVideoFormat RGB24(
     OPAL_RGB24,
     RTP_DataFrame::MaxPayloadType,
-    OPAL_RGB24,
+    NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
     24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
@@ -140,7 +143,7 @@ const OpalVideoFormat & GetOpalRGB32()
   static const OpalVideoFormat RGB32(
     OPAL_RGB32,
     RTP_DataFrame::MaxPayloadType,
-    OPAL_RGB32,
+    NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
     32*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
@@ -153,7 +156,7 @@ const OpalVideoFormat & GetOpalYUV420P()
   static const OpalVideoFormat YUV420P(
     OPAL_YUV420P,
     RTP_DataFrame::MaxPayloadType,
-    OPAL_YUV420P,
+    NULL,
     FRAME_WIDTH, FRAME_HEIGHT,
     FRAME_RATE,
     12*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
