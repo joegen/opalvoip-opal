@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2073  2007/09/07 05:40:12  rjongbloed
+ * Revision 1.2074  2007/09/10 00:16:16  rjongbloed
+ * Fixed allocating dynamic payload types to media formats maked as internal via
+ *   having an IllegalPayloadType
+ * Added extra fields to the PrintOptions() function.
+ *
+ * Revision 2.72  2007/09/07 05:40:12  rjongbloed
  * Fixed issue where OpalMediaOptions are lost when an OpalMediaFormat
  *    is added to an OpalMediaFormatList.
  * Also fixes a memory leak in GetAllRegisteredMediaFormats().
@@ -911,7 +916,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
     AddOption(new OpalMediaOptionUnsigned(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
 
   // assume non-dynamic payload types are correct and do not need deconflicting
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType == RTP_DataFrame::MaxPayloadType) {
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType) {
     registeredFormats.OpalMediaFormatBaseList::Append(this);
     return;
   }
@@ -1310,9 +1315,16 @@ time_t OpalMediaFormat::GetCodecBaseTime() const
 
 ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
 {
+  static const char * const SessionNames[] = { "", " Audio", " Video", " Data", " H.224" };
+  static const int TitleWidth = 25;
+
+  strm << right << setw(TitleWidth) <<   "Format Name" << left << "       = " << *this << '\n'
+       << right << setw(TitleWidth) <<    "Session ID" << left << "       = " << defaultSessionID << (defaultSessionID < PARRAYSIZE(SessionNames) ? SessionNames[defaultSessionID] : "") << '\n'
+       << right << setw(TitleWidth) <<  "Payload Type" << left << "       = " << rtpPayloadType << '\n'
+       << right << setw(TitleWidth) << "Encoding Name" << left << "       = " << rtpEncodingName << '\n';
   for (PINDEX i = 0; i < GetOptionCount(); i++) {
     const OpalMediaOption & option = GetOption(i);
-    strm << right << setw(25) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
+    strm << right << setw(TitleWidth) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
          << ") = " << left << setw(10) << option.AsString();
     if (!option.GetFMTPName().IsEmpty())
       strm << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
@@ -1327,7 +1339,7 @@ ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
       if (!genericInfo.excludeReqMode)
         strm << " RM";
     }
-    strm << endl;
+    strm << '\n';
   }
   strm << endl;
 
