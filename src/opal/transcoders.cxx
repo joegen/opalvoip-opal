@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2037  2007/09/05 14:19:27  csoutheren
+ * Revision 1.2038  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
+ * Revision 2.36  2007/09/05 14:19:27  csoutheren
  * Remove warning on Windows
  *
  * Revision 2.35  2007/09/05 13:36:59  csoutheren
@@ -310,7 +314,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
                                                    const BYTE * instance,
                                                        unsigned instanceLen)
 {
-  OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalMediaFormatPair(srcFormat, destFormat));
+  OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder != NULL) {
     transcoder->UpdateOutputMediaFormat(destFormat);
     if (instance != NULL && instanceLen != 0 && transcoder->HasCodecControl("set_instance_id")) {
@@ -349,13 +353,12 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat.GetDefaultSessionID() == sessionID) {
-          OpalMediaFormatPair search(srcFormat, dstFormat);
+          OpalTranscoderKey search(srcFormat, dstFormat);
           OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
           for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-            OpalMediaFormatPair & target = *i;
-            if (search == target)
-              return srcFormat.Merge(target.GetInputFormat()) &&
-                     dstFormat.Merge(target.GetOutputFormat()) &&
+            if (search == *i)
+              return srcFormat.Merge(i->first) &&
+                     dstFormat.Merge(i->second) &&
                      srcFormat.Merge(dstFormat);
           }
         }
@@ -390,13 +393,13 @@ BOOL OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
 
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find1 = availableTranscoders.begin(); find1 != availableTranscoders.end(); ++find1) {
-    if (find1->GetInputFormat() == srcFormat) {
+    if (find1->first == srcFormat) {
       for (OpalTranscoderIterator find2 = availableTranscoders.begin(); find2 != availableTranscoders.end(); ++find2) {
-        if (find2->GetInputFormat() == find1->GetOutputFormat() && find2->GetOutputFormat() == dstFormat) {
-          intermediateFormat = find1->GetOutputFormat();
-          intermediateFormat.Merge(find2->GetInputFormat());
-          return srcFormat.Merge(find1->GetInputFormat()) &&
-                 dstFormat.Merge(find2->GetOutputFormat()) &&
+        if (find2->first == find1->second && find2->second == dstFormat) {
+          intermediateFormat = find1->second;
+          intermediateFormat.Merge(find2->first);
+          return srcFormat.Merge(find1->first) &&
+                 dstFormat.Merge(find2->second) &&
                  srcFormat.Merge(dstFormat);
         }
       }
@@ -413,8 +416,8 @@ OpalMediaFormatList OpalTranscoder::GetDestinationFormats(const OpalMediaFormat 
 
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find = availableTranscoders.begin(); find != availableTranscoders.end(); ++find) {
-    if (find->GetInputFormat() == srcFormat)
-      list += find->GetOutputFormat();
+    if (find->first == srcFormat)
+      list += find->second;
   }
 
   return list;
@@ -427,10 +430,8 @@ OpalMediaFormatList OpalTranscoder::GetSourceFormats(const OpalMediaFormat & dst
 
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find = availableTranscoders.begin(); find != availableTranscoders.end(); ++find) {
-    PString s = find->GetInputFormat();
-    PString d = find->GetOutputFormat();
-    if (find->GetOutputFormat() == dstFormat)
-      list += find->GetInputFormat();
+    if (find->second == dstFormat)
+      list += find->first;
   }
 
   return list;
