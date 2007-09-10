@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.32  2007/09/10 00:11:13  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
  * Revision 1.31  2007/09/04 07:12:28  rjongbloed
  * Fixed crash when change a media format option after moving it in dialog.
  *
@@ -1861,7 +1865,7 @@ void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & m
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     const OpalMediaFormat & mediaFormat = mediaFormats[i];
-    if (mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType)
+    if (mediaFormat.IsTransportable())
       m_mediaInfo.push_back(MyMedia(source, mediaFormat));
   }
 }
