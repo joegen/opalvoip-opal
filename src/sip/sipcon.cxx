@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2259  2007/09/05 14:03:37  csoutheren
+ * Revision 1.2260  2007/09/10 00:11:14  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.258  2007/09/05 14:03:37  csoutheren
  * Applied 1783448 - Removing media streams when releasing session
  * Thanks to Borko Jandras
  *
@@ -1937,8 +1941,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat & fmt = formats[i];
     if (fmt.GetDefaultSessionID() == rtpSessionId &&
-            (rtpSessionId == OpalMediaFormat::DefaultDataSessionID ||
-             fmt.GetPayloadType() < RTP_DataFrame::MaxPayloadType))
+            (rtpSessionId == OpalMediaFormat::DefaultDataSessionID || fmt.IsTransportable()))
       break;
   }
   if (i >= formats.GetSize()) {

@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2171  2007/09/05 13:10:45  csoutheren
+ * Revision 1.2172  2007/09/10 00:11:14  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.170  2007/09/05 13:10:45  csoutheren
  * Applied 1686620 - Couple of locks in H323Connection class
  * Thanks to Borko Jandras
  *
@@ -3603,8 +3607,7 @@ void H323Connection::OnSetLocalCapabilities()
     simultaneous = P_MAX_INDEX;
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
-      if (format.GetDefaultSessionID() == sessionOrder[s] &&
-          format.GetPayloadType() < RTP_DataFrame::MaxPayloadType)
+      if (format.GetDefaultSessionID() == sessionOrder[s] && format.IsTransportable())
         simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format, TRUE);
     }
   }
