@@ -22,7 +22,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2096  2007/09/08 12:01:34  rjongbloed
+ * Revision 1.2097  2007/09/10 00:11:13  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.95  2007/09/08 12:01:34  rjongbloed
  * Improved memory checking (leaks etc), especially when using MSVC debug library.
  *
  * Revision 2.94  2007/07/26 01:03:38  csoutheren
@@ -1174,7 +1178,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-    if (allMediaFormats[i].GetPayloadType() >= RTP_DataFrame::MaxPayloadType)
+    if (!allMediaFormats[i].IsTransportable())
       allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
   }
   allMediaFormats.Remove(GetMediaFormatMask());
