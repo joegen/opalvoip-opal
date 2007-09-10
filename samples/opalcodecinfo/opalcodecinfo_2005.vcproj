@@ -296,7 +296,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
-			RelativePathToProject="..\..\..\pwlib\src\ptlib\msos\Console_2005.vcproj"
+			RelativePathToProject="..\pwlib\src\ptlib\msos\Console_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
@@ -304,7 +304,7 @@
 			CopyLocalDependencies="false"
 			UseInBuild="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject="..\..\src\win32\opal_lib_2005.vcproj"
+			RelativePathToProject=".\src\win32\opal_lib_2005.vcproj"
 		/>
 	</References>
 	<Files>
