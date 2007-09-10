@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2074  2007/09/10 00:16:16  rjongbloed
+ * Revision 1.2075  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
+ * Revision 2.73  2007/09/10 00:16:16  rjongbloed
  * Fixed allocating dynamic payload types to media formats maked as internal via
  *   having an IllegalPayloadType
  * Added extra fields to the PrintOptions() function.
@@ -941,8 +945,6 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
   // then move the old format to the next unused format
   if (match != NULL)
     match->rtpPayloadType = nextUnused;
-  else
-    rtpPayloadType = nextUnused;
 
   registeredFormats.OpalMediaFormatBaseList::Append(this);
 }

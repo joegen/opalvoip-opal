@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2017  2007/09/07 17:49:47  ykiryanov
+ * Revision 1.2018  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
+ * Revision 2.16  2007/09/07 17:49:47  ykiryanov
  * File was missing transcoders.h include. This had an effect while building code with no video.
  *
  * Revision 2.15  2007/08/13 06:07:51  csoutheren
@@ -434,12 +438,12 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
     class Worker : public OpalTranscoderFactory::WorkerBase 
     {
       public:
-        Worker(const OpalMediaFormatPair & key, PluginCodec_Definition * _codecDefn, BOOL _isEncoder)
+        Worker(const OpalTranscoderKey & key, PluginCodec_Definition * _codecDefn, BOOL _isEncoder)
           : OpalTranscoderFactory::WorkerBase(), codecDefn(_codecDefn), isEncoder(_isEncoder)
         { OpalTranscoderFactory::Register(key, this); }
 
       protected:
-        virtual OpalTranscoder * Create(const OpalMediaFormatPair &) const
+        virtual OpalTranscoder * Create(const OpalTranscoderKey &) const
         { return new TranscoderClass(codecDefn, isEncoder); }
 
         PluginCodec_Definition * codecDefn;

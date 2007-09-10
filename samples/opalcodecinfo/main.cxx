@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.10  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
  * Revision 1.9  2007/06/25 05:09:09  rjongbloed
  * Fixed compile after change to anonymous structure in header (for GCC).
  *
@@ -723,8 +727,8 @@ void OpalCodecInfo::Main()
     OpalTranscoderList keys = OpalTranscoderFactory::GetKeyList();
     OpalTranscoderList::const_iterator transcoder;
     for (transcoder = keys.begin(); transcoder != keys.end(); ++transcoder) {
-      cout << "   " << *transcoder << flush;
-      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder->GetInputFormat(), transcoder->GetOutputFormat());
+      cout << "   " << transcoder->first << "->" << transcoder->second << flush;
+      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder->first, transcoder->second);
       if (xcoder == NULL)
         cout << "  CANNOT BE INSTANTIATED";
       else
