@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2095  2007/08/01 23:56:54  csoutheren
+ * Revision 1.2096  2007/09/11 13:42:18  csoutheren
+ * Add logging for IP address translation
+ *
+ * Revision 2.94  2007/08/01 23:56:54  csoutheren
  * Add extra logging
  *
  * Revision 2.93  2007/07/22 03:22:11  rjongbloed
@@ -1514,6 +1517,8 @@ BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
       // given these paramaters, translate the local address
       PIPSocket::Address trialAddr = localAddr;
       TranslateIPAddress(trialAddr, peerAddr);
+
+      PTRACE(3, "OPAL\tTranslateIPAddress has converted " << localAddr << " to " << trialAddr);
 
       // if the application specific routine changed the local address, then enable RTP NAT mode
       if (localAddr != trialAddr) {
