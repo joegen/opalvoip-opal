@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3.2.5  2007/09/11 14:41:35  hfriederich
+ * Add basic RFC3263 support. Does not yet work for connection based
+ * transactions.
+ *
  * Revision 1.3.2.4  2007/09/08 10:15:44  hfriederich
  * Fix propagation of transaction failures (timeouts, retries exceeded)
  * and some code cleanup
@@ -171,6 +175,7 @@ protected:
   SIPTransaction            * request;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
+  OpalTransportAddress        destination;
   PString                     callID;
   int                         originalExpire;
   int	                      expire;
