@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.33  2007/09/11 09:18:05  rjongbloed
+ * Added full dump of all codecs and their options to trace log.
+ *
  * Revision 1.32  2007/09/10 00:11:13  rjongbloed
  * AddedOpalMediaFormat::IsTransportable() function as better test than simply
  *   checking the payload type, condition is more complex.
@@ -861,15 +864,10 @@ bool MyManager::Initialise()
 
 #if PTRACING
   mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-  ostream & traceStream = PTrace::Begin(1, __FILE__, __LINE__);
+  ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
   traceStream << "OpenPhone\tRegistered media formats:\n";
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    traceStream << "    " << mediaFormats[i] << '\n';
-    for (PINDEX j = 0; j < mediaFormats[i].GetOptionCount(); j++) {
-      const OpalMediaOption & option = mediaFormats[i].GetOption(j);
-      traceStream << "        " << option.GetName() << " = " << option.AsString() << '\n';
-    }
-  }
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
+    mediaFormats[i].PrintOptions(traceStream);
   traceStream << PTrace::End;
 #endif
 
