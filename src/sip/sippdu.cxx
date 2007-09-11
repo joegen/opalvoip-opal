@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.11  2007/09/08 10:15:45  hfriederich
+ * Revision 1.2117.2.12  2007/09/11 14:41:35  hfriederich
+ * Add basic RFC3263 support. Does not yet work for connection based
+ * transactions.
+ *
+ * Revision 2.116.2.11  2007/09/08 10:15:45  hfriederich
  * Fix propagation of transaction failures (timeouts, retries exceeded)
  * and some code cleanup
  *
@@ -501,6 +505,7 @@
 
 #include <ptclib/cypher.h>
 #include <ptclib/pdns.h>
+#include <ptclib/enum.h>
 
 
 #define  SIP_VER_MAJOR  2
@@ -2115,24 +2120,9 @@ BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remo
     return FALSE;
   }
   
-  if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
-    // skip transport identifier
-    SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
-    
-    OpalTransportAddress actualRemoteAddress;
-    // Do a DNS SRV lookup
-#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
-      actualRemoteAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
-    else  
-#endif
-      actualRemoteAddress = hosturl.GetHostAddress();
-    
-    PTRACE(3, "SIP\tAdjusting transport remote address to " << actualRemoteAddress);
-    transport.SetRemoteAddress(actualRemoteAddress);
+  if (!remoteAddress.IsEmpty()) {
+    transport.SetRemoteAddress(remoteAddress);
   }
-  
   
   PString str = Build();
   
@@ -2194,7 +2184,8 @@ SIPTransaction::SIPTransaction(SIPEndPoint & ep,
                                const PTimeInterval & minRetryTime,
                                const PTimeInterval & maxRetryTime)
   : endpoint(ep),
-    transport(trans)
+    transport(trans),
+    remoteAddress()
 {
   connection = NULL;
   Construct(minRetryTime, maxRetryTime);
@@ -2206,7 +2197,8 @@ SIPTransaction::SIPTransaction(SIPConnection & conn,
                                Methods meth)
   : SIP_PDU(meth, conn, trans),
     endpoint(conn.GetEndPoint()),
-    transport(trans)
+    transport(trans),
+    remoteAddress()
 {
   connection = &conn;
   Construct();
@@ -2270,13 +2262,17 @@ BOOL SIPTransaction::Start()
   
   OnStart();
   
+  if (remoteAddress.IsEmpty()) {
+    remoteAddress = GetSendAddress(routeSet); // BOGUS, add RFC3263 lookup
+  }
+  
   if (connection != NULL) {
     // Use the connection transport to send the request
-    if (connection->SendPDU(*this, GetSendAddress(routeSet)))
+    if (connection->SendPDU(*this, remoteAddress))
       success = TRUE;
   }
   else {
-    success = Write(transport, GetSendAddress(routeSet));
+    success = Write(transport, remoteAddress);
   }
   
   if (success == FALSE) {
@@ -2409,6 +2405,41 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
   }
 
   return TRUE;
+}
+
+
+OpalTransportAddress SIPTransaction::LocateDestination(const SIPURL & destination)
+{
+  OpalTransportAddress remoteAddress = destination.GetHostAddress();
+  
+  // Using procedure as defined in RFC 3263
+  // At the moment, only UDP is supported.
+#if P_DNS
+  // Do NAPTR lookup if no port or IP address is specified
+  PIPSocket::Address ipAddress(destination.GetHostName());
+  if (!destination.GetPortSupplied() && !ipAddress.IsValid()) {
+    PDNS::NAPTRRecordList naptrRecords;
+    PDNS::GetRecords(destination.GetHostName(), naptrRecords);
+    PDNS::NAPTRRecord *naptrRecord = naptrRecords.GetFirst("SIP+D2U");
+    PString srvQuery = "";
+    if (naptrRecord != NULL) {
+      srvQuery = naptrRecord->replacement;
+    }
+    PIPSocketAddressAndPortVector addrs;
+    BOOL result = FALSE;
+    if (srvQuery.IsEmpty()) {
+      // Construct SRV query manually
+      result = PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs);
+    } else {
+      result = PDNS::LookupSRV(srvQuery, destination.GetPort(), addrs);
+    }
+    if (result) {
+      remoteAddress = OpalTransportAddress(addrs[0].address.AsString(), addrs[0].port, "udp");
+    }
+  }
+#endif
+  
+  return remoteAddress;
 }
 
 

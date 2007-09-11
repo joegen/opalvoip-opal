@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.16  2007/09/07 12:56:17  hfriederich
+ * Revision 1.2198.2.17  2007/09/11 14:41:35  hfriederich
+ * Add basic RFC3263 support. Does not yet work for connection based
+ * transactions.
+ *
+ * Revision 2.197.2.16  2007/09/07 12:56:17  hfriederich
  * Backports from HEAD
  *
  * Revision 2.197.2.15  2007/08/25 17:05:02  hfriederich
@@ -1010,13 +1014,13 @@ SIPConnection::SIPConnection(OpalCall & call,
   UpdateRemotePartyNameAndNumber();
   
   // Do a DNS SRV lookup
-#if P_DNS
+/*#if P_DNS
     PIPSocketAddressAndPortVector addrs;
     if (PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs)) {
       transportAddress.SetHostName(addrs[0].address.AsString());
       transportAddress.SetPort(addrs [0].port);
     }
-#endif
+#endif*/
 
   originalInvite = NULL;
   jobHandler = NULL;
@@ -1605,13 +1609,13 @@ BOOL SIPConnection::SetUpConnection()
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
   // Do a DNS SRV lookup
-#if P_DNS
+/*#if P_DNS
     PIPSocketAddressAndPortVector addrs;
     if (PDNS::LookupSRV(targetAddress.GetHostName(), "_sip._udp", targetAddress.GetPort(), addrs)) {
       transportAddress.SetHostName(addrs[0].address.AsString());
       transportAddress.SetPort(addrs [0].port);
     }
-#endif
+#endif*/
   PStringList routeSet = GetRouteSet();
   if (!routeSet.IsEmpty()) 
     transportAddress = routeSet[0];
