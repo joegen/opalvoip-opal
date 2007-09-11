@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.h,v $
+ * Revision 1.5  2007/09/11 13:41:19  csoutheren
+ * Fully implemented RFC 4175 codec with YCrCb420 encoding
+ *
  * Revision 1.4  2007/08/29 00:45:57  csoutheren
  * Change base class for RFC4175 transcoder
  *
@@ -57,14 +60,9 @@ namespace PWLibStupidLinkerHacks {
   extern int rfc4175Loader;
 };
 
-#define OPAL_RFC4175_YUV420P "RFC4175_YUV420P"
-#define OPAL_RFC4175_RGB24   "RFC4175_RGB24"
-
-extern const OpalVideoFormat & GetOpalRFC4175_YUV420P();
-extern const OpalVideoFormat & GetOpalRFC4175_RGB24();
-
-#define OpalRFC4175_YUV420P GetOpalRFC4175_YUV420P()
-#define OpalRFC4175_RGB24   GetOpalRFC4175_RGB24()
+#define OPAL_RFC4175_YCbCr420  "RFC4175_YCbCr-4:2:0"
+extern const OpalVideoFormat & GetOpalRFC4175_YCbCr420();
+#define OpalRFC4175YCbCr420    GetOpalRFC4175_YCbCr420()
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -78,6 +76,12 @@ class OpalRFC4175Transcoder : public OpalUncompVideoTranscoder
     );
     virtual PINDEX PixelsToBytes(PINDEX pixels) const = 0;
     PINDEX RFC4175HeaderSize(PINDEX lines);
+
+    struct ScanLineHeader {
+      PUInt16b length;
+      PUInt16b y;       // has field flag in top bit
+      PUInt16b offset;  // has last line flag in top bit
+    };
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -94,7 +98,27 @@ class OpalRFC4175Encoder : public OpalRFC4175Transcoder
     BOOL ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
+    void EncodeFullFrame();
+    void EncodeScanLineSegment(PINDEX y, PINDEX offs, PINDEX width);
+    void AddNewDstFrame();
+    void EncodeFrames();
+    void FinishOutputFrame();
+
     DWORD extendedSequenceNumber;
+    PINDEX maximumPacketSize;
+    unsigned frameHeight;
+    unsigned frameWidth;
+
+    DWORD srcTimestamp;
+    BYTE * srcYPlane;
+    BYTE * srcCbPlane;
+    BYTE * srcCrPlane;
+
+    RTP_DataFrameList * dstFrames;
+    std::vector<PINDEX> dstScanlineCounts;
+    PINDEX dstScanLineCount;
+    PINDEX dstPacketSize;
+    ScanLineHeader * dstScanLineTable;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,6 +131,7 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
       const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
+    ~OpalRFC4175Decoder();
 
     virtual PINDEX PixelsToBytes(PINDEX pixels) const = 0;
     virtual PINDEX BytesToPixels(PINDEX pixels) const = 0;
@@ -114,41 +139,52 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
 
   protected:
     BOOL Initialise();
+    BOOL DecodeStoredFrames(RTP_DataFrameList & output);
 
-    BOOL firstFrame;
-    PINDEX width, maxY;
-    RTP_DataFrame yuvFrame;
+    RTP_DataFrameList inputFrames;
+    std::vector<PINDEX> scanlineCounts;
+    PINDEX frameWidth, frameHeight;
+
+    BOOL  first;
+    DWORD lastSequenceNumber;
+    DWORD lastTimeStamp;
 };
-
-/////////////////////////////////////////////////////////////////////////////
-
-#define OPAL_REGISTER_RFC4175_VIDEO(format) \
-  OPAL_REGISTER_TRANSCODER(Opal_RFC4175_##format,   OpalRFC4175_##format, Opal##format); \
-  OPAL_REGISTER_TRANSCODER(Opal_##format##_RFC4175, Opal##format, OpalRFC4175_##format);
 
 /////////////////////////////////////////////////////////////////////////////
 
 /**This class defines a transcoder implementation class that converts RFC4175 to YUV420P
  */
-class Opal_RFC4175_YUV420P : public OpalRFC4175Decoder
+class Opal_RFC4175YCbCr420_to_YUV420P : public OpalRFC4175Decoder
 {
-  PCLASSINFO(Opal_RFC4175_YUV420P, OpalRFC4175Decoder);
+  PCLASSINFO(Opal_RFC4175YCbCr420_to_YUV420P, OpalRFC4175Decoder);
   public:
-    Opal_RFC4175_YUV420P() : OpalRFC4175Decoder(OpalYUV420P, OpalRFC4175_YUV420P) { }
+    Opal_RFC4175YCbCr420_to_YUV420P() : OpalRFC4175Decoder(OpalYUV420P, OpalRFC4175YCbCr420) { }
     PINDEX PixelsToBytes(PINDEX pixels) const                                     { return pixels*12/8; }
     PINDEX BytesToPixels(PINDEX bytes) const                                      { return bytes*8/12; }
 };
 
-class Opal_YUV420P_RFC4175 : public OpalRFC4175Encoder
+class Opal_YUV420P_to_RFC4175YCbCr420 : public OpalRFC4175Encoder
 {
-  PCLASSINFO(Opal_YUV420P_RFC4175, OpalRFC4175Encoder);
+  PCLASSINFO(Opal_YUV420P_to_RFC4175YCbCr420, OpalRFC4175Encoder);
   public:
-    Opal_YUV420P_RFC4175() : OpalRFC4175Encoder(OpalRFC4175_YUV420P, OpalYUV420P) { }
+    Opal_YUV420P_to_RFC4175YCbCr420() : OpalRFC4175Encoder(OpalRFC4175YCbCr420, OpalYUV420P) { }
     PINDEX PixelsToBytes(PINDEX pixels) const                                     { return pixels*12/8; }
     PINDEX BytesToPixels(PINDEX bytes) const                                      { return bytes*8/12; }
 };
+
+#define OPAL_REGISTER_RFC4175_VIDEO(oformat, rformat) \
+  OPAL_REGISTER_TRANSCODER(Opal_RFC4175##rformat##_to_##oformat, OpalRFC4175##rformat, Opal##oformat); \
+  OPAL_REGISTER_TRANSCODER(Opal_##oformat##_to_RFC4175##rformat, Opal##oformat, OpalRFC4175##rformat);
 
 /////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+
+#if 0
+
+#define OPAL_RFC4175_RGB24   "RFC4175_RGB24"
+extern const OpalVideoFormat & GetOpalRFC4175_RGB24();
+#define OpalRFC4175_RGB24   GetOpalRFC4175_RGB24()
 
 /**This class defines a transcoder implementation class that converts RFC4175 to RGB24
  */
@@ -169,6 +205,8 @@ class Opal_RGB24_RFC4175 : public OpalRFC4175Encoder
     PINDEX PixelsToBytes(PINDEX pixels) const                               { return pixels*3; }
     PINDEX BytesToPixels(PINDEX bytes) const                                { return bytes/3; }
 };
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
