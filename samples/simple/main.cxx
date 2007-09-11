@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2097  2007/09/10 00:11:13  rjongbloed
+ * Revision 1.2098  2007/09/11 09:18:05  rjongbloed
+ * Added full dump of all codecs and their options to trace log.
+ *
+ * Revision 2.96  2007/09/10 00:11:13  rjongbloed
  * AddedOpalMediaFormat::IsTransportable() function as better test than simply
  *   checking the payload type, condition is more complex.
  *
@@ -1237,6 +1240,14 @@ BOOL MyManager::Initialise(PArgList & args)
     cout << "Set option \"" << optionName << "\" to \"" << valueStr << "\" in \"" << mediaFormat << '"' << endl;
   }
 
+#if PTRACING
+  allMediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
+  traceStream << "Simple\tRegistered media formats:\n";
+  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++)
+    allMediaFormats[i].PrintOptions(traceStream);
+  traceStream << PTrace::End;
+#endif
   return TRUE;
 }
 
