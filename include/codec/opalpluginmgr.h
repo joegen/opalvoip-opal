@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2018  2007/09/10 03:15:04  rjongbloed
+ * Revision 1.2019  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 2.17  2007/09/10 03:15:04  rjongbloed
  * Fixed issues in creating and subsequently using correctly unique
  *   payload types in OpalMediaFormat instances and transcoders.
  *
@@ -172,7 +177,7 @@ class OpalPluginCodecHandler : public PObject
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
                                                                     time_t timeStamp);
-    virtual void CreateVideoTranscoder(const OpalMediaFormat & src, const OpalMediaFormat & dst, PluginCodec_Definition * codec, BOOL v);
+    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, BOOL v);
 #endif
 
 #if OPAL_T38FAX
@@ -198,8 +203,6 @@ class OpalPluginCodecManager : public PPluginModuleManager
 
     void OnLoadPlugin(PDynaLink & dll, INT code);
 
-    static OpalMediaFormatList GetMediaFormats();
-
     virtual void OnShutdown();
 
     static void Bootstrap();
@@ -220,9 +223,8 @@ class OpalPluginCodecManager : public PPluginModuleManager
       OpalPluginCodecHandler * handler
     );
 
-    static void AddFormat(const OpalMediaFormat & fmt);
-    static OpalMediaFormatList & GetMediaFormatList();
-    static PMutex & GetMediaFormatMutex();
+    // Note the below MUST NOT be an OpalMediaFormatList
+    PList<OpalMediaFormat> mediaFormatsOnHeap;
 
     void RegisterCodecPlugins  (unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
     void UnregisterCodecPlugins(unsigned int count, PluginCodec_Definition * codecList, OpalPluginCodecHandler * handler);
@@ -266,7 +268,6 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat
                                unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
                                time_t timeStamp              /// timestamp (for versioning)
     );
-    ~OpalPluginAudioMediaFormat();
     bool IsValidForProtocol(const PString & protocol) const;
     PObject * Clone() const;
     const PluginCodec_Definition * encoderCodec;
@@ -285,7 +286,6 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
       const char * rtpEncodingName, /// rtp encoding name
       time_t timeStamp              /// timestamp (for versioning)
     );
-    ~OpalPluginVideoMediaFormat();
     PObject * Clone() const;
     bool IsValidForProtocol(const PString & protocol) const;
     const PluginCodec_Definition * encoderCodec;
@@ -334,7 +334,6 @@ class OpalPluginFaxMediaFormat : public OpalMediaFormat
       unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
       time_t timeStamp              /// timestamp (for versioning)
     );
-    ~OpalPluginFaxMediaFormat();
     PObject * Clone() const;
     bool IsValidForProtocol(const PString & protocol) const;
     const PluginCodec_Definition * encoderCodec;
@@ -493,8 +492,6 @@ class H323AudioPluginCapability : public H323AudioCapability,
     // this constructor is only used when creating a capability without a codec
     H323AudioPluginCapability(const PString & _mediaFormat,
                               const PString & _baseName,
-                              unsigned maxFramesPerPacket,
-                              unsigned /*recommendedFramesPerPacket*/,
                               unsigned _pluginSubType);
 
     virtual PObject * Clone() const;
