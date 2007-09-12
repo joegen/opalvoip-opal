@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2198.2.17  2007/09/11 14:41:35  hfriederich
+ * Revision 1.2198.2.18  2007/09/12 11:59:18  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
+ * Revision 2.197.2.17  2007/09/11 14:41:35  hfriederich
  * Add basic RFC3263 support. Does not yet work for connection based
  * transactions.
  *
@@ -1012,15 +1015,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   // Update remote party parameters
   remotePartyAddress = targetAddress.AsQuotedString();
   UpdateRemotePartyNameAndNumber();
-  
-  // Do a DNS SRV lookup
-/*#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs)) {
-      transportAddress.SetHostName(addrs[0].address.AsString());
-      transportAddress.SetPort(addrs [0].port);
-    }
-#endif*/
 
   originalInvite = NULL;
   jobHandler = NULL;
@@ -1589,6 +1583,8 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
     return FALSE;
   }
   
+  invite->SetRemoteAddress(connection.transactionDestination);
+  
   if (invite->Start()) {
     PWaitAndSignal m(connection.invitationsMutex); 
     connection.forkedInvitations.Append(invite);
@@ -1603,27 +1599,15 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 BOOL SIPConnection::SetUpConnection()
 {
   ApplyStringOptions();
-    
-  SIPURL transportAddress = targetAddress;
 
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
-
-  // Do a DNS SRV lookup
-/*#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(targetAddress.GetHostName(), "_sip._udp", targetAddress.GetPort(), addrs)) {
-      transportAddress.SetHostName(addrs[0].address.AsString());
-      transportAddress.SetPort(addrs [0].port);
-    }
-#endif*/
-  PStringList routeSet = GetRouteSet();
-  if (!routeSet.IsEmpty()) 
-    transportAddress = routeSet[0];
+  
+  LocateDestination();
 
   originating = TRUE;
 
   delete transport;
-  transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
+  transport = endpoint.CreateTransport(transactionDestination);
   if (transport == NULL) {
     Release(EndedByTransportFail);
     return FALSE;
@@ -1650,6 +1634,7 @@ void SIPConnection::HoldConnection()
   local_hold = TRUE;
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  invite->SetRemoteAddress(transactionDestination);
   if (invite->Start()) {
 
     // Pause the media streams
@@ -1677,6 +1662,7 @@ void SIPConnection::RetrieveConnection()
   PTRACE(3, "SIP\tWill retrieve connection from hold");
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
+  invite->SetRemoteAddress(transactionDestination);
   if (invite->Start()) {
     // Un-Pause the media streams
     PauseMediaStreams(FALSE);
@@ -2663,6 +2649,7 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
+  invite->SetRemoteAddress(transactionDestination);
   if (invite->Start())
   {
     PWaitAndSignal m(invitationsMutex); 
@@ -3089,6 +3076,18 @@ BOOL SIPConnection::PopulateCapabilityList()
   capabilities.AddCapabilityWithFormat(rfc2833Format);
   
   return TRUE;
+}
+
+
+void SIPConnection::LocateDestination()
+{  
+  PStringList routeSet = GetRouteSet();
+  if (!routeSet.IsEmpty()) {
+    SIPURL destination = routeSet[0];
+    transactionDestination = SIPTransaction::LocateDestination(destination);
+  } else {
+    transactionDestination = SIPTransaction::LocateDestination(targetAddress);
+  }
 }
 
 #if OPAL_VIDEO

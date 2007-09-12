@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.14  2007/09/08 10:15:45  hfriederich
+ * Revision 1.2142.2.15  2007/09/12 11:59:18  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
+ * Revision 2.141.2.14  2007/09/08 10:15:45  hfriederich
  * Fix propagation of transaction failures (timeouts, retries exceeded)
  * and some code cleanup
  *
@@ -1224,7 +1227,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   }
 
   // Restart the transaction with new authentication handler
-  request = callid_handler->CreateTransaction(transaction.GetTransport());
+  request = callid_handler->CreateNewTransaction(transaction.GetTransport());
   if (!realm_handler->GetAuthentication().Authorise(*request)) {
     // don't send again if no authentication info available
     delete request;
