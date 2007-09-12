@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2054  2007/09/12 04:19:53  rjongbloed
+ * Revision 1.2055  2007/09/12 19:08:53  ykiryanov
+ * Because I have various versions of strcasecmp for WCE based platforms, such as strcasecmp(char*, char*) or strcasecmp(wchar_t*, char), or strcasecmp(PString, char*), which is under UNICODE are all different, I have added cast of some variables to (const char*). Should we NOT use strcasecmp and go with PString comparisons instead?
+ *
+ * Revision 2.53  2007/09/12 04:19:53  rjongbloed
  * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
  *   the plug in capabilities, that then do not get updated values from the master
  *   list, or worse from the user modified master list, causing much confusion.
@@ -561,15 +564,15 @@ void OpalPluginMediaFormat::SetOldStyleFormatOption(OpalMediaFormat & format, co
 
 #if OPAL_VIDEO
   // Backward compatibility tests
-  if (strcasecmp(key, h323_qcifMPI_tag) == 0)
+  if (strcasecmp((const char*) key, h323_qcifMPI_tag) == 0)
     key = qcifMPI_tag;
-  else if (strcasecmp(key, h323_cifMPI_tag) == 0)
+  else if (strcasecmp((const char*) key, h323_cifMPI_tag) == 0)
     key = cifMPI_tag;
-  else if (strcasecmp(key, h323_sqcifMPI_tag) == 0)
+  else if (strcasecmp((const char*) key, h323_sqcifMPI_tag) == 0)
     key = sqcifMPI_tag;
-  else if (strcasecmp(key, h323_cif4MPI_tag) == 0)
+  else if (strcasecmp((const char*) key, h323_cif4MPI_tag) == 0)
     key = cif4MPI_tag;
-  else if (strcasecmp(key, h323_cif16MPI_tag) == 0)
+  else if (strcasecmp((const char*) key, h323_cif16MPI_tag) == 0)
     key = cif16MPI_tag;
 #endif
 
