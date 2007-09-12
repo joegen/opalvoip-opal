@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.34  2007/09/12 03:51:12  rjongbloed
+ * Changed to avoid display of non-existent memory leak.
+ *
  * Revision 1.33  2007/09/11 09:18:05  rjongbloed
  * Added full dump of all codecs and their options to trace log.
  *
@@ -442,10 +445,17 @@ class TextCtrlChannel : public PChannel
       wxFrame * frame
     ) { m_frame = frame; }
 
+    static TextCtrlChannel & Instance()
+    {
+      static TextCtrlChannel instance;
+      return instance;
+    }
+
   protected:
     wxFrame * m_frame;
-} LogWindow;
+};
 
+#define LogWindow TextCtrlChannel::Instance()
 
 
 ///////////////////////////////////////////////////////////////////////////////
