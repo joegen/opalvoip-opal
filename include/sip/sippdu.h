@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2046.2.8  2007/09/11 14:41:35  hfriederich
+ * Revision 1.2046.2.9  2007/09/12 11:59:17  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
+ * Revision 2.45.2.8  2007/09/11 14:41:35  hfriederich
  * Add basic RFC3263 support. Does not yet work for connection based
  * transactions.
  *
@@ -876,10 +879,19 @@ class SIPTransaction : public SIP_PDU
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
 
+    /**Returns the local address from which this transaction is sent
+      */
     const OpalTransportAddress & GetLocalAddress() const { return localAddress; }
+    
+    /**Returns the remote network address to which this transaction is sent.
+       This is not to be confused with the final destination for this transaction.
+      */
     const OpalTransportAddress & GetRemoteAddress() const { return remoteAddress; }
     void SetRemoteAddress(const OpalTransportAddress & _remoteAddress) { remoteAddress = _remoteAddress; }
     
+    /**Determines the network address to which PDUs targeted towards destination
+       are to be sent
+      */
     static OpalTransportAddress LocateDestination(const SIPURL & destination);
     
     // Callbacks to update state
