@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.11  2007/09/12 05:55:35  csoutheren
+ * Fixed SIP fmtp options for rfc 4175
+ *
  * Revision 1.10  2007/09/11 15:48:44  csoutheren
  * Implemented RC4175 RGB
  *
@@ -82,13 +85,14 @@ class RFC4175VideoFormat : public OpalVideoFormat
   public:
     RFC4175VideoFormat(
       const char * fullName,    ///<  Full name of media format
-      const char * samplingName
+      const char * samplingName,
+      unsigned int bandwidth
     );
 };
 
 const OpalVideoFormat & GetOpalRFC4175_YCbCr420()
 {
-  static const RFC4175VideoFormat RFC4175_YCbCr420(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0");
+  static const RFC4175VideoFormat RFC4175_YCbCr420(OPAL_RFC4175_YCbCr420, "YCbCr-4:2:0", (FRAME_WIDTH*FRAME_HEIGHT*3/2)*FRAME_RATE);
   return RFC4175_YCbCr420;
 }
 
@@ -96,7 +100,7 @@ OPAL_REGISTER_RFC4175_VIDEO(YUV420P, YCbCr420)
 
 const OpalVideoFormat & GetOpalRFC4175_RGB()
 {
-  static const RFC4175VideoFormat RFC4175_RGB(OPAL_RFC4175_RGB, "RGB");
+  static const RFC4175VideoFormat RFC4175_RGB(OPAL_RFC4175_RGB, "RGB", FRAME_WIDTH*FRAME_HEIGHT*3*FRAME_RATE);
   return RFC4175_RGB;
 }
 
@@ -106,16 +110,41 @@ OPAL_REGISTER_RFC4175_VIDEO(RGB24, RGB)
 
 RFC4175VideoFormat::RFC4175VideoFormat(
       const char * fullName,    ///<  Full name of media format
-      const char * samplingName)
+      const char * samplingName,
+      unsigned int bandwidth)
  : OpalVideoFormat(fullName, 
                    RTP_DataFrame::DynamicBase,
                    "raw",
-                   32767, 32767,
+                   FRAME_WIDTH, FRAME_HEIGHT,
                    FRAME_RATE,
-                   0xffffffff  //24*FRAME_WIDTH*FRAME_HEIGHT*FRAME_RATE  // Bandwidth
-                   )
+                   bandwidth)
 {
-  AddOption(new OpalMediaOptionString("encoding", TRUE, samplingName), TRUE);
+  OpalMediaOption * option;
+
+  // add mandatory fields
+  option = FindOption(ClockRateOption());
+  if (option != NULL)
+    option->SetFMTPName("rate");
+
+  option = new OpalMediaOptionString("rfc4175_sampling", TRUE, samplingName);
+  option->SetFMTPName("sampling");
+  AddOption(option, TRUE);
+
+  option = FindOption(FrameWidthOption());
+  if (option != NULL)
+    option->SetFMTPName("width");
+
+  option = FindOption(FrameHeightOption());
+  if (option != NULL)
+    option->SetFMTPName("height");
+
+  option = new OpalMediaOptionInteger("rfc4175_depth", TRUE, OpalMediaOption::NoMerge, 8);
+  option->SetFMTPName("depth");
+  AddOption(option, TRUE);
+
+  option = new OpalMediaOptionString("rfc4175_colorimetry", TRUE, "BT601-5");
+  option->SetFMTPName("colorimetry");
+  AddOption(option, TRUE);
 }
 
 /////////////////////////////////////////////////////////////////////////////
