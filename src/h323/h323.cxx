@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2172  2007/09/10 00:11:14  rjongbloed
+ * Revision 1.2173  2007/09/12 09:19:52  rjongbloed
+ * Fixed H.323 channel not using merged media format, so not obeying remote TCS.
+ *
+ * Revision 2.171  2007/09/10 00:11:14  rjongbloed
  * AddedOpalMediaFormat::IsTransportable() function as better test than simply
  *   checking the payload type, condition is more complex.
  *
@@ -3782,6 +3785,7 @@ OpalMediaStream * H323Connection::InternalCreateMediaStream(const OpalMediaForma
   if (!isSource && (transmitterMediaStream != NULL)) {
     OpalMediaStream * stream = transmitterMediaStream;
     transmitterMediaStream = NULL;
+    stream->UpdateMediaFormat(mediaFormat);
     return stream;
   }
 
