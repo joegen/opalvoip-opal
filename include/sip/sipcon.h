@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2059.2.10  2007/08/25 17:04:58  hfriederich
+ * Revision 1.2059.2.11  2007/09/12 11:59:17  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
+ * Revision 2.58.2.10  2007/08/25 17:04:58  hfriederich
  * Backport from HEAD
  *
  * Revision 2.58.2.9  2007/08/05 13:12:17  hfriederich
@@ -726,6 +729,8 @@ class SIPConnection : public OpalConnection
       */
     virtual BOOL OnMediaControlXML(SIP_PDU & pdu);
 #endif
+    
+protected:
 
     PDECLARE_NOTIFIER(PThread, SIPConnection, JobThreadMain);
     BOOL ProcessNextJob();
@@ -764,6 +769,8 @@ class SIPConnection : public OpalConnection
     BOOL ConstructSDP(SDPSessionDescription & sdpOut, BOOL releaseOnFailure = TRUE);
     
     void UpdateRemotePartyNameAndNumber();
+    
+    void LocateDestination();
 
     SIPEndPoint         & endpoint;
     OpalTransport       * transport;
@@ -779,6 +786,7 @@ class SIPConnection : public OpalConnection
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
+    OpalTransportAddress  transactionDestination;
 
     SIPTransactionJobQueue jobQueue;
     PMutex        jobQueueMutex;

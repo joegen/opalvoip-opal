@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.3.2.6  2007/09/12 11:59:17  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
  * Revision 1.3.2.5  2007/09/11 14:41:35  hfriederich
  * Add basic RFC3263 support. Does not yet work for connection based
  * transactions.
@@ -153,7 +156,8 @@ public:
   virtual void SetBody(const PString & b)
     { body = b;}
 
-  virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
+  SIPTransaction * CreateNewTransaction(OpalTransport & t, 
+                                        BOOL locateDestination = FALSE);
 
   virtual SIP_PDU::Methods GetMethod() = 0;
   virtual SIPSubscribe::SubscribeType GetSubscribeType() 
@@ -170,12 +174,14 @@ public:
   const PStringList & GetRouteSet() const { return routeSet; }
 
 protected:
+  virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
+  
   SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
   SIPTransaction            * request;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
-  OpalTransportAddress        destination;
+  OpalTransportAddress        transactionDestination;
   PString                     callID;
   int                         originalExpire;
   int	                      expire;
@@ -215,13 +221,16 @@ public:
 
   ~SIPRegisterHandler();
 
-  virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_REGISTER; }
 
   virtual void OnFailed(SIP_PDU::StatusCodes r);
+  
+protected:
+  virtual SIPTransaction * CreateTransaction(OpalTransport &);
+  
 private:
   PDECLARE_NOTIFIER(PTimer, SIPRegisterHandler, OnExpireTimeout);
 };
@@ -237,7 +246,6 @@ public:
                       int expire);
   ~SIPSubscribeHandler();
 
-  virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
   virtual BOOL OnReceivedNOTIFY(SIP_PDU & response);
   virtual SIP_PDU::Methods GetMethod ()
@@ -247,6 +255,9 @@ public:
 
   virtual void OnFailed (SIP_PDU::StatusCodes);
   unsigned GetNextCSeq() { return ++lastSentCSeq; }
+  
+protected:
+  virtual SIPTransaction * CreateTransaction (OpalTransport &);
 
 private:
   PDECLARE_NOTIFIER(PTimer, SIPSubscribeHandler, OnExpireTimeout);
@@ -272,7 +283,6 @@ public:
                     int expire);
   ~SIPPublishHandler();
 
-  virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod()
@@ -282,6 +292,9 @@ public:
   static PString BuildBody(const PString & to,
                            const PString & basic,
                            const PString & note);
+  
+protected:
+  virtual SIPTransaction * CreateTransaction(OpalTransport &);
 
 private:
   PDECLARE_NOTIFIER(PTimer, SIPPublishHandler, OnExpireTimeout);
@@ -300,13 +313,15 @@ public:
                     const PString & body);
   ~SIPMessageHandler();
 
-  virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);
 
+protected:
+  virtual SIPTransaction * CreateTransaction (OpalTransport &);
+  
 private:
   PDECLARE_NOTIFIER(PTimer, SIPMessageHandler, OnExpireTimeout);
   unsigned timeoutRetry;
@@ -318,13 +333,15 @@ class SIPPingHandler : public SIPHandler
 public:
   SIPPingHandler(SIPEndPoint & ep, 
                  const PString & to);
-  virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);
 
+protected:
+  virtual SIPTransaction * CreateTransaction (OpalTransport &);
+  
 private:
   PDECLARE_NOTIFIER(PTimer, SIPPingHandler, OnExpireTimeout);
 };
