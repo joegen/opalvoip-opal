@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2117.2.12  2007/09/11 14:41:35  hfriederich
+ * Revision 1.2117.2.13  2007/09/12 11:59:18  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
+ * Revision 2.116.2.12  2007/09/11 14:41:35  hfriederich
  * Add basic RFC3263 support. Does not yet work for connection based
  * transactions.
  *
@@ -2233,14 +2236,15 @@ BOOL SIPTransaction::Start()
 {
   PStringList routeSet;
     
-  if (state != NotStarted) {
-    PAssertAlways(PLogicError);
-    return FALSE;
-  }
-    
   BOOL success = FALSE;
     
   Lock();
+  
+  if (state != NotStarted) {
+    PAssertAlways(PLogicError);
+    Unlock();
+    return FALSE;
+  }
     
   if (connection != NULL) {
     connection->AddTransaction(this);
@@ -2254,22 +2258,20 @@ BOOL SIPTransaction::Start()
   state = Trying;
   retry = 0;
   retryTimer = retryTimeoutMin;
-  localAddress = transport.GetLocalAddress();
-  
   completionTimer = endpoint.GetNonInviteTimeout();
   
   routeSet = this->GetMIME().GetRoute(); // get the route set from the PDU
   
-  OnStart();
-  
+  localAddress = transport.GetLocalAddress();
   if (remoteAddress.IsEmpty()) {
-    remoteAddress = GetSendAddress(routeSet); // BOGUS, add RFC3263 lookup
+    remoteAddress = GetSendAddress(routeSet);
   }
+  
+  OnStart();
   
   if (connection != NULL) {
     // Use the connection transport to send the request
-    if (connection->SendPDU(*this, remoteAddress))
-      success = TRUE;
+    success = connection->SendPDU(*this, remoteAddress);
   }
   else {
     success = Write(transport, remoteAddress);
@@ -2470,7 +2472,7 @@ void SIPTransaction::HandleRetry()
     return;
   }
   
-  else if (!transport.SetLocalAddress(localAddress) || !Write(transport)) {
+  else if (!transport.SetLocalAddress(localAddress) || !Write(transport, remoteAddress)) {
     SetTerminated(Terminated_TransportError);
     return;
   }

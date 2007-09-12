@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.4.2.6  2007/09/12 11:59:18  hfriederich
+ * Fix RFC3263 support for connections. Code cleanup
+ *
  * Revision 1.4.2.5  2007/09/11 14:41:35  hfriederich
  * Add basic RFC3263 support. Does not yet work for connection based
  * transactions.
@@ -115,17 +118,20 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   targetAddress.Parse(to);
   remotePartyAddress = targetAddress.AsQuotedString();
   
-  destination = SIPTransaction::LocateDestination(targetAddress);
-
-  transport = endpoint.CreateTransport(destination);
+  const SIPURL & proxy = endpoint.GetProxy();
+    
+  // Default routeSet if there is a proxy
+  // locate the destination before creating the transport instance for the
+  // case where network interfaces are filtered
+  if (!proxy.IsEmpty()) {
+    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
+    transactionDestination = SIPTransaction::LocateDestination(proxy);
+  } else {
+    transactionDestination = SIPTransaction::LocateDestination(targetAddress);
+  }
+  transport = endpoint.CreateTransport(transactionDestination);
   
   authenticationAttempts = 0;
-
-  const SIPURL & proxy = endpoint.GetProxy();
-
-  // Default routeSet if there is a proxy
-  if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
-    routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
   callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 
@@ -172,7 +178,7 @@ BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 
   SIPHandler * handler = (SIPHandler *)param;
 
-  request = handler->CreateTransaction(transport);
+  request = handler->CreateNewTransaction(transport);
   if (!request) 
     return FALSE;
 
@@ -182,6 +188,32 @@ BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
   }
 
   return TRUE;
+}
+
+
+SIPTransaction * SIPHandler::CreateNewTransaction(OpalTransport & t,
+                                                  BOOL locateDestination)
+{
+  SIPTransaction * transaction = CreateTransaction(t);
+  
+  if (!transaction)
+    return NULL;
+  
+  if (locateDestination) {
+    const SIPURL & proxy = endpoint.GetProxy();
+    
+    // Default routeSet if there is a proxy
+    if (!proxy.IsEmpty()) {
+      transactionDestination = SIPTransaction::LocateDestination(proxy);
+    } else {
+      transactionDestination = SIPTransaction::LocateDestination(targetAddress);
+    }
+  }
+  
+  transaction->SetRemoteAddress(transactionDestination);
+  endpoint.AddTransaction(transaction);
+  
+  return transaction;
 }
 
 
@@ -304,11 +336,6 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
                              expire, 
                              retryTimeoutMin, 
                              retryTimeoutMax);
-
-  if (request) {
-    request->SetRemoteAddress(destination);
-    endpoint.AddTransaction(request);
-  }
 
   return request;
 }
@@ -433,11 +460,6 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
                               callID, 
                               GetNextCSeq(),
                               expire); 
-
-  if (request) {
-    request->SetRemoteAddress(destination);
-    endpoint.AddTransaction(request);
-  }
 
   return request;
 }
@@ -706,11 +728,6 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
                            expire);
   callID = request->GetMIME().GetCallID();
 
-  if (request) {
-    request->SetRemoteAddress(destination);
-    endpoint.AddTransaction(request);
-  }
-
   return request;
 }
 
@@ -849,11 +866,6 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
   request = new SIPMessage(endpoint, t, targetAddress, routeSet, body);
   callID = request->GetMIME().GetCallID();
 
-  if (request) {
-    request->SetRemoteAddress(destination);
-    endpoint.AddTransaction(request);
-  }
-
   return request;
 }
 
@@ -907,11 +919,6 @@ SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 
   request = new SIPPing(endpoint, t, targetAddress, body);
   callID = request->GetMIME().GetCallID();
-
-  if (request) {
-    request->SetRemoteAddress(destination);
-    endpoint.AddTransaction(request);
-  }
 
   return request;
 }
