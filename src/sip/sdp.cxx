@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2057  2007/09/06 04:58:49  csoutheren
+ * Revision 1.2057.2.1  2007/09/13 05:41:39  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.57  2007/09/10 00:11:14  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.56  2007/09/06 04:58:49  csoutheren
  * Fix problem with SDP parsing
  *
  * Revision 2.55  2007/09/05 07:53:14  csoutheren
@@ -989,8 +996,7 @@ void SDPMediaDescription::AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat)
 
 void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map)
 {
-  const char * encodingName = mediaFormat.GetEncodingName();
-  if (!mediaFormat.IsValidForProtocol("sip") || encodingName == NULL || *encodingName == '\0')
+  if (!mediaFormat.IsTransportable() || !mediaFormat.IsValidForProtocol("sip"))
     return;
 
   RTP_DataFrame::PayloadTypes payloadType = mediaFormat.GetPayloadType();
@@ -1000,14 +1006,11 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
       payloadType = r->second;
   }
 
-  if (payloadType >= RTP_DataFrame::MaxPayloadType)
-    return;
-
   unsigned clockRate = mediaFormat.GetClockRate();
 
   for (PINDEX i = 0; i < formats.GetSize(); i++) {
     if (formats[i].GetPayloadType() == payloadType ||
-        ((formats[i].GetEncodingName() *= encodingName) && formats[i].GetClockRate() == clockRate)
+        ((formats[i].GetEncodingName() *= mediaFormat.GetEncodingName()) && formats[i].GetClockRate() == clockRate)
         )
       return;
   }
@@ -1033,8 +1036,7 @@ void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaForma
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat & mediaFormat = mediaFormats[i];
     if (mediaFormat.GetDefaultSessionID() == session &&
-            (session == OpalMediaFormat::DefaultDataSessionID ||
-             mediaFormat.GetPayloadType() < RTP_DataFrame::MaxPayloadType))
+            (session == OpalMediaFormat::DefaultDataSessionID || mediaFormat.IsTransportable()))
       AddMediaFormat(mediaFormat, map);
   }
 }

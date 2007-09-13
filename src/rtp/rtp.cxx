@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2072  2007/09/05 14:00:32  csoutheren
+ * Revision 1.2072.2.1  2007/09/13 05:41:39  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.72  2007/09/09 23:37:20  rjongbloed
+ * Fixed confusion over MaxPayloadType meaning
+ *
+ * Revision 2.71  2007/09/05 14:00:32  csoutheren
  * Applied 1783430 - Closing jitter buffer when releasing a session
  * Thanks to Borko Jandras
  *
@@ -1042,7 +1048,7 @@ RTP_Session::RTP_Session(
   packetsLostSinceLastRR = 0;
   lastTransitTime = 0;
 
-  lastReceivedPayloadType = RTP_DataFrame::MaxPayloadType;
+  lastReceivedPayloadType = RTP_DataFrame::IllegalPayloadType;
 
   closeOnBye = FALSE;
   byeSent    = FALSE;
@@ -1353,7 +1359,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
     return e_IgnorePacket; // Non fatal error, just ignore
 
   // Check if expected payload type
-  if (lastReceivedPayloadType == RTP_DataFrame::MaxPayloadType)
+  if (lastReceivedPayloadType == RTP_DataFrame::IllegalPayloadType)
     lastReceivedPayloadType = frame.GetPayloadType();
 
   if (lastReceivedPayloadType != frame.GetPayloadType() && !ignorePayloadTypeChanges) {

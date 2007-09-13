@@ -24,7 +24,14 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2066  2007/09/05 13:23:39  csoutheren
+ * Revision 1.2066.2.1  2007/09/13 05:41:39  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.66  2007/09/10 00:11:14  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.65  2007/09/05 13:23:39  csoutheren
  * Applied 1704162 - Opal mediastrm.cxx added IsOpen check to SetPatch
  * Thanks to Drazen Dimoti
  *
@@ -496,7 +503,7 @@ BOOL OpalMediaStream::WritePacket(RTP_DataFrame & packet)
   if (paused)
     packet.SetPayloadSize(0);
   
-  if (size > 0 && mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType) {
+  if (size > 0 && mediaFormat.IsTransportable()) {
     if (packet.GetPayloadType() == mediaFormat.GetPayloadType()) {
       PTRACE_IF(2, mismatchedPayloadTypes > 0,
                 "H323RTP\tPayload type matched again " << mediaFormat.GetPayloadType());
