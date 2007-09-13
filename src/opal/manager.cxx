@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2095.2.1  2007/09/13 05:41:39  rjongbloed
+ * Revision 1.2095.2.2  2007/09/13 05:57:45  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) cleaning up only occurs in the existing garbage collection
+ *
+ * Revision 2.94.2.1  2007/09/13 05:41:39  rjongbloed
  * Merge from HEAD
  *
  * Revision 2.95  2007/09/11 13:42:18  csoutheren
@@ -1448,7 +1454,7 @@ void OpalManager::GarbageCollection()
   BOOL allCleared = activeCalls.DeleteObjectsToBeRemoved();
   PWaitAndSignal mutex(inUseFlag);
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    if (!endpoints[i].connectionsActive.DeleteObjectsToBeRemoved())
+    if (!endpoints[i].GarbageCollection())
       allCleared = FALSE;
   }
   if (allCleared && clearingAllCalls)

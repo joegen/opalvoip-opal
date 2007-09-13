@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2184.2.1  2007/09/13 05:41:39  rjongbloed
+ * Revision 1.2184.2.2  2007/09/13 05:57:45  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) cleaning up only occurs in the existing garbage collection
+ *
+ * Revision 2.183.2.1  2007/09/13 05:41:39  rjongbloed
  * Merge from HEAD
  *
  * Revision 2.184  2007/09/10 03:15:05  rjongbloed
@@ -724,15 +730,9 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   defaultSignalPort = 5060;
   mimeForm = FALSE;
   maxRetries = 10;
-  lastSentCSeq = 0;
-
-  transactions.DisallowDeleteObjects();
-  activeSIPHandlers.AllowDeleteObjects();
 
   natBindingTimer.SetNotifier(PCREATE_NOTIFIER(NATBindingRefresh));
   natBindingTimer.RunContinuous(natBindingTimeout);
-  garbageTimer.SetNotifier(PCREATE_NOTIFIER(GarbageCollector));
-  garbageTimer.RunContinuous(PTimeInterval(0, 1));
 
   natMethod = None;
 
@@ -747,29 +747,19 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
 
 SIPEndPoint::~SIPEndPoint()
 {
-  while (activeSIPHandlers.GetSize()>0) {
-    for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
-      PString aor = handler->GetRemotePartyAddress ();
-      if (handler->GetMethod() == SIP_PDU::Method_REGISTER 
-          && handler->GetState() == SIPHandler::Subscribed) {
+  while (activeSIPHandlers.GetSize() > 0) {
+    PSafePtr<SIPHandler> handler = activeSIPHandlers;
+    PString aor = handler->GetRemotePartyAddress();
+    if (handler->GetMethod() == SIP_PDU::Method_REGISTER && handler->GetState()  == SIPHandler::Subscribed) {
         Unregister(aor);
+      PThread::Sleep(500);
       }
-      else { 
-        handler->SetState(SIPHandler::Unsubscribed);
-        handler->SetExpire(-1);
-      }
+    else
+      activeSIPHandlers.Remove(handler);
     }
 
-    activeSIPHandlers.DeleteObjectsToBeRemoved();
-    PThread::Current()->Sleep(10); // Let GarbageCollect() do the cleanup
-  }
-
-  for (PINDEX i = 0; i < transactions.GetSize(); i++) {
-    PWaitAndSignal m(transactionsMutex);
-    SIPTransaction *transaction = transactions.GetAt(i);
-    if (transaction)
-      WaitForTransactionCompletion(transaction);
-  }
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReference); transaction != NULL; ++transaction)
+    transaction->WaitForCompletion();
 
   // Clean up
   transactions.RemoveAll();
@@ -777,9 +767,7 @@ SIPEndPoint::~SIPEndPoint()
 
   // Stop timers before compiler destroys member objects
   natBindingTimer.Stop();
-  garbageTimer.Stop();
   
-  PWaitAndSignal m(transactionsMutex);
   PTRACE(4, "SIP\tDeleted endpoint.");
 }
 
@@ -854,34 +842,6 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 
   PTRACE(5, "SIP\tNAT Binding refresh finished.");
 }
-
-
-void SIPEndPoint::GarbageCollector(PTimer &, INT)
-{
-  for (PINDEX i = activeSIPHandlers.GetSize(); i > 0; i--) {
-
-    PSafePtr<SIPHandler> handler = activeSIPHandlers.GetAt (i-1, PSafeReadWrite);
-    if (handler->CanBeDeleted()) { 
-      activeSIPHandlers.RemoveAt(i-1);
-    }
-  }
-  activeSIPHandlers.DeleteObjectsToBeRemoved();
-
-  // Delete terminated transactions
-  {
-    PWaitAndSignal m(completedTransactionsMutex);
-      
-    for (PINDEX i = completedTransactions.GetSize(); i > 0; i--) {
-      SIPTransaction & transaction = completedTransactions[i-1];
-          
-      if (transaction.IsTerminated()) {
-        completedTransactions.RemoveAt(i-1);
-      }
-    }
-  }
-
-}
-
 
 
 OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remoteAddress,
@@ -984,6 +944,20 @@ OpalMediaFormatList SIPEndPoint::GetMediaFormats() const
 }
 
 
+BOOL SIPEndPoint::GarbageCollection()
+{
+  for (PSafePtr<SIPTransaction> transaction(transactions, PSafeReadOnly); transaction != NULL; ++transaction) {
+    if (transaction->IsTerminated())
+      transactions.RemoveAt(transaction->GetTransactionID());
+  }
+
+  transactions.DeleteObjectsToBeRemoved();
+  activeSIPHandlers.DeleteObjectsToBeRemoved();
+
+  return OpalEndPoint::GarbageCollection();
+}
+
+
 BOOL SIPEndPoint::IsAcceptedAddress(const SIPURL & /*toAddr*/)
 {
   return TRUE;
@@ -1075,8 +1049,7 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   switch (pdu->GetMethod()) {
     case SIP_PDU::NumMethods :
       {
-        PWaitAndSignal m(transactionsMutex);
-        SIPTransaction * transaction = transactions.GetAt(pdu->GetTransactionID());
+        PSafePtr<SIPTransaction> transaction = GetTransaction(pdu->GetTransactionID());
         if (transaction != NULL)
           transaction->OnReceivedResponse(*pdu);
       }
@@ -1208,15 +1181,7 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 
 void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
-  PSafePtr<SIPHandler> realm_handler = NULL;
-  PSafePtr<SIPHandler> callid_handler = NULL;
-  SIPTransaction * request = NULL;
-  SIPAuthentication auth;
-  
-  BOOL isProxy = 
-    response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
-  PString lastNonce;
-  PString lastUsername;
+  BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
   
 #if PTRACING
   const char * proxyTrace = isProxy ? "Proxy " : "";
@@ -1232,13 +1197,13 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   }
   
   // Try to find authentication information for the given call ID
-  callid_handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
-
+  PSafePtr<SIPHandler> callid_handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
   if (!callid_handler)
     return;
   
   // Received authentication required response, try to find authentication
   // for the given realm
+  SIPAuthentication auth;
   if (!auth.Parse(response.GetMIME()(isProxy 
 				     ? "Proxy-Authenticate"
 				     : "WWW-Authenticate"),
@@ -1249,7 +1214,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
   // Try to find authentication information for the requested realm
   // That realm is specified when registering
-  realm_handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(auth.GetAuthRealm(), auth.GetUsername().IsEmpty()?SIPURL(response.GetMIME().GetFrom()).GetUserName():auth.GetUsername(), PSafeReadOnly);
+  PSafePtr<SIPHandler> realm_handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(auth.GetAuthRealm(), auth.GetUsername().IsEmpty()?SIPURL(response.GetMIME().GetFrom()).GetUserName():auth.GetUsername(), PSafeReadOnly);
 
   // No authentication information found for the realm, 
   // use what we have for the given CallID
@@ -1267,13 +1232,14 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
     return;
   }
   
+  PString lastNonce;
+  PString lastUsername;
   if (realm_handler->GetAuthentication().IsValid()) {
     lastUsername = realm_handler->GetAuthentication().GetUsername();
     lastNonce = realm_handler->GetAuthentication().GetNonce();
   }
 
-  if (!realm_handler->GetAuthentication().Parse(response.GetMIME()(isProxy 
-								? "Proxy-Authenticate"
+  if (!realm_handler->GetAuthentication().Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate"
 								: "WWW-Authenticate"),
 					     isProxy)) {
     callid_handler->OnFailed(SIP_PDU::Failure_UnAuthorised);
@@ -1282,10 +1248,10 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   
   // Already sent handler for that callID. Check if params are different
   // from the ones found for the given realm
-  if (callid_handler->GetAuthentication().IsValid()
-      && lastUsername == callid_handler->GetAuthentication().GetUsername ()
-      && lastNonce == callid_handler->GetAuthentication().GetNonce ()
-      && callid_handler->GetState() == SIPHandler::Subscribing) {
+  if (callid_handler->GetAuthentication().IsValid() &&
+      callid_handler->GetAuthentication().GetUsername() == lastUsername &&
+      callid_handler->GetAuthentication().GetNonce() == lastNonce &&
+      callid_handler->GetState() == SIPHandler::Subscribing) {
     PTRACE(2, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
     callid_handler->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
@@ -1295,28 +1261,28 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
   // some implementations return "401 Unauthorized" with a different nonce at every
   // time.
   unsigned authenticationAttempts = callid_handler->GetAuthenticationAttempts();
-  if(authenticationAttempts < 10) {
-    authenticationAttempts++;
-    callid_handler->SetAuthenticationAttempts(authenticationAttempts);
-  } else {
+  if(authenticationAttempts >= 10) {
     PTRACE(1, "SIP\tAborting after " << authenticationAttempts << " attempts to REGISTER/SUBSCRIBE");
     callid_handler->OnFailed(SIP_PDU::Failure_UnAuthorised);
     return;
   }
 
+  callid_handler->SetAuthenticationAttempts(++authenticationAttempts);
+
   // Restart the transaction with new authentication handler
-  request = callid_handler->CreateTransaction(transaction.GetTransport());
-  if (!realm_handler->GetAuthentication().Authorise(*request)) {
+  SIPTransaction * newTransaction = callid_handler->CreateTransaction(transaction.GetTransport());
+  if (!realm_handler->GetAuthentication().Authorise(*newTransaction)) {
     // don't send again if no authentication handler available
-    delete request;
     callid_handler->OnFailed(SIP_PDU::Failure_UnAuthorised);
+    delete newTransaction; // Not started yet, we need to delete
     return;
   }
+
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
-  request->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
-  if (!request->Start()) {
-    delete request;
+  newTransaction->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
+  newTransaction->GetMIME().SetCallID(callid_handler->GetCallID());
+  if (!newTransaction->Start()) {
     PTRACE(1, "SIP\tCould not restart REGISTER/SUBSCRIBE for Authentication Required");
   }
 }
@@ -1324,10 +1290,7 @@ void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
 
 void SIPEndPoint::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & response)
 {
-  PSafePtr<SIPHandler> handler = NULL;
-
-  handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
- 
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
   if (handler == NULL) 
     return;
   
@@ -1339,9 +1302,7 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & /*transaction*/, SIP_PDU & respo
 
 void SIPEndPoint::OnTransactionTimeout(SIPTransaction & transaction)
 {
-  PSafePtr<SIPHandler> handler = NULL;
-
-  handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadOnly);
   if (handler == NULL) 
     return;
   
@@ -1351,7 +1312,6 @@ void SIPEndPoint::OnTransactionTimeout(SIPTransaction & transaction)
 
 BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
 {
-  PSafePtr<SIPHandler> handler = NULL;
   PCaselessString state;
   SIPSubscribe::SubscribeType event;
   
@@ -1373,7 +1333,7 @@ BOOL SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu)
     
   // A NOTIFY will have the same CallID than the SUBSCRIBE request
   // it corresponds to
-  handler = activeSIPHandlers.FindSIPHandlerByCallID(pdu.GetMIME().GetCallID(), PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(pdu.GetMIME().GetCallID(), PSafeReadOnly);
   if (handler == NULL) {
 
     if (event == SIPSubscribe::Presence) {
@@ -1443,7 +1403,6 @@ void SIPEndPoint::OnRegistered(const PString & /*aor*/,
 BOOL SIPEndPoint::IsRegistered(const PString & url) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(url, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-
   if (handler == NULL)
     return FALSE;
   
@@ -1455,7 +1414,6 @@ BOOL SIPEndPoint::IsSubscribed(SIPSubscribe::SubscribeType type,
                                const PString & to) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, type, PSafeReadOnly);
-
   if (handler == NULL)
     return FALSE;
 
@@ -1492,10 +1450,7 @@ BOOL SIPEndPoint::Register(unsigned expire,
                            const PTimeInterval & minRetryTime, 
                            const PTimeInterval & maxRetryTime)
 {
-  PSafePtr<SIPHandler> handler = NULL;
-  
-  // Create the SIPHandler structure
-  handler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+  PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
   
   // If there is already a request with this URL and method, 
   // then update it with the new information
@@ -1585,7 +1540,6 @@ BOOL SIPEndPoint::Unsubscribe(SIPSubscribe::SubscribeType & type,
 {
   // Create the SIPHandler structure
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_SUBSCRIBE, type, PSafeReadOnly);
-
   if (handler == NULL) {
     PTRACE(1, "SIP\tCould not find active SUBSCRIBE for " << to);
     return FALSE;
@@ -1758,15 +1712,6 @@ PString SIPEndPoint::GetUserAgent() const
 }
 
 
-BOOL SIPEndPoint::WaitForTransactionCompletion(SIPTransaction * transaction)
-{
-  transaction->WaitForCompletion();
-  BOOL success = !transaction->IsFailed();
-  AddCompletedTransaction(transaction);
-  return success;
-}
-
-
 BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &auth) 
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByAuthRealm(realm, PString::Empty(), PSafeReadOnly);
@@ -1782,7 +1727,6 @@ BOOL SIPEndPoint::GetAuthentication(const PString & realm, SIPAuthentication &au
 SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(url.GetHostName(), SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  
   if (handler == NULL) 
     return GetDefaultRegisteredPartyName();
 
