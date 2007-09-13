@@ -25,7 +25,25 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2052  2007/08/22 05:18:09  rjongbloed
+ * Revision 1.2052.2.1  2007/09/13 05:41:38  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.55  2007/09/12 23:02:00  rjongbloed
+ * Code clean up, thanks Hannes.
+ *
+ * Revision 2.54  2007/09/12 19:08:53  ykiryanov
+ * Because I have various versions of strcasecmp for WCE based platforms, such as strcasecmp(char*, char*) or strcasecmp(wchar_t*, char), or strcasecmp(PString, char*), which is under UNICODE are all different, I have added cast of some variables to (const char*). Should we NOT use strcasecmp and go with PString comparisons instead?
+ *
+ * Revision 2.53  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 2.52  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
+ * Revision 2.51  2007/08/22 05:18:09  rjongbloed
  * Changed size of RTP packet to be slightlysmaller, the true MTU for ethernet.
  * Also some code clean ups.
  *
@@ -547,20 +565,20 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
 
 void OpalPluginMediaFormat::SetOldStyleFormatOption(OpalMediaFormat & format, const PString & _key, const PString & _val, const PString & type)
 {
-  PString key(_key);
+  PCaselessString key(_key);
   const char * val = _val;
 
 #if OPAL_VIDEO
   // Backward compatibility tests
-  if (strcasecmp(key, h323_qcifMPI_tag) == 0)
+  if (key == h323_qcifMPI_tag)
     key = qcifMPI_tag;
-  else if (strcasecmp(key, h323_cifMPI_tag) == 0)
+  else if (key == h323_cifMPI_tag)
     key = cifMPI_tag;
-  else if (strcasecmp(key, h323_sqcifMPI_tag) == 0)
+  else if (key == h323_sqcifMPI_tag)
     key = sqcifMPI_tag;
-  else if (strcasecmp(key, h323_cif4MPI_tag) == 0)
+  else if (key == h323_cif4MPI_tag)
     key = cif4MPI_tag;
-  else if (strcasecmp(key, h323_cif16MPI_tag) == 0)
+  else if (key == h323_cif16MPI_tag)
     key = cif16MPI_tag;
 #endif
 
@@ -631,6 +649,11 @@ void OpalPluginMediaFormat::SetOldStyleFormatOption(OpalMediaFormat & format, co
 
 static void PopulateMediaFormatFromGenericData(OpalMediaFormat & mediaFormat, const PluginCodec_H323GenericCodecData * genericData)
 {
+  if (genericData == NULL) {
+    PTRACE(1, "OpalPlugin\tGeneric codec information for codec '" << mediaFormat << "' has NULL data field");
+    return;
+  }
+
   const PluginCodec_H323GenericParameterDefinition *ptr = genericData->params;
   for (unsigned i = 0; i < genericData->nParameters; i++, ptr++) {
     OpalMediaOption::H245GenericInfo generic;
@@ -704,37 +727,35 @@ bool OpalPluginMediaFormat::IsValidForProtocol(const PluginCodec_Definition * en
 #if OPAL_AUDIO
 
 OpalPluginAudioMediaFormat::OpalPluginAudioMediaFormat(const PluginCodec_Definition * _encoderCodec,
-                           const char * rtpEncodingName, /// rtp encoding name
-                           unsigned frameTime,           /// Time for frame in RTP units (if applicable)
-                           unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
-                           time_t timeStamp              /// timestamp (for versioning)
-)
-: OpalAudioFormat(CreateCodecName(_encoderCodec),
-                  (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                  rtpEncodingName,
-                  _encoderCodec->parm.audio.bytesPerFrame,
-                  frameTime,
-                  _encoderCodec->parm.audio.recommendedFramesPerPacket,
-                  _encoderCodec->parm.audio.recommendedFramesPerPacket,
-                  _encoderCodec->parm.audio.maxFramesPerPacket,
-                  _encoderCodec->sampleRate,
-                  timeStamp  
-                )
-, encoderCodec(_encoderCodec)
+                                                       const char * rtpEncodingName, /// rtp encoding name
+                                                       unsigned frameTime,           /// Time for frame in RTP units (if applicable)
+                                                       unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
+                                                       time_t timeStamp              /// timestamp (for versioning)
+                                                      )
+  : OpalAudioFormat(CreateCodecName(_encoderCodec),
+                    (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                    rtpEncodingName,
+                    _encoderCodec->parm.audio.bytesPerFrame,
+                    frameTime,
+                    _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                    _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                    _encoderCodec->parm.audio.maxFramesPerPacket,
+                    _encoderCodec->sampleRate,
+                    timeStamp  
+                  )
+  , encoderCodec(_encoderCodec)
 {
   OpalPluginMediaFormat::PopulateMediaFormatOptions(_encoderCodec, *this);
+
+  if (_encoderCodec->h323CapabilityType == PluginCodec_H323Codec_generic)
+    PopulateMediaFormatFromGenericData(*this, (PluginCodec_H323GenericCodecData *)_encoderCodec->h323CapabilityData);
+
+  if (_encoderCodec->parm.audio.maxFramesPerPacket > 0)
+    SetOptionInteger(TxFramesPerPacketOption(), _encoderCodec->parm.audio.maxFramesPerPacket);
 
   // Override calculated value if we have an explicit bit rate
   if (_encoderCodec->bitsPerSec > 0)
     SetOptionInteger(MaxBitRateOption(), _encoderCodec->bitsPerSec);
-
-  // manually register the new singleton type, as we do not have a concrete type
-  OpalMediaFormatFactory::Register(*this, this);
-}
-
-OpalPluginAudioMediaFormat::~OpalPluginAudioMediaFormat()
-{
-  OpalMediaFormatFactory::Unregister(*this);
 }
 
 bool OpalPluginAudioMediaFormat::IsValidForProtocol(const PString & protocol) const
@@ -777,32 +798,25 @@ static H323Capability * CreateGSMCap(
 
 #if OPAL_VIDEO
 
-OpalPluginVideoMediaFormat::OpalPluginVideoMediaFormat(
-  const PluginCodec_Definition * _encoderCodec,
-  const char * rtpEncodingName, /// rtp encoding name
-  time_t timeStamp              /// timestamp (for versioning)
-)
-: OpalVideoFormat(
-  CreateCodecName(_encoderCodec),
-                  (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                  rtpEncodingName,
-                  _encoderCodec->parm.video.maxFrameWidth,
-                  _encoderCodec->parm.video.maxFrameHeight,
-                  _encoderCodec->parm.video.maxFrameRate,
-                  _encoderCodec->bitsPerSec,
-                  timeStamp  
-                )
-, encoderCodec(_encoderCodec)
+OpalPluginVideoMediaFormat::OpalPluginVideoMediaFormat(const PluginCodec_Definition * _encoderCodec,
+                                                       const char * rtpEncodingName, /// rtp encoding name
+                                                       time_t timeStamp              /// timestamp (for versioning)
+                                                      )
+  : OpalVideoFormat(CreateCodecName(_encoderCodec),
+                    (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                    rtpEncodingName,
+                    _encoderCodec->parm.video.maxFrameWidth,
+                    _encoderCodec->parm.video.maxFrameHeight,
+                    _encoderCodec->parm.video.maxFrameRate,
+                    _encoderCodec->bitsPerSec,
+                    timeStamp  
+                  )
+  , encoderCodec(_encoderCodec)
 {
   OpalPluginMediaFormat::PopulateMediaFormatOptions(_encoderCodec, *this);
 
-  // manually register the new singleton type, as we do not have a concrete type
-  OpalMediaFormatFactory::Register(*this, this);
-}
-
-OpalPluginVideoMediaFormat::~OpalPluginVideoMediaFormat()
-{
-  OpalMediaFormatFactory::Unregister(*this);
+  if (_encoderCodec->h323CapabilityType == PluginCodec_H323Codec_generic)
+    PopulateMediaFormatFromGenericData(*this, (PluginCodec_H323GenericCodecData *)_encoderCodec->h323CapabilityData);
 }
 
 PObject * OpalPluginVideoMediaFormat::Clone() const
@@ -913,38 +927,32 @@ static H323CodecPluginCapabilityMapEntry videoMaps[] = {
 
 #if OPAL_T38FAX
 
-OpalPluginFaxMediaFormat::OpalPluginFaxMediaFormat(
-  const PluginCodec_Definition * _encoderCodec,
-  const char * rtpEncodingName, /// rtp encoding name
-  unsigned frameTime,
-  unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
-  time_t timeStamp              /// timestamp (for versioning)
-)
-: OpalMediaFormat(CreateCodecName(_encoderCodec),
-                  OpalMediaFormat::DefaultDataSessionID,
-                  (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
-                  rtpEncodingName,
-                  FALSE,                                // need jitter
-                  8*_encoderCodec->parm.audio.bytesPerFrame*AudioClockRate/frameTime, // bandwidth
-                  _encoderCodec->parm.audio.bytesPerFrame,         // size of frame in bytes
-                  frameTime,                            // time for frame
-                  _encoderCodec->sampleRate,            // clock rate
-                  (unsigned int)timeStamp               // timestamp
-                )
-, encoderCodec(_encoderCodec)
+OpalPluginFaxMediaFormat::OpalPluginFaxMediaFormat(const PluginCodec_Definition * _encoderCodec,
+                                                   const char * rtpEncodingName, /// rtp encoding name
+                                                   unsigned frameTime,
+                                                   unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
+                                                   time_t timeStamp              /// timestamp (for versioning)
+                                                  )
+  : OpalMediaFormat(CreateCodecName(_encoderCodec),
+                    OpalMediaFormat::DefaultDataSessionID,
+                    (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
+                    rtpEncodingName,
+                    FALSE,                                // need jitter
+                    8*_encoderCodec->parm.audio.bytesPerFrame*AudioClockRate/frameTime, // bandwidth
+                    _encoderCodec->parm.audio.bytesPerFrame,         // size of frame in bytes
+                    frameTime,                            // time for frame
+                    _encoderCodec->sampleRate,            // clock rate
+                    (unsigned int)timeStamp               // timestamp
+                  )
+  , encoderCodec(_encoderCodec)
 {
   OpalPluginMediaFormat::PopulateMediaFormatOptions(_encoderCodec, *this);
-
-  // manually register the new singleton type, as we do not have a concrete type
-  OpalMediaFormatFactory::Register(*this, this);
-}
-OpalPluginFaxMediaFormat::~OpalPluginFaxMediaFormat()
-{
-  OpalMediaFormatFactory::Unregister(*this);
 }
 
 PObject * OpalPluginFaxMediaFormat::Clone() const
-{ return new OpalPluginFaxMediaFormat(*this); }
+{
+  return new OpalPluginFaxMediaFormat(*this);
+}
 
 bool OpalPluginFaxMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
@@ -1482,37 +1490,38 @@ H323AudioPluginCapability::H323AudioPluginCapability(const PluginCodec_Definitio
 : H323AudioCapability(), H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
   pluginSubType(_pluginSubType)
 { 
-  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
 }
 
 // this constructor is only used when creating a capability without a codec
 H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaFormat,
-                          const PString & _baseName,
-                          unsigned maxFramesPerPacket,
-                          unsigned /*recommendedFramesPerPacket*/,
-                          unsigned _pluginSubType)
+                                                     const PString & _baseName,
+                                                     unsigned _pluginSubType)
   : H323AudioCapability(), H323PluginCapabilityInfo(_baseName),
     pluginSubType(_pluginSubType)
-  { 
-    for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
-      if (audioMaps[i].pluginCapType == (int)_pluginSubType) { 
-        h323subType = audioMaps[i].h323SubType;
-        break;
-      }
+{ 
+  for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
+    if (audioMaps[i].pluginCapType == (int)_pluginSubType) { 
+      h323subType = audioMaps[i].h323SubType;
+      break;
     }
-    rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
-    SetTxFramesInPacket(maxFramesPerPacket);
-    // recommendedFramesPerPacket
   }
+  rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
+}
 
 PObject * H323AudioPluginCapability::Clone() const
-{ return new H323AudioPluginCapability(*this); }
+{
+  return new H323AudioPluginCapability(*this);
+}
 
 PString H323AudioPluginCapability::GetFormatName() const
-{ return H323PluginCapabilityInfo::GetFormatName();}
+{
+  return H323PluginCapabilityInfo::GetFormatName();
+}
 
 unsigned H323AudioPluginCapability::GetSubType() const
-{ return pluginSubType; }
+{
+  return pluginSubType;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -1597,29 +1606,9 @@ class H323GSMPluginCapability : public H323AudioPluginCapability
 
 /////////////////////////////////////////////////////////////////////////////
 
-PMutex & OpalPluginCodecManager::GetMediaFormatMutex()
-{
-  static PMutex mutex;
-  return mutex;
-}
-
 OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
   : PPluginModuleManager(PLUGIN_CODEC_GET_CODEC_FN_STR, _pluginMgr)
 {
-  // instantiate all of the media formats
-  {
-    OpalMediaFormatFactory::KeyList_T keyList = OpalMediaFormatFactory::GetKeyList();
-    OpalMediaFormatFactory::KeyList_T::const_iterator r;
-    for (r = keyList.begin(); r != keyList.end(); ++r) {
-      OpalMediaFormat * instance = OpalMediaFormatFactory::CreateInstance(*r);
-      if (instance == NULL) {
-        PTRACE(4, "OpalPlugin\tCannot instantiate opal media format " << *r);
-      } else {
-        PTRACE(4, "OpalPlugin\tCreating media format " << *r);
-      }
-    }
-  }
-
   // instantiate all of the static codecs
   {
     H323StaticPluginCodecFactory::KeyList_T keyList = H323StaticPluginCodecFactory::GetKeyList();
@@ -1654,10 +1643,9 @@ OpalPluginCodecManager::~OpalPluginCodecManager()
 
 void OpalPluginCodecManager::OnShutdown()
 {
-  // unregister the plugin media formats
-  OpalMediaFormatFactory::UnregisterAll();
+  mediaFormatsOnHeap.RemoveAll();
 
-#if 0 // OPAL_H323
+#if OPAL_H323
   // unregister the plugin capabilities
   H323CapabilityFactory::UnregisterAll();
 #endif
@@ -1804,18 +1792,6 @@ void OpalPluginCodecManager::UnregisterCodecPlugins(unsigned int, PluginCodec_De
 {
 }
 
-OpalMediaFormatList & OpalPluginCodecManager::GetMediaFormatList()
-{
-  static OpalMediaFormatList mediaFormatList;
-  return mediaFormatList;
-}
-
-OpalMediaFormatList OpalPluginCodecManager::GetMediaFormats()
-{
-  PWaitAndSignal m(GetMediaFormatMutex());
-  return GetMediaFormatList();
-}
-
 void OpalPluginCodecManager::RegisterPluginPair(
        PluginCodec_Definition * encoderCodec,
        PluginCodec_Definition * decoderCodec,
@@ -1866,13 +1842,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
     OpalMediaFormat existingFormat(fmtName);
     if (existingFormat.IsValid() && existingFormat.GetCodecBaseTime() >= timeStamp) {
       PTRACE(2, "OpalPlugin\tNewer media format " << fmtName << " already exists");
-      //AddFormat(existingFormat);
     } else {
-      if (existingFormat.IsValid()) {
-        PWaitAndSignal m(GetMediaFormatMutex());
-        GetMediaFormatList() -= existingFormat;
-      }
-
       PTRACE(3, "OpalPlugin\tCreating new media format " << fmtName);
 
       OpalMediaFormat * mediaFormat = NULL;
@@ -1896,14 +1866,18 @@ void OpalPluginCodecManager::RegisterPluginPair(
           break;
 #endif
         default:
-          break;
+          PTRACE(3, "OpalPlugin\tOnknown Media Type " << (encoderCodec->flags & PluginCodec_MediaTypeMask));
+          return;
       }
+
+      // Remember format so we can deallocate it on shut down
+      mediaFormatsOnHeap.Append(mediaFormat);
+
       // if the codec has been flagged to use a shared RTP payload type, then find a codec with the same SDP name
       // and clock rate and use that RTP code rather than creating a new one. That prevents codecs (like Speex) from 
       // consuming dozens of dynamic RTP types
       if ((encoderCodec->flags & PluginCodec_RTPTypeShared) != 0 && (encoderCodec->sdpFormat != NULL)) {
-        PWaitAndSignal m(OpalPluginCodecManager::GetMediaFormatMutex());
-        OpalMediaFormatList & list = OpalPluginCodecManager::GetMediaFormatList();
+        OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
         for (PINDEX i = 0; i < list.GetSize(); i++) {
           OpalMediaFormat * opalFmt = &list[i];
 #if OPAL_AUDIO
@@ -1950,12 +1924,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #endif
         }
       }
-
-      // save the format
-      AddFormat(*mediaFormat);
-
-      // this looks like a memory leak, but it isn't
-      //delete mediaFormat;
+      OpalMediaFormat::SetRegisteredMediaFormat(*mediaFormat);
     }
   }
 
@@ -1963,22 +1932,20 @@ void OpalPluginCodecManager::RegisterPluginPair(
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      handler->CreateVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, TRUE);
-      handler->CreateVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, FALSE);
-      //new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(OpalYUV420P,                encoderCodec->destFormat), encoderCodec, TRUE);
-      //new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalYUV420P),                decoderCodec, FALSE);
+      handler->RegisterVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, TRUE);
+      handler->RegisterVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, FALSE);
       break;
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
       if (encoderCodec->sampleRate == 8000) {
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
       }
       else if (encoderCodec->sampleRate == 16000)
       {
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
       }
       else
       {
@@ -1987,13 +1954,13 @@ void OpalPluginCodecManager::RegisterPluginPair(
       break;
     case PluginCodec_MediaTypeAudioStreamed:
       if (encoderCodec->sampleRate == 8000) {
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
       }
       else if (encoderCodec->sampleRate == 16000)
       {
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalMediaFormatPair(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
       }
       else
       {
@@ -2003,8 +1970,8 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #endif
 #if OPAL_T38FAX
     case PluginCodec_MediaTypeFax:
-      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalMediaFormatPair(GetOpalPCM16Fax(),        encoderCodec->destFormat), encoderCodec, TRUE);
-      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalMediaFormatPair(encoderCodec->destFormat, GetOpalPCM16Fax()),        decoderCodec, FALSE);
+      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(GetOpalPCM16Fax(),        encoderCodec->destFormat), encoderCodec, TRUE);
+      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, GetOpalPCM16Fax()),        decoderCodec, FALSE);
       break;
 #endif
     default:
@@ -2092,15 +2059,6 @@ void OpalPluginCodecManager::RegisterCapability(PluginCodec_Definition * encoder
 }
 #endif // OPAL_H323
 
-void OpalPluginCodecManager::AddFormat(const OpalMediaFormat & fmt)
-{
-  OpalMediaFormat::SetRegisteredMediaFormat(fmt);
-  {
-    PWaitAndSignal m(GetMediaFormatMutex());
-    GetMediaFormatList() += fmt;
-  }
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 OpalPluginCodecHandler::OpalPluginCodecHandler()
@@ -2128,9 +2086,9 @@ OpalMediaFormat * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPluginCodecMan
   return new OpalPluginVideoMediaFormat(encoderCodec, rtpEncodingName, timeStamp);
 }
 
-void OpalPluginCodecHandler::CreateVideoTranscoder(const OpalMediaFormat & src, const OpalMediaFormat & dst, PluginCodec_Definition * codec, BOOL v)
+void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, BOOL v)
 {
-  new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalMediaFormatPair(src, dst), codec, v);
+  new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalTranscoderKey(src, dst), codec, v);
 }
 
 #endif
@@ -2182,12 +2140,7 @@ H323Capability *CreateGenericAudioCap(const PluginCodec_Definition * encoderCode
                                       const PluginCodec_Definition * decoderCodec,
                                       int /*subType*/) 
 {
-  PluginCodec_H323GenericCodecData * pluginData = (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData;
-  if (pluginData != NULL )
-    return new H323CodecPluginGenericAudioCapability(encoderCodec, decoderCodec, pluginData);
-
-  PTRACE(1, "OpalPlugin\tGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
-  return NULL;
+  return new H323CodecPluginGenericAudioCapability(encoderCodec, decoderCodec, (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData);
 }
 
 H323Capability * CreateG7231Cap(const PluginCodec_Definition * encoderCodec,
@@ -2236,12 +2189,7 @@ H323Capability *CreateGenericVideoCap(const PluginCodec_Definition * encoderCode
                                       const PluginCodec_Definition * decoderCodec,
                                       int /*subType*/) 
 {
-  PluginCodec_H323GenericCodecData * pluginData = (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData;
-  if (pluginData != NULL )
-    return new H323CodecPluginGenericVideoCapability(encoderCodec, decoderCodec, pluginData);
-
-  PTRACE(1, "OpalPlugin\tGeneric codec information for codec '"<<encoderCodec->descr<<"' has NULL data field");
-  return NULL;
+  return new H323CodecPluginGenericVideoCapability(encoderCodec, decoderCodec, (PluginCodec_H323GenericCodecData *)encoderCodec->h323CapabilityData);
 }
 
 
@@ -2291,8 +2239,6 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
  : H323NonStandardAudioCapability(compareFunc,data, dataLen), 
    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec)
 {
-  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
-
   PluginCodec_H323NonStandardCodecData * nonStdData = (PluginCodec_H323NonStandardCodecData *)_encoderCodec->h323CapabilityData;
   if (nonStdData->objectId != NULL) {
     oid = PString(nonStdData->objectId);
@@ -2309,7 +2255,6 @@ H323CodecPluginNonStandardAudioCapability::H323CodecPluginNonStandardAudioCapabi
  : H323NonStandardAudioCapability(data, dataLen), 
    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec)
 {
-  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
   PluginCodec_H323NonStandardCodecData * nonStdData = (PluginCodec_H323NonStandardCodecData *)_encoderCodec->h323CapabilityData;
   if (nonStdData->objectId != NULL) {
     oid = PString(nonStdData->objectId);
@@ -2331,12 +2276,9 @@ PString H323CodecPluginNonStandardAudioCapability::GetFormatName() const
 H323CodecPluginGenericAudioCapability::H323CodecPluginGenericAudioCapability(const PluginCodec_Definition * _encoderCodec,
                                                                              const PluginCodec_Definition * _decoderCodec,
                                                                              const PluginCodec_H323GenericCodecData *data )
-  : H323GenericAudioCapability(data->standardIdentifier, data->maxBitRate ? data->maxBitRate : 0),
+  : H323GenericAudioCapability(data->standardIdentifier, data != NULL ? data->maxBitRate : 0),
     H323PluginCapabilityInfo((PluginCodec_Definition *)_encoderCodec, (PluginCodec_Definition *) _decoderCodec)
 {
-  SetTxFramesInPacket(_decoderCodec->parm.audio.maxFramesPerPacket);
-
-  PopulateMediaFormatFromGenericData(GetWritableMediaFormat(), data);
 }
 
 PObject * H323CodecPluginGenericAudioCapability::Clone() const
@@ -2439,10 +2381,7 @@ void H323VideoPluginCapability::PrintOn(std::ostream & strm) const
 H323H261PluginCapability::H323H261PluginCapability(const PluginCodec_Definition * _encoderCodec,
                                                    const PluginCodec_Definition * _decoderCodec)
   : H323VideoPluginCapability(_encoderCodec, _decoderCodec, H245_VideoCapability::e_h261VideoCapability)
-{ 
-  const OpalMediaFormat & fmt = GetMediaFormat();
-  if (!fmt.HasOption(qcifMPI_tag) && !fmt.HasOption(cifMPI_tag))
-    GetWritableMediaFormat().AddOption(new OpalMediaOptionUnsigned(cifMPI_tag, false, OpalMediaOption::MinMerge, 4));
+{
 }
 
 PObject::Comparison H323H261PluginCapability::Compare(const PObject & obj) const
@@ -2894,10 +2833,9 @@ PString H323CodecPluginNonStandardVideoCapability::GetFormatName() const
 H323CodecPluginGenericVideoCapability::H323CodecPluginGenericVideoCapability(const PluginCodec_Definition * _encoderCodec,
                                                                              const PluginCodec_Definition * _decoderCodec,
                                                                              const PluginCodec_H323GenericCodecData *data)
-  : H323GenericVideoCapability(data->standardIdentifier, data->maxBitRate),
+  : H323GenericVideoCapability(data->standardIdentifier, data != NULL ? data->maxBitRate : 0),
     H323PluginCapabilityInfo((PluginCodec_Definition *)_encoderCodec, (PluginCodec_Definition *)_decoderCodec)
 {
-  PopulateMediaFormatFromGenericData(GetWritableMediaFormat(), data);
 }
 
 PObject * H323CodecPluginGenericVideoCapability::Clone() const

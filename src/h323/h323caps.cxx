@@ -27,7 +27,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2039  2007/09/05 04:13:32  rjongbloed
+ * Revision 1.2039.2.1  2007/09/13 05:41:38  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.40  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 2.39  2007/09/09 23:37:19  rjongbloed
+ * Fixed confusion over MaxPayloadType meaning
+ *
+ * Revision 2.38  2007/09/05 04:13:32  rjongbloed
  * Fixed getting same media packetization information in TCS multiple times.
  *
  * Revision 2.37  2007/09/05 01:36:00  rjongbloed
@@ -579,9 +590,9 @@ BOOL H323Capability::IsUsable(const H323Connection &) const
 }
 
 
-const OpalMediaFormat & H323Capability::GetMediaFormat() const
+OpalMediaFormat H323Capability::GetMediaFormat() const
 {
-  return PRemoveConst(H323Capability, this)->GetWritableMediaFormat();
+  return mediaFormat.IsEmpty() ? OpalMediaFormat(GetFormatName()) : mediaFormat;
 }
 
 
@@ -2751,7 +2762,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
 
       h225_0.m_mediaPacketizationCapability.m_rtpPayloadType.SetSize(rtpPacketizationCount+1);
       if (H323SetRTPPacketization(h225_0.m_mediaPacketizationCapability.m_rtpPayloadType[rtpPacketizationCount],
-                                                    capability.GetMediaFormat(), RTP_DataFrame::MaxPayloadType)) {
+                                                    capability.GetMediaFormat(), RTP_DataFrame::IllegalPayloadType)) {
         // Check if already in list
         PINDEX test;
         for (test = 0; test < rtpPacketizationCount; test++) {
