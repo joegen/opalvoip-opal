@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2142.2.15  2007/09/12 11:59:18  hfriederich
+ * Revision 1.2142.2.16  2007/09/13 14:21:00  hfriederich
+ * Allow to force the creation of a new handler when registering, even
+ * if there already exists a handler for the target
+ *
+ * Revision 2.141.2.15  2007/09/12 11:59:18  hfriederich
  * Fix RFC3263 support for connections. Code cleanup
  *
  * Revision 2.141.2.14  2007/09/08 10:15:45  hfriederich
@@ -1429,26 +1433,31 @@ BOOL SIPEndPoint::Register(unsigned expire,
                            const PString & password,
                            const PString & realm,
                            const PTimeInterval & minRetryTime, 
-                           const PTimeInterval & maxRetryTime)
+                           const PTimeInterval & maxRetryTime,
+                           BOOL forceCreationOfNewHandler)
 {
   PSafePtr<SIPHandler> handler = NULL;
+  
+  if (forceCreationOfNewHandler == FALSE) {
     
-  // Create the SIPHandler structure
-  handler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
+    // Create the SIPHandler structure
+    handler = activeSIPHandlers.FindSIPHandlerByUrl(aor, SIP_PDU::Method_REGISTER, PSafeReadOnly);
     
-  // If there is already a request with this URL and method, 
-  // then update it with the new information
-  if (handler != NULL) {
-    if (!password.IsEmpty())
-      handler->SetPassword(password); // Adjust the password if required 
-    if (!realm.IsEmpty())
-      handler->SetAuthRealm(realm);   // Adjust the realm if required 
-    if (!authName.IsEmpty())
-      handler->SetAuthUser(authName); // Adjust the authUser if required 
-    handler->SetExpire(expire);      // Adjust the expire field
-  } 
+    // If there is already a request with this URL and method, 
+    // then update it with the new information
+    if (handler != NULL) {
+      if (!password.IsEmpty())
+        handler->SetPassword(password); // Adjust the password if required 
+      if (!realm.IsEmpty())
+        handler->SetAuthRealm(realm);   // Adjust the realm if required 
+      if (!authName.IsEmpty())
+        handler->SetAuthUser(authName); // Adjust the authUser if required 
+      handler->SetExpire(expire);      // Adjust the expire field
+    }
+  }
+  
   // Otherwise create a new request with this method type
-  else {
+  if (handler == NULL) {
     handler = CreateRegisterHandler(aor, authName, password, realm, expire, minRetryTime, maxRetryTime);
     activeSIPHandlers.Append(handler);
   }
