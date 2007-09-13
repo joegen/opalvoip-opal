@@ -24,6 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.10.2.1  2007/09/13 05:57:45  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) cleaning up only occurs in the existing garbage collection
+ *
  * Revision 1.10  2007/09/04 05:42:55  rjongbloed
  * Added OnRegistrationStatus() call back function so can distinguish
  *   between initial registration and refreshes.
@@ -101,8 +107,6 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
     retryTimeoutMin(retryMin), 
     retryTimeoutMax(retryMax)
 {
-  request = NULL;
-
   targetAddress.Parse(to);
   remotePartyAddress = targetAddress.AsQuotedString();
 
@@ -124,9 +128,6 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
 SIPHandler::~SIPHandler() 
 {
-  if (request)
-    endpoint.WaitForTransactionCompletion(request);
-
   if (transport) {
     transport->CloseWait();
     delete transport;
@@ -154,23 +155,20 @@ void SIPHandler::SetExpire (int e)
 
 BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 {
-  SIPTransaction *request = NULL;
-
   if (param == NULL)
     return FALSE;
 
   SIPHandler * handler = (SIPHandler *)param;
 
-  request = handler->CreateTransaction(transport);
-  if (!request) 
-    return FALSE;
-
-  if (!request->Start()) {
-    PTRACE(2, "SIP\tDid not start transaction on " << transport);
-    return FALSE;
+  SIPTransaction * transaction = handler->CreateTransaction(transport);
+  if (transaction != NULL) {
+    handler->callID = transaction->GetMIME().GetCallID();
+    if (transaction->Start())
+      return TRUE;
   }
 
-  return TRUE;
+    PTRACE(2, "SIP\tDid not start transaction on " << transport);
+    return FALSE;
 }
 
 
@@ -281,10 +279,7 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
   if (expire != 0)
     expire = originalExpire;
 
-  if (request)
-    endpoint.WaitForTransactionCompletion(request);
-
-  request = new SIPRegister (endpoint, 
+  return new SIPRegister(endpoint, 
                              t, 
                              GetRouteSet(),
                              targetAddress, 
@@ -292,11 +287,6 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
                              expire, 
                              retryTimeoutMin, 
                              retryTimeoutMax);
-
-  if (request)
-    endpoint.AddTransaction(request);
-
-  return request;
 }
 
 
@@ -405,10 +395,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
     localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
   }
 
-  if (request)
-    endpoint.WaitForTransactionCompletion(request);
-
-  request = new SIPSubscribe (endpoint,
+  return new SIPSubscribe(endpoint,
                               trans, 
                               type,
                               GetRouteSet(),
@@ -418,11 +405,6 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
                               callID, 
                               GetNextCSeq(),
                               expire); 
-
-  if (request)
-    endpoint.AddTransaction(request);
-
-  return request;
 }
 
 
@@ -683,22 +665,13 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
   if (expire != 0)
     expire = originalExpire;
 
-  if (request)
-    endpoint.WaitForTransactionCompletion(request);
-
-  request = new SIPPublish(endpoint,
+  return new SIPPublish(endpoint,
                            t, 
                            GetRouteSet(), 
                            targetAddress, 
                            sipETag, 
                            (GetState() == Refreshing)?PString::Empty():body, 
                            expire);
-  callID = request->GetMIME().GetCallID();
-
-  if (request)
-    endpoint.AddTransaction(request);
-
-  return request;
 }
 
 
@@ -829,17 +802,8 @@ SIPMessageHandler::~SIPMessageHandler ()
 
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
 { 
-  if (request)
-    endpoint.WaitForTransactionCompletion(request);
-
   SetExpire(expire);
-  request = new SIPMessage(endpoint, t, targetAddress, routeSet, body);
-  callID = request->GetMIME().GetCallID();
-
-  if (request)
-    endpoint.AddTransaction(request);
-
-  return request;
+  return new SIPMessage(endpoint, t, targetAddress, routeSet, body);
 }
 
 
@@ -887,16 +851,7 @@ SIPPingHandler::SIPPingHandler (SIPEndPoint & endpoint,
 
 SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 {
-  if (request)
-    endpoint.WaitForTransactionCompletion(request);
-
-  request = new SIPPing(endpoint, t, targetAddress, body);
-  callID = request->GetMIME().GetCallID();
-
-  if (request)
-    endpoint.AddTransaction(request);
-
-  return request;
+  return new SIPPing(endpoint, t, targetAddress, body);
 }
 
 

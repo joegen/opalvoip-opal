@@ -24,7 +24,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2259.2.1  2007/09/13 05:41:39  rjongbloed
+ * Revision 1.2259.2.2  2007/09/13 05:57:45  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) cleaning up only occurs in the existing garbage collection
+ *
+ * Revision 2.258.2.1  2007/09/13 05:41:39  rjongbloed
  * Merge from HEAD
  *
  * Revision 2.259  2007/09/10 00:11:14  rjongbloed
@@ -1193,7 +1199,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   releaseMethod = ReleaseWithNothing;
 
   forkedInvitations.DisallowDeleteObjects();
-  transactions.DisallowDeleteObjects();
 
   referTransaction = NULL;
   local_hold = FALSE;
@@ -1216,23 +1221,12 @@ SIPConnection::~SIPConnection()
 {
   delete originalInvite;
   delete transport;
-  delete referTransaction;
 
   if (pduHandler) 
     delete pduHandler;
 
   PTRACE(4, "SIP\tDeleted connection.");
 }
-
-SIPTransaction * SIPConnection::GetAndLockTransaction(const PString & transactionID)
-{ 
-  transactionsMutex.Wait(); 
-  SIPTransaction * trans = transactions.GetAt(transactionID); 
-  if (trans == NULL)
-    transactionsMutex.Signal(); 
-  return trans;
-}
-
 
 void SIPConnection::OnReleased()
 {
@@ -1247,7 +1241,7 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasingPhase);
 
-  SIPTransaction * byeTransaction = NULL;
+  PSafePtr<SIPTransaction> byeTransaction;
 
   switch (releaseMethod) {
     case ReleaseWithNothing :
@@ -1281,14 +1275,9 @@ void SIPConnection::OnReleased()
 
     case ReleaseWithCANCEL :
       {
-        PINDEX i;
-        {
-          PWaitAndSignal m(invitationsMutex);
-          for (i = 0; i < forkedInvitations.GetSize(); i++) {
-            PTRACE(3, "SIP\tCancelling transaction " << i << " of " << forkedInvitations.GetSize());
-            forkedInvitations[i].Cancel();
-          }
-        }
+        PTRACE(3, "SIP\tCancelling " << forkedInvitations.GetSize() << " transactions.");
+        for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
+          invitation->Cancel();
       }
   }
 
@@ -1296,9 +1285,8 @@ void SIPConnection::OnReleased()
   CloseMediaStreams();
 
   // Sent a BYE, wait for it to complete
-  if (byeTransaction != NULL) {
-    endpoint.WaitForTransactionCompletion(byeTransaction);
-  }
+  if (byeTransaction != NULL)
+    byeTransaction->WaitForCompletion();
 
   SetPhase(ReleasedPhase);
 
@@ -1308,25 +1296,14 @@ void SIPConnection::OnReleased()
   }
   
   // Wait until all INVITEs have completed
-  for (PINDEX i = 0; i < forkedInvitations.GetSize(); i++) {
-    endpoint.WaitForTransactionCompletion(&forkedInvitations[i]);
-  }
+  for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation)
+    invitation->WaitForCompletion();
+  forkedInvitations.RemoveAll();
 
   OpalConnection::OnReleased();
 
-  // Wait until all transactions belonging to this connection have terminated
-  while (transactions.GetSize() > 0) {
-    PThread::Sleep(1000);
-  }
-  
   if (transport != NULL)
     transport->CloseWait();
-
-  // Remove all INVITEs
-  {
-    PWaitAndSignal m(invitationsMutex); 
-    forkedInvitations.RemoveAll();
-  }
 }
 
 
@@ -1785,12 +1762,11 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   // sent out.
   if (connection.GetPhase() >= OpalConnection::ReleasingPhase) {
     PTRACE(2, "SIP\tAborting INVITE transaction since connection is in releasing phase");
-    delete invite; // at this point, the INVITE is not yet added to the transactions
+    delete invite; // Before Start() is called we are responsible for deletion
     return FALSE;
   }
   
   if (invite->Start()) {
-    PWaitAndSignal m(connection.invitationsMutex); 
     connection.forkedInvitations.Append(invite);
     return TRUE;
   }
@@ -2090,9 +2066,8 @@ void SIPConnection::OnTransactionFailed(SIPTransaction & transaction)
 
   {
     // The connection stays alive unless all INVITEs have failed
-    PWaitAndSignal m(invitationsMutex); 
-    for (PINDEX i = 0; i < forkedInvitations.GetSize(); i++) {
-      if (!forkedInvitations[i].IsFailed())
+    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+      if (!invitation->IsFailed())
         return;
     }
   }
@@ -2143,8 +2118,7 @@ void SIPConnection::OnReceivedPDU(SIP_PDU & pdu)
       break;
     case SIP_PDU::NumMethods :  // if no method, must be response
       {
-        PWaitAndSignal m(transactionsMutex);
-        SIPTransaction * transaction = transactions.GetAt(pdu.GetTransactionID());
+        PSafePtr<SIPTransaction> transaction = endpoint.GetTransaction(pdu.GetTransactionID());
         if (transaction != NULL)
           transaction->OnReceivedResponse(pdu);
       }
@@ -2160,12 +2134,10 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
   BOOL reInvite = FALSE;
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
-    PWaitAndSignal m(invitationsMutex);
-
     // See if this is an initial INVITE or a re-INVITE
     reInvite = TRUE;
-    for (i = 0; i < forkedInvitations.GetSize(); i++) {
-      if (&forkedInvitations[i] == &transaction) {
+    for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+      if (invitation == &transaction) {
         reInvite = FALSE;
         break;
       }
@@ -2174,9 +2146,9 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     if (!reInvite && response.GetStatusCode()/100 <= 2) {
       if (response.GetStatusCode()/100 == 2) {
         // Have a final response to the INVITE, so cancel all the other invitations sent.
-        for (i = 0; i < forkedInvitations.GetSize(); i++) {
-          if (&forkedInvitations[i] != &transaction)
-            forkedInvitations[i].Cancel();
+        for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+          if (invitation != &transaction)
+            invitation->Cancel();
         }
 
         // And end connect mode on the transport
@@ -2222,8 +2194,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     if (phase < ConnectedPhase) {
       // Final check to see if we have forked INVITEs still running, don't
       // release connection until all of them have failed.
-      for (i = 0; i < forkedInvitations.GetSize(); i++) {
-        if (forkedInvitations[i].IsInProgress()) {
+      for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
+        if (invitation->IsInProgress()) {
           ignoreErrorResponse = TRUE;
           break;
         }
@@ -2673,7 +2645,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   
   // The REFER is over
   if (state.Find("terminated") != P_MAX_INDEX) {
-    endpoint.WaitForTransactionCompletion(referTransaction);
+    referTransaction->WaitForCompletion();
     referTransaction = NULL;
 
     // Release the connection
@@ -2710,7 +2682,7 @@ void SIPConnection::OnReceivedREFER(SIP_PDU & pdu)
   
   // Send a Final NOTIFY,
   notifyTransaction = new SIPReferNotify(*this, *transport, SIP_PDU::Successful_Accepted);
-  endpoint.WaitForTransactionCompletion(notifyTransaction);
+  notifyTransaction->WaitForCompletion();
 }
 
 
@@ -2883,12 +2855,10 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
   if (invite->Start())
   {
-    PWaitAndSignal m(invitationsMutex); 
     forkedInvitations.Append(invite);
     return TRUE;
   }
 
-  delete invite;
   PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
   return FALSE;
 }
@@ -3220,19 +3190,21 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
     case SendUserInputAsTone:
     case SendUserInputAsString:
       {
-        SIPTransaction * infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
+        PSafePtr<SIPTransaction> infoTransaction = new SIPTransaction(*this, *transport, SIP_PDU::Method_INFO);
         SIPMIMEInfo & mimeInfo = infoTransaction->GetMIME();
         PStringStream str;
         if (mode == SendUserInputAsTone) {
           mimeInfo.SetContentType(ApplicationDTMFRelayKey);
           str << "Signal=" << tone << "\r\n" << "Duration=" << duration << "\r\n";
-        } else {
+        }
+        else {
           mimeInfo.SetContentType("application/dtmf-relay");
           mimeInfo.SetContentType("application/dtmf");
           str << tone;
         }
         infoTransaction->GetEntityBody() = str;
-        return endpoint.WaitForTransactionCompletion(infoTransaction);
+        infoTransaction->WaitForCompletion();
+        return !infoTransaction->IsFailed();
       }
 
     // anything else - send as RFC 2833
