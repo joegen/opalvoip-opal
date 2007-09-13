@@ -22,7 +22,20 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2095  2007/07/26 01:03:38  csoutheren
+ * Revision 1.2095.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.97  2007/09/11 09:18:05  rjongbloed
+ * Added full dump of all codecs and their options to trace log.
+ *
+ * Revision 2.96  2007/09/10 00:11:13  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.95  2007/09/08 12:01:34  rjongbloed
+ * Improved memory checking (leaks etc), especially when using MSVC debug library.
+ *
+ * Revision 2.94  2007/07/26 01:03:38  csoutheren
  * Remove debug code
  *
  * Revision 2.93  2007/07/26 00:42:57  csoutheren
@@ -416,6 +429,7 @@
 #include <lids/lidep.h>
 #include <ptclib/pstun.h>
 #include <ptlib/config.h>
+#include <codec/opalpluginmgr.h>
 
 #include "main.h"
 #include "../../version.h"
@@ -434,7 +448,6 @@ SimpleOpalProcess::SimpleOpalProcess()
 {
 }
 
-#include <codec/opalpluginmgr.h>
 
 void SimpleOpalProcess::Main()
 {
@@ -1171,7 +1184,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-    if (allMediaFormats[i].GetPayloadType() >= RTP_DataFrame::MaxPayloadType)
+    if (!allMediaFormats[i].IsTransportable())
       allMediaFormats.RemoveAt(i--); // Don't show media formats that are not used over the wire
   }
   allMediaFormats.Remove(GetMediaFormatMask());
@@ -1230,6 +1243,14 @@ BOOL MyManager::Initialise(PArgList & args)
     cout << "Set option \"" << optionName << "\" to \"" << valueStr << "\" in \"" << mediaFormat << '"' << endl;
   }
 
+#if PTRACING
+  allMediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
+  ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
+  traceStream << "Simple\tRegistered media formats:\n";
+  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++)
+    allMediaFormats[i].PrintOptions(traceStream);
+  traceStream << PTrace::End;
+#endif
   return TRUE;
 }
 

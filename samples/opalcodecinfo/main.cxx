@@ -22,6 +22,18 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.9.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 1.11  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 1.10  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
  * Revision 1.9  2007/06/25 05:09:09  rjongbloed
  * Fixed compile after change to anonymous structure in header (for GCC).
  *
@@ -638,7 +650,6 @@ void OpalCodecInfo::Main()
              "A-audio-test:"
              "a-capabilities."
              "C-caps:"
-             "c-codecs."
              "f-format:"
              "h-help."
              "i-info:"
@@ -667,13 +678,6 @@ void OpalCodecInfo::Main()
     PStringArray formats = args.GetOptionString('f').Lines();
     for (PINDEX i = 0; i < formats.GetSize(); i++)
       DisplayMediaFormat(formats[i]);
-    needHelp = false;
-  }
-
-  if (args.HasOption('c')) {
-    OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
-    cout << "Plug In codecs:" << endl;
-    DisplayMediaFormats(stdCodecList);
     needHelp = false;
   }
 
@@ -706,7 +710,7 @@ void OpalCodecInfo::Main()
   if (args.HasOption('C')) {
     PStringArray specs = args.GetOptionString('C').Lines();
     for (PINDEX s = 0; s < specs.GetSize(); s++) {
-      OpalMediaFormatList stdCodecList = OpalPluginCodecManager::GetMediaFormats();
+      OpalMediaFormatList stdCodecList = OpalMediaFormat::GetAllRegisteredMediaFormats();
       H323Capabilities caps;
       caps.AddAllCapabilities(0, 0, specs[s]);
       cout << "Capability set using \"" << specs[s] << "\" :\n" << caps << endl;
@@ -723,8 +727,8 @@ void OpalCodecInfo::Main()
     OpalTranscoderList keys = OpalTranscoderFactory::GetKeyList();
     OpalTranscoderList::const_iterator transcoder;
     for (transcoder = keys.begin(); transcoder != keys.end(); ++transcoder) {
-      cout << "   " << *transcoder << flush;
-      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder->GetInputFormat(), transcoder->GetOutputFormat());
+      cout << "   " << transcoder->first << "->" << transcoder->second << flush;
+      OpalTranscoder * xcoder = OpalTranscoder::Create(transcoder->first, transcoder->second);
       if (xcoder == NULL)
         cout << "  CANNOT BE INSTANTIATED";
       else

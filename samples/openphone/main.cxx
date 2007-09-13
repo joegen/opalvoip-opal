@@ -25,6 +25,19 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.31.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 1.34  2007/09/12 03:51:12  rjongbloed
+ * Changed to avoid display of non-existent memory leak.
+ *
+ * Revision 1.33  2007/09/11 09:18:05  rjongbloed
+ * Added full dump of all codecs and their options to trace log.
+ *
+ * Revision 1.32  2007/09/10 00:11:13  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
  * Revision 1.31  2007/09/04 07:12:28  rjongbloed
  * Fixed crash when change a media format option after moving it in dialog.
  *
@@ -435,10 +448,17 @@ class TextCtrlChannel : public PChannel
       wxFrame * frame
     ) { m_frame = frame; }
 
+    static TextCtrlChannel & Instance()
+    {
+      static TextCtrlChannel instance;
+      return instance;
+    }
+
   protected:
     wxFrame * m_frame;
-} LogWindow;
+};
 
+#define LogWindow TextCtrlChannel::Instance()
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -857,15 +877,10 @@ bool MyManager::Initialise()
 
 #if PTRACING
   mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-  ostream & traceStream = PTrace::Begin(1, __FILE__, __LINE__);
+  ostream & traceStream = PTrace::Begin(3, __FILE__, __LINE__);
   traceStream << "OpenPhone\tRegistered media formats:\n";
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    traceStream << "    " << mediaFormats[i] << '\n';
-    for (PINDEX j = 0; j < mediaFormats[i].GetOptionCount(); j++) {
-      const OpalMediaOption & option = mediaFormats[i].GetOption(j);
-      traceStream << "        " << option.GetName() << " = " << option.AsString() << '\n';
-    }
-  }
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
+    mediaFormats[i].PrintOptions(traceStream);
   traceStream << PTrace::End;
 #endif
 
@@ -1861,7 +1876,7 @@ void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & m
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     const OpalMediaFormat & mediaFormat = mediaFormats[i];
-    if (mediaFormat.GetPayloadType() != RTP_DataFrame::MaxPayloadType)
+    if (mediaFormat.IsTransportable())
       m_mediaInfo.push_back(MyMedia(source, mediaFormat));
   }
 }
