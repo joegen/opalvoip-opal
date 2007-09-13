@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2184  2007/09/04 05:40:15  rjongbloed
+ * Revision 1.2184.2.1  2007/09/13 05:41:39  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.184  2007/09/10 03:15:05  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
+ * Revision 2.183  2007/09/04 05:40:15  rjongbloed
  * Added OnRegistrationStatus() call back function so can distinguish
  *   between initial registration and refreshes.
  *
@@ -728,6 +735,11 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   garbageTimer.RunContinuous(PTimeInterval(0, 1));
 
   natMethod = None;
+
+  // Make sure these have been contructed now to avoid
+  // payload type disambiguation problems.
+  GetOpalRFC2833();
+  GetOpalCiscoNSE();
 
   PTRACE(4, "SIP\tCreated endpoint.");
 }

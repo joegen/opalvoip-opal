@@ -28,6 +28,12 @@
  *
  *
  * $Log: iax2con.cxx,v $
+ * Revision 1.28.2.1  2007/09/13 05:41:39  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 1.29  2007/09/09 23:37:20  rjongbloed
+ * Fixed confusion over MaxPayloadType meaning
+ *
  * Revision 1.28  2007/08/13 04:24:41  csoutheren
  * Normalise IAX2 answer logic
  *
@@ -174,7 +180,7 @@ IAX2Connection::IAX2Connection(OpalCall & call,               /* Owner call for 
 endpoint(ep),
 iax2Processor(*new IAX2CallProcessor(ep))
 {  
-  opalPayloadType = RTP_DataFrame::MaxPayloadType;
+  opalPayloadType = RTP_DataFrame::IllegalPayloadType;
 
   remotePartyAddress = "iax2:" + inRemoteParty;
   if (inRemotePartyName.IsEmpty())
@@ -643,7 +649,7 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 {
     PTRACE(6, "RTP\tIAX2 Incoming Media frame of " << soundFrame->GetMediaDataSize() << " bytes and timetamp=" << (soundFrame->GetTimeStamp() * 8));
 
-    if (opalPayloadType == RTP_DataFrame::MaxPayloadType) {
+    if (opalPayloadType == RTP_DataFrame::IllegalPayloadType) {
       //have not done a capability decision. (or capability failed).
       PTRACE(3, "RTP\tDump this sound frame, as no capability decision has been made");
       delete soundFrame;
