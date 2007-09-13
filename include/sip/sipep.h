@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2069.2.13  2007/09/08 10:15:44  hfriederich
+ * Revision 1.2069.2.14  2007/09/13 14:21:00  hfriederich
+ * Allow to force the creation of a new handler when registering, even
+ * if there already exists a handler for the target
+ *
+ * Revision 2.68.2.13  2007/09/08 10:15:44  hfriederich
  * Fix propagation of transaction failures (timeouts, retries exceeded)
  * and some code cleanup
  *
@@ -684,7 +688,8 @@ class SIPEndPoint : public OpalEndPoint
       const PString & password = PString::Empty(),            ///< authentication password
       const PString & authRealm = PString::Empty(),           ///< authentication realm
       const PTimeInterval & minRetryTime = PMaxTimeInterval, 
-      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+      const PTimeInterval & maxRetryTime = PMaxTimeInterval,
+      BOOL forceCreationOfNewHandler = FALSE
     );
     BOOL Register(
       const PString & host,
