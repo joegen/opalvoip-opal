@@ -24,6 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 1.3  2007/09/11 08:29:24  csoutheren
+ * Set marker bits on input frames
+ * Allow "codec-less" operation
+ * Fix spelling mistakes
+ *
  * Revision 1.2  2007/09/07 04:06:39  rjongbloed
  * Added bit rate parameter
  * Fixed propagating frame size, frame rate and bit rate to codec via OpalMediaOptions.
@@ -173,7 +181,7 @@ void CodecTest::Main()
     }
 
     cout << "Select:\n"
-            "  vfu    : Vide Fast Update (forece I-Frame)\n"
+            "  vfu    : Video Fast Update (force I-Frame)\n"
             "  fg     : Flip video grabber top to bottom\n"
             "  fd     : Flip video display top to bottom\n"
             "  qcif   : Set size of grab & display to qcif\n"
@@ -198,14 +206,20 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
     }
 
     if (mediaFormat.GetDefaultSessionID() == rawFormat.GetDefaultSessionID()) {
-      if ((encoder = OpalTranscoder::Create(rawFormat, mediaFormat)) == NULL) {
-        cout << "Could not create encoder for media format \"" << mediaFormat << '"' << endl;
-        return false;
+      if (rawFormat == mediaFormat) {
+        decoder = NULL;
+        encoder = NULL;
       }
+      else {
+        if ((encoder = OpalTranscoder::Create(rawFormat, mediaFormat)) == NULL) {
+          cout << "Could not create encoder for media format \"" << mediaFormat << '"' << endl;
+          return false;
+        }
 
-      if ((decoder = OpalTranscoder::Create(mediaFormat, rawFormat)) == NULL) {
-        cout << "Could not create decoder for media format \"" << mediaFormat << '"' << endl;
-        return false;
+        if ((decoder = OpalTranscoder::Create(mediaFormat, rawFormat)) == NULL) {
+          cout << "Could not create decoder for media format \"" << mediaFormat << '"' << endl;
+          return false;
+        }
       }
 
       return -1;
@@ -573,8 +587,8 @@ void VideoThread::Main()
 
 void TranscoderThread::Main()
 {
-  if (encoder == NULL || decoder == NULL)
-    return;
+  //if (encoder == NULL || decoder == NULL)
+  //  return;
 
   unsigned byteCount = 0;
   unsigned frameCount = 0;
@@ -584,31 +598,38 @@ void TranscoderThread::Main()
   bool oldEncState = true;
   bool oldDecState = true;
 
-  RTP_DataFrame srcFrame;
-
   PTimeInterval startTick = PTimer::Tick();
   while (running) {
-    bool state = Read(srcFrame);
+    RTP_DataFrame * srcFrame = new RTP_DataFrame;
+    bool state = Read(*srcFrame);
     if (oldSrcState != state) {
       oldSrcState = state;
       cerr << "Source " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
     }
 
     RTP_DataFrameList encFrames;
-    state = encoder->ConvertFrames(srcFrame, encFrames);
-    if (oldEncState != state) {
-      oldEncState = state;
-      cerr << "Encoder " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
-      continue;
+    if (encoder == NULL)
+      encFrames.Append(srcFrame); 
+    else {
+      state = encoder->ConvertFrames(*srcFrame, encFrames);
+      if (oldEncState != state) {
+        oldEncState = state;
+        cerr << "Encoder " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
+        continue;
+      }
     }
 
     for (PINDEX i = 0; i < encFrames.GetSize(); i++) {
       RTP_DataFrameList outFrames;
-      state = decoder->ConvertFrames(encFrames[i], outFrames);
-      if (oldDecState != state) {
-        oldDecState = state;
-        cerr << "Decoder " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
-        continue;
+      if (encoder == NULL)
+        outFrames = encFrames;
+      else {
+        state = decoder->ConvertFrames(encFrames[i], outFrames);
+        if (oldDecState != state) {
+          oldDecState = state;
+          cerr << "Decoder " << (state ? "restor" : "fail") << "ed at packet " << packetCount << endl;
+          continue;
+        }
       }
       for (PINDEX j = 0; j < outFrames.GetSize(); j++) {
         state = Write(outFrames[j]);
@@ -670,6 +691,7 @@ bool AudioThread::Write(const RTP_DataFrame & frame)
 bool VideoThread::Read(RTP_DataFrame & data)
 {
   data.SetPayloadSize(grabber->GetMaxFrameBytes()+sizeof(OpalVideoTranscoder::FrameHeader));
+  data.SetMarker(TRUE);
 
   unsigned width, height;
   grabber->GetFrameSize(width, height);

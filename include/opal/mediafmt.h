@@ -25,7 +25,19 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2057  2007/08/10 09:30:18  rjongbloed
+ * Revision 1.2057.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.58  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 2.57  2007/09/10 00:11:13  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.56  2007/08/10 09:30:18  rjongbloed
  * Fixed typos in comments
  *
  * Revision 2.55  2007/08/07 01:38:40  csoutheren
@@ -131,7 +143,19 @@
  * Added OpalMediaFormat clone function
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2057  2007/08/10 09:30:18  rjongbloed
+ * Revision 1.2057.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.58  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 2.57  2007/09/10 00:11:13  rjongbloed
+ * AddedOpalMediaFormat::IsTransportable() function as better test than simply
+ *   checking the payload type, condition is more complex.
+ *
+ * Revision 2.56  2007/08/10 09:30:18  rjongbloed
  * Fixed typos in comments
  *
  * Revision 2.55  2007/08/07 01:38:40  csoutheren
@@ -914,7 +938,12 @@ class OpalMediaFormat : public PCaselessString
        single string constructor is used to check that it matched something
        in the registered media formats database.
       */
-    virtual BOOL IsValid() const { return rtpPayloadType <= RTP_DataFrame::MaxPayloadType; }
+    virtual BOOL IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !IsEmpty(); }
+
+    /**Return TRUE if media format info may be sent via RTP. Some formats are internal
+       use only and are never transported "over the wire".
+      */
+    BOOL IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
 
     /**Copy a media format
       */
@@ -1362,8 +1391,6 @@ extern const OpalMediaFormat & GetOpalCiscoNSE();
 #define OpalG711uLaw       OpalG711_ULAW_64K
 #define OpalG711ALaw       OpalG711_ALAW_64K
 
-
-typedef PFactory<OpalMediaFormat, std::string> OpalMediaFormatFactory;
 
 #ifdef _MSC_VER
 #if _MSC_VER < 1300

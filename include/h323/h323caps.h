@@ -27,7 +27,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2021  2007/06/22 06:29:13  rjongbloed
+ * Revision 1.2021.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.21  2007/09/12 04:19:53  rjongbloed
+ * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
+ *   the plug in capabilities, that then do not get updated values from the master
+ *   list, or worse from the user modified master list, causing much confusion.
+ *
+ * Revision 2.20  2007/06/22 06:29:13  rjongbloed
  * Fixed GCC warnings.
  *
  * Revision 2.19  2007/06/22 05:49:12  rjongbloed
@@ -531,7 +539,7 @@ class H323Capability : public PObject
 
     /**Get media format of the media data this class represents.
       */
-    const OpalMediaFormat & GetMediaFormat() const;
+    OpalMediaFormat GetMediaFormat() const;
 
     /// Get the payload type for the capaibility
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }

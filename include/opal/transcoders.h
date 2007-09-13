@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2027  2007/06/22 05:47:19  rjongbloed
+ * Revision 1.2027.2.1  2007/09/13 05:41:37  rjongbloed
+ * Merge from HEAD
+ *
+ * Revision 2.27  2007/09/10 03:15:04  rjongbloed
+ * Fixed issues in creating and subsequently using correctly unique
+ *   payload types in OpalMediaFormat instances and transcoders.
+ *
+ * Revision 2.26  2007/06/22 05:47:19  rjongbloed
  * Fixed setting of output RTP payload types on plug in video codecs.
  *
  * Revision 2.25  2007/03/29 05:22:32  csoutheren
@@ -203,15 +210,13 @@ class OpalMediaFormatPair : public PObject
 };
 
 
-typedef PFactory<OpalTranscoder, OpalMediaFormatPair>                      OpalTranscoderFactory;
-typedef PFactory<OpalTranscoder, OpalMediaFormatPair>::KeyList_T           OpalTranscoderList;
-typedef PFactory<OpalTranscoder, OpalMediaFormatPair>::KeyList_T::iterator OpalTranscoderIterator;
-
-inline OpalMediaFormatPair OpalCreateMediaFormatPair(const OpalMediaFormat & from, const OpalMediaFormat & to)
-{ return OpalMediaFormatPair(from, to); }
+typedef std::pair<PString, PString>                                      OpalTranscoderKey;
+typedef PFactory<OpalTranscoder, OpalTranscoderKey>                      OpalTranscoderFactory;
+typedef PFactory<OpalTranscoder, OpalTranscoderKey>::KeyList_T           OpalTranscoderList;
+typedef PFactory<OpalTranscoder, OpalTranscoderKey>::KeyList_T::iterator OpalTranscoderIterator;
 
 #define OPAL_REGISTER_TRANSCODER(cls, input, output) \
-  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(OpalCreateMediaFormatPair(input, output))
+  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(OpalTranscoderKey(input, output))
 
 
 /**This class embodies the implementation of a specific transcoder instance
