@@ -24,6 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.6.2.1  2007/09/13 05:57:44  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) cleaning up only occurs in the existing garbage collection
+ *
  * Revision 1.6  2007/09/04 11:54:49  csoutheren
  * Fixed compilation on Linux
  *
@@ -149,8 +155,6 @@ public:
   virtual void SetBody(const PString & b)
     { body = b;}
 
-  virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
-
   virtual SIP_PDU::Methods GetMethod() = 0;
   virtual SIPSubscribe::SubscribeType GetSubscribeType() 
     { return SIPSubscribe::Unknown; }
@@ -165,10 +169,12 @@ public:
   void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
   const PStringList & GetRouteSet() const { return routeSet; }
 
+  virtual SIPTransaction * CreateTransaction(OpalTransport & t) = 0;
+
 protected:
   SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
-  SIPTransaction            * request;
+  PSafePtr<SIPTransaction>    transaction;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;

@@ -25,7 +25,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2088  2007/09/04 05:40:15  rjongbloed
+ * Revision 1.2088.2.1  2007/09/13 05:57:44  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) cleaning up only occurs in the existing garbage collection
+ *
+ * Revision 2.87  2007/09/04 05:40:15  rjongbloed
  * Added OnRegistrationStatus() call back function so can distinguish
  *   between initial registration and refreshes.
  *
@@ -525,6 +531,12 @@ class SIPEndPoint : public OpalEndPoint
        The default behaviour is pure.
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
+
+    /** Execute garbage collection for endpoint.
+        Returns TRUE if all garbage has been collected.
+        Default behaviour deletes the objects in the connectionsActive list.
+      */
+    virtual BOOL GarbageCollection();
   //@}
 
   /**@name Customisation call backs */
@@ -868,23 +880,15 @@ class SIPEndPoint : public OpalEndPoint
 
     void AddTransaction(
       SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
+    ) { transactions.SetAt(transaction->GetTransactionID(), transaction); }
 
-    void RemoveTransaction(
-      SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
-
+    PSafePtr<SIPTransaction> GetTransaction(const PString & transactionID, PSafetyMode mode = PSafeReadWrite)
+    { return transactions.FindWithLock(transactionID, mode); }
     
     /**Return the next CSEQ for the next transaction.
      */
-    unsigned GetNextCSeq() { PWaitAndSignal m(transactionsMutex); return ++lastSentCSeq; }
+    unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    
-    /**Waits until the transaction completes and ensures that the transaction is
-     * deleted when the transaction is terminated.
-     * Returns whether the transaction succeeded or not
-     */
-    BOOL WaitForTransactionCompletion(SIPTransaction * transaction);
     
     /**Return the SIPAuthentication for a specific realm.
      */
@@ -985,9 +989,6 @@ class SIPEndPoint : public OpalEndPoint
      */
     void SetNATBindingRefreshMethod(const NATBindingRefreshMethod m) { natMethod = m; }
 
-    SIPHandlersList & GetactiveSIPHandlers() 
-    { return activeSIPHandlers; }
-
     virtual SIPRegisterHandler * CreateRegisterHandler(const PString & to,
                                                        const PString & authName, 
                                                        const PString & password, 
@@ -999,13 +1000,8 @@ class SIPEndPoint : public OpalEndPoint
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
-    PDECLARE_NOTIFIER(PTimer, SIPEndPoint, GarbageCollector);
 
 
-    void AddCompletedTransaction(
-      SIPTransaction * transaction
-    ) { PWaitAndSignal m(completedTransactionsMutex); completedTransactions.Append(transaction); }
-    
     void ParsePartyName(
       const PString & remoteParty,     ///<  Party name string.
       PString & party                  ///<  Parsed party name, after e164 lookup
@@ -1029,21 +1025,12 @@ class SIPEndPoint : public OpalEndPoint
     
     SIPHandlersList   activeSIPHandlers;
 
-    SIPTransactionList messages;
-    SIPTransactionDict transactions;
+    PSafeDictionary<PString, SIPTransaction> transactions;
 
     PTimer                  natBindingTimer;
     NATBindingRefreshMethod natMethod;
     
-    PTimer                  garbageTimer;
-
-    PMutex             transactionsMutex;
-    PMutex             connectionsActiveInUse;
-
-    unsigned           lastSentCSeq;    
-
-    SIPTransactionList completedTransactions;
-    PMutex             completedTransactionsMutex;
+    PAtomicInteger          lastSentCSeq;    
 };
 
 #endif // __OPAL_SIPEP_H
