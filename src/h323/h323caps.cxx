@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2041  2007/09/12 04:19:53  rjongbloed
+ * Revision 1.2042  2007/09/14 01:26:18  csoutheren
+ * Fixed warnings
+ *
+ * Revision 2.40  2007/09/12 04:19:53  rjongbloed
  * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
  *   the plug in capabilities, that then do not get updated values from the master
  *   list, or worse from the user modified master list, causing much confusion.
@@ -1417,7 +1420,7 @@ BOOL H323VideoCapability::OnSendingPDU(H245_DataType & dataType) const
 }
 
 
-BOOL H323VideoCapability::OnSendingPDU(H245_VideoCapability & pdu) const
+BOOL H323VideoCapability::OnSendingPDU(H245_VideoCapability & /*pdu*/) const
 {
   return FALSE;
 }
