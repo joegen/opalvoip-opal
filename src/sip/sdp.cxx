@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2058  2007/09/10 00:11:14  rjongbloed
+ * Revision 1.2059  2007/09/14 06:09:08  csoutheren
+ * Fix problems with incorrect parsing of "c=" lines
+ * Clamp ptime to 60 so Ciscos will work
+ *
+ * Revision 2.57  2007/09/10 00:11:14  rjongbloed
  * AddedOpalMediaFormat::IsTransportable() function as better test than simply
  *   checking the payload type, condition is more complex.
  *
@@ -646,6 +650,7 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, M
 
   transport = (mediaType == Image) ? SDP_MEDIA_TRANSPORT_UDPTL : SDP_MEDIA_TRANSPORT;
   direction = Undefined;
+  port      = 0;
 }
 
 
@@ -682,10 +687,10 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     portCount = (WORD)portStr.Mid(pos+1).AsUnsigned();
     portStr   = portStr.Left(pos);
   }
-  unsigned port = portStr.AsUnsigned();
+  port = (WORD)portStr.AsUnsigned();
 
   if (port == 0) 
-    PTRACE(4, "SDP\tIgnoring media session with port=0");
+    PTRACE(4, "SDP\tIgnoring media session " << mediaType << " with port=0");
   else {
     PTRACE(4, "SDP\tMedia session port=" << port);
 
@@ -889,7 +894,12 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
 
       const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
       if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
-        unsigned ptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+        unsigned txFrames = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
+        unsigned ptime1 = txFrames*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+
+        // Some Ciscos barf if ptime is > 60. Go figure
+        if (ptime1 > 60)
+          ptime1 = 60;
         if (ptime < ptime1)
           ptime = ptime1;
       }
@@ -1056,6 +1066,7 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
   
   bandwidthModifier = "";
   bandwidthValue = 0;
+  defaultConnectPort = 0;
 }
 
 
@@ -1162,9 +1173,10 @@ BOOL SDPSessionDescription::Decode(const PString & str)
         // media name and transport address (mandatory)
         if (key[0] == 'm') {
           currentMedia = new SDPMediaDescription(defaultConnectAddress);
-          if (currentMedia->Decode(value)) {
+          if (currentMedia->Decode(value) && (currentMedia->GetPort() != 0)) {
             mediaDescriptions.Append(currentMedia);
             PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
+            defaultConnectPort = currentMedia->GetPort();
           }
           else {
             delete currentMedia;
@@ -1244,7 +1256,8 @@ BOOL SDPSessionDescription::Decode(const PString & str)
               break;
 
             case 'c' : // connection information - optional if included at session-level
-              currentMedia->SetTransportAddress(ParseConnectAddress(value));
+              if (defaultConnectPort != 0)
+                currentMedia->SetTransportAddress(OpalTransportAddress(ParseConnectAddress(value), defaultConnectPort));
               break;
 
             case 'a' : // zero or more media attribute lines
