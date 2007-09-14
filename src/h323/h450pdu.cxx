@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.cxx,v $
- * Revision 1.2023  2007/04/04 02:12:00  rjongbloed
+ * Revision 1.2024  2007/09/14 01:26:18  csoutheren
+ * Fixed warnings
+ *
+ * Revision 2.22  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *
@@ -1777,8 +1780,8 @@ H4507Handler::H4507Handler(H323Connection & conn, H450xDispatcher & disp)
   dispatcher.AddOpCode(H4507_H323_MWI_Operations::e_mwiInterrogate, this);
 }
 
-void H4507Handler::OnReceivedMwiInterrogate(int linkedId,
-                                            int invokeId,
+void H4507Handler::OnReceivedMwiInterrogate(int /*linkedId*/,
+                                            int /*invokeId*/,
                                             PASN_OctetString *argument)
 {
   PTRACE(3, "H450.7\tOnReceivedMwiInterrogate" << *argument); 
