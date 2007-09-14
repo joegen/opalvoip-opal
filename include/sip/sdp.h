@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2026  2007/09/04 08:27:45  rjongbloed
+ * Revision 1.2027  2007/09/14 06:08:58  csoutheren
+ * Fix problems with incorrect parsing of "c=" lines
+ * Clamp ptime to 60 so Ciscos will work
+ *
+ * Revision 2.25  2007/09/04 08:27:45  rjongbloed
  * Added ptime and maxptime SDP attributes.
  *
  * Revision 2.24  2007/06/22 05:41:47  rjongbloed
@@ -279,6 +283,8 @@ class SDPMediaDescription : public PObject
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
 
+    WORD GetPort() const { return port; }
+
   protected:
     void PrintOn(ostream & strm, const PString & str) const;
     SDPMediaFormat * FindFormat(PString & str) const;
@@ -289,6 +295,7 @@ class SDPMediaDescription : public PObject
     PCaselessString media;
     PCaselessString transport;
     OpalTransportAddress transportAddress;
+    WORD port;
 
     Direction direction;
 
@@ -360,6 +367,7 @@ class SDPSessionDescription : public PObject
     unsigned ownerVersion;
     OpalTransportAddress ownerAddress;
     OpalTransportAddress defaultConnectAddress;
+    WORD defaultConnectPort;
 	
     PString bandwidthModifier;
     PINDEX bandwidthValue;
