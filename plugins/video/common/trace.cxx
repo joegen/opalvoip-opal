@@ -42,6 +42,11 @@ void Trace::SetLevel (unsigned level)
   TraceLevel = level;
 }
 
+unsigned Trace::GetLevel ()
+{
+  return (TraceLevel);
+}
+
 bool Trace::CanTrace (unsigned level)
 {
   return level <= TraceLevel;
