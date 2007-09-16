@@ -48,18 +48,7 @@ bool DynaLink::Open(const char *name)
   // At first we try without a path
   if (InternalOpen("", name))
     return true;
-/*
-  // Then we try iterating over PWLIBPLUGINDIR paths
-  char * env = ::getenv("PWLIBPLUGINDIR");
-  if (env != NULL) {
-    const char * token = strtok(env, DIR_TOKENISER);
-    while (token != NULL) {
-      if (InternalOpen(token, name))
-        return true;
-      token = strtok(NULL, DIR_TOKENISER);
-    }
-  }
-*/
+
   // As a last resort, try the current directory
   return InternalOpen(".", name);
 }
@@ -78,17 +67,18 @@ bool DynaLink::InternalOpen(const char * dir, const char *name)
   strcat(path, name);
 
   // Load the Libary
+  WITH_ALIGNED_STACK({  // must be called before using avcodec lib
 #ifdef _WIN32
 # ifdef UNICODE
-  USES_CONVERSION;
-  _hDLL = LoadLibrary(A2T(path));
+     USES_CONVERSION;
+    _hDLL = LoadLibrary(A2T(path));
 # else
-  _hDLL = LoadLibrary(name);
+    _hDLL = LoadLibrary(name);
 # endif /* UNICODE */
 #else
-  _hDLL = dlopen((const char *)path, RTLD_NOW);
+    _hDLL = dlopen((const char *)path, RTLD_NOW);
 #endif /* WIN32 */
-
+  });
   // Check for errors
   if (_hDLL == NULL) {
 #ifndef _WIN32
@@ -263,7 +253,7 @@ bool FFMPEGLibrary::Load()
   }
 
   if (!GetFunction("av_free", (Function &)Favcodec_free)) {
-    TRACE (1, _codecString << "\tDYNA\tFailed to load avcodec_close");
+    TRACE (1, _codecString << "\tDYNA\tFailed to load av_free");
     return false;
   }
 
@@ -282,16 +272,6 @@ bool FFMPEGLibrary::Load()
     return false;
   }
 
-  unsigned libVer = Favcodec_version();
-  unsigned libBuild = Favcodec_build();
-  if (libVer != LIBAVCODEC_VERSION_INT || libBuild != LIBAVCODEC_BUILD) {
-    TRACE (1, _codecString << "\tDYNA\tWarning: compiled against libavcodec headers from ver/build "
-           << std::hex << LIBAVCODEC_VERSION_INT << "/"
-           << std::dec << LIBAVCODEC_BUILD
-           << ", loaded " 
-           << std::hex << libVer << "/"
-           << std::dec << libBuild);
-  }
 
   if (!GetFunction("av_log_set_level", (Function &)FAv_log_set_level)) {
     TRACE (1, _codecString << "\tDYNA\tFailed to load av_log_set_level");
@@ -304,6 +284,18 @@ bool FFMPEGLibrary::Load()
   }
 
   WITH_ALIGNED_STACK({  // must be called before using avcodec lib
+
+    unsigned libVer = Favcodec_version();
+    unsigned libBuild = Favcodec_build();
+    if (libVer != LIBAVCODEC_VERSION_INT || libBuild != LIBAVCODEC_BUILD) {
+      TRACE (1, _codecString << "\tDYNA\tWarning: compiled against libavcodec headers from ver/build "
+             << std::hex << LIBAVCODEC_VERSION_INT << "/"
+             << std::dec << LIBAVCODEC_BUILD
+             << ", loaded " 
+             << std::hex << libVer << "/"
+             << std::dec << libBuild);
+    }
+
     Favcodec_init();
 
     // register only the codecs needed (to have smaller code)

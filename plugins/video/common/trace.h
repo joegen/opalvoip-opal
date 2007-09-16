@@ -43,6 +43,7 @@ class Trace
 public:
   static ostream & Start(const char* file, int line);
   static bool CanTrace(unsigned level);
+  static unsigned GetLevel();
   static void SetLevel(unsigned level);
 };
 

@@ -236,15 +236,12 @@ int main(int argc, char *argv[])
         break;
       case ENCODE_FRAMES:
           readStream(stream, (LPVOID)&srcLen, sizeof(srcLen));
-          printf ("CP: Received %d bytes, msg: %d\n",srcLen, msg );
           readStream(stream, (LPVOID)&src, srcLen);
           readStream(stream, (LPVOID)&headerLen, sizeof(headerLen));
           readStream(stream, (LPVOID)&dst, headerLen);
 
       case ENCODE_FRAMES_BUFFERED:
-          printf ("CP: Received %d bytes, msg: %d\n", srcLen, msg );
           ret = (x264->EncodeFrames( src,  srcLen, dst, dstLen, flags));
-          printf ("CP: Sending %d bytes\n", dstLen );
           writeStream(stream,(LPCVOID)&msg, sizeof(msg));
           writeStream(stream,(LPCVOID)&dstLen, sizeof(dstLen));
           writeStream(stream,(LPCVOID)&dst, dstLen);
