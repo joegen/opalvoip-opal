@@ -15,8 +15,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="../bin/$(ProjectName)/$(ConfigurationName)"
-			IntermediateDirectory="../bin/$(ProjectName)/$(ConfigurationName)"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -105,8 +105,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="../bin/$(ProjectName)/$(ConfigurationName)"
-			IntermediateDirectory="../bin/$(ProjectName)/$(ConfigurationName)"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -198,11 +198,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject="..\..\..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
+			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
-			RelativePathToProject="..\..\src\win32\opal_dll_2005.vcproj"
+			RelativePathToProject=".\src\win32\opal_dll_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{77EA0743-0AC3-40FA-AFB0-DA722147EDCF}"
@@ -210,7 +210,6 @@
 			CopyLocalDependencies="false"
 			UseInBuild="false"
 			CopyLocalSatelliteAssemblies="false"
-			RelativePathToProject=".\ipp_2005.vcproj"
 		/>
 	</References>
 	<Files>
