@@ -51,7 +51,7 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="OPAL_STATIC_LINK"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -149,7 +149,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswd&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="OPAL_STATIC_LINK"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;PTRACING"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="true"
@@ -185,6 +185,105 @@
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile=".\Debug/OpenPhone.pdb"
+				SubSystem="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="No Trace|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				Description="Checking for wxWidgets"
+				CommandLine="if exist &quot;%WXDIR%&quot; exit 0&#x0D;&#x0A;echo $(TargetName) : error : Must have a WXDIR variable set to use wxWidgets!&#x0D;&#x0A;exit 1&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
+				TypeLibraryName=".\Release/OpenPhone.tlb"
+				HeaderFileName=""
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				RuntimeTypeInfo="true"
+				UsePrecompiledHeader="0"
+				PrecompiledHeaderFile=".\Release/OpenPhone.pch"
+				AssemblerListingLocation=".\Release/"
+				ObjectFile=".\Release/"
+				ProgramDataBaseFileName=".\Release/"
+				WarningLevel="4"
+				SuppressStartupBanner="true"
+				CompileAs="0"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="3081"
+				AdditionalIncludeDirectories="&quot;$(WXDIR)\include&quot;"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="opals.lib ptlibs.lib wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib user32.lib ole32.lib advapi32.lib shell32.lib"
+				OutputFile=".\Release/OpenPhone.exe"
+				LinkIncremental="1"
+				SuppressStartupBanner="true"
+				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
+				ProgramDatabaseFile=".\Release/OpenPhone.pdb"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -253,6 +352,16 @@
 						BasicRuntimeChecks="3"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						Optimization="2"
+						AdditionalIncludeDirectories=""
+						PreprocessorDefinitions=""
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -291,6 +400,16 @@
 				</FileConfiguration>
 				<FileConfiguration
 					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Creating C++ source from XML resource file"
+						CommandLine="%WXDIR%\bin\wxrc -c $(InputPath)&#x0D;&#x0A;"
+						Outputs="resource.cpp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="No Trace|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
