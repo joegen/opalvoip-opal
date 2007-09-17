@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.31.2.3  2007/09/17 05:19:41  rjongbloed
+ * Fixed call back reporting registration status.
+ *
  * Revision 1.31.2.2  2007/09/17 01:19:07  rjongbloed
  * Fixed call back reporting registration status.
  *
@@ -3183,7 +3186,7 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
                                          BOOL reRegistering,
                                          SIP_PDU::StatusCodes reason)
 {
-  if (reRegistering && reason == SIP_PDU::Successful_OK)
+  if (reason == SIP_PDU::Failure_UnAuthorised || (reRegistering && reason == SIP_PDU::Successful_OK))
     return;
 
   LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << ' ';
@@ -3197,7 +3200,7 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
       break;
 
     default :
-      LogWindow << "failed";
+      LogWindow << "failed (" << reason << ')';
   }
   LogWindow << '.' << endl;
 }
