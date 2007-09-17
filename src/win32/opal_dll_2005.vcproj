@@ -54,7 +54,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				PreprocessorDefinitions="NDEBUG"
+				PreprocessorDefinitions="NDEBUG;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -1005,7 +1005,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Merging exported library symbols"
-					CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x release\ptlib.def -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+					CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;No Trace\ptlibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
 					AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;"
 					Outputs="$(IntDir)\$(TargetName).def"
 				/>
