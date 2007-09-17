@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -58,9 +58,7 @@
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Release/OpenPhone.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				ProgramDataBaseFileName="$(OutDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -80,11 +78,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opals.lib ptlibs.lib wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib user32.lib ole32.lib advapi32.lib shell32.lib"
-				OutputFile=".\Release/OpenPhone.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
-				ProgramDatabaseFile=".\Release/OpenPhone.pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -115,8 +112,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -155,9 +152,7 @@
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Debug/OpenPhone.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
+				ProgramDataBaseFileName="$(OutDir)/$(TargetName).pdb"
 				BrowseInformation="1"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
@@ -179,12 +174,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opalsd.lib ptlibsd.lib wxmsw$(WXVER)d_xrc.lib wxmsw$(WXVER)d_html.lib wxmsw$(WXVER)d_adv.lib wxmsw$(WXVER)d_core.lib wxbase$(WXVER)d_xml.lib wxbase$(WXVER)d.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib oleaut32.lib"
-				OutputFile=".\Debug/OpenPhone.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile=".\Debug/OpenPhone.pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -215,8 +209,8 @@
 		</Configuration>
 		<Configuration
 			Name="No Trace|Win32"
-			OutputDirectory="$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -257,9 +251,7 @@
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderFile=".\Release/OpenPhone.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
+				ProgramDataBaseFileName="$(OutDir)/$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -279,11 +271,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opals.lib ptlibs.lib wxmsw$(WXVER)_xrc.lib wxmsw$(WXVER)_html.lib wxmsw$(WXVER)_adv.lib wxmsw$(WXVER)_core.lib wxbase$(WXVER)_xml.lib wxbase$(WXVER).lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wsock32.lib odbc32.lib odbccp32.lib comctl32.lib rpcrt4.lib user32.lib ole32.lib advapi32.lib shell32.lib"
-				OutputFile=".\Release/OpenPhone.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
-				ProgramDatabaseFile=".\Release/OpenPhone.pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
