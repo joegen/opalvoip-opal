@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2224.2.4  2007/08/01 13:10:34  csoutheren
+ * Revision 1.2224.2.5  2007/09/17 08:55:48  csoutheren
+ * Fix problem when incoming SIP call does not contain a supported codec
+ *
+ * Revision 2.223.2.4  2007/08/01 13:10:34  csoutheren
  * Fix problem with early shutdown SIP call not returning response code
  *
  * Revision 2.223.2.3  2007/07/10 06:30:18  csoutheren
@@ -919,12 +922,11 @@ typedef void (SIPConnection::* SIPMethodFunction)(SIP_PDU & pdu);
 static const char ApplicationDTMFRelayKey[] = "application/dtmf-relay";
 static const char ApplicationDTMFKey[]      = "application/dtmf";
 
-#define new PNEW
-
 #if OPAL_T38FAX
 #include <t38/t38proto.h>
 #endif
 
+#define new PNEW
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -1207,43 +1209,44 @@ void SIPConnection::TransferConnection(const PString & remoteParty, const PStrin
 
 BOOL SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
 {
-  BOOL sdpFailure = TRUE;
+  BOOL sdpOK;
 
   // get the remote media formats, if any
   if (originalInvite->HasSDP()) {
     remoteSDP = originalInvite->GetSDP();
 
-    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+    sdpOK = OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)
 #if OPAL_VIDEO
-    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
+            || OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut)
 #endif
 #if OPAL_T38FAX
-    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
+            || OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut)
 #endif
-  }
-
-  if (sdpFailure) {
-    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
-#endif
-#if OPAL_T38FAX
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID) && sdpFailure;
-#endif
-
-    if (sdpFailure) {
-      Release(EndedByCapabilityExchange);
-      return FALSE;
-    }
+            ;
   }
   
-  // abort if already in releasing phase
-  if (phase >= ReleasingPhase) {
+  else {
+
+    // construct offer as per RFC 3261, para 14.2
+    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
+
+    sdpOK = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID)
+#if OPAL_VIDEO
+            || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID)
+#endif
+#if OPAL_T38FAX
+            || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID)
+#endif
+            ;
+  }
+
+  if (!sdpOK) {
+    Release(EndedByCapabilityExchange);
     return FALSE;
   }
 
-  return TRUE;
+  // abort if already in releasing phase
+  return phase < ReleasingPhase;
 }
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
@@ -1301,8 +1304,10 @@ BOOL SIPConnection::SetConnected()
 
   SDPSessionDescription sdpOut(GetLocalAddress());
 
-  if (!ConstructSDP(sdpOut))
+  if (!ConstructSDP(sdpOut)) {
+    SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
     return FALSE;
+  }
     
   // update the route set and the target address according to 12.1.1
   // requests in a dialog do not modify the route set according to 12.2
@@ -1618,8 +1623,10 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
 void SIPConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
     AttachRFC2833HandlerToPatch(isSource, patch);
+//    if (detectInBandDTMF && isSource) 
+//      patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
   }
 }
 
@@ -2222,7 +2229,6 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
   BOOL isReinvite = FALSE;
-  BOOL sdpFailure = TRUE;
  
   if (originalInvite != NULL) {
 
@@ -2353,35 +2359,43 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 #endif
     }
  
+    BOOL sdpOK = FALSE;
+
     if (originalInvite->HasSDP()) {
+
       // Try to send SDP media description for audio and video
       SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
-#if OPAL_VIDEO
-      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
-#endif
-#if OPAL_T38FAX
-      sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
-#endif
+      sdpOK = OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)
+  #if OPAL_VIDEO
+              || OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut)
+  #endif
+  #if OPAL_T38FAX
+              || OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut)
+  #endif
+              ;
+
+      if (!sdpOK)
+        SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
     }
 
-    if (sdpFailure) {
+    else {
+
+      // construct offer as per RFC 3261, para 14.2
       SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
-#endif
-#if OPAL_T38FAX
-      sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID) && sdpFailure;
-#endif
-      if (sdpFailure) {
-        // Ignore a failed reInvite
-        return;
-      }
+      sdpOK  = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID)
+  #if OPAL_VIDEO
+             || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID)
+  #endif
+  #if OPAL_T38FAX
+             || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID)
+  #endif
+             ;
+
     }
-  
+
     // send the 200 OK response
-    SendInviteOK(sdpOut);
+    if (sdpOK) 
+      SendInviteOK(sdpOut);
 
     return;
   }
