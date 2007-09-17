@@ -16,8 +16,8 @@
 	<Configurations>
 		<Configuration
 			Name="No Trace|Win32"
-			OutputDirectory=".\NoTrace\DLL"
-			IntermediateDirectory=".\NoTrace\DLL"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -107,8 +107,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release\DLL"
-			IntermediateDirectory=".\Release\DLL"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -198,8 +198,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug\DLL"
-			IntermediateDirectory=".\Debug\DLL"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
