@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.6.2.2  2007/09/17 01:19:06  rjongbloed
+ * Fixed call back reporting registration status.
+ *
  * Revision 1.6.2.1  2007/09/13 05:57:44  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
@@ -224,6 +227,7 @@ public:
 
   virtual void OnFailed(SIP_PDU::StatusCodes r);
 private:
+  void SendStatus(SIP_PDU::StatusCodes code);
   PDECLARE_NOTIFIER(PTimer, SIPRegisterHandler, OnExpireTimeout);
 };
 
