@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.31.2.2  2007/09/17 01:19:07  rjongbloed
+ * Fixed call back reporting registration status.
+ *
  * Revision 1.31.2.1  2007/09/13 05:41:37  rjongbloed
  * Merge from HEAD
  *
@@ -3180,8 +3183,23 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
                                          BOOL reRegistering,
                                          SIP_PDU::StatusCodes reason)
 {
-  if (!reRegistering)
-    LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << " successful." << endl;
+  if (reRegistering && reason == SIP_PDU::Successful_OK)
+    return;
+
+  LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << ' ';
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      LogWindow << "successful";
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      LogWindow << "timed out";
+      break;
+
+    default :
+      LogWindow << "failed";
+  }
+  LogWindow << '.' << endl;
 }
 
 #endif

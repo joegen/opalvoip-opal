@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.10.2.2  2007/09/17 01:19:07  rjongbloed
+ * Fixed call back reporting registration status.
+ *
  * Revision 1.10.2.1  2007/09/13 05:57:45  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
@@ -292,7 +295,6 @@ SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
 
 void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
 {
-  PString aor;
   PString contact = response.GetMIME().GetContact();
 
   int newExpiryTime = SIPURL(contact).GetParamVars()("expires").AsUnsigned();
@@ -313,9 +315,7 @@ void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
     PTRACE(2, "SIP\tUpdated realm to " << authentication.GetAuthRealm());
   }
 
-  aor = targetAddress.AsString().Mid(4);
-  endpoint.OnRegistrationStatus(aor, GetState() != Unsubscribing, GetState() == Refreshing, SIP_PDU::Successful_OK);
-
+  SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(response);
 }
 
@@ -329,12 +329,7 @@ void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 
 void SIPRegisterHandler::OnFailed (SIP_PDU::StatusCodes r)
 { 
-  PString aor;
-
-  aor = targetAddress.AsString();
-  aor = aor.Mid(4);
-  endpoint.OnRegistrationStatus(aor, GetState() != Unsubscribing, FALSE, r);
-
+  SendStatus(r);
   SIPHandler::OnFailed(r);
 }
 
@@ -345,6 +340,28 @@ void SIPRegisterHandler::OnExpireTimeout(PTimer &, INT)
 
   if (!SendRequest(Refreshing))
     SetState(Unsubscribed);
+}
+
+
+void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
+{
+  PString aor = targetAddress.AsString().Mid(4);
+  switch (GetState()) {
+    case Subscribing :
+      endpoint.OnRegistrationStatus(aor, true, false, code);
+      break;
+
+    case Refreshing :
+      endpoint.OnRegistrationStatus(aor, true, true, code);
+      break;
+
+    case Unsubscribing :
+      endpoint.OnRegistrationStatus(aor, false, false, code);
+      break;
+
+    default :
+      break;
+  }
 }
 
 
