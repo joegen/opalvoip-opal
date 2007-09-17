@@ -7,3 +7,4 @@ opal.spec
 opal_cfg.dxy
 opal_inc.mak
 Makefile
+bin
