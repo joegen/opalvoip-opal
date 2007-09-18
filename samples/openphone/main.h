@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.46  2007/09/18 02:26:01  rjongbloed
+ * Use correct mechanism for forcing windows video output device.
+ *
  * Revision 1.45  2007/09/04 05:40:15  rjongbloed
  * Added OnRegistrationStatus() call back function so can distinguish
  *   between initial registration and refreshes.
@@ -614,13 +617,6 @@ class MyManager : public wxFrame, public OpalManager
     virtual BOOL OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
-    );
-    virtual BOOL CreateVideoOutputDevice(
-      const OpalConnection & connection,    /// Connection needing created video device
-      const OpalMediaFormat & mediaFormat,  /// Media format for stream
-      BOOL preview,                         /// Flag indicating is a preview output
-      PVideoOutputDevice * & device,        /// Created device
-      BOOL & autoDelete                     /// Flag for auto delete device
     );
     virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
