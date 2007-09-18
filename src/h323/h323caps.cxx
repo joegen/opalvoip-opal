@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2042  2007/09/14 01:26:18  csoutheren
+ * Revision 1.2043  2007/09/18 18:35:51  dsandras
+ * Fixed compilation warning with GCC 4.2.
+ *
+ * Revision 2.41  2007/09/14 01:26:18  csoutheren
  * Fixed warnings
  *
  * Revision 2.40  2007/09/12 04:19:53  rjongbloed
@@ -2968,7 +2971,7 @@ OpalMediaFormatList H323Capabilities::GetMediaFormats() const
 
 
 struct msNonStandardCodecDef {
-  char * name;
+  const char * name;
   BYTE sig[2];
 };
 
