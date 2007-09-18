@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2070  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2071  2007/09/18 09:37:52  rjongbloed
+ * Propagated call backs for RTP statistics through OpalManager and OpalCall.
+ *
+ * Revision 2.69  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.68  2007/04/04 02:12:00  rjongbloed
@@ -1210,9 +1213,10 @@ void H323EndPoint::OnClosedLogicalChannel(H323Connection & /*connection*/,
 }
 
 
-void H323EndPoint::OnRTPStatistics(const H323Connection & /*connection*/,
-                                   const RTP_Session & /*session*/) const
+void H323EndPoint::OnRTPStatistics(const H323Connection & connection,
+                                   const RTP_Session & session) const
 {
+  manager.OnRTPStatistics(connection, session);
 }
 
 

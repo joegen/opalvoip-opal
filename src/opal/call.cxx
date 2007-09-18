@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2064  2007/06/28 12:08:26  rjongbloed
+ * Revision 1.2065  2007/09/18 09:37:52  rjongbloed
+ * Propagated call backs for RTP statistics through OpalManager and OpalCall.
+ *
+ * Revision 2.63  2007/06/28 12:08:26  rjongbloed
  * Simplified mutex strategy to avoid some wierd deadlocks. All locking of access
  *   to an OpalConnection must be via the PSafeObject locks.
  *
@@ -660,6 +663,11 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   }
   
   return TRUE;
+}
+
+
+void OpalCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
+{
 }
 
 

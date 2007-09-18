@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2097  2007/09/18 02:24:24  rjongbloed
+ * Revision 1.2098  2007/09/18 09:37:52  rjongbloed
+ * Propagated call backs for RTP statistics through OpalManager and OpalCall.
+ *
+ * Revision 2.96  2007/09/18 02:24:24  rjongbloed
  * Set window title to connection remote party name if video output device has one.
  *
  * Revision 2.95  2007/09/11 13:42:18  csoutheren
@@ -914,6 +917,12 @@ BOOL OpalManager::OnOpenMediaStream(OpalConnection & connection,
     return connection.GetCall().PatchMediaStreams(connection, stream);
 
   return TRUE;
+}
+
+
+void OpalManager::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
+{
+  connection.GetCall().OnRTPStatistics(connection, session);
 }
 
 
