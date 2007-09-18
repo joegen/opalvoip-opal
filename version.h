@@ -37,7 +37,7 @@
 #define MAJOR_VERSION 2
 #define MINOR_VERSION 2
 #define BUILD_TYPE    ReleaseCode
-#define BUILD_NUMBER 11 
+#define BUILD_NUMBER 12 
 
 
 #endif  // _OPAL_VERSION_H
