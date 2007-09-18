@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2185  2007/09/10 03:15:05  rjongbloed
+ * Revision 1.2186  2007/09/18 09:37:52  rjongbloed
+ * Propagated call backs for RTP statistics through OpalManager and OpalCall.
+ *
+ * Revision 2.184  2007/09/10 03:15:05  rjongbloed
  * Fixed issues in creating and subsequently using correctly unique
  *   payload types in OpalMediaFormat instances and transcoders.
  *
@@ -1847,9 +1850,10 @@ BOOL SIPEndPoint::SendResponse(SIP_PDU::StatusCodes code, OpalTransport & transp
 }
 
 
-void SIPEndPoint::OnRTPStatistics(const SIPConnection & /*connection*/,
-                                  const RTP_Session & /*session*/) const
+void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
+                                  const RTP_Session & session) const
 {
+  manager.OnRTPStatistics(connection, session);
 }
 
 
