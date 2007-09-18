@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2024  2005/02/21 12:19:54  rjongbloed
+ * Revision 1.2024.2.1  2007/09/18 08:20:53  dsandras
+ * Fixed GCC 4.2 warnings.
+ *
+ * Revision 2.23  2005/02/21 12:19:54  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.22  2004/11/07 12:26:40  rjongbloed
@@ -2498,7 +2501,7 @@ PMutex & H323CapabilityRegistration::GetMutex()
 
 
 struct msNonStandardCodecDef {
-  char * name;
+  const char * name;
   BYTE sig[2];
 };
 

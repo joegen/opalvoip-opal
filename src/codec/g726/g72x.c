@@ -26,6 +26,9 @@
 
 /*
  * $Log: g72x.c,v $
+ * Revision 1.2.2.1  2007/09/18 08:20:53  dsandras
+ * Fixed GCC 4.2 warnings.
+ *
  * Revision 1.2  2002/11/20 04:53:16  robertj
  * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
  *
@@ -46,6 +49,10 @@
 
 static int power2[15] = {1, 2, 4, 8, 0x10, 0x20, 0x40, 0x80,
 			0x100, 0x200, 0x400, 0x800, 0x1000, 0x2000, 0x4000};
+
+#ifndef abs
+#define abs(n) ((n)<0 ? -(n) : (n))
+#endif
 
 /*
  * quan()
@@ -383,12 +390,12 @@ update(
 		/* UPA1 */
 		/* update predictor pole a[0] */
 		state_ptr->a[0] -= state_ptr->a[0] >> 8;
-		if (dqsez != 0)
+		if (dqsez != 0) {
 			if (pks1 == 0)
 				state_ptr->a[0] += 192;
 			else
 				state_ptr->a[0] -= 192;
-
+                }
 		/* LIMD */
 		a1ul = 15360 - a2p;
 		if (state_ptr->a[0] < -a1ul)
