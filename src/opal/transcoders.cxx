@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2038  2007/09/10 03:15:04  rjongbloed
+ * Revision 1.2039  2007/09/18 02:22:58  rjongbloed
+ * Fixed output display window starting off at correct size.
+ *
+ * Revision 2.37  2007/09/10 03:15:04  rjongbloed
  * Fixed issues in creating and subsequently using correctly unique
  *   payload types in OpalMediaFormat instances and transcoders.
  *
@@ -359,7 +362,8 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
             if (search == *i)
               return srcFormat.Merge(i->first) &&
                      dstFormat.Merge(i->second) &&
-                     srcFormat.Merge(dstFormat);
+                     srcFormat.Merge(dstFormat) &&
+                     dstFormat.Merge(srcFormat);
           }
         }
       }
