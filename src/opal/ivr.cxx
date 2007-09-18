@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.cxx,v $
- * Revision 1.2026  2007/09/04 07:46:32  csoutheren
+ * Revision 1.2027  2007/09/18 06:23:22  csoutheren
+ * Add ability queue multiple events in IVR kickoff
+ *
+ * Revision 2.25  2007/09/04 07:46:32  csoutheren
  * Fixed tts
  *
  * Revision 2.24  2007/09/04 05:36:42  csoutheren
@@ -333,6 +336,8 @@ BOOL OpalIVRConnection::StartVXML()
     }
   }
 
+  vars.SetAt("Time", PTime().AsString());
+
   if (vxmlToLoad.IsEmpty()) 
     vxmlToLoad = endpoint.GetDefaultVXML();
 
@@ -342,25 +347,71 @@ BOOL OpalIVRConnection::StartVXML()
   if (vxmlToLoad.Find("<?xml") == 0)
     return vxmlSession.LoadVXML(vxmlToLoad);
 
-  else {
-    if (vxmlToLoad.Find("tone=") == 0) 
-      vxmlSession.PlayTone(vxmlToLoad.Mid(5));
+  ////////////////////////////////
 
-    else if (vxmlToLoad.Find("file://") == 0) {
-      PString fn = vxmlToLoad.Mid(7).Trim();
-      if (fn.Right(5) *= ".vxml")
-        return vxmlSession.LoadFile(fn);
+  PINDEX repeat = 1;
+  PINDEX delay = 0;
+  PString voice;
 
-      vxmlSession.PlayFile(fn);
+  PINDEX i;
+  PStringArray tokens = vxmlToLoad.Tokenise(';', FALSE);
+  for (i = 0; i < tokens.GetSize(); ++i) {
+    PString str(tokens[i]);
+
+    if (str.Find("file://") == 0) {
+      PString fn = str.Mid(7).Trim();
+      if (fn.Right(5) *= ".vxml") {
+        if (!voice.IsEmpty())
+          fn = voice + PDIR_SEPARATOR + fn;
+        vxmlSession.LoadFile(fn);
+        continue;
+      }
+      else if (fn.Right(4) *= ".wav") {
+        if (!voice.IsEmpty())
+          fn = voice + PDIR_SEPARATOR + fn;
+        vxmlSession.PlayFile(fn, repeat, delay);
+        continue;
+      }
     }
 
-    else
-      vxmlSession.PlayText(vxmlToLoad, PTextToSpeech::Default, FALSE);
+    PINDEX pos = str.Find("=");
+    PString key(str);
+    PString val;
+    if (pos != P_MAX_INDEX) {
+      key = str.Left(pos);
+      val = str.Mid(pos+1);
+    }
 
-    vxmlSession.SetFinishWhenEmpty(TRUE);
+    if (key *= "repeat") {
+      if (!val.IsEmpty())
+        repeat = val.AsInteger();
+    }
+    else if (key *= "delay") {
+      if (!val.IsEmpty())
+        delay = val.AsInteger();
+    }
+    else if (key *= "voice") {
+      if (!val.IsEmpty()) {
+        voice = val;
+        PTextToSpeech * tts = vxmlSession.GetTextToSpeech();
+        if (tts != NULL)
+          tts->SetVoice(voice);
+      }
+    }
 
-    return TRUE;
+    else if (key *= "tone") 
+      vxmlSession.PlayTone(val, repeat, delay);
+
+    else if (key *= "speak") {
+      if (!val.IsEmpty() && (val[0] == '$'))
+        val = vars(val.Mid(1));
+      vxmlSession.PlayText(val, PTextToSpeech::Default, repeat, delay);
+    }
   }
+
+  vxmlSession.SetFinishWhenEmpty(TRUE);
+
+  return TRUE;
 }
 
 BOOL OpalIVRConnection::SetAlerting(const PString & calleeName, BOOL)
