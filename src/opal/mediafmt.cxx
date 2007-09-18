@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2075  2007/09/10 03:15:04  rjongbloed
+ * Revision 1.2076  2007/09/18 03:20:11  rjongbloed
+ * Allow frame width/height to be altered by user.
+ *
+ * Revision 2.74  2007/09/10 03:15:04  rjongbloed
  * Fixed issues in creating and subsequently using correctly unique
  *   payload types in OpalMediaFormat instances and transcoders.
  *
@@ -1409,8 +1412,8 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),         true,  OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),        true,  OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
   AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
   AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000,    1000));
   AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
