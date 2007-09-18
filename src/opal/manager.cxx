@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2096  2007/09/11 13:42:18  csoutheren
+ * Revision 1.2097  2007/09/18 02:24:24  rjongbloed
+ * Set window title to connection remote party name if video output device has one.
+ *
+ * Revision 2.95  2007/09/11 13:42:18  csoutheren
  * Add logging for IP address translation
  *
  * Revision 2.94  2007/08/01 23:56:54  csoutheren
@@ -948,7 +951,7 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
 }
 
 
-BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
+BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                           const OpalMediaFormat & mediaFormat,
                                           BOOL preview,
                                           PVideoOutputDevice * & device,
@@ -958,6 +961,12 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & /*connection*/,
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
   args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+
+  PINDEX start = args.deviceName.Find("TITLE=\"");
+  if (start != P_MAX_INDEX) {
+    start += 7;
+    args.deviceName.Splice(preview ? "Local Preview" : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
+  }
 
   autoDelete = TRUE;
   device = PVideoOutputDevice::CreateOpenedDevice(args);
