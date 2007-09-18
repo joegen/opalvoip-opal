@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.36  2007/09/18 12:50:29  rjongbloed
+ * Fixed call back reporting registration status.
+ *
  * Revision 1.35  2007/09/18 02:26:01  rjongbloed
  * Use correct mechanism for forcing windows video output device.
  *
@@ -3161,8 +3164,23 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
                                          BOOL reRegistering,
                                          SIP_PDU::StatusCodes reason)
 {
-  if (!reRegistering)
-    LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << " successful." << endl;
+  if (reason == SIP_PDU::Failure_UnAuthorised || (reRegistering && reason == SIP_PDU::Successful_OK))
+    return;
+
+  LogWindow << "SIP " << (wasRegistering ? "" : "un") << "registration of " << aor << ' ';
+  switch (reason) {
+    case SIP_PDU::Successful_OK :
+      LogWindow << "successful";
+      break;
+
+    case SIP_PDU::Failure_RequestTimeout :
+      LogWindow << "timed out";
+      break;
+
+    default :
+      LogWindow << "failed (" << reason << ')';
+  }
+  LogWindow << '.' << endl;
 }
 
 #endif
