@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2260  2007/09/10 00:11:14  rjongbloed
+ * Revision 1.2261  2007/09/18 06:25:11  csoutheren
+ * Ensure non-matching SDP is handled correctly
+ *
+ * Revision 2.259  2007/09/10 00:11:14  rjongbloed
  * AddedOpalMediaFormat::IsTransportable() function as better test than simply
  *   checking the payload type, condition is more complex.
  *
@@ -1339,43 +1342,44 @@ void SIPConnection::TransferConnection(const PString & remoteParty, const PStrin
 
 BOOL SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
 {
-  BOOL sdpFailure = TRUE;
+  BOOL sdpOK;
 
   // get the remote media formats, if any
   if (originalInvite->HasSDP()) {
     remoteSDP = originalInvite->GetSDP();
 
-    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+    sdpOK = OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)
 #if OPAL_VIDEO
-    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
+            || OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut)
 #endif
 #if OPAL_T38FAX
-    sdpFailure = !OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
+            || OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut)
 #endif
-  }
-
-  if (sdpFailure) {
-    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
-#endif
-#if OPAL_T38FAX
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID) && sdpFailure;
-#endif
-
-    if (sdpFailure) {
-      Release(EndedByCapabilityExchange);
-      return FALSE;
-    }
+            ;
   }
   
-  // abort if already in releasing phase
-  if (phase >= ReleasingPhase) {
+  else {
+
+    // construct offer as per RFC 3261, para 14.2
+    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
+
+    sdpOK = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID)
+#if OPAL_VIDEO
+            || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID)
+#endif
+#if OPAL_T38FAX
+            || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID)
+#endif
+            ;
+  }
+
+  if (!sdpOK) {
+    Release(EndedByCapabilityExchange);
     return FALSE;
   }
 
-  return TRUE;
+  // abort if already in releasing phase
+  return phase < ReleasingPhase;
 }
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
@@ -1398,7 +1402,11 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
     SendInviteResponse(SIP_PDU::Information_Ringing);
   else {
     SDPSessionDescription sdpOut(GetLocalAddress());
-    if (!ConstructSDP(sdpOut) || !SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
+    if (!ConstructSDP(sdpOut)) {
+      SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
+      return FALSE;
+    }
+    if (!SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
       return FALSE;
   }
 
@@ -1433,8 +1441,10 @@ BOOL SIPConnection::SetConnected()
 
   SDPSessionDescription sdpOut(GetLocalAddress());
 
-  if (!ConstructSDP(sdpOut))
+  if (!ConstructSDP(sdpOut)) {
+    SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
     return FALSE;
+  }
     
   // update the route set and the target address according to 12.1.1
   // requests in a dialog do not modify the route set according to 12.2
@@ -2475,36 +2485,43 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 #endif
   }
 
-  BOOL sdpFailure = TRUE;
+  BOOL sdpOK = FALSE;
+
   if (originalInvite->HasSDP()) {
+
     // Try to send SDP media description for audio and video
     SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-    sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+    sdpOK = OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)
 #if OPAL_VIDEO
-    sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut) && sdpFailure;
+            || OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut)
 #endif
 #if OPAL_T38FAX
-    sdpFailure = !OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut) && sdpFailure;
+            || OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut)
 #endif
+            ;
+
+    if (!sdpOK)
+      SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
   }
 
-  if (sdpFailure) {
+  else {
+
+    // construct offer as per RFC 3261, para 14.2
     SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+    sdpOK  = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID)
 #if OPAL_VIDEO
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID) && sdpFailure;
+           || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID)
 #endif
 #if OPAL_T38FAX
-    sdpFailure = !BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID) && sdpFailure;
+           || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID)
 #endif
-    if (sdpFailure) {
-      // Ignore a failed reInvite
-      return;
-    }
+           ;
+
   }
 
   // send the 200 OK response
-  SendInviteOK(sdpOut);
+  if (sdpOK) 
+    SendInviteOK(sdpOut);
 }
 
 
