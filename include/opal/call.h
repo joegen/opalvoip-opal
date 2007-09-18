@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2031  2007/05/07 14:13:51  csoutheren
+ * Revision 1.2032  2007/09/18 09:37:52  rjongbloed
+ * Propagated call backs for RTP statistics through OpalManager and OpalCall.
+ *
+ * Revision 2.30  2007/05/07 14:13:51  csoutheren
  * Add call record capability
  *
  * Revision 2.29  2007/04/16 06:48:04  rjongbloed
@@ -384,6 +387,18 @@ class OpalCall : public PSafeObject
       OpalMediaStream & source           ///<  Source media stream to patch
     );
     
+    /**Callback from the RTP session for statistics monitoring.
+       This is called every so many packets on the transmitter and receiver
+       threads of the RTP session indicating that the statistics have been
+       updated.
+
+       The default behaviour does nothing.
+      */
+    virtual void OnRTPStatistics(
+      const OpalConnection & connection,  ///<  Connection for the channel
+      const RTP_Session & session         ///<  Session with statistics
+    );
+
     /**Close the media streams on the connections.
      */
     virtual void CloseMediaStreams();
