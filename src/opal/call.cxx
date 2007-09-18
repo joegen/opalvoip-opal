@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2065  2007/09/18 09:37:52  rjongbloed
+ * Revision 1.2066  2007/09/18 10:06:03  rjongbloed
+ * Fixed compiler warning
+ *
+ * Revision 2.64  2007/09/18 09:37:52  rjongbloed
  * Propagated call backs for RTP statistics through OpalManager and OpalCall.
  *
  * Revision 2.63  2007/06/28 12:08:26  rjongbloed
@@ -666,7 +669,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
 }
 
 
-void OpalCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session)
+void OpalCall::OnRTPStatistics(const OpalConnection & /*connection*/, const RTP_Session & /*session*/)
 {
 }
 
