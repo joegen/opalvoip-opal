@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.4  2007/09/18 02:27:57  rjongbloed
+ * Changed so single letter options are consistently lowercase.
+ *
  * Revision 1.3  2007/09/11 08:29:24  csoutheren
  * Set marker bits on input frames
  * Allow "codec-less" operation
@@ -78,7 +81,7 @@ void CodecTest::Main()
              "s-frame-size:"
              "r-frame-rate:"
              "b-bit-rate:"
-             "C-crop."
+             "c-crop."
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
@@ -108,10 +111,10 @@ void CodecTest::Main()
               "  --grab-channel num      : video grabber channel.\n"
               "  --display-driver drv    : video display driver to use.\n"
               "  -D --display-device dev : video display device to use.\n"
-              "  -S --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
-              "  -R --frame-rate size    : video frame rate (frames/second)\n"
-              "  -B --bit-rate size      : video bit rate (bits/second)\n"
-              "  -C --crop               : crop rather than scale if resizing\n"
+              "  -s --frame-size size    : video frame size (\"qcif\", \"cif\", WxH)\n"
+              "  -r --frame-rate size    : video frame rate (frames/second)\n"
+              "  -b --bit-rate size      : video bit rate (bits/second)\n"
+              "  -c --crop               : crop rather than scale if resizing\n"
 #if PTRACING
               "  -o or --output file     : file name for output of log messages\n"       
               "  -t or --trace           : degree of verbosity in error log (more times for more detail)\n"     
