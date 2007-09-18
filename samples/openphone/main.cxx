@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.35  2007/09/18 02:26:01  rjongbloed
+ * Use correct mechanism for forcing windows video output device.
+ *
  * Revision 1.34  2007/09/12 03:51:12  rjongbloed
  * Changed to avoid display of non-existent memory leak.
  *
@@ -797,7 +800,18 @@ bool MyManager::Initialise()
   if (config->Read(VideoAutoReceiveKey, &onoff))
     SetAutoStartReceiveVideo(onoff);
 
+  videoArgs = GetVideoPreviewDevice();
+#if defined(__WXMSW__)
+  videoArgs.driverName = "Window";
+  videoArgs.deviceName = psprintf("MSWIN STYLE=0x%08X TITLE=\"Local\"", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
+#endif
+  SetVideoPreviewDevice(videoArgs);
+
   videoArgs = GetVideoOutputDevice();
+#if defined(__WXMSW__)
+  videoArgs.driverName = "Window";
+  videoArgs.deviceName = psprintf("MSWIN STYLE=0x%08X TITLE=\"Remote\"", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
+#endif
   config->Read(VideoFlipRemoteKey, &videoArgs.flip);
   SetVideoOutputDevice(videoArgs);
 
@@ -1695,36 +1709,6 @@ void MyManager::SendUserInput(char tone)
 }
 
 
-BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
-                                        const OpalMediaFormat & mediaFormat,
-                                        BOOL preview,
-                                        PVideoOutputDevice * & device,
-                                        BOOL & autoDelete)
-{
-  if (preview && !m_VideoGrabPreview)
-    return FALSE;
-
-  // We ALWAYS use a Window
-  device = PVideoOutputDevice::CreateDevice("Window");
-  if (device != NULL) {
-    autoDelete = TRUE;
-    PString name;
-#if defined(__WXMSW__)
-    name.sprintf("MSWIN STYLE=0x%08X ", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
-#endif
-    name += "TITLE=\"";
-    name += preview ? "Local" : (const char *)connection.GetRemotePartyName();
-    name += '"';
-    if (device->Open(name))
-      return TRUE;
-
-    delete device;
-  }
-
-  return OpalManager::CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
-}
-
-    
 void MyManager::OnUserInputString(OpalConnection & connection, const PString & value)
 {
   LogWindow << "User input \"" << value << "\" received from \"" << connection.GetRemotePartyName() << '"' << endl;
