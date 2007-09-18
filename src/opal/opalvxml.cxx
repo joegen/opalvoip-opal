@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2013  2006/08/11 07:52:01  csoutheren
+ * Revision 1.2014  2007/09/18 09:53:31  rjongbloed
+ * Fixed memory leak in IVR connection
+ *
+ * Revision 2.12  2006/08/11 07:52:01  csoutheren
  * Fix problem with media format factory in VC 2005
  * Fixing problems with Speex codec
  * Remove non-portable usages of PFactory code
@@ -164,7 +167,7 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
       if (std::find(engines.begin(), engines.end(), name) == engines.end())
 #endif
         name = engines[0];
-      tts = PFactory<PTextToSpeech>::CreateInstance(name);
+      SetTextToSpeech(name);
     }
   }
 }
