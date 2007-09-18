@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2059  2007/09/12 04:19:53  rjongbloed
+ * Revision 1.2060  2007/09/18 12:52:34  rjongbloed
+ * Removed duplicate change logs
+ *
+ * Revision 2.58  2007/09/12 04:19:53  rjongbloed
  * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
  *   the plug in capabilities, that then do not get updated values from the master
  *   list, or worse from the user modified master list, causing much confusion.
@@ -139,102 +142,7 @@
  * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
  * Added OpalMediaFormat clone function
  *
- * $Log: mediafmt.h,v $
- * Revision 1.2059  2007/09/12 04:19:53  rjongbloed
- * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
- *   the plug in capabilities, that then do not get updated values from the master
- *   list, or worse from the user modified master list, causing much confusion.
- *
- * Revision 2.57  2007/09/10 00:11:13  rjongbloed
- * AddedOpalMediaFormat::IsTransportable() function as better test than simply
- *   checking the payload type, condition is more complex.
- *
- * Revision 2.56  2007/08/10 09:30:18  rjongbloed
- * Fixed typos in comments
- *
- * Revision 2.55  2007/08/07 01:38:40  csoutheren
- * Fix problem with rtpEncodingName member going out of scope
- *
- * Revision 2.54  2007/08/02 07:54:15  csoutheren
- * Add function to print options on media format
- *
- * Revision 2.53  2007/07/24 12:51:26  rjongbloed
- * Fixed odd problem where need to allow for sign bit on an unsigned enum in a struct bitfield.
- *
- * Revision 2.52  2007/06/27 07:56:08  rjongbloed
- * Add new OpalMediaOption for octet strings (simple block of bytes).
- *
- * Revision 2.51  2007/06/22 05:41:47  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- *
- * Revision 2.50  2007/06/16 21:36:59  dsandras
- * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
- * Thanks a lot !
- *
- * Baseline Profile:
- * no B-frames
- * We make use of the baseline profile (which is the designated profile for interactive vide) ,
- * that means:
- * no B-Frames (too much latency in interactive video)
- * CBR (we want to get the max. quality making use of all the bitrate that is available)
- * We allow one exeption: configuring a bitrate of > 786 kbit/s
- *
- * This plugin implements
- * - Single Time Aggregation Packets A
- * - Single NAL units
- * - Fragmentation Units
- * like described in RFC3984
- *
- * It requires x264 and ffmpeg.
- *
- * Revision 2.49  2007/04/10 05:15:53  rjongbloed
- * Fixed issue with use of static C string variables in DLL environment,
- *   must use functional interface for correct initialisation.
- *
- * Revision 2.48  2007/03/13 00:32:16  csoutheren
- * Simple but messy changes to allow compile time removal of protocol
- * options such as H.450 and H.460
- * Fix MakeConnection overrides
- *
- * Revision 2.47  2007/02/14 06:51:28  csoutheren
- * Extended FindFormat to allow finding multiple matching formats
- *
- * Revision 2.46  2007/02/10 18:14:31  hfriederich
- * Add copy constructor to have consistent code with assignment operator.
- * Only make options unique when they actually differ
- *
- * Revision 2.45  2006/12/08 07:33:13  csoutheren
- * Fix problem with wideband audio plugins and sound channel
- *
- * Revision 2.44  2006/11/21 01:00:59  csoutheren
- * Ensure SDP only uses codecs that are valid for SIP
- *
- * Revision 2.43  2006/08/20 03:45:54  csoutheren
- * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
- * rather than relying on the presence of the IANA rtp encoding name field
- *
- * Revision 2.42  2006/08/11 07:52:01  csoutheren
- * Fix problem with media format factory in VC 2005
- * Fixing problems with Speex codec
- * Remove non-portable usages of PFactory code
- *
- * Revision 2.41  2006/07/24 14:03:38  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 2.37.4.6  2006/04/26 05:05:59  csoutheren
- * H.263 decoding working via codec plugin
- *
- * Revision 2.37.4.5  2006/04/19 04:58:56  csoutheren
- * Debugging and testing of new video plugins
- * H.261 working in both CIF and QCIF modes in H.323
- *
- * Revision 2.37.4.4  2006/04/10 06:24:30  csoutheren
- * Backport from CVS head up to Plugin_Merge3
- *
+
  * Revision 2.37  2005/12/27 20:46:09  dsandras
  * Added clockRate to the media format. Added "AlwaysMerge" method for merging
  * media format options.
