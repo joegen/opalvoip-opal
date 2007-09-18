@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2059  2007/09/14 06:09:08  csoutheren
+ * Revision 1.2060  2007/09/18 10:03:38  rjongbloed
+ * Fixed tiny little memory leak in SDP
+ *
+ * Revision 2.58  2007/09/14 06:09:08  csoutheren
  * Fix problems with incorrect parsing of "c=" lines
  * Clamp ptime to 60 so Ciscos will work
  *
@@ -336,7 +339,8 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
   : payloadType(pt),
     clockRate(0),
     encodingName(_name),
-    nteSet(TRUE)
+    nteSet(TRUE),
+    nseSet(TRUE)
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     AddNTEString("0-15,32-49");
@@ -356,7 +360,8 @@ SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
     payloadType(pt),
     clockRate(fmt.GetClockRate()),
     encodingName(fmt.GetEncodingName()),
-    nteSet(TRUE)
+    nteSet(TRUE),
+    nseSet(TRUE)
 {
   if (nxeString != NULL) {
 #if OPAL_T38FAX
