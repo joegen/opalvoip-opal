@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2026  2007/03/29 05:22:32  csoutheren
+ * Revision 1.2026.2.1  2007/09/19 12:05:19  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ * (backport from head)
+ *
+ * Revision 2.25  2007/03/29 05:22:32  csoutheren
  * Add extra logging
  *
  * Revision 2.24  2006/11/29 06:28:57  csoutheren
@@ -567,7 +572,37 @@ class Opal_PCM_Linear16Mono : public OpalStreamedTranscoder {
   OPAL_REGISTER_TRANSCODER(Opal_Linear16Mono_PCM, OpalL16_MONO_8KHZ, OpalPCM16); \
   OPAL_REGISTER_TRANSCODER(Opal_PCM_Linear16Mono, OpalPCM16,         OpalL16_MONO_8KHZ)
 
+class OpalEmptyFramedAudioTranscoder : public OpalFramedTranscoder
+{
+  PCLASSINFO(OpalEmptyFramedAudioTranscoder, OpalFramedTranscoder);
+  public:
+    OpalEmptyFramedAudioTranscoder(const char * inFormat, const char * outFormat)
+      : OpalFramedTranscoder(inFormat, outFormat, 100, 100)
+    {  }
 
+    BOOL ConvertFrame(const BYTE *, PINDEX &, BYTE *, PINDEX &)
+    { return FALSE; }
+};
+
+#define OPAL_DECLARE_EMPTY_TRANSCODER(fmt) \
+class Opal_Empty_##fmt##_Encoder : public OpalEmptyFramedAudioTranscoder \
+{ \
+  public: \
+    Opal_Empty_##fmt##_Encoder() \
+      : OpalEmptyFramedAudioTranscoder(OpalPCM16, fmt) \
+    { } \
+}; \
+class Opal_Empty_##fmt##_Decoder : public OpalEmptyFramedAudioTranscoder \
+{ \
+  public: \
+    Opal_Empty_##fmt##_Decoder() \
+      : OpalEmptyFramedAudioTranscoder(fmt, OpalPCM16) \
+    { } \
+}; \
+
+#define OPAL_DEFINE_EMPTY_TRANSCODER(fmt) \
+OPAL_REGISTER_TRANSCODER(Opal_Empty_##fmt##_Encoder, OpalPCM16, fmt); \
+OPAL_REGISTER_TRANSCODER(Opal_Empty_##fmt##_Decoder, fmt,       OpalPCM16); \
 
 #endif // __OPAL_TRANSCODERS_H
 
