@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2028  2007/09/10 03:15:04  rjongbloed
+ * Revision 1.2029  2007/09/19 10:43:00  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ *
+ * Revision 2.27  2007/09/10 03:15:04  rjongbloed
  * Fixed issues in creating and subsequently using correctly unique
  *   payload types in OpalMediaFormat instances and transcoders.
  *
@@ -576,6 +580,37 @@ class Opal_PCM_Linear16Mono : public OpalStreamedTranscoder {
   OPAL_REGISTER_TRANSCODER(Opal_PCM_Linear16Mono, OpalPCM16,         OpalL16_MONO_8KHZ)
 
 
+class OpalEmptyFramedAudioTranscoder : public OpalFramedTranscoder
+{
+  PCLASSINFO(OpalEmptyFramedAudioTranscoder, OpalFramedTranscoder);
+  public:
+    OpalEmptyFramedAudioTranscoder(const char * inFormat, const char * outFormat)
+      : OpalFramedTranscoder(inFormat, outFormat, 100, 100)
+    {  }
+
+    BOOL ConvertFrame(const BYTE *, PINDEX &, BYTE *, PINDEX &)
+    { return FALSE; }
+};
+
+#define OPAL_DECLARE_EMPTY_TRANSCODER(fmt) \
+class Opal_Empty_##fmt##_Encoder : public OpalEmptyFramedAudioTranscoder \
+{ \
+  public: \
+    Opal_Empty_##fmt##_Encoder() \
+      : OpalEmptyFramedAudioTranscoder(OpalPCM16, fmt) \
+    { } \
+}; \
+class Opal_Empty_##fmt##_Decoder : public OpalEmptyFramedAudioTranscoder \
+{ \
+  public: \
+    Opal_Empty_##fmt##_Decoder() \
+      : OpalEmptyFramedAudioTranscoder(fmt, OpalPCM16) \
+    { } \
+}; \
+
+#define OPAL_DEFINE_EMPTY_TRANSCODER(fmt) \
+OPAL_REGISTER_TRANSCODER(Opal_Empty_##fmt##_Encoder, OpalPCM16, fmt); \
+OPAL_REGISTER_TRANSCODER(Opal_Empty_##fmt##_Decoder, fmt,       OpalPCM16); \
 
 #endif // __OPAL_TRANSCODERS_H
 

@@ -27,7 +27,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2022  2007/09/12 04:19:53  rjongbloed
+ * Revision 1.2023  2007/09/19 10:43:00  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ *
+ * Revision 2.21  2007/09/12 04:19:53  rjongbloed
  * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
  *   the plug in capabilities, that then do not get updated values from the master
  *   list, or worse from the user modified master list, causing much confusion.
@@ -2547,12 +2551,6 @@ class H323Capabilities : public PObject
 typedef PFactory<H323Capability, std::string> H323CapabilityFactory;
 
 #define H323_REGISTER_CAPABILITY(cls, capName)   static H323CapabilityFactory::Worker<cls> cls##Factory(capName, true); \
-
-#define H323_DECLARE_CAPABILITY_CLASS(cls, anc) \
-  class cls : public anc \
-  { \
-    public: \
-      cls() \
 
 #endif // __OPAL_H323CAPS_H
 
