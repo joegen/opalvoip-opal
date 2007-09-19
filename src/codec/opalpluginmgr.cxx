@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2056  2007/09/12 23:02:00  rjongbloed
+ * Revision 1.2057  2007/09/19 10:43:31  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ *
+ * Revision 2.55  2007/09/12 23:02:00  rjongbloed
  * Code clean up, thanks Hannes.
  *
  * Revision 2.54  2007/09/12 19:08:53  ykiryanov
@@ -1492,13 +1496,12 @@ H323AudioPluginCapability::H323AudioPluginCapability(const PluginCodec_Definitio
 // this constructor is only used when creating a capability without a codec
 H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaFormat,
                                                      const PString & _baseName,
-                                                     unsigned _pluginSubType)
-  : H323AudioCapability(), H323PluginCapabilityInfo(_baseName),
-    pluginSubType(_pluginSubType)
+                                                     unsigned _type)
+  : H323AudioCapability(), H323PluginCapabilityInfo(_baseName)
 { 
   for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
-    if (audioMaps[i].pluginCapType == (int)_pluginSubType) { 
-      h323subType = audioMaps[i].h323SubType;
+    if (audioMaps[i].pluginCapType == (int)_type) { 
+      pluginSubType = audioMaps[i].h323SubType;
       break;
     }
   }
@@ -1525,42 +1528,40 @@ unsigned H323AudioPluginCapability::GetSubType() const
 // Class for handling G.723.1 codecs
 //
 
-class H323PluginG7231Capability : public H323AudioPluginCapability
+H323PluginG7231Capability::H323PluginG7231Capability(const PluginCodec_Definition * _encoderCodec,
+                          const PluginCodec_Definition * _decoderCodec,
+                          BOOL _annexA)
+  : H323AudioPluginCapability(_encoderCodec, _decoderCodec, H245_AudioCapability::e_g7231),
+    annexA(_annexA)
+{ }
+
+// this constructor is used for creating empty codecs
+H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA)
+  : H323AudioPluginCapability(fmt, fmt, H245_AudioCapability::e_g7231),
+    annexA(_annexA)
+{ }
+
+PObject * H323PluginG7231Capability::Clone() const
+{ return new H323PluginG7231Capability(*this); }
+
+BOOL H323PluginG7231Capability::OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
 {
-  PCLASSINFO(H323PluginG7231Capability, H323AudioPluginCapability);
-  public:
-    H323PluginG7231Capability(const PluginCodec_Definition * _encoderCodec,
-                              const PluginCodec_Definition * _decoderCodec,
-                              BOOL _annexA = TRUE)
-      : H323AudioPluginCapability(_encoderCodec, _decoderCodec, H245_AudioCapability::e_g7231),
-        annexA(_annexA)
-      { }
+  cap.SetTag(H245_AudioCapability::e_g7231);
+  H245_AudioCapability_g7231 & g7231 = cap;
+  g7231.m_maxAl_sduAudioFrames = packetSize;
+  g7231.m_silenceSuppression = annexA;
+  return TRUE;
+}
 
-    virtual PObject * Clone() const
-    { return new H323PluginG7231Capability(*this); }
-
-    virtual BOOL OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
-    {
-      cap.SetTag(H245_AudioCapability::e_g7231);
-      H245_AudioCapability_g7231 & g7231 = cap;
-      g7231.m_maxAl_sduAudioFrames = packetSize;
-      g7231.m_silenceSuppression = annexA;
-      return TRUE;
-    }
-
-    virtual BOOL OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize)
-    {
-      if (cap.GetTag() != H245_AudioCapability::e_g7231)
-        return FALSE;
-      const H245_AudioCapability_g7231 & g7231 = cap;
-      packetSize = g7231.m_maxAl_sduAudioFrames;
-      annexA = g7231.m_silenceSuppression;
-      return TRUE;
-    }
-
-  protected:
-    BOOL annexA;
-};
+BOOL H323PluginG7231Capability::OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize)
+{
+  if (cap.GetTag() != H245_AudioCapability::e_g7231)
+    return FALSE;
+  const H245_AudioCapability_g7231 & g7231 = cap;
+  packetSize = g7231.m_maxAl_sduAudioFrames;
+  annexA = g7231.m_silenceSuppression;
+  return TRUE;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
