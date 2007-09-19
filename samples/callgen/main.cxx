@@ -20,6 +20,9 @@
  * Contributor(s): Equivalence Pty. Ltd.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2  2007/09/19 22:52:39  rjongbloed
+ * Fixed minor issues with console output.
+ *
  * Revision 1.1  2007/09/18 12:17:44  rjongbloed
  * Added call generator
  *
@@ -474,8 +477,8 @@ void CallThread::Main()
     PString token;
     PTRACE(1, "CallGen\tMaking call to " << destination);
     unsigned totalAttempts = ++callgen.totalAttempts;
-    if (!callgen.manager.SetUpCall("ivr:*", destination, token))
-      PError << setw(3) << index << ": Call creation to " << destination << " failed" << endl;
+    if (!callgen.manager.SetUpCall("ivr:*", destination, token, this))
+      OUTPUT(index, token, "Failed to start call to " << destination)
     else {
       BOOL stopping = FALSE;
 
@@ -547,19 +550,9 @@ void CallThread::Stop()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalCall *MyManager:: CreateCall()
+OpalCall * MyManager:: CreateCall(void * userData)
 {
-  return new MyCall(*this);
-}
-
-
-void MyManager::OnEstablishedCall(OpalCall & call)
-{
-  PSafePtr<OpalConnection> connection = call.GetConnection(call.GetPartyA().NumCompare("IVR/") == EqualTo ? 1 : 0, PSafeReadOnly);
-  OUTPUT("", call.GetToken(), "Established \"" << connection->GetRemotePartyName() << "\""
-                                    " " << connection->GetRemotePartyAddress() <<
-                                    " active=" << activeCalls.GetSize() <<
-                                    " total=" << ++CallGen::Current().totalEstablished);
+  return new MyCall(*this, (CallThread *)userData);
 }
 
 
@@ -572,11 +565,34 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream &
 
 ///////////////////////////////////////////////////////////////////////////////
 
+MyCall::MyCall(MyManager & mgr, CallThread * caller)
+  : OpalCall(mgr)
+  , manager(mgr)
+  , index(caller != NULL ? caller->index : 0)
+  , openedTransmitMedia(0)
+  , openedReceiveMedia(0)
+  , receivedMedia(0)
+{
+}
+
+
+void MyCall::OnEstablishedCall()
+{
+  PSafePtr<OpalConnection> connection = GetConnection(GetPartyA().NumCompare("IVR/") == EqualTo ? 1 : 0, PSafeReadOnly);
+
+  OUTPUT(index, GetToken(), "Established \"" << connection->GetRemotePartyName() << "\""
+                                  " " << connection->GetRemotePartyAddress() <<
+                                    " active=" << manager.GetActiveCalls() <<
+                                    " total=" << ++CallGen::Current().totalEstablished);
+  OpalCall::OnEstablishedCall();
+}
+
+
 void MyCall::OnReleased(OpalConnection & connection)
 {
-  OUTPUT("", GetToken(), "Cleared \"" << connection.GetRemotePartyName() << "\""
-                                  " " << connection.GetRemotePartyAddress() <<
-                           " reason=" << connection.GetCallEndReason());
+  OUTPUT(index, GetToken(), "Cleared \"" << connection.GetRemotePartyName() << "\""
+                                     " " << connection.GetRemotePartyAddress() <<
+                              " reason=" << connection.GetCallEndReason());
 
   PTextFile & cdrFile = CallGen::Current().cdrFile;
 
@@ -643,7 +659,7 @@ BOOL MyCall::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & st
 {
   (stream.IsSink() ? openedTransmitMedia : openedReceiveMedia) = PTime();
 
-  OUTPUT("", connection.GetCall().GetToken(),
+  OUTPUT(index, connection.GetCall().GetToken(),
          "Opened " << (stream.IsSink() ? "transmitter" : "receiver")
                    << " for " << stream.GetMediaFormat());
 
@@ -655,7 +671,7 @@ void MyCall::OnRTPStatistics(const OpalConnection & connection, const RTP_Sessio
 {
   if (receivedMedia.GetTimeInSeconds() == 0 && session.GetPacketsReceived() > 0) {
     receivedMedia = PTime();
-    OUTPUT("", connection.GetCall().GetToken(), "Received media");
+    OUTPUT(index, connection.GetCall().GetToken(), "Received media");
 
     const RTP_UDP * udpSess = dynamic_cast<const RTP_UDP *>(&session);
     if (udpSess != NULL) 
