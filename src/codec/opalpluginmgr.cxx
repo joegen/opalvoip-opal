@@ -25,7 +25,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2025.2.1  2007/08/09 00:54:04  csoutheren
+ * Revision 1.2025.2.2  2007/09/19 12:05:37  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ * (backport from head)
+ *
+ * Revision 2.24.2.1  2007/08/09 00:54:04  csoutheren
  * Removed unused code
  *
  * Revision 2.24  2007/05/12 03:57:34  rjongbloed
@@ -1229,28 +1234,6 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
 
 #if OPAL_H323
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Helper class for handling plugin capabilities
-//
-
-class H323PluginCapabilityInfo
-{
-  public:
-    H323PluginCapabilityInfo(PluginCodec_Definition * _encoderCodec,
-                             PluginCodec_Definition * _decoderCodec);
-
-    H323PluginCapabilityInfo(const PString & _baseName);
-
-    const PString & GetFormatName() const
-    { return capabilityFormatName; }
-
-  protected:
-    PluginCodec_Definition * encoderCodec;
-    PluginCodec_Definition * decoderCodec;
-    PString                  capabilityFormatName;
-};
-
 #if OPAL_AUDIO
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1258,54 +1241,39 @@ class H323PluginCapabilityInfo
 // Class for handling most audio plugin capabilities
 //
 
-class H323AudioPluginCapability : public H323AudioCapability,
-                                  public H323PluginCapabilityInfo
-{
-  PCLASSINFO(H323AudioPluginCapability, H323AudioCapability);
-  public:
-    H323AudioPluginCapability(PluginCodec_Definition * _encoderCodec,
-                         PluginCodec_Definition * _decoderCodec,
-                         unsigned _pluginSubType)
-      : H323AudioCapability(), 
-        H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
-        pluginSubType(_pluginSubType)
-      { 
-        SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
-        // _encoderCodec->recommendedFramesPerPacket
+H323AudioPluginCapability::H323AudioPluginCapability(PluginCodec_Definition * _encoderCodec,
+                     PluginCodec_Definition * _decoderCodec,
+                     unsigned _pluginSubType)
+  : H323AudioCapability(), 
+    H323PluginCapabilityInfo(_encoderCodec, _decoderCodec),
+    pluginSubType(_pluginSubType)
+  { 
+    SetTxFramesInPacket(_decoderCodec->maxFramesPerPacket);
+    // _encoderCodec->recommendedFramesPerPacket
+  }
+
+// this constructor is only used when creating a capability without a codec
+H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaFormat, const PString & _baseName,
+                     unsigned _type)
+  : H323AudioCapability(), H323PluginCapabilityInfo(_baseName)
+  { 
+    for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
+      if (audioMaps[i].pluginCapType == (int)_type) { 
+        pluginSubType = audioMaps[i].h323SubType;
+        break;
       }
+    }
+    rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
+  }
 
-    // this constructor is only used when creating a capability without a codec
-    H323AudioPluginCapability(const PString & _mediaFormat, const PString & _baseName,
-                         unsigned maxFramesPerPacket, unsigned /*recommendedFramesPerPacket*/,
-                         unsigned _pluginSubType)
-      : H323AudioCapability(), 
-        H323PluginCapabilityInfo(_baseName),
-        pluginSubType(_pluginSubType)
-      { 
-        for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
-          if (audioMaps[i].pluginCapType == (int)_pluginSubType) { 
-            h323subType = audioMaps[i].h323SubType;
-            break;
-          }
-        }
-        rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
-        SetTxFramesInPacket(maxFramesPerPacket);
-        // recommendedFramesPerPacket
-      }
+PObject * H323AudioPluginCapability::Clone() const
+{ return new H323AudioPluginCapability(*this); }
 
-    virtual PObject * Clone() const
-    { return new H323AudioPluginCapability(*this); }
+PString H323AudioPluginCapability::GetFormatName() const
+{ return H323PluginCapabilityInfo::GetFormatName();}
 
-    virtual PString GetFormatName() const
-    { return H323PluginCapabilityInfo::GetFormatName();}
-
-    virtual unsigned GetSubType() const
-    { return pluginSubType; }
-
-  protected:
-    unsigned pluginSubType;
-    unsigned h323subType;   // only set if using capability without codec
-};
+unsigned H323AudioPluginCapability::GetSubType() const
+{ return H323AudioPluginCapability::pluginSubType; }
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -1362,59 +1330,56 @@ class H323CodecPluginGenericAudioCapability : public H323GenericAudioCapability,
 // Class for handling G.723.1 codecs
 //
 
-class H323PluginG7231Capability : public H323AudioPluginCapability
+H323PluginG7231Capability::H323PluginG7231Capability(PluginCodec_Definition * _encoderCodec,
+                           PluginCodec_Definition * _decoderCodec,
+                           BOOL _annexA)
+  : H323AudioPluginCapability(_encoderCodec, _decoderCodec, H245_AudioCapability::e_g7231),
+    annexA(_annexA)
+{ }
+
+H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA)
+  : H323AudioPluginCapability(fmt, fmt, H245_AudioCapability::e_g7231),
+    annexA(_annexA)
+{ }
+
+PObject::Comparison H323PluginG7231Capability::Compare(const PObject & obj) const
 {
-  PCLASSINFO(H323PluginG7231Capability, H323AudioPluginCapability);
-  public:
-    H323PluginG7231Capability(PluginCodec_Definition * _encoderCodec,
-                               PluginCodec_Definition * _decoderCodec,
-                               BOOL _annexA = TRUE)
-      : H323AudioPluginCapability(_encoderCodec, _decoderCodec, H245_AudioCapability::e_g7231),
-        annexA(_annexA)
-      { }
+  if (!PIsDescendant(&obj, H323PluginG7231Capability))
+    return LessThan;
 
-    Comparison Compare(const PObject & obj) const
-    {
-      if (!PIsDescendant(&obj, H323PluginG7231Capability))
-        return LessThan;
+  Comparison result = H323AudioCapability::Compare(obj);
+  if (result != EqualTo)
+    return result;
 
-      Comparison result = H323AudioCapability::Compare(obj);
-      if (result != EqualTo)
-        return result;
+  PINDEX otherAnnexA = ((const H323PluginG7231Capability &)obj).annexA;
+  if (annexA < otherAnnexA)
+    return LessThan;
+  if (annexA > otherAnnexA)
+    return GreaterThan;
+  return EqualTo;
+}
 
-      PINDEX otherAnnexA = ((const H323PluginG7231Capability &)obj).annexA;
-      if (annexA < otherAnnexA)
-        return LessThan;
-      if (annexA > otherAnnexA)
-        return GreaterThan;
-      return EqualTo;
-    }
+PObject * H323PluginG7231Capability::Clone() const
+{ return new H323PluginG7231Capability(*this); }
 
-    virtual PObject * Clone() const
-    { return new H323PluginG7231Capability(*this); }
+BOOL H323PluginG7231Capability::OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
+{
+  cap.SetTag(H245_AudioCapability::e_g7231);
+  H245_AudioCapability_g7231 & g7231 = cap;
+  g7231.m_maxAl_sduAudioFrames = packetSize;
+  g7231.m_silenceSuppression = annexA;
+  return TRUE;
+}
 
-    virtual BOOL OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
-    {
-      cap.SetTag(H245_AudioCapability::e_g7231);
-      H245_AudioCapability_g7231 & g7231 = cap;
-      g7231.m_maxAl_sduAudioFrames = packetSize;
-      g7231.m_silenceSuppression = annexA;
-      return TRUE;
-    }
-
-    virtual BOOL OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize)
-    {
-      if (cap.GetTag() != H245_AudioCapability::e_g7231)
-        return FALSE;
-      const H245_AudioCapability_g7231 & g7231 = cap;
-      packetSize = g7231.m_maxAl_sduAudioFrames;
-      annexA = g7231.m_silenceSuppression;
-      return TRUE;
-    }
-
-  protected:
-    BOOL annexA;
-};
+BOOL H323PluginG7231Capability::OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize)
+{
+  if (cap.GetTag() != H245_AudioCapability::e_g7231)
+    return FALSE;
+  const H245_AudioCapability_g7231 & g7231 = cap;
+  packetSize = g7231.m_maxAl_sduAudioFrames;
+  annexA = g7231.m_silenceSuppression;
+  return TRUE;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
