@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2019  2007/09/12 04:19:53  rjongbloed
+ * Revision 1.2020  2007/09/19 10:43:00  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ *
+ * Revision 2.18  2007/09/12 04:19:53  rjongbloed
  * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
  *   the plug in capabilities, that then do not get updated values from the master
  *   list, or worse from the user modified master list, causing much confusion.
@@ -502,8 +506,52 @@ class H323AudioPluginCapability : public H323AudioCapability,
 
   protected:
     unsigned pluginSubType;
-    unsigned h323subType;   // only set if using capability without codec
+    //unsigned h323subType;   // only set if using capability without codec
 };
+
+#define OPAL_DECLARE_EMPTY_AUDIO_CAPABILITY(fmt, type) \
+class fmt##_CapabilityRegisterer { \
+  public: \
+    fmt##_CapabilityRegisterer() \
+    { H323CapabilityFactory::Register(fmt, new H323AudioPluginCapability(fmt, fmt, type)); } \
+}; \
+
+#define OPAL_DEFINE_EMPTY_AUDIO_CAPABILITY(fmt) \
+static fmt##_CapabilityRegisterer fmt##_CapabilityRegisterer_instance; \
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling G.723.1 codecs
+//
+
+class H323PluginG7231Capability : public H323AudioPluginCapability
+{
+  PCLASSINFO(H323PluginG7231Capability, H323AudioPluginCapability);
+  public:
+    H323PluginG7231Capability(const PluginCodec_Definition * _encoderCodec,
+                              const PluginCodec_Definition * _decoderCodec,
+                              BOOL _annexA = TRUE);
+
+    // this constructor is used for creating empty codecs
+    H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA = TRUE);
+
+    virtual PObject * Clone() const;
+    virtual BOOL OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const;
+    virtual BOOL OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
+
+  protected:
+    BOOL annexA;
+};
+
+#define OPAL_DECLARE_EMPTY_G7231_CAPABILITY(fmt, annex) \
+class fmt##_CapabilityRegisterer { \
+  public: \
+    fmt##_CapabilityRegisterer() \
+    { H323CapabilityFactory::Register(fmt, new H323PluginG7231Capability(fmt, annex)); } \
+}; \
+
+#define OPAL_DEFINE_EMPTY_G7231_CAPABILITY(fmt) \
+static fmt##_CapabilityRegisterer fmt##_CapabilityRegisterer_instance; \
 
 //////////////////////////////////////////////////////////////////////////////
 //
