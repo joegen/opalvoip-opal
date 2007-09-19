@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2005.4.1  2007/08/15 06:21:39  csoutheren
+ * Revision 1.2005.4.2  2007/09/19 12:05:18  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ * (backport from head)
+ *
+ * Revision 2.4.4.1  2007/08/15 06:21:39  csoutheren
  * Fix link problem on old compilers caused by PWLib change
  *
  * Revision 2.4  2006/10/02 13:30:50  rjongbloed
@@ -136,6 +141,117 @@ class OpalPluginCodecManager : public PPluginModuleManager
     CapabilityCreateListType capabilityCreateList;
 #endif
 };
+
+class OPALDynaLink : public PDynaLink
+{
+  PCLASSINFO(OPALDynaLink, PDynaLink)
+    
+ public:
+  OPALDynaLink(const char * basename, const char * reason = NULL);
+
+  virtual void Load();
+  virtual BOOL IsLoaded()
+  { PWaitAndSignal m(processLock); return isLoadedOK; }
+  virtual BOOL LoadPlugin (const PString & fileName);
+
+protected:
+  PMutex processLock;
+  BOOL isLoadedOK;
+  const char * baseName;
+  const char * reason;
+};
+
+#if OPAL_H323
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Helper class for handling plugin capabilities
+//
+
+class H323PluginCapabilityInfo
+{
+  public:
+    H323PluginCapabilityInfo(PluginCodec_Definition * _encoderCodec,
+                             PluginCodec_Definition * _decoderCodec);
+
+    H323PluginCapabilityInfo(const PString & _baseName);
+
+    const PString & GetFormatName() const
+    { return capabilityFormatName; }
+
+  protected:
+    PluginCodec_Definition * encoderCodec;
+    PluginCodec_Definition * decoderCodec;
+    PString                  capabilityFormatName;
+};
+
+class H323AudioPluginCapability : public H323AudioCapability,
+                                  public H323PluginCapabilityInfo
+{
+  PCLASSINFO(H323AudioPluginCapability, H323AudioCapability);
+  public:
+    H323AudioPluginCapability(PluginCodec_Definition * _encoderCodec,
+                         PluginCodec_Definition * _decoderCodec,
+                         unsigned _pluginSubType);
+
+    // this constructor is only used when creating a capability without a codec
+    H323AudioPluginCapability(const PString & _mediaFormat, const PString & _baseName, unsigned _type);
+
+    virtual PObject * Clone() const;
+    virtual PString GetFormatName() const;
+    virtual unsigned GetSubType() const;
+
+  protected:
+    unsigned pluginSubType;
+    //unsigned h323subType;   // only set if using capability without codec
+};
+
+#define OPAL_DECLARE_EMPTY_AUDIO_CAPABILITY(fmt, type) \
+class fmt##_CapabilityRegisterer { \
+  public: \
+    fmt##_CapabilityRegisterer() \
+    { H323CapabilityFactory::Register(fmt, new H323AudioPluginCapability(fmt, fmt, type)); } \
+}; \
+
+#define OPAL_DEFINE_EMPTY_AUDIO_CAPABILITY(fmt) \
+static fmt##_CapabilityRegisterer fmt##_CapabilityRegisterer_instance; \
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// Class for handling G.723.1 codecs
+//
+
+class H323PluginG7231Capability : public H323AudioPluginCapability
+{
+  PCLASSINFO(H323PluginG7231Capability, H323AudioPluginCapability);
+  public:
+    H323PluginG7231Capability(PluginCodec_Definition * _encoderCodec,
+                               PluginCodec_Definition * _decoderCodec,
+                               BOOL _annexA = TRUE);
+
+    H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA = TRUE);
+
+    Comparison Compare(const PObject & obj) const;
+    virtual PObject * Clone() const;
+    virtual BOOL OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const;
+    virtual BOOL OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
+
+  protected:
+    BOOL annexA;
+};
+
+#define OPAL_DECLARE_EMPTY_G7231_CAPABILITY(fmt, annex) \
+class fmt##_CapabilityRegisterer { \
+  public: \
+    fmt##_CapabilityRegisterer() \
+    { H323CapabilityFactory::Register(fmt, new H323PluginG7231Capability(fmt, annex)); } \
+}; \
+
+#define OPAL_DEFINE_EMPTY_G7231_CAPABILITY(fmt) \
+static fmt##_CapabilityRegisterer fmt##_CapabilityRegisterer_instance; \
+
+
+#endif // OPAL_H323
 
 //////////////////////////////////////////////////////
 //

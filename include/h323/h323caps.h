@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2019  2007/04/10 05:15:53  rjongbloed
+ * Revision 1.2019.2.1  2007/09/19 12:05:18  csoutheren
+ * Exposed G.7231 capability class
+ * Added macros to create empty transcoders and capabilities
+ * (backport from head)
+ *
+ * Revision 2.18  2007/04/10 05:15:53  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -2498,12 +2503,6 @@ class H323Capabilities : public PObject
 typedef PFactory<H323Capability, std::string> H323CapabilityFactory;
 
 #define H323_REGISTER_CAPABILITY(cls, capName)   static H323CapabilityFactory::Worker<cls> cls##Factory(capName, true); \
-
-#define H323_DECLARE_CAPABILITY_CLASS(cls, anc) \
-  class cls : public anc \
-  { \
-    public: \
-      cls() \
 
 #endif // __OPAL_H323CAPS_H
 
