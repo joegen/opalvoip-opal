@@ -20,6 +20,9 @@
  * Contributor(s): Equivalence Pty. Ltd.
  *
  * $Log: main.h,v $
+ * Revision 1.2  2007/09/19 22:52:39  rjongbloed
+ * Fixed minor issues with console output.
+ *
  * Revision 1.1  2007/09/18 12:17:44  rjongbloed
  * Added call generator
  *
@@ -28,21 +31,22 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
+class MyManager;
+class CallThread;
+
 class MyCall : public OpalCall
 {
     PCLASSINFO(MyCall, OpalCall);
   public:
-    MyCall(OpalManager & manager)
-      : OpalCall(manager)
-      , openedTransmitMedia(0)
-      , openedReceiveMedia(0)
-      , receivedMedia(0)
-    { }
+    MyCall(MyManager & manager, CallThread * caller);
 
+    virtual void OnEstablishedCall();
     virtual void OnReleased(OpalConnection & connection);
     virtual BOOL OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session);
 
+    MyManager          & manager;
+    unsigned             index;
     PTime                openedTransmitMedia;
     PTime                openedReceiveMedia;
     PTime                receivedMedia;
@@ -59,10 +63,11 @@ class MyManager : public OpalManager
     MyManager()
       { }
 
-    virtual OpalCall * CreateCall();
-    virtual void OnEstablishedCall(OpalCall & call);
+    virtual OpalCall * CreateCall(void * userData);
 
     virtual BOOL OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+
+    PINDEX GetActiveCalls() const { return activeCalls.GetSize(); }
 };
 
 
@@ -100,7 +105,6 @@ class CallThread : public PThread
     void Main();
     void Stop();
 
-  protected:
     PStringArray destinations;
     unsigned     index;
     CallParams   params;
