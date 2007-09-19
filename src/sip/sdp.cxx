@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2060  2007/09/18 10:03:38  rjongbloed
+ * Revision 1.2061  2007/09/19 06:28:48  csoutheren
+ * Do not send ptime, because it's broken
+ *
+ * Revision 2.59  2007/09/18 10:03:38  rjongbloed
  * Fixed tiny little memory leak in SDP
  *
  * Revision 2.58  2007/09/14 06:09:08  csoutheren
@@ -915,8 +918,11 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
       }
     }
 
-    if (ptime > 0)
-      str << "a=ptime:" << ptime << "\r\n";
+    // don't output ptime parameters, as some Cisco endpoints barf on it
+    // and it's not very well-defined anyway
+    //if (ptime > 0)
+    //  str << "a=ptime:" << ptime << "\r\n";
+
     if (maxptime < UINT_MAX)
       str << "a=maxptime:" << maxptime << "\r\n";
 
