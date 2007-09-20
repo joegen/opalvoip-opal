@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2114  2007/08/13 16:19:08  csoutheren
+ * Revision 1.2115  2007/09/20 04:29:31  rjongbloed
+ * Added log for reason RTP session is not created.
+ *
+ * Revision 2.113  2007/08/13 16:19:08  csoutheren
  * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
  *
  * Revision 2.112  2007/07/26 00:39:30  csoutheren
@@ -1407,6 +1410,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
                            rtpqos)) {
     nextPort = manager.GetRtpIpPortPair();
     if (nextPort == firstPort) {
+      PTRACE(1, "OpalCon\tNo ports available for RTP session " << sessionID << " for " << *this);
       delete rtpSession;
       return NULL;
     }
