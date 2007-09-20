@@ -24,7 +24,10 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2067  2007/09/10 00:11:14  rjongbloed
+ * Revision 1.2068  2007/09/20 07:52:26  rjongbloed
+ * Fixed correct initial buffer size for RTP media stream packets.
+ *
+ * Revision 2.66  2007/09/10 00:11:14  rjongbloed
  * AddedOpalMediaFormat::IsTransportable() function as better test than simply
  *   checking the payload type, condition is more complex.
  *
@@ -710,6 +713,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
+  defaultDataSize = RTP_DataFrame::MaxEthernetPayloadSize;
 }
 
 
