@@ -1,7 +1,7 @@
 Building OpenPhone
 ==================
 
-Last updated, 11 August 2006
+Last updated, 20 September 2007
 
 
 OpenPhone is based onw wxWidgets so as well as all the usual PWLib and
@@ -13,11 +13,6 @@ You can get wxWidgets from http://www.wxwidgets.org
 
 Before we start, the assumption is (since you are reading this) that you
 already have PWLib and OPAL installed, AND BUILT.
-
-Note: you will need to make sure PWlib is built with the "Expat XML"
-configuration option enabled. If you get errors like "unresolved external
-symbol _XML_ParserFree referenced" then this is the problem. The expat
-library can be found the "external/expat" of the OpenH323 CVS.
 
 
 For Windows:
