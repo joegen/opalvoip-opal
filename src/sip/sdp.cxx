@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2061  2007/09/19 06:28:48  csoutheren
+ * Revision 1.2062  2007/09/20 23:09:03  rjongbloed
+ * Fix compilation without fax support enabled.
+ *
+ * Revision 2.60  2007/09/19 06:28:48  csoutheren
  * Do not send ptime, because it's broken
  *
  * Revision 2.59  2007/09/18 10:03:38  rjongbloed
@@ -339,11 +342,13 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
 /////////////////////////////////////////////////////////
 
 SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _name)
-  : payloadType(pt),
-    clockRate(0),
-    encodingName(_name),
-    nteSet(TRUE),
-    nseSet(TRUE)
+  : payloadType(pt)
+  , clockRate(0)
+  , encodingName(_name)
+  , nteSet(TRUE)
+#if OPAL_T38FAX
+  , nseSet(TRUE)
+#endif
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     AddNTEString("0-15,32-49");
@@ -359,12 +364,14 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
 SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
                                RTP_DataFrame::PayloadTypes pt,
                                const char * nxeString)
-  : mediaFormat(fmt),
-    payloadType(pt),
-    clockRate(fmt.GetClockRate()),
-    encodingName(fmt.GetEncodingName()),
-    nteSet(TRUE),
-    nseSet(TRUE)
+  : mediaFormat(fmt)
+  , payloadType(pt)
+  , clockRate(fmt.GetClockRate())
+  , encodingName(fmt.GetEncodingName())
+  , nteSet(TRUE)
+#if OPAL_T38FAX
+  , nseSet(TRUE)
+#endif
 {
   if (nxeString != NULL) {
 #if OPAL_T38FAX
