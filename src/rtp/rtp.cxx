@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rtp.cxx,v $
- * Revision 1.2073  2007/09/09 23:37:20  rjongbloed
+ * Revision 1.2074  2007/09/20 07:51:12  rjongbloed
+ * Changed read of too large packet on RTP/UDP port to non-fatal error.
+ *
+ * Revision 2.72  2007/09/09 23:37:20  rjongbloed
  * Fixed confusion over MaxPayloadType meaning
  *
  * Revision 2.71  2007/09/05 14:00:32  csoutheren
@@ -2368,8 +2371,13 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   switch (socket.GetErrorNumber()) {
     case ECONNRESET :
     case ECONNREFUSED :
-      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
-             << channelName << " port on remote not ready.");
+      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName
+             << " port on remote not ready.");
+      return RTP_Session::e_IgnorePacket;
+
+    case EMSGSIZE :
+      PTRACE(2, "RTP_UDP\tSession " << sessionID << ", " << channelName
+             << " read packet too large for buffer of " << frame.GetSize() << " bytes.");
       return RTP_Session::e_IgnorePacket;
 
     case EAGAIN :
@@ -2377,8 +2385,8 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
       return RTP_Session::e_IgnorePacket;
 
     default:
-      PTRACE(1, "RTP_UDP\t" << channelName << " read error ("
-             << socket.GetErrorNumber(PChannel::LastReadError) << "): "
+      PTRACE(1, "RTP_UDP\tSession " << sessionID << ", " << channelName
+             << " read error (" << socket.GetErrorNumber(PChannel::LastReadError) << "): "
              << socket.GetErrorText(PChannel::LastReadError));
       return RTP_Session::e_AbortTransport;
   }
