@@ -13,8 +13,8 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -23,14 +23,14 @@
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="NDEBUG;PTRACING"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING=1"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
-				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -39,11 +39,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ptlib.lib wxmsw26_xrc.lib wxmsw26_html.lib wxmsw26_adv.lib wxmsw26_core.lib wxbase26_xml.lib wxbase26.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wxexpat.lib comctl32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\$(Projectname).exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
@@ -83,8 +84,8 @@ exit 1
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -92,13 +93,14 @@ exit 1
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\mswd&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="_DEBUG;PTRACING"
+				PreprocessorDefinitions="_DEBUG;_WINDOWS;PTRACING=1"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
-				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
+				BrowseInformation="1"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="4"
@@ -108,12 +110,12 @@ exit 1
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ptlibd.lib wxmsw26d_xrc.lib wxmsw26d_html.lib wxmsw26d_adv.lib wxmsw26d_core.lib wxbase26d_xml.lib wxbase26d.lib wxtiffd.lib wxjpegd.lib wxpngd.lib wxzlibd.lib wxregexd.lib wxexpatd.lib comctl32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\$(Projectname).exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
@@ -153,8 +155,8 @@ exit 1
 		</Configuration>
 		<Configuration
 			Name="No Trace|Win32"
-			OutputDirectory=".\NoTrace"
-			IntermediateDirectory=".\NoTrace"
+			OutputDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
+			IntermediateDirectory="..\..\bin\$(ProjectName)\$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -163,14 +165,14 @@ exit 1
 				Optimization="2"
 				InlineFunctionExpansion="1"
 				AdditionalIncludeDirectories="&quot;$(WXDIR)\lib\vc_lib\msw&quot;;&quot;$(WXDIR)\include&quot;"
-				PreprocessorDefinitions="NDEBUG;PASN_NOPRINTON;PASN_LEANANDMEAN"
+				PreprocessorDefinitions="NDEBUG;_WINDOWS;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="TRUE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="TRUE"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderFile="$(IntDir)\$(ProjectName).pch"
-				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
+				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
 				CompileAs="0"/>
@@ -179,11 +181,12 @@ exit 1
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ptlib.lib wxmsw26_xrc.lib wxmsw26_html.lib wxmsw26_adv.lib wxmsw26_core.lib wxbase26_xml.lib wxbase26.lib wxtiff.lib wxjpeg.lib wxpng.lib wxzlib.lib wxregex.lib wxexpat.lib comctl32.lib rpcrt4.lib"
-				OutputFile="$(OutDir)\$(Projectname).exe"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="$(WXDIR)\lib\vc_lib"
-				ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
