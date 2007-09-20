@@ -20,6 +20,9 @@
  * Contributor(s): Equivalence Pty. Ltd.
  *
  * $Log: main.cxx,v $
+ * Revision 1.3  2007/09/20 04:35:58  rjongbloed
+ * Added check that there are enough RTP ports to support simultaneous calls.
+ *
  * Revision 1.2  2007/09/19 22:52:39  rjongbloed
  * Fixed minor issues with console output.
  *
@@ -211,6 +214,10 @@ void CallGen::Main()
   ivr->SetDefaultVXML("file://" + outgoingMessageFile);
 #endif
 
+  unsigned simultaneous = args.GetOptionString('m').AsUnsigned();
+  if (simultaneous == 0)
+    simultaneous = 1;
+
   if (args.HasOption('c')) {
     if (cdrFile.Open(args.GetOptionString('c'), PFile::WriteOnly, PFile::Create)) {
       cdrFile.SetPosition(0, PFile::End);
@@ -223,14 +230,22 @@ void CallGen::Main()
   }
 
   if (args.HasOption("tcp-base"))
-    h323->SetTCPPorts(args.GetOptionString("tcp-base").AsUnsigned(),
-                     args.GetOptionString("tcp-max").AsUnsigned());
+    manager.SetTCPPorts(args.GetOptionString("tcp-base").AsUnsigned(),
+                        args.GetOptionString("tcp-max").AsUnsigned());
   if (args.HasOption("udp-base"))
-    h323->SetUDPPorts(args.GetOptionString("udp-base").AsUnsigned(),
-                     args.GetOptionString("udp-max").AsUnsigned());
+    manager.SetUDPPorts(args.GetOptionString("udp-base").AsUnsigned(),
+                        args.GetOptionString("udp-max").AsUnsigned());
   if (args.HasOption("rtp-base"))
-    h323->SetRtpIpPorts(args.GetOptionString("rtp-base").AsUnsigned(),
-                       args.GetOptionString("rtp-max").AsUnsigned());
+    manager.SetRtpIpPorts(args.GetOptionString("rtp-base").AsUnsigned(),
+                          args.GetOptionString("rtp-max").AsUnsigned());
+  else {
+    // Make sure that there are enough RTP ports for the simultaneous calls
+    unsigned availablePorts = manager.GetRtpIpPortMax() - manager.GetRtpIpPortBase();
+    if (availablePorts < simultaneous*4) {
+      manager.SetRtpIpPorts(manager.GetRtpIpPortBase(), manager.GetRtpIpPortBase()+simultaneous*5);
+      cout << "Increasing RTP ports available from " << availablePorts << " to " << simultaneous*5 << endl;
+    }
+  }
 
   if (args.HasOption('D'))
     manager.SetMediaFormatMask(args.GetOptionString('D').Lines());
@@ -326,11 +341,8 @@ void CallGen::Main()
       return;
     }
 
-    unsigned number = args.GetOptionString('m').AsUnsigned();
-    if (number == 0)
-      number = 1;
-    cout << "Endpoint starting " << number << " simultaneous call";
-    if (number > 1)
+    cout << "Endpoint starting " << simultaneous << " simultaneous call";
+    if (simultaneous > 1)
       cout << 's';
     cout << ' ';
 
@@ -343,13 +355,13 @@ void CallGen::Main()
     if (params.repeat != 1)
       cout << 's';
     if (params.repeat != 0)
-      cout << ", grand total of " << number*params.repeat << " calls";
+      cout << ", grand total of " << simultaneous*params.repeat << " calls";
     cout << ".\n\n"
             "Press ENTER at any time to quit.\n\n"
          << endl;
 
     // create some threads to do calls, but start them randomly
-    for (unsigned idx = 0; idx < number; idx++) {
+    for (unsigned idx = 0; idx < simultaneous; idx++) {
       if (args.HasOption('C'))
         threadList.Append(new CallThread(idx+1, args.GetParameters(), params));
       else {
@@ -590,65 +602,68 @@ void MyCall::OnEstablishedCall()
 
 void MyCall::OnReleased(OpalConnection & connection)
 {
-  OUTPUT(index, GetToken(), "Cleared \"" << connection.GetRemotePartyName() << "\""
-                                     " " << connection.GetRemotePartyAddress() <<
-                              " reason=" << connection.GetCallEndReason());
+  if (connection.GetRemotePartyName().NumCompare("IVR/") != EqualTo) {
 
-  PTextFile & cdrFile = CallGen::Current().cdrFile;
+    OUTPUT(index, GetToken(), "Cleared \"" << connection.GetRemotePartyName() << "\""
+                                       " " << connection.GetRemotePartyAddress() <<
+                                " reason=" << connection.GetCallEndReason());
 
-  if (cdrFile.IsOpen()) {
-    static PMutex cdrMutex;
-    cdrMutex.Wait();
+    PTextFile & cdrFile = CallGen::Current().cdrFile;
 
-    if (cdrFile.GetLength() == 0)
-      cdrFile << "Call Start Time,"
-                 "Total duration,"
-                 "Media open transmit time,"
-                 "Media open received time,"
-                 "Media received time,"
-                 "ALERTING time,"
-                 "CONNECT time,"
-                 "Call End Reason,"
-                 "Remote party,"
-                 "Signalling gateway,"
-                 "Media gateway,"
-                 "Call Id,"
-                 "Call Token\n";
+    if (cdrFile.IsOpen()) {
+      static PMutex cdrMutex;
+      cdrMutex.Wait();
 
-    PTime setupTime = connection.GetSetupUpTime();
+      if (cdrFile.GetLength() == 0)
+        cdrFile << "Call Start Time,"
+                   "Total duration,"
+                   "Media open transmit time,"
+                   "Media open received time,"
+                   "Media received time,"
+                   "ALERTING time,"
+                   "CONNECT time,"
+                   "Call End Reason,"
+                   "Remote party,"
+                   "Signalling gateway,"
+                   "Media gateway,"
+                   "Call Id,"
+                   "Call Token\n";
 
-    cdrFile << setupTime.AsString("yyyy/M/d hh:mm:ss") << ','
-            << setprecision(1) << (connection.GetConnectionEndTime() - setupTime) << ',';
+      PTime setupTime = connection.GetSetupUpTime();
 
-    if (openedTransmitMedia.IsValid())
-      cdrFile << (openedTransmitMedia - setupTime);
-    cdrFile << ',';
+      cdrFile << setupTime.AsString("yyyy/M/d hh:mm:ss") << ','
+              << setprecision(1) << (connection.GetConnectionEndTime() - setupTime) << ',';
 
-    if (openedReceiveMedia.IsValid())
-      cdrFile << (openedReceiveMedia - setupTime);
-    cdrFile << ',';
+      if (openedTransmitMedia.IsValid())
+        cdrFile << (openedTransmitMedia - setupTime);
+      cdrFile << ',';
 
-    if (receivedMedia.IsValid())
-      cdrFile << (receivedMedia - setupTime);
-    cdrFile << ',';
+      if (openedReceiveMedia.IsValid())
+        cdrFile << (openedReceiveMedia - setupTime);
+      cdrFile << ',';
 
-    if (connection.GetAlertingTime().IsValid())
-      cdrFile << (connection.GetAlertingTime() - setupTime);
-    cdrFile << ',';
+      if (receivedMedia.IsValid())
+        cdrFile << (receivedMedia - setupTime);
+      cdrFile << ',';
 
-    if (connection.GetConnectionStartTime().IsValid())
-      cdrFile << (connection.GetConnectionStartTime() - setupTime);
-    cdrFile << ',';
+      if (connection.GetAlertingTime().IsValid())
+        cdrFile << (connection.GetAlertingTime() - setupTime);
+      cdrFile << ',';
 
-    cdrFile << connection.GetCallEndReason() << ','
-            << connection.GetRemotePartyName() << ','
-            << connection.GetRemotePartyAddress() << ','
-            << mediaGateway << ','
-            << connection.GetIdentifier() << ','
-            << connection.GetToken()
-            << endl;
+      if (connection.GetConnectionStartTime().IsValid())
+        cdrFile << (connection.GetConnectionStartTime() - setupTime);
+      cdrFile << ',';
 
-    cdrMutex.Signal();
+      cdrFile << connection.GetCallEndReason() << ','
+              << connection.GetRemotePartyName() << ','
+              << connection.GetRemotePartyAddress() << ','
+              << mediaGateway << ','
+              << connection.GetIdentifier() << ','
+              << connection.GetToken()
+              << endl;
+
+      cdrMutex.Signal();
+    }
   }
 
   OpalCall::OnReleased(connection);
