@@ -22,6 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.12  2007/09/20 00:34:37  rjongbloed
+ * Moved samples binary to common directory to make it easier to clean.
+ * Fixed "No Trace" builds.
+ *
  * Revision 1.11  2007/09/12 04:19:53  rjongbloed
  * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
  *   the plug in capabilities, that then do not get updated values from the master
@@ -651,16 +655,20 @@ void OpalCodecInfo::Main()
              "h-help."
              "i-info:"
              "m-mediaformats."
-             "o-output:"
              "p-pluginlist."
              "T-trancoders."
+#if PTRACING
              "t-trace."
+             "o-output:"
+#endif
              "V-video-test:"
              , FALSE);
 
+#if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
          PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
+#endif
 
   bool needHelp = true;
 
