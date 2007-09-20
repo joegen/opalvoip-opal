@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2261  2007/09/18 06:25:11  csoutheren
+ * Revision 1.2262  2007/09/20 23:47:31  rjongbloed
+ * Fixed MaCarthy Boolean || operator from preventing offering video if has audio.
+ *
+ * Revision 2.260  2007/09/18 06:25:11  csoutheren
  * Ensure non-matching SDP is handled correctly
  *
  * Revision 2.259  2007/09/10 00:11:14  rjongbloed
@@ -1348,38 +1351,35 @@ BOOL SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
   if (originalInvite->HasSDP()) {
     remoteSDP = originalInvite->GetSDP();
 
-    sdpOK = OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)
+    // Use |= to avoid McCarthy boolean || from not calling video/fax
+    sdpOK  = OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
 #if OPAL_VIDEO
-            || OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut)
+    sdpOK |= OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
 #endif
 #if OPAL_T38FAX
-            || OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut)
+    sdpOK |= OnSendSDPMediaDescription(remoteSDP, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID,  sdpOut);
 #endif
-            ;
   }
   
   else {
 
     // construct offer as per RFC 3261, para 14.2
+    // Use |= to avoid McCarthy boolean || from not calling video/fax
     SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-
-    sdpOK = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID)
+    sdpOK  = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
 #if OPAL_VIDEO
-            || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID)
+    sdpOK |= BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 #endif
 #if OPAL_T38FAX
-            || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID)
+    sdpOK |= BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
 #endif
-            ;
   }
 
-  if (!sdpOK) {
-    Release(EndedByCapabilityExchange);
-    return FALSE;
-  }
+  if (sdpOK)
+    return phase < ReleasingPhase; // abort if already in releasing phase
 
-  // abort if already in releasing phase
-  return phase < ReleasingPhase;
+  Release(EndedByCapabilityExchange);
+  return FALSE;
 }
 
 BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
@@ -2485,43 +2485,41 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 #endif
   }
 
-  BOOL sdpOK = FALSE;
+  BOOL sdpOK;
 
   if (originalInvite->HasSDP()) {
 
     // Try to send SDP media description for audio and video
+    // Use |= to avoid McCarthy boolean || from not calling video/fax
     SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-    sdpOK = OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut)
+    sdpOK  = OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
 #if OPAL_VIDEO
-            || OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut)
+    sdpOK |= OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
 #endif
 #if OPAL_T38FAX
-            || OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID, sdpOut)
+    sdpOK |= OnSendSDPMediaDescription(sdpIn, SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID,  sdpOut);
 #endif
-            ;
-
-    if (!sdpOK)
-      SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
   }
 
   else {
 
     // construct offer as per RFC 3261, para 14.2
-    SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
-    sdpOK  = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID)
+    // Use |= to avoid McCarthy boolean || from not calling video/fax
+    SDPSessionDescription *sdp = &sdpOut;
+    sdpOK  = BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
 #if OPAL_VIDEO
-           || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID)
+    sdpOK |= BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
 #endif
 #if OPAL_T38FAX
-           || BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID)
+    sdpOK |= BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
 #endif
-           ;
-
   }
 
   // send the 200 OK response
   if (sdpOK) 
     SendInviteOK(sdpOut);
+  else
+    SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
 }
 
 
