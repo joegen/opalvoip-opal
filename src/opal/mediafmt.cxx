@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2076  2007/09/18 03:20:11  rjongbloed
+ * Revision 1.2077  2007/09/20 04:26:36  rjongbloed
+ * Fixed missing mutex in video media format merge.
+ *
+ * Revision 2.75  2007/09/18 03:20:11  rjongbloed
  * Allow frame width/height to be altered by user.
  *
  * Revision 2.74  2007/09/10 03:15:04  rjongbloed
@@ -1320,6 +1323,8 @@ time_t OpalMediaFormat::GetCodecBaseTime() const
 
 ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
 {
+  PWaitAndSignal m(media_format_mutex);
+
   static const char * const SessionNames[] = { "", " Audio", " Video", " Data", " H.224" };
   static const int TitleWidth = 25;
 
@@ -1434,6 +1439,8 @@ PObject * OpalVideoFormat::Clone() const
 
 bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
 {
+  PWaitAndSignal m(media_format_mutex);
+
   if (!OpalMediaFormat::Merge(mediaFormat))
     return false;
 
