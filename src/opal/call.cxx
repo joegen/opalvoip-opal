@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2066  2007/09/18 10:06:03  rjongbloed
+ * Revision 1.2067  2007/09/20 04:32:36  rjongbloed
+ * Fixed issue with clearing a call before it has finished setting up.
+ *
+ * Revision 2.65  2007/09/18 10:06:03  rjongbloed
  * Fixed compiler warning
  *
  * Revision 2.64  2007/09/18 09:37:52  rjongbloed
@@ -307,15 +310,14 @@
 #endif
 
 OpalCall::OpalCall(OpalManager & mgr)
-  : manager(mgr),
-    myToken(manager.GetNextCallToken())
+  : manager(mgr)
+  , myToken(mgr.GetNextCallToken())
+  , isEstablished(FALSE)
+  , isClearing(FALSE)
+  , callEndReason(OpalConnection::NumCallEndReasons)
+  , endCallSyncPoint(NULL)
 {
   manager.activeCalls.SetAt(myToken, this);
-
-  isEstablished = FALSE;
-  endCallSyncPoint = NULL;
-
-  callEndReason = OpalConnection::NumCallEndReasons;
 
   connectionsActive.DisallowDeleteObjects();
 
@@ -332,9 +334,6 @@ OpalCall::~OpalCall()
   PTRACE(3, "Call\t" << *this << " destroyed.");
 
   manager.GetRecordManager().Close(myToken);
-
-  if (endCallSyncPoint != NULL)
-    endCallSyncPoint->Signal();
 }
 
 
@@ -360,14 +359,16 @@ void OpalCall::SetCallEndReason(OpalConnection::CallEndReason reason)
 
 void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 {
-  PTRACE(3, "Call\tClearing " << *this << " reason=" << reason);
+  PTRACE(3, "Call\tClearing " << (sync != NULL ? "(sync) " : "") << *this << " reason=" << reason);
 
   if (!LockReadWrite())
     return;
 
+  isClearing = TRUE;
+
   SetCallEndReason(reason);
 
-  if (sync != NULL) {
+  if (sync != NULL && !connectionsActive.IsEmpty()) {
     // only set the sync point if it is NULL
     if (endCallSyncPoint == NULL)
       endCallSyncPoint = sync;
@@ -386,6 +387,9 @@ void OpalCall::Clear(OpalConnection::CallEndReason reason, PSyncPoint * sync)
 void OpalCall::OnCleared()
 {
   manager.OnClearedCall(*this);
+
+  if (endCallSyncPoint != NULL)
+    endCallSyncPoint->Signal();
 }
 
 
@@ -395,7 +399,7 @@ BOOL OpalCall::OnSetUp(OpalConnection & connection)
 
   BOOL ok = FALSE;
 
-  if (!LockReadWrite())
+  if (isClearing || !LockReadWrite())
     return FALSE;
 
   partyA = connection.GetRemotePartyName();
@@ -418,9 +422,7 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnAlerting " << connection);
 
-  BOOL ok = FALSE;
-
-  if (!LockReadWrite())
+  if (isClearing || !LockReadWrite())
     return FALSE;
 
   partyB = connection.GetRemotePartyName();
@@ -429,6 +431,8 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
 
 
   BOOL hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, TRUE) != NULL;
+
+  BOOL ok = FALSE;
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
@@ -451,7 +455,7 @@ BOOL OpalCall::OnConnected(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnConnected " << connection);
 
-  if (!LockReadOnly())
+  if (isClearing || !LockReadOnly())
     return FALSE;
 
   BOOL ok = connectionsActive.GetSize() == 1 && !partyB.IsEmpty();
@@ -500,7 +504,7 @@ BOOL OpalCall::OnEstablished(OpalConnection & PTRACE_PARAM(connection))
   PTRACE(3, "Call\tOnEstablished " << connection);
 
   PSafeLockReadWrite lock(*this);
-  if (!lock.IsLocked())
+  if (isClearing || !lock.IsLocked())
     return FALSE;
 
   if (isEstablished)
@@ -626,7 +630,7 @@ BOOL OpalCall::PatchMediaStreams(const OpalConnection & connection,
   PTRACE(3, "Call\tPatchMediaStreams " << connection);
 
   PSafeLockReadOnly lock(*this);
-  if (!lock.IsLocked())
+  if (isClearing || !lock.IsLocked())
     return FALSE;
 
   OpalMediaPatch * patch = NULL;
@@ -677,7 +681,7 @@ void OpalCall::OnRTPStatistics(const OpalConnection & /*connection*/, const RTP_
 BOOL OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
                                      unsigned sessionID) const
 {
-  PTRACE(3, "Call\tCanDoMediaBypass " << connection << " session " << sessionID);
+  PTRACE(3, "Call\tIsMediaBypassPossible " << connection << " session " << sessionID);
 
   BOOL ok = FALSE;
 

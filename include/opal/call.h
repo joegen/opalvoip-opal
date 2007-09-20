@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.h,v $
- * Revision 1.2032  2007/09/18 09:37:52  rjongbloed
+ * Revision 1.2033  2007/09/20 04:32:36  rjongbloed
+ * Fixed issue with clearing a call before it has finished setting up.
+ *
+ * Revision 2.31  2007/09/18 09:37:52  rjongbloed
  * Propagated call backs for RTP statistics through OpalManager and OpalCall.
  *
  * Revision 2.30  2007/05/07 14:13:51  csoutheren
@@ -492,6 +495,7 @@ class OpalCall : public PSafeObject
     PString partyB;
     PTime   startTime;
     BOOL    isEstablished;
+    BOOL    isClearing;
 
     OpalConnection::CallEndReason callEndReason;
 
