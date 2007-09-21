@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2060  2007/09/18 12:52:34  rjongbloed
+ * Revision 1.2061  2007/09/21 00:51:38  rjongbloed
+ * Fixed weird divide by zero error on clock rate.
+ *
+ * Revision 2.59  2007/09/18 12:52:34  rjongbloed
  * Removed duplicate change logs
  *
  * Revision 2.58  2007/09/12 04:19:53  rjongbloed
@@ -949,7 +952,7 @@ class OpalMediaFormat : public PCaselessString
 
     /**Get the clock rate in Hz for this format.
       */
-    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption()); }
+    unsigned GetClockRate() const { return GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
 
     /**Get the number of options this media format has.
