@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.h,v $
- * Revision 1.2075  2007/08/22 09:01:18  csoutheren
+ * Revision 1.2076  2007/09/21 01:34:09  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
+ * Revision 2.74  2007/08/22 09:01:18  csoutheren
  * Allow setting of explicit From field in SIP
  *
  * Revision 2.73  2007/07/22 12:25:23  rjongbloed
@@ -680,18 +688,6 @@ class SIPConnection : public OpalConnection
       unsigned rtpSessionId
     );
 
-    SIPTransaction * GetAndLockTransaction (const PString & transactionID);
-
-    void AddTransaction(
-      SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), transaction); }
-
-    void RemoveTransaction(
-      SIPTransaction * transaction
-    ) { PWaitAndSignal m(transactionsMutex); transactions.SetAt(transaction->GetTransactionID(), NULL); }
-
-    PMutex & GetTransactionsMutex() { return transactionsMutex; }
-
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
@@ -781,13 +777,10 @@ class SIPConnection : public OpalConnection
     PSemaphore    pduSemaphore;
     PThread     * pduHandler;
 
-    PTimer             ackTimer;
-    PMutex             transactionsMutex;
-    SIPTransaction   * referTransaction;
-    PMutex             invitationsMutex;
-    SIPTransactionList forkedInvitations; // Not for re-INVITE
-    SIPTransactionDict transactions;
-    PAtomicInteger     lastSentCSeq;
+    PTimer                    ackTimer;
+    PSafePtr<SIPTransaction>  referTransaction;
+    PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
+    PAtomicInteger            lastSentCSeq;
 
     enum {
       ReleaseWithBYE,

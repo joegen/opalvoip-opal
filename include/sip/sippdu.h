@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2052  2007/08/24 06:38:17  csoutheren
+ * Revision 1.2053  2007/09/21 01:34:09  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
+ * Revision 2.51  2007/08/24 06:38:17  csoutheren
  * Add way to get empty DisplayName without always using default
  *
  * Revision 2.50  2007/07/02 04:07:58  rjongbloed
@@ -589,7 +597,7 @@ class SIPAuthentication : public PObject
 	Class provides methods for reading from and writing to transport.
  */
 
-class SIP_PDU : public PObject
+class SIP_PDU : public PSafeObject
 {
   PCLASSINFO(SIP_PDU, PObject);
   public:
@@ -896,7 +904,7 @@ class SIPTransaction : public SIP_PDU
 
     SIPEndPoint   & endpoint;
     OpalTransport & transport;
-    SIPConnection * connection;
+    PSafePtr<SIPConnection> connection;
 
     States   state;
     unsigned retry;
@@ -904,17 +912,12 @@ class SIPTransaction : public SIP_PDU
     PTimer   completionTimer;
 
     PSyncPoint completed;
-    PTimedMutex mutex;
 
     PTimeInterval retryTimeoutMin; 
     PTimeInterval retryTimeoutMax; 
 
     OpalTransportAddress localAddress;
 };
-
-
-PLIST(SIPTransactionList, SIPTransaction);
-PDICTIONARY(SIPTransactionDict, PString, SIPTransaction);
 
 
 /////////////////////////////////////////////////////////////////////////
