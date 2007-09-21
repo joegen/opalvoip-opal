@@ -24,6 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.h,v $
+ * Revision 1.7  2007/09/21 01:34:09  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
  * Revision 1.6  2007/09/04 11:54:49  csoutheren
  * Fixed compilation on Linux
  *
@@ -168,7 +176,7 @@ public:
 protected:
   SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
-  SIPTransaction            * request;
+  PSafePtr<SIPTransaction>    transaction;
   OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;
@@ -218,6 +226,7 @@ public:
 
   virtual void OnFailed(SIP_PDU::StatusCodes r);
 private:
+  void SendStatus(SIP_PDU::StatusCodes code);
   PDECLARE_NOTIFIER(PTimer, SIPRegisterHandler, OnExpireTimeout);
 };
 

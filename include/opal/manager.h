@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2066  2007/09/18 09:37:52  rjongbloed
+ * Revision 1.2067  2007/09/21 01:34:09  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
+ * Revision 2.65  2007/09/18 09:37:52  rjongbloed
  * Propagated call backs for RTP statistics through OpalManager and OpalCall.
  *
  * Revision 2.64  2007/07/20 05:49:57  rjongbloed
@@ -1363,11 +1371,10 @@ class OpalManager : public PObject
     PMutex     routeTableMutex;
 
     // Dynamic variables
-    PMutex inUseFlag;
-
     PList<OpalEndPoint> endpoints;
+    PReadWriteMutex     endpointsMutex;
 
-    unsigned     lastCallTokenID;
+    PAtomicInteger lastCallTokenID;
 
     class CallDict : public PSafeDictionary<PString, OpalCall>
     {
