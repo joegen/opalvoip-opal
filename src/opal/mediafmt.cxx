@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2077  2007/09/20 04:26:36  rjongbloed
+ * Revision 1.2078  2007/09/21 00:51:38  rjongbloed
+ * Fixed weird divide by zero error on clock rate.
+ *
+ * Revision 2.76  2007/09/20 04:26:36  rjongbloed
  * Fixed missing mutex in video media format merge.
  *
  * Revision 2.75  2007/09/18 03:20:11  rjongbloed
@@ -1092,7 +1095,8 @@ int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
   if (optInteger != NULL)
     return optInteger->GetValue();
 
-  return 0;
+  PAssertAlways(PInvalidCast);
+  return dflt;
 }
 
 
@@ -1117,6 +1121,7 @@ bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
     return true;
   }
 
+  PAssertAlways(PInvalidCast);
   return false;
 }
 
