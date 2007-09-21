@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2061  2007/06/29 06:59:57  rjongbloed
+ * Revision 1.2062  2007/09/21 01:34:09  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
+ * Revision 2.60  2007/06/29 06:59:57  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.59  2007/06/25 05:16:19  rjongbloed
@@ -340,6 +348,12 @@ BOOL OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/
 void OpalEndPoint::PrintOn(ostream & strm) const
 {
   strm << "EP<" << prefixName << '>';
+}
+
+
+BOOL OpalEndPoint::GarbageCollection()
+{
+  return connectionsActive.DeleteObjectsToBeRemoved();
 }
 
 

@@ -25,7 +25,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2098  2007/09/18 09:37:52  rjongbloed
+ * Revision 1.2099  2007/09/21 01:34:09  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
+ * Revision 2.97  2007/09/18 09:37:52  rjongbloed
  * Propagated call backs for RTP statistics through OpalManager and OpalCall.
  *
  * Revision 2.96  2007/09/18 02:24:24  rjongbloed
@@ -481,14 +489,23 @@ PCaselessString OpalProductInfo::AsString() const
 #endif
 
 OpalManager::OpalManager()
-  : defaultUserName(PProcess::Current().GetUserName()),
-    defaultDisplayName(defaultUserName),
-    mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder),
-    noMediaTimeout(0, 0, 5),     // Minutes
-    translationAddress(0),       // Invalid address to disable
-    activeCalls(*this)
+  : defaultUserName(PProcess::Current().GetUserName())
+  , defaultDisplayName(defaultUserName)
+#ifdef _WIN32
+  , rtpIpTypeofService(IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY)
+#else
+  , rtpIpTypeofService(IPTOS_LOWDELAY) // Don't use IPTOS_PREC_CRITIC_ECP on Unix platforms as then need to be root
+#endif
+  , minAudioJitterDelay(50)  // milliseconds
+  , maxAudioJitterDelay(250) // milliseconds
+  , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
+  , noMediaTimeout(0, 0, 5)     // Minutes
+  , translationAddress(0)       // Invalid address to disable
+  , stun(NULL)
+  , activeCalls(*this)
+  , clearingAllCalls(FALSE)
 #if OPAL_RTP_AGGREGATE
-    ,useRTPAggregation(TRUE)
+  , useRTPAggregation(TRUE)
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
@@ -497,20 +514,6 @@ OpalManager::OpalManager()
   // use dynamic port allocation by default
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
-
-  stun = NULL;
-
-  clearingAllCalls = FALSE;
-
-#ifdef _WIN32
-  rtpIpTypeofService = IPTOS_PREC_CRITIC_ECP|IPTOS_LOWDELAY;
-#else
-  // Don't use IPTOS_PREC_CRITIC_ECP on Unix platforms as then need to be root
-  rtpIpTypeofService = IPTOS_LOWDELAY;
-#endif
-
-  minAudioJitterDelay = 50;  // milliseconds
-  maxAudioJitterDelay = 250; // milliseconds
 
 #ifndef NO_OPAL_VIDEO
   PStringList devices;
@@ -537,8 +540,6 @@ OpalManager::OpalManager()
   if (autoStartReceiveVideo)
     videoPreviewDevice = videoOutputDevice;
 #endif
-
-  lastCallTokenID = 1;
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), 0,
                                      PThread::NoAutoDeleteThread,
@@ -582,12 +583,12 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint)
   if (PAssertNULL(endpoint) == NULL)
     return;
 
-  inUseFlag.Wait();
+  endpointsMutex.StartWrite();
 
   if (endpoints.GetObjectsIndex(endpoint) == P_MAX_INDEX)
     endpoints.Append(endpoint);
 
-  inUseFlag.Signal();
+  endpointsMutex.EndWrite();
 }
 
 
@@ -596,15 +597,15 @@ void OpalManager::DetachEndPoint(OpalEndPoint * endpoint)
   if (PAssertNULL(endpoint) == NULL)
     return;
 
-  inUseFlag.Wait();
+  endpointsMutex.StartWrite();
   endpoints.Remove(endpoint);
-  inUseFlag.Signal();
+  endpointsMutex.EndWrite();
 }
 
 
 OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
 {
-  PWaitAndSignal mutex(inUseFlag);
+  PReadWaitAndSignal mutex(endpointsMutex);
 
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (endpoints[i].GetPrefixName() *= prefix)
@@ -638,17 +639,9 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
     return TRUE;
   }
 
-  OpalConnection::CallEndReason endReason = OpalConnection::NumCallEndReasons;
   PSafePtr<OpalConnection> connection = call->GetConnection(0);
-  if (connection != NULL) {
-    endReason = connection->GetCallEndReason();
-  }
-  
-  if (endReason != OpalConnection::NumCallEndReasons) {
-    call->Clear(endReason);
-  } else {
-    call->Clear();
-  }
+  OpalConnection::CallEndReason endReason = connection != NULL ? connection->GetCallEndReason() : OpalConnection::NumCallEndReasons;
+  call->Clear(endReason != OpalConnection::NumCallEndReasons ? endReason : OpalConnection::EndedByTemporaryFailure);
 
   if (!activeCalls.RemoveAt(token)) {
     PTRACE(2, "OpalMan\tSetUpCall could not remove call from active call list");
@@ -728,7 +721,7 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 
 void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 {
-  PTRACE(3, "OpalMan\tOnClearedCall \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
+  PTRACE(3, "OpalMan\tOnClearedCall " << call << " from \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
 }
 
 
@@ -751,11 +744,7 @@ void OpalManager::DestroyCall(OpalCall * call)
 
 PString OpalManager::GetNextCallToken()
 {
-  PString token;
-  inUseFlag.Wait();
-  token.sprintf("%u", lastCallTokenID++);
-  inUseFlag.Signal();
-  return token;
+  return psprintf("%u", ++lastCallTokenID);
 }
 
 BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
@@ -766,7 +755,9 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
     return FALSE;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
-  PWaitAndSignal mutex(inUseFlag);
+
+  PReadWaitAndSignal mutex(endpointsMutex);
+
   if (epname.IsEmpty())
     epname = endpoints[0].GetPrefixName();
 
@@ -1451,8 +1442,6 @@ BOOL OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
   if (newInterval < 10)
     return FALSE;
 
-  PWaitAndSignal mutex(inUseFlag);
-
   noMediaTimeout = newInterval; 
   return TRUE; 
 }
@@ -1461,11 +1450,16 @@ BOOL OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval)
 void OpalManager::GarbageCollection()
 {
   BOOL allCleared = activeCalls.DeleteObjectsToBeRemoved();
-  PWaitAndSignal mutex(inUseFlag);
+
+  endpointsMutex.StartRead();
+
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    if (!endpoints[i].connectionsActive.DeleteObjectsToBeRemoved())
+    if (!endpoints[i].GarbageCollection())
       allCleared = FALSE;
   }
+
+  endpointsMutex.EndRead();
+
   if (allCleared && clearingAllCalls)
     allCallsCleared.Signal();
 }
@@ -1480,7 +1474,7 @@ void OpalManager::CallDict::DeleteObject(PObject * object) const
 void OpalManager::GarbageMain(PThread &, INT)
 {
   while (!garbageCollectExit.Wait(1000))
-      GarbageCollection();
+    GarbageCollection();
 }
 
 void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
