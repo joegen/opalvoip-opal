@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2057  2007/09/19 10:43:31  csoutheren
+ * Revision 1.2058  2007/09/21 04:08:16  rjongbloed
+ * Improved logging when setting plug in options
+ *
+ * Revision 2.56  2007/09/19 10:43:31  csoutheren
  * Exposed G.7231 capability class
  * Added macros to create empty transcoders and capabilities
  *
@@ -1240,8 +1243,20 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
       const OpalMediaOption & option = fmt.GetOption(i);
       list += option.GetName();
       list += option.AsString();
-      PTRACE(5, "OpalPlugin\tSetting codec control '" << option.GetName() << "'=" << option.AsString());
     }
+
+#if PTRACING
+    if (PTrace::CanTrace(4)) {
+      ostream & strm = PTrace::Begin(4, __FILE__, __LINE__);
+      strm << "OpalPlugin\tSetting " << (isEncoder ? "en" : "de") << "coder options:\n";
+      for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
+        const OpalMediaOption & option = fmt.GetOption(i);
+        strm << "    " << option.GetName() << " = " << option.AsString() << '\n';
+      }
+      strm << PTrace::End;
+    }
+#endif
+
     char ** _options = list.ToCharArray();
     unsigned int optionsLen = sizeof(_options);
     (*ctl->control)(codec, context, SET_CODEC_OPTIONS_CONTROL, _options, &optionsLen);
