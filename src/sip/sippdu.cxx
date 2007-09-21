@@ -24,7 +24,15 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2148  2007/09/05 13:45:29  csoutheren
+ * Revision 1.2149  2007/09/21 01:34:10  rjongbloed
+ * Rewrite of SIP transaction handling to:
+ *   a) use PSafeObject and safe collections
+ *   b) only one database of transactions, remove connection copy
+ *   c) fix timers not always firing due to bogus deadlock avoidance
+ *   d) cleaning up only occurs in the existing garbage collection thread
+ *   e) use of read/write mutex on endpoint list to avoid possible deadlock
+ *
+ * Revision 2.147  2007/09/05 13:45:29  csoutheren
  * Applied 1748937 - SIP support for combined Via header
  * Thanks to Simon Zwahlen
  *
@@ -2265,6 +2273,7 @@ SIPTransaction::SIPTransaction(SIPEndPoint & ep,
 {
   connection = NULL;
   Construct(minRetryTime, maxRetryTime);
+  PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
 
 
@@ -2296,32 +2305,24 @@ void SIPTransaction::Construct(const PTimeInterval & minRetryTime, const PTimeIn
 
 SIPTransaction::~SIPTransaction()
 {
-  if (state > NotStarted && state < Terminated_Success) {
-    PAssertAlways("Destroying transaction that is not yet terminated");
-  }
+  PTRACE_IF(1, state < Terminated_Success, "SIP\tDestroying transaction " << mime.GetCSeq() << " which is not yet terminated.");
   PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " destroyed.");
 }
 
 
 BOOL SIPTransaction::Start()
 {
-  PStringList routeSet;
+  endpoint.AddTransaction(this);
 
   if (state != NotStarted) {
     PAssertAlways(PLogicError);
     return FALSE;
   }
 
-  if (connection != NULL) {
-    connection->AddTransaction(this);
+  if (connection != NULL)
     connection->GetAuthenticator().Authorise(*this); 
-  }
-  else {
-    endpoint.AddTransaction(this);
-    //We authorise the PDU when authentication is required
-  }
 
-  PWaitAndSignal m(mutex);
+  PSafeLockReadWrite lock(*this);
 
   state = Trying;
   retry = 0;
@@ -2333,7 +2334,7 @@ BOOL SIPTransaction::Start()
   else
     completionTimer = endpoint.GetNonInviteTimeout();
 
-  routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
+  PStringList routeSet = this->GetMIME().GetRoute(); // Get the route set from the PDU
   if (connection != NULL) {
     // Use the connection transport to send the request
     if (connection->SendPDU(*this, GetSendAddress(routeSet)))
@@ -2351,6 +2352,9 @@ BOOL SIPTransaction::Start()
 
 void SIPTransaction::WaitForCompletion()
 {
+  if (state >= Completed)
+    return;
+
   if (state == NotStarted)
     Start();
 
@@ -2360,21 +2364,24 @@ void SIPTransaction::WaitForCompletion()
 
 BOOL SIPTransaction::Cancel()
 {
-  PWaitAndSignal m(mutex);
+  PSafeLockReadWrite lock(*this);
 
   if (state == NotStarted || state >= Cancelling) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " cannot be cancelled.");
     return FALSE;
   }
 
+  completionTimer = endpoint.GetPduCleanUpTimeout();
   return ResendCANCEL();
 }
 
 
 void SIPTransaction::Abort()
 {
-  PWaitAndSignal m(mutex);
-  SetTerminated(Terminated_Aborted);
+  if (LockReadWrite()) {
+    SetTerminated(Terminated_Aborted);
+    UnlockReadWrite();
+  }
 }
 
 
@@ -2408,13 +2415,19 @@ BOOL SIPTransaction::ResendCANCEL()
 
 BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
+  // Stop the timers outside of the mutex to avoid deadlock
+  retryTimer.Stop();
+  completionTimer.Stop();
+
   PString cseq = response.GetMIME().GetCSeq();
 
   // If is the response to a CANCEl we sent, then just ignore it
   if (cseq.Find(MethodNames[Method_CANCEL]) != P_MAX_INDEX) {
     // Lock only if we have not already locked it in SIPInvite::OnReceivedResponse
-    PWaitAndSignal m(mutex, method != Method_INVITE);
-    SetTerminated(Terminated_Cancelled);
+    if (LockReadWrite()) {
+      SetTerminated(Terminated_Cancelled);
+      UnlockReadWrite();
+    }
     return FALSE;
   }
 
@@ -2424,8 +2437,9 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     return FALSE;
   }
 
-  if (method != Method_INVITE)
-    mutex.Wait();
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return FALSE;
 
   BOOL notCompletedFlag = state < Completed;
 
@@ -2451,11 +2465,8 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     }
 
     completed.Signal();
-    retryTimer.Stop();
     completionTimer = endpoint.GetPduCleanUpTimeout();
   }
-
-  mutex.Signal();
 
   if (notCompletedFlag) {
     if (connection != NULL)
@@ -2463,13 +2474,9 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     else
       endpoint.OnReceivedResponse(*this, response);
 
-    if (state == Completed && !OnCompleted(response))
-      return FALSE;
+    if (state == Completed)
+      return OnCompleted(response);
   }
-
-  // If this is invite then we need to lock it again
-  if (method == Method_INVITE)
-    mutex.Wait();
 
   return TRUE;
 }
@@ -2483,17 +2490,10 @@ BOOL SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 
 void SIPTransaction::OnRetry(PTimer &, INT)
 {
-  /* There is a potential deadlock if a reply packet comes in at the exact
-     same time as the timeout. So, put a timeout on the mutex grab, if it
-     fails then we had the deadlock condition, in which case the retry
-     timeout can be safely ignored as the PDU states are already handled.
-     */
-  if (!mutex.Wait(100)) {
-    PTRACE(2, "SIP\tTransaction " << mime.GetCSeq() << " timeout ignored.");
-    return;
-  }
+  PSafeLockReadWrite lock(*this);
 
-  PWaitAndSignal m(mutex, false);
+  if (!lock.IsLocked() || state != Trying)
+    return;
 
   retry++;
 
@@ -2523,23 +2523,15 @@ void SIPTransaction::OnRetry(PTimer &, INT)
 
 void SIPTransaction::OnTimeout(PTimer &, INT)
 {
-  /* There is a potential deadlock if a reply packet comes in at the exact
-     same time as the timeout. So, put a timeout on the mutex grab, if it
-     fails then we had the deadlock condition, in which case the retry
-     timeout can be safely ignored as the PDU states are already handled.
-   */
-  if (mutex.Wait(100)) {
+  PSafeLockReadWrite lock(*this);
+
+  if (lock.IsLocked() && state <= Completed)
     SetTerminated(state != Completed ? Terminated_Timeout : Terminated_Success);
-    mutex.Signal();
-  }
 }
 
 
 void SIPTransaction::SetTerminated(States newState)
 {
-  retryTimer.Stop();
-  completionTimer.Stop();
-
 #if PTRACING
   static const char * const StateNames[NumStates] = {
     "NotStarted",
@@ -2571,26 +2563,13 @@ void SIPTransaction::SetTerminated(States newState)
 
   // Transaction failed, tell the endpoint
   if (state != Terminated_Success) 
-    endpoint.OnTransactionTimeout (*this);
+    endpoint.OnTransactionTimeout(*this);
 
-  if (oldState != Completed) {
+  if (oldState != Completed)
     completed.Signal();
-  }
 
-  // Unlock the mutex before calling the connection / endpoint
-  // to avoid possible deadlocks
-  mutex.Signal();
-  if (connection != NULL) {
-    if (state != Terminated_Success) {
-      connection->OnTransactionFailed(*this);
-    }
-    connection->RemoveTransaction(this);
-  }
-  else {
-    endpoint.RemoveTransaction(this);
-  }
-  mutex.Wait();
-    
+  if (state != Terminated_Success && connection != NULL)
+    connection->OnTransactionFailed(*this);
 }
 
 
@@ -2645,24 +2624,20 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsi
 
 BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  PWaitAndSignal m(mutex);
-	
   States originalState = state;
 
   if (!SIPTransaction::OnReceivedResponse(response))
     return FALSE;
 
-  if (response.GetStatusCode()/100 == 1) {
-    retryTimer.Stop();
-    completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  } 
-  else {
+  PSafeLockReadWrite lock(*this);
+  if (!lock.IsLocked())
+    return FALSE;
 
-    // If the state was already 'Completed', ensure that still an
-    // ACK is sent
-    if (originalState >= Completed) {
-      connection->SendACK(*this, response);
-    }
+  if (response.GetStatusCode()/100 == 1)
+    completionTimer = PTimeInterval(0, mime.GetExpires(180));
+  else if (originalState >= Completed) {
+    // If the state was already 'Completed', ensure that still an ACK is sent
+    connection->SendACK(*this, response);
   }
 
   /* Handle response to outgoing call cancellation */
