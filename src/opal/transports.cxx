@@ -29,7 +29,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2089  2007/09/07 05:44:15  rjongbloed
+ * Revision 1.2090  2007/09/22 04:32:30  rjongbloed
+ * Fixed lock up on exit whena  gatekeeper is used.
+ * Also fixed fatal "read error" (ECONNRESET) when send packet to a machine which
+ *   is not listening on the specified port. No error is lgged but does not stop listener.
+ *
+ * Revision 2.88  2007/09/07 05:44:15  rjongbloed
  * Fixed initialisation of SSL context in both OpalListenerTCPS contructors.
  *
  * Revision 2.87  2007/08/26 20:17:44  hfriederich
@@ -1674,7 +1679,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
 {
-  Open(new PMonitoredSocketChannel(PMonitoredSockets::Create(binding.AsString(), reuseAddr)));
+  Open(new PMonitoredSocketChannel(PMonitoredSockets::Create(binding.AsString(), reuseAddr), FALSE));
 
   PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
 }
@@ -1693,7 +1698,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   remoteAddress = remAddr;
   remotePort = remPort;
 
-  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener);
+  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, TRUE);
   socket->SetRemote(remAddr, remPort);
   socket->SetInterface(iface);
   socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
