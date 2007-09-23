@@ -466,7 +466,7 @@ dnl ###########################################################################
 dnl Checks for libtheora
 dnl ###########################################################################
 
-HAS_THEORA=022
+HAS_THEORA=0
 THEORA_LIBS=
 
 AC_ARG_ENABLE(theora, [  --disable-theora        Disable theora],,)
