@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2263  2007/09/21 01:34:10  rjongbloed
+ * Revision 1.2264  2007/09/24 23:38:39  csoutheren
+ * Fixed errors on 64 bit Linux
+ *
+ * Revision 2.262  2007/09/21 01:34:10  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -1205,7 +1208,7 @@ SIPConnection::SIPConnection(OpalCall & call,
 
   forkedInvitations.DisallowDeleteObjects();
 
-  referTransaction = NULL;
+  referTransaction = (SIPTransaction *)NULL;
   local_hold = FALSE;
   remote_hold = FALSE;
 
@@ -2671,7 +2674,7 @@ void SIPConnection::OnReceivedNOTIFY(SIP_PDU & pdu)
   // The REFER is over
   if (state.Find("terminated") != P_MAX_INDEX) {
     referTransaction->WaitForCompletion();
-    referTransaction = NULL;
+    referTransaction = (SIPTransaction *)NULL;
 
     // Release the connection
     if (phase < ReleasingPhase) 
