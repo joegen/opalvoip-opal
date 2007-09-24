@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2149  2007/09/21 01:34:10  rjongbloed
+ * Revision 1.2150  2007/09/24 23:38:39  csoutheren
+ * Fixed errors on 64 bit Linux
+ *
+ * Revision 2.148  2007/09/21 01:34:10  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -2271,7 +2274,7 @@ SIPTransaction::SIPTransaction(SIPEndPoint & ep,
   : endpoint(ep),
     transport(trans)
 {
-  connection = NULL;
+  connection = (SIPConnection *)NULL;
   Construct(minRetryTime, maxRetryTime);
   PTRACE(4, "SIP\tTransaction " << mime.GetCSeq() << " created.");
 }
