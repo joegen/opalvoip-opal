@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2015  2007/09/04 02:21:20  rjongbloed
+ * Revision 1.2016  2007/09/24 07:05:44  rjongbloed
+ * Added some extra RTP magic numbers: min header size, max packet size etc
+ *
+ * Revision 2.14  2007/09/04 02:21:20  rjongbloed
  * Allow for plug in API versions other than zero.
  *
  * Revision 2.13  2007/09/04 02:05:03  rjongbloed
@@ -589,7 +592,11 @@ enum {
 // RTP specific definitions
 //
 
-#define PluginCodec_RTP_GetHeaderLength(ptr)      ((((BYTE*)(ptr))[0] & 0x0f)*4 + 12)
+#define PluginCodec_RTP_MaxPacketSize  (1518-14-4-8-20-16)  // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP headers
+#define PluginCodec_RTP_MinHeaderSize  (12)
+#define PluginCodec_RTP_MaxPayloadSize (PluginCodec_RTP_MaxPacketSize - PluginCodec_RTP_MinHeaderSize)
+
+#define PluginCodec_RTP_GetHeaderLength(ptr)      ((((BYTE*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
 #define PluginCodec_RTP_GetPayloadPtr(ptr)          ((BYTE*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
 #define PluginCodec_RTP_GetPayloadType(ptr)        (((BYTE*)(ptr))[1] & 0x7f)
 #define PluginCodec_RTP_SetPayloadType(ptr, type)  (((BYTE*)(ptr))[1] = (((BYTE*)(ptr))[1] & 0x80) | (type & 0x7f))
