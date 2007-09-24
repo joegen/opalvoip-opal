@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.9  2007/09/07 11:08:31  hfriederich
+ * Revision 1.2072.2.10  2007/09/24 10:42:12  hfriederich
+ * Backports from HEAD
+ *
+ * Revision 2.71.2.9  2007/09/07 11:08:31  hfriederich
  * Backports from HEAD
  *
  * Revision 2.71.2.8  2007/08/26 20:04:28  hfriederich
@@ -1647,7 +1650,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
 {
-  Open(new PMonitoredSocketChannel(PMonitoredSockets::Create(binding.AsString(), reuseAddr)));
+  Open(new PMonitoredSocketChannel(PMonitoredSockets::Create(binding.AsString(), reuseAddr), FALSE));
     
   PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
 }
@@ -1666,7 +1669,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   remoteAddress = remAddr;
   remotePort = remPort;
     
-  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener);
+  PMonitoredSocketChannel * socket = new PMonitoredSocketChannel(listener, TRUE);
   socket->SetRemote(remAddr, remPort);
   socket->SetInterface(iface);
   socket->GetLocal(localAddress, localPort, !manager.IsLocalAddress(remoteAddress));
