@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2058  2007/09/21 04:08:16  rjongbloed
+ * Revision 1.2059  2007/09/25 06:42:30  rjongbloed
+ * Tightened setting of video encoder packet size so allows for RTP header.
+ * Also added default size for video decoder output packet (YUV420) frame.
+ *
+ * Revision 2.57  2007/09/21 04:08:16  rjongbloed
  * Improved logging when setting plug in options
  *
  * Revision 2.56  2007/09/19 10:43:31  csoutheren
@@ -1301,7 +1305,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
   // get the size of the output buffer
   int outputDataSize;
   if (!CallCodecControl(GET_OUTPUT_DATA_SIZE_CONTROL, NULL, NULL, outputDataSize))
-    outputDataSize = 1518-14-4-8-20-16;  // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP headers
+    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(FALSE);
 
   unsigned flags;
 
@@ -1309,8 +1313,9 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
     do {
 
-      // create the output buffer
-      RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize);
+      // create the output buffer, outputDataSize is supposed to include the
+      // RTP header size, so take that off as ctor adds it back.
+      RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize - PluginCodec_RTP_MinHeaderSize);
       dst->SetPayloadType(GetPayloadType(FALSE));
 
       // call the codec function
@@ -1327,7 +1332,6 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
         return FALSE;
       }
 
-
       if (forceIFrame && ((flags & PluginCodec_ReturnCoderIFrame) != 0))
         --updatePictureCount;
 
@@ -1340,6 +1344,9 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
   }
 
   else {
+    // We use the data size indicated by plug in as a payload size, we do not adjust the size
+    // downward as many plug ins forget to add the RTP header size in its output data size and
+    // it doesn't hurt to make thisbuffer an extra 12 bytes long.
 
     if (bufferRTP == NULL)
       bufferRTP = new RTP_DataFrame(outputDataSize);
