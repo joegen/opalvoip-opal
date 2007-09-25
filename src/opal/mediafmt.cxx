@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2078  2007/09/21 00:51:38  rjongbloed
+ * Revision 1.2079  2007/09/25 19:35:39  csoutheren
+ * Fix compilation when using --disable-audio
+ *
+ * Revision 2.77  2007/09/21 00:51:38  rjongbloed
  * Fixed weird divide by zero error on clock rate.
  *
  * Revision 2.76  2007/09/20 04:26:36  rjongbloed
@@ -401,6 +404,8 @@ static class InstantiateMe
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_AUDIO
+
 #define AUDIO_FORMAT(name, rtpPayloadType, encodingName, frameSize, frameTime, rxFrames, txFrames, maxFrames, clock) \
   const OpalAudioFormat & GetOpal##name() \
   { \
@@ -426,6 +431,7 @@ AUDIO_FORMAT(G7231A_6k3,     G7231,          "G723", 24, 240,  8,  3, 256,  8000
 AUDIO_FORMAT(G7231A_5k3,     G7231,          "G723", 24, 240,  8,  3, 256,  8000);
 AUDIO_FORMAT(GSM0610,        GSM,            "GSM",  33, 160,  7,  4, 7  ,  8000);
 
+#endif
 
 const OpalMediaFormat & GetOpalRFC2833()
 {
@@ -1363,6 +1369,8 @@ ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_AUDIO
+
 const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = "Rx Frames Per Packet"; return s; }
 const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = "Tx Frames Per Packet"; return s; }
 
@@ -1391,6 +1399,7 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
 
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
