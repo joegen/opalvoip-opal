@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2061  2007/09/21 00:51:38  rjongbloed
+ * Revision 1.2062  2007/09/25 19:35:30  csoutheren
+ * Fix compilation when using --disable-audio
+ *
+ * Revision 2.60  2007/09/21 00:51:38  rjongbloed
  * Fixed weird divide by zero error on clock rate.
  *
  * Revision 2.59  2007/09/18 12:52:34  rjongbloed
@@ -1253,6 +1256,7 @@ class OpalVideoFormat : public OpalMediaFormat
 #define OPAL_RFC2833        "UserInput/RFC2833"
 #define OPAL_CISCONSE       "NamedSignalEvent"
 
+#if OPAL_AUDIO
 extern const OpalAudioFormat & GetOpalPCM16();
 extern const OpalAudioFormat & GetOpalPCM16_16KHZ();
 extern const OpalAudioFormat & GetOpalL16_MONO_8KHZ();
@@ -1269,6 +1273,8 @@ extern const OpalAudioFormat & GetOpalG7231_5k3();
 extern const OpalAudioFormat & GetOpalG7231A_6k3();
 extern const OpalAudioFormat & GetOpalG7231A_5k3();
 extern const OpalAudioFormat & GetOpalGSM0610();
+#endif
+
 extern const OpalMediaFormat & GetOpalRFC2833();
 extern const OpalMediaFormat & GetOpalCiscoNSE();
 

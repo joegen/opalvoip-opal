@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2013  2007/07/25 01:14:52  csoutheren
+ * Revision 1.2014  2007/09/25 19:35:30  csoutheren
+ * Fix compilation when using --disable-audio
+ *
+ * Revision 2.12  2007/07/25 01:14:52  csoutheren
  * Add support for receiving faxes into a TIFF file
  *
  * Revision 2.11  2007/05/10 05:34:01  csoutheren
@@ -266,6 +269,8 @@ class OpalT38Protocol : public PObject
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if OPAL_AUDIO
+
 /**
   *  This format is identical to the OpalPCM16 except that it uses a different
   *  sessionID in order to be compatible with T.38
@@ -289,6 +294,8 @@ class OpalFaxAudioFormat : public OpalMediaFormat
       time_t timeStamp = 0       ///<  timestamp (for versioning)
     );
 };
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 
