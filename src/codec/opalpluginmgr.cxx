@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2059  2007/09/25 06:42:30  rjongbloed
+ * Revision 1.2060  2007/09/25 09:49:54  rjongbloed
+ * Fixed videoFastUpdate, is not a count but a simple boolean.
+ *
+ * Revision 2.58  2007/09/25 06:42:30  rjongbloed
  * Tightened setting of video encoder packet size so allows for RTP header.
  * Also added default size for video decoder output packet (YUV420) frame.
  *
@@ -1280,15 +1283,6 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
     (*codec->destroyCodec)(codec, context); 
 }
 
-BOOL OpalPluginVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
-{
-  if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    ++updatePictureCount;
-    return TRUE;
-  }
-
-  return OpalTranscoder::ExecuteCommand(command);
-}
 
 PINDEX OpalPluginVideoTranscoder::GetOptimalDataFrameSize(BOOL /*input*/) const
 {
@@ -1321,7 +1315,6 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
       // call the codec function
       unsigned int fromLen = src.GetSize();
       unsigned int toLen = dst->GetSize();
-      BOOL forceIFrame = updatePictureCount > 0;
       flags = forceIFrame ? PluginCodec_CoderForceIFrame : 0;
 
       if (!(codec->codecFunction)(codec, context, 
@@ -1332,8 +1325,8 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
         return FALSE;
       }
 
-      if (forceIFrame && ((flags & PluginCodec_ReturnCoderIFrame) != 0))
-        --updatePictureCount;
+      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+        forceIFrame = false;
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());

@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2022  2007/09/09 23:46:28  rjongbloed
+ * Revision 1.2023  2007/09/25 09:49:54  rjongbloed
+ * Fixed videoFastUpdate, is not a count but a simple boolean.
+ *
+ * Revision 2.21  2007/09/09 23:46:28  rjongbloed
  * There is no encoding name for internal formats
  *
  * Revision 2.20  2007/08/31 07:56:19  dsandras
@@ -172,10 +175,10 @@ const OpalVideoFormat & GetOpalYUV420P()
 OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
+  , forceIFrame(false)
 {
   UpdateOutputMediaFormat(outputMediaFormat);
   fillLevel = 5;
-  updatePictureCount.SetValue(0);
 }
 
 
@@ -193,7 +196,7 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
 BOOL OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
-    ++updatePictureCount;
+    forceIFrame = true; // Reset when I-Frame is sent
     return TRUE;
   }
 

@@ -24,7 +24,10 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2016  2007/08/17 11:14:17  csoutheren
+ * Revision 1.2017  2007/09/25 09:49:54  rjongbloed
+ * Fixed videoFastUpdate, is not a count but a simple boolean.
+ *
+ * Revision 2.15  2007/08/17 11:14:17  csoutheren
  * Add OnLostPicture and OnLostPartialPicture commands
  *
  * Revision 2.14  2007/02/16 07:56:02  dereksmithies
@@ -187,7 +190,8 @@ class OpalVideoTranscoder : public OpalTranscoder
     bool     dynamicVideoQuality;
     bool     adaptivePacketDelay;
     unsigned fillLevel;
-    PAtomicInteger updatePictureCount;
+
+    bool     forceIFrame;
 };
 
 
