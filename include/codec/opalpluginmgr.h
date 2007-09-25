@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2020  2007/09/19 10:43:00  csoutheren
+ * Revision 1.2021  2007/09/25 09:49:54  rjongbloed
+ * Fixed videoFastUpdate, is not a count but a simple boolean.
+ *
+ * Revision 2.19  2007/09/19 10:43:00  csoutheren
  * Exposed G.7231 capability class
  * Added macros to create empty transcoders and capabilities
  *
@@ -310,7 +313,6 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
                         unsigned int * parmLen,
                                  int & retVal);
 
-    BOOL ExecuteCommand(const OpalMediaCommand & /*command*/);
     PINDEX GetOptimalDataFrameSize(BOOL input) const;
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
