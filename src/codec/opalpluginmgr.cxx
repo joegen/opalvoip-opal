@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2060  2007/09/25 09:49:54  rjongbloed
+ * Revision 1.2061  2007/09/25 10:38:33  rjongbloed
+ * Added trace log for when I-Frame sent
+ *
+ * Revision 2.59  2007/09/25 09:49:54  rjongbloed
  * Fixed videoFastUpdate, is not a count but a simple boolean.
  *
  * Revision 2.58  2007/09/25 06:42:30  rjongbloed
@@ -489,7 +492,7 @@ void OpalPluginMediaFormat::PopulateMediaFormatOptions(const PluginCodec_Definit
     else {
       // New scheme
       struct PluginCodec_Option const * const * options = (struct PluginCodec_Option const * const *)_options;
-      PTRACE_IF(5, options != NULL, "Adding options to OpalMediaFormat " << format << " using new style method");
+      PTRACE_IF(5, options != NULL, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using new style method");
       while (*options != NULL) {
         struct PluginCodec_Option const * option = *options++;
         OpalMediaOption * newOption;
@@ -1325,8 +1328,10 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
         return FALSE;
       }
 
-      if ((flags & PluginCodec_ReturnCoderIFrame) != 0)
+      if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
+        PTRACE(forceIFrame ? 3 : 4, "OpalPlugin\tSending I-Frame" << (forceIFrame ? " in response to videoFastUpdate" : ""));
         forceIFrame = false;
+      }
 
       if (toLen > 0) {
         dst->SetPayloadSize(toLen - dst->GetHeaderSize());
@@ -1362,7 +1367,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
       if (commandNotifier != PNotifier()) {
         OpalVideoUpdatePicture updatePictureCommand;
         commandNotifier(updatePictureCommand, 0); 
-        PTRACE (3, "Video\t Could not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
+        PTRACE (3, "OpalPlugin\tCould not decode frame, sending VideoUpdatePicture in hope of an I-Frame.");
       }
     }
 
