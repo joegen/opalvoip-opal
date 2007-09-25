@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2046  2007/08/31 11:36:13  csoutheren
+ * Revision 1.2047  2007/09/25 09:48:34  rjongbloed
+ * Added H.323 support for videoFastUpdatePicture
+ *
+ * Revision 2.45  2007/08/31 11:36:13  csoutheren
  * Fix usage of GetOtherPartyConnection without PSafePtr
  *
  * Revision 2.44  2007/08/21 00:19:46  rjongbloed
@@ -805,9 +808,32 @@ void H323Channel::OnFlowControl(long PTRACE_PARAM(bitRateRestriction))
 }
 
 
-void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & PTRACE_PARAM(type))
+void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & type)
 {
   PTRACE(3, "LogChan\tOnMiscellaneousCommand: chan=" << number << ", type=" << type.GetTagName());
+  OpalMediaStream * mediaStream = GetMediaStream();
+  if (mediaStream == NULL)
+    return;
+
+  switch (type.GetTag()) {
+    case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture :
+      mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
+      break;
+
+    case H245_MiscellaneousCommand_type::e_videoFastUpdateGOB :
+      {
+        const H245_MiscellaneousCommand_type_videoFastUpdateGOB & vfuGOB = type;
+        mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuGOB.m_firstGOB, -1, vfuGOB.m_numberOfGOBs));
+      }
+      break;
+
+    case H245_MiscellaneousCommand_type::e_videoFastUpdateMB :
+      {
+        const H245_MiscellaneousCommand_type_videoFastUpdateMB & vfuMB = type;
+        mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuMB.m_firstGOB, vfuMB.m_firstMB, vfuMB.m_numberOfMBs));
+      }
+      break;
+  }
 }
 
 
