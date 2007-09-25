@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2062  2007/09/20 23:09:03  rjongbloed
+ * Revision 1.2063  2007/09/25 19:35:39  csoutheren
+ * Fix compilation when using --disable-audio
+ *
+ * Revision 2.61  2007/09/20 23:09:03  rjongbloed
  * Fix compilation without fax support enabled.
  *
  * Revision 2.60  2007/09/19 06:28:48  csoutheren
@@ -790,6 +793,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     return;
   }
 
+#if OPAL_AUDIO
   if (attr *= "ptime") {
     SetPacketTime(OpalAudioFormat::TxFramesPerPacketOption(), value);
     return;
@@ -799,6 +803,7 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     SetPacketTime(OpalAudioFormat::RxFramesPerPacketOption(), value);
     return;
   }
+#endif
 
   // unknown attriutes
   PTRACE(2, "SDP\tUnknown media attribute " << attr);
@@ -908,6 +913,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
       str << formats[i];
 
       const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
+#if OPAL_AUDIO
       if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
         unsigned txFrames = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
         unsigned ptime1 = txFrames*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
@@ -923,6 +929,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
         if (maxptime > maxptime1)
           maxptime = maxptime1;
       }
+#endif
     }
 
     // don't output ptime parameters, as some Cisco endpoints barf on it

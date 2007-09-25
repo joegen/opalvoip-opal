@@ -24,7 +24,10 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2024  2007/07/25 01:15:08  csoutheren
+ * Revision 1.2025  2007/09/25 19:35:39  csoutheren
+ * Fix compilation when using --disable-audio
+ *
+ * Revision 2.23  2007/07/25 01:15:08  csoutheren
  * Add support for receiving faxes into a TIFF file
  *
  * Revision 2.22  2007/07/24 12:57:55  rjongbloed
@@ -205,6 +208,8 @@ const OpalMediaFormat & GetOpalT38()
   return opalT38;
 }
 
+#if OPAL_AUDIO
+
 const OpalFaxAudioFormat & GetOpalPCM16Fax() 
 {
   static const OpalFaxAudioFormat opalPCM16Fax(OPAL_PCM16_FAX, RTP_DataFrame::MaxPayloadType, "", 16, 8,  240, 30, 256,  8000);
@@ -236,6 +241,8 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
 }
+
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 
