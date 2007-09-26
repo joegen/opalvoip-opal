@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.37  2007/09/26 04:21:30  rjongbloed
+ * Added saving of video output and preview window positions.
+ *
  * Revision 1.36  2007/09/18 12:50:29  rjongbloed
  * Fixed call back reporting registration status.
  *
@@ -283,6 +286,13 @@
 #include "sipphone.xpm"
 #include "otherphone.xpm"
 #include "smallphone.xpm"
+
+#define USE_SDL 1
+
+#else
+
+#define USE_SDL 0
+
 #endif
 
 
@@ -348,6 +358,10 @@ DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
 DEF_FIELD(VideoAutoReceive);
 DEF_FIELD(VideoFlipRemote);
+DEF_FIELD(LocalVideoFrameX);
+DEF_FIELD(LocalVideoFrameY);
+DEF_FIELD(RemoteVideoFrameX);
+DEF_FIELD(RemoteVideoFrameY);
 
 static const char CodecsGroup[] = "/Codecs";
 static const char CodecNameKey[] = "Name";
@@ -531,20 +545,29 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
 END_EVENT_TABLE()
 
 MyManager::MyManager()
-  : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480)),
-    m_speedDials(NULL),
-    pcssEP(NULL),
-    potsEP(NULL),
+  : wxFrame(NULL, -1, wxT("OpenPhone"), wxDefaultPosition, wxSize(640, 480))
+  , m_speedDials(NULL)
+  , pcssEP(NULL)
+  , potsEP(NULL)
 #if OPAL_H323
-    h323EP(NULL),
+  , h323EP(NULL)
 #endif
 #if OPAL_SIP
-    sipEP(NULL),
+  , sipEP(NULL)
 #endif
 #if P_EXPAT
-    ivrEP(NULL),
+  , ivrEP(NULL)
 #endif
-    m_callState(IdleState)
+  , m_autoAnswer(false)
+  , m_VideoGrabPreview(true)
+  , m_localVideoFrameX(INT_MIN)
+  , m_localVideoFrameY(INT_MIN)
+  , m_remoteVideoFrameX(INT_MIN)
+  , m_remoteVideoFrameY(INT_MIN)
+#if PTRACING
+  , m_enableTracing(false)
+#endif
+  , m_callState(IdleState)
 {
   // Give it an icon
   SetIcon(wxICON(AppIcon));
@@ -804,19 +827,26 @@ bool MyManager::Initialise()
     SetAutoStartReceiveVideo(onoff);
 
   videoArgs = GetVideoPreviewDevice();
-#if defined(__WXMSW__)
+#if USE_SDL
+  videoArgs.driverName = "SDL";
+#else
   videoArgs.driverName = "Window";
-  videoArgs.deviceName = psprintf("MSWIN STYLE=0x%08X TITLE=\"Local\"", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
 #endif
   SetVideoPreviewDevice(videoArgs);
 
   videoArgs = GetVideoOutputDevice();
-#if defined(__WXMSW__)
+#if USE_SDL
+  videoArgs.driverName = "SDL";
+#else
   videoArgs.driverName = "Window";
-  videoArgs.deviceName = psprintf("MSWIN STYLE=0x%08X TITLE=\"Remote\"", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
 #endif
   config->Read(VideoFlipRemoteKey, &videoArgs.flip);
   SetVideoOutputDevice(videoArgs);
+
+  config->Read(LocalVideoFrameXKey, &m_localVideoFrameX);
+  config->Read(LocalVideoFrameYKey, &m_localVideoFrameY);
+  config->Read(RemoteVideoFrameXKey, &m_remoteVideoFrameX);
+  config->Read(RemoteVideoFrameYKey, &m_remoteVideoFrameY);
 
   ////////////////////////////////////////
   // Codec fields
@@ -1685,6 +1715,36 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream &
 }
 
 
+void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
+{
+  OpalManager::OnClosedMediaStream(stream);
+
+  if (PIsDescendant(&stream, OpalVideoMediaStream)) {
+    PVideoOutputDevice * device = ((const OpalVideoMediaStream &)stream).GetVideoOutputDevice();
+    if (device != NULL) {
+      int x, y;
+      if (device->GetPosition(x, y)) {
+        wxConfigBase * config = wxConfig::Get();
+        config->SetPath(VideoGroup);
+
+        if (stream.IsSource()) {
+          if (x != m_localVideoFrameX || y != m_localVideoFrameY) {
+            config->Write(LocalVideoFrameXKey, m_localVideoFrameX = x);
+            config->Write(LocalVideoFrameYKey, m_localVideoFrameY = y);
+          }
+        }
+        else {
+          if (x != m_remoteVideoFrameX || y != m_remoteVideoFrameY) {
+            config->Write(RemoteVideoFrameXKey, m_remoteVideoFrameX = x);
+            config->Write(RemoteVideoFrameYKey, m_remoteVideoFrameY = y);
+          }
+        }
+      }
+    }
+  }
+}
+
+
 PSafePtr<OpalConnection> MyManager::GetUserConnection()
 {
   PSafePtr<OpalCall> call = GetCall();
@@ -1758,6 +1818,46 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 
   PTRACE(2, "OpalPhone\tReadUserInput timeout (" << firstDigitTimeout << "ms) on " << *this);
   return PString::Empty();
+}
+
+
+static const PVideoDevice::OpenArgs & AdjustVideoArgs(PVideoDevice::OpenArgs & videoArgs, const char * title, int x, int y)
+{
+#if USE_SDL
+  videoArgs.deviceName = "SDL";
+#else
+  videoArgs.deviceName = psprintf("MSWIN STYLE=0x%08X", WS_POPUP|WS_BORDER|WS_SYSMENU|WS_CAPTION);
+#endif
+
+  videoArgs.deviceName.sprintf(" TITLE=\"%s\" X=%i Y=%i", title, x, y);
+
+  return videoArgs;
+}
+
+BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
+                                        const OpalMediaFormat & mediaFormat,
+                                        BOOL preview,
+                                        PVideoOutputDevice * & device,
+                                        BOOL & autoDelete)
+{
+  if (preview && !m_VideoGrabPreview)
+    return FALSE;
+
+  if (m_localVideoFrameX == INT_MIN) {
+    wxRect rect = GetScreenRect();
+    m_localVideoFrameX = rect.GetLeft() + mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
+    m_localVideoFrameY = rect.GetBottom();
+    m_remoteVideoFrameX = rect.GetLeft();
+    m_remoteVideoFrameY = rect.GetBottom();
+  }
+
+  PVideoDevice::OpenArgs videoArgs;
+  if (preview)
+    SetVideoPreviewDevice(AdjustVideoArgs(videoArgs = GetVideoPreviewDevice(), "Local", m_localVideoFrameX, m_localVideoFrameY));
+  else
+    SetVideoOutputDevice(AdjustVideoArgs(videoArgs = GetVideoOutputDevice(), "Remote", m_remoteVideoFrameX, m_remoteVideoFrameY));
+
+  return OpalManager::CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
 }
 
 
