@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2099  2007/09/21 01:34:09  rjongbloed
+ * Revision 1.2100  2007/09/26 03:50:13  rjongbloed
+ * Allow for SDL only being able to show one window, prevent
+ *   preview window from appearing if SDL used for both.
+ *
+ * Revision 2.98  2007/09/21 01:34:09  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -957,6 +961,10 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                           PVideoOutputDevice * & device,
                                           BOOL & autoDelete)
 {
+  // Donot use our one and only SDl window, if we need it for the video output.
+  if (preview && videoPreviewDevice.driverName == "SDL" && videoOutputDevice.driverName == "SDL")
+    return FALSE;
+
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
   args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
