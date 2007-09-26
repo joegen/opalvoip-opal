@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.47  2007/09/26 04:21:30  rjongbloed
+ * Added saving of video output and preview window positions.
+ *
  * Revision 1.46  2007/09/18 02:26:01  rjongbloed
  * Use correct mechanism for forcing windows video output device.
  *
@@ -618,6 +621,9 @@ class MyManager : public wxFrame, public OpalManager
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
     );
+    virtual void OnClosedMediaStream(
+      const OpalMediaStream & stream     ///<  Stream being closed
+    );
     virtual void OnUserInputString(
       OpalConnection & connection,  /// Connection input has come from
       const PString & value         /// String value of indication
@@ -627,6 +633,13 @@ class MyManager : public wxFrame, public OpalManager
       const char * terminators = "#\r\n", ///<  Characters that can terminte input
       unsigned lastDigitTimeout = 4,      ///<  Timeout on last digit in string
       unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
+    );
+    virtual BOOL CreateVideoOutputDevice(
+      const OpalConnection & connection,    ///<  Connection needing created video device
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      BOOL preview,                         ///<  Flag indicating is a preview output
+      PVideoOutputDevice * & device,        ///<  Created device
+      BOOL & autoDelete                     ///<  Flag for auto delete device
     );
 
 
@@ -728,6 +741,10 @@ class MyManager : public wxFrame, public OpalManager
 
     bool m_autoAnswer;
     bool m_VideoGrabPreview;
+    int  m_localVideoFrameX;
+    int  m_localVideoFrameY;
+    int  m_remoteVideoFrameX;
+    int  m_remoteVideoFrameY;
 
     MyMediaList m_mediaInfo;
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
