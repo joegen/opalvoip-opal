@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2048  2007/09/05 13:23:39  csoutheren
+ * Revision 1.2049  2007/09/26 03:45:38  rjongbloed
+ * Added missing const in member variable access function.
+ *
+ * Revision 2.47  2007/09/05 13:23:39  csoutheren
  * Applied 1704162 - Opal mediastrm.cxx added IsOpen check to SetPatch
  * Thanks to Drazen Dimoti
  *
@@ -943,13 +946,13 @@ class OpalVideoMediaStream : public OpalMediaStream
 
     /** Get the input device (e.g. for statistics)
       */
-    virtual PVideoInputDevice * GetVideoInputDevice() {
+    virtual PVideoInputDevice * GetVideoInputDevice() const {
       return inputDevice;
     }
 
     /** Get the output device (e.g. for statistics)
       */
-    virtual PVideoOutputDevice * GetVideoOutputDevice() {
+    virtual PVideoOutputDevice * GetVideoOutputDevice() const {
       return outputDevice;
     }
 
