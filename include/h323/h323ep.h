@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2047.2.4  2007/08/05 13:12:15  hfriederich
+ * Revision 1.2047.2.5  2007/09/27 21:03:10  hfriederich
+ * Allow thread-safe endpoint alias changes
+ *
+ * Revision 2.46.2.4  2007/08/05 13:12:15  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.46.2.3  2007/03/20 00:46:01  hfriederich
@@ -1242,6 +1245,10 @@ class H323EndPoint : public OpalEndPoint
        Note that this name is technically the first alias for the endpoint.
        Additional aliases may be added by the use of the AddAliasName()
        function, however that list will be cleared when this function is used.
+      
+       Note that this method is not thread-safe if the enpoint is registered
+       at a Gatekeeper. You should use the mutex returned with 
+       GetAliasNamesMutex() in this case.
      */
     virtual void SetLocalUserName(
       const PString & name  ///<  Local name of endpoint (prime alias)
@@ -1251,13 +1258,17 @@ class H323EndPoint : public OpalEndPoint
        defaults to the logged in user as obtained from the
        PProcess::GetUserName() function.
      */
-    virtual const PString & GetLocalUserName() const { return localAliasNames[0]; }
+    virtual const PString & GetLocalUserName() const { PWaitAndSignal m(localAliasNamesMutex); return localAliasNames[0]; }
 
     /**Add an alias name to be used for the local end of any connections. If
        the alias name already exists in the list then is is not added again.
 
        The list defaults to the value set in the SetLocalUserName() function.
        Note that calling SetLocalUserName() will clear the alias list.
+      
+       Note that this method is not thread-safe if the endpoint is registered
+       at a Gatekeeper. You should use the mutex returned with
+       GetAliasNamesMutex() in this case.
      */
     BOOL AddAliasName(
       const PString & name  ///<  New alias name to add
@@ -1265,6 +1276,10 @@ class H323EndPoint : public OpalEndPoint
 
     /**Remove an alias name used for the local end of any connections. 
        defaults to an empty list.
+      
+       Note that this method is not thread-safe if the endpoint is registered
+       at a Gatekeeper. You should use the mutex returned with
+       GetAliasNamesMutex() in this case.
      */
     BOOL RemoveAliasName(
       const PString & name  ///<  New alias namer to add
@@ -1274,7 +1289,11 @@ class H323EndPoint : public OpalEndPoint
        defaults to the logged in user as obtained from the
        PProcess::GetUserName() function.
      */
-    const PStringList & GetAliasNames() const { return localAliasNames; }
+    const PStringList & GetAliasNames() const { PWaitAndSignal m(localAliasNamesMutex); return localAliasNames; }
+    
+    /**Returns the mutex used to protect the alias names list
+      */
+    PMutex & GetAliasNamesMutex() { return localAliasNamesMutex; }
 
     /**Get the default ILS server to use for user lookup.
       */
@@ -1692,6 +1711,7 @@ class H323EndPoint : public OpalEndPoint
 
     // Configuration variables, commonly changed
     PStringList localAliasNames;
+    PMutex      localAliasNamesMutex;
     BOOL        autoStartReceiveData;
     BOOL        autoStartTransmitData;
     BOOL        autoCallForward;
