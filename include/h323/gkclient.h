@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2015  2006/08/21 04:51:51  csoutheren
+ * Revision 1.2015.4.1  2007/09/27 21:04:01  hfriederich
+ * Allow to do immediate RRQs when terminal alias changed
+ *
+ * Revision 2.14  2006/08/21 04:51:51  csoutheren
  * Fixed formatting
  *
  * Revision 2.13  2006/05/30 11:33:02  hfriederich
@@ -435,6 +438,10 @@ class H323Gatekeeper : public H225_RAS
       const H225_ArrayOf_ServiceControlSession & serviceControl,
       H323Connection * connection
     );
+    
+    /** Handle terminal alias changes
+      */
+    virtual void OnTerminalAliasChanged();
   //@}
 
   /**@name Member variable access */
