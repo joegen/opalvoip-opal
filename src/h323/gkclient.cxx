@@ -27,7 +27,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2036.4.4  2007/09/07 08:51:25  hfriederich
+ * Revision 1.2036.4.5  2007/09/27 21:04:01  hfriederich
+ * Allow to do immediate RRQs when terminal alias changed
+ *
+ * Revision 2.35.4.4  2007/09/07 08:51:25  hfriederich
  * Backports from HEAD
  *
  * Revision 2.35.4.3  2007/08/05 13:12:17  hfriederich
@@ -1165,6 +1168,8 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
   // Remove the endpoint aliases that the gatekeeper did not like and add the
   // ones that it really wants us to be.
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_terminalAlias)) {
+    PWaitAndSignal m(endpoint.GetAliasNamesMutex());
+    
     const PStringList & currentAliases = endpoint.GetAliasNames();
     PStringList aliasesToChange;
     PINDEX i, j;
@@ -2238,6 +2243,16 @@ void H323Gatekeeper::OnServiceControlSessions(const H225_ArrayOf_ServiceControlS
 }
 
 
+void H323Gatekeeper::OnTerminalAliasChanged()
+{
+  // Do a non-lightweight RRQ. Treat the GK as
+  // unregistered and immediately send a RRQ
+  registrationFailReason = UnregisteredLocally;
+  reregisterNow = TRUE;
+  monitorTickle.Signal();
+}
+
+
 void H323Gatekeeper::SetPassword(const PString & password, 
                                  const PString & username)
 {
@@ -2364,17 +2379,17 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
 {
   if (PAssertNULL(transport) == NULL)
     return FALSE;
-
+  
   // Set authenticators if not already set by caller
   requestMutex.Wait();
-
+  
   if (request.requestPDU.GetAuthenticators().IsEmpty())
     request.requestPDU.SetAuthenticators(authenticators);
-
+  
   /* To be sure that the H323 Cleaner, H225 Caller or Monitor don't set the
      transport address of the alternate while the other is in timeout. We
      have to block the function */
-
+  
   H323TransportAddress tempAddr = transport->GetRemoteAddress();
   PString tempIdentifier = gatekeeperIdentifier;
   
@@ -2382,8 +2397,8 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
   for (;;) {
     if (H225_RAS::MakeRequest(request)) {
       if (!alternatePermanent &&
-            (transport->GetRemoteAddress() != tempAddr ||
-             gatekeeperIdentifier != tempIdentifier))
+          (transport->GetRemoteAddress() != tempAddr ||
+           gatekeeperIdentifier != tempIdentifier))
         Connect(tempAddr, tempIdentifier);
       requestMutex.Signal();
       return TRUE;
@@ -2411,7 +2426,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
       transport->GetLocalAddress().GetIpAndPort(localAddress,localPort);
       transport->CleanUpOnTermination();
       delete transport;
-
+      
       transport = new H323TransportUDP(endpoint,localAddress,localPort);
       transport->SetRemoteAddress (altInfo->rasAddress);
       transport->Connect();
@@ -2432,9 +2447,9 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
           altInfo->registrationState = AlternateInfo::IsRegistered;
           // The wanted registration is done, we can return
           if (request.requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {
-	    if (!alternatePermanent)
-	      Connect(tempAddr,tempIdentifier);
-	    return TRUE;
+            if (!alternatePermanent)
+              Connect(tempAddr,tempIdentifier);
+            return TRUE;
           }
         }
         requestMutex.Wait();
