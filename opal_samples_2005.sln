@@ -35,6 +35,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecTest", "samples\codect
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CallGen", "samples\callgen\callgen_2005.vcproj", "{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlayRTP", "samples\playrtp\playrtp_2005.vcproj", "{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -117,6 +119,12 @@ Global
 		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.No Trace|Win32.Build.0 = Debug|Win32
 		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Release|Win32.ActiveCfg = Release|Win32
 		{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}.Release|Win32.Build.0 = Release|Win32
+		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Debug|Win32.Build.0 = Debug|Win32
+		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.No Trace|Win32.Build.0 = Debug|Win32
+		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Release|Win32.ActiveCfg = Release|Win32
+		{0FB8D668-0D31-4C4C-B01D-0F14E17259A7}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
