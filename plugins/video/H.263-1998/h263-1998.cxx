@@ -135,7 +135,7 @@ bool H263PEncoderContext::OpenCodec()
   _context->rc_min_rate = 0; // minimum bitrate
   _context->rc_max_rate = _bitRate; // maximum bitrate
   _context->rc_qsquish = 0; // limit q by clipping
-  _context->rc_eq= "tex^qComp"; // rate control equation
+  _context->rc_eq= (char*) "tex^qComp"; // rate control equation
   _context->rc_buffer_size = _bitRate * 64;
 
   _context->mb_qmin = _context->qmin = _videoQMin;

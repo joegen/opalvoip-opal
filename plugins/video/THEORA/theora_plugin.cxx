@@ -301,7 +301,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
       }
 
       theora_comment_init(&theoraComment);
-      theoraComment.vendor = "theora";
+      theoraComment.vendor = (char*) "theora";
       ret = theora_decode_header( &_theoraInfo, &theoraComment, &oggPacket );
       if (ret != 0) {
         TRACE(1, "THEORA\tDecoder\tDecoding failed (header packet): " << theoraErrorMessage(ret));
@@ -425,7 +425,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
 const char*
 theoraErrorMessage(int code)
 {
-  static char *error;
+  static const char *error;
   static char errormsg [1024];	
 
   switch (code) {
