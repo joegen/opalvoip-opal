@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.48  2007/09/30 12:49:23  rjongbloed
+ * Added desired video size to options dialog.
+ *
  * Revision 1.47  2007/09/26 04:21:30  rjongbloed
  * Added saving of video output and preview window positions.
  *
@@ -459,6 +462,7 @@ class OptionsDialog : public wxDialog
     int       m_VideoGrabFormat;
     int       m_VideoGrabSource;
     int       m_VideoGrabFrameRate;
+    PwxString m_VideoGrabFrameSize;
     bool      m_VideoGrabPreview;
     bool      m_VideoFlipLocal;
     bool      m_VideoAutoTransmit;
@@ -740,11 +744,14 @@ class MyManager : public wxFrame, public OpalManager
 #endif
 
     bool m_autoAnswer;
+
     bool m_VideoGrabPreview;
     int  m_localVideoFrameX;
     int  m_localVideoFrameY;
     int  m_remoteVideoFrameX;
     int  m_remoteVideoFrameY;
+    PwxString m_VideoGrabFrameSize;
+    bool AdjustFrameSize();
 
     MyMediaList m_mediaInfo;
     void InitMediaInfo(const char * source, const OpalMediaFormatList & formats);
