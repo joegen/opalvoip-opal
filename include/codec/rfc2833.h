@@ -23,7 +23,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.h,v $
- * Revision 1.2008  2007/07/26 00:38:56  csoutheren
+ * Revision 1.2009  2007/09/30 17:46:46  dsandras
+ * Added missing const.
+ *
+ * Revision 2.7  2007/07/26 00:38:56  csoutheren
  * Make transmission of RFC2833 independent of the media stream
  *
  * Revision 2.6  2007/03/12 23:36:23  csoutheren
@@ -57,10 +60,10 @@
 
 #include <rtp/rtp.h>
 
-extern char * OpalDefaultNTEString;
+extern const char * OpalDefaultNTEString;
 
 #if OPAL_T38FAX
-extern char * OpalDefaultNSEString;
+extern const char * OpalDefaultNSEString;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
