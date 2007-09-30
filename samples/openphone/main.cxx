@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.38  2007/09/30 12:49:22  rjongbloed
+ * Added desired video size to options dialog.
+ *
  * Revision 1.37  2007/09/26 04:21:30  rjongbloed
  * Added saving of video output and preview window positions.
  *
@@ -353,6 +356,7 @@ DEF_FIELD(VideoGrabber);
 DEF_FIELD(VideoGrabFormat);
 DEF_FIELD(VideoGrabSource);
 DEF_FIELD(VideoGrabFrameRate);
+DEF_FIELD(VideoGrabFrameSize);
 DEF_FIELD(VideoGrabPreview);
 DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
@@ -819,6 +823,9 @@ bool MyManager::Initialise()
     videoArgs.rate = value1;
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
+
+  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize, "CIF");
+  AdjustFrameSize();
 
   config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
   if (config->Read(VideoAutoTransmitKey, &onoff))
@@ -1956,6 +1963,27 @@ bool MyManager::StopRegistrar()
 }
 
 
+bool MyManager::AdjustFrameSize()
+{
+  unsigned width, height;
+  if (!PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, width, height))
+    return false;
+
+  OpalMediaFormatList allMediaFormats;
+  OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
+  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
+    OpalMediaFormat mediaFormat = allMediaFormats[i];
+    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+      OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+    }
+  }
+
+  return true;
+}
+
+
 void MyManager::InitMediaInfo(const char * source, const OpalMediaFormatList & mediaFormats)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
@@ -1985,6 +2013,32 @@ void MyManager::ApplyMediaInfo()
   }
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
+
+class wxFrameSizeValidator: public wxGenericValidator
+{
+public:
+  wxFrameSizeValidator(wxString* val)
+    : wxGenericValidator(val)
+  {
+  }
+
+  virtual wxObject *Clone() const
+  {
+    return new wxFrameSizeValidator(*this);
+  }
+
+  virtual bool Validate(wxWindow * parent)
+  {
+    unsigned width, height;
+    if (PVideoFrameInfo::ParseSize(GetWindow()->GetLabel().c_str(), width, height))
+      return true;
+
+    wxMessageBox("Illegal value for video size.", "Error", wxCANCEL|wxICON_EXCLAMATION);
+    return false;
+  }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -2196,6 +2250,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != FALSE);
   INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != FALSE);
   INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != FALSE);
+
+  m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
+  FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
 
   choice = FindWindowByNameAs<wxChoice>(this, "VideoGrabber");
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -2437,6 +2494,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabFormat, grabber.videoFormat = (PVideoDevice::VideoFormat));
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
+  SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
+  m_manager.AdjustFrameSize();
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
   m_manager.SetVideoInputDevice(grabber);
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
