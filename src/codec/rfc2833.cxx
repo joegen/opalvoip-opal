@@ -23,7 +23,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2009  2007/08/17 08:59:20  csoutheren
+ * Revision 1.2010  2007/09/30 17:39:32  dsandras
+ * Killed more GCC 4.2 warnings. Patch from Matthias Schneider <ma30002000
+ * yahoo de>.
+ *
+ * Revision 2.8  2007/08/17 08:59:20  csoutheren
  * Changed logging message
  *
  * Revision 2.7  2007/08/09 08:22:47  csoutheren
@@ -61,10 +65,10 @@
 #include <rtp/rtp.h>
 
 static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
-char * OpalDefaultNTEString = "0-15,32-49";
+const char * OpalDefaultNTEString = "0-15,32-49";
 
 #if OPAL_T38FAX
-char * OpalDefaultNSEString = "192,193";
+const char * OpalDefaultNSEString = "192,193";
 #endif
 
 #define new PNEW
