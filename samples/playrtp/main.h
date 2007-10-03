@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.2  2007/10/03 05:30:32  rjongbloed
+ * Added display of when a decoder error occurs.
+ *
  * Revision 1.1  2007/09/28 02:33:26  rjongbloed
  * Added application to play back RTP out of a Wireshark capture file.
  *
@@ -41,6 +44,8 @@ class PlayRTP : public PProcess
 
     virtual void Main();
     void Play(const PFilePath & filename);
+
+    PDECLARE_NOTIFIER(OpalMediaCommand, PlayRTP, OnTranscoderCommand);
 
     std::map<RTP_DataFrame::PayloadTypes, OpalMediaFormat> m_payloadType2mediaFormat;
 
