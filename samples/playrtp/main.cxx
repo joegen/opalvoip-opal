@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.3  2007/10/03 05:30:32  rjongbloed
+ * Added display of when a decoder error occurs.
+ *
  * Revision 1.2  2007/10/03 03:52:52  rjongbloed
  * Fixed warning
  *
@@ -377,6 +380,7 @@ void PlayRTP::Play(const PFilePath & filename)
       }
 
       cout << "Decoding " << srcFmt << " from file \"" << filename << '"' << endl;
+      m_transcoder->SetCommandNotifier(PCREATE_NOTIFIER(OnTranscoderCommand));
       lastTimeStamp = rtp.GetTimestamp();
     }
 
@@ -409,6 +413,13 @@ void PlayRTP::Play(const PFilePath & filename)
 
   delete m_transcoder;
   m_transcoder = NULL;
+}
+
+
+void PlayRTP::OnTranscoderCommand(OpalMediaCommand & command, INT /*extra*/)
+{
+  if (PIsDescendant(&command, OpalVideoUpdatePicture))
+    cout << "Decoder error in received stream." << endl;
 }
 
 
