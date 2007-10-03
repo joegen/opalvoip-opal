@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2053  2007/09/21 01:34:09  rjongbloed
+ * Revision 1.2054  2007/10/03 23:59:05  rjongbloed
+ * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
+ *   thanks to Will Hawkins and Kris Marsh for what needs to be done.
+ *
+ * Revision 2.52  2007/09/21 01:34:09  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -300,6 +304,15 @@ class SIPURL : public PURL
         (scheme, user, password, host, port & URI parms (like transport))
       */
     void AdjustForRequestURI();
+
+    /** This will adjust the current URL according to RFC3263, using DNS SRV records.
+
+        @return FALSE if DNS is available but entry is larger than last SRV record entry,
+                TRUE if DNS lookup fails or no DNS is available
+      */
+    BOOL AdjustToDNS(
+      PINDEX entry = 0  /// Entry in the SRV record to adjust to
+    );
 
   protected:
     /** Parses name-addr, like:

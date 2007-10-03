@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2264  2007/09/24 23:38:39  csoutheren
+ * Revision 1.2265  2007/10/03 23:59:05  rjongbloed
+ * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
+ *   thanks to Will Hawkins and Kris Marsh for what needs to be done.
+ *
+ * Revision 2.263  2007/09/24 23:38:39  csoutheren
  * Fixed errors on 64 bit Linux
  *
  * Revision 2.262  2007/09/21 01:34:10  rjongbloed
@@ -1193,13 +1197,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   UpdateRemotePartyNameAndNumber();
   
   // Do a DNS SRV lookup
-#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(destination.GetHostName(), "_sip._udp", destination.GetPort(), addrs)) {
-      transportAddress.SetHostName(addrs[0].address.AsString());
-      transportAddress.SetPort(addrs [0].port);
-    }
-#endif
+  transportAddress.AdjustToDNS();
 
   originalInvite = NULL;
   pduHandler = NULL;
@@ -1797,13 +1795,8 @@ BOOL SIPConnection::SetUpConnection()
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
   // Do a DNS SRV lookup
-#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(targetAddress.GetHostName(), "_sip._udp", targetAddress.GetPort(), addrs)) {
-      transportAddress.SetHostName(addrs[0].address.AsString());
-      transportAddress.SetPort(addrs [0].port);
-    }
-#endif
+  transportAddress.AdjustToDNS();
+
   PStringList routeSet = GetRouteSet();
   if (!routeSet.IsEmpty()) 
     transportAddress = routeSet[0];
