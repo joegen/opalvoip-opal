@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.2  2007/10/03 03:52:52  rjongbloed
+ * Fixed warning
+ *
  * Revision 1.1  2007/09/28 02:33:26  rjongbloed
  * Added application to play back RTP out of a Wireshark capture file.
  *
@@ -266,7 +269,7 @@ void PlayRTP::Play(const PFilePath & filename)
   PBYTEArray packetData(pcap_hdr.snaplen); // Every packet is smaller than this
 
   RTP_DataFrame::PayloadTypes rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
-  DWORD lastTimeStamp;
+  DWORD lastTimeStamp = 0;
 
   while (!pcap.IsEndOfFile()) {
     struct pcaprec_hdr_s { 
