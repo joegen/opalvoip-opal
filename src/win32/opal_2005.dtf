@@ -458,17 +458,21 @@ EXPORTS
     ??0?$PQueue@VSIP_PDU@@@@QAE@XZ @297 NONAME
     ??0?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@QAE@XZ @298 NONAME
     ??0?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@QAE@XZ @41903 NONAME
+    ??0?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@QAE@XZ @43466 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@QAE@XZ @300 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@QAE@XZ @301 NONAME
     ??0?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@QAE@XZ @302 NONAME
     ??0?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@QAE@XZ @303 NONAME
     ??0?$PSafeDictionary@VPString@@VOpalCall@@@@QAE@XZ @304 NONAME
     ??0?$PSafeDictionary@VPString@@VOpalConnection@@@@QAE@XZ @305 NONAME
+    ??0?$PSafeDictionary@VPString@@VSIPTransaction@@@@QAE@XZ @43467 NONAME
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@QAE@XZ @306 NONAME
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@QAE@XZ @307 NONAME
     ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@QAE@XZ @308 NONAME
+    ??0?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@QAE@XZ @43468 NONAME
     ??0?$PSafeList@VOpalConnection@@@@QAE@XZ @309 NONAME
     ??0?$PSafeList@VSIPHandler@@@@QAE@XZ @41904 NONAME
+    ??0?$PSafeList@VSIPTransaction@@@@QAE@XZ @43469 NONAME
     ??0?$PSafePtr@VH323Connection@@@@QAE@ABV0@@Z @311 NONAME
     ??0?$PSafePtr@VH323Connection@@@@QAE@PAVH323Connection@@W4PSafetyMode@@@Z @312 NONAME
     ??0?$PSafePtr@VH323GatekeeperCall@@@@QAE@ABV0@@Z @313 NONAME
@@ -505,6 +509,10 @@ EXPORTS
     ??0?$PSafePtr@VSIPHandler@@@@QAE@ABV0@@Z @41906 NONAME
     ??0?$PSafePtr@VSIPHandler@@@@QAE@ABVPSafeCollection@@W4PSafetyMode@@H@Z @41907 NONAME
     ??0?$PSafePtr@VSIPHandler@@@@QAE@PAVSIPHandler@@W4PSafetyMode@@@Z @41908 NONAME
+    ??0?$PSafePtr@VSIPTransaction@@@@QAE@ABV0@@Z @43470 NONAME
+    ??0?$PSafePtr@VSIPTransaction@@@@QAE@ABVPSafeCollection@@W4PSafetyMode@@H@Z @43471 NONAME
+    ??0?$PSafePtr@VSIPTransaction@@@@QAE@ABVPSafeCollection@@W4PSafetyMode@@PAVPSafeObject@@@Z @43472 NONAME
+    ??0?$PSafePtr@VSIPTransaction@@@@QAE@PAVSIPTransaction@@W4PSafetyMode@@@Z @43473 NONAME
     ??0?$PSafeSortedList@VH323GatekeeperCall@@@@QAE@XZ @344 NONAME
     ??0?$PSafeSortedList@VH323PeerElementDescriptor@@@@QAE@XZ @345 NONAME
     ??0?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@QAE@XZ @346 NONAME
@@ -690,7 +698,6 @@ EXPORTS
     ??0ContinueAction_PNotifier@OpalH281Handler@@QAE@PAV1@@Z @452 NONAME
     ??0Entry@OpalJitterBuffer@@QAE@XZ @41165 NONAME
     ??0Filter@OpalMediaPatch@@QAE@ABVPNotifier@@ABVOpalMediaFormat@@@Z @454 NONAME
-    ??0GarbageCollector_PNotifier@SIPEndPoint@@QAE@PAV1@@Z @41938 NONAME
     ??0GarbageMain_PNotifier@OpalManager@@QAE@PAV1@@Z @455 NONAME
     ??0GCC_AlternativeNodeID@@QAE@ABV0@@Z @456 NONAME
     ??0GCC_AlternativeNodeID@@QAE@IW4TagClass@PASN_Object@@@Z @457 NONAME
@@ -3094,6 +3101,7 @@ EXPORTS
     ??0H323PluginCapabilityInfo@@QAE@ABVPString@@@Z @2848 NONAME
     ??0H323PluginCapabilityInfo@@QAE@PBUPluginCodec_Definition@@0@Z @42704 NONAME
     ??0H323PluginG7231Capability@@QAE@ABV0@@Z @2850 NONAME
+    ??0H323PluginG7231Capability@@QAE@ABVOpalMediaFormat@@H@Z @43474 NONAME
     ??0H323PluginG7231Capability@@QAE@PBUPluginCodec_Definition@@0H@Z @42705 NONAME
     ??0H323RasPDU@@QAE@ABV0@@Z @2852 NONAME
     ??0H323RasPDU@@QAE@ABVH235Authenticators@@@Z @2853 NONAME
@@ -4297,7 +4305,6 @@ EXPORTS
     ??0Opal_RFC4175YCbCr420_to_YUV420P@@QAE@XZ @42974 NONAME
     ??0Opal_RGB24_to_RFC4175RGB@@QAE@XZ @42975 NONAME
     ??0Opal_YUV420P_to_RFC4175YCbCr420@@QAE@XZ @42976 NONAME
-    ??0OpenArgs@PVideoDevice@@QAE@ABU01@@Z @41825 NONAME
     ??0Params@OpalEchoCanceler@@QAE@W4Mode@1@@Z @3998 NONAME
     ??0Params@OpalSilenceDetector@@QAE@W4Mode@1@IIII@Z @3999 NONAME
     ??0PASN_GeneralisedTime@@QAE@ABV0@@Z @4000 NONAME
@@ -4599,17 +4606,21 @@ EXPORTS
     ??1?$PQueue@VSIP_PDU@@@@UAE@XZ @4256 NONAME
     ??1?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAE@XZ @4257 NONAME
     ??1?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UAE@XZ @41990 NONAME
+    ??1?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UAE@XZ @43475 NONAME
     ??1?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE@XZ @4259 NONAME
     ??1?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UAE@XZ @4260 NONAME
     ??1?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAE@XZ @4261 NONAME
     ??1?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@UAE@XZ @4262 NONAME
     ??1?$PSafeDictionary@VPString@@VOpalCall@@@@UAE@XZ @4263 NONAME
     ??1?$PSafeDictionary@VPString@@VOpalConnection@@@@UAE@XZ @4264 NONAME
+    ??1?$PSafeDictionary@VPString@@VSIPTransaction@@@@UAE@XZ @43476 NONAME
     ??1?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE@XZ @4265 NONAME
     ??1?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAE@XZ @4266 NONAME
     ??1?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAE@XZ @4267 NONAME
+    ??1?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UAE@XZ @43477 NONAME
     ??1?$PSafeList@VOpalConnection@@@@UAE@XZ @4268 NONAME
     ??1?$PSafeList@VSIPHandler@@@@UAE@XZ @41991 NONAME
+    ??1?$PSafeList@VSIPTransaction@@@@UAE@XZ @43478 NONAME
     ??1?$PSafePtr@VH323Connection@@@@UAE@XZ @4270 NONAME
     ??1?$PSafePtr@VH323GatekeeperCall@@@@UAE@XZ @4271 NONAME
     ??1?$PSafePtr@VH323PeerElementDescriptor@@@@UAE@XZ @4272 NONAME
@@ -4623,6 +4634,7 @@ EXPORTS
     ??1?$PSafePtr@VOpalPCSSConnection@@@@UAE@XZ @4279 NONAME
     ??1?$PSafePtr@VSIPConnection@@@@UAE@XZ @4280 NONAME
     ??1?$PSafePtr@VSIPHandler@@@@UAE@XZ @41992 NONAME
+    ??1?$PSafePtr@VSIPTransaction@@@@UAE@XZ @43479 NONAME
     ??1?$PSafeSortedList@VH323GatekeeperCall@@@@UAE@XZ @4282 NONAME
     ??1?$PSafeSortedList@VH323PeerElementDescriptor@@@@UAE@XZ @4283 NONAME
     ??1?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@UAE@XZ @4284 NONAME
@@ -4690,7 +4702,6 @@ EXPORTS
     ??1ContinueAction_PNotifier@OpalH281Handler@@UAE@XZ @4327 NONAME
     ??1Entry@OpalJitterBuffer@@UAE@XZ @41189 NONAME
     ??1Filter@OpalMediaPatch@@UAE@XZ @4329 NONAME
-    ??1GarbageCollector_PNotifier@SIPEndPoint@@UAE@XZ @42002 NONAME
     ??1GarbageMain_PNotifier@OpalManager@@UAE@XZ @4330 NONAME
     ??1GCC_AlternativeNodeID@@UAE@XZ @4331 NONAME
     ??1GCC_ApplicationInvokeIndication@@UAE@XZ @4332 NONAME
@@ -6524,7 +6535,6 @@ EXPORTS
     ??1Opal_RFC4175YCbCr420_to_YUV420P@@UAE@XZ @43010 NONAME
     ??1Opal_RGB24_to_RFC4175RGB@@UAE@XZ @43011 NONAME
     ??1Opal_YUV420P_to_RFC4175YCbCr420@@UAE@XZ @43012 NONAME
-    ??1OpenArgs@PVideoDevice@@QAE@XZ @6119 NONAME
     ??1PASN_GeneralisedTime@@UAE@XZ @6120 NONAME
     ??1PendingRtpDataFrames@@UAE@XZ @41194 NONAME
     ??1PluginLoader@@UAE@XZ @6121 NONAME
@@ -6677,8 +6687,10 @@ EXPORTS
     ??4?$PSafePtr@VOpalFaxConnection@@@@QAEAAV0@PAVOpalFaxConnection@@@Z @41594 NONAME
     ??4?$PSafePtr@VOpalLineConnection@@@@QAEAAV0@PAVOpalLineConnection@@@Z @6251 NONAME
     ??4?$PSafePtr@VOpalPCSSConnection@@@@QAEAAV0@PAVOpalPCSSConnection@@@Z @6252 NONAME
+    ??4?$PSafePtr@VSIPConnection@@@@QAEAAV0@PAVSIPConnection@@@Z @43480 NONAME
     ??4?$PSafePtr@VSIPHandler@@@@QAEAAV0@ABV0@@Z @42037 NONAME
     ??4?$PSafePtr@VSIPHandler@@@@QAEAAV0@PAVSIPHandler@@@Z @42038 NONAME
+    ??4?$PSafePtr@VSIPTransaction@@@@QAEAAV0@PAVSIPTransaction@@@Z @43481 NONAME
     ??4?$PSortedList@VOpalMediaOption@@@@QAEAAV0@ABV0@@Z @6255 NONAME
     ??4?$PStringDictionary@VPCaselessString@@@@QAEAAV0@ABV0@@Z @6256 NONAME
     ??4?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAEAAV01@ABV01@@Z @6257 NONAME
@@ -7212,7 +7224,6 @@ EXPORTS
     ??A?$PList@VSDPMediaDescription@@@@QBEAAVSDPMediaDescription@@H@Z @6767 NONAME
     ??A?$PList@VSDPMediaFormat@@@@QBEAAVSDPMediaFormat@@H@Z @6768 NONAME
     ??A?$PList@VSink@OpalMediaPatch@@@@QBEAAVSink@OpalMediaPatch@@H@Z @6769 NONAME
-    ??A?$PList@VSIPTransaction@@@@QBEAAVSIPTransaction@@H@Z @6770 NONAME
     ??A?$POrdinalDictionary@VPString@@@@QBEHABVPString@@@Z @6771 NONAME
     ??A?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@QBEAAVAlternateInfo@H323Gatekeeper@@H@Z @6772 NONAME
     ??A?$PSortedList@VH225_AliasAddress@@@@QBEAAVH225_AliasAddress@@H@Z @6773 NONAME
@@ -7439,6 +7450,7 @@ EXPORTS
     ??B?$PSafePtr@VOpalPCSSConnection@@@@QBEPAVOpalPCSSConnection@@XZ @6990 NONAME
     ??B?$PSafePtr@VSIPConnection@@@@QBEPAVSIPConnection@@XZ @6991 NONAME
     ??B?$PSafePtr@VSIPHandler@@@@QBEPAVSIPHandler@@XZ @42044 NONAME
+    ??B?$PSafePtr@VSIPTransaction@@@@QBEPAVSIPTransaction@@XZ @43482 NONAME
     ??B?$_Vb_reference@V?$vector@_NV?$allocator@_N@std@@@std@@@std@@QBE_NXZ @40556 NONAME
     ??BGCC_CapabilityID@@QAEAAVGCC_Key@@XZ @6993 NONAME
     ??BGCC_CapabilityID@@QBEABVGCC_Key@@XZ @6994 NONAME
@@ -9095,6 +9107,7 @@ EXPORTS
     ??C?$PSafePtr@VOpalPCSSConnection@@@@QBEPAVOpalPCSSConnection@@XZ @8645 NONAME
     ??C?$PSafePtr@VSIPConnection@@@@QBEPAVSIPConnection@@XZ @8646 NONAME
     ??C?$PSafePtr@VSIPHandler@@@@QBEPAVSIPHandler@@XZ @42045 NONAME
+    ??C?$PSafePtr@VSIPTransaction@@@@QBEPAVSIPTransaction@@XZ @43483 NONAME
     ??C?$_Vector_const_iterator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@V?$allocator@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@2@@std@@QBEPBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@1@XZ @43028 NONAME
     ??C?$_Vector_iterator@U?$pair@VPString@@V1@@std@@V?$allocator@U?$pair@VPString@@V1@@std@@@2@@std@@QBEPAU?$pair@VPString@@V1@@1@XZ @43029 NONAME
     ??C?$_Vector_iterator@UCapabilityListCreateEntry@OpalPluginCodecManager@@V?$allocator@UCapabilityListCreateEntry@OpalPluginCodecManager@@@std@@@std@@QBEPAUCapabilityListCreateEntry@OpalPluginCodecManager@@XZ @40288 NONAME
@@ -9150,6 +9163,7 @@ EXPORTS
     ??E?$PSafePtr@VOpalCall@@@@QAEPAVOpalCall@@XZ @8680 NONAME
     ??E?$PSafePtr@VOpalConnection@@@@QAEPAVOpalConnection@@XZ @8681 NONAME
     ??E?$PSafePtr@VSIPHandler@@@@QAEPAVSIPHandler@@XZ @42053 NONAME
+    ??E?$PSafePtr@VSIPTransaction@@@@QAEPAVSIPTransaction@@XZ @43484 NONAME
     ??E?$_Vb_const_iterator@V?$vector@_NV?$allocator@_N@std@@@std@@@std@@QAEAAV01@XZ @40558 NONAME
     ??E?$_Vb_iterator@V?$vector@_NV?$allocator@_N@std@@@std@@@std@@QAEAAV01@XZ @40559 NONAME
     ??E?$_Vector_const_iterator@U?$pair@VPString@@V1@@std@@V?$allocator@U?$pair@VPString@@V1@@std@@@2@@std@@QAEAAV01@XZ @43040 NONAME
@@ -9325,17 +9339,21 @@ EXPORTS
     ??_7?$PQueue@VSIP_PDU@@@@6B@ @8805 NONAME
     ??_7?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@6B@ @8806 NONAME
     ??_7?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@6B@ @42066 NONAME
+    ??_7?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@6B@ @43485 NONAME
     ??_7?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@6B@ @8808 NONAME
     ??_7?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@6B@ @8809 NONAME
     ??_7?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@6B@ @8810 NONAME
     ??_7?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@6B@ @8811 NONAME
     ??_7?$PSafeDictionary@VPString@@VOpalCall@@@@6B@ @8812 NONAME
     ??_7?$PSafeDictionary@VPString@@VOpalConnection@@@@6B@ @8813 NONAME
+    ??_7?$PSafeDictionary@VPString@@VSIPTransaction@@@@6B@ @43486 NONAME
     ??_7?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@6B@ @8814 NONAME
     ??_7?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@6B@ @8815 NONAME
     ??_7?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@6B@ @8816 NONAME
+    ??_7?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@6B@ @43487 NONAME
     ??_7?$PSafeList@VOpalConnection@@@@6B@ @8817 NONAME
     ??_7?$PSafeList@VSIPHandler@@@@6B@ @42067 NONAME
+    ??_7?$PSafeList@VSIPTransaction@@@@6B@ @43488 NONAME
     ??_7?$PSafePtr@VH323Connection@@@@6B@ @8819 NONAME
     ??_7?$PSafePtr@VH323GatekeeperCall@@@@6B@ @8820 NONAME
     ??_7?$PSafePtr@VH323PeerElementDescriptor@@@@6B@ @8821 NONAME
@@ -9349,6 +9367,7 @@ EXPORTS
     ??_7?$PSafePtr@VOpalPCSSConnection@@@@6B@ @8828 NONAME
     ??_7?$PSafePtr@VSIPConnection@@@@6B@ @8829 NONAME
     ??_7?$PSafePtr@VSIPHandler@@@@6B@ @42068 NONAME
+    ??_7?$PSafePtr@VSIPTransaction@@@@6B@ @43489 NONAME
     ??_7?$PSafeSortedList@VH323GatekeeperCall@@@@6B@ @8831 NONAME
     ??_7?$PSafeSortedList@VH323PeerElementDescriptor@@@@6B@ @8832 NONAME
     ??_7?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@6B@ @8833 NONAME
@@ -9397,7 +9416,6 @@ EXPORTS
     ??_7ContinueAction_PNotifier@OpalH281Handler@@6B@ @8867 NONAME
     ??_7Entry@OpalJitterBuffer@@6B@ @41206 NONAME
     ??_7Filter@OpalMediaPatch@@6B@ @8869 NONAME
-    ??_7GarbageCollector_PNotifier@SIPEndPoint@@6B@ @42074 NONAME
     ??_7GarbageMain_PNotifier@OpalManager@@6B@ @8870 NONAME
     ??_7GCC_AlternativeNodeID@@6B@ @8871 NONAME
     ??_7GCC_ApplicationInvokeIndication@@6B@ @8872 NONAME
@@ -11463,17 +11481,21 @@ EXPORTS
     ??_R0?AV?$PQueue@VSIP_PDU@@@@@8 @10872 NONAME
     ??_R0?AV?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@@8 @10873 NONAME
     ??_R0?AV?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@@8 @42105 NONAME
+    ??_R0?AV?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@@8 @43490 NONAME
     ??_R0?AV?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@@8 @10875 NONAME
     ??_R0?AV?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@@8 @10876 NONAME
     ??_R0?AV?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@@8 @10877 NONAME
     ??_R0?AV?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@@8 @10878 NONAME
     ??_R0?AV?$PSafeDictionary@VPString@@VOpalCall@@@@@8 @10879 NONAME
     ??_R0?AV?$PSafeDictionary@VPString@@VOpalConnection@@@@@8 @10880 NONAME
+    ??_R0?AV?$PSafeDictionary@VPString@@VSIPTransaction@@@@@8 @43491 NONAME
     ??_R0?AV?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@@8 @10881 NONAME
     ??_R0?AV?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@@8 @10882 NONAME
     ??_R0?AV?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@@8 @10883 NONAME
+    ??_R0?AV?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@@8 @43492 NONAME
     ??_R0?AV?$PSafeList@VOpalConnection@@@@@8 @10884 NONAME
     ??_R0?AV?$PSafeList@VSIPHandler@@@@@8 @42106 NONAME
+    ??_R0?AV?$PSafeList@VSIPTransaction@@@@@8 @43493 NONAME
     ??_R0?AV?$PSafePtr@VH323Connection@@@@@8 @10886 NONAME
     ??_R0?AV?$PSafePtr@VH323GatekeeperCall@@@@@8 @10887 NONAME
     ??_R0?AV?$PSafePtr@VH323PeerElementDescriptor@@@@@8 @10888 NONAME
@@ -11487,6 +11509,7 @@ EXPORTS
     ??_R0?AV?$PSafePtr@VOpalPCSSConnection@@@@@8 @10895 NONAME
     ??_R0?AV?$PSafePtr@VSIPConnection@@@@@8 @10896 NONAME
     ??_R0?AV?$PSafePtr@VSIPHandler@@@@@8 @42107 NONAME
+    ??_R0?AV?$PSafePtr@VSIPTransaction@@@@@8 @43494 NONAME
     ??_R0?AV?$PSafeSortedList@VH323GatekeeperCall@@@@@8 @10898 NONAME
     ??_R0?AV?$PSafeSortedList@VH323PeerElementDescriptor@@@@@8 @10899 NONAME
     ??_R0?AV?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@@8 @10900 NONAME
@@ -11535,7 +11558,6 @@ EXPORTS
     ??_R0?AVContinueAction_PNotifier@OpalH281Handler@@@8 @10934 NONAME
     ??_R0?AVEntry@OpalJitterBuffer@@@8 @41218 NONAME
     ??_R0?AVFilter@OpalMediaPatch@@@8 @10936 NONAME
-    ??_R0?AVGarbageCollector_PNotifier@SIPEndPoint@@@8 @42113 NONAME
     ??_R0?AVGarbageMain_PNotifier@OpalManager@@@8 @10937 NONAME
     ??_R0?AVGCC_AlternativeNodeID@@@8 @10938 NONAME
     ??_R0?AVGCC_ApplicationInvokeIndication@@@8 @10939 NONAME
@@ -13561,17 +13583,21 @@ EXPORTS
     ??_R1A@?0A@EA@?$PQueue@VSIP_PDU@@@@8 @12902 NONAME
     ??_R1A@?0A@EA@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@8 @12903 NONAME
     ??_R1A@?0A@EA@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@8 @42144 NONAME
+    ??_R1A@?0A@EA@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@8 @43495 NONAME
     ??_R1A@?0A@EA@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@8 @12905 NONAME
     ??_R1A@?0A@EA@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@8 @12906 NONAME
     ??_R1A@?0A@EA@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@8 @12907 NONAME
     ??_R1A@?0A@EA@?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@8 @12908 NONAME
     ??_R1A@?0A@EA@?$PSafeDictionary@VPString@@VOpalCall@@@@8 @12909 NONAME
     ??_R1A@?0A@EA@?$PSafeDictionary@VPString@@VOpalConnection@@@@8 @12910 NONAME
+    ??_R1A@?0A@EA@?$PSafeDictionary@VPString@@VSIPTransaction@@@@8 @43496 NONAME
     ??_R1A@?0A@EA@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@8 @12911 NONAME
     ??_R1A@?0A@EA@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@8 @12912 NONAME
     ??_R1A@?0A@EA@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@8 @12913 NONAME
+    ??_R1A@?0A@EA@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@8 @43497 NONAME
     ??_R1A@?0A@EA@?$PSafeList@VOpalConnection@@@@8 @12914 NONAME
     ??_R1A@?0A@EA@?$PSafeList@VSIPHandler@@@@8 @42145 NONAME
+    ??_R1A@?0A@EA@?$PSafeList@VSIPTransaction@@@@8 @43498 NONAME
     ??_R1A@?0A@EA@?$PSafePtr@VH323Connection@@@@8 @12916 NONAME
     ??_R1A@?0A@EA@?$PSafePtr@VH323GatekeeperCall@@@@8 @12917 NONAME
     ??_R1A@?0A@EA@?$PSafePtr@VH323PeerElementDescriptor@@@@8 @12918 NONAME
@@ -13585,6 +13611,7 @@ EXPORTS
     ??_R1A@?0A@EA@?$PSafePtr@VOpalPCSSConnection@@@@8 @12925 NONAME
     ??_R1A@?0A@EA@?$PSafePtr@VSIPConnection@@@@8 @12926 NONAME
     ??_R1A@?0A@EA@?$PSafePtr@VSIPHandler@@@@8 @42146 NONAME
+    ??_R1A@?0A@EA@?$PSafePtr@VSIPTransaction@@@@8 @43499 NONAME
     ??_R1A@?0A@EA@?$PSafeSortedList@VH323GatekeeperCall@@@@8 @12928 NONAME
     ??_R1A@?0A@EA@?$PSafeSortedList@VH323PeerElementDescriptor@@@@8 @12929 NONAME
     ??_R1A@?0A@EA@?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@8 @12930 NONAME
@@ -13633,7 +13660,6 @@ EXPORTS
     ??_R1A@?0A@EA@ContinueAction_PNotifier@OpalH281Handler@@8 @12964 NONAME
     ??_R1A@?0A@EA@Entry@OpalJitterBuffer@@8 @41230 NONAME
     ??_R1A@?0A@EA@Filter@OpalMediaPatch@@8 @12966 NONAME
-    ??_R1A@?0A@EA@GarbageCollector_PNotifier@SIPEndPoint@@8 @42152 NONAME
     ??_R1A@?0A@EA@GarbageMain_PNotifier@OpalManager@@8 @12967 NONAME
     ??_R1A@?0A@EA@GCC_AlternativeNodeID@@8 @12968 NONAME
     ??_R1A@?0A@EA@GCC_ApplicationInvokeIndication@@8 @12969 NONAME
@@ -15588,7 +15614,7 @@ EXPORTS
     ??_R1A@?0A@EN@WorkerBase@?$PFactory@VPPluginModuleManager@@V?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@@8 @40866 NONAME
     ??_R1BBB@?0A@EA@OpalPluginTranscoder@@8 @43121 NONAME
     ??_R1BBJ@?0A@EA@OpalPluginTranscoder@@8 @43122 NONAME
-    ??_R1BCI@?0A@EA@OpalPluginTranscoder@@8 @43123 NONAME
+    ??_R1BCJ@?0A@EA@OpalPluginTranscoder@@8 @43500 NONAME
     ??_R1CA@?0A@EA@H323TransactionPDU@@8 @14868 NONAME
     ??_R1EME@?0A@EA@H323TransactionPDU@@8 @14869 NONAME
     ??_R1HI@?0A@EA@H323GenericCapabilityInfo@@8 @43124 NONAME
@@ -15674,17 +15700,21 @@ EXPORTS
     ??_R2?$PQueue@VSIP_PDU@@@@8 @14943 NONAME
     ??_R2?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@8 @14944 NONAME
     ??_R2?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@8 @42183 NONAME
+    ??_R2?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@8 @43501 NONAME
     ??_R2?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@8 @14946 NONAME
     ??_R2?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@8 @14947 NONAME
     ??_R2?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@8 @14948 NONAME
     ??_R2?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@8 @14949 NONAME
     ??_R2?$PSafeDictionary@VPString@@VOpalCall@@@@8 @14950 NONAME
     ??_R2?$PSafeDictionary@VPString@@VOpalConnection@@@@8 @14951 NONAME
+    ??_R2?$PSafeDictionary@VPString@@VSIPTransaction@@@@8 @43502 NONAME
     ??_R2?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@8 @14952 NONAME
     ??_R2?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@8 @14953 NONAME
     ??_R2?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@8 @14954 NONAME
+    ??_R2?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@8 @43503 NONAME
     ??_R2?$PSafeList@VOpalConnection@@@@8 @14955 NONAME
     ??_R2?$PSafeList@VSIPHandler@@@@8 @42184 NONAME
+    ??_R2?$PSafeList@VSIPTransaction@@@@8 @43504 NONAME
     ??_R2?$PSafePtr@VH323Connection@@@@8 @14957 NONAME
     ??_R2?$PSafePtr@VH323GatekeeperCall@@@@8 @14958 NONAME
     ??_R2?$PSafePtr@VH323PeerElementDescriptor@@@@8 @14959 NONAME
@@ -15698,6 +15728,7 @@ EXPORTS
     ??_R2?$PSafePtr@VOpalPCSSConnection@@@@8 @14966 NONAME
     ??_R2?$PSafePtr@VSIPConnection@@@@8 @14967 NONAME
     ??_R2?$PSafePtr@VSIPHandler@@@@8 @42185 NONAME
+    ??_R2?$PSafePtr@VSIPTransaction@@@@8 @43505 NONAME
     ??_R2?$PSafeSortedList@VH323GatekeeperCall@@@@8 @14969 NONAME
     ??_R2?$PSafeSortedList@VH323PeerElementDescriptor@@@@8 @14970 NONAME
     ??_R2?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@8 @14971 NONAME
@@ -15746,7 +15777,6 @@ EXPORTS
     ??_R2ContinueAction_PNotifier@OpalH281Handler@@8 @15005 NONAME
     ??_R2Entry@OpalJitterBuffer@@8 @41242 NONAME
     ??_R2Filter@OpalMediaPatch@@8 @15007 NONAME
-    ??_R2GarbageCollector_PNotifier@SIPEndPoint@@8 @42191 NONAME
     ??_R2GarbageMain_PNotifier@OpalManager@@8 @15008 NONAME
     ??_R2GCC_AlternativeNodeID@@8 @15009 NONAME
     ??_R2GCC_ApplicationInvokeIndication@@8 @15010 NONAME
@@ -17772,17 +17802,21 @@ EXPORTS
     ??_R3?$PQueue@VSIP_PDU@@@@8 @16973 NONAME
     ??_R3?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@8 @16974 NONAME
     ??_R3?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@8 @42222 NONAME
+    ??_R3?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@8 @43506 NONAME
     ??_R3?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@8 @16976 NONAME
     ??_R3?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@8 @16977 NONAME
     ??_R3?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@8 @16978 NONAME
     ??_R3?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@8 @16979 NONAME
     ??_R3?$PSafeDictionary@VPString@@VOpalCall@@@@8 @16980 NONAME
     ??_R3?$PSafeDictionary@VPString@@VOpalConnection@@@@8 @16981 NONAME
+    ??_R3?$PSafeDictionary@VPString@@VSIPTransaction@@@@8 @43507 NONAME
     ??_R3?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@8 @16982 NONAME
     ??_R3?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@8 @16983 NONAME
     ??_R3?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@8 @16984 NONAME
+    ??_R3?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@8 @43508 NONAME
     ??_R3?$PSafeList@VOpalConnection@@@@8 @16985 NONAME
     ??_R3?$PSafeList@VSIPHandler@@@@8 @42223 NONAME
+    ??_R3?$PSafeList@VSIPTransaction@@@@8 @43509 NONAME
     ??_R3?$PSafePtr@VH323Connection@@@@8 @16987 NONAME
     ??_R3?$PSafePtr@VH323GatekeeperCall@@@@8 @16988 NONAME
     ??_R3?$PSafePtr@VH323PeerElementDescriptor@@@@8 @16989 NONAME
@@ -17796,6 +17830,7 @@ EXPORTS
     ??_R3?$PSafePtr@VOpalPCSSConnection@@@@8 @16996 NONAME
     ??_R3?$PSafePtr@VSIPConnection@@@@8 @16997 NONAME
     ??_R3?$PSafePtr@VSIPHandler@@@@8 @42224 NONAME
+    ??_R3?$PSafePtr@VSIPTransaction@@@@8 @43510 NONAME
     ??_R3?$PSafeSortedList@VH323GatekeeperCall@@@@8 @16999 NONAME
     ??_R3?$PSafeSortedList@VH323PeerElementDescriptor@@@@8 @17000 NONAME
     ??_R3?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@8 @17001 NONAME
@@ -17844,7 +17879,6 @@ EXPORTS
     ??_R3ContinueAction_PNotifier@OpalH281Handler@@8 @17035 NONAME
     ??_R3Entry@OpalJitterBuffer@@8 @41254 NONAME
     ??_R3Filter@OpalMediaPatch@@8 @17037 NONAME
-    ??_R3GarbageCollector_PNotifier@SIPEndPoint@@8 @42230 NONAME
     ??_R3GarbageMain_PNotifier@OpalManager@@8 @17038 NONAME
     ??_R3GCC_AlternativeNodeID@@8 @17039 NONAME
     ??_R3GCC_ApplicationInvokeIndication@@8 @17040 NONAME
@@ -19870,17 +19904,21 @@ EXPORTS
     ??_R4?$PQueue@VSIP_PDU@@@@6B@ @19003 NONAME
     ??_R4?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@6B@ @19004 NONAME
     ??_R4?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@6B@ @42261 NONAME
+    ??_R4?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@6B@ @43511 NONAME
     ??_R4?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@6B@ @19006 NONAME
     ??_R4?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@6B@ @19007 NONAME
     ??_R4?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@6B@ @19008 NONAME
     ??_R4?$PSafeDictionary@VPString@@VH323RegisteredEndPoint@@@@6B@ @19009 NONAME
     ??_R4?$PSafeDictionary@VPString@@VOpalCall@@@@6B@ @19010 NONAME
     ??_R4?$PSafeDictionary@VPString@@VOpalConnection@@@@6B@ @19011 NONAME
+    ??_R4?$PSafeDictionary@VPString@@VSIPTransaction@@@@6B@ @43512 NONAME
     ??_R4?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@6B@ @19012 NONAME
     ??_R4?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@6B@ @19013 NONAME
     ??_R4?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@6B@ @19014 NONAME
+    ??_R4?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@6B@ @43513 NONAME
     ??_R4?$PSafeList@VOpalConnection@@@@6B@ @19015 NONAME
     ??_R4?$PSafeList@VSIPHandler@@@@6B@ @42262 NONAME
+    ??_R4?$PSafeList@VSIPTransaction@@@@6B@ @43514 NONAME
     ??_R4?$PSafePtr@VH323Connection@@@@6B@ @19017 NONAME
     ??_R4?$PSafePtr@VH323GatekeeperCall@@@@6B@ @19018 NONAME
     ??_R4?$PSafePtr@VH323PeerElementDescriptor@@@@6B@ @19019 NONAME
@@ -19894,6 +19932,7 @@ EXPORTS
     ??_R4?$PSafePtr@VOpalPCSSConnection@@@@6B@ @19026 NONAME
     ??_R4?$PSafePtr@VSIPConnection@@@@6B@ @19027 NONAME
     ??_R4?$PSafePtr@VSIPHandler@@@@6B@ @42263 NONAME
+    ??_R4?$PSafePtr@VSIPTransaction@@@@6B@ @43515 NONAME
     ??_R4?$PSafeSortedList@VH323GatekeeperCall@@@@6B@ @19029 NONAME
     ??_R4?$PSafeSortedList@VH323PeerElementDescriptor@@@@6B@ @19030 NONAME
     ??_R4?$PSafeSortedList@VH323PeerElementServiceRelationship@@@@6B@ @19031 NONAME
@@ -19942,7 +19981,6 @@ EXPORTS
     ??_R4ContinueAction_PNotifier@OpalH281Handler@@6B@ @19065 NONAME
     ??_R4Entry@OpalJitterBuffer@@6B@ @41266 NONAME
     ??_R4Filter@OpalMediaPatch@@6B@ @19067 NONAME
-    ??_R4GarbageCollector_PNotifier@SIPEndPoint@@6B@ @42269 NONAME
     ??_R4GarbageMain_PNotifier@OpalManager@@6B@ @19068 NONAME
     ??_R4GCC_AlternativeNodeID@@6B@ @19069 NONAME
     ??_R4GCC_ApplicationInvokeIndication@@6B@ @19070 NONAME
@@ -21941,7 +21979,6 @@ EXPORTS
     ?AddCallCreditServiceControl@H323GatekeeperCall@@QBEHAAVH225_ArrayOf_ServiceControlSession@@@Z @21009 NONAME
     ?AddCapability@H235Authenticator@@IAEHIABVPString@@AAVH225_ArrayOf_AuthenticationMechanism@@AAVH225_ArrayOf_PASN_ObjectId@@@Z @21010 NONAME
     ?AddCapability@H323EndPoint@@QAEXPAVH323Capability@@@Z @21011 NONAME
-    ?AddCompletedTransaction@SIPEndPoint@@IAEXPAVSIPTransaction@@@Z @41820 NONAME
     ?AddConnection@OpalEndPoint@@IAEHPAVOpalConnection@@@Z @41681 NONAME
     ?addContent@H460_FeatureParameter@@QAEXABVH460_FeatureContent@@@Z @21012 NONAME
     ?AddDescriptor@H323PeerElement@@QAEHABVPGloballyUniqueID@@ABVH225_ArrayOf_AliasAddress@@1IH@Z @40183 NONAME
@@ -21992,7 +22029,6 @@ EXPORTS
     ?AddSession@RTP_SessionManager@@QAEXPAVRTP_Session@@@Z @21053 NONAME
     ?AddSink@OpalMediaPatch@@QAEHPAVOpalMediaStream@@ABV?$map@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@@std@@@Z @21054 NONAME
     ?AddSourceDescriptionItem@RTP_ControlFrame@@QAEXIABVPString@@@Z @41278 NONAME
-    ?AddTransaction@SIPConnection@@QAEXPAVSIPTransaction@@@Z @21057 NONAME
     ?AddTransaction@SIPEndPoint@@QAEXPAVSIPTransaction@@@Z @21058 NONAME
     ?AddVideoMediaFormats@OpalConnection@@UBEXAAVOpalMediaFormatList@@@Z @21059 NONAME
     ?AddVideoMediaFormats@OpalEndPoint@@UBEXAAVOpalMediaFormatList@@PBVOpalConnection@@@Z @21060 NONAME
@@ -22028,7 +22064,6 @@ EXPORTS
     ?allocate@?$allocator@U_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@@std@@QAEPAU_Node@?$_Tree_nod@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@2@I@Z @21078 NONAME
     ?allocate@?$allocator@VStreamFrame@OpalAudioMixerStream@@@std@@QAEPAVStreamFrame@OpalAudioMixerStream@@I@Z @42302 NONAME
     ?AllocateBandwidth@H323GatekeeperServer@@UAEIII@Z @21080 NONAME
-    ?AllowDeleteObjects@PSafeCollection@@QAEXH@Z @21081 NONAME
     ?AllowDuplicateAlias@H323GatekeeperServer@@UAEHABVH225_ArrayOf_AliasAddress@@@Z @21082 NONAME
     ?AlterTimeStamp@IAX2MiniFrame@@QAEXH@Z @21083 NONAME
     ?Answer@OpalT120Protocol@@UAEHAAVOpalTransport@@@Z @21084 NONAME
@@ -22040,6 +22075,7 @@ EXPORTS
     ?AnswerWasAcked@IAX2CallProcessor@@IAEXXZ @39202 NONAME
     ?Append@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@PAVOpalConnection@@W4PSafetyMode@@@Z @21091 NONAME
     ?Append@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UAE?AV?$PSafePtr@VSIPHandler@@@@PAVSIPHandler@@W4PSafetyMode@@@Z @42303 NONAME
+    ?Append@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UAE?AV?$PSafePtr@VSIPTransaction@@@@PAVSIPTransaction@@W4PSafetyMode@@@Z @43516 NONAME
     ?Append@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@PAVH323GatekeeperCall@@W4PSafetyMode@@@Z @21093 NONAME
     ?Append@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UAE?AV?$PSafePtr@VH323PeerElementDescriptor@@@@PAVH323PeerElementDescriptor@@W4PSafetyMode@@@Z @21094 NONAME
     ?Append@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@@@PAVH323PeerElementServiceRelationship@@W4PSafetyMode@@@Z @21095 NONAME
@@ -22293,7 +22329,6 @@ EXPORTS
     ?CalculateFCS@Q922_Frame@@ABEGPBEH@Z @21323 NONAME
     ?Call@AsyncTimeout_PNotifier@OpalRFC2833Proto@@UBEXAAVPObject@@H@Z @43201 NONAME
     ?Call@ContinueAction_PNotifier@OpalH281Handler@@UBEXAAVPObject@@H@Z @21324 NONAME
-    ?Call@GarbageCollector_PNotifier@SIPEndPoint@@UBEXAAVPObject@@H@Z @42309 NONAME
     ?Call@GarbageMain_PNotifier@OpalManager@@UBEXAAVPObject@@H@Z @21325 NONAME
     ?Call@HandleIncoming_PNotifier@OpalLineConnection@@UBEXAAVPObject@@H@Z @21326 NONAME
     ?Call@HandlePDUsThreadMain_PNotifier@SIPConnection@@UBEXAAVPObject@@H@Z @21327 NONAME
@@ -22449,12 +22484,14 @@ EXPORTS
     ?Class@?$PQueue@VSIP_PDU@@@@SAPBDXZ @21456 NONAME
     ?Class@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@SAPBDXZ @21457 NONAME
     ?Class@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@SAPBDXZ @42321 NONAME
+    ?Class@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@SAPBDXZ @43517 NONAME
     ?Class@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@SAPBDXZ @21459 NONAME
     ?Class@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@SAPBDXZ @21460 NONAME
     ?Class@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@SAPBDXZ @21461 NONAME
     ?Class@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@SAPBDXZ @21462 NONAME
     ?Class@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@SAPBDXZ @21463 NONAME
     ?Class@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@SAPBDXZ @21464 NONAME
+    ?Class@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@SAPBDXZ @43518 NONAME
     ?Class@?$PSafePtr@VH323Connection@@@@SAPBDXZ @21465 NONAME
     ?Class@?$PSafePtr@VH323GatekeeperCall@@@@SAPBDXZ @21466 NONAME
     ?Class@?$PSafePtr@VH323PeerElementDescriptor@@@@SAPBDXZ @21467 NONAME
@@ -22468,6 +22505,7 @@ EXPORTS
     ?Class@?$PSafePtr@VOpalPCSSConnection@@@@SAPBDXZ @21474 NONAME
     ?Class@?$PSafePtr@VSIPConnection@@@@SAPBDXZ @21475 NONAME
     ?Class@?$PSafePtr@VSIPHandler@@@@SAPBDXZ @42322 NONAME
+    ?Class@?$PSafePtr@VSIPTransaction@@@@SAPBDXZ @43519 NONAME
     ?Class@?$PSet@VPOrdinalKey@@@@SAPBDXZ @21477 NONAME
     ?Class@?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@SAPBDXZ @21478 NONAME
     ?Class@?$PSortedList@VH225_AliasAddress@@@@SAPBDXZ @21479 NONAME
@@ -26842,12 +26880,14 @@ EXPORTS
     ?CompareObjectMemoryDirect@?$PQueue@VSIP_PDU@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25800 NONAME
     ?CompareObjectMemoryDirect@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25801 NONAME
     ?CompareObjectMemoryDirect@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @42346 NONAME
+    ?CompareObjectMemoryDirect@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @43520 NONAME
     ?CompareObjectMemoryDirect@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25803 NONAME
     ?CompareObjectMemoryDirect@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25804 NONAME
     ?CompareObjectMemoryDirect@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25805 NONAME
     ?CompareObjectMemoryDirect@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25806 NONAME
     ?CompareObjectMemoryDirect@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25807 NONAME
     ?CompareObjectMemoryDirect@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25808 NONAME
+    ?CompareObjectMemoryDirect@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @43521 NONAME
     ?CompareObjectMemoryDirect@?$PSafePtr@VH323Connection@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25809 NONAME
     ?CompareObjectMemoryDirect@?$PSafePtr@VH323GatekeeperCall@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25810 NONAME
     ?CompareObjectMemoryDirect@?$PSafePtr@VH323PeerElementDescriptor@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25811 NONAME
@@ -26861,6 +26901,7 @@ EXPORTS
     ?CompareObjectMemoryDirect@?$PSafePtr@VOpalPCSSConnection@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25818 NONAME
     ?CompareObjectMemoryDirect@?$PSafePtr@VSIPConnection@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25819 NONAME
     ?CompareObjectMemoryDirect@?$PSafePtr@VSIPHandler@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @42347 NONAME
+    ?CompareObjectMemoryDirect@?$PSafePtr@VSIPTransaction@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @43522 NONAME
     ?CompareObjectMemoryDirect@?$PSet@VPOrdinalKey@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25821 NONAME
     ?CompareObjectMemoryDirect@?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25822 NONAME
     ?CompareObjectMemoryDirect@?$PSortedList@VH225_AliasAddress@@@@UBE?AW4Comparison@PObject@@ABV3@@Z @25823 NONAME
@@ -28775,10 +28816,12 @@ EXPORTS
     ?Contains@?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@QBEHABVPString@@@Z @27690 NONAME
     ?Contains@?$PDictionary@VPString@@VOpalCall@@@@QBEHABVPString@@@Z @27691 NONAME
     ?Contains@?$PDictionary@VPString@@VOpalConnection@@@@QBEHABVPString@@@Z @27692 NONAME
+    ?Contains@?$PDictionary@VPString@@VSIPTransaction@@@@QBEHABVPString@@@Z @43523 NONAME
     ?Contains@?$POrdinalDictionary@VPString@@@@QBEHABVPString@@@Z @27693 NONAME
     ?Contains@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEHABVPString@@@Z @27694 NONAME
     ?Contains@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAEHABVPString@@@Z @27695 NONAME
     ?Contains@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAEHABVPString@@@Z @27696 NONAME
+    ?Contains@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UAEHABVPString@@@Z @43524 NONAME
     ?Contains@?$PSet@VPOrdinalKey@@@@QBEHABVPOrdinalKey@@@Z @27697 NONAME
     ?Contains@?$PStringDictionary@VPOrdinalKey@@@@QBEHABVPOrdinalKey@@@Z @27698 NONAME
     ?Contains@H460_Feature@@QAEHABVH460_FeatureID@@@Z @27699 NONAME
@@ -31258,7 +31301,6 @@ EXPORTS
     ?erase@?$_Tree@V?$_Tmap_traits@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@$0A@@std@@@std@@QAE?AViterator@12@V312@@Z @30089 NONAME
     ?ExecuteCommand@OpalMediaPatch@@UAEHABVOpalMediaCommand@@H@Z @30090 NONAME
     ?ExecuteCommand@OpalMediaStream@@UAEHABVOpalMediaCommand@@@Z @30091 NONAME
-    ?ExecuteCommand@OpalPluginVideoTranscoder@@UAEHABVOpalMediaCommand@@@Z @30092 NONAME
     ?ExecuteCommand@OpalTranscoder@@UAEHABVOpalMediaCommand@@@Z @30093 NONAME
     ?ExecuteCommand@OpalVideoTranscoder@@UAEHABVOpalMediaCommand@@@Z @30094 NONAME
     ?ExecuteCommand@Sink@OpalMediaPatch@@QAE_NABVOpalMediaCommand@@@Z @30095 NONAME
@@ -31325,12 +31367,14 @@ EXPORTS
     ?FindSIPHandlerByUrl@SIPHandlersList@@QAE?AV?$PSafePtr@VSIPHandler@@@@ABVPString@@W4Methods@SIP_PDU@@W4SubscribeType@SIPSubscribe@@W4PSafetyMode@@@Z @42411 NONAME
     ?FindWithLock@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@ABVOpalConnection@@W4PSafetyMode@@@Z @30148 NONAME
     ?FindWithLock@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UAE?AV?$PSafePtr@VSIPHandler@@@@ABVSIPHandler@@W4PSafetyMode@@@Z @42412 NONAME
+    ?FindWithLock@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UAE?AV?$PSafePtr@VSIPTransaction@@@@ABVSIPTransaction@@W4PSafetyMode@@@Z @43525 NONAME
     ?FindWithLock@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@ABVH323GatekeeperCall@@W4PSafetyMode@@@Z @30150 NONAME
     ?FindWithLock@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UAE?AV?$PSafePtr@VH323PeerElementDescriptor@@@@ABVH323PeerElementDescriptor@@W4PSafetyMode@@@Z @30151 NONAME
     ?FindWithLock@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@@@ABVH323PeerElementServiceRelationship@@W4PSafetyMode@@@Z @30152 NONAME
     ?FindWithLock@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@ABVPString@@W4PSafetyMode@@@Z @30153 NONAME
     ?FindWithLock@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAE?AV?$PSafePtr@VOpalCall@@@@ABVPString@@W4PSafetyMode@@@Z @30154 NONAME
     ?FindWithLock@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@ABVPString@@W4PSafetyMode@@@Z @30155 NONAME
+    ?FindWithLock@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UAE?AV?$PSafePtr@VSIPTransaction@@@@ABVPString@@W4PSafetyMode@@@Z @43526 NONAME
     ?FinishOutputFrame@OpalRFC4175Encoder@@IAEXXZ @43278 NONAME
     ?First@RTP_SessionManager@@QAEPAVRTP_Session@@XZ @30156 NONAME
     ?ForwardCall@H323Connection@@UAEHABVPString@@@Z @30158 NONAME
@@ -31346,8 +31390,9 @@ EXPORTS
     ?FromString@OpalMediaOption@@QAE_NABVPString@@@Z @30167 NONAME
     ?front@?$deque@VStreamFrame@OpalAudioMixerStream@@V?$allocator@VStreamFrame@OpalAudioMixerStream@@@std@@@std@@QAEAAVStreamFrame@OpalAudioMixerStream@@XZ @42413 NONAME
     ?front@?$queue@VStreamFrame@OpalAudioMixerStream@@V?$deque@VStreamFrame@OpalAudioMixerStream@@V?$allocator@VStreamFrame@OpalAudioMixerStream@@@std@@@std@@@std@@QAEAAVStreamFrame@OpalAudioMixerStream@@XZ @42414 NONAME
+    ?GarbageCollection@OpalEndPoint@@UAEHXZ @43527 NONAME
     ?GarbageCollection@OpalManager@@QAEXXZ @30168 NONAME
-    ?GarbageCollector@SIPEndPoint@@MAEXAAVPTimer@@H@Z @42415 NONAME
+    ?GarbageCollection@SIPEndPoint@@UAEHXZ @43528 NONAME
     ?GarbageMain@OpalManager@@MAEXAAVPThread@@H@Z @30169 NONAME
     ?GenerateCallReference@Q931@@SAIXZ @30170 NONAME
     ?GetAccept@SIPMIMEInfo@@QBE?AVPString@@XZ @30171 NONAME
@@ -31376,7 +31421,6 @@ EXPORTS
     ?GetAllTypes@OpalLineInterfaceDevice@@SA?AVPStringList@@XZ @30195 NONAME
     ?GetAndDelete@SafeString@@QAE?AVPString@@XZ @30196 NONAME
     ?GetAndLockSinkTranscoder@OpalMediaPatch@@UBEPAVOpalTranscoder@@H@Z @43279 NONAME
-    ?GetAndLockTransaction@SIPConnection@@QAEPAVSIPTransaction@@ABVPString@@@Z @42416 NONAME
     ?GetAndLockVXMLChannel@PVXMLSession@@QAEPAVPVXMLChannel@@XZ @30197 NONAME
     ?GetApplicationInfo@H323RegisteredEndPoint@@QBE?AVPCaselessString@@XZ @42823 NONAME
     ?GetAt@?$PDictionary@VH323ChannelNumber@@VH245NegLogicalChannel@@@@UBEPAVH245NegLogicalChannel@@ABVH323ChannelNumber@@@Z @30198 NONAME
@@ -31395,12 +31439,14 @@ EXPORTS
     ?GetAt@?$PDictionary@VPString@@VSIPTransaction@@@@UBEPAVSIPTransaction@@ABVPString@@@Z @30211 NONAME
     ?GetAt@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@HW4PSafetyMode@@@Z @30212 NONAME
     ?GetAt@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UAE?AV?$PSafePtr@VSIPHandler@@@@HW4PSafetyMode@@@Z @42417 NONAME
+    ?GetAt@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UAE?AV?$PSafePtr@VSIPTransaction@@@@HW4PSafetyMode@@@Z @43529 NONAME
     ?GetAt@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAE?AV?$PSafePtr@VH323GatekeeperCall@@@@HW4PSafetyMode@@@Z @30214 NONAME
     ?GetAt@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UAE?AV?$PSafePtr@VH323PeerElementDescriptor@@@@HW4PSafetyMode@@@Z @30215 NONAME
     ?GetAt@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAE?AV?$PSafePtr@VH323PeerElementServiceRelationship@@@@HW4PSafetyMode@@@Z @30216 NONAME
     ?GetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAE?AV?$PSafePtr@VH323RegisteredEndPoint@@@@HW4PSafetyMode@@@Z @30217 NONAME
     ?GetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAE?AV?$PSafePtr@VOpalCall@@@@HW4PSafetyMode@@@Z @30218 NONAME
     ?GetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAE?AV?$PSafePtr@VOpalConnection@@@@HW4PSafetyMode@@@Z @30219 NONAME
+    ?GetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UAE?AV?$PSafePtr@VSIPTransaction@@@@HW4PSafetyMode@@@Z @43530 NONAME
     ?GetAudioSignalLevel@OpalConnection@@UAEIH@Z @39775 NONAME
     ?GetAudioSignalLevel@OpalLineConnection@@UAEIH@Z @39776 NONAME
     ?GetAudioSignalLevel@OpalPCSSConnection@@UAEIH@Z @39777 NONAME
@@ -31548,12 +31594,14 @@ EXPORTS
     ?GetClass@?$PQueue@VSIP_PDU@@@@UBEPBDI@Z @30354 NONAME
     ?GetClass@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UBEPBDI@Z @30355 NONAME
     ?GetClass@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UBEPBDI@Z @42424 NONAME
+    ?GetClass@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UBEPBDI@Z @43531 NONAME
     ?GetClass@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEPBDI@Z @30357 NONAME
     ?GetClass@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UBEPBDI@Z @30358 NONAME
     ?GetClass@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UBEPBDI@Z @30359 NONAME
     ?GetClass@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEPBDI@Z @30360 NONAME
     ?GetClass@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UBEPBDI@Z @30361 NONAME
     ?GetClass@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UBEPBDI@Z @30362 NONAME
+    ?GetClass@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UBEPBDI@Z @43532 NONAME
     ?GetClass@?$PSafePtr@VH323Connection@@@@UBEPBDI@Z @30363 NONAME
     ?GetClass@?$PSafePtr@VH323GatekeeperCall@@@@UBEPBDI@Z @30364 NONAME
     ?GetClass@?$PSafePtr@VH323PeerElementDescriptor@@@@UBEPBDI@Z @30365 NONAME
@@ -31567,6 +31615,7 @@ EXPORTS
     ?GetClass@?$PSafePtr@VOpalPCSSConnection@@@@UBEPBDI@Z @30372 NONAME
     ?GetClass@?$PSafePtr@VSIPConnection@@@@UBEPBDI@Z @30373 NONAME
     ?GetClass@?$PSafePtr@VSIPHandler@@@@UBEPBDI@Z @42425 NONAME
+    ?GetClass@?$PSafePtr@VSIPTransaction@@@@UBEPBDI@Z @43533 NONAME
     ?GetClass@?$PSet@VPOrdinalKey@@@@UBEPBDI@Z @30375 NONAME
     ?GetClass@?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@UBEPBDI@Z @30376 NONAME
     ?GetClass@?$PSortedList@VH225_AliasAddress@@@@UBEPBDI@Z @30377 NONAME
@@ -35053,6 +35102,7 @@ EXPORTS
     ?GetTCPPortMax@OpalManager@@QBEGXZ @33745 NONAME
     ?GetTerminalType@H323EndPoint@@QBE?AW4TerminalTypes@1@XZ @33746 NONAME
     ?GetTextString@IAX2FullFrameText@@QBE?AVPString@@XZ @33747 NONAME
+    ?GetTextToSpeech@PVXMLSession@@QAEPAVPTextToSpeech@@XZ @43534 NONAME
     ?GetTiltDirection@H281_Frame@@QBE?AW4TiltDirection@1@XZ @33748 NONAME
     ?GetTimeout@H281_Frame@@QBEEXZ @33749 NONAME
     ?GetTimeStamp@IAX2Frame@@QAEKXZ @33750 NONAME
@@ -35067,6 +35117,7 @@ EXPORTS
     ?GetToken@OpalLine@@QBE?AVPString@@XZ @33759 NONAME
     ?GetTone@OpalRFC2833Info@@QBEDXZ @33760 NONAME
     ?GetToolName@RTP_Session@@QBE?AVPString@@XZ @33761 NONAME
+    ?GetTransaction@SIPEndPoint@@QAE?AV?$PSafePtr@VSIPTransaction@@@@ABVPString@@W4PSafetyMode@@@Z @43535 NONAME
     ?GetTransactionID@SIP_PDU@@QBE?AVPString@@XZ @33763 NONAME
     ?GetTransmitMutex@OpalH224Handler@@QAEAAVPCriticalSection@@XZ @33765 NONAME
     ?GetTransport@H323Connection@@UBEAAVOpalTransport@@XZ @33766 NONAME
@@ -35114,9 +35165,9 @@ EXPORTS
     ?GetVia@SIPMIMEInfo@@QBE?AVPString@@XZ @33806 NONAME
     ?GetViaAddress@SIP_PDU@@QAE?AVOpalTransportAddress@@AAVOpalEndPoint@@@Z @33807 NONAME
     ?GetViaList@SIPMIMEInfo@@QBE?AVPStringList@@XZ @33808 NONAME
-    ?GetVideoInputDevice@OpalVideoMediaStream@@UAEPAVPVideoInputDevice@@XZ @42473 NONAME
+    ?GetVideoInputDevice@OpalVideoMediaStream@@UBEPAVPVideoInputDevice@@XZ @43536 NONAME
     ?GetVideoMode@H281_Frame@@QBE?AW4VideoMode@1@XZ @33809 NONAME
-    ?GetVideoOutputDevice@OpalVideoMediaStream@@UAEPAVPVideoOutputDevice@@XZ @42474 NONAME
+    ?GetVideoOutputDevice@OpalVideoMediaStream@@UBEPAVPVideoOutputDevice@@XZ @43537 NONAME
     ?GetVideoSourceNumber@H281_Frame@@QBEEXZ @33810 NONAME
     ?GetWinkDuration@OpalLineInterfaceDevice@@UAEII@Z @33812 NONAME
     ?GetWinkDuration@OpalPluginLID@@UAEII@Z @40396 NONAME
@@ -35371,12 +35422,14 @@ EXPORTS
     ?InternalIsDescendant@?$PQueue@VSIP_PDU@@@@UBEHPBD@Z @34052 NONAME
     ?InternalIsDescendant@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UBEHPBD@Z @34053 NONAME
     ?InternalIsDescendant@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UBEHPBD@Z @42478 NONAME
+    ?InternalIsDescendant@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UBEHPBD@Z @43538 NONAME
     ?InternalIsDescendant@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UBEHPBD@Z @34055 NONAME
     ?InternalIsDescendant@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UBEHPBD@Z @34056 NONAME
     ?InternalIsDescendant@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UBEHPBD@Z @34057 NONAME
     ?InternalIsDescendant@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UBEHPBD@Z @34058 NONAME
     ?InternalIsDescendant@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UBEHPBD@Z @34059 NONAME
     ?InternalIsDescendant@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UBEHPBD@Z @34060 NONAME
+    ?InternalIsDescendant@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UBEHPBD@Z @43539 NONAME
     ?InternalIsDescendant@?$PSafePtr@VH323Connection@@@@UBEHPBD@Z @34061 NONAME
     ?InternalIsDescendant@?$PSafePtr@VH323GatekeeperCall@@@@UBEHPBD@Z @34062 NONAME
     ?InternalIsDescendant@?$PSafePtr@VH323PeerElementDescriptor@@@@UBEHPBD@Z @34063 NONAME
@@ -35390,6 +35443,7 @@ EXPORTS
     ?InternalIsDescendant@?$PSafePtr@VOpalPCSSConnection@@@@UBEHPBD@Z @34070 NONAME
     ?InternalIsDescendant@?$PSafePtr@VSIPConnection@@@@UBEHPBD@Z @34071 NONAME
     ?InternalIsDescendant@?$PSafePtr@VSIPHandler@@@@UBEHPBD@Z @42479 NONAME
+    ?InternalIsDescendant@?$PSafePtr@VSIPTransaction@@@@UBEHPBD@Z @43540 NONAME
     ?InternalIsDescendant@?$PSet@VPOrdinalKey@@@@UBEHPBD@Z @34073 NONAME
     ?InternalIsDescendant@?$PSortedList@VAlternateInfo@H323Gatekeeper@@@@UBEHPBD@Z @34074 NONAME
     ?InternalIsDescendant@?$PSortedList@VH225_AliasAddress@@@@UBEHPBD@Z @34075 NONAME
@@ -38116,6 +38170,8 @@ EXPORTS
     ?OnRouteConnection@OpalManager@@UAE?AVPString@@AAVOpalConnection@@@Z @36673 NONAME
     ?OnRTPStatistics@H323Connection@@UBEXABVRTP_Session@@@Z @36674 NONAME
     ?OnRTPStatistics@H323EndPoint@@UBEXABVH323Connection@@ABVRTP_Session@@@Z @36675 NONAME
+    ?OnRTPStatistics@OpalCall@@UAEXABVOpalConnection@@ABVRTP_Session@@@Z @43541 NONAME
+    ?OnRTPStatistics@OpalManager@@UAEXABVOpalConnection@@ABVRTP_Session@@@Z @43542 NONAME
     ?OnRTPStatistics@SIPConnection@@UBEXABVRTP_Session@@@Z @36676 NONAME
     ?OnRTPStatistics@SIPEndPoint@@UBEXABVSIPConnection@@ABVRTP_Session@@@Z @36677 NONAME
     ?OnRxApplDefined@RTP_Session@@UAEXABVPString@@IKPBEH@Z @36678 NONAME
@@ -38377,8 +38433,8 @@ EXPORTS
     ?OnUseRTPSession@SIPConnection@@MAEPAVRTP_UDP@@IABVOpalTransportAddress@@AAV3@@Z @36918 NONAME
     ?OnWriteAudio@Mixer_T@OpalRecordManager@@UAEHABVMixerFrame@OpalAudioMixer@@@Z @42556 NONAME
     ?OnWriteAudio@OpalAudioMixer@@UAEHABVMixerFrame@1@@Z @42557 NONAME
-    ?OpalDefaultNSEString@@3PADA @41470 NONAME
-    ?OpalDefaultNTEString@@3PADA @41471 NONAME
+    ?OpalDefaultNSEString@@3PBDB @43543 NONAME
+    ?OpalDefaultNTEString@@3PBDB @43544 NONAME
     ?OpalGetBuildNumber@@YAIXZ @36920 NONAME
     ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABV?$PList@VOpalListener@@@@HPAVOpalTransport@@@Z @36921 NONAME
     ?OpalGetInterfaceAddresses@@YA?AVOpalTransportAddressArray@@ABVOpalTransportAddress@@HPAVOpalTransport@@@Z @36922 NONAME
@@ -39576,6 +39632,7 @@ EXPORTS
     ?RemoteSelectedCodecOk@IAX2CallProcessor@@IAEHXZ @39340 NONAME
     ?Remove@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAEHPAVOpalConnection@@@Z @38059 NONAME
     ?Remove@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UAEHPAVSIPHandler@@@Z @42588 NONAME
+    ?Remove@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UAEHPAVSIPTransaction@@@Z @43545 NONAME
     ?Remove@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEHPAVH323GatekeeperCall@@@Z @38061 NONAME
     ?Remove@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UAEHPAVH323PeerElementDescriptor@@@Z @38062 NONAME
     ?Remove@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAEHPAVH323PeerElementServiceRelationship@@@Z @38063 NONAME
@@ -39610,12 +39667,14 @@ EXPORTS
     ?RemoveAt@?$PDictionary@VPString@@VSIPTransaction@@@@UAEPAVSIPTransaction@@ABVPString@@@Z @38091 NONAME
     ?RemoveAt@?$PSafeColl@V?$PList@VOpalConnection@@@@VOpalConnection@@@@UAEHH@Z @38092 NONAME
     ?RemoveAt@?$PSafeColl@V?$PList@VSIPHandler@@@@VSIPHandler@@@@UAEHH@Z @42590 NONAME
+    ?RemoveAt@?$PSafeColl@V?$PList@VSIPTransaction@@@@VSIPTransaction@@@@UAEHH@Z @43546 NONAME
     ?RemoveAt@?$PSafeColl@V?$PSortedList@VH323GatekeeperCall@@@@VH323GatekeeperCall@@@@UAEHH@Z @38094 NONAME
     ?RemoveAt@?$PSafeColl@V?$PSortedList@VH323PeerElementDescriptor@@@@VH323PeerElementDescriptor@@@@UAEHH@Z @38095 NONAME
     ?RemoveAt@?$PSafeColl@V?$PSortedList@VH323PeerElementServiceRelationship@@@@VH323PeerElementServiceRelationship@@@@UAEHH@Z @38096 NONAME
     ?RemoveAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEHABVPString@@@Z @38097 NONAME
     ?RemoveAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAEHABVPString@@@Z @38098 NONAME
     ?RemoveAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAEHABVPString@@@Z @38099 NONAME
+    ?RemoveAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UAEHABVPString@@@Z @43547 NONAME
     ?RemoveAt@PASN_Array@@QAEXH@Z @38100 NONAME
     ?RemoveCall@H323GatekeeperServer@@UAEXPAVH323GatekeeperCall@@@Z @38101 NONAME
     ?RemoveCall@H323RegisteredEndPoint@@UAEHPAVH323GatekeeperCall@@@Z @38102 NONAME
@@ -39647,8 +39706,6 @@ EXPORTS
     ?RemoveServiceRelationship@H323PeerElement@@QAEHABVPGloballyUniqueID@@H@Z @40209 NONAME
     ?RemoveSink@OpalMediaPatch@@QAEXPAVOpalMediaStream@@@Z @38126 NONAME
     ?RemoveStream@OpalAudioMixer@@QAEXABV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@@Z @42591 NONAME
-    ?RemoveTransaction@SIPConnection@@QAEXPAVSIPTransaction@@@Z @38127 NONAME
-    ?RemoveTransaction@SIPEndPoint@@QAEXPAVSIPTransaction@@@Z @38128 NONAME
     ?Reopen@RTP_UDP@@UAEXH@Z @38130 NONAME
     ?Reorder@H323Capabilities@@QAEXABVPStringArray@@@Z @38131 NONAME
     ?Reorder@OpalMediaFormatList@@QAEXABVPStringArray@@@Z @38132 NONAME
@@ -39750,6 +39807,7 @@ EXPORTS
     ?SendServiceControlSession@H323RegisteredEndPoint@@UAEHABVH323ServiceControlSession@@@Z @38219 NONAME
     ?SendSignalSetup@H323Connection@@UAE?AW4CallEndReason@OpalConnection@@ABVPString@@ABVH323TransportAddress@@@Z @38220 NONAME
     ?SendSoundMessage@IAX2CallProcessor@@IAEXPAVPBYTEArray@@@Z @39352 NONAME
+    ?SendStatus@SIPRegisterHandler@@AAEXW4StatusCodes@SIP_PDU@@@Z @43548 NONAME
     ?SendText@IAX2CallProcessor@@QAEXABVPString@@@Z @39353 NONAME
     ?SendTextMessage@IAX2CallProcessor@@IAEXAAVPString@@@Z @39354 NONAME
     ?SendToneAsync@OpalRFC2833Proto@@UAEHDI@Z @43384 NONAME
@@ -39825,6 +39883,7 @@ EXPORTS
     ?SetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VH323RegisteredEndPoint@@@@VPString@@VH323RegisteredEndPoint@@@@UAEXABVPString@@PAVH323RegisteredEndPoint@@@Z @38289 NONAME
     ?SetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalCall@@@@VPString@@VOpalCall@@@@UAEXABVPString@@PAVOpalCall@@@Z @38290 NONAME
     ?SetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VOpalConnection@@@@VPString@@VOpalConnection@@@@UAEXABVPString@@PAVOpalConnection@@@Z @38291 NONAME
+    ?SetAt@?$PSafeDictionaryBase@V?$PDictionary@VPString@@VSIPTransaction@@@@VPString@@VSIPTransaction@@@@UAEXABVPString@@PAVSIPTransaction@@@Z @43549 NONAME
     ?SetAt@OpalMediaFormatList@@EAEHHPAVPObject@@@Z @38292 NONAME
     ?SetAttribute@SDPMediaDescription@@QAEXABVPString@@0@Z @43385 NONAME
     ?SetAudioJitterDelay@OpalConnection@@QAEXII@Z @38294 NONAME
@@ -40480,7 +40539,6 @@ EXPORTS
     ?WaitForToneDetect@OpalLine@@UAE?AW4CallProgressTones@OpalLineInterfaceDevice@@I@Z @38903 NONAME
     ?WaitForToneDetect@OpalLineInterfaceDevice@@UAE?AW4CallProgressTones@1@II@Z @38904 NONAME
     ?WaitForToneDetect@OpalPluginLID@@UAE?AW4CallProgressTones@OpalLineInterfaceDevice@@II@Z @40459 NONAME
-    ?WaitForTransactionCompletion@SIPEndPoint@@QAEHPAVSIPTransaction@@@Z @41824 NONAME
     ?Write1Byte@IAX2Frame@@IAEXE@Z @38905 NONAME
     ?Write1Byte@IAX2Frame@@IAEXH@Z @38906 NONAME
     ?Write2Bytes@IAX2Frame@@IAEXH@Z @38907 NONAME
