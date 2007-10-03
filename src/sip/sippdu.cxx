@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2150  2007/09/24 23:38:39  csoutheren
+ * Revision 1.2151  2007/10/03 23:59:05  rjongbloed
+ * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
+ *   thanks to Will Hawkins and Kris Marsh for what needs to be done.
+ *
+ * Revision 2.149  2007/09/24 23:38:39  csoutheren
  * Fixed errors on 64 bit Linux
  *
  * Revision 2.148  2007/09/21 01:34:10  rjongbloed
@@ -874,6 +878,41 @@ void SIPURL::AdjustForRequestURI()
   queryVars.RemoveAll();
   Recalculate();
 }
+
+
+#if P_DNS
+BOOL SIPURL::AdjustToDNS(PINDEX entry)
+{
+  // RFC3263 states we do not do lookup if explicit port mentioned
+  if (GetPortSupplied())
+    return TRUE;
+
+  // Or it is a valid IP address, not a domain name
+  PIPSocket::Address ip = GetHostName();
+  if (ip.IsValid())
+    return TRUE;
+
+  // Do the SRV lookup, if fails, then we actually return TRUE so outer loops
+  // can use the original host name value.
+  PIPSocketAddressAndPortVector addrs;
+  if (!PDNS::LookupSRV(GetHostName(), "_sip._" + paramVars("transport", "udp"), GetPort(), addrs))
+    return TRUE;
+
+  // Got the SRV list, return FALSE if outer loop has got to the end of it
+  if (entry >= (PINDEX)addrs.size())
+    return FALSE;
+
+  // Adjust our host and port to what the DNS SRV record says
+  SetHostName(addrs[entry].address.AsString());
+  SetPort(addrs[entry].port);
+  return TRUE;
+}
+#else
+BOOL SIPURL::AdjustToDNS(PINDEX)
+{
+  return TRUE;
+}
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2197,16 +2236,10 @@ BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remo
     // skip transport identifier
     SIPURL hosturl = remoteAddress.Mid(remoteAddress.Find('$')+1);
 
-    OpalTransportAddress actualRemoteAddress;
     // Do a DNS SRV lookup
-#if P_DNS
-    PIPSocketAddressAndPortVector addrs;
-    if (PDNS::LookupSRV(hosturl.GetHostName(), "_sip._udp", hosturl.GetPort(), addrs))  
-      actualRemoteAddress = OpalTransportAddress(addrs[0].address, addrs[0].port, "udp$");
-    else  
-#endif
-      actualRemoteAddress = hosturl.GetHostAddress();
+    hosturl.AdjustToDNS();
 
+    OpalTransportAddress actualRemoteAddress = hosturl.GetHostAddress();
     PTRACE(3, "SIP\tAdjusting transport remote address to " << actualRemoteAddress);
     transport.SetRemoteAddress(actualRemoteAddress);
   }
