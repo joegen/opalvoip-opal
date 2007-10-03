@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.12  2007/10/03 04:06:33  csoutheren
+ * Add missing #pragma
+ *
  * Revision 1.11  2007/09/12 05:55:35  csoutheren
  * Fixed SIP fmtp options for rfc 4175
  *
@@ -60,6 +63,11 @@
  */
 
 #include <ptlib.h>
+
+#ifdef __GNUC__
+#pragma implementation "rfc4175.h"
+#endif
+
 #include <opal/buildopts.h>
 
 #if OPAL_RFC4175
