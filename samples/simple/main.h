@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2028  2007/04/03 07:59:14  rjongbloed
+ * Revision 1.2029  2007/10/04 07:01:18  rjongbloed
+ * Added ability to have different gk for h323 and h323s endpoints.
+ *
+ * Revision 2.27  2007/04/03 07:59:14  rjongbloed
  * Warning: API change to PCSS callbacks:
  *   changed return on OnShowIncoming to BOOL, now agrees with
  *     documentation and allows UI to abort calls early.
@@ -203,7 +206,7 @@ class MyManager : public OpalManager
     );
 
   protected:
-    BOOL InitialiseH323EP(PArgList & args, const PString & listenOption, H323EndPoint * h323EP);
+    BOOL InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h323EP);
 
     PString currentCallToken;
 
