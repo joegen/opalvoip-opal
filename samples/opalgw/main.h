@@ -22,6 +22,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
+ * Revision 1.2  2007/10/04 06:48:04  rjongbloed
+ * High speed collision between opengk and opalgw.
+ *
  * Revision 1.1  2003/03/26 02:49:00  robertj
  * Added service/daemon sample application.
  *
@@ -31,22 +34,106 @@
 #define _OpalGw_MAIN_H
 
 
-#include <opal/manager.h>
+#if OPAL_H323
 
-#if P_SSL
-#include <ptclib/shttpsvc.h>
-typedef PSecureHTTPServiceProcess OpalGwProcessAncestor;
-#else
-#include <ptclib/httpsvc.h>
-typedef PHTTPServiceProcess OpalGwProcessAncestor;
+class MyGatekeeperServer;
+
+class MyGatekeeperCall : public H323GatekeeperCall
+{
+  PCLASSINFO(MyGatekeeperCall, H323GatekeeperCall);
+  public:
+    MyGatekeeperCall(
+      MyGatekeeperServer & server,
+      const OpalGloballyUniqueID & callIdentifier, /// Unique call identifier
+      Direction direction
+    );
+    ~MyGatekeeperCall();
+
+    virtual H323GatekeeperRequest::Response OnAdmission(
+      H323GatekeeperARQ & request
+    );
+
+#ifdef H323_TRANSNEXUS_OSP
+    BOOL AuthoriseOSPCall(H323GatekeeperARQ & info);
+    OpalOSP::Transaction * ospTransaction;
+#endif
+};
+
+
+
+class MyGatekeeperServer : public H323GatekeeperServer
+{
+    PCLASSINFO(MyGatekeeperServer, H323GatekeeperServer);
+  public:
+    MyGatekeeperServer(H323EndPoint & ep);
+
+    // Overrides
+    virtual H323GatekeeperCall * CreateCall(
+      const OpalGloballyUniqueID & callIdentifier,
+      H323GatekeeperCall::Direction direction
+    );
+    virtual BOOL TranslateAliasAddress(
+      const H225_AliasAddress & alias,
+      H225_ArrayOf_AliasAddress & aliases,
+      H323TransportAddress & address,
+      BOOL & isGkRouted,
+      H323GatekeeperCall * call
+    );
+
+    // new functions
+    BOOL Initialise(PConfig & cfg, PConfigPage * rsrc);
+
+#ifdef H323_TRANSNEXUS_OSP
+    OpalOSP::Provider * GetOSPProvider() const
+    { return ospProvider; }
 #endif
 
+  private:
+    H323EndPoint & endpoint;
 
-class SIPEndPoint;
-class H323EndPoint;
-class OpalPOTSEndPoint;
-class OpalPSTNEndPoint;
-class OpalIVREndPoint;
+    class RouteMap : public PObject {
+        PCLASSINFO(RouteMap, PObject);
+      public:
+        RouteMap(
+          const PString & alias,
+          const PString & host
+        );
+        RouteMap(
+          const RouteMap & map
+        ) : alias(map.alias), regex(map.alias), host(map.host) { }
+
+        void PrintOn(
+          ostream & strm
+        ) const;
+
+        BOOL IsValid() const;
+
+        BOOL IsMatch(
+          const PString & alias
+        ) const;
+
+        const H323TransportAddress & GetHost() const { return host; }
+
+      private:
+        PString              alias;
+        PRegularExpression   regex;
+        H323TransportAddress host;
+    };
+    PList<RouteMap> routes;
+
+    PMutex reconfigurationMutex;
+
+#ifdef H323_TRANSNEXUS_OSP
+    OpalOSP::Provider * ospProvider;
+    PString ospRoutingURL;
+    PString ospPrivateKeyFileName;
+    PString ospPublicKeyFileName;
+    PString ospServerKeyFileName;
+#endif
+};
+
+
+#endif
 
 
 class MyManager : public OpalManager
@@ -58,15 +145,27 @@ class MyManager : public OpalManager
     ~MyManager();
 
     BOOL Initialise(PConfig & cfg, PConfigPage * rsrc);
+#if OPAL_H323
+    BOOL OnPostControl(const PStringToString & data, PHTML & msg);
+    PString OnLoadEndPointStatus(const PString & htmlBlock);
+    PString OnLoadCallStatus(const PString & htmlBlock);
+#endif
 
   protected:
-    H323EndPoint     * h323EP;
+#if OPAL_H323
+    H323EndPoint       * h323EP;
+    MyGatekeeperServer * gkServer;
+#endif
+#if OPAL_SIP
     SIPEndPoint      * sipEP;
+#endif
     OpalPOTSEndPoint * potsEP;
     OpalPSTNEndPoint * pstnEP;
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
+
+  friend class OpalGw;
 };
 
 
@@ -83,8 +182,27 @@ class OpalGw : public OpalGwProcessAncestor
     virtual void OnConfigChanged();
     virtual BOOL Initialise(const char * initMsg);
 
-  private:
+    static OpalGw & Current() { return (OpalGw &)PProcess::Current(); }
+
     MyManager manager;
+};
+
+
+class MainStatusPage : public PServiceHTTPString
+{
+  PCLASSINFO(MainStatusPage, PServiceHTTPString);
+
+  public:
+    MainStatusPage(OpalGw & app, PHTTPAuthority & auth);
+    
+    virtual BOOL Post(
+      PHTTPRequest & request,
+      const PStringToString &,
+      PHTML & msg
+    );
+  
+  private:
+    OpalGw & app;
 };
 
 

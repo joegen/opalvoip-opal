@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.6  2007/10/04 06:48:04  rjongbloed
+ * High speed collision between opengk and opalgw.
+ *
  * Revision 1.5  2006/10/02 13:30:51  rjongbloed
  * Added LID plug ins
  *
@@ -46,22 +49,6 @@
 #include "precompile.h"
 #include "main.h"
 #include "custom.h"
-
-#if OPAL_H323
-#include <h323/h323.h>
-#include <h323/gkclient.h>
-#endif
-
-#if OPAL_SIP
-#include <sip/sip.h>
-#endif
-
-#include <lids/lidep.h>
-
-#if P_EXPAT
-#include <opal/ivr.h>
-#endif
-
 
 
 PCREATE_PROCESS(OpalGw);
@@ -154,6 +141,21 @@ void OpalGw::OnStop()
 
 void OpalGw::OnControl()
 {
+  // This function get called when the Control menu item is selected in the
+  // tray icon mode of the service.
+  PStringStream url;
+  url << "http://";
+
+  PString host = PIPSocket::GetHostName();
+  PIPSocket::Address addr;
+  if (PIPSocket::GetHostAddress(host, addr))
+    url << host;
+  else
+    url << "localhost";
+
+  url << ':' << DefaultHTTPPort;
+
+  PURL::OpenBrowser(url);
 }
 
 
@@ -221,6 +223,10 @@ BOOL OpalGw::Initialise(const char * initMsg)
   httpNameSpace.AddResource(rsrc, PHTTPSpace::Overwrite);
 
 
+  // Create the status page
+  httpNameSpace.AddResource(new MainStatusPage(*this, authority), PHTTPSpace::Overwrite);
+
+
   // Create the home page
   static const char welcomeHtml[] = "welcome.html";
   if (PFile::Exists(welcomeHtml))
@@ -272,6 +278,7 @@ MyManager::MyManager()
 {
 #if OPAL_H323
   h323EP = NULL;
+  gkServer = NULL;
 #endif
 #if OPAL_SIP
   sipEP = NULL;
@@ -291,6 +298,10 @@ MyManager::~MyManager()
   // Must do this before we destroy the manager or a crash will result
   if (potsEP != NULL)
     potsEP->RemoveAllLines();
+
+#if OPAL_H323
+  delete gkServer;
+#endif
 }
 
 
@@ -303,6 +314,8 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_H323
   if (h323EP == NULL)
     h323EP = new H323EndPoint(*this);
+  if (gkServer == NULL && h323EP != NULL)
+    gkServer = new MyGatekeeperServer(*h323EP);
 #endif
 
 #if OPAL_SIP
@@ -411,6 +424,8 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
     PSYSTEMLOG(Error, "Could not register with gatekeeper!");
   }
 
+  if (!gkServer->Initialise(cfg, rsrc))
+    return FALSE;
 #endif
 
 #if OPAL_SIP

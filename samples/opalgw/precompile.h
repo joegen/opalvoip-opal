@@ -1,5 +1,5 @@
 /*
- * precompile.cxx
+ * precompile.h
  *
  * PWLib application source file for OPAL Gateway
  *
@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: precompile.h,v $
+ * Revision 1.3  2007/10/04 06:48:04  rjongbloed
+ * High speed collision between opengk and opalgw.
+ *
  * Revision 1.2  2007/05/21 04:30:30  dereksmithies
  * put #ifndef _PTLIB_H protection around the include of ptlib.h
  *
@@ -35,9 +38,34 @@
  *
  */
 
-#ifndef _PTLIB_H
 #include <ptlib.h>
+
+#include <opal/manager.h>
+
+#if P_SSL
+#include <ptclib/shttpsvc.h>
+typedef PSecureHTTPServiceProcess OpalGwProcessAncestor;
+#else
+#include <ptclib/httpsvc.h>
+typedef PHTTPServiceProcess OpalGwProcessAncestor;
 #endif
+
+#if OPAL_H323
+#include <h323/h323.h>
+#include <h323/gkclient.h>
+#include <h323/gkserver.h>
+#endif
+
+#if OPAL_SIP
+#include <sip/sip.h>
+#endif
+
+#include <lids/lidep.h>
+
+#if P_EXPAT
+#include <opal/ivr.h>
+#endif
+
 
 
 // End of File ///////////////////////////////////////////////////////////////
