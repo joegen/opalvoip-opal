@@ -22,7 +22,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
- * Revision 1.2098  2007/09/11 09:18:05  rjongbloed
+ * Revision 1.2099  2007/10/04 07:01:18  rjongbloed
+ * Added ability to have different gk for h323 and h323s endpoints.
+ *
+ * Revision 2.97  2007/09/11 09:18:05  rjongbloed
  * Added full dump of all codecs and their options to trace log.
  *
  * Revision 2.96  2007/09/10 00:11:13  rjongbloed
@@ -473,6 +476,8 @@ void SimpleOpalProcess::Main()
 #if P_SSL
              "-no-h323s."
              "-h323s-listen:"
+             "-h323s-gk:"
+             "-no-h323s-gk."
 #endif
              "-h323-listen:"
              "I-no-sip."
@@ -600,11 +605,21 @@ void SimpleOpalProcess::Main()
 #if OPAL_H323
             "H.323 options:\n"
             "  -H --no-h323            : Disable H.323 protocol.\n"
+#if P_SSL
+            "     --no-h323s           : Do not create secure H.323 endpoint\n"
+#endif
             "  -g --gatekeeper host    : Specify gatekeeper host.\n"
             "  -G --gk-id name         : Specify gatekeeper identifier.\n"
+#if P_SSL
+            "     --h323s-gk host      : Specify gatekeeper host for secure H.323 endpoint\n"
+#endif
             "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
+#if P_SSL
+            "     --no-h323s-gk        : Disable gatekeeper discovery for secure H.323 endpoint\n"
+#endif
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
             "     --gk-token str       : Set gatekeeper security token OID.\n"
+            "     --disable-grq        : Do not send GRQ when registering with GK\n"
             "  -b --bandwidth bps      : Limit bandwidth usage to bps bits/second.\n"
             "  -f --fast-disable       : Disable fast start.\n"
             "  -T --h245tunneldisable  : Disable H245 tunnelling.\n"
@@ -613,10 +628,6 @@ void SimpleOpalProcess::Main()
             "     --h323s-listen iface : Interface/port(s) to listen for secure H.323 requests\n"
 #endif
             "                          : '*' is all interfaces, (default tcp$:*:1720)\n"
-            " --disable-grq            : Do not send GRQ when registering with GK\n"
-#if P_SSL
-            " --no-h323s               : Do not creat secure H.323 endpoint\n"
-#endif
 #endif
 
             "\n"
@@ -967,12 +978,12 @@ BOOL MyManager::Initialise(PArgList & args)
   // Create H.323 protocol handler
   if (!args.HasOption("no-h323")) {
     h323EP = new H323EndPoint(*this);
-    if (!InitialiseH323EP(args, "h323-listen", h323EP))
+    if (!InitialiseH323EP(args, false, h323EP))
       return FALSE;
 #if P_SSL
     if (!args.HasOption("no-h323s")) {
       h323sEP = new H323SecureEndPoint(*this);
-      if (!InitialiseH323EP(args, "h323s-listen", h323sEP))
+      if (!InitialiseH323EP(args, true, h323sEP))
         return FALSE;
     }
 #endif
@@ -1253,7 +1264,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
 #if OPAL_H323
 
-BOOL MyManager::InitialiseH323EP(PArgList & args, const PString & listenOption, H323EndPoint * h323EP)
+BOOL MyManager::InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h323EP)
 {
   h323EP->DisableFastStart(args.HasOption('f'));
   h323EP->DisableH245Tunneling(args.HasOption('T'));
@@ -1288,7 +1299,7 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, const PString & listenOption, 
 
 
   // Start the listener thread for incoming calls.
-  PStringArray listeners = args.GetOptionString(listenOption).Lines();
+  PStringArray listeners = args.GetOptionString(secure ? "h323s-listen" : "h323-listen").Lines();
   if (!h323EP->StartListeners(listeners)) {
     cerr <<  "Could not open any " << prefix << " listener from "
          << setfill(',') << listeners << endl;
@@ -1301,10 +1312,10 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, const PString & listenOption, 
     h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
 
   // Establish link with gatekeeper if required.
-  if (!args.HasOption('n')) {
-    PString gkHost      = args.GetOptionString('g');
+  if (!args.HasOption(secure ? "no-h323s-gk" : "no-gatekeeper")) {
+    PString gkHost      = args.GetOptionString(secure ? "h323s-gk" : "gatekeeper");
     PString gkIdentifer = args.GetOptionString('G');
-    PString gkInterface = args.GetOptionString("h323-listen");
+    PString gkInterface = args.GetOptionString(secure ? "h323s-listen" : "h323-listen");
     cout << "Gatekeeper: " << flush;
     if (h323EP->UseGatekeeper(gkHost, gkIdentifer, gkInterface))
       cout << *h323EP->GetGatekeeper() << endl;
