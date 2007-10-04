@@ -29,7 +29,11 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2090  2007/09/22 04:32:30  rjongbloed
+ * Revision 1.2091  2007/10/04 05:41:20  rjongbloed
+ * Assure OpalTransportUDP is pre-opened in non-listener constructor
+ *   to emulate the previous semantics. Fixes issue with gk server.
+ *
+ * Revision 2.89  2007/09/22 04:32:30  rjongbloed
  * Fixed lock up on exit whena  gatekeeper is used.
  * Also fixed fatal "read error" (ECONNRESET) when send packet to a machine which
  *   is not listening on the specified port. No error is lgged but does not stop listener.
@@ -1679,9 +1683,14 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
 {
-  Open(new PMonitoredSocketChannel(PMonitoredSockets::Create(binding.AsString(), reuseAddr), FALSE));
-
-  PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
+  PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr);
+  if (sockets->Open(localPort)) {
+    Open(new PMonitoredSocketChannel(sockets, FALSE));
+    PTRACE(3, "OpalUDP\tBinding to interface: " << localAddress << ':' << localPort);
+  }
+  else {
+    PTRACE(1, "OpalUDP\tCould not bind to interface: " << localAddress << ':' << localPort);
+  }
 }
 
 
@@ -1733,7 +1742,7 @@ BOOL OpalTransportUDP::Connect()
   if (remotePort == 0)
     return FALSE;
 
-  if (remoteAddress.IsAny()) {
+  if (remoteAddress.IsAny() || remoteAddress.IsBroadcast()) {
     remoteAddress = PIPSocket::Address::GetBroadcast();
     PTRACE(3, "OpalUDP\tBroadcast connect to port " << remotePort);
   }
