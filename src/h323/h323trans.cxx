@@ -24,7 +24,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2006  2007/09/05 13:32:35  csoutheren
+ * Revision 1.2007  2007/10/04 05:44:13  rjongbloed
+ * Fixed listening an all interfaces individually when using INADDR_ANY as binding.
+ * Fixed default transport address for gatekeeper to be UDP.
+ * Removed unnecessary Connect() calls when changing "write to" address.
+ *
+ * Revision 2.5  2007/09/05 13:32:35  csoutheren
  * Applied 1743378 - Gatekeeper TryAlternate
  * Thanks to Borko Jandras
  *
@@ -349,7 +354,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
   if (PAssertNULL(transport) == NULL)
     return;
 
-  PTRACE(4, "Trans\tStarting listener thread on " << *transport);
+  PTRACE(3, "Trans\tStarting listener thread on " << *transport);
 
   transport->SetReadTimeout(PMaxTimeInterval);
 
@@ -397,7 +402,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
     AgeResponses();
   }
 
-  PTRACE(4, "Trans\tEnded listener thread on " << *transport);
+  PTRACE(3, "Trans\tEnded listener thread on " << *transport);
 }
 
 
@@ -496,7 +501,7 @@ BOOL H323Transactor::WriteTo(H323TransactionPDU & pdu,
 
   BOOL ok = FALSE;
   for (PINDEX i = 0; i < addresses.GetSize(); i++) {
-    if (transport->ConnectTo(addresses[i])) {
+    if (transport->SetRemoteAddress(addresses[i])) {
       PTRACE(3, "Trans\tWrite address set to " << addresses[i]);
       if (callback)
         ok = WritePDU(pdu);
@@ -505,7 +510,7 @@ BOOL H323Transactor::WriteTo(H323TransactionPDU & pdu,
     }
   }
 
-  transport->ConnectTo(oldAddress);
+  transport->SetRemoteAddress(oldAddress);
 
   pduWriteMutex.Signal();
 
@@ -908,7 +913,7 @@ H323TransactionServer::~H323TransactionServer()
 BOOL H323TransactionServer::AddListeners(const H323TransportAddressArray & ifaces)
 {
   if (ifaces.IsEmpty())
-    return AddListener("*");
+    return AddListener("udp$*");
 
   PINDEX i;
 
@@ -954,7 +959,7 @@ BOOL H323TransactionServer::AddListener(const H323TransportAddress & interfaceNa
   if (!interfaceName.GetIpAndPort(addr, port))
     return AddListener(interfaceName.CreateTransport(ownerEndPoint));
 
-  if (addr.IsAny())
+  if (!addr.IsAny())
     return AddListener(new H323TransportUDP(ownerEndPoint, addr, port));
 
   PIPSocket::InterfaceTable interfaces;
