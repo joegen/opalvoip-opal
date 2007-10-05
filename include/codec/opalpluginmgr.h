@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2021  2007/09/25 09:49:54  rjongbloed
+ * Revision 1.2022  2007/10/05 04:14:47  rjongbloed
+ * Quite a large code clean up.
+ *
+ * Revision 2.20  2007/09/25 09:49:54  rjongbloed
  * Fixed videoFastUpdate, is not a count but a simple boolean.
  *
  * Revision 2.19  2007/09/19 10:43:00  csoutheren
@@ -135,6 +138,8 @@
 #endif
 
 
+///////////////////////////////////////////////////////////////////////////////
+
 class H323Capability;
 
 class H323StaticPluginCodec
@@ -145,23 +150,12 @@ class H323StaticPluginCodec
     virtual PluginCodec_GetCodecFunction Get_GetCodecFn() = 0;
 };
 
-class OpalPluginTranscoder {
-  public:
-    static BOOL CallCodecControl(const PluginCodec_Definition * codec, 
-                                                         void * context,
-                                                   const char * name,
-                                                         void * parm, 
-                                                 unsigned int * parmLen,
-                                                          int & retVal);
-    static BOOL HasCodecControl(const PluginCodec_Definition * codec, const char * name);
-
-    static PluginCodec_ControlDefn * GetCodecControl(const PluginCodec_Definition * codec, const char * name);
-};
-
 
 typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
 
-class OpalMediaFormat;
+
+///////////////////////////////////////////////////////////////////////////////
+
 class OpalPluginCodecManager;
 
 class OpalPluginCodecHandler : public PObject
@@ -196,6 +190,7 @@ class OpalPluginCodecHandler : public PObject
                                                                   time_t timeStamp);
 #endif
 };
+
 
 class OpalPluginCodecManager : public PPluginModuleManager
 {
@@ -249,42 +244,134 @@ class OpalPluginCodecManager : public PPluginModuleManager
 #endif
 };
 
-//////////////////////////////////////////////////////
-//
-//  base classes for plugin media formats
-//
 
-class OpalPluginMediaFormat {
+///////////////////////////////////////////////////////////////////////////////
+
+class OpalPluginControl
+{
   public:
-    static void PopulateMediaFormatOptions(const PluginCodec_Definition * _encoderCodec, OpalMediaFormat & format);
-    static bool IsValidForProtocol(const PluginCodec_Definition * encoderCodec, const PString & _protocol);
-    static BOOL CallCodecControl(const PluginCodec_Definition * codec, const char * name, void * parm, unsigned int * parmLen, int & retVal);
-    static void SetOldStyleFormatOption(OpalMediaFormat & format, const PString & key, const PString & val, const PString & type);
+    OpalPluginControl(const PluginCodec_Definition * def, const char * name);
+
+    BOOL Exists() const
+    {
+      return controlDef != NULL;
+    }
+
+    int Call(void * parm, unsigned * parmLen, void * context = NULL) const
+    {
+      return controlDef != NULL ? (*controlDef->control)(codecDef, context, fnName, parm, parmLen) : 0;
+    }
+
+    int Call(void * parm, unsigned   parmLen, void * context = NULL) const
+    {
+      return Call(parm, &parmLen, context);
+    }
+
+  protected:
+    const PluginCodec_Definition  * codecDef;
+    const char                    * fnName;
+    const PluginCodec_ControlDefn * controlDef;
 };
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+class OpalPluginMediaFormat
+{
+  public:
+    OpalPluginMediaFormat(const PluginCodec_Definition * defn);
+
+    void PopulateOptions(OpalMediaFormat & format);
+    bool IsValidForProtocol(const PString & _protocol) const;
+
+    const PluginCodec_Definition * codecDef;
+    OpalPluginControl getOptionsControl;
+    OpalPluginControl freeOptionsControl;
+    OpalPluginControl validForProtocolControl;
+};
+
+
+class OpalPluginTranscoder
+{
+  public:
+    OpalPluginTranscoder(const PluginCodec_Definition * defn, BOOL isEnc);
+    ~OpalPluginTranscoder();
+
+    BOOL Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
+    {
+      return codecDef != NULL && codecDef->codecFunction != NULL &&
+            (codecDef->codecFunction)(codecDef, context, from, fromLen, to, toLen, flags) != 0;
+    }
+
+  protected:
+    const PluginCodec_Definition * codecDef;
+    BOOL   isEncoder;
+    void * context;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 #if OPAL_AUDIO
 
-class OpalPluginAudioMediaFormat : public OpalAudioFormat
+class OpalPluginAudioMediaFormat : public OpalAudioFormat, public OpalPluginMediaFormat
 {
   public:
     friend class OpalPluginCodecManager;
 
-    OpalPluginAudioMediaFormat(const PluginCodec_Definition * _encoderCodec,
-                               const char * rtpEncodingName, /// rtp encoding name
-                               unsigned frameTime,           /// Time for frame in RTP units (if applicable)
-                               unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
-                               time_t timeStamp              /// timestamp (for versioning)
+    OpalPluginAudioMediaFormat(
+      const PluginCodec_Definition * _encoderCodec,
+      const char * rtpEncodingName, /// rtp encoding name
+      unsigned frameTime,           /// Time for frame in RTP units (if applicable)
+      unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
+                         time_t timeStamp              /// timestamp (for versioning)
     );
     bool IsValidForProtocol(const PString & protocol) const;
     PObject * Clone() const;
-    const PluginCodec_Definition * encoderCodec;
+};
+
+
+class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public OpalPluginTranscoder
+{
+  PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
+  public:
+    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = OpalPCM16);
+    BOOL ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
+    virtual BOOL ConvertSilentFrame(BYTE * buffer);
+};
+
+
+class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public OpalPluginTranscoder
+{
+  PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
+  public:
+    OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
+};
+
+
+class OpalPluginStreamedAudioEncoder : public OpalPluginStreamedAudioTranscoder
+{
+  PCLASSINFO(OpalPluginStreamedAudioEncoder, OpalPluginStreamedAudioTranscoder);
+  public:
+    OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, BOOL);
+    int ConvertOne(int _sample) const;
+};
+
+class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
+{
+  PCLASSINFO(OpalPluginStreamedAudioDecoder, OpalPluginStreamedAudioTranscoder);
+  public:
+    OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, BOOL);
+    int ConvertOne(int codedSample) const;
 };
 
 #endif
 
+///////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_VIDEO
 
-class OpalPluginVideoMediaFormat : public OpalVideoFormat
+class OpalPluginVideoMediaFormat : public OpalVideoFormat, public OpalPluginMediaFormat
 {
   public:
     friend class OpalPluginCodecManager;
@@ -295,9 +382,8 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat
     );
     PObject * Clone() const;
     bool IsValidForProtocol(const PString & protocol) const;
-    const PluginCodec_Definition * encoderCodec;
-
 };
+
 
 class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginTranscoder
 {
@@ -306,29 +392,21 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, BOOL _isEncoder);
     ~OpalPluginVideoTranscoder();
 
-    BOOL HasCodecControl(const char * name);
-
-    BOOL CallCodecControl(const char * name,
-                                void * parm,
-                        unsigned int * parmLen,
-                                 int & retVal);
-
     PINDEX GetOptimalDataFrameSize(BOOL input) const;
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
 
   protected:
-    void * context;
-    const PluginCodec_Definition * codec;
-    BOOL isEncoder;
     RTP_DataFrame * bufferRTP;
 };
 
 #endif
 
+///////////////////////////////////////////////////////////////////////////////
+
 #if OPAL_T38FAX
 
-class OpalPluginFaxMediaFormat : public OpalMediaFormat
+class OpalPluginFaxMediaFormat : public OpalMediaFormat, public OpalPluginMediaFormat
 {
   public:
     friend class OpalPluginCodecManager;
@@ -342,36 +420,10 @@ class OpalPluginFaxMediaFormat : public OpalMediaFormat
     );
     PObject * Clone() const;
     bool IsValidForProtocol(const PString & protocol) const;
-    const PluginCodec_Definition * encoderCodec;
 };
 
 #endif // OPAL_T38FAX
 
-#if 0
-//////////////////////////////////////////////////////
-//
-//  base class for plugin 
-//
-
-class OPALDynaLink : public PDynaLink
-{
-  PCLASSINFO(OPALDynaLink, PDynaLink)
-    
- public:
-  OPALDynaLink(const char * basename, const char * reason = NULL);
-
-  virtual void Load();
-  virtual BOOL IsLoaded()
-  { PWaitAndSignal m(processLock); return isLoadedOK; }
-  virtual BOOL LoadPlugin (const PString & fileName);
-
-protected:
-  PMutex processLock;
-  BOOL isLoadedOK;
-  const char * baseName;
-  const char * reason;
-};
-#endif
 
 //////////////////////////////////////////////////////
 //
