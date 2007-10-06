@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2037.2.5  2007/01/15 22:16:43  dsandras
+ * Revision 1.2037.2.6  2007/10/06 13:56:55  dsandras
+ * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
+ * thanks to Will Hawkins and Kris Marsh for what needs to be done.
+ *
+ * Revision 2.36.2.5  2007/01/15 22:16:43  dsandras
  * Backported patches improving stability from HEAD to Phobos.
  *
  * Revision 2.36.2.4  2006/12/08 06:27:20  csoutheren
@@ -247,6 +251,15 @@ class SIPURL : public PURL
         (scheme, user, password, host, port & URI parms (like transport))
       */
     void AdjustForRequestURI();
+
+    /** This will adjust the current URL according to RFC3263, using DNS SRV records.
+
+        @return FALSE if DNS is available but entry is larger than last SRV record entry,
+                TRUE if DNS lookup fails or no DNS is available
+      */
+    BOOL AdjustToDNS(
+      PINDEX entry = 0  /// Entry in the SRV record to adjust to
+    );
 
   protected:
     /** Parses name-addr, like:
