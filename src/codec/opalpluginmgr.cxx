@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2062  2007/10/05 04:14:47  rjongbloed
+ * Revision 1.2062.2.1  2007/10/06 04:00:27  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.61  2007/10/05 04:14:47  rjongbloed
  * Quite a large code clean up.
  *
  * Revision 2.60  2007/09/25 10:38:33  rjongbloed
@@ -327,14 +330,6 @@
 OPAL_REGISTER_G711();
 
 
-#define H323CAP_TAG_PREFIX    "h323"
-static const char VALID_FOR_PROTOCOL_CONTROL[]   = "valid_for_protocol";
-static const char GET_CODEC_OPTIONS_CONTROL[]    = "get_codec_options";
-static const char FREE_CODEC_OPTIONS_CONTROL[]   = "free_codec_options";
-static const char GET_OUTPUT_DATA_SIZE_CONTROL[] = "get_output_data_size";
-static const char SET_CODEC_OPTIONS_CONTROL[]    = "set_codec_options";
-
-
 #if OPAL_VIDEO
 
 #define CIF_WIDTH         352
@@ -359,6 +354,8 @@ static const char * cif4MPI_tag                           = "CIF4 MPI";
 static const char * cif16MPI_tag                          = "CIF16 MPI";
 
 #if OPAL_H323
+
+#define H323CAP_TAG_PREFIX    "h323"
 
 // H.261 only
 static const char * h323_stillImageTransmission_tag            = H323CAP_TAG_PREFIX "_stillImageTransmission";
@@ -435,9 +432,11 @@ OpalPluginControl::OpalPluginControl(const PluginCodec_Definition * def, const c
 
 OpalPluginMediaFormat::OpalPluginMediaFormat(const PluginCodec_Definition * defn)
   : codecDef(defn)
-  , getOptionsControl(defn, GET_CODEC_OPTIONS_CONTROL)
-  , freeOptionsControl(defn, FREE_CODEC_OPTIONS_CONTROL)
-  , validForProtocolControl(defn, VALID_FOR_PROTOCOL_CONTROL)
+  , getOptionsControl      (defn, PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS    )
+  , freeOptionsControl     (defn, PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS   )
+  , validForProtocolControl(defn, PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL   )
+  , toNormalisedControl    (defn, PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS)
+  , toCustomisedControl    (defn, PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS)
 {
 }
 
@@ -686,6 +685,52 @@ void OpalPluginMediaFormat::PopulateOptions(OpalMediaFormat & format)
 }
 
 
+static char ** MediaOptionsToStringArray(const OpalMediaFormat & fmt, const char * PTRACE_PARAM(title))
+{
+  PStringArray list;
+  for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
+    const OpalMediaOption & option = fmt.GetOption(i);
+    list += option.GetName();
+    list += option.AsString();
+  }
+
+#if PTRACING
+  if (PTrace::CanTrace(4)) {
+    ostream & strm = PTrace::Begin(4, __FILE__, __LINE__);
+    strm << "OpalPlugin\t" << title << ":\n";
+    for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
+      const OpalMediaOption & option = fmt.GetOption(i);
+      strm << "    " << option.GetName() << " = " << option.AsString() << '\n';
+    }
+    strm << PTrace::End;
+  }
+#endif
+
+  return list.ToCharArray();
+}
+
+BOOL OpalPluginMediaFormat::AdjustOptions(OpalMediaFormat & fmt, OpalPluginControl & control) const
+{
+  if (!control.Exists())
+    return TRUE;
+
+  char ** input = MediaOptionsToStringArray(fmt, control.GetName());
+  char ** output = input;
+
+  BOOL ok = control.Call(&output, sizeof(output)) != 0;
+
+  if (output != NULL && output != input) {
+    for (char ** option = output; option != NULL; option += 2)
+      fmt.SetOptionValue(output[0], output[1]);
+    freeOptionsControl.Call(output, sizeof(output));
+  }
+
+  free(input);
+
+  return ok;
+}
+
+
 bool OpalPluginMediaFormat::IsValidForProtocol(const PString & _protocol) const
 {
   PString protocol(_protocol.ToLower());
@@ -745,7 +790,22 @@ bool OpalPluginAudioMediaFormat::IsValidForProtocol(const PString & protocol) co
 
 
 PObject * OpalPluginAudioMediaFormat::Clone() const
-{ return new OpalPluginAudioMediaFormat(*this); }
+{
+  return new OpalPluginAudioMediaFormat(*this);
+}
+
+
+BOOL OpalPluginAudioMediaFormat::ToNormalisedOptions()
+{
+  return AdjustOptions(*this, toNormalisedControl);
+}
+
+
+BOOL OpalPluginAudioMediaFormat::ToCustomisedOptions()
+{
+  return AdjustOptions(*this, toCustomisedControl);
+}
+
 
 #if OPAL_H323
 
@@ -809,6 +869,18 @@ PObject * OpalPluginVideoMediaFormat::Clone() const
 bool OpalPluginVideoMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
   return OpalPluginMediaFormat::IsValidForProtocol(protocol);
+}
+
+
+BOOL OpalPluginVideoMediaFormat::ToNormalisedOptions()
+{
+  return AdjustOptions(*this, toNormalisedControl);
+}
+
+
+BOOL OpalPluginVideoMediaFormat::ToCustomisedOptions()
+{
+  return AdjustOptions(*this, toCustomisedControl);
 }
 
 
@@ -1102,33 +1174,14 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 
 BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
 {
-  OpalPluginControl ctl(codecDef, SET_CODEC_OPTIONS_CONTROL);
-  if (ctl.Exists()) {
-    PStringArray list;
-    for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
-      const OpalMediaOption & option = fmt.GetOption(i);
-      list += option.GetName();
-      list += option.AsString();
-    }
+  OpalPluginControl ctl(codecDef, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS);
+  if (!ctl.Exists())
+    return FALSE;
 
-#if PTRACING
-    if (PTrace::CanTrace(4)) {
-      ostream & strm = PTrace::Begin(4, __FILE__, __LINE__);
-      strm << "OpalPlugin\tSetting " << (isEncoder ? "en" : "de") << "coder options:\n";
-      for (PINDEX i = 0; i < fmt.GetOptionCount(); i++) {
-        const OpalMediaOption & option = fmt.GetOption(i);
-        strm << "    " << option.GetName() << " = " << option.AsString() << '\n';
-      }
-      strm << PTrace::End;
-    }
-#endif
-
-    char ** options = list.ToCharArray();
-    ctl.Call(options, sizeof(options), context);
-    free(options);
-  }
-
-  return TRUE;
+  char ** options = MediaOptionsToStringArray(fmt, isEncoder ? "Setting encoder options" : "Setting decoder options");
+  BOOL ok = ctl.Call(options, sizeof(options), context) != 0;
+  free(options);
+  return ok;
 }
 
 
@@ -1143,7 +1196,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
   // get the size of the output buffer
   int outputDataSize;
-  if (!CallCodecControl(GET_OUTPUT_DATA_SIZE_CONTROL, NULL, NULL, outputDataSize))
+  if (!CallCodecControl(PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE, NULL, NULL, outputDataSize))
     outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(FALSE);
 
   unsigned flags;
@@ -1822,7 +1875,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
       break;
   }
 
-  OpalPluginControl isValid(encoderCodec, VALID_FOR_PROTOCOL_CONTROL);
+  OpalPluginControl isValid(encoderCodec, PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL);
   if (encoderCodec->h323CapabilityType == PluginCodec_H323Codec_NoH323 ||
       (isValid.Exists() && !isValid.Call((void *)"h323", sizeof(const char *)))) {
     PTRACE(2, "OpalPlugin\tNot adding H.323 capability for plugin codec " << encoderCodec->destFormat << " as this has been specifically disabled");
