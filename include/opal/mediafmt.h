@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2062  2007/09/25 19:35:30  csoutheren
+ * Revision 1.2062.4.1  2007/10/06 04:00:26  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.61  2007/09/25 19:35:30  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.60  2007/09/21 00:51:38  rjongbloed
@@ -898,6 +901,17 @@ class OpalMediaFormat : public PCaselessString
       const OpalMediaFormat & mediaFormat
     );
 
+    /**This will translate the codec specific "custom" options to OPAL
+       "normalised" options, e.g. For H.261 "QCIF MPI"="1", "CIF MPI"="5"
+        would be translated to "Frame Width"="176", "Frame Height"="144".
+      */
+    virtual BOOL ToNormalisedOptions();
+
+    /**This will do the reverse of ToNormalisedOptions, translating the OPAL
+       "normalised" options to codec specific "custom" options.
+      */
+    virtual BOOL ToCustomisedOptions();
+
     /**Get the RTP payload type that is to be used for this media format.
        This will either be an intrinsic one for the media format eg GSM or it
        will be automatically calculated as a dynamic media format that will be
@@ -1227,10 +1241,13 @@ class OpalVideoFormat : public OpalMediaFormat
 
     static const PString & FrameWidthOption();
     static const PString & FrameHeightOption();
-    static const PString & EncodingQualityOption();
     static const PString & TargetBitRateOption();
-    static const PString & DynamicVideoQualityOption();
-    static const PString & AdaptivePacketDelayOption();
+    static const PString & MinRxFrameWidthOption();
+    static const PString & MinRxFrameHeightOption();
+    static const PString & MaxRxFrameWidthOption();
+    static const PString & MaxRxFrameHeightOption();
+    static const PString & TemporalSpatialTradeOffOption();
+    static const PString & TxKeyFramePeriodOption();
 };
 #endif
 
