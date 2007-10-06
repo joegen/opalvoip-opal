@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2016  2007/09/24 07:05:44  rjongbloed
+ * Revision 1.2016.4.1  2007/10/06 04:00:16  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.15  2007/09/24 07:05:44  rjongbloed
  * Added some extra RTP magic numbers: min header size, max packet size etc
  *
  * Revision 2.14  2007/09/04 02:21:20  rjongbloed
@@ -293,6 +296,16 @@ enum PluginCodec_ReturnCoderFlags {
 
 struct PluginCodec_Definition;
 
+// Control function names
+
+#define PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL    "valid_for_protocol"
+#define PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS     "get_codec_options"
+#define PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS    "free_codec_options"
+#define PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE  "get_output_data_size"
+#define PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS     "set_codec_options"
+#define PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS "to_normalised_options"
+#define PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS "to_customised_options"
+
 struct PluginCodec_ControlDefn {
   const char * name;
   int (*control)(const struct PluginCodec_Definition * codec, void * context,
@@ -348,6 +361,26 @@ struct PluginCodec_Option {
   const char *                 m_maximum;
 };
 
+
+// Normalised option names
+#define PLUGINCODEC_OPTION_NEEDS_JITTER               "Needs Jitter"
+#define PLUGINCODEC_OPTION_CLOCK_RATE                 "Clock Rate"
+#define PLUGINCODEC_OPTION_FRAME_TIME                 "Frame Time"
+#define PLUGINCODEC_OPTION_MAX_BIT_RATE               "Max Bit Rate"
+#define PLUGINCODEC_OPTION_TARGET_BIT_RATE            "Target Bit Rate"
+#define PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET       "Tx Frames Per Packet"
+#define PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET       "Rx Frames per Packet"
+#define PLUGINCODEC_OPTION_FRAME_WIDTH                "Frame Width"
+#define PLUGINCODEC_OPTION_FRAME_HEIGHT               "Frame Height"
+#define PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH         "Min Rx Frame Width"
+#define PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT        "Min Rx Frame Height"
+#define PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH         "Max Rx Frame Width"
+#define PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT        "Max Rx Frame Height"
+#define PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF "Temporal Spatial Trade Off"
+#define PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD        "Tx Key Frame Period"
+
+
+// Full definition of the codec
 
 struct PluginCodec_Definition {
   unsigned int version;                     // codec structure version
