@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2039  2007/09/18 02:22:58  rjongbloed
+ * Revision 1.2039.6.1  2007/10/06 04:00:28  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.38  2007/09/18 02:22:58  rjongbloed
  * Fixed output display window starting off at correct size.
  *
  * Revision 2.37  2007/09/10 03:15:04  rjongbloed
@@ -344,7 +347,10 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat == dstFormat)
-          return srcFormat.Merge(dstFormat) && dstFormat.Merge(srcFormat);
+          return srcFormat.Merge(dstFormat) &&
+                 dstFormat.Merge(srcFormat) &&
+                 srcFormat.ToCustomisedOptions() &&
+                 dstFormat.ToCustomisedOptions();
       }
     }
   }
@@ -363,7 +369,9 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
               return srcFormat.Merge(i->first) &&
                      dstFormat.Merge(i->second) &&
                      srcFormat.Merge(dstFormat) &&
-                     dstFormat.Merge(srcFormat);
+                     dstFormat.Merge(srcFormat) &&
+                     srcFormat.ToCustomisedOptions() &&
+                     dstFormat.ToCustomisedOptions();
           }
         }
       }
