@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2022  2007/10/05 04:14:47  rjongbloed
+ * Revision 1.2022.2.1  2007/10/06 04:00:17  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.21  2007/10/05 04:14:47  rjongbloed
  * Quite a large code clean up.
  *
  * Revision 2.20  2007/09/25 09:49:54  rjongbloed
@@ -267,6 +270,8 @@ class OpalPluginControl
       return Call(parm, &parmLen, context);
     }
 
+    const char * GetName() const { return fnName; }
+
   protected:
     const PluginCodec_Definition  * codecDef;
     const char                    * fnName;
@@ -283,11 +288,14 @@ class OpalPluginMediaFormat
 
     void PopulateOptions(OpalMediaFormat & format);
     bool IsValidForProtocol(const PString & _protocol) const;
+    BOOL AdjustOptions(OpalMediaFormat & fmt, OpalPluginControl & control) const;
 
     const PluginCodec_Definition * codecDef;
     OpalPluginControl getOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl validForProtocolControl;
+    OpalPluginControl toNormalisedControl;
+    OpalPluginControl toCustomisedControl;
 };
 
 
@@ -328,6 +336,8 @@ class OpalPluginAudioMediaFormat : public OpalAudioFormat, public OpalPluginMedi
     );
     bool IsValidForProtocol(const PString & protocol) const;
     PObject * Clone() const;
+    virtual BOOL ToNormalisedOptions();
+    virtual BOOL ToCustomisedOptions();
 };
 
 
@@ -382,6 +392,8 @@ class OpalPluginVideoMediaFormat : public OpalVideoFormat, public OpalPluginMedi
     );
     PObject * Clone() const;
     bool IsValidForProtocol(const PString & protocol) const;
+    virtual BOOL ToNormalisedOptions();
+    virtual BOOL ToCustomisedOptions();
 };
 
 
