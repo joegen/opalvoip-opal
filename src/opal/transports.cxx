@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2091  2007/10/04 05:41:20  rjongbloed
+ * Revision 1.2091.2.1  2007/10/06 04:00:28  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.90  2007/10/04 05:41:20  rjongbloed
  * Assure OpalTransportUDP is pre-opened in non-listener constructor
  *   to emulate the previous semantics. Fixes issue with gk server.
  *
@@ -1294,7 +1297,7 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   WORD remotePort;
   PString iface;
   PINDEX readCount;
-  if (listenerBundle->ReadFrom(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
+  if (listenerBundle->ReadFromBundle(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
     pdu.SetSize(readCount);
     return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
   }

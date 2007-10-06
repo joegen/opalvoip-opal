@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2079  2007/09/25 19:35:39  csoutheren
+ * Revision 1.2079.4.1  2007/10/06 04:00:28  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.78  2007/09/25 19:35:39  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.77  2007/09/21 00:51:38  rjongbloed
@@ -1036,6 +1039,18 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
 }
 
 
+BOOL OpalMediaFormat::ToNormalisedOptions()
+{
+  return TRUE;
+}
+
+
+BOOL OpalMediaFormat::ToCustomisedOptions()
+{
+  return TRUE;
+}
+
+
 bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) const
 {
   PWaitAndSignal m(media_format_mutex);
@@ -1405,12 +1420,15 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
 
 #if OPAL_VIDEO
 
-const PString & OpalVideoFormat::FrameWidthOption()          { static PString s = "Frame Width";           return s; }
-const PString & OpalVideoFormat::FrameHeightOption()         { static PString s = "Frame Height";          return s; }
-const PString & OpalVideoFormat::EncodingQualityOption()     { static PString s = "Encoding Quality";      return s; }
-const PString & OpalVideoFormat::TargetBitRateOption()       { static PString s = "Target Bit Rate";       return s; }
-const PString & OpalVideoFormat::DynamicVideoQualityOption() { static PString s = "Dynamic Video Quality"; return s; }
-const PString & OpalVideoFormat::AdaptivePacketDelayOption() { static PString s = "Adaptive Packet Delay"; return s; }
+const PString & OpalVideoFormat::FrameWidthOption()             { static PString s = "Frame Width";               return s; }
+const PString & OpalVideoFormat::FrameHeightOption()            { static PString s = "Frame Height";              return s; }
+const PString & OpalVideoFormat::TargetBitRateOption()          { static PString s = "Target Bit Rate";           return s; }
+const PString & OpalVideoFormat::MinRxFrameWidthOption()        { static PString s = "Min Rx Frame Width";        return s; }
+const PString & OpalVideoFormat::MinRxFrameHeightOption()       { static PString s = "Min Rx Frame Height";       return s; }
+const PString & OpalVideoFormat::MaxRxFrameWidthOption()        { static PString s = "Max Rx Frame Width";        return s; }
+const PString & OpalVideoFormat::MaxRxFrameHeightOption()       { static PString s = "Max Rx Frame Height";       return s; }
+const PString & OpalVideoFormat::TemporalSpatialTradeOffOption(){ static PString s = "Temporal Spatial Trade Off";return s; }
+const PString & OpalVideoFormat::TxKeyFramePeriodOption()       { static PString s = "Tx Key Frame Period";       return s; }
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1431,12 +1449,15 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                     OpalMediaFormat::VideoClockRate,
                     timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
-  AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000,    1000));
-  AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
-  AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),              false, OpalMediaOption::MinMerge, frameWidth,   16,  2048));
+  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),             false, OpalMediaOption::MinMerge, frameHeight,  16,  2048));
+  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),           false, OpalMediaOption::MinMerge,    10000000,1000       ));
+  AddOption(new OpalMediaOptionUnsigned(MinRxFrameWidthOption(),         false, OpalMediaOption::MinMerge,         128,  16,  2048));
+  AddOption(new OpalMediaOptionUnsigned(MinRxFrameHeightOption(),        false, OpalMediaOption::MinMerge,        1920,  16,  2048));
+  AddOption(new OpalMediaOptionUnsigned(MaxRxFrameWidthOption(),         false, OpalMediaOption::MinMerge,          96,  16,  2048));
+  AddOption(new OpalMediaOptionUnsigned(MaxRxFrameHeightOption(),        false, OpalMediaOption::MinMerge,        1192,  16,  2048));
+  AddOption(new OpalMediaOptionUnsigned(TemporalSpatialTradeOffOption(), false, OpalMediaOption::MinMerge,           0,   0,    31));
+  AddOption(new OpalMediaOptionUnsigned(TxKeyFramePeriodOption(),        false, OpalMediaOption::MinMerge,         132,   1, 32767));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(MaxBitRateOption())->SetReadOnly(false);

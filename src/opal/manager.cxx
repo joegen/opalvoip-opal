@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2100  2007/09/26 03:50:13  rjongbloed
+ * Revision 1.2100.4.1  2007/10/06 04:00:28  rjongbloed
+ * First cut at new Media Options negotiation
+ *
+ * Revision 2.99  2007/09/26 03:50:13  rjongbloed
  * Allow for SDL only being able to show one window, prevent
  *   preview window from appearing if SDL used for both.
  *
@@ -889,6 +892,8 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 {
   mediaFormats.Remove(mediaFormatMask);
   mediaFormats.Reorder(mediaFormatOrder);
+  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
+    mediaFormats[i].ToCustomisedOptions();
 }
 
 
