@@ -29,7 +29,12 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2091  2007/10/04 05:41:20  rjongbloed
+ * Revision 1.2092  2007/10/07 07:36:13  rjongbloed
+ * Changed bundled sockets so does not return error if interface goes away it just
+ *   blocks reads till the interface comes back, or is explicitly closed.
+ * Also return error codes, rather than just a BOOL.
+ *
+ * Revision 2.90  2007/10/04 05:41:20  rjongbloed
  * Assure OpalTransportUDP is pre-opened in non-listener constructor
  *   to emulate the previous semantics. Fixes issue with gk server.
  *
@@ -1294,17 +1299,19 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   WORD remotePort;
   PString iface;
   PINDEX readCount;
-  if (listenerBundle->ReadFrom(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
-    pdu.SetSize(readCount);
-    return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
+  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
+    case PChannel::NoError :
+      pdu.SetSize(readCount);
+      return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
+
+    case PChannel::Interrupted :
+      PTRACE(4, "Listen\tDropped interface " << iface);
+      break;
+
+    default :
+      PTRACE(1, "Listen\tUDP read error.");
   }
 
-  if (iface.IsEmpty()) {
-    PTRACE(1, "Listen\tUDP read error.");
-  }
-  else {
-    PTRACE(4, "Listen\tDropped interface " << iface);
-  }
   return NULL;
 }
 
