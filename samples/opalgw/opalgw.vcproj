@@ -238,6 +238,9 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\gkserv.cxx">
+			</File>
+			<File
 				RelativePath="main.cxx">
 				<FileConfiguration
 					Name="Release|Win32">
