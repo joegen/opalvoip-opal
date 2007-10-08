@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2016.4.1  2007/10/06 04:00:16  rjongbloed
+ * Revision 1.2016.4.2  2007/10/08 02:49:21  rjongbloed
+ * Update fixes from HEAD
+ *
+ * Revision 2.16  2007/10/08 01:45:16  rjongbloed
+ * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
+ * Some more clean ups.
+ *
+ * Revision 2.15.4.1  2007/10/06 04:00:16  rjongbloed
  * First cut at new Media Options negotiation
  *
  * Revision 2.15  2007/09/24 07:05:44  rjongbloed
@@ -305,6 +312,8 @@ struct PluginCodec_Definition;
 #define PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS     "set_codec_options"
 #define PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS "to_normalised_options"
 #define PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS "to_customised_options"
+#define PLUGINCODEC_CONTROL_SET_INSTANCE_ID       "set_instance_id"
+
 
 struct PluginCodec_ControlDefn {
   const char * name;

@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2062.2.1  2007/10/06 04:00:27  rjongbloed
+ * Revision 1.2062.2.2  2007/10/08 02:49:21  rjongbloed
+ * Update fixes from HEAD
+ *
+ * Revision 2.62  2007/10/08 01:45:16  rjongbloed
+ * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
+ * Some more clean ups.
+ *
+ * Revision 2.61.2.1  2007/10/06 04:00:27  rjongbloed
  * First cut at new Media Options negotiation
  *
  * Revision 2.61  2007/10/05 04:14:47  rjongbloed
@@ -1023,6 +1030,8 @@ OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, 
   : codecDef(defn)
   , isEncoder(isEnc)
   , context(codecDef->createCodec != NULL ? (*codecDef->createCodec)(codecDef) : NULL)
+  , setCodecOptions(defn, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS)
+  , getOutputDataSizeControl(defn, PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE)
 {
 }
 
@@ -1174,12 +1183,11 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 
 BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
 {
-  OpalPluginControl ctl(codecDef, PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS);
-  if (!ctl.Exists())
+  if (!setCodecOptions.Exists())
     return FALSE;
 
   char ** options = MediaOptionsToStringArray(fmt, isEncoder ? "Setting encoder options" : "Setting decoder options");
-  BOOL ok = ctl.Call(options, sizeof(options), context) != 0;
+  BOOL ok = setCodecOptions.Call(options, sizeof(options), context);
   free(options);
   return ok;
 }
@@ -1196,7 +1204,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
   // get the size of the output buffer
   int outputDataSize;
-  if (!CallCodecControl(PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE, NULL, NULL, outputDataSize))
+  if (getOutputDataSizeControl.Call(&outputDataSize, sizeof(outputDataSize), context) <= 0)
     outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(FALSE);
 
   unsigned flags;
@@ -1294,6 +1302,14 @@ class OpalFaxAudioTranscoder : public OpalPluginFramedAudioTranscoder
 
     ~OpalFaxAudioTranscoder()
     { 
+    }
+
+    virtual void SetInstanceID(const BYTE * instance, unsigned instanceLen)
+    {
+      if (instance != NULL && instanceLen > 0) {
+        OpalPluginControl ctl(codecDef, PLUGINCODEC_CONTROL_SET_INSTANCE_ID);
+        ctl.Call((void *)instance, instanceLen, context);
+      }
     }
 
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);

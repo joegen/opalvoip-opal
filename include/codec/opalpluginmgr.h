@@ -24,7 +24,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2022.2.1  2007/10/06 04:00:17  rjongbloed
+ * Revision 1.2022.2.2  2007/10/08 02:49:21  rjongbloed
+ * Update fixes from HEAD
+ *
+ * Revision 2.22  2007/10/08 01:45:16  rjongbloed
+ * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
+ * Some more clean ups.
+ *
+ * Revision 2.21.2.1  2007/10/06 04:00:17  rjongbloed
  * First cut at new Media Options negotiation
  *
  * Revision 2.21  2007/10/05 04:14:47  rjongbloed
@@ -315,6 +322,9 @@ class OpalPluginTranscoder
     const PluginCodec_Definition * codecDef;
     BOOL   isEncoder;
     void * context;
+
+    OpalPluginControl setCodecOptions;
+    OpalPluginControl getOutputDataSizeControl;
 };
 
 
