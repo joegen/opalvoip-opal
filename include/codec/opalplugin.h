@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalplugin.h,v $
- * Revision 1.2016  2007/09/24 07:05:44  rjongbloed
+ * Revision 1.2017  2007/10/08 01:45:16  rjongbloed
+ * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
+ * Some more clean ups.
+ *
+ * Revision 2.15  2007/09/24 07:05:44  rjongbloed
  * Added some extra RTP magic numbers: min header size, max packet size etc
  *
  * Revision 2.14  2007/09/04 02:21:20  rjongbloed
@@ -292,6 +296,18 @@ enum PluginCodec_ReturnCoderFlags {
 };
 
 struct PluginCodec_Definition;
+
+// Control function names
+
+#define PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL    "valid_for_protocol"
+#define PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS     "get_codec_options"
+#define PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS    "free_codec_options"
+#define PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE  "get_output_data_size"
+#define PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS     "set_codec_options"
+#define PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS "to_normalised_options"
+#define PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS "to_customised_options"
+#define PLUGINCODEC_CONTROL_SET_INSTANCE_ID       "set_instance_id"
+
 
 struct PluginCodec_ControlDefn {
   const char * name;
