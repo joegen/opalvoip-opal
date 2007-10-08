@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2063  2007/10/08 01:45:16  rjongbloed
+ * Revision 1.2064  2007/10/08 12:16:18  rjongbloed
+ * Really fixed uninitialised variable this time!
+ *
+ * Revision 2.62  2007/10/08 01:45:16  rjongbloed
  * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
  * Some more clean ups.
  *
@@ -1142,7 +1145,9 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
   // get the size of the output buffer
   int outputDataSize;
-  if (getOutputDataSizeControl.Call(&outputDataSize, sizeof(outputDataSize), context) <= 0)
+  if (getOutputDataSizeControl.Exists())
+    outputDataSize = getOutputDataSizeControl.Call(&outputDataSize, sizeof(outputDataSize), context);
+  else
     outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(FALSE);
 
   unsigned flags;
