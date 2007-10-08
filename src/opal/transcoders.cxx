@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2039  2007/09/18 02:22:58  rjongbloed
+ * Revision 1.2040  2007/10/08 01:45:16  rjongbloed
+ * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
+ * Some more clean ups.
+ *
+ * Revision 2.38  2007/09/18 02:22:58  rjongbloed
  * Fixed output display window starting off at correct size.
  *
  * Revision 2.37  2007/09/10 03:15:04  rjongbloed
@@ -250,6 +254,11 @@ BOOL OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 }
 
 
+void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanceLen*/)
+{
+}
+
+
 RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
 {
   RTP_DataFrame::PayloadTypes pt = (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
@@ -320,10 +329,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder != NULL) {
     transcoder->UpdateOutputMediaFormat(destFormat);
-    if (instance != NULL && instanceLen != 0 && transcoder->HasCodecControl("set_instance_id")) {
-      int ret;
-      transcoder->CallCodecControl("set_instance_id", (void *)instance, &instanceLen, ret);
-    }
+    transcoder->SetInstanceID(instance, instanceLen);
   }
   return transcoder;
 }
