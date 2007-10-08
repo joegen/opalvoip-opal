@@ -29,7 +29,15 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2091.2.1  2007/10/06 04:00:28  rjongbloed
+ * Revision 1.2091.2.2  2007/10/08 02:49:21  rjongbloed
+ * Update fixes from HEAD
+ *
+ * Revision 2.91  2007/10/07 07:36:13  rjongbloed
+ * Changed bundled sockets so does not return error if interface goes away it just
+ *   blocks reads till the interface comes back, or is explicitly closed.
+ * Also return error codes, rather than just a BOOL.
+ *
+ * Revision 2.90.2.1  2007/10/06 04:00:28  rjongbloed
  * First cut at new Media Options negotiation
  *
  * Revision 2.90  2007/10/04 05:41:20  rjongbloed
@@ -1298,16 +1306,10 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   PString iface;
   PINDEX readCount;
   if (listenerBundle->ReadFromBundle(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
-    pdu.SetSize(readCount);
-    return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
+      pdu.SetSize(readCount);
+      return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
   }
 
-  if (iface.IsEmpty()) {
-    PTRACE(1, "Listen\tUDP read error.");
-  }
-  else {
-    PTRACE(4, "Listen\tDropped interface " << iface);
-  }
   return NULL;
 }
 

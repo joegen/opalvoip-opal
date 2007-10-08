@@ -25,7 +25,14 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2029  2007/09/19 10:43:00  csoutheren
+ * Revision 1.2029.4.1  2007/10/08 02:49:21  rjongbloed
+ * Update fixes from HEAD
+ *
+ * Revision 2.29  2007/10/08 01:45:16  rjongbloed
+ * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
+ * Some more clean ups.
+ *
+ * Revision 2.28  2007/09/19 10:43:00  csoutheren
  * Exposed G.7231 capability class
  * Added macros to create empty transcoders and capabilities
  *
@@ -307,8 +314,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     static OpalTranscoder * Create(
       const OpalMediaFormat & srcFormat,  ///<  Name of source format
       const OpalMediaFormat & dstFormat,  ///<  Name of destination format
-                 const BYTE * instance = NULL,
-                     unsigned instanceLen = 0
+      const BYTE * instance = NULL,       ///<  Unique instance identifier for transcoder
+      unsigned instanceLen = 0            ///<  Length of instance identifier
     );
 
     /**Find media format(s) for transcoders.
@@ -389,13 +396,12 @@ class OpalTranscoder : public OpalMediaFormatPair
       */
     const PNotifier & GetCommandNotifier() const { return commandNotifier; }
 
-    /**Call a codec control function. This will normally only be defined for plugin codecs
+    /** Set the unique instance identifier for transcoder
       */
-    virtual BOOL HasCodecControl(const char *)
-    { return FALSE; }
-
-    virtual BOOL CallCodecControl(const char *, void *,  unsigned int *, int &)
-    { return -1; }
+    virtual void SetInstanceID(
+      const BYTE * instance,              ///<  Unique instance identifier for transcoder
+      unsigned instanceLen                ///<  Length of instance identifier
+    );
 
     void SetRTPPayloadMap(const RTP_DataFrame::PayloadMapType & v)
     { payloadTypeMap = v; }
