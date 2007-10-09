@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.6  2007/10/09 09:22:41  rjongbloed
+ * Allow for 16kHz audio codecs.
+ * Allow user to set sound channel buffers.
+ *
  * Revision 1.5  2007/10/09 01:53:30  rjongbloed
  * Simplified code for audio/video grab/play devices.
  *
@@ -75,6 +79,7 @@ void CodecTest::Main()
              "R-record-device:"
              "-play-driver:"
              "P-play-device:"
+             "-play-buffers:"
              "-grab-driver:"
              "G-grab-device:"
              "-grab-format:"
@@ -108,6 +113,7 @@ void CodecTest::Main()
               "  -R --record-device dev  : audio recorder device.\n"
               "  --play-driver drv       : audio player driver.\n"
               "  -P --play-device dev    : audio player device.\n"
+              "  --play-buffers n        : audio player buffers, default 8.\n"
               "  --grab-driver drv       : video grabber driver.\n"
               "  -G --grab-device dev    : video grabber device.\n"
               "  --grab-format fmt       : video grabber format (\"pal\"/\"ntsc\")\n"
@@ -214,12 +220,15 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
         encoder = NULL;
       }
       else {
-        if ((encoder = OpalTranscoder::Create(rawFormat, mediaFormat)) == NULL) {
+        OpalMediaFormat adjustedRawFormat = rawFormat;
+        if (mediaFormat.GetClockRate() != rawFormat.GetClockRate())
+          adjustedRawFormat = OpalPCM16_16KHZ;
+        if ((encoder = OpalTranscoder::Create(adjustedRawFormat, mediaFormat)) == NULL) {
           cout << "Could not create encoder for media format \"" << mediaFormat << '"' << endl;
           return false;
         }
 
-        if ((decoder = OpalTranscoder::Create(mediaFormat, rawFormat)) == NULL) {
+        if ((decoder = OpalTranscoder::Create(mediaFormat, adjustedRawFormat)) == NULL) {
           cout << "Could not create decoder for media format \"" << mediaFormat << '"' << endl;
           return false;
         }
@@ -249,7 +258,9 @@ bool AudioThread::Initialise(PArgList & args)
   // Audio recorder
   PString driverName = args.GetOptionString("record-driver");
   PString deviceName = args.GetOptionString("record-device");
-  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Recorder);
+  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName,
+                                                PSoundChannel::Recorder, 1,
+                                                encoder->GetInputFormat().GetClockRate());
   if (recorder == NULL) {
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
@@ -293,6 +304,8 @@ bool AudioThread::Initialise(PArgList & args)
     cerr << endl;
     return false;
   }
+
+  player->SetBuffers(readSize, args.GetOptionString("play-buffers", "8").AsUnsigned());
 
   cout << "Audio Player ";
   if (!driverName.IsEmpty())
