@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2064  2007/10/08 12:16:18  rjongbloed
+ * Revision 1.2065  2007/10/09 01:49:47  rjongbloed
+ * Fixed correct setting of audio Tx Frames per Packet to plug-in recommended value.
+ *
+ * Revision 2.63  2007/10/08 12:16:18  rjongbloed
  * Really fixed uninitialised variable this time!
  *
  * Revision 2.62  2007/10/08 01:45:16  rjongbloed
@@ -720,7 +723,7 @@ OpalPluginAudioMediaFormat::OpalPluginAudioMediaFormat(const PluginCodec_Definit
                     rtpEncodingName,
                     _encoderCodec->parm.audio.bytesPerFrame,
                     frameTime,
-                    _encoderCodec->parm.audio.recommendedFramesPerPacket,
+                    _encoderCodec->parm.audio.maxFramesPerPacket,
                     _encoderCodec->parm.audio.recommendedFramesPerPacket,
                     _encoderCodec->parm.audio.maxFramesPerPacket,
                     _encoderCodec->sampleRate,
@@ -729,9 +732,6 @@ OpalPluginAudioMediaFormat::OpalPluginAudioMediaFormat(const PluginCodec_Definit
   , OpalPluginMediaFormat(_encoderCodec)
 {
   PopulateOptions(*this);
-
-  if (_encoderCodec->parm.audio.maxFramesPerPacket > 0)
-    SetOptionInteger(TxFramesPerPacketOption(), _encoderCodec->parm.audio.maxFramesPerPacket);
 
   // Override calculated value if we have an explicit bit rate
   if (_encoderCodec->bitsPerSec > 0)
