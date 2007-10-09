@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2041  2007/10/09 04:24:25  rjongbloed
+ * Revision 1.2042  2007/10/09 09:17:07  rjongbloed
+ * Fixed being able to handle missing/DTX frames which manifest as zero length.
+ *
+ * Revision 2.40  2007/10/09 04:24:25  rjongbloed
  * Prevent infinite loop in high priority thread if codec (plug-in) misbehaves.
  *
  * Revision 2.39  2007/10/08 01:45:16  rjongbloed
@@ -278,10 +281,6 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
 BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
-  // if no input payload, then nothing to convert
-  if (input.GetPayloadSize() == 0)
-    return TRUE;
-
   // make sure there is at least one output frame available
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
@@ -580,7 +579,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   // set actual output payload size
   output.SetPayloadSize(outLen);
 
-  return outLen > 0;
+  return TRUE;
 }
 
 BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consumed*/, BYTE * outputPtr, PINDEX & /*created*/)
