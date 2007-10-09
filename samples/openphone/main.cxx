@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.40  2007/10/09 10:27:15  rjongbloed
+ * Fixed ring sound being played if auto answer enabled.
+ *
  * Revision 1.39  2007/10/09 00:53:51  rjongbloed
  * Fixed wxWidgets 2.6 compatibility
  *
@@ -1595,7 +1598,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
             << " from " << connection.GetRemotePartyName() << endl;
 
-  if (!m_RingSoundFileName.empty()) {
+  if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
     m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
     m_RingSoundTimer.RunContinuous(5000);
