@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2022.2.2  2007/10/08 02:49:21  rjongbloed
+ * Revision 1.2022.2.3  2007/10/09 09:19:00  rjongbloed
  * Update fixes from HEAD
  *
  * Revision 2.22  2007/10/08 01:45:16  rjongbloed
