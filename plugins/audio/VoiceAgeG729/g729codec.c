@@ -20,6 +20,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g729codec.c,v $
+ * Revision 1.4  2007/10/09 10:30:17  rjongbloed
+ * Cosmetic change.
+ *
  * Revision 1.3  2006/10/26 08:39:25  rjongbloed
  * Updated to latest Voice Age download library
  *
@@ -53,10 +56,10 @@ PLUGIN_CODEC_IMPLEMENT("VoiceAgeG729")
 #include <malloc.h>
 #include "va_g729/va_g729.h"
 
-#define SAMPLES_PER_FRAME   L_FRAME
-#define BYTES_PER_FRAME     L_FRAME_COMPRESSED
-#define NANOSECONDSPERFRAME 10000
-#define BITS_PER_SECOND     8000
+#define SAMPLES_PER_FRAME    L_FRAME
+#define BYTES_PER_FRAME      L_FRAME_COMPRESSED
+#define MICROSECONDSPERFRAME 10000
+#define BITS_PER_SECOND      8000
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -195,7 +198,7 @@ static struct PluginCodec_Definition g729CodecDefn[4] = {
 
   8000,                               // samples per second
   BITS_PER_SECOND,                    // raw bits per second
-  NANOSECONDSPERFRAME,                // nanoseconds per frame
+  MICROSECONDSPERFRAME,               // microseconds per frame
   SAMPLES_PER_FRAME,                  // samples per frame
   10,                                 // bytes per frame
   6,                                  // recommended number of frames per packet
@@ -230,7 +233,7 @@ static struct PluginCodec_Definition g729CodecDefn[4] = {
 
   8000,                               // samples per second
   BITS_PER_SECOND,                    // raw bits per second
-  NANOSECONDSPERFRAME,                // nanoseconds per frame
+  MICROSECONDSPERFRAME,               // microseconds per frame
   SAMPLES_PER_FRAME,                  // samples per frame
   BYTES_PER_FRAME,                    // bytes per frame
   6,                                  // recommended number of frames per packet
@@ -265,7 +268,7 @@ static struct PluginCodec_Definition g729CodecDefn[4] = {
 
   8000,                                   // samples per second
   BITS_PER_SECOND,                        // raw bits per second
-  NANOSECONDSPERFRAME,                    // nanoseconds per frame
+  MICROSECONDSPERFRAME,                   // microseconds per frame
   SAMPLES_PER_FRAME,                      // samples per frame
   BYTES_PER_FRAME,                        // bytes per frame
   6,                                      // recommended number of frames per packet
@@ -300,7 +303,7 @@ static struct PluginCodec_Definition g729CodecDefn[4] = {
 
   8000,                                   // samples per second
   BITS_PER_SECOND,                        // raw bits per second
-  NANOSECONDSPERFRAME,                    // nanoseconds per frame
+  MICROSECONDSPERFRAME,                   // microseconds per frame
   SAMPLES_PER_FRAME,                      // samples per frame
   BYTES_PER_FRAME,                        // bytes per frame
   6,                                      // recommended number of frames per packet
