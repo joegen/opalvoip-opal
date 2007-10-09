@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2040  2007/10/08 01:45:16  rjongbloed
+ * Revision 1.2041  2007/10/09 04:24:25  rjongbloed
+ * Prevent infinite loop in high priority thread if codec (plug-in) misbehaves.
+ *
+ * Revision 2.39  2007/10/08 01:45:16  rjongbloed
  * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
  * Some more clean ups.
  *
@@ -565,6 +568,9 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
       return FALSE;
 
+    if (consumed == 0 && created == 0)
+      break;
+
     outputPtr   += created;
     outLen      += created;
     inputPtr    += consumed;
@@ -574,7 +580,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   // set actual output payload size
   output.SetPayloadSize(outLen);
 
-  return TRUE;
+  return outLen > 0;
 }
 
 BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consumed*/, BYTE * outputPtr, PINDEX & /*created*/)
