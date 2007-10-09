@@ -3,9 +3,12 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.7 2007/08/17 08:56:59 rjongbloed Exp $
+ * $Id: amrcodec.c,v 1.8 2007/10/09 09:21:13 rjongbloed Exp $
  *
  * $Log: amrcodec.c,v $
+ * Revision 1.8  2007/10/09 09:21:13  rjongbloed
+ * Make sure codec gets, and handles, missing frames.
+ *
  * Revision 1.7  2007/08/17 08:56:59  rjongbloed
  * Tiny change to make closer to specification
  *
@@ -189,7 +192,7 @@ static int amr_codec_decoder(const struct PluginCodec_Definition * codec,
   if (*toLen < L_FRAME*sizeof(short))
     return FALSE;
 
-  if (*fromLen == 0) {
+  if (fromLen == NULL || *fromLen == 0) {
     unsigned char buffer[32];
     buffer[0] = (AMR_BITRATE_DTX << 3)|4;
     Decoder_Interface_Decode(context, buffer, (short *)toPtr, 0); // Handle missing data
@@ -251,7 +254,7 @@ static struct PluginCodec_Option const amrInitialMode =
   { PluginCodec_IntegerOption, "Initial Mode",         0, PluginCodec_NoMerge,  "7", NULL, NULL, H245_AMR_BITRATE,         "0", "7" };
 
 static struct PluginCodec_Option const amrVAD =
-  { PluginCodec_BoolOption,    "VAD",                  0, PluginCodec_AndMerge, "1", NULL, NULL, H245_AMR_GSMAMRCOMFORTNOISE };
+  { PluginCodec_BoolOption,    "VAD",                  0, PluginCodec_AndMerge, "True", NULL, NULL, H245_AMR_GSMAMRCOMFORTNOISE };
 
 static struct PluginCodec_Option const amrMediaPacketization =
   { PluginCodec_StringOption,  "Media Packetization",  0, PluginCodec_EqualMerge, "RFC3267" };
@@ -388,7 +391,8 @@ static struct PluginCodec_Definition amrCodecDefn[] = {
     PluginCodec_MediaTypeAudio |            // audio codec
     PluginCodec_InputTypeRaw |              // raw input data
     PluginCodec_OutputTypeRaw |             // raw output data
-    PluginCodec_RTPTypeDynamic,             // dynamic RTP type
+    PluginCodec_RTPTypeDynamic |            // dynamic RTP type
+    PluginCodec_DecodeSilence,              // Can accept missing (empty) frames and generate silence
 
     "GSM-AMR",                              // text decription
     "GSM-AMR",                              // source format
