@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.cxx,v $
+ * Revision 1.5  2007/10/09 01:53:30  rjongbloed
+ * Simplified code for audio/video grab/play devices.
+ *
  * Revision 1.4  2007/09/18 02:27:57  rjongbloed
  * Changed so single letter options are consistently lowercase.
  *
@@ -232,8 +235,6 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
 
 bool AudioThread::Initialise(PArgList & args)
 {
-  PINDEX i;
-
   switch (InitialiseCodec(args, OpalPCM16)) {
     case 0 :
       return false;
@@ -243,99 +244,59 @@ bool AudioThread::Initialise(PArgList & args)
 
   readSize = encoder->GetOptimalDataFrameSize(TRUE);
 
+  cout << "Audio media format set to " << encoder->GetOutputFormat() << endl;
+
   // Audio recorder
-  PString recordDriverName = args.GetOptionString("record-driver");
-  if (!recordDriverName .IsEmpty()) {
-    recorder = PSoundChannel::CreateChannel(recordDriverName);
-    if (recorder == NULL) {
-      cerr << "Cannot use audio recorder driver name \"" << recordDriverName << "\", must be one of:\n";
-      PStringList drivers = PSoundChannel::GetDriverNames();
-      for (i = 0; i < drivers.GetSize(); i++)
-        cerr << "  " << drivers[i] << '\n';
-      cerr << endl;
-      return false;
-    }
-  }
-
-  PStringList devices = PSoundChannel::GetDriversDeviceNames(recordDriverName, PSoundChannel::Recorder);
-  if (devices.IsEmpty()) {
-    cerr << "No audio recorder devices present";
-    if (!recordDriverName.IsEmpty())
-      cerr << " for driver \"" << recordDriverName << '"';
-    cerr << endl;
-    return false;
-  }
-
-  PString recordDeviceName = args.GetOptionString("record-device");
-  if (recordDeviceName.IsEmpty())
-    recordDeviceName = PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder);
-    
-  if (recorder == NULL)
-    recorder = PSoundChannel::CreateChannelByName(recordDeviceName, PSoundChannel::Recorder);
-
-  if (recorder == NULL || !recorder->Open(recordDeviceName, PSoundChannel::Recorder)) {
-    cerr << "Cannot use audio recorder device name \"" << recordDeviceName << "\", must be one of:\n";
-    PStringList drivers = PSoundChannel::GetDriverNames();
-    for (i = 0; i < drivers.GetSize(); i++) {
-      devices = PSoundChannel::GetDriversDeviceNames(drivers[i], PSoundChannel::Recorder);
-      for (PINDEX j = 0; j < devices.GetSize(); j++)
-        cerr << "  " << setw(20) << setiosflags(ios::left) << drivers[i] << devices[j] << '\n';
-    }
+  PString driverName = args.GetOptionString("record-driver");
+  PString deviceName = args.GetOptionString("record-device");
+  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Recorder);
+  if (recorder == NULL) {
+    cerr << "Cannot use ";
+    if (driverName.IsEmpty() && deviceName.IsEmpty())
+      cerr << "default ";
+    cerr << "audio recorder";
+    if (!driverName)
+      cerr << ", driver \"" << driverName << '"';
+    if (!deviceName)
+      cerr << ", device \"" << deviceName << '"';
+    cerr << ", must be one of:\n";
+    PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Recorder);
+    for (PINDEX i = 0; i < devices.GetSize(); i++)
+      cerr << "   " << devices[i] << '\n';
     cerr << endl;
     return false;
   }
 
   cout << "Audio Recorder ";
-  if (!recordDriverName.IsEmpty())
-    cout << "driver \"" << recordDriverName << "\" and ";
+  if (!driverName.IsEmpty())
+    cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << recorder->GetName() << "\" opened." << endl;
 
 
   // Audio player
-  PString playDriverName = args.GetOptionString("play-driver");
-  if (!playDriverName .IsEmpty()) {
-    player = PSoundChannel::CreateChannel(playDriverName);
-    if (player == NULL) {
-      cerr << "Cannot use audio player driver name \"" << playDriverName << "\", must be one of:\n";
-      PStringList drivers = PSoundChannel::GetDriverNames();
-      for (i = 0; i < drivers.GetSize(); i++)
-        cerr << "  " << drivers[i] << '\n';
-      cerr << endl;
-      return false;
-    }
-  }
-
-  devices = PSoundChannel::GetDriversDeviceNames(playDriverName, PSoundChannel::Player);
-  if (devices.IsEmpty()) {
-    cerr << "No audio player devices present";
-    if (!playDriverName.IsEmpty())
-      cerr << " for driver \"" << playDriverName << '"';
-    cerr << endl;
-    return false;
-  }
-
-  PString playDeviceName = args.GetOptionString("play-device");
-  if (playDeviceName.IsEmpty())
-    playDeviceName = PSoundChannel::GetDefaultDevice(PSoundChannel::Player);
-    
-  if (player == NULL)
-    player = PSoundChannel::CreateChannelByName(playDeviceName, PSoundChannel::Player);
-
-  if (player == NULL || !player->Open(playDeviceName, PSoundChannel::Player)) {
-    cerr << "Cannot use audio player device name \"" << playDeviceName << "\", must be one of:\n";
-    PStringList drivers = PSoundChannel::GetDriverNames();
-    for (i = 0; i < drivers.GetSize(); i++) {
-      devices = PSoundChannel::GetDriversDeviceNames(drivers[i], PSoundChannel::Player);
-      for (PINDEX j = 0; j < devices.GetSize(); j++)
-        cerr << "  " << setw(20) << setiosflags(ios::left) << drivers[i] << devices[j] << '\n';
-    }
+  driverName = args.GetOptionString("play-driver");
+  deviceName = args.GetOptionString("play-device");
+  player = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Player);
+  if (player == NULL) {
+    cerr << "Cannot use ";
+    if (driverName.IsEmpty() && deviceName.IsEmpty())
+      cerr << "default ";
+    cerr << "audio player";
+    if (!driverName)
+      cerr << ", driver \"" << driverName << '"';
+    if (!deviceName)
+      cerr << ", device \"" << deviceName << '"';
+    cerr << ", must be one of:\n";
+    PStringList devices = PSoundChannel::GetDriversDeviceNames("*", PSoundChannel::Player);
+    for (PINDEX i = 0; i < devices.GetSize(); i++)
+      cerr << "   " << devices[i] << '\n';
     cerr << endl;
     return false;
   }
 
   cout << "Audio Player ";
-  if (!playDriverName.IsEmpty())
-    cout << "driver \"" << playDriverName << "\" and ";
+  if (!driverName.IsEmpty())
+    cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << player->GetName() << "\" opened." << endl;
 
   return true;
@@ -344,8 +305,6 @@ bool AudioThread::Initialise(PArgList & args)
 
 bool VideoThread::Initialise(PArgList & args)
 {
-  PINDEX i;
-
   switch (InitialiseCodec(args, OpalYUV420P)) {
     case 0 :
       return false;
@@ -355,52 +314,34 @@ bool VideoThread::Initialise(PArgList & args)
 
   OpalMediaFormat mediaFormat = encoder->GetOutputFormat();
 
+  cout << "Video media format set to " << mediaFormat << endl;
+
   // Video grabber
-  PString grabDriverName = args.GetOptionString("grab-driver");
-  if (!grabDriverName.IsEmpty()) {
-    grabber = PVideoInputDevice::CreateDevice(grabDriverName);
-    if (grabber == NULL) {
-      cerr << "Cannot use video grabber driver name \"" << grabDriverName << "\", must be one of:\n";
-      PStringList drivers = PVideoInputDevice::GetDriverNames();
-      for (i = 0; i < drivers.GetSize(); i++)
-        cerr << "  " << drivers[i] << '\n';
-      cerr << endl;
-      return false;
-    }
-  }
-
-  PStringList devices = PVideoInputDevice::GetDriversDeviceNames(grabDriverName);
-  if (devices.IsEmpty()) {
-    cerr << "No video grabber devices present";
-    if (!grabDriverName.IsEmpty())
-      cerr << " for driver \"" << grabDriverName << '"';
-    cerr << endl;
-    return false;
-  }
-
-  PString grabDeviceName = args.GetOptionString("grab-device");
-  if (grabDeviceName.IsEmpty())
-    grabDeviceName = devices[0];
-    
-  if (grabber == NULL)
-    grabber = PVideoInputDevice::CreateDeviceByName(grabDeviceName);
-
-  if (grabber == NULL || !grabber->Open(grabDeviceName, false)) {
-    cerr << "Cannot use video grabber device name \"" << grabDeviceName << "\", must be one of:\n";
-    PStringList drivers = PVideoInputDevice::GetDriverNames();
-    for (i = 0; i < drivers.GetSize(); i++) {
-      devices = PVideoInputDevice::GetDriversDeviceNames(drivers[i]);
-      for (PINDEX j = 0; j < devices.GetSize(); j++)
-        cerr << "  " << setw(20) << setiosflags(ios::left) << drivers[i] << devices[j] << '\n';
-    }
+  PString driverName = args.GetOptionString("grab-driver");
+  PString deviceName = args.GetOptionString("grab-device");
+  grabber = PVideoInputDevice::CreateOpenedDevice(driverName, deviceName, FALSE);
+  if (grabber == NULL) {
+    cerr << "Cannot use ";
+    if (driverName.IsEmpty() && deviceName.IsEmpty())
+      cerr << "default ";
+    cerr << "video display";
+    if (!driverName)
+      cerr << ", driver \"" << driverName << '"';
+    if (!deviceName)
+      cerr << ", device \"" << deviceName << '"';
+    cerr << ", must be one of:\n";
+    PStringList devices = PVideoInputDevice::GetDriversDeviceNames("*");
+    for (PINDEX i = 0; i < devices.GetSize(); i++)
+      cerr << "   " << devices[i] << '\n';
     cerr << endl;
     return false;
   }
 
   cout << "Video Grabber ";
-  if (!grabDriverName.IsEmpty())
-    cout << "driver \"" << grabDriverName << "\" and ";
+  if (!driverName.IsEmpty())
+    cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << grabber->GetDeviceName() << "\" opened." << endl;
+
 
   if (args.HasOption("grab-format")) {
     PVideoDevice::VideoFormat format;
@@ -451,53 +392,29 @@ bool VideoThread::Initialise(PArgList & args)
 
 
   // Video display
-  PString displayDriverName = args.GetOptionString("display-driver");
-  if (!displayDriverName.IsEmpty()) {
-    display = PVideoOutputDevice::CreateDevice(displayDriverName);
-    if (display == NULL) {
-      cerr << "Cannot use video display driver name \"" << displayDriverName << "\", must be one of:\n";
-      PStringList drivers = PVideoOutputDevice::GetDriverNames();
-      for (i = 0; i < drivers.GetSize(); i++)
-        cerr << "  " << drivers[i] << '\n';
-      cerr << endl;
-      return false;
-    }
-  }
-
-  devices = PVideoOutputDevice::GetDriversDeviceNames(displayDriverName);
-  if (devices.IsEmpty()) {
-    cerr << "No video video display devices present";
-    if (!displayDriverName.IsEmpty())
-      cerr << " for driver \"" << displayDriverName << '"';
-    cerr << endl;
-    return false;
-  }
-
-  PString displayDeviceName = args.GetOptionString("display-device");
-  if (displayDeviceName.IsEmpty()) {
-    displayDeviceName = devices[0];
-    if (displayDeviceName == "NULL" && devices.GetSize() > 1)
-      displayDeviceName = devices[1];
-  }
-
-  if (display == NULL)
-    display = PVideoOutputDevice::CreateDeviceByName(displayDeviceName);
-
-  if (display == NULL || !display->Open(displayDeviceName, false)) {
-    cerr << "Cannot use video display device name \"" << displayDeviceName << "\", must be one of:\n";
-    PStringList drivers = PVideoOutputDevice::GetDriverNames();
-    for (i = 0; i < drivers.GetSize(); i++) {
-      devices = PVideoOutputDevice::GetDriversDeviceNames(drivers[i]);
-      for (PINDEX j = 0; j < devices.GetSize(); j++)
-        cerr << "  " << setw(20) << setiosflags(ios::left) << drivers[i] << devices[j] << '\n';
-    }
+  driverName = args.GetOptionString("display-driver");
+  deviceName = args.GetOptionString("display-device");
+  display = PVideoOutputDevice::CreateOpenedDevice(driverName, deviceName, FALSE);
+  if (display == NULL) {
+    cerr << "Cannot use ";
+    if (driverName.IsEmpty() && deviceName.IsEmpty())
+      cerr << "default ";
+    cerr << "video display";
+    if (!driverName)
+      cerr << ", driver \"" << driverName << '"';
+    if (!deviceName)
+      cerr << ", device \"" << deviceName << '"';
+    cerr << ", must be one of:\n";
+    PStringList devices = PVideoOutputDevice::GetDriversDeviceNames("*");
+    for (PINDEX i = 0; i < devices.GetSize(); i++)
+      cerr << "   " << devices[i] << '\n';
     cerr << endl;
     return false;
   }
 
   cout << "Display ";
-  if (!displayDriverName.IsEmpty())
-    cout << "driver \"" << displayDriverName << "\" and ";
+  if (!driverName.IsEmpty())
+    cout << "driver \"" << driverName << "\" and ";
   cout << "device \"" << display->GetDeviceName() << "\" opened." << endl;
 
   // Configure sizes/speeds
