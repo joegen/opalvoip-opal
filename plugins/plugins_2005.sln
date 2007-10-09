@@ -47,6 +47,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_dll", "..\src\win32\op
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalcodecinfo", "..\samples\opalcodecinfo\opalcodecinfo_2005.vcproj", "{7FF55F1C-87EB-4087-8814-FD494BE49170}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecTest", "..\samples\codectest\codectest_2005.vcproj", "{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -286,6 +288,15 @@ Global
 		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|Win32.ActiveCfg = Release|Win32
 		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|Win32.Build.0 = Release|Win32
 		{7FF55F1C-87EB-4087-8814-FD494BE49170}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.Build.0 = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Win32.Build.0 = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Release|Win32.ActiveCfg = Release|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Release|Win32.Build.0 = Release|Win32
+		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
