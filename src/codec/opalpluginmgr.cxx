@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2065  2007/10/09 01:49:47  rjongbloed
+ * Revision 1.2066  2007/10/09 09:19:53  rjongbloed
+ * Be more flexible on what a bool string is in plug-in option lists.
+ *
+ * Revision 2.64  2007/10/09 01:49:47  rjongbloed
  * Fixed correct setting of audio Tx Frames per Packet to plug-in recommended value.
  *
  * Revision 2.63  2007/10/08 12:16:18  rjongbloed
@@ -562,7 +565,7 @@ void OpalPluginMediaFormat::PopulateOptions(OpalMediaFormat & format)
             newOption = new OpalMediaOptionBoolean(option->m_name,
                                                    option->m_readOnly != 0,
                                                    (OpalMediaOption::MergeType)option->m_merge,
-                                                   option->m_value != NULL && *option->m_value == 'T');
+                                                   option->m_value != NULL && (toupper(*option->m_value) == 'T' || atoi(option->m_value) != 0));
             break;
           case PluginCodec_IntegerOption :
             newOption = new OpalMediaOptionUnsigned(option->m_name,
