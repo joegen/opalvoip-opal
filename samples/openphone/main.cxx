@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.41  2007/10/09 23:44:39  rjongbloed
+ * Fixed detection of interface list change.
+ *
  * Revision 1.40  2007/10/09 10:27:15  rjongbloed
  * Fixed ring sound being played if auto answer enabled.
  *
@@ -2454,7 +2457,8 @@ bool OptionsDialog::TransferDataFromWindow()
   bool changed = m_manager.m_LocalInterfaces.GetSize() != newInterfaces.GetSize();
   for (int i = 0; i < newInterfaces.GetSize(); i++) {
     newInterfaces[i] = m_LocalInterfaces->GetString(i);
-    if (newInterfaces[i] != m_manager.m_LocalInterfaces)
+    PINDEX oldIndex = m_manager.m_LocalInterfaces.GetValuesIndex(newInterfaces[i]);
+    if (oldIndex == P_MAX_INDEX || newInterfaces[i] != m_manager.m_LocalInterfaces[oldIndex])
       changed = true;
     wxString key;
     key.sprintf("%u", i+1);
