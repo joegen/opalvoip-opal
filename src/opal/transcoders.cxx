@@ -24,8 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2039.6.2  2007/10/08 02:49:21  rjongbloed
+ * Revision 1.2039.6.3  2007/10/09 09:19:01  rjongbloed
  * Update fixes from HEAD
+ *
+ * Revision 2.40  2007/10/09 04:24:25  rjongbloed
+ * Prevent infinite loop in high priority thread if codec (plug-in) misbehaves.
  *
  * Revision 2.39  2007/10/08 01:45:16  rjongbloed
  * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
@@ -281,10 +284,6 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
 BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
-  // if no input payload, then nothing to convert
-  if (input.GetPayloadSize() == 0)
-    return TRUE;
-
   // make sure there is at least one output frame available
   if (output.IsEmpty())
     output.Append(new RTP_DataFrame);
@@ -575,6 +574,9 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
 
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
       return FALSE;
+
+    if (consumed == 0 && created == 0)
+      break;
 
     outputPtr   += created;
     outLen      += created;
