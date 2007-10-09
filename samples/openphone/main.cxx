@@ -25,6 +25,9 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.39  2007/10/09 00:53:51  rjongbloed
+ * Fixed wxWidgets 2.6 compatibility
+ *
  * Revision 1.38  2007/09/30 12:49:22  rjongbloed
  * Added desired video size to options dialog.
  *
@@ -1851,7 +1854,7 @@ BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
     return FALSE;
 
   if (m_localVideoFrameX == INT_MIN) {
-    wxRect rect = GetScreenRect();
+    wxRect rect(GetPosition(), GetSize());
     m_localVideoFrameX = rect.GetLeft() + mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
     m_localVideoFrameY = rect.GetBottom();
     m_remoteVideoFrameX = rect.GetLeft();
