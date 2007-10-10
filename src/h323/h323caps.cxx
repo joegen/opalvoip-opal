@@ -27,7 +27,13 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2043  2007/09/18 18:35:51  dsandras
+ * Revision 1.2044  2007/10/10 04:57:48  csoutheren
+ * Include capability type in logging for FindCapability
+ * Fix problem where MatchWildcard incorrectly matched prefix of media format
+ *   i.e. returned G.729A/B for G.729
+ *
+<<<<<<< h323caps.cxx
+ * Revision 2.42  2007/09/18 18:35:51  dsandras
  * Fixed compilation warning with GCC 4.2.
  *
  * Revision 2.41  2007/09/14 01:26:18  csoutheren
@@ -2361,7 +2367,7 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
     }
   }
 
-  return TRUE;
+  return last == str.GetLength();
 }
 
 
@@ -2632,8 +2638,6 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 
 H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType) const
 {
-  PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName());
-
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     BOOL checkExact;
@@ -2641,6 +2645,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       case H245_DataType::e_audioData :
       {
         const H245_AudioCapability & audio = dataType;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << audio.GetTagName());
         checkExact = capability.IsMatch(audio);
         break;
       }
@@ -2648,6 +2653,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       case H245_DataType::e_videoData :
       {
         const H245_VideoCapability & video = dataType;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << video.GetTagName());
         checkExact = capability.IsMatch(video);
         break;
       }
@@ -2655,12 +2661,14 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       case H245_DataType::e_data :
       {
         const H245_DataApplicationCapability & data = dataType;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << data.m_application.GetTagName());
         checkExact = capability.IsMatch(data.m_application);
         break;
       }
 
       default :
         checkExact = FALSE;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", unknown type");
     }
 
     if (checkExact) {
