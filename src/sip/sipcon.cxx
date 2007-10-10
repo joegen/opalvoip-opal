@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2265  2007/10/03 23:59:05  rjongbloed
+ * Revision 1.2266  2007/10/10 01:24:44  rjongbloed
+ * Removed redundent code and added extra log for if SRV was used.
+ *
+ * Revision 2.264  2007/10/03 23:59:05  rjongbloed
  * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
  *   thanks to Will Hawkins and Kris Marsh for what needs to be done.
  *
@@ -1174,7 +1177,6 @@ SIPConnection::SIPConnection(OpalCall & call,
     transport(newTransport),
     pduSemaphore(0, P_MAX_INDEX)
 {
-  SIPURL transportAddress = destination;
   targetAddress = destination;
 
   // Look for a "proxy" parameter to override default proxy
@@ -1196,9 +1198,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   remotePartyAddress = targetAddress.AsQuotedString();
   UpdateRemotePartyNameAndNumber();
   
-  // Do a DNS SRV lookup
-  transportAddress.AdjustToDNS();
-
   originalInvite = NULL;
   pduHandler = NULL;
   lastSentCSeq.SetValue(0);
@@ -1788,18 +1787,20 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 
 BOOL SIPConnection::SetUpConnection()
 {
-  ApplyStringOptions();
-
-  SIPURL transportAddress = targetAddress;
-
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
-  // Do a DNS SRV lookup
-  transportAddress.AdjustToDNS();
+  ApplyStringOptions();
+
+  SIPURL transportAddress;
 
   PStringList routeSet = GetRouteSet();
   if (!routeSet.IsEmpty()) 
     transportAddress = routeSet[0];
+  else {
+    transportAddress = targetAddress;
+    transportAddress.AdjustToDNS(); // Do a DNS SRV lookup
+    PTRACE(4, "SIP\tConnecting to " << targetAddress << " via " << transportAddress);
+  }
 
   originating = TRUE;
 
@@ -1811,7 +1812,7 @@ BOOL SIPConnection::SetUpConnection()
   }
 
   if (!transport->WriteConnect(WriteINVITE, this)) {
-    PTRACE(1, "SIP\tCould not write to " << targetAddress << " - " << transport->GetErrorText());
+    PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
     return FALSE;
   }
