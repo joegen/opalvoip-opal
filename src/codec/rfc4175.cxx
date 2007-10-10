@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.cxx,v $
+ * Revision 1.11.6.1  2007/10/10 06:54:36  csoutheren
+ * Updates to RFC4175 to deal with transmission over a wire
+ * Not finished yet :)
+ *
  * Revision 1.11  2007/09/12 05:55:35  csoutheren
  * Fixed SIP fmtp options for rfc 4175
  *
@@ -184,6 +188,8 @@ BOOL OpalRFC4175Encoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 {
   PAssert(sizeof(ScanLineHeader) == 6, "ScanLineHeader is not packed");
 
+  _outputFrames.RemoveAll();
+
   // make sure the incoming frame is big enough for a frame header
   if (input.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader))) {
     PTRACE(1,"RFC4175\tPayload of grabbed frame too small for frame header");
@@ -249,6 +255,8 @@ void OpalRFC4175Encoder::EncodeScanLineSegment(PINDEX y, PINDEX offs, PINDEX wid
     // calculate how many pixels we can add
     PINDEX pixelsToAdd = PMIN((roomLeft - (PINDEX)sizeof(ScanLineHeader)) / GetPgroupSize(), endX - x);
 
+    PAssert(pixelsToAdd > 0, "how did we get negative pixels?");
+
     // populate the scan line table
     dstScanLineTable->length = (WORD)pixelsToAdd;
     dstScanLineTable->y      = (WORD)y;
@@ -286,7 +294,7 @@ void OpalRFC4175Encoder::AddNewDstFrame()
 
 void OpalRFC4175Encoder::FinishOutputFrame()
 {
-  if (dstFrames->GetSize() != 0 && (dstScanLineCount > 0)) {
+  if ((dstFrames->GetSize() > 0) && (dstScanLineCount > 0)) {
 
     // populate the frame fields
     RTP_DataFrame & dst = (*dstFrames)[dstFrames->GetSize()-1];
@@ -295,8 +303,9 @@ void OpalRFC4175Encoder::FinishOutputFrame()
     --dstScanLineTable;
     dstScanLineTable->offset = (WORD)dstScanLineTable->offset | 0x8000;
 
-    // set the timestamp
+    // set the timestamp and payload type
     dst.SetTimestamp(srcTimestamp);
+    dst.SetPayloadType(outputMediaFormat.GetPayloadType());
 
     // set and increment the sequence number
     dst.SetSequenceNumber((WORD)(extendedSequenceNumber & 0xffff));
@@ -319,12 +328,13 @@ OpalRFC4175Decoder::OpalRFC4175Decoder(
 ) : OpalRFC4175Transcoder(inputMediaFormat, outputMediaFormat)
 {
   inputFrames.AllowDeleteObjects();
+  first = TRUE;
+  waitingForMarker = FALSE;
   Initialise();
 }
 
 OpalRFC4175Decoder::~OpalRFC4175Decoder()
 {
-  first = TRUE;
 }
 
 BOOL OpalRFC4175Decoder::Initialise()
@@ -342,8 +352,10 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
 {
   PAssert(sizeof(ScanLineHeader) == 6, "ScanLineHeader is not packed");
 
+  output.RemoveAll();
+
   // do quick sanity check on packet
-  if (input.GetPayloadSize() < 2) {
+  if (input.GetPayloadSize() > 2) {
     PTRACE(1,"RFC4175\tinput frame too small for header");
     return FALSE;
   }
@@ -351,80 +363,86 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   // get extended sequence number
   DWORD receivedSeqNo = input.GetSequenceNumber() | ((*(PUInt16b *)input.GetPayloadPtr()) << 16);
 
-  BOOL ok = TRUE;
-
   // special handling for first packet
   if (first) {
     lastSequenceNumber = receivedSeqNo;
     lastTimeStamp      = input.GetTimestamp();
     first = FALSE;
   } 
+
+  // if waiting for a marker bit to resync, keep waiting
+  else if (waitingForMarker) {
+    if (!input.GetMarker()) {
+      PTRACE(1,"RFC4175\tignoring frame while waiting for marker bit");
+    } else {
+      PTRACE(1,"RFC4175\tmarker bit received - starting new frame");
+      first = TRUE;
+    }
+    return TRUE;
+  }
+
   else {
-    // if timestamp changed, we lost the marker bit on the previous input frame
-    // so, flush the output and change to the new timestamp
-    if ((input.GetTimestamp() != lastTimeStamp) && (inputFrames.GetSize() > 0)) {
-      PTRACE(2, "RFC4175\tDetected change of timestamp - marker bit lost");
-      DecodeFrames(output);
+    // if timestamp changed and we still have input data, then we lost the marker bit on the previous input frame
+    DWORD timeStamp = input.GetTimestamp();
+    if ((timeStamp != lastTimeStamp) && (inputFrames.GetSize() > 0)) {
+      PTRACE(2, "RFC4175\tDetected change of timestamp - flushing until next marker bit");
+      Initialise();
+      waitingForMarker = TRUE;
+      return TRUE;
     }
     lastTimeStamp = input.GetTimestamp();
 
-    // if packet is out of sequence, determine if to ignore packet or accept it and update sequence number
+    // if sequence number is not sequential, then frame is not complete
     ++lastSequenceNumber;
     if (lastSequenceNumber != receivedSeqNo) {
-      ok = receivedSeqNo > lastSequenceNumber;
-      if (!ok && ((lastSequenceNumber - receivedSeqNo) > 0xfffffc00)) {
-        ok = TRUE;
-        lastSequenceNumber = receivedSeqNo;
-      }
-      PTRACE(2, "RFC4175\t" << (ok ? "Accepting" : "Ignoring") << " out of order packet");
+      PTRACE(2, "RFC4175\tDetected lost frame - flushing until next marker bit");
+      Initialise();
+      waitingForMarker = TRUE;
+      return TRUE;
     }
   }
 
   // make a pass through the scan line table and update the overall frame width and height
   PINDEX lineCount = 0;
-  if (ok) {
 
-    ScanLineHeader * scanLinePtr = (ScanLineHeader *)(input.GetPayloadPtr() + 2);
+  ScanLineHeader * scanLinePtr = (ScanLineHeader *)(input.GetPayloadPtr() + 2);
 
-    BOOL lastLine = FALSE;
-    while (!lastLine && RFC4175HeaderSize(lineCount+1) < input.GetPayloadSize()) {
+  BOOL lastLine = FALSE;
+  while (!lastLine && RFC4175HeaderSize(lineCount+1) < input.GetPayloadSize()) {
 
-      // scan line length
-      PINDEX lineLength = scanLinePtr->length;
+    // scan line length
+    PINDEX lineLength = scanLinePtr->length;
 
-      // line number 
-      WORD lineNumber = scanLinePtr->y & 0x7fff; 
+    // line number 
+    WORD lineNumber = scanLinePtr->y & 0x7fff; 
 
-      // pixel offset of scanline start
-      WORD offset = scanLinePtr->offset;
+    // pixel offset of scanline start
+    WORD offset = scanLinePtr->offset;
 
-      // detect if last scanline in table
-      if (offset & 0x8000) {
-        lastLine = TRUE;
-        offset &= 0x7fff;
-      }
-
-      // update frame width and height
-      PINDEX right = offset + lineLength;
-      if (right > frameWidth)
-        frameWidth = right;
-      PINDEX bottom = lineNumber+2;
-      if (bottom > frameHeight)
-        frameHeight = bottom;
-
-      // count lines
-      ++lineCount;
-
-      // update scan line pointer
-      ++scanLinePtr;
+    // detect if last scanline in table
+    if (offset & 0x8000) {
+      lastLine = TRUE;
+      offset &= 0x7fff;
     }
+
+    // update frame width and height
+    PINDEX right = offset + lineLength;
+    if (right > frameWidth)
+      frameWidth = right;
+    PINDEX bottom = lineNumber+2;
+    if (bottom > frameHeight)
+      frameHeight = bottom;
+
+    // count lines
+    ++lineCount;
+
+    // update scan line pointer
+    ++scanLinePtr;
   }
 
-  // add the frame to the input frame list, if OK
-  if (ok) {
-    inputFrames.Append(new RTP_DataFrame(input));
-    scanlineCounts.push_back(lineCount);
-  }
+  // add the frame to the input frame list
+  inputFrames.Append(new RTP_DataFrame(input));
+  scanlineCounts.push_back(lineCount);
 
   // if marker bit not set, keep collecting frames
   if (input.GetMarker()) 
@@ -494,12 +512,18 @@ BOOL Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
     return FALSE;
   }
 
+  if (frameHeight != 144 || frameWidth != 176) {
+    int s = inputFrames.GetSize();
+    PTRACE(4, "not right frame " << s);
+  }
+
   PTRACE(4, "RFC4175\tDecoding output from from " << inputFrames.GetSize() << " input frames");
 
   // allocate destination frame
   output.Append(new RTP_DataFrame());
   RTP_DataFrame & outputFrame = output[output.GetSize()-1];
   outputFrame.SetMarker(TRUE);
+  outputFrame.SetPayloadType(outputMediaFormat.GetPayloadType());
   outputFrame.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + PixelsToBytes(frameWidth*frameHeight));
 
   // get pointer to header and payload
@@ -580,7 +604,7 @@ void Opal_RGB24_to_RFC4175RGB::EncodeFrames()
 {
   FinishOutputFrame();
 
-  PTRACE(4, "RFC4175\tEncoded RGB24 input frame to " << dstFrames->GetSize() << " RFC4175 output frames in RGB format");
+  PTRACE(4, "RFC4175\tEncoded RGB24 input frame to " << (dstFrames->GetSize()) << " RFC4175 output frames in RGB format");
 
   PINDEX f, i;
   for (f = 0; f < dstFrames->GetSize(); ++f) {
