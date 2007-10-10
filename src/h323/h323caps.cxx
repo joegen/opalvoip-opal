@@ -27,7 +27,12 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2030  2007/04/10 05:15:54  rjongbloed
+ * Revision 1.2030.2.1  2007/10/10 04:49:48  csoutheren
+ * Include capability type in logging for FindCapability
+ * Fix problem where MatchWildcard incorrectly matched prefix of media format
+ *    i.e. returned G.729A/B for G.729
+ *
+ * Revision 2.29  2007/04/10 05:15:54  rjongbloed
  * Fixed issue with use of static C string variables in DLL environment,
  *   must use functional interface for correct initialisation.
  *
@@ -2102,7 +2107,7 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
     }
   }
 
-  return TRUE;
+  return last == str.GetLength();
 }
 
 
@@ -2355,8 +2360,6 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 
 H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType) const
 {
-  PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName());
-
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     BOOL checkExact;
@@ -2364,6 +2367,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       case H245_DataType::e_audioData :
       {
         const H245_AudioCapability & audio = dataType;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << audio.GetTagName());
         checkExact = capability.GetMainType() == H323Capability::e_Audio &&
                      capability.GetSubType() == audio.GetTag() &&
                     (capability.GetSubType() != H245_AudioCapability::e_nonStandard ||
@@ -2374,6 +2378,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       case H245_DataType::e_videoData :
       {
         const H245_VideoCapability & video = dataType;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << video.GetTagName());
         checkExact = capability.GetMainType() == H323Capability::e_Video &&
                      capability.GetSubType() == video.GetTag() &&
                     (capability.GetSubType() != H245_VideoCapability::e_nonStandard ||
@@ -2384,6 +2389,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
       case H245_DataType::e_data :
       {
         const H245_DataApplicationCapability & data = dataType;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << data.m_application.GetTagName());
         checkExact = capability.GetMainType() == H323Capability::e_Data &&
                      capability.GetSubType() == data.m_application.GetTag() &&
                     (capability.GetSubType() != H245_DataApplicationCapability_application::e_nonStandard ||
@@ -2393,6 +2399,7 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 
       default :
         checkExact = FALSE;
+        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", unknown type");
     }
 
     if (checkExact) {
