@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2025.2.2  2007/09/19 12:05:37  csoutheren
+ * Revision 1.2025.2.3  2007/10/10 04:59:27  csoutheren
+ * Fix problem when creating G.723.1 codec stubs
+ * Add assert if codec stub cannot be created
+ *
+ * Revision 2.24.2.2  2007/09/19 12:05:37  csoutheren
  * Exposed G.7231 capability class
  * Added macros to create empty transcoders and capabilities
  * (backport from head)
@@ -1257,12 +1261,14 @@ H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaForma
                      unsigned _type)
   : H323AudioCapability(), H323PluginCapabilityInfo(_baseName)
   { 
-    for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
+    PINDEX i;
+    for (i = 0; audioMaps[i].pluginCapType >= 0; i++) {
       if (audioMaps[i].pluginCapType == (int)_type) { 
         pluginSubType = audioMaps[i].h323SubType;
         break;
       }
     }
+    PAssert(audioMaps[i].pluginCapType > 0, "could not match plugin type");
     rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
   }
 
@@ -1338,7 +1344,7 @@ H323PluginG7231Capability::H323PluginG7231Capability(PluginCodec_Definition * _e
 { }
 
 H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA)
-  : H323AudioPluginCapability(fmt, fmt, H245_AudioCapability::e_g7231),
+  : H323AudioPluginCapability(fmt, fmt, PluginCodec_H323AudioCodec_g7231),
     annexA(_annexA)
 { }
 
