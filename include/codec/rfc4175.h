@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.h,v $
+ * Revision 1.6.6.1  2007/10/10 06:54:26  csoutheren
+ * Updates to RFC4175 to deal with transmission over a wire
+ * Not finished yet :)
+ *
  * Revision 1.6  2007/09/11 15:48:35  csoutheren
  * Implemented RC4175 RGB
  *
@@ -160,6 +164,7 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     BOOL  first;
     DWORD lastSequenceNumber;
     DWORD lastTimeStamp;
+    BOOL  waitingForMarker;
 };
 
 /////////////////////////////////////////////////////////////////////////////
