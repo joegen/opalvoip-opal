@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2153  2007/10/10 19:52:43  dsandras
+ * Revision 1.2154  2007/10/10 22:17:41  csoutheren
+ * Removed confusing literal string in branch ID
+ *
+ * Revision 2.152  2007/10/10 19:52:43  dsandras
  * Added missing magic cookie. Fixes Ekiga report #485407.
  *
  * Revision 2.151  2007/10/10 01:23:20  rjongbloed
@@ -1898,7 +1901,7 @@ void SIP_PDU::Construct(Methods meth,
     str << ip << ':' << port;
   else
     str << via.Mid(dollar+1);
-  str << ";branch=z9hG4bK" << branch << ";rport";
+  str << ";branch=" << branch << ";rport";
 
   mime.SetVia(str);
 
