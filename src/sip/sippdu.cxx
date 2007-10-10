@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2151  2007/10/03 23:59:05  rjongbloed
+ * Revision 1.2152  2007/10/10 01:23:20  rjongbloed
+ * Fixed server address from SRV lookup being overwritten by URI host.
+ *
+ * Revision 2.150  2007/10/03 23:59:05  rjongbloed
  * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
  *   thanks to Will Hawkins and Kris Marsh for what needs to be done.
  *
@@ -2059,7 +2062,7 @@ OpalTransportAddress SIP_PDU::GetSendAddress(const PStringList & routeSet)
     }
   }
 
-  return GetURI().GetHostAddress();
+  return OpalTransportAddress();
 }
 
 
