@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2152  2007/10/10 01:23:20  rjongbloed
+ * Revision 1.2153  2007/10/10 19:52:43  dsandras
+ * Added missing magic cookie. Fixes Ekiga report #485407.
+ *
+ * Revision 2.151  2007/10/10 01:23:20  rjongbloed
  * Fixed server address from SRV lookup being overwritten by URI host.
  *
  * Revision 2.150  2007/10/03 23:59:05  rjongbloed
@@ -1895,7 +1898,7 @@ void SIP_PDU::Construct(Methods meth,
     str << ip << ':' << port;
   else
     str << via.Mid(dollar+1);
-  str << ";branch=" << branch << ";rport";
+  str << ";branch=z9hG4bK" << branch << ";rport";
 
   mime.SetVia(str);
 
