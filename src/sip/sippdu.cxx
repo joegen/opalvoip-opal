@@ -24,7 +24,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2154  2007/10/10 22:17:41  csoutheren
+ * Revision 1.2155  2007/10/10 22:23:47  csoutheren
+ * Who would beleive that z9hG4bK is a special prefix mandated by RFC3261
+ * I certainly didn't, but I do now. Just goes to show you can't trust anyone :)
+ *
+ * Revision 2.153  2007/10/10 22:17:41  csoutheren
  * Removed confusing literal string in branch ID
  *
  * Revision 2.152  2007/10/10 19:52:43  dsandras
@@ -1901,7 +1905,7 @@ void SIP_PDU::Construct(Methods meth,
     str << ip << ':' << port;
   else
     str << via.Mid(dollar+1);
-  str << ";branch=" << branch << ";rport";
+  str << ";branch=z9hG4bK" << branch << ";rport";
 
   mime.SetVia(str);
 
