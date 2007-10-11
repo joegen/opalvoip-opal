@@ -24,6 +24,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: handlers.cxx,v $
+ * Revision 1.12  2007/10/11 21:26:37  dsandras
+ * More debugging.
+ *
  * Revision 1.11  2007/09/21 01:34:10  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
@@ -205,7 +208,7 @@ void SIPHandler::OnReceivedOK(SIP_PDU & /*response*/)
       break;
 
     default :
-      PTRACE(2, "SIP\tUnexpected OK in handler.");
+      PTRACE(2, "SIP\tUnexpected OK in handler with state " << GetState ());
   }
 }
 
