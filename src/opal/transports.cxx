@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2072.2.10  2007/09/24 10:42:12  hfriederich
+ * Revision 1.2072.2.11  2007/10/11 18:24:26  hfriederich
+ * Backport from HEAD to fix compilation
+ *
+ * Revision 2.71.2.10  2007/09/24 10:42:12  hfriederich
  * Backports from HEAD
  *
  * Revision 2.71.2.9  2007/09/07 11:08:31  hfriederich
@@ -1261,17 +1264,19 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
   WORD remotePort;
   PString iface;
   PINDEX readCount;
-  if (listenerBundle->ReadFrom(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
-    pdu.SetSize(readCount);
-    return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
+  switch (listenerBundle->ReadFromBundle(pdu.GetPointer(2000), 2000, remoteAddr, remotePort, iface, readCount, timeout)) {
+    case PChannel::NoError :
+      pdu.SetSize(readCount);
+      return new OpalTransportUDP(endpoint, pdu, listenerBundle, iface, remoteAddr, remotePort);
+      
+    case PChannel::Interrupted:
+      PTRACE(4, "Listen\tDropped interface " << iface);
+      break;
+      
+    default:
+      PTRACE(1, "Listen\tUDP read error.");
   }
-
-  if (iface.IsEmpty()) {
-    PTRACE(1, "Listen\tUDP read error.");
-  }
-  else {
-    PTRACE(4, "Listen\tDropped interface " << iface);
-  }
+  
   return NULL;
 }
 
