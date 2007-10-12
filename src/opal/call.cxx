@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2067  2007/09/20 04:32:36  rjongbloed
+ * Revision 1.2068  2007/10/12 06:07:33  csoutheren
+ * Fix problem with asymmetric codecs in some SIP calls
+ *
+ * Revision 2.66  2007/09/20 04:32:36  rjongbloed
  * Fixed issue with clearing a call before it has finished setting up.
  *
  * Revision 2.65  2007/09/18 10:06:03  rjongbloed
@@ -570,7 +573,6 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   return commonFormats;
 }
 
-
 BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
                                       const OpalMediaFormatList & mediaFormats,
                                       unsigned sessionID)
@@ -589,20 +591,19 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
   if (adjustableMediaFormats.GetSize() == 0)
     return FALSE;
+
+  // if there is already a connection with an open stream then reorder the 
+  // media formats to match that connection so we get symmetric codecs
+  if (connectionsActive.GetSize() > 0) {
+    OpalMediaStream * strm = connection.GetMediaStream(sessionID, TRUE);
+    if (strm != NULL)
+      adjustableMediaFormats.Reorder(strm->GetMediaFormat());
+  }
   
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
-      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
+      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) 
         startedOne = TRUE;
-        // If opened the source stream, then reorder the media formats so we
-        // have a preference for symmetric codecs on subsequent connection(s)
-        OpalMediaStream * otherStream = conn->GetMediaStream(sessionID, TRUE);
-        if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
-          adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
-          PTRACE(4, "Call\tOpenSourceMediaStreams for session " << sessionID
-                 << " adjusted media to " << setfill(',') << adjustableMediaFormats << setfill(' '));
-        }
-      }
     }
   }
 
