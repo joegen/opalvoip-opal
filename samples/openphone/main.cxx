@@ -25,6 +25,10 @@
  * Contributor(s): 
  *
  * $Log: main.cxx,v $
+ * Revision 1.42  2007/10/12 04:07:26  rjongbloed
+ * Fixed recently used addresses in call dialog being in reverse order, ie last
+ *   called address should be at top of list.
+ *
  * Revision 1.41  2007/10/09 23:44:39  rjongbloed
  * Fixed detection of interface list change.
  *
@@ -3006,31 +3010,21 @@ CallDialog::CallDialog(wxFrame * parent)
 
 void CallDialog::OnOK(wxCommandEvent & event)
 {
-  bool addNewEntry = true;
-
   wxConfigBase * config = wxConfig::Get();
   config->DeleteGroup(RecentCallsGroup);
   config->SetPath(RecentCallsGroup);
 
-  size_t index;
-  for (index = 0; index < m_AddressCtrl->GetCount(); ++index) {
-    wxString entry = m_AddressCtrl->GetString(index);
+  config->Write("1", m_Address);
 
-    wxString key;
-    key.sprintf("%u", index+1);
-    config->Write(key, entry);
+  unsigned keyNumber = 1;
+  for (size_t i = 0; i < m_AddressCtrl->GetCount() && keyNumber < MaxSavedRecentCalls; ++i) {
+    wxString entry = m_AddressCtrl->GetString(i);
 
-    if (m_Address == entry)
-      addNewEntry = false;
-
-    if (index >= MaxSavedRecentCalls-(addNewEntry?1:0))
-      break;
-  }
-
-  if (addNewEntry) {
-    wxString key;
-    key.sprintf("%u", index+1);
-    config->Write(key, m_Address);
+    if (m_Address != entry) {
+      wxString key;
+      key.sprintf("%u", ++keyNumber);
+      config->Write(key, entry);
+    }
   }
 
   EndModal(wxID_OK);
