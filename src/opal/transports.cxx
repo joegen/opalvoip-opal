@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2093  2007/10/12 00:20:17  rjongbloed
+ * Revision 1.2094  2007/10/12 04:00:44  rjongbloed
+ * Fixed being able to SIP call to localhost.
+ *
+ * Revision 2.92  2007/10/12 00:20:17  rjongbloed
  * Added more logging
  *
  * Revision 2.91  2007/10/07 07:36:13  rjongbloed
@@ -696,6 +699,19 @@ BOOL OpalTransportAddress::IsEquivalent(const OpalTransportAddress & address) co
 }
 
 
+BOOL OpalTransportAddress::IsCompatible(const OpalTransportAddress & address) const
+{
+  if (IsEmpty() || address.IsEmpty())
+    return TRUE;
+
+  PCaselessString myPrefix = Left(Find('$'));
+  PCaselessString theirPrefix = address.Left(address.Find('$'));
+  return myPrefix == theirPrefix ||
+        (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix)) ||
+        (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix));
+}
+
+
 BOOL OpalTransportAddress::GetIpAddress(PIPSocket::Address & ip) const
 {
   if (transport == NULL)
@@ -1227,12 +1243,13 @@ OpalTransport * OpalListenerTCP::Accept(const PTimeInterval & timeout)
 
 
 
-OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & localAddress) const
+OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & localAddress,
+                                                 const OpalTransportAddress & remoteAddress) const
 {
-  if (localAddress.Find(TcpPrefix) == 0)
-    return localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
-
-  return new OpalTransportTCP(endpoint);
+  OpalTransportAddress myLocalAddress = GetLocalAddress();
+  if (myLocalAddress.IsCompatible(remoteAddress) && myLocalAddress.IsCompatible(remoteAddress))
+    return localAddress.IsEmpty() ? new OpalTransportTCP(endpoint) : localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
+  return NULL;
 }
 
 
@@ -1319,10 +1336,17 @@ OpalTransport * OpalListenerUDP::Accept(const PTimeInterval & timeout)
 }
 
 
-OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & localAddress) const
+OpalTransport * OpalListenerUDP::CreateTransport(const OpalTransportAddress & localAddress,
+                                                 const OpalTransportAddress & remoteAddress) const
 {
-  PString iface;
+  if (!GetLocalAddress().IsCompatible(remoteAddress))
+    return NULL;
+
   PIPSocket::Address addr;
+  if (remoteAddress.GetIpAddress(addr) && addr.IsLoopback())
+    return new OpalTransportUDP(endpoint, addr);
+
+  PString iface;
   if (localAddress.GetIpAddress(addr))
     iface = addr.AsString();
   return new OpalTransportUDP(endpoint, PBYTEArray(), listenerBundle, iface, PIPSocket::GetDefaultIpAny(), 0);

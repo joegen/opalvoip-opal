@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2187  2007/09/21 01:34:10  rjongbloed
+ * Revision 1.2188  2007/10/12 04:00:44  rjongbloed
+ * Fixed being able to SIP call to localhost.
+ *
+ * Revision 2.186  2007/09/21 01:34:10  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -852,11 +855,8 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
   OpalTransport * transport = NULL;
 	
   for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    OpalTransportAddress binding = listeners[i].GetLocalAddress();
-    if (binding.Left(binding.Find('$')) *= remoteAddress.Left(remoteAddress.Find('$'))) {
-      transport = listeners[i].CreateTransport(localAddress);
+    if ((transport = listeners[i].CreateTransport(localAddress, remoteAddress)) != NULL)
       break;
-    }
   }
 
   if (transport == NULL) {
@@ -872,7 +872,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
-  if (!transport->ConnectTo(remoteAddress)) {
+  if (!transport->Connect()) {
     PTRACE(1, "SIP\tCould not connect to " << remoteAddress << " - " << transport->GetErrorText());
     transport->CloseWait();
     delete transport;
