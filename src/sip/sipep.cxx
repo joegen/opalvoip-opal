@@ -24,7 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2187  2007/09/21 01:34:10  rjongbloed
+ * Revision 1.2187.2.1  2007/10/12 07:22:38  csoutheren
+ * Add overrides for REGISTER and SUBSCRIBE commands
+ *
+ * Revision 2.186  2007/09/21 01:34:10  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -1070,13 +1073,13 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       return OnReceivedINVITE(transport, pdu);
 
     case SIP_PDU::Method_REGISTER :
+      return OnReceivedREGISTER(transport, *pdu);
+
     case SIP_PDU::Method_SUBSCRIBE :
-      SendResponse(SIP_PDU::Failure_MethodNotAllowed, transport, *pdu);
-      break;
+      return OnReceivedSUBSCRIBE(transport, *pdu);
 
     case SIP_PDU::Method_NOTIFY :
        return OnReceivedNOTIFY(transport, *pdu);
-       break;
 
     case SIP_PDU::Method_MESSAGE :
       OnReceivedMESSAGE(transport, *pdu);
@@ -1098,6 +1101,18 @@ BOOL SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   return FALSE;
 }
 
+
+BOOL SIPEndPoint::OnReceivedREGISTER(OpalTransport & transport, SIP_PDU & pdu)
+{
+  SendResponse(SIP_PDU::Failure_MethodNotAllowed, transport, pdu);
+  return FALSE;
+}
+
+BOOL SIPEndPoint::OnReceivedSUBSCRIBE(OpalTransport & transport, SIP_PDU & pdu)
+{
+  SendResponse(SIP_PDU::Failure_MethodNotAllowed, transport, pdu);
+  return FALSE;
+}
 
 void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & response)
 {
