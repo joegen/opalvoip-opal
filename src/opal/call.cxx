@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2062  2007/05/09 01:39:28  csoutheren
+ * Revision 1.2062.2.1  2007/10/12 05:59:29  csoutheren
+ * Fix problem with asymmetric codecs in some SIP calls
+ *
+ * Revision 2.61  2007/05/09 01:39:28  csoutheren
  * Remove redundant patch for NULL source streams
  *
  * Revision 2.60  2007/05/07 14:14:31  csoutheren
@@ -573,21 +576,19 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
 
   if (adjustableMediaFormats.GetSize() == 0)
     return FALSE;
+
+  // if there is already a connection with an open stream then reorder the 
+  // media formats to match that connection so we get symmetric codecs
+  if (connectionsActive.GetSize() > 0) {
+    OpalMediaStream * strm = connection.GetMediaStream(sessionID, TRUE);
+    if (strm != NULL)
+      adjustableMediaFormats.Reorder(strm->GetMediaFormat());
+  }
   
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
-      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) {
+      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) 
         startedOne = TRUE;
-        // If opened the source stream, then reorder the media formats so we
-        // have a preference for symmetric codecs on subsequent connection(s)
-        PWaitAndSignal m(conn->GetMediaStreamMutex());
-        OpalMediaStream * otherStream = conn->GetMediaStream(sessionID, TRUE);
-        if (otherStream != NULL && adjustableMediaFormats[0] != otherStream->GetMediaFormat()) {
-          adjustableMediaFormats.Reorder(otherStream->GetMediaFormat());
-          PTRACE(4, "Call\tOpenSourceMediaStreams for session " << sessionID
-                 << " adjusted media to " << setfill(',') << adjustableMediaFormats << setfill(' '));
-        }
-      }
     }
   }
 
