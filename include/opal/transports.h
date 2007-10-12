@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2030  2007/09/07 05:44:14  rjongbloed
+ * Revision 1.2031  2007/10/12 04:00:44  rjongbloed
+ * Fixed being able to SIP call to localhost.
+ *
+ * Revision 2.29  2007/09/07 05:44:14  rjongbloed
  * Fixed initialisation of SSL context in both OpalListenerTCPS contructors.
  *
  * Revision 2.28  2007/07/24 13:46:45  rjongbloed
@@ -209,6 +212,12 @@ class OpalTransportAddress : public PString
     /**Determine if the two transport addresses are equivalent.
       */
     BOOL IsEquivalent(
+      const OpalTransportAddress & address
+    ) const;
+
+    /**Determine if the two transport addresses are compatible.
+      */
+    BOOL IsCompatible(
       const OpalTransportAddress & address
     ) const;
 
@@ -426,7 +435,8 @@ class OpalListener : public PObject
     /**Create a transport compatible with this listener.
      */
     virtual OpalTransport * CreateTransport(
-      const OpalTransportAddress & localAddress
+      const OpalTransportAddress & localAddress,
+      const OpalTransportAddress & remoteAddress
     ) const = 0;
 
     /**Get the local transport address on which this listener may be accessed.
@@ -607,7 +617,8 @@ class OpalListenerTCP : public OpalListenerIP
     /**Create a transport compatible with this listener.
      */
     virtual OpalTransport * CreateTransport(
-      const OpalTransportAddress & localAddress
+      const OpalTransportAddress & localAddress,
+      const OpalTransportAddress & remoteAddress
     ) const;
   //@}
 
@@ -688,7 +699,8 @@ class OpalListenerUDP : public OpalListenerIP
     /**Create a transport compatible with this listener.
      */
     virtual OpalTransport * CreateTransport(
-      const OpalTransportAddress & localAddress
+      const OpalTransportAddress & localAddress,
+      const OpalTransportAddress & remoteAddress
     ) const;
   //@}
 
