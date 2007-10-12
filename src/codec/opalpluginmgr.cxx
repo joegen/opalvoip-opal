@@ -25,7 +25,11 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2066  2007/10/09 09:19:53  rjongbloed
+ * Revision 1.2067  2007/10/12 08:06:36  csoutheren
+ * Backport from development branch
+ * Fix problem with creating codec stubs
+ *
+ * Revision 2.65  2007/10/09 09:19:53  rjongbloed
  * Be more flexible on what a bool string is in plug-in option lists.
  *
  * Revision 2.64  2007/10/09 01:49:47  rjongbloed
@@ -1360,12 +1364,14 @@ H323AudioPluginCapability::H323AudioPluginCapability(const PString & _mediaForma
                                                      unsigned _type)
   : H323AudioCapability(), H323PluginCapabilityInfo(_baseName)
 { 
-  for (PINDEX i = 0; audioMaps[i].pluginCapType >= 0; i++) {
+  PINDEX i;
+  for (i = 0; audioMaps[i].pluginCapType >= 0; i++) {
     if (audioMaps[i].pluginCapType == (int)_type) { 
       pluginSubType = audioMaps[i].h323SubType;
       break;
     }
   }
+  PAssert(audioMaps[i].pluginCapType > 0, "could not match plugin type");
   rtpPayloadType = OpalMediaFormat(_mediaFormat).GetPayloadType();
 }
 
@@ -1398,7 +1404,7 @@ H323PluginG7231Capability::H323PluginG7231Capability(const PluginCodec_Definitio
 
 // this constructor is used for creating empty codecs
 H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA)
-  : H323AudioPluginCapability(fmt, fmt, H245_AudioCapability::e_g7231),
+  : H323AudioPluginCapability(fmt, fmt, PluginCodec_H323AudioCodec_g7231),
     annexA(_annexA)
 { }
 
