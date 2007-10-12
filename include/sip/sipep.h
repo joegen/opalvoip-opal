@@ -25,7 +25,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.h,v $
- * Revision 1.2089  2007/09/21 01:34:09  rjongbloed
+ * Revision 1.2089.2.1  2007/10/12 07:22:24  csoutheren
+ * Add overrides for REGISTER and SUBSCRIBE commands
+ *
+ * Revision 2.88  2007/09/21 01:34:09  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy
@@ -633,6 +636,20 @@ class SIPEndPoint : public OpalEndPoint
     virtual BOOL OnReceivedNOTIFY(
       OpalTransport & transport,
       SIP_PDU & response
+    );
+
+    /**Handle an incoming REGISTER PDU.
+      */
+    virtual BOOL OnReceivedREGISTER(
+      OpalTransport & transport, 
+      SIP_PDU & pdu
+    );
+
+    /**Handle an incoming SUBSCRIBE PDU.
+      */
+    virtual BOOL OnReceivedSUBSCRIBE(
+      OpalTransport & transport, 
+      SIP_PDU & pdu
     );
 
     /**Handle an incoming MESSAGE PDU.
