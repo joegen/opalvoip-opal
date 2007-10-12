@@ -29,7 +29,10 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.cxx,v $
- * Revision 1.2092  2007/10/07 07:36:13  rjongbloed
+ * Revision 1.2093  2007/10/12 00:20:17  rjongbloed
+ * Added more logging
+ *
+ * Revision 2.91  2007/10/07 07:36:13  rjongbloed
  * Changed bundled sockets so does not return error if interface goes away it just
  *   blocks reads till the interface comes back, or is explicitly closed.
  * Also return error codes, rather than just a BOOL.
@@ -1923,6 +1926,7 @@ BOOL OpalTransportUDP::WriteConnect(WriteConnectCallback function, void * userDa
 
   BOOL ok = FALSE;
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
+    PTRACE(4, "OpalUDP\tWriting to interface " << i << " - \"" << interfaces[i] << '"');
     socket->SetInterface(interfaces[i]);
     if (function(*this, userData))
       ok = TRUE;
