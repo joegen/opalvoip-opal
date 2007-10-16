@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g7231codec.h,v $
+ * Revision 1.2  2007/10/16 05:02:57  csoutheren
+ * Fix IANA name
+ *
  * Revision 1.1  2006/08/10 07:04:59  csoutheren
  * Added EasyCodec
  *
@@ -53,7 +56,7 @@ static unsigned int		EasyG7231_63_BytesPerFrame = L_G7231_FRAME_COMPRESSED_64; /
 static unsigned int		EasyG7231_63_RecFramesPerPacket = 1;        //rec number of frames per packet 
 static unsigned int		EasyG7231_63_MaxFramesPerPacket = 1;       // max number of frames per packet
 #define	EasyG7231_63_IANACode  4									// IANA RTP payload code  
-static const char		EasyG7231_63_IANAName[] = { "G7231" };		// RTP payload name 
+static const char		EasyG7231_63_IANAName[] = { "G723" };		// RTP payload name 
 static unsigned char	EasyG7231_63_CapType = PluginCodec_H323AudioCodec_g7231;	// h323CapabilityType 
 
 
