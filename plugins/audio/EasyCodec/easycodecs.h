@@ -25,6 +25,9 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: easycodecs.h,v $
+ * Revision 1.3  2007/10/16 05:02:57  csoutheren
+ * Fix IANA name
+ *
  * Revision 1.2  2006/10/16 09:46:49  rjongbloed
  * Fixed various MSVC 8 warnings
  *
@@ -63,7 +66,7 @@ enum {
 // Information
 
 static struct PluginCodec_information licenseInfo = {
-  1073619586,                              // timestamp = Fri 09 Jan 2004 03:39:46 AM UTC = 
+  1192510548,                              // timestamp = Tue 16 Oct 2007 04:55:48 AM UTC 
 
   "Simon Horne	ISVO(Asia) Pte Ltd",                           // source code author
   "1.0",                                                       // source code version
