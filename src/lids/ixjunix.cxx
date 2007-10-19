@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ixjunix.cxx,v $
- * Revision 1.2013  2006/06/27 13:50:24  csoutheren
+ * Revision 2.12  2006/06/27 13:50:24  csoutheren
  * Patch 1375137 - Voicetronix patches and lid enhancements
  * Thanks to Frederich Heem
  *

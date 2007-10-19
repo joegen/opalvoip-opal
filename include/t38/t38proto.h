@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t38proto.h,v $
- * Revision 1.2014  2007/09/25 19:35:30  csoutheren
+ * Revision 2.13  2007/09/25 19:35:30  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.12  2007/07/25 01:14:52  csoutheren

@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalglobalstatics.cxx,v $
- * Revision 1.2010  2007/06/27 18:19:49  csoutheren
+ * Revision 2.9  2007/06/27 18:19:49  csoutheren
  * Fix compile when video disabled
  *
  * Revision 2.8  2007/05/31 14:11:45  csoutheren

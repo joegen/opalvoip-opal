@@ -38,9 +38,9 @@ extern int mload_(integer *order, integer *awins, integer *awinf, real *speech, 
 /* 	MLOAD Version 48 */
 
 /* $Log: mload.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:18  rjongbloed
 /* Added more plug ins
 /*

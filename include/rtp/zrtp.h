@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: zrtp.h,v $
- * Revision 1.2003  2007/05/21 04:30:30  dereksmithies
+ * Revision 2.2  2007/05/21 04:30:30  dereksmithies
  * put #ifndef _PTLIB_H protection around the include of ptlib.h
  *
  * Revision 2.1  2007/02/12 02:44:27  csoutheren

@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: guid.h,v $
- * Revision 1.2007  2006/09/20 05:07:22  csoutheren
+ * Revision 2.6  2006/09/20 05:07:22  csoutheren
  * Changed to use PGloballyUniqueID
  *
  * Revision 2.5  2005/11/30 13:35:26  csoutheren

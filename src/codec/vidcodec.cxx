@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: vidcodec.cxx,v $
- * Revision 1.2023  2007/09/25 09:49:54  rjongbloed
+ * Revision 2.22  2007/09/25 09:49:54  rjongbloed
  * Fixed videoFastUpdate, is not a count but a simple boolean.
  *
  * Revision 2.21  2007/09/09 23:46:28  rjongbloed

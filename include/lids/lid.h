@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.h,v $
- * Revision 1.2018  2006/11/05 05:04:46  rjongbloed
+ * Revision 2.17  2006/11/05 05:04:46  rjongbloed
  * Improved the terminal LID line ringing, epecially for country emulation.
  *
  * Revision 2.16  2006/10/25 22:26:14  rjongbloed

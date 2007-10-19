@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.h,v $
- * Revision 1.2013  2005/11/30 13:35:26  csoutheren
+ * Revision 2.12  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.11  2004/02/19 10:46:44  rjongbloed

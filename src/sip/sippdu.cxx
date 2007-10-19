@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.cxx,v $
- * Revision 1.2155  2007/10/10 22:23:47  csoutheren
+ * Revision 2.154  2007/10/10 22:23:47  csoutheren
  * Who would beleive that z9hG4bK is a special prefix mandated by RFC3261
  * I certainly didn't, but I do now. Just goes to show you can't trust anyone :)
  *

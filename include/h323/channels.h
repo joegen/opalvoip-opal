@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.h,v $
- * Revision 1.2017  2007/03/29 05:15:48  csoutheren
+ * Revision 2.16  2007/03/29 05:15:48  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *

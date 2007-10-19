@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t38.cxx,v $
- * Revision 1.2015  2007/01/18 12:49:22  csoutheren
+ * Revision 2.14  2007/01/18 12:49:22  csoutheren
  * Add ability to disable T.38 in compile
  *
  * Revision 2.13  2005/02/21 12:20:08  rjongbloed

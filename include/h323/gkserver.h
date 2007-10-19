@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkserver.h,v $
- * Revision 1.2018  2007/06/29 06:59:56  rjongbloed
+ * Revision 2.17  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.16  2006/08/21 04:52:40  csoutheren

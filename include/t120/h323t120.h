@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.h,v $
- * Revision 1.2009  2005/11/30 13:35:27  csoutheren
+ * Revision 2.8  2005/11/30 13:35:27  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.7  2002/11/10 11:33:17  robertj

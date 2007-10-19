@@ -65,9 +65,9 @@ static integer c__2 = 2;
 /* 	DECODE Version 54 */
 
 /* $Log: decode_.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*
@@ -212,9 +212,9 @@ static integer c__2 = 2;
     integer ishift, errcnt, lsb;
 
 /* $Log: decode_.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*
@@ -255,9 +255,9 @@ static integer c__2 = 2;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: decode_.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*

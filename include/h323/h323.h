@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.h,v $
- * Revision 1.2010  2006/08/01 12:46:32  rjongbloed
+ * Revision 2.9  2006/08/01 12:46:32  rjongbloed
  * Added build solution for plug ins
  * Removed now redundent code due to plug ins addition
  *

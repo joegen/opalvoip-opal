@@ -22,7 +22,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.cxx,v $
- * Revision 1.2006  2006/10/09 07:21:47  csoutheren
+ * Revision 2.5  2006/10/09 07:21:47  csoutheren
  * Fix problem with reading last block of uLaw/ALaw files
  *
  * Revision 2.4  2006/02/13 03:46:17  csoutheren

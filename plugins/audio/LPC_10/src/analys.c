@@ -91,9 +91,9 @@ static integer c__1 = 1;
 /* 	ANALYS Version 55 */
 
 /* $Log: analys.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:13  rjongbloed
 /* Added more plug ins
 /*
@@ -270,9 +270,9 @@ static integer c__1 = 1;
     real phi[100]	/* was [10][10] */, psi[10];
 
 /* $Log: analys.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:13  rjongbloed
 /* Added more plug ins
 /*
@@ -313,9 +313,9 @@ static integer c__1 = 1;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments to ANALYS */
 /* $Log: analys.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:13  rjongbloed
 /* Added more plug ins
 /*

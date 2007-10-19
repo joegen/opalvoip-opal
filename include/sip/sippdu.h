@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sippdu.h,v $
- * Revision 1.2054  2007/10/03 23:59:05  rjongbloed
+ * Revision 2.53  2007/10/03 23:59:05  rjongbloed
  * Fixed correct operation of DNS SRV lookups to RFC3263 specification,
  *   thanks to Will Hawkins and Kris Marsh for what needs to be done.
  *

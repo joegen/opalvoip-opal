@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.h,v $
- * Revision 1.2023  2007/09/19 10:43:00  csoutheren
+ * Revision 2.22  2007/09/19 10:43:00  csoutheren
  * Exposed G.7231 capability class
  * Added macros to create empty transcoders and capabilities
  *

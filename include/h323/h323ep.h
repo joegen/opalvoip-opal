@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.h,v $
- * Revision 1.2051  2007/06/29 06:59:56  rjongbloed
+ * Revision 2.50  2007/06/29 06:59:56  rjongbloed
  * Major improvement to the "product info", normalising H.221 and User-Agent mechanisms.
  *
  * Revision 2.49  2007/05/15 07:26:38  csoutheren

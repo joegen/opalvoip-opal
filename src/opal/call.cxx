@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: call.cxx,v $
- * Revision 1.2068  2007/10/12 06:07:33  csoutheren
+ * Revision 2.67  2007/10/12 06:07:33  csoutheren
  * Fix problem with asymmetric codecs in some SIP calls
  *
  * Revision 2.66  2007/09/20 04:32:36  rjongbloed

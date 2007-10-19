@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediastrm.h,v $
- * Revision 1.2049  2007/09/26 03:45:38  rjongbloed
+ * Revision 2.48  2007/09/26 03:45:38  rjongbloed
  * Added missing const in member variable access function.
  *
  * Revision 2.47  2007/09/05 13:23:39  csoutheren

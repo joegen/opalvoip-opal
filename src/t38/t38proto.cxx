@@ -24,7 +24,7 @@
  * Contributor(s): Vyacheslav Frolov.
  *
  * $Log: t38proto.cxx,v $
- * Revision 1.2025  2007/09/25 19:35:39  csoutheren
+ * Revision 2.24  2007/09/25 19:35:39  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.23  2007/07/25 01:15:08  csoutheren

@@ -41,9 +41,9 @@ extern int placea_(integer *ipitch, integer *voibuf, integer *obound, integer *a
 /* 	PLACEA Version 48 */
 
 /* $Log: placea.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:18  rjongbloed
 /* Added more plug ins
 /*

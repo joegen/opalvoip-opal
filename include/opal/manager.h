@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2067  2007/09/21 01:34:09  rjongbloed
+ * Revision 2.66  2007/09/21 01:34:09  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy

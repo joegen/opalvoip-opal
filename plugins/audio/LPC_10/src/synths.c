@@ -67,9 +67,9 @@ static real c_b2 = .7f;
 /* 	SYNTHS Version 54 */
 
 /* $Log: synths.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:19  rjongbloed
 /* Added more plug ins
 /*
@@ -196,9 +196,9 @@ static real c_b2 = .7f;
     real rci[160]	/* was [10][16] */;
 
 /* $Log: synths.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:19  rjongbloed
 /* Added more plug ins
 /*
@@ -236,9 +236,9 @@ static real c_b2 = .7f;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: synths.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:19  rjongbloed
 /* Added more plug ins
 /*

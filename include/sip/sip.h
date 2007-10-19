@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sip.h,v $
- * Revision 1.2002  2002/02/01 04:53:01  robertj
+ * Revision 2.1  2002/02/01 04:53:01  robertj
  * Added (very primitive!) SIP support.
  *
  */

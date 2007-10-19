@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipep.cxx,v $
- * Revision 1.2189  2007/10/12 08:07:17  csoutheren
+ * Revision 2.188  2007/10/12 08:07:17  csoutheren
  * Add virtual for REGISTER and SUBSCRIBE pdu reception
  *
  * Revision 2.187  2007/10/12 04:00:44  rjongbloed

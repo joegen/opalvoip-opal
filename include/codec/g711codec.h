@@ -23,7 +23,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: g711codec.h,v $
- * Revision 1.2006  2005/08/28 07:59:17  rjongbloed
+ * Revision 2.5  2005/08/28 07:59:17  rjongbloed
  * Converted OpalTranscoder to use factory, requiring sme changes in making sure
  *   OpalMediaFormat instances are initialised before use.
  *

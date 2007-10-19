@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidpluginmgr.cxx,v $
- * Revision 1.2013  2007/06/10 08:25:14  rjongbloed
+ * Revision 2.12  2007/06/10 08:25:14  rjongbloed
  * Fixed race condition with tones on LID handset.
  *
  * Revision 2.11  2007/06/09 07:37:59  rjongbloed

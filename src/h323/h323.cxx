@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323.cxx,v $
- * Revision 1.2173  2007/09/12 09:19:52  rjongbloed
+ * Revision 2.172  2007/09/12 09:19:52  rjongbloed
  * Fixed H.323 channel not using merged media format, so not obeying remote TCS.
  *
  * Revision 2.171  2007/09/10 00:11:14  rjongbloed

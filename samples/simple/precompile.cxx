@@ -8,7 +8,7 @@
  * Copyright 1999 Equivalence
  *
  * $Log: precompile.cxx,v $
- * Revision 1.2001  2001/07/27 15:48:24  robertj
+ * Revision 2.0  2001/07/27 15:48:24  robertj
  * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
  *
  * Revision 1.1  2000/05/11 10:00:38  robertj

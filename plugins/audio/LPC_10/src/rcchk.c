@@ -38,9 +38,9 @@ extern int rcchk_(integer *order, real *rc1f, real *rc2f);
 /* 	RCCHK Version 45G */
 
 /* $Log: rcchk.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:19  rjongbloed
 /* Added more plug ins
 /*

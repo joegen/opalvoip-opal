@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.cxx,v $
- * Revision 1.2005  2007/04/04 02:12:00  rjongbloed
+ * Revision 2.4  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *

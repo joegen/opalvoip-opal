@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.cxx,v $
- * Revision 1.2042  2007/10/09 09:17:07  rjongbloed
+ * Revision 2.41  2007/10/09 09:17:07  rjongbloed
  * Fixed being able to handle missing/DTX frames which manifest as zero length.
  *
  * Revision 2.40  2007/10/09 04:24:25  rjongbloed
