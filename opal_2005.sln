@@ -11,9 +11,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "src\win32\op
 		{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D} = {D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\pwlib\src\ptlib\msos\Console_2005.vcproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\ptlib\src\ptlib\msos\Console_2005.vcproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\pwlib\src\ptlib\msos\PTLib_2005.vcproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\ptib\src\ptlib\msos\PTLib_2005.vcproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalcodecinfo", "samples\opalcodecinfo\opalcodecinfo_2005.vcproj", "{7FF55F1C-87EB-4087-8814-FD494BE49170}"
 	ProjectSection(ProjectDependencies) = postProject

@@ -3,19 +3,7 @@ Microsoft Developer Studio Workspace File, Format Version 6.00
 
 ###############################################################################
 
-Project: "Console"=..\pwlib\src\ptlib\msos\Console.dsp - Package Owner=<4>
-
-Package=<5>
-{{{
-}}}
-
-Package=<4>
-{{{
-}}}
-
-###############################################################################
-
-Project: "Console Components"="..\pwlib\src\ptlib\msos\Console Components.dsp" - Package Owner=<4>
+Project: "Console"=..\ptlib\src\ptlib\msos\Console.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -84,7 +72,7 @@ Package=<4>
 
 ###############################################################################
 
-Project: "PTLib"=..\pwlib\src\ptlib\msos\PTLib.dsp - Package Owner=<4>
+Project: "PTLib"=..\ptlib\src\ptlib\msos\PTLib.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
