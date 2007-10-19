@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h450pdu.h,v $
- * Revision 1.2012  2006/06/27 12:54:35  csoutheren
+ * Revision 2.11  2006/06/27 12:54:35  csoutheren
  * Patch 1374489 - h450.7 message center support
  * Thanks to Frederich Heem
  *

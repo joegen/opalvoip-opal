@@ -24,7 +24,7 @@
  * Contributor(s): __________________________________
  *
  * $Log: h235auth.cxx,v $
- * Revision 1.2015  2007/04/19 06:17:21  csoutheren
+ * Revision 2.14  2007/04/19 06:17:21  csoutheren
  * Fixes for precompiled headers with gcc
  *
  * Revision 2.13  2007/04/04 02:12:00  rjongbloed

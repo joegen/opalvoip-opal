@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323neg.cxx,v $
- * Revision 1.2015  2007/05/23 00:26:21  csoutheren
+ * Revision 2.14  2007/05/23 00:26:21  csoutheren
  * Don't increment TCS sequence number if h245InSetup ignored
  *
  * Revision 2.13  2007/04/10 05:15:54  rjongbloed

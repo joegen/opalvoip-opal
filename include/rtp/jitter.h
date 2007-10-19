@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.h,v $
- * Revision 1.2012  2007/01/09 23:04:41  dereksmithies
+ * Revision 2.11  2007/01/09 23:04:41  dereksmithies
  * Abstract out the jitterbuffer. This enables the use of the jitter buffer
  * in quite different circumstances (such as iax2 and test programs).
  *

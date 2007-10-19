@@ -60,9 +60,9 @@ extern struct {
 /* 	VOICIN Version 52 */
 
 /* $Log: voicin.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:19  rjongbloed
 /* Added more plug ins
 /*
@@ -314,9 +314,9 @@ s*/
 /* 	Global Variables: */
 /*       Arguments */
 /* $Log: voicin.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:19  rjongbloed
 /* Added more plug ins
 /*

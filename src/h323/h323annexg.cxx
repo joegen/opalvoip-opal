@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323annexg.cxx,v $
- * Revision 1.2003  2007/04/02 05:51:33  rjongbloed
+ * Revision 2.2  2007/04/02 05:51:33  rjongbloed
  * Tidied some trace logs to assure all have a category (bit before a tab character) set.
  *
  * Revision 2.1  2004/02/19 10:47:04  rjongbloed

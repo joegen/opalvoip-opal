@@ -22,7 +22,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalwavfile.h,v $
- * Revision 1.2007  2006/02/13 03:46:16  csoutheren
+ * Revision 2.6  2006/02/13 03:46:16  csoutheren
  * Added initialisation stuff to make sure that everything works OK
  *
  * Revision 2.5  2005/11/30 13:35:26  csoutheren

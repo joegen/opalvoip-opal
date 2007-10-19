@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.cxx,v $
- * Revision 1.2007  2007/10/04 05:44:13  rjongbloed
+ * Revision 2.6  2007/10/04 05:44:13  rjongbloed
  * Fixed listening an all interfaces individually when using INADDR_ANY as binding.
  * Fixed default transport address for gatekeeper to be UDP.
  * Removed unnecessary Connect() calls when changing "write to" address.

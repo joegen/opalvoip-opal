@@ -53,9 +53,9 @@ static real c_b2 = 1.f;
 /* 	ONSET Version 49 */
 
 /* $Log: onset.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:18  rjongbloed
 /* Added more plug ins
 /*
@@ -167,9 +167,9 @@ static real c_b2 = 1.f;
 
 /*       Arguments */
 /* $Log: onset.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:18  rjongbloed
 /* Added more plug ins
 /*

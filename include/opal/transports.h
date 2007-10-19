@@ -29,7 +29,7 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: transports.h,v $
- * Revision 1.2031  2007/10/12 04:00:44  rjongbloed
+ * Revision 2.30  2007/10/12 04:00:44  rjongbloed
  * Fixed being able to SIP call to localhost.
  *
  * Revision 2.29  2007/09/07 05:44:14  rjongbloed

@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: dllmain.cxx,v $
- * Revision 1.2008  2007/04/08 02:59:23  ykiryanov
+ * Revision 2.7  2007/04/08 02:59:23  ykiryanov
  * *** empty log message ***
  *
  * Revision 2.6  2006/10/02 13:30:52  rjongbloed

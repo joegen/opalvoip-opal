@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalvxml.cxx,v $
- * Revision 1.2014  2007/09/18 09:53:31  rjongbloed
+ * Revision 2.13  2007/09/18 09:53:31  rjongbloed
  * Fixed memory leak in IVR connection
  *
  * Revision 2.12  2006/08/11 07:52:01  csoutheren

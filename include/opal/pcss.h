@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.h,v $
- * Revision 1.2030  2007/04/03 07:59:13  rjongbloed
+ * Revision 2.29  2007/04/03 07:59:13  rjongbloed
  * Warning: API change to PCSS callbacks:
  *   changed return on OnShowIncoming to BOOL, now agrees with
  *     documentation and allows UI to abort calls early.

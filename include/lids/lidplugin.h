@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidplugin.h,v $
- * Revision 1.2007  2007/09/04 02:21:20  rjongbloed
+ * Revision 2.6  2007/09/04 02:21:20  rjongbloed
  * Allow for plug in API versions other than zero.
  *
  * Revision 2.5  2006/11/05 05:04:46  rjongbloed

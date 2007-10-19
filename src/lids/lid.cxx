@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lid.cxx,v $
- * Revision 1.2024  2007/04/04 02:12:00  rjongbloed
+ * Revision 2.23  2007/04/04 02:12:00  rjongbloed
  * Reviewed and adjusted PTRACE log levels
  *   Now follows 1=error,2=warn,3=info,4+=debug
  *

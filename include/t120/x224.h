@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: x224.h,v $
- * Revision 1.2004  2002/11/10 11:33:17  robertj
+ * Revision 2.3  2002/11/10 11:33:17  robertj
  * Updated to OpenH323 v1.10.3
  *
  * Revision 2.2  2002/09/16 02:52:35  robertj

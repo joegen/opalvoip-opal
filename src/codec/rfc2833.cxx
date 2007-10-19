@@ -23,7 +23,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc2833.cxx,v $
- * Revision 1.2010  2007/09/30 17:39:32  dsandras
+ * Revision 2.9  2007/09/30 17:39:32  dsandras
  * Killed more GCC 4.2 warnings. Patch from Matthias Schneider <ma30002000
  * yahoo de>.
  *

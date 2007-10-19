@@ -28,7 +28,7 @@
  *     http://www.jfcom.mil/about/abt_j9.htm
  *
  * $Log: connection.h,v $
- * Revision 1.2090  2007/08/24 07:47:46  csoutheren
+ * Revision 2.89  2007/08/24 07:47:46  csoutheren
  * Get access to called URL
  *
  * Revision 2.88  2007/08/13 16:19:08  csoutheren

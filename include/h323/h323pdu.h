@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.h,v $
- * Revision 1.2019  2007/09/05 01:36:00  rjongbloed
+ * Revision 2.18  2007/09/05 01:36:00  rjongbloed
  * Added media packetization fields to H.323 TCS.
  *
  * Revision 2.17  2007/06/29 06:59:56  rjongbloed

@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323caps.cxx,v $
- * Revision 1.2044  2007/10/10 04:57:48  csoutheren
+ * Revision 2.43  2007/10/10 04:57:48  csoutheren
  * Include capability type in logging for FindCapability
  * Fix problem where MatchWildcard incorrectly matched prefix of media format
  *   i.e. returned G.729A/B for G.729

@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323rtp.cxx,v $
- * Revision 1.2017  2007/09/05 01:36:00  rjongbloed
+ * Revision 2.16  2007/09/05 01:36:00  rjongbloed
  * Added media packetization fields to H.323 TCS.
  *
  * Revision 2.15  2007/08/16 03:13:36  rjongbloed

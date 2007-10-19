@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: pcss.cxx,v $
- * Revision 1.2049  2007/09/04 06:31:20  rjongbloed
+ * Revision 2.48  2007/09/04 06:31:20  rjongbloed
  * Fixed correct return of "Busy" if PCSS devices are already in use.
  *
  * Revision 2.47  2007/06/29 06:59:57  rjongbloed

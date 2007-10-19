@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h225ras.cxx,v $
- * Revision 1.2011  2006/05/30 11:33:02  hfriederich
+ * Revision 2.10  2006/05/30 11:33:02  hfriederich
  * Porting support for H.460 from OpenH323
  *
  * Revision 2.9  2004/02/19 10:47:03  rjongbloed

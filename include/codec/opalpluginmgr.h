@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.h,v $
- * Revision 1.2023  2007/10/08 01:45:16  rjongbloed
+ * Revision 2.22  2007/10/08 01:45:16  rjongbloed
  * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
  * Some more clean ups.
  *

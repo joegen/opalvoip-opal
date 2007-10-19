@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transcoders.h,v $
- * Revision 1.2030  2007/10/08 01:45:16  rjongbloed
+ * Revision 2.29  2007/10/08 01:45:16  rjongbloed
  * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
  * Some more clean ups.
  *

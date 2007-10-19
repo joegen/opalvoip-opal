@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: t120proto.cxx,v $
- * Revision 1.2008  2005/02/21 12:20:07  rjongbloed
+ * Revision 2.7  2005/02/21 12:20:07  rjongbloed
  * Added new "options list" to the OpalMediaFormat class.
  *
  * Revision 2.6  2002/11/10 11:33:20  robertj

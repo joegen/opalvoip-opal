@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323trans.h,v $
- * Revision 1.2003  2005/11/30 13:35:26  csoutheren
+ * Revision 2.2  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.1  2004/02/19 10:46:44  rjongbloed

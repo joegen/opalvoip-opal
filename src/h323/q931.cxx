@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: q931.cxx,v $
- * Revision 1.2014  2007/09/05 13:47:53  csoutheren
+ * Revision 2.13  2007/09/05 13:47:53  csoutheren
  * Applied 1749010 - Fix Q.931 Channel Information for D-Channel only
  * Thanks to Simon Zwahlen
  *

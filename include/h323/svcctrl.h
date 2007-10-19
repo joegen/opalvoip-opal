@@ -23,7 +23,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: svcctrl.h,v $
- * Revision 1.2002  2004/02/19 10:46:44  rjongbloed
+ * Revision 2.1  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.1  2003/04/01 01:07:22  robertj

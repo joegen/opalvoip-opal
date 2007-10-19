@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: endpoint.cxx,v $
- * Revision 1.2062  2007/09/21 01:34:09  rjongbloed
+ * Revision 2.61  2007/09/21 01:34:09  rjongbloed
  * Rewrite of SIP transaction handling to:
  *   a) use PSafeObject and safe collections
  *   b) only one database of transactions, remove connection copy

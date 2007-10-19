@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323pdu.cxx,v $
- * Revision 1.2025  2007/09/09 23:37:19  rjongbloed
+ * Revision 2.24  2007/09/09 23:37:19  rjongbloed
  * Fixed confusion over MaxPayloadType meaning
  *
  * Revision 2.23  2007/09/05 01:36:00  rjongbloed

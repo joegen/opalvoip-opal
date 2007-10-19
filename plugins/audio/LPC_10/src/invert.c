@@ -38,9 +38,9 @@ extern int invert_(integer *order, real *phi, real *psi, real *rc);
 /* 	INVERT Version 45G */
 
 /* $Log: invert.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:16  rjongbloed
 /* Added more plug ins
 /*
@@ -109,9 +109,9 @@ extern int invert_(integer *order, real *phi, real *psi, real *rc);
 
 /*       Arguments */
 /* $Log: invert.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:16  rjongbloed
 /* Added more plug ins
 /*

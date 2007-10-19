@@ -55,9 +55,9 @@ static integer c__2 = 2;
 /* 	ENCODE Version 54 */
 
 /* $Log: encode_.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:15  rjongbloed
 /* Added more plug ins
 /*
@@ -152,9 +152,9 @@ static integer c__2 = 2;
     integer idel, nbit, i__, j, i2, i3, mrk;
 
 /* $Log: encode_.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:15  rjongbloed
 /* Added more plug ins
 /*
@@ -187,9 +187,9 @@ static integer c__2 = 2;
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: encode_.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:15  rjongbloed
 /* Added more plug ins
 /*
