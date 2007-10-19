@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.h,v $
- * Revision 1.2027  2007/09/14 06:08:58  csoutheren
+ * Revision 2.26  2007/09/14 06:08:58  csoutheren
  * Fix problems with incorrect parsing of "c=" lines
  * Clamp ptime to 60 so Ciscos will work
  *

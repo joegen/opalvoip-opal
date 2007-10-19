@@ -24,7 +24,7 @@
  * Contributor(s): 
  *
  * $Log: vidcodec.h,v $
- * Revision 1.2017  2007/09/25 09:49:54  rjongbloed
+ * Revision 2.16  2007/09/25 09:49:54  rjongbloed
  * Fixed videoFastUpdate, is not a count but a simple boolean.
  *
  * Revision 2.15  2007/08/17 11:14:17  csoutheren

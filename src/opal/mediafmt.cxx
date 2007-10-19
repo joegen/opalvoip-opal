@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.cxx,v $
- * Revision 1.2079  2007/09/25 19:35:39  csoutheren
+ * Revision 2.78  2007/09/25 19:35:39  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.77  2007/09/21 00:51:38  rjongbloed

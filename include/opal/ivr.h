@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: ivr.h,v $
- * Revision 1.2019  2007/09/04 07:46:24  csoutheren
+ * Revision 2.18  2007/09/04 07:46:24  csoutheren
  * Fixed tts
  *
  * Revision 2.17  2007/09/04 04:48:13  csoutheren

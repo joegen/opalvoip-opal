@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323t120.cxx,v $
- * Revision 1.2014  2007/03/12 23:35:39  csoutheren
+ * Revision 2.13  2007/03/12 23:35:39  csoutheren
  * Add ability to remove T.120
  *
  * Revision 2.12  2006/08/21 05:29:25  csoutheren

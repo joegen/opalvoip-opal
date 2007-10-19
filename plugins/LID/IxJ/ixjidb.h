@@ -8,7 +8,7 @@
 
     -----------------------------------------------------------------
 
-	$Header: /home/svnmigrate/clean_cvs/opal/plugins/LID/IxJ/ixjidb.h,v 1.1 2006/10/02 13:30:53 rjongbloed Exp $
+	$Header: /cvsroot/openh323/opal/plugins/LID/IxJ/ixjidb.h,v 1.1 2006/10/02 13:30:53 rjongbloed Exp $
 
     $Log: ixjidb.h,v $
     Revision 1.1  2006/10/02 13:30:53  rjongbloed

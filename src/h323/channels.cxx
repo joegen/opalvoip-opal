@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: channels.cxx,v $
- * Revision 1.2047  2007/09/25 09:48:34  rjongbloed
+ * Revision 2.46  2007/09/25 09:48:34  rjongbloed
  * Added H.323 support for videoFastUpdatePicture
  *
  * Revision 2.45  2007/08/31 11:36:13  csoutheren

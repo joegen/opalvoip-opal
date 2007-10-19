@@ -24,7 +24,7 @@
  * Contributor(s): ________________________________________.
  *
  * $Log: mediastrm.cxx,v $
- * Revision 1.2068  2007/09/20 07:52:26  rjongbloed
+ * Revision 2.67  2007/09/20 07:52:26  rjongbloed
  * Fixed correct initial buffer size for RTP media stream packets.
  *
  * Revision 2.66  2007/09/10 00:11:14  rjongbloed

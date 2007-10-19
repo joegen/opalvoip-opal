@@ -60,9 +60,9 @@ extern struct {
 /* 	BSYNZ Version 54 */
 
 /* $Log: bsynz.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*
@@ -168,9 +168,9 @@ extern struct {
     real lpi0, hpi0;
 
 /* $Log: bsynz.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*
@@ -211,9 +211,9 @@ extern struct {
 /* Frame size, Prediction order, Pitch period */
 /*       Arguments */
 /* $Log: bsynz.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*

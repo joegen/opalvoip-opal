@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: mediafmt.h,v $
- * Revision 1.2062  2007/09/25 19:35:30  csoutheren
+ * Revision 2.61  2007/09/25 19:35:30  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.60  2007/09/21 00:51:38  rjongbloed

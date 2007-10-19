@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.cxx,v $
- * Revision 1.2040  2007/09/05 13:32:35  csoutheren
+ * Revision 2.39  2007/09/05 13:32:35  csoutheren
  * Applied 1743378 - Gatekeeper TryAlternate
  * Thanks to Borko Jandras
  *

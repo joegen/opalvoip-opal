@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: patch.h,v $
- * Revision 1.2018  2007/09/05 13:43:04  csoutheren
+ * Revision 2.17  2007/09/05 13:43:04  csoutheren
  * Applied 1748637 - RTP payload translation
  * Thanks to Borko Jandras
  *

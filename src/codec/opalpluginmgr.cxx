@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: opalpluginmgr.cxx,v $
- * Revision 1.2067  2007/10/12 08:06:36  csoutheren
+ * Revision 2.66  2007/10/12 08:06:36  csoutheren
  * Backport from development branch
  * Fix problem with creating codec stubs
  *

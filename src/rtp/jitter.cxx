@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: jitter.cxx,v $
- * Revision 1.2021  2007/09/05 13:58:29  csoutheren
+ * Revision 2.20  2007/09/05 13:58:29  csoutheren
  * Applied 1783417 - Restarting the jitter buffer thread
  * Thanks to Borko Jandras
  *

@@ -38,9 +38,9 @@ extern int ham84_(integer *input, integer *output, integer *errcnt);
 /* 	HAM84 Version 45G */
 
 /* $Log: ham84.c,v $
- * Revision 1.2  2006/08/01 13:06:50  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:50  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:16  rjongbloed
 /* Added more plug ins
 /*

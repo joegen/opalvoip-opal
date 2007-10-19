@@ -38,9 +38,9 @@ extern int dcbias_(integer *len, real *speech, real *sigout);
 /* 	DCBIAS Version 50 */
 
 /* $Log: dcbias.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:49  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:14  rjongbloed
 /* Added more plug ins
 /*

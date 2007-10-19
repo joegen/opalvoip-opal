@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323con.h,v $
- * Revision 1.2068  2007/08/13 16:19:08  csoutheren
+ * Revision 2.67  2007/08/13 16:19:08  csoutheren
  * Ensure CreateMediaStream is only called *once* for each stream in H.323 calls
  *
  * Revision 2.66  2007/07/26 00:41:17  csoutheren

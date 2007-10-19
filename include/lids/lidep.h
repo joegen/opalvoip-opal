@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: lidep.h,v $
- * Revision 1.2029  2007/03/29 05:15:48  csoutheren
+ * Revision 2.28  2007/03/29 05:15:48  csoutheren
  * Pass OpalConnection to OpalMediaSream constructor
  * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
  *

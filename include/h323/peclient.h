@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: peclient.h,v $
- * Revision 1.2004  2005/11/30 13:35:26  csoutheren
+ * Revision 2.3  2005/11/30 13:35:26  csoutheren
  * Changed tags for Doxygen
  *
  * Revision 2.2  2004/06/04 06:54:17  csoutheren

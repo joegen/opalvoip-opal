@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sdp.cxx,v $
- * Revision 1.2063  2007/09/25 19:35:39  csoutheren
+ * Revision 2.62  2007/09/25 19:35:39  csoutheren
  * Fix compilation when using --disable-audio
  *
  * Revision 2.61  2007/09/20 23:09:03  rjongbloed

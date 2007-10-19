@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h323ep.cxx,v $
- * Revision 1.2071  2007/09/18 09:37:52  rjongbloed
+ * Revision 2.70  2007/09/18 09:37:52  rjongbloed
  * Propagated call backs for RTP statistics through OpalManager and OpalCall.
  *
  * Revision 2.69  2007/06/29 06:59:57  rjongbloed

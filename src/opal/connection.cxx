@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: connection.cxx,v $
- * Revision 1.2115  2007/09/20 04:29:31  rjongbloed
+ * Revision 2.114  2007/09/20 04:29:31  rjongbloed
  * Added log for reason RTP session is not created.
  *
  * Revision 2.113  2007/08/13 16:19:08  csoutheren

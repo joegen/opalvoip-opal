@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: sipcon.cxx,v $
- * Revision 1.2266  2007/10/10 01:24:44  rjongbloed
+ * Revision 2.265  2007/10/10 01:24:44  rjongbloed
  * Removed redundent code and added extra log for if SRV was used.
  *
  * Revision 2.264  2007/10/03 23:59:05  rjongbloed

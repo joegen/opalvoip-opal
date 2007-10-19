@@ -49,9 +49,9 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
 /* 	PITSYN Version 53 */
 
 /* $Log: pitsyn.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:18  rjongbloed
 /* Added more plug ins
 /*
@@ -167,9 +167,9 @@ extern int pitsyn_(integer *order, integer *voice, integer *pitch, real *rms, re
 
 /*       Arguments */
 /* $Log: pitsyn.c,v $
- * Revision 1.2  2006/08/01 13:06:51  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
+/* Revision 1.2  2006/08/01 13:06:51  rjongbloed
+/* Added a raft of unvalidated audio codecs from OpenH323 tree
+/*
 /* Revision 1.1.2.1  2006/07/22 14:03:18  rjongbloed
 /* Added more plug ins
 /*

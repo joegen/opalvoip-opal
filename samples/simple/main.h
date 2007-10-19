@@ -22,7 +22,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: main.h,v $
- * Revision 1.2029  2007/10/04 07:01:18  rjongbloed
+ * Revision 2.28  2007/10/04 07:01:18  rjongbloed
  * Added ability to have different gk for h323 and h323s endpoints.
  *
  * Revision 2.27  2007/04/03 07:59:14  rjongbloed

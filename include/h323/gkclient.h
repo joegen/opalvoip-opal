@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: gkclient.h,v $
- * Revision 1.2015  2006/08/21 04:51:51  csoutheren
+ * Revision 2.14  2006/08/21 04:51:51  csoutheren
  * Fixed formatting
  *
  * Revision 2.13  2006/05/30 11:33:02  hfriederich

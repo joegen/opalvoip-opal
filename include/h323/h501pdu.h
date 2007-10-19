@@ -24,7 +24,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: h501pdu.h,v $
- * Revision 1.2002  2004/02/19 10:46:44  rjongbloed
+ * Revision 2.1  2004/02/19 10:46:44  rjongbloed
  * Merged OpenH323 version 1.13.1 changes.
  *
  * Revision 1.10  2003/04/10 01:03:39  craigs

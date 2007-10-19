@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.cxx,v $
- * Revision 1.2100  2007/09/26 03:50:13  rjongbloed
+ * Revision 2.99  2007/09/26 03:50:13  rjongbloed
  * Allow for SDL only being able to show one window, prevent
  *   preview window from appearing if SDL used for both.
  *

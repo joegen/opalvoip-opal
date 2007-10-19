@@ -27,7 +27,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: transaddr.cxx,v $
- * Revision 1.2011  2006/08/21 05:29:25  csoutheren
+ * Revision 2.10  2006/08/21 05:29:25  csoutheren
  * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
  * and secure H.323 signalling via the sh323 URL scheme
  *
