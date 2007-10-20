@@ -55,6 +55,8 @@ MAJOR_VERSION=`cat ${OPALDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
 MINOR_VERSION=`cat ${OPALDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
 BUILD_NUMBER=`cat ${OPALDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
 OPAL_VERSION="${MAJOR_VERSION}.${MINOR_VERSION}.${BUILD_NUMBER}"
+BUILD_TYPE=`cat ${OPALDIR}/version.h | grep BUILD_TYPE | cut -f 3 -d ' ' | sed 's/BetaCode/-beta/' | sed 's/AlphaCode/-alpha/' | sed 's/ReleaseCode/\./'`
+
 AC_DEFINE_UNQUOTED(OPAL_MAJOR,   ${MAJOR_VERSION})
 AC_DEFINE_UNQUOTED(OPAL_MINOR,   ${MINOR_VERSION})
 AC_DEFINE_UNQUOTED(OPAL_BUILD,   ${BUILD_NUMBER})
@@ -64,6 +66,7 @@ AC_MSG_NOTICE(Opal version is ${OPAL_VERSION});
 
 #use to set the version in opal.pc
 AC_SUBST(OPAL_VERSION)
+AC_SUBST(BUILD_TYPE)
 
 dnl ########################################################################
 dnl look for ptlib, use a preference order of explicit PWLIBDIR, directory
