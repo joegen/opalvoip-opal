@@ -1,7 +1,8 @@
 AC_INIT(configure.ac)
-
 AC_PROG_CXX
 AC_HEADER_STDC
+
+PKG_PROG_PKG_CONFIG()
 
 dnl ########################################################################
 dnl set the PREFIX accordingly
@@ -408,9 +409,16 @@ dnl ###########################################################################
 
 HAS_X264=0
 X264_LIBS=
+LIBX264_LINKED=0
+m4_define([x264_default], [runtime])
 
-AC_ARG_ENABLE(x264, [  --disable-x264          Disable x264],,)
-if test "x${enable_x264}" != "xno" ; then
+dnl declare --enable-* args and collect ac_help strings
+AC_ARG_ENABLE(x264,
+              AC_HELP_STRING([--enable-x264=@<:@no/static/runtime@:>@],
+			     [enable x264 plugin @<:@default=x264_default@:>@]),,
+	      enable_x264=x264_default)
+
+if test "x$enable_x264" = "xruntime"; then
     enable_x264=yes
 
     saved_LIBS="$LIBS"
@@ -422,7 +430,7 @@ if test "x${enable_x264}" != "xno" ; then
         AC_CHECK_HEADERS([x264.h], [x264_headers=true], [x264_headers=false])
         if test "x${x264_headers}" = "xtrue"; then
           if test "x$HAS_LIBDL" != "x0" ; then
-	    H264_LIBS="-ldl"
+	    X264_LIBS="-ldl"
           fi
 
           AC_MSG_CHECKING(for x264 version >= 48)
@@ -458,9 +466,61 @@ C_FILE
         fi
     fi
 fi
+
+if test "x$enable_x264" = "xstatic"; then
+
+  have_x264_48="no"
+  saved_LIBS="$LIBS"
+  PKG_CHECK_MODULES([x264], [x264 >= 0.48], [ have_x264_48="yes" ], [  have_x264_48="no" ])
+
+  dnl For people who don't have pkg-config or x264.pc 
+  if test $have_x264_48 = "no"; then
+	   AC_CHECK_HEADERS(x264.h,
+	   [
+	     LIBS="$LIBS -lm -lz -lpthread"
+	     AC_CHECK_LIB(x264, x264_encoder_open,
+	     [
+	       AC_MSG_CHECKING(x264 version >= 48)
+	       AC_TRY_COMPILE([
+			         #include <stdint.h>
+			         #include <x264.h>
+			       ],
+			       [
+				 #if X264_BUILD < 48
+				 #error x264 older than 48
+				 #endif
+			       ],
+			       [ 
+				 have_x264_48="yes" 
+			       ],
+			       [
+				 have_x264_48="no"
+			       ])
+	       AC_MSG_RESULT($have_x264_48)
+	       if test $have_x264_48 = "no" ; then
+		 AC_MSG_WARN([Your libx264 is too old - version 48 or newer strongly recommended])
+	       fi
+	     ])
+	   ],
+           [
+             AC_MSG_ERROR([Could not find libx264 on your system: you may get it from http://www.videolan.org/x264.html])
+	   ])
+  fi
+  LIBS="$saved_LIBS"
+
+  if test $have_x264_48 = "yes"; then
+      X264_LIBS="-lx264 -lm -lpthread"
+      HAS_X264=1
+      X264_CFLAGS="${X264_CFLAGS} -DLIBX264_LINKED=1"
+      LIBX264_LINKED=1
+  fi
+
+fi
+
 AC_SUBST(HAS_X264)
 AC_SUBST(X264_CFLAGS)
-AC_SUBST(H264_LIBS)
+AC_SUBST(X264_LIBS)
+AC_SUBST(LIBX264_LINKED)
 
 dnl ###########################################################################
 dnl Checks for libtheora

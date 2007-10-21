@@ -24,7 +24,9 @@
 #include <sys/stat.h>
 #include <fstream>
 #include "trace.h"
+#ifndef LIBX264_LINKED
 #include "x264loader_unix.h"
+#endif
 #define MAX_FRAME_SIZE 608286
 
 std::ifstream dlStream;
@@ -43,7 +45,9 @@ int ret;
 
 X264EncoderContext* x264;
 
+#ifndef LIBX264_LINKED
 extern X264Library X264Lib;
+#endif
 
 void closeAndExit()
 {
@@ -93,10 +97,14 @@ int main(int argc, char *argv[])
   ulStream.open(argv[2],std::ios::binary);
   if (ulStream.fail()) { TRACE (1, "H264\tIPC\tCP: Error when opening UL named pipe"); exit (1); }
 
+#ifndef LIBX264_LINKED
   if (X264Lib.Load()) 
     status = 1;
   else 
     status = 0;
+#else
+  status = 1;
+#endif
 
   readStream(dlStream, (char*)&msg, sizeof(msg));
   writeStream(ulStream,(char*)&msg, sizeof(msg)); 

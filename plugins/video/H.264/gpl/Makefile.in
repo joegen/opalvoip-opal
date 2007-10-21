@@ -87,7 +87,8 @@ PLUGINEXT	=@PLUGINEXT@
 STDCCFLAGS	=@STDCCFLAGS@
 LDFLAGS		=@LDFLAGS@
 X264_CFLAGS     =@X264_CFLAGS@
-H264_LIBS	=@H264_LIBS@
+X264_LIBS	=@X264_LIBS@
+LIBX264_LINKED  =@LIBX264_LINKED@
 
 EXTRACCFLAGS	+= $(X264_CFLAGS) -I$(COMMONDIR) 
 
@@ -98,8 +99,11 @@ vpath	%.o   $(OBJDIR)
 SRCS   += $(SHAREDDIR)/h264frame.cxx \
 	  $(COMMONDIR)/trace.cxx \
 	  enc-ctx.cxx  \
-	  h264helper_unix.cxx \
-	  x264loader_unix.cxx
+	  h264helper_unix.cxx
+
+ifneq ($(LIBX264_LINKED),1)
+SRCS   += x264loader_unix.cxx
+endif
 
 
 $(OBJDIR)/%.o : %.cxx
@@ -115,7 +119,7 @@ PLUGIN	= ./$(BASENAME)_video_pwplugin_helper
 OBJECTS = $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(patsubst %.cxx,%.o,$(notdir $(SRCS)))))
 
 $(PLUGIN): $(OBJECTS)
-	$(CXX) $(H264_LIBS) -o $@ $^
+	$(CXX) -o $@ $^ $(X264_LIBS)
 
 
 install:
