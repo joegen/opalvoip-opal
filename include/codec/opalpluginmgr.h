@@ -537,7 +537,7 @@ class H323PluginCapabilityInfo
     PString                        capabilityFormatName;
 };
 
-
+#if OPAL_H323
 #if OPAL_AUDIO
 
 //////////////////////////////////////////////////////////////////////////////
@@ -790,5 +790,6 @@ class H323H263PluginCapability : public H323VideoPluginCapability
 };
 
 #endif // OPAL_VIDEO
+#endif // OPAL_H323
 
 #endif // __OPALPLUGINMGR_H
