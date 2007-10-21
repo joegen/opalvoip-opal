@@ -361,13 +361,13 @@ OPAL_REGISTER_G711();
 #define SQCIF_WIDTH       128
 #define SQCIF_HEIGHT      96
 
+#if OPAL_H323
+
 static const char * sqcifMPI_tag                          = "SQCIF MPI";
 static const char * qcifMPI_tag                           = "QCIF MPI";
 static const char * cifMPI_tag                            = "CIF MPI";
 static const char * cif4MPI_tag                           = "CIF4 MPI";
 static const char * cif16MPI_tag                          = "CIF16 MPI";
-
-#if OPAL_H323
 
 #define H323CAP_TAG_PREFIX    "h323"
 
@@ -459,6 +459,7 @@ static void SetOldStyleOption(OpalMediaFormat & format, const PString & _key, co
   const char * val = _val;
 
 #if OPAL_VIDEO
+#if OPAL_H323
   // Backward compatibility tests
   if (key == h323_qcifMPI_tag)
     key = qcifMPI_tag;
@@ -470,6 +471,7 @@ static void SetOldStyleOption(OpalMediaFormat & format, const PString & _key, co
     key = cif4MPI_tag;
   else if (key == h323_cif16MPI_tag)
     key = cif16MPI_tag;
+#endif
 #endif
 
   OpalMediaOption::MergeType op = OpalMediaOption::NoMerge;
