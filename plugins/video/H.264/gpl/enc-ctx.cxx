@@ -33,7 +33,7 @@
 #endif
 #include <string.h>
 
-#ifndef _WIN32
+#ifndef LIBX264_LINKED
 X264Library X264Lib;
 #endif
 

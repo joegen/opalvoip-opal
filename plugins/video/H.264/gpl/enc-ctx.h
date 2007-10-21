@@ -38,8 +38,9 @@ extern "C" {
 #endif
 };
 
-#ifndef _WIN32
-#include "x264loader_unix.h"
+#ifdef _WIN32
+/* to keep compatibility with old build */
+#define LIBX264_LINKED 1
 #endif
 
 #define CIF_WIDTH 352
@@ -54,7 +55,7 @@ extern "C" {
 #define H264_FRAME_RATE          25
 #define H264_KEY_FRAME_INTERVAL 2.0
 
-#ifdef _WIN32
+#if LIBX264_LINKED
   #define X264_ENCODER_OPEN x264_encoder_open 
   #define X264_PARAM_DEFAULT x264_param_default
   #define X264_ENCODER_ENCODE x264_encoder_encode
@@ -66,6 +67,7 @@ extern "C" {
   #define X264_PICTURE_CLEAN x264_picture_clean
   #define X264_ENCODER_CLOSE x264_encoder_close
 #else
+  #include "x264loader_unix.h"
   #define X264_ENCODER_OPEN X264Lib.Xx264_encoder_open 
   #define X264_PARAM_DEFAULT X264Lib.Xx264_param_default
   #define X264_ENCODER_ENCODE X264Lib.Xx264_encoder_encode
