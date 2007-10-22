@@ -750,7 +750,7 @@ static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType]
   "FS1016",
   "G721",
   "GSM",
-  "G7231",
+  "G723",
   "DVI4_8k",
   "DVI4_16k",
   "LPC",
