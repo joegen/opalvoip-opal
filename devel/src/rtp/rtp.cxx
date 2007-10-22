@@ -765,6 +765,11 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
   strm << hex << setfill('0') << PBYTEArray(GetPayloadPtr(), GetPayloadSize(), false) << setfill(' ') << dec;
 }
 
+unsigned RTP_DataFrame::GetPaddingSize() const
+{
+  if (!GetPadding()) return 0;
+  return PMAX(0, GetPayloadPtr()[payloadSize-1]);
+}
 
 #if PTRACING
 static const char * const PayloadTypesNames[RTP_DataFrame::LastKnownPayloadType] = {
