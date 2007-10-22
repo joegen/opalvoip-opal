@@ -1,0 +1,198 @@
+/*! \mainpage  OPAL  -  Open Phone Abstraction Library
+ 
+
+
+\section Introduction Open Phone Abstraction Library
+
+        This is a Open Source class library for the development of
+        applications that wish to use the SIP and H.323 protocols for
+        multi-media communications over packet based networks.
+
+
+
+
+Last updated 10 May, 2005
+
+Copyright (C) 1999-2003 Equivalence Pty Ltd, All right reserved 
+
+Portions Copyright (C) 2004 Post Increment, All Rights Reserved
+
+
+\section arch Architecture
+
+The fundamental object in the ownership hierarchy is the OpalManager
+class. 
+
+There are endpoint classes, which control the specifics for that particular
+protocol. Thus, SIPEndPoint controls SIP specific things, and H323EndPoint
+controls h.323 specific things. An application would typically create one
+instance of a descendant of either (or both) endpoint classes.
+
+\subsection Flow of the RTP data.  
+The flow of RTP data is from the "source"-->patch-->"sink". The patch is a
+thread which reads from the "source", and writes to the "sink". For example,
+the source OpalMediaStream reads UDP data in, which the patch then writes to a
+sink media stream (e.g. the attached sound card).
+
+
+\subsection Key Opal clases 
+There are four key classes in opal. - OpalManager, OpalEndPoint,
+OpalConnection, and OpalCall.
+
+The OpalManager maintains state on the entire application. 
+
+There is an EndPoint (descended of OpalEndPoint) for each protocol the
+application supports. Thus, you have (for example) the classes
+H323EndPoint, SIPEndPoint, OpalLIDEndPoint, OpalPCSSEndPoint
+
+The Connection class does the state handling for each call of that
+protocol.  Thus, if there are four concurrent H.323 calls being
+handled by the application, there will be four instances of the
+H323Connection class.
+
+The OpalCall provides the glue between two Connection instances. Thus,
+if use a OpalCall class to glue a H323Connection and PCSSConnection,
+H.323 calls are connected to the PC Sound System, and the application
+behaves like ohphone.  Conversely, if OpalCall is used to glue a
+H323Connection and SIP connection together, you have a H.323 - SIP
+gateway.
+
+\section opal Opal Classes 
+Classes with the word "Opal" in their name are independent of
+protocol. Thus, the OpalEndPoint class will be used for the H.323 and
+SIP voip protocols. It is expected that the implementation of any VOIP
+protocol requires the user to subclass from this list.
+
+
+
+The key architectural classes are::
+\li OpalCall 
+\li OpalConnection 
+\li OpalEndPoint 
+\li OpalManager 
+\li OpalMediaFormat
+\li OpalMediaPatch 
+
+
+
+The remaining Opal classes are listed below.
+
+\li OpalAudioFormat 
+\li OpalAudioMediaStream 
+\li OpalFileMediaStream 
+\li OpalFramedTranscoder 
+\li Opal_G711_ALaw_PCM 
+\li Opal_G711_uLaw_PCM 
+\li Opal_G726_16_PCM 
+\li Opal_G726_24_PCM 
+\li Opal_G726_32_PCM 
+\li Opal_G726_40_PCM 
+\li Opal_G726_Transcoder 
+\li Opal_G729_PCM 
+\li OpalGloballyUniqueID 
+\li Opal_GSM0610 
+\li Opal_GSM0610_PCM 
+\li Opal_H261_YUV420P 
+\li Opal_iLBC_13k3_PCM 
+\li Opal_iLBC_15k2_PCM 
+\li Opal_iLBC_Encoder 
+\li OpalInternalTransport
+\li OpalIVRConnection 
+\li OpalIVREndPoint 
+\li OpalIVRMediaStream 
+\li OpalIxJDevice
+\li OpalLIDEndPoint
+\li OpalLIDRegistration
+\li OpalLine
+\li Opal_Linear16Mono_PCM 
+\li OpalLineConnection
+\li OpalLineInterfaceDevice
+\li OpalLineMediaStream
+\li OpalLineSilenceDetector
+\li OpalListener 
+\li OpalListenerIP 
+\li OpalListenerTCP 
+\li OpalListenerUDP 
+\li Opal_LPC10_PCM 
+\li OpalMediaFormatList 
+\li OpalMediaOption 
+\li OpalMediaOptionEnum 
+\li OpalMediaOptionString 
+\li OpalMediaOptionValue 
+\li OpalMediaStream
+\li Opal_MSGSM_PCM 
+\li Opal_MSIMA_PCM 
+\li OpalNullMediaStream 
+\li OpalPCM16SilenceDetector 
+\li Opal_PCM_G711_ALaw 
+\li Opal_PCM_G711_uLaw 
+\li Opal_PCM_G726_16 
+\li Opal_PCM_G726_24 
+\li Opal_PCM_G726_32 
+\li Opal_PCM_G726_40 
+\li Opal_PCM_G729 
+\li Opal_PCM_GSM0610 
+\li Opal_PCM_iLBC_13k3 
+\li Opal_PCM_iLBC_15k2 
+\li Opal_PCM_Linear16Mono 
+\li Opal_PCM_LPC10 
+\li Opal_PCM_MSGSM 
+\li Opal_PCM_MSIMA 
+\li Opal_PCM_Speex_11k 
+\li Opal_PCM_Speex_15k 
+\li Opal_PCM_Speex_18k2 
+\li Opal_PCM_Speex_5k95 
+\li Opal_PCM_Speex_8k 
+\li OpalPCSSConnection 
+\li OpalPCSSEndPoint 
+\li OpalPOTSEndPoint
+\li OpalPSTNEndPoint
+\li OpalRawMediaStream 
+\li OpalRFC2833Info 
+\li OpalRFC2833Proto
+\li Opal_RGB24_RGB24 
+\li Opal_RGB24_YUV420P 
+\li Opal_RGB32_YUV420P 
+\li OpalRTPMediaStream 
+\li OpalSilenceDetector
+\li Opal_Speex_11k_PCM 
+\li Opal_Speex_15k_PCM 
+\li Opal_Speex_18k2_PCM 
+\li Opal_Speex_5k95_PCM 
+\li Opal_Speex_8k_PCM 
+\li Opal_Speex_Decoder 
+\li Opal_Speex_Encoder 
+\li Opal_Speex_Transcoder 
+\li OpalStreamedTranscoder 
+\li OpalT120Protocol 
+\li OpalT38Protocol
+\li OpalTranscoder 
+\li OpalTranscoderRegistration 
+\li OpalTransport
+\li OpalTransportAddress 
+\li OpalTransportIP 
+\li OpalTransportTCP 
+\li OpalTransportUDP 
+\li OpalUncompVideoTranscoder 
+\li OpalVideoMediaStream 
+\li OpalVideoTranscoder 
+\li OpalVoipBlasterDevice
+\li OpalVpbDevice
+\li OpalVXMLSession 
+\li OpalWAVFile 
+\li Opal_YUV420P_H261 
+\li Opal_YUV420P_RGB24 
+\li Opal_YUV420P_RGB32 
+
+Additional information on the working of the IAX2 is \ref pageIAX2Protocol.
+
+\subsection history History
+
+\li 28 February 2005 -  Converted from Doc++ to Doxygen format by Derek Smithies
+
+\li 10 May 2005     - Added some comments to explain data flow in a RTP classes
+
+\li 12 May 2005     - Changed main page to list only the Opal classes.
+
+\li 11 March 2006   - Add link to description of the IAX2 code.
+*/
