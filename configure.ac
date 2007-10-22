@@ -16,8 +16,8 @@ rfc4175=yes
 
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
-REQUIRED_PWLIB_MAJOR=1
-REQUIRED_PWLIB_MINOR=11
+REQUIRED_PWLIB_MAJOR=2
+REQUIRED_PWLIB_MINOR=0
 REQUIRED_PWLIB_BUILD=0
 
 dnl ########################################################################
