@@ -767,8 +767,9 @@ void RTP_DataFrame::PrintOn(ostream & strm) const
 
 unsigned RTP_DataFrame::GetPaddingSize() const
 {
-  if (!GetPadding()) return 0;
-  return PMAX(0, GetPayloadPtr()[payloadSize-1]);
+  if (!GetPadding())
+    return 0;
+  return theArray[payloadSize-1];
 }
 
 #if PTRACING
