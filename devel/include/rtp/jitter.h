@@ -136,9 +136,6 @@ class OpalJitterBuffer : public PObject
   PCLASSINFO(OpalJitterBuffer, PObject);
 
   public:
-#if OPAL_RTP_AGGREGATE
-    friend class RTP_AggregatedHandle;
-#endif
     /**Constructor for this jitter buffer. The size of this buffer can be
        altered later with the SetDelay method */
     OpalJitterBuffer(
@@ -149,7 +146,7 @@ class OpalJitterBuffer : public PObject
     );
     
     /**Destructor, which closes this down and deletes the internal list of frames */
-    ~OpalJitterBuffer();
+    virtual ~OpalJitterBuffer();
 
     /**Report the statistics for this jitter instance */
     void PrintOn(ostream & strm  ) const;
@@ -210,7 +207,7 @@ class OpalJitterBuffer : public PObject
 
     /**Start jitter thread
       */
-    void Resume(PHandleAggregator * aggregator = NULL);
+    virtual void Resume(PHandleAggregator * aggregator = NULL);
 
     PDECLARE_NOTIFIER(PThread, OpalJitterBuffer, JitterThreadMain);
 
@@ -262,8 +259,6 @@ class OpalJitterBuffer : public PObject
     PThread * jitterThread;
     PINDEX    jitterStackSize;
 
-    RTP_AggregatedHandle * aggregratedHandle;
-
     BOOL Init(Entry * & currentReadFrame, BOOL & markerWarning);
     BOOL PreRead(Entry * & currentReadFrame, BOOL & markerWarning);
     BOOL OnRead(Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop);
@@ -278,6 +273,9 @@ class RTP_JitterBuffer : public OpalJitterBuffer
     PCLASSINFO(RTP_JitterBuffer, OpalJitterBuffer);
 
  public:
+#if OPAL_RTP_AGGREGATE
+    friend class RTP_AggregatedHandle;
+#endif
         RTP_JitterBuffer(
 	    RTP_Session & session,   ///<  Associated RTP session tor ead data from
 	    unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
@@ -285,7 +283,7 @@ class RTP_JitterBuffer : public OpalJitterBuffer
 	    unsigned timeUnits = 8,  ///<  Time units, usually 8 or 16
 	    PINDEX stackSize = 30000 ///<  Stack size for jitter thread
 	    );
-	
+        virtual ~RTP_JitterBuffer();
 	
     /**This class instance collects data from the outside world in this
        method.
@@ -296,9 +294,14 @@ class RTP_JitterBuffer : public OpalJitterBuffer
 	BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
 	) ;
 
+    /**Start jitter thread
+      */
+    virtual void Resume(PHandleAggregator * aggregator = NULL);
+
  protected:
 	/**This class extracts data from the outside world by reading from this session variable */
    RTP_Session & session;
+   RTP_AggregatedHandle * aggregatedHandle;
 };
 
 

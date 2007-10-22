@@ -385,10 +385,6 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
 #else
   analyser = NULL;
 #endif
-
-#if OPAL_RTP_AGGREGATE
-  aggregratedHandle = NULL;
-#endif
 }
 
 
@@ -396,24 +392,13 @@ OpalJitterBuffer::~OpalJitterBuffer()
 {
   shuttingDown = TRUE;
 
-#if OPAL_RTP_AGGREGATE
-  if (jitterThread == NULL) {
-      if (aggregatedHandle != NULL) {
-	  aggregratedHandle->Remove();
-	  delete aggregratedHandle;  
-	  aggregratedHandle = NULL;
-      }
-  } else 
-#endif
-  {
-      if (jitterThread != NULL) {
-	  PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
-	  PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
-	  delete jitterThread;
-	  jitterThread = NULL;
-      } else {
-	  PTRACE(1, "RTP\tJitter buffer thread is null, when the OpalJitterBuffer destructor runs");
-      }
+  if (jitterThread != NULL) {
+    PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
+    PAssert(jitterThread->WaitForTermination(10000), "Jitter buffer thread did not terminate");
+    delete jitterThread;
+    jitterThread = NULL;
+  } else {
+    PTRACE(1, "RTP\tJitter buffer thread is null, when the OpalJitterBuffer destructor runs");
   }
   bufferMutex.Wait();
 
@@ -510,21 +495,8 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
   bufferMutex.Signal();
 }
 
-void OpalJitterBuffer::Resume(PHandleAggregator * 
-#if OPAL_RTP_AGGREGATE
-                              aggregator
-#endif
-                              )
+void OpalJitterBuffer::Resume(PHandleAggregator * /*aggregator */)
 {
-#if OPAL_RTP_AGGREGATE
-  // if we are aggregating RTP threads, add the socket to the RTP aggregator
-  if (aggregator != NULL) {
-    aggregratedHandle = new RTP_AggregatedHandle(aggregator, *this);
-    aggregator->AddHandle(aggregratedHandle);
-    return;
-  }
-#endif
-
   // otherwise create a seperate thread as per the old design
   jitterThread = PThread::Create(PCREATE_NOTIFIER(JitterThreadMain), 0, PThread::NoAutoDeleteThread, PThread::HighestPriority, "RTP Jitter:%x",  jitterStackSize);
   jitterThread->Resume();
@@ -1019,8 +991,22 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
                                    PINDEX stackSize)
     : OpalJitterBuffer(minJitterDelay, maxJitterDelay, time, stackSize),
       session(sess)
+#if OPAL_RTP_AGGREGATE
+      , aggregatedHandle(NULL)
+#endif
 {
     PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
+}
+
+RTP_JitterBuffer::~RTP_JitterBuffer() 
+{
+#if OPAL_RTP_AGGREGATE
+  if (aggregatedHandle != NULL) {
+    aggregatedHandle->Remove();
+    delete aggregatedHandle;  
+    aggregatedHandle = NULL;
+  }
+#endif
 }
 
 BOOL RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
@@ -1029,6 +1015,20 @@ BOOL RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
     BOOL success = session.ReadData(frame, loop);
     PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
     return success;
+}
+
+void RTP_JitterBuffer::Resume(PHandleAggregator * aggregator)
+{
+#if OPAL_RTP_AGGREGATE
+  // if we are aggregating RTP threads, add the socket to the RTP aggregator
+  if (aggregator != NULL) {
+    aggregatedHandle = new RTP_AggregatedHandle(aggregator, *this);
+    aggregator->AddHandle(aggregatedHandle);
+    return;
+  }
+#endif
+
+  OpalJitterBuffer::Resume(aggregator);
 }
 
 
