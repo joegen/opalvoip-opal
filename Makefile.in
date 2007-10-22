@@ -633,7 +633,7 @@ CLEAN_FILES = $(OPAL_LIB)
 
 ####################################################
 
-include @PWLIBDIR@/make/common.mak
+include @PTLIBDIR@/make/common.mak
 
 PROG=opal
 ####################################################
@@ -671,7 +671,7 @@ $(LIBDIR)/$(OPAL_FILE) : $(TARGETLIB)
 
 ifeq ($(P_SHAREDLIB),1)
 
-  SYSLIBS += -L$(PW_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
+  SYSLIBS += -L$(PT_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
   ifeq ($(OSTYPE),beos)
     # BeOS requires different options when building shared libraries
     LDSOOPTS = -nostdlib -nostart
