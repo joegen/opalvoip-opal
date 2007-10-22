@@ -985,6 +985,25 @@ void SIPMIMEInfo::SetFrom(const PString & v)
   SetAt(compactForm ? "f" : "From",  v);
 }
 
+PString SIPMIMEInfo::GetPAssertedIdentity() const
+{
+  return (*this)["P-Asserted-Identity"];
+}
+
+void SIPMIMEInfo::SetPAssertedIdentity(const PString & v)
+{
+  SetAt("P-Asserted-Identity", v);
+}
+
+PString SIPMIMEInfo::GetPPreferredIdentity() const
+{
+  return (*this)["P-Preferred-Identity"];
+}
+
+void SIPMIMEInfo::SetPPreferredIdentity(const PString & v)
+{
+  SetAt("P-Preferred-Identity", v);
+}
 
 PString SIPMIMEInfo::GetCallID() const
 {

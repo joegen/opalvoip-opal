@@ -392,6 +392,12 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetFrom() const;
     void SetFrom(const PString & v);
 
+    PString GetPAssertedIdentity() const;
+    void SetPAssertedIdentity(const PString & v);
+
+    PString GetPPreferredIdentity() const;
+    void SetPPreferredIdentity(const PString & v);
+
     PString GetAccept() const;
     void SetAccept(const PString & v);
 
