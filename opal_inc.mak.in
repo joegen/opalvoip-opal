@@ -87,17 +87,17 @@
 #
 
 OPALDIR=@OPALDIR@
-PWLIBDIR=@PWLIBDIR@
+PTLIBDIR=@PTLIBDIR@
 
 LIBDIRS += $(OPALDIR)
 
 ifdef LIBRARY_MAKEFILE
-include $(PWLIBDIR)/make/unix.mak
+include $(PTLIBDIR)/make/unix.mak
 else
 ifdef NOTRACE
 OBJDIR_SUFFIX := n
 endif
-include $(PWLIBDIR)/make/ptlib.mak
+include $(PTLIBDIR)/make/ptlib.mak
 endif
 
 OPAL_SRCDIR = $(OPALDIR)/src
