@@ -887,10 +887,20 @@ BOOL OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaForm
 
     PTRACE(3, "OpalCon\tOpenSourceMediaStream for session " << sessionID << " on " << *this);
 
+    // see if sink stream already opened, so we can ensure symmetric codecs
+    OpalMediaFormatList toFormats = mediaFormats;
+    {
+      OpalMediaStream * sink = GetMediaStream(sessionID, FALSE);
+      if (sink != NULL) {
+        PTRACE(3, "OpalCon\tOpenSourceMediaStream reordering codec for sink stream format " << sink->GetMediaFormat());
+        toFormats.Reorder(sink->GetMediaFormat());
+      }
+    }
+
     OpalMediaFormat sourceFormat, destinationFormat;
     if (!OpalTranscoder::SelectFormats(sessionID,
                                       GetMediaFormats(),
-                                      mediaFormats,
+                                      toFormats,
                                       sourceFormat,
                                       destinationFormat)) {
       PTRACE(2, "OpalCon\tOpenSourceMediaStream session " << sessionID
