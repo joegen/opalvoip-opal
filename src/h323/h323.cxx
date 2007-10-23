@@ -4072,6 +4072,15 @@ BOOL H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingChanne
   }
 
   if (!fromRemote) {
+    // close the source media stream so it will be re-established
+    OpalMediaStream* stream = NULL;
+    stream = conflictingChannel.GetMediaStream();
+    if (stream != NULL) {
+      OpalMediaPatch * patch = stream->GetPatch();
+      if (patch != NULL) 
+        patch->GetSource().Close();
+    }
+
     conflictingChannel.Close();
     H323Capability * capability = remoteCapabilities.FindCapability(channel->GetCapability());
     if (capability == NULL) {

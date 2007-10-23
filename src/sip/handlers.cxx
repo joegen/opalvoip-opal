@@ -115,11 +115,23 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   targetAddress.Parse(to);
   remotePartyAddress = targetAddress.AsQuotedString();
 
-  transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-
   authenticationAttempts = 0;
 
-  const SIPURL & proxy = endpoint.GetProxy();
+  // Look for a "proxy" parameter to override default proxy
+  const PStringToString& params = targetAddress.GetParamVars();
+  SIPURL proxy;
+  if (params.Contains("proxy")) {
+    proxy.Parse(params("proxy"));
+    targetAddress.SetParamVar("proxy", PString::Empty());
+  }
+
+  if (proxy.IsEmpty())
+    proxy = endpoint.GetProxy();
+
+  if (!proxy.IsEmpty())
+    transport = endpoint.CreateTransport(proxy.GetHostAddress());
+  else
+    transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
 
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
