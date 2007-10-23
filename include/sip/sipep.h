@@ -953,7 +953,7 @@ class SIPEndPoint : public OpalEndPoint
      * If the transport is not running, the first listener transport
      * will be used, if any.
      */
-    SIPURL GetLocalURL(
+    virtual SIPURL GetLocalURL(
        const OpalTransport & transport,             ///< Transport on which we can receive new requests
        const PString & userName = PString::Empty()  ///< The user name part of the contact field
     );

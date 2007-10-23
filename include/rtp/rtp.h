@@ -443,6 +443,11 @@ class RTP_DataFrame : public PBYTEArray
     BOOL GetMarker() const { return (theArray[1]&0x80) != 0; }
     void SetMarker(BOOL m);
 
+    BOOL GetPadding() const;
+    void SetPadding(BOOL v);
+
+    unsigned GetPaddingSize() const;
+
     PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
     void         SetPayloadType(PayloadTypes t);
 
