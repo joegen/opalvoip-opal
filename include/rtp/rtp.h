@@ -443,8 +443,8 @@ class RTP_DataFrame : public PBYTEArray
     BOOL GetMarker() const { return (theArray[1]&0x80) != 0; }
     void SetMarker(BOOL m);
 
-    BOOL GetPadding() const;
-    void SetPadding(BOOL v);
+    BOOL GetPadding() const { return (theArray[0]&0x20) != 0; }
+    void SetPadding(BOOL v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
 
     unsigned GetPaddingSize() const;
 
@@ -472,7 +472,7 @@ class RTP_DataFrame : public PBYTEArray
     BOOL   SetExtensionSize(PINDEX sz);
     BYTE * GetExtensionPtr() const;
 
-    PINDEX GetPayloadSize() const { return payloadSize; }
+    PINDEX GetPayloadSize() const { return payloadSize - GetPaddingSize(); }
     BOOL   SetPayloadSize(PINDEX sz);
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
 
@@ -525,9 +525,6 @@ class RTP_ControlFrame : public PBYTEArray
     void EndPacket();
 
     PINDEX GetCompoundSize() const;
-
-    BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
-    void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
 
     void Reset(PINDEX size);
 
