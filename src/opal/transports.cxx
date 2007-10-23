@@ -935,6 +935,14 @@ BOOL OpalInternalIPTransport::GetAdjustedIpAndPort(const OpalTransportAddress & 
       port = 0;
       return address.GetIpAddress(ip);
 
+    case OpalTransportAddress::RouteInterface :
+      if (address.GetIpAndPort(ip, port))
+        ip = PIPSocket::GetRouteInterfaceAddress(ip);
+      else
+        ip = PIPSocket::GetDefaultIpAny();
+      port = 0;
+      return TRUE;
+
     default :
       port = endpoint.GetDefaultSignalPort();
       return address.GetIpAndPort(ip, port);
