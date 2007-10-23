@@ -592,9 +592,9 @@ BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 }
 
 
+#if P_EXPAT
 BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
-#if P_EXPAT
   PString body = request.GetEntityBody();
   SIPURL from = request.GetMIME().GetFrom();
   PString basic;
@@ -639,10 +639,14 @@ BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 
   from.AdjustForRequestURI();
   endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
-#endif
-
   return TRUE;
 }
+#else
+BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU &)
+{
+  return TRUE;
+}
+#endif
 
 
 void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes reason)
