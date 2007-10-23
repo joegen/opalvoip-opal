@@ -379,10 +379,8 @@ Q931 & Q931::operator=(const Q931 & other)
   fromDestination = other.fromDestination;
   protocolDiscriminator = other.protocolDiscriminator;
   messageType = other.messageType;
-
-  informationElements.RemoveAll();
-  for (PINDEX i = 0; i < other.informationElements.GetSize(); i++)
-    informationElements.SetAt(other.informationElements.GetKeyAt(i), new PBYTEArray(other.informationElements.GetDataAt(i)));
+  informationElements = other.informationElements;
+  informationElements.MakeUnique();
 
   return *this;
 }
@@ -533,12 +531,12 @@ BOOL Q931::Decode(const PBYTEArray & data)
   PINDEX offset = 5;
   while (offset < data.GetSize()) {
     // Get field discriminator
-    int discriminator = data[offset++];
-
-    PBYTEArray * item = new PBYTEArray;
+    InformationElementCodes discriminator = (InformationElementCodes)data[offset++];
 
     // For discriminator with high bit set there is no data
-    if ((discriminator&0x80) == 0) {
+    if ((discriminator&0x80) != 0)
+      SetIE(discriminator, PBYTEArray(), TRUE);
+    else {
       int len = data[offset++];
 
       if (discriminator == UserUserIE) {
@@ -560,11 +558,10 @@ BOOL Q931::Decode(const PBYTEArray & data)
       if (offset + len > data.GetSize())
         return FALSE;
 
-      memcpy(item->GetPointer(len), (const BYTE *)data+offset, len);
+      SetIE(discriminator, PBYTEArray((const BYTE *)data+offset, len), TRUE);
+
       offset += len;
     }
-
-    informationElements.SetAt(discriminator, item);
   }
 
   return TRUE;
@@ -577,11 +574,13 @@ BOOL Q931::Encode(PBYTEArray & data) const
   unsigned discriminator;
   for (discriminator = 0; discriminator < 256; discriminator++) {
     if (informationElements.Contains(discriminator)) {
-      if (discriminator < 128)
-        totalBytes += informationElements[discriminator].GetSize() +
-                            (discriminator != UserUserIE ? 2 : 4);
-      else
-        totalBytes++;
+      const InternalInformationElement & element = informationElements[discriminator];
+      for (PINDEX idx = 0; idx < element.GetSize(); idx++) {
+        if (discriminator < 128)
+          totalBytes += element[idx].GetSize() + (discriminator != UserUserIE ? 2 : 4);
+        else
+          totalBytes++;
+      }
     }
   }
 
@@ -604,28 +603,31 @@ BOOL Q931::Encode(PBYTEArray & data) const
   PINDEX offset = 5;
   for (discriminator = 0; discriminator < 256; discriminator++) {
     if (informationElements.Contains(discriminator)) {
-      if (discriminator < 128) {
-        int len = informationElements[discriminator].GetSize();
+      const InternalInformationElement & element = informationElements[discriminator];
+      for (PINDEX i = 0; i < element.GetSize(); i++) {
+        if (discriminator < 128) {
+          int len = element[i].GetSize();
 
-        if (discriminator != UserUserIE) {
-          data[offset++] = (BYTE)discriminator;
-          data[offset++] = (BYTE)len;
-        }
-        else {
-          len++; // Allow for protocol discriminator
-          data[offset++] = (BYTE)discriminator;
-          data[offset++] = (BYTE)(len >> 8);
-          data[offset++] = (BYTE)len;
-          len--; // Then put the length back again
-          // We shall assume that the user-user field is an ITU protocol block (5)
-          data[offset++] = 5;
-        }
+          if (discriminator != UserUserIE) {
+            data[offset++] = (BYTE)discriminator;
+            data[offset++] = (BYTE)len;
+          }
+          else {
+            len++; // Allow for protocol discriminator
+            data[offset++] = (BYTE)discriminator;
+            data[offset++] = (BYTE)(len >> 8);
+            data[offset++] = (BYTE)len;
+            len--; // Then put the length back again
+            // We shall assume that the user-user field is an ITU protocol block (5)
+            data[offset++] = 5;
+          }
 
-        memcpy(&data[offset], (const BYTE *)informationElements[discriminator], len);
-        offset += len;
+          memcpy(&data[offset], (const BYTE *)element[i], len);
+          offset += len;
+        }
+        else
+          data[offset++] = (BYTE)discriminator;
       }
-      else
-        data[offset++] = (BYTE)discriminator;
     }
   }
 
@@ -646,28 +648,31 @@ void Q931::PrintOn(ostream & strm) const
 
   for (unsigned discriminator = 0; discriminator < 256; discriminator++) {
     if (informationElements.Contains(discriminator)) {
-      strm << setw(indent+4) << "IE: " << (InformationElementCodes)discriminator;
-      if (discriminator == CauseIE) {
-        if (informationElements[discriminator].GetSize() > 1)
-          strm << " - " << (CauseValues)(informationElements[discriminator][1]&0x7f);
-      }
-      strm << " = {\n"
-           << hex << setfill('0') << resetiosflags(ios::floatfield)
-           << setprecision(indent+2) << setw(16);
+      const InternalInformationElement & element = informationElements[discriminator];
+      for (PINDEX idx = 0; idx < element.GetSize(); idx++) {
+        strm << setw(indent+4) << "IE: " << (InformationElementCodes)discriminator;
+        if (discriminator == CauseIE) {
+          if (element[idx].GetSize() > 1)
+            strm << " - " << (CauseValues)(element[idx][1]&0x7f);
+        }
+        strm << " = {\n"
+             << hex << setfill('0') << resetiosflags(ios::floatfield)
+             << setprecision(indent+2) << setw(16);
 
-      PBYTEArray value = informationElements[discriminator];
-      if (value.GetSize() <= 32 || (flags&ios::floatfield) != ios::fixed)
-        strm << value;
-      else {
-        PBYTEArray truncatedArray(value, 32);
-        strm << truncatedArray << '\n'
-             << setfill(' ')
-             << setw(indent+5) << "...";
-      }
+        PBYTEArray value = element[idx];
+        if (value.GetSize() <= 32 || (flags&ios::floatfield) != ios::fixed)
+          strm << value;
+        else {
+          PBYTEArray truncatedArray(value, 32);
+          strm << truncatedArray << '\n'
+               << setfill(' ')
+               << setw(indent+5) << "...";
+        }
 
-      strm << dec << setfill(' ')
-           << '\n'
-           << setw(indent+2) << "}\n";
+        strm << dec << setfill(' ')
+             << '\n'
+             << setw(indent+2) << "}\n";
+      }
     }
   }
 
@@ -768,18 +773,24 @@ BOOL Q931::HasIE(InformationElementCodes ie) const
 }
 
 
-PBYTEArray Q931::GetIE(InformationElementCodes ie) const
+PBYTEArray Q931::GetIE(InformationElementCodes ie, PINDEX idx) const
 {
   if (informationElements.Contains(POrdinalKey(ie)))
-    return informationElements[ie];
+    return informationElements[ie][idx];
 
   return PBYTEArray();
 }
 
 
-void Q931::SetIE(InformationElementCodes ie, const PBYTEArray & userData)
+void Q931::SetIE(InformationElementCodes ie, const PBYTEArray & userData, BOOL append)
 {
-  informationElements.SetAt(ie, new PBYTEArray(userData));
+  if (append && informationElements.Contains(ie))
+    informationElements[ie].Append(new PBYTEArray(userData));
+  else {
+    InternalInformationElement * element = new InternalInformationElement;
+    element->Append(new PBYTEArray(userData));
+    informationElements.SetAt(ie, element);
+  }
 }
 
 void Q931::RemoveIE(InformationElementCodes ie)
