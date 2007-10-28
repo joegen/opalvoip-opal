@@ -147,7 +147,7 @@ extern "C" {
 #    define DIR_SEPERATOR "\\"
 #    define DIR_TOKENISER ";"
 #  else
-#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/pwlib"
+#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/ptlib"
 #    define DIR_SEPERATOR "/"
 #    define DIR_TOKENISER ":"
 #  endif
