@@ -71,11 +71,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/fax/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/pwlib/codecs/fax/
+	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/fax/
+	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/fax/
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/pwlib/codecs/fax/$(PLUGIN)
+	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/fax/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)
