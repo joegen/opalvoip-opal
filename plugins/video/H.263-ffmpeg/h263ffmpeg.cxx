@@ -1569,7 +1569,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263CIFDesc,                        // text decription
@@ -1602,7 +1603,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263CIFDesc,                        // text decription
@@ -1703,7 +1705,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263Desc,                           // text decription
@@ -1736,7 +1738,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263Desc,                           // text decription
