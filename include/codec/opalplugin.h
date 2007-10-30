@@ -254,7 +254,6 @@ enum PluginCodec_Flags {
   PluginCodec_MediaTypeVideo         = 0x0001,
   PluginCodec_MediaTypeAudioStreamed = 0x0002,
   PluginCodec_MediaTypeFax           = 0x0003,
-  PluginCodec_MediaTypeExtVideo      = 0x0004,
 
   PluginCodec_InputTypeMask          = 0x0010,
   PluginCodec_InputTypeRaw           = 0x0000,
@@ -279,6 +278,9 @@ enum PluginCodec_Flags {
   PluginCodec_EncodeSilenceMask      = 0x0200,
   PluginCodec_NoEncodeSilence        = 0x0000,
   PluginCodec_EncodeSilence          = 0x0200,
+
+  PluginCodec_MediaExtensionMask     = 0x0400,
+  PluginCodec_MediaTypeExtVideo      = 0x0400,
 
   PluginCodec_BitsPerSamplePos       = 12,
   PluginCodec_BitsPerSampleMask      = 0xf000,
