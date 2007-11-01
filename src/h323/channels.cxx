@@ -816,6 +816,7 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
     return;
 
   switch (type.GetTag()) {
+#if OPAL_VIDEO
     case H245_MiscellaneousCommand_type::e_videoFastUpdatePicture :
       mediaStream->ExecuteCommand(OpalVideoUpdatePicture());
       break;
@@ -833,6 +834,7 @@ void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & 
         mediaStream->ExecuteCommand(OpalVideoUpdatePicture(vfuMB.m_firstGOB, vfuMB.m_firstMB, vfuMB.m_numberOfMBs));
       }
       break;
+#endif
   }
 }
 
