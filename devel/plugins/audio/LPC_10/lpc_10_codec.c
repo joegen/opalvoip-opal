@@ -88,29 +88,43 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
                                        unsigned * toLen,
                                    unsigned int * flag)
 {
-  int i;
-  INT32 bits[BitsPerFrame];
-  real speech[SamplesPerFrame];
   unsigned char * buffer = (unsigned char *)to;
   const short * sampleBuffer = (const short *)from;
+  real speech[SamplesPerFrame];
+  INT32 bits[BitsPerFrame];
+  int i;
+  int stat = 0;
 
-  if ((*fromLen)/2 != SamplesPerFrame || *toLen < BytesPerFrame)
-    return 0;
+  int srcSize = 0;
+  int dstSize = 0;
 
-  for (i = 0; i < SamplesPerFrame; i++)
-    speech[i] = (real)(sampleBuffer[i]/SampleValueScale);
+  for (;;) {
 
-  lpc10_encode(speech, bits, (struct lpc10_encoder_state *)context);
+    if (((*fromLen-srcSize)/2) < SamplesPerFrame || ((*toLen-dstSize) < BytesPerFrame))
+      break;
 
-  memset(to, 0, BytesPerFrame);
-  for (i = 0; i < BitsPerFrame; i++) {
-    if (bits[i])
-      buffer[i>>3] |= 1 << (i&7);
+    for (i = 0; i < SamplesPerFrame; i++)
+      speech[i] = (real)(*sampleBuffer++/SampleValueScale);
+
+    lpc10_encode(speech, bits, (struct lpc10_encoder_state *)context);
+
+    memset(buffer, 0, BytesPerFrame);
+    for (i = 0; i < BitsPerFrame; i++) {
+      if (bits[i])
+        buffer[i>>3] |= 1 << (i&7);
+    }
+    buffer += BytesPerFrame;
+
+    srcSize += SamplesPerFrame*2;
+    dstSize += BytesPerFrame;
+
+    stat = 1;
   }
 
-  *toLen = BytesPerFrame;
+  *fromLen = srcSize;
+  *toLen   = dstSize;
 
-  return 1;
+  return stat;
 }
 
 static void destroy_encoder(const struct PluginCodec_Definition * codec, void * context)
@@ -134,31 +148,45 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
                                    unsigned int * flag)
 {
   int i;
-  INT32 bits[BitsPerFrame];
-  real speech[SamplesPerFrame];
   short * sampleBuffer = (short *)to;
   const unsigned char * buffer = (const unsigned char *)from;
+  INT32 bits[BitsPerFrame];
+  real speech[SamplesPerFrame];
+  int stat = 0;
+  
+  int srcSize = 0;
+  int dstSize = 0;
 
-  if (*fromLen < BytesPerFrame || *toLen < SamplesPerFrame*2)
-    return 0;
+  for (;;) {
 
-  for (i = 0; i < BitsPerFrame; i++)
-    bits[i] = (buffer[i>>3]&(1<<(i&7))) != 0;
+    if ((*fromLen-srcSize) < BytesPerFrame || (*toLen-dstSize) < SamplesPerFrame*2)
+      break;
 
-  lpc10_decode(bits, speech, (struct lpc10_decoder_state *)context);
+    for (i = 0; i < BitsPerFrame; i++)
+      bits[i] = (buffer[i>>3]&(1<<(i&7))) != 0;
+    buffer += BytesPerFrame;
 
-  for (i = 0; i < SamplesPerFrame; i++) {
-    real sample = (real)(speech[i]*SampleValueScale);
-    if (sample < MinSampleValue)
-      sample = MinSampleValue;
-    else if (sample > MaxSampleValue)
-      sample = MaxSampleValue;
-    sampleBuffer[i] = (short)sample;
+    lpc10_decode(bits, speech, (struct lpc10_decoder_state *)context);
+
+    for (i = 0; i < SamplesPerFrame; i++) {
+      real sample = (real)(speech[i]*SampleValueScale);
+      if (sample < MinSampleValue)
+        sample = MinSampleValue;
+      else if (sample > MaxSampleValue)
+        sample = MaxSampleValue;
+      *sampleBuffer++ = (short)sample;
+    }
+
+    srcSize += BytesPerFrame;
+    dstSize += SamplesPerFrame*2;
+
+    stat = 1;
   }
 
-  *toLen = SamplesPerFrame*2;
+  *fromLen = srcSize;
+  *toLen   = dstSize;
 
-  return 1;
+  return stat;
 }
 
 static void destroy_decoder(const struct PluginCodec_Definition * codec, void * context)
