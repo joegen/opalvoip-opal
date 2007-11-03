@@ -241,6 +241,7 @@
  */
 
 #include <ptlib.h>
+#include <ptbuildopts.h>
 
 #ifdef __GNUC__
 #pragma implementation "connection.h"
@@ -1064,7 +1065,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
   // before the audio is passed on to the sound card (or other output device)
 
   // Pass the 16 bit PCM audio through the DTMF decoder   
-#if PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11
+#if (PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11) || defined(PTLIB_MAJOR)
   PString tones = dtmfDecoder.Decode((short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/2);
 #else
   PString tones = dtmfDecoder.Decode(frame.GetPayloadPtr(), frame.GetPayloadSize());

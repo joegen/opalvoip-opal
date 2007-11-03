@@ -470,7 +470,7 @@ class SIPAuthentication : public PObject
       const PString & password = PString::Empty()
     );
 
-#if PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11
+#if (PWLIB_MAJOR >= 1 && PWLIB_MINOR >= 11) || defined (PTLIB_MAJOR)
     SIPAuthentication & operator =(const SIPAuthentication & auth)
     {
       isProxy   = auth.isProxy;
