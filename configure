@@ -2609,8 +2609,8 @@ iax=yes
 audio=yes
 video=yes
 
-REQUIRED_PWLIB_MAJOR=1
-REQUIRED_PWLIB_MINOR=11
+REQUIRED_PWLIB_MAJOR=2
+REQUIRED_PWLIB_MINOR=1
 REQUIRED_PWLIB_BUILD=0
 
 
@@ -2684,9 +2684,9 @@ fi
 
 fi
 if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  as_ac_File=`echo "ac_cv_file_${OPALDIR}/../pwlib/version.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${OPALDIR}/../pwlib/version.h" >&5
-echo $ECHO_N "checking for ${OPALDIR}/../pwlib/version.h... $ECHO_C" >&6
+  as_ac_File=`echo "ac_cv_file_${OPALDIR}/../ptlib/version.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${OPALDIR}/../ptlib/version.h" >&5
+echo $ECHO_N "checking for ${OPALDIR}/../ptlib/version.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2694,7 +2694,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${OPALDIR}/../pwlib/version.h"; then
+if test -r "${OPALDIR}/../ptlib/version.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2707,11 +2707,11 @@ if test `eval echo '${'$as_ac_File'}'` = yes; then
 fi
 
   if test "${HAS_PTLIB:-unset}" != "unset" ; then
-    PWLIBDIR="${OPALDIR}/../pwlib"
+    PWLIBDIR="${OPALDIR}/../ptlib"
   else
-    as_ac_File=`echo "ac_cv_file_${HOME}/pwlib/include/ptlib.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${HOME}/pwlib/include/ptlib.h" >&5
-echo $ECHO_N "checking for ${HOME}/pwlib/include/ptlib.h... $ECHO_C" >&6
+    as_ac_File=`echo "ac_cv_file_${HOME}/ptlib/include/ptlib.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${HOME}/ptlib/include/ptlib.h" >&5
+echo $ECHO_N "checking for ${HOME}/ptlib/include/ptlib.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2719,7 +2719,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${HOME}/pwlib/include/ptlib.h"; then
+if test -r "${HOME}/ptlib/include/ptlib.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2732,7 +2732,7 @@ if test `eval echo '${'$as_ac_File'}'` = yes; then
 fi
 
     if test "${HAS_PTLIB:-unset}" != "unset" ; then
-      PWLIBDIR="${HOME}/pwlib"
+      PWLIBDIR="${HOME}/ptlib"
     else
       echo "$as_me:$LINENO: checking for /usr/local/include/ptlib.h" >&5
 echo $ECHO_N "checking for /usr/local/include/ptlib.h... $ECHO_C" >&6
