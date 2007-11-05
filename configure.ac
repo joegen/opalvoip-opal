@@ -72,7 +72,7 @@ dnl ########################################################################
 dnl look for ptlib, use a preference order of explicit PTLIBDIR, directory
 dnl at same level, home directory, /usr/local or /usr.
 
-if test test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
+if test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
   PTLIBDIR=$PWLIBDIR
 fi
 if test "${PTLIBDIR:-unset}" != "unset" ; then

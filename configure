@@ -3079,7 +3079,7 @@ echo "$as_me: Opal version is ${OPAL_VERSION}" >&6;};
 
 
 
-if test test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
+if test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
   PTLIBDIR=$PWLIBDIR
 fi
 if test "${PTLIBDIR:-unset}" != "unset" ; then
