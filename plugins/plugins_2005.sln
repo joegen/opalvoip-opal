@@ -37,9 +37,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyG728 Audio Codec", "aud
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Common ISDN API LID", "LID\CAPI\CAPI_2005.vcproj", "{73808A58-6491-4948-8441-90C8F35B7F59}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\..\pwlib\src\ptlib\msos\Console_2005.vcproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib Static", "..\..\ptlib\src\ptlib\msos\Console_2005.vcproj", "{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\..\pwlib\src\ptlib\msos\PTLib_2005.vcproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PTLib DLL", "..\..\ptlib\src\ptlib\msos\PTLib_2005.vcproj", "{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "..\src\win32\opal_lib_2005.vcproj", "{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
 EndProject
