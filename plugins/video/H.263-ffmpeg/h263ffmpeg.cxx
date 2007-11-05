@@ -843,6 +843,8 @@ class H263EncoderContext
       CIF, 
       CIF4, 
       CIF16, 
+      i480,
+	  p720,
       NumStdSizes,
       UnknownStdSize = NumStdSizes
     };
@@ -858,6 +860,8 @@ class H263EncoderContext
         {  352,  288}, // CIF
         {  704,  576}, // 4CIF
         { 1408, 1152}, // 16CIF
+        {  640,  480}, // i480
+        { 1280,  720}, // p720
       };
 
       int sizeIndex;
@@ -1571,7 +1575,6 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263CIFDesc,                        // text decription
@@ -1605,7 +1608,6 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
-  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263CIFDesc,                        // text decription
@@ -1707,6 +1709,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263Desc,                           // text decription
@@ -1740,6 +1743,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263Desc,                           // text decription
