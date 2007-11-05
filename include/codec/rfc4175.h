@@ -24,6 +24,10 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: rfc4175.h,v $
+ * Revision 1.6.6.1  2007/10/10 06:54:26  csoutheren
+ * Updates to RFC4175 to deal with transmission over a wire
+ * Not finished yet :)
+ *
  * Revision 1.6  2007/09/11 15:48:35  csoutheren
  * Implemented RC4175 RGB
  *
@@ -111,7 +115,7 @@ class OpalRFC4175Encoder : public OpalRFC4175Transcoder
 
   protected:
     virtual void StartEncoding(const RTP_DataFrame & input);
-    virtual void EncodeFrames() = 0;
+    virtual void EndEncoding() = 0;
 
     void EncodeFullFrame();
     void EncodeScanLineSegment(PINDEX y, PINDEX offs, PINDEX width);
@@ -160,6 +164,8 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     BOOL  first;
     DWORD lastSequenceNumber;
     DWORD lastTimeStamp;
+    BOOL  waitingForMarker;
+    PINDEX packetCount;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -170,7 +176,7 @@ class Opal_RFC4175YCbCr420_to_YUV420P : public OpalRFC4175Decoder
 {
   PCLASSINFO(Opal_RFC4175YCbCr420_to_YUV420P, OpalRFC4175Decoder);
   public:
-    Opal_RFC4175YCbCr420_to_YUV420P() : OpalRFC4175Decoder(OpalYUV420P, OpalRFC4175YCbCr420) { }
+    Opal_RFC4175YCbCr420_to_YUV420P() : OpalRFC4175Decoder(OpalRFC4175YCbCr420, OpalYUV420P) { }
     PINDEX GetPgroupSize() const        { return 6; }       
     PINDEX GetColsPerPgroup() const     { return 2; }   
     PINDEX GetRowsPerPgroup() const     { return 2; }
@@ -185,7 +191,7 @@ class Opal_YUV420P_to_RFC4175YCbCr420 : public OpalRFC4175Encoder
 {
   PCLASSINFO(Opal_YUV420P_to_RFC4175YCbCr420, OpalRFC4175Encoder);
   public:
-    Opal_YUV420P_to_RFC4175YCbCr420() : OpalRFC4175Encoder(OpalRFC4175YCbCr420, OpalYUV420P) { }
+    Opal_YUV420P_to_RFC4175YCbCr420() : OpalRFC4175Encoder(OpalYUV420P, OpalRFC4175YCbCr420) { }
     PINDEX GetPgroupSize() const        { return 6; }       
     PINDEX GetColsPerPgroup() const     { return 2; }   
     PINDEX GetRowsPerPgroup() const     { return 2; }
@@ -194,7 +200,7 @@ class Opal_YUV420P_to_RFC4175YCbCr420 : public OpalRFC4175Encoder
     PINDEX BytesToPixels(PINDEX bytes) const  { return bytes * 8 / 12; }
 
     void StartEncoding(const RTP_DataFrame & input);
-    void EncodeFrames();
+    void EndEncoding();
 
   protected:
     BYTE * srcYPlane;
@@ -208,7 +214,7 @@ class Opal_RFC4175RGB_to_RGB24 : public OpalRFC4175Decoder
 {
   PCLASSINFO(Opal_RFC4175RGB_to_RGB24, OpalRFC4175Decoder);
   public:
-    Opal_RFC4175RGB_to_RGB24() : OpalRFC4175Decoder(OpalRGB24, OpalRFC4175RGB) { }
+    Opal_RFC4175RGB_to_RGB24() : OpalRFC4175Decoder(OpalRFC4175RGB, OpalRGB24) { }
     PINDEX GetPgroupSize() const        { return 3; }       
     PINDEX GetColsPerPgroup() const     { return 1; }   
     PINDEX GetRowsPerPgroup() const     { return 1; }
@@ -223,7 +229,7 @@ class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder
 {
   PCLASSINFO(Opal_RGB24_to_RFC4175RGB, OpalRFC4175Encoder);
   public:
-    Opal_RGB24_to_RFC4175RGB() : OpalRFC4175Encoder(OpalRFC4175RGB, OpalRGB24) { }
+    Opal_RGB24_to_RFC4175RGB() : OpalRFC4175Encoder(OpalRGB24, OpalRFC4175RGB) { }
     PINDEX GetPgroupSize() const        { return 3; }       
     PINDEX GetColsPerPgroup() const     { return 1; }   
     PINDEX GetRowsPerPgroup() const     { return 1; }
@@ -232,7 +238,7 @@ class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder
     PINDEX BytesToPixels(PINDEX bytes) const  { return bytes / 3; }
 
     void StartEncoding(const RTP_DataFrame & input);
-    void EncodeFrames();
+    void EndEncoding();
 
   protected:
     BYTE * rgbBase;
