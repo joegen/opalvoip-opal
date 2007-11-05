@@ -324,7 +324,7 @@ default :: optshared
 all :: bothdepend both
 
 update:
-	cvs -q update
+	svn update
 	$(MAKE) all
 
 
