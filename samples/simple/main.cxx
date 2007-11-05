@@ -1223,7 +1223,7 @@ BOOL MyManager::Initialise(PArgList & args)
 
       if (args.HasOption("video-rate")) {
         unsigned rate = args.GetOptionString("video-rate").AsUnsigned();
-        unsigned frameTime = 1000 / rate;
+        unsigned frameTime = 90000 / rate;
         mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
       }
       OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
