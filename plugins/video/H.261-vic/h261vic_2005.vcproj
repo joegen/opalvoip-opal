@@ -206,6 +206,22 @@
 			<File
 				RelativePath=".\h261vic.cxx"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS=1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS=1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\common\trace.cxx"
@@ -238,26 +254,74 @@
 				<File
 					RelativePath=".\vic\dct.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\encoder-h261.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\p64.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\p64encoder.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\transmitter.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\vid_coder.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter
