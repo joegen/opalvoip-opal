@@ -112,7 +112,7 @@
 
  */
 
-
+#define _CRT_NONSTDC_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
 #include <codec/opalplugin.h>
 
@@ -143,11 +143,11 @@ extern "C" {
 #endif
 
 #  ifdef  _WIN32
-#    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
+#    define P_DEFAULT_PLUGIN_DIR "C:\\PTLIB_PLUGINS;C:\\PWLIB_PLUGINS"
 #    define DIR_SEPERATOR "\\"
 #    define DIR_TOKENISER ";"
 #  else
-#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/ptlib"
+#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/ptlib:/usr/lib/pwlib"
 #    define DIR_SEPERATOR "/"
 #    define DIR_TOKENISER ":"
 #  endif
@@ -274,9 +274,10 @@ class DynaLink
 
     virtual bool Open(const char *name)
     {
-      char * env = ::getenv("PWLIBPLUGINDIR");
-      if (env == NULL) 
-        return InternalOpen(P_DEFAULT_PLUGIN_DIR, name);
+      char * env;
+      if ((env = ::getenv("PTLIBPLUGINDIR")) == NULL &&
+          (env = ::getenv("PWLIBPLUGINDIR")) == NULL) 
+        env = strdup(P_DEFAULT_PLUGIN_DIR);
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
