@@ -70,7 +70,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/EasyG729A_pwplugin.dll"
+				OutputFile="$(OutDir)/EasyG729A_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
@@ -161,7 +161,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/EasyG729A_pwplugin.dll"
+				OutputFile="$(OutDir)/EasyG729A_ptplugin.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
