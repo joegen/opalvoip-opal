@@ -74,7 +74,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
+				ProgramDatabaseFile="$(TargetDir)/$(TargetName).pdb"
 				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
@@ -101,8 +101,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Copying plug in to c:\pwlib_plugins directory."
-				CommandLine="copy $(TargetPath) c:\pwlib_plugins\$(TargetFileName)"
+				Description="Copying codec and debug information to plug in directory"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins"
 			/>
 		</Configuration>
 		<Configuration
