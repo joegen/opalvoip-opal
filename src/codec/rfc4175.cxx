@@ -527,10 +527,10 @@ BOOL Opal_RFC4175YCbCr420_to_YUV420P::DecodeFrames(RTP_DataFrameList & output)
     return FALSE;
   }
 
-  if (frameHeight != 144 || frameWidth != 176) {
-    int s = inputFrames.GetSize();
-    PTRACE(4, "not right frame " << s);
-  }
+  //if (frameHeight != 144 || frameWidth != 176) {
+  //  int s = inputFrames.GetSize();
+  //  PTRACE(4, "not right frame " << s);
+  //}
 
   PTRACE(4, "RFC4175\tDecoding output from " << inputFrames.GetSize() << " input frames");
 
