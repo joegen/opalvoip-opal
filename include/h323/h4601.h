@@ -272,6 +272,8 @@ class H460_FeatureContent : public H460<H225_Content>
 				return ((PASN_IA5String &)*choice).GetValue();
 			case e_transport: 
 				return H323TransportAddress(*(H225_TransportAddress *)choice);
+		        default:
+			        break;
 		}
 		
 		return PString();
@@ -747,75 +749,75 @@ class H460_Feature : public H460<H225_FeatureDescriptor>
 		interface.
 	*/
   // PDU calls (Used in the H225_RAS Class)
-    virtual BOOL OnSendGatekeeperRequest(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendGatekeeperConfirm(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendGatekeeperReject(H225_FeatureDescriptor & pdu) { return FALSE; };
+    virtual BOOL OnSendGatekeeperRequest(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendGatekeeperConfirm(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendGatekeeperReject(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
 
-    virtual void OnReceiveGatekeeperRequest(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveGatekeeperReject(const H225_FeatureDescriptor & pdu) {};
+    virtual void OnReceiveGatekeeperRequest(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveGatekeeperConfirm(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveGatekeeperReject(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendRegistrationRequest(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendRegistrationConfirm(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendRegistrationReject(H225_FeatureDescriptor & pdu) { return FALSE; };
+    virtual BOOL OnSendRegistrationRequest(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendRegistrationConfirm(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendRegistrationReject(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
 
-    virtual void OnReceiveRegistrationRequest(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveRegistrationReject(const H225_FeatureDescriptor & pdu) {};
+    virtual void OnReceiveRegistrationRequest(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveRegistrationConfirm(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveRegistrationReject(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendAdmissionRequest(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendAdmissionConfirm(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendAdmissionReject(H225_FeatureDescriptor & pdu) { return FALSE; };
+    virtual BOOL OnSendAdmissionRequest(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendAdmissionConfirm(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendAdmissionReject(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
 
-    virtual void OnReceiveAdmissionRequest(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveAdmissionConfirm(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveAdmissionReject(const H225_FeatureDescriptor & pdu) {};
+    virtual void OnReceiveAdmissionRequest(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveAdmissionConfirm(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveAdmissionReject(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendLocationRequest(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendLocationConfirm(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendLocationReject(H225_FeatureDescriptor & pdu) { return FALSE; };
+    virtual BOOL OnSendLocationRequest(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendLocationConfirm(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendLocationReject(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
 
-    virtual void OnReceiveLocationRequest(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveLocationConfirm(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveLocationReject(const H225_FeatureDescriptor & pdu) {};
+    virtual void OnReceiveLocationRequest(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveLocationConfirm(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveLocationReject(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendServiceControlIndication(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual BOOL OnSendServiceControlResponse(H225_FeatureDescriptor & pdu) { return FALSE; };
+    virtual BOOL OnSendServiceControlIndication(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual BOOL OnSendServiceControlResponse(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
 
-    virtual void OnReceiveServiceControlIndication(const H225_FeatureDescriptor & pdu) {};
-    virtual void OnReceiveServiceControlResponse(const H225_FeatureDescriptor & pdu) {};
+    virtual void OnReceiveServiceControlIndication(const H225_FeatureDescriptor & /*pdu*/) {};
+    virtual void OnReceiveServiceControlResponse(const H225_FeatureDescriptor & /*pdu*/) {};
 
 
-    virtual BOOL OnSendNonStandardMessage(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual void OnReceiveNonStandardMessage(const H225_FeatureDescriptor & pdu) {};
+    virtual BOOL OnSendNonStandardMessage(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual void OnReceiveNonStandardMessage(const H225_FeatureDescriptor & /*pdu*/) {};
 
-	virtual BOOL OnSendEndpoint(H225_FeatureDescriptor & pdu) { return FALSE; };
-	virtual void OnReceiveEndpoint(const H225_FeatureDescriptor & pdu) {};
+	virtual BOOL OnSendEndpoint(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+	virtual void OnReceiveEndpoint(const H225_FeatureDescriptor & /*pdu*/) {};
   //@}
 
   /**@name Signal PDU Interface */
   //@{
   // UUIE Calls (Used in the H323SignalPDU Class)
-    virtual BOOL OnSendSetup_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual void OnReceiveSetup_UUIE(const H225_FeatureDescriptor & pdu) {};
+    virtual BOOL OnSendSetup_UUIE(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual void OnReceiveSetup_UUIE(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendAlerting_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual void OnReceiveAlerting_UUIE(const H225_FeatureDescriptor & pdu) {};
+    virtual BOOL OnSendAlerting_UUIE(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual void OnReceiveAlerting_UUIE(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendCallProceeding_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual void OnReceiveCallProceeding_UUIE(const H225_FeatureDescriptor & pdu) {};
+    virtual BOOL OnSendCallProceeding_UUIE(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual void OnReceiveCallProceeding_UUIE(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendCallConnect_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual void OnReceiveCallConnect_UUIE(const H225_FeatureDescriptor & pdu) {};
+    virtual BOOL OnSendCallConnect_UUIE(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual void OnReceiveCallConnect_UUIE(const H225_FeatureDescriptor & /*pdu*/) {};
 
-    virtual BOOL OnSendFacility_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
-    virtual void OnReceiveFacility_UUIE(const H225_FeatureDescriptor & pdu) {};
+    virtual BOOL OnSendFacility_UUIE(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+    virtual void OnReceiveFacility_UUIE(const H225_FeatureDescriptor & /*pdu*/) {};
 
-	virtual BOOL OnSendReleaseComplete_UUIE(H225_FeatureDescriptor & pdu) { return FALSE; };
-	virtual void OnReceiveReleaseComplete_UUIE(const H225_FeatureDescriptor & pdu) {};
+	virtual BOOL OnSendReleaseComplete_UUIE(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+	virtual void OnReceiveReleaseComplete_UUIE(const H225_FeatureDescriptor & /*pdu*/) {};
 
-	virtual BOOL OnSendUnAllocatedPDU(H225_FeatureDescriptor & pdu) { return FALSE; };
-	virtual void OnReceivedUnAllocatedPDU(const H225_FeatureDescriptor & pdu) {};
+	virtual BOOL OnSendUnAllocatedPDU(H225_FeatureDescriptor & /*pdu*/) { return FALSE; };
+	virtual void OnReceivedUnAllocatedPDU(const H225_FeatureDescriptor & /*pdu*/) {};
 
   //@}
 
