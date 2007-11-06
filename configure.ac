@@ -75,38 +75,20 @@ dnl at same level, home directory, /usr/local or /usr.
 if test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
   PTLIBDIR=$PWLIBDIR
 fi
-if test "${PTLIBDIR:-unset}" != "unset" ; then
-  AC_CHECK_FILE(${PTLIBDIR}/version.h, HAS_PTLIB=1)
-fi
-if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  AC_CHECK_FILE(${OPALDIR}/../ptlib/version.h, HAS_PTLIB=1)
-  if test "${HAS_PTLIB:-unset}" != "unset" ; then
+if test "${PTLIBDIR:-unset}" = "unset" -o ! -r "${PTLIBDIR}/version.h"; then
+  if test -r "${OPALDIR}/../ptlib/version.h"; then
     PTLIBDIR="${OPALDIR}/../ptlib"
+  elif test -r "${HOME}/ptlib/include/ptlib.h"; then
+    PTLIBDIR="${HOME}/ptlib"
+  elif test -r /usr/local/include/ptlib.h; then
+    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/local/bin)
+  elif test -r /usr/include/ptlib.h; then
+    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/share/ptlib/make/)
+  elif test -r "${prefix}/include/ptlib.h"; then
+    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${prefix}/bin)
   else
-    AC_CHECK_FILE(${HOME}/ptlib/include/ptlib.h, HAS_PTLIB=1)
-    if test "${HAS_PTLIB:-unset}" != "unset" ; then
-      PTLIBDIR="${HOME}/ptlib"
-    else
-      AC_CHECK_FILE(/usr/local/include/ptlib.h, HAS_PTLIB=1)
-      if test "${HAS_PTLIB:-unset}" != "unset" ; then
-        AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/local/bin)
-      else
-        AC_CHECK_FILE(/usr/include/ptlib.h, HAS_PTLIB=1)
-        if test "${HAS_PTLIB:-unset}" != "unset" ; then
-          AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , /usr/share/ptlib/make/)
-        else
-          AC_CHECK_FILE(${prefix}/include/ptlib.h, HAS_PTLIB=1)
-          if test "${HAS_PTLIB:-unset}" != "unset" ; then
-            AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${prefix}/bin)
-          fi
-        fi
-      fi
-    fi
+    AC_MSG_ERROR("Cannot find PTLib - please install or set PTLIBDIR and try again")
   fi
-fi
-
-if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  AC_MSG_ERROR("Cannot find PTLib - please install or set PTLIBDIR and try again")
 fi
 
 if test "${PTLIBDIR:-unset}" = "unset" ; then
