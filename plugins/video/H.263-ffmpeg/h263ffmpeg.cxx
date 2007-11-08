@@ -274,6 +274,18 @@ class DynaLink
 
     virtual bool Open(const char *name)
     {
+#ifdef _WIN32
+      char exe_path[_MAX_PATH];
+      if (GetModuleFileName(NULL, exe_path, sizeof(exe_path))) {
+        char * slash = strrchr(exe_path, '\\');
+        if (slash != NULL) {
+          *++slash = '\0';
+          if (InternalOpen(exe_path, name))
+            return true;
+        }
+      }
+#endif // _WIN32
+
       char * env;
       if ((env = ::getenv("PTLIBPLUGINDIR")) == NULL &&
           (env = ::getenv("PWLIBPLUGINDIR")) == NULL) 
@@ -285,7 +297,7 @@ class DynaLink
           return true;
         token = strtok(NULL, DIR_TOKENISER);
       }
-      return false;
+      return InternalOpen(NULL, name); // Last ditch effort
     }
 
   // split into directories on correct seperator
