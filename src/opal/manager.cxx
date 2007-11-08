@@ -951,6 +951,7 @@ BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
 
   autoDelete = TRUE;
   device = PVideoInputDevice::CreateOpenedDevice(args);
+  PTRACE_IF(2, device == NULL, "OpalCon\tCould not open video device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
