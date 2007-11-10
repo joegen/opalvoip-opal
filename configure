@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all plugins"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION PTLIB_CONFIG PWLIBDIR CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX OPAL_H450 OPAL_H460 OPAL_LID OPAL_IVR OPAL_ZRTP HAS_LIBZRTP OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION PTLIB_CONFIG PTLIBDIR CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX OPAL_H450 OPAL_H460 OPAL_LID OPAL_IVR OPAL_ZRTP HAS_LIBZRTP OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -849,7 +849,7 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --disable-versioncheck    disable PWLib version check
+  --disable-versioncheck    disable PTLib version check
   --enable-localspeex     use local version of Speex library rather than system version
   --disable-audio         disable audio codec support
   --disable-video         disable video codec support
@@ -2609,9 +2609,9 @@ iax=yes
 audio=yes
 video=yes
 
-REQUIRED_PWLIB_MAJOR=1
-REQUIRED_PWLIB_MINOR=11
-REQUIRED_PWLIB_BUILD=0
+REQUIRED_PTLIB_MAJOR=2
+REQUIRED_PTLIB_MINOR=0
+REQUIRED_PTLIB_BUILD=0
 
 
 OPALDIR=`pwd`
@@ -2659,10 +2659,10 @@ echo "$as_me: Opal version is ${OPAL_VERSION}" >&6;};
 
 
 
-if test "${PWLIBDIR:-unset}" != "unset" ; then
-  as_ac_File=`echo "ac_cv_file_${PWLIBDIR}/version.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${PWLIBDIR}/version.h" >&5
-echo $ECHO_N "checking for ${PWLIBDIR}/version.h... $ECHO_C" >&6
+if test "${PTLIBDIR:-unset}" != "unset" ; then
+  as_ac_File=`echo "ac_cv_file_${PTLIBDIR}/version.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${PTLIBDIR}/version.h" >&5
+echo $ECHO_N "checking for ${PTLIBDIR}/version.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2670,7 +2670,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${PWLIBDIR}/version.h"; then
+if test -r "${PTLIBDIR}/version.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2684,9 +2684,9 @@ fi
 
 fi
 if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  as_ac_File=`echo "ac_cv_file_${OPALDIR}/../pwlib/version.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${OPALDIR}/../pwlib/version.h" >&5
-echo $ECHO_N "checking for ${OPALDIR}/../pwlib/version.h... $ECHO_C" >&6
+  as_ac_File=`echo "ac_cv_file_${OPALDIR}/../ptlib/version.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${OPALDIR}/../ptlib/version.h" >&5
+echo $ECHO_N "checking for ${OPALDIR}/../ptlib/version.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2694,7 +2694,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${OPALDIR}/../pwlib/version.h"; then
+if test -r "${OPALDIR}/../ptlib/version.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2707,11 +2707,11 @@ if test `eval echo '${'$as_ac_File'}'` = yes; then
 fi
 
   if test "${HAS_PTLIB:-unset}" != "unset" ; then
-    PWLIBDIR="${OPALDIR}/../pwlib"
+    PTLIBDIR="${OPALDIR}/../ptlib"
   else
-    as_ac_File=`echo "ac_cv_file_${HOME}/pwlib/include/ptlib.h" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${HOME}/pwlib/include/ptlib.h" >&5
-echo $ECHO_N "checking for ${HOME}/pwlib/include/ptlib.h... $ECHO_C" >&6
+    as_ac_File=`echo "ac_cv_file_${HOME}/ptlib/include/ptlib.h" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${HOME}/ptlib/include/ptlib.h" >&5
+echo $ECHO_N "checking for ${HOME}/ptlib/include/ptlib.h... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -2719,7 +2719,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${HOME}/pwlib/include/ptlib.h"; then
+if test -r "${HOME}/ptlib/include/ptlib.h"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -2732,7 +2732,7 @@ if test `eval echo '${'$as_ac_File'}'` = yes; then
 fi
 
     if test "${HAS_PTLIB:-unset}" != "unset" ; then
-      PWLIBDIR="${HOME}/pwlib"
+      PTLIBDIR="${HOME}/ptlib"
     else
       echo "$as_me:$LINENO: checking for /usr/local/include/ptlib.h" >&5
 echo $ECHO_N "checking for /usr/local/include/ptlib.h... $ECHO_C" >&6
@@ -2831,7 +2831,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in /usr/share/pwlib/make/
+for as_dir in /usr/share/ptlib/make/
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -2928,71 +2928,71 @@ fi
 fi
 
 if test "${HAS_PTLIB:-unset}" = "unset" ; then
-  { { echo "$as_me:$LINENO: error: \"Cannot find pwlib - please install or set PWLIBDIR and try again\"" >&5
-echo "$as_me: error: \"Cannot find pwlib - please install or set PWLIBDIR and try again\"" >&2;}
+  { { echo "$as_me:$LINENO: error: \"Cannot find ptlib - please install or set PTLIBDIR and try again\"" >&5
+echo "$as_me: error: \"Cannot find ptlib - please install or set PTLIBDIR and try again\"" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-if test "${PWLIBDIR:-unset}" = "unset" ; then
+if test "${PTLIBDIR:-unset}" = "unset" ; then
   if test "${PTLIB_CONFIG:-unset}" = "unset" ; then
     { { echo "$as_me:$LINENO: error: \"Cannot find ptlib-config - please install and try again\"" >&5
 echo "$as_me: error: \"Cannot find ptlib-config - please install and try again\"" >&2;}
    { (exit 1); exit 1; }; }
   fi
-  PWLIBDIR=`$PTLIB_CONFIG --prefix`
+  PTLIBDIR=`$PTLIB_CONFIG --prefix`
 fi
 
-if test "x$PWLIBDIR" = "x/usr" -o "x$PWLIBDIR" = "x/usr/"; then
-  PWLIBDIR="/usr/share/pwlib/"
+if test "x$PTLIBDIR" = "x/usr" -o "x$PTLIBDIR" = "x/usr/"; then
+  PTLIBDIR="/usr/share/ptlib/"
 fi
-if test "x$PWLIBDIR" = "x/usr/local" -o "x$PWLIBDIR" = "x/usr/"; then
-  PWLIBDIR="/usr/local/share/pwlib/"
+if test "x$PTLIBDIR" = "x/usr/local" -o "x$PTLIBDIR" = "x/usr/"; then
+  PTLIBDIR="/usr/local/share/ptlib/"
 fi
-if test "x$PWLIBDIR" = "x${prefix}"; then
-  PWLIBDIR="${prefix}/share/pwlib/"
+if test "x$PTLIBDIR" = "x${prefix}"; then
+  PTLIBDIR="${prefix}/share/ptlib/"
 fi
 
 
-echo "PWLib prefix set to.... $PWLIBDIR"
+echo "PTLib prefix set to.... $PTLIBDIR"
 
-if test "${PWLIBDIR:-unset}" = "unset" ; then
+if test "${PTLIBDIR:-unset}" = "unset" ; then
   PWVERSION=`$PTLIB_CONFIG --version`
   PW_MAJOR_VERSION=`echo $PW_VERSION | cut -d'.' -f1`
   PW_MINOR_VERSION=`echo $PW_VERSION | cut -d'.' -f2`
   PW_BUILD_NUMBER=`echo $PW_VERSION | cut -d'.' -f3`
 
 else
-  PW_MAJOR_VERSION=`cat ${PWLIBDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
-  PW_MINOR_VERSION=`cat ${PWLIBDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
-  PW_BUILD_NUMBER=`cat ${PWLIBDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
+  PW_MAJOR_VERSION=`cat ${PTLIBDIR}/version.h | grep MAJOR_VERSION | cut -f3 -d' '`
+  PW_MINOR_VERSION=`cat ${PTLIBDIR}/version.h | grep MINOR_VERSION | cut -f3 -d' '`
+  PW_BUILD_NUMBER=`cat ${PTLIBDIR}/version.h | grep BUILD_NUMBER | cut -f3 -d' '`
   PWVERSION="${PW_MAJOR_VERSION}.${PW_MINOR_VERSION}.${PW_BUILD_NUMBER}"
 fi
 
 # Check whether --enable-versioncheck or --disable-versioncheck was given.
 if test "${enable_versioncheck+set}" = set; then
   enableval="$enable_versioncheck"
-  PWLIB_VERSION_CHECK=$enableval
+  PTLIB_VERSION_CHECK=$enableval
 fi;
 
-echo "$as_me:$LINENO: checking Checking PWLib version ${PWVERSION}" >&5
-echo $ECHO_N "checking Checking PWLib version ${PWVERSION}... $ECHO_C" >&6
-if test "${PWLIB_VERSION_CHECK}x" = "nox" ; then
+echo "$as_me:$LINENO: checking Checking PTLib version ${PWVERSION}" >&5
+echo $ECHO_N "checking Checking PTLib version ${PWVERSION}... $ECHO_C" >&6
+if test "${PTLIB_VERSION_CHECK}x" = "nox" ; then
   echo "$as_me:$LINENO: result: check disabled" >&5
 echo "${ECHO_T}check disabled" >&6
 else
-  if test $PW_MAJOR_VERSION -lt $REQUIRED_PWLIB_MAJOR ; then
-    { { echo "$as_me:$LINENO: error: Major version less than required $REQUIRED_PWLIB_MAJOR" >&5
-echo "$as_me: error: Major version less than required $REQUIRED_PWLIB_MAJOR" >&2;}
+  if test $PW_MAJOR_VERSION -lt $REQUIRED_PTLIB_MAJOR ; then
+    { { echo "$as_me:$LINENO: error: Major version less than required $REQUIRED_PTLIB_MAJOR" >&5
+echo "$as_me: error: Major version less than required $REQUIRED_PTLIB_MAJOR" >&2;}
    { (exit 1); exit 1; }; }
   fi
-  if test $PW_MINOR_VERSION -lt $REQUIRED_PWLIB_MINOR ; then
-    { { echo "$as_me:$LINENO: error: Minor version less than required $REQUIRED_PWLIB_MINOR" >&5
-echo "$as_me: error: Minor version less than required $REQUIRED_PWLIB_MINOR" >&2;}
+  if test $PW_MINOR_VERSION -lt $REQUIRED_PTLIB_MINOR ; then
+    { { echo "$as_me:$LINENO: error: Minor version less than required $REQUIRED_PTLIB_MINOR" >&5
+echo "$as_me: error: Minor version less than required $REQUIRED_PTLIB_MINOR" >&2;}
    { (exit 1); exit 1; }; }
   fi
-  if test $PW_BUILD_NUMBER -lt $REQUIRED_PWLIB_BUILD ; then
-    { { echo "$as_me:$LINENO: error: Build version less than required $REQUIRED_PWLIB_BUILD" >&5
-echo "$as_me: error: Build version less than required $REQUIRED_PWLIB_BUILD" >&2;}
+  if test $PW_BUILD_NUMBER -lt $REQUIRED_PTLIB_BUILD ; then
+    { { echo "$as_me:$LINENO: error: Build version less than required $REQUIRED_PTLIB_BUILD" >&5
+echo "$as_me: error: Build version less than required $REQUIRED_PTLIB_BUILD" >&2;}
    { (exit 1); exit 1; }; }
   fi
   echo "$as_me:$LINENO: result: ok" >&5
@@ -6890,7 +6890,7 @@ s,@INSTALLPREFIX@,$INSTALLPREFIX,;t t
 s,@LIBDIR@,$LIBDIR,;t t
 s,@OPAL_VERSION@,$OPAL_VERSION,;t t
 s,@PTLIB_CONFIG@,$PTLIB_CONFIG,;t t
-s,@PWLIBDIR@,$PWLIBDIR,;t t
+s,@PTLIBDIR@,$PTLIBDIR,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@SIZE16@,$SIZE16,;t t

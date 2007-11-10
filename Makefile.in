@@ -615,7 +615,7 @@ CLEAN_FILES = $(OPAL_LIB)
 
 ####################################################
 
-include @PWLIBDIR@/make/common.mak
+include @PTLIBDIR@/make/common.mak
 
 PROG=opal
 ####################################################
