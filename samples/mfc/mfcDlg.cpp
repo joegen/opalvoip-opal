@@ -181,14 +181,15 @@ HCURSOR CMfcDlg::OnQueryDragIcon()
 
 void CMfcDlg::OnCall() 
 {
-  m_manager.SetUpCall((const char *)m_destination, "pc:*", m_token);
+  PString dest((LPCTSTR)m_destination);
+  m_manager.SetUpCall(dest, "pc:*", m_token);
   m_call.EnableWindow(FALSE);
   m_hangup.EnableWindow();
 }
 
 void CMfcDlg::OnAnswer() 
 {
-  m_caller.SetWindowText("");
+  m_caller.SetWindowText(_T(""));
   m_answer.EnableWindow(FALSE);
   m_refuse.EnableWindow(FALSE);
   m_hangup.EnableWindow(FALSE);
@@ -204,7 +205,7 @@ void CMfcDlg::OnAnswer()
 
 void CMfcDlg::OnRefuse() 
 {
-  m_caller.SetWindowText("");
+  m_caller.SetWindowText(_T(""));
   m_answer.EnableWindow(FALSE);
   m_refuse.EnableWindow(FALSE);
   m_hangup.EnableWindow(FALSE);

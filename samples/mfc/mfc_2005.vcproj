@@ -22,7 +22,7 @@
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="2"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -51,6 +51,7 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="stdafx.h"
@@ -202,7 +203,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{C7546C76-E010-4105-AEAE-48FCD6C09527}"

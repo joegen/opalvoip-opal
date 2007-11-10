@@ -2475,7 +2475,7 @@ H501_ElementIdentifier & H501_ElementIdentifier::operator=(const PString & v)
 }
 
 
-H501_ElementIdentifier & H501_ElementIdentifier::operator=(const PWORDArray & v)
+H501_ElementIdentifier & H501_ElementIdentifier::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;

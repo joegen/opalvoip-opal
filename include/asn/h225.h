@@ -1184,7 +1184,7 @@ class H225_GatekeeperIdentifier : public PASN_BMPString
 
     H225_GatekeeperIdentifier & operator=(const char * v);
     H225_GatekeeperIdentifier & operator=(const PString & v);
-    H225_GatekeeperIdentifier & operator=(const PWORDArray & v);
+    H225_GatekeeperIdentifier & operator=(const PWCharArray & v);
     H225_GatekeeperIdentifier & operator=(const PASN_BMPString & v);
     PObject * Clone() const;
 };
@@ -1240,7 +1240,7 @@ class H225_EndpointIdentifier : public PASN_BMPString
 
     H225_EndpointIdentifier & operator=(const char * v);
     H225_EndpointIdentifier & operator=(const PString & v);
-    H225_EndpointIdentifier & operator=(const PWORDArray & v);
+    H225_EndpointIdentifier & operator=(const PWCharArray & v);
     H225_EndpointIdentifier & operator=(const PASN_BMPString & v);
     PObject * Clone() const;
 };
