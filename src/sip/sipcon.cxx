@@ -2600,7 +2600,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     return;
   }
 
-  if (originalInvite->GetMIME().GetTo()   != response.GetMIME().GetTo() ||
+  if (originalInvite->GetMIME().GetCallID()   != response.GetMIME().GetCallID() ||
       originalInvite->GetMIME().GetFrom() != response.GetMIME().GetFrom()) {
     PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
     return;
