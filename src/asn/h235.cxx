@@ -169,7 +169,7 @@ H235_Password & H235_Password::operator=(const PString & v)
 }
 
 
-H235_Password & H235_Password::operator=(const PWORDArray & v)
+H235_Password & H235_Password::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;
@@ -217,7 +217,7 @@ H235_Identifier & H235_Identifier::operator=(const PString & v)
 }
 
 
-H235_Identifier & H235_Identifier::operator=(const PWORDArray & v)
+H235_Identifier & H235_Identifier::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;

@@ -418,7 +418,7 @@ H4508_ExtendedName & H4508_ExtendedName::operator=(const PString & v)
 }
 
 
-H4508_ExtendedName & H4508_ExtendedName::operator=(const PWORDArray & v)
+H4508_ExtendedName & H4508_ExtendedName::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;
