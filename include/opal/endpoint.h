@@ -827,7 +827,7 @@ class OpalEndPoint : public PObject
       */
     BOOL HasAttribute(Attributes opt) const { return (attributeBits&opt) != 0; }
 
-    /**Get the initial bandwidth parameter.
+    /**Get the default signal port for this endpoint.
      */
     WORD GetDefaultSignalPort() const { return defaultSignalPort; }
 
