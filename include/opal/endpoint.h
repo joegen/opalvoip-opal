@@ -933,7 +933,6 @@ class OpalEndPoint : public PObject
     OpalConnection::SendUserInputModes defaultSendUserInputMode;
 
     OpalListenerList   listeners;
-    PSyncPoint         allConnectionsCleared;
 
     class ConnectionDict : public PSafeDictionary<PString, OpalConnection>
     {

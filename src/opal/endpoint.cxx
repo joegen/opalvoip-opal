@@ -642,14 +642,7 @@ BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
 
 void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
 {
-  BOOL releasedOne = FALSE;
-  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadOnly); connection; ++connection) {
-    connection->Release(reason);
-    releasedOne = TRUE;
-  }
-
-  if (wait && releasedOne)
-    allConnectionsCleared.Wait();
+  manager.ClearAllCalls(reason, wait);
 }
 
 
