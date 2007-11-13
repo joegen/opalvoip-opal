@@ -4622,7 +4622,7 @@ static void AddSessionCodecName(PStringStream & name, H323Channel * channel)
     return;
 
   OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-  if (mediaFormat.IsEmpty())
+  if (!mediaFormat.IsValid())
     return;
 
   if (name.IsEmpty())
