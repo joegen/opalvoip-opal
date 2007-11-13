@@ -741,8 +741,10 @@ PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
   PTRACE(3, "preferred codecs are " << list);
 
   PStringArray codecNames;
-  for (PINDEX i = 0; i < list.GetSize(); i++)
-    codecNames += PString(list[i]);
+  for (PINDEX i = 0; i < list.GetSize(); i++) {
+    PString format = list[i];
+    codecNames += format;
+  }
 
   unsigned short val = 0;
   PINDEX index = 0;
@@ -802,8 +804,10 @@ PINDEX IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
 
   PINDEX i;
   PStringArray codecNames;
-  for (i = 0; i < list.GetSize(); i++)
-    codecNames += PString(list[i]);
+  for (i = 0; i < list.GetSize(); i++) {
+    PString format = list[i];
+    codecNames += format;
+  }
 
   for(i = 0; i < codecNames.GetSize(); i++) {
     PTRACE(5, "Supported codec in opal is " << codecNames[i]);
