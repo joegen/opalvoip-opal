@@ -705,21 +705,21 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
     ,features(ep.GetFeatureSet())
 #endif
 {
-  alternatePermanent = FALSE;
-  discoveryComplete = FALSE;
+  alternatePermanent = PFalse;
+  discoveryComplete = PFalse;
   registrationFailReason = UnregisteredLocally;
 
   pregrantMakeCall = pregrantAnswerCall = RequireARQ;
 
-  autoReregister = TRUE;
-  reregisterNow = FALSE;
-  requiresDiscovery = FALSE;
+  autoReregister = PTrue;
+  reregisterNow = PFalse;
+  requiresDiscovery = PFalse;
 
   timeToLive.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
   infoRequestRate.SetNotifier(PCREATE_NOTIFIER(TickleMonitor));
 
-  willRespondToIRR = FALSE;
-  monitorStop = FALSE;
+  willRespondToIRR = PFalse;
+  monitorStop = PFalse;
 
   monitor = PThread::Create(PCREATE_NOTIFIER(MonitorMain), 0,
                             PThread::NoAutoDeleteThread,
@@ -735,7 +735,7 @@ H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
 H323Gatekeeper::~H323Gatekeeper()
 {
   if (monitor != NULL) {
-    monitorStop = TRUE;
+    monitorStop = PTrue;
     monitorTickle.Signal();
     monitor->WaitForTermination();
     delete monitor;
@@ -753,28 +753,28 @@ PString H323Gatekeeper::GetName() const
 }
 
 
-BOOL H323Gatekeeper::DiscoverAny()
+PBoolean H323Gatekeeper::DiscoverAny()
 {
   gatekeeperIdentifier = PString();
   return StartDiscovery(H323TransportAddress());
 }
 
 
-BOOL H323Gatekeeper::DiscoverByName(const PString & identifier)
+PBoolean H323Gatekeeper::DiscoverByName(const PString & identifier)
 {
   gatekeeperIdentifier = identifier;
   return StartDiscovery(H323TransportAddress());
 }
 
 
-BOOL H323Gatekeeper::DiscoverByAddress(const H323TransportAddress & address)
+PBoolean H323Gatekeeper::DiscoverByAddress(const H323TransportAddress & address)
 {
   gatekeeperIdentifier = PString();
   return StartDiscovery(address);
 }
 
 
-BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
+PBoolean H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
                                               const H323TransportAddress & address)
 {
   gatekeeperIdentifier = identifier;
@@ -782,7 +782,7 @@ BOOL H323Gatekeeper::DiscoverByNameAndAddress(const PString & identifier,
 }
 
 
-static BOOL WriteGRQ(H323Transport & transport, void * param)
+static PBoolean WriteGRQ(H323Transport & transport, void * param)
 {
   H323RasPDU & pdu = *(H323RasPDU *)param;
   H225_GatekeeperRequest & grq = pdu;
@@ -804,10 +804,10 @@ static BOOL WriteGRQ(H323Transport & transport, void * param)
 }
 
 
-BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
+PBoolean H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   PAssert(!transport->IsRunning(), "Cannot do discovery on running RAS channel");
 
@@ -816,16 +816,16 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
     address = "udp$*:1719";
 
   if (!transport->ConnectTo(address))
-    return FALSE;
+    return PFalse;
 
   /// don't send GRQ if not requested
   if (!endpoint.GetSendGRQ() && !initialAddress.IsEmpty()) {
     StartChannel();
     PTRACE(3, "RAS\tSkipping gatekeeper discovery for " << initialAddress);
-    return TRUE;
+    return PTrue;
   }
 
-  discoveryComplete = FALSE;
+  discoveryComplete = PFalse;
 
   H323RasPDU pdu;
   Request request(SetupGatekeeperRequest(pdu), pdu);
@@ -889,7 +889,7 @@ unsigned H323Gatekeeper::SetupGatekeeperRequest(H323RasPDU & request)
 
   H225_RAS::OnSendGatekeeperRequest(request, grq);
 
-  discoveryComplete = FALSE;
+  discoveryComplete = PFalse;
 
   return grq.m_requestSeqNum;
 }
@@ -908,10 +908,10 @@ void H323Gatekeeper::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
 }
 
 
-BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & gcf)
+PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & gcf)
 {
   if (!H225_RAS::OnReceiveGatekeeperConfirm(gcf))
-    return FALSE;
+    return PFalse;
 
   PINDEX i;
 
@@ -935,23 +935,23 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm & g
 
   if (!transport->SetRemoteAddress(locatedAddress)) {
     PTRACE(2, "RAS\tInvalid gatekeeper discovery address: \"" << locatedAddress << '"');
-    return FALSE;
+    return PFalse;
   }
 
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_alternateGatekeeper))
-    SetAlternates(gcf.m_alternateGatekeeper, FALSE);
+    SetAlternates(gcf.m_alternateGatekeeper, PFalse);
 
   endpoint.OnGatekeeperConfirm();
 
-  discoveryComplete = TRUE;
-  return TRUE;
+  discoveryComplete = PTrue;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject & grj)
+PBoolean H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject & grj)
 {
   if (!H225_RAS::OnReceiveGatekeeperReject(grj))
-    return FALSE;
+    return PFalse;
 
   if (grj.HasOptionalField(H225_GatekeeperReject::e_altGKInfo)) {
     SetAlternates(grj.m_altGKInfo.m_alternateGatekeeper,
@@ -965,21 +965,21 @@ BOOL H323Gatekeeper::OnReceiveGatekeeperReject(const H225_GatekeeperReject & grj
 
   endpoint.OnGatekeeperReject();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
+PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   autoReregister = autoReg;
 
   H323RasPDU pdu;
   H225_RegistrationRequest & rrq = pdu.BuildRegistrationRequest(GetNextSequenceNumber());
 
-  // If discoveryComplete flag is FALSE then do lightweight reregister
+  // If discoveryComplete flag is PFalse then do lightweight reregister
   rrq.m_discoveryComplete = discoveryComplete;
 
   rrq.m_rasAddress.SetSize(1);
@@ -1002,10 +1002,10 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   
   rasAddress.SetPDU(rrq.m_rasAddress[0]);
 
-  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(TRUE, transport);
+  H323TransportAddressArray listeners = endpoint.GetInterfaceAddresses(PTrue, transport);
   if (listeners.IsEmpty()) {
     PTRACE(1, "RAS\tCannot register with Gatekeeper without a H323Listener!");
-    return FALSE;
+    return PFalse;
   }
 
   for (PINDEX i = 0; i < listeners.GetSize(); i++)
@@ -1017,7 +1017,7 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
   H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
 
-  rrq.m_willSupplyUUIEs = TRUE;
+  rrq.m_willSupplyUUIEs = PTrue;
   rrq.IncludeOptionalField(H225_RegistrationRequest::e_usageReportingCapability);
   rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_startTime);
   rrq.m_usageReportingCapability.IncludeOptionalField(H225_RasUsageInfoTypes::e_endTime);
@@ -1043,26 +1043,26 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
   if (endpoint.CanDisplayAmountString()) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
     rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canDisplayAmountString);
-    rrq.m_callCreditCapability.m_canDisplayAmountString = TRUE;
+    rrq.m_callCreditCapability.m_canDisplayAmountString = PTrue;
   }
 
   if (endpoint.CanEnforceDurationLimit()) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_callCreditCapability);
     rrq.m_callCreditCapability.IncludeOptionalField(H225_CallCreditCapability::e_canEnforceDurationLimit);
-    rrq.m_callCreditCapability.m_canEnforceDurationLimit = TRUE;
+    rrq.m_callCreditCapability.m_canEnforceDurationLimit = PTrue;
   }
 
   if (IsRegistered()) {
     rrq.IncludeOptionalField(H225_RegistrationRequest::e_keepAlive);
-    rrq.m_keepAlive = TRUE;
+    rrq.m_keepAlive = PTrue;
   }
 
   // After doing full register, do lightweight reregisters from now on
-  discoveryComplete = FALSE;
+  discoveryComplete = PFalse;
 
   Request request(rrq.m_requestSeqNum, pdu);
   if (MakeRequest(request))
-    return TRUE;
+    return PTrue;
 
   PTRACE(3, "RAS\tFailed registration of " << endpointIdentifier << " with " << gatekeeperIdentifier);
   switch (request.responseResult) {
@@ -1071,13 +1071,13 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
         case H225_RegistrationRejectReason::e_discoveryRequired :
           // If have been told by GK that we need to discover it again, set flag
           // for next register done by timeToLive handler to do discovery
-          requiresDiscovery = TRUE;
+          requiresDiscovery = PTrue;
           // Do next case
 
         case H225_RegistrationRejectReason::e_fullRegistrationRequired :
           registrationFailReason = GatekeeperLostRegistration;
           // Set timer to retry registration
-          reregisterNow = TRUE;
+          reregisterNow = PTrue;
           monitorTickle.Signal();
           break;
 
@@ -1109,14 +1109,14 @@ BOOL H323Gatekeeper::RegistrationRequest(BOOL autoReg)
       break;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm & rcf)
+PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm & rcf)
 {
   if (!H225_RAS::OnReceiveRegistrationConfirm(rcf))
-    return FALSE;
+    return PFalse;
 
   registrationFailReason = RegistrationSuccessful;
 
@@ -1125,7 +1125,7 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
 
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_alternateGatekeeper))
-    SetAlternates(rcf.m_alternateGatekeeper, FALSE);
+    SetAlternates(rcf.m_alternateGatekeeper, PFalse);
 
   if (rcf.HasOptionalField(H225_RegistrationConfirm::e_timeToLive))
     timeToLive = AdjustTimeout(rcf.m_timeToLive);
@@ -1205,14 +1205,14 @@ BOOL H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationConfirm
   
   endpoint.OnRegistrationConfirm();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReject & rrj)
+PBoolean H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReject & rrj)
 {
   if (!H225_RAS::OnReceiveRegistrationReject(rrj))
-    return FALSE;
+    return PFalse;
 
   if (rrj.HasOptionalField(H225_RegistrationReject::e_altGKInfo))
     SetAlternates(rrj.m_altGKInfo.m_alternateGatekeeper,
@@ -1220,7 +1220,7 @@ BOOL H323Gatekeeper::OnReceiveRegistrationReject(const H225_RegistrationReject &
 
   endpoint.OnRegistrationReject();
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1239,7 +1239,7 @@ void H323Gatekeeper::RegistrationTimeToLive()
       return;
     }
 
-    requiresDiscovery = FALSE;
+    requiresDiscovery = PFalse;
   }
 
   if (!RegistrationRequest(autoReregister)) {
@@ -1249,10 +1249,10 @@ void H323Gatekeeper::RegistrationTimeToLive()
 }
 
 
-BOOL H323Gatekeeper::UnregistrationRequest(int reason)
+PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   PINDEX i;
   H323RasPDU pdu;
@@ -1286,7 +1286,7 @@ BOOL H323Gatekeeper::UnregistrationRequest(int reason)
 
   Request request(urq.m_requestSeqNum, pdu);
 
-  BOOL requestResult = MakeRequest(request);
+  PBoolean requestResult = MakeRequest(request);
 
   for (i = 0; i < alternates.GetSize(); i++) {
     AlternateInfo & altgk = alternates[i];
@@ -1297,7 +1297,7 @@ BOOL H323Gatekeeper::UnregistrationRequest(int reason)
   }
 
   if (requestResult)
-    return TRUE;
+    return PTrue;
 
   switch (request.responseResult) {
     case Request::NoResponseReceived :
@@ -1318,52 +1318,52 @@ BOOL H323Gatekeeper::UnregistrationRequest(int reason)
 }
 
 
-BOOL H323Gatekeeper::OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm & ucf)
+PBoolean H323Gatekeeper::OnReceiveUnregistrationConfirm(const H225_UnregistrationConfirm & ucf)
 {
   if (!H225_RAS::OnReceiveUnregistrationConfirm(ucf))
-    return FALSE;
+    return PFalse;
 
   registrationFailReason = UnregisteredLocally;
   timeToLive = 0; // zero disables lightweight RRQ
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & urq)
+PBoolean H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationRequest & urq)
 {
   if (!H225_RAS::OnReceiveUnregistrationRequest(urq))
-    return FALSE;
+    return PFalse;
 
   PTRACE(3, "RAS\tUnregistration received");
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_gatekeeperIdentifier) ||
        urq.m_gatekeeperIdentifier.GetValue() != gatekeeperIdentifier) {
     PTRACE(2, "RAS\tInconsistent gatekeeperIdentifier!");
-    return FALSE;
+    return PFalse;
   }
 
   if (!urq.HasOptionalField(H225_UnregistrationRequest::e_endpointIdentifier) ||
        urq.m_endpointIdentifier.GetValue() != endpointIdentifier) {
     PTRACE(2, "RAS\tInconsistent endpointIdentifier!");
-    return FALSE;
+    return PFalse;
   }
 
-  endpoint.ClearAllCalls(H323Connection::EndedByGatekeeper, FALSE);
+  endpoint.ClearAllCalls(H323Connection::EndedByGatekeeper, PFalse);
 
   PTRACE(3, "RAS\tUnregistered, calls cleared");
   registrationFailReason = UnregisteredByGatekeeper;
   timeToLive = 0; // zero disables lightweight RRQ
 
   if (urq.HasOptionalField(H225_UnregistrationRequest::e_alternateGatekeeper))
-    SetAlternates(urq.m_alternateGatekeeper, FALSE);
+    SetAlternates(urq.m_alternateGatekeeper, PFalse);
 
   H323RasPDU response(authenticators);
   response.BuildUnregistrationConfirm(urq.m_requestSeqNum);
-  BOOL ok = WritePDU(response);
+  PBoolean ok = WritePDU(response);
 
   if (autoReregister) {
     PTRACE(4, "RAS\tReregistering by setting timeToLive");
-    reregisterNow = TRUE;
+    reregisterNow = PTrue;
     monitorTickle.Signal();
   }
 
@@ -1371,21 +1371,21 @@ BOOL H323Gatekeeper::OnReceiveUnregistrationRequest(const H225_UnregistrationReq
 }
 
 
-BOOL H323Gatekeeper::OnReceiveUnregistrationReject(const H225_UnregistrationReject & urj)
+PBoolean H323Gatekeeper::OnReceiveUnregistrationReject(const H225_UnregistrationReject & urj)
 {
   if (!H225_RAS::OnReceiveUnregistrationReject(urj))
-    return FALSE;
+    return PFalse;
 
   if (lastRequest->rejectReason != H225_UnregRejectReason::e_callInProgress) {
     registrationFailReason = UnregisteredLocally;
     timeToLive = 0; // zero disables lightweight RRQ
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::LocationRequest(const PString & alias,
+PBoolean H323Gatekeeper::LocationRequest(const PString & alias,
                                      H323TransportAddress & address)
 {
   PStringList aliases;
@@ -1394,11 +1394,11 @@ BOOL H323Gatekeeper::LocationRequest(const PString & alias,
 }
 
 
-BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
+PBoolean H323Gatekeeper::LocationRequest(const PStringList & aliases,
                                      H323TransportAddress & address)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   H323RasPDU pdu;
   H225_LocationRequest & lrq = pdu.BuildLocationRequest(GetNextSequenceNumber());
@@ -1424,7 +1424,7 @@ BOOL H323Gatekeeper::LocationRequest(const PStringList & aliases,
   Request request(lrq.m_requestSeqNum, pdu);
   request.responseInfo = &address;
   if (!MakeRequest(request))
-    return FALSE;
+    return PFalse;
 
   // sanity check the address - some Gks return address 0.0.0.0 and port 0
   PIPSocket::Address ipAddr;
@@ -1437,7 +1437,7 @@ H323Gatekeeper::AdmissionResponse::AdmissionResponse()
 {
   rejectReason = UINT_MAX;
 
-  gatekeeperRouted = FALSE;
+  gatekeeperRouted = PFalse;
   endpointCount = 1;
   transportAddress = NULL;
   accessTokenData = NULL;
@@ -1462,27 +1462,27 @@ struct AdmissionRequestResponseInfo {
 };
 
 
-BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
+PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
                                       AdmissionResponse & response,
-                                      BOOL ignorePreGrantedARQ)
+                                      PBoolean ignorePreGrantedARQ)
 {
-  BOOL answeringCall = connection.HadAnsweredCall();
+  PBoolean answeringCall = connection.HadAnsweredCall();
 
   if (!ignorePreGrantedARQ) {
     switch (answeringCall ? pregrantAnswerCall : pregrantMakeCall) {
       case RequireARQ :
         break;
       case PregrantARQ :
-        return TRUE;
+        return PTrue;
       case PreGkRoutedARQ :
         if (gkRouteAddress.IsEmpty()) {
           response.rejectReason = UINT_MAX;
-          return FALSE;
+          return PFalse;
         }
         if (response.transportAddress != NULL)
           *response.transportAddress = gkRouteAddress;
-        response.gatekeeperRouted = TRUE;
-        return TRUE;
+        response.gatekeeperRouted = PTrue;
+        return PTrue;
     }
   }
 
@@ -1492,9 +1492,9 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
   arq.m_callType.SetTag(H225_CallType::e_pointToPoint);
   arq.m_endpointIdentifier = endpointIdentifier;
   arq.m_answerCall = answeringCall;
-  arq.m_canMapAlias = TRUE; // Stack supports receiving a different number in the ACF 
+  arq.m_canMapAlias = PTrue; // Stack supports receiving a different number in the ACF 
                             // to the one sent in the ARQ
-  arq.m_willSupplyUUIEs = TRUE;
+  arq.m_willSupplyUUIEs = PTrue;
 
   if (!gatekeeperIdentifier) {
     arq.IncludeOptionalField(H225_AdmissionRequest::e_gatekeeperIdentifier);
@@ -1592,7 +1592,7 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
     if (request.responseResult == Request::RejectReceived &&
         response.rejectReason != H225_AdmissionRejectReason::e_callerNotRegistered &&
         response.rejectReason != H225_AdmissionRejectReason::e_invalidEndpointIdentifier)
-      return FALSE;
+      return PFalse;
 
     PTRACE(2, "RAS\tEndpoint has become unregistered during ARQ from gatekeeper " << gatekeeperIdentifier);
 
@@ -1614,11 +1614,11 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
 
     // If we are not registered and auto register is set ...
     if (!autoReregister)
-      return FALSE;
+      return PFalse;
 
     // Then immediately reregister.
     if (!RegistrationRequest(autoReregister))
-      return FALSE;
+      return PFalse;
 
     // Reset the gk info in ARQ
     arq.m_endpointIdentifier = endpointIdentifier;
@@ -1637,14 +1637,14 @@ BOOL H323Gatekeeper::AdmissionRequest(H323Connection & connection,
       response.rejectReason = request.responseResult == Request::RejectReceived
                                                 ? request.rejectReason : UINT_MAX;
 	 
-      return FALSE;
+      return PFalse;
     }
   }
 
   connection.SetBandwidthAvailable(info.allocatedBandwidth);
   connection.SetUUIEsRequested(info.uuiesRequested);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1659,32 +1659,32 @@ static unsigned GetUUIEsRequested(const H225_UUIEsRequested & pdu)
 {
   unsigned uuiesRequested = 0;
 
-  if ((BOOL)pdu.m_setup)
+  if ((PBoolean)pdu.m_setup)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_setup);
-  if ((BOOL)pdu.m_callProceeding)
+  if ((PBoolean)pdu.m_callProceeding)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_callProceeding);
-  if ((BOOL)pdu.m_connect)
+  if ((PBoolean)pdu.m_connect)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_connect);
-  if ((BOOL)pdu.m_alerting)
+  if ((PBoolean)pdu.m_alerting)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_alerting);
-  if ((BOOL)pdu.m_information)
+  if ((PBoolean)pdu.m_information)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_information);
-  if ((BOOL)pdu.m_releaseComplete)
+  if ((PBoolean)pdu.m_releaseComplete)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_releaseComplete);
-  if ((BOOL)pdu.m_facility)
+  if ((PBoolean)pdu.m_facility)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_facility);
-  if ((BOOL)pdu.m_progress)
+  if ((PBoolean)pdu.m_progress)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_progress);
-  if ((BOOL)pdu.m_empty)
+  if ((PBoolean)pdu.m_empty)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_empty);
 
-  if (pdu.HasOptionalField(H225_UUIEsRequested::e_status) && (BOOL)pdu.m_status)
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_status) && (PBoolean)pdu.m_status)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_status);
-  if (pdu.HasOptionalField(H225_UUIEsRequested::e_statusInquiry) && (BOOL)pdu.m_statusInquiry)
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_statusInquiry) && (PBoolean)pdu.m_statusInquiry)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_statusInquiry);
-  if (pdu.HasOptionalField(H225_UUIEsRequested::e_setupAcknowledge) && (BOOL)pdu.m_setupAcknowledge)
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_setupAcknowledge) && (PBoolean)pdu.m_setupAcknowledge)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_setupAcknowledge);
-  if (pdu.HasOptionalField(H225_UUIEsRequested::e_notify) && (BOOL)pdu.m_notify)
+  if (pdu.HasOptionalField(H225_UUIEsRequested::e_notify) && (PBoolean)pdu.m_notify)
     uuiesRequested |= (1<<H225_H323_UU_PDU_h323_message_body::e_notify);
 
   return uuiesRequested;
@@ -1712,10 +1712,10 @@ static void ExtractToken(const AdmissionRequestResponseInfo & info,
 }
 
 
-BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf)
+PBoolean H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf)
 {
   if (!H225_RAS::OnReceiveAdmissionConfirm(acf))
-    return FALSE;
+    return PFalse;
 
   AdmissionRequestResponseInfo & info = *(AdmissionRequestResponseInfo *)lastRequest->responseInfo;
   info.allocatedBandwidth = acf.m_bandWidth;
@@ -1763,20 +1763,20 @@ BOOL H323Gatekeeper::OnReceiveAdmissionConfirm(const H225_AdmissionConfirm & acf
   if (acf.HasOptionalField(H225_AdmissionConfirm::e_serviceControl))
     OnServiceControlSessions(acf.m_serviceControl, &info.connection);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & arj)
+PBoolean H323Gatekeeper::OnReceiveAdmissionReject(const H225_AdmissionReject & arj)
 {
   if (!H225_RAS::OnReceiveAdmissionReject(arj))
-    return FALSE;
+    return PFalse;
 
   if (arj.HasOptionalField(H225_AdmissionConfirm::e_serviceControl))
     OnServiceControlSessions(arj.m_serviceControl,
               &((AdmissionRequestResponseInfo *)lastRequest->responseInfo)->connection);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1803,7 +1803,7 @@ static void SetRasUsageInformation(const H323Connection & connection,
 }
 
 
-BOOL H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigned reason)
+PBoolean H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigned reason)
 {
   H323RasPDU pdu;
   H225_DisengageRequest & drq = pdu.BuildDisengageRequest(GetNextSequenceNumber());
@@ -1839,10 +1839,10 @@ BOOL H323Gatekeeper::DisengageRequest(const H323Connection & connection, unsigne
 }
 
 
-BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq)
+PBoolean H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq)
 {
   if (!H225_RAS::OnReceiveDisengageRequest(drq))
-    return FALSE;
+    return PFalse;
 
   OpalGloballyUniqueID id = NULL;
   if (drq.HasOptionalField(H225_DisengageRequest::e_callIdentifier))
@@ -1871,7 +1871,7 @@ BOOL H323Gatekeeper::OnReceiveDisengageRequest(const H225_DisengageRequest & drq
 }
 
 
-BOOL H323Gatekeeper::BandwidthRequest(H323Connection & connection,
+PBoolean H323Gatekeeper::BandwidthRequest(H323Connection & connection,
                                       unsigned requestedBandwidth)
 {
   H323RasPDU pdu;
@@ -1891,29 +1891,29 @@ BOOL H323Gatekeeper::BandwidthRequest(H323Connection & connection,
   request.responseInfo = &allocatedBandwidth;
 
   if (!MakeRequestWithReregister(request, H225_BandRejectReason::e_notBound))
-    return FALSE;
+    return PFalse;
 
   connection.SetBandwidthAvailable(allocatedBandwidth);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf)
+PBoolean H323Gatekeeper::OnReceiveBandwidthConfirm(const H225_BandwidthConfirm & bcf)
 {
   if (!H225_RAS::OnReceiveBandwidthConfirm(bcf))
-    return FALSE;
+    return PFalse;
 
   if (lastRequest->responseInfo != NULL)
     *(unsigned *)lastRequest->responseInfo = bcf.m_bandWidth;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq)
+PBoolean H323Gatekeeper::OnReceiveBandwidthRequest(const H225_BandwidthRequest & brq)
 {
   if (!H225_RAS::OnReceiveBandwidthRequest(brq))
-    return FALSE;
+    return PFalse;
 
   OpalGloballyUniqueID id = brq.m_callIdentifier.m_guid;
   PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(id.AsString());
@@ -1994,10 +1994,10 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
 }
 
 
-BOOL H323Gatekeeper::SendUnsolicitedIRR(H225_InfoRequestResponse & irr,
+PBoolean H323Gatekeeper::SendUnsolicitedIRR(H225_InfoRequestResponse & irr,
                                         H323RasPDU & response)
 {
-  irr.m_unsolicited = TRUE;
+  irr.m_unsolicited = PTrue;
 
   if (willRespondToIRR) {
     PTRACE(4, "RAS\tSending unsolicited IRR and awaiting acknowledgement");
@@ -2057,17 +2057,17 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
 }
 
 
-static BOOL AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
+static PBoolean AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
                                           H323EndPoint & endpoint,
                                           const PStringList & tokens)
 {
-  BOOL addedOne = FALSE;
+  PBoolean addedOne = PFalse;
 
   for (PINDEX i = 0; i < tokens.GetSize(); i++) {
     PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(tokens[i]);
     if (connection != NULL) {
       AddInfoRequestResponseCall(irr, *connection);
-      addedOne = TRUE;
+      addedOne = PTrue;
     }
   }
 
@@ -2102,7 +2102,7 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection)
 
 void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
                                          const H225_H323_UU_PDU & pdu,
-                                         BOOL sent)
+                                         PBoolean sent)
 {
   // Are unknown Q.931 PDU
   if (pdu.m_h323_message_body.GetTag() == P_MAX_INDEX)
@@ -2129,10 +2129,10 @@ void H323Gatekeeper::InfoRequestResponse(const H323Connection & connection,
 }
 
 
-BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
+PBoolean H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
 {
   if (!H225_RAS::OnReceiveInfoRequest(irq))
-    return FALSE;
+    return PFalse;
 
   H323RasPDU response(authenticators);
   H225_InfoRequestResponse & irr = BuildInfoRequestResponse(response, irq.m_requestSeqNum);
@@ -2163,12 +2163,12 @@ BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
 
   H323TransportAddress replyAddress = irq.m_replyAddress;
   if (replyAddress.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   H323TransportAddress oldAddress = transport->GetRemoteAddress();
   if (!oldAddress.IsEquivalent(replyAddress)) {
 
-    BOOL ok = transport->ConnectTo(replyAddress) && WritePDU(response);
+    PBoolean ok = transport->ConnectTo(replyAddress) && WritePDU(response);
     transport->ConnectTo(oldAddress);
 
     return ok;
@@ -2178,10 +2178,10 @@ BOOL H323Gatekeeper::OnReceiveInfoRequest(const H225_InfoRequest & irq)
 }
 
 
-BOOL H323Gatekeeper::OnReceiveServiceControlIndication(const H225_ServiceControlIndication & sci)
+PBoolean H323Gatekeeper::OnReceiveServiceControlIndication(const H225_ServiceControlIndication & sci)
 {
   if (!H225_RAS::OnReceiveServiceControlIndication(sci))
-    return FALSE;
+    return PFalse;
 
   H323Connection * connection = NULL;
 
@@ -2275,7 +2275,7 @@ void H323Gatekeeper::TickleMonitor(PTimer &, INT)
 }
 
 
-void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, BOOL permanent)
+void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, PBoolean permanent)
 {
   PINDEX i;
 
@@ -2304,14 +2304,14 @@ void H323Gatekeeper::SetAlternates(const H225_ArrayOf_AlternateGK & alts, BOOL p
 }
 
 
-BOOL H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned unregisteredTag)
+PBoolean H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned unregisteredTag)
 {
   if (MakeRequest(request))
-    return TRUE;
+    return PTrue;
 
   if (request.responseResult == Request::RejectReceived &&
       request.rejectReason != unregisteredTag)
-    return FALSE;
+    return PFalse;
 
   PTRACE(2, "RAS\tEndpoint has become unregistered from gatekeeper " << gatekeeperIdentifier);
 
@@ -2331,11 +2331,11 @@ BOOL H323Gatekeeper::MakeRequestWithReregister(Request & request, unsigned unreg
 
   // If we are not registered and auto register is set ...
   if (!autoReregister)
-    return FALSE;
+    return PFalse;
 
-  reregisterNow = TRUE;
+  reregisterNow = PTrue;
   monitorTickle.Signal();
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2352,10 +2352,10 @@ void H323Gatekeeper::Connect(const H323TransportAddress & address,
 }
 
 
-BOOL H323Gatekeeper::MakeRequest(Request & request)
+PBoolean H323Gatekeeper::MakeRequest(Request & request)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   // Set authenticators if not already set by caller
   requestMutex.Wait();
@@ -2378,14 +2378,14 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
              gatekeeperIdentifier != tempIdentifier))
         Connect(tempAddr, tempIdentifier);
       requestMutex.Signal();
-      return TRUE;
+      return PTrue;
     }
     
     if (request.responseResult != Request::NoResponseReceived &&
         request.responseResult != Request::TryAlternate) {
       // try alternate in those cases and see if it's successful
       requestMutex.Signal();
-      return FALSE;
+      return PFalse;
     }
     
     AlternateInfo * altInfo;
@@ -2396,7 +2396,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
         if (!alternatePermanent && alt > 0) 
           Connect(tempAddr,tempIdentifier);
         requestMutex.Signal();
-        return FALSE;
+        return PFalse;
       }
       
       altInfo = &alternates[alt++];
@@ -2414,7 +2414,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
     if (altInfo->registrationState == AlternateInfo::NeedToRegister) {
       altInfo->registrationState = AlternateInfo::RegistrationFailed;
       registrationFailReason = TransportError;
-      discoveryComplete = FALSE;
+      discoveryComplete = PFalse;
       H323RasPDU pdu;
       Request req(SetupGatekeeperRequest(pdu), pdu);
       
@@ -2426,7 +2426,7 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
           if (request.requestPDU.GetChoice().GetTag() == H225_RasMessage::e_registrationRequest) {
 	    if (!alternatePermanent)
 	      Connect(tempAddr,tempIdentifier);
-	    return TRUE;
+	    return PTrue;
           }
         }
         requestMutex.Wait();
@@ -2476,7 +2476,7 @@ void H323Gatekeeper::AlternateInfo::PrintOn(ostream & strm) const
     strm << ";priority=" << priority;
 }
 
-BOOL H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
+PBoolean H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
 {
 #ifdef H323_H460
   return features.SendFeature(pduType, message);

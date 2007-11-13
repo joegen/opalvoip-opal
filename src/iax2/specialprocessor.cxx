@@ -99,14 +99,14 @@ void IAX2SpecialProcessor::ProcessNetworkFrame(IAX2MiniFrame * src)
   delete src;
 }
 
-BOOL IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
+PBoolean IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 {
   PTRACE(3, "ProcessNetworkFrame(IAX2FullFrameProtocol * src)");
   src->CopyDataFromIeListTo(ieData);
   
   //check if the common method can process it?
   if (IAX2Processor::ProcessNetworkFrame(src))
-      return TRUE;
+      return PTrue;
   
   switch (src->GetSubClass()) {
     case IAX2FullFrameProtocol::cmdPoke:
@@ -115,10 +115,10 @@ BOOL IAX2SpecialProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     default:
       PTRACE(1, "Process Full Frame Protocol, Type not expected");
       SendUnsupportedFrame(src);
-      return FALSE;
+      return PFalse;
   }
   
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2SpecialProcessor::ProcessIaxCmdPoke(IAX2FullFrameProtocol *src)

@@ -62,7 +62,7 @@ class IAX2RegProcessor : public IAX2Processor
   };
   
   /** The current state of the registration */
-  BOOL registrationState;
+  RegistrationState registrationState;
   
   /** A mutex to protect the registrationState variable and the flow
       of the RegProcessor.*/      
@@ -117,7 +117,7 @@ class IAX2RegProcessor : public IAX2Processor
   
   /**Processes a protocol full frame, well, those components relating to
    * registration.*/
-  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
+  virtual PBoolean ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Reset the call, ie: get a new call source number, 
      put the sequence numbers to 0 and reset the timer.

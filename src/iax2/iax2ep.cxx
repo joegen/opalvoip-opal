@@ -64,7 +64,7 @@
  *
  * Revision 1.27  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 1.26  2007/01/24 04:00:57  csoutheren
@@ -197,7 +197,7 @@ IAX2EndPoint::IAX2EndPoint(OpalManager & mgr)
   callsEstablished.SetValue(0);
   
   //We handle the deletion of regProcessor objects.
-  regProcessors.AllowDeleteObjects(FALSE);
+  regProcessors.AllowDeleteObjects(PFalse);
 
   Initialise();
   PTRACE(5, "IAX2\tCreated endpoint.");
@@ -255,9 +255,9 @@ void IAX2EndPoint::ReportTransmitterLists()
   transmitter->ReportLists(); 
 }
 
-BOOL IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
+PBoolean IAX2EndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
@@ -338,15 +338,15 @@ PINDEX IAX2EndPoint::NextSrcCallNumber(IAX2Processor * /*processor*/)
 }
 
 
-BOOL IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
+PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 {
   PString frameToken = f->GetConnectionToken();
 
   // ReportStoredConnections();
 
-  BOOL res = connectionsActive.Contains(frameToken);
+  PBoolean res = connectionsActive.Contains(frameToken);
   if (res) {
-    return TRUE;
+    return PTrue;
   }
 
   mutexTokenTable.Wait();
@@ -355,18 +355,18 @@ BOOL IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 
   if (tokenTranslated.IsEmpty()) {
     PTRACE(4, "No matching translation table entry token for \"" << frameToken << "\"");
-    return FALSE;
+    return PFalse;
   }
 
   res = connectionsActive.Contains(tokenTranslated);
   if (res) {
     PTRACE(5, "Found \"" << tokenTranslated << "\" in the connectionsActive table");
-    return TRUE;
+    return PTrue;
   }
 
   PTRACE(4, "ERR Could not find matching connection for \"" << tokenTranslated 
 	 << "\" or \"" << frameToken << "\"");
-  return FALSE;
+  return PFalse;
 }
 
 void IAX2EndPoint::ReportStoredConnections()
@@ -476,7 +476,7 @@ PString IAX2EndPoint::BuildUrl(
   return url;
 }
 
-BOOL IAX2EndPoint::MakeConnection(
+PBoolean IAX2EndPoint::MakeConnection(
 				 OpalCall & call,
 				 const PString & rParty, 
 				 void * userData,
@@ -493,7 +493,7 @@ BOOL IAX2EndPoint::MakeConnection(
   
   PStringList remoteInfo = DissectRemoteParty(rParty);
   if(remoteInfo[protoIndex] != PString("iax2"))
-    return FALSE;
+    return PFalse;
 
   PString remotePartyName = rParty.Mid(5);    
 
@@ -501,14 +501,14 @@ BOOL IAX2EndPoint::MakeConnection(
   PIPSocket::Address ip;
   if (!PIPSocket::GetHostAddress(remoteInfo[addressIndex], ip)) {
     PTRACE(3, "Could not make a iax2 call to " << remoteInfo[addressIndex] << " as IP resolution failed");
-    return FALSE;
+    return PFalse;
   }
 
   PStringStream callId;
   callId << "iax2:" <<  ip.AsString() << "OutgoingCall" << PString(++callsEstablished);
   IAX2Connection * connection = CreateConnection(call, callId, userData, remotePartyName);
   if (!AddConnection(connection))
-    return FALSE;
+    return PFalse;
 
   //search through the register srcProcessors to see if there is a relevant userName
   //and password we can use for authentication.  If there isn't then the default
@@ -539,7 +539,7 @@ BOOL IAX2EndPoint::MakeConnection(
     connection->SetUpConnection();
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 IAX2Connection * IAX2EndPoint::CreateConnection(
@@ -557,7 +557,7 @@ OpalMediaFormatList IAX2EndPoint::GetMediaFormats() const
   return localMediaFormats;
 }
 
-BOOL IAX2EndPoint::Initialise()
+PBoolean IAX2EndPoint::Initialise()
 {
   transmitter = NULL;
   receiver    = NULL;
@@ -585,7 +585,7 @@ BOOL IAX2EndPoint::Initialise()
   if (!sock->Listen(INADDR_ANY, 0, ListenPortNumber())) {
     PTRACE(3, "Receiver\tFailed to listen for incoming connections on " << ListenPortNumber());
     PTRACE(3, "Receiver\tFailed because the socket:::" << sock->GetErrorText());
-    return FALSE;
+    return PFalse;
   }
   
   PTRACE(6, "Receiver\tYES.. Ready for incoming connections on " << ListenPortNumber());
@@ -593,7 +593,7 @@ BOOL IAX2EndPoint::Initialise()
   transmitter = new IAX2Transmit(*this, *sock);
   receiver    = new IAX2Receiver(*this, *sock);
   
-  return TRUE;
+  return PTrue;
 }
 
 PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
@@ -607,11 +607,11 @@ PINDEX IAX2EndPoint::GetOutSequenceNumberForStatusQuery()
 }
 
 
-BOOL IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
+PBoolean IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
 {   
   if (!frame->IsFullFrame()) {
     // Do Not have a FullFrame, so dont add a translation entry.
-    return FALSE;
+    return PFalse;
   }
   
   PINDEX destCallNo = frame->GetRemoteInfo().DestCallNumber();  /*Call number at our end */
@@ -625,15 +625,15 @@ BOOL IAX2EndPoint::AddNewTranslationEntry(IAX2Frame *frame)
     if (connection->GetRemoteInfo().SourceCallNumber() == destCallNo) {
       PWaitAndSignal m(mutexTokenTable);
       tokenTable.SetAt(frame->GetConnectionToken(), connection->GetCallToken());
-      return TRUE;
+      return PTrue;
     }
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
+PBoolean IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
 {
   ReportStoredConnections();
 
@@ -649,12 +649,12 @@ BOOL IAX2EndPoint::ProcessInMatchingConnection(IAX2Frame *f)
   connection = PSafePtrCast<OpalConnection, IAX2Connection>(connectionsActive.FindWithLock(tokenTranslated));
   if (connection != NULL) {
     connection->IncomingEthernetFrame(f);
-    return TRUE;
+    return PTrue;
   }
   
   PTRACE(3, "ERR Could not find matching connection for \"" << tokenTranslated 
 	 << "\" or \"" << f->GetConnectionToken() << "\"");
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -861,7 +861,7 @@ void IAX2EndPoint::Register(
 void IAX2EndPoint::OnRegistered(
       const PString & /*host*/,
       const PString & /*username*/,
-      BOOL /*isFailure*/,
+      PBoolean /*isFailure*/,
       RegisteredError /*reason*/)
 {
   PTRACE(2, "registration event occured");
@@ -870,7 +870,7 @@ void IAX2EndPoint::OnRegistered(
 void IAX2EndPoint::OnUnregistered(
       const PString & /*host*/,
       const PString & /*username*/,
-      BOOL /*isFailure*/,
+      PBoolean /*isFailure*/,
       UnregisteredError /*reason*/)
 {
   PTRACE(2, "unregistration event occured");
@@ -906,7 +906,7 @@ void IAX2EndPoint::Unregister(
   }
 }
 
-BOOL IAX2EndPoint::IsRegistered(const PString & host, const PString & username)
+PBoolean IAX2EndPoint::IsRegistered(const PString & host, const PString & username)
 {
   PWaitAndSignal m(regProcessorsMutex);
   
@@ -917,11 +917,11 @@ BOOL IAX2EndPoint::IsRegistered(const PString & host, const PString & username)
       
     if (regProcessor->GetHost() == host &&
       regProcessor->GetUserName() == username) {
-      return TRUE;
+      return PTrue;
     }
   }
   
-  return FALSE;
+  return PFalse;
 }
 
 PINDEX IAX2EndPoint::GetRegistrationsCount() {
@@ -929,7 +929,7 @@ PINDEX IAX2EndPoint::GetRegistrationsCount() {
   return regProcessors.GetSize();
 }
 
-BOOL IAX2EndPoint::OnIncomingCall(IAX2Connection & conn)
+PBoolean IAX2EndPoint::OnIncomingCall(IAX2Connection & conn)
 {
   return conn.OnIncomingCall(0, NULL);
 }
@@ -940,7 +940,7 @@ BOOL IAX2EndPoint::OnIncomingCall(IAX2Connection & conn)
 IAX2IncomingEthernetFrames::IAX2IncomingEthernetFrames() 
   : PThread(1000, NoAutoDeleteThread)
 {
-  keepGoing = TRUE;
+  keepGoing = PTrue;
 }
 
 void IAX2IncomingEthernetFrames::Assign(IAX2EndPoint *ep)
@@ -952,7 +952,7 @@ void IAX2IncomingEthernetFrames::Assign(IAX2EndPoint *ep)
 void IAX2IncomingEthernetFrames::Terminate()
 {
   PTRACE(3, "Distribute\tEnd of thread - have received a terminate signal");
-  keepGoing = FALSE;
+  keepGoing = PFalse;
   ProcessList();
 }
 

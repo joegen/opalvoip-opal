@@ -74,7 +74,7 @@ IAX2Receiver::IAX2Receiver(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
      endpoint(_newEndpoint),
      sock(_newSocket)
 {
-  keepGoing = TRUE;
+  keepGoing = PTrue;
   fromNetworkFrames.Initialise();
   
   PTRACE(6, "IAX2 Rx\tReceiver Constructed just fine");
@@ -96,7 +96,7 @@ IAX2Receiver::~IAX2Receiver()
 void IAX2Receiver::Terminate()
 {
   PTRACE(5, "IAX2 Rx\tEnd receiver thread");
-  keepGoing = FALSE;
+  keepGoing = PFalse;
   
   PIPSocket::Address addr;
   sock.GetLocalAddress(addr);
@@ -109,9 +109,9 @@ void IAX2Receiver::Main()
   SetThreadName("IAX2Receiver");
   
   while (keepGoing) {
-    BOOL res = ReadNetworkSocket();
+    PBoolean res = ReadNetworkSocket();
     
-    if ((res == FALSE) || (keepGoing == FALSE)) {
+    if ((res == PFalse) || (keepGoing == PFalse)) {
       PTRACE(3, "IAX2 Rx\tNetwork socket has closed down, so exit");
       break;            /*Network socket has closed down*/
     }
@@ -136,26 +136,26 @@ void IAX2Receiver::AddNewReceivedFrame(IAX2Frame *newFrame)
   fromNetworkFrames.AddNewFrame(newFrame);
 }
 
-BOOL IAX2Receiver::ReadNetworkSocket()
+PBoolean IAX2Receiver::ReadNetworkSocket()
 {
   IAX2Frame *frame = new IAX2Frame(endpoint);
   
   PTRACE(5, "IAX2 Rx\tWait for packet on socket.with port " << sock.GetPort() << " FrameID-->" << frame->IdString());
-  BOOL res = frame->ReadNetworkPacket(sock);
+  PBoolean res = frame->ReadNetworkPacket(sock);
   
-  if (res == FALSE) {
+  if (res == PFalse) {
     PTRACE(3, "IAX2 Rx\tFailed to read network packet from socket for FrameID-->" << frame->IdString());
     delete frame;
-    return FALSE;
+    return PFalse;
   }
   
   PTRACE(6, "IAX2 Rx\tHave read a frame from the network socket fro FrameID-->" 
 	 << frame->IdString() << endl  << *frame);
   
-  if(frame->ProcessNetworkPacket() == FALSE) {
+  if(frame->ProcessNetworkPacket() == PFalse) {
     PTRACE(3, "IAX2 Rx\tFailed to interpret header for " << frame->IdString());
     delete frame;
-    return TRUE;
+    return PTrue;
   }
   
   /* At this point, the IAX2Connection instance this frame belongs to is
@@ -168,7 +168,7 @@ BOOL IAX2Receiver::ReadNetworkSocket()
      the chance of dropping a frame is less.*/
   AddNewReceivedFrame(frame);
   
-  return TRUE;
+  return PTrue;
 }
 /* The comment below is magic for those who use emacs to edit this file. */
 /* With the comment below, the tab key does auto indent to 4 spaces.     */

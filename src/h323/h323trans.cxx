@@ -168,31 +168,31 @@ ostream & operator<<(ostream & strm, const H323TransactionPDU & pdu)
 }
 
 
-BOOL H323TransactionPDU::Read(H323Transport & transport)
+PBoolean H323TransactionPDU::Read(H323Transport & transport)
 {
   if (!transport.ReadPDU(rawPDU)) {
     PTRACE(1, GetProtocolName() << "\tRead error ("
            << transport.GetErrorNumber(PChannel::LastReadError)
            << "): " << transport.GetErrorText(PChannel::LastReadError));
-    return FALSE;
+    return PFalse;
   }
 
   rawPDU.ResetDecoder();
-  BOOL ok = GetPDU().Decode(rawPDU);
+  PBoolean ok = GetPDU().Decode(rawPDU);
   if (!ok) {
     PTRACE(1, GetProtocolName() << "\tRead error: PER decode failure:\n  "
            << setprecision(2) << rawPDU << "\n "  << setprecision(2) << *this);
     GetChoice().SetTag(UINT_MAX);
-    return TRUE;
+    return PTrue;
   }
 
-  H323TraceDumpPDU(GetProtocolName(), FALSE, rawPDU, GetPDU(), GetChoice(), GetSequenceNumber());
+  H323TraceDumpPDU(GetProtocolName(), PFalse, rawPDU, GetPDU(), GetChoice(), GetSequenceNumber());
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323TransactionPDU::Write(H323Transport & transport)
+PBoolean H323TransactionPDU::Write(H323Transport & transport)
 {
   PPER_Stream strm;
   GetPDU().Encode(strm);
@@ -202,15 +202,15 @@ BOOL H323TransactionPDU::Write(H323Transport & transport)
   for (PINDEX i = 0; i < authenticators.GetSize(); i++)
     authenticators[i].Finalise(strm);
 
-  H323TraceDumpPDU("Trans", TRUE, strm, GetPDU(), GetChoice(), GetSequenceNumber());
+  H323TraceDumpPDU("Trans", PTrue, strm, GetPDU(), GetChoice(), GetSequenceNumber());
 
   if (transport.WritePDU(strm))
-    return TRUE;
+    return PTrue;
 
   PTRACE(1, GetProtocolName() << "\tWrite PDU failed ("
          << transport.GetErrorNumber(PChannel::LastWriteError)
          << "): " << transport.GetErrorText(PChannel::LastWriteError));
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -256,7 +256,7 @@ H323Transactor::H323Transactor(H323EndPoint & ep,
 void H323Transactor::Construct()
 {
   nextSequenceNumber = PRandom::Number()%65536;
-  checkResponseCryptoTokens = TRUE;
+  checkResponseCryptoTokens = PTrue;
   lastRequest = NULL;
 
   requests.DisallowDeleteObjects();
@@ -289,20 +289,20 @@ void H323Transactor::PrintOn(ostream & strm) const
 }
 
 
-BOOL H323Transactor::SetTransport(const H323TransportAddress & iface)
+PBoolean H323Transactor::SetTransport(const H323TransportAddress & iface)
 {
   PWaitAndSignal mutex(pduWriteMutex);
 
   if (transport != NULL && transport->GetLocalAddress().IsEquivalent(iface)) {
     PTRACE(2, "Trans\tAlready have listener for " << iface);
-    return TRUE;
+    return PTrue;
   }
 
   PIPSocket::Address addr;
   WORD port = defaultLocalPort;
   if (!iface.GetIpAndPort(addr, port)) {
     PTRACE(1, "Trans\tCannot create listener for " << iface);
-    return FALSE;
+    return PFalse;
   }
 
   if (transport != NULL) {
@@ -315,7 +315,7 @@ BOOL H323Transactor::SetTransport(const H323TransportAddress & iface)
   return StartChannel();;
 }
 
-H323TransportAddressArray H323Transactor::GetInterfaceAddresses(BOOL excludeLocalHost,
+H323TransportAddressArray H323Transactor::GetInterfaceAddresses(PBoolean excludeLocalHost,
                                                                 H323Transport * associatedTransport)
 {
   if (transport == NULL)
@@ -326,16 +326,16 @@ H323TransportAddressArray H323Transactor::GetInterfaceAddresses(BOOL excludeLoca
                                      associatedTransport);
 }
 
-BOOL H323Transactor::StartChannel()
+PBoolean H323Transactor::StartChannel()
 {
   if (transport == NULL)
-    return FALSE;
+    return PFalse;
 
   transport->AttachThread(PThread::Create(PCREATE_NOTIFIER(HandleTransactions), 0,
                                           PThread::NoAutoDeleteThread,
                                           PThread::NormalPriority,
                                           "Transactor:%x"));
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -360,7 +360,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
 
   PINDEX consecutiveErrors = 0;
 
-  BOOL ok = TRUE;
+  PBoolean ok = PTrue;
   while (ok) {
     PTRACE(5, "Trans\tReading PDU");
     H323TransactionPDU * response = CreateTransactionPDU();
@@ -380,7 +380,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
           // Do NotOpen case
 
         case PChannel::NotOpen :
-          ok = FALSE;
+          ok = PFalse;
           break;
 
         default :
@@ -393,7 +393,7 @@ void H323Transactor::HandleTransactions(PThread &, INT)
             default:
               PTRACE(1, "Trans\tRead error: " << transport->GetErrorText(PChannel::LastReadError));
               if (++consecutiveErrors > 10)
-                ok = FALSE;
+                ok = PFalse;
           }
       }
     }
@@ -406,13 +406,13 @@ void H323Transactor::HandleTransactions(PThread &, INT)
 }
 
 
-BOOL H323Transactor::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress & addresses)
+PBoolean H323Transactor::SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress & addresses)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   H323SetTransportAddresses(*transport,
-                            endpoint.GetInterfaceAddresses(FALSE, transport),
+                            endpoint.GetInterfaceAddresses(PFalse, transport),
                             addresses);
 
   return addresses.GetSize() > 0;
@@ -445,10 +445,10 @@ void H323Transactor::AgeResponses()
 }
 
 
-BOOL H323Transactor::SendCachedResponse(const H323TransactionPDU & pdu)
+PBoolean H323Transactor::SendCachedResponse(const H323TransactionPDU & pdu)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   Response key(transport->GetLastReceivedAddress(), pdu.GetSequenceNumber());
 
@@ -459,14 +459,14 @@ BOOL H323Transactor::SendCachedResponse(const H323TransactionPDU & pdu)
     return responses[idx].SendCachedResponse(*transport);
 
   responses.Append(new Response(key));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323Transactor::WritePDU(H323TransactionPDU & pdu)
+PBoolean H323Transactor::WritePDU(H323TransactionPDU & pdu)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   OnSendingPDU(pdu.GetPDU());
 
@@ -481,12 +481,12 @@ BOOL H323Transactor::WritePDU(H323TransactionPDU & pdu)
 }
 
 
-BOOL H323Transactor::WriteTo(H323TransactionPDU & pdu,
+PBoolean H323Transactor::WriteTo(H323TransactionPDU & pdu,
                              const H323TransportAddressArray & addresses,
-                             BOOL callback)
+                             PBoolean callback)
 {
   if (PAssertNULL(transport) == NULL)
-    return FALSE;
+    return PFalse;
 
   if (addresses.IsEmpty()) {
     if (callback)
@@ -499,7 +499,7 @@ BOOL H323Transactor::WriteTo(H323TransactionPDU & pdu,
 
   H323TransportAddress oldAddress = transport->GetRemoteAddress();
 
-  BOOL ok = FALSE;
+  PBoolean ok = PFalse;
   for (PINDEX i = 0; i < addresses.GetSize(); i++) {
     if (transport->SetRemoteAddress(addresses[i])) {
       PTRACE(3, "Trans\tWrite address set to " << addresses[i]);
@@ -518,7 +518,7 @@ BOOL H323Transactor::WriteTo(H323TransactionPDU & pdu,
 }
 
 
-BOOL H323Transactor::MakeRequest(Request & request)
+PBoolean H323Transactor::MakeRequest(Request & request)
 {
   PTRACE(3, "Trans\tMaking request: " << request.requestPDU.GetChoice().GetTagName());
 
@@ -528,7 +528,7 @@ BOOL H323Transactor::MakeRequest(Request & request)
   requests.SetAt(request.sequenceNumber, &request);
   requestsMutex.Signal();
 
-  BOOL ok = request.Poll(*this);
+  PBoolean ok = request.Poll(*this);
 
   requestsMutex.Wait();
   requests.SetAt(request.sequenceNumber, NULL);
@@ -538,7 +538,7 @@ BOOL H323Transactor::MakeRequest(Request & request)
 }
 
 
-BOOL H323Transactor::CheckForResponse(unsigned reqTag, unsigned seqNum, const PASN_Choice * reason)
+PBoolean H323Transactor::CheckForResponse(unsigned reqTag, unsigned seqNum, const PASN_Choice * reason)
 {
   requestsMutex.Wait();
   lastRequest = requests.GetAt(seqNum);
@@ -546,16 +546,16 @@ BOOL H323Transactor::CheckForResponse(unsigned reqTag, unsigned seqNum, const PA
 
   if (lastRequest == NULL) {
     PTRACE(2, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
-    return FALSE;
+    return PFalse;
   }
 
   lastRequest->responseMutex.Wait();
   lastRequest->CheckResponse(reqTag, reason);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Transactor::HandleRequestInProgress(const H323TransactionPDU & pdu,
+PBoolean H323Transactor::HandleRequestInProgress(const H323TransactionPDU & pdu,
                                              unsigned delay)
 {
   unsigned seqNum = pdu.GetSequenceNumber();
@@ -566,26 +566,26 @@ BOOL H323Transactor::HandleRequestInProgress(const H323TransactionPDU & pdu,
 
   if (lastRequest == NULL) {
     PTRACE(2, "Trans\tTimed out or received sequence number (" << seqNum << ") for PDU we never requested");
-    return FALSE;
+    return PFalse;
   }
 
   lastRequest->responseMutex.Wait();
 
   PTRACE(3, "Trans\tReceived RIP on sequence number " << seqNum);
   lastRequest->OnReceiveRIP(delay);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323Transactor::CheckCryptoTokens(const H323TransactionPDU & pdu,
+PBoolean H323Transactor::CheckCryptoTokens(const H323TransactionPDU & pdu,
                                        const PASN_Array & clearTokens,
                                        unsigned clearOptionalField,
                                        const PASN_Array & cryptoTokens,
                                        unsigned cryptoOptionalField)
 {
-  // If cypto token checking disabled, just return TRUE.
+  // If cypto token checking disabled, just return PTrue.
   if (!GetCheckResponseCryptoTokens())
-    return TRUE;
+    return PTrue;
 
   if (lastRequest != NULL && pdu.GetAuthenticators().IsEmpty()) {
     ((H323TransactionPDU &)pdu).SetAuthenticators(lastRequest->requestPDU.GetAuthenticators());
@@ -595,7 +595,7 @@ BOOL H323Transactor::CheckCryptoTokens(const H323TransactionPDU & pdu,
 
   if (pdu.Validate(clearTokens, clearOptionalField,
                    cryptoTokens, cryptoOptionalField) == H235Authenticator::e_OK)
-    return TRUE;
+    return PTrue;
 
   /* Note that a crypto tokens error is flagged to the requestor in the
      responseResult field but the other thread is NOT signalled. This is so
@@ -609,7 +609,7 @@ BOOL H323Transactor::CheckCryptoTokens(const H323TransactionPDU & pdu,
     lastRequest = NULL;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -634,7 +634,7 @@ H323Transactor::Request::Request(unsigned seqNum,
 }
 
 
-BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
+PBoolean H323Transactor::Request::Poll(H323Transactor & rasChannel)
 {
   H323EndPoint & endpoint = rasChannel.GetEndPoint();
 
@@ -644,7 +644,7 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
     // To avoid race condition with RIP must set timeout before sending the packet
     whenResponseExpected = PTimer::Tick() + endpoint.GetRasRequestTimeout();
 
-    if (!rasChannel.WriteTo(requestPDU, requestAddresses, FALSE))
+    if (!rasChannel.WriteTo(requestPDU, requestAddresses, PFalse))
       break;
 
     PTRACE(3, "Trans\tWaiting on response to seqnum=" << requestPDU.GetSequenceNumber()
@@ -662,16 +662,16 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
           break;
 
         case ConfirmReceived :
-          return TRUE;
+          return PTrue;
 
         case RejectReceived :
         case TryAlternate :
-          return FALSE;
+          return PFalse;
 
         case BadCryptoTokens :
           PTRACE(1, "Trans\tResponse to seqnum=" << requestPDU.GetSequenceNumber()
                  << " had invalid crypto tokens.");
-          return FALSE;
+          return PFalse;
 
         default : // RequestInProgress
           responseResult = AwaitingResponse; // Keep waiting
@@ -686,7 +686,7 @@ BOOL H323Transactor::Request::Poll(H323Transactor & rasChannel)
            << ", try #" << retry << " of " << endpoint.GetRasRequestRetries());
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -778,7 +778,7 @@ void H323Transactor::Response::SetPDU(const H323TransactionPDU & pdu)
 }
 
 
-BOOL H323Transactor::Response::SendCachedResponse(H323Transport & transport)
+PBoolean H323Transactor::Response::SendCachedResponse(H323Transport & transport)
 {
   PTRACE(3, "Trans\tSending cached response: " << *this);
 
@@ -793,7 +793,7 @@ BOOL H323Transactor::Response::SendCachedResponse(H323Transport & transport)
   }
 
   lastUsedTime = PTime();
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -810,9 +810,9 @@ H323Transaction::H323Transaction(H323Transactor & trans,
   confirm = conf;
   reject = rej;
   authenticatorResult = H235Authenticator::e_Disabled;
-  fastResponseRequired = TRUE;
-  isBehindNAT = FALSE;
-  canSendRIP  = FALSE;
+  fastResponseRequired = PTrue;
+  isBehindNAT = PFalse;
+  canSendRIP  = PFalse;
 }
 
 
@@ -824,40 +824,40 @@ H323Transaction::~H323Transaction()
 }
 
 
-BOOL H323Transaction::HandlePDU()
+PBoolean H323Transaction::HandlePDU()
 {
   int response = OnHandlePDU();
   switch (response) {
     case Ignore :
-      return FALSE;
+      return PFalse;
 
     case Confirm :
       if (confirm != NULL)
         WritePDU(*confirm);
-      return FALSE;
+      return PFalse;
 
     case Reject :
       if (reject != NULL)
         WritePDU(*reject);
-      return FALSE;
+      return PFalse;
   }
 
   H323TransactionPDU * rip = CreateRIP(request->GetSequenceNumber(), response);
-  BOOL ok = WritePDU(*rip);
+  PBoolean ok = WritePDU(*rip);
   delete rip;
 
   if (!ok)
-    return FALSE;
+    return PFalse;
 
   if (fastResponseRequired) {
-    fastResponseRequired = FALSE;
+    fastResponseRequired = PFalse;
     PThread::Create(PCREATE_NOTIFIER(SlowHandler), 0,
                                      PThread::AutoDeleteThread,
                                      PThread::NormalPriority,
                                      "Transaction:%x");
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -874,14 +874,14 @@ void H323Transaction::SlowHandler(PThread &, INT)
 }
 
 
-BOOL H323Transaction::WritePDU(H323TransactionPDU & pdu)
+PBoolean H323Transaction::WritePDU(H323TransactionPDU & pdu)
 {
   pdu.SetAuthenticators(authenticators);
-  return transactor.WriteTo(pdu, replyAddresses, TRUE);
+  return transactor.WriteTo(pdu, replyAddresses, PTrue);
 }
 
 
-BOOL H323Transaction::CheckCryptoTokens(const H235Authenticators & auth)
+PBoolean H323Transaction::CheckCryptoTokens(const H235Authenticators & auth)
 {
   authenticators = auth;
 
@@ -890,10 +890,10 @@ BOOL H323Transaction::CheckCryptoTokens(const H235Authenticators & auth)
   authenticatorResult = ValidatePDU();
 
   if (authenticatorResult == H235Authenticator::e_OK)
-    return TRUE;
+    return PTrue;
 
   PTRACE(2, "Trans\t" << GetName() << " rejected, security tokens invalid.");
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -910,7 +910,7 @@ H323TransactionServer::~H323TransactionServer()
 }
 
 
-BOOL H323TransactionServer::AddListeners(const H323TransportAddressArray & ifaces)
+PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & ifaces)
 {
   if (ifaces.IsEmpty())
     return AddListener("udp$*");
@@ -919,10 +919,10 @@ BOOL H323TransactionServer::AddListeners(const H323TransportAddressArray & iface
 
   mutex.Wait();
   for (i = 0; i < listeners.GetSize(); i++) {
-    BOOL remove = TRUE;
+    PBoolean remove = PTrue;
     for (PINDEX j = 0; j < ifaces.GetSize(); j++) {
       if (listeners[i].GetTransport().GetLocalAddress().IsEquivalent(ifaces[j])) {
-        remove = FALSE;
+        remove = PFalse;
        break;
       }
     }
@@ -942,7 +942,7 @@ BOOL H323TransactionServer::AddListeners(const H323TransportAddressArray & iface
 }
 
 
-BOOL H323TransactionServer::AddListener(const H323TransportAddress & interfaceName)
+PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfaceName)
 {
   PWaitAndSignal wait(mutex);
 
@@ -950,7 +950,7 @@ BOOL H323TransactionServer::AddListener(const H323TransportAddress & interfaceNa
   for (i = 0; i < listeners.GetSize(); i++) {
     if (listeners[i].GetTransport().GetLocalAddress().IsEquivalent(interfaceName)) {
       PTRACE(2, "H323\tAlready have listener for " << interfaceName);
-      return TRUE;
+      return PTrue;
     }
   }
 
@@ -966,19 +966,19 @@ BOOL H323TransactionServer::AddListener(const H323TransportAddress & interfaceNa
   if (!PIPSocket::GetInterfaceTable(interfaces)) {
     PTRACE(1, "Trans\tNo interfaces on system!");
     if (!PIPSocket::GetHostAddress(addr))
-      return FALSE;
+      return PFalse;
     return AddListener(new H323TransportUDP(ownerEndPoint, addr, port));
   }
 
   PTRACE(4, "Trans\tAdding interfaces:\n" << setfill('\n') << interfaces << setfill(' '));
 
-  BOOL atLeastOne = FALSE;
+  PBoolean atLeastOne = PFalse;
 
   for (i = 0; i < interfaces.GetSize(); i++) {
     addr = interfaces[i].GetAddress();
     if (addr != 0) {
       if (AddListener(new H323TransportUDP(ownerEndPoint, addr, port)))
-        atLeastOne = TRUE;
+        atLeastOne = PTrue;
     }
   }
 
@@ -986,24 +986,24 @@ BOOL H323TransactionServer::AddListener(const H323TransportAddress & interfaceNa
 }
 
 
-BOOL H323TransactionServer::AddListener(H323Transport * transport)
+PBoolean H323TransactionServer::AddListener(H323Transport * transport)
 {
   if (transport == NULL)
-    return FALSE;
+    return PFalse;
 
   if (!transport->IsOpen()) {
     delete transport;
-    return FALSE;
+    return PFalse;
   }
 
   return AddListener(CreateListener(transport));
 }
 
 
-BOOL H323TransactionServer::AddListener(H323Transactor * listener)
+PBoolean H323TransactionServer::AddListener(H323Transactor * listener)
 {
   if (listener == NULL)
-    return FALSE;
+    return PFalse;
 
   PTRACE(3, "Trans\tStarted listener " << *listener);
 
@@ -1013,13 +1013,13 @@ BOOL H323TransactionServer::AddListener(H323Transactor * listener)
 
   listener->StartChannel();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323TransactionServer::RemoveListener(H323Transactor * listener)
+PBoolean H323TransactionServer::RemoveListener(H323Transactor * listener)
 {
-  BOOL ok = TRUE;
+  PBoolean ok = PTrue;
 
   mutex.Wait();
   if (listener != NULL) {

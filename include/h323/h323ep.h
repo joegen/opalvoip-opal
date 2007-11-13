@@ -42,7 +42,7 @@
  *
  * Revision 2.47  2007/03/01 05:51:03  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 2.46  2007/01/24 04:00:55  csoutheren
@@ -188,7 +188,7 @@
  * Updated to OpenH323 v1.7.9
  *
  * Revision 2.6  2001/11/13 06:25:56  robertj
- * Changed SetUpConnection() so returns BOOL as returning
+ * Changed SetUpConnection() so returns PBoolean as returning
  *   pointer to connection is not useful.
  *
  * Revision 2.5  2001/11/02 10:45:19  robertj
@@ -494,12 +494,12 @@ class H323EndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       FALSE is returned.
+       PFalse is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If FALSE is returned then the connection could not be established. For
+       If PFalse is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -507,7 +507,7 @@ class H323EndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,                  ///<  Owner of connection
       const PString & party,            ///<  Remote party to call
       void * userData  = NULL,          ///<  Arbitrary data to pass to connection
@@ -657,7 +657,7 @@ class H323EndPoint : public OpalEndPoint
        the same criteria then the gatekeeper is not changed, otherwise it is
        deleted (with unregistration) and new one created and registered to.
      */
-    BOOL UseGatekeeper(
+    PBoolean UseGatekeeper(
       const PString & address = PString::Empty(),     ///<  Address of gatekeeper to use.
       const PString & identifier = PString::Empty(),  ///<  Identifier of gatekeeper to use.
       const PString & localAddress = PString::Empty() ///<  Local interface to use.
@@ -673,7 +673,7 @@ class H323EndPoint : public OpalEndPoint
        the H323Gatekeeper object it becomes associated with. Also if transport
        is NULL then a H323TransportUDP is created.
      */
-    BOOL SetGatekeeper(
+    PBoolean SetGatekeeper(
       const PString & address,          ///<  Address of gatekeeper to use.
       H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
@@ -692,7 +692,7 @@ class H323EndPoint : public OpalEndPoint
        the H323Gatekeeper object it becomes associated with. Also if transport
        is NULL then a H323TransportUDP is created.
      */
-    BOOL SetGatekeeperZone(
+    PBoolean SetGatekeeperZone(
       const PString & address,          ///<  Address of gatekeeper to use.
       const PString & identifier,       ///<  Identifier of gatekeeper to use.
       H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
@@ -707,7 +707,7 @@ class H323EndPoint : public OpalEndPoint
        H323Gatekeeper created by this function and will be deleted by it. Also
        if transport is NULL then a H323TransportUDP is created.
      */
-    BOOL LocateGatekeeper(
+    PBoolean LocateGatekeeper(
       const PString & identifier,       ///<  Identifier of gatekeeper to locate.
       H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
@@ -720,7 +720,7 @@ class H323EndPoint : public OpalEndPoint
        H323Gatekeeper created by this function and will be deleted by it. Also
        if transport is NULL then a H323TransportUDP is created.
      */
-    BOOL DiscoverGatekeeper(
+    PBoolean DiscoverGatekeeper(
       H323Transport * transport = NULL  ///<  Transport over which to talk to gatekeeper.
     );
 
@@ -741,14 +741,14 @@ class H323EndPoint : public OpalEndPoint
 
     /**Return if endpoint is registered with gatekeeper.
       */
-    BOOL IsRegisteredWithGatekeeper() const;
+    PBoolean IsRegisteredWithGatekeeper() const;
 
     /**Unregister and delete the gatekeeper we are registered with.
-       The return value indicates FALSE if there was an error during the
+       The return value indicates PFalse if there was an error during the
        unregistration. However the gatekeeper is still removed and its
        instance deleted regardless of this error.
      */
-    BOOL RemoveGatekeeper(
+    PBoolean RemoveGatekeeper(
       int reason = -1    ///<  Reason for gatekeeper removal
     );
 
@@ -792,7 +792,7 @@ class H323EndPoint : public OpalEndPoint
   //@{
     /**Handle new incoming connetion from listener.
       */
-    virtual BOOL NewIncomingConnection(
+    virtual PBoolean NewIncomingConnection(
       OpalTransport * transport  ///<  Transport connection came in on
     );
 
@@ -825,7 +825,7 @@ class H323EndPoint : public OpalEndPoint
        This function is declared virtual to allow an application to override
        the function and get the new call token of the forwarded call.
      */
-    virtual BOOL SetupTransfer(
+    virtual PBoolean SetupTransfer(
       const PString & token,        ///<  Existing connection to be transferred
       const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
       const PString & remoteParty,  ///<  Remote party to transfer the existing call to
@@ -860,13 +860,13 @@ class H323EndPoint : public OpalEndPoint
     */
     void HoldCall(
       const PString & token,        ///<  Existing connection to be transferred
-      BOOL localHold   ///<  true for Local Hold, false for Remote Hold
+      PBoolean localHold   ///<  true for Local Hold, false for Remote Hold
     );
 
     /** Initiate Call intrusion
         Designed similar to MakeCall function
       */
-    BOOL IntrudeCall(
+    PBoolean IntrudeCall(
       const PString & remoteParty,  ///<  Remote party to intrude call
       unsigned capabilityLevel,     ///<  Capability level
       void * userData = NULL        ///<  user data to pass to CreateConnection
@@ -878,7 +878,7 @@ class H323EndPoint : public OpalEndPoint
        where the default alias is the same as the host, the default transport
        is "ip" and the default port is 1720.
       */
-    BOOL ParsePartyName(
+    PBoolean ParsePartyName(
       const PString & party,          ///<  Party name string.
       PString & alias,                ///<  Parsed alias name
       H323TransportAddress & address  ///<  Parsed transport address
@@ -906,21 +906,21 @@ class H323EndPoint : public OpalEndPoint
         @return if false, do no send the setup pdu
       */
       
-    virtual BOOL OnSendSignalSetup(H323Connection & connection,
+    virtual PBoolean OnSendSignalSetup(H323Connection & connection,
                                    H323SignalPDU & setupPDU);
 
     /**Adjust call proceeding PDU being sent. This function is called from
     the OnReceivedSignalSetup() function before it sends the Call
     Proceeding PDU. It gives an opportunity for an application to alter
     the request before transmission to the other endpoint. If this function
-    returns FALSE then the Call Proceeding PDU is not sent at all.
+    returns PFalse then the Call Proceeding PDU is not sent at all.
 
-    The default behaviour simply returns TRUE.
+    The default behaviour simply returns PTrue.
     @param connection the connection associated to the call proceeding
     @param callProceedingPDU the call processding to modify
     @return if false, do no send the connect pdu  
      */
-    virtual BOOL OnSendCallProceeding(H323Connection & connection,
+    virtual PBoolean OnSendCallProceeding(H323Connection & connection,
                                       H323SignalPDU & callProceedingPDU
                                      );
     
@@ -928,14 +928,14 @@ class H323EndPoint : public OpalEndPoint
     the H323Connection::SetConnected function before it sends the connect  PDU. 
     It gives an opportunity for an application to alter
     the request before transmission to the other endpoint. If this function
-    returns FALSE then the connect PDU is not sent at all.
+    returns PFalse then the connect PDU is not sent at all.
 
-    The default behaviour simply returns TRUE.
+    The default behaviour simply returns PTrue.
     @param connection the connection associated to the connect
     @param connectPDU the connect to modify
     @return if false, do no send the connect pdu  
      */
-    virtual BOOL OnSendConnect(H323Connection & connection,
+    virtual PBoolean OnSendConnect(H323Connection & connection,
                                H323SignalPDU & connectPDU
                               );
     
@@ -945,42 +945,42 @@ class H323EndPoint : public OpalEndPoint
        application to alter the reply before transmission to the other
        endpoint.
 
-       If FALSE is returned the connection is aborted and a Release Complete
+       If PFalse is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns TRUE.
+       The default behaviour simply returns PTrue.
      */
-    virtual BOOL OnIncomingCall(
+    virtual PBoolean OnIncomingCall(
       H323Connection & connection,    ///<  Connection that was established
       const H323SignalPDU & setupPDU,   ///<  Received setup PDU
       H323SignalPDU & alertingPDU       ///<  Alerting PDU to send
     );
 
     /**Called when an outgoing call connects
-       If FALSE is returned the connection is aborted and a Release Complete
+       If PFalse is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns TRUE.
+       The default behaviour simply returns PTrue.
       */
-    virtual BOOL OnOutgoingCall(
+    virtual PBoolean OnOutgoingCall(
         H323Connection & conn, 
         const H323SignalPDU & connectPDU
     );
 
     /**Handle a connection transfer.
        This gives the application an opportunity to abort the transfer.
-       The default behaviour just returns TRUE.
+       The default behaviour just returns PTrue.
       */
-    virtual BOOL OnCallTransferInitiate(
+    virtual PBoolean OnCallTransferInitiate(
       H323Connection & connection,    ///<  Connection to transfer
       const PString & remoteParty     ///<  Party transferring to.
     );
 
     /**Handle a transfer via consultation.
        This gives the transferred-to user an opportunity to abort the transfer.
-       The default behaviour just returns TRUE.
+       The default behaviour just returns PTrue.
       */
-    virtual BOOL OnCallTransferIdentify(
+    virtual PBoolean OnCallTransferIdentify(
       H323Connection & connection    ///<  Connection to transfer
     );
 
@@ -1016,12 +1016,12 @@ class H323EndPoint : public OpalEndPoint
        receives the optional Alerting PDU from the remote endpoint. That is
        when the remote "phone" is "ringing".
 
-       If FALSE is returned the connection is aborted and a Release Complete
+       If PFalse is returned the connection is aborted and a Release Complete
        PDU is sent.
 
-       The default behaviour simply returns TRUE.
+       The default behaviour simply returns PTrue.
      */
-    virtual BOOL OnAlerting(
+    virtual PBoolean OnAlerting(
       H323Connection & connection,    ///<  Connection that was established
       const H323SignalPDU & alertingPDU,  ///<  Received Alerting PDU
       const PString & user                ///<  Username of remote endpoint
@@ -1029,44 +1029,44 @@ class H323EndPoint : public OpalEndPoint
 
     /** A call back function when the alerting is about to be sent, 
         can be used by the application to alter the alerting Pdu
-        @return if FALSE, then the alerting is not sent
+        @return if PFalse, then the alerting is not sent
      */
       
-    virtual BOOL OnSendAlerting(H323Connection & connection,  ///< onnection that was established
+    virtual PBoolean OnSendAlerting(H323Connection & connection,  ///< onnection that was established
                                 H323SignalPDU & alerting,     ///< Alerting PDU to modify
                                 const PString & calleeName,   ///< Name of endpoint being alerted.
-                                BOOL withMedia                ///< Open media with alerting
+                                PBoolean withMedia                ///< Open media with alerting
                                );
         
     /** A call back function when the alerting has been sent, can be used by the application 
         to send the connect as soon as the alerting has been sent.
      */
       
-    virtual BOOL OnSentAlerting(H323Connection & connection);
+    virtual PBoolean OnSentAlerting(H323Connection & connection);
     
     /**A call back function when a connection indicates it is to be forwarded.
        An H323 application may handle this call back so it can make
        complicated decisions on if the call forward ius to take place. If it
-       decides to do so it must call MakeCall() and return TRUE.
+       decides to do so it must call MakeCall() and return PTrue.
 
-       The default behaviour simply returns FALSE and that the automatic
+       The default behaviour simply returns PFalse and that the automatic
        call forwarding should take place. See ForwardConnection()
       */
-    virtual BOOL OnConnectionForwarded(
+    virtual PBoolean OnConnectionForwarded(
       H323Connection & connection,    ///<  Connection to be forwarded
       const PString & forwardParty,   ///<  Remote party to forward to
       const H323SignalPDU & pdu       ///<  Full PDU initiating forwarding
     );
 
     /**Forward the call using the same token as the specified connection.
-       Return TRUE if the call is being redirected.
+       Return PTrue if the call is being redirected.
 
        The default behaviour will replace the current call in the endpoints
        call list using the same token as the call being redirected. Not that
        even though the same token is being used the actual object is
        completely mad anew.
       */
-    virtual BOOL ForwardConnection(
+    virtual PBoolean ForwardConnection(
       H323Connection & connection,    ///<  Connection to be forwarded
       const PString & forwardParty,   ///<  Remote party to forward to
       const H323SignalPDU & pdu       ///<  Full PDU initiating forwarding
@@ -1085,7 +1085,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Determine if a connection is established.
       */
-    virtual BOOL IsConnectionEstablished(
+    virtual PBoolean IsConnectionEstablished(
       const PString & token   ///<  Token for identifying connection
     );
 
@@ -1106,9 +1106,9 @@ class H323EndPoint : public OpalEndPoint
   //@{
     /**Call back for opening a logical channel.
 
-       The default behaviour simply returns TRUE.
+       The default behaviour simply returns PTrue.
       */
-    virtual BOOL OnStartLogicalChannel(
+    virtual PBoolean OnStartLogicalChannel(
       H323Connection & connection,    ///<  Connection for the channel
       H323Channel & channel           ///<  Channel being started
     );
@@ -1165,14 +1165,14 @@ class H323EndPoint : public OpalEndPoint
        An application may override this to display call credit information
        on registration, or when a call is started.
 
-       The canDisplayAmountString member variable must also be set to TRUE
+       The canDisplayAmountString member variable must also be set to PTrue
        for this to operate.
 
        The default behaviour does nothing.
       */
     virtual void OnCallCreditServiceControl(
       const PString & amount,  ///<  UTF-8 string for amount, including currency.
-      BOOL mode          ///<  Flag indicating that calls will debit the account.
+      PBoolean mode          ///<  Flag indicating that calls will debit the account.
     );
 
     /**Handle incoming service control session information.
@@ -1197,27 +1197,27 @@ class H323EndPoint : public OpalEndPoint
     /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "invite"
       
-        The default behaviour is to return FALSE, which will close the connection
+        The default behaviour is to return PFalse, which will close the connection
      */
-    virtual BOOL OnConferenceInvite(
+    virtual PBoolean OnConferenceInvite(
       const H323SignalPDU & setupPDU
     );
 
     /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "callIndependentSupplementaryService"
       
-        The default behaviour is to return FALSE, which will close the connection
+        The default behaviour is to return PFalse, which will close the connection
      */
-    virtual BOOL OnCallIndependentSupplementaryService(
+    virtual PBoolean OnCallIndependentSupplementaryService(
       const H323SignalPDU & setupPDU
     );
 
     /** Called when an endpoint receives a SETUP PDU with a
         conference goal of "capability_negotiation"
       
-        The default behaviour is to return FALSE, which will close the connection
+        The default behaviour is to return PFalse, which will close the connection
      */
-    virtual BOOL OnNegotiateConferenceCapabilities(
+    virtual PBoolean OnNegotiateConferenceCapabilities(
       const H323SignalPDU & setupPDU
     );
   //@}
@@ -1248,14 +1248,14 @@ class H323EndPoint : public OpalEndPoint
        The list defaults to the value set in the SetLocalUserName() function.
        Note that calling SetLocalUserName() will clear the alias list.
      */
-    BOOL AddAliasName(
+    PBoolean AddAliasName(
       const PString & name  ///<  New alias name to add
     );
 
     /**Remove an alias name used for the local end of any connections. 
        defaults to an empty list.
      */
-    BOOL RemoveAliasName(
+    PBoolean RemoveAliasName(
       const PString & name  ///<  New alias namer to add
     );
 
@@ -1277,68 +1277,68 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the default fast start mode.
       */
-    BOOL IsFastStartDisabled() const
+    PBoolean IsFastStartDisabled() const
       { return disableFastStart; }
 
     /**Set the default fast start mode.
       */
     void DisableFastStart(
-      BOOL mode ///<  New default mode
+      PBoolean mode ///<  New default mode
     ) { disableFastStart = mode; } 
 
     /**Get the default H.245 tunneling mode.
       */
-    BOOL IsH245TunnelingDisabled() const
+    PBoolean IsH245TunnelingDisabled() const
       { return disableH245Tunneling; }
 
     /**Set the default H.245 tunneling mode.
       */
     void DisableH245Tunneling(
-      BOOL mode ///<  New default mode
+      PBoolean mode ///<  New default mode
     ) { disableH245Tunneling = mode; } 
 
     /**Get the default H.245 tunneling mode.
       */
-    BOOL IsH245inSetupDisabled() const
+    PBoolean IsH245inSetupDisabled() const
       { return disableH245inSetup; }
 
     /**Set the default H.245 tunneling mode.
       */
     void DisableH245inSetup(
-      BOOL mode ///<  New default mode
+      PBoolean mode ///<  New default mode
     ) { disableH245inSetup = mode; } 
 
     /** find out if h245 is disabled or enabled 
-      * @return TRUE if h245 is disabled 
+      * @return PTrue if h245 is disabled 
       */
-    BOOL IsH245Disabled() const
+    PBoolean IsH245Disabled() const
     { return m_bH245Disabled; }
 
     /**Disable/Enable H.245, used at least for h450.7 calls
-     * @param  bH245Disabled TRUE if h245 has to be disabled 
+     * @param  bH245Disabled PTrue if h245 has to be disabled 
      */
-    void DisableH245(BOOL bH245Disabled) { m_bH245Disabled = bH245Disabled; } 
+    void DisableH245(PBoolean bH245Disabled) { m_bH245Disabled = bH245Disabled; } 
     
     /**Get the flag indicating the endpoint can display an amount string.
       */
-    BOOL CanDisplayAmountString() const
+    PBoolean CanDisplayAmountString() const
       { return canDisplayAmountString; }
 
     /**Set the flag indicating the endpoint can display an amount string.
       */
     void SetCanDisplayAmountString(
-      BOOL mode ///<  New default mode
+      PBoolean mode ///<  New default mode
     ) { canDisplayAmountString = mode; } 
 
     /**Get the flag indicating the call will automatically clear after a time.
       */
-    BOOL CanEnforceDurationLimit() const
+    PBoolean CanEnforceDurationLimit() const
       { return canEnforceDurationLimit; }
 
     /**Set the flag indicating the call will automatically clear after a time.
       */
     void SetCanEnforceDurationLimit(
-      BOOL mode ///<  New default mode
+      PBoolean mode ///<  New default mode
     ) { canEnforceDurationLimit = mode; } 
 
 #if OPAL_H450
@@ -1360,34 +1360,34 @@ class H323EndPoint : public OpalEndPoint
 #if OPAL_VIDEO
     /**See if should auto-start receive video channels on connection.
      */
-    BOOL CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
+    PBoolean CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
 
     /**See if should auto-start transmit video channels on connection.
      */
-    BOOL CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
+    PBoolean CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
 #endif
 
 #if OPAL_T38FAX
     /**See if should auto-start receive fax channels on connection.
      */
-    BOOL CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
+    PBoolean CanAutoStartReceiveFax() const { return autoStartReceiveFax; }
 
     /**See if should auto-start transmit fax channels on connection.
      */
-    BOOL CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
+    PBoolean CanAutoStartTransmitFax() const { return autoStartTransmitFax; }
 #endif
 
     /** Returns whether H.224 is enabled or not
      */
-    BOOL IsH224Enabled() const { return isH224Enabled; }
+    PBoolean IsH224Enabled() const { return isH224Enabled; }
 	
     /** Enables / disables H.224
 	 */
-    void SetIsH224Enabled(BOOL flag) { isH224Enabled = flag; }
+    void SetIsH224Enabled(PBoolean flag) { isH224Enabled = flag; }
 
     /**See if should automatically do call forward of connection.
      */
-    BOOL CanAutoCallForward() const { return autoCallForward; }
+    PBoolean CanAutoCallForward() const { return autoCallForward; }
 
     /**Get the current capability table for this endpoint.
      */
@@ -1419,19 +1419,19 @@ class H323EndPoint : public OpalEndPoint
 
     /**Determine if endpoint is terminal type.
      */
-    BOOL IsTerminal() const;
+    PBoolean IsTerminal() const;
 
     /**Determine if endpoint is gateway type.
      */
-    BOOL IsGateway() const;
+    PBoolean IsGateway() const;
 
     /**Determine if endpoint is gatekeeper type.
      */
-    BOOL IsGatekeeper() const;
+    PBoolean IsGatekeeper() const;
 
     /**Determine if endpoint is gatekeeper type.
      */
-    BOOL IsMCU() const;
+    PBoolean IsMCU() const;
 
     /**Get the default maximum audio jitter delay parameter.
        Defaults to 50ms
@@ -1460,7 +1460,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Called when an outgoing PDU requires a feature set
      */
-    virtual BOOL OnSendFeatureSet(unsigned, H225_FeatureSet &);
+    virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &);
 
     /**Called when an incoming PDU contains a feature set
      */
@@ -1474,7 +1474,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Determine if the address is "local", ie does not need STUN
      */
-    virtual BOOL IsLocalAddress(
+    virtual PBoolean IsLocalAddress(
       const PIPSocket::Address & remoteAddress
     ) const { return manager.IsLocalAddress(remoteAddress); }
 
@@ -1583,7 +1583,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get the flag for clearing a call if the round trip delay calculation fails.
      */
-    BOOL ShouldClearCallOnRoundTripFail() const { return clearCallOnRoundTripFail; }
+    PBoolean ShouldClearCallOnRoundTripFail() const { return clearCallOnRoundTripFail; }
 
     /**Get the amount of time with no media that should cause call to clear
      */
@@ -1591,7 +1591,7 @@ class H323EndPoint : public OpalEndPoint
 
     /**Set the amount of time with no media that should cause call to clear
      */
-    BOOL SetNoMediaTimeout(
+    PBoolean SetNoMediaTimeout(
       const PTimeInterval & newInterval  ///<  New timeout for media
     ) { return manager.SetNoMediaTimeout(newInterval); }
 
@@ -1631,12 +1631,12 @@ class H323EndPoint : public OpalEndPoint
 
     /**Get flag to indicate whether to send GRQ on gatekeeper registration
      */
-    BOOL GetSendGRQ() const
+    PBoolean GetSendGRQ() const
     { return sendGRQ; }
 
     /**Sent flag to indicate whether to send GRQ on gatekeeper registration
      */
-    void SetSendGRQ(BOOL v) 
+    void SetSendGRQ(PBoolean v) 
     { sendGRQ = v; }
 
     /**Get the default timeout for Call Transfer Timer CT-T1.
@@ -1677,8 +1677,8 @@ class H323EndPoint : public OpalEndPoint
 
   protected:
     H323Gatekeeper * InternalCreateGatekeeper(H323Transport * transport);
-    BOOL InternalRegisterGatekeeper(H323Gatekeeper * gk, BOOL discovered);
-    BOOL InternalMakeCall(
+    PBoolean InternalRegisterGatekeeper(H323Gatekeeper * gk, PBoolean discovered);
+    PBoolean InternalMakeCall(
       OpalCall & call,
       const PString & existingToken,           ///<  Existing connection to be transferred
       const PString & callIdentity,            ///<  Call identity of the secondary call (if it exists)
@@ -1691,23 +1691,23 @@ class H323EndPoint : public OpalEndPoint
 
     // Configuration variables, commonly changed
     PStringList localAliasNames;
-    BOOL        autoStartReceiveFax;
-    BOOL        autoStartTransmitFax;
-    BOOL        isH224Enabled;
-    BOOL        autoCallForward;
-    BOOL        disableFastStart;
-    BOOL        disableH245Tunneling;
-    BOOL        disableH245inSetup;
-    BOOL        m_bH245Disabled; /* enabled or disabled h245 */
-    BOOL        canDisplayAmountString;
-    BOOL        canEnforceDurationLimit;
+    PBoolean        autoStartReceiveFax;
+    PBoolean        autoStartTransmitFax;
+    PBoolean        isH224Enabled;
+    PBoolean        autoCallForward;
+    PBoolean        disableFastStart;
+    PBoolean        disableH245Tunneling;
+    PBoolean        disableH245inSetup;
+    PBoolean        m_bH245Disabled; /* enabled or disabled h245 */
+    PBoolean        canDisplayAmountString;
+    PBoolean        canEnforceDurationLimit;
 #if OPAL_H450
     unsigned    callIntrusionProtectionLevel;
 #endif
 
     TerminalTypes terminalType;
 
-    BOOL          clearCallOnRoundTripFail;
+    PBoolean          clearCallOnRoundTripFail;
 
     // Some more configuration variables, rarely changed.
     PTimeInterval signallingChannelCallTimeout;
@@ -1727,7 +1727,7 @@ class H323EndPoint : public OpalEndPoint
     PTimeInterval registrationTimeToLive;
 
     PString       gkAccessTokenOID;
-    BOOL          sendGRQ;
+    PBoolean          sendGRQ;
 
     /* Protect against absence of a response to the ctIdentify reqest
        (Transferring Endpoint - Call Transfer with a secondary Call) */

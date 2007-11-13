@@ -161,7 +161,7 @@ class IAX2Transmit : public PThread
   IAX2FrameList  sendNowFrames;  
   
   /**Flag to indicate that this thread should keep working */
-  BOOL       keepGoing;
+  PBoolean       keepGoing;
 };
 
 #endif // IAX2_TRANSMIT_H

@@ -34,7 +34,7 @@ const static PASN_Names Names_H4509_H323CallCompletionOperations[]={
 //
 
 H4509_H323CallCompletionOperations::H4509_H323CallCompletionOperations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 40, FALSE
+  : PASN_Enumeration(tag, tagClass, 40, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4509_H323CallCompletionOperations,7
 #endif
@@ -71,7 +71,7 @@ const static PASN_Names Names_H4509_CcArg[]={
 //
 
 H4509_CcArg::H4509_CcArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4509_CcArg,2
 #endif
@@ -124,19 +124,19 @@ H4509_CcArg::operator const H4509_CcLongArg &() const
 }
 
 
-BOOL H4509_CcArg::CreateObject()
+PBoolean H4509_CcArg::CreateObject()
 {
   switch (tag) {
     case e_shortArg :
       choice = new H4509_CcShortArg();
-      return TRUE;
+      return PTrue;
     case e_longArg :
       choice = new H4509_CcLongArg();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -162,7 +162,7 @@ const static PASN_Names Names_H4509_CallCompletionErrors[]={
 //
 
 H4509_CallCompletionErrors::H4509_CallCompletionErrors(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 1013, FALSE
+  : PASN_Enumeration(tag, tagClass, 1013, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4509_CallCompletionErrors,4
 #endif
@@ -223,7 +223,7 @@ PObject * H4509_ArrayOf_MixedExtension::Clone() const
 //
 
 H4509_CcRequestArg::H4509_CcRequestArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -294,25 +294,25 @@ PINDEX H4509_CcRequestArg::GetDataLength() const
 }
 
 
-BOOL H4509_CcRequestArg::Decode(PASN_Stream & strm)
+PBoolean H4509_CcRequestArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_numberA.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_numberB.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_ccIdentifier) && !m_ccIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_service.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_can_retain_service.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_retain_sig_connection) && !m_retain_sig_connection.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -351,7 +351,7 @@ PObject * H4509_CcRequestArg::Clone() const
 //
 
 H4509_CcRequestRes::H4509_CcRequestRes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -398,15 +398,15 @@ PINDEX H4509_CcRequestRes::GetDataLength() const
 }
 
 
-BOOL H4509_CcRequestRes::Decode(PASN_Stream & strm)
+PBoolean H4509_CcRequestRes::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_retain_service.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -438,7 +438,7 @@ PObject * H4509_CcRequestRes::Clone() const
 //
 
 H4509_CcShortArg::H4509_CcShortArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -487,15 +487,15 @@ PINDEX H4509_CcShortArg::GetDataLength() const
 }
 
 
-BOOL H4509_CcShortArg::Decode(PASN_Stream & strm)
+PBoolean H4509_CcShortArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_ccIdentifier) && !m_ccIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -528,7 +528,7 @@ PObject * H4509_CcShortArg::Clone() const
 //
 
 H4509_CcLongArg::H4509_CcLongArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -595,21 +595,21 @@ PINDEX H4509_CcLongArg::GetDataLength() const
 }
 
 
-BOOL H4509_CcLongArg::Decode(PASN_Stream & strm)
+PBoolean H4509_CcLongArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_numberA) && !m_numberA.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_numberB) && !m_numberB.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_ccIdentifier) && !m_ccIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_service) && !m_service.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

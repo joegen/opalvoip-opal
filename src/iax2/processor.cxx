@@ -100,20 +100,20 @@ void IAX2WaitingForAck::ZeroValues()
   //     response = sendNothing;
 }
 
-BOOL IAX2WaitingForAck::MatchingAckPacket(IAX2FullFrame *f)
+PBoolean IAX2WaitingForAck::MatchingAckPacket(IAX2FullFrame *f)
 {
   PTRACE(4, "MatchingAck\tCompare " << timeStamp << " and " << seqNo);
   if (f->GetTimeStamp() != timeStamp) {
     PTRACE(4, "MatchingAck\tTimstamps differ");
-    return FALSE;
+    return PFalse;
   }
 
   if (f->GetSequenceInfo().OutSeqNo() != seqNo) {
     PTRACE(4, "MatchingAck\tOut seqnos differ");    
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2WaitingForAck::PrintOn(ostream & strm) const
@@ -140,7 +140,7 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   : PThread(1000, NoAutoDeleteThread),
     endpoint(ep)
 {
-  endThread = FALSE;
+  endThread = PFalse;
   
   frameList.Initialise();
   
@@ -151,7 +151,7 @@ IAX2Processor::IAX2Processor(IAX2EndPoint &ep)
   nextTask.ZeroValues();
   noResponseTimer.SetNotifier(PCREATE_NOTIFIER(OnNoResponseTimeoutStart));
   
-  specialPackets = FALSE;
+  specialPackets = PFalse;
 
   currentSoundTimeStamp = 0;
 }
@@ -188,7 +188,7 @@ void IAX2Processor::Main()
   if (IsHandlingSpecialPackets())
     SetThreadName("Special Iax packets");
 
-  while(endThread == FALSE) {
+  while(endThread == PFalse) {
     activate.Wait();
     ProcessLists();
   }
@@ -197,30 +197,30 @@ void IAX2Processor::Main()
   PTRACE(3, "End of iax connection processing");
 }
 
-BOOL IAX2Processor::IsStatusQueryEthernetFrame(IAX2Frame *frame)
+PBoolean IAX2Processor::IsStatusQueryEthernetFrame(IAX2Frame *frame)
 {
   if (!PIsDescendant(frame, IAX2FullFrame))
-    return FALSE;
+    return PFalse;
    
   IAX2FullFrame *f = (IAX2FullFrame *)frame;
   if (f->GetFrameType() != IAX2FullFrame::iax2ProtocolType)
-    return FALSE;
+    return PFalse;
    
   PINDEX subClass = f->GetSubClass();
    
   if (subClass == IAX2FullFrameProtocol::cmdLagRq) {
     PTRACE(4, "Special packet of  lagrq to process");
-    return TRUE;
+    return PTrue;
   }
    
   if (subClass == IAX2FullFrameProtocol::cmdPing) {
     PTRACE(4, "Special packet of Ping to process");
-    return TRUE;
+    return PTrue;
   }
    
   PTRACE(4, "This frame  is not a cmdPing or cmdLagRq");
    
-  return FALSE;
+  return PFalse;
 }
 
 void IAX2Processor::IncomingEthernetFrame(IAX2Frame *frame)
@@ -260,7 +260,7 @@ void IAX2Processor::Activate()
 
 void IAX2Processor::Terminate()
 {
-  endThread = TRUE;
+  endThread = PTrue;
   
   PTRACE(4, "Processor has been directed to end. So end now.");
   if (IsTerminated()) {
@@ -270,11 +270,11 @@ void IAX2Processor::Terminate()
   Activate();
 }
 
-BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
+PBoolean IAX2Processor::ProcessOneIncomingEthernetFrame()
 {  
   IAX2Frame *frame = frameList.GetLastFrame();
   if (frame == NULL) {
-    return FALSE;
+    return PFalse;
   }
   
   //check the frame has not already been built
@@ -284,7 +284,7 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
     delete frame;
     
     if (af == NULL)
-      return TRUE;  
+      return PTrue;  
       
     frame = af;  
   }  
@@ -292,7 +292,7 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (PIsDescendant(frame, IAX2MiniFrame)) {
     PTRACE(4, "IaxConnection\tIncoming mini frame" << frame->IdString());
     ProcessNetworkFrame((IAX2MiniFrame *)frame);
-    return TRUE;
+    return PTrue;
   }
   
   IAX2FullFrame *f = (IAX2FullFrame *) frame;
@@ -307,13 +307,13 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
 	  PTRACE(4, "Skipped frame, received frame is " << f->GetSequenceInfo().AsString());
 	  SendVnakFrame(f);
 	  delete f;
-	  return TRUE;
+	  return PTrue;
       } 
 	  break;
       case IAX2SequenceNumbers::RepeatedFrame: {
 	  SendAckFrame(f);
 	  delete f;
-	  return TRUE;
+	  return PTrue;
       }
   }
 
@@ -333,7 +333,7 @@ BOOL IAX2Processor::ProcessOneIncomingEthernetFrame()
   if (f != NULL)
     delete f;
 
-  return TRUE;   /*There could be more frames to process. */
+  return PTrue;   /*There could be more frames to process. */
 }
 
 void IAX2Processor::TransmitFrameNow(IAX2Frame *src)
@@ -371,16 +371,16 @@ void IAX2Processor::TransmitFrameToRemoteEndpoint(IAX2FullFrame *src, IAX2Waitin
   TransmitFrameNow(src);
 }
 
-BOOL IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & password)
+PBoolean IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & password)
 {
-  BOOL processed = FALSE;
+  PBoolean processed = PFalse;
   IAX2IeAuthMethods ie(ieData.authMethods);
   
   if (ie.IsMd5Authentication()) {
     PTRACE(5, "Processor\tMD5 Authentiction yes, make reply up");
     IAX2IeMd5Result *res = new IAX2IeMd5Result(ieData.challenge, password);
     reply->AppendIe(res);
-    processed = TRUE;
+    processed = PTrue;
     encryption.SetChallengeKey(ieData.challenge);
     encryption.SetEncryptionKey(password);
   } else if (ie.IsPlainTextAuthentication()) {
@@ -388,11 +388,11 @@ BOOL IAX2Processor::Authenticate(IAX2FullFrameProtocol *reply, PString & passwor
     allowing md5 passwords.  This would make
     injecting plain auth IEs useless.*/
     reply->AppendIe(new IAX2IePassword(password));
-    processed = TRUE;
+    processed = PTrue;
   } else if (ie.IsRsaAuthentication()) {
     PTRACE(4, "DO NOT handle RSA authentication ");
     reply->SetSubClass(IAX2FullFrameProtocol::cmdInval);
-    processed = TRUE;
+    processed = PTrue;
   }
   
   if (ieData.encryptionMethods == IAX2IeEncryption::encryptAes128) {
@@ -445,7 +445,7 @@ void IAX2Processor::SendUnsupportedFrame(IAX2FullFrame *inReplyTo)
   delete inReplyTo;
 }
 
-BOOL IAX2Processor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
+PBoolean IAX2Processor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 {
   switch(src->GetSubClass()) {
   case IAX2FullFrameProtocol::cmdLagRq:
@@ -464,10 +464,10 @@ BOOL IAX2Processor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     ProcessIaxCmdPong(src);
     break;
   default:
-    return FALSE;
+    return PFalse;
   }
   
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2Processor::ProcessIaxCmdPing(IAX2FullFrameProtocol *src)

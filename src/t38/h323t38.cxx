@@ -236,7 +236,7 @@ H323Channel * H323_T38Capability::CreateChannel(H323Connection & connection,
 }
 
 
-BOOL H323_T38Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
+PBoolean H323_T38Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
   PTRACE(3, "H323T38\tOnSendingPDU for capability");
 
@@ -247,7 +247,7 @@ BOOL H323_T38Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) cons
 }
 
 
-BOOL H323_T38Capability::OnSendingPDU(H245_DataMode & pdu) const
+PBoolean H323_T38Capability::OnSendingPDU(H245_DataMode & pdu) const
 {
   pdu.m_bitRate = FAX_BIT_RATE;
   pdu.m_application.SetTag(H245_DataMode_application::e_t38fax);
@@ -256,7 +256,7 @@ BOOL H323_T38Capability::OnSendingPDU(H245_DataMode & pdu) const
 }
 
 
-BOOL H323_T38Capability::OnSendingPDU(H245_DataProtocolCapability & proto,
+PBoolean H323_T38Capability::OnSendingPDU(H245_DataProtocolCapability & proto,
                                       H245_T38FaxProfile & profile) const
 {
   if (mode == e_UDP) {
@@ -278,16 +278,16 @@ BOOL H323_T38Capability::OnSendingPDU(H245_DataProtocolCapability & proto,
     profile.m_t38FaxTcpOptions.m_t38TCPBidirectionalMode = mode == e_SingleTCP;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability & cap)
+PBoolean H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability & cap)
 {
   PTRACE(3, "H323T38\tOnRecievedPDU for capability");
 
   if (cap.m_application.GetTag() != H245_DataApplicationCapability_application::e_t38fax)
-    return FALSE;
+    return PFalse;
 
   const H245_DataApplicationCapability_application_t38fax & fax = cap.m_application;
   const H245_DataProtocolCapability & proto = fax.m_t38FaxProtocol;
@@ -302,7 +302,7 @@ BOOL H323_T38Capability::OnReceivedPDU(const H245_DataApplicationCapability & ca
       mode = e_DualTCP;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -356,7 +356,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
   PTRACE(3, "H323T38\tH323 channel created");
 
   // Transport will be owned by OpalT38Protocol
-  autoDeleteTransport = FALSE;
+  autoDeleteTransport = PFalse;
 
   separateReverseChannel = mode != H323_T38Capability::e_SingleTCP;
   usesTCP = mode != H323_T38Capability::e_UDP;
@@ -382,7 +382,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
     transport = t38handler->GetTransport();
 
     if (transport == NULL && !usesTCP && CreateTransport())
-      t38handler->SetTransport(transport, TRUE);
+      t38handler->SetTransport(transport, PTrue);
   }
 }
 
@@ -405,17 +405,17 @@ void H323_T38Channel::Close()
 }
 
 
-BOOL H323_T38Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
+PBoolean H323_T38Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
   if (t38handler != NULL)
     return H323DataChannel::OnSendingPDU(open);
 
   PTRACE(1, "H323T38\tNo protocol handler, aborting OpenLogicalChannel.");
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323_T38Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
+PBoolean H323_T38Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
                                     unsigned & errorCode)
 {
   if (t38handler != NULL)
@@ -423,7 +423,7 @@ BOOL H323_T38Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
 
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
   PTRACE(1, "H323T38\tNo protocol handler, refusing OpenLogicalChannel.");
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -474,10 +474,10 @@ void H323_T38Channel::Transmit()
 }
 
 
-BOOL H323_T38Channel::CreateTransport()
+PBoolean H323_T38Channel::CreateTransport()
 {
   if (transport != NULL)
-    return TRUE;
+    return PTrue;
 
   if (usesTCP)
     return H323DataChannel::CreateTransport();
@@ -490,14 +490,14 @@ BOOL H323_T38Channel::CreateTransport()
 
   transport = new H323TransportUDP(connection.GetEndPoint(), ip);
   PTRACE(3, "H323T38\tCreated transport: " << *transport);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323_T38Channel::CreateListener()
+PBoolean H323_T38Channel::CreateListener()
 {
   if (listener != NULL)
-    return TRUE;
+    return PTrue;
 
   if (usesTCP) {
     return H323DataChannel::CreateListener();

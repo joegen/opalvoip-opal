@@ -54,7 +54,7 @@ class MyGatekeeperCall : public H323GatekeeperCall
     );
 
 #ifdef H323_TRANSNEXUS_OSP
-    BOOL AuthoriseOSPCall(H323GatekeeperARQ & info);
+    PBoolean AuthoriseOSPCall(H323GatekeeperARQ & info);
     OpalOSP::Transaction * ospTransaction;
 #endif
 };
@@ -72,16 +72,16 @@ class MyGatekeeperServer : public H323GatekeeperServer
       const OpalGloballyUniqueID & callIdentifier,
       H323GatekeeperCall::Direction direction
     );
-    virtual BOOL TranslateAliasAddress(
+    virtual PBoolean TranslateAliasAddress(
       const H225_AliasAddress & alias,
       H225_ArrayOf_AliasAddress & aliases,
       H323TransportAddress & address,
-      BOOL & isGkRouted,
+      PBoolean & isGkRouted,
       H323GatekeeperCall * call
     );
 
     // new functions
-    BOOL Initialise(PConfig & cfg, PConfigPage * rsrc);
+    PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
 
 #ifdef H323_TRANSNEXUS_OSP
     OpalOSP::Provider * GetOSPProvider() const
@@ -106,9 +106,9 @@ class MyGatekeeperServer : public H323GatekeeperServer
           ostream & strm
         ) const;
 
-        BOOL IsValid() const;
+        PBoolean IsValid() const;
 
-        BOOL IsMatch(
+        PBoolean IsMatch(
           const PString & alias
         ) const;
 
@@ -144,9 +144,9 @@ class MyManager : public OpalManager
     MyManager();
     ~MyManager();
 
-    BOOL Initialise(PConfig & cfg, PConfigPage * rsrc);
+    PBoolean Initialise(PConfig & cfg, PConfigPage * rsrc);
 #if OPAL_H323
-    BOOL OnPostControl(const PStringToString & data, PHTML & msg);
+    PBoolean OnPostControl(const PStringToString & data, PHTML & msg);
     PString OnLoadEndPointStatus(const PString & htmlBlock);
     PString OnLoadCallStatus(const PString & htmlBlock);
 #endif
@@ -176,11 +176,11 @@ class OpalGw : public OpalGwProcessAncestor
   public:
     OpalGw();
     virtual void Main();
-    virtual BOOL OnStart();
+    virtual PBoolean OnStart();
     virtual void OnStop();
     virtual void OnControl();
     virtual void OnConfigChanged();
-    virtual BOOL Initialise(const char * initMsg);
+    virtual PBoolean Initialise(const char * initMsg);
 
     static OpalGw & Current() { return (OpalGw &)PProcess::Current(); }
 
@@ -195,7 +195,7 @@ class MainStatusPage : public PServiceHTTPString
   public:
     MainStatusPage(OpalGw & app, PHTTPAuthority & auth);
     
-    virtual BOOL Post(
+    virtual PBoolean Post(
       PHTTPRequest & request,
       const PStringToString &,
       PHTML & msg

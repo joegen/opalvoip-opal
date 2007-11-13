@@ -158,10 +158,10 @@ void SIPHandler::SetExpire (int e)
 }
 
 
-BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
+PBoolean SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 {
   if (param == NULL)
-    return FALSE;
+    return PFalse;
 
   SIPHandler * handler = (SIPHandler *)param;
 
@@ -169,18 +169,18 @@ BOOL SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
   if (transaction != NULL) {
     handler->callID = transaction->GetMIME().GetCallID();
     if (transaction->Start())
-      return TRUE;
+      return PTrue;
   }
 
     PTRACE(2, "SIP\tDid not start transaction on " << transport);
-    return FALSE;
+    return PFalse;
 }
 
 
-BOOL SIPHandler::SendRequest(SIPHandler::State s)
+PBoolean SIPHandler::SendRequest(SIPHandler::State s)
 {
   if (transport == NULL)
-    return FALSE;
+    return PFalse;
 
   SetState(expire != 0 ? s : Unsubscribing); 
 
@@ -188,9 +188,9 @@ BOOL SIPHandler::SendRequest(SIPHandler::State s)
 }
 
 
-BOOL SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
+PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -235,12 +235,12 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes r)
 }
 
 
-BOOL SIPHandler::CanBeDeleted()
+PBoolean SIPHandler::CanBeDeleted()
 {
   if (GetState() == Unsubscribed && GetExpire() == -1)
-    return TRUE;
+    return PTrue;
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -384,7 +384,7 @@ SIPSubscribeHandler::SIPSubscribeHandler (SIPEndPoint & endpoint,
   if (expire == 0)
     expire = endpoint.GetNotifierTimeToLive().GetSeconds();
   type = t;
-  dialogCreated = FALSE;
+  dialogCreated = PFalse;
 
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
@@ -447,7 +447,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIP_PDU & response)
       routeSet += recordRoute [i];
     if (!response.GetMIME().GetContact().IsEmpty()) 
       targetAddress = response.GetMIME().GetContact();
-    dialogCreated = TRUE;
+    dialogCreated = PTrue;
   }
 
   /* Update the To */
@@ -463,7 +463,7 @@ void SIPSubscribeHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 }
 
 
-BOOL SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
+PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 {
   unsigned requestCSeq = request.GetMIME().GetCSeq().AsUnsigned();
   SIPSubscribe::SubscribeType event = SIPSubscribe::MessageSummary;
@@ -477,12 +477,12 @@ BOOL SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
     lastReceivedCSeq = requestCSeq;
 
   if (transport == NULL)
-    return FALSE;
+    return PFalse;
 
   else if (requestCSeq < lastReceivedCSeq) {
 
     endpoint.SendResponse(SIP_PDU::Failure_InternalServerError, *transport, request);
-    return FALSE;
+    return PFalse;
   }
   lastReceivedCSeq = requestCSeq;
 
@@ -533,7 +533,7 @@ BOOL SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
 }
 
 
-BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
+PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 {
   PString body = request.GetEntityBody();
   PString msgs;
@@ -565,7 +565,7 @@ BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
           endpoint.OnMWIReceived (GetRemotePartyAddress(),
                             (SIPSubscribe::MWIType) z, 
                             msgs);
-          return TRUE;
+          return PTrue;
         }
       }
     }
@@ -576,11 +576,11 @@ BOOL SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
                       "1/0");
   } 
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
+PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
 #if P_EXPAT
   PString body = request.GetEntityBody();
@@ -596,22 +596,22 @@ BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
   PXMLElement *noteElement = NULL;
 
   if (!xmlPresence.Load(body))
-    return FALSE;
+    return PFalse;
 
   rootElement = xmlPresence.GetRootElement();
   if (rootElement == NULL)
-    return FALSE;
+    return PFalse;
 
   if (rootElement->GetName() != "presence")
-    return FALSE;
+    return PFalse;
 
   tupleElement = rootElement->GetElement("tuple");
   if (tupleElement == NULL)
-    return FALSE;
+    return PFalse;
 
   statusElement = tupleElement->GetElement("status");
   if (statusElement == NULL)
-    return FALSE;
+    return PFalse;
 
   basicElement = statusElement->GetElement("basic");
   if (basicElement)
@@ -629,7 +629,7 @@ BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
   endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
 #endif
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -667,7 +667,7 @@ SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
   publishTimer.SetNotifier(PCREATE_NOTIFIER(OnPublishTimeout));
   publishTimer.RunContinuous (PTimeInterval (0, 5));
 
-  stateChanged = FALSE;
+  stateChanged = PFalse;
 
   body = b;
 }
@@ -739,7 +739,7 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
     if (stateChanged) {
       if (!SendRequest())
         SetState(Unsubscribed);
-      stateChanged = FALSE;
+      stateChanged = PFalse;
     }
   }
 }
@@ -747,7 +747,7 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
 
 void SIPPublishHandler::SetBody(const PString & b)
 {
-  stateChanged = TRUE;
+  stateChanged = PTrue;
   body = b;
 }
 

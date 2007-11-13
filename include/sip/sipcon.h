@@ -90,7 +90,7 @@
  *
  * Revision 2.60  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 2.59  2007/02/19 04:42:27  csoutheren
@@ -359,7 +359,7 @@ class SIPConnection : public OpalConnection
 
        The default behaviour is .
       */
-    virtual BOOL SetUpConnection();
+    virtual PBoolean SetUpConnection();
 
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
@@ -379,9 +379,9 @@ class SIPConnection : public OpalConnection
      */
     virtual void RetrieveConnection();
 
-    /**Return TRUE if the current connection is on hold.
+    /**Return PTrue if the current connection is on hold.
      */
-    virtual BOOL IsConnectionOnHold();
+    virtual PBoolean IsConnectionOnHold();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -393,16 +393,16 @@ class SIPConnection : public OpalConnection
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetAlerting(
+    virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      BOOL withMedia
+      PBoolean withMedia
     );
 
     /**Indicate to remote endpoint we are connected.
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetConnected();
+    virtual PBoolean SetConnected();
 
     /**Get the data formats this endpoint is capable of operating in.
       */
@@ -410,7 +410,7 @@ class SIPConnection : public OpalConnection
     
     /**Open source transmitter media stream for session.
       */
-    virtual BOOL OpenSourceMediaStream(
+    virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
       unsigned sessionID                   ///<  Session to start stream on
     );
@@ -438,12 +438,12 @@ class SIPConnection : public OpalConnection
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource                        ///<  Is a source stream
+      PBoolean isSource                        ///<  Is a source stream
     );
 	
     /**Overrides from OpalConnection
       */
-    virtual void OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch);
+    virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
 
 
     /**Indicate the result of answering an incoming call.
@@ -476,10 +476,10 @@ class SIPConnection : public OpalConnection
 
     /**See if the media can bypass the local host.
 
-       The default behaviour returns FALSE indicating that media bypass is not
+       The default behaviour returns PFalse indicating that media bypass is not
        possible.
      */
-    virtual BOOL IsMediaBypassPossible(
+    virtual PBoolean IsMediaBypassPossible(
       unsigned sessionID                  ///<  Session ID for media channel
     ) const;
 
@@ -575,9 +575,9 @@ class SIPConnection : public OpalConnection
     virtual void OnReceivedSessionProgress(SIP_PDU & pdu);
   
     /**Handle an incoming Proxy Authentication Required response PDU
-       Returns: TRUE if handled, if FALSE is returned connection is released.
+       Returns: PTrue if handled, if PFalse is returned connection is released.
       */
-    virtual BOOL OnReceivedAuthenticationRequired(
+    virtual PBoolean OnReceivedAuthenticationRequired(
       SIPTransaction & transaction,
       SIP_PDU & response
     );
@@ -627,11 +627,11 @@ class SIPConnection : public OpalConnection
        function when an application wishes to redirect an unwanted incoming
        call.
 
-       The return value is TRUE if the call is to be forwarded, FALSE 
+       The return value is PTrue if the call is to be forwarded, PFalse 
        otherwise. Note that if the call is forwarded, the current connection
        is cleared with the ended call code set to EndedByCallForwarded.
       */
-    virtual BOOL ForwardCall(
+    virtual PBoolean ForwardCall(
       const PString & forwardParty   ///<  Party to forward call to.
     );
 
@@ -658,17 +658,17 @@ class SIPConnection : public OpalConnection
 
        The default behaviour sends the tone using RFC2833.
       */
-    BOOL SendUserInputTone(char tone, unsigned duration);
+    PBoolean SendUserInputTone(char tone, unsigned duration);
     
     /**Send a "200 OK" response for the received INVITE message.
      */
-    virtual BOOL SendInviteOK(const SDPSessionDescription & sdp);
+    virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
 	
-	virtual BOOL SendACK(SIPTransaction & invite, SIP_PDU & response);
+	virtual PBoolean SendACK(SIPTransaction & invite, SIP_PDU & response);
 
     /**Send a response for the received INVITE message.
      */
-    virtual BOOL SendInviteResponse(
+    virtual PBoolean SendInviteResponse(
       SIP_PDU::StatusCodes code,
       const char * contact = NULL,
       const char * extra = NULL,
@@ -678,11 +678,11 @@ class SIPConnection : public OpalConnection
     /**Send a PDU using the connection transport.
      * The PDU is sent to the address given as argument.
      */
-    virtual BOOL SendPDU(SIP_PDU &, const OpalTransportAddress &);
+    virtual PBoolean SendPDU(SIP_PDU &, const OpalTransportAddress &);
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    BOOL BuildSDP(
+    PBoolean BuildSDP(
       SDPSessionDescription * &,     
       RTP_SessionManager & rtpSessions,
       unsigned rtpSessionId
@@ -713,15 +713,15 @@ class SIPConnection : public OpalConnection
     const PStringList & GetRouteSet() const { return routeSet; }
     const SIPAuthentication & GetAuthenticator() const { return authentication; }
 
-    BOOL OnOpenIncomingMediaChannels();
+    PBoolean OnOpenIncomingMediaChannels();
 
 #if OPAL_VIDEO
     /**Call when SIP INFO of type application/media_control+xml is received.
 
-       Return FALSE if default reponse of Failure_UnsupportedMediaType is to be returned
+       Return PFalse if default reponse of Failure_UnsupportedMediaType is to be returned
 
       */
-    virtual BOOL OnMediaControlXML(SIP_PDU & pdu);
+    virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
 
   protected:
@@ -734,28 +734,28 @@ class SIPConnection : public OpalConnection
       OpalTransportAddress & localAddress
     );
     virtual void OnReceivedSDP(SIP_PDU & pdu);
-    virtual BOOL OnReceivedSDPMediaDescription(
+    virtual PBoolean OnReceivedSDPMediaDescription(
       SDPSessionDescription & sdp,
       SDPMediaDescription::MediaType mediaType,
       unsigned sessionId
     );
-    virtual BOOL OnSendSDPMediaDescription(
+    virtual PBoolean OnSendSDPMediaDescription(
       const SDPSessionDescription & sdpIn,
       SDPMediaDescription::MediaType mediaType,
       unsigned sessionId,
       SDPSessionDescription & sdpOut
     );
-    virtual BOOL OnOpenSourceMediaStreams(
+    virtual PBoolean OnOpenSourceMediaStreams(
       const OpalMediaFormatList & remoteFormatList,
       unsigned sessionId,
       SDPMediaDescription *localMedia
     );
     SDPMediaDescription::Direction GetDirection(unsigned sessionId);
-    static BOOL WriteINVITE(OpalTransport & transport, void * param);
+    static PBoolean WriteINVITE(OpalTransport & transport, void * param);
 
-    OpalTransport * CreateTransport(const OpalTransportAddress & address, BOOL isLocalAddress = FALSE);
+    OpalTransport * CreateTransport(const OpalTransportAddress & address, PBoolean isLocalAddress = PFalse);
 
-    BOOL ConstructSDP(SDPSessionDescription & sdpOut);
+    PBoolean ConstructSDP(SDPSessionDescription & sdpOut);
 
     void UpdateRemotePartyNameAndNumber();
 
@@ -763,8 +763,8 @@ class SIPConnection : public OpalConnection
     OpalTransport       * transport;
 
     PMutex                transportMutex;
-    BOOL                  local_hold;
-    BOOL                  remote_hold;
+    PBoolean                  local_hold;
+    PBoolean                  remote_hold;
     PString               localPartyAddress;
     PString               forwardParty;
     SIP_PDU             * originalInvite;

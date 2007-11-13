@@ -59,7 +59,7 @@
 H224_Frame::H224_Frame(PINDEX size)
 : Q922_Frame(H224_HEADER_SIZE + size)
 {
-  SetHighPriority(FALSE);
+  SetHighPriority(PFalse);
 	
   SetControlFieldOctet(0x03);
 	
@@ -82,7 +82,7 @@ H224_Frame::~H224_Frame()
 {
 }
 
-void H224_Frame::SetHighPriority(BOOL flag)
+void H224_Frame::SetHighPriority(PBoolean flag)
 {
   SetHighOrderAddressOctet(0x00);
 	
@@ -137,14 +137,14 @@ void H224_Frame::SetClientID(BYTE clientID)
   data[4] = clientID;
 }
 
-BOOL H224_Frame::GetBS() const
+PBoolean H224_Frame::GetBS() const
 {
   BYTE *data = GetInformationFieldPtr();
 	
   return (data[5] & 0x80) != 0;
 }
 
-void H224_Frame::SetBS(BOOL flag)
+void H224_Frame::SetBS(PBoolean flag)
 {
   BYTE *data = GetInformationFieldPtr();
 	
@@ -155,14 +155,14 @@ void H224_Frame::SetBS(BOOL flag)
   }
 }
 
-BOOL H224_Frame::GetES() const
+PBoolean H224_Frame::GetES() const
 {
   BYTE *data = GetInformationFieldPtr();
 	
   return (data[5] & 0x40) != 0;
 }
 
-void H224_Frame::SetES(BOOL flag)
+void H224_Frame::SetES(PBoolean flag)
 {
   BYTE *data = GetInformationFieldPtr();
 	
@@ -173,14 +173,14 @@ void H224_Frame::SetES(BOOL flag)
   }
 }
 
-BOOL H224_Frame::GetC1() const
+PBoolean H224_Frame::GetC1() const
 {
   BYTE *data = GetInformationFieldPtr();
 	
   return (data[5] & 0x20) != 0;
 }
 
-void H224_Frame::SetC1(BOOL flag)
+void H224_Frame::SetC1(PBoolean flag)
 {
   BYTE *data = GetInformationFieldPtr();
 	
@@ -191,14 +191,14 @@ void H224_Frame::SetC1(BOOL flag)
   }
 }
 
-BOOL H224_Frame::GetC0() const
+PBoolean H224_Frame::GetC0() const
 {
   BYTE *data = GetInformationFieldPtr();
 	
   return (data[5] & 0x10) != 0;
 }
 
-void H224_Frame::SetC0(BOOL flag)
+void H224_Frame::SetC0(PBoolean flag)
 {
   BYTE *data = GetInformationFieldPtr();
 	
@@ -224,13 +224,13 @@ void H224_Frame::SetSegmentNumber(BYTE segmentNumber)
   data[5] |= (segmentNumber & 0x0f);
 }
 
-BOOL H224_Frame::Decode(const BYTE *data, 
+PBoolean H224_Frame::Decode(const BYTE *data, 
 						PINDEX size)
 {
-  BOOL result = Q922_Frame::Decode(data, size);
+  PBoolean result = Q922_Frame::Decode(data, size);
 	
-  if(result == FALSE) {
-	return FALSE;
+  if(result == PFalse) {
+	return PFalse;
   }
 	
   // doing some validity check for H.224 frames
@@ -243,10 +243,10 @@ BOOL H224_Frame::Decode(const BYTE *data,
      (controlFieldOctet != 0x03) ||
      (GetClientID() > 0x02))
   {		
-	  return FALSE;
+	  return PFalse;
   }
 	
-  return TRUE;
+  return PTrue;
 }
 
 ////////////////////////////////////
@@ -272,11 +272,11 @@ void OpalH224Handler::StartTransmit()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if(canTransmit == TRUE) {
+  if(canTransmit == PTrue) {
     return;
   }
 	
-  canTransmit = TRUE;
+  canTransmit = PTrue;
 	
   transmitFrame = new RTP_DataFrame(300);
   
@@ -296,7 +296,7 @@ void OpalH224Handler::StopTransmit()
   delete transmitStartTime;
   transmitStartTime = NULL;
 	
-  canTransmit = FALSE;
+  canTransmit = PFalse;
 }
 
 void OpalH224Handler::StartReceive()
@@ -317,16 +317,16 @@ void OpalH224Handler::StopReceive()
   }
 }
 
-BOOL OpalH224Handler::SendClientList()
+PBoolean OpalH224Handler::SendClientList()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if(canTransmit == FALSE) {
-    return FALSE;
+  if(canTransmit == PFalse) {
+    return PFalse;
   }
 	
   H224_Frame h224Frame = H224_Frame(4);
-  h224Frame.SetHighPriority(TRUE);
+  h224Frame.SetHighPriority(PTrue);
   h224Frame.SetDestinationTerminalAddress(H224_BROADCAST);
   h224Frame.SetSourceTerminalAddress(H224_BROADCAST);
 	
@@ -334,10 +334,10 @@ BOOL OpalH224Handler::SendClientList()
   h224Frame.SetClientID(0x00);
 	
   // Begin and end of sequence
-  h224Frame.SetBS(TRUE);
-  h224Frame.SetES(TRUE);
-  h224Frame.SetC1(FALSE);
-  h224Frame.SetC0(FALSE);
+  h224Frame.SetBS(PTrue);
+  h224Frame.SetES(PTrue);
+  h224Frame.SetC1(PFalse);
+  h224Frame.SetC0(PFalse);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -349,32 +349,32 @@ BOOL OpalH224Handler::SendClientList()
 	
   TransmitFrame(h224Frame);
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::SendExtraCapabilities()
+PBoolean OpalH224Handler::SendExtraCapabilities()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if(canTransmit == FALSE) {
-    return FALSE;
+  if(canTransmit == PFalse) {
+    return PFalse;
   }
 	
   h281Handler->SendExtraCapabilities();
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::SendClientListCommand()
+PBoolean OpalH224Handler::SendClientListCommand()
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if(canTransmit == FALSE) {
-    return FALSE;
+  if(canTransmit == PFalse) {
+    return PFalse;
   }
 	
   H224_Frame h224Frame = H224_Frame(2);
-  h224Frame.SetHighPriority(TRUE);
+  h224Frame.SetHighPriority(PTrue);
   h224Frame.SetDestinationTerminalAddress(H224_BROADCAST);
   h224Frame.SetSourceTerminalAddress(H224_BROADCAST);
 	
@@ -382,10 +382,10 @@ BOOL OpalH224Handler::SendClientListCommand()
   h224Frame.SetClientID(0x00);
 	
   // Begin and end of sequence
-  h224Frame.SetBS(TRUE);
-  h224Frame.SetES(TRUE);
-  h224Frame.SetC1(FALSE);
-  h224Frame.SetC0(FALSE);
+  h224Frame.SetBS(PTrue);
+  h224Frame.SetES(PTrue);
+  h224Frame.SetC1(PFalse);
+  h224Frame.SetC0(PFalse);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -395,23 +395,23 @@ BOOL OpalH224Handler::SendClientListCommand()
 	
   TransmitFrame(h224Frame);
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::SendExtraCapabilitiesCommand(BYTE clientID)
+PBoolean OpalH224Handler::SendExtraCapabilitiesCommand(BYTE clientID)
 {
   PWaitAndSignal m(transmitMutex);
 	
-  if(canTransmit == FALSE) {
-    return FALSE;
+  if(canTransmit == PFalse) {
+    return PFalse;
   }
 	
   if(clientID != H281_CLIENT_ID) {
-    return FALSE;
+    return PFalse;
   }
 	
   H224_Frame h224Frame = H224_Frame(4);
-  h224Frame.SetHighPriority(TRUE);
+  h224Frame.SetHighPriority(PTrue);
   h224Frame.SetDestinationTerminalAddress(H224_BROADCAST);
   h224Frame.SetSourceTerminalAddress(H224_BROADCAST);
 	
@@ -419,10 +419,10 @@ BOOL OpalH224Handler::SendExtraCapabilitiesCommand(BYTE clientID)
   h224Frame.SetClientID(0x00);
 	
   // Begin and end of sequence
-  h224Frame.SetBS(TRUE);
-  h224Frame.SetES(TRUE);
-  h224Frame.SetC1(FALSE);
-  h224Frame.SetC0(FALSE);
+  h224Frame.SetBS(PTrue);
+  h224Frame.SetES(PTrue);
+  h224Frame.SetC1(PFalse);
+  h224Frame.SetC0(PFalse);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -433,10 +433,10 @@ BOOL OpalH224Handler::SendExtraCapabilitiesCommand(BYTE clientID)
 	
   TransmitFrame(h224Frame);
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::SendExtraCapabilitiesMessage(BYTE clientID, 
+PBoolean OpalH224Handler::SendExtraCapabilitiesMessage(BYTE clientID, 
 												   BYTE *data, PINDEX length)
 {	
   PWaitAndSignal m(transmitMutex);
@@ -444,15 +444,15 @@ BOOL OpalH224Handler::SendExtraCapabilitiesMessage(BYTE clientID,
   // only H.281 supported at the moment
   if(clientID != H281_CLIENT_ID) {
 	
-    return FALSE;
+    return PFalse;
   }
 	
-  if(canTransmit == FALSE) {
-    return FALSE;
+  if(canTransmit == PFalse) {
+    return PFalse;
   }
 	
   H224_Frame h224Frame = H224_Frame(length+3);
-  h224Frame.SetHighPriority(TRUE);
+  h224Frame.SetHighPriority(PTrue);
   h224Frame.SetDestinationTerminalAddress(H224_BROADCAST);
   h224Frame.SetSourceTerminalAddress(H224_BROADCAST);
 	
@@ -460,10 +460,10 @@ BOOL OpalH224Handler::SendExtraCapabilitiesMessage(BYTE clientID,
   h224Frame.SetClientID(0x00);
 	
   // Begin and end of sequence, rest is zero
-  h224Frame.SetBS(TRUE);
-  h224Frame.SetES(TRUE);
-  h224Frame.SetC1(FALSE);
-  h224Frame.SetC0(FALSE);
+  h224Frame.SetBS(PTrue);
+  h224Frame.SetES(PTrue);
+  h224Frame.SetC1(PFalse);
+  h224Frame.SetC0(PFalse);
   h224Frame.SetSegmentNumber(0);
 	
   BYTE *ptr = h224Frame.GetClientDataPtr();
@@ -476,31 +476,31 @@ BOOL OpalH224Handler::SendExtraCapabilitiesMessage(BYTE clientID,
 	
   TransmitFrame(h224Frame);
 	
-  return TRUE;	
+  return PTrue;	
 }
 
-BOOL OpalH224Handler::TransmitClientFrame(BYTE clientID, H224_Frame & frame)
+PBoolean OpalH224Handler::TransmitClientFrame(BYTE clientID, H224_Frame & frame)
 {
   PWaitAndSignal m(transmitMutex);
 	
   // only H.281 is supported at the moment
   if(clientID != H281_CLIENT_ID) {
-    return FALSE;
+    return PFalse;
   }
 	
   frame.SetClientID(clientID);
 	
   TransmitFrame(frame);
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
+PBoolean OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
 {
   if(frame.GetDestinationTerminalAddress() != H224_BROADCAST) {
     // only broadcast frames are handled at the moment
     PTRACE(3, "H.224\tReceived frame with non-broadcast address");
-    return TRUE;
+    return PTrue;
   }
   BYTE clientID = frame.GetClientID();
 	
@@ -512,10 +512,10 @@ BOOL OpalH224Handler::OnReceivedFrame(H224_Frame & frame)
     h281Handler->OnReceivedMessage((const H281_Frame &)frame);
   }
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::OnReceivedCMEMessage(H224_Frame & frame)
+PBoolean OpalH224Handler::OnReceivedCMEMessage(H224_Frame & frame)
 {
   BYTE *data = frame.GetClientDataPtr();
 	
@@ -539,10 +539,10 @@ BOOL OpalH224Handler::OnReceivedCMEMessage(H224_Frame & frame)
   }
 	
   // incorrect frames are simply ignored
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
+PBoolean OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
 {
   BYTE *data = frame.GetClientDataPtr();
 	
@@ -550,14 +550,14 @@ BOOL OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
 	
   PINDEX i = 3;
 	
-  BOOL remoteHasH281 = FALSE;
+  PBoolean remoteHasH281 = PFalse;
 	
   while(numberOfClients > 0) {
 	  
 	BYTE clientID = (data[i] & 0x7f);
 		
 	if(clientID == H281_CLIENT_ID) {
-	  remoteHasH281 = TRUE;
+	  remoteHasH281 = PTrue;
 	  i++;
 	} else if(clientID == 0x7e) { // extended client ID
       i += 2;
@@ -571,16 +571,16 @@ BOOL OpalH224Handler::OnReceivedClientList(H224_Frame & frame)
 	
   h281Handler->SetRemoteHasH281(remoteHasH281);
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::OnReceivedClientListCommand()
+PBoolean OpalH224Handler::OnReceivedClientListCommand()
 {
   SendClientList();
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
+PBoolean OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
 {
   BYTE *data = frame.GetClientDataPtr();
 	
@@ -591,13 +591,13 @@ BOOL OpalH224Handler::OnReceivedExtraCapabilities(H224_Frame & frame)
     h281Handler->OnReceivedExtraCapabilities((data + 3), size);
   }
 	
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalH224Handler::OnReceivedExtraCapabilitiesCommand()
+PBoolean OpalH224Handler::OnReceivedExtraCapabilitiesCommand()
 {
   SendExtraCapabilities();
-  return TRUE;
+  return PTrue;
 }
 
 OpalH224ReceiverThread * OpalH224Handler::CreateH224ReceiverThread()
@@ -620,7 +620,7 @@ void OpalH224Handler::TransmitFrame(H224_Frame & frame)
   transmitFrame->SetTimestamp((DWORD)timePassed.GetMilliSeconds() * 8);
   
   transmitFrame->SetPayloadSize(size);
-  transmitFrame->SetMarker(TRUE);
+  transmitFrame->SetMarker(PTrue);
 	
   if(!session->WriteData(*transmitFrame)) {
     PTRACE(1, "H.224\tFailed to write encoded frame");
@@ -635,7 +635,7 @@ OpalH224ReceiverThread::OpalH224ReceiverThread(OpalH224Handler *theH224Handler, 
 {
   h224Handler = theH224Handler;
   timestamp = 0;
-  terminate = FALSE;
+  terminate = PFalse;
 }
 
 OpalH224ReceiverThread::~OpalH224ReceiverThread()
@@ -659,10 +659,10 @@ void OpalH224ReceiverThread::Main()
     timestamp = packet.GetTimestamp();
 		
     if(h224Frame.Decode(packet.GetPayloadPtr(), packet.GetPayloadSize())) {
-      BOOL result = h224Handler->OnReceivedFrame(h224Frame);
+      PBoolean result = h224Handler->OnReceivedFrame(h224Frame);
 
-      if(result == FALSE) {
-        // FALSE indicates a serious problem, therefore the thread is closed
+      if(result == PFalse) {
+        // PFalse indicates a serious problem, therefore the thread is closed
         return;
       }
     } else {
@@ -671,7 +671,7 @@ void OpalH224ReceiverThread::Main()
 		
     inUse.Signal();
 		
-    if(terminate == TRUE) {
+    if(terminate == PTrue) {
       return;
     }
   }
@@ -679,11 +679,11 @@ void OpalH224ReceiverThread::Main()
 
 void OpalH224ReceiverThread::Close()
 {
-  rtpSession.Close(TRUE);
+  rtpSession.Close(PTrue);
 	
   inUse.Wait();
 	
-  terminate = TRUE;
+  terminate = PTrue;
 	
   inUse.Signal();
 	

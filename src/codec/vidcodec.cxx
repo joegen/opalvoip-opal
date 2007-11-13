@@ -182,32 +182,32 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
 }
 
 
-BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
+PBoolean OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PWaitAndSignal mutex(updateMutex);
 
   if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
+PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     forceIFrame = true; // Reset when I-Frame is sent
-    return TRUE;
+    return PTrue;
   }
 
   return OpalTranscoder::ExecuteCommand(command);
 }
 
 
-BOOL OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
+PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
                                   RTP_DataFrame & /*output*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 PString OpalVideoUpdatePicture::GetName() const
@@ -271,7 +271,7 @@ OpalUncompVideoTranscoder::~OpalUncompVideoTranscoder()
 }
 
 
-PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
+PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
 #ifndef NO_OPAL_VIDEO
   PINDEX frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, GetOutputFormat());
@@ -285,7 +285,7 @@ PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
 }
 
 
-BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
+PBoolean OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                               RTP_DataFrameList & output)
 {
 #ifndef NO_OPAL_VIDEO
@@ -293,7 +293,7 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
   const FrameHeader * srcHeader = (const FrameHeader *)input.GetPayloadPtr();
   if (srcHeader->x != 0 || srcHeader->y != 0)
-    return FALSE;
+    return PFalse;
 
   if (srcHeader->width != frameWidth || srcHeader->height != frameHeight) {
     frameWidth = srcHeader->width;
@@ -311,7 +311,7 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
 
   unsigned bandCount = (frameHeight+scanLinesPerBand-1)/scanLinesPerBand;
   if (bandCount < 1)
-    return FALSE;
+    return PFalse;
 
   for (unsigned band = 0; band < bandCount; band++) {
     RTP_DataFrame * pkt = new RTP_DataFrame(scanLinesPerBand*bytesPerScanLine);
@@ -326,11 +326,11 @@ BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
     memcpy(OPAL_VIDEO_FRAME_DATA_PTR(dstHeader), OPAL_VIDEO_FRAME_DATA_PTR(srcHeader)+band*bytesPerScanLine, scanLinesPerBand*bytesPerScanLine);
   }
 
-  output[output.GetSize()-1].SetMarker(TRUE);
+  output[output.GetSize()-1].SetMarker(PTrue);
 
-  return TRUE;
+  return PTrue;
 #else
-  return FALSE;
+  return PFalse;
 #endif
 }
 

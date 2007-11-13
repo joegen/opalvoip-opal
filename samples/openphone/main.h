@@ -61,9 +61,9 @@
  *
  * Revision 1.37  2007/04/03 07:59:13  rjongbloed
  * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to BOOL, now agrees with
+ *   changed return on OnShowIncoming to PBoolean, now agrees with
  *     documentation and allows UI to abort calls early.
- *   added BOOL to AcceptIncomingConnection indicating the
+ *   added PBoolean to AcceptIncomingConnection indicating the
  *     supplied token is invalid.
  *   removed redundent OnGetDestination() function, was never required.
  *
@@ -239,8 +239,8 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
     MyPCSSEndPoint(MyManager & manager);
 
   private:
-    virtual BOOL OnShowIncoming(const OpalPCSSConnection & connection);
-    virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
+    virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
+    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
 
     MyManager & m_manager;
 };
@@ -269,8 +269,8 @@ class MySIPEndPoint : public SIPEndPoint
   private:
     virtual void OnRegistrationStatus(
       const PString & aor,
-      BOOL wasRegistering,
-      BOOL reRegistering,
+      PBoolean wasRegistering,
+      PBoolean reRegistering,
       SIP_PDU::StatusCodes reason
     );
 
@@ -612,7 +612,7 @@ class MyManager : public wxFrame, public OpalManager
 
   private:
     // OpalManager overrides
-    virtual BOOL OnIncomingConnection(
+    virtual PBoolean OnIncomingConnection(
       OpalConnection & connection
     );
     virtual void OnEstablishedCall(
@@ -621,7 +621,7 @@ class MyManager : public wxFrame, public OpalManager
     virtual void OnClearedCall(
       OpalCall & call   /// Connection that was established
     );
-    virtual BOOL OnOpenMediaStream(
+    virtual PBoolean OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
     );
@@ -638,12 +638,12 @@ class MyManager : public wxFrame, public OpalManager
       unsigned lastDigitTimeout = 4,      ///<  Timeout on last digit in string
       unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
     );
-    virtual BOOL CreateVideoOutputDevice(
+    virtual PBoolean CreateVideoOutputDevice(
       const OpalConnection & connection,    ///<  Connection needing created video device
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      BOOL preview,                         ///<  Flag indicating is a preview output
+      PBoolean preview,                         ///<  Flag indicating is a preview output
       PVideoOutputDevice * & device,        ///<  Created device
-      BOOL & autoDelete                     ///<  Flag for auto delete device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 
 

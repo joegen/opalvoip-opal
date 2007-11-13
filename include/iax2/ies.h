@@ -158,8 +158,8 @@ class IAX2Ie : public PObject
   /** Given an arbitrary type code, build & initialise the IAX2Ie descendant class */
   static IAX2Ie *BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcData);     
   
-  /** returns TRUE if contains an initialised    information element */
-  virtual BOOL IsValid() { return validData; }
+  /** returns PTrue if contains an initialised    information element */
+  virtual PBoolean IsValid() { return validData; }
   
   /**return the number of bytes to hold this data element */
   virtual BYTE GetLengthOfData() { return 0; }
@@ -194,7 +194,7 @@ class IAX2Ie : public PObject
   
   /**A flag indicating if the data was read from the supplied bytes
      correctly, or if this structure is yet to be initialised */
-  BOOL   validData;
+  PBoolean   validData;
 };
 
 /////////////////////////////////////////////////////////////////////////////    
@@ -286,7 +286,7 @@ class IAX2IeByte : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(BYTE newData) { dataValue = newData; validData = TRUE; }
+  void SetData(BYTE newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   BYTE ReadData() { return dataValue; }
@@ -329,7 +329,7 @@ class IAX2IeChar : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(char newData) { dataValue = newData; validData = TRUE; }
+  void SetData(char newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   char ReadData() { return dataValue; }
@@ -372,7 +372,7 @@ class IAX2IeShort : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(short newData) { dataValue = newData; validData = TRUE; }
+  void SetData(short newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   short ReadData() { return dataValue; }  
@@ -413,7 +413,7 @@ class IAX2IeInt : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(int newData) { dataValue = newData; validData = TRUE; }
+  void SetData(int newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   int ReadData() { return dataValue; }
@@ -455,7 +455,7 @@ class IAX2IeUShort : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(unsigned short newData) { dataValue = newData; validData = TRUE; }
+  void SetData(unsigned short newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   unsigned short ReadData() { return dataValue; }         
@@ -496,7 +496,7 @@ class IAX2IeUInt : public IAX2Ie
   void PrintOn(ostream & str) const;
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(unsigned int &newData) { dataValue = newData; validData = TRUE; }
+  void SetData(unsigned int &newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   unsigned int ReadData() { return dataValue; }          
@@ -589,7 +589,7 @@ class IAX2IeDateAndTime : public IAX2Ie
   virtual BYTE GetLengthOfData() { return 4; }
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(const PTime & newData) { dataValue = newData; validData = TRUE; }
+  void SetData(const PTime & newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   PTime ReadData() { return dataValue; }
@@ -631,7 +631,7 @@ class IAX2IeBlockOfData : public IAX2Ie
   virtual BYTE GetLengthOfData() { return (BYTE)dataValue.GetSize(); }
   
   /**Take the supplied data and copy contents into this IE */
-  void SetData(const PBYTEArray & newData) { dataValue = newData; validData = TRUE; }
+  void SetData(const PBYTEArray & newData) { dataValue = newData; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   PBYTEArray ReadData() { return dataValue; }
@@ -679,7 +679,7 @@ class IAX2IeSockaddrIn : public IAX2Ie
   
   /**Take the supplied data and copy contents into this IE */
   void SetData(const PIPSocket::Address & newAddr, PINDEX newPort) 
-    { dataValue = newAddr; portNumber = newPort; validData = TRUE; }
+    { dataValue = newAddr; portNumber = newPort; validData = PTrue; }
   
   /**Report the value of the stored data for this class */
   PIPSocket::Address ReadData() { return dataValue; }
@@ -967,7 +967,7 @@ class IAX2IeVersion : public IAX2IeShort
   IAX2IeVersion(BYTE length, BYTE *srcData) : IAX2IeShort(length, srcData) { };
   
   /**Construct to the one possible value - version 2 */
-  IAX2IeVersion() { dataValue = 2; validData = TRUE; }
+  IAX2IeVersion() { dataValue = 2; validData = PTrue; }
   
   /**print this class (nicely) to the designated stream*/
   void PrintOn(ostream & str) const;
@@ -1055,33 +1055,33 @@ class IAX2IeAuthMethods : public IAX2IeShort
   virtual void StoreDataIn(IAX2IeData &res) { res.authMethods = dataValue; }     
   
   /**Return true if the supplied value has the RSA key on*/
-  static BOOL IsRsaAuthentication(short testValue) { return InternalIsRsa(testValue); }
+  static PBoolean IsRsaAuthentication(short testValue) { return InternalIsRsa(testValue); }
   
   /**Return true if the supplied value has the MD5 key on*/
-  static BOOL IsMd5Authentication(short testValue) { return InternalIsMd5(testValue); }
+  static PBoolean IsMd5Authentication(short testValue) { return InternalIsMd5(testValue); }
   
   /**Return true if the supplied value has the plain text  key on*/
-  static BOOL IsPlainTextAuthentication(short testValue) { return InternalIsPlainText(testValue); }     
+  static PBoolean IsPlainTextAuthentication(short testValue) { return InternalIsPlainText(testValue); }     
   
   /**Return true if the internal value has the RSA key on*/
-  BOOL IsRsaAuthentication() { if (IsValid()) return InternalIsRsa(dataValue); else return FALSE; }
+  PBoolean IsRsaAuthentication() { if (IsValid()) return InternalIsRsa(dataValue); else return PFalse; }
   
   /**Return true if the internal value has the MD5 key on*/
-  BOOL IsMd5Authentication() { if (IsValid()) return InternalIsMd5(dataValue); else return FALSE; }
+  PBoolean IsMd5Authentication() { if (IsValid()) return InternalIsMd5(dataValue); else return PFalse; }
   
   /**Return true if the internal value has the plain text  key on*/
-  BOOL IsPlainTextAuthentication() { if (IsValid()) return InternalIsPlainText(dataValue); else return FALSE; }
+  PBoolean IsPlainTextAuthentication() { if (IsValid()) return InternalIsPlainText(dataValue); else return PFalse; }
   
  protected:
   
   /**Return true if the supplied value has the RSA key on*/
-  static BOOL InternalIsRsa(short testValue) { return testValue  && 0x04; }
+  static PBoolean InternalIsRsa(short testValue) { return testValue  && 0x04; }
   
   /**Return true if the supplied value has the MD5 key on*/
-  static BOOL InternalIsMd5(short testValue) { return testValue  && 0x02; }
+  static PBoolean InternalIsMd5(short testValue) { return testValue  && 0x02; }
   
   /**Return true if the supplied value has the plain text  key on*/
-  static BOOL InternalIsPlainText(short testValue) { return testValue  && 0x01; }
+  static PBoolean InternalIsPlainText(short testValue) { return testValue  && 0x01; }
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -1374,7 +1374,7 @@ class IAX2IeAutoAnswer : public IAX2IeNone
   
   /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
       This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &res) { res.autoAnswer = TRUE;; }     
+  virtual void StoreDataIn(IAX2IeData &res) { res.autoAnswer = PTrue;; }     
  protected:
 };
 
@@ -1400,7 +1400,7 @@ class IAX2IeMusicOnHold : public IAX2IeNone
   
   /** Take the data from this IAX2Ie, and copy it into the IAX2IeData structure.
       This is done on processing an incoming frame which contains IAX2Ie in the data section. */
-  virtual void StoreDataIn(IAX2IeData &res) { res.musicOnHold = TRUE; }     
+  virtual void StoreDataIn(IAX2IeData &res) { res.musicOnHold = PTrue; }     
  protected:
 };
 
@@ -1999,11 +1999,11 @@ class IAX2IeList : public IAX2Ie *
   /**Delete item at a particular index */
   void DeleteAt(PINDEX idex);
   
-  /**Test to see if list is empty - returns TRUE if no elements stored in this list */
-  BOOL Empty() const { return GetSize() == 0; }
+  /**Test to see if list is empty - returns PTrue if no elements stored in this list */
+  PBoolean Empty() const { return GetSize() == 0; }
   
-  /**Test to see if list is empty - returns TRUE if no elements stored in this list */
-  BOOL IsEmpty() const { return GetSize() == 0; }
+  /**Test to see if list is empty - returns PTrue if no elements stored in this list */
+  PBoolean IsEmpty() const { return GetSize() == 0; }
   
   /**Add a new IAX2Ie to the list */
   void AppendIe(IAX2Ie *newMember) { Append(newMember);}

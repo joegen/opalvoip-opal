@@ -207,7 +207,7 @@ class OpalCall : public PSafeObject
   //@{
     /**Indicate tha all connections in call are connected and media is going.
       */
-    BOOL IsEstablished() const { return isEstablished; }
+    PBoolean IsEstablished() const { return isEstablished; }
 
     /**Call back to indicate that the call has been established.
        At this point in time there are no connections left in the call.
@@ -262,7 +262,7 @@ class OpalCall : public PSafeObject
        The default behaviour is to call SetUpConnection() on all the other
        connections in the call.
       */
-    virtual BOOL OnSetUp(
+    virtual PBoolean OnSetUp(
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
@@ -271,7 +271,7 @@ class OpalCall : public PSafeObject
        The default behaviour is to call SetAlerting() on all the other
        connections in the call.
       */
-    virtual BOOL OnAlerting(
+    virtual PBoolean OnAlerting(
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
@@ -307,7 +307,7 @@ class OpalCall : public PSafeObject
        The default behaviour is to call SetConnected() on all other
        connections in the call.
       */
-    virtual BOOL OnConnected(
+    virtual PBoolean OnConnected(
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
@@ -324,7 +324,7 @@ class OpalCall : public PSafeObject
        established and if so, marks the call as established and calls
        OnEstablishedCall().
       */
-    virtual BOOL OnEstablished(
+    virtual PBoolean OnEstablished(
       OpalConnection & connection   ///<  Connection that indicates it is alerting
     );
 
@@ -366,7 +366,7 @@ class OpalCall : public PSafeObject
       */
     virtual OpalMediaFormatList GetMediaFormats(
       const OpalConnection & connection,  ///<  Connection requesting formats
-      BOOL includeSpecifiedConnection     ///<  Include parameters media
+      PBoolean includeSpecifiedConnection     ///<  Include parameters media
     );
 
     /**Open transmitter media streams for each connection.
@@ -374,7 +374,7 @@ class OpalCall : public PSafeObject
        open a source media stream. If successful, then PatchMediaStreams() is
        called which in turns starts the sink media stream on the connection.
       */
-    virtual BOOL OpenSourceMediaStreams(
+    virtual PBoolean OpenSourceMediaStreams(
       const OpalConnection & connection,        ///<  Connection requesting open
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
       unsigned sessionID                        ///<  Session to start streams on
@@ -385,7 +385,7 @@ class OpalCall : public PSafeObject
        connection for the specified source media stream. The created media
        patch is a thread, but it is not started immediately.
      */
-    virtual BOOL PatchMediaStreams(
+    virtual PBoolean PatchMediaStreams(
       const OpalConnection & connection, ///<  Source connection
       OpalMediaStream & source           ///<  Source media stream to patch
     );
@@ -412,7 +412,7 @@ class OpalCall : public PSafeObject
 
     /**See if the media can bypass the local host.
      */
-    virtual BOOL IsMediaBypassPossible(
+    virtual PBoolean IsMediaBypassPossible(
       const OpalConnection & connection,  ///<  Source connection
       unsigned sessionID                  ///<  Session ID for media channel
     ) const;
@@ -482,7 +482,7 @@ class OpalCall : public PSafeObject
     const PTime & GetStartTime() const { return startTime; }
   //@}
 
-    virtual BOOL StartRecording(const PFilePath & fn);
+    virtual PBoolean StartRecording(const PFilePath & fn);
     virtual void StopRecording();
     void OnStopRecordAudio(const PString & callToken);
 
@@ -494,8 +494,8 @@ class OpalCall : public PSafeObject
     PString partyA;
     PString partyB;
     PTime   startTime;
-    BOOL    isEstablished;
-    BOOL    isClearing;
+    PBoolean    isEstablished;
+    PBoolean    isClearing;
 
     OpalConnection::CallEndReason callEndReason;
 

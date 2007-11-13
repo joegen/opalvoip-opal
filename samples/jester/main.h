@@ -107,13 +107,13 @@ class JesterJitterBuffer : public IAX2JitterBuffer
 
 
     virtual void Close(
-	BOOL /*reading */   ///<  Closing the read side of the session
+	PBoolean /*reading */   ///<  Closing the read side of the session
 	);
 
    /**Reopens an existing session in the given direction.
       */
     virtual void Reopen(
-	BOOL /*isReading */
+	PBoolean /*isReading */
 	) { }
 
     /**Get the local host name as used in SDES packes.
@@ -132,7 +132,7 @@ class JesterJitterBuffer : public IAX2JitterBuffer
     DWORD psuedoTimestamp;
 
     /**Flag to indicate we have closed down */
-    BOOL closedDown;
+    PBoolean closedDown;
 
     /**time at which this all started */
     PTime startJester;
@@ -187,18 +187,18 @@ class JesterProcess : public PProcess
     PINDEX bytesPerBlock;
 
     /**Flag to indicate if we do, or do not, simulate silence suppression. If
-       TRUE, we do silence suppresion and send packets in bursts of onnnn,
+       PTrue, we do silence suppresion and send packets in bursts of onnnn,
        nothing, onnn, nothing..*/
-    BOOL silenceSuppression;
+    PBoolean silenceSuppression;
 
     /**Flag to indicate if we do, or do not fiddle with the operaiton of
        silence suppression function. When doing silence suppression, the start
        of each talk burst has the marker bit turned on. If this flag is set
-       TRUE, then some of those marker bits (half of them) are
+       PTrue, then some of those marker bits (half of them) are
        suppressed. This flag therefore tests the operation of the jitter
        buffer, to see if it copes with the dropping of the first packet in
        each voice stream */
-    BOOL markerSuppression;
+    PBoolean markerSuppression;
 
     /**min size of the jitter buffer in ms */
     PINDEX minJitterSize;

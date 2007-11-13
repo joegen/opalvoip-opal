@@ -72,7 +72,7 @@
  *
  * Revision 2.51  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 2.50  2007/01/24 04:00:57  csoutheren
@@ -339,10 +339,10 @@ OpalEndPoint::~OpalEndPoint()
   PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
-BOOL OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
+PBoolean OpalEndPoint::MakeConnection(OpalCall & /*call*/, const PString & /*party*/, void * /*userData*/, unsigned int /*options*/, OpalConnection::StringOptions * /*stringOptions*/)
 {
   PAssertAlways("Must implement descendant of OpalEndPoint::MakeConnection");
-  return FALSE;
+  return PFalse;
 }
 
 void OpalEndPoint::PrintOn(ostream & strm) const
@@ -351,34 +351,34 @@ void OpalEndPoint::PrintOn(ostream & strm) const
 }
 
 
-BOOL OpalEndPoint::GarbageCollection()
+PBoolean OpalEndPoint::GarbageCollection()
 {
   return connectionsActive.DeleteObjectsToBeRemoved();
 }
 
 
-BOOL OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
+PBoolean OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
 {
   PStringArray interfaces = listenerAddresses;
   if (interfaces.IsEmpty()) {
     interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty())
-      return FALSE;
+      return PFalse;
   }
 
-  BOOL startedOne = FALSE;
+  PBoolean startedOne = PFalse;
 
   for (PINDEX i = 0; i < interfaces.GetSize(); i++) {
     if (interfaces[i].Find('$') != P_MAX_INDEX) {
       if (StartListener(interfaces[i]))
-        startedOne = TRUE;
+        startedOne = PTrue;
     }
     else {
       PStringArray transports = GetDefaultTransport().Tokenise(',');
       for (PINDEX j = 0; j < transports.GetSize(); j++) {
         OpalTransportAddress iface(interfaces[i], GetDefaultSignalPort(), transports[j]);
         if (StartListener(iface))
-          startedOne = TRUE;
+          startedOne = PTrue;
       }
     }
   }
@@ -387,7 +387,7 @@ BOOL OpalEndPoint::StartListeners(const PStringArray & listenerAddresses)
 }
 
 
-BOOL OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddress)
+PBoolean OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddress)
 {
   OpalListener * listener;
 
@@ -396,39 +396,39 @@ BOOL OpalEndPoint::StartListener(const OpalTransportAddress & listenerAddress)
   if (iface.IsEmpty()) {
     PStringArray interfaces = GetDefaultListeners();
     if (interfaces.IsEmpty())
-      return FALSE;
+      return PFalse;
     iface = OpalTransportAddress(interfaces[0], defaultSignalPort);
   }
 
   listener = iface.CreateListener(*this, OpalTransportAddress::FullTSAP);
   if (listener == NULL) {
     PTRACE(1, "OpalEP\tCould not create listener: " << iface);
-    return FALSE;
+    return PFalse;
   }
 
   if (StartListener(listener))
-    return TRUE;
+    return PTrue;
 
   PTRACE(1, "OpalEP\tCould not start listener: " << iface);
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL OpalEndPoint::StartListener(OpalListener * listener)
+PBoolean OpalEndPoint::StartListener(OpalListener * listener)
 {
   if (listener == NULL)
-    return FALSE;
+    return PFalse;
 
   // as the listener is not open, this will have the effect of immediately
   // stopping the listener thread. This is good - it means that the 
   // listener Close function will appear to have stopped the thread
   if (!listener->Open(PCREATE_NOTIFIER(ListenerCallback))) {
     delete listener;
-    return FALSE;
+    return PFalse;
   }
 
   listeners.Append(listener);
-  return TRUE;
+  return PTrue;
 }
 
 PString OpalEndPoint::GetDefaultTransport() const
@@ -460,24 +460,24 @@ OpalListener * OpalEndPoint::FindListener(const OpalTransportAddress & iface)
 }
 
 
-BOOL OpalEndPoint::StopListener(const OpalTransportAddress & iface)
+PBoolean OpalEndPoint::StopListener(const OpalTransportAddress & iface)
 {
   OpalListener * listener = FindListener(iface);
   return listener != NULL && RemoveListener(listener);
 }
 
 
-BOOL OpalEndPoint::RemoveListener(OpalListener * listener)
+PBoolean OpalEndPoint::RemoveListener(OpalListener * listener)
 {
   if (listener != NULL)
     return listeners.Remove(listener);
 
   listeners.RemoveAll();
-  return TRUE;
+  return PTrue;
 }
 
 
-OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(BOOL excludeLocalHost,
+OpalTransportAddressArray OpalEndPoint::GetInterfaceAddresses(PBoolean excludeLocalHost,
                                                               OpalTransport * associatedTransport)
 {
   return OpalGetInterfaceAddresses(listeners, excludeLocalHost, associatedTransport);
@@ -496,9 +496,9 @@ void OpalEndPoint::ListenerCallback(PThread &, INT param)
 }
 
 
-BOOL OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
+PBoolean OpalEndPoint::NewIncomingConnection(OpalTransport * /*transport*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -513,23 +513,23 @@ PStringList OpalEndPoint::GetAllConnections()
 }
 
 
-BOOL OpalEndPoint::HasConnection(const PString & token)
+PBoolean OpalEndPoint::HasConnection(const PString & token)
 {
   PWaitAndSignal wait(inUseFlag);
   return connectionsActive.Contains(token);
 }
 
 
-BOOL OpalEndPoint::AddConnection(OpalConnection * connection)
+PBoolean OpalEndPoint::AddConnection(OpalConnection * connection)
 {
   if (connection == NULL)
-    return FALSE;
+    return PFalse;
 
   OnNewConnection(connection->GetCall(), *connection);
 
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -539,26 +539,26 @@ void OpalEndPoint::DestroyConnection(OpalConnection * connection)
 }
 
 
-BOOL OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
+PBoolean OpalEndPoint::OnSetUpConnection(OpalConnection & PTRACE_PARAM(connection))
 {
   PTRACE(3, "OpalEP\tOnSetUpConnection " << connection);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/)
+PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
+PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
+PBoolean OpalEndPoint::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   return OnIncomingConnection(connection) &&
          OnIncomingConnection(connection, options) &&
@@ -605,7 +605,7 @@ void OpalEndPoint::OnHold(OpalConnection & connection)
 }
 
 
-BOOL OpalEndPoint::OnForwarded(OpalConnection & connection,
+PBoolean OpalEndPoint::OnForwarded(OpalConnection & connection,
 			       const PString & forwardParty)
 {
   PTRACE(4, "OpalEP\tOnForwarded " << connection);
@@ -621,7 +621,7 @@ void OpalEndPoint::ConnectionDict::DeleteObject(PObject * object) const
 }
 
 
-BOOL OpalEndPoint::ClearCall(const PString & token,
+PBoolean OpalEndPoint::ClearCall(const PString & token,
                              OpalConnection::CallEndReason reason,
                              PSyncPoint * sync)
 {
@@ -629,7 +629,7 @@ BOOL OpalEndPoint::ClearCall(const PString & token,
 }
 
 
-BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
+PBoolean OpalEndPoint::ClearCallSynchronous(const PString & token,
                                         OpalConnection::CallEndReason reason,
                                         PSyncPoint * sync)
 {
@@ -640,12 +640,12 @@ BOOL OpalEndPoint::ClearCallSynchronous(const PString & token,
 }
 
 
-void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
+void OpalEndPoint::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean wait)
 {
-  BOOL releasedOne = FALSE;
+  PBoolean releasedOne = PFalse;
   for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReadOnly); connection; ++connection) {
     connection->Release(reason);
-    releasedOne = TRUE;
+    releasedOne = PTrue;
   }
 
   if (wait && releasedOne)
@@ -660,7 +660,7 @@ void OpalEndPoint::AdjustMediaFormats(const OpalConnection & connection,
 }
 
 
-BOOL OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
+PBoolean OpalEndPoint::OnOpenMediaStream(OpalConnection & connection,
                                      OpalMediaStream & stream)
 {
   return manager.OnOpenMediaStream(connection, stream);
@@ -680,19 +680,19 @@ void OpalEndPoint::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
 }
 
 
-BOOL OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
+PBoolean OpalEndPoint::CreateVideoInputDevice(const OpalConnection & connection,
                                           const OpalMediaFormat & mediaFormat,
                                           PVideoInputDevice * & device,
-                                          BOOL & autoDelete)
+                                          PBoolean & autoDelete)
 {
   return manager.CreateVideoInputDevice(connection, mediaFormat, device, autoDelete);
 }
 
-BOOL OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
+PBoolean OpalEndPoint::CreateVideoOutputDevice(const OpalConnection & connection,
                                            const OpalMediaFormat & mediaFormat,
-                                           BOOL preview,
+                                           PBoolean preview,
                                            PVideoOutputDevice * & device,
-                                           BOOL & autoDelete)
+                                           PBoolean & autoDelete)
 {
   return manager.CreateVideoOutputDevice(connection, mediaFormat, preview, device, autoDelete);
 }
@@ -784,12 +784,12 @@ PHandleAggregator * OpalEndPoint::GetRTPAggregator()
 #endif
 }
 
-BOOL OpalEndPoint::UseRTPAggregation() const
+PBoolean OpalEndPoint::UseRTPAggregation() const
 { 
 #if OPAL_RTP_AGGREGATE
   return useRTPAggregation; 
 #else
-  return FALSE;
+  return PFalse;
 #endif
 }
 
@@ -813,18 +813,18 @@ PINDEX OpalEndPoint::GetRTPAggregationSize() const
 #endif
 }
 
-BOOL OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
+PBoolean OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
                                         PIPSocket::InterfaceTable & /*interfaceTable*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
+PBoolean OpalEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
                          const PIPSocket::Address & localAddr, 
                          const PIPSocket::Address & peerAddr,
                          const PIPSocket::Address & sigAddr,
-                                               BOOL incoming)
+                                               PBoolean incoming)
 {
   return GetManager().IsRTPNATEnabled(conn, localAddr, peerAddr, sigAddr, incoming);
 }

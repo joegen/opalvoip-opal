@@ -124,19 +124,19 @@ class IAX2Frame :  public PObject
   
   /**Wait on the designated socket for an incoming UDP packet. This
      method is only called by the receiver. This method does NO interpretation*/
-  BOOL ReadNetworkPacket(PUDPSocket &sock);
+  PBoolean ReadNetworkPacket(PUDPSocket &sock);
   
   /**Interpret the data from the read process*/
-  virtual BOOL ProcessNetworkPacket();
+  virtual PBoolean ProcessNetworkPacket();
   
   /**True if this is a full frame */
-  virtual BOOL IsFullFrame();
+  virtual PBoolean IsFullFrame();
   
   /**True if it is a video frame */
-  BOOL IsVideo() const;
+  PBoolean IsVideo() const;
   
   /**True if is is an audio frame */
-  BOOL IsAudio() const;
+  PBoolean IsAudio() const;
 
   /**Pointer to the beginning of the media (after the header) in this packet.
      The low level frame has no idea on headers, so just return pointer to beginning
@@ -172,11 +172,11 @@ class IAX2Frame :  public PObject
   PINDEX   GetUnReadBytes() { return data.GetSize() - currentReadIndex; }
   
   /**Cause the header bytes for this particular frame type to be written to the internal array */
-  virtual BOOL WriteHeader() { return FALSE; }
+  virtual PBoolean WriteHeader() { return PFalse; }
   
   /**Send this packet on the specified socket to the remote host. This method is only
      called by the transmiter.*/
-  virtual BOOL TransmitPacket(PUDPSocket &sock);
+  virtual PBoolean TransmitPacket(PUDPSocket &sock);
   
   /**Pretty print this frame data to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
@@ -200,7 +200,7 @@ class IAX2Frame :  public PObject
   DWORD  GetTimeStamp() { return timeStamp; }
   
   /** Report flag stating that this call must be active when this frame is transmitted*/
-  virtual BOOL CallMustBeActive() { return TRUE; }     
+  virtual PBoolean CallMustBeActive() { return PTrue; }     
   
   /**Specify the type of this frame. */
   enum IAX2FrameType {
@@ -228,7 +228,7 @@ class IAX2Frame :  public PObject
   virtual void InitialiseHeader(IAX2Processor * /*processor*/) { }
   
   /**Return true if this frame should be retransmitted. Acks are never retransmitted. cmdNew are retransmitted.*/
-  BOOL CanRetransmitFrame() const {return canRetransmitFrame; } 
+  PBoolean CanRetransmitFrame() const {return canRetransmitFrame; } 
   
   /**Get the string which uniquely identifies the IAXConnection that sent this frame */
   PString GetConnectionToken() const { return connectionToken; }
@@ -243,7 +243,7 @@ class IAX2Frame :  public PObject
 
   /**Write the data in the variables to this frame's data array. If
      encryption is on, the data will be encrypted */
-  BOOL EncryptContents(IAX2Encryption &encData);
+  PBoolean EncryptContents(IAX2Encryption &encData);
 
   /**Get the offset to the beginning of the encrypted region */
   virtual PINDEX GetEncryptionOffset();
@@ -252,8 +252,8 @@ class IAX2Frame :  public PObject
 
   /**Use the supplied encryptionKey, and data in storage, to decrypt this frame.
    
-  Return False if the decryption fails, TRUE if the decryption works.*/
-  BOOL DecryptContents(IAX2Encryption & encryption);
+  Return False if the decryption fails, PTrue if the decryption works.*/
+  PBoolean DecryptContents(IAX2Encryption & encryption);
 
   /**Specification of the location (address, call number etc) of the far endpoint */
   IAX2Remote  remote;
@@ -262,16 +262,16 @@ class IAX2Frame :  public PObject
   IAX2FrameType frameType;
   
   /** Read 1 byte from the internal area, (Internal area is filled when reading the packet in). Big Endian.*/
-  BOOL          Read1Byte(BYTE & res);
+  PBoolean          Read1Byte(BYTE & res);
   
   /** Read 2 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
-  BOOL          Read2Bytes(PINDEX & res);
+  PBoolean          Read2Bytes(PINDEX & res);
   
   /** Read 2 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
-  BOOL          Read2Bytes(WORD & res);
+  PBoolean          Read2Bytes(WORD & res);
   
   /** Read 4 bytes from the internal area, (Internal area is filled when reading the packet in)  Big Endian.*/
-  BOOL          Read4Bytes(DWORD & res);
+  PBoolean          Read4Bytes(DWORD & res);
   
   /** Write 1 byte to the internal area, as part of writing the header info */
   void          Write1Byte(BYTE newVal);
@@ -295,13 +295,13 @@ class IAX2Frame :  public PObject
   PBYTEArray         data;
   
   /**Flag to indicate if this is a MiniFrame or FullFrame */
-  BOOL               isFullFrame;
+  PBoolean               isFullFrame;
   
   /**Flag to indicate if this is a MiniFrame with video */
-  BOOL               isVideo;
+  PBoolean               isVideo;
   
   /**Flag to indicate if this is a MiniFrame with audio */
-  BOOL               isAudio;
+  PBoolean               isAudio;
   
   /**Index of where we are reading from the internal data area */
   PINDEX               currentReadIndex;  
@@ -316,7 +316,7 @@ class IAX2Frame :  public PObject
   int                frameIndex;
   
   /**Indicate if this frame can be retransmitted*/
-  BOOL               canRetransmitFrame;
+  PBoolean               canRetransmitFrame;
 
   /**Connection Token, which uniquely identifies the IAXConnection
      that sent this frame. The token will (except for the first setup
@@ -349,16 +349,16 @@ class IAX2MiniFrame : public IAX2Frame
      TimeStamp will be calculated from time since call started, if the users timestamp is 0.
      If the users timeStamp is non zero, the frames timestamp will be this.
   */
-  IAX2MiniFrame(IAX2Processor * con, PBYTEArray &sound, BOOL isAudio, DWORD usersTimeStamp = 0);
+  IAX2MiniFrame(IAX2Processor * con, PBYTEArray &sound, PBoolean isAudio, DWORD usersTimeStamp = 0);
 
   /**Destructor*/
   virtual ~IAX2MiniFrame();
   
   /** Process the incoming frame some more, but process it as this frame type demands*/
-  virtual BOOL ProcessNetworkPacket();
+  virtual PBoolean ProcessNetworkPacket();
   
   /**Write the header to the internal data area */
-  virtual BOOL WriteHeader();
+  virtual PBoolean WriteHeader();
   
   /**Pretty print this frame data to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
@@ -406,65 +406,65 @@ class IAX2FullFrame : public IAX2Frame
   virtual ~IAX2FullFrame();
   
   /**Return True if this an ack frame */
-  BOOL IsAckFrame() { return isAckFrame; }
+  PBoolean IsAckFrame() { return isAckFrame; }
   
   /**Return True if this is a PING frame */
-  BOOL IsPingFrame();
+  PBoolean IsPingFrame();
 
   /**Return True if this is a NEW frame */
-  BOOL IsNewFrame();
+  PBoolean IsNewFrame();
 
   /**Return True if this is a LAGRQ frame */
-  BOOL IsLagRqFrame();
+  PBoolean IsLagRqFrame();
 
   /**Return True if this is a LAGRP frame */
-  BOOL IsLagRpFrame();
+  PBoolean IsLagRpFrame();
 
   /**Return True if this is a PONG frame */
-  BOOL IsPongFrame();
+  PBoolean IsPongFrame();
 
   /**Return True if this is a AuthReq frame */
-  BOOL IsAuthReqFrame();
+  PBoolean IsAuthReqFrame();
 
   /**Return True if this is a VNAK frame */
-  BOOL IsVnakFrame();
+  PBoolean IsVnakFrame();
   
   /**Return True if this is a REGREQ frame */
-  BOOL IsRegReqFrame();
+  PBoolean IsRegReqFrame();
   
   /**Return True if this is a REGAUTH frame */
-  BOOL IsRegAuthFrame();
+  PBoolean IsRegAuthFrame();
   
   /**Return True if this is a REGACK frame */
-  BOOL IsRegAckFrame();  
+  PBoolean IsRegAckFrame();  
   
   /**Return True if this is a REGREL frame */
-  BOOL IsRegRelFrame();
+  PBoolean IsRegRelFrame();
   
   /**Return True if this is a REGREJ frame */
-  BOOL IsRegRejFrame();
+  PBoolean IsRegRejFrame();
 
   /**Return True if this FullFrame is of a type that increments the InSeqNo */
-  BOOL FrameIncrementsInSeqNo();
+  PBoolean FrameIncrementsInSeqNo();
 
   /**True if this is a full frame - always returns true as this is a full
      frame. */
-  virtual BOOL IsFullFrame() { return TRUE; }  
+  virtual PBoolean IsFullFrame() { return PTrue; }  
   
-  /**Report TRUE if this is a hangup frame. We need this information for
+  /**Report PTrue if this is a hangup frame. We need this information for
      processing incoming frames, before fully dissection of the frame has
      completed */
-  BOOL IsHangupFrame();
+  PBoolean IsHangupFrame();
 
   /** Initialise to zero all the members of this particular class */
   void ZeroAllValues();
   
   /** Process the incoming frame some more, but process it as a full frame */
-  virtual BOOL ProcessNetworkPacket();
+  virtual PBoolean ProcessNetworkPacket();
   
   /**Send this packet on the specified socket to the remote host. This method is only
      called by the transmiter.*/
-  virtual BOOL TransmitPacket(PUDPSocket &sock);
+  virtual PBoolean TransmitPacket(PUDPSocket &sock);
   
   /**Get text descrption of this frame type*/
   PString GetFullFrameName() const;
@@ -497,7 +497,7 @@ class IAX2FullFrame : public IAX2Frame
   /**Write the header for this class to the internal data array. 12
      bytes of data are writen.  The application developer must write the
      remaining bytes, before transmiting this frame. */
-  virtual BOOL WriteHeader();
+  virtual PBoolean WriteHeader();
   
   /**Alter the two bytes for in and out sequence values. (in the header)*/
   void ModifyFrameHeaderSequenceNumbers(PINDEX inNo, PINDEX outNo);
@@ -509,13 +509,13 @@ class IAX2FullFrame : public IAX2Frame
   void ModifyFrameTimeStamp(PINDEX newTimeStamp);
 
   /**Mark this frame as having (or not having) information elements*/
-  virtual BOOL InformationElementsPresent() { return FALSE; }  
+  virtual PBoolean InformationElementsPresent() { return PFalse; }  
   
   /**Get flag to see if this frame is ready to be sent (or resent). In other words, has the timer expired?*/
-  BOOL  SendFrameNow() { return sendFrameNow; }
+  PBoolean  SendFrameNow() { return sendFrameNow; }
   
   /**Get flag to see if this frame is ready for deletion. In other words. Has it been sent too many times? */
-  BOOL  DeleteFrameNow() { return deleteFrameNow; }
+  PBoolean  DeleteFrameNow() { return deleteFrameNow; }
   
   /**Get the sequence number info (inSeqNo and outSeqNo) */
   IAX2SequenceNumbers & GetSequenceInfo() { return sequence; }
@@ -528,7 +528,7 @@ class IAX2FullFrame : public IAX2Frame
   
   /**Compare this FullFrame with another full frame, which is used when determining if we are
      dealing with a frame we have already processed */
-  BOOL operator *= (IAX2FullFrame & other);
+  PBoolean operator *= (IAX2FullFrame & other);
   
   /**enum to define if the call must be active when sending this
      frame*/
@@ -545,7 +545,7 @@ class IAX2FullFrame : public IAX2Frame
   
  protected:
   /** Report flag stating that this call must be active when this frame is transmitted*/
-  virtual BOOL CallMustBeActive() { return callMustBeActive; }
+  virtual PBoolean CallMustBeActive() { return callMustBeActive; }
   
   /**Turn the 8 bit subClass value into a 16 bit representation */
   void UnCompressSubClass(BYTE a);
@@ -597,19 +597,19 @@ class IAX2FullFrame : public IAX2Frame
   IAX2SequenceNumbers sequence;
   
   /**List flag, indicating if this frame ready for sending*/
-  BOOL         sendFrameNow;   
+  PBoolean         sendFrameNow;   
   
   /**List flag, this frame is ready for deletion (too many retries)*/
-  BOOL         deleteFrameNow; 
+  PBoolean         deleteFrameNow; 
   
   /**A tracking flag to indicate this fame has been resent*/
-  BOOL         packetResent;   
+  PBoolean         packetResent;   
   
   /** Flag stating that this call must be active when this frame is transmitted  */
-  BOOL callMustBeActive;
+  PBoolean callMustBeActive;
   
   /** flag to indicate if this is an ack frame */
-  BOOL isAckFrame;  
+  PBoolean isAckFrame;  
 };
 
 /////////////////////////////////////////////////////////////////////////////    
@@ -985,7 +985,7 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   void SetRetransmissionRequired();
   
   /**Mark this frame as having (or not having) information elements*/
-  virtual BOOL InformationElementsPresent() { return !ieElements.IsEmpty(); }
+  virtual PBoolean InformationElementsPresent() { return !ieElements.IsEmpty(); }
   
   /**Report the current value of the subClass variable */
   ProtocolSc GetSubClass() const { return (ProtocolSc) subClass; }
@@ -1026,7 +1026,7 @@ class IAX2FullFrameProtocol : public IAX2FullFrame
   
   /**Read the information elements from the incoming data array 
      to generate a list of information element classes*/
-  BOOL ReadInformationElements();
+  PBoolean ReadInformationElements();
   
   /**A list of the IEs read from/(or  written to) the data section of this frame,*/
   IAX2IeList ieElements;
@@ -1182,7 +1182,7 @@ class IAX2FrameList : public IAX2Frame *
   void Initialise() {  DisallowDeleteObjects(); }
     
   /**True if this frame list is empty*/
-  BOOL Empty() { return GetSize() == 0; }
+  PBoolean Empty() { return GetSize() == 0; }
   
   /**Copy to this frame the contents of the frameList pointed to by src*/
   void GrabContents(IAX2FrameList &src);

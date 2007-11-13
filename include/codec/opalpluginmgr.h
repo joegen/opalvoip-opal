@@ -154,7 +154,6 @@ class H323StaticPluginCodec
     virtual PluginCodec_GetCodecFunction Get_GetCodecFn() = 0;
 };
 
-
 typedef PFactory<H323StaticPluginCodec> H323StaticPluginCodecFactory;
 
 
@@ -182,7 +181,7 @@ class OpalPluginCodecHandler : public PObject
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
                                                                     time_t timeStamp);
-    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, BOOL v);
+    virtual void RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, PBoolean v);
 #endif
 
 #if OPAL_T38FAX
@@ -256,7 +255,7 @@ class OpalPluginControl
   public:
     OpalPluginControl(const PluginCodec_Definition * def, const char * name);
 
-    BOOL Exists() const
+    PBoolean Exists() const
     {
       return controlDef != NULL;
     }
@@ -298,10 +297,10 @@ class OpalPluginMediaFormat
 class OpalPluginTranscoder
 {
   public:
-    OpalPluginTranscoder(const PluginCodec_Definition * defn, BOOL isEnc);
+    OpalPluginTranscoder(const PluginCodec_Definition * defn, PBoolean isEnc);
     ~OpalPluginTranscoder();
 
-    BOOL Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
+    PBoolean Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
     {
       return codecDef != NULL && codecDef->codecFunction != NULL &&
             (codecDef->codecFunction)(codecDef, context, from, fromLen, to, toLen, flags) != 0;
@@ -309,7 +308,7 @@ class OpalPluginTranscoder
 
   protected:
     const PluginCodec_Definition * codecDef;
-    BOOL   isEncoder;
+    PBoolean   isEncoder;
     void * context;
 
     OpalPluginControl setCodecOptions;
@@ -342,9 +341,9 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
 {
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
-    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = OpalPCM16);
-    BOOL ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
-    virtual BOOL ConvertSilentFrame(BYTE * buffer);
+    OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat = OpalPCM16);
+    PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
+    virtual PBoolean ConvertSilentFrame(BYTE * buffer);
 };
 
 
@@ -352,7 +351,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
 {
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
-    OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
+    OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
 };
 
 
@@ -360,7 +359,7 @@ class OpalPluginStreamedAudioEncoder : public OpalPluginStreamedAudioTranscoder
 {
   PCLASSINFO(OpalPluginStreamedAudioEncoder, OpalPluginStreamedAudioTranscoder);
   public:
-    OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, BOOL);
+    OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, PBoolean);
     int ConvertOne(int _sample) const;
 };
 
@@ -368,7 +367,7 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
 {
   PCLASSINFO(OpalPluginStreamedAudioDecoder, OpalPluginStreamedAudioTranscoder);
   public:
-    OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, BOOL);
+    OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, PBoolean);
     int ConvertOne(int codedSample) const;
 };
 
@@ -396,12 +395,12 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 {
   PCLASSINFO(OpalPluginVideoTranscoder, OpalVideoTranscoder);
   public:
-    OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, BOOL _isEncoder);
+    OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, PBoolean _isEncoder);
     ~OpalPluginVideoTranscoder();
 
-    PINDEX GetOptimalDataFrameSize(BOOL input) const;
-    BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
-    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
+    PINDEX GetOptimalDataFrameSize(PBoolean input) const;
+    PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+    PBoolean UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
 
   protected:
     RTP_DataFrame * bufferRTP;
@@ -502,7 +501,7 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
     class Worker : public OpalTranscoderFactory::WorkerBase 
     {
       public:
-        Worker(const OpalTranscoderKey & key, PluginCodec_Definition * _codecDefn, BOOL _isEncoder)
+        Worker(const OpalTranscoderKey & key, PluginCodec_Definition * _codecDefn, PBoolean _isEncoder)
           : OpalTranscoderFactory::WorkerBase(), codecDefn(_codecDefn), isEncoder(_isEncoder)
         { OpalTranscoderFactory::Register(key, this); }
 
@@ -511,7 +510,7 @@ class OpalPluginTranscoderFactory : public OpalTranscoderFactory
         { return new TranscoderClass(codecDefn, isEncoder); }
 
         PluginCodec_Definition * codecDefn;
-        BOOL isEncoder;
+        PBoolean isEncoder;
     };
 };
 
@@ -591,17 +590,17 @@ class H323PluginG7231Capability : public H323AudioPluginCapability
   public:
     H323PluginG7231Capability(const PluginCodec_Definition * _encoderCodec,
                               const PluginCodec_Definition * _decoderCodec,
-                              BOOL _annexA = TRUE);
+                              PBoolean _annexA = PTrue);
 
     // this constructor is used for creating empty codecs
-    H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA = TRUE);
+    H323PluginG7231Capability(const OpalMediaFormat & fmt, PBoolean _annexA = PTrue);
 
     virtual PObject * Clone() const;
-    virtual BOOL OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const;
-    virtual BOOL OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
+    virtual PBoolean OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const;
+    virtual PBoolean OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize);
 
   protected:
-    BOOL annexA;
+    PBoolean annexA;
 };
 
 #define OPAL_DECLARE_EMPTY_G7231_CAPABILITY(fmt, annex) \
@@ -678,7 +677,7 @@ class H323VideoPluginCapability : public H323VideoCapability,
 
     virtual unsigned GetSubType() const;
 
-    static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
+    static PBoolean SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
 
     virtual void PrintOn(std::ostream & strm) const;
 
@@ -746,15 +745,15 @@ class H323H261PluginCapability : public H323VideoPluginCapability
 
     virtual PObject * Clone() const;
 
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
     ) const;
 
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_VideoMode & pdu
     ) const;
 
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
 };
@@ -775,18 +774,18 @@ class H323H263PluginCapability : public H323VideoPluginCapability
 
     virtual PObject * Clone() const;
 
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_VideoCapability & pdu  /// PDU to set information on
     ) const;
 
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_VideoMode & pdu
     ) const;
 
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_VideoCapability & pdu  /// PDU to get information from
     );
-    virtual BOOL IsMatch(const PASN_Choice & subTypePDU) const;
+    virtual PBoolean IsMatch(const PASN_Choice & subTypePDU) const;
 };
 
 #endif // OPAL_VIDEO

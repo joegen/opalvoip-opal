@@ -67,7 +67,7 @@ public:
 	
   /** Decodes a Q.922 frame from a given buffer, returns the success of this operation
 	*/
-  BOOL Decode(const BYTE *data, PINDEX size);
+  PBoolean Decode(const BYTE *data, PINDEX size);
 	
  /** Returns an estimate of the encoded size.
 	 The receiver will use at most the size when encoding. Returns zero if encoding will fail.
@@ -77,7 +77,7 @@ public:
   /** Encodes this Q.922 frame into the given buffer.
 	  On return, size contains the number of octets occupied in the buffer.
 	*/
-  BOOL Encode(BYTE *buffer, PINDEX & size) const;
+  PBoolean Encode(BYTE *buffer, PINDEX & size) const;
 
   /** Encodes this Q.922 frame into the given buffer.
 	  On return, size contains the number of octets occupied in the buffer.
@@ -86,7 +86,7 @@ public:
 	  bitPosition shall be in the range 0-7, whereas 7 means that the FLAG sequence
 	  is encoded at byte boundaries
 	*/
-  BOOL Encode(BYTE *buffer, PINDEX & size, BYTE & bitPosition) const;
+  PBoolean Encode(BYTE *buffer, PINDEX & size, BYTE & bitPosition) const;
 	
 protected:
 	
@@ -94,7 +94,7 @@ protected:
 	
 private:
 
-  inline BOOL FindFlagEnd(const BYTE *buffer, PINDEX bufferSize, PINDEX & octetIndex, BYTE & bitIndex);
+  inline PBoolean FindFlagEnd(const BYTE *buffer, PINDEX bufferSize, PINDEX & octetIndex, BYTE & bitIndex);
   inline BYTE DecodeByte(const BYTE *buffer, BYTE *destination, PINDEX & octetIndex, BYTE & bitIndex, BYTE & onesCounter);
   inline BYTE DecodeBit(const BYTE *buffer, PINDEX & octetIndex, BYTE & bitIndex);
 	

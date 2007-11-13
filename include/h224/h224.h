@@ -56,8 +56,8 @@ public:
   H224_Frame(PINDEX clientDataSize = 254);
   ~H224_Frame();
 	
-  BOOL IsHighPriority() const { return (GetLowOrderAddressOctet() == 0x71); }
-  void SetHighPriority(BOOL flag);
+  PBoolean IsHighPriority() const { return (GetLowOrderAddressOctet() == 0x71); }
+  void SetHighPriority(PBoolean flag);
 	
   WORD GetDestinationTerminalAddress() const;
   void SetDestinationTerminalAddress(WORD destination);
@@ -69,17 +69,17 @@ public:
   BYTE GetClientID() const;
   void SetClientID(BYTE clientID);
 	
-  BOOL GetBS() const;
-  void SetBS(BOOL bs);
+  PBoolean GetBS() const;
+  void SetBS(PBoolean bs);
 	
-  BOOL GetES() const;
-  void SetES(BOOL es);
+  PBoolean GetES() const;
+  void SetES(PBoolean es);
 	
-  BOOL GetC1() const;
-  void SetC1(BOOL c1);
+  PBoolean GetC1() const;
+  void SetC1(PBoolean c1);
 	
-  BOOL GetC0() const;
-  void SetC0(BOOL c0);
+  PBoolean GetC0() const;
+  void SetC0(PBoolean c0);
 	
   BYTE GetSegmentNumber() const;
   void SetSegmentNumber(BYTE segmentNumber);
@@ -89,7 +89,7 @@ public:
   PINDEX GetClientDataSize() const { return (GetInformationFieldSize() - H224_HEADER_SIZE); }
   void SetClientDataSize(PINDEX size) { SetInformationFieldSize(size + H224_HEADER_SIZE); }
 	
-  BOOL Decode(const BYTE *data, PINDEX size);
+  PBoolean Decode(const BYTE *data, PINDEX size);
 };
 
 #endif // __OPAL_H224_H

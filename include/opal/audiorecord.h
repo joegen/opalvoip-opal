@@ -48,14 +48,14 @@ class OpalRecordManager
     {
       protected:
         OpalWAVFile file;
-        BOOL mono;
-        BOOL started;
+        PBoolean mono;
+        PBoolean started;
 
       public:
         Mixer_T();
-        BOOL Open(const PFilePath & fn);
-        BOOL Close();
-        BOOL OnWriteAudio(const MixerFrame & mixerFrame);
+        PBoolean Open(const PFilePath & fn);
+        PBoolean Close();
+        PBoolean OnWriteAudio(const MixerFrame & mixerFrame);
     };
 
     Mixer_T mixer;
@@ -63,14 +63,14 @@ class OpalRecordManager
   protected:
     PMutex mutex;
     PString token;
-    BOOL started;
+    PBoolean started;
 
   public:
     OpalRecordManager();
-    BOOL Open(const PString & _callToken, const PFilePath & fn);
-    BOOL CloseStream(const PString & _callToken, const std::string & _strm);
-    BOOL Close(const PString & _callToken);
-    BOOL WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp);
+    PBoolean Open(const PString & _callToken, const PFilePath & fn);
+    PBoolean CloseStream(const PString & _callToken, const std::string & _strm);
+    PBoolean Close(const PString & _callToken);
+    PBoolean WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp);
 };
 
 

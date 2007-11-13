@@ -145,7 +145,7 @@ class H235Authenticator : public PObject
 
     virtual const char * GetName() const = 0;
 
-    virtual BOOL PrepareTokens(
+    virtual PBoolean PrepareTokens(
       PASN_Array & clearTokens,
       PASN_Array & cryptoTokens
     );
@@ -153,7 +153,7 @@ class H235Authenticator : public PObject
     virtual H235_ClearToken * CreateClearToken();
     virtual H225_CryptoH323Token * CreateCryptoToken();
 
-    virtual BOOL Finalise(
+    virtual PBoolean Finalise(
       PBYTEArray & rawPDU
     );
 
@@ -182,29 +182,29 @@ class H235Authenticator : public PObject
       const PBYTEArray & rawPDU
     );
 
-    virtual BOOL IsCapability(
+    virtual PBoolean IsCapability(
       const H235_AuthenticationMechanism & mechansim,
       const PASN_ObjectId & algorithmOID
     ) = 0;
 
-    virtual BOOL SetCapability(
+    virtual PBoolean SetCapability(
       H225_ArrayOf_AuthenticationMechanism & mechansims,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     ) = 0;
 
-    virtual BOOL UseGkAndEpIdentifiers() const;
+    virtual PBoolean UseGkAndEpIdentifiers() const;
 
-    virtual BOOL IsSecuredPDU(
+    virtual PBoolean IsSecuredPDU(
       unsigned rasPDU,
-      BOOL received
+      PBoolean received
     ) const;
 
-    virtual BOOL IsActive() const;
+    virtual PBoolean IsActive() const;
 
     void Enable(
-      BOOL enab = TRUE
+      PBoolean enab = PTrue
     ) { enabled = enab; }
-    void Disable() { enabled = FALSE; }
+    void Disable() { enabled = PFalse; }
 
     const PString & GetRemoteId() const { return remoteId; }
     void SetRemoteId(const PString & id) { remoteId = id; }
@@ -217,14 +217,14 @@ class H235Authenticator : public PObject
 
 
   protected:
-    BOOL AddCapability(
+    PBoolean AddCapability(
       unsigned mechanism,
       const PString & oid,
       H225_ArrayOf_AuthenticationMechanism & mechansims,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    BOOL     enabled;
+    PBoolean     enabled;
 
     PString  remoteId;      // ID of remote entity
     PString  localId;       // ID of local entity
@@ -283,19 +283,19 @@ class H235AuthSimpleMD5 : public H235Authenticator
       const PBYTEArray & rawPDU
     );
 
-    virtual BOOL IsCapability(
+    virtual PBoolean IsCapability(
       const H235_AuthenticationMechanism & mechansim,
       const PASN_ObjectId & algorithmOID
     );
 
-    virtual BOOL SetCapability(
+    virtual PBoolean SetCapability(
       H225_ArrayOf_AuthenticationMechanism & mechansim,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    virtual BOOL IsSecuredPDU(
+    virtual PBoolean IsSecuredPDU(
       unsigned rasPDU,
-      BOOL received
+      PBoolean received
     ) const;
 };
 
@@ -322,19 +322,19 @@ class H235AuthCAT : public H235Authenticator
       const H235_ClearToken & clearToken
     );
 
-    virtual BOOL IsCapability(
+    virtual PBoolean IsCapability(
       const H235_AuthenticationMechanism & mechansim,
       const PASN_ObjectId & algorithmOID
     );
 
-    virtual BOOL SetCapability(
+    virtual PBoolean SetCapability(
       H225_ArrayOf_AuthenticationMechanism & mechansim,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    virtual BOOL IsSecuredPDU(
+    virtual PBoolean IsSecuredPDU(
       unsigned rasPDU,
-      BOOL received
+      PBoolean received
     ) const;
 };
 
@@ -359,7 +359,7 @@ class H235AuthProcedure1 : public H235Authenticator
 
     virtual H225_CryptoH323Token * CreateCryptoToken();
 
-    virtual BOOL Finalise(
+    virtual PBoolean Finalise(
       PBYTEArray & rawPDU
     );
 
@@ -368,17 +368,17 @@ class H235AuthProcedure1 : public H235Authenticator
       const PBYTEArray & rawPDU
     );
 
-    virtual BOOL IsCapability(
+    virtual PBoolean IsCapability(
       const H235_AuthenticationMechanism & mechansim,
       const PASN_ObjectId & algorithmOID
     );
 
-    virtual BOOL SetCapability(
+    virtual PBoolean SetCapability(
       H225_ArrayOf_AuthenticationMechanism & mechansim,
       H225_ArrayOf_PASN_ObjectId & algorithmOIDs
     );
 
-    virtual BOOL UseGkAndEpIdentifiers() const;
+    virtual PBoolean UseGkAndEpIdentifiers() const;
 };
 
 #endif

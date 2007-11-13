@@ -48,6 +48,7 @@
 #include <string.h>
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 
 #include "vpbapi.h"
 
@@ -79,19 +80,19 @@ class Context
         /* +1 is used for driver 2.4.8*/
         handle = vpb_open(cardNumber, lineNumber);
         if (handle < 0)
-          return FALSE;
+          return PFalse;
         readFrameSize = writeFrameSize = 480;
-        currentHookState = FALSE;
+        currentHookState = PFalse;
         vpb_sethook_sync(handle, VPB_ONHOOK);
         vpb_set_event_mask(handle, VPB_MRING | VPB_MTONEDETECT );
-        return TRUE;
+        return PTrue;
       }
 
       PluginLID_Boolean SetLineOffHook(PluginLID_Boolean newState)
       {
         try {
           if (vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) < 0)
-            return FALSE;
+            return PFalse;
 
           // clear DTMF buffer and event queue after changing hook state.
           vpb_flush_digits(handle);
@@ -103,11 +104,11 @@ class Context
         }
         catch (VpbException v) {
           std::cerr << "VPB\tSetLineOffHook " << v.code << ", s = " << v.s << ", api func = " << v.api_function << std::endl;
-          return FALSE;
+          return PFalse;
         }
 
         currentHookState = newState;
-        return TRUE;
+        return PTrue;
       }
 
       int               handle;
@@ -190,7 +191,7 @@ class Context
 
       try {
         for(unsigned uiLineCount = 0; uiLineCount < m_uiLineCount; uiLineCount++) {
-          SetLineOffHook(uiLineCount, FALSE);
+          SetLineOffHook(uiLineCount, PFalse);
           vpb_close(lineState[uiLineCount].handle);
         }  
       }
@@ -227,7 +228,7 @@ class Context
       if (line >= m_uiLineCount)
         return PluginLID_NoSuchLine;
 
-      *isTerminal = FALSE;
+      *isTerminal = PFalse;
       return PluginLID_NoError;
     }
 
@@ -243,7 +244,7 @@ class Context
       if (line >= m_uiLineCount)
         return PluginLID_NoSuchLine;
 
-      *present = TRUE;
+      *present = PTrue;
       return PluginLID_NoError;
     }
 

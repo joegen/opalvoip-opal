@@ -42,7 +42,7 @@
  *
  * Revision 2.14  2007/03/01 05:51:04  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 2.13  2007/01/24 04:00:56  csoutheren
@@ -153,12 +153,12 @@ class OpalIVREndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       FALSE is returned.
+       PFalse is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If FALSE is returned then the connection could not be established. For
+       If PFalse is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -166,7 +166,7 @@ class OpalIVREndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,   ///<  Arbitrary data to pass to connection
@@ -235,7 +235,7 @@ class OpalIVREndPoint : public OpalEndPoint
     /** Called when a call needs to start the outgoing VXML.
         This can be used to do different behaviour
       */
-    virtual BOOL StartVXML();
+    virtual PBoolean StartVXML();
 
     /** Set/get the default text to speech engine used by the IVR  
       */
@@ -287,7 +287,7 @@ class OpalIVRConnection : public OpalConnection
 
        The default behaviour does.
       */
-    virtual BOOL SetUpConnection();
+    virtual PBoolean SetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -299,16 +299,16 @@ class OpalIVRConnection : public OpalConnection
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetAlerting(
+    virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      BOOL withMedia                ///<  Open media with alerting
+      PBoolean withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetConnected();
+    virtual PBoolean SetConnected();
 
     void OnEstablished();
 
@@ -338,7 +338,7 @@ class OpalIVRConnection : public OpalConnection
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource                        ///<  Is a source stream
+      PBoolean isSource                        ///<  Is a source stream
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -348,7 +348,7 @@ class OpalIVRConnection : public OpalConnection
 
        The default behaviour plays the DTMF tones on the line.
       */
-    virtual BOOL SendUserInputString(
+    virtual PBoolean SendUserInputString(
       const PString & value                   ///<  String value of indication
     );
   //@}
@@ -356,9 +356,9 @@ class OpalIVRConnection : public OpalConnection
     /** Called when a call needs to start the outgoing VXML.
         This can be used to do different behaviour
       */
-    virtual BOOL StartVXML();
+    virtual PBoolean StartVXML();
 
-    PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, BOOL autoDelete = FALSE)
+    PTextToSpeech * SetTextToSpeech(PTextToSpeech * _tts, PBoolean autoDelete = PFalse)
     { return vxmlSession.SetTextToSpeech(_tts, autoDelete); }
 
     PTextToSpeech * SetTextToSpeech(const PString & ttsName)
@@ -391,7 +391,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
       OpalIVRConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource,                       ///<  Is a source stream
+      PBoolean isSource,                       ///<  Is a source stream
       PVXMLSession & vxml                  ///<  vxml session to use
     );
   //@}
@@ -403,12 +403,12 @@ class OpalIVRMediaStream : public OpalRawMediaStream
        The default behaviour simply sets the member variable "mediaFormat"
        and "defaultDataSize".
       */
-    virtual BOOL Open();
+    virtual PBoolean Open();
 
     /**Indicate if the media stream is synchronous.
-       Returns FALSE for IVR streams.
+       Returns PFalse for IVR streams.
       */
-    virtual BOOL IsSynchronous() const;
+    virtual PBoolean IsSynchronous() const;
   //@}
 
   protected:

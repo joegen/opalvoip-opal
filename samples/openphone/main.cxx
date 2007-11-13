@@ -113,9 +113,9 @@
  *
  * Revision 1.16  2007/04/03 07:59:13  rjongbloed
  * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to BOOL, now agrees with
+ *   changed return on OnShowIncoming to PBoolean, now agrees with
  *     documentation and allows UI to abort calls early.
- *   added BOOL to AcceptIncomingConnection indicating the
+ *   added PBoolean to AcceptIncomingConnection indicating the
  *     supplied token is invalid.
  *   removed redundent OnGetDestination() function, was never required.
  *
@@ -464,18 +464,18 @@ class TextCtrlChannel : public PChannel
       : m_frame(NULL)
       { }
 
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, /// Pointer to a block of memory to write.
       PINDEX len        /// Number of bytes to write.
     ) {
       if (m_frame == NULL)
-        return FALSE;
+        return PFalse;
 
       wxCommandEvent theEvent(wxEvtLogMessage, ID_LOG_MESSAGE);
       theEvent.SetEventObject(m_frame);
       theEvent.SetString(wxString((const wxChar *)buf, (size_t)len));
       m_frame->GetEventHandler()->AddPendingEvent(theEvent);
-      return TRUE;
+      return PTrue;
     }
 
     void SetFrame(
@@ -692,7 +692,7 @@ bool MyManager::Initialise()
   SetSizer(sizer);
 
   // Show the frame window
-  Show(TRUE);
+  Show(PTrue);
 
   m_ClipboardFormat.SetId("OpenPhone Speed Dial");
 
@@ -1211,7 +1211,7 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 
 void MyManager::OnMenuQuit(wxCommandEvent& WXUNUSED(event))
 {
-    Close(TRUE);
+    Close(PTrue);
 }
 
 
@@ -1607,7 +1607,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 
   if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
-    m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
+    m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), PFalse);
     m_RingSoundTimer.RunContinuous(5000);
   }
 
@@ -1617,7 +1617,7 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
 
 void MyManager::OnRingSoundAgain(PTimer &, INT)
 {
-  m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), FALSE);
+  m_RingSoundChannel.PlayFile(m_RingSoundFileName.c_str(), PFalse);
 }
 
 
@@ -1628,7 +1628,7 @@ void MyManager::StopRingSound()
 }
 
 
-BOOL MyManager::OnIncomingConnection(OpalConnection & connection)
+PBoolean MyManager::OnIncomingConnection(OpalConnection & connection)
 {
   if (connection.GetEndPoint().GetPrefixName() == "pots")
     LogWindow << "Line interface device \"" << connection.GetRemotePartyName() << "\" has gone off hook." << endl;
@@ -1706,14 +1706,14 @@ void MyManager::OnClearedCall(OpalCall & call)
 }
 
 
-BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   if (!OpalManager::OnOpenMediaStream(connection, stream))
-    return FALSE;
+    return PFalse;
 
   PString prefix = connection.GetEndPoint().GetPrefixName();
   if (prefix == pcssEP->GetPrefixName())
-    return TRUE;
+    return PTrue;
 
   LogWindow << "Started ";
 
@@ -1731,7 +1731,7 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream &
 
   LogWindow << connection.GetEndPoint().GetPrefixName() << " endpoint" << endl;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1811,9 +1811,9 @@ PString MyManager::ReadUserInput(OpalConnection & connection,
 
   PTRACE(3, "OpalPhone\tReadUserInput from " << connection);
 
-  connection.PromptUserInput(TRUE);
+  connection.PromptUserInput(PTrue);
   PString digit = connection.GetUserInput(firstDigitTimeout);
-  connection.PromptUserInput(FALSE);
+  connection.PromptUserInput(PFalse);
 
   PString input;
   while (!digit.IsEmpty()) {
@@ -1854,14 +1854,14 @@ static const PVideoDevice::OpenArgs & AdjustVideoArgs(PVideoDevice::OpenArgs & v
   return videoArgs;
 }
 
-BOOL MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
+PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                         const OpalMediaFormat & mediaFormat,
-                                        BOOL preview,
+                                        PBoolean preview,
                                         PVideoOutputDevice * & device,
-                                        BOOL & autoDelete)
+                                        PBoolean & autoDelete)
 {
   if (preview && !m_VideoGrabPreview)
-    return FALSE;
+    return PFalse;
 
   if (m_localVideoFrameX == INT_MIN) {
     wxRect rect(GetPosition(), GetSize());
@@ -1955,7 +1955,7 @@ bool MyManager::StartRegistrar()
   if (sipEP == NULL || !m_registrarUsed)
     return false;
 
-  BOOL ok = sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword);
+  PBoolean ok = sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword);
   LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << m_registrarUser << '@' << m_registrarName << endl;
   return ok;
 }
@@ -2258,11 +2258,11 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(VideoGrabFormat, m_manager.GetVideoInputDevice().videoFormat);
   INIT_FIELD(VideoGrabSource, m_manager.GetVideoInputDevice().channelNumber);
   INIT_FIELD(VideoGrabFrameRate, m_manager.GetVideoInputDevice().rate);
-  INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != FALSE);
+  INIT_FIELD(VideoFlipLocal, m_manager.GetVideoInputDevice().flip != PFalse);
   INIT_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview);
-  INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != FALSE);
-  INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != FALSE);
-  INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != FALSE);
+  INIT_FIELD(VideoAutoTransmit, m_manager.CanAutoStartTransmitVideo() != PFalse);
+  INIT_FIELD(VideoAutoReceive, m_manager.CanAutoStartReceiveVideo() != PFalse);
+  INIT_FIELD(VideoFlipRemote, m_manager.GetVideoOutputDevice().flip != PFalse);
 
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
   FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
@@ -2318,9 +2318,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   if (m_DTMFSendMode > OpalConnection::SendUserInputAsInlineRFC2833)
     m_DTMFSendMode = OpalConnection::SendUserInputAsString;
   INIT_FIELD(CallIntrusionProtectionLevel, m_manager.h323EP->GetCallIntrusionProtectionLevel());
-  INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != FALSE);
-  INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != FALSE);
-  INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != FALSE);
+  INIT_FIELD(DisableFastStart, m_manager.h323EP->IsFastStartDisabled() != PFalse);
+  INIT_FIELD(DisableH245Tunneling, m_manager.h323EP->IsH245TunnelingDisabled() != PFalse);
+  INIT_FIELD(DisableH245inSETUP, m_manager.h323EP->IsH245inSetupDisabled() != PFalse);
   INIT_FIELD(GatekeeperMode, m_manager.m_gatekeeperMode);
   INIT_FIELD(GatekeeperAddress, m_manager.m_gatekeeperAddress);
   INIT_FIELD(GatekeeperIdentifier, m_manager.m_gatekeeperIdentifier);
@@ -3277,20 +3277,20 @@ MyPCSSEndPoint::MyPCSSEndPoint(MyManager & manager)
 }
 
 
-BOOL MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   m_manager.OnRinging(connection);
-  return TRUE;
+  return PTrue;
 
 }
 
 
-BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
+PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
   PTime now;
   LogWindow << connection.GetRemotePartyName() << " is ringing on "
             << now.AsString("w h:mma") << " ..." << endl;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -3323,8 +3323,8 @@ MySIPEndPoint::MySIPEndPoint(MyManager & manager)
 
 
 void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
-                                         BOOL wasRegistering,
-                                         BOOL reRegistering,
+                                         PBoolean wasRegistering,
+                                         PBoolean reRegistering,
                                          SIP_PDU::StatusCodes reason)
 {
   if (reason == SIP_PDU::Failure_UnAuthorised || (reRegistering && reason == SIP_PDU::Successful_OK))

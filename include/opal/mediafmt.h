@@ -435,7 +435,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
 
     /**Determine if a format matching the payload type is in the list.
       */
-    BOOL HasFormat(
+    PBoolean HasFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType ///<  RTP payload type code
     ) const { return FindFormat(rtpPayloadType) != P_MAX_INDEX; }
 
@@ -444,7 +444,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        character. For example: "G.711*" would match "G.711-uLaw-64k" and
        "G.711-ALaw-64k".
       */
-    BOOL HasFormat(
+    PBoolean HasFormat(
       const PString & wildcard    ///<  Wildcard string name.
     ) const { return FindFormat(wildcard) != P_MAX_INDEX; }
 
@@ -467,7 +467,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     virtual PINDEX Append(PObject *) { return P_MAX_INDEX; }
     virtual PINDEX Insert(const PObject &, PObject *) { return P_MAX_INDEX; }
     virtual PINDEX InsertAt(PINDEX, PObject *) { return P_MAX_INDEX; }
-    virtual BOOL SetAt(PINDEX, PObject *) { return FALSE; }
+    virtual PBoolean SetAt(PINDEX, PObject *) { return PFalse; }
 };
 
 
@@ -778,7 +778,7 @@ class OpalMediaFormat : public PCaselessString
       unsigned defaultSessionID,  ///<  Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,  ///<  RTP encoding name
-      BOOL     needsJitter,       ///<  Indicate format requires a jitter buffer
+      PBoolean     needsJitter,       ///<  Indicate format requires a jitter buffer
       unsigned bandwidth,         ///<  Bandwidth in bits/second
       PINDEX   frameSize,         ///<  Size of frame in bytes (if applicable)
       unsigned frameTime,         ///<  Time for frame in RTP units (if applicable)
@@ -842,16 +842,16 @@ class OpalMediaFormat : public PCaselessString
       const OpalMediaFormat & mediaFormat ///< other media format
     );
 
-    /**Return TRUE if media format info is valid. This may be used if the
+    /**Return PTrue if media format info is valid. This may be used if the
        single string constructor is used to check that it matched something
        in the registered media formats database.
       */
-    virtual BOOL IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !IsEmpty(); }
+    virtual PBoolean IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !IsEmpty(); }
 
-    /**Return TRUE if media format info may be sent via RTP. Some formats are internal
+    /**Return PTrue if media format info may be sent via RTP. Some formats are internal
        use only and are never transported "over the wire".
       */
-    BOOL IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
+    PBoolean IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
 
     /**Copy a media format
       */
@@ -891,7 +891,7 @@ class OpalMediaFormat : public PCaselessString
        object has a tx number of frames of 3, but the parameter has a value
        of 1, then the current object will be set to 1.
 
-       Returns FALSE if the media formats are incompatible and cannot be
+       Returns PFalse if the media formats are incompatible and cannot be
        merged.
       */
     virtual bool Merge(
@@ -994,7 +994,7 @@ class OpalMediaFormat : public PCaselessString
       */
     bool GetOptionBoolean(
       const PString & name,   ///<  Option name
-      bool dflt = FALSE       ///<  Default value if option not present
+      bool dflt = PFalse       ///<  Default value if option not present
     ) const;
 
     /**Set the option value of the specified name as a boolean.
@@ -1087,7 +1087,7 @@ class OpalMediaFormat : public PCaselessString
     );
 
     /**Get the option value of the specified name as an octet array.
-       Returns FALSE if not present.
+       Returns PFalse if not present.
       */
     bool GetOptionOctets(
       const PString & name, ///<  Option name
@@ -1129,7 +1129,7 @@ class OpalMediaFormat : public PCaselessString
       */
     bool AddOption(
       OpalMediaOption * option,
-      BOOL overwrite = FALSE
+      PBoolean overwrite = PFalse
     );
 
     /**
@@ -1146,7 +1146,7 @@ class OpalMediaFormat : public PCaselessString
       const PString & name
     ) const;
 
-    /** Returns TRUE if the media format is valid for the protocol specified
+    /** Returns PTrue if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for
         The default implementation returns true unless the protocol is H.323
         and the rtpEncodingName is NULL

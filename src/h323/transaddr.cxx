@@ -193,7 +193,7 @@ static void AppendTransportAddress(OpalManager & manager,
 }
 
 
-BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
+PBoolean H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
                                   const OpalTransport & associatedTransport)
 {
   OpalManager & manager = associatedTransport.GetEndPoint().GetManager();
@@ -201,11 +201,11 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
   PIPSocket::Address ip;
   WORD port = associatedTransport.GetEndPoint().GetDefaultSignalPort(); //H323EndPoint::DefaultTcpPort;
   if (!GetIpAndPort(ip, port))
-    return FALSE;
+    return PFalse;
 
   if (!ip.IsAny()) {
     AppendTransportAddress(manager, associatedTransport, ip, port, pdu);
-    return TRUE;
+    return PTrue;
   }
 
   PIPSocket::InterfaceTable interfaces;
@@ -213,7 +213,7 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
     PIPSocket::Address ipAddr;
     PIPSocket::GetHostAddress(ipAddr);
     AppendTransportAddress(manager, associatedTransport, ipAddr, port, pdu);
-    return TRUE;
+    return PTrue;
   }
 
   PINDEX i;
@@ -233,11 +233,11 @@ BOOL H323TransportAddress::SetPDU(H225_ArrayOf_TransportAddress & pdu,
       AppendTransportAddress(manager, associatedTransport, ipAddr, port, pdu);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort) const
+PBoolean H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort) const
 {
   PIPSocket::Address ip;
   WORD port = defPort;
@@ -249,7 +249,7 @@ BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort) con
       for (PINDEX i = 0; i < ip.GetSize(); i++)
         addr.m_ip[i] = ip[i];
       addr.m_port = port;
-      return TRUE;
+      return PTrue;
     }
 #endif
 
@@ -260,14 +260,14 @@ BOOL H323TransportAddress::SetPDU(H225_TransportAddress & pdu, WORD defPort) con
     for (PINDEX i = 0; i < 4; i++)
       addr.m_ip[i] = ip[i];
     addr.m_port = port;
-    return TRUE;
+    return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort) const
+PBoolean H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort) const
 {
   WORD port = defPort;
   if (defPort == 0)
@@ -286,7 +286,7 @@ BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort) con
       for (PINDEX i = 0; i < ip.GetSize(); i++)
         addr.m_network[i] = ip[i];
       addr.m_tsapIdentifier = port;
-      return TRUE;
+      return PTrue;
     }
 #endif
 
@@ -295,10 +295,10 @@ BOOL H323TransportAddress::SetPDU(H245_TransportAddress & pdu, WORD defPort) con
     for (PINDEX i = 0; i < 4; i++)
       addr.m_network[i] = ip[i];
     addr.m_tsapIdentifier = port;
-    return TRUE;
+    return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
