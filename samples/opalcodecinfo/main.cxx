@@ -422,7 +422,7 @@ void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
   PINDEX i;
   PINDEX max_len = 0;
   for (i = 0; i < mediaList.GetSize(); i++) {
-    PINDEX len = mediaList[i].GetLength();
+    PINDEX len = mediaList[i].GetName().GetLength();
     if (len > max_len)
       max_len = len;
   }

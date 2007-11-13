@@ -468,7 +468,7 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
         // if using video, check for two step encoders
         if (format.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
           for (PINDEX j = 0; j < dstFormats.GetSize(); ++j) {
-            if (dstFormats[j].GetSize() > 0)
+            if (dstFormats[j].IsValid())
               possibleFormats += dstFormats[j];
           }
         }
