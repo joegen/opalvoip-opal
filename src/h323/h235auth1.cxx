@@ -324,10 +324,10 @@ H225_CryptoH323Token * H235AuthProcedure1::CreateCryptoToken()
 }
 
 
-BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
+PBoolean H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
 {
   if (!IsActive())
-    return FALSE;
+    return PFalse;
 
   // Find the pattern
 
@@ -342,7 +342,7 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   if (foundat == -1) {
     //Can't find the search pattern in the ASN1 packet.
     PTRACE(1, "H235RAS\tPDU not prepared for H235AuthProcedure1");
-    return FALSE;
+    return PFalse;
   }
   
   // Zero out the search pattern
@@ -367,27 +367,27 @@ BOOL H235AuthProcedure1::Finalise(PBYTEArray & rawPDU)
   memcpy(&rawPDU[foundat], key, HASH_SIZE);
   
   PTRACE(4, "H235RAS\tH235AuthProcedure1 hashing completed: \"" << password << '"');
-  return TRUE;
+  return PTrue;
 }
 
 
-static BOOL CheckOID(const PASN_ObjectId & oid1, const PASN_ObjectId & oid2)
+static PBoolean CheckOID(const PASN_ObjectId & oid1, const PASN_ObjectId & oid2)
 {
   if (oid1.GetSize() != oid2.GetSize())
-    return FALSE;
+    return PFalse;
 
   PINDEX i;
   for (i = 0; i < OID_VERSION_OFFSET; i++) {
     if (oid1[i] != oid2[i])
-      return FALSE;
+      return PFalse;
   }
 
   for (i++; i < oid1.GetSize(); i++) {
     if (oid1[i] != oid2[i])
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -557,7 +557,7 @@ H235Authenticator::ValidationResult H235AuthProcedure1::ValidateCryptoToken(
 }
 
 
-BOOL H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & mechansim,
+PBoolean H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & mechansim,
                                       const PASN_ObjectId & algorithmOID)
 {
   return mechansim.GetTag() == H235_AuthenticationMechanism::e_pwdHash &&
@@ -565,16 +565,16 @@ BOOL H235AuthProcedure1::IsCapability(const H235_AuthenticationMechanism & mecha
 }
 
 
-BOOL H235AuthProcedure1::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
+PBoolean H235AuthProcedure1::SetCapability(H225_ArrayOf_AuthenticationMechanism & mechanisms,
                                       H225_ArrayOf_PASN_ObjectId & algorithmOIDs)
 {
   return AddCapability(H235_AuthenticationMechanism::e_pwdHash, OID_U, mechanisms, algorithmOIDs);
 }
 
 
-BOOL H235AuthProcedure1::UseGkAndEpIdentifiers() const
+PBoolean H235AuthProcedure1::UseGkAndEpIdentifiers() const
 {
-  return TRUE;
+  return PTrue;
 }
 
 

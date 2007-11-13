@@ -76,7 +76,7 @@ class H235_SRTP_FecOrder : public PASN_Sequence
     PASN_Null m_fecAfterSrtp;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -103,7 +103,7 @@ class H235_SRTP_SrtpKeyParameters_lifetime : public PASN_Choice
       e_specific
     };
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -124,7 +124,7 @@ class H235_SRTP_SrtpKeyParameters_mki : public PASN_Sequence
     PASN_OctetString m_value;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -177,7 +177,7 @@ class H235_SRTP_SrtpKeyParameters : public PASN_Sequence
     H235_SRTP_SrtpKeyParameters_mki m_mki;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -218,7 +218,7 @@ class H235_SRTP_SrtpSessionParameters : public PASN_Sequence
     H235_SRTP_ArrayOf_GenericData m_newParameter;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -251,7 +251,7 @@ class H235_SRTP_SrtpCryptoInfo : public PASN_Sequence
     PASN_Boolean m_allowMKI;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;

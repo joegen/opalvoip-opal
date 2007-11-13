@@ -28,7 +28,7 @@ const static PASN_Names Names_H4506_CallWaitingOperations[]={
 //
 
 H4506_CallWaitingOperations::H4506_CallWaitingOperations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 105, FALSE
+  : PASN_Enumeration(tag, tagClass, 105, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4506_CallWaitingOperations,1
 #endif
@@ -89,7 +89,7 @@ PObject * H4506_ArrayOf_MixedExtension::Clone() const
 //
 
 H4506_CallWaitingArg::H4506_CallWaitingArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_nbOfAddWaitingCalls.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_extensionArg.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
@@ -139,15 +139,15 @@ PINDEX H4506_CallWaitingArg::GetDataLength() const
 }
 
 
-BOOL H4506_CallWaitingArg::Decode(PASN_Stream & strm)
+PBoolean H4506_CallWaitingArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nbOfAddWaitingCalls) && !m_nbOfAddWaitingCalls.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_extensionArg) && !m_extensionArg.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

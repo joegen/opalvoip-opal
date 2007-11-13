@@ -152,23 +152,23 @@ class OpalT38Protocol : public PObject
        An application would normally override this. The default just sends
        "heartbeat" T.30 no signal indicator.
       */
-    virtual BOOL Originate();
+    virtual PBoolean Originate();
 
     /**Write packet to the T.38 connection.
       */
-    virtual BOOL WritePacket(
+    virtual PBoolean WritePacket(
       const T38_IFPPacket & pdu
     );
 
     /**Write T.30 indicator packet to the T.38 connection.
       */
-    virtual BOOL WriteIndicator(
+    virtual PBoolean WriteIndicator(
       unsigned indicator
     );
 
     /**Write data packet to the T.38 connection.
       */
-    virtual BOOL WriteMultipleData(
+    virtual PBoolean WriteMultipleData(
       unsigned mode,
       PINDEX count,
       unsigned * type,
@@ -177,7 +177,7 @@ class OpalT38Protocol : public PObject
 
     /**Write data packet to the T.38 connection.
       */
-    virtual BOOL WriteData(
+    virtual PBoolean WriteData(
       unsigned mode,
       unsigned type,
       const PBYTEArray & data
@@ -185,58 +185,58 @@ class OpalT38Protocol : public PObject
 
     /**Handle the origination of a T.38 connection.
       */
-    virtual BOOL Answer();
+    virtual PBoolean Answer();
 
     /**Handle incoming T.38 packet.
 
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL HandlePacket(
+    virtual PBoolean HandlePacket(
       const T38_IFPPacket & pdu
     );
 
     /**Handle lost T.38 packets.
 
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL HandlePacketLost(
+    virtual PBoolean HandlePacketLost(
       unsigned nLost
     );
 
     /**Handle incoming T.38 indicator packet.
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL OnIndicator(
+    virtual PBoolean OnIndicator(
       unsigned indicator
     );
 
     /**Handle incoming T.38 CNG indicator.
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL OnCNG();
+    virtual PBoolean OnCNG();
 
     /**Handle incoming T.38 CED indicator.
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL OnCED();
+    virtual PBoolean OnCED();
 
     /**Handle incoming T.38 V.21 preamble indicator.
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL OnPreamble();
+    virtual PBoolean OnPreamble();
 
     /**Handle incoming T.38 data mode training indicator.
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL OnTraining(
+    virtual PBoolean OnTraining(
       unsigned indicator
     );
 
     /**Handle incoming T.38 data packet.
 
-       If returns FALSE, then the reading loop should be terminated.
+       If returns PFalse, then the reading loop should be terminated.
       */
-    virtual BOOL OnData(
+    virtual PBoolean OnData(
       unsigned mode,
       unsigned type,
       const PBYTEArray & data
@@ -246,18 +246,18 @@ class OpalT38Protocol : public PObject
     OpalTransport * GetTransport() const { return transport; }
     void SetTransport(
       OpalTransport * transport,
-      BOOL autoDelete = TRUE
+      PBoolean autoDelete = PTrue
     );
 
   protected:
-    BOOL HandleRawIFP(
+    PBoolean HandleRawIFP(
       const PASN_OctetString & pdu
     );
 
     OpalTransport * transport;
-    BOOL            autoDeleteTransport;
+    PBoolean            autoDeleteTransport;
 
-    BOOL     corrigendumASN;
+    PBoolean     corrigendumASN;
     unsigned indicatorRedundancy;
     unsigned lowSpeedRedundancy;
     unsigned highSpeedRedundancy;
@@ -316,26 +316,26 @@ class T38PseudoRTP : public RTP_UDP
     T38PseudoRTP(
       PHandleAggregator * aggregator, ///< RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
-      BOOL remoteIsNAT                ///<  TRUE is remote is behind NAT
+      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP
     ~T38PseudoRTP();
 
-    BOOL ReadData(RTP_DataFrame & frame, BOOL loop);
-    BOOL WriteData(RTP_DataFrame & frame);
+    PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
+    PBoolean WriteData(RTP_DataFrame & frame);
     RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
     RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/);
 
     RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
 
-    BOOL SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL isDataPort);
+    PBoolean SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort);
 
   protected:
     int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout);
-    BOOL OnTimeout(RTP_DataFrame & frame);
-    BOOL corrigendumASN;
+    PBoolean OnTimeout(RTP_DataFrame & frame);
+    PBoolean corrigendumASN;
     int consecutiveBadPackets;
 
     PBYTEArray lastIFP;
@@ -375,10 +375,10 @@ class OpalFaxMediaStream : public OpalMediaStream
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID, 
-      BOOL isSource ,                      ///<  Is a source stream
+      PBoolean isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename,
-      BOOL receive
+      PBoolean receive
     );
   //@}
 
@@ -386,41 +386,41 @@ class OpalFaxMediaStream : public OpalMediaStream
   //@{
     /**Open the media stream using the media format.
 
-       The default behaviour simply sets the isOpen variable to TRUE.
+       The default behaviour simply sets the isOpen variable to PTrue.
       */
-    virtual BOOL Open();
+    virtual PBoolean Open();
 
     /**Close the media stream.
 
        The default does nothing.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
     /**Start the media stream.
 
        The default behaviour calls Resume() on the associated OpalMediaPatch
        thread if it was suspended.
       */
-    virtual BOOL Start();
+    virtual PBoolean Start();
 
     /**Read an RTP frame of data from the source media stream.
        The new behaviour simply calls RTP_Session::ReadData().
       */
-    virtual BOOL ReadPacket(
+    virtual PBoolean ReadPacket(
       RTP_DataFrame & packet
     );
 
     /**Write an RTP frame of data to the sink media stream.
        The new behaviour simply calls RTP_Session::WriteData().
       */
-    virtual BOOL WritePacket(
+    virtual PBoolean WritePacket(
       RTP_DataFrame & packet
     );
 
     /**Indicate if the media stream is synchronous.
-       Returns FALSE for RTP streams.
+       Returns PFalse for RTP streams.
       */
-    virtual BOOL IsSynchronous() const;
+    virtual PBoolean IsSynchronous() const;
 
     virtual PString GetSpanDSPCommandLine(OpalFaxCallInfo &);
 
@@ -431,7 +431,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     PString sessionToken;
     OpalFaxCallInfo * faxCallInfo;
     PFilePath filename;
-    BOOL receive;
+    PBoolean receive;
     BYTE writeBuffer[320];
     PINDEX writeBufferLen;
 };
@@ -448,16 +448,16 @@ class OpalT38MediaStream : public OpalFaxMediaStream
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID, 
-      BOOL isSource ,                      ///<  Is a source stream
+      PBoolean isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename,            ///<  filename
-      BOOL receive
+      PBoolean receive
     );
 
     PString GetSpanDSPCommandLine(OpalFaxCallInfo &);
 
-    BOOL ReadPacket(RTP_DataFrame & packet);
-    BOOL WritePacket(RTP_DataFrame & packet);
+    PBoolean ReadPacket(RTP_DataFrame & packet);
+    PBoolean WritePacket(RTP_DataFrame & packet);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -484,7 +484,7 @@ class OpalFaxEndPoint : public OpalEndPoint
     ~OpalFaxEndPoint();
   //@}
 
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
@@ -497,7 +497,7 @@ class OpalFaxEndPoint : public OpalEndPoint
     virtual OpalFaxConnection * CreateConnection(
       OpalCall & call,          ///< Owner of connection
       const PString & filename, ///< filename to send/receive
-      BOOL receive,
+      PBoolean receive,
       void * userData = NULL,   ///< Arbitrary data to pass to connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
@@ -528,7 +528,7 @@ class OpalFaxEndPoint : public OpalEndPoint
       */
     virtual void OnPatchMediaStream(
       const OpalFaxConnection & connection, ///<  Connection having new patch
-      BOOL isSource,                         ///<  Source patch
+      PBoolean isSource,                         ///<  Source patch
       OpalMediaPatch & patch                 ///<  New patch
     );
   //@}
@@ -550,7 +550,7 @@ class OpalFaxConnection : public OpalConnection
       OpalCall & call,                 ///<   Owner calll for connection
       OpalFaxEndPoint & endpoint,      ///<   Owner endpoint for connection
       const PString & filename,        ///<   filename to send/receive
-      BOOL receive,                    ///<   TRUE if receiving a fax
+      PBoolean receive,                    ///<   PTrue if receiving a fax
       const PString & _token,           ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
@@ -568,7 +568,7 @@ class OpalFaxConnection : public OpalConnection
 
        The default behaviour does.
       */
-    virtual BOOL SetUpConnection();
+    virtual PBoolean SetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -580,16 +580,16 @@ class OpalFaxConnection : public OpalConnection
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetAlerting(
+    virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      BOOL withMedia                ///<  Open media with alerting
+      PBoolean withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetConnected();
+    virtual PBoolean SetConnected();
 
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
@@ -600,7 +600,7 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
-    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource);
+    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
 
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
@@ -610,13 +610,13 @@ class OpalFaxConnection : public OpalConnection
        Add a PCM silence detector filter.
       */
     virtual void OnPatchMediaStream(
-      BOOL isSource,
+      PBoolean isSource,
       OpalMediaPatch & patch    ///<  New patch
     );
 
     /**Open source transmitter media stream for session.
       */
-    virtual BOOL OpenSourceMediaStream(
+    virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
       unsigned sessionID                   ///<  Session to start stream on
     );
@@ -640,8 +640,8 @@ class OpalFaxConnection : public OpalConnection
   protected:
     OpalFaxEndPoint & endpoint;
     PString filename;
-    BOOL receive;
-    BOOL forceFaxAudio;
+    PBoolean receive;
+    PBoolean forceFaxAudio;
 };
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -664,7 +664,7 @@ class OpalT38EndPoint : public OpalFaxEndPoint
     );
     OpalMediaFormatList GetMediaFormats() const;
     PString MakeToken();
-    virtual OpalFaxConnection * CreateConnection(OpalCall & call, const PString & filename, BOOL receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions);
+    virtual OpalFaxConnection * CreateConnection(OpalCall & call, const PString & filename, PBoolean receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -683,12 +683,12 @@ class OpalT38Connection : public OpalFaxConnection
       OpalCall & call,                 ///<  Owner calll for connection
       OpalT38EndPoint & endpoint,      ///<  Owner endpoint for connection
       const PString & filename,        ///<  filename to send/receive
-      BOOL receive,
+      PBoolean receive,
       const PString & _token,           ///<  token for connection
       OpalConnection::StringOptions * stringOptions = NULL
     );
     void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
-    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource);
+    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     OpalMediaFormatList GetMediaFormats() const;
 };
 

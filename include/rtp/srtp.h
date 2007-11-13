@@ -117,15 +117,15 @@ class OpalSRTPSecurityMode : public OpalSecurityMode
       PBYTEArray key;
       PBYTEArray salt;
     };
-    virtual BOOL SetOutgoingKey(const KeySalt & key) = 0;
-    virtual BOOL GetOutgoingKey(KeySalt & key) const = 0;
-    virtual BOOL SetOutgoingSSRC(DWORD ssrc) = 0;
-    virtual BOOL GetOutgoingSSRC(DWORD & ssrc) const = 0;
+    virtual PBoolean SetOutgoingKey(const KeySalt & key) = 0;
+    virtual PBoolean GetOutgoingKey(KeySalt & key) const = 0;
+    virtual PBoolean SetOutgoingSSRC(DWORD ssrc) = 0;
+    virtual PBoolean GetOutgoingSSRC(DWORD & ssrc) const = 0;
 
-    virtual BOOL SetIncomingKey(const KeySalt & key) = 0;
-    virtual BOOL GetIncomingKey(KeySalt & key) const = 0;
-    virtual BOOL SetIncomingSSRC(DWORD ssrc) = 0;
-    virtual BOOL GetIncomingSSRC(DWORD & ssrc) const = 0;
+    virtual PBoolean SetIncomingKey(const KeySalt & key) = 0;
+    virtual PBoolean GetIncomingKey(KeySalt & key) const = 0;
+    virtual PBoolean SetIncomingSSRC(DWORD ssrc) = 0;
+    virtual PBoolean GetIncomingSSRC(DWORD & ssrc) const = 0;
 };
 
 ////////////////////////////////////////////////////////////////////
@@ -140,7 +140,7 @@ class OpalSRTP_UDP : public SecureRTP_UDP
     OpalSRTP_UDP(
       PHandleAggregator * _aggregator,   ///< handle aggregator
       unsigned id,                       ///<  Session ID for RTP channel
-      BOOL remoteIsNAT                  ///<  TRUE is remote is behind NAT
+      PBoolean remoteIsNAT                  ///<  PTrue is remote is behind NAT
     );
 
     virtual SendReceiveStatus OnSendData   (RTP_DataFrame & frame) = 0;
@@ -163,12 +163,12 @@ class LibSRTP_UDP : public OpalSRTP_UDP
   public:
     LibSRTP_UDP(PHandleAggregator * _aggregator,   ///< handle aggregator
                   unsigned int id,                 ///<  Session ID for RTP channel
-                  BOOL remoteIsNAT                 ///<  TRUE is remote is behind NAT
+                  PBoolean remoteIsNAT                 ///<  PTrue is remote is behind NAT
     );
 
     ~LibSRTP_UDP();
 
-    BOOL Open(
+    PBoolean Open(
       PIPSocket::Address localAddress,  ///<  Local interface to bind to
       WORD portBase,                    ///<  Base of ports to search
       WORD portMax,                     ///<  end of ports to search (inclusive)

@@ -100,7 +100,7 @@ class IAX2Receiver : public PThread
   virtual void Terminate();
   
   /**Sit in here, waiting for data on the socket*/
-  BOOL ReadNetworkSocket();
+  PBoolean ReadNetworkSocket();
   
   /**We have just read a frame from the network. This is a good
      IAX2Frame. Put it on the queue of frames to be processed by the
@@ -124,7 +124,7 @@ class IAX2Receiver : public PThread
   IAX2FrameList      fromNetworkFrames;
   
   /**Flag to indicate if this receiver thread should keep listening for network data */
-  BOOL           keepGoing;
+  PBoolean           keepGoing;
 };
 
 #endif // RECEIVER_H

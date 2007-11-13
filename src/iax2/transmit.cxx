@@ -76,7 +76,7 @@ IAX2Transmit::IAX2Transmit(IAX2EndPoint & _newEndpoint, PUDPSocket & _newSocket)
   sendNowFrames.Initialise();
   ackingFrames.Initialise();
   
-  keepGoing = TRUE;
+  keepGoing = PTrue;
   
   PTRACE(6,"Constructor - IAX2 Transmitter");
   Resume();
@@ -91,7 +91,7 @@ IAX2Transmit::~IAX2Transmit()
 
 void IAX2Transmit::Terminate()
 {
-  keepGoing = FALSE;
+  keepGoing = PFalse;
   activate.Signal();
 }
 
@@ -163,9 +163,9 @@ void IAX2Transmit::ProcessSendList()
     if (active == NULL) 
       break;
     
-    BOOL isFullFrame = FALSE;
+    PBoolean isFullFrame = PFalse;
     if (PIsDescendant(active, IAX2FullFrame)) {
-      isFullFrame = TRUE;
+      isFullFrame = PTrue;
       IAX2FullFrame *f= (IAX2FullFrame *)active;
       if (f->DeleteFrameNow()) {
 	PTRACE(6, "This frame has timed out, so do not transmit" <<  f->IdString());

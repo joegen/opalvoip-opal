@@ -114,7 +114,7 @@ OpalGw::OpalGw()
 }
 
 
-BOOL OpalGw::OnStart()
+PBoolean OpalGw::OnStart()
 {
   // change to the default directory to the one containing the executable
   PDirectory exeDir = GetFile().GetDirectory();
@@ -165,7 +165,7 @@ void OpalGw::OnConfigChanged()
 
 
 
-BOOL OpalGw::Initialise(const char * initMsg)
+PBoolean OpalGw::Initialise(const char * initMsg)
 {
   PConfig cfg("Parameters");
 
@@ -203,9 +203,9 @@ BOOL OpalGw::Initialise(const char * initMsg)
   // SSL certificate file.
   PString certificateFile = cfg.GetString(HTTPCertificateFileKey, "server.pem");
   rsrc->Add(new PHTTPStringField(HTTPCertificateFileKey, 25, certificateFile));
-  if (!SetServerCertificate(certificateFile, TRUE)) {
+  if (!SetServerCertificate(certificateFile, PTrue)) {
     PSYSTEMLOG(Fatal, "BMAC\tCould not load certificate \"" << certificateFile << '"');
-    return FALSE;
+    return PFalse;
   }
 #endif
 
@@ -215,7 +215,7 @@ BOOL OpalGw::Initialise(const char * initMsg)
 
   // Initialise the core of the system
   if (!manager.Initialise(cfg, rsrc))
-    return FALSE;
+    return PFalse;
 
   // Finished the resource to add, generate HTML for it and add to name space
   PServiceHTML html("System Parameters");
@@ -230,7 +230,7 @@ BOOL OpalGw::Initialise(const char * initMsg)
   // Create the home page
   static const char welcomeHtml[] = "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, TRUE), PHTTPSpace::Overwrite);
+    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, PTrue), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to " + GetName())
@@ -258,11 +258,11 @@ BOOL OpalGw::Initialise(const char * initMsg)
     PSYSTEMLOG(Info, "Opened master socket for HTTP: " << httpListeningSocket->GetPort());
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP port: " << httpListeningSocket->GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
   PSYSTEMLOG(Info, "Service " << GetName() << ' ' << initMsg);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -289,7 +289,7 @@ MyManager::MyManager()
   ivrEP = NULL;
 #endif
 
-  autoStartReceiveVideo = autoStartTransmitVideo = FALSE;
+  autoStartReceiveVideo = autoStartTransmitVideo = PFalse;
 }
 
 
@@ -305,7 +305,7 @@ MyManager::~MyManager()
 }
 
 
-BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
+PBoolean MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
   PHTTPFieldArray * fieldArray;
 
@@ -335,7 +335,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
   // General parameters for all endpoint types
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), TRUE);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(PreferredMediaKey, 25), PTrue);
   PStringArray formats = fieldArray->GetStrings(cfg);
   if (formats.GetSize() > 0)
     SetMediaFormatOrder(formats);
@@ -344,7 +344,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
   rsrc->Add(fieldArray);
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), TRUE);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(RemovedMediaKey, 25), PTrue);
   SetMediaFormatMask(fieldArray->GetStrings(cfg));
   rsrc->Add(fieldArray);
 
@@ -373,7 +373,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #if OPAL_H323
 
   // Add H.323 parameters
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), TRUE);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323AliasesKey, 25), PTrue);
   PStringArray aliases = fieldArray->GetStrings(cfg);
   if (aliases.IsEmpty())
     fieldArray->SetStrings(cfg, h323EP->GetAliasNames());
@@ -395,7 +395,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   h323EP->SetInitialBandwidth(cfg.GetInteger(H323BandwidthKey, h323EP->GetInitialBandwidth()/10)*10);
   rsrc->Add(new PHTTPIntegerField(H323BandwidthKey, 1, UINT_MAX/10, h323EP->GetInitialBandwidth()/10, "kb/s"));
   
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25), FALSE);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(H323ListenersKey, 25), PFalse);
   if (!h323EP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any H.323 listeners!");
   }
@@ -425,7 +425,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
   if (!gkServer->Initialise(cfg, rsrc))
-    return FALSE;
+    return PFalse;
 #endif
 
 #if OPAL_SIP
@@ -440,7 +440,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PString registrar = cfg.GetString(SIPRegistrarKey);
   rsrc->Add(new PHTTPStringField(SIPRegistrarKey, 25, registrar));
 
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25), FALSE);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(SIPListenersKey, 25), PFalse);
   if (!sipEP->StartListeners(fieldArray->GetStrings(cfg))) {
     PSYSTEMLOG(Error, "Could not open any SIP listeners!");
   }
@@ -457,7 +457,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
 #endif
 
   // Add POTS and PSTN endpoints
-  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), FALSE);
+  fieldArray = new PHTTPFieldArray(new PHTTPSelectField(LIDKey, OpalLineInterfaceDevice::GetAllDevices()), PFalse);
   rsrc->Add(fieldArray);
   PStringArray devices = fieldArray->GetStrings(cfg);
   if (!potsEP->AddDeviceNames(devices)) {
@@ -514,7 +514,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   rsrc->Add(new PHTTPRadioField(DefaultSIPDialPeerKey, sipDialPeerDestination, sipRoute));
 #endif
   
-  fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), TRUE);
+  fieldArray = new PHTTPFieldArray(new PHTTPStringField(DialPeerKey, 25), PTrue);
   rsrc->Add(fieldArray);
   PStringArray routes = fieldArray->GetStrings(cfg);
 
@@ -580,7 +580,7 @@ BOOL MyManager::Initialise(PConfig & cfg, PConfigPage * rsrc)
   }
 
 
-  return TRUE;
+  return PTrue;
 }
 
 

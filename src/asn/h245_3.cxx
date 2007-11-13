@@ -17,7 +17,7 @@
 //
 
 H245_FECData_rfc2733_pktMode_rfc2733diffport::H245_FECData_rfc2733_pktMode_rfc2733diffport(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -57,13 +57,13 @@ PINDEX H245_FECData_rfc2733_pktMode_rfc2733diffport::GetDataLength() const
 }
 
 
-BOOL H245_FECData_rfc2733_pktMode_rfc2733diffport::Decode(PASN_Stream & strm)
+PBoolean H245_FECData_rfc2733_pktMode_rfc2733diffport::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -100,7 +100,7 @@ const static PASN_Names Names_H245_DepFECMode_rfc2733Mode_mode_separateStream[]=
 //
 
 H245_DepFECMode_rfc2733Mode_mode_separateStream::H245_DepFECMode_rfc2733Mode_mode_separateStream(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_DepFECMode_rfc2733Mode_mode_separateStream,2
 #endif
@@ -153,19 +153,19 @@ H245_DepFECMode_rfc2733Mode_mode_separateStream::operator const H245_DepFECMode_
 }
 
 
-BOOL H245_DepFECMode_rfc2733Mode_mode_separateStream::CreateObject()
+PBoolean H245_DepFECMode_rfc2733Mode_mode_separateStream::CreateObject()
 {
   switch (tag) {
     case e_differentPort :
       choice = new H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort();
-      return TRUE;
+      return PTrue;
     case e_samePort :
       choice = new H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -190,7 +190,7 @@ const static PASN_Names Names_H245_MultilinkResponse_addConnection_responseCode_
 //
 
 H245_MultilinkResponse_addConnection_responseCode_rejected::H245_MultilinkResponse_addConnection_responseCode_rejected(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MultilinkResponse_addConnection_responseCode_rejected,2
 #endif
@@ -199,7 +199,7 @@ H245_MultilinkResponse_addConnection_responseCode_rejected::H245_MultilinkRespon
 }
 
 
-BOOL H245_MultilinkResponse_addConnection_responseCode_rejected::CreateObject()
+PBoolean H245_MultilinkResponse_addConnection_responseCode_rejected::CreateObject()
 {
   choice = (tag <= e_userRejected) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -229,7 +229,7 @@ const static PASN_Names Names_H245_MiscellaneousCommand_type_progressiveRefineme
 //
 
 H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount::H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount,4
 #endif
@@ -238,7 +238,7 @@ H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount::H245_Misc
 }
 
 
-BOOL H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount::CreateObject()
+PBoolean H245_MiscellaneousCommand_type_progressiveRefinementStart_repeatCount::CreateObject()
 {
   choice = (tag <= e_doContinuousIndependentProgressions) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -267,7 +267,7 @@ const static PASN_Names Names_H245_NewATMVCCommand_aal_aal1_clockRecovery[]={
 //
 
 H245_NewATMVCCommand_aal_aal1_clockRecovery::H245_NewATMVCCommand_aal_aal1_clockRecovery(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_NewATMVCCommand_aal_aal1_clockRecovery,3
 #endif
@@ -276,7 +276,7 @@ H245_NewATMVCCommand_aal_aal1_clockRecovery::H245_NewATMVCCommand_aal_aal1_clock
 }
 
 
-BOOL H245_NewATMVCCommand_aal_aal1_clockRecovery::CreateObject()
+PBoolean H245_NewATMVCCommand_aal_aal1_clockRecovery::CreateObject()
 {
   choice = (tag <= e_adaptiveClockRecovery) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -306,7 +306,7 @@ const static PASN_Names Names_H245_NewATMVCCommand_aal_aal1_errorCorrection[]={
 //
 
 H245_NewATMVCCommand_aal_aal1_errorCorrection::H245_NewATMVCCommand_aal_aal1_errorCorrection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_NewATMVCCommand_aal_aal1_errorCorrection,4
 #endif
@@ -315,7 +315,7 @@ H245_NewATMVCCommand_aal_aal1_errorCorrection::H245_NewATMVCCommand_aal_aal1_err
 }
 
 
-BOOL H245_NewATMVCCommand_aal_aal1_errorCorrection::CreateObject()
+PBoolean H245_NewATMVCCommand_aal_aal1_errorCorrection::CreateObject()
 {
   choice = (tag <= e_errorCorrectionOnly) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -344,7 +344,7 @@ const static PASN_Names Names_H245_NewATMVCIndication_aal_aal1_clockRecovery[]={
 //
 
 H245_NewATMVCIndication_aal_aal1_clockRecovery::H245_NewATMVCIndication_aal_aal1_clockRecovery(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_NewATMVCIndication_aal_aal1_clockRecovery,3
 #endif
@@ -353,7 +353,7 @@ H245_NewATMVCIndication_aal_aal1_clockRecovery::H245_NewATMVCIndication_aal_aal1
 }
 
 
-BOOL H245_NewATMVCIndication_aal_aal1_clockRecovery::CreateObject()
+PBoolean H245_NewATMVCIndication_aal_aal1_clockRecovery::CreateObject()
 {
   choice = (tag <= e_adaptiveClockRecovery) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -383,7 +383,7 @@ const static PASN_Names Names_H245_NewATMVCIndication_aal_aal1_errorCorrection[]
 //
 
 H245_NewATMVCIndication_aal_aal1_errorCorrection::H245_NewATMVCIndication_aal_aal1_errorCorrection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H245_NewATMVCIndication_aal_aal1_errorCorrection,4
 #endif
@@ -392,7 +392,7 @@ H245_NewATMVCIndication_aal_aal1_errorCorrection::H245_NewATMVCIndication_aal_aa
 }
 
 
-BOOL H245_NewATMVCIndication_aal_aal1_errorCorrection::CreateObject()
+PBoolean H245_NewATMVCIndication_aal_aal1_errorCorrection::CreateObject()
 {
   choice = (tag <= e_errorCorrectionOnly) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -413,7 +413,7 @@ PObject * H245_NewATMVCIndication_aal_aal1_errorCorrection::Clone() const
 //
 
 H245_DepFECData_rfc2733_mode_separateStream_differentPort::H245_DepFECData_rfc2733_mode_separateStream_differentPort(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_protectedSessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_protectedPayloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
@@ -461,15 +461,15 @@ PINDEX H245_DepFECData_rfc2733_mode_separateStream_differentPort::GetDataLength(
 }
 
 
-BOOL H245_DepFECData_rfc2733_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECData_rfc2733_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedSessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_protectedPayloadType) && !m_protectedPayloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -501,7 +501,7 @@ PObject * H245_DepFECData_rfc2733_mode_separateStream_differentPort::Clone() con
 //
 
 H245_DepFECData_rfc2733_mode_separateStream_samePort::H245_DepFECData_rfc2733_mode_separateStream_samePort(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_protectedPayloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -542,13 +542,13 @@ PINDEX H245_DepFECData_rfc2733_mode_separateStream_samePort::GetDataLength() con
 }
 
 
-BOOL H245_DepFECData_rfc2733_mode_separateStream_samePort::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECData_rfc2733_mode_separateStream_samePort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedPayloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -578,7 +578,7 @@ PObject * H245_DepFECData_rfc2733_mode_separateStream_samePort::Clone() const
 //
 
 H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_protectedSessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_protectedPayloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
@@ -626,15 +626,15 @@ PINDEX H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::GetDataLen
 }
 
 
-BOOL H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedSessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_protectedPayloadType) && !m_protectedPayloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -666,7 +666,7 @@ PObject * H245_DepFECMode_rfc2733Mode_mode_separateStream_differentPort::Clone()
 //
 
 H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -706,13 +706,13 @@ PINDEX H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::GetDataLength()
 }
 
 
-BOOL H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -742,7 +742,7 @@ PObject * H245_DepFECMode_rfc2733Mode_mode_separateStream_samePort::Clone() cons
 //
 
 H245_GenericMessage::H245_GenericMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_subMessageIdentifier.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -795,17 +795,17 @@ PINDEX H245_GenericMessage::GetDataLength() const
 }
 
 
-BOOL H245_GenericMessage::Decode(PASN_Stream & strm)
+PBoolean H245_GenericMessage::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_messageIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_subMessageIdentifier) && !m_subMessageIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_messageContent) && !m_messageContent.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -858,7 +858,7 @@ PObject * H245_GenericInformation::Clone() const
 //
 
 H245_NonStandardParameter::H245_NonStandardParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -902,15 +902,15 @@ PINDEX H245_NonStandardParameter::GetDataLength() const
 }
 
 
-BOOL H245_NonStandardParameter::Decode(PASN_Stream & strm)
+PBoolean H245_NonStandardParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_nonStandardIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_data.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -941,7 +941,7 @@ PObject * H245_NonStandardParameter::Clone() const
 //
 
 H245_MasterSlaveDeterminationAck::H245_MasterSlaveDeterminationAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -981,13 +981,13 @@ PINDEX H245_MasterSlaveDeterminationAck::GetDataLength() const
 }
 
 
-BOOL H245_MasterSlaveDeterminationAck::Decode(PASN_Stream & strm)
+PBoolean H245_MasterSlaveDeterminationAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_decision.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1017,7 +1017,7 @@ PObject * H245_MasterSlaveDeterminationAck::Clone() const
 //
 
 H245_MasterSlaveDeterminationReject::H245_MasterSlaveDeterminationReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1057,13 +1057,13 @@ PINDEX H245_MasterSlaveDeterminationReject::GetDataLength() const
 }
 
 
-BOOL H245_MasterSlaveDeterminationReject::Decode(PASN_Stream & strm)
+PBoolean H245_MasterSlaveDeterminationReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1093,7 +1093,7 @@ PObject * H245_MasterSlaveDeterminationReject::Clone() const
 //
 
 H245_TerminalCapabilitySet::H245_TerminalCapabilitySet(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 1)
 {
   m_capabilityTable.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
   m_capabilityDescriptors.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -1159,23 +1159,23 @@ PINDEX H245_TerminalCapabilitySet::GetDataLength() const
 }
 
 
-BOOL H245_TerminalCapabilitySet::Decode(PASN_Stream & strm)
+PBoolean H245_TerminalCapabilitySet::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_protocolIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_multiplexCapability) && !m_multiplexCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_capabilityTable) && !m_capabilityTable.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_capabilityDescriptors) && !m_capabilityDescriptors.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1213,7 +1213,7 @@ PObject * H245_TerminalCapabilitySet::Clone() const
 //
 
 H245_CapabilityTableEntry::H245_CapabilityTableEntry(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
 }
 
@@ -1259,15 +1259,15 @@ PINDEX H245_CapabilityTableEntry::GetDataLength() const
 }
 
 
-BOOL H245_CapabilityTableEntry::Decode(PASN_Stream & strm)
+PBoolean H245_CapabilityTableEntry::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_capabilityTableEntryNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_capability) && !m_capability.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1299,7 +1299,7 @@ PObject * H245_CapabilityTableEntry::Clone() const
 //
 
 H245_CapabilityDescriptor::H245_CapabilityDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
   m_simultaneousCapabilities.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -1346,15 +1346,15 @@ PINDEX H245_CapabilityDescriptor::GetDataLength() const
 }
 
 
-BOOL H245_CapabilityDescriptor::Decode(PASN_Stream & strm)
+PBoolean H245_CapabilityDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_capabilityDescriptorNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_simultaneousCapabilities) && !m_simultaneousCapabilities.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1386,7 +1386,7 @@ PObject * H245_CapabilityDescriptor::Clone() const
 //
 
 H245_TerminalCapabilitySetAck::H245_TerminalCapabilitySetAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -1428,15 +1428,15 @@ PINDEX H245_TerminalCapabilitySetAck::GetDataLength() const
 }
 
 
-BOOL H245_TerminalCapabilitySetAck::Decode(PASN_Stream & strm)
+PBoolean H245_TerminalCapabilitySetAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1467,7 +1467,7 @@ PObject * H245_TerminalCapabilitySetAck::Clone() const
 //
 
 H245_TerminalCapabilitySetReject::H245_TerminalCapabilitySetReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -1513,17 +1513,17 @@ PINDEX H245_TerminalCapabilitySetReject::GetDataLength() const
 }
 
 
-BOOL H245_TerminalCapabilitySetReject::Decode(PASN_Stream & strm)
+PBoolean H245_TerminalCapabilitySetReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1555,7 +1555,7 @@ PObject * H245_TerminalCapabilitySetReject::Clone() const
 //
 
 H245_TerminalCapabilitySetRelease::H245_TerminalCapabilitySetRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -1579,13 +1579,13 @@ PINDEX H245_TerminalCapabilitySetRelease::GetDataLength() const
 }
 
 
-BOOL H245_TerminalCapabilitySetRelease::Decode(PASN_Stream & strm)
+PBoolean H245_TerminalCapabilitySetRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1615,7 +1615,7 @@ PObject * H245_TerminalCapabilitySetRelease::Clone() const
 //
 
 H245_H222Capability::H245_H222Capability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_numberOfVCs.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -1660,15 +1660,15 @@ PINDEX H245_H222Capability::GetDataLength() const
 }
 
 
-BOOL H245_H222Capability::Decode(PASN_Stream & strm)
+PBoolean H245_H222Capability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_numberOfVCs.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_vcCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1699,7 +1699,7 @@ PObject * H245_H222Capability::Clone() const
 //
 
 H245_H223Capability::H245_H223Capability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 6)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 6)
 {
   m_maximumAl2SDUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_maximumAl3SDUSize.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -1809,51 +1809,51 @@ PINDEX H245_H223Capability::GetDataLength() const
 }
 
 
-BOOL H245_H223Capability::Decode(PASN_Stream & strm)
+PBoolean H245_H223Capability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_transportWithI_frames.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_videoWithAL1.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_videoWithAL2.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_videoWithAL3.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_audioWithAL1.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_audioWithAL2.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_audioWithAL3.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataWithAL1.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataWithAL2.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataWithAL3.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maximumAl2SDUSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maximumAl3SDUSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maximumDelayJitter.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_h223MultiplexTableCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_maxMUXPDUSizeCapability, m_maxMUXPDUSizeCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_nsrpSupport, m_nsrpSupport))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_mobileOperationTransmitCapability, m_mobileOperationTransmitCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h223AnnexCCapability, m_h223AnnexCCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_bitRate, m_bitRate))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_mobileMultilinkFrameCapability, m_mobileMultilinkFrameCapability))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1902,7 +1902,7 @@ PObject * H245_H223Capability::Clone() const
 //
 
 H245_V76Capability::H245_V76Capability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_numOfDLCS.SetConstraints(PASN_Object::FixedConstraint, 2, 8191);
   m_n401Capability.SetConstraints(PASN_Object::FixedConstraint, 1, 4095);
@@ -2001,41 +2001,41 @@ PINDEX H245_V76Capability::GetDataLength() const
 }
 
 
-BOOL H245_V76Capability::Decode(PASN_Stream & strm)
+PBoolean H245_V76Capability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_suspendResumeCapabilitywAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_suspendResumeCapabilitywoAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rejCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_sREJCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mREJCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_crc8bitCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_crc16bitCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_crc32bitCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_uihCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_numOfDLCS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_twoOctetAddressFieldCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_loopBackTestCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_n401Capability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxWindowSizeCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_v75Capability.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2079,7 +2079,7 @@ PObject * H245_V76Capability::Clone() const
 //
 
 H245_MediaPacketizationCapability::H245_MediaPacketizationCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
   m_rtpPayloadType.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -2122,15 +2122,15 @@ PINDEX H245_MediaPacketizationCapability::GetDataLength() const
 }
 
 
-BOOL H245_MediaPacketizationCapability::Decode(PASN_Stream & strm)
+PBoolean H245_MediaPacketizationCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_h261aVideoPacketization.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_rtpPayloadType, m_rtpPayloadType))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2161,7 +2161,7 @@ PObject * H245_MediaPacketizationCapability::Clone() const
 //
 
 H245_RSVPParameters::H245_RSVPParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
 {
   m_tokenRate.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
   m_bucketSize.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
@@ -2238,23 +2238,23 @@ PINDEX H245_RSVPParameters::GetDataLength() const
 }
 
 
-BOOL H245_RSVPParameters::Decode(PASN_Stream & strm)
+PBoolean H245_RSVPParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_qosMode) && !m_qosMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_tokenRate) && !m_tokenRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_bucketSize) && !m_bucketSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_peakRate) && !m_peakRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_minPoliced) && !m_minPoliced.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_maxPktSize) && !m_maxPktSize.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2295,7 +2295,7 @@ PObject * H245_RSVPParameters::Clone() const
 //
 
 H245_ServicePriorityValue::H245_ServicePriorityValue(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -2337,13 +2337,13 @@ PINDEX H245_ServicePriorityValue::GetDataLength() const
 }
 
 
-BOOL H245_ServicePriorityValue::Decode(PASN_Stream & strm)
+PBoolean H245_ServicePriorityValue::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardParameter) && !m_nonStandardParameter.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2374,7 +2374,7 @@ PObject * H245_ServicePriorityValue::Clone() const
 //
 
 H245_ServicePriority::H245_ServicePriority(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -2426,17 +2426,17 @@ PINDEX H245_ServicePriority::GetDataLength() const
 }
 
 
-BOOL H245_ServicePriority::Decode(PASN_Stream & strm)
+PBoolean H245_ServicePriority::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_servicePrioritySignalled.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_servicePriorityValue) && !m_servicePriorityValue.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2470,7 +2470,7 @@ PObject * H245_ServicePriority::Clone() const
 //
 
 H245_AuthorizationParameters::H245_AuthorizationParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -2512,13 +2512,13 @@ PINDEX H245_AuthorizationParameters::GetDataLength() const
 }
 
 
-BOOL H245_AuthorizationParameters::Decode(PASN_Stream & strm)
+PBoolean H245_AuthorizationParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2549,7 +2549,7 @@ PObject * H245_AuthorizationParameters::Clone() const
 //
 
 H245_QOSDescriptor::H245_QOSDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -2599,17 +2599,17 @@ PINDEX H245_QOSDescriptor::GetDataLength() const
 }
 
 
-BOOL H245_QOSDescriptor::Decode(PASN_Stream & strm)
+PBoolean H245_QOSDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_qosType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_qosClass.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2642,7 +2642,7 @@ PObject * H245_QOSDescriptor::Clone() const
 //
 
 H245_GenericTransportParameters::H245_GenericTransportParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
 {
   m_averageRate.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
   m_burst.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
@@ -2712,21 +2712,21 @@ PINDEX H245_GenericTransportParameters::GetDataLength() const
 }
 
 
-BOOL H245_GenericTransportParameters::Decode(PASN_Stream & strm)
+PBoolean H245_GenericTransportParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_averageRate) && !m_averageRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_burst) && !m_burst.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_peakRate) && !m_peakRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_maxPktSize) && !m_maxPktSize.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2765,7 +2765,7 @@ PObject * H245_GenericTransportParameters::Clone() const
 //
 
 H245_QOSCapability::H245_QOSCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 6)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 6)
 {
   m_dscpValue.SetConstraints(PASN_Object::FixedConstraint, 0, 63);
 }
@@ -2832,29 +2832,29 @@ PINDEX H245_QOSCapability::GetDataLength() const
 }
 
 
-BOOL H245_QOSCapability::Decode(PASN_Stream & strm)
+PBoolean H245_QOSCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_rsvpParameters) && !m_rsvpParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_atmParameters) && !m_atmParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_localQoS, m_localQoS))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericTransportParameters, m_genericTransportParameters))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_servicePriority, m_servicePriority))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_authorizationParameter, m_authorizationParameter))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_qosDescriptor, m_qosDescriptor))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_dscpValue, m_dscpValue))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2895,7 +2895,7 @@ PObject * H245_QOSCapability::Clone() const
 //
 
 H245_TransportCapability::H245_TransportCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
 {
   m_qOSCapabilities.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
   m_mediaChannelCapabilities.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -2951,17 +2951,17 @@ PINDEX H245_TransportCapability::GetDataLength() const
 }
 
 
-BOOL H245_TransportCapability::Decode(PASN_Stream & strm)
+PBoolean H245_TransportCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_qOSCapabilities) && !m_qOSCapabilities.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaChannelCapabilities) && !m_mediaChannelCapabilities.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2996,7 +2996,7 @@ PObject * H245_TransportCapability::Clone() const
 //
 
 H245_RedundancyEncodingCapability::H245_RedundancyEncodingCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_secondaryEncoding.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -3047,17 +3047,17 @@ PINDEX H245_RedundancyEncodingCapability::GetDataLength() const
 }
 
 
-BOOL H245_RedundancyEncodingCapability::Decode(PASN_Stream & strm)
+PBoolean H245_RedundancyEncodingCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_redundancyEncodingMethod.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_primaryEncoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_secondaryEncoding) && !m_secondaryEncoding.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3090,7 +3090,7 @@ PObject * H245_RedundancyEncodingCapability::Clone() const
 //
 
 H245_RTPH263VideoRedundancyEncoding::H245_RTPH263VideoRedundancyEncoding(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_numberOfThreads.SetConstraints(PASN_Object::FixedConstraint, 1, 16);
   m_framesBetweenSyncPoints.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -3146,19 +3146,19 @@ PINDEX H245_RTPH263VideoRedundancyEncoding::GetDataLength() const
 }
 
 
-BOOL H245_RTPH263VideoRedundancyEncoding::Decode(PASN_Stream & strm)
+PBoolean H245_RTPH263VideoRedundancyEncoding::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_numberOfThreads.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_framesBetweenSyncPoints.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_frameToThreadMapping.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_containedThreads) && !m_containedThreads.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3192,7 +3192,7 @@ PObject * H245_RTPH263VideoRedundancyEncoding::Clone() const
 //
 
 H245_RTPH263VideoRedundancyFrameMapping::H245_RTPH263VideoRedundancyFrameMapping(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_threadNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 15);
 }
@@ -3237,15 +3237,15 @@ PINDEX H245_RTPH263VideoRedundancyFrameMapping::GetDataLength() const
 }
 
 
-BOOL H245_RTPH263VideoRedundancyFrameMapping::Decode(PASN_Stream & strm)
+PBoolean H245_RTPH263VideoRedundancyFrameMapping::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_threadNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_frameSequence.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3276,7 +3276,7 @@ PObject * H245_RTPH263VideoRedundancyFrameMapping::Clone() const
 //
 
 H245_MultipointCapability::H245_MultipointCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -3324,17 +3324,17 @@ PINDEX H245_MultipointCapability::GetDataLength() const
 }
 
 
-BOOL H245_MultipointCapability::Decode(PASN_Stream & strm)
+PBoolean H245_MultipointCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multicastCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiUniCastConference.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mediaDistributionCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3366,7 +3366,7 @@ PObject * H245_MultipointCapability::Clone() const
 //
 
 H245_MediaDistributionCapability::H245_MediaDistributionCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -3438,27 +3438,27 @@ PINDEX H245_MediaDistributionCapability::GetDataLength() const
 }
 
 
-BOOL H245_MediaDistributionCapability::Decode(PASN_Stream & strm)
+PBoolean H245_MediaDistributionCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_centralizedControl.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_distributedControl.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_centralizedAudio.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_distributedAudio.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_centralizedVideo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_distributedVideo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_centralizedData) && !m_centralizedData.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_distributedData) && !m_distributedData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3497,7 +3497,7 @@ PObject * H245_MediaDistributionCapability::Clone() const
 //
 
 H245_ExtendedVideoCapability::H245_ExtendedVideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -3543,15 +3543,15 @@ PINDEX H245_ExtendedVideoCapability::GetDataLength() const
 }
 
 
-BOOL H245_ExtendedVideoCapability::Decode(PASN_Stream & strm)
+PBoolean H245_ExtendedVideoCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_videoCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_videoCapabilityExtension) && !m_videoCapabilityExtension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3583,7 +3583,7 @@ PObject * H245_ExtendedVideoCapability::Clone() const
 //
 
 H245_EnhancementLayerInfo::H245_EnhancementLayerInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
 {
   m_snrEnhancement.SetConstraints(PASN_Object::FixedConstraint, 1, 14);
   m_spatialEnhancement.SetConstraints(PASN_Object::FixedConstraint, 1, 14);
@@ -3644,19 +3644,19 @@ PINDEX H245_EnhancementLayerInfo::GetDataLength() const
 }
 
 
-BOOL H245_EnhancementLayerInfo::Decode(PASN_Stream & strm)
+PBoolean H245_EnhancementLayerInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_baseBitRateConstrained.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_snrEnhancement) && !m_snrEnhancement.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_spatialEnhancement) && !m_spatialEnhancement.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_bPictureEnhancement) && !m_bPictureEnhancement.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3692,7 +3692,7 @@ PObject * H245_EnhancementLayerInfo::Clone() const
 //
 
 H245_H263ModeComboFlags::H245_H263ModeComboFlags(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 2)
 {
   IncludeOptionalField(e_enhancedReferencePicSelect);
   IncludeOptionalField(e_h263Version3Options);
@@ -3818,57 +3818,57 @@ PINDEX H245_H263ModeComboFlags::GetDataLength() const
 }
 
 
-BOOL H245_H263ModeComboFlags::Decode(PASN_Stream & strm)
+PBoolean H245_H263ModeComboFlags::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_unrestrictedVector.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_arithmeticCoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_advancedPrediction.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_pbFrames.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_advancedIntraCodingMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_deblockingFilterMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_unlimitedMotionVectors.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesInOrder_NonRect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesInOrder_Rect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesNoOrder_NonRect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesNoOrder_Rect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_improvedPBFramesMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_referencePicSelect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicPictureResizingByFour.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicPictureResizingSixteenthPel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicWarpingHalfPel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicWarpingSixteenthPel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_reducedResolutionUpdate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_independentSegmentDecoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alternateInterVLCMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_modifiedQuantizationMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_enhancedReferencePicSelect, m_enhancedReferencePicSelect))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h263Version3Options, m_h263Version3Options))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3920,7 +3920,7 @@ PObject * H245_H263ModeComboFlags::Clone() const
 //
 
 H245_G7231AnnexCCapability::H245_G7231AnnexCCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_maxAl_sduAudioFrames.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -3971,17 +3971,17 @@ PINDEX H245_G7231AnnexCCapability::GetDataLength() const
 }
 
 
-BOOL H245_G7231AnnexCCapability::Decode(PASN_Stream & strm)
+PBoolean H245_G7231AnnexCCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_maxAl_sduAudioFrames.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_silenceSuppression.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_g723AnnexCAudioMode) && !m_g723AnnexCAudioMode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4014,7 +4014,7 @@ PObject * H245_G7231AnnexCCapability::Clone() const
 //
 
 H245_DataApplicationCapability::H245_DataApplicationCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_maxBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
 }
@@ -4059,15 +4059,15 @@ PINDEX H245_DataApplicationCapability::GetDataLength() const
 }
 
 
-BOOL H245_DataApplicationCapability::Decode(PASN_Stream & strm)
+PBoolean H245_DataApplicationCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_application.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxBitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4098,7 +4098,7 @@ PObject * H245_DataApplicationCapability::Clone() const
 //
 
 H245_T38FaxUdpOptions::H245_T38FaxUdpOptions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
 {
 }
 
@@ -4150,17 +4150,17 @@ PINDEX H245_T38FaxUdpOptions::GetDataLength() const
 }
 
 
-BOOL H245_T38FaxUdpOptions::Decode(PASN_Stream & strm)
+PBoolean H245_T38FaxUdpOptions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_t38FaxMaxBuffer) && !m_t38FaxMaxBuffer.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_t38FaxMaxDatagram) && !m_t38FaxMaxDatagram.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_t38FaxUdpEC.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4194,7 +4194,7 @@ PObject * H245_T38FaxUdpOptions::Clone() const
 //
 
 H245_AuthenticationCapability::H245_AuthenticationCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
 {
 }
 
@@ -4238,15 +4238,15 @@ PINDEX H245_AuthenticationCapability::GetDataLength() const
 }
 
 
-BOOL H245_AuthenticationCapability::Decode(PASN_Stream & strm)
+PBoolean H245_AuthenticationCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_antiSpamAlgorithm, m_antiSpamAlgorithm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4278,7 +4278,7 @@ PObject * H245_AuthenticationCapability::Clone() const
 //
 
 H245_IntegrityCapability::H245_IntegrityCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -4320,13 +4320,13 @@ PINDEX H245_IntegrityCapability::GetDataLength() const
 }
 
 
-BOOL H245_IntegrityCapability::Decode(PASN_Stream & strm)
+PBoolean H245_IntegrityCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4357,7 +4357,7 @@ PObject * H245_IntegrityCapability::Clone() const
 //
 
 H245_ConferenceCapability::H245_ConferenceCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
 {
   IncludeOptionalField(e_videoIndicateMixingCapability);
 }
@@ -4408,19 +4408,19 @@ PINDEX H245_ConferenceCapability::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceCapability::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_chairControlCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_videoIndicateMixingCapability, m_videoIndicateMixingCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_multipointVisualizationCapability, m_multipointVisualizationCapability))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4454,7 +4454,7 @@ PObject * H245_ConferenceCapability::Clone() const
 //
 
 H245_GenericCapability::H245_GenericCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
 {
   m_maxBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
 }
@@ -4525,23 +4525,23 @@ PINDEX H245_GenericCapability::GetDataLength() const
 }
 
 
-BOOL H245_GenericCapability::Decode(PASN_Stream & strm)
+PBoolean H245_GenericCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_capabilityIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_maxBitRate) && !m_maxBitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_collapsing) && !m_collapsing.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_nonCollapsing) && !m_nonCollapsing.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_nonCollapsingRaw) && !m_nonCollapsingRaw.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_transport) && !m_transport.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4581,7 +4581,7 @@ PObject * H245_GenericCapability::Clone() const
 //
 
 H245_GenericParameter::H245_GenericParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -4631,17 +4631,17 @@ PINDEX H245_GenericParameter::GetDataLength() const
 }
 
 
-BOOL H245_GenericParameter::Decode(PASN_Stream & strm)
+PBoolean H245_GenericParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_parameterIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_parameterValue.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_supersedes) && !m_supersedes.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4674,7 +4674,7 @@ PObject * H245_GenericParameter::Clone() const
 //
 
 H245_MultiplexedStreamCapability::H245_MultiplexedStreamCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_capabilityOnMuxStream.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -4725,17 +4725,17 @@ PINDEX H245_MultiplexedStreamCapability::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexedStreamCapability::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexedStreamCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multiplexFormat.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_controlOnMuxStream.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_capabilityOnMuxStream) && !m_capabilityOnMuxStream.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4768,7 +4768,7 @@ PObject * H245_MultiplexedStreamCapability::Clone() const
 //
 
 H245_MultiplePayloadStreamCapability::H245_MultiplePayloadStreamCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_capabilities.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -4809,13 +4809,13 @@ PINDEX H245_MultiplePayloadStreamCapability::GetDataLength() const
 }
 
 
-BOOL H245_MultiplePayloadStreamCapability::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplePayloadStreamCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_capabilities.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4845,7 +4845,7 @@ PObject * H245_MultiplePayloadStreamCapability::Clone() const
 //
 
 H245_FECCapability::H245_FECCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -4897,17 +4897,17 @@ PINDEX H245_FECCapability::GetDataLength() const
 }
 
 
-BOOL H245_FECCapability::Decode(PASN_Stream & strm)
+PBoolean H245_FECCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_fecScheme) && !m_fecScheme.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_rfc2733Format) && !m_rfc2733Format.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4941,7 +4941,7 @@ PObject * H245_FECCapability::Clone() const
 //
 
 H245_NetworkAccessParameters::H245_NetworkAccessParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
 {
   m_externalReference.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
 }
@@ -5000,21 +5000,21 @@ PINDEX H245_NetworkAccessParameters::GetDataLength() const
 }
 
 
-BOOL H245_NetworkAccessParameters::Decode(PASN_Stream & strm)
+PBoolean H245_NetworkAccessParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_distribution) && !m_distribution.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_networkAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_associateConference.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_externalReference) && !m_externalReference.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_t120SetupProcedure, m_t120SetupProcedure))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5050,7 +5050,7 @@ PObject * H245_NetworkAccessParameters::Clone() const
 //
 
 H245_Q2931Address::H245_Q2931Address(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_subaddress.SetConstraints(PASN_Object::FixedConstraint, 1, 20);
 }
@@ -5097,15 +5097,15 @@ PINDEX H245_Q2931Address::GetDataLength() const
 }
 
 
-BOOL H245_Q2931Address::Decode(PASN_Stream & strm)
+PBoolean H245_Q2931Address::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_address.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_subaddress) && !m_subaddress.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5137,7 +5137,7 @@ PObject * H245_Q2931Address::Clone() const
 //
 
 H245_H223LogicalChannelParameters::H245_H223LogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5181,15 +5181,15 @@ PINDEX H245_H223LogicalChannelParameters::GetDataLength() const
 }
 
 
-BOOL H245_H223LogicalChannelParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H223LogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_adaptationLayerType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_segmentableFlag.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5220,7 +5220,7 @@ PObject * H245_H223LogicalChannelParameters::Clone() const
 //
 
 H245_H223AL1MParameters::H245_H223AL1MParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
   m_rcpcCodeRate.SetConstraints(PASN_Object::FixedConstraint, 8, 32);
   m_rsCodeCorrection.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
@@ -5288,27 +5288,27 @@ PINDEX H245_H223AL1MParameters::GetDataLength() const
 }
 
 
-BOOL H245_H223AL1MParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H223AL1MParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_transferMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_headerFEC.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_crcLength.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rcpcCodeRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_arqType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alpduInterleaving.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alsduSplitting.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_rsCodeCorrection, m_rsCodeCorrection))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5345,7 +5345,7 @@ PObject * H245_H223AL1MParameters::Clone() const
 //
 
 H245_H223AL2MParameters::H245_H223AL2MParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5389,15 +5389,15 @@ PINDEX H245_H223AL2MParameters::GetDataLength() const
 }
 
 
-BOOL H245_H223AL2MParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H223AL2MParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_headerFEC.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alpduInterleaving.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5428,7 +5428,7 @@ PObject * H245_H223AL2MParameters::Clone() const
 //
 
 H245_H223AL3MParameters::H245_H223AL3MParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
   m_rcpcCodeRate.SetConstraints(PASN_Object::FixedConstraint, 8, 32);
   m_rsCodeCorrection.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
@@ -5488,23 +5488,23 @@ PINDEX H245_H223AL3MParameters::GetDataLength() const
 }
 
 
-BOOL H245_H223AL3MParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H223AL3MParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_headerFormat.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_crcLength.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rcpcCodeRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_arqType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alpduInterleaving.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_rsCodeCorrection, m_rsCodeCorrection))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5539,7 +5539,7 @@ PObject * H245_H223AL3MParameters::Clone() const
 //
 
 H245_H223AnnexCArqParameters::H245_H223AnnexCArqParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_sendBufferSize.SetConstraints(PASN_Object::FixedConstraint, 0, 16777215);
 }
@@ -5584,15 +5584,15 @@ PINDEX H245_H223AnnexCArqParameters::GetDataLength() const
 }
 
 
-BOOL H245_H223AnnexCArqParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H223AnnexCArqParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_numberOfRetransmissions.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_sendBufferSize.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5623,7 +5623,7 @@ PObject * H245_H223AnnexCArqParameters::Clone() const
 //
 
 H245_V76HDLCParameters::H245_V76HDLCParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_n401.SetConstraints(PASN_Object::FixedConstraint, 1, 4095);
 }
@@ -5672,17 +5672,17 @@ PINDEX H245_V76HDLCParameters::GetDataLength() const
 }
 
 
-BOOL H245_V76HDLCParameters::Decode(PASN_Stream & strm)
+PBoolean H245_V76HDLCParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_crcLength.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_n401.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_loopbackTestProcedure.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5714,7 +5714,7 @@ PObject * H245_V76HDLCParameters::Clone() const
 //
 
 H245_RTPPayloadType::H245_RTPPayloadType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_payloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -5761,15 +5761,15 @@ PINDEX H245_RTPPayloadType::GetDataLength() const
 }
 
 
-BOOL H245_RTPPayloadType::Decode(PASN_Stream & strm)
+PBoolean H245_RTPPayloadType::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_payloadDescriptor.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_payloadType) && !m_payloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5801,7 +5801,7 @@ PObject * H245_RTPPayloadType::Clone() const
 //
 
 H245_MultiplePayloadStream::H245_MultiplePayloadStream(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5841,13 +5841,13 @@ PINDEX H245_MultiplePayloadStream::GetDataLength() const
 }
 
 
-BOOL H245_MultiplePayloadStream::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplePayloadStream::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_elements.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5877,7 +5877,7 @@ PObject * H245_MultiplePayloadStream::Clone() const
 //
 
 H245_EncryptionSync::H245_EncryptionSync(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
 {
   m_synchFlag.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_h235Key.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
@@ -5938,21 +5938,21 @@ PINDEX H245_EncryptionSync::GetDataLength() const
 }
 
 
-BOOL H245_EncryptionSync::Decode(PASN_Stream & strm)
+PBoolean H245_EncryptionSync::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_synchFlag.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_h235Key.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_escrowentry) && !m_escrowentry.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericParameter, m_genericParameter))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5988,7 +5988,7 @@ PObject * H245_EncryptionSync::Clone() const
 //
 
 H245_OpenLogicalChannelReject::H245_OpenLogicalChannelReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -6034,17 +6034,17 @@ PINDEX H245_OpenLogicalChannelReject::GetDataLength() const
 }
 
 
-BOOL H245_OpenLogicalChannelReject::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannelReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6076,7 +6076,7 @@ PObject * H245_OpenLogicalChannelReject::Clone() const
 //
 
 H245_OpenLogicalChannelConfirm::H245_OpenLogicalChannelConfirm(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -6118,15 +6118,15 @@ PINDEX H245_OpenLogicalChannelConfirm::GetDataLength() const
 }
 
 
-BOOL H245_OpenLogicalChannelConfirm::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannelConfirm::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6157,7 +6157,7 @@ PObject * H245_OpenLogicalChannelConfirm::Clone() const
 //
 
 H245_H2250LogicalChannelAckParameters::H245_H2250LogicalChannelAckParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 2)
 {
   m_sessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_dynamicRTPPayloadType.SetConstraints(PASN_Object::FixedConstraint, 96, 127);
@@ -6231,25 +6231,25 @@ PINDEX H245_H2250LogicalChannelAckParameters::GetDataLength() const
 }
 
 
-BOOL H245_H2250LogicalChannelAckParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H2250LogicalChannelAckParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_sessionID) && !m_sessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaChannel) && !m_mediaChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaControlChannel) && !m_mediaControlChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_dynamicRTPPayloadType) && !m_dynamicRTPPayloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_flowControlToZero, m_flowControlToZero))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_portNumber, m_portNumber))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6290,7 +6290,7 @@ PObject * H245_H2250LogicalChannelAckParameters::Clone() const
 //
 
 H245_CloseLogicalChannel::H245_CloseLogicalChannel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
   IncludeOptionalField(e_reason);
 }
@@ -6337,17 +6337,17 @@ PINDEX H245_CloseLogicalChannel::GetDataLength() const
 }
 
 
-BOOL H245_CloseLogicalChannel::Decode(PASN_Stream & strm)
+PBoolean H245_CloseLogicalChannel::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_source.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_reason, m_reason))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6379,7 +6379,7 @@ PObject * H245_CloseLogicalChannel::Clone() const
 //
 
 H245_RequestChannelClose::H245_RequestChannelClose(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 2)
 {
   IncludeOptionalField(e_reason);
 }
@@ -6424,17 +6424,17 @@ PINDEX H245_RequestChannelClose::GetDataLength() const
 }
 
 
-BOOL H245_RequestChannelClose::Decode(PASN_Stream & strm)
+PBoolean H245_RequestChannelClose::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_qosCapability, m_qosCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_reason, m_reason))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6466,7 +6466,7 @@ PObject * H245_RequestChannelClose::Clone() const
 //
 
 H245_RequestChannelCloseReject::H245_RequestChannelCloseReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -6510,15 +6510,15 @@ PINDEX H245_RequestChannelCloseReject::GetDataLength() const
 }
 
 
-BOOL H245_RequestChannelCloseReject::Decode(PASN_Stream & strm)
+PBoolean H245_RequestChannelCloseReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6549,7 +6549,7 @@ PObject * H245_RequestChannelCloseReject::Clone() const
 //
 
 H245_MultiplexEntrySend::H245_MultiplexEntrySend(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_multiplexEntryDescriptors.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -6594,15 +6594,15 @@ PINDEX H245_MultiplexEntrySend::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexEntrySend::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexEntrySend::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplexEntryDescriptors.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6633,7 +6633,7 @@ PObject * H245_MultiplexEntrySend::Clone() const
 //
 
 H245_MultiplexEntryDescriptor::H245_MultiplexEntryDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
   m_elementList.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -6680,15 +6680,15 @@ PINDEX H245_MultiplexEntryDescriptor::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexEntryDescriptor::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexEntryDescriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multiplexTableEntryNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_elementList) && !m_elementList.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6720,7 +6720,7 @@ PObject * H245_MultiplexEntryDescriptor::Clone() const
 //
 
 H245_MultiplexElement::H245_MultiplexElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6764,15 +6764,15 @@ PINDEX H245_MultiplexElement::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexElement::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_repeatCount.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6803,7 +6803,7 @@ PObject * H245_MultiplexElement::Clone() const
 //
 
 H245_MultiplexEntrySendAck::H245_MultiplexEntrySendAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_multiplexTableEntryNumber.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -6848,15 +6848,15 @@ PINDEX H245_MultiplexEntrySendAck::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexEntrySendAck::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexEntrySendAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplexTableEntryNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6887,7 +6887,7 @@ PObject * H245_MultiplexEntrySendAck::Clone() const
 //
 
 H245_MultiplexEntrySendReject::H245_MultiplexEntrySendReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_rejectionDescriptions.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -6932,15 +6932,15 @@ PINDEX H245_MultiplexEntrySendReject::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexEntrySendReject::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexEntrySendReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rejectionDescriptions.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6971,7 +6971,7 @@ PObject * H245_MultiplexEntrySendReject::Clone() const
 //
 
 H245_MultiplexEntryRejectionDescriptions::H245_MultiplexEntryRejectionDescriptions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -7015,15 +7015,15 @@ PINDEX H245_MultiplexEntryRejectionDescriptions::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexEntryRejectionDescriptions::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexEntryRejectionDescriptions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multiplexTableEntryNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7054,7 +7054,7 @@ PObject * H245_MultiplexEntryRejectionDescriptions::Clone() const
 //
 
 H245_MultiplexEntrySendRelease::H245_MultiplexEntrySendRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_multiplexTableEntryNumber.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -7095,13 +7095,13 @@ PINDEX H245_MultiplexEntrySendRelease::GetDataLength() const
 }
 
 
-BOOL H245_MultiplexEntrySendRelease::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplexEntrySendRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multiplexTableEntryNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7131,7 +7131,7 @@ PObject * H245_MultiplexEntrySendRelease::Clone() const
 //
 
 H245_RequestMultiplexEntry::H245_RequestMultiplexEntry(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_entryNumbers.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -7172,13 +7172,13 @@ PINDEX H245_RequestMultiplexEntry::GetDataLength() const
 }
 
 
-BOOL H245_RequestMultiplexEntry::Decode(PASN_Stream & strm)
+PBoolean H245_RequestMultiplexEntry::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_entryNumbers.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7208,7 +7208,7 @@ PObject * H245_RequestMultiplexEntry::Clone() const
 //
 
 H245_RequestMultiplexEntryAck::H245_RequestMultiplexEntryAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_entryNumbers.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -7249,13 +7249,13 @@ PINDEX H245_RequestMultiplexEntryAck::GetDataLength() const
 }
 
 
-BOOL H245_RequestMultiplexEntryAck::Decode(PASN_Stream & strm)
+PBoolean H245_RequestMultiplexEntryAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_entryNumbers.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7285,7 +7285,7 @@ PObject * H245_RequestMultiplexEntryAck::Clone() const
 //
 
 H245_RequestMultiplexEntryReject::H245_RequestMultiplexEntryReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_entryNumbers.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
   m_rejectionDescriptions.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
@@ -7331,15 +7331,15 @@ PINDEX H245_RequestMultiplexEntryReject::GetDataLength() const
 }
 
 
-BOOL H245_RequestMultiplexEntryReject::Decode(PASN_Stream & strm)
+PBoolean H245_RequestMultiplexEntryReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_entryNumbers.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rejectionDescriptions.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7370,7 +7370,7 @@ PObject * H245_RequestMultiplexEntryReject::Clone() const
 //
 
 H245_RequestMultiplexEntryRejectionDescriptions::H245_RequestMultiplexEntryRejectionDescriptions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -7414,15 +7414,15 @@ PINDEX H245_RequestMultiplexEntryRejectionDescriptions::GetDataLength() const
 }
 
 
-BOOL H245_RequestMultiplexEntryRejectionDescriptions::Decode(PASN_Stream & strm)
+PBoolean H245_RequestMultiplexEntryRejectionDescriptions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multiplexTableEntryNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7453,7 +7453,7 @@ PObject * H245_RequestMultiplexEntryRejectionDescriptions::Clone() const
 //
 
 H245_RequestMultiplexEntryRelease::H245_RequestMultiplexEntryRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_entryNumbers.SetConstraints(PASN_Object::FixedConstraint, 1, 15);
 }
@@ -7494,13 +7494,13 @@ PINDEX H245_RequestMultiplexEntryRelease::GetDataLength() const
 }
 
 
-BOOL H245_RequestMultiplexEntryRelease::Decode(PASN_Stream & strm)
+PBoolean H245_RequestMultiplexEntryRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_entryNumbers.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7530,7 +7530,7 @@ PObject * H245_RequestMultiplexEntryRelease::Clone() const
 //
 
 H245_RequestMode::H245_RequestMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_requestedModes.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -7575,15 +7575,15 @@ PINDEX H245_RequestMode::GetDataLength() const
 }
 
 
-BOOL H245_RequestMode::Decode(PASN_Stream & strm)
+PBoolean H245_RequestMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_requestedModes.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7614,7 +7614,7 @@ PObject * H245_RequestMode::Clone() const
 //
 
 H245_RequestModeAck::H245_RequestModeAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -7658,15 +7658,15 @@ PINDEX H245_RequestModeAck::GetDataLength() const
 }
 
 
-BOOL H245_RequestModeAck::Decode(PASN_Stream & strm)
+PBoolean H245_RequestModeAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_response.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7697,7 +7697,7 @@ PObject * H245_RequestModeAck::Clone() const
 //
 
 H245_RequestModeReject::H245_RequestModeReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -7741,15 +7741,15 @@ PINDEX H245_RequestModeReject::GetDataLength() const
 }
 
 
-BOOL H245_RequestModeReject::Decode(PASN_Stream & strm)
+PBoolean H245_RequestModeReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7780,7 +7780,7 @@ PObject * H245_RequestModeReject::Clone() const
 //
 
 H245_RedundancyEncodingDTModeElement::H245_RedundancyEncodingDTModeElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -7820,13 +7820,13 @@ PINDEX H245_RedundancyEncodingDTModeElement::GetDataLength() const
 }
 
 
-BOOL H245_RedundancyEncodingDTModeElement::Decode(PASN_Stream & strm)
+PBoolean H245_RedundancyEncodingDTModeElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7856,7 +7856,7 @@ PObject * H245_RedundancyEncodingDTModeElement::Clone() const
 //
 
 H245_MultiplePayloadStreamMode::H245_MultiplePayloadStreamMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -7896,13 +7896,13 @@ PINDEX H245_MultiplePayloadStreamMode::GetDataLength() const
 }
 
 
-BOOL H245_MultiplePayloadStreamMode::Decode(PASN_Stream & strm)
+PBoolean H245_MultiplePayloadStreamMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_elements.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7932,7 +7932,7 @@ PObject * H245_MultiplePayloadStreamMode::Clone() const
 //
 
 H245_FECMode::H245_FECMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -7984,17 +7984,17 @@ PINDEX H245_FECMode::GetDataLength() const
 }
 
 
-BOOL H245_FECMode::Decode(PASN_Stream & strm)
+PBoolean H245_FECMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedElement.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_fecScheme) && !m_fecScheme.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_rfc2733Format) && !m_rfc2733Format.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8028,7 +8028,7 @@ PObject * H245_FECMode::Clone() const
 //
 
 H245_H223ModeParameters::H245_H223ModeParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -8072,15 +8072,15 @@ PINDEX H245_H223ModeParameters::GetDataLength() const
 }
 
 
-BOOL H245_H223ModeParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H223ModeParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_adaptationLayerType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_segmentableFlag.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8111,7 +8111,7 @@ PObject * H245_H223ModeParameters::Clone() const
 //
 
 H245_RedundancyEncodingMode::H245_RedundancyEncodingMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -8157,15 +8157,15 @@ PINDEX H245_RedundancyEncodingMode::GetDataLength() const
 }
 
 
-BOOL H245_RedundancyEncodingMode::Decode(PASN_Stream & strm)
+PBoolean H245_RedundancyEncodingMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_redundancyEncodingMethod.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_secondaryEncoding) && !m_secondaryEncoding.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8197,7 +8197,7 @@ PObject * H245_RedundancyEncodingMode::Clone() const
 //
 
 H245_H261VideoMode::H245_H261VideoMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 19200);
 }
@@ -8246,17 +8246,17 @@ PINDEX H245_H261VideoMode::GetDataLength() const
 }
 
 
-BOOL H245_H261VideoMode::Decode(PASN_Stream & strm)
+PBoolean H245_H261VideoMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_resolution.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_stillImageTransmission.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8288,7 +8288,7 @@ PObject * H245_H261VideoMode::Clone() const
 //
 
 H245_H262VideoMode::H245_H262VideoMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
 {
   m_videoBitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 1073741823);
   m_vbvBufferSize.SetConstraints(PASN_Object::FixedConstraint, 0, 262143);
@@ -8370,25 +8370,25 @@ PINDEX H245_H262VideoMode::GetDataLength() const
 }
 
 
-BOOL H245_H262VideoMode::Decode(PASN_Stream & strm)
+PBoolean H245_H262VideoMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_profileAndLevel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_videoBitRate) && !m_videoBitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_vbvBufferSize) && !m_vbvBufferSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_samplesPerLine) && !m_samplesPerLine.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_linesPerFrame) && !m_linesPerFrame.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_framesPerSecond) && !m_framesPerSecond.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_luminanceSampleRate) && !m_luminanceSampleRate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8430,7 +8430,7 @@ PObject * H245_H262VideoMode::Clone() const
 //
 
 H245_IS11172AudioMode::H245_IS11172AudioMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 448);
 }
@@ -8483,19 +8483,19 @@ PINDEX H245_IS11172AudioMode::GetDataLength() const
 }
 
 
-BOOL H245_IS11172AudioMode::Decode(PASN_Stream & strm)
+PBoolean H245_IS11172AudioMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_audioLayer.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_audioSampling.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multichannelType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8528,7 +8528,7 @@ PObject * H245_IS11172AudioMode::Clone() const
 //
 
 H245_IS13818AudioMode::H245_IS13818AudioMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 1130);
 }
@@ -8589,23 +8589,23 @@ PINDEX H245_IS13818AudioMode::GetDataLength() const
 }
 
 
-BOOL H245_IS13818AudioMode::Decode(PASN_Stream & strm)
+PBoolean H245_IS13818AudioMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_audioLayer.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_audioSampling.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multichannelType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_lowFrequencyEnhancement.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multilingual.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8640,7 +8640,7 @@ PObject * H245_IS13818AudioMode::Clone() const
 //
 
 H245_G7231AnnexCMode::H245_G7231AnnexCMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_maxAl_sduAudioFrames.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -8689,17 +8689,17 @@ PINDEX H245_G7231AnnexCMode::GetDataLength() const
 }
 
 
-BOOL H245_G7231AnnexCMode::Decode(PASN_Stream & strm)
+PBoolean H245_G7231AnnexCMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_maxAl_sduAudioFrames.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_silenceSuppression.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_g723AnnexCAudioMode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8731,7 +8731,7 @@ PObject * H245_G7231AnnexCMode::Clone() const
 //
 
 H245_DataMode::H245_DataMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
 }
@@ -8776,15 +8776,15 @@ PINDEX H245_DataMode::GetDataLength() const
 }
 
 
-BOOL H245_DataMode::Decode(PASN_Stream & strm)
+PBoolean H245_DataMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_application.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8815,7 +8815,7 @@ PObject * H245_DataMode::Clone() const
 //
 
 H245_MaintenanceLoopRequest::H245_MaintenanceLoopRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -8855,13 +8855,13 @@ PINDEX H245_MaintenanceLoopRequest::GetDataLength() const
 }
 
 
-BOOL H245_MaintenanceLoopRequest::Decode(PASN_Stream & strm)
+PBoolean H245_MaintenanceLoopRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8891,7 +8891,7 @@ PObject * H245_MaintenanceLoopRequest::Clone() const
 //
 
 H245_MaintenanceLoopAck::H245_MaintenanceLoopAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -8931,13 +8931,13 @@ PINDEX H245_MaintenanceLoopAck::GetDataLength() const
 }
 
 
-BOOL H245_MaintenanceLoopAck::Decode(PASN_Stream & strm)
+PBoolean H245_MaintenanceLoopAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8967,7 +8967,7 @@ PObject * H245_MaintenanceLoopAck::Clone() const
 //
 
 H245_MaintenanceLoopReject::H245_MaintenanceLoopReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -9011,15 +9011,15 @@ PINDEX H245_MaintenanceLoopReject::GetDataLength() const
 }
 
 
-BOOL H245_MaintenanceLoopReject::Decode(PASN_Stream & strm)
+PBoolean H245_MaintenanceLoopReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9050,7 +9050,7 @@ PObject * H245_MaintenanceLoopReject::Clone() const
 //
 
 H245_CommunicationModeCommand::H245_CommunicationModeCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_communicationModeTable.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -9091,13 +9091,13 @@ PINDEX H245_CommunicationModeCommand::GetDataLength() const
 }
 
 
-BOOL H245_CommunicationModeCommand::Decode(PASN_Stream & strm)
+PBoolean H245_CommunicationModeCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_communicationModeTable.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9127,7 +9127,7 @@ PObject * H245_CommunicationModeCommand::Clone() const
 //
 
 H245_TerminalLabel::H245_TerminalLabel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -9171,15 +9171,15 @@ PINDEX H245_TerminalLabel::GetDataLength() const
 }
 
 
-BOOL H245_TerminalLabel::Decode(PASN_Stream & strm)
+PBoolean H245_TerminalLabel::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mcuNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_terminalNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9210,7 +9210,7 @@ PObject * H245_TerminalLabel::Clone() const
 //
 
 H245_RequestAllTerminalIDsResponse::H245_RequestAllTerminalIDsResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -9250,13 +9250,13 @@ PINDEX H245_RequestAllTerminalIDsResponse::GetDataLength() const
 }
 
 
-BOOL H245_RequestAllTerminalIDsResponse::Decode(PASN_Stream & strm)
+PBoolean H245_RequestAllTerminalIDsResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalInformation.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9286,7 +9286,7 @@ PObject * H245_RequestAllTerminalIDsResponse::Clone() const
 //
 
 H245_TerminalInformation::H245_TerminalInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -9330,15 +9330,15 @@ PINDEX H245_TerminalInformation::GetDataLength() const
 }
 
 
-BOOL H245_TerminalInformation::Decode(PASN_Stream & strm)
+PBoolean H245_TerminalInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_terminalID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9369,7 +9369,7 @@ PObject * H245_TerminalInformation::Clone() const
 //
 
 H245_DialingInformationNumber::H245_DialingInformationNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_networkAddress.SetConstraints(PASN_Object::FixedConstraint, 0, 40);
   m_subAddress.SetConstraints(PASN_Object::FixedConstraint, 1, 40);
@@ -9422,17 +9422,17 @@ PINDEX H245_DialingInformationNumber::GetDataLength() const
 }
 
 
-BOOL H245_DialingInformationNumber::Decode(PASN_Stream & strm)
+PBoolean H245_DialingInformationNumber::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_networkAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_subAddress) && !m_subAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_networkType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9465,7 +9465,7 @@ PObject * H245_DialingInformationNumber::Clone() const
 //
 
 H245_LogicalChannelRateReject::H245_LogicalChannelRateReject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -9519,19 +9519,19 @@ PINDEX H245_LogicalChannelRateReject::GetDataLength() const
 }
 
 
-BOOL H245_LogicalChannelRateReject::Decode(PASN_Stream & strm)
+PBoolean H245_LogicalChannelRateReject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_logicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rejectReason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_currentMaximumBitRate) && !m_currentMaximumBitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9565,7 +9565,7 @@ PObject * H245_LogicalChannelRateReject::Clone() const
 //
 
 H245_FlowControlCommand::H245_FlowControlCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -9609,15 +9609,15 @@ PINDEX H245_FlowControlCommand::GetDataLength() const
 }
 
 
-BOOL H245_FlowControlCommand::Decode(PASN_Stream & strm)
+PBoolean H245_FlowControlCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_scope.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_restriction.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9648,7 +9648,7 @@ PObject * H245_FlowControlCommand::Clone() const
 //
 
 H245_MiscellaneousCommand::H245_MiscellaneousCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -9694,17 +9694,17 @@ PINDEX H245_MiscellaneousCommand::GetDataLength() const
 }
 
 
-BOOL H245_MiscellaneousCommand::Decode(PASN_Stream & strm)
+PBoolean H245_MiscellaneousCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_logicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_direction, m_direction))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9736,7 +9736,7 @@ PObject * H245_MiscellaneousCommand::Clone() const
 //
 
 H245_MobileMultilinkReconfigurationCommand::H245_MobileMultilinkReconfigurationCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_sampleSize.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_samplesPerFrame.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -9786,17 +9786,17 @@ PINDEX H245_MobileMultilinkReconfigurationCommand::GetDataLength() const
 }
 
 
-BOOL H245_MobileMultilinkReconfigurationCommand::Decode(PASN_Stream & strm)
+PBoolean H245_MobileMultilinkReconfigurationCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sampleSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_samplesPerFrame.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_status.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9828,7 +9828,7 @@ PObject * H245_MobileMultilinkReconfigurationCommand::Clone() const
 //
 
 H245_FunctionNotSupported::H245_FunctionNotSupported(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -9874,15 +9874,15 @@ PINDEX H245_FunctionNotSupported::GetDataLength() const
 }
 
 
-BOOL H245_FunctionNotSupported::Decode(PASN_Stream & strm)
+PBoolean H245_FunctionNotSupported::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_cause.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_returnedFunction) && !m_returnedFunction.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9914,7 +9914,7 @@ PObject * H245_FunctionNotSupported::Clone() const
 //
 
 H245_MiscellaneousIndication::H245_MiscellaneousIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -9958,15 +9958,15 @@ PINDEX H245_MiscellaneousIndication::GetDataLength() const
 }
 
 
-BOOL H245_MiscellaneousIndication::Decode(PASN_Stream & strm)
+PBoolean H245_MiscellaneousIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_logicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9997,7 +9997,7 @@ PObject * H245_MiscellaneousIndication::Clone() const
 //
 
 H245_JitterIndication::H245_JitterIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_estimatedReceivedJitterMantissa.SetConstraints(PASN_Object::FixedConstraint, 0, 3);
   m_estimatedReceivedJitterExponent.SetConstraints(PASN_Object::FixedConstraint, 0, 7);
@@ -10061,21 +10061,21 @@ PINDEX H245_JitterIndication::GetDataLength() const
 }
 
 
-BOOL H245_JitterIndication::Decode(PASN_Stream & strm)
+PBoolean H245_JitterIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_scope.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_estimatedReceivedJitterMantissa.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_estimatedReceivedJitterExponent.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_skippedFrameCount) && !m_skippedFrameCount.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_additionalDecoderBuffer) && !m_additionalDecoderBuffer.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10111,7 +10111,7 @@ PObject * H245_JitterIndication::Clone() const
 //
 
 H245_FlowControlIndication::H245_FlowControlIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -10155,15 +10155,15 @@ PINDEX H245_FlowControlIndication::GetDataLength() const
 }
 
 
-BOOL H245_FlowControlIndication::Decode(PASN_Stream & strm)
+PBoolean H245_FlowControlIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_scope.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_restriction.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10194,7 +10194,7 @@ PObject * H245_FlowControlIndication::Clone() const
 //
 
 H245_VCCapability_availableBitRates::H245_VCCapability_availableBitRates(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -10234,13 +10234,13 @@ PINDEX H245_VCCapability_availableBitRates::GetDataLength() const
 }
 
 
-BOOL H245_VCCapability_availableBitRates::Decode(PASN_Stream & strm)
+PBoolean H245_VCCapability_availableBitRates::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10270,7 +10270,7 @@ PObject * H245_VCCapability_availableBitRates::Clone() const
 //
 
 H245_VCCapability_aal1ViaGateway::H245_VCCapability_aal1ViaGateway(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_gatewayAddress.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
 }
@@ -10347,31 +10347,31 @@ PINDEX H245_VCCapability_aal1ViaGateway::GetDataLength() const
 }
 
 
-BOOL H245_VCCapability_aal1ViaGateway::Decode(PASN_Stream & strm)
+PBoolean H245_VCCapability_aal1ViaGateway::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_gatewayAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_nullClockRecovery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_srtsClockRecovery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_adaptiveClockRecovery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_nullErrorCorrection.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_longInterleaver.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_shortInterleaver.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_errorCorrectionOnly.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_structuredDataTransfer.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_partiallyFilledCells.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10410,7 +10410,7 @@ PObject * H245_VCCapability_aal1ViaGateway::Clone() const
 //
 
 H245_RefPictureSelection_enhancedReferencePicSelect::H245_RefPictureSelection_enhancedReferencePicSelect(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -10452,13 +10452,13 @@ PINDEX H245_RefPictureSelection_enhancedReferencePicSelect::GetDataLength() cons
 }
 
 
-BOOL H245_RefPictureSelection_enhancedReferencePicSelect::Decode(PASN_Stream & strm)
+PBoolean H245_RefPictureSelection_enhancedReferencePicSelect::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_subPictureRemovalParameters) && !m_subPictureRemovalParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10489,7 +10489,7 @@ PObject * H245_RefPictureSelection_enhancedReferencePicSelect::Clone() const
 //
 
 H245_CustomPictureFormat_mPI::H245_CustomPictureFormat_mPI(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_standardMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 31);
 }
@@ -10538,15 +10538,15 @@ PINDEX H245_CustomPictureFormat_mPI::GetDataLength() const
 }
 
 
-BOOL H245_CustomPictureFormat_mPI::Decode(PASN_Stream & strm)
+PBoolean H245_CustomPictureFormat_mPI::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_standardMPI) && !m_standardMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_customPCF) && !m_customPCF.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10579,7 +10579,7 @@ PObject * H245_CustomPictureFormat_mPI::Clone() const
 //
 
 H245_DepFECCapability_rfc2733::H245_DepFECCapability_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -10623,15 +10623,15 @@ PINDEX H245_DepFECCapability_rfc2733::GetDataLength() const
 }
 
 
-BOOL H245_DepFECCapability_rfc2733::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECCapability_rfc2733::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_redundancyEncoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_separateStream.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10662,7 +10662,7 @@ PObject * H245_DepFECCapability_rfc2733::Clone() const
 //
 
 H245_OpenLogicalChannel_forwardLogicalChannelParameters::H245_OpenLogicalChannel_forwardLogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
 {
   m_portNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -10717,21 +10717,21 @@ PINDEX H245_OpenLogicalChannel_forwardLogicalChannelParameters::GetDataLength() 
 }
 
 
-BOOL H245_OpenLogicalChannel_forwardLogicalChannelParameters::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannel_forwardLogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_portNumber) && !m_portNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplexParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_forwardLogicalChannelDependency, m_forwardLogicalChannelDependency))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_replacementFor, m_replacementFor))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10766,7 +10766,7 @@ PObject * H245_OpenLogicalChannel_forwardLogicalChannelParameters::Clone() const
 //
 
 H245_OpenLogicalChannel_reverseLogicalChannelParameters::H245_OpenLogicalChannel_reverseLogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 2)
 {
 }
 
@@ -10816,19 +10816,19 @@ PINDEX H245_OpenLogicalChannel_reverseLogicalChannelParameters::GetDataLength() 
 }
 
 
-BOOL H245_OpenLogicalChannel_reverseLogicalChannelParameters::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannel_reverseLogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_dataType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_multiplexParameters) && !m_multiplexParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_reverseLogicalChannelDependency, m_reverseLogicalChannelDependency))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_replacementFor, m_replacementFor))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10862,7 +10862,7 @@ PObject * H245_OpenLogicalChannel_reverseLogicalChannelParameters::Clone() const
 //
 
 H245_RedundancyEncoding_rtpRedundancyEncoding::H245_RedundancyEncoding_rtpRedundancyEncoding(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -10910,15 +10910,15 @@ PINDEX H245_RedundancyEncoding_rtpRedundancyEncoding::GetDataLength() const
 }
 
 
-BOOL H245_RedundancyEncoding_rtpRedundancyEncoding::Decode(PASN_Stream & strm)
+PBoolean H245_RedundancyEncoding_rtpRedundancyEncoding::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_primary) && !m_primary.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_secondary) && !m_secondary.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -10951,7 +10951,7 @@ PObject * H245_RedundancyEncoding_rtpRedundancyEncoding::Clone() const
 //
 
 H245_DepFECData_rfc2733::H245_DepFECData_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -10991,13 +10991,13 @@ PINDEX H245_DepFECData_rfc2733::GetDataLength() const
 }
 
 
-BOOL H245_DepFECData_rfc2733::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECData_rfc2733::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11027,7 +11027,7 @@ PObject * H245_DepFECData_rfc2733::Clone() const
 //
 
 H245_FECData_rfc2733::H245_FECData_rfc2733(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_protectedPayloadType.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -11078,17 +11078,17 @@ PINDEX H245_FECData_rfc2733::GetDataLength() const
 }
 
 
-BOOL H245_FECData_rfc2733::Decode(PASN_Stream & strm)
+PBoolean H245_FECData_rfc2733::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protectedPayloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_fecScheme) && !m_fecScheme.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_pktMode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11121,7 +11121,7 @@ PObject * H245_FECData_rfc2733::Clone() const
 //
 
 H245_UnicastAddress_iPSourceRouteAddress::H245_UnicastAddress_iPSourceRouteAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_network.SetConstraints(PASN_Object::FixedConstraint, 4);
   m_tsapIdentifier.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -11175,19 +11175,19 @@ PINDEX H245_UnicastAddress_iPSourceRouteAddress::GetDataLength() const
 }
 
 
-BOOL H245_UnicastAddress_iPSourceRouteAddress::Decode(PASN_Stream & strm)
+PBoolean H245_UnicastAddress_iPSourceRouteAddress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_routing.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_network.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tsapIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_route.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11220,7 +11220,7 @@ PObject * H245_UnicastAddress_iPSourceRouteAddress::Clone() const
 //
 
 H245_OpenLogicalChannelAck_reverseLogicalChannelParameters::H245_OpenLogicalChannelAck_reverseLogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
 {
   m_portNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -11275,19 +11275,19 @@ PINDEX H245_OpenLogicalChannelAck_reverseLogicalChannelParameters::GetDataLength
 }
 
 
-BOOL H245_OpenLogicalChannelAck_reverseLogicalChannelParameters::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannelAck_reverseLogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reverseLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_portNumber) && !m_portNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_multiplexParameters) && !m_multiplexParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_replacementFor, m_replacementFor))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11322,7 +11322,7 @@ PObject * H245_OpenLogicalChannelAck_reverseLogicalChannelParameters::Clone() co
 //
 
 H245_DepFECMode_rfc2733Mode::H245_DepFECMode_rfc2733Mode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -11362,13 +11362,13 @@ PINDEX H245_DepFECMode_rfc2733Mode::GetDataLength() const
 }
 
 
-BOOL H245_DepFECMode_rfc2733Mode::Decode(PASN_Stream & strm)
+PBoolean H245_DepFECMode_rfc2733Mode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11398,7 +11398,7 @@ PObject * H245_DepFECMode_rfc2733Mode::Clone() const
 //
 
 H245_ConferenceRequest_requestTerminalCertificate::H245_ConferenceRequest_requestTerminalCertificate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
 {
   m_sRandom.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
 }
@@ -11453,17 +11453,17 @@ PINDEX H245_ConferenceRequest_requestTerminalCertificate::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceRequest_requestTerminalCertificate::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceRequest_requestTerminalCertificate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_terminalLabel) && !m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_certSelectionCriteria) && !m_certSelectionCriteria.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_sRandom) && !m_sRandom.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11498,7 +11498,7 @@ PObject * H245_ConferenceRequest_requestTerminalCertificate::Clone() const
 //
 
 H245_ConferenceResponse_mCTerminalIDResponse::H245_ConferenceResponse_mCTerminalIDResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -11542,15 +11542,15 @@ PINDEX H245_ConferenceResponse_mCTerminalIDResponse::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceResponse_mCTerminalIDResponse::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceResponse_mCTerminalIDResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_terminalID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11581,7 +11581,7 @@ PObject * H245_ConferenceResponse_mCTerminalIDResponse::Clone() const
 //
 
 H245_ConferenceResponse_terminalIDResponse::H245_ConferenceResponse_terminalIDResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -11625,15 +11625,15 @@ PINDEX H245_ConferenceResponse_terminalIDResponse::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceResponse_terminalIDResponse::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceResponse_terminalIDResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_terminalID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11664,7 +11664,7 @@ PObject * H245_ConferenceResponse_terminalIDResponse::Clone() const
 //
 
 H245_ConferenceResponse_conferenceIDResponse::H245_ConferenceResponse_conferenceIDResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -11708,15 +11708,15 @@ PINDEX H245_ConferenceResponse_conferenceIDResponse::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceResponse_conferenceIDResponse::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceResponse_conferenceIDResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_conferenceID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11747,7 +11747,7 @@ PObject * H245_ConferenceResponse_conferenceIDResponse::Clone() const
 //
 
 H245_ConferenceResponse_passwordResponse::H245_ConferenceResponse_passwordResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -11791,15 +11791,15 @@ PINDEX H245_ConferenceResponse_passwordResponse::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceResponse_passwordResponse::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceResponse_passwordResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_password.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11830,7 +11830,7 @@ PObject * H245_ConferenceResponse_passwordResponse::Clone() const
 //
 
 H245_ConferenceResponse_chairTokenOwnerResponse::H245_ConferenceResponse_chairTokenOwnerResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -11874,15 +11874,15 @@ PINDEX H245_ConferenceResponse_chairTokenOwnerResponse::GetDataLength() const
 }
 
 
-BOOL H245_ConferenceResponse_chairTokenOwnerResponse::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceResponse_chairTokenOwnerResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_terminalID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -11913,7 +11913,7 @@ PObject * H245_ConferenceResponse_chairTokenOwnerResponse::Clone() const
 //
 
 H245_ConferenceResponse_terminalCertificateResponse::H245_ConferenceResponse_terminalCertificateResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_certificateResponse.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -11962,15 +11962,15 @@ PINDEX H245_ConferenceResponse_terminalCertificateResponse::GetDataLength() cons
 }
 
 
-BOOL H245_ConferenceResponse_terminalCertificateResponse::Decode(PASN_Stream & strm)
+PBoolean H245_ConferenceResponse_terminalCertificateResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_terminalLabel) && !m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_certificateResponse) && !m_certificateResponse.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12003,7 +12003,7 @@ PObject * H245_ConferenceResponse_terminalCertificateResponse::Clone() const
 //
 
 H245_MultilinkRequest_maximumHeaderInterval::H245_MultilinkRequest_maximumHeaderInterval(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -12043,13 +12043,13 @@ PINDEX H245_MultilinkRequest_maximumHeaderInterval::GetDataLength() const
 }
 
 
-BOOL H245_MultilinkRequest_maximumHeaderInterval::Decode(PASN_Stream & strm)
+PBoolean H245_MultilinkRequest_maximumHeaderInterval::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_requestType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12079,7 +12079,7 @@ PObject * H245_MultilinkRequest_maximumHeaderInterval::Clone() const
 //
 
 H245_MultilinkResponse_addConnection::H245_MultilinkResponse_addConnection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -12123,15 +12123,15 @@ PINDEX H245_MultilinkResponse_addConnection::GetDataLength() const
 }
 
 
-BOOL H245_MultilinkResponse_addConnection::Decode(PASN_Stream & strm)
+PBoolean H245_MultilinkResponse_addConnection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_responseCode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12162,7 +12162,7 @@ PObject * H245_MultilinkResponse_addConnection::Clone() const
 //
 
 H245_SendTerminalCapabilitySet_specificRequest::H245_SendTerminalCapabilitySet_specificRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_capabilityTableEntryNumbers.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
   m_capabilityDescriptorNumbers.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -12216,17 +12216,17 @@ PINDEX H245_SendTerminalCapabilitySet_specificRequest::GetDataLength() const
 }
 
 
-BOOL H245_SendTerminalCapabilitySet_specificRequest::Decode(PASN_Stream & strm)
+PBoolean H245_SendTerminalCapabilitySet_specificRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_multiplexCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_capabilityTableEntryNumbers) && !m_capabilityTableEntryNumbers.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_capabilityDescriptorNumbers) && !m_capabilityDescriptorNumbers.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12260,7 +12260,7 @@ PObject * H245_SendTerminalCapabilitySet_specificRequest::Clone() const
 //
 
 H245_EncryptionCommand_encryptionAlgorithmID::H245_EncryptionCommand_encryptionAlgorithmID(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -12304,15 +12304,15 @@ PINDEX H245_EncryptionCommand_encryptionAlgorithmID::GetDataLength() const
 }
 
 
-BOOL H245_EncryptionCommand_encryptionAlgorithmID::Decode(PASN_Stream & strm)
+PBoolean H245_EncryptionCommand_encryptionAlgorithmID::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_h233AlgorithmIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_associatedAlgorithm.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12343,7 +12343,7 @@ PObject * H245_EncryptionCommand_encryptionAlgorithmID::Clone() const
 //
 
 H245_NewATMVCCommand_reverseParameters::H245_NewATMVCCommand_reverseParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -12396,19 +12396,19 @@ PINDEX H245_NewATMVCCommand_reverseParameters::GetDataLength() const
 }
 
 
-BOOL H245_NewATMVCCommand_reverseParameters::Decode(PASN_Stream & strm)
+PBoolean H245_NewATMVCCommand_reverseParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToPCRClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToNetworkClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplex.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12441,7 +12441,7 @@ PObject * H245_NewATMVCCommand_reverseParameters::Clone() const
 //
 
 H245_NewATMVCIndication_reverseParameters::H245_NewATMVCIndication_reverseParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -12494,19 +12494,19 @@ PINDEX H245_NewATMVCIndication_reverseParameters::GetDataLength() const
 }
 
 
-BOOL H245_NewATMVCIndication_reverseParameters::Decode(PASN_Stream & strm)
+PBoolean H245_NewATMVCIndication_reverseParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToPCRClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToNetworkClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplex.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12539,7 +12539,7 @@ PObject * H245_NewATMVCIndication_reverseParameters::Clone() const
 //
 
 H245_UserInputIndication_signal::H245_UserInputIndication_signal(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 4)
 {
   m_signalType.SetConstraints(PASN_Object::FixedConstraint, 1);
   m_signalType.SetCharacterSet(PASN_Object::FixedConstraint, "0123456789#*ABCD!");
@@ -12603,25 +12603,25 @@ PINDEX H245_UserInputIndication_signal::GetDataLength() const
 }
 
 
-BOOL H245_UserInputIndication_signal::Decode(PASN_Stream & strm)
+PBoolean H245_UserInputIndication_signal::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_signalType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_duration) && !m_duration.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_rtp) && !m_rtp.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_rtpPayloadIndication, m_rtpPayloadIndication))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_paramS, m_paramS))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_encryptedSignalType, m_encryptedSignalType))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_algorithmOID, m_algorithmOID))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12659,7 +12659,7 @@ PObject * H245_UserInputIndication_signal::Clone() const
 //
 
 H245_UserInputIndication_signalUpdate::H245_UserInputIndication_signalUpdate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_duration.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -12706,15 +12706,15 @@ PINDEX H245_UserInputIndication_signalUpdate::GetDataLength() const
 }
 
 
-BOOL H245_UserInputIndication_signalUpdate::Decode(PASN_Stream & strm)
+PBoolean H245_UserInputIndication_signalUpdate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_duration.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_rtp) && !m_rtp.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12746,7 +12746,7 @@ PObject * H245_UserInputIndication_signalUpdate::Clone() const
 //
 
 H245_UserInputIndication_extendedAlphanumeric::H245_UserInputIndication_extendedAlphanumeric(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
 {
 }
 
@@ -12794,17 +12794,17 @@ PINDEX H245_UserInputIndication_extendedAlphanumeric::GetDataLength() const
 }
 
 
-BOOL H245_UserInputIndication_extendedAlphanumeric::Decode(PASN_Stream & strm)
+PBoolean H245_UserInputIndication_extendedAlphanumeric::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_alphanumeric.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_rtpPayloadIndication) && !m_rtpPayloadIndication.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_encryptedAlphanumeric, m_encryptedAlphanumeric))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12837,7 +12837,7 @@ PObject * H245_UserInputIndication_extendedAlphanumeric::Clone() const
 //
 
 H245_V76LogicalChannelParameters_mode_eRM::H245_V76LogicalChannelParameters_mode_eRM(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_windowSize.SetConstraints(PASN_Object::FixedConstraint, 1, 127);
 }
@@ -12882,15 +12882,15 @@ PINDEX H245_V76LogicalChannelParameters_mode_eRM::GetDataLength() const
 }
 
 
-BOOL H245_V76LogicalChannelParameters_mode_eRM::Decode(PASN_Stream & strm)
+PBoolean H245_V76LogicalChannelParameters_mode_eRM::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_windowSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_recovery.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12921,7 +12921,7 @@ PObject * H245_V76LogicalChannelParameters_mode_eRM::Clone() const
 //
 
 H245_MiscellaneousCommand_type_progressiveRefinementStart::H245_MiscellaneousCommand_type_progressiveRefinementStart(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -12961,13 +12961,13 @@ PINDEX H245_MiscellaneousCommand_type_progressiveRefinementStart::GetDataLength(
 }
 
 
-BOOL H245_MiscellaneousCommand_type_progressiveRefinementStart::Decode(PASN_Stream & strm)
+PBoolean H245_MiscellaneousCommand_type_progressiveRefinementStart::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_repeatCount.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -12997,7 +12997,7 @@ PObject * H245_MiscellaneousCommand_type_progressiveRefinementStart::Clone() con
 //
 
 H245_MiscellaneousCommand_type_encryptionUpdateCommand::H245_MiscellaneousCommand_type_encryptionUpdateCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -13043,15 +13043,15 @@ PINDEX H245_MiscellaneousCommand_type_encryptionUpdateCommand::GetDataLength() c
 }
 
 
-BOOL H245_MiscellaneousCommand_type_encryptionUpdateCommand::Decode(PASN_Stream & strm)
+PBoolean H245_MiscellaneousCommand_type_encryptionUpdateCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_encryptionSync.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_multiplePayloadStream) && !m_multiplePayloadStream.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13083,7 +13083,7 @@ PObject * H245_MiscellaneousCommand_type_encryptionUpdateCommand::Clone() const
 //
 
 H245_NewATMVCCommand_aal_aal1::H245_NewATMVCCommand_aal_aal1(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -13135,19 +13135,19 @@ PINDEX H245_NewATMVCCommand_aal_aal1::GetDataLength() const
 }
 
 
-BOOL H245_NewATMVCCommand_aal_aal1::Decode(PASN_Stream & strm)
+PBoolean H245_NewATMVCCommand_aal_aal1::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_clockRecovery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_errorCorrection.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_structuredDataTransfer.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_partiallyFilledCells.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13180,7 +13180,7 @@ PObject * H245_NewATMVCCommand_aal_aal1::Clone() const
 //
 
 H245_NewATMVCIndication_aal_aal1::H245_NewATMVCIndication_aal_aal1(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -13232,19 +13232,19 @@ PINDEX H245_NewATMVCIndication_aal_aal1::GetDataLength() const
 }
 
 
-BOOL H245_NewATMVCIndication_aal_aal1::Decode(PASN_Stream & strm)
+PBoolean H245_NewATMVCIndication_aal_aal1::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_clockRecovery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_errorCorrection.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_structuredDataTransfer.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_partiallyFilledCells.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13277,7 +13277,7 @@ PObject * H245_NewATMVCIndication_aal_aal1::Clone() const
 //
 
 H245_NonStandardMessage::H245_NonStandardMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -13317,13 +13317,13 @@ PINDEX H245_NonStandardMessage::GetDataLength() const
 }
 
 
-BOOL H245_NonStandardMessage::Decode(PASN_Stream & strm)
+PBoolean H245_NonStandardMessage::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13353,7 +13353,7 @@ PObject * H245_NonStandardMessage::Clone() const
 //
 
 H245_VCCapability::H245_VCCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 1)
 {
 }
 
@@ -13415,23 +13415,23 @@ PINDEX H245_VCCapability::GetDataLength() const
 }
 
 
-BOOL H245_VCCapability::Decode(PASN_Stream & strm)
+PBoolean H245_VCCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_aal1) && !m_aal1.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_aal5) && !m_aal5.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_transportStream.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_programStream.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_availableBitRates.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_aal1ViaGateway, m_aal1ViaGateway))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13468,7 +13468,7 @@ PObject * H245_VCCapability::Clone() const
 //
 
 H245_H2250Capability::H245_H2250Capability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 4)
 {
   m_maximumAudioDelayJitter.SetConstraints(PASN_Object::FixedConstraint, 0, 1023);
   m_redundancyEncodingCapability.SetConstraints(PASN_Object::FixedConstraint, 1, 256);
@@ -13544,33 +13544,33 @@ PINDEX H245_H2250Capability::GetDataLength() const
 }
 
 
-BOOL H245_H2250Capability::Decode(PASN_Stream & strm)
+PBoolean H245_H2250Capability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_maximumAudioDelayJitter.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_receiveMultipointCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_transmitMultipointCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_receiveAndTransmitMultipointCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mcCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_rtcpVideoControlCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mediaPacketizationCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_transportCapability, m_transportCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_redundancyEncodingCapability, m_redundancyEncodingCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_logicalChannelSwitchingCapability, m_logicalChannelSwitchingCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_t120DynamicPortCapability, m_t120DynamicPortCapability))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13610,7 +13610,7 @@ PObject * H245_H2250Capability::Clone() const
 //
 
 H245_RefPictureSelection::H245_RefPictureSelection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
 {
   IncludeOptionalField(e_enhancedReferencePicSelect);
 }
@@ -13663,19 +13663,19 @@ PINDEX H245_RefPictureSelection::GetDataLength() const
 }
 
 
-BOOL H245_RefPictureSelection::Decode(PASN_Stream & strm)
+PBoolean H245_RefPictureSelection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_additionalPictureMemory) && !m_additionalPictureMemory.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_videoMux.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_videoBackChannelSend.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_enhancedReferencePicSelect, m_enhancedReferencePicSelect))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13709,7 +13709,7 @@ PObject * H245_RefPictureSelection::Clone() const
 //
 
 H245_CustomPictureFormat::H245_CustomPictureFormat(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_maxCustomPictureWidth.SetConstraints(PASN_Object::FixedConstraint, 1, 2048);
   m_maxCustomPictureHeight.SetConstraints(PASN_Object::FixedConstraint, 1, 2048);
@@ -13773,23 +13773,23 @@ PINDEX H245_CustomPictureFormat::GetDataLength() const
 }
 
 
-BOOL H245_CustomPictureFormat::Decode(PASN_Stream & strm)
+PBoolean H245_CustomPictureFormat::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_maxCustomPictureWidth.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxCustomPictureHeight.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_minCustomPictureWidth.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_minCustomPictureHeight.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_pixelAspectInformation.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13824,7 +13824,7 @@ PObject * H245_CustomPictureFormat::Clone() const
 //
 
 H245_H263VideoModeCombos::H245_H263VideoModeCombos(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_h263VideoCoupledModes.SetConstraints(PASN_Object::FixedConstraint, 1, 16);
 }
@@ -13869,15 +13869,15 @@ PINDEX H245_H263VideoModeCombos::GetDataLength() const
 }
 
 
-BOOL H245_H263VideoModeCombos::Decode(PASN_Stream & strm)
+PBoolean H245_H263VideoModeCombos::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_h263VideoUncoupledModes.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_h263VideoCoupledModes.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -13908,7 +13908,7 @@ PObject * H245_H263VideoModeCombos::Clone() const
 //
 
 H245_T38FaxProfile::H245_T38FaxProfile(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 4)
 {
   m_version.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   IncludeOptionalField(e_version);
@@ -13967,25 +13967,25 @@ PINDEX H245_T38FaxProfile::GetDataLength() const
 }
 
 
-BOOL H245_T38FaxProfile::Decode(PASN_Stream & strm)
+PBoolean H245_T38FaxProfile::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_fillBitRemoval.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_transcodingJBIG.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_transcodingMMR.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_version, m_version))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_t38FaxRateManagement, m_t38FaxRateManagement))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_t38FaxUdpOptions, m_t38FaxUdpOptions))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_t38FaxTcpOptions, m_t38FaxTcpOptions))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14021,7 +14021,7 @@ PObject * H245_T38FaxProfile::Clone() const
 //
 
 H245_EncryptionAuthenticationAndIntegrity::H245_EncryptionAuthenticationAndIntegrity(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 1)
 {
 }
 
@@ -14077,19 +14077,19 @@ PINDEX H245_EncryptionAuthenticationAndIntegrity::GetDataLength() const
 }
 
 
-BOOL H245_EncryptionAuthenticationAndIntegrity::Decode(PASN_Stream & strm)
+PBoolean H245_EncryptionAuthenticationAndIntegrity::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_encryptionCapability) && !m_encryptionCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_authenticationCapability) && !m_authenticationCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_integrityCapability) && !m_integrityCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericH235SecurityCapability, m_genericH235SecurityCapability))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14125,7 +14125,7 @@ PObject * H245_EncryptionAuthenticationAndIntegrity::Clone() const
 //
 
 H245_OpenLogicalChannel::H245_OpenLogicalChannel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 3)
 {
 }
 
@@ -14181,23 +14181,23 @@ PINDEX H245_OpenLogicalChannel::GetDataLength() const
 }
 
 
-BOOL H245_OpenLogicalChannel::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannel::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_forwardLogicalChannelParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_reverseLogicalChannelParameters) && !m_reverseLogicalChannelParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_separateStack, m_separateStack))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_encryptionSync, m_encryptionSync))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14233,7 +14233,7 @@ PObject * H245_OpenLogicalChannel::Clone() const
 //
 
 H245_H235Media::H245_H235Media(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -14277,15 +14277,15 @@ PINDEX H245_H235Media::GetDataLength() const
 }
 
 
-BOOL H245_H235Media::Decode(PASN_Stream & strm)
+PBoolean H245_H235Media::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_encryptionAuthenticationAndIntegrity.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mediaType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14316,7 +14316,7 @@ PObject * H245_H235Media::Clone() const
 //
 
 H245_V76LogicalChannelParameters::H245_V76LogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -14372,21 +14372,21 @@ PINDEX H245_V76LogicalChannelParameters::GetDataLength() const
 }
 
 
-BOOL H245_V76LogicalChannelParameters::Decode(PASN_Stream & strm)
+PBoolean H245_V76LogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_hdlcParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_suspendResume.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_uIH.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_v75Parameters.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14420,7 +14420,7 @@ PObject * H245_V76LogicalChannelParameters::Clone() const
 //
 
 H245_RedundancyEncoding::H245_RedundancyEncoding(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 1)
 {
 }
 
@@ -14468,17 +14468,17 @@ PINDEX H245_RedundancyEncoding::GetDataLength() const
 }
 
 
-BOOL H245_RedundancyEncoding::Decode(PASN_Stream & strm)
+PBoolean H245_RedundancyEncoding::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_redundancyEncodingMethod.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_secondaryEncoding) && !m_secondaryEncoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_rtpRedundancyEncoding, m_rtpRedundancyEncoding))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14511,7 +14511,7 @@ PObject * H245_RedundancyEncoding::Clone() const
 //
 
 H245_OpenLogicalChannelAck::H245_OpenLogicalChannelAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 4)
 {
 }
 
@@ -14565,23 +14565,23 @@ PINDEX H245_OpenLogicalChannelAck::GetDataLength() const
 }
 
 
-BOOL H245_OpenLogicalChannelAck::Decode(PASN_Stream & strm)
+PBoolean H245_OpenLogicalChannelAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_forwardLogicalChannelNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_reverseLogicalChannelParameters) && !m_reverseLogicalChannelParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_separateStack, m_separateStack))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_forwardMultiplexAckParameters, m_forwardMultiplexAckParameters))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_encryptionSync, m_encryptionSync))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericInformation, m_genericInformation))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14617,7 +14617,7 @@ PObject * H245_OpenLogicalChannelAck::Clone() const
 //
 
 H245_H235Mode::H245_H235Mode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -14661,15 +14661,15 @@ PINDEX H245_H235Mode::GetDataLength() const
 }
 
 
-BOOL H245_H235Mode::Decode(PASN_Stream & strm)
+PBoolean H245_H235Mode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_encryptionAuthenticationAndIntegrity.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mediaMode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14700,7 +14700,7 @@ PObject * H245_H235Mode::Clone() const
 //
 
 H245_RedundancyEncodingDTMode::H245_RedundancyEncodingDTMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -14748,17 +14748,17 @@ PINDEX H245_RedundancyEncodingDTMode::GetDataLength() const
 }
 
 
-BOOL H245_RedundancyEncodingDTMode::Decode(PASN_Stream & strm)
+PBoolean H245_RedundancyEncodingDTMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_redundancyEncodingMethod.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_primary.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_secondary.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14790,7 +14790,7 @@ PObject * H245_RedundancyEncodingDTMode::Clone() const
 //
 
 H245_H2250ModeParameters::H245_H2250ModeParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -14832,13 +14832,13 @@ PINDEX H245_H2250ModeParameters::GetDataLength() const
 }
 
 
-BOOL H245_H2250ModeParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H2250ModeParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_redundancyEncodingMode) && !m_redundancyEncodingMode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -14869,7 +14869,7 @@ PObject * H245_H2250ModeParameters::Clone() const
 //
 
 H245_CommunicationModeTableEntry::H245_CommunicationModeTableEntry(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 7, PTrue, 3)
 {
   m_sessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
   m_associatedSessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -14969,37 +14969,37 @@ PINDEX H245_CommunicationModeTableEntry::GetDataLength() const
 }
 
 
-BOOL H245_CommunicationModeTableEntry::Decode(PASN_Stream & strm)
+PBoolean H245_CommunicationModeTableEntry::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_sessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_associatedSessionID) && !m_associatedSessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_terminalLabel) && !m_terminalLabel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_sessionDescription.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaChannel) && !m_mediaChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaGuaranteedDelivery) && !m_mediaGuaranteedDelivery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaControlChannel) && !m_mediaControlChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaControlGuaranteedDelivery) && !m_mediaControlGuaranteedDelivery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_redundancyEncoding, m_redundancyEncoding))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_sessionDependency, m_sessionDependency))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_destination, m_destination))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15048,7 +15048,7 @@ PObject * H245_CommunicationModeTableEntry::Clone() const
 //
 
 H245_NewATMVCCommand::H245_NewATMVCCommand(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_resourceID.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
@@ -15114,25 +15114,25 @@ PINDEX H245_NewATMVCCommand::GetDataLength() const
 }
 
 
-BOOL H245_NewATMVCCommand::Decode(PASN_Stream & strm)
+PBoolean H245_NewATMVCCommand::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_resourceID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToPCRClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToNetworkClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_aal.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplex.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_reverseParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15168,7 +15168,7 @@ PObject * H245_NewATMVCCommand::Clone() const
 //
 
 H245_NewATMVCIndication::H245_NewATMVCIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
   m_resourceID.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
@@ -15233,25 +15233,25 @@ PINDEX H245_NewATMVCIndication::GetDataLength() const
 }
 
 
-BOOL H245_NewATMVCIndication::Decode(PASN_Stream & strm)
+PBoolean H245_NewATMVCIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_resourceID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToPCRClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRateLockedToNetworkClock.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_aal.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_multiplex.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_reverseParameters, m_reverseParameters))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15287,7 +15287,7 @@ PObject * H245_NewATMVCIndication::Clone() const
 //
 
 H245_DataApplicationCapability_application_t38fax::H245_DataApplicationCapability_application_t38fax(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -15331,15 +15331,15 @@ PINDEX H245_DataApplicationCapability_application_t38fax::GetDataLength() const
 }
 
 
-BOOL H245_DataApplicationCapability_application_t38fax::Decode(PASN_Stream & strm)
+PBoolean H245_DataApplicationCapability_application_t38fax::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_t38FaxProtocol.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_t38FaxProfile.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15370,7 +15370,7 @@ PObject * H245_DataApplicationCapability_application_t38fax::Clone() const
 //
 
 H245_DataMode_application_t38fax::H245_DataMode_application_t38fax(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -15414,15 +15414,15 @@ PINDEX H245_DataMode_application_t38fax::GetDataLength() const
 }
 
 
-BOOL H245_DataMode_application_t38fax::Decode(PASN_Stream & strm)
+PBoolean H245_DataMode_application_t38fax::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_t38FaxProtocol.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_t38FaxProfile.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15453,7 +15453,7 @@ PObject * H245_DataMode_application_t38fax::Clone() const
 //
 
 H245_H235SecurityCapability::H245_H235SecurityCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -15497,15 +15497,15 @@ PINDEX H245_H235SecurityCapability::GetDataLength() const
 }
 
 
-BOOL H245_H235SecurityCapability::Decode(PASN_Stream & strm)
+PBoolean H245_H235SecurityCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_encryptionAuthenticationAndIntegrity.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mediaCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15536,7 +15536,7 @@ PObject * H245_H235SecurityCapability::Clone() const
 //
 
 H245_H263Options::H245_H263Options(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 2)
 {
   m_customPictureClockFrequency.SetConstraints(PASN_Object::FixedConstraint, 1, 16);
   m_customPictureFormat.SetConstraints(PASN_Object::FixedConstraint, 1, 16);
@@ -15707,73 +15707,73 @@ PINDEX H245_H263Options::GetDataLength() const
 }
 
 
-BOOL H245_H263Options::Decode(PASN_Stream & strm)
+PBoolean H245_H263Options::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_advancedIntraCodingMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_deblockingFilterMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_improvedPBFramesMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_unlimitedMotionVectors.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_fullPictureFreeze.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_partialPictureFreezeAndRelease.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_resizingPartPicFreezeAndRelease.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_fullPictureSnapshot.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_partialPictureSnapshot.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_videoSegmentTagging.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_progressiveRefinement.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicPictureResizingByFour.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicPictureResizingSixteenthPel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicWarpingHalfPel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dynamicWarpingSixteenthPel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_independentSegmentDecoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesInOrder_NonRect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesInOrder_Rect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesNoOrder_NonRect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_slicesNoOrder_Rect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alternateInterVLCMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_modifiedQuantizationMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_reducedResolutionUpdate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_transparencyParameters) && !m_transparencyParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_separateVideoBackChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_refPictureSelection) && !m_refPictureSelection.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_customPictureClockFrequency) && !m_customPictureClockFrequency.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_customPictureFormat) && !m_customPictureFormat.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_modeCombos) && !m_modeCombos.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_videoBadMBsCap, m_videoBadMBsCap))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h263Version3Options, m_h263Version3Options))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -15838,7 +15838,7 @@ PObject * H245_H263Options::Clone() const
 //
 
 H245_H2250LogicalChannelParameters::H245_H2250LogicalChannelParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 10, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 10, PTrue, 3)
 {
   m_sessionID.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_associatedSessionID.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -15947,39 +15947,39 @@ PINDEX H245_H2250LogicalChannelParameters::GetDataLength() const
 }
 
 
-BOOL H245_H2250LogicalChannelParameters::Decode(PASN_Stream & strm)
+PBoolean H245_H2250LogicalChannelParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_sessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_associatedSessionID) && !m_associatedSessionID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaChannel) && !m_mediaChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaGuaranteedDelivery) && !m_mediaGuaranteedDelivery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaControlChannel) && !m_mediaControlChannel.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaControlGuaranteedDelivery) && !m_mediaControlGuaranteedDelivery.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_silenceSuppression) && !m_silenceSuppression.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_destination) && !m_destination.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_dynamicRTPPayloadType) && !m_dynamicRTPPayloadType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_mediaPacketization) && !m_mediaPacketization.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_transportCapability, m_transportCapability))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_redundancyEncoding, m_redundancyEncoding))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_source, m_source))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16032,7 +16032,7 @@ PObject * H245_H2250LogicalChannelParameters::Clone() const
 //
 
 H245_ModeElement::H245_ModeElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 5)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 5)
 {
 }
 
@@ -16088,25 +16088,25 @@ PINDEX H245_ModeElement::GetDataLength() const
 }
 
 
-BOOL H245_ModeElement::Decode(PASN_Stream & strm)
+PBoolean H245_ModeElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_h223ModeParameters) && !m_h223ModeParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_v76ModeParameters, m_v76ModeParameters))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h2250ModeParameters, m_h2250ModeParameters))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericModeParameters, m_genericModeParameters))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_multiplexedStreamModeParameters, m_multiplexedStreamModeParameters))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_logicalChannelNumber, m_logicalChannelNumber))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16143,7 +16143,7 @@ PObject * H245_ModeElement::Clone() const
 //
 
 H245_H263VideoMode::H245_H263VideoMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 3)
 {
   m_bitRate.SetConstraints(PASN_Object::FixedConstraint, 1, 19200);
   IncludeOptionalField(e_errorCompensation);
@@ -16211,29 +16211,29 @@ PINDEX H245_H263VideoMode::GetDataLength() const
 }
 
 
-BOOL H245_H263VideoMode::Decode(PASN_Stream & strm)
+PBoolean H245_H263VideoMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_resolution.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_bitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_unrestrictedVector.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_arithmeticCoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_advancedPrediction.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_pbFrames.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_errorCompensation, m_errorCompensation))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_enhancementLayerInfo, m_enhancementLayerInfo))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h263Options, m_h263Options))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16271,7 +16271,7 @@ PObject * H245_H263VideoMode::Clone() const
 //
 
 H245_H263VideoCapability::H245_H263VideoCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, TRUE, 8)
+  : PASN_Sequence(tag, tagClass, 7, PTrue, 8)
 {
   m_sqcifMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 32);
   m_qcifMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 32);
@@ -16403,53 +16403,53 @@ PINDEX H245_H263VideoCapability::GetDataLength() const
 }
 
 
-BOOL H245_H263VideoCapability::Decode(PASN_Stream & strm)
+PBoolean H245_H263VideoCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_sqcifMPI) && !m_sqcifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_qcifMPI) && !m_qcifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cifMPI) && !m_cifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cif4MPI) && !m_cif4MPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cif16MPI) && !m_cif16MPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxBitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_unrestrictedVector.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_arithmeticCoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_advancedPrediction.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_pbFrames.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_temporalSpatialTradeOffCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_hrd_B) && !m_hrd_B.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_bppMaxKb) && !m_bppMaxKb.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_slowSqcifMPI, m_slowSqcifMPI))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_slowQcifMPI, m_slowQcifMPI))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_slowCifMPI, m_slowCifMPI))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_slowCif4MPI, m_slowCif4MPI))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_slowCif16MPI, m_slowCif16MPI))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_errorCompensation, m_errorCompensation))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_enhancementLayerInfo, m_enhancementLayerInfo))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h263Options, m_h263Options))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16506,7 +16506,7 @@ PObject * H245_H263VideoCapability::Clone() const
 //
 
 H245_EnhancementOptions::H245_EnhancementOptions(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 11, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 11, PTrue, 0)
 {
   m_sqcifMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 32);
   m_qcifMPI.SetConstraints(PASN_Object::FixedConstraint, 1, 32);
@@ -16639,43 +16639,43 @@ PINDEX H245_EnhancementOptions::GetDataLength() const
 }
 
 
-BOOL H245_EnhancementOptions::Decode(PASN_Stream & strm)
+PBoolean H245_EnhancementOptions::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_sqcifMPI) && !m_sqcifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_qcifMPI) && !m_qcifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cifMPI) && !m_cifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cif4MPI) && !m_cif4MPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cif16MPI) && !m_cif16MPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxBitRate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_unrestrictedVector.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_arithmeticCoding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_temporalSpatialTradeOffCapability.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_slowSqcifMPI) && !m_slowSqcifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_slowQcifMPI) && !m_slowQcifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_slowCifMPI) && !m_slowCifMPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_slowCif4MPI) && !m_slowCif4MPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_slowCif16MPI) && !m_slowCif16MPI.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_errorCompensation.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_h263Options) && !m_h263Options.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -16731,7 +16731,7 @@ PObject * H245_EnhancementOptions::Clone() const
 //
 
 H245_BEnhancementParameters::H245_BEnhancementParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_numberOfBPictures.SetConstraints(PASN_Object::FixedConstraint, 1, 64);
 }
@@ -16776,15 +16776,15 @@ PINDEX H245_BEnhancementParameters::GetDataLength() const
 }
 
 
-BOOL H245_BEnhancementParameters::Decode(PASN_Stream & strm)
+PBoolean H245_BEnhancementParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_enhancementOptions.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_numberOfBPictures.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

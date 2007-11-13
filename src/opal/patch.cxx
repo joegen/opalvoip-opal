@@ -316,17 +316,17 @@ void OpalMediaPatch::Close()
 }
 
 
-BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
+PBoolean OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
 {
   PWaitAndSignal mutex(inUse);
 
   if (PAssertNULL(stream) == NULL)
-    return FALSE;
+    return PFalse;
 
   PAssert(stream->IsSink(), "Attempt to set source stream as sink!");
 
   if (!stream->SetPatch(this))
-    return FALSE;
+    return PFalse;
 
   Sink * sink = new Sink(*this, stream, rtpMap);
   sinks.Append(sink);
@@ -337,7 +337,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
 
   if ((sourceFormat == destinationFormat) && ((sourceFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) || (source.GetDataSize() <= stream->GetDataSize()))) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
-    return TRUE;
+    return PTrue;
   }
 
   PString id = stream->GetID();
@@ -347,10 +347,10 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
-    if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(FALSE))) {
+    if (!stream->SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(PFalse))) {
       PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
-              << sink->primaryCodec->GetOptimalDataFrameSize(FALSE));
-      return FALSE;
+              << sink->primaryCodec->GetOptimalDataFrameSize(PFalse));
+      return PFalse;
     }
 
     PTRACE(3, "Patch\tAdded media stream sink " << *stream
@@ -361,7 +361,7 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
     if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat,
                                                 intermediateFormat)) {
       PTRACE(1, "Patch\tCould find compatible media format for " << *stream);
-      return FALSE;
+      return PFalse;
     }
 
     sink->primaryCodec = OpalTranscoder::Create(sourceFormat, intermediateFormat, (const BYTE *)id, id.GetLength());
@@ -371,10 +371,10 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
 
     sink->secondaryCodec->SetMaxOutputSize(sink->stream->GetDataSize());
 
-    if (!stream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(FALSE))) {
+    if (!stream->SetDataSize(sink->secondaryCodec->GetOptimalDataFrameSize(PFalse))) {
       PTRACE(1, "Patch\tSink stream " << *stream << " cannot support data size "
-              << sink->secondaryCodec->GetOptimalDataFrameSize(FALSE));
-      return FALSE;
+              << sink->secondaryCodec->GetOptimalDataFrameSize(PFalse));
+      return PFalse;
     }
 
     PTRACE(3, "Patch\tAdded media stream sink " << *stream
@@ -382,8 +382,8 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
            << " and " << *sink->secondaryCodec);
   }
 
-  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(TRUE));
-  return TRUE;
+  source.SetDataSize(sink->primaryCodec->GetOptimalDataFrameSize(PTrue));
+  return PTrue;
 }
 
 
@@ -481,18 +481,18 @@ void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat &
 }
 
 
-BOOL OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage)
+PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaFormat & stage)
 {
   PWaitAndSignal mutex(inUse);
 
   for (PINDEX i = 0; i < filters.GetSize(); i++) {
     if (filters[i].notifier == filter && filters[i].stage == stage) {
       filters.RemoveAt(i);
-      return TRUE;
+      return PTrue;
     }
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -508,14 +508,14 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
 }
 
 
-BOOL OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, BOOL fromSink)
+PBoolean OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, PBoolean fromSink)
 {
   PWaitAndSignal mutex(inUse);
 
   if (fromSink)
     return source.UpdateMediaFormat(mediaFormat);
 
-  BOOL atLeastOne = FALSE;
+  PBoolean atLeastOne = PFalse;
   for (PINDEX i = 0; i < sinks.GetSize(); i++)
     atLeastOne = sinks[i].UpdateMediaFormat(mediaFormat) || atLeastOne;
 
@@ -523,14 +523,14 @@ BOOL OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, BOOL
 }
 
 
-BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, BOOL fromSink)
+PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoolean fromSink)
 {
   PWaitAndSignal mutex(inUse);
 
   if (fromSink)
     return source.ExecuteCommand(command);
 
-  BOOL atLeastOne = FALSE;
+  PBoolean atLeastOne = PFalse;
   for (PINDEX i = 0; i < sinks.GetSize(); i++)
     atLeastOne = sinks[i].ExecuteCommand(command) || atLeastOne;
 
@@ -538,7 +538,7 @@ BOOL OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, BOOL fromS
 }
 
 
-void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, BOOL fromSink)
+void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fromSink)
 {
   PWaitAndSignal mutex(inUse);
 
@@ -557,12 +557,12 @@ void OpalMediaPatch::Main()
 	
   inUse.Wait();
   source.OnPatchStart();
-  BOOL isSynchronous = source.IsSynchronous();
+  PBoolean isSynchronous = source.IsSynchronous();
   if (!source.IsSynchronous()) {
     for (i = 0; i < sinks.GetSize(); i++) {
       if (sinks[i].stream->IsSynchronous()) {
         source.EnableJitterBuffer();
-        isSynchronous = TRUE;
+        isSynchronous = PTrue;
         break;
       }
     }
@@ -633,7 +633,7 @@ bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat
 
 bool OpalMediaPatch::Sink::ExecuteCommand(const OpalMediaCommand & command)
 {
-  BOOL atLeastOne = FALSE;
+  PBoolean atLeastOne = PFalse;
 
   if (secondaryCodec != NULL)
     atLeastOne = secondaryCodec->ExecuteCommand(command) || atLeastOne;
@@ -727,10 +727,10 @@ void OpalPassiveMediaPatch::Start()
 }
 
 
-BOOL OpalPassiveMediaPatch::PushFrame(RTP_DataFrame & frame)
+PBoolean OpalPassiveMediaPatch::PushFrame(RTP_DataFrame & frame)
 {
   DispatchFrame(frame);
-  return TRUE;
+  return PTrue;
 }
 
 

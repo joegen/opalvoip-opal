@@ -107,14 +107,14 @@ class OpalSilenceDetector : public PObject
 
     /**Get silence detection status
 
-       The inTalkBurst value is TRUE if packet transmission is enabled and
-       FALSE if it is being suppressed due to silence.
+       The inTalkBurst value is PTrue if packet transmission is enabled and
+       PFalse if it is being suppressed due to silence.
 
        The currentThreshold value is the value from 0 to 32767 which is used
        as the threshold value for 16 bit PCM data.
       */
     Mode GetStatus(
-      BOOL * isInTalkBurst,
+      PBoolean * isInTalkBurst,
       unsigned * currentThreshold
     ) const;
 
@@ -138,7 +138,7 @@ class OpalSilenceDetector : public PObject
 
     Params param;
 
-    BOOL     inTalkBurst;           // Currently sending RTP data
+    PBoolean     inTalkBurst;           // Currently sending RTP data
     unsigned lastTimestamp;         // Last timestamp received
     unsigned receivedTime;          // Signal/Silence duration received so far.
     unsigned levelThreshold;        // Threshold level for silence/signal

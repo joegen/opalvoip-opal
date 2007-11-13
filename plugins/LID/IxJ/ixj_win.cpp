@@ -153,21 +153,21 @@ class Context
     DWORD         dwCardType;
     HANDLE        hDriver;
     PMutex        readMutex, writeMutex;
-    BOOL          readStopped, writeStopped;
+    PBoolean          readStopped, writeStopped;
     PINDEX        readFrameSize, writeFrameSize;
     PINDEX        readCodecType, writeCodecType;
-    BOOL          lastHookState, currentHookState;
+    PBoolean          lastHookState, currentHookState;
     PTimer        hookTimeout;
-    BOOL          inRawMode;
+    PBoolean          inRawMode;
     unsigned      enabledAudioLine;
-    BOOL          exclusiveAudioMode;
+    PBoolean          exclusiveAudioMode;
     DWORD         countryCode;
     DWORD         driverVersion;
     PTimer        ringTimeout;
     DWORD         lastDTMFDigit;
     DWORD         lastFlashState;
     PTimeInterval toneSendCompletionTime;
-    BOOL          vadEnabled;
+    PBoolean          vadEnabled;
     HANDLE        hReadEvent, hWriteEvent;
 
   public:
@@ -175,13 +175,13 @@ class Context
     {
       hDriver = INVALID_HANDLE_VALUE;
       driverVersion = 0;
-      readStopped = writeStopped = TRUE;
+      readStopped = writeStopped = PTrue;
       readFrameSize = writeFrameSize = 480;  // 30 milliseconds of 16 bit PCM data
       readCodecType = writeCodecType = P_MAX_INDEX;
-      currentHookState = lastHookState = FALSE;
-      inRawMode = FALSE;
+      currentHookState = lastHookState = PFalse;
+      inRawMode = PFalse;
       enabledAudioLine = UINT_MAX;
-      exclusiveAudioMode = TRUE;
+      exclusiveAudioMode = PTrue;
       lastDTMFDigit = 0;
       hReadEvent = hWriteEvent = NULL;
     }
@@ -306,7 +306,7 @@ class Context
       RingLine(0, 0, NULL, 0);
       StopReading(0);
       StopWriting(0);
-      SetLineToLineDirect(0, 1, TRUE); // Back to pass through mode
+      SetLineToLineDirect(0, 1, PTrue); // Back to pass through mode
 
       if (GetOperatingSystem() == IsWindows9x)
         IoControl(IOCTL_Device_Close);
@@ -371,7 +371,7 @@ class Context
         return PluginLID_NoSuchLine;
 
       if (line != PSTNLine) {
-        *present = FALSE;
+        *present = PFalse;
         return PluginLID_NoError;
       }
 
@@ -388,7 +388,7 @@ class Context
           }
           IoControl(IOCTL_DevCtrl_LineTest);
           dwResult = LINE_TEST_TESTING;
-          forceTest = FALSE;
+          forceTest = PFalse;
         }
       } while (dwResult == LINE_TEST_TESTING);
 
@@ -421,13 +421,13 @@ class Context
       }
 
       PluginLID_Boolean present;
-      if (IsLinePresent(PSTNLine, FALSE, &present) != PluginLID_NoError)
+      if (IsLinePresent(PSTNLine, PFalse, &present) != PluginLID_NoError)
         return PluginLID_InternalError;
 
       if (!IoControl(IsLineJACK() && present ? IOCTL_DevCtrl_GetLinePhoneOnHook : IOCTL_DevCtrl_GetOnHook, 0, &dwResult))
         return PluginLID_InternalError;
 
-      BOOL newHookState = dwResult == 0;
+      PBoolean newHookState = dwResult == 0;
       if (lastHookState != newHookState) {
         lastHookState = newHookState;
         hookTimeout = 250;
@@ -568,7 +568,7 @@ class Context
         DWORD dwResult = 0;
         if (IoControl(IOCTL_DevCtrl_GetLineCallerOnHook, 0, &dwResult) && dwResult != 0) {
           PTRACE(3, "xJack\tDetected wink, line disconnected.");
-          *connected = TRUE;
+          *connected = PTrue;
           return PluginLID_NoError;
         }
       }
@@ -614,7 +614,7 @@ class Context
       // The IOCTL_DevCtrl_GetPotsToSlic is broken unless the line test has been
       // performed and there is a PSTN line present.
       PluginLID_Boolean present;
-      if (IsLinePresent(PSTNLine, FALSE, &present) != PluginLID_NoError)
+      if (IsLinePresent(PSTNLine, PFalse, &present) != PluginLID_NoError)
         return PluginLID_InternalError;
 
       if (!present)
@@ -717,7 +717,7 @@ class Context
                                                         : IOCTL_Record_Start_Old))
         return PluginLID_InternalError;
 
-      readStopped = FALSE;
+      readStopped = PFalse;
 
       return PluginLID_NoError;
     }
@@ -800,7 +800,7 @@ class Context
                                                         : IOCTL_Playback_Start_Old))
         return PluginLID_InternalError;
 
-      writeStopped = FALSE;
+      writeStopped = PFalse;
       return PluginLID_NoError;
     }
 
@@ -864,7 +864,7 @@ class Context
 
       readMutex.Wait();
       if (!readStopped) {
-        readStopped = TRUE;
+        readStopped = PTrue;
         IoControl(IOCTL_Record_Stop);
       }
       readMutex.Signal();
@@ -890,7 +890,7 @@ class Context
 
       writeMutex.Wait();
       if (!writeStopped) {
-        writeStopped = TRUE;
+        writeStopped = PTrue;
         IoControl(IOCTL_Playback_Stop);
       }
       writeMutex.Signal();
@@ -991,7 +991,7 @@ class Context
         return PluginLID_NoError;
       }
 
-      BOOL reblockG729 = CodecInfo[readCodecType].isG729;
+      PBoolean reblockG729 = CodecInfo[readCodecType].isG729;
       WORD temp_frame_buffer[6];
 
       PWin32Overlapped overlap;
@@ -1205,12 +1205,12 @@ class Context
           return PluginLID_InternalError;
       }
 
-      InternalSetVolume(TRUE, RecordMicrophone,    -1, dwSource != ANALOG_SOURCE_SPEAKERPHONE);
-      InternalSetVolume(TRUE, RecordPhoneIn,       -1, dwSource != ANALOG_SOURCE_POTSPHONE);
-      InternalSetVolume(FALSE,PlaybackPhoneOut,    -1, dwSource != ANALOG_SOURCE_POTSPHONE);
-      InternalSetVolume(TRUE, RecordPhoneLineIn,   -1, dwSource != ANALOG_SOURCE_PSTNLINE);
-      InternalSetVolume(FALSE,PlaybackPhoneLineOut,-1, dwSource != ANALOG_SOURCE_PSTNLINE);
-      InternalSetVolume(FALSE,PlaybackWave,        -1, FALSE);
+      InternalSetVolume(PTrue, RecordMicrophone,    -1, dwSource != ANALOG_SOURCE_SPEAKERPHONE);
+      InternalSetVolume(PTrue, RecordPhoneIn,       -1, dwSource != ANALOG_SOURCE_POTSPHONE);
+      InternalSetVolume(PFalse,PlaybackPhoneOut,    -1, dwSource != ANALOG_SOURCE_POTSPHONE);
+      InternalSetVolume(PTrue, RecordPhoneLineIn,   -1, dwSource != ANALOG_SOURCE_PSTNLINE);
+      InternalSetVolume(PFalse,PlaybackPhoneLineOut,-1, dwSource != ANALOG_SOURCE_PSTNLINE);
+      InternalSetVolume(PFalse,PlaybackWave,        -1, PFalse);
 
       return PluginLID_NoError;
     }
@@ -1240,14 +1240,14 @@ class Context
         return PluginLID_NoSuchLine;
 
       if (IsLineJACK()) {
-        if (!InternalSetVolume(TRUE,
+        if (!InternalSetVolume(PTrue,
                               line == POTSLine ? RecordPhoneIn : RecordPhoneLineIn,
                               volume,
                               -1))
           return PluginLID_InternalError;
       }
 
-      return InternalSetVolume(TRUE, RecordMaster, volume, -1)? PluginLID_NoError : PluginLID_InternalError;
+      return InternalSetVolume(PTrue, RecordMaster, volume, -1)? PluginLID_NoError : PluginLID_InternalError;
     }
 
 
@@ -1260,14 +1260,14 @@ class Context
         return PluginLID_NoSuchLine;
 
       if (IsLineJACK()) {
-        if (!InternalSetVolume(FALSE,
+        if (!InternalSetVolume(PFalse,
                               line == POTSLine ? PlaybackPhoneOut : PlaybackPhoneLineOut,
                               volume,
                               -1))
           return PluginLID_InternalError;
       }
 
-      return InternalSetVolume(FALSE, PlaybackMaster, volume, -1) ? PluginLID_NoError : PluginLID_InternalError;
+      return InternalSetVolume(PFalse, PlaybackMaster, volume, -1) ? PluginLID_NoError : PluginLID_InternalError;
     }
 
 
@@ -1487,7 +1487,7 @@ class Context
       PString name, number;
       PTime theTime;
 
-      PStringArray fields = PString(idString).Tokenise('\t', TRUE);
+      PStringArray fields = PString(idString).Tokenise('\t', PTrue);
       switch (fields.GetSize()) {
         case 3 :
           name = fields[2];
@@ -1640,7 +1640,7 @@ class Context
         }
 
         if (dwToneIndex != IDLE_TONE_NOTONE) {
-          if (!InternalPlayTone(line, dwToneIndex, onTime, offTime, TRUE))
+          if (!InternalPlayTone(line, dwToneIndex, onTime, offTime, PTrue))
             return PluginLID_InternalError;
         }
       }
@@ -1692,7 +1692,7 @@ class Context
       if (IsLineInvalid(line))
         return PluginLID_NoSuchLine;
 
-      DWORD result = FALSE;
+      DWORD result = PFalse;
       if (!IoControl(IOCTL_Record_GetDisableOnDTMFDetect, 0, &result))
         return PluginLID_InternalError;
 
@@ -1725,7 +1725,7 @@ class Context
       if (IsLineInvalid(line))
         return PluginLID_NoSuchLine;
 
-      if (EnableAudio(line, TRUE) != PluginLID_NoError)
+      if (EnableAudio(line, PTrue) != PluginLID_NoError)
         return PluginLID_InternalError;
 
       DWORD dwReturn = 0;
@@ -1827,7 +1827,7 @@ class Context
         DWORD dwReturn = 0;
         DWORD dwBytesReturned;
         IoControl(IOCTL_Filter_DetectToneCadence, &dtc, sizeof(dtc),
-                  &dwReturn, sizeof(dwReturn), &dwBytesReturned, FALSE);
+                  &dwReturn, sizeof(dwReturn), &dwBytesReturned, PFalse);
       }
 
       static struct FilterTableEntry {
@@ -1927,15 +1927,15 @@ class Context
 
       switch (tone) {
         case PluginLID_DialTone :
-          return InternalPlayTone(line, IDLE_TONE_DIAL, 0, 0, FALSE) ? PluginLID_NoError : PluginLID_InternalError;
+          return InternalPlayTone(line, IDLE_TONE_DIAL, 0, 0, PFalse) ? PluginLID_NoError : PluginLID_InternalError;
         case PluginLID_RingTone :
-          return InternalPlayTone(line, IDLE_TONE_RING, 0, 0, FALSE) ? PluginLID_NoError : PluginLID_InternalError;
+          return InternalPlayTone(line, IDLE_TONE_RING, 0, 0, PFalse) ? PluginLID_NoError : PluginLID_InternalError;
         case PluginLID_BusyTone :
-          return InternalPlayTone(line, IDLE_TONE_BUSY, 0, 0, FALSE) ? PluginLID_NoError : PluginLID_InternalError;
+          return InternalPlayTone(line, IDLE_TONE_BUSY, 0, 0, PFalse) ? PluginLID_NoError : PluginLID_InternalError;
         case PluginLID_ClearTone :
-          return InternalPlayTone(line, IDLE_TONE_BUSY, 0, 0, FALSE) ? PluginLID_NoError : PluginLID_InternalError;
+          return InternalPlayTone(line, IDLE_TONE_BUSY, 0, 0, PFalse) ? PluginLID_NoError : PluginLID_InternalError;
         default :
-          return InternalPlayTone(line, IDLE_TONE_NOTONE, 0, 0, FALSE) ? PluginLID_NoError : PluginLID_InternalError;
+          return InternalPlayTone(line, IDLE_TONE_NOTONE, 0, 0, PFalse) ? PluginLID_NoError : PluginLID_InternalError;
       }
     }
 
@@ -2092,10 +2092,10 @@ class Context
       return 0;
     }
 
-    BOOL SetRawCodec(unsigned)
+    PBoolean SetRawCodec(unsigned)
     {
       if (inRawMode)
-        return TRUE;
+        return PTrue;
 
       PTRACE(3, "xJack\tSetRawCodec()");
 
@@ -2152,16 +2152,16 @@ class Context
 
       readMutex.Wait();
       writeMutex.Wait();
-      readStopped = TRUE;
-      writeStopped = TRUE;
+      readStopped = PTrue;
+      writeStopped = PTrue;
       BOOL ok = IoControl(IOCTL_Fax_Stop);
       readMutex.Signal();
       writeMutex.Signal();
 
-      inRawMode = FALSE;
+      inRawMode = PFalse;
     }
 
-    BOOL InternalSetVolume(BOOL record, unsigned id, int volume, int mute)
+    PBoolean InternalSetVolume(PBoolean record, unsigned id, int volume, int mute)
     {
       MIXER_LINE mixer;
       mixer.dwLineID = id;
@@ -2170,7 +2170,7 @@ class Context
       if (!IoControl(record ? IOCTL_Mixer_GetRecordLineControls
                             : IOCTL_Mixer_GetPlaybackLineControls,
                     &mixer, sizeof(mixer), &mixer, sizeof(mixer), &dwSize))
-        return FALSE;
+        return PFalse;
 
       if (volume >= 0) {
         if (volume >= 100)
@@ -2188,10 +2188,10 @@ class Context
                       &mixer, sizeof(mixer), &dwReturn, sizeof(dwReturn), &dwSize);
     }
 
-    BOOL InternalPlayTone(unsigned line,
+    PBoolean InternalPlayTone(unsigned line,
                           DWORD toneIndex,
                           DWORD onTime, DWORD offTime,
-                          BOOL synchronous)
+                          PBoolean synchronous)
     {
       StopTone(line);
 
@@ -2213,16 +2213,16 @@ class Context
                     &dwReturn, sizeof(dwReturn), &dwBytesReturned) ||
           dwBytesReturned != sizeof(dwReturn) ||
           dwReturn == 0)
-        return FALSE;
+        return PFalse;
 
       toneSendCompletionTime = PTimer::Tick() + (int)tone.dwDuration - 1;
       if (synchronous)
         Sleep(tone.dwDuration);
 
-      return TRUE;
+      return PTrue;
     }
 
-    BOOL IoControl(DWORD dwIoControlCode,
+    PBoolean IoControl(DWORD dwIoControlCode,
                    DWORD inParam = 0,
                    DWORD * outParam = NULL)
     {
@@ -2236,7 +2236,7 @@ class Context
             dwBytesReturned == sizeof(DWORD);
     }
 
-    BOOL IoControl(DWORD dwIoControlCode,
+    PBoolean IoControl(DWORD dwIoControlCode,
                    LPVOID lpInBuffer,
                    DWORD nInBufferSize,
                    LPVOID lpOutBuffer,
@@ -2245,7 +2245,7 @@ class Context
                    PWin32Overlapped * overlap = NULL)
     {
       if (hDriver == INVALID_HANDLE_VALUE)
-        return FALSE;
+        return PFalse;
 
       DWORD newError = ERROR_SUCCESS;
       if (!DeviceIoControl(hDriver,

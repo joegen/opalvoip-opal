@@ -10,7 +10,7 @@
 
 template <class ToBeSigned>
 H235_SIGNED<ToBeSigned>::H235_SIGNED(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -66,19 +66,19 @@ PINDEX H235_SIGNED<ToBeSigned>::GetDataLength() const
 
 
 template <class ToBeSigned>
-BOOL H235_SIGNED<ToBeSigned>::Decode(PASN_Stream & strm)
+PBoolean H235_SIGNED<ToBeSigned>::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_toBeSigned.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_algorithmOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_paramS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_signature.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -114,7 +114,7 @@ PObject * H235_SIGNED<ToBeSigned>::Clone() const
 
 template <class ToBeEncrypted>
 H235_ENCRYPTED<ToBeEncrypted>::H235_ENCRYPTED(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -166,17 +166,17 @@ PINDEX H235_ENCRYPTED<ToBeEncrypted>::GetDataLength() const
 
 
 template <class ToBeEncrypted>
-BOOL H235_ENCRYPTED<ToBeEncrypted>::Decode(PASN_Stream & strm)
+PBoolean H235_ENCRYPTED<ToBeEncrypted>::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_algorithmOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_paramS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_encryptedData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -211,7 +211,7 @@ PObject * H235_ENCRYPTED<ToBeEncrypted>::Clone() const
 
 template <class ToBeHashed>
 H235_HASHED<ToBeHashed>::H235_HASHED(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -263,17 +263,17 @@ PINDEX H235_HASHED<ToBeHashed>::GetDataLength() const
 
 
 template <class ToBeHashed>
-BOOL H235_HASHED<ToBeHashed>::Decode(PASN_Stream & strm)
+PBoolean H235_HASHED<ToBeHashed>::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_algorithmOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_paramS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_hash.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

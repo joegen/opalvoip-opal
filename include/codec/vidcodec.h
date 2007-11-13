@@ -151,7 +151,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        The default behaviour updates the outputMediaFormat member variable
        and sets the outputMediaFormatUpdated flag.
       */
-    virtual BOOL UpdateOutputMediaFormat(
+    virtual PBoolean UpdateOutputMediaFormat(
       const OpalMediaFormat & mediaFormat  ///<  New media format
     );
 
@@ -162,7 +162,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        The default behaviour checks for a OpalVideoUpdatePicture and sets the
        updatePicture member variable if that is the command.
       */
-    virtual BOOL ExecuteCommand(
+    virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
     );
 
@@ -174,9 +174,9 @@ class OpalVideoTranscoder : public OpalTranscoder
        have a one to one input to output frames ratio, so the ConvertFrames()
        function is used instead.
 
-       Returns FALSE if the conversion fails.
+       Returns PFalse if the conversion fails.
       */
-    virtual BOOL Convert(
+    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
     );
@@ -339,7 +339,7 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      ///<  Flag for input or output data size
+      PBoolean input      ///<  Flag for input or output data size
     ) const;
 
     /**Convert the data from one format to another.
@@ -350,9 +350,9 @@ class OpalUncompVideoTranscoder : public OpalVideoTranscoder
        The default behaviour makes sure the output list has only one element
        in it and calls the Convert() function.
 
-       Returns FALSE if the conversion fails.
+       Returns PFalse if the conversion fails.
       */
-    virtual BOOL ConvertFrames(
+    virtual PBoolean ConvertFrames(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrameList & output    ///<  Output data
     );

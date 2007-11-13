@@ -27,9 +27,9 @@
  *
  * Revision 2.27  2007/04/03 07:59:14  rjongbloed
  * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to BOOL, now agrees with
+ *   changed return on OnShowIncoming to PBoolean, now agrees with
  *     documentation and allows UI to abort calls early.
- *   added BOOL to AcceptIncomingConnection indicating the
+ *   added PBoolean to AcceptIncomingConnection indicating the
  *     supplied token is invalid.
  *   removed redundent OnGetDestination() function, was never required.
  *
@@ -169,13 +169,13 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
   public:
     MyPCSSEndPoint(MyManager & manager);
 
-    virtual BOOL OnShowIncoming(const OpalPCSSConnection & connection);
-    virtual BOOL OnShowOutgoing(const OpalPCSSConnection & connection);
+    virtual PBoolean OnShowIncoming(const OpalPCSSConnection & connection);
+    virtual PBoolean OnShowOutgoing(const OpalPCSSConnection & connection);
 
-    BOOL SetSoundDevice(PArgList & args, const char * optionName, PSoundChannel::Directions dir);
+    PBoolean SetSoundDevice(PArgList & args, const char * optionName, PSoundChannel::Directions dir);
 
     PString incomingConnectionToken;
-    BOOL    autoAnswer;
+    PBoolean    autoAnswer;
 };
 
 
@@ -187,7 +187,7 @@ class MyManager : public OpalManager
     MyManager();
     ~MyManager();
 
-    BOOL Initialise(PArgList & args);
+    PBoolean Initialise(PArgList & args);
     void Main(PArgList & args);
 
     virtual void OnEstablishedCall(
@@ -196,7 +196,7 @@ class MyManager : public OpalManager
     virtual void OnClearedCall(
       OpalCall & call   /// Connection that was established
     );
-    virtual BOOL OnOpenMediaStream(
+    virtual PBoolean OnOpenMediaStream(
       OpalConnection & connection,  /// Connection that owns the media stream
       OpalMediaStream & stream    /// New media stream being opened
     );
@@ -206,7 +206,7 @@ class MyManager : public OpalManager
     );
 
   protected:
-    BOOL InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h323EP);
+    PBoolean InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPoint * h323EP);
 
     PString currentCallToken;
 
@@ -234,7 +234,7 @@ class MyManager : public OpalManager
     OpalFaxEndPoint  * t38EP;
 #endif
 
-    BOOL pauseBeforeDialing;
+    PBoolean pauseBeforeDialing;
     PString srcEP;
 
     void HangupCurrentCall();

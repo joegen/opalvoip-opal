@@ -85,7 +85,7 @@ class H4503_RESULT_activateDiversionQ : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -123,7 +123,7 @@ class H4503_RESULT_deactivateDiversionQ : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -161,7 +161,7 @@ class H4503_RESULT_checkRestriction : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -199,7 +199,7 @@ class H4503_RESULT_callRerouting : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -237,7 +237,7 @@ class H4503_ARGUMENT_cfnrDivertedLegFailed : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -433,7 +433,7 @@ class H4503_ARGUMENT_activateDiversionQ_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -471,7 +471,7 @@ class H4503_ARGUMENT_deactivateDiversionQ_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -509,7 +509,7 @@ class H4503_ARGUMENT_interrogateDiversionQ_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -547,7 +547,7 @@ class H4503_ARGUMENT_checkRestriction_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -585,7 +585,7 @@ class H4503_ARGUMENT_callRerouting_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -623,7 +623,7 @@ class H4503_ARGUMENT_divertingLegInformation1_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -661,7 +661,7 @@ class H4503_ARGUMENT_divertingLegInformation2_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -699,7 +699,7 @@ class H4503_ARGUMENT_divertingLegInformation3_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -737,7 +737,7 @@ class H4503_ARGUMENT_divertingLegInformation4_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -775,7 +775,7 @@ class H4503_IntResult_extension : public PASN_Choice
     operator const H225_NonStandardParameter &() const;
 #endif
 
-    BOOL CreateObject();
+    PBoolean CreateObject();
     PObject * Clone() const;
 };
 
@@ -804,7 +804,7 @@ class H4503_ARGUMENT_activateDiversionQ : public PASN_Sequence
     H4503_ARGUMENT_activateDiversionQ_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -837,7 +837,7 @@ class H4503_ARGUMENT_deactivateDiversionQ : public PASN_Sequence
     H4503_ARGUMENT_deactivateDiversionQ_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -870,7 +870,7 @@ class H4503_ARGUMENT_interrogateDiversionQ : public PASN_Sequence
     H4503_ARGUMENT_interrogateDiversionQ_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -902,7 +902,7 @@ class H4503_ARGUMENT_checkRestriction : public PASN_Sequence
     H4503_ARGUMENT_checkRestriction_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -950,7 +950,7 @@ class H4503_ARGUMENT_callRerouting : public PASN_Sequence
     H4503_ARGUMENT_callRerouting_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -988,7 +988,7 @@ class H4503_ARGUMENT_divertingLegInformation1 : public PASN_Sequence
     H4503_ARGUMENT_divertingLegInformation1_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -1029,7 +1029,7 @@ class H4503_ARGUMENT_divertingLegInformation2 : public PASN_Sequence
     H4503_ARGUMENT_divertingLegInformation2_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -1063,7 +1063,7 @@ class H4503_ARGUMENT_divertingLegInformation3 : public PASN_Sequence
     H4503_ARGUMENT_divertingLegInformation3_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -1100,7 +1100,7 @@ class H4503_ARGUMENT_divertingLegInformation4 : public PASN_Sequence
     H4503_ARGUMENT_divertingLegInformation4_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;
@@ -1134,7 +1134,7 @@ class H4503_IntResult : public PASN_Sequence
     H4503_IntResult_extension m_extension;
 
     PINDEX GetDataLength() const;
-    BOOL Decode(PASN_Stream & strm);
+    PBoolean Decode(PASN_Stream & strm);
     void Encode(PASN_Stream & strm) const;
 #ifndef PASN_NOPRINTON
     void PrintOn(ostream & strm) const;

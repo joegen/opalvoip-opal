@@ -139,13 +139,13 @@ void X224::PrintOn(ostream & strm) const
 }
 
 
-BOOL X224::Decode(const PBYTEArray & rawData)
+PBoolean X224::Decode(const PBYTEArray & rawData)
 {
   PINDEX packetLength = rawData.GetSize();
 
   PINDEX headerLength = rawData[0];
   if (packetLength < headerLength + 1) // Not enough bytes
-    return FALSE;
+    return PFalse;
 
   header.SetSize(headerLength);
   memcpy(header.GetPointer(), (const BYTE *)rawData+1, headerLength);
@@ -155,17 +155,17 @@ BOOL X224::Decode(const PBYTEArray & rawData)
   if (packetLength > 0)
     memcpy(data.GetPointer(), (const BYTE *)rawData+headerLength+1, packetLength);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL X224::Encode(PBYTEArray & rawData) const
+PBoolean X224::Encode(PBYTEArray & rawData) const
 {
   PINDEX headerLength = header.GetSize();
   PINDEX dataLength = data.GetSize();
 
   if (!rawData.SetSize(headerLength + dataLength + 1))
-    return FALSE;
+    return PFalse;
 
   rawData[0] = (BYTE)headerLength;
   memcpy(rawData.GetPointer() + 1, header, headerLength);
@@ -173,7 +173,7 @@ BOOL X224::Encode(PBYTEArray & rawData) const
   if (dataLength > 0)
     memcpy(rawData.GetPointer()+headerLength+1, data, dataLength);
 
-  return TRUE;
+  return PTrue;
 }
 
 

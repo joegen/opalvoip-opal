@@ -31,7 +31,7 @@ const static PASN_Names Names_H4508_NameOperations[]={
 //
 
 H4508_NameOperations::H4508_NameOperations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, FALSE
+  : PASN_Enumeration(tag, tagClass, 3, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_NameOperations,4
 #endif
@@ -69,7 +69,7 @@ const static PASN_Names Names_H4508_Name[]={
 //
 
 H4508_Name::H4508_Name(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_Name,3
 #endif
@@ -122,22 +122,22 @@ H4508_Name::operator const H4508_NamePresentationRestricted &() const
 }
 
 
-BOOL H4508_Name::CreateObject()
+PBoolean H4508_Name::CreateObject()
 {
   switch (tag) {
     case e_namePresentationAllowed :
       choice = new H4508_NamePresentationAllowed();
-      return TRUE;
+      return PTrue;
     case e_namePresentationRestricted :
       choice = new H4508_NamePresentationRestricted();
-      return TRUE;
+      return PTrue;
     case e_nameNotAvailable :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -162,7 +162,7 @@ const static PASN_Names Names_H4508_NamePresentationAllowed[]={
 //
 
 H4508_NamePresentationAllowed::H4508_NamePresentationAllowed(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_NamePresentationAllowed,2
 #endif
@@ -215,19 +215,19 @@ H4508_NamePresentationAllowed::operator const H4508_ExtendedName &() const
 }
 
 
-BOOL H4508_NamePresentationAllowed::CreateObject()
+PBoolean H4508_NamePresentationAllowed::CreateObject()
 {
   switch (tag) {
     case e_simpleName :
       choice = new H4508_SimpleName();
-      return TRUE;
+      return PTrue;
     case e_extendedName :
       choice = new H4508_ExtendedName();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -253,7 +253,7 @@ const static PASN_Names Names_H4508_NamePresentationRestricted[]={
 //
 
 H4508_NamePresentationRestricted::H4508_NamePresentationRestricted(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4508_NamePresentationRestricted,3
 #endif
@@ -306,22 +306,22 @@ H4508_NamePresentationRestricted::operator const H4508_ExtendedName &() const
 }
 
 
-BOOL H4508_NamePresentationRestricted::CreateObject()
+PBoolean H4508_NamePresentationRestricted::CreateObject()
 {
   switch (tag) {
     case e_simpleName :
       choice = new H4508_SimpleName();
-      return TRUE;
+      return PTrue;
     case e_extendedName :
       choice = new H4508_ExtendedName();
-      return TRUE;
+      return PTrue;
     case e_restrictedNull :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 

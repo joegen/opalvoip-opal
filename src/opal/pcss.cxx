@@ -43,9 +43,9 @@
  *
  * Revision 2.43  2007/04/03 07:59:14  rjongbloed
  * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to BOOL, now agrees with
+ *   changed return on OnShowIncoming to PBoolean, now agrees with
  *     documentation and allows UI to abort calls early.
- *   added BOOL to AcceptIncomingConnection indicating the
+ *   added PBoolean to AcceptIncomingConnection indicating the
  *     supplied token is invalid.
  *   removed redundent OnGetDestination() function, was never required.
  *
@@ -60,7 +60,7 @@
  *
  * Revision 2.40  2007/03/01 05:51:07  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 2.39  2007/01/24 04:00:57  csoutheren
@@ -182,7 +182,7 @@
  * Revamp of user input API triggered by RFC2833 support
  *
  * Revision 2.6  2001/11/13 06:25:56  robertj
- * Changed SetUpConnection() so returns BOOL as returning
+ * Changed SetUpConnection() so returns PBoolean as returning
  *   pointer to connection is not useful.
  *
  * Revision 2.5  2001/10/15 04:33:17  robertj
@@ -273,7 +273,7 @@ OpalPCSSEndPoint::~OpalPCSSEndPoint()
 }
 
 
-static BOOL SetDeviceName(const PString & name,
+static PBoolean SetDeviceName(const PString & name,
                           PSoundChannel::Directions dir,
                           PString & result)
 {
@@ -281,22 +281,22 @@ static BOOL SetDeviceName(const PString & name,
     PStringArray devices = PSoundChannel::GetDeviceNames(dir);
     PINDEX id = name.Mid(1).AsUnsigned();
     if (id == 0 || id > devices.GetSize())
-      return FALSE;
+      return PFalse;
     result = devices[id-1];
   }
   else {
     PSoundChannel * pChannel = PSoundChannel::CreateChannelByName(name, dir);
     if (pChannel == NULL)
-      return FALSE;
+      return PFalse;
     delete pChannel;
     result = name;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
+PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
                                       void * userData,
                                unsigned int /*options*/,
@@ -326,16 +326,16 @@ BOOL OpalPCSSEndPoint::MakeConnection(OpalCall & call,
   if (connection != NULL) {
     PTRACE(2, "PCSS\tConnection already exists for " << *connection);
     call.Clear(OpalConnection::EndedByLocalBusy);
-    return FALSE;
+    return PFalse;
   }
 
   connection = CreateConnection(call, playDevice, recordDevice, userData);
   if (connection == NULL)
-    return FALSE;
+    return PFalse;
 
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -365,7 +365,7 @@ OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
 
 PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & connection,
 						     const OpalMediaFormat & mediaFormat,
-                                                     BOOL isSource)
+                                                     PBoolean isSource)
 {
   PString deviceName;
   PSoundChannel::Directions dir;
@@ -400,35 +400,35 @@ PSoundChannel * OpalPCSSEndPoint::CreateSoundChannel(const OpalPCSSConnection & 
 }
 
 
-BOOL OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
+PBoolean OpalPCSSEndPoint::AcceptIncomingConnection(const PString & token)
 {
   PSafePtr<OpalPCSSConnection> connection = GetPCSSConnectionWithLock(token, PSafeReadOnly);
   if (connection == NULL)
-    return FALSE;
+    return PFalse;
 
   connection->AcceptIncoming();
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString &)
+PBoolean OpalPCSSEndPoint::OnShowUserInput(const OpalPCSSConnection &, const PString &)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-void OpalPCSSEndPoint::OnPatchMediaStream(const OpalPCSSConnection & /*connection*/, BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
+void OpalPCSSEndPoint::OnPatchMediaStream(const OpalPCSSConnection & /*connection*/, PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
 {
 }
 
 
-BOOL OpalPCSSEndPoint::SetSoundChannelPlayDevice(const PString & name)
+PBoolean OpalPCSSEndPoint::SetSoundChannelPlayDevice(const PString & name)
 {
   return SetDeviceName(name, PSoundChannel::Player, soundChannelPlayDevice);
 }
 
 
-BOOL OpalPCSSEndPoint::SetSoundChannelRecordDevice(const PString & name)
+PBoolean OpalPCSSEndPoint::SetSoundChannelRecordDevice(const PString & name)
 {
   return SetDeviceName(name, PSoundChannel::Recorder, soundChannelRecordDevice);
 }
@@ -466,29 +466,29 @@ OpalPCSSConnection::~OpalPCSSConnection()
 }
 
 
-BOOL OpalPCSSConnection::SetUpConnection()
+PBoolean OpalPCSSConnection::SetUpConnection()
 {
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
     if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
-      return FALSE;
+      return PFalse;
     }
 
     PTRACE(3, "PCSS\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
-      return FALSE;
+      return PFalse;
     }
 
-    return TRUE;
+    return PTrue;
   }
 
   {
     PSafePtr<OpalConnection> otherConn = ownerCall.GetOtherPartyConnection(*this);
     if (otherConn == NULL)
-      return FALSE;
+      return PFalse;
 
     remotePartyName    = otherConn->GetRemotePartyName();
     remotePartyAddress = otherConn->GetRemotePartyAddress();
@@ -503,7 +503,7 @@ BOOL OpalPCSSConnection::SetUpConnection()
 }
 
 
-BOOL OpalPCSSConnection::SetAlerting(const PString & calleeName, BOOL)
+PBoolean OpalPCSSConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
   PTRACE(3, "PCSS\tSetAlerting(" << calleeName << ')');
   phase = AlertingPhase;
@@ -512,7 +512,7 @@ BOOL OpalPCSSConnection::SetAlerting(const PString & calleeName, BOOL)
 }
 
 
-BOOL OpalPCSSConnection::SetConnected()
+PBoolean OpalPCSSConnection::SetConnected()
 {
   PTRACE(3, "PCSS\tSetConnected()");
 
@@ -523,7 +523,7 @@ BOOL OpalPCSSConnection::SetConnected()
     OnEstablished();
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -535,7 +535,7 @@ OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
 
 OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                         unsigned sessionID,
-                                                        BOOL isSource)
+                                                        PBoolean isSource)
 {
   if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
@@ -548,7 +548,7 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 }
 
 
-void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
+void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
 					    OpalMediaPatch & patch)
 {
   PTRACE(3, "OpalCon\tNew patch created");
@@ -568,12 +568,12 @@ void OpalPCSSConnection::OnPatchMediaStream(BOOL isSource,
 }
 
 
-BOOL OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
+PBoolean OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
 					       unsigned sessionID)
 {
 #if OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
-    return FALSE;
+    return PFalse;
 #endif
 
   return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
@@ -591,21 +591,21 @@ OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & sour
 }
 
 
-BOOL OpalPCSSConnection::SetAudioVolume(BOOL source, unsigned percentage)
+PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
   OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
-    return FALSE;
+    return PFalse;
 
   PSoundChannel * channel = dynamic_cast<PSoundChannel *>(stream->GetChannel());
   if (channel == NULL)
-    return FALSE;
+    return PFalse;
 
   return channel->SetVolume(percentage);
 }
 
 
-unsigned OpalPCSSConnection::GetAudioSignalLevel(BOOL source)
+unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 {
   OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
@@ -615,13 +615,13 @@ unsigned OpalPCSSConnection::GetAudioSignalLevel(BOOL source)
 }
 
 
-PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, BOOL isSource)
+PSoundChannel * OpalPCSSConnection::CreateSoundChannel(const OpalMediaFormat & mediaFormat, PBoolean isSource)
 {
   return endpoint.CreateSoundChannel(*this, mediaFormat, isSource);
 }
 
 
-BOOL OpalPCSSConnection::SendUserInputString(const PString & value)
+PBoolean OpalPCSSConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "PCSS\tSendUserInputString(" << value << ')');
   return endpoint.OnShowUserInput(*this, value);

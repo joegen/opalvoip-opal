@@ -154,7 +154,7 @@
 
 #if P_EXPAT
 
-OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BOOL autoDelete)
+OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, PBoolean autoDelete)
   : PVXMLSession(tts, autoDelete),
     conn(_conn)
 {
@@ -173,12 +173,12 @@ OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, BO
 }
 
 
-BOOL OpalVXMLSession::Close()
+PBoolean OpalVXMLSession::Close()
 {
   if (!IsOpen())
-    return TRUE;
+    return PTrue;
 
-  BOOL ok = PVXMLSession::Close();
+  PBoolean ok = PVXMLSession::Close();
   conn->Release();
   return ok;
 }

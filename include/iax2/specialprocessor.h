@@ -86,7 +86,7 @@ class IAX2SpecialProcessor : public IAX2Processor
   
   /**Process an IAX2FullFrameProtocol. This special processor handles
    things relative to special needs of full frame protocols.*/
-  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
+  virtual PBoolean ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Process a poke command*/
   void ProcessIaxCmdPoke(IAX2FullFrameProtocol * src);

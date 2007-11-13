@@ -180,7 +180,7 @@
  * Added ability set ports
  *
  * Revision 1.94  2000/12/18 01:22:28  robertj
- * Changed semantics or HasConnection() so returns TRUE until the connection
+ * Changed semantics or HasConnection() so returns PTrue until the connection
  *   has been deleted and not just until ClearCall() was executure on it.
  *
  * Revision 1.93  2000/12/05 01:52:00  craigs

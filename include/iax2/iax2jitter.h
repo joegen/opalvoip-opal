@@ -101,7 +101,7 @@ class PendingRtpDataFrames : public RTP_DataFrameQueue
   PMutex mutex;
 
   /**Flag to indicate this class is running and operational */
-  BOOL keepGoing;
+  PBoolean keepGoing;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -123,10 +123,10 @@ class IAX2JitterBuffer : public OpalJitterBuffer
     /**This class instance collects data from the outside world in this
        method.
 
-    @return TRUE on successful read, FALSE on faulty read. */
-    virtual BOOL OnReadPacket    (
+    @return PTrue on successful read, PFalse on faulty read. */
+    virtual PBoolean OnReadPacket    (
         RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-        BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+        PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
         ) ;
 
     /**Have receive a new frame from the network. Place it on the internal list */
@@ -142,7 +142,7 @@ class IAX2JitterBuffer : public OpalJitterBuffer
     void CloseDown() { receivedFrames.CloseDown(); }
 
     /**Report if the jitter buffer is devoid of RTP_DataFrames*/
-    BOOL IsEmpty();
+    PBoolean IsEmpty();
 	
  protected:
 

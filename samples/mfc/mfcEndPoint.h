@@ -16,7 +16,7 @@ class CMfcDlg;
 class CMfcManager : public OpalManager
 {
 public:
-	BOOL Initialise(CMfcDlg * dlg);
+	PBoolean Initialise(CMfcDlg * dlg);
 	CMfcManager();
 	virtual ~CMfcManager();
 protected:

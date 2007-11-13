@@ -54,7 +54,7 @@ const static PASN_Names Names_H225_ReleaseCompleteReason[]={
 //
 
 H225_ReleaseCompleteReason::H225_ReleaseCompleteReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 12, TRUE
+  : PASN_Choice(tag, tagClass, 12, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ReleaseCompleteReason,25
 #endif
@@ -129,7 +129,7 @@ H225_ReleaseCompleteReason::operator const H225_SecurityErrors &() const
 }
 
 
-BOOL H225_ReleaseCompleteReason::CreateObject()
+PBoolean H225_ReleaseCompleteReason::CreateObject()
 {
   switch (tag) {
     case e_noBandwidth :
@@ -155,20 +155,20 @@ BOOL H225_ReleaseCompleteReason::CreateObject()
     case e_invalidCID :
     case e_hopCountExceeded :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_nonStandardReason :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_replaceWithConferenceInvite :
       choice = new H225_ConferenceIdentifier();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -198,7 +198,7 @@ const static PASN_Names Names_H225_ScnConnectionType[]={
 //
 
 H225_ScnConnectionType::H225_ScnConnectionType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, TRUE
+  : PASN_Choice(tag, tagClass, 7, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ScnConnectionType,7
 #endif
@@ -207,7 +207,7 @@ H225_ScnConnectionType::H225_ScnConnectionType(unsigned tag, PASN_Object::TagCla
 }
 
 
-BOOL H225_ScnConnectionType::CreateObject()
+PBoolean H225_ScnConnectionType::CreateObject()
 {
   choice = (tag <= e_multirate) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -239,7 +239,7 @@ const static PASN_Names Names_H225_ScnConnectionAggregation[]={
 //
 
 H225_ScnConnectionAggregation::H225_ScnConnectionAggregation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ScnConnectionAggregation,6
 #endif
@@ -248,7 +248,7 @@ H225_ScnConnectionAggregation::H225_ScnConnectionAggregation(unsigned tag, PASN_
 }
 
 
-BOOL H225_ScnConnectionAggregation::CreateObject()
+PBoolean H225_ScnConnectionAggregation::CreateObject()
 {
   choice = (tag <= e_bonded_mode3) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -277,7 +277,7 @@ const static PASN_Names Names_H225_PresentationIndicator[]={
 //
 
 H225_PresentationIndicator::H225_PresentationIndicator(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_PresentationIndicator,3
 #endif
@@ -286,7 +286,7 @@ H225_PresentationIndicator::H225_PresentationIndicator(unsigned tag, PASN_Object
 }
 
 
-BOOL H225_PresentationIndicator::CreateObject()
+PBoolean H225_PresentationIndicator::CreateObject()
 {
   choice = (tag <= e_addressNotAvailable) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -315,7 +315,7 @@ const static PASN_Names Names_H225_ScreeningIndicator[]={
 //
 
 H225_ScreeningIndicator::H225_ScreeningIndicator(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, TRUE
+  : PASN_Enumeration(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ScreeningIndicator,4
 #endif
@@ -361,7 +361,7 @@ const static PASN_Names Names_H225_FacilityReason[]={
 //
 
 H225_FacilityReason::H225_FacilityReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_FacilityReason,11
 #endif
@@ -370,7 +370,7 @@ H225_FacilityReason::H225_FacilityReason(unsigned tag, PASN_Object::TagClass tag
 }
 
 
-BOOL H225_FacilityReason::CreateObject()
+PBoolean H225_FacilityReason::CreateObject()
 {
   choice = (tag <= e_transportedInformation) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -403,7 +403,7 @@ const static PASN_Names Names_H225_TransportAddress[]={
 //
 
 H225_TransportAddress::H225_TransportAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, TRUE
+  : PASN_Choice(tag, tagClass, 7, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_TransportAddress,7
 #endif
@@ -522,36 +522,36 @@ H225_TransportAddress::operator const H225_NonStandardParameter &() const
 }
 
 
-BOOL H225_TransportAddress::CreateObject()
+PBoolean H225_TransportAddress::CreateObject()
 {
   switch (tag) {
     case e_ipAddress :
       choice = new H225_TransportAddress_ipAddress();
-      return TRUE;
+      return PTrue;
     case e_ipSourceRoute :
       choice = new H225_TransportAddress_ipSourceRoute();
-      return TRUE;
+      return PTrue;
     case e_ipxAddress :
       choice = new H225_TransportAddress_ipxAddress();
-      return TRUE;
+      return PTrue;
     case e_ip6Address :
       choice = new H225_TransportAddress_ip6Address();
-      return TRUE;
+      return PTrue;
     case e_netBios :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 16);
-      return TRUE;
+      return PTrue;
     case e_nsap :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 20);
-      return TRUE;
+      return PTrue;
     case e_nonStandardAddress :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -586,7 +586,7 @@ const static PASN_Names Names_H225_SupportedProtocols[]={
 //
 
 H225_SupportedProtocols::H225_SupportedProtocols(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 9, TRUE
+  : PASN_Choice(tag, tagClass, 9, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_SupportedProtocols,12
 #endif
@@ -859,49 +859,49 @@ H225_SupportedProtocols::operator const H225_SIPCaps &() const
 }
 
 
-BOOL H225_SupportedProtocols::CreateObject()
+PBoolean H225_SupportedProtocols::CreateObject()
 {
   switch (tag) {
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_h310 :
       choice = new H225_H310Caps();
-      return TRUE;
+      return PTrue;
     case e_h320 :
       choice = new H225_H320Caps();
-      return TRUE;
+      return PTrue;
     case e_h321 :
       choice = new H225_H321Caps();
-      return TRUE;
+      return PTrue;
     case e_h322 :
       choice = new H225_H322Caps();
-      return TRUE;
+      return PTrue;
     case e_h323 :
       choice = new H225_H323Caps();
-      return TRUE;
+      return PTrue;
     case e_h324 :
       choice = new H225_H324Caps();
-      return TRUE;
+      return PTrue;
     case e_voice :
       choice = new H225_VoiceCaps();
-      return TRUE;
+      return PTrue;
     case e_t120_only :
       choice = new H225_T120OnlyCaps();
-      return TRUE;
+      return PTrue;
     case e_nonStandardProtocol :
       choice = new H225_NonStandardProtocol();
-      return TRUE;
+      return PTrue;
     case e_t38FaxAnnexbOnly :
       choice = new H225_T38FaxAnnexbOnlyCaps();
-      return TRUE;
+      return PTrue;
     case e_sip :
       choice = new H225_SIPCaps();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -919,7 +919,7 @@ PObject * H225_SupportedProtocols::Clone() const
 //
 
 H225_H221NonStandard::H225_H221NonStandard(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_t35CountryCode.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_t35Extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
@@ -970,17 +970,17 @@ PINDEX H225_H221NonStandard::GetDataLength() const
 }
 
 
-BOOL H225_H221NonStandard::Decode(PASN_Stream & strm)
+PBoolean H225_H221NonStandard::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_t35CountryCode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_t35Extension.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_manufacturerCode.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1012,7 +1012,7 @@ PObject * H225_H221NonStandard::Clone() const
 //
 
 H225_TunnelledProtocolAlternateIdentifier::H225_TunnelledProtocolAlternateIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_protocolType.SetConstraints(PASN_Object::FixedConstraint, 1, 64);
   m_protocolVariant.SetConstraints(PASN_Object::FixedConstraint, 1, 64);
@@ -1060,15 +1060,15 @@ PINDEX H225_TunnelledProtocolAlternateIdentifier::GetDataLength() const
 }
 
 
-BOOL H225_TunnelledProtocolAlternateIdentifier::Decode(PASN_Stream & strm)
+PBoolean H225_TunnelledProtocolAlternateIdentifier::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protocolType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_protocolVariant) && !m_protocolVariant.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1107,7 +1107,7 @@ const static PASN_Names Names_H225_NonStandardIdentifier[]={
 //
 
 H225_NonStandardIdentifier::H225_NonStandardIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_NonStandardIdentifier,2
 #endif
@@ -1138,19 +1138,19 @@ H225_NonStandardIdentifier::operator const H225_H221NonStandard &() const
 }
 
 
-BOOL H225_NonStandardIdentifier::CreateObject()
+PBoolean H225_NonStandardIdentifier::CreateObject()
 {
   switch (tag) {
     case e_object :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
     case e_h221NonStandard :
       choice = new H225_H221NonStandard();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1181,7 +1181,7 @@ const static PASN_Names Names_H225_AliasAddress[]={
 //
 
 H225_AliasAddress::H225_AliasAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_AliasAddress,8
 #endif
@@ -1278,42 +1278,42 @@ H225_AliasAddress::operator const H225_IsupNumber &() const
 }
 
 
-BOOL H225_AliasAddress::CreateObject()
+PBoolean H225_AliasAddress::CreateObject()
 {
   switch (tag) {
     case e_dialedDigits :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 128);
       choice->SetCharacterSet(PASN_Object::FixedConstraint, "0123456789#*,");
-      return TRUE;
+      return PTrue;
     case e_h323_ID :
       choice = new PASN_BMPString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return TRUE;
+      return PTrue;
     case e_url_ID :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 512);
-      return TRUE;
+      return PTrue;
     case e_transportID :
       choice = new H225_TransportAddress();
-      return TRUE;
+      return PTrue;
     case e_email_ID :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 512);
-      return TRUE;
+      return PTrue;
     case e_partyNumber :
       choice = new H225_PartyNumber();
-      return TRUE;
+      return PTrue;
     case e_mobileUIM :
       choice = new H225_MobileUIM();
-      return TRUE;
+      return PTrue;
     case e_isupNumber :
       choice = new H225_IsupNumber();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1338,7 +1338,7 @@ const static PASN_Names Names_H225_AddressPattern[]={
 //
 
 H225_AddressPattern::H225_AddressPattern(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_AddressPattern,2
 #endif
@@ -1391,19 +1391,19 @@ H225_AddressPattern::operator const H225_AddressPattern_range &() const
 }
 
 
-BOOL H225_AddressPattern::CreateObject()
+PBoolean H225_AddressPattern::CreateObject()
 {
   switch (tag) {
     case e_wildcard :
       choice = new H225_AliasAddress();
-      return TRUE;
+      return PTrue;
     case e_range :
       choice = new H225_AddressPattern_range();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1431,7 +1431,7 @@ const static PASN_Names Names_H225_PartyNumber[]={
 //
 
 H225_PartyNumber::H225_PartyNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_PartyNumber,5
 #endif
@@ -1506,24 +1506,24 @@ H225_PartyNumber::operator const H225_PrivatePartyNumber &() const
 }
 
 
-BOOL H225_PartyNumber::CreateObject()
+PBoolean H225_PartyNumber::CreateObject()
 {
   switch (tag) {
     case e_e164Number :
       choice = new H225_PublicPartyNumber();
-      return TRUE;
+      return PTrue;
     case e_dataPartyNumber :
     case e_telexPartyNumber :
     case e_nationalStandardPartyNumber :
       choice = new H225_NumberDigits();
-      return TRUE;
+      return PTrue;
     case e_privateNumber :
       choice = new H225_PrivatePartyNumber();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1587,7 +1587,7 @@ const static PASN_Names Names_H225_PublicTypeOfNumber[]={
 //
 
 H225_PublicTypeOfNumber::H225_PublicTypeOfNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_PublicTypeOfNumber,6
 #endif
@@ -1596,7 +1596,7 @@ H225_PublicTypeOfNumber::H225_PublicTypeOfNumber(unsigned tag, PASN_Object::TagC
 }
 
 
-BOOL H225_PublicTypeOfNumber::CreateObject()
+PBoolean H225_PublicTypeOfNumber::CreateObject()
 {
   choice = (tag <= e_abbreviatedNumber) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1628,7 +1628,7 @@ const static PASN_Names Names_H225_PrivateTypeOfNumber[]={
 //
 
 H225_PrivateTypeOfNumber::H225_PrivateTypeOfNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_PrivateTypeOfNumber,6
 #endif
@@ -1637,7 +1637,7 @@ H225_PrivateTypeOfNumber::H225_PrivateTypeOfNumber(unsigned tag, PASN_Object::Ta
 }
 
 
-BOOL H225_PrivateTypeOfNumber::CreateObject()
+PBoolean H225_PrivateTypeOfNumber::CreateObject()
 {
   choice = (tag <= e_abbreviatedNumber) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1665,7 +1665,7 @@ const static PASN_Names Names_H225_MobileUIM[]={
 //
 
 H225_MobileUIM::H225_MobileUIM(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_MobileUIM,2
 #endif
@@ -1718,19 +1718,19 @@ H225_MobileUIM::operator const H225_GSM_UIM &() const
 }
 
 
-BOOL H225_MobileUIM::CreateObject()
+PBoolean H225_MobileUIM::CreateObject()
 {
   switch (tag) {
     case e_ansi_41_uim :
       choice = new H225_ANSI_41_UIM();
-      return TRUE;
+      return PTrue;
     case e_gsm_uim :
       choice = new H225_GSM_UIM();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1782,7 +1782,7 @@ PObject * H225_TBCD_STRING::Clone() const
 //
 
 H225_GSM_UIM::H225_GSM_UIM(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
 {
   m_imsi.SetConstraints(PASN_Object::FixedConstraint, 3, 16);
   m_tmsi.SetConstraints(PASN_Object::FixedConstraint, 1, 4);
@@ -1860,23 +1860,23 @@ PINDEX H225_GSM_UIM::GetDataLength() const
 }
 
 
-BOOL H225_GSM_UIM::Decode(PASN_Stream & strm)
+PBoolean H225_GSM_UIM::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_imsi) && !m_imsi.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_tmsi) && !m_tmsi.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_msisdn) && !m_msisdn.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_imei) && !m_imei.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_hplmn) && !m_hplmn.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_vplmn) && !m_vplmn.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1927,7 +1927,7 @@ const static PASN_Names Names_H225_IsupNumber[]={
 //
 
 H225_IsupNumber::H225_IsupNumber(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_IsupNumber,5
 #endif
@@ -2002,24 +2002,24 @@ H225_IsupNumber::operator const H225_IsupPrivatePartyNumber &() const
 }
 
 
-BOOL H225_IsupNumber::CreateObject()
+PBoolean H225_IsupNumber::CreateObject()
 {
   switch (tag) {
     case e_e164Number :
       choice = new H225_IsupPublicPartyNumber();
-      return TRUE;
+      return PTrue;
     case e_dataPartyNumber :
     case e_telexPartyNumber :
     case e_nationalStandardPartyNumber :
       choice = new H225_IsupDigits();
-      return TRUE;
+      return PTrue;
     case e_privateNumber :
       choice = new H225_IsupPrivatePartyNumber();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2050,7 +2050,7 @@ const static PASN_Names Names_H225_NatureOfAddress[]={
 //
 
 H225_NatureOfAddress::H225_NatureOfAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, TRUE
+  : PASN_Choice(tag, tagClass, 8, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_NatureOfAddress,8
 #endif
@@ -2059,7 +2059,7 @@ H225_NatureOfAddress::H225_NatureOfAddress(unsigned tag, PASN_Object::TagClass t
 }
 
 
-BOOL H225_NatureOfAddress::CreateObject()
+PBoolean H225_NatureOfAddress::CreateObject()
 {
   choice = (tag <= e_routingNumberWithCalledDirectoryNumber) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -2115,7 +2115,7 @@ PObject * H225_IsupDigits::Clone() const
 //
 
 H225_ExtendedAliasAddress::H225_ExtendedAliasAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -2167,17 +2167,17 @@ PINDEX H225_ExtendedAliasAddress::GetDataLength() const
 }
 
 
-BOOL H225_ExtendedAliasAddress::Decode(PASN_Stream & strm)
+PBoolean H225_ExtendedAliasAddress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_address.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_presentationIndicator) && !m_presentationIndicator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_screeningIndicator) && !m_screeningIndicator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2219,7 +2219,7 @@ const static PASN_Names Names_H225_UseSpecifiedTransport[]={
 //
 
 H225_UseSpecifiedTransport::H225_UseSpecifiedTransport(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_UseSpecifiedTransport,3
 #endif
@@ -2228,7 +2228,7 @@ H225_UseSpecifiedTransport::H225_UseSpecifiedTransport(unsigned tag, PASN_Object
 }
 
 
-BOOL H225_UseSpecifiedTransport::CreateObject()
+PBoolean H225_UseSpecifiedTransport::CreateObject()
 {
   choice = (tag <= e_sctp) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -2257,7 +2257,7 @@ const static PASN_Names Names_H225_SecurityServiceMode[]={
 //
 
 H225_SecurityServiceMode::H225_SecurityServiceMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_SecurityServiceMode,3
 #endif
@@ -2288,20 +2288,20 @@ H225_SecurityServiceMode::operator const H225_NonStandardParameter &() const
 }
 
 
-BOOL H225_SecurityServiceMode::CreateObject()
+PBoolean H225_SecurityServiceMode::CreateObject()
 {
   switch (tag) {
     case e_nonStandard :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_none :
     case e_default :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2340,7 +2340,7 @@ const static PASN_Names Names_H225_SecurityErrors[]={
 //
 
 H225_SecurityErrors::H225_SecurityErrors(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 16, TRUE
+  : PASN_Choice(tag, tagClass, 16, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_SecurityErrors,16
 #endif
@@ -2349,7 +2349,7 @@ H225_SecurityErrors::H225_SecurityErrors(unsigned tag, PASN_Object::TagClass tag
 }
 
 
-BOOL H225_SecurityErrors::CreateObject()
+PBoolean H225_SecurityErrors::CreateObject()
 {
   choice = (tag <= e_securityUnknownCA) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -2381,7 +2381,7 @@ const static PASN_Names Names_H225_SecurityErrors2[]={
 //
 
 H225_SecurityErrors2::H225_SecurityErrors2(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_SecurityErrors2,6
 #endif
@@ -2390,7 +2390,7 @@ H225_SecurityErrors2::H225_SecurityErrors2(unsigned tag, PASN_Object::TagClass t
 }
 
 
-BOOL H225_SecurityErrors2::CreateObject()
+PBoolean H225_SecurityErrors2::CreateObject()
 {
   choice = (tag <= e_securityWrongOID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -2420,7 +2420,7 @@ const static PASN_Names Names_H225_H245Security[]={
 //
 
 H225_H245Security::H225_H245Security(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_H245Security,4
 #endif
@@ -2473,23 +2473,23 @@ H225_H245Security::operator const H225_SecurityCapabilities &() const
 }
 
 
-BOOL H225_H245Security::CreateObject()
+PBoolean H225_H245Security::CreateObject()
 {
   switch (tag) {
     case e_nonStandard :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_noSecurity :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_tls :
     case e_ipsec :
       choice = new H225_SecurityCapabilities();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2507,7 +2507,7 @@ PObject * H225_H245Security::Clone() const
 //
 
 H225_Q954Details::H225_Q954Details(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -2551,15 +2551,15 @@ PINDEX H225_Q954Details::GetDataLength() const
 }
 
 
-BOOL H225_Q954Details::Decode(PASN_Stream & strm)
+PBoolean H225_Q954Details::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_conferenceCalling.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_threePartyService.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3074,7 +3074,7 @@ PObject * H225_H248SignalsDescriptor::Clone() const
 //
 
 H225_CallIdentifier::H225_CallIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -3114,13 +3114,13 @@ PINDEX H225_CallIdentifier::GetDataLength() const
 }
 
 
-BOOL H225_CallIdentifier::Decode(PASN_Stream & strm)
+PBoolean H225_CallIdentifier::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_guid.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3157,7 +3157,7 @@ const static PASN_Names Names_H225_EncryptIntAlg[]={
 //
 
 H225_EncryptIntAlg::H225_EncryptIntAlg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_EncryptIntAlg,2
 #endif
@@ -3188,19 +3188,19 @@ H225_EncryptIntAlg::operator const H225_NonStandardParameter &() const
 }
 
 
-BOOL H225_EncryptIntAlg::CreateObject()
+PBoolean H225_EncryptIntAlg::CreateObject()
 {
   switch (tag) {
     case e_nonStandard :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_isoAlgorithm :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -3227,7 +3227,7 @@ const static PASN_Names Names_H225_NonIsoIntegrityMechanism[]={
 //
 
 H225_NonIsoIntegrityMechanism::H225_NonIsoIntegrityMechanism(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_NonIsoIntegrityMechanism,4
 #endif
@@ -3258,23 +3258,23 @@ H225_NonIsoIntegrityMechanism::operator const H225_EncryptIntAlg &() const
 }
 
 
-BOOL H225_NonIsoIntegrityMechanism::CreateObject()
+PBoolean H225_NonIsoIntegrityMechanism::CreateObject()
 {
   switch (tag) {
     case e_hMAC_MD5 :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_hMAC_iso10118_2_s :
     case e_hMAC_iso10118_2_l :
       choice = new H225_EncryptIntAlg();
-      return TRUE;
+      return PTrue;
     case e_hMAC_iso10118_3 :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -3301,7 +3301,7 @@ const static PASN_Names Names_H225_IntegrityMechanism[]={
 //
 
 H225_IntegrityMechanism::H225_IntegrityMechanism(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_IntegrityMechanism,4
 #endif
@@ -3354,25 +3354,25 @@ H225_IntegrityMechanism::operator const H225_NonIsoIntegrityMechanism &() const
 }
 
 
-BOOL H225_IntegrityMechanism::CreateObject()
+PBoolean H225_IntegrityMechanism::CreateObject()
 {
   switch (tag) {
     case e_nonStandard :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_digSig :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_iso9797 :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
     case e_nonIsoIM :
       choice = new H225_NonIsoIntegrityMechanism();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -3390,7 +3390,7 @@ PObject * H225_IntegrityMechanism::Clone() const
 //
 
 H225_ICV::H225_ICV(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -3434,15 +3434,15 @@ PINDEX H225_ICV::GetDataLength() const
 }
 
 
-BOOL H225_ICV::Decode(PASN_Stream & strm)
+PBoolean H225_ICV::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_algorithmOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_icv.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3527,7 +3527,7 @@ const static PASN_Names Names_H225_CryptoH323Token[]={
 //
 
 H225_CryptoH323Token::H225_CryptoH323Token(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, TRUE
+  : PASN_Choice(tag, tagClass, 8, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_CryptoH323Token,8
 #endif
@@ -3668,33 +3668,33 @@ H225_CryptoH323Token::operator const H235_CryptoToken &() const
 }
 
 
-BOOL H225_CryptoH323Token::CreateObject()
+PBoolean H225_CryptoH323Token::CreateObject()
 {
   switch (tag) {
     case e_cryptoEPPwdHash :
       choice = new H225_CryptoH323Token_cryptoEPPwdHash();
-      return TRUE;
+      return PTrue;
     case e_cryptoGKPwdHash :
       choice = new H225_CryptoH323Token_cryptoGKPwdHash();
-      return TRUE;
+      return PTrue;
     case e_cryptoEPPwdEncr :
     case e_cryptoGKPwdEncr :
       choice = new H235_ENCRYPTED<H235_EncodedPwdCertToken>();
-      return TRUE;
+      return PTrue;
     case e_cryptoEPCert :
     case e_cryptoGKCert :
       choice = new H235_SIGNED<H235_EncodedPwdCertToken>();
-      return TRUE;
+      return PTrue;
     case e_cryptoFastStart :
       choice = new H235_SIGNED<H225_EncodedFastStartToken>();
-      return TRUE;
+      return PTrue;
     case e_nestedcryptoToken :
       choice = new H235_CryptoToken();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -3712,7 +3712,7 @@ PObject * H225_CryptoH323Token::Clone() const
 //
 
 H225_CallLinkage::H225_CallLinkage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -3760,15 +3760,15 @@ PINDEX H225_CallLinkage::GetDataLength() const
 }
 
 
-BOOL H225_CallLinkage::Decode(PASN_Stream & strm)
+PBoolean H225_CallLinkage::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_globalCallId) && !m_globalCallId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_threadId) && !m_threadId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3801,7 +3801,7 @@ PObject * H225_CallLinkage::Clone() const
 //
 
 H225_CapacityReportingCapability::H225_CapacityReportingCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -3841,13 +3841,13 @@ PINDEX H225_CapacityReportingCapability::GetDataLength() const
 }
 
 
-BOOL H225_CapacityReportingCapability::Decode(PASN_Stream & strm)
+PBoolean H225_CapacityReportingCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_canReportCallCapacity.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3877,7 +3877,7 @@ PObject * H225_CapacityReportingCapability::Clone() const
 //
 
 H225_CarrierInfo::H225_CarrierInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_carrierIdentificationCode.SetConstraints(PASN_Object::FixedConstraint, 3, 4);
   m_carrierName.SetConstraints(PASN_Object::FixedConstraint, 1, 128);
@@ -3927,15 +3927,15 @@ PINDEX H225_CarrierInfo::GetDataLength() const
 }
 
 
-BOOL H225_CarrierInfo::Decode(PASN_Stream & strm)
+PBoolean H225_CarrierInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_carrierIdentificationCode) && !m_carrierIdentificationCode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_carrierName) && !m_carrierName.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3977,7 +3977,7 @@ const static PASN_Names Names_H225_ServiceControlDescriptor[]={
 //
 
 H225_ServiceControlDescriptor::H225_ServiceControlDescriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ServiceControlDescriptor,4
 #endif
@@ -4052,26 +4052,26 @@ H225_ServiceControlDescriptor::operator const H225_CallCreditServiceControl &() 
 }
 
 
-BOOL H225_ServiceControlDescriptor::CreateObject()
+PBoolean H225_ServiceControlDescriptor::CreateObject()
 {
   switch (tag) {
     case e_url :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 512);
-      return TRUE;
+      return PTrue;
     case e_signal :
       choice = new H225_H248SignalsDescriptor();
-      return TRUE;
+      return PTrue;
     case e_nonStandard :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_callCreditServiceControl :
       choice = new H225_CallCreditServiceControl();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -4096,7 +4096,7 @@ const static PASN_Names Names_H225_CallTerminationCause[]={
 //
 
 H225_CallTerminationCause::H225_CallTerminationCause(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_CallTerminationCause,2
 #endif
@@ -4127,20 +4127,20 @@ H225_CallTerminationCause::operator const H225_ReleaseCompleteReason &() const
 }
 
 
-BOOL H225_CallTerminationCause::CreateObject()
+PBoolean H225_CallTerminationCause::CreateObject()
 {
   switch (tag) {
     case e_releaseCompleteReason :
       choice = new H225_ReleaseCompleteReason();
-      return TRUE;
+      return PTrue;
     case e_releaseCompleteCauseIE :
       choice = new PASN_OctetString();
       choice->SetConstraints(PASN_Object::FixedConstraint, 2, 32);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -4158,7 +4158,7 @@ PObject * H225_CallTerminationCause::Clone() const
 //
 
 H225_CallCreditCapability::H225_CallCreditCapability(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -4206,15 +4206,15 @@ PINDEX H225_CallCreditCapability::GetDataLength() const
 }
 
 
-BOOL H225_CallCreditCapability::Decode(PASN_Stream & strm)
+PBoolean H225_CallCreditCapability::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_canDisplayAmountString) && !m_canDisplayAmountString.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_canEnforceDurationLimit) && !m_canEnforceDurationLimit.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4255,7 +4255,7 @@ const static PASN_Names Names_H225_GenericIdentifier[]={
 //
 
 H225_GenericIdentifier::H225_GenericIdentifier(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_GenericIdentifier,3
 #endif
@@ -4286,23 +4286,23 @@ H225_GenericIdentifier::operator const H225_GloballyUniqueID &() const
 }
 
 
-BOOL H225_GenericIdentifier::CreateObject()
+PBoolean H225_GenericIdentifier::CreateObject()
 {
   switch (tag) {
     case e_standard :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::ExtendableConstraint, 0, 16383);
-      return TRUE;
+      return PTrue;
     case e_oid :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
     case e_nonStandard :
       choice = new H225_GloballyUniqueID();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -4337,7 +4337,7 @@ const static PASN_Names Names_H225_Content[]={
 //
 
 H225_Content::H225_Content(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 12, TRUE
+  : PASN_Choice(tag, tagClass, 12, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_Content,12
 #endif
@@ -4456,54 +4456,54 @@ H225_Content::operator const H225_ArrayOf_GenericData &() const
 }
 
 
-BOOL H225_Content::CreateObject()
+PBoolean H225_Content::CreateObject()
 {
   switch (tag) {
     case e_raw :
       choice = new PASN_OctetString();
-      return TRUE;
+      return PTrue;
     case e_text :
       choice = new PASN_IA5String();
-      return TRUE;
+      return PTrue;
     case e_unicode :
       choice = new PASN_BMPString();
-      return TRUE;
+      return PTrue;
     case e_bool :
       choice = new PASN_Boolean();
-      return TRUE;
+      return PTrue;
     case e_number8 :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 255);
-      return TRUE;
+      return PTrue;
     case e_number16 :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return TRUE;
+      return PTrue;
     case e_number32 :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
-      return TRUE;
+      return PTrue;
     case e_id :
       choice = new H225_GenericIdentifier();
-      return TRUE;
+      return PTrue;
     case e_alias :
       choice = new H225_AliasAddress();
-      return TRUE;
+      return PTrue;
     case e_transport :
       choice = new H225_TransportAddress();
-      return TRUE;
+      return PTrue;
     case e_compound :
       choice = new H225_ArrayOf_EnumeratedParameter();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 512);
-      return TRUE;
+      return PTrue;
     case e_nested :
       choice = new H225_ArrayOf_GenericData();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 16);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -4521,7 +4521,7 @@ PObject * H225_Content::Clone() const
 //
 
 H225_TransportChannelInfo::H225_TransportChannelInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -4569,15 +4569,15 @@ PINDEX H225_TransportChannelInfo::GetDataLength() const
 }
 
 
-BOOL H225_TransportChannelInfo::Decode(PASN_Stream & strm)
+PBoolean H225_TransportChannelInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_sendAddress) && !m_sendAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_recvAddress) && !m_recvAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4617,7 +4617,7 @@ const static PASN_Names Names_H225_RehomingModel[]={
 //
 
 H225_RehomingModel::H225_RehomingModel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, FALSE
+  : PASN_Choice(tag, tagClass, 2, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_RehomingModel,2
 #endif
@@ -4626,7 +4626,7 @@ H225_RehomingModel::H225_RehomingModel(unsigned tag, PASN_Object::TagClass tagCl
 }
 
 
-BOOL H225_RehomingModel::CreateObject()
+PBoolean H225_RehomingModel::CreateObject()
 {
   choice = (tag <= e_endpointBased) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -4685,7 +4685,7 @@ const static PASN_Names Names_H225_RasMessage[]={
 //
 
 H225_RasMessage::H225_RasMessage(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 25, TRUE
+  : PASN_Choice(tag, tagClass, 25, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_RasMessage,33
 #endif
@@ -5420,112 +5420,112 @@ H225_RasMessage::operator const H225_ArrayOf_AdmissionConfirm &() const
 }
 
 
-BOOL H225_RasMessage::CreateObject()
+PBoolean H225_RasMessage::CreateObject()
 {
   switch (tag) {
     case e_gatekeeperRequest :
       choice = new H225_GatekeeperRequest();
-      return TRUE;
+      return PTrue;
     case e_gatekeeperConfirm :
       choice = new H225_GatekeeperConfirm();
-      return TRUE;
+      return PTrue;
     case e_gatekeeperReject :
       choice = new H225_GatekeeperReject();
-      return TRUE;
+      return PTrue;
     case e_registrationRequest :
       choice = new H225_RegistrationRequest();
-      return TRUE;
+      return PTrue;
     case e_registrationConfirm :
       choice = new H225_RegistrationConfirm();
-      return TRUE;
+      return PTrue;
     case e_registrationReject :
       choice = new H225_RegistrationReject();
-      return TRUE;
+      return PTrue;
     case e_unregistrationRequest :
       choice = new H225_UnregistrationRequest();
-      return TRUE;
+      return PTrue;
     case e_unregistrationConfirm :
       choice = new H225_UnregistrationConfirm();
-      return TRUE;
+      return PTrue;
     case e_unregistrationReject :
       choice = new H225_UnregistrationReject();
-      return TRUE;
+      return PTrue;
     case e_admissionRequest :
       choice = new H225_AdmissionRequest();
-      return TRUE;
+      return PTrue;
     case e_admissionConfirm :
       choice = new H225_AdmissionConfirm();
-      return TRUE;
+      return PTrue;
     case e_admissionReject :
       choice = new H225_AdmissionReject();
-      return TRUE;
+      return PTrue;
     case e_bandwidthRequest :
       choice = new H225_BandwidthRequest();
-      return TRUE;
+      return PTrue;
     case e_bandwidthConfirm :
       choice = new H225_BandwidthConfirm();
-      return TRUE;
+      return PTrue;
     case e_bandwidthReject :
       choice = new H225_BandwidthReject();
-      return TRUE;
+      return PTrue;
     case e_disengageRequest :
       choice = new H225_DisengageRequest();
-      return TRUE;
+      return PTrue;
     case e_disengageConfirm :
       choice = new H225_DisengageConfirm();
-      return TRUE;
+      return PTrue;
     case e_disengageReject :
       choice = new H225_DisengageReject();
-      return TRUE;
+      return PTrue;
     case e_locationRequest :
       choice = new H225_LocationRequest();
-      return TRUE;
+      return PTrue;
     case e_locationConfirm :
       choice = new H225_LocationConfirm();
-      return TRUE;
+      return PTrue;
     case e_locationReject :
       choice = new H225_LocationReject();
-      return TRUE;
+      return PTrue;
     case e_infoRequest :
       choice = new H225_InfoRequest();
-      return TRUE;
+      return PTrue;
     case e_infoRequestResponse :
       choice = new H225_InfoRequestResponse();
-      return TRUE;
+      return PTrue;
     case e_nonStandardMessage :
       choice = new H225_NonStandardMessage();
-      return TRUE;
+      return PTrue;
     case e_unknownMessageResponse :
       choice = new H225_UnknownMessageResponse();
-      return TRUE;
+      return PTrue;
     case e_requestInProgress :
       choice = new H225_RequestInProgress();
-      return TRUE;
+      return PTrue;
     case e_resourcesAvailableIndicate :
       choice = new H225_ResourcesAvailableIndicate();
-      return TRUE;
+      return PTrue;
     case e_resourcesAvailableConfirm :
       choice = new H225_ResourcesAvailableConfirm();
-      return TRUE;
+      return PTrue;
     case e_infoRequestAck :
       choice = new H225_InfoRequestAck();
-      return TRUE;
+      return PTrue;
     case e_infoRequestNak :
       choice = new H225_InfoRequestNak();
-      return TRUE;
+      return PTrue;
     case e_serviceControlIndication :
       choice = new H225_ServiceControlIndication();
-      return TRUE;
+      return PTrue;
     case e_serviceControlResponse :
       choice = new H225_ServiceControlResponse();
-      return TRUE;
+      return PTrue;
     case e_admissionConfirmSequence :
       choice = new H225_ArrayOf_AdmissionConfirm();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -5556,7 +5556,7 @@ const static PASN_Names Names_H225_GatekeeperRejectReason[]={
 //
 
 H225_GatekeeperRejectReason::H225_GatekeeperRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_GatekeeperRejectReason,8
 #endif
@@ -5587,7 +5587,7 @@ H225_GatekeeperRejectReason::operator const H225_SecurityErrors &() const
 }
 
 
-BOOL H225_GatekeeperRejectReason::CreateObject()
+PBoolean H225_GatekeeperRejectReason::CreateObject()
 {
   switch (tag) {
     case e_resourceUnavailable :
@@ -5598,14 +5598,14 @@ BOOL H225_GatekeeperRejectReason::CreateObject()
     case e_genericDataReason :
     case e_neededFeatureNotSupported :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -5647,7 +5647,7 @@ const static PASN_Names Names_H225_RegistrationRejectReason[]={
 //
 
 H225_RegistrationRejectReason::H225_RegistrationRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, TRUE
+  : PASN_Choice(tag, tagClass, 8, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_RegistrationRejectReason,19
 #endif
@@ -5722,7 +5722,7 @@ H225_RegistrationRejectReason::operator const H225_SecurityErrors &() const
 }
 
 
-BOOL H225_RegistrationRejectReason::CreateObject()
+PBoolean H225_RegistrationRejectReason::CreateObject()
 {
   switch (tag) {
     case e_discoveryRequired :
@@ -5742,20 +5742,20 @@ BOOL H225_RegistrationRejectReason::CreateObject()
     case e_neededFeatureNotSupported :
     case e_registerWithAssignedGK :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_duplicateAlias :
       choice = new H225_ArrayOf_AliasAddress();
-      return TRUE;
+      return PTrue;
     case e_invalidTerminalAliases :
       choice = new H225_RegistrationRejectReason_invalidTerminalAliases();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -5785,7 +5785,7 @@ const static PASN_Names Names_H225_UnregRequestReason[]={
 //
 
 H225_UnregRequestReason::H225_UnregRequestReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_UnregRequestReason,7
 #endif
@@ -5816,7 +5816,7 @@ H225_UnregRequestReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_UnregRequestReason::CreateObject()
+PBoolean H225_UnregRequestReason::CreateObject()
 {
   switch (tag) {
     case e_reregistrationRequired :
@@ -5826,14 +5826,14 @@ BOOL H225_UnregRequestReason::CreateObject()
     case e_maintenance :
     case e_registerWithAssignedGK :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -5862,7 +5862,7 @@ const static PASN_Names Names_H225_UnregRejectReason[]={
 //
 
 H225_UnregRejectReason::H225_UnregRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_UnregRejectReason,6
 #endif
@@ -5893,7 +5893,7 @@ H225_UnregRejectReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_UnregRejectReason::CreateObject()
+PBoolean H225_UnregRejectReason::CreateObject()
 {
   switch (tag) {
     case e_notCurrentlyRegistered :
@@ -5902,14 +5902,14 @@ BOOL H225_UnregRejectReason::CreateObject()
     case e_permissionDenied :
     case e_securityDenial :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -5936,7 +5936,7 @@ const static PASN_Names Names_H225_CallType[]={
 //
 
 H225_CallType::H225_CallType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_CallType,4
 #endif
@@ -5945,7 +5945,7 @@ H225_CallType::H225_CallType(unsigned tag, PASN_Object::TagClass tagClass)
 }
 
 
-BOOL H225_CallType::CreateObject()
+PBoolean H225_CallType::CreateObject()
 {
   choice = (tag <= e_nToN) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -5973,7 +5973,7 @@ const static PASN_Names Names_H225_CallModel[]={
 //
 
 H225_CallModel::H225_CallModel(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_CallModel,2
 #endif
@@ -5982,7 +5982,7 @@ H225_CallModel::H225_CallModel(unsigned tag, PASN_Object::TagClass tagClass)
 }
 
 
-BOOL H225_CallModel::CreateObject()
+PBoolean H225_CallModel::CreateObject()
 {
   choice = (tag <= e_gatekeeperRouted) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -6012,7 +6012,7 @@ const static PASN_Names Names_H225_TransportQOS[]={
 //
 
 H225_TransportQOS::H225_TransportQOS(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_TransportQOS,4
 #endif
@@ -6043,22 +6043,22 @@ H225_TransportQOS::operator const H225_ArrayOf_QOSCapability &() const
 }
 
 
-BOOL H225_TransportQOS::CreateObject()
+PBoolean H225_TransportQOS::CreateObject()
 {
   switch (tag) {
     case e_endpointControlled :
     case e_gatekeeperControlled :
     case e_noControl :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_qOSCapabilities :
       choice = new H225_ArrayOf_QOSCapability();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 256);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6076,7 +6076,7 @@ PObject * H225_TransportQOS::Clone() const
 //
 
 H225_UUIEsRequested::H225_UUIEsRequested(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 4)
 {
   IncludeOptionalField(e_status);
   IncludeOptionalField(e_statusInquiry);
@@ -6160,37 +6160,37 @@ PINDEX H225_UUIEsRequested::GetDataLength() const
 }
 
 
-BOOL H225_UUIEsRequested::Decode(PASN_Stream & strm)
+PBoolean H225_UUIEsRequested::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_setup.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_callProceeding.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_connect.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alerting.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_information.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_releaseComplete.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_facility.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_progress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_empty.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_status, m_status))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_statusInquiry, m_statusInquiry))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_setupAcknowledge, m_setupAcknowledge))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_notify, m_notify))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6260,7 +6260,7 @@ const static PASN_Names Names_H225_AdmissionRejectReason[]={
 //
 
 H225_AdmissionRejectReason::H225_AdmissionRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 8, TRUE
+  : PASN_Choice(tag, tagClass, 8, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_AdmissionRejectReason,23
 #endif
@@ -6313,7 +6313,7 @@ H225_AdmissionRejectReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_AdmissionRejectReason::CreateObject()
+PBoolean H225_AdmissionRejectReason::CreateObject()
 {
   switch (tag) {
     case e_calledPartyNotRegistered :
@@ -6338,17 +6338,17 @@ BOOL H225_AdmissionRejectReason::CreateObject()
     case e_unallocatedNumber :
     case e_registerWithAssignedGK :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_routeCallToSCN :
       choice = new H225_ArrayOf_PartyNumber();
-      return TRUE;
+      return PTrue;
     case e_securityErrors :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6379,7 +6379,7 @@ const static PASN_Names Names_H225_BandRejectReason[]={
 //
 
 H225_BandRejectReason::H225_BandRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_BandRejectReason,8
 #endif
@@ -6410,7 +6410,7 @@ H225_BandRejectReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_BandRejectReason::CreateObject()
+PBoolean H225_BandRejectReason::CreateObject()
 {
   switch (tag) {
     case e_notBound :
@@ -6421,14 +6421,14 @@ BOOL H225_BandRejectReason::CreateObject()
     case e_undefinedReason :
     case e_securityDenial :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6467,7 +6467,7 @@ const static PASN_Names Names_H225_LocationRejectReason[]={
 //
 
 H225_LocationRejectReason::H225_LocationRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_LocationRejectReason,16
 #endif
@@ -6520,7 +6520,7 @@ H225_LocationRejectReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_LocationRejectReason::CreateObject()
+PBoolean H225_LocationRejectReason::CreateObject()
 {
   switch (tag) {
     case e_notRegistered :
@@ -6538,17 +6538,17 @@ BOOL H225_LocationRejectReason::CreateObject()
     case e_noRouteToDestination :
     case e_unallocatedNumber :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_routeCalltoSCN :
       choice = new H225_ArrayOf_PartyNumber();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6574,7 +6574,7 @@ const static PASN_Names Names_H225_DisengageReason[]={
 //
 
 H225_DisengageReason::H225_DisengageReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_DisengageReason,3
 #endif
@@ -6583,7 +6583,7 @@ H225_DisengageReason::H225_DisengageReason(unsigned tag, PASN_Object::TagClass t
 }
 
 
-BOOL H225_DisengageReason::CreateObject()
+PBoolean H225_DisengageReason::CreateObject()
 {
   choice = (tag <= e_undefinedReason) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -6613,7 +6613,7 @@ const static PASN_Names Names_H225_DisengageRejectReason[]={
 //
 
 H225_DisengageRejectReason::H225_DisengageRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_DisengageRejectReason,4
 #endif
@@ -6644,21 +6644,21 @@ H225_DisengageRejectReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_DisengageRejectReason::CreateObject()
+PBoolean H225_DisengageRejectReason::CreateObject()
 {
   switch (tag) {
     case e_notRegistered :
     case e_requestToDropOther :
     case e_securityDenial :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6685,7 +6685,7 @@ const static PASN_Names Names_H225_InfoRequestResponseStatus[]={
 //
 
 H225_InfoRequestResponseStatus::H225_InfoRequestResponseStatus(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_InfoRequestResponseStatus,4
 #endif
@@ -6694,22 +6694,22 @@ H225_InfoRequestResponseStatus::H225_InfoRequestResponseStatus(unsigned tag, PAS
 }
 
 
-BOOL H225_InfoRequestResponseStatus::CreateObject()
+PBoolean H225_InfoRequestResponseStatus::CreateObject()
 {
   switch (tag) {
     case e_complete :
     case e_incomplete :
     case e_invalidCall :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_segment :
       choice = new PASN_Integer();
       choice->SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6736,7 +6736,7 @@ const static PASN_Names Names_H225_InfoRequestNakReason[]={
 //
 
 H225_InfoRequestNakReason::H225_InfoRequestNakReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_InfoRequestNakReason,4
 #endif
@@ -6767,21 +6767,21 @@ H225_InfoRequestNakReason::operator const H225_SecurityErrors2 &() const
 }
 
 
-BOOL H225_InfoRequestNakReason::CreateObject()
+PBoolean H225_InfoRequestNakReason::CreateObject()
 {
   switch (tag) {
     case e_notRegistered :
     case e_securityDenial :
     case e_undefinedReason :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_securityError :
       choice = new H225_SecurityErrors2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -6799,7 +6799,7 @@ PObject * H225_InfoRequestNakReason::Clone() const
 //
 
 H225_H323_UserInformation_user_data::H225_H323_UserInformation_user_data(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_protocol_discriminator.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
   m_user_information.SetConstraints(PASN_Object::FixedConstraint, 1, 131);
@@ -6845,15 +6845,15 @@ PINDEX H225_H323_UserInformation_user_data::GetDataLength() const
 }
 
 
-BOOL H225_H323_UserInformation_user_data::Decode(PASN_Stream & strm)
+PBoolean H225_H323_UserInformation_user_data::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_protocol_discriminator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_user_information.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6902,7 +6902,7 @@ const static PASN_Names Names_H225_H323_UU_PDU_h323_message_body[]={
 //
 
 H225_H323_UU_PDU_h323_message_body::H225_H323_UU_PDU_h323_message_body(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, TRUE
+  : PASN_Choice(tag, tagClass, 7, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_H323_UU_PDU_h323_message_body,13
 #endif
@@ -7175,52 +7175,52 @@ H225_H323_UU_PDU_h323_message_body::operator const H225_Notify_UUIE &() const
 }
 
 
-BOOL H225_H323_UU_PDU_h323_message_body::CreateObject()
+PBoolean H225_H323_UU_PDU_h323_message_body::CreateObject()
 {
   switch (tag) {
     case e_setup :
       choice = new H225_Setup_UUIE();
-      return TRUE;
+      return PTrue;
     case e_callProceeding :
       choice = new H225_CallProceeding_UUIE();
-      return TRUE;
+      return PTrue;
     case e_connect :
       choice = new H225_Connect_UUIE();
-      return TRUE;
+      return PTrue;
     case e_alerting :
       choice = new H225_Alerting_UUIE();
-      return TRUE;
+      return PTrue;
     case e_information :
       choice = new H225_Information_UUIE();
-      return TRUE;
+      return PTrue;
     case e_releaseComplete :
       choice = new H225_ReleaseComplete_UUIE();
-      return TRUE;
+      return PTrue;
     case e_facility :
       choice = new H225_Facility_UUIE();
-      return TRUE;
+      return PTrue;
     case e_progress :
       choice = new H225_Progress_UUIE();
-      return TRUE;
+      return PTrue;
     case e_empty :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_status :
       choice = new H225_Status_UUIE();
-      return TRUE;
+      return PTrue;
     case e_statusInquiry :
       choice = new H225_StatusInquiry_UUIE();
-      return TRUE;
+      return PTrue;
     case e_setupAcknowledge :
       choice = new H225_SetupAcknowledge_UUIE();
-      return TRUE;
+      return PTrue;
     case e_notify :
       choice = new H225_Notify_UUIE();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -7529,7 +7529,7 @@ const static PASN_Names Names_H225_Setup_UUIE_conferenceGoal[]={
 //
 
 H225_Setup_UUIE_conferenceGoal::H225_Setup_UUIE_conferenceGoal(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_Setup_UUIE_conferenceGoal,5
 #endif
@@ -7538,7 +7538,7 @@ H225_Setup_UUIE_conferenceGoal::H225_Setup_UUIE_conferenceGoal(unsigned tag, PAS
 }
 
 
-BOOL H225_Setup_UUIE_conferenceGoal::CreateObject()
+PBoolean H225_Setup_UUIE_conferenceGoal::CreateObject()
 {
   choice = (tag <= e_callIndependentSupplementaryService) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -7590,7 +7590,7 @@ PObject * H225_ArrayOf_H245Security::Clone() const
 //
 
 H225_Setup_UUIE_connectionParameters::H225_Setup_UUIE_connectionParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_numberOfScnConnections.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -7639,17 +7639,17 @@ PINDEX H225_Setup_UUIE_connectionParameters::GetDataLength() const
 }
 
 
-BOOL H225_Setup_UUIE_connectionParameters::Decode(PASN_Stream & strm)
+PBoolean H225_Setup_UUIE_connectionParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_connectionType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_numberOfScnConnections.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_connectionAggregation.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7838,7 +7838,7 @@ PObject * H225_ArrayOf_ConferenceList::Clone() const
 //
 
 H225_TransportAddress_ipAddress::H225_TransportAddress_ipAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_ip.SetConstraints(PASN_Object::FixedConstraint, 4);
   m_port.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -7884,15 +7884,15 @@ PINDEX H225_TransportAddress_ipAddress::GetDataLength() const
 }
 
 
-BOOL H225_TransportAddress_ipAddress::Decode(PASN_Stream & strm)
+PBoolean H225_TransportAddress_ipAddress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_ip.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_port.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7923,7 +7923,7 @@ PObject * H225_TransportAddress_ipAddress::Clone() const
 //
 
 H225_TransportAddress_ipxAddress::H225_TransportAddress_ipxAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_node.SetConstraints(PASN_Object::FixedConstraint, 6);
   m_netnum.SetConstraints(PASN_Object::FixedConstraint, 4);
@@ -7974,17 +7974,17 @@ PINDEX H225_TransportAddress_ipxAddress::GetDataLength() const
 }
 
 
-BOOL H225_TransportAddress_ipxAddress::Decode(PASN_Stream & strm)
+PBoolean H225_TransportAddress_ipxAddress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_node.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_netnum.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_port.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8016,7 +8016,7 @@ PObject * H225_TransportAddress_ipxAddress::Clone() const
 //
 
 H225_TransportAddress_ip6Address::H225_TransportAddress_ip6Address(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_ip.SetConstraints(PASN_Object::FixedConstraint, 16);
   m_port.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
@@ -8062,15 +8062,15 @@ PINDEX H225_TransportAddress_ip6Address::GetDataLength() const
 }
 
 
-BOOL H225_TransportAddress_ip6Address::Decode(PASN_Stream & strm)
+PBoolean H225_TransportAddress_ip6Address::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_ip.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_port.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8201,7 +8201,7 @@ const static PASN_Names Names_H225_TunnelledProtocol_id[]={
 //
 
 H225_TunnelledProtocol_id::H225_TunnelledProtocol_id(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_TunnelledProtocol_id,2
 #endif
@@ -8232,19 +8232,19 @@ H225_TunnelledProtocol_id::operator const H225_TunnelledProtocolAlternateIdentif
 }
 
 
-BOOL H225_TunnelledProtocol_id::CreateObject()
+PBoolean H225_TunnelledProtocol_id::CreateObject()
 {
   switch (tag) {
     case e_tunnelledProtocolObjectID :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
     case e_tunnelledProtocolAlternateID :
       choice = new H225_TunnelledProtocolAlternateIdentifier();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -8262,7 +8262,7 @@ PObject * H225_TunnelledProtocol_id::Clone() const
 //
 
 H225_AddressPattern_range::H225_AddressPattern_range(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -8306,15 +8306,15 @@ PINDEX H225_AddressPattern_range::GetDataLength() const
 }
 
 
-BOOL H225_AddressPattern_range::Decode(PASN_Stream & strm)
+PBoolean H225_AddressPattern_range::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_startOfRange.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_endOfRange.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8352,7 +8352,7 @@ const static PASN_Names Names_H225_ANSI_41_UIM_system_id[]={
 //
 
 H225_ANSI_41_UIM_system_id::H225_ANSI_41_UIM_system_id(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ANSI_41_UIM_system_id,2
 #endif
@@ -8361,21 +8361,21 @@ H225_ANSI_41_UIM_system_id::H225_ANSI_41_UIM_system_id(unsigned tag, PASN_Object
 }
 
 
-BOOL H225_ANSI_41_UIM_system_id::CreateObject()
+PBoolean H225_ANSI_41_UIM_system_id::CreateObject()
 {
   switch (tag) {
     case e_sid :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 4);
-      return TRUE;
+      return PTrue;
     case e_mid :
       choice = new PASN_IA5String();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, 4);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -8455,7 +8455,7 @@ PObject * H225_ArrayOf_AlternateGK::Clone() const
 //
 
 H225_CryptoH323Token_cryptoEPPwdHash::H225_CryptoH323Token_cryptoEPPwdHash(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -8503,17 +8503,17 @@ PINDEX H225_CryptoH323Token_cryptoEPPwdHash::GetDataLength() const
 }
 
 
-BOOL H225_CryptoH323Token_cryptoEPPwdHash::Decode(PASN_Stream & strm)
+PBoolean H225_CryptoH323Token_cryptoEPPwdHash::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_alias.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_timeStamp.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_token.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8545,7 +8545,7 @@ PObject * H225_CryptoH323Token_cryptoEPPwdHash::Clone() const
 //
 
 H225_CryptoH323Token_cryptoGKPwdHash::H225_CryptoH323Token_cryptoGKPwdHash(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -8593,17 +8593,17 @@ PINDEX H225_CryptoH323Token_cryptoGKPwdHash::GetDataLength() const
 }
 
 
-BOOL H225_CryptoH323Token_cryptoGKPwdHash::Decode(PASN_Stream & strm)
+PBoolean H225_CryptoH323Token_cryptoGKPwdHash::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_gatekeeperId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_timeStamp.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_token.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8635,7 +8635,7 @@ PObject * H225_CryptoH323Token_cryptoGKPwdHash::Clone() const
 //
 
 H225_CapacityReportingSpecification_when::H225_CapacityReportingSpecification_when(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -8683,15 +8683,15 @@ PINDEX H225_CapacityReportingSpecification_when::GetDataLength() const
 }
 
 
-BOOL H225_CapacityReportingSpecification_when::Decode(PASN_Stream & strm)
+PBoolean H225_CapacityReportingSpecification_when::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_callStart) && !m_callStart.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_callEnd) && !m_callEnd.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8829,7 +8829,7 @@ const static PASN_Names Names_H225_ServiceControlSession_reason[]={
 //
 
 H225_ServiceControlSession_reason::H225_ServiceControlSession_reason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_ServiceControlSession_reason,3
 #endif
@@ -8838,7 +8838,7 @@ H225_ServiceControlSession_reason::H225_ServiceControlSession_reason(unsigned ta
 }
 
 
-BOOL H225_ServiceControlSession_reason::CreateObject()
+PBoolean H225_ServiceControlSession_reason::CreateObject()
 {
   choice = (tag <= e_close) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -8859,7 +8859,7 @@ PObject * H225_ServiceControlSession_reason::Clone() const
 //
 
 H225_RasUsageSpecification_when::H225_RasUsageSpecification_when(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
 {
 }
 
@@ -8913,17 +8913,17 @@ PINDEX H225_RasUsageSpecification_when::GetDataLength() const
 }
 
 
-BOOL H225_RasUsageSpecification_when::Decode(PASN_Stream & strm)
+PBoolean H225_RasUsageSpecification_when::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_start) && !m_start.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_end) && !m_end.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_inIrr) && !m_inIrr.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -8958,7 +8958,7 @@ PObject * H225_RasUsageSpecification_when::Clone() const
 //
 
 H225_RasUsageSpecification_callStartingPoint::H225_RasUsageSpecification_callStartingPoint(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -9006,15 +9006,15 @@ PINDEX H225_RasUsageSpecification_callStartingPoint::GetDataLength() const
 }
 
 
-BOOL H225_RasUsageSpecification_callStartingPoint::Decode(PASN_Stream & strm)
+PBoolean H225_RasUsageSpecification_callStartingPoint::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_alerting) && !m_alerting.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_connect) && !m_connect.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -9054,7 +9054,7 @@ const static PASN_Names Names_H225_CallCreditServiceControl_billingMode[]={
 //
 
 H225_CallCreditServiceControl_billingMode::H225_CallCreditServiceControl_billingMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_CallCreditServiceControl_billingMode,2
 #endif
@@ -9063,7 +9063,7 @@ H225_CallCreditServiceControl_billingMode::H225_CallCreditServiceControl_billing
 }
 
 
-BOOL H225_CallCreditServiceControl_billingMode::CreateObject()
+PBoolean H225_CallCreditServiceControl_billingMode::CreateObject()
 {
   choice = (tag <= e_debit) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -9091,7 +9091,7 @@ const static PASN_Names Names_H225_CallCreditServiceControl_callStartingPoint[]=
 //
 
 H225_CallCreditServiceControl_callStartingPoint::H225_CallCreditServiceControl_callStartingPoint(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H225_CallCreditServiceControl_callStartingPoint,2
 #endif
@@ -9100,7 +9100,7 @@ H225_CallCreditServiceControl_callStartingPoint::H225_CallCreditServiceControl_c
 }
 
 
-BOOL H225_CallCreditServiceControl_callStartingPoint::CreateObject()
+PBoolean H225_CallCreditServiceControl_callStartingPoint::CreateObject()
 {
   choice = (tag <= e_connect) ? new PASN_Null() : NULL;
   return choice != NULL;

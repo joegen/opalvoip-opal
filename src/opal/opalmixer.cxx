@@ -16,8 +16,8 @@ OpalAudioMixerStream::StreamFrame::StreamFrame(const RTP_DataFrame & rtp)
 
 OpalAudioMixerStream::OpalAudioMixerStream()
 { 
-  active = FALSE; 
-  first  = TRUE;
+  active = PFalse; 
+  first  = PTrue;
   cacheTimeStamp = 80000000;
 }
 
@@ -74,7 +74,7 @@ void OpalAudioMixerStream::PopFrame(StreamFrame & retFrame, PINDEX ms)
   frameQueue.pop();
 }
 
-BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
+PBoolean OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
 {
   mutex.Wait();
 
@@ -82,10 +82,10 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   if (first) {
     if (frameQueue.size() == 0) {
       mutex.Signal();
-      return FALSE;
+      return PFalse;
     }
     cacheTimeStamp = frameQueue.front().timestamp;
-    first = FALSE;
+    first = PFalse;
   }
 
   // if there is data in the cache, return it
@@ -114,7 +114,7 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
 
     mutex.Signal();
 
-    return TRUE;
+    return PTrue;
   }
 
   // invariant: no data in the "cache" buffer
@@ -126,11 +126,11 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
     if (frameQueue.size() == 0) {
       cacheTimeStamp += MS_TO_SAMPLES(ms);
       mutex.Signal();
-      return FALSE;
+      return PFalse;
     }
 
     // the stream is now active
-    active = TRUE;
+    active = PTrue;
 
     // get from the first frame
     PopFrame(retFrame, ms);
@@ -140,7 +140,7 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
 
     mutex.Signal();
 
-    return TRUE;
+    return PTrue;
   }
 
   // invariant: stream is active and cacheTimeStamp is valid
@@ -148,9 +148,9 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   // if no data available, deactivate the stream and return silence
   if (frameQueue.size() == 0) {
     cacheTimeStamp += MS_TO_SAMPLES(ms);
-    active = FALSE;
+    active = PFalse;
     mutex.Signal();
-    return FALSE;
+    return PFalse;
   }
 
   // invariant: the queue contains one or more frames of data
@@ -162,7 +162,7 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
   if (cacheTimeStamp < frame.timestamp) {
     cacheTimeStamp += MS_TO_SAMPLES(ms);
     mutex.Signal();
-    return FALSE;
+    return PFalse;
   }
 
   // get cached data
@@ -174,7 +174,7 @@ BOOL OpalAudioMixerStream::ReadFrame(StreamFrame & retFrame, PINDEX ms)
 
   mutex.Signal();
 
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -204,7 +204,7 @@ void OpalAudioMixer::MixerFrame::CreateMixedData() const
   }
 }
 
-BOOL OpalAudioMixer::MixerFrame::GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const
+PBoolean OpalAudioMixer::MixerFrame::GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const
 {
   CreateMixedData();
 
@@ -221,17 +221,17 @@ BOOL OpalAudioMixer::MixerFrame::GetMixedFrame(OpalAudioMixerStream::StreamFrame
     *dst++ = (short)v;
   }
   frame.Unlock();
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalAudioMixer::MixerFrame::GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const
+PBoolean OpalAudioMixer::MixerFrame::GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const
 {
   frame.SetSize(frameLengthSamples * 2 * 2);
 
   PWaitAndSignal m(mutex);
 
   if (channelData.size() == 0 || channelData.size() > 2)
-    return FALSE;
+    return PFalse;
 
   short * dst = (short *)frame.GetPointerAndLock();
 
@@ -269,14 +269,14 @@ BOOL OpalAudioMixer::MixerFrame::GetStereoFrame(OpalAudioMixerStream::StreamFram
 
   frame.Unlock();
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalAudioMixer::MixerFrame::GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const
+PBoolean OpalAudioMixer::MixerFrame::GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const
 {
   MixerPCMMap_T::const_iterator r = channelData.find(key);
   if (r == channelData.end())
-    return FALSE;
+    return PFalse;
 
   CreateMixedData();
 
@@ -297,22 +297,22 @@ BOOL OpalAudioMixer::MixerFrame::GetChannelFrame(Key_T key, OpalAudioMixerStream
   r->second.Unlock();
   frame.Unlock();
 
-  return TRUE;
+  return PTrue;
 }
 
-OpalAudioMixer::OpalAudioMixer(BOOL _realTime, BOOL _pushThread)
+OpalAudioMixer::OpalAudioMixer(PBoolean _realTime, PBoolean _pushThread)
   : realTime(_realTime), pushThread(_pushThread)
 {
   frameLengthMs   = 10;
   channelNumber   = 0;
   thread          = NULL;
-  audioStarted    = FALSE;
-  firstRead       = TRUE;
+  audioStarted    = PFalse;
+  firstRead       = PTrue;
   outputTimestamp = 10000000;
 }
 
-BOOL OpalAudioMixer::OnWriteAudio(const MixerFrame &)
-{ return TRUE; }
+PBoolean OpalAudioMixer::OnWriteAudio(const MixerFrame &)
+{ return PTrue; }
 
 void OpalAudioMixer::RemoveStream(const Key_T & key)
 {
@@ -326,7 +326,7 @@ void OpalAudioMixer::RemoveStream(const Key_T & key)
 
 void OpalAudioMixer::RemoveAllStreams()
 {
-  threadRunning = FALSE;
+  threadRunning = PFalse;
   if (thread != NULL) {
     thread->WaitForTermination();
     delete thread;
@@ -342,7 +342,7 @@ void OpalAudioMixer::StartThread()
   if (pushThread) {
     PWaitAndSignal m(mutex);
     if (thread == NULL) {
-      threadRunning = TRUE;
+      threadRunning = PTrue;
       thread = new PThreadObj<OpalAudioMixer>(*this, &OpalAudioMixer::ThreadMain);
     }
   }
@@ -370,7 +370,7 @@ void OpalAudioMixer::ReadRoutine()
   // if this is the first read, set the first read time
   if (firstRead) {
     timeOfNextRead = PTime() + 5 * frameLengthMs;
-    firstRead = FALSE;
+    firstRead = PFalse;
     return;
   }
 
@@ -419,10 +419,10 @@ void OpalAudioMixer::WriteMixedFrame()
 //
 // write a frame of data to a named stream of the mixer
 //
-BOOL OpalAudioMixer::Write(const Key_T & key, const RTP_DataFrame & rtp)
+PBoolean OpalAudioMixer::Write(const Key_T & key, const RTP_DataFrame & rtp)
 {
   if (rtp.GetPayloadSize() == 0)
-    return TRUE;
+    return PTrue;
 
   // copy the data to PMembuffer
   OpalAudioMixerStream::StreamFrame frame(rtp);
@@ -446,10 +446,10 @@ BOOL OpalAudioMixer::Write(const Key_T & key, const RTP_DataFrame & rtp)
     stream->WriteFrame(frame);
 
     // and tag the stream as started
-    audioStarted = TRUE;
+    audioStarted = PTrue;
   }
 
   // trigger reading of mixed data
   ReadRoutine();
-  return TRUE;
+  return PTrue;
 }

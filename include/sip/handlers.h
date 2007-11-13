@@ -128,7 +128,7 @@ public:
 
   virtual const PString GetRemotePartyAddress();
 
-  virtual BOOL OnReceivedNOTIFY(SIP_PDU & response);
+  virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
 
   // An expire time of -1 corresponds to an invalid SIPHandler that 
   // should be deleted.
@@ -140,7 +140,7 @@ public:
   virtual PString GetCallID()
     { return callID; }
 
-  virtual BOOL CanBeDeleted();
+  virtual PBoolean CanBeDeleted();
 
   virtual void SetAuthUser(const PString & u)
     { authUser = u;}
@@ -167,7 +167,7 @@ public:
   virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
 
-  virtual BOOL SendRequest(SIPHandler::State s = Subscribing);
+  virtual PBoolean SendRequest(SIPHandler::State s = Subscribing);
 
   int GetAuthenticationAttempts() { return authenticationAttempts; };
   void SetAuthenticationAttempts(unsigned attempts) { authenticationAttempts = attempts; };
@@ -195,7 +195,7 @@ protected:
   PString remotePartyAddress;
 
 private:
-  static BOOL WriteSIPHandler(
+  static PBoolean WriteSIPHandler(
     OpalTransport & transport, 
     void * info
   );
@@ -244,7 +244,7 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual void OnReceivedOK(SIP_PDU & response);
   virtual void OnTransactionTimeout(SIPTransaction & transaction);
-  virtual BOOL OnReceivedNOTIFY(SIP_PDU & response);
+  virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_SUBSCRIBE; }
   virtual SIPSubscribe::SubscribeType GetSubscribeType() 
@@ -256,11 +256,11 @@ public:
 private:
   PDECLARE_NOTIFIER(PTimer, SIPSubscribeHandler, OnExpireTimeout);
 
-  BOOL OnReceivedMWINOTIFY(SIP_PDU & response);
-  BOOL OnReceivedPresenceNOTIFY(SIP_PDU & response);
+  PBoolean OnReceivedMWINOTIFY(SIP_PDU & response);
+  PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
   SIPSubscribe::SubscribeType type;
-  BOOL dialogCreated;
+  PBoolean dialogCreated;
   PString localPartyAddress;
   unsigned lastSentCSeq;
   unsigned lastReceivedCSeq;
@@ -293,7 +293,7 @@ private:
   PDECLARE_NOTIFIER(PTimer, SIPPublishHandler, OnPublishTimeout);
   PTimer publishTimer;
   PString sipETag;
-  BOOL stateChanged;
+  PBoolean stateChanged;
 };
 
 class SIPMessageHandler : public SIPHandler

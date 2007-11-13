@@ -188,7 +188,7 @@ class H323_T38Capability : public H323DataCapability
        The default behaviour sets the pdu and calls OnSendingPDU with a
        H245_DataProtocolCapability parameter.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_DataApplicationCapability & pdu
     ) const;
 
@@ -200,7 +200,7 @@ class H323_T38Capability : public H323DataCapability
        The default behaviour sets the pdu and calls OnSendingPDU with a
        H245_DataProtocolCapability parameter.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_DataMode & pdu  ///<  PDU to set information on
     ) const;
 
@@ -210,7 +210,7 @@ class H323_T38Capability : public H323DataCapability
 
        The default behaviour sets tcp or udp as required.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_DataProtocolCapability & proto,  ///<  PDU to set information on
       H245_T38FaxProfile & profile          ///<  PDU to set information on
     ) const;
@@ -222,7 +222,7 @@ class H323_T38Capability : public H323DataCapability
 
        The default behaviour gets the data rate field from the PDU.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     );
   //@}
@@ -304,7 +304,7 @@ class H323_T38Channel : public H323DataChannel
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
@@ -315,7 +315,7 @@ class H323_T38Channel : public H323DataChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
       unsigned & errorCode                    ///<  Error code on failure
     );
@@ -344,24 +344,24 @@ class H323_T38Channel : public H323DataChannel
        This is called on receipt of an OpenLogicalChannel request.
 
        The default behaviour creates a compatible listener using the
-       connections control channel as a basis and returns TRUE if successful.
+       connections control channel as a basis and returns PTrue if successful.
       */
-    virtual BOOL CreateListener();
+    virtual PBoolean CreateListener();
 
     /**Create the H323Transport class to be used.
        This is called on receipt of an OpenLogicalChannelAck response. It
-       should not return TRUE unless the transport member variable is set.
+       should not return PTrue unless the transport member variable is set.
 
        The default behaviour uses the connection signalling channel to create
-       the transport and returns TRUE if successful.
+       the transport and returns PTrue if successful.
       */
-    virtual BOOL CreateTransport();
+    virtual PBoolean CreateTransport();
   //@}
 
     OpalT38Protocol * GetHandler() const { return t38handler; }
 
   protected:
-    BOOL              usesTCP;
+    PBoolean              usesTCP;
     OpalT38Protocol * t38handler;
 };
 

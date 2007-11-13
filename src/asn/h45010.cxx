@@ -30,7 +30,7 @@ const static PASN_Names Names_H45010_H323CallOfferOperations[]={
 //
 
 H45010_H323CallOfferOperations::H45010_H323CallOfferOperations(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 115, FALSE
+  : PASN_Enumeration(tag, tagClass, 115, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H45010_H323CallOfferOperations,3
 #endif
@@ -91,7 +91,7 @@ PObject * H45010_ArrayOf_MixedExtension::Clone() const
 //
 
 H45010_CoReqOptArg::H45010_CoReqOptArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -134,13 +134,13 @@ PINDEX H45010_CoReqOptArg::GetDataLength() const
 }
 
 
-BOOL H45010_CoReqOptArg::Decode(PASN_Stream & strm)
+PBoolean H45010_CoReqOptArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -171,7 +171,7 @@ PObject * H45010_CoReqOptArg::Clone() const
 //
 
 H45010_RUAlertOptArg::H45010_RUAlertOptArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -214,13 +214,13 @@ PINDEX H45010_RUAlertOptArg::GetDataLength() const
 }
 
 
-BOOL H45010_RUAlertOptArg::Decode(PASN_Stream & strm)
+PBoolean H45010_RUAlertOptArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -251,7 +251,7 @@ PObject * H45010_RUAlertOptArg::Clone() const
 //
 
 H45010_CfbOvrOptArg::H45010_CfbOvrOptArg(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_extension.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -294,13 +294,13 @@ PINDEX H45010_CfbOvrOptArg::GetDataLength() const
 }
 
 
-BOOL H45010_CfbOvrOptArg::Decode(PASN_Stream & strm)
+PBoolean H45010_CfbOvrOptArg::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_extension) && !m_extension.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

@@ -120,10 +120,10 @@ class OpalVXMLSession : public PVXMLSession
     OpalVXMLSession(
       OpalConnection * _conn,
       PTextToSpeech * tts = NULL,
-      BOOL autoDelete = FALSE
+      PBoolean autoDelete = PFalse
     );
 
-    virtual BOOL Close();
+    virtual PBoolean Close();
     virtual void OnEndSession();
 
     virtual PWAVFile * CreateWAVFile(

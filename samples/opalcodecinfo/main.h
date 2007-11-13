@@ -74,21 +74,21 @@ class SimpleH323EndPoint : public H323EndPoint
 
     // overrides from H323EndPoint
     virtual H323Connection * CreateConnection(unsigned callReference);
-    virtual BOOL OnIncomingCall(H323Connection &, const H323SignalPDU &, H323SignalPDU &);
+    virtual PBoolean OnIncomingCall(H323Connection &, const H323SignalPDU &, H323SignalPDU &);
     virtual H323Connection::AnswerCallResponse OnAnswerCall(H323Connection &, const PString &, const H323SignalPDU &, H323SignalPDU &);
-    virtual BOOL OnConnectionForwarded(H323Connection &, const PString &, const H323SignalPDU &);
+    virtual PBoolean OnConnectionForwarded(H323Connection &, const PString &, const H323SignalPDU &);
     virtual void OnConnectionEstablished(H323Connection & connection, const PString & token);
     virtual void OnConnectionCleared(H323Connection & connection, const PString & clearedCallToken);
-    virtual BOOL OpenAudioChannel(H323Connection &, BOOL, unsigned, H323AudioCodec &);
+    virtual PBoolean OpenAudioChannel(H323Connection &, PBoolean, unsigned, H323AudioCodec &);
 
     // New functions
-    BOOL Initialise(PArgList &);
-    BOOL SetSoundDevice(PArgList &, const char *, PSoundChannel::Directions);
+    PBoolean Initialise(PArgList &);
+    PBoolean SetSoundDevice(PArgList &, const char *, PSoundChannel::Directions);
 
     PString currentCallToken;
 
   protected:
-    BOOL autoAnswer;
+    PBoolean autoAnswer;
     PString busyForwardParty;
 };
 
@@ -100,11 +100,11 @@ class SimpleH323Connection : public H323Connection
   public:
     SimpleH323Connection(SimpleH323EndPoint &, unsigned);
 
-    virtual BOOL OnStartLogicalChannel(H323Channel &);
+    virtual PBoolean OnStartLogicalChannel(H323Channel &);
     virtual void OnUserInputString(const PString &);
 
   protected:
-    BOOL noFastStart;
+    PBoolean noFastStart;
 };
 
 

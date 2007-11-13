@@ -387,7 +387,7 @@ class RTP_DataFrame : public PBYTEArray
 
   public:
     RTP_DataFrame(PINDEX payloadSize = 2048);
-    RTP_DataFrame(const BYTE * data, PINDEX len, BOOL dynamic = TRUE);
+    RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic = PTrue);
 
     enum {
       ProtocolVersion = 2,
@@ -437,11 +437,11 @@ class RTP_DataFrame : public PBYTEArray
 
     unsigned GetVersion() const { return (theArray[0]>>6)&3; }
 
-    BOOL GetExtension() const   { return (theArray[0]&0x10) != 0; }
-    void SetExtension(BOOL ext);
+    PBoolean GetExtension() const   { return (theArray[0]&0x10) != 0; }
+    void SetExtension(PBoolean ext);
 
-    BOOL GetMarker() const { return (theArray[1]&0x80) != 0; }
-    void SetMarker(BOOL m);
+    PBoolean GetMarker() const { return (theArray[1]&0x80) != 0; }
+    void SetMarker(PBoolean m);
 
     PayloadTypes GetPayloadType() const { return (PayloadTypes)(theArray[1]&0x7f); }
     void         SetPayloadType(PayloadTypes t);
@@ -464,11 +464,11 @@ class RTP_DataFrame : public PBYTEArray
     int GetExtensionType() const; // -1 is no extension
     void   SetExtensionType(int type);
     PINDEX GetExtensionSize() const;
-    BOOL   SetExtensionSize(PINDEX sz);
+    PBoolean   SetExtensionSize(PINDEX sz);
     BYTE * GetExtensionPtr() const;
 
     PINDEX GetPayloadSize() const { return payloadSize; }
-    BOOL   SetPayloadSize(PINDEX sz);
+    PBoolean   SetPayloadSize(PINDEX sz);
     BYTE * GetPayloadPtr()     const { return (BYTE *)(theArray+GetHeaderSize()); }
 
     virtual void PrintOn(ostream & strm) const;
@@ -515,14 +515,14 @@ class RTP_ControlFrame : public PBYTEArray
 
     BYTE * GetPayloadPtr() const;
 
-    BOOL ReadNextPacket();
-    BOOL StartNewPacket();
+    PBoolean ReadNextPacket();
+    PBoolean StartNewPacket();
     void EndPacket();
 
     PINDEX GetCompoundSize() const;
 
-    BOOL GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
-    void SetPadding(BOOL v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
+    PBoolean GetPadding() const { return theArray[compoundOffset & 0x20] != 0; }
+    void SetPadding(PBoolean v) { if (v) theArray[compoundOffset] |= 0x20; else theArray[compoundOffset] &= 0xdf; }
 
     void Reset(PINDEX size);
 
@@ -662,11 +662,11 @@ class RTP_Session : public PObject
       PHandleAggregator * aggregator, ///<  RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
       RTP_UserData * userData = NULL, ///<  Optional data for session.
-      BOOL autoDeleteUserData = TRUE  ///<  Delete optional data with session.
+      PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
     );
 
     /**Delete a session.
-       This deletes the userData field if autoDeleteUserData is TRUE.
+       This deletes the userData field if autoDeleteUserData is PTrue.
      */
     ~RTP_Session();
   //@}
@@ -701,15 +701,15 @@ class RTP_Session : public PObject
     unsigned GetJitterTimeUnits() const;
 
     /**Modifies the QOS specifications for this RTP session*/
-    virtual BOOL ModifyQOS(RTP_QOS * )
-    { return FALSE; }
+    virtual PBoolean ModifyQOS(RTP_QOS * )
+    { return PFalse; }
 
     /**Read a data frame from the RTP channel.
        This function will conditionally read data from the jitter buffer or
        directly if there is no jitter buffer enabled. An application should
        generally use this in preference to directly calling ReadData().
       */
-    virtual BOOL ReadBufferedData(
+    virtual PBoolean ReadBufferedData(
       DWORD timestamp,        ///<  Timestamp to read from buffer.
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
@@ -719,44 +719,44 @@ class RTP_Session : public PObject
        returned by this function. It will block until a data frame is
        available or an error occurs.
       */
-    virtual BOOL ReadData(
+    virtual PBoolean ReadData(
       RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-      BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+      PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
     ) = 0;
 
     /**Write a data frame from the RTP channel.
       */
-    virtual BOOL WriteData(
+    virtual PBoolean WriteData(
       RTP_DataFrame & frame   ///<  Frame to write to the RTP session
     ) = 0;
 
     /** Write data frame to the RTP channel outside the normal stream of media
       * Used for RFC2833 packets
       */
-    virtual BOOL WriteOOBData(
+    virtual PBoolean WriteOOBData(
       RTP_DataFrame & frame
     );
 
     /**Write a control frame from the RTP channel.
       */
-    virtual BOOL WriteControl(
+    virtual PBoolean WriteControl(
       RTP_ControlFrame & frame    ///<  Frame to write to the RTP session
     ) = 0;
 
     /**Write the RTCP reports.
       */
-    virtual BOOL SendReport();
+    virtual PBoolean SendReport();
 
     /**Close down the RTP session.
       */
     virtual void Close(
-      BOOL reading    ///<  Closing the read side of the session
+      PBoolean reading    ///<  Closing the read side of the session
     ) = 0;
 
    /**Reopens an existing session in the given direction.
       */
     virtual void Reopen(
-      BOOL isReading
+      PBoolean isReading
     ) = 0;
 
     /**Get the local host name as used in SDES packes.
@@ -856,7 +856,7 @@ class RTP_Session : public PObject
       */
     void SetUserData(
       RTP_UserData * data,            ///<  New user data to be used
-      BOOL autoDeleteUserData = TRUE  ///<  Delete optional data with session.
+      PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
     );
 
     /**Get the source output identifier.
@@ -869,32 +869,32 @@ class RTP_Session : public PObject
 
     /**Decrement reference count for RTP session.
       */
-    BOOL DecrementReference() { return --referenceCount == 0; }
+    PBoolean DecrementReference() { return --referenceCount == 0; }
 
     /**Indicate if will ignore all but first received SSRC value.
       */
-    BOOL WillIgnoreOtherSources() const { return ignoreOtherSources; }
+    PBoolean WillIgnoreOtherSources() const { return ignoreOtherSources; }
 
     /**Indicate if will ignore all but first received SSRC value.
       */
     void SetIgnoreOtherSources(
-      BOOL ignore   ///<  Flag for ignore other SSRC values
+      PBoolean ignore   ///<  Flag for ignore other SSRC values
     ) { ignoreOtherSources = ignore; }
 
     /**Indicate if will ignore out of order packets.
       */
-    BOOL WillIgnoreOutOfOrderPackets() const { return ignoreOutOfOrderPackets; }
+    PBoolean WillIgnoreOutOfOrderPackets() const { return ignoreOutOfOrderPackets; }
 
     /**Indicate if will ignore out of order packets.
       */
     void SetIgnoreOutOfOrderPackets(
-      BOOL ignore   ///<  Flag for ignore out of order packets
+      PBoolean ignore   ///<  Flag for ignore out of order packets
     ) { ignoreOutOfOrderPackets = ignore; }
 
     /**Indicate if will ignore rtp payload type changes in received packets.
      */
     void SetIgnorePayloadTypeChanges(
-      BOOL ignore   ///<  Flag to ignore payload type changes
+      PBoolean ignore   ///<  Flag to ignore payload type changes
     ) { ignorePayloadTypeChanges = ignore; }
 
     /**Get the time interval for sending RTCP reports in the session.
@@ -1029,7 +1029,7 @@ class RTP_Session : public PObject
   //@}
 
     virtual void SendBYE();
-    virtual void SetCloseOnBYE(BOOL v)  { closeOnBye = v; }
+    virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
 #if OPAL_VIDEO
     /** Tell the rtp session to send out an intra frame request control packet.
         This is called when the media stream receives an OpalVideoUpdatePicture
@@ -1039,24 +1039,24 @@ class RTP_Session : public PObject
 #endif    
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
-    BOOL InsertReportPacket(RTP_ControlFrame & report);
+    PBoolean InsertReportPacket(RTP_ControlFrame & report);
 
     unsigned           sessionID;
     PString            canonicalName;
     PString            toolName;
     unsigned           referenceCount;
     RTP_UserData     * userData;
-    BOOL               autoDeleteUserData;
+    PBoolean               autoDeleteUserData;
     RTP_JitterBuffer * jitter;
 
-    BOOL          ignoreOtherSources;
-    BOOL          ignoreOutOfOrderPackets;
+    PBoolean          ignoreOtherSources;
+    PBoolean          ignoreOutOfOrderPackets;
     DWORD         syncSourceOut;
     DWORD         syncSourceIn;
     DWORD         lastSentTimestamp;
-    BOOL	        allowSyncSourceInChange;
-    BOOL	        allowRemoteTransmitAddressChange;
-    BOOL	        allowSequenceChange;
+    PBoolean	        allowSyncSourceInChange;
+    PBoolean	        allowRemoteTransmitAddressChange;
+    PBoolean	        allowSequenceChange;
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
@@ -1070,8 +1070,8 @@ class RTP_Session : public PObject
     PMutex        sendDataMutex;
     DWORD         timeStampOut;               // current timestamp for this session
     DWORD         timeStampOffs;              // offset between incoming media timestamp and timeStampOut
-    BOOL          timeStampOffsetEstablished; // TRUE if timeStampOffs has been established by media
-    BOOL          timeStampIsPremedia;        // TRUE if timeStampOutTick has been initialised
+    PBoolean          timeStampOffsetEstablished; // PTrue if timeStampOffs has been established by media
+    PBoolean          timeStampIsPremedia;        // PTrue if timeStampOutTick has been initialised
 
     // Statistics
     DWORD packetsSent;
@@ -1106,15 +1106,15 @@ class RTP_Session : public PObject
     DWORD    lastTransitTime;
     
     RTP_DataFrame::PayloadTypes lastReceivedPayloadType;
-    BOOL ignorePayloadTypeChanges;
+    PBoolean ignorePayloadTypeChanges;
 
     PMutex reportMutex;
     PTimer reportTimer;
 
     PHandleAggregator * aggregator;
 
-    BOOL closeOnBye;
-    BOOL byeSent;
+    PBoolean closeOnBye;
+    PBoolean byeSent;
 };
 
 
@@ -1167,7 +1167,7 @@ class RTP_SessionManager : public PObject
      */
     void ReleaseSession(
       unsigned sessionID,    ///<  Session ID to release.
-      BOOL clearAll = FALSE  ///<  Clear all sessions with that ID
+      PBoolean clearAll = PFalse  ///<  Clear all sessions with that ID
     );
 
     /**Get a session for the specified ID.
@@ -1238,7 +1238,7 @@ class RTP_UDP : public RTP_Session
     RTP_UDP(
       PHandleAggregator * aggregator, ///< RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
-      BOOL remoteIsNAT                ///<  TRUE is remote is behind NAT
+      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP
@@ -1252,25 +1252,25 @@ class RTP_UDP : public RTP_Session
        returned by this function. It will block until a data frame is
        available or an error occurs.
       */
-    virtual BOOL ReadData(RTP_DataFrame & frame, BOOL loop);
+    virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
 
     /** Write a data frame to the RTP channel.
       */
-    virtual BOOL WriteData(RTP_DataFrame & frame);
+    virtual PBoolean WriteData(RTP_DataFrame & frame);
 
     /** Write data frame to the RTP channel outside the normal stream of media
       * Used for RFC2833 packets
       */
-    virtual BOOL WriteOOBData(RTP_DataFrame & frame);
+    virtual PBoolean WriteOOBData(RTP_DataFrame & frame);
 
     /**Write a control frame from the RTP channel.
       */
-    virtual BOOL WriteControl(RTP_ControlFrame & frame);
+    virtual PBoolean WriteControl(RTP_ControlFrame & frame);
 
     /**Close down the RTP session.
       */
     virtual void Close(
-      BOOL reading    ///<  Closing the read side of the session
+      PBoolean reading    ///<  Closing the read side of the session
     );
 
     /**Get the session description name.
@@ -1280,13 +1280,13 @@ class RTP_UDP : public RTP_Session
 
     /**Change the QoS settings
       */
-    virtual BOOL ModifyQOS(RTP_QOS * rtpqos);
+    virtual PBoolean ModifyQOS(RTP_QOS * rtpqos);
 
   /**@name New functions for class */
   //@{
     /**Open the UDP ports for the RTP session.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       PIPSocket::Address localAddress,  ///<  Local interface to bind to
       WORD portBase,                    ///<  Base of ports to search
       WORD portMax,                     ///<  end of ports to search (inclusive)
@@ -1298,7 +1298,7 @@ class RTP_UDP : public RTP_Session
 
    /**Reopens an existing session in the given direction.
       */
-    virtual void Reopen(BOOL isReading);
+    virtual void Reopen(PBoolean isReading);
   //@}
 
   /**@name Member variable access */
@@ -1343,10 +1343,10 @@ class RTP_UDP : public RTP_Session
 
     /**Set the remote address and port information for session.
       */
-    virtual BOOL SetRemoteSocketInfo(
+    virtual PBoolean SetRemoteSocketInfo(
       PIPSocket::Address address,   ///<  Addre ss of remote
       WORD port,                    ///<  Port on remote
-      BOOL isDataPort               ///<  Flag for data or control channel
+      PBoolean isDataPort               ///<  Flag for data or control channel
     );
 
     /**Apply QOS - requires address to connect the socket on Windows platforms
@@ -1369,7 +1369,7 @@ class RTP_UDP : public RTP_Session
     virtual SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
       PBYTEArray & frame,
-      BOOL fromDataChannel
+      PBoolean fromDataChannel
     );
 
     PIPSocket::Address localAddress;
@@ -1382,15 +1382,15 @@ class RTP_UDP : public RTP_Session
 
     PIPSocket::Address remoteTransmitAddress;
 
-    BOOL shutdownRead;
-    BOOL shutdownWrite;
+    PBoolean shutdownRead;
+    PBoolean shutdownWrite;
 
     PUDPSocket * dataSocket;
     PUDPSocket * controlSocket;
 
-    BOOL appliedQOS;
-    BOOL remoteIsNAT;
-    BOOL first;
+    PBoolean appliedQOS;
+    PBoolean remoteIsNAT;
+    PBoolean first;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1407,7 +1407,7 @@ class SecureRTP_UDP : public RTP_UDP
     SecureRTP_UDP(
       PHandleAggregator * aggregator, ///< RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
-      BOOL remoteIsNAT                ///<  TRUE is remote is behind NAT
+      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP

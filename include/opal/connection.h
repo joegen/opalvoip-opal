@@ -79,7 +79,7 @@
  *
  * Revision 2.76  2007/03/01 05:51:03  rjongbloed
  * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned FALSE
+ *   functions on various classes. If an old override returned PFalse
  *   then it will now abort the call as it used to.
  *
  * Revision 2.75  2007/03/01 05:05:20  csoutheren
@@ -426,7 +426,7 @@ class OpalConnection : public PSafeObject
       */
     enum CallEndReason {
       EndedByLocalUser,         /// Local endpoint application cleared call
-      EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=FALSE
+      EndedByNoAccept,          /// Local endpoint did not accept call OnIncomingCall()=PFalse
       EndedByAnswerDenied,      /// Local endpoint declined to answer call
       EndedByRemoteUser,        /// Remote endpoint application cleared call
       EndedByRefusal,           /// Remote endpoint refused call
@@ -624,9 +624,9 @@ class OpalConnection : public PSafeObject
      */
     virtual void RetrieveConnection();
 
-    /**Return TRUE if the current connection is on hold.
+    /**Return PTrue if the current connection is on hold.
      */
-    virtual BOOL IsConnectionOnHold();
+    virtual PBoolean IsConnectionOnHold();
   //@}
 
   /**@name Call progress functions */
@@ -635,7 +635,7 @@ class OpalConnection : public PSafeObject
        This function is used for an application to control the answering of
        incoming calls.
 
-       If TRUE is returned then the connection continues. If FALSE then the
+       If PTrue is returned then the connection continues. If PFalse then the
        connection is aborted.
 
        Note this function should not block for any length of time. If the
@@ -656,9 +656,9 @@ class OpalConnection : public PSafeObject
        descendant classes to implement it. This will only affect code that implements new
        descendants of OpalConnection - code that uses existing descendants will be unaffected
      */
-    virtual BOOL OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
-    virtual BOOL OnIncomingConnection(unsigned int options);
-    virtual BOOL OnIncomingConnection();
+    virtual PBoolean OnIncomingConnection(unsigned int options, OpalConnection::StringOptions * stringOptions);
+    virtual PBoolean OnIncomingConnection(unsigned int options);
+    virtual PBoolean OnIncomingConnection();
 
     /**Start an outgoing connection.
        This function will initiate the connection to the remote entity, for
@@ -666,12 +666,12 @@ class OpalConnection : public PSafeObject
 
        The default behaviour is pure.
       */
-    virtual BOOL SetUpConnection() = 0;
+    virtual PBoolean SetUpConnection() = 0;
 
     /**Callback for outgoing connection, it is invoked after SetUpConnection
        This function allows the application to set up some parameters or to log some messages
      */
-    virtual BOOL OnSetUpConnection();
+    virtual PBoolean OnSetUpConnection();
 
     
     /**Call back for remote party being alerted.
@@ -679,7 +679,7 @@ class OpalConnection : public PSafeObject
        remote endpoint is "ringing". Generally some time after the
        SetUpConnection() function was called, this is function is called.
 
-       If FALSE is returned the connection is aborted.
+       If PFalse is returned the connection is aborted.
 
        If an application overrides this function, it should generally call the
        ancestor version for correct operation. An application would typically
@@ -701,9 +701,9 @@ class OpalConnection : public PSafeObject
 
        The default behaviour is pure.
       */
-    virtual BOOL SetAlerting(
+    virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      BOOL withMedia                ///<  Open media with alerting
+      PBoolean withMedia                ///<  Open media with alerting
     ) = 0;
 
     /**Call back for answering an incoming call.
@@ -756,7 +756,7 @@ class OpalConnection : public PSafeObject
 
        The default behaviour is pure.
       */
-    virtual BOOL SetConnected() = 0;
+    virtual PBoolean SetConnected() = 0;
 
     /**A call back function whenever a connection is established.
        This indicates that a connection to an endpoint was established. This
@@ -818,11 +818,11 @@ class OpalConnection : public PSafeObject
        function when an application wishes to redirct an unwanted incoming
        call.
 
-       The return value is TRUE if the call is to be forwarded, FALSE
+       The return value is PTrue if the call is to be forwarded, PFalse
        otherwise. Note that if the call is forwarded the current connection is
        cleared with teh ended call code of EndedByCallForwarded.
       */
-    virtual BOOL ForwardCall(
+    virtual PBoolean ForwardCall(
       const PString & forwardParty   ///<  Party to forward call to.
     );
   //@}
@@ -851,7 +851,7 @@ class OpalConnection : public PSafeObject
     
     /**Open source transmitter media stream for session.
       */
-    virtual BOOL OpenSourceMediaStream(
+    virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
       unsigned sessionID                   ///<  Session to start stream on
     );
@@ -876,7 +876,7 @@ class OpalConnection : public PSafeObject
     
     /**Pause media streams for session.
       */
-    virtual void PauseMediaStreams(BOOL paused);
+    virtual void PauseMediaStreams(PBoolean paused);
 
     /**Create a new media stream.
        This will create a media stream of an appropriate subclass as required
@@ -895,7 +895,7 @@ class OpalConnection : public PSafeObject
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource                        ///<  Is a source stream
+      PBoolean isSource                        ///<  Is a source stream
     );
 
     /**Call back when opening a media stream.
@@ -909,7 +909,7 @@ class OpalConnection : public PSafeObject
 
        The default behaviour calls the OpalEndPoint function of the same name.
       */
-    virtual BOOL OnOpenMediaStream(
+    virtual PBoolean OnOpenMediaStream(
       OpalMediaStream & stream    ///<  New media stream being opened
     );
 
@@ -926,7 +926,7 @@ class OpalConnection : public PSafeObject
        patch between two streams.
       */
     virtual void OnPatchMediaStream(
-      BOOL isSource,
+      PBoolean isSource,
       OpalMediaPatch & patch    ///<  New patch
     );
 	
@@ -934,7 +934,7 @@ class OpalConnection : public PSafeObject
        This method may be called from subclasses, e.g. within
        OnPatchMediaStream()
       */
-    virtual void AttachRFC2833HandlerToPatch(BOOL isSource, OpalMediaPatch & patch);
+    virtual void AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch);
 
     /**Get a media stream.
        Locates a stream given a RTP session ID. Each session would usually
@@ -943,7 +943,7 @@ class OpalConnection : public PSafeObject
       */
     OpalMediaStream * GetMediaStream(
       unsigned sessionId,  ///<  Session ID to search for.
-      BOOL source          ///<  Indicates the direction of stream.
+      PBoolean source          ///<  Indicates the direction of stream.
     ) const;
 
     /**
@@ -951,19 +951,19 @@ class OpalConnection : public PSafeObject
       This will automatically delete the stream if the stream was found in the
       stream list.
 
-      Returns TRUE if the media stream was removed the list and deleted, else
-      returns FALSE if the media stream was unchanged
+      Returns PTrue if the media stream was removed the list and deleted, else
+      returns PFalse if the media stream was unchanged
       */
-    BOOL RemoveMediaStream(
+    PBoolean RemoveMediaStream(
       OpalMediaStream * strm     // media stream to remove
     );
 
     /**See if the media can bypass the local host.
 
-       The default behaviour returns FALSE indicating that media bypass is not
+       The default behaviour returns PFalse indicating that media bypass is not
        possible.
      */
-    virtual BOOL IsMediaBypassPossible(
+    virtual PBoolean IsMediaBypassPossible(
       unsigned sessionID                  ///<  Session ID for media channel
     ) const;
 
@@ -993,7 +993,7 @@ class OpalConnection : public PSafeObject
        It is up to the descendant class to assure that the mediaTransportAddresses
        dictionary is set correctly before OnIncomingCall() is executed.
      */
-    virtual BOOL GetMediaInformation(
+    virtual PBoolean GetMediaInformation(
       unsigned sessionID,     ///<  Session ID for media channel
       MediaInformation & info ///<  Information on media channel
     ) const;
@@ -1010,27 +1010,27 @@ class OpalConnection : public PSafeObject
 
     /**Create an PVideoInputDevice for a source media stream.
       */
-    virtual BOOL CreateVideoInputDevice(
+    virtual PBoolean CreateVideoInputDevice(
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
       PVideoInputDevice * & device,         ///<  Created device
-      BOOL & autoDelete                     ///<  Flag for auto delete device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 
     /**Create an PVideoOutputDevice for a sink media stream or the preview
        display for a source media stream.
       */
-    virtual BOOL CreateVideoOutputDevice(
+    virtual PBoolean CreateVideoOutputDevice(
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      BOOL preview,                         ///<  Flag indicating is a preview output
+      PBoolean preview,                         ///<  Flag indicating is a preview output
       PVideoOutputDevice * & device,        ///<  Created device
-      BOOL & autoDelete                     ///<  Flag for auto delete device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 #endif 
 
     /**Set the volume (gain) for the audio media channel to the specified percentage.
       */
-    virtual BOOL SetAudioVolume(
-      BOOL source,                  ///< true for source (microphone), false for sink (speaker)
+    virtual PBoolean SetAudioVolume(
+      PBoolean source,                  ///< true for source (microphone), false for sink (speaker)
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
 
@@ -1038,7 +1038,7 @@ class OpalConnection : public PSafeObject
        A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
       */
     virtual unsigned GetAudioSignalLevel(
-      BOOL source                   ///< true for source (microphone), false for sink (speaker)
+      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
     );
   //@}
 
@@ -1080,7 +1080,7 @@ class OpalConnection : public PSafeObject
      */
     virtual void ReleaseSession(
       unsigned sessionID,    ///<  RTP session number
-      BOOL clearAll = FALSE  ///<  Clear all sessions
+      PBoolean clearAll = PFalse  ///<  Clear all sessions
     );
 
     /**Create and open a new RTP session.
@@ -1101,12 +1101,12 @@ class OpalConnection : public PSafeObject
     unsigned GetBandwidthAvailable() const { return bandwidthAvailable; }
 
     /**Set the available bandwidth in 100's of bits/sec.
-       Note if the force parameter is TRUE this function will close down
+       Note if the force parameter is PTrue this function will close down
        active media streams to meet the new bandwidth requirement.
       */
-    virtual BOOL SetBandwidthAvailable(
+    virtual PBoolean SetBandwidthAvailable(
       unsigned newBandwidth,    ///<  New bandwidth limit
-      BOOL force = FALSE        ///<  Force bandwidth limit
+      PBoolean force = PFalse        ///<  Force bandwidth limit
     );
 
     /**Get the bandwidth currently used.
@@ -1119,11 +1119,11 @@ class OpalConnection : public PSafeObject
        This is an internal function used by the OpalMediaStream bandwidth
        management code.
 
-       If there is insufficient bandwidth available, FALSE is returned. If
-       sufficient bandwidth is available, then TRUE is returned and the amount
+       If there is insufficient bandwidth available, PFalse is returned. If
+       sufficient bandwidth is available, then PTrue is returned and the amount
        of available bandwidth is reduced by the specified amount.
       */
-    virtual BOOL SetBandwidthUsed(
+    virtual PBoolean SetBandwidthUsed(
       unsigned releasedBandwidth,   ///<  Bandwidth to release
       unsigned requiredBandwidth    ///<  Bandwidth required
     );
@@ -1165,7 +1165,7 @@ class OpalConnection : public PSafeObject
        The default behaviour is to call SendUserInputTone() for each character
        in the string.
       */
-    virtual BOOL SendUserInputString(
+    virtual PBoolean SendUserInputString(
       const PString & value                   ///<  String value of indication
     );
 
@@ -1185,7 +1185,7 @@ class OpalConnection : public PSafeObject
 
        The default behaviour sends the tone using RFC2833.
       */
-    virtual BOOL SendUserInputTone(
+    virtual PBoolean SendUserInputTone(
       char tone,        ///<  DTMF tone code
       unsigned duration = 0  ///<  Duration of tone in milliseconds
     );
@@ -1246,8 +1246,8 @@ class OpalConnection : public PSafeObject
 
        The default behaviour does nothing.
       */
-    virtual BOOL PromptUserInput(
-      BOOL play   ///<  Flag to start or stop playing the prompt
+    virtual PBoolean PromptUserInput(
+      PBoolean play   ///<  Flag to start or stop playing the prompt
     );
   //@}
 
@@ -1335,7 +1335,7 @@ class OpalConnection : public PSafeObject
 
     /**Get the call direction for this connection.
      */
-    BOOL IsOriginating() const { return originating; }
+    PBoolean IsOriginating() const { return originating; }
 
     /**Get the time at which the connection was begun
       */
@@ -1466,9 +1466,9 @@ class OpalConnection : public PSafeObject
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
     { return rtpPayloadMap; }
 
-    /** Return TRUE if the remote appears to be behind a NAT firewall
+    /** Return PTrue if the remote appears to be behind a NAT firewall
     */
-    BOOL RemoteIsNAT() const
+    PBoolean RemoteIsNAT() const
     { return remoteIsNAT; }
 
     virtual void SetSecurityMode(const PString & v)
@@ -1482,7 +1482,7 @@ class OpalConnection : public PSafeObject
 
     void SetStringOptions(StringOptions * options);
 
-    virtual BOOL OnOpenIncomingMediaChannels();
+    virtual PBoolean OnOpenIncomingMediaChannels();
 
     virtual void ApplyStringOptions();
 
@@ -1491,10 +1491,10 @@ class OpalConnection : public PSafeObject
     virtual void EnableRecording();
     virtual void DisableRecording();
 
-    virtual BOOL IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
+    virtual PBoolean IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
                                  const PIPSocket::Address & peerAddr,
                                  const PIPSocket::Address & sigAddr,
-                                                       BOOL incoming);
+                                                       PBoolean incoming);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
@@ -1514,7 +1514,7 @@ class OpalConnection : public PSafeObject
 
     PString              callToken;
     OpalGloballyUniqueID callIdentifier;
-    BOOL                 originating;
+    PBoolean                 originating;
     PTime                setupTime;
     PTime                alertingTime;
     PTime                connectedTime;
@@ -1530,12 +1530,12 @@ class OpalConnection : public PSafeObject
     PString              calledDestinationNumber;
     PString              calledDestinationName;
     PString              calledDestinationURL;
-    BOOL                 remoteIsNAT;
+    PBoolean                 remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PSyncPoint            userInputAvailable;
-    BOOL                  detectInBandDTMF;
+    PBoolean                  detectInBandDTMF;
     unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;
@@ -1578,12 +1578,12 @@ class OpalConnection : public PSafeObject
     friend ostream & operator<<(ostream & o, Phases p);
 #endif
 
-    BOOL useRTPAggregation;
+    PBoolean useRTPAggregation;
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
 
-    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource);
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
 };
 
 class RTP_UDP;
@@ -1595,9 +1595,9 @@ class OpalSecurityMode : public PObject
     virtual RTP_UDP * CreateRTPSession(
       PHandleAggregator * _aggregator,   ///< handle aggregator
       unsigned id,          ///<  Session ID for RTP channel
-      BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+      PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
     ) = 0;
-    virtual BOOL Open() = 0;
+    virtual PBoolean Open() = 0;
 };
 
 

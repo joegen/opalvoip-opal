@@ -362,7 +362,7 @@ Q931::Q931()
 {
   protocolDiscriminator = 8;  // Q931 always has 00001000
   messageType = NationalEscapeMsg;
-  fromDestination = FALSE;
+  fromDestination = PFalse;
   callReference = 0;
 }
 
@@ -388,7 +388,7 @@ Q931 & Q931::operator=(const Q931 & other)
 }
 
 
-void Q931::BuildFacility(int callRef, BOOL fromDest)
+void Q931::BuildFacility(int callRef, PBoolean fromDest)
 {
   messageType = FacilityMsg;
   callReference = callRef;
@@ -399,7 +399,7 @@ void Q931::BuildFacility(int callRef, BOOL fromDest)
 }
 
 
-void Q931::BuildInformation(int callRef, BOOL fromDest)
+void Q931::BuildInformation(int callRef, PBoolean fromDest)
 {
   messageType = InformationMsg;
   callReference = callRef;
@@ -409,7 +409,7 @@ void Q931::BuildInformation(int callRef, BOOL fromDest)
 
 
 void Q931::BuildProgress(int callRef,
-                         BOOL fromDest,
+                         PBoolean fromDest,
                          unsigned description,
                          unsigned codingStandard,
                          unsigned location)
@@ -422,7 +422,7 @@ void Q931::BuildProgress(int callRef,
 }
 
 
-void Q931::BuildNotify(int callRef, BOOL fromDest)
+void Q931::BuildNotify(int callRef, PBoolean fromDest)
 {
   messageType = NotifyMsg;
   callReference = callRef;
@@ -435,7 +435,7 @@ void Q931::BuildSetupAcknowledge(int callRef)
 {
   messageType = SetupAckMsg;
   callReference = callRef;
-  fromDestination = TRUE;
+  fromDestination = PTrue;
   informationElements.RemoveAll();
 }
 
@@ -444,7 +444,7 @@ void Q931::BuildCallProceeding(int callRef)
 {
   messageType = CallProceedingMsg;
   callReference = callRef;
-  fromDestination = TRUE;
+  fromDestination = PTrue;
   informationElements.RemoveAll();
 }
 
@@ -453,7 +453,7 @@ void Q931::BuildAlerting(int callRef)
 {
   messageType = AlertingMsg;
   callReference = callRef;
-  fromDestination = TRUE;
+  fromDestination = PTrue;
   informationElements.RemoveAll();
 }
 
@@ -465,7 +465,7 @@ void Q931::BuildSetup(int callRef)
     callReference = GenerateCallReference();
   else
     callReference = callRef;
-  fromDestination = FALSE;
+  fromDestination = PFalse;
   informationElements.RemoveAll();
   SetBearerCapabilities(TransferSpeech, 1);
 }
@@ -475,13 +475,13 @@ void Q931::BuildConnect(int callRef)
 {
   messageType = ConnectMsg;
   callReference = callRef;
-  fromDestination = TRUE;
+  fromDestination = PTrue;
   informationElements.RemoveAll();
   SetBearerCapabilities(TransferSpeech, 1);
 }
 
 
-void Q931::BuildStatus(int callRef, BOOL fromDest)
+void Q931::BuildStatus(int callRef, PBoolean fromDest)
 {
   messageType = StatusMsg;
   callReference = callRef;
@@ -493,7 +493,7 @@ void Q931::BuildStatus(int callRef, BOOL fromDest)
 }
 
 
-void Q931::BuildStatusEnquiry(int callRef, BOOL fromDest)
+void Q931::BuildStatusEnquiry(int callRef, PBoolean fromDest)
 {
   messageType = StatusEnquiryMsg;
   callReference = callRef;
@@ -502,7 +502,7 @@ void Q931::BuildStatusEnquiry(int callRef, BOOL fromDest)
 }
 
 
-void Q931::BuildReleaseComplete(int callRef, BOOL fromDest)
+void Q931::BuildReleaseComplete(int callRef, PBoolean fromDest)
 {
   messageType = ReleaseCompleteMsg;
   callReference = callRef;
@@ -511,18 +511,18 @@ void Q931::BuildReleaseComplete(int callRef, BOOL fromDest)
 }
 
 
-BOOL Q931::Decode(const PBYTEArray & data)
+PBoolean Q931::Decode(const PBYTEArray & data)
 {
   // Clear all existing data before reading new
   informationElements.RemoveAll();
 
   if (data.GetSize() < 5) // Packet too short
-    return FALSE;
+    return PFalse;
 
   protocolDiscriminator = data[0];
 
   if (data[1] != 2) // Call reference must be 2 bytes long
-    return FALSE;
+    return PFalse;
 
   callReference = ((data[2]&0x7f) << 8) | data[3];
   fromDestination = (data[2]&0x80) != 0;
@@ -551,14 +551,14 @@ BOOL Q931::Decode(const PBYTEArray & data)
 
 	// before decrementing the length, make sure it is not zero
 	if (len == 0)
-          return FALSE;
+          return PFalse;
 
         // adjust for protocol discriminator
         len--;
       }
 
       if (offset + len > data.GetSize())
-        return FALSE;
+        return PFalse;
 
       memcpy(item->GetPointer(len), (const BYTE *)data+offset, len);
       offset += len;
@@ -567,11 +567,11 @@ BOOL Q931::Decode(const PBYTEArray & data)
     informationElements.SetAt(discriminator, item);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL Q931::Encode(PBYTEArray & data) const
+PBoolean Q931::Encode(PBYTEArray & data) const
 {
   PINDEX totalBytes = 5;
   unsigned discriminator;
@@ -586,7 +586,7 @@ BOOL Q931::Encode(PBYTEArray & data) const
   }
 
   if (!data.SetMinSize(totalBytes))
-    return FALSE;
+    return PFalse;
 
   // Put in Q931 header
   PAssert(protocolDiscriminator < 256, PInvalidParameter);
@@ -762,7 +762,7 @@ unsigned Q931::GenerateCallReference()
 }
 
 
-BOOL Q931::HasIE(InformationElementCodes ie) const
+PBoolean Q931::HasIE(InformationElementCodes ie) const
 {
   return informationElements.Contains(POrdinalKey(ie));
 }
@@ -842,17 +842,17 @@ void Q931::SetBearerCapabilities(InformationTransferCapability capability,
 }
 
 
-BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
+PBoolean Q931::GetBearerCapabilities(InformationTransferCapability & capability,
                                  unsigned & transferRate,
                                  unsigned * codingStandard,
                                  unsigned * userInfoLayer1)
 {
   if (!HasIE(BearerCapabilityIE))
-    return FALSE;
+    return PFalse;
 
   PBYTEArray data = GetIE(BearerCapabilityIE);
   if (data.GetSize() < 2)
-    return FALSE;
+    return PFalse;
 
   capability = (InformationTransferCapability)data[0];
   if (codingStandard != NULL)
@@ -877,18 +877,18 @@ BOOL Q931::GetBearerCapabilities(InformationTransferCapability & capability,
       break;
     case 0x18 :
       if (data.GetSize() < 3)
-        return FALSE;
+        return PFalse;
       transferRate = data[2]&0x7f;
       nextByte = 3;
       break;
     default :
-      return FALSE;
+      return PFalse;
   }
 
   if (userInfoLayer1 != NULL)
     *userInfoLayer1 = data.GetSize() >= nextByte && ((data[nextByte]>>5)&3) == 1 ? (data[nextByte]&0x1f) : 0;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1006,16 +1006,16 @@ void Q931::SetProgressIndicator(unsigned description,
 }
 
 
-BOOL Q931::GetProgressIndicator(unsigned & description,
+PBoolean Q931::GetProgressIndicator(unsigned & description,
                                 unsigned * codingStandard,
                                 unsigned * location) const
 {
   if (!HasIE(ProgressIndicatorIE))
-    return FALSE;
+    return PFalse;
 
   PBYTEArray data = GetIE(ProgressIndicatorIE);
   if (data.GetSize() < 2)
-    return FALSE;
+    return PFalse;
 
   if (codingStandard != NULL)
     *codingStandard = (data[0]>>5)&0x03;
@@ -1023,7 +1023,7 @@ BOOL Q931::GetProgressIndicator(unsigned & description,
     *location = data[0]&0x0f;
   description = data[1]&0x7f;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1092,7 +1092,7 @@ static PBYTEArray SetNumberIE(const PString & number,
 }
 
 
-static BOOL GetNumberIE(const PBYTEArray & bytes,
+static PBoolean GetNumberIE(const PBYTEArray & bytes,
                         PString  & number,
                         unsigned * plan,
                         unsigned * type,
@@ -1106,7 +1106,7 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
   number = PString();
 
   if (bytes.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   if (plan != NULL)
     *plan = bytes[0]&15;
@@ -1126,7 +1126,7 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
   }
   else {
     if (bytes.GetSize() < 2)
-      return FALSE;
+      return PFalse;
 
     if (presentation != NULL)
       *presentation = (bytes[1]>>5)&3;
@@ -1142,7 +1142,7 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
     }
     else {
       if (bytes.GetSize() < 3)
-        return FALSE;
+        return PFalse;
 
       if (reason != NULL)
         *reason = bytes[2]&15;
@@ -1152,7 +1152,7 @@ static BOOL GetNumberIE(const PBYTEArray & bytes,
   }
 
   if (bytes.GetSize() < offset)
-    return FALSE;
+    return PFalse;
 
   PINDEX len = bytes.GetSize()-offset;
 
@@ -1174,7 +1174,7 @@ void Q931::SetCallingPartyNumber(const PString & number,
 }
 
 
-BOOL Q931::GetCallingPartyNumber(PString  & number,
+PBoolean Q931::GetCallingPartyNumber(PString  & number,
                                  unsigned * plan,
                                  unsigned * type,
                                  unsigned * presentation,
@@ -1195,7 +1195,7 @@ void Q931::SetCalledPartyNumber(const PString & number, unsigned plan, unsigned 
 }
 
 
-BOOL Q931::GetCalledPartyNumber(PString & number, unsigned * plan, unsigned * type) const
+PBoolean Q931::GetCalledPartyNumber(PString & number, unsigned * plan, unsigned * type) const
 {
   return GetNumberIE(GetIE(CalledPartyNumberIE),
                      number, plan, type, NULL, NULL, NULL, 0, 0, 0);
@@ -1214,7 +1214,7 @@ void Q931::SetRedirectingNumber(const PString & number,
 }
 
 
-BOOL Q931::GetRedirectingNumber(PString  & number,
+PBoolean Q931::GetRedirectingNumber(PString  & number,
                                 unsigned * plan,
                                 unsigned * type,
                                 unsigned * presentation,
@@ -1230,7 +1230,7 @@ BOOL Q931::GetRedirectingNumber(PString  & number,
 }
 
 
-BOOL Q931::GetConnectedNumber(PString  & number,
+PBoolean Q931::GetConnectedNumber(PString  & number,
                               unsigned * plan,
                               unsigned * type,
                               unsigned * presentation,
@@ -1305,16 +1305,16 @@ void Q931::SetChannelIdentification(unsigned interfaceType,
 }
 
 
-BOOL Q931::GetChannelIdentification(unsigned * interfaceType,
+PBoolean Q931::GetChannelIdentification(unsigned * interfaceType,
                                     unsigned * preferredOrExclusive,
                                     int      * channelNumber) const
 {
   if (!HasIE(ChannelIdentificationIE))
-    return FALSE;
+    return PFalse;
 
   PBYTEArray bytes = GetIE(ChannelIdentificationIE);
   if (bytes.GetSize() < 1)
-    return FALSE;
+    return PFalse;
 
   *interfaceType        = (bytes[0]>>5) & 0x01;
   *preferredOrExclusive = (bytes[0]>>3) & 0x01;
@@ -1343,17 +1343,17 @@ BOOL Q931::GetChannelIdentification(unsigned * interfaceType,
       }
       else { // B Channel
         if (bytes.GetSize() < 3)
-          return FALSE;
+          return PFalse;
 
         if (bytes[1] != 0x83)
-          return FALSE;
+          return PFalse;
 
         *channelNumber = bytes[2] & 0x7f;
       }
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 

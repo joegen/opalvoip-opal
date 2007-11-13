@@ -113,7 +113,7 @@
 
 OpalSRTP_UDP::OpalSRTP_UDP(PHandleAggregator * _aggregator,   ///<  RTP aggregator
                                       unsigned id,            ///<  Session ID for RTP channel
-                                          BOOL remoteIsNAT)   ///<  TRUE is remote is behind NAT
+                                          PBoolean remoteIsNAT)   ///<  PTrue is remote is behind NAT
   : SecureRTP_UDP(_aggregator, id, remoteIsNAT)
 {
 }
@@ -156,20 +156,20 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
   public:
     RTP_UDP * CreateRTPSession(PHandleAggregator * _aggregator,   ///< handle aggregator
                                             unsigned id,          ///<  Session ID for RTP channel
-                                            BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+                                            PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
     );
 
-    BOOL SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return TRUE; }
-    BOOL GetOutgoingKey(KeySalt & key) const  { key = outgoingKey; return TRUE; }
-    BOOL SetOutgoingSSRC(DWORD ssrc);
-    BOOL GetOutgoingSSRC(DWORD & ssrc) const;
+    PBoolean SetOutgoingKey(const KeySalt & key)  { outgoingKey = key; return PTrue; }
+    PBoolean GetOutgoingKey(KeySalt & key) const  { key = outgoingKey; return PTrue; }
+    PBoolean SetOutgoingSSRC(DWORD ssrc);
+    PBoolean GetOutgoingSSRC(DWORD & ssrc) const;
 
-    BOOL SetIncomingKey(const KeySalt & key)  { incomingKey = key; return TRUE; }
-    BOOL GetIncomingKey(KeySalt & key) const  { key = incomingKey; return TRUE; } ;
-    BOOL SetIncomingSSRC(DWORD ssrc);
-    BOOL GetIncomingSSRC(DWORD & ssrc) const;
+    PBoolean SetIncomingKey(const KeySalt & key)  { incomingKey = key; return PTrue; }
+    PBoolean GetIncomingKey(KeySalt & key) const  { key = incomingKey; return PTrue; } ;
+    PBoolean SetIncomingSSRC(DWORD ssrc);
+    PBoolean GetIncomingSSRC(DWORD & ssrc) const;
 
-    BOOL Open();
+    PBoolean Open();
 
     srtp_t inboundSession;
     srtp_t outboundSession;
@@ -182,11 +182,11 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
     srtp_policy_t outboundPolicy;
 
   private:
-    static BOOL inited;
+    static PBoolean inited;
     static PMutex initMutex;
 };
 
-BOOL LibSRTPSecurityMode_Base::inited = FALSE;
+PBoolean LibSRTPSecurityMode_Base::inited = PFalse;
 PMutex LibSRTPSecurityMode_Base::initMutex;
 
 void LibSRTPSecurityMode_Base::Init()
@@ -195,7 +195,7 @@ void LibSRTPSecurityMode_Base::Init()
     PWaitAndSignal m(initMutex);
     if (!inited) {
       srtp_init();
-      inited = TRUE;
+      inited = PTrue;
     }
   }
   inboundPolicy.ssrc.type  = ssrc_any_inbound;
@@ -210,58 +210,58 @@ void LibSRTPSecurityMode_Base::Init()
 RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(
                               PHandleAggregator * _aggregator,   ///< handle aggregator
                                          unsigned id, 
-                                             BOOL remoteIsNAT)
+                                             PBoolean remoteIsNAT)
 {
   LibSRTP_UDP * session = new LibSRTP_UDP(_aggregator, id, remoteIsNAT);
   session->SetSecurityMode(this);
   return session;
 }
 
-BOOL LibSRTPSecurityMode_Base::SetIncomingSSRC(DWORD ssrc)
+PBoolean LibSRTPSecurityMode_Base::SetIncomingSSRC(DWORD ssrc)
 {
   inboundPolicy.ssrc.type  = ssrc_specific;
   inboundPolicy.ssrc.value = ssrc;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL LibSRTPSecurityMode_Base::SetOutgoingSSRC(DWORD ssrc)
+PBoolean LibSRTPSecurityMode_Base::SetOutgoingSSRC(DWORD ssrc)
 {
   outboundPolicy.ssrc.type = ssrc_specific;
   outboundPolicy.ssrc.value = ssrc;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL LibSRTPSecurityMode_Base::GetOutgoingSSRC(DWORD & ssrc) const
+PBoolean LibSRTPSecurityMode_Base::GetOutgoingSSRC(DWORD & ssrc) const
 {
   if (outboundPolicy.ssrc.type != ssrc_specific)
-    return FALSE;
+    return PFalse;
   ssrc = outboundPolicy.ssrc.value;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL LibSRTPSecurityMode_Base::GetIncomingSSRC(DWORD & ssrc) const
+PBoolean LibSRTPSecurityMode_Base::GetIncomingSSRC(DWORD & ssrc) const
 {
   if (inboundPolicy.ssrc.type != ssrc_specific)
-    return FALSE;
+    return PFalse;
 
   ssrc = inboundPolicy.ssrc.value;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL LibSRTPSecurityMode_Base::Open()
+PBoolean LibSRTPSecurityMode_Base::Open()
 {
   outboundPolicy.key = outgoingKey.key.GetPointer();
   err_status_t err = srtp_create(&outboundSession, &outboundPolicy);
   if (err != ::err_status_ok)
-    return FALSE;
+    return PFalse;
 
   inboundPolicy.key = incomingKey.key.GetPointer();
   err = srtp_create(&inboundSession, &inboundPolicy);
   if (err != ::err_status_ok)
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -291,7 +291,7 @@ DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_12
 
 LibSRTP_UDP::LibSRTP_UDP(PHandleAggregator * _aggregator,   ///< handle aggregator
                                     unsigned _sessionId, 
-                                        BOOL _remoteIsNAT)
+                                        PBoolean _remoteIsNAT)
   : OpalSRTP_UDP(_aggregator, _sessionId, _remoteIsNAT)
 {
 }
@@ -300,7 +300,7 @@ LibSRTP_UDP::~LibSRTP_UDP()
 {
 }
 
-BOOL LibSRTP_UDP::Open(
+PBoolean LibSRTP_UDP::Open(
       PIPSocket::Address localAddress,  ///<  Local interface to bind to
       WORD portBase,                    ///<  Base of ports to search
       WORD portMax,                     ///<  end of ports to search (inclusive)
@@ -311,7 +311,7 @@ BOOL LibSRTP_UDP::Open(
 {
   LibSRTPSecurityMode_Base * srtp = (LibSRTPSecurityMode_Base *)securityParms;
   if (srtp == NULL)
-    return FALSE;
+    return PFalse;
 
   // get the inbound and outbound SSRC from the SRTP parms and into the RTP session
   srtp->GetOutgoingSSRC(syncSourceOut);

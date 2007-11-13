@@ -92,7 +92,7 @@
 
 PCREATE_PROCESS(JesterProcess);
 
-BOOL       keepRunning;
+PBoolean       keepRunning;
 
 ///////////////////////////////////////////////////////////////
 JesterJitterBuffer::JesterJitterBuffer():
@@ -106,7 +106,7 @@ JesterJitterBuffer::~JesterJitterBuffer()
 
 }
 
-void JesterJitterBuffer::Close(BOOL /*reading */ )
+void JesterJitterBuffer::Close(PBoolean /*reading */ )
 {
 CloseDown();
 }
@@ -136,7 +136,7 @@ void JesterProcess::Main()
 #endif
 	     "v-version."
 	     "w-wavfile:"
-          , FALSE);
+          , PFalse);
 
 
   if (args.HasOption('h') ) {
@@ -163,7 +163,7 @@ void JesterProcess::Main()
 
   if (args.HasOption('v')) {
       cout << GetName()  << endl
-	   << " Version " << GetVersion(TRUE) << endl
+	   << " Version " << GetVersion(PTrue) << endl
 	   << " by " << GetManufacturer() << endl
 	   << " on " << GetOSClass() << ' ' << GetOSName() << endl
 	   << " (" << GetOSVersion() << '-' << GetOSHardware() << ")\n\n";
@@ -242,7 +242,7 @@ void JesterProcess::Main()
   jitterBuffer.SetDelay(8 * minJitterSize, 8 * maxJitterSize);
   jitterBuffer.Resume();
 
-  keepRunning = TRUE;
+  keepRunning = PTrue;
   generateTimestamp = 0;
   consumeTimestamp = 0;
 
@@ -274,7 +274,7 @@ void JesterProcess::Main()
 void JesterProcess::GenerateUdpPackets(PThread &, INT )
 {
     PAdaptiveDelay delay;
-    BOOL lastFrameWasSilence = TRUE;
+    PBoolean lastFrameWasSilence = PTrue;
     PWAVFile soundFile(wavFile);
     generateIndex = 0;
     PINDEX talkSequenceCounter = 0;
@@ -284,12 +284,12 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 	//Silence period, 10 seconds cycle, with 3 second on time.
 	if (silenceSuppression && ((generateIndex % 1000) > 200)) {
 	    PTRACE(3, "Don't send this frame - silence period");
-	    if (lastFrameWasSilence == FALSE) {
+	    if (lastFrameWasSilence == PFalse) {
 		PTRACE(3, "Stop Audio here");
 		cout << "Stop audio at " << PTime() << endl;
 		talkSequenceCounter++;
 	    }
-	    lastFrameWasSilence = TRUE;
+	    lastFrameWasSilence = PTrue;
 	} else {
 	    RTP_DataFrame *frame = new RTP_DataFrame;
 	    if (lastFrameWasSilence) {
@@ -297,7 +297,7 @@ void JesterProcess::GenerateUdpPackets(PThread &, INT )
 		cout << "Start Audio at " << PTime() << endl;
 	    }
 	    frame->SetMarker(lastFrameWasSilence);
-	    lastFrameWasSilence = FALSE;
+	    lastFrameWasSilence = PFalse;
 	    frame->SetPayloadType(RTP_DataFrame::L16_Mono);
 	    frame->SetSyncSource(0x12345678);
 	    frame->SetSequenceNumber((WORD)(generateIndex + 100));
@@ -345,7 +345,7 @@ void JesterProcess::ConsumeUdpPackets(PThread &, INT)
 
   while(keepRunning) {
 
-      BOOL success = jitterBuffer.ReadData(consumeTimestamp, readFrame);
+      PBoolean success = jitterBuffer.ReadData(consumeTimestamp, readFrame);
       PTime lastWriteTime;
       if (success && (readFrame.GetPayloadSize() > 0)) {
 	  consumeTimestamp = readFrame.GetTimestamp();
@@ -429,7 +429,7 @@ void JesterProcess::ManageUserInput()
   }
 
 endAudioTest:
-  keepRunning = FALSE;
+  keepRunning = PFalse;
   cout  << "end audio test" << endl;
 }
 
