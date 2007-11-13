@@ -563,6 +563,10 @@ OpalManager::~OpalManager()
   // Clear any pending calls on this endpoint
   ClearAllCalls();
 
+  // Kill off the endpoints, could wait till compiler generated destructor but
+  // prefer to keep the PTRACE's in sequence.
+  endpoints.RemoveAll();
+
   // Shut down the cleaner thread
   garbageCollectExit.Signal();
   garbageCollector->WaitForTermination();
@@ -571,10 +575,6 @@ OpalManager::~OpalManager()
   GarbageCollection();
 
   delete garbageCollector;
-
-  // Kill off the endpoints, could wait till compiler generated destructor but
-  // prefer to keep the PTRACE's in sequence.
-  endpoints.RemoveAll();
 
   delete stun;
 
