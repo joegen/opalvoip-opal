@@ -496,6 +496,9 @@ class OpalMediaOption : public PObject
 
   protected:
     OpalMediaOption(
+      const PString & name
+    );
+    OpalMediaOption(
       const char * name,
       bool readOnly,
       MergeType merge

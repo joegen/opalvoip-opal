@@ -489,6 +489,14 @@ static PMutex & GetMediaFormatsListMutex()
 
 /////////////////////////////////////////////////////////////////////////////
 
+OpalMediaOption::OpalMediaOption(const PString & name)
+  : m_name(name)
+  , m_readOnly(false)
+  , m_merge(NoMerge)
+{
+}
+
+
 OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType merge)
   : m_name(name)
   , m_readOnly(readOnly)
@@ -1269,10 +1277,18 @@ bool OpalMediaFormat::AddOption(OpalMediaOption * option, BOOL overwrite)
 }
 
 
+class OpalMediaOptionSearchArg : public OpalMediaOption
+{
+public:
+  OpalMediaOptionSearchArg(const PString & name) : OpalMediaOption(name) { }
+  virtual Comparison CompareValue(const OpalMediaOption &) const { return EqualTo; }
+  virtual void Assign(const OpalMediaOption &) { }
+};
+
 OpalMediaOption * OpalMediaFormat::FindOption(const PString & name) const
 {
   PWaitAndSignal m(media_format_mutex);
-  OpalMediaOptionString search(name, false);
+  OpalMediaOptionSearchArg search(name);
   PINDEX index = options.GetValuesIndex(search);
   if (index == P_MAX_INDEX)
     return NULL;
