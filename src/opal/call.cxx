@@ -596,8 +596,10 @@ BOOL OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
   // media formats to match that connection so we get symmetric codecs
   if (connectionsActive.GetSize() > 0) {
     OpalMediaStream * strm = connection.GetMediaStream(sessionID, TRUE);
-    if (strm != NULL)
-      adjustableMediaFormats.Reorder((PString)strm->GetMediaFormat());
+    if (strm != NULL) {
+      PString format = strm->GetMediaFormat();
+      adjustableMediaFormats.Reorder(format);
+    }
   }
   
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
