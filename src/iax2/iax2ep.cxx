@@ -740,24 +740,18 @@ PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
 {
   PTRACE(3, "preferred codecs are " << list);
 
-  PStringArray codecNames;
-  for (PINDEX i = 0; i < list.GetSize(); i++) {
-    PString format = list[i];
-    codecNames += format;
-  }
-
   unsigned short val = 0;
   PINDEX index = 0;
   
-  while ((index < codecNames.GetSize()) && (val == 0)) {
-    val = IAX2FullFrameVoice::OpalNameToIax2Value(codecNames[index]);
+  while ((index < list.GetSize()) && (val == 0)) {
+    val = IAX2FullFrameVoice::OpalNameToIax2Value(list[index]);
     index++;
   }
   
   if (val == 0) {
     PTRACE(3, "Preferred codec is empty");
   } else {
-    PTRACE(3, "EndPoint\tPreferred codec is  " << codecNames[index - 1]);
+    PTRACE(3, "EndPoint\tPreferred codec is  " << list[index - 1]);
   }
   
   return val;
