@@ -332,8 +332,15 @@ class Q931 : public PObject
     friend ostream & operator<<(ostream & strm, InformationElementCodes ie);
 
     PBoolean HasIE(InformationElementCodes ie) const;
-    PBYTEArray GetIE(InformationElementCodes ie) const;
-    void SetIE(InformationElementCodes ie, const PBYTEArray & userData);
+    PBYTEArray GetIE(
+      InformationElementCodes ie,
+      PINDEX idx = 0 // Index of duplicate IE entry
+    ) const;
+    void SetIE(
+      InformationElementCodes ie,
+      const PBYTEArray & userData,
+      BOOL append = FALSE
+    );
     void RemoveIE(InformationElementCodes ie);
 
     enum InformationTransferCapability {
@@ -605,7 +612,8 @@ class Q931 : public PObject
     unsigned protocolDiscriminator;
     MsgTypes messageType;
 
-    PDICTIONARY(InternalInformationElements, POrdinalKey, PBYTEArray);
+    PARRAY(InternalInformationElement, PBYTEArray);
+    PDICTIONARY(InternalInformationElements, POrdinalKey, InternalInformationElement);
     InternalInformationElements informationElements;
 };
 

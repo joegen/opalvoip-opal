@@ -228,6 +228,8 @@ class PwxString : public wxString
     operator PString() const { return c_str(); }
     operator PIPSocket::Address() const { return PIPSocket::Address(PString(c_str())); }
     friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
+
+    bool operator==(const OpalMediaFormat & other) const { return IsSameAs((const char *)other); }
 };
 
 

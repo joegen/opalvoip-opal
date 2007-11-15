@@ -1075,7 +1075,7 @@ class H501_ElementIdentifier : public PASN_BMPString
 
     H501_ElementIdentifier & operator=(const char * v);
     H501_ElementIdentifier & operator=(const PString & v);
-    H501_ElementIdentifier & operator=(const PWORDArray & v);
+    H501_ElementIdentifier & operator=(const PWCharArray & v);
     H501_ElementIdentifier & operator=(const PASN_BMPString & v);
     PObject * Clone() const;
 };

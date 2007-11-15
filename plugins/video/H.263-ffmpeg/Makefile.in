@@ -66,11 +66,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CXX) $(LDSO) -o $@ $^
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/video/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/pwlib/codecs/video/
+	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
+	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/pwlib/codecs/video/$(PLUGIN)
+	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/video/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)

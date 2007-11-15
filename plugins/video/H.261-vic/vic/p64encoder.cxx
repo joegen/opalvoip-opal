@@ -165,6 +165,7 @@ VideoFrame::VideoFrame(u_char *cr, int newWidth, int newHeight)
 {
   crvec = cr;
   frameptr = NULL;
+  width = height = 0; // avoid uninitialized compare
   SetSize(newWidth,newHeight);
 }
 
@@ -172,6 +173,7 @@ VideoFrame::VideoFrame(int newWidth, int newHeight)
 {
   crvec = NULL;
   frameptr = NULL;
+  width = height = 0; // avoid uninitialized compare
   SetSize(newWidth,newHeight);
 }
 

@@ -87,7 +87,7 @@
 				OutputFile="..\..\lib\opaln.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib;..\..\..\pwlib\lib"
+				AdditionalLibraryDirectories="..\..\lib;..\..\..\ptlib\lib"
 				ModuleDefinitionFile="$(IntDir)\opaln.def"
 				DelayLoadDLLs=""
 				ProgramDatabaseFile="$(TargetDir)\$(TargetName).pdb"
@@ -155,12 +155,12 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\pwlib\include"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
@@ -187,7 +187,7 @@
 				OutputFile="$(OutDir)\opaln.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\pwlib\lib\wm5"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="$(IntDir)\$(TargetName).def"
 				DelayLoadDLLs=""
@@ -256,12 +256,12 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\pwlib\include"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;PTRACING=0;PASN_NOPRINTON;PASN_LEANANDMEAN"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
@@ -288,7 +288,7 @@
 				OutputFile="$(OutDir)\opaln.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\pwlib\lib\wm6"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="$(IntDir)\$(TargetName).def"
 				DelayLoadDLLs=""
@@ -382,7 +382,7 @@
 				OutputFile="..\..\lib\opald.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib;..\..\..\pwlib\lib"
+				AdditionalLibraryDirectories="..\..\lib;..\..\..\ptlib\lib"
 				ModuleDefinitionFile="$(IntDir)\opald.def"
 				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
@@ -450,10 +450,10 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\pwlib\include"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC;PTRACING=1"
 				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				ProgramDataBaseFileName="$(TargetDir)\$(TargetName).pdb"
 				BrowseInformation="1"
@@ -479,7 +479,7 @@
 				OutputFile="$(OutDir)\opald.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\pwlib\lib\wm5"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="$(IntDir)\$(TargetName).def"
 				DelayLoadDLLs=""
@@ -547,10 +547,10 @@
 				Name="VCCLCompilerTool"
 				ExecutionBucket="7"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\pwlib\include"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="_DEBUG;DEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC;PTRACING=1"
 				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				ProgramDataBaseFileName="$(OutDir)\$(TargetName).pdb"
 				WarningLevel="4"
@@ -575,7 +575,7 @@
 				OutputFile="$(OutDir)\opald.dll"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\pwlib\lib\wm6"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="$(IntDir)\$(TargetName).def"
 				DelayLoadDLLs=""
@@ -676,7 +676,7 @@
 				OutputFile="..\..\lib\opal.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib;..\..\..\pwlib\lib"
+				AdditionalLibraryDirectories="..\..\lib;..\..\..\ptlib\lib"
 				ModuleDefinitionFile="$(IntDir)\opal.def"
 				DelayLoadDLLs=""
 				GenerateDebugInformation="true"
@@ -745,12 +745,12 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\pwlib\include"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC;PTRACING=1"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
@@ -777,7 +777,7 @@
 				OutputFile="$(OutDir)\opal.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\pwlib\lib\wm5"
+				AdditionalLibraryDirectories="..\..\lib\wm5;..\..\..\ptlib\lib\wm5"
 				IgnoreDefaultLibraryNames="shell32.lib"
 				ModuleDefinitionFile="$(IntDir)\$(TargetName).def"
 				DelayLoadDLLs=""
@@ -846,12 +846,12 @@
 				ExecutionBucket="7"
 				Optimization="2"
 				InlineFunctionExpansion="2"
-				AdditionalIncludeDirectories="..\..\include;..\..\..\pwlib\include"
+				AdditionalIncludeDirectories="..\..\include;..\..\..\ptlib\include"
 				PreprocessorDefinitions="NDEBUG;_WIN32_WCE=$(CEVER);UNDER_CE;$(PLATFORMDEFINES);WINCE;$(ARCHFAM);$(_ARCHFAM_);UNICODE;_UNICODE;XML_STATIC"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
-				TreatWChar_tAsBuiltInType="false"
+				TreatWChar_tAsBuiltInType="true"
 				RuntimeTypeInfo="true"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="ptlib.h"
@@ -878,7 +878,7 @@
 				OutputFile="$(OutDir)\opal.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\pwlib\lib\wm6"
+				AdditionalLibraryDirectories="..\..\lib\wm6;..\..\..\ptlib\lib\wm6"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile="$(IntDir)\$(TargetName).def"
 				DelayLoadDLLs=""
@@ -920,7 +920,7 @@
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 	</References>
 	<Files>
@@ -1060,7 +1060,7 @@
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
 						CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;$(ConfigurationName)\ptlib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;$(SolutionDir)\..\pwlib\lib\$(ConfigurationName)\PTLib.def"
+						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;$(SolutionDir)\..\ptlib\lib\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -1190,7 +1190,7 @@
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
 						CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;$(ConfigurationName)\ptlibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;$(SolutionDir)\..\pwlib\lib\$(ConfigurationName)\PTLibd.def"
+						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;$(SolutionDir)\..\ptlib\lib\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -1320,7 +1320,7 @@
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
 						CommandLine="MergeSym -I &quot;$(_ACP_LIB)&quot; -x &quot;$(ConfigurationName)\ptlibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;$(SolutionDir)\..\pwlib\lib\$(ConfigurationName)\PTLibn.def"
+						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;$(SolutionDir)\..\ptlib\lib\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -1533,8 +1533,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\pwlib\lib\wm5\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\pwlib\lib\wm5\$(ConfigurationName)\PTLib.def"
+						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm5\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -1663,8 +1663,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\pwlib\lib\wm5\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\pwlib\lib\wm5\$(ConfigurationName)\PTLibd.def"
+						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm5\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -1793,8 +1793,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\pwlib\lib\wm5\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\pwlib\lib\wm5\$(ConfigurationName)\PTLibn.def"
+						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm5\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm5\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -2007,8 +2007,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\pwlib\lib\wm6\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\pwlib\lib\wm6\$(ConfigurationName)\PTLib.def"
+						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm6\$(ConfigurationName)\PTLib.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opals.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opals.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6\$(ConfigurationName)\PTLib.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -2137,8 +2137,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\pwlib\lib\wm6\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\pwlib\lib\wm6\$(ConfigurationName)\PTLibd.def"
+						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm6\$(ConfigurationName)\PTLibd.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsd.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsd.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6\$(ConfigurationName)\PTLibd.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>
@@ -2267,8 +2267,8 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Merging exported library symbols"
-						CommandLine="MergeSym -x &quot;..\..\..\pwlib\lib\wm6\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
-						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\pwlib\lib\wm6\$(ConfigurationName)\PTLibn.def"
+						CommandLine="MergeSym -x &quot;..\..\..\ptlib\lib\wm6\$(ConfigurationName)\PTLibn.def&quot; -x &quot;$(InputDir)\Private.def&quot; &quot;$(OutDir)\opalsn.lib&quot; &quot;$(InputPath)&quot; &quot;$(IntDir)\$(TargetName).def&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(OutDir)\opalsn.lib;$(InputDir)Private.def;..\..\..\ptlib\lib\wm6\$(ConfigurationName)\PTLibn.def"
 						Outputs="$(IntDir)\$(TargetName).def"
 					/>
 				</FileConfiguration>

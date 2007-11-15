@@ -242,6 +242,7 @@ class OpalTransportAddress : public PString
       FullTSAP,
       Streamed,
       Datagram,
+      RouteInterface,
       NumBindOptions
     };
 
@@ -268,6 +269,10 @@ class OpalTransportAddress : public PString
        With NoBinding then a compatible listener is created and no local
        binding is made. This is equivalent to translating the address to
        "tcp$*:0" so that only the overall protocol type is used.
+
+       With RouteInterface, the address is considered a remote address and the
+       created transport is bound only to the address associated with the
+       interface that would be used to get to that address.
 
        Also note that if the address has a trailing '+' character then the
        socket will be bound using the REUSEADDR option, where relevant.

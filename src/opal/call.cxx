@@ -597,7 +597,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
   if (connectionsActive.GetSize() > 0) {
     OpalMediaStream * strm = connection.GetMediaStream(sessionID, PTrue);
     if (strm != NULL)
-      adjustableMediaFormats.Reorder(strm->GetMediaFormat());
+      adjustableMediaFormats.Reorder(strm->GetMediaFormat().GetName());
   }
   
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {

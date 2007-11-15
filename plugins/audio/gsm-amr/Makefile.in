@@ -40,7 +40,7 @@ PLUGIN	= ./$(BASENAME)_pwplugin.$(PLUGINEXT)
 
 $(OBJDIR)/%.o : %.c
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
-	$(CC) -g -c $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
+	$(CC) -g -c -I../../../include $(STDCCFLAGS) $(CCFLAGS) -o $@ $<
 
 OBJECTS	= $(addprefix $(OBJDIR)/,$(patsubst %.c,%.o,$(notdir $(SRCS))))
 
@@ -50,11 +50,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO) -o $@ $^
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/
+	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
+	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/pwlib/codecs/audio/$(PLUGIN)
+	rm -f $(DESTDIR)$(LIBDIR)/ptlib/codecs/audio/$(PLUGIN)
 else
 install:
 uninstall:

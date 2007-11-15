@@ -536,6 +536,7 @@ void SimpleOpalProcess::Main()
              "-display:"
              "-displaydriver:"
              "-video-size:"
+             "-video-rate:"
 #endif
 #if P_EXPAT
              "V-no-ivr."
@@ -584,6 +585,7 @@ void SimpleOpalProcess::Main()
             "     --displaydriver dev  : Set the video display driver (if device name is ambiguous).\n"
             "     --video-size size    : Set the size of the video for all video formats, use\n"
             "                          : \"qcif\", \"cif\", WxH etc\n"
+            "     --video-rate rate    : Set the frame rate of video for all video formats\n"
             "\n"
 #endif
 
@@ -1204,22 +1206,28 @@ PBoolean MyManager::Initialise(PArgList & args)
           "Available codecs: " << allMediaFormats << setfill(' ') << endl;
 
 #if OPAL_VIDEO
-  if (args.HasOption("video-size")) {
-    PString sizeStr = args.GetOptionString("video-size");
-    unsigned width, height;
-    if (PVideoFrameInfo::ParseSize(sizeStr, width, height)) {
-      OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
-      for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
-        OpalMediaFormat mediaFormat = allMediaFormats[i];
-        if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
-          mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
-          mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
-          OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
+  OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
+  for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
+    OpalMediaFormat mediaFormat = allMediaFormats[i];
+    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+      if (args.HasOption("video-size")) {
+        PString sizeStr = args.GetOptionString("video-size");
+        unsigned width, height;
+        if (PVideoFrameInfo::ParseSize(sizeStr, width, height)) {
+            mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
+            mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
         }
+        else
+          cerr << "Unknown video size \"" << sizeStr << '"' << endl;
       }
+
+      if (args.HasOption("video-rate")) {
+        unsigned rate = args.GetOptionString("video-rate").AsUnsigned();
+        unsigned frameTime = 90000 / rate;
+        mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), frameTime);
+      }
+      OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
-    else
-      cerr << "Unknown video size \"" << sizeStr << '"' << endl;
   }
 #endif
 

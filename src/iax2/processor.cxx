@@ -261,11 +261,10 @@ void IAX2Processor::Activate()
 void IAX2Processor::Terminate()
 {
   endThread = PTrue;
-  
-  PTRACE(4, "Processor has been directed to end. So end now.");
-  if (IsTerminated()) {
-    PTRACE(4, "Processor has already ended");
-  }
+  if (IsSuspended())
+    Resume();
+
+  PTRACE(4, "Processor has been directed to end. " << (IsTerminated() ? "Has already ended" : "So end now."));
   
   Activate();
 }

@@ -628,82 +628,80 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "PUBLISH"
 };
 
-static struct {
-  int code;
-  const char * desc;
-} sipErrorDescriptions[] = {
-  { SIP_PDU::Information_Trying,                  "Trying" },
-  { SIP_PDU::Information_Ringing,                 "Ringing" },
-  { SIP_PDU::Information_CallForwarded,           "Call Forwarded" },
-  { SIP_PDU::Information_Queued,                  "Queued" },
-  { SIP_PDU::Information_Session_Progress,        "Progress" },
-
-  { SIP_PDU::Successful_OK,                       "OK" },
-  { SIP_PDU::Successful_Accepted,                 "Accepted" },
-
-  { SIP_PDU::Redirection_MultipleChoices,         "Multiple Choices" },
-  { SIP_PDU::Redirection_MovedPermanently,        "Moved Permanently" },
-  { SIP_PDU::Redirection_MovedTemporarily,        "Moved Temporarily" },
-  { SIP_PDU::Redirection_UseProxy,                "Use Proxy" },
-  { SIP_PDU::Redirection_AlternativeService,      "Alternative Service" },
-
-  { SIP_PDU::Failure_BadRequest,                  "BadRequest" },
-  { SIP_PDU::Failure_UnAuthorised,                "Unauthorised" },
-  { SIP_PDU::Failure_PaymentRequired,             "Payment Required" },
-  { SIP_PDU::Failure_Forbidden,                   "Forbidden" },
-  { SIP_PDU::Failure_NotFound,                    "Not Found" },
-  { SIP_PDU::Failure_MethodNotAllowed,            "Method Not Allowed" },
-  { SIP_PDU::Failure_NotAcceptable,               "Not Acceptable" },
-  { SIP_PDU::Failure_ProxyAuthenticationRequired, "Proxy Authentication Required" },
-  { SIP_PDU::Failure_RequestTimeout,              "Request Timeout" },
-  { SIP_PDU::Failure_Conflict,                    "Conflict" },
-  { SIP_PDU::Failure_Gone,                        "Gone" },
-  { SIP_PDU::Failure_LengthRequired,              "Length Required" },
-  { SIP_PDU::Failure_RequestEntityTooLarge,       "Request Entity Too Large" },
-  { SIP_PDU::Failure_RequestURITooLong,           "Request URI Too Long" },
-  { SIP_PDU::Failure_UnsupportedMediaType,        "Unsupported Media Type" },
-  { SIP_PDU::Failure_UnsupportedURIScheme,        "Unsupported URI Scheme" },
-  { SIP_PDU::Failure_BadExtension,                "Bad Extension" },
-  { SIP_PDU::Failure_ExtensionRequired,           "Extension Required" },
-  { SIP_PDU::Failure_IntervalTooBrief,            "Interval Too Brief" },
-  { SIP_PDU::Failure_TemporarilyUnavailable,      "Temporarily Unavailable" },
-  { SIP_PDU::Failure_TransactionDoesNotExist,     "Call Leg/Transaction Does Not Exist" },
-  { SIP_PDU::Failure_LoopDetected,                "Loop Detected" },
-  { SIP_PDU::Failure_TooManyHops,                 "Too Many Hops" },
-  { SIP_PDU::Failure_AddressIncomplete,           "Address Incomplete" },
-  { SIP_PDU::Failure_Ambiguous,                   "Ambiguous" },
-  { SIP_PDU::Failure_BusyHere,                    "Busy Here" },
-  { SIP_PDU::Failure_RequestTerminated,           "Request Terminated" },
-  { SIP_PDU::Failure_NotAcceptableHere,           "Not Acceptable Here" },
-  { SIP_PDU::Failure_BadEvent,                    "Bad Event" },
-  { SIP_PDU::Failure_RequestPending,              "Request Pending" },
-  { SIP_PDU::Failure_Undecipherable,              "Undecipherable" },
-
-  { SIP_PDU::Failure_InternalServerError,         "Internal Server Error" },
-  { SIP_PDU::Failure_NotImplemented,              "Not Implemented" },
-  { SIP_PDU::Failure_BadGateway,                  "Bad Gateway" },
-  { SIP_PDU::Failure_ServiceUnavailable,          "Service Unavailable" },
-  { SIP_PDU::Failure_ServerTimeout,               "Server Time-out" },
-  { SIP_PDU::Failure_SIPVersionNotSupported,      "SIP Version Not Supported" },
-  { SIP_PDU::Failure_MessageTooLarge,             "Message Too Large" },
-
-  { SIP_PDU::GlobalFailure_BusyEverywhere,        "Busy Everywhere" },
-  { SIP_PDU::GlobalFailure_Decline,               "Decline" },
-  { SIP_PDU::GlobalFailure_DoesNotExistAnywhere,  "Does Not Exist Anywhere" },
-  { SIP_PDU::GlobalFailure_NotAcceptable,         "Not Acceptable" },
-
-  { 0 }
-};
-
-
 const char * SIP_PDU::GetStatusCodeDescription (int code)
 {
-  unsigned i;
-  for (i = 0; sipErrorDescriptions[i].code != 0; i++) {
+  static struct {
+    int code;
+    const char * desc;
+  } sipErrorDescriptions[] = {
+    { SIP_PDU::Information_Trying,                  "Trying" },
+    { SIP_PDU::Information_Ringing,                 "Ringing" },
+    { SIP_PDU::Information_CallForwarded,           "Call Forwarded" },
+    { SIP_PDU::Information_Queued,                  "Queued" },
+    { SIP_PDU::Information_Session_Progress,        "Progress" },
+
+    { SIP_PDU::Successful_OK,                       "OK" },
+    { SIP_PDU::Successful_Accepted,                 "Accepted" },
+
+    { SIP_PDU::Redirection_MultipleChoices,         "Multiple Choices" },
+    { SIP_PDU::Redirection_MovedPermanently,        "Moved Permanently" },
+    { SIP_PDU::Redirection_MovedTemporarily,        "Moved Temporarily" },
+    { SIP_PDU::Redirection_UseProxy,                "Use Proxy" },
+    { SIP_PDU::Redirection_AlternativeService,      "Alternative Service" },
+
+    { SIP_PDU::Failure_BadRequest,                  "BadRequest" },
+    { SIP_PDU::Failure_UnAuthorised,                "Unauthorised" },
+    { SIP_PDU::Failure_PaymentRequired,             "Payment Required" },
+    { SIP_PDU::Failure_Forbidden,                   "Forbidden" },
+    { SIP_PDU::Failure_NotFound,                    "Not Found" },
+    { SIP_PDU::Failure_MethodNotAllowed,            "Method Not Allowed" },
+    { SIP_PDU::Failure_NotAcceptable,               "Not Acceptable" },
+    { SIP_PDU::Failure_ProxyAuthenticationRequired, "Proxy Authentication Required" },
+    { SIP_PDU::Failure_RequestTimeout,              "Request Timeout" },
+    { SIP_PDU::Failure_Conflict,                    "Conflict" },
+    { SIP_PDU::Failure_Gone,                        "Gone" },
+    { SIP_PDU::Failure_LengthRequired,              "Length Required" },
+    { SIP_PDU::Failure_RequestEntityTooLarge,       "Request Entity Too Large" },
+    { SIP_PDU::Failure_RequestURITooLong,           "Request URI Too Long" },
+    { SIP_PDU::Failure_UnsupportedMediaType,        "Unsupported Media Type" },
+    { SIP_PDU::Failure_UnsupportedURIScheme,        "Unsupported URI Scheme" },
+    { SIP_PDU::Failure_BadExtension,                "Bad Extension" },
+    { SIP_PDU::Failure_ExtensionRequired,           "Extension Required" },
+    { SIP_PDU::Failure_IntervalTooBrief,            "Interval Too Brief" },
+    { SIP_PDU::Failure_TemporarilyUnavailable,      "Temporarily Unavailable" },
+    { SIP_PDU::Failure_TransactionDoesNotExist,     "Call Leg/Transaction Does Not Exist" },
+    { SIP_PDU::Failure_LoopDetected,                "Loop Detected" },
+    { SIP_PDU::Failure_TooManyHops,                 "Too Many Hops" },
+    { SIP_PDU::Failure_AddressIncomplete,           "Address Incomplete" },
+    { SIP_PDU::Failure_Ambiguous,                   "Ambiguous" },
+    { SIP_PDU::Failure_BusyHere,                    "Busy Here" },
+    { SIP_PDU::Failure_RequestTerminated,           "Request Terminated" },
+    { SIP_PDU::Failure_NotAcceptableHere,           "Not Acceptable Here" },
+    { SIP_PDU::Failure_BadEvent,                    "Bad Event" },
+    { SIP_PDU::Failure_RequestPending,              "Request Pending" },
+    { SIP_PDU::Failure_Undecipherable,              "Undecipherable" },
+
+    { SIP_PDU::Failure_InternalServerError,         "Internal Server Error" },
+    { SIP_PDU::Failure_NotImplemented,              "Not Implemented" },
+    { SIP_PDU::Failure_BadGateway,                  "Bad Gateway" },
+    { SIP_PDU::Failure_ServiceUnavailable,          "Service Unavailable" },
+    { SIP_PDU::Failure_ServerTimeout,               "Server Time-out" },
+    { SIP_PDU::Failure_SIPVersionNotSupported,      "SIP Version Not Supported" },
+    { SIP_PDU::Failure_MessageTooLarge,             "Message Too Large" },
+
+    { SIP_PDU::GlobalFailure_BusyEverywhere,        "Busy Everywhere" },
+    { SIP_PDU::GlobalFailure_Decline,               "Decline" },
+    { SIP_PDU::GlobalFailure_DoesNotExistAnywhere,  "Does Not Exist Anywhere" },
+    { SIP_PDU::GlobalFailure_NotAcceptable,         "Not Acceptable" },
+
+    { 0 }
+  };
+
+  for (PINDEX i = 0; sipErrorDescriptions[i].code != 0; i++) {
     if (sipErrorDescriptions[i].code == code)
       return sipErrorDescriptions[i].desc;
   }
-  return 0;
+  return "";
 }
 
 
@@ -985,6 +983,25 @@ void SIPMIMEInfo::SetFrom(const PString & v)
   SetAt(compactForm ? "f" : "From",  v);
 }
 
+PString SIPMIMEInfo::GetPAssertedIdentity() const
+{
+  return (*this)["P-Asserted-Identity"];
+}
+
+void SIPMIMEInfo::SetPAssertedIdentity(const PString & v)
+{
+  SetAt("P-Asserted-Identity", v);
+}
+
+PString SIPMIMEInfo::GetPPreferredIdentity() const
+{
+  return (*this)["P-Preferred-Identity"];
+}
+
+void SIPMIMEInfo::SetPPreferredIdentity(const PString & v)
+{
+  SetAt("P-Preferred-Identity", v);
+}
 
 PString SIPMIMEInfo::GetCallID() const
 {
@@ -1804,14 +1821,8 @@ SIP_PDU::SIP_PDU(const SIP_PDU & request,
   // format response
   if (extra != NULL)
     info = extra;
-  else {
-    for (PINDEX i = 0; sipErrorDescriptions[i].code != 0; i++) {
-      if (sipErrorDescriptions[i].code == code) {
-        info = sipErrorDescriptions[i].desc;
-        break;
-      }
-    }
-  }
+  else
+    info = GetStatusCodeDescription(code);
 }
 
 
@@ -2852,7 +2863,7 @@ SIPReferNotify::SIPReferNotify(SIPConnection & connection, OpalTransport & trans
   mime.SetContentType("message/sipfrag;version=2.0");
 
 
-  str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << sipErrorDescriptions[code].desc;
+  str << "SIP/" << versionMajor << '.' << versionMinor << " " << code << " " << GetStatusCodeDescription(code);
   entityBody = str;
 }
 

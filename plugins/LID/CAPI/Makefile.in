@@ -63,11 +63,11 @@ $(PLUGIN): $(OBJECTS)
 	$(CC) $(LDSO)$(SONAME) -o $@ $^ $(EXTRALIBS)
 
 install:
-	mkdir -p $(DESTDIR)$(LIBDIR)/pwlib/lid/
-	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/pwlib/lid/
+	mkdir -p $(DESTDIR)$(LIBDIR)/ptlib/lid/
+	cp $(PLUGIN) $(DESTDIR)$(LIBDIR)/ptlib/lid/
 
 uninstall:
-	rm -f $(DESTDIR)$(LIBDIR)/pwlib/lid/$(PLUGIN)
+	rm -f $(DESTDIR)$(LIBDIR)/ptlib/lid/$(PLUGIN)
 
 clean:
 	rm -f $(OBJECTS) $(PLUGIN)
