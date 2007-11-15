@@ -1059,7 +1059,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionValue(
       const PString & name,   ///<  Option name
       const PString & value   ///<  New option value as string
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionValue(name, value); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionValue(name, value); }
 
     /**Get the option value of the specified name as a boolean. The default
        value is returned if the option is not present.
@@ -1078,7 +1078,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionBoolean(
       const PString & name,   ///<  Option name
       bool value              ///<  New value for option
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionBoolean(name, value); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionBoolean(name, value); }
 
     /**Get the option value of the specified name as an integer. The default
        value is returned if the option is not present.
@@ -1098,7 +1098,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionInteger(
       const PString & name,   ///<  Option name
       int value               ///<  New value for option
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionInteger(name, value); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionInteger(name, value); }
 
     /**Get the option value of the specified name as a real. The default
        value is returned if the option is not present.
@@ -1117,7 +1117,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionReal(
       const PString & name,   ///<  Option name
       double value            ///<  New value for option
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionReal(name, value); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionReal(name, value); }
 
     /**Get the option value of the specified name as an index into an
        enumeration list. The default value is returned if the option is not
@@ -1137,7 +1137,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionEnum(
       const PString & name,   ///<  Option name
       PINDEX value            ///<  New value for option
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionEnum(name, value); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionEnum(name, value); }
 
     /**Get the option value of the specified name as a string. The default
        value is returned if the option is not present.
@@ -1156,7 +1156,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionString(
       const PString & name,   ///<  Option name
       const PString & value   ///<  New value for option
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionString(name, value); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionString(name, value); }
 
     /**Get the option value of the specified name as an octet array.
        Returns FALSE if not present.
@@ -1175,12 +1175,12 @@ class OpalMediaFormat : public PContainer
     bool SetOptionOctets(
       const PString & name,       ///<  Option name
       const PBYTEArray & octets   ///<  Octets in option
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionOctets(name, octets); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, octets); }
     bool SetOptionOctets(
       const PString & name,       ///<  Option name
       const BYTE * data,          ///<  Octets in option
       PINDEX length               ///<  Number of octets
-    ) { return m_info != NULL && MakeUnique() && m_info->SetOptionOctets(name, data, length); }
+    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, data, length); }
 
     /**Get a copy of the list of media formats that have been registered.
       */
@@ -1202,7 +1202,7 @@ class OpalMediaFormat : public PContainer
     bool AddOption(
       OpalMediaOption * option,
       BOOL overwrite = FALSE
-    ) { return m_info != NULL && MakeUnique() && m_info->AddOption(option, overwrite); }
+    ) { MakeUnique(); return m_info != NULL && m_info->AddOption(option, overwrite); }
 
     /**
       * Determine if media format has the specified option.

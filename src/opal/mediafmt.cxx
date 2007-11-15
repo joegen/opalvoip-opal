@@ -968,6 +968,7 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
 {
   m_info = (OpalMediaFormatInternal *)c->m_info->Clone();
+  m_info->options.MakeUnique();
 }
 
 
