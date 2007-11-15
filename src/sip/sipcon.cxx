@@ -3229,8 +3229,7 @@ BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
           str << "Signal=" << tone << "\r\n" << "Duration=" << duration << "\r\n";
         }
         else {
-          mimeInfo.SetContentType("application/dtmf-relay");
-          mimeInfo.SetContentType("application/dtmf");
+          mimeInfo.SetContentType(ApplicationDTMFKey);
           str << tone;
         }
         infoTransaction->GetEntityBody() = str;
