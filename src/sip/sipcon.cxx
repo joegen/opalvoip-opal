@@ -2321,8 +2321,12 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
       return;
     }
 
-    if (originalMIME.GetTo() != requestTo || originalMIME.GetFrom() != requestFrom) {
-      // Different "dialog" determined by the tags in the to and from fields indicate forking
+    // Different "dialog" determined by the tags in the to and from fields indicate forking
+    PString fromTag = request.GetMIME().GetFieldParameter("tag", requestFrom);
+    PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetFrom());
+    PString toTag = request.GetMIME().GetFieldParameter("tag", requestTo);
+    PString origToTag = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetTo());
+    if (fromTag != origFromTag || toTag != origToTag) {
       PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
       SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
       response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
@@ -2600,8 +2604,12 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
     return;
   }
 
-  if (originalInvite->GetMIME().GetTo()   != response.GetMIME().GetTo() ||
-      originalInvite->GetMIME().GetFrom() != response.GetMIME().GetFrom()) {
+  // Forked request
+  PString fromTag = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetFrom());
+  PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetFrom());
+  PString toTag = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetTo());
+  PString origToTag = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetTo());
+  if (fromTag != origFromTag || toTag != origToTag) {
     PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
     return;
   }

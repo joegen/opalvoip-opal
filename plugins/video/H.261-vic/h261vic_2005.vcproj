@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h261vic_pwplugin.dll"
+				OutputFile="$(OutDir)/h261vic_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
@@ -160,7 +160,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="wsock32.lib"
-				OutputFile="$(OutDir)/h261vic_pwplugin.dll"
+				OutputFile="$(OutDir)/h261vic_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -192,7 +192,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying codec and debug information to plug in directory"
-				CommandLine="if not exist c:\pwlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\pwlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\pwlib_plugins&#x0D;&#x0A;"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -206,6 +206,22 @@
 			<File
 				RelativePath=".\h261vic.cxx"
 				>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS=1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						PreprocessorDefinitions="_CRT_SECURE_NO_WARNINGS=1"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\common\trace.cxx"
@@ -238,26 +254,74 @@
 				<File
 					RelativePath=".\vic\dct.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\encoder-h261.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\p64.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\p64encoder.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\transmitter.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 				<File
 					RelativePath=".\vic\vid_coder.cxx"
 					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							WarningLevel="3"
+						/>
+					</FileConfiguration>
 				</File>
 			</Filter>
 			<Filter

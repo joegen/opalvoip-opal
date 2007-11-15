@@ -452,8 +452,8 @@ H323_REGISTER_CAPABILITY(cls, capName) \
 
 #ifndef NO_H323_AUDIO_CODECS
 
-DEFINE_G711_CAPABILITY(H323_G711ALaw64Capability, H323_G711Capability::ALaw, OpalG711_ALAW_64K)
-DEFINE_G711_CAPABILITY(H323_G711uLaw64Capability, H323_G711Capability::muLaw, OpalG711_ULAW_64K)
+DEFINE_G711_CAPABILITY(H323_G711ALaw64Capability, H323_G711Capability::ALaw, OPAL_G711_ALAW_64K)
+DEFINE_G711_CAPABILITY(H323_G711uLaw64Capability, H323_G711Capability::muLaw, OPAL_G711_ULAW_64K)
 
 #endif
 
@@ -601,13 +601,13 @@ PBoolean H323Capability::IsUsable(const H323Connection &) const
 
 OpalMediaFormat H323Capability::GetMediaFormat() const
 {
-  return mediaFormat.IsEmpty() ? OpalMediaFormat(GetFormatName()) : mediaFormat;
+  return mediaFormat.IsValid() ? mediaFormat : OpalMediaFormat(GetFormatName());
 }
 
 
 OpalMediaFormat & H323Capability::GetWritableMediaFormat()
 {
-  if (mediaFormat.IsEmpty())
+  if (!mediaFormat.IsValid())
     mediaFormat = GetFormatName();
   return mediaFormat;
 }

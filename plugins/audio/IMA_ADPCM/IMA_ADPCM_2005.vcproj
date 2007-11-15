@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
-				OutputFile="$(OutDir)/IMA_ADPCM_pwplugin.dll"
+				OutputFile="$(OutDir)/IMA_ADPCM_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -161,7 +161,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/IMA_ADPCM_pwplugin.dll"
+				OutputFile="$(OutDir)/IMA_ADPCM_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)\$(TargetName).lib"

@@ -4072,6 +4072,15 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
   }
 
   if (!fromRemote) {
+    // close the source media stream so it will be re-established
+    OpalMediaStream* stream = NULL;
+    stream = conflictingChannel.GetMediaStream();
+    if (stream != NULL) {
+      OpalMediaPatch * patch = stream->GetPatch();
+      if (patch != NULL) 
+        patch->GetSource().Close();
+    }
+
     conflictingChannel.Close();
     H323Capability * capability = remoteCapabilities.FindCapability(channel->GetCapability());
     if (capability == NULL) {
@@ -4613,7 +4622,7 @@ static void AddSessionCodecName(PStringStream & name, H323Channel * channel)
     return;
 
   OpalMediaFormat mediaFormat = stream->GetMediaFormat();
-  if (mediaFormat.IsEmpty())
+  if (!mediaFormat.IsValid())
     return;
 
   if (name.IsEmpty())

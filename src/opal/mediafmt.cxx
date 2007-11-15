@@ -440,7 +440,7 @@ const OpalMediaFormat & GetOpalRFC2833()
     0,
     (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
     "telephone-event",
-    PTrue,   // Needs jitter
+    true,   // Needs jitter
     32*(1000/50), // bits/sec  (32 bits every 50ms)
     4,      // bytes/frame
     150*8,  // 150 millisecond
@@ -456,7 +456,7 @@ const OpalMediaFormat & GetOpalCiscoNSE()
     0,
     (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
     "NSE",
-    PTrue,   // Needs jitter
+    true,   // Needs jitter
     32*(1000/50), // bits/sec  (32 bits every 50ms)
     4,      // bytes/frame
     150*8,  // 150 millisecond
@@ -489,12 +489,20 @@ static PMutex & GetMediaFormatsListMutex()
 
 /////////////////////////////////////////////////////////////////////////////
 
+OpalMediaOption::OpalMediaOption(const PString & name)
+  : m_name(name)
+  , m_readOnly(false)
+  , m_merge(NoMerge)
+{
+}
+
+
 OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType merge)
   : m_name(name)
   , m_readOnly(readOnly)
   , m_merge(merge)
 {
-  m_name.Replace("=", "_", PTrue);
+  m_name.Replace("=", "_", true);
   memset(&m_H245Generic, 0, sizeof(m_H245Generic));
 }
 
@@ -855,14 +863,15 @@ const PString & OpalMediaFormat::MaxFrameSizeOption(){ static PString s = "Max F
 const PString & OpalMediaFormat::FrameTimeOption()   { static PString s = "Frame Time";     return s; }
 const PString & OpalMediaFormat::ClockRateOption()   { static PString s = "Clock Rate";     return s; }
 
-OpalMediaFormat::OpalMediaFormat()
+OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
+  : m_info(NULL)
 {
-  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
-  defaultSessionID = 0;
+  Construct(info);
 }
 
 
 OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol)
+  : m_info(NULL)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
@@ -870,26 +879,20 @@ OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockR
   PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name, protocol);
   if (idx != P_MAX_INDEX)
     *this = registeredFormats[idx];
-  else
-    *this = OpalMediaFormat();
 }
 
 
 OpalMediaFormat::OpalMediaFormat(const char * wildcard)
+  : m_info(NULL)
 {
   operator=(PString(wildcard));
 }
 
 
 OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
+  : m_info(NULL)
 {
   operator=(wildcard);
-}
-
-
-OpalMediaFormat::OpalMediaFormat(const OpalMediaFormat & mediaFormat)
-{
-  operator=(mediaFormat);
 }
 
 
@@ -903,82 +906,28 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned ft,
                                  unsigned cr,
                                  time_t ts)
-  : PCaselessString(fullName)
 {
-  codecBaseTime = ts;
+  Construct(new OpalMediaFormatInternal(fullName, dsid, pt, en, nj, bw, fs, ft,cr, ts));
+}
 
-  PINDEX i;
+
+void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
+{
+  if (info == NULL)
+    return;
+
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  if ((i = registeredFormats.GetValuesIndex(*this)) != P_MAX_INDEX) {
-    *this = registeredFormats[i]; // Already registered, use previous values
-    return;
-  }
-
-  rtpPayloadType = pt;
-  rtpEncodingName = en;
-  defaultSessionID = dsid;
-
-  if (nj)
-    AddOption(new OpalMediaOptionBoolean(NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
-
-  AddOption(new OpalMediaOptionUnsigned(MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
-
-  if (fs > 0)
-    AddOption(new OpalMediaOptionUnsigned(MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
-
-  if (ft > 0)
-    AddOption(new OpalMediaOptionUnsigned(FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
-
-  if (cr > 0)
-    AddOption(new OpalMediaOptionUnsigned(ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
-
-  // assume non-dynamic payload types are correct and do not need deconflicting
-  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType) {
+  PINDEX idx = registeredFormats.FindFormat(info->formatName);
+  if (idx != P_MAX_INDEX)
+    *this = registeredFormats[idx];
+  else {
+    m_info = info;
     registeredFormats.OpalMediaFormatBaseList::Append(this);
-    return;
   }
-
-  // find the next unused dynamic number, and find anything with the new 
-  // rtp payload type if it is explicitly required
-  OpalMediaFormat * match = NULL;
-  RTP_DataFrame::PayloadTypes nextUnused = RTP_DataFrame::DynamicBase;
-  do {
-    for (i = 0; i < registeredFormats.GetSize(); i++) {
-      if (registeredFormats[i].GetPayloadType() == nextUnused) {
-        nextUnused = (RTP_DataFrame::PayloadTypes)(nextUnused + 1);
-        break;
-      }
-      if ((rtpPayloadType >= RTP_DataFrame::DynamicBase) && 
-          (registeredFormats[i].GetPayloadType() == rtpPayloadType))
-        match = &registeredFormats[i];
-    }
-  } while (i < registeredFormats.GetSize());
-
-  // if new format requires a specific payload type in the dynamic range, 
-  // then move the old format to the next unused format
-  if (match != NULL)
-    match->rtpPayloadType = nextUnused;
-
-  registeredFormats.OpalMediaFormatBaseList::Append(this);
 }
 
-OpalMediaFormat & OpalMediaFormat::operator=(const OpalMediaFormat &format)
-{
-  if (this == &format)
-    return *this;
-
-  PWaitAndSignal m1(media_format_mutex);
-  PWaitAndSignal m2(format.media_format_mutex);
-  *static_cast<PCaselessString *>(this) = *static_cast<const PCaselessString *>(&format);
-  options = format.options;
-  rtpPayloadType = format.rtpPayloadType;
-  rtpEncodingName = format.rtpEncodingName;
-  defaultSessionID = format.defaultSessionID;
-  codecBaseTime = format.codecBaseTime;
-  return *this;  
-}
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 {
@@ -1000,18 +949,38 @@ OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
   return operator=(PString(wildcard));
 }
 
+
 OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   PINDEX idx = registeredFormats.FindFormat(wildcard);
-  if (idx != P_MAX_INDEX)
-    *this = registeredFormats[idx];
-  else
+  if (idx == P_MAX_INDEX)
     *this = OpalMediaFormat();
+  else
+    *this = registeredFormats[idx];
 
   return *this;
+}
+
+
+void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
+{
+  m_info = (OpalMediaFormatInternal *)c->m_info->Clone();
+  m_info->options.MakeUnique();
+}
+
+
+void OpalMediaFormat::CopyContents(const OpalMediaFormat & c)
+{
+  m_info = c.m_info;
+}
+
+
+void OpalMediaFormat::DestroyContents()
+{
+  delete m_info;
 }
 
 
@@ -1021,263 +990,30 @@ PObject * OpalMediaFormat::Clone() const
 }
 
 
-bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
+PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 {
-  PWaitAndSignal m1(media_format_mutex);
-  PWaitAndSignal m2(mediaFormat.media_format_mutex);
-  options.MakeUnique();
-  for (PINDEX i = 0; i < options.GetSize(); i++) {
-    OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
-    if (option != NULL && !options[i].Merge(*option))
-      return false;
-  }
-
-  return true;
+  PAssert(PIsDescendant(&obj, OpalMediaFormat), PInvalidCast);
+  const OpalMediaFormat & other = (const OpalMediaFormat &)obj;
+  if (m_info == NULL)
+    return other.m_info == NULL ? EqualTo : LessThan;
+  if (other.m_info == NULL)
+    return m_info == NULL ? EqualTo : GreaterThan;
+  return m_info->formatName.Compare(other.m_info->formatName);
 }
 
 
-bool OpalMediaFormat::GetOptionValue(const PString & name, PString & value) const
+void OpalMediaFormat::PrintOn(ostream & strm) const
 {
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  value = option->AsString();
-  return true;
+  if (m_info != NULL)
+    strm << m_info->formatName;
 }
 
 
-bool OpalMediaFormat::SetOptionValue(const PString & name, const PString & value)
+void OpalMediaFormat::ReadFrom(istream & strm)
 {
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  return option->FromString(value);
-}
-
-
-bool OpalMediaFormat::GetOptionBoolean(const PString & name, bool dflt) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionBoolean, option)->GetValue();
-}
-
-
-bool OpalMediaFormat::SetOptionBoolean(const PString & name, bool value)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionBoolean, option)->SetValue(value);
-  return true;
-}
-
-
-int OpalMediaFormat::GetOptionInteger(const PString & name, int dflt) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
-  if (optUnsigned != NULL)
-    return optUnsigned->GetValue();
-
-  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
-  if (optInteger != NULL)
-    return optInteger->GetValue();
-
-  PAssertAlways(PInvalidCast);
-  return dflt;
-}
-
-
-bool OpalMediaFormat::SetOptionInteger(const PString & name, int value)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
-  if (optUnsigned != NULL) {
-    optUnsigned->SetValue(value);
-    return true;
-  }
-
-  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
-  if (optInteger != NULL) {
-    optInteger->SetValue(value);
-    return true;
-  }
-
-  PAssertAlways(PInvalidCast);
-  return false;
-}
-
-
-double OpalMediaFormat::GetOptionReal(const PString & name, double dflt) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionReal, option)->GetValue();
-}
-
-
-bool OpalMediaFormat::SetOptionReal(const PString & name, double value)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionReal, option)->SetValue(value);
-  return true;
-}
-
-
-PINDEX OpalMediaFormat::GetOptionEnum(const PString & name, PINDEX dflt) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionEnum, option)->GetValue();
-}
-
-
-bool OpalMediaFormat::SetOptionEnum(const PString & name, PINDEX value)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionEnum, option)->SetValue(value);
-  return true;
-}
-
-
-PString OpalMediaFormat::GetOptionString(const PString & name, const PString & dflt) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return dflt;
-
-  return PDownCast(OpalMediaOptionString, option)->GetValue();
-}
-
-
-bool OpalMediaFormat::SetOptionString(const PString & name, const PString & value)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionString, option)->SetValue(value);
-  return true;
-}
-
-
-bool OpalMediaFormat::GetOptionOctets(const PString & name, PBYTEArray & octets) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  octets = PDownCast(OpalMediaOptionOctets, option)->GetValue();
-  return true;
-}
-
-
-bool OpalMediaFormat::SetOptionOctets(const PString & name, const PBYTEArray & octets)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionOctets, option)->SetValue(octets);
-  return true;
-}
-
-
-bool OpalMediaFormat::SetOptionOctets(const PString & name, const BYTE * data, PINDEX length)
-{
-  PWaitAndSignal m(media_format_mutex);
-  options.MakeUnique();
-
-  OpalMediaOption * option = FindOption(name);
-  if (option == NULL)
-    return false;
-
-  PDownCast(OpalMediaOptionOctets, option)->SetValue(data, length);
-  return true;
-}
-
-
-bool OpalMediaFormat::AddOption(OpalMediaOption * option, PBoolean overwrite)
-{
-  PWaitAndSignal m(media_format_mutex);
-  if (PAssertNULL(option) == NULL)
-    return false;
-
-  PINDEX index = options.GetValuesIndex(*option);
-  if (index != P_MAX_INDEX) {
-    if (!overwrite) {
-      delete option;
-      return false;
-    }
-
-    options.RemoveAt(index);
-  }
-
-  options.MakeUnique();
-  options.Append(option);
-  return true;
-}
-
-
-OpalMediaOption * OpalMediaFormat::FindOption(const PString & name) const
-{
-  PWaitAndSignal m(media_format_mutex);
-  OpalMediaOptionString search(name, false);
-  PINDEX index = options.GetValuesIndex(search);
-  if (index == P_MAX_INDEX)
-    return NULL;
-
-  return &options[index];
+  char fmt[100];
+  strm >> fmt;
+  operator=(fmt);
 }
 
 
@@ -1318,33 +1054,352 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
   return false;
 }
 
-bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
+                                                 unsigned dsid,
+                                                 RTP_DataFrame::PayloadTypes pt,
+                                                 const char * en,
+                                                 PBoolean     nj,
+                                                 unsigned bw,
+                                                 PINDEX   fs,
+                                                 unsigned ft,
+                                                 unsigned cr,
+                                                 time_t ts)
+  : formatName(fullName)
+{
+  codecVersionTime = ts;
+  rtpPayloadType = pt;
+  rtpEncodingName = en;
+  defaultSessionID = dsid;
+
+  if (nj)
+    AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
+
+  AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxBitRateOption(), true, OpalMediaOption::MinMerge, bw, 100));
+
+  if (fs > 0)
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::MaxFrameSizeOption(), true, OpalMediaOption::NoMerge, fs));
+
+  if (ft > 0)
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::FrameTimeOption(), true, OpalMediaOption::NoMerge, ft));
+
+  if (cr > 0)
+    AddOption(new OpalMediaOptionUnsigned(OpalMediaFormat::ClockRateOption(), true, OpalMediaOption::AlwaysMerge, cr));
+
+  // assume non-dynamic payload types are correct and do not need deconflicting
+  if (rtpPayloadType < RTP_DataFrame::DynamicBase || rtpPayloadType >= RTP_DataFrame::MaxPayloadType)
+    return;
+
+  PWaitAndSignal mutex(GetMediaFormatsListMutex());
+  OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+
+  // find the next unused dynamic number, and find anything with the new 
+  // rtp payload type if it is explicitly required
+  PINDEX i;
+  OpalMediaFormat * match = NULL;
+  RTP_DataFrame::PayloadTypes nextUnused = RTP_DataFrame::DynamicBase;
+  do {
+    for (i = 0; i < registeredFormats.GetSize(); i++) {
+      if (registeredFormats[i].GetPayloadType() == nextUnused) {
+        nextUnused = (RTP_DataFrame::PayloadTypes)(nextUnused + 1);
+        break;
+      }
+      if ((rtpPayloadType >= RTP_DataFrame::DynamicBase) && 
+          (registeredFormats[i].GetPayloadType() == rtpPayloadType))
+        match = &registeredFormats[i];
+    }
+  } while (i < registeredFormats.GetSize());
+
+  // if new format requires a specific payload type in the dynamic range, 
+  // then move the old format to the next unused format
+  if (match != NULL)
+    match->SetPayloadType(nextUnused);
+}
+
+
+bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
+{
+  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m2(mediaFormat.media_format_mutex);
+  for (PINDEX i = 0; i < options.GetSize(); i++) {
+    OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
+    if (option != NULL && !options[i].Merge(*option))
+      return false;
+  }
+
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::GetOptionValue(const PString & name, PString & value) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  value = option->AsString();
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::SetOptionValue(const PString & name, const PString & value)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  return option->FromString(value);
+}
+
+
+bool OpalMediaFormatInternal::GetOptionBoolean(const PString & name, bool dflt) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionBoolean, option)->GetValue();
+}
+
+
+bool OpalMediaFormatInternal::SetOptionBoolean(const PString & name, bool value)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionBoolean, option)->SetValue(value);
+  return true;
+}
+
+
+int OpalMediaFormatInternal::GetOptionInteger(const PString & name, int dflt) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  if (optUnsigned != NULL)
+    return optUnsigned->GetValue();
+
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL)
+    return optInteger->GetValue();
+
+  PAssertAlways(PInvalidCast);
+  return dflt;
+}
+
+
+bool OpalMediaFormatInternal::SetOptionInteger(const PString & name, int value)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  OpalMediaOptionUnsigned * optUnsigned = dynamic_cast<OpalMediaOptionUnsigned *>(option);
+  if (optUnsigned != NULL) {
+    optUnsigned->SetValue(value);
+    return true;
+  }
+
+  OpalMediaOptionInteger * optInteger = dynamic_cast<OpalMediaOptionInteger *>(option);
+  if (optInteger != NULL) {
+    optInteger->SetValue(value);
+    return true;
+  }
+
+  PAssertAlways(PInvalidCast);
+  return false;
+}
+
+
+double OpalMediaFormatInternal::GetOptionReal(const PString & name, double dflt) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionReal, option)->GetValue();
+}
+
+
+bool OpalMediaFormatInternal::SetOptionReal(const PString & name, double value)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionReal, option)->SetValue(value);
+  return true;
+}
+
+
+PINDEX OpalMediaFormatInternal::GetOptionEnum(const PString & name, PINDEX dflt) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionEnum, option)->GetValue();
+}
+
+
+bool OpalMediaFormatInternal::SetOptionEnum(const PString & name, PINDEX value)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionEnum, option)->SetValue(value);
+  return true;
+}
+
+
+PString OpalMediaFormatInternal::GetOptionString(const PString & name, const PString & dflt) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return dflt;
+
+  return PDownCast(OpalMediaOptionString, option)->GetValue();
+}
+
+
+bool OpalMediaFormatInternal::SetOptionString(const PString & name, const PString & value)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionString, option)->SetValue(value);
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::GetOptionOctets(const PString & name, PBYTEArray & octets) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  octets = PDownCast(OpalMediaOptionOctets, option)->GetValue();
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const PBYTEArray & octets)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionOctets, option)->SetValue(octets);
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const BYTE * data, PINDEX length)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  OpalMediaOption * option = FindOption(name);
+  if (option == NULL)
+    return false;
+
+  PDownCast(OpalMediaOptionOctets, option)->SetValue(data, length);
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::AddOption(OpalMediaOption * option, PBoolean overwrite)
+{
+  PWaitAndSignal m(media_format_mutex);
+  if (PAssertNULL(option) == NULL)
+    return false;
+
+  PINDEX index = options.GetValuesIndex(*option);
+  if (index != P_MAX_INDEX) {
+    if (!overwrite) {
+      delete option;
+      return false;
+    }
+
+    options.RemoveAt(index);
+  }
+
+  options.Append(option);
+  return true;
+}
+
+
+class OpalMediaOptionSearchArg : public OpalMediaOption
+{
+public:
+  OpalMediaOptionSearchArg(const PString & name) : OpalMediaOption(name) { }
+  virtual Comparison CompareValue(const OpalMediaOption &) const { return EqualTo; }
+  virtual void Assign(const OpalMediaOption &) { }
+};
+
+OpalMediaOption * OpalMediaFormatInternal::FindOption(const PString & name) const
+{
+  PWaitAndSignal m(media_format_mutex);
+  OpalMediaOptionSearchArg search(name);
+  PINDEX index = options.GetValuesIndex(search);
+  if (index == P_MAX_INDEX)
+    return NULL;
+
+  return &options[index];
+}
+
+
+bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 {
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
     return rtpEncodingName != NULL;
 
-  return PTrue;
+  return true;
 }
 
-time_t OpalMediaFormat::GetCodecBaseTime() const
-{
-  return codecBaseTime;
-}
 
-ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
+void OpalMediaFormatInternal::PrintOptions(ostream & strm) const
 {
   PWaitAndSignal m(media_format_mutex);
 
   static const char * const SessionNames[] = { "", " Audio", " Video", " Data", " H.224" };
   static const int TitleWidth = 25;
 
-  strm << right << setw(TitleWidth) <<   "Format Name" << left << "       = " << *this << '\n'
+  strm << right << setw(TitleWidth) <<   "Format Name" << left << "       = " << formatName << '\n'
        << right << setw(TitleWidth) <<    "Session ID" << left << "       = " << defaultSessionID << (defaultSessionID < PARRAYSIZE(SessionNames) ? SessionNames[defaultSessionID] : "") << '\n'
        << right << setw(TitleWidth) <<  "Payload Type" << left << "       = " << rtpPayloadType << '\n'
        << right << setw(TitleWidth) << "Encoding Name" << left << "       = " << rtpEncodingName << '\n';
-  for (PINDEX i = 0; i < GetOptionCount(); i++) {
-    const OpalMediaOption & option = GetOption(i);
+  for (PINDEX i = 0; i < options.GetSize(); i++) {
+    const OpalMediaOption & option = options[i];
     strm << right << setw(TitleWidth) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
          << ") = " << left << setw(10) << option.AsString();
     if (!option.GetFMTPName().IsEmpty())
@@ -1363,8 +1418,6 @@ ostream & OpalMediaFormat::PrintOptions(ostream & strm) const
     strm << '\n';
   }
   strm << endl;
-
-  return strm;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1382,21 +1435,62 @@ OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  unsigned rxFrames,
                                  unsigned txFrames,
                                  unsigned maxFrames,
-				                         unsigned clockRate,
-                                   time_t timeStamp)
-  : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultAudioSessionID,
-                    rtpPayloadType,
-                    encodingName,
-                    PTrue,
-                    8*frameSize*AudioClockRate/frameTime,  // bits per second = 8*frameSize * framesPerSecond
-                    frameSize,
-                    frameTime,
-                    clockRate,
-                    timeStamp)
+                                 unsigned clockRate,
+                                 time_t timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  Construct(new OpalAudioFormatInternal(fullName,
+                                        rtpPayloadType,
+                                        encodingName,
+                                        frameSize,
+                                        frameTime,
+                                        rxFrames,
+                                        txFrames,
+                                        maxFrames,
+                                        clockRate,
+                                        timeStamp));
+}
+
+
+OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
+                                                 RTP_DataFrame::PayloadTypes rtpPayloadType,
+                                                 const char * encodingName,
+                                                 PINDEX   frameSize,
+                                                 unsigned frameTime,
+                                                 unsigned rxFrames,
+                                                 unsigned txFrames,
+                                                 unsigned maxFrames,
+                                                 unsigned clockRate,
+                                                 time_t timeStamp)
+  : OpalMediaFormatInternal(fullName,
+                            OpalMediaFormat::DefaultAudioSessionID,
+                            rtpPayloadType,
+                            encodingName,
+                            true,
+                            8*frameSize*OpalAudioFormat::AudioClockRate/frameTime,  // bits per second = 8*frameSize * framesPerSecond
+                            frameSize,
+                            frameTime,
+                            clockRate,
+                            timeStamp)
+{
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+}
+
+
+PObject * OpalAudioFormatInternal::Clone() const
+{
+  return new OpalAudioFormatInternal(*this);
+}
+
+
+bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
+{
+  PWaitAndSignal m(media_format_mutex);
+
+  if (!OpalMediaFormatInternal::Merge(mediaFormat))
+    return false;
+
+  return true;
 }
 
 #endif
@@ -1420,48 +1514,68 @@ OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  unsigned frameRate,
                                  unsigned bitRate,
                                  time_t timeStamp)
-  : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultVideoSessionID,
-                    rtpPayloadType,
-                    encodingName,
-                    PFalse,
-                    bitRate,
-                    0,
-                    OpalMediaFormat::VideoClockRate/frameRate,
-                    OpalMediaFormat::VideoClockRate,
-                    timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionUnsigned(FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
-  AddOption(new OpalMediaOptionUnsigned(EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionUnsigned(TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000,    1000));
-  AddOption(new OpalMediaOptionBoolean(DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
-  AddOption(new OpalMediaOptionBoolean(AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
+  Construct(new OpalVideoFormatInternal(fullName,
+                                        rtpPayloadType,
+                                        encodingName,
+                                        frameWidth,
+                                        frameHeight,
+                                        frameRate,
+                                        bitRate,
+                                        timeStamp));
+}
+
+
+OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
+                                                 RTP_DataFrame::PayloadTypes rtpPayloadType,
+                                                 const char * encodingName,
+                                                 unsigned frameWidth,
+                                                 unsigned frameHeight,
+                                                 unsigned frameRate,
+                                                 unsigned bitRate,
+                                                 time_t timeStamp)
+  : OpalMediaFormatInternal(fullName,
+                            OpalMediaFormat::DefaultVideoSessionID,
+                            rtpPayloadType,
+                            encodingName,
+                            PFalse,
+                            bitRate,
+                            0,
+                            OpalMediaFormat::VideoClockRate/frameRate,
+                            OpalMediaFormat::VideoClockRate,
+                            timeStamp)
+{
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000,    1000));
+  AddOption(new OpalMediaOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
 
   // For video the max bit rate and frame rate is adjustable by user
-  FindOption(MaxBitRateOption())->SetReadOnly(false);
-  FindOption(FrameTimeOption())->SetReadOnly(false);
-  FindOption(FrameTimeOption())->SetMerge(OpalMediaOption::MinMerge);
+  FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
+  FindOption(OpalVideoFormat::FrameTimeOption())->SetReadOnly(false);
+  FindOption(OpalVideoFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MinMerge);
 }
 
 
-PObject * OpalVideoFormat::Clone() const
+PObject * OpalVideoFormatInternal::Clone() const
 {
-  return new OpalVideoFormat(*this);
+  return new OpalVideoFormatInternal(*this);
 }
 
 
-bool OpalVideoFormat::Merge(const OpalMediaFormat & mediaFormat)
+bool OpalVideoFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
   PWaitAndSignal m(media_format_mutex);
 
-  if (!OpalMediaFormat::Merge(mediaFormat))
+  if (!OpalMediaFormatInternal::Merge(mediaFormat))
     return false;
 
-  unsigned maxBitRate = GetOptionInteger(MaxBitRateOption());
-  unsigned targetBitRate = GetOptionInteger(TargetBitRateOption());
+  unsigned maxBitRate = GetOptionInteger(OpalVideoFormat::MaxBitRateOption(), 0);
+  unsigned targetBitRate = GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 0);
   if (targetBitRate > maxBitRate)
-    SetOptionInteger(TargetBitRateOption(), maxBitRate);
+    SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), maxBitRate);
 
   return true;
 }
@@ -1560,7 +1674,7 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
 }
 
 
-static PBoolean WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
+static bool WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
 {
   if (wildcards.GetSize() == 1)
     return str == wildcards[0];
@@ -1576,30 +1690,30 @@ static PBoolean WildcardMatch(const PCaselessString & str, const PStringArray & 
     else {
       next = str.Find(wildcard, last);
       if (next == P_MAX_INDEX)
-        return PFalse;
+        return false;
     }
 
     // Check for having * at beginning of search string
     if (i == 0 && next != 0 && !wildcard)
-      return PFalse;
+      return false;
 
     last = next + wildcard.GetLength();
 
     // Check for having * at end of search string
     if (i == wildcards.GetSize()-1 && !wildcard && last != str.GetLength())
-      return PFalse;
+      return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 
 PINDEX OpalMediaFormatList::FindFormat(const PString & search, PINDEX pos) const
 {
-  PStringArray wildcards = search.Tokenise('*', PTrue);
+  PStringArray wildcards = search.Tokenise('*', true);
   PINDEX idx;
   for (idx = pos; idx < GetSize(); idx++) {
-    if (WildcardMatch((*this)[idx], wildcards))
+    if (WildcardMatch((*this)[idx].m_info->formatName, wildcards))
       return idx;
   }
 
@@ -1612,11 +1726,11 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
   DisallowDeleteObjects();
   PINDEX nextPos = 0;
   for (PINDEX i = 0; i < order.GetSize(); i++) {
-    PStringArray wildcards = order[i].Tokenise('*', PTrue);
+    PStringArray wildcards = order[i].Tokenise('*', true);
 
     PINDEX findPos = 0;
     while (findPos < GetSize()) {
-      if (WildcardMatch((*this)[findPos], wildcards)) {
+      if (WildcardMatch((*this)[findPos].m_info->formatName, wildcards)) {
         if (findPos > nextPos)
           OpalMediaFormatBaseList::InsertAt(nextPos, RemoveAt(findPos));
         nextPos++;

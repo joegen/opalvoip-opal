@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="false"
 				AdditionalDependencies="winmm.lib"
-				OutputFile="$(OutDir)/tj_lid_pwplugin.dll"
+				OutputFile="$(OutDir)/tj_lid_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -160,7 +160,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="winmm.lib"
-				OutputFile="$(OutDir)/tj_lid_pwplugin.dll"
+				OutputFile="$(OutDir)/tj_lid_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)\$(TargetName).lib"

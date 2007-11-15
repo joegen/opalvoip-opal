@@ -2761,7 +2761,7 @@ H225_GatekeeperIdentifier & H225_GatekeeperIdentifier::operator=(const PString &
 }
 
 
-H225_GatekeeperIdentifier & H225_GatekeeperIdentifier::operator=(const PWORDArray & v)
+H225_GatekeeperIdentifier & H225_GatekeeperIdentifier::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;
@@ -2877,7 +2877,7 @@ H225_EndpointIdentifier & H225_EndpointIdentifier::operator=(const PString & v)
 }
 
 
-H225_EndpointIdentifier & H225_EndpointIdentifier::operator=(const PWORDArray & v)
+H225_EndpointIdentifier & H225_EndpointIdentifier::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;

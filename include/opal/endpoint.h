@@ -827,7 +827,7 @@ class OpalEndPoint : public PObject
       */
     PBoolean HasAttribute(Attributes opt) const { return (attributeBits&opt) != 0; }
 
-    /**Get the initial bandwidth parameter.
+    /**Get the default signal port for this endpoint.
      */
     WORD GetDefaultSignalPort() const { return defaultSignalPort; }
 
@@ -933,7 +933,6 @@ class OpalEndPoint : public PObject
     OpalConnection::SendUserInputModes defaultSendUserInputMode;
 
     OpalListenerList   listeners;
-    PSyncPoint         allConnectionsCleared;
 
     class ConnectionDict : public PSafeDictionary<PString, OpalConnection>
     {

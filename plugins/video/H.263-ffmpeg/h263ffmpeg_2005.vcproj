@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="$(OutDir)/h263ffmpeg_pwplugin.dll"
+				OutputFile="$(OutDir)/h263ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
@@ -160,7 +160,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="wsock32.lib"
-				OutputFile="$(OutDir)/h263ffmpeg_pwplugin.dll"
+				OutputFile="$(OutDir)/h263ffmpeg_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
@@ -192,7 +192,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying codec and debug information to plug in directory"
-				CommandLine="if not exist c:\pwlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\pwlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\pwlib_plugins&#x0D;&#x0A;copy .\ffmpeg\libavcodec.dll c:\pwlib_plugins"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;copy .\ffmpeg\libavcodec.dll c:\ptlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

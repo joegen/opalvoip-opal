@@ -1065,7 +1065,7 @@ PBoolean OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
         break;
 
       case RTP_DataFrame::G729 :
-        if (mediaFormat.Find('B') != P_MAX_INDEX) {
+        if (mediaFormat.GetName().Find('B') != P_MAX_INDEX) {
           static const BYTE g729_sid_frame[2] = { 1 };
           buffer = g729_sid_frame;
           length = 2;

@@ -592,11 +592,7 @@ void OpalMediaPatch::Main()
     inUse.Signal();
 		
     if (!isSynchronous || !sourceFrame.GetPayloadSize())
-      PThread::Sleep(5); // Don't starve the CPU
-#if !defined(WIN32)
-    else
-      PThread::Sleep(5); // Permit to another thread to take the mutex
-#endif
+      PThread::Sleep(5); // Don't starve the CPU if we have empty frames
 		
     if (len == 0)
       break;

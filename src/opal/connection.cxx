@@ -909,7 +909,7 @@ PBoolean OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & media
       OpalMediaStream * sink = GetMediaStream(sessionID, PFalse);
       if (sink != NULL) {
         PTRACE(3, "OpalCon\tOpenSourceMediaStream reordering codec for sink stream format " << sink->GetMediaFormat());
-        toFormats.Reorder(sink->GetMediaFormat());
+        toFormats.Reorder(sink->GetMediaFormat().GetName());
       }
     }
 
@@ -966,7 +966,8 @@ OpalMediaStream * OpalConnection::OpenSinkMediaStream(OpalMediaStream & source)
   // Reorder the media formats from this protocol so we give preference
   // to what has been selected in the source media stream.
   OpalMediaFormatList destinationFormats = GetMediaFormats();
-  PStringArray order = sourceFormat;
+  PString format = sourceFormat;
+  PStringArray order = format;
   // Second preference is given to the previous media stream already
   // opened to maintain symmetric codecs, if possible.
 

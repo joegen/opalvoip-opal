@@ -71,7 +71,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="../../Release/gsm0610_pwplugin.dll"
+				OutputFile="$(OutDir)/gsm0610_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				ImportLibrary="$(IntDir)/$(TargetName).lib"
@@ -159,7 +159,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				OutputFile="../../Debug/gsm0610_pwplugin.dll"
+				OutputFile="$(OutDir)/gsm0610_ptplugin.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"

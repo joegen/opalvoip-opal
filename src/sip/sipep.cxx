@@ -1181,7 +1181,7 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
                                                mime.GetCallID(),
                                                NULL,
                                                request->GetURI(),
-                                               CreateTransport(transport.GetRemoteAddress(), transport.GetLocalAddress()),
+                                               CreateTransport(transport.GetRemoteAddress(), transport.GetInterface()),
                                                request);
   if (!AddConnection(connection)) {
     PTRACE(1, "SIP\tFailed to create SIPConnection for INVITE from " << request->GetURI() << " for " << toAddr);

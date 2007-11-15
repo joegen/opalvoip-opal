@@ -556,7 +556,7 @@ GCC_TextString & GCC_TextString::operator=(const PString & v)
 }
 
 
-GCC_TextString & GCC_TextString::operator=(const PWORDArray & v)
+GCC_TextString & GCC_TextString::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;
@@ -605,7 +605,7 @@ GCC_SimpleTextString & GCC_SimpleTextString::operator=(const PString & v)
 }
 
 
-GCC_SimpleTextString & GCC_SimpleTextString::operator=(const PWORDArray & v)
+GCC_SimpleTextString & GCC_SimpleTextString::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;
@@ -759,7 +759,7 @@ GCC_ExtraDialingString & GCC_ExtraDialingString::operator=(const PString & v)
 }
 
 
-GCC_ExtraDialingString & GCC_ExtraDialingString::operator=(const PWORDArray & v)
+GCC_ExtraDialingString & GCC_ExtraDialingString::operator=(const PWCharArray & v)
 {
   SetValue(v);
   return *this;

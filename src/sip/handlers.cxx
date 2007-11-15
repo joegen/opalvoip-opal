@@ -115,11 +115,23 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   targetAddress.Parse(to);
   remotePartyAddress = targetAddress.AsQuotedString();
 
-  transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
-
   authenticationAttempts = 0;
 
-  const SIPURL & proxy = endpoint.GetProxy();
+  // Look for a "proxy" parameter to override default proxy
+  const PStringToString& params = targetAddress.GetParamVars();
+  SIPURL proxy;
+  if (params.Contains("proxy")) {
+    proxy.Parse(params("proxy"));
+    targetAddress.SetParamVar("proxy", PString::Empty());
+  }
+
+  if (proxy.IsEmpty())
+    proxy = endpoint.GetProxy();
+
+  if (!proxy.IsEmpty())
+    transport = endpoint.CreateTransport(proxy.GetHostAddress());
+  else
+    transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
 
   // Default routeSet if there is a proxy
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
@@ -580,9 +592,9 @@ PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 }
 
 
+#if P_EXPAT
 PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
-#if P_EXPAT
   PString body = request.GetEntityBody();
   SIPURL from = request.GetMIME().GetFrom();
   PString basic;
@@ -627,10 +639,14 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 
   from.AdjustForRequestURI();
   endpoint.OnPresenceInfoReceived (from.AsQuotedString(), basic, note);
-#endif
-
   return PTrue;
 }
+#else
+BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU &)
+{
+  return TRUE;
+}
+#endif
 
 
 void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes reason)

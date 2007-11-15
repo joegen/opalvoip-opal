@@ -168,7 +168,7 @@ class OpalPluginCodecHandler : public PObject
     OpalPluginCodecHandler();
 
 #if OPAL_AUDIO
-    virtual OpalMediaFormat * OnCreateAudioFormat(OpalPluginCodecManager & mgr,
+    virtual OpalMediaFormatInternal * OnCreateAudioFormat(OpalPluginCodecManager & mgr,
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
                                                                   unsigned frameTime,
@@ -177,7 +177,7 @@ class OpalPluginCodecHandler : public PObject
 #endif
 
 #if OPAL_VIDEO
-    virtual OpalMediaFormat * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
+    virtual OpalMediaFormatInternal * OnCreateVideoFormat(OpalPluginCodecManager & mgr,
                                             const PluginCodec_Definition * encoderCodec,
                                                               const char * rtpEncodingName,
                                                                     time_t timeStamp);
@@ -185,7 +185,7 @@ class OpalPluginCodecHandler : public PObject
 #endif
 
 #if OPAL_T38FAX
-    virtual OpalMediaFormat * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
+    virtual OpalMediaFormatInternal * OnCreateFaxFormat(OpalPluginCodecManager & mgr,
                                           const PluginCodec_Definition * encoderCodec,
                                                             const char * rtpEncodingName,
                                                                 unsigned frameTime,
@@ -279,18 +279,31 @@ class OpalPluginControl
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class OpalPluginMediaFormat
+class OpalPluginMediaFormatInternal
 {
   public:
-    OpalPluginMediaFormat(const PluginCodec_Definition * defn);
+    OpalPluginMediaFormatInternal(const PluginCodec_Definition * defn);
 
-    void PopulateOptions(OpalMediaFormat & format);
+    void PopulateOptions(OpalMediaFormatInternal & format);
+    void SetOldStyleOption(OpalMediaFormatInternal & format, const PString & _key, const PString & _val, const PString & type);
     bool IsValidForProtocol(const PString & _protocol) const;
 
     const PluginCodec_Definition * codecDef;
     OpalPluginControl getOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl validForProtocolControl;
+};
+
+
+class OpalPluginMediaFormat : public OpalMediaFormat
+{
+  public:
+    OpalPluginMediaFormat(OpalMediaFormatInternal * info)
+      : OpalMediaFormat(info)
+    {
+    }
+
+    OpalPluginMediaFormatInternal * GetInfo() const { return dynamic_cast<OpalPluginMediaFormatInternal *>(m_info); }
 };
 
 
@@ -320,20 +333,20 @@ class OpalPluginTranscoder
 
 #if OPAL_AUDIO
 
-class OpalPluginAudioMediaFormat : public OpalAudioFormat, public OpalPluginMediaFormat
+class OpalPluginAudioFormatInternal : public OpalAudioFormatInternal, public OpalPluginMediaFormatInternal
 {
   public:
     friend class OpalPluginCodecManager;
 
-    OpalPluginAudioMediaFormat(
+    OpalPluginAudioFormatInternal(
       const PluginCodec_Definition * _encoderCodec,
       const char * rtpEncodingName, /// rtp encoding name
       unsigned frameTime,           /// Time for frame in RTP units (if applicable)
       unsigned /*timeUnits*/,       /// RTP units for frameTime (if applicable)
-                         time_t timeStamp              /// timestamp (for versioning)
+      time_t timeStamp              /// timestamp (for versioning)
     );
-    bool IsValidForProtocol(const PString & protocol) const;
-    PObject * Clone() const;
+    virtual PObject * Clone() const;
+    virtual bool IsValidForProtocol(const PString & protocol) const;
 };
 
 
@@ -377,17 +390,16 @@ class OpalPluginStreamedAudioDecoder : public OpalPluginStreamedAudioTranscoder
 
 #if OPAL_VIDEO
 
-class OpalPluginVideoMediaFormat : public OpalVideoFormat, public OpalPluginMediaFormat
+class OpalPluginVideoFormatInternal : public OpalVideoFormatInternal, public OpalPluginMediaFormatInternal
 {
   public:
-    friend class OpalPluginCodecManager;
-    OpalPluginVideoMediaFormat(
+    OpalPluginVideoFormatInternal(
       const PluginCodec_Definition * _encoderCodec,
       const char * rtpEncodingName, /// rtp encoding name
       time_t timeStamp              /// timestamp (for versioning)
     );
-    PObject * Clone() const;
-    bool IsValidForProtocol(const PString & protocol) const;
+    virtual PObject * Clone() const;
+    virtual bool IsValidForProtocol(const PString & protocol) const;
 };
 
 
@@ -412,20 +424,18 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
 #if OPAL_T38FAX
 
-class OpalPluginFaxMediaFormat : public OpalMediaFormat, public OpalPluginMediaFormat
+class OpalPluginFaxFormatInternal : public OpalMediaFormatInternal, public OpalPluginMediaFormatInternal
 {
   public:
-    friend class OpalPluginCodecManager;
-
-    OpalPluginFaxMediaFormat(
+    OpalPluginFaxFormatInternal(
       const PluginCodec_Definition * _encoderCodec,
       const char * rtpEncodingName, /// rtp encoding name
       unsigned frameTime,
       unsigned /*timeUnits*/,           /// RTP units for frameTime (if applicable)
       time_t timeStamp              /// timestamp (for versioning)
     );
-    PObject * Clone() const;
-    bool IsValidForProtocol(const PString & protocol) const;
+    virtual PObject * Clone() const;
+    virtual bool IsValidForProtocol(const PString & protocol) const;
 };
 
 #endif // OPAL_T38FAX

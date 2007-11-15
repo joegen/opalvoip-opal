@@ -33,8 +33,8 @@
 #include "h264pipe_unix.h"
 
 #define HAS_MKFIFO 1
-#define GPL_PROCESS_FILENAME "pwlib/codecs/video/h264_video_pwplugin_helper"
-#define P_DEFAULT_PLUGIN_DIR "/usr/lib/pwlib"
+#define GPL_PROCESS_FILENAME "ptlib/codecs/video/h264_video_pwplugin_helper"
+#define P_DEFAULT_PLUGIN_DIR "/usr/lib/ptlib"
 #define DIR_SEPERATOR "/"
 #define DIR_TOKENISER ":"
 
