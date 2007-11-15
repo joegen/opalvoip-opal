@@ -382,8 +382,8 @@ bool VideoThread::Initialise(PArgList & args)
     int videoInput = args.GetOptionString("grab-channel").AsInteger();
     if (!grabber->SetChannel(videoInput)) {
       cerr << "Video grabber device could not be set to channel " << videoInput << endl;
-    return false;
-  }
+      return false;
+    }
   }
   cout << "Grabber grabber channel set to " << grabber->GetChannel() << endl;
 
@@ -485,8 +485,26 @@ bool VideoThread::Initialise(PArgList & args)
   cout << ')' << endl;
 
 
-  if (args.HasOption("bit-rate"))
-    mediaFormat.SetOptionInteger(OpalVideoFormat::MaxBitRateOption(), args.GetOptionString("bit-rate").AsUnsigned());
+  if (args.HasOption("bit-rate")) {
+    PString str = args.GetOptionString("bit-rate");
+    double bitrate = str.AsReal();
+    switch (str[str.GetLength()-1]) {
+      case 'K' :
+      case 'k' :
+        bitrate *= 1000;
+        break;
+      case 'M' :
+      case 'm' :
+        bitrate *= 1000000;
+        break;
+    }
+    if (bitrate < 100 || bitrate > INT_MAX) {
+      cerr << "Could not set bit rate to " << str << endl;
+      return false;
+    }
+    mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), (unsigned)bitrate);
+  }
+  cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
   encoder->UpdateOutputMediaFormat(mediaFormat);
 
@@ -530,8 +548,8 @@ void TranscoderThread::Main()
 
   PTimeInterval startTick = PTimer::Tick();
   while (running) {
-    RTP_DataFrame * srcFrame = new RTP_DataFrame;
-    bool state = Read(*srcFrame);
+    RTP_DataFrame srcFrame;
+    bool state = Read(srcFrame);
     if (oldSrcState != state) {
       oldSrcState = state;
       cerr << "Source " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
@@ -539,9 +557,9 @@ void TranscoderThread::Main()
 
     RTP_DataFrameList encFrames;
     if (encoder == NULL)
-      encFrames.Append(srcFrame); 
+      encFrames.Append(new RTP_DataFrame(srcFrame)); 
     else {
-      state = encoder->ConvertFrames(*srcFrame, encFrames);
+      state = encoder->ConvertFrames(srcFrame, encFrames);
       if (oldEncState != state) {
         oldEncState = state;
         cerr << "Encoder " << (state ? "restor" : "fail") << "ed at frame " << frameCount << endl;
