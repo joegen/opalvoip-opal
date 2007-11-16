@@ -642,7 +642,7 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
   return PTrue;
 }
 #else
-BOOL SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU &)
+PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU &)
 {
   return TRUE;
 }
