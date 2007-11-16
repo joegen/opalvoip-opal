@@ -756,7 +756,7 @@ class Context
       if (IsLineInvalid(line))
         return PluginLID_NoSuchLine;
 
-      if (EnableAudio(line, PTrue) != PluginLID_NoError)
+      if (EnableAudio(line, TRUE) != PluginLID_NoError)
         return PluginLID_InternalError;
 
       return PluginLID_NoError;
