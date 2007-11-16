@@ -80,19 +80,19 @@ class Context
         /* +1 is used for driver 2.4.8*/
         handle = vpb_open(cardNumber, lineNumber);
         if (handle < 0)
-          return PFalse;
+          return FALSE;
         readFrameSize = writeFrameSize = 480;
-        currentHookState = PFalse;
+        currentHookState = FALSE;
         vpb_sethook_sync(handle, VPB_ONHOOK);
         vpb_set_event_mask(handle, VPB_MRING | VPB_MTONEDETECT );
-        return PTrue;
+        return TRUE;
       }
 
       PluginLID_Boolean SetLineOffHook(PluginLID_Boolean newState)
       {
         try {
           if (vpb_sethook_sync(handle, newState ? VPB_OFFHOOK : VPB_ONHOOK) < 0)
-            return PFalse;
+            return FALSE;
 
           // clear DTMF buffer and event queue after changing hook state.
           vpb_flush_digits(handle);
@@ -104,11 +104,11 @@ class Context
         }
         catch (VpbException v) {
           std::cerr << "VPB\tSetLineOffHook " << v.code << ", s = " << v.s << ", api func = " << v.api_function << std::endl;
-          return PFalse;
+          return FALSE;
         }
 
         currentHookState = newState;
-        return PTrue;
+        return TRUE;
       }
 
       int               handle;
@@ -191,7 +191,7 @@ class Context
 
       try {
         for(unsigned uiLineCount = 0; uiLineCount < m_uiLineCount; uiLineCount++) {
-          SetLineOffHook(uiLineCount, PFalse);
+          SetLineOffHook(uiLineCount, FALSE);
           vpb_close(lineState[uiLineCount].handle);
         }  
       }
@@ -228,7 +228,7 @@ class Context
       if (line >= m_uiLineCount)
         return PluginLID_NoSuchLine;
 
-      *isTerminal = PFalse;
+      *isTerminal = FALSE;
       return PluginLID_NoError;
     }
 
@@ -244,7 +244,7 @@ class Context
       if (line >= m_uiLineCount)
         return PluginLID_NoSuchLine;
 
-      *present = PTrue;
+      *present = TRUE;
       return PluginLID_NoError;
     }
 
