@@ -393,10 +393,45 @@ class SpeedDialDialog : public wxDialog
 };
 
 
+#if OPAL_SIP
+
+class RegistrarInfo
+{
+  public:
+    RegistrarInfo()
+      : m_Active(false)
+      , m_TimeToLive(300)
+    {
+    }
+
+    bool operator==(const RegistrarInfo & other) const
+    {
+      return m_Active     == other.m_Active &&
+             m_Domain     == other.m_Domain &&
+             m_User       == other.m_User &&
+             m_Password   == other.m_Password &&
+             m_TimeToLive == other.m_TimeToLive &&
+             m_Proxy      == other.m_Proxy;
+    }
+
+    bool      m_Active;
+    PwxString m_Domain;
+    PwxString m_User;
+    PwxString m_Password;
+    int       m_TimeToLive;
+    PwxString m_Proxy;
+};
+
+typedef list<RegistrarInfo> RegistrarList;
+
+#endif
+
+
 class OptionsDialog : public wxDialog
 {
   public:
     OptionsDialog(MyManager *parent);
+    ~OptionsDialog();
     virtual bool TransferDataFromWindow();
 
   private:
@@ -517,15 +552,32 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // SIP fields
+#if OPAL_SIP
     bool      m_SIPProxyUsed;
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
-    bool      m_RegistrarUsed;
-    PwxString m_RegistrarName;
-    PwxString m_RegistrarUsername;
-    PwxString m_RegistrarPassword;
-    int       m_RegistrarTimeToLive;
+
+    wxListCtrl * m_Registrars;
+    int          m_SelectedRegistrar;
+    wxButton   * m_AddRegistrar;
+    wxButton   * m_ChangeRegistrar;
+    wxButton   * m_RemoveRegistrar;
+    wxTextCtrl * m_RegistrarDomain;
+    wxTextCtrl * m_RegistrarUser;
+    wxTextCtrl * m_RegistrarPassword;
+    wxSpinCtrl * m_RegistrarTimeToLive;
+    wxCheckBox * m_RegistrarActive;
+
+    void FieldsToRegistrar(RegistrarInfo & info);
+    void RegistrarToList(bool overwrite, RegistrarInfo * registrar, int position);
+    void AddRegistrar(wxCommandEvent & event);
+    void ChangeRegistrar(wxCommandEvent & event);
+    void RemoveRegistrar(wxCommandEvent & event);
+    void SelectedRegistrar(wxListEvent & event);
+    void DeselectedRegistrar(wxListEvent & event);
+    void ChangedRegistrarInfo(wxCommandEvent & event);
+#endif
 
     ////////////////////////////////////////
     // Routing fields
@@ -733,12 +785,9 @@ class MyManager : public wxFrame, public OpalManager
 #if OPAL_SIP
     MySIPEndPoint * sipEP;
     bool            m_SIPProxyUsed;
-    bool            m_registrarUsed;
-    PwxString       m_registrarName;
-    PwxString       m_registrarUser;
-    PwxString       m_registrarPassword;
-    bool StartRegistrar();
-    bool StopRegistrar();
+    RegistrarList   m_registrars;
+    void StartRegistrars();
+    void StopRegistrars();
 #endif
 
 #if P_EXPAT
