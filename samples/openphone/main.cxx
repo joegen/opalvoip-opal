@@ -279,6 +279,7 @@
 #include <wx/gdicmn.h>     //Required for icons on linux. 
 #include <wx/image.h>
 #include <wx/listctrl.h>
+#include <wx/spinctrl.h>
 #include <wx/splitter.h>
 #include <wx/valgen.h>
 #include <wx/notebook.h>
@@ -403,8 +404,11 @@ DEF_FIELD(SIPProxyUsed);
 DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
+
+static const char RegistrarGroup[] = "/SIP/Registrars";
 DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
+DEF_FIELD(RegistrarDomain);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
 DEF_FIELD(RegistrarTimeToLive);
@@ -987,6 +991,7 @@ bool MyManager::Initialise()
       return false;
   }
 
+#if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -1002,11 +1007,33 @@ bool MyManager::Initialise()
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
 
-  if (config->Read(RegistrarUsedKey, &m_registrarUsed, false) &&
-      config->Read(RegistrarNameKey, &m_registrarName) &&
-      config->Read(RegistrarUsernameKey, &m_registrarUser) &&
-      config->Read(RegistrarPasswordKey, &m_registrarPassword))
-    StartRegistrar();
+  // Original backward compatibility entry
+  RegistrarInfo registrar;
+  if (config->Read(RegistrarUsedKey, &registrar.m_Active, false) &&
+      config->Read(RegistrarNameKey, &registrar.m_Domain) &&
+      config->Read(RegistrarUsernameKey, &registrar.m_User) &&
+      config->Read(RegistrarPasswordKey, &registrar.m_Password))
+    m_registrars.push_back(registrar);
+
+  config->SetPath(RegistrarGroup);
+  wxString groupName;
+  long groupIndex;
+  if (config->GetFirstGroup(groupName, groupIndex)) {
+    do {
+      config->SetPath(groupName);
+      if (config->Read(RegistrarUsedKey, &registrar.m_Active, false) &&
+          config->Read(RegistrarDomainKey, &registrar.m_Domain) &&
+          config->Read(RegistrarUsernameKey, &registrar.m_User) &&
+          config->Read(RegistrarPasswordKey, &registrar.m_Password) &&
+          config->Read(RegistrarTimeToLiveKey, &registrar.m_TimeToLive))
+        m_registrars.push_back(registrar);
+      config->SetPath("..");
+    } while (config->GetNextGroup(groupName, groupIndex));
+  }
+
+  StartRegistrars();
+#endif
+
 
   ////////////////////////////////////////
   // Routing fields
@@ -1175,7 +1202,7 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameHeightKey, h);
 
   ClearAllCalls();
-  StopRegistrar();
+  StopRegistrars();
 
   Destroy();
 }
@@ -1953,29 +1980,33 @@ bool MyManager::StartGatekeeper()
 }
 
 
-bool MyManager::StartRegistrar()
+void MyManager::StartRegistrars()
 {
-  if (sipEP == NULL || !m_registrarUsed)
-    return false;
+  if (sipEP == NULL)
+    return;
 
-  BOOL ok = sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword);
-  LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << m_registrarUser << '@' << m_registrarName << endl;
-  return ok;
+  for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
+    if (iter->m_Active) {
+      BOOL ok = sipEP->Register(iter->m_Domain, iter->m_User, iter->m_User, iter->m_Password);
+      LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+    }
+  }
 }
 
 
-bool MyManager::StopRegistrar()
+void MyManager::StopRegistrars()
 {
   if (sipEP == NULL)
-    return false;
+    return;
 
-  PStringStream aor;
-  aor << m_registrarUser << '@' << m_registrarName;
-  if (!sipEP->IsRegistered(aor))
-    return false;
-
-  LogWindow << "SIP registration ended for " << aor << endl;
-  return sipEP->Unregister(aor);
+  for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
+    PStringStream aor;
+    aor << iter->m_User << '@' << iter->m_Domain;
+    if (sipEP->IsRegistered(aor)) {
+      LogWindow << "SIP registration ended for " << aor << endl;
+      sipEP->Unregister(aor);
+    }
+  }
 }
 
 
@@ -2090,6 +2121,19 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_LIST_ITEM_SELECTED(XRCID("CodecOptionsList"), OptionsDialog::SelectedCodecOption)
   EVT_LIST_ITEM_DESELECTED(XRCID("CodecOptionsList"), OptionsDialog::DeselectedCodecOption)
   EVT_TEXT(XRCID("CodecOptionValue"), OptionsDialog::ChangedCodecOptionValue)
+
+  ////////////////////////////////////////
+  // SIP fields
+  EVT_BUTTON(XRCID("AddRegistrar"), OptionsDialog::AddRegistrar)
+  EVT_BUTTON(XRCID("ChangeRegistrar"), OptionsDialog::ChangeRegistrar)
+  EVT_BUTTON(XRCID("RemoveRegistrar"), OptionsDialog::RemoveRegistrar)
+  EVT_LIST_ITEM_SELECTED(XRCID("Registrars"), OptionsDialog::SelectedRegistrar)
+  EVT_LIST_ITEM_DESELECTED(XRCID("Registrars"), OptionsDialog::DeselectedRegistrar)
+  EVT_TEXT(XRCID("RegistrarDomain"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_TEXT(XRCID("RegistrarUsername"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_TEXT(XRCID("RegistrarPassword"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_TEXT(XRCID("RegistrarTimeToLive"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_BUTTON(XRCID("RegistrarUsed"), OptionsDialog::ChangedRegistrarInfo)
 
   ////////////////////////////////////////
   // Routing fields
@@ -2337,11 +2381,35 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SIPProxy, m_manager.sipEP->GetProxy().GetHostName());
   INIT_FIELD(SIPProxyUsername, m_manager.sipEP->GetProxy().GetUserName());
   INIT_FIELD(SIPProxyPassword, m_manager.sipEP->GetProxy().GetPassword());
-  INIT_FIELD(RegistrarUsed, m_manager.m_registrarUsed);
-  INIT_FIELD(RegistrarName, m_manager.m_registrarName);
-  INIT_FIELD(RegistrarUsername, m_manager.m_registrarUser);
-  INIT_FIELD(RegistrarPassword, m_manager.m_registrarPassword);
-  INIT_FIELD(RegistrarTimeToLive, m_manager.sipEP->GetRegistrarTimeToLive().GetSeconds());
+
+  m_SelectedRegistrar = INT_MAX;
+
+  m_Registrars = FindWindowByNameAs<wxListCtrl>(this, "Registrars");
+  m_Registrars->InsertColumn(0, _T("Domain"));
+  m_Registrars->InsertColumn(1, _T("User"));
+  m_Registrars->InsertColumn(2, _T("Refresh"));
+  m_Registrars->InsertColumn(3, _T("Status"));
+  for (RegistrarList::iterator registrar = m_manager.m_registrars.begin(); registrar != m_manager.m_registrars.end(); ++registrar)
+    RegistrarToList(false, new RegistrarInfo(*registrar), INT_MAX);
+  m_Registrars->SetColumnWidth(0, 200);
+  m_Registrars->SetColumnWidth(1, 150);
+  m_Registrars->SetColumnWidth(2, 75);
+  m_Registrars->SetColumnWidth(3, 75);
+
+  m_AddRegistrar = FindWindowByNameAs<wxButton>(this, "AddRegistrar");
+  m_AddRegistrar->Disable();
+
+  m_ChangeRegistrar = FindWindowByNameAs<wxButton>(this, "ChangeRegistrar");
+  m_ChangeRegistrar->Disable();
+
+  m_RemoveRegistrar = FindWindowByNameAs<wxButton>(this, "RemoveRegistrar");
+  m_RemoveRegistrar->Disable();
+
+  m_RegistrarDomain = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarDomain");
+  m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarUsername");
+  m_RegistrarPassword = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarPassword");
+  m_RegistrarTimeToLive = FindWindowByNameAs<wxSpinCtrl>(this, "RegistrarTimeToLive");
+  m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, "RegistrarUsed");
 
   ////////////////////////////////////////
   // Routing fields
@@ -2408,6 +2476,13 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   wxNotebook * book = FindWindowByNameAs<wxNotebook>(this, "OptionsNotebook");
   book->DeletePage(book->GetPageCount()-1);
 #endif // PTRACING
+}
+
+
+OptionsDialog::~OptionsDialog()
+{
+  for (int i = 0; i < m_Registrars->GetItemCount(); ++i)
+    delete (RegistrarInfo *)m_Registrars->GetItemData(i);
 }
 
 
@@ -2607,19 +2682,28 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
   config->Write(SIPProxyPasswordKey, m_SIPProxyPassword);
 
-  config->Write(RegistrarTimeToLiveKey, m_RegistrarTimeToLive);
-  m_manager.sipEP->SetRegistrarTimeToLive(PTimeInterval(0, m_RegistrarTimeToLive));
+  RegistrarList newRegistrars;
 
-  if (m_manager.m_registrarUsed != m_RegistrarUsed ||
-      m_manager.m_registrarName != m_RegistrarName ||
-      m_manager.m_registrarUser != m_RegistrarUsername ||
-      m_manager.m_registrarPassword != m_RegistrarPassword) {
-    m_manager.StopRegistrar();
-    SAVE_FIELD(RegistrarUsed, m_manager.m_registrarUsed =);
-    SAVE_FIELD(RegistrarName, m_manager.m_registrarName =);
-    SAVE_FIELD(RegistrarUsername, m_manager.m_registrarUser =);
-    SAVE_FIELD(RegistrarPassword, m_manager.m_registrarPassword =);
-    m_manager.StartRegistrar();
+  for (int i = 0; i < m_Registrars->GetItemCount(); ++i)
+    newRegistrars.push_back(*(RegistrarInfo *)m_Registrars->GetItemData(i));
+
+  if (newRegistrars != m_manager.m_registrars) {
+    int registrarIndex = 1;
+    config->DeleteGroup(RegistrarGroup);
+    for (RegistrarList::iterator iterReg = newRegistrars.begin(); iterReg != newRegistrars.end(); ++iterReg) {
+      wxString group;
+      group.sprintf("%s/%04u", RegistrarGroup, registrarIndex++);
+      config->SetPath(group);
+      config->Write(RegistrarUsedKey, iterReg->m_Active);
+      config->Write(RegistrarDomainKey, iterReg->m_Domain);
+      config->Write(RegistrarUsernameKey, iterReg->m_User);
+      config->Write(RegistrarPasswordKey, iterReg->m_Password);
+      config->Write(RegistrarTimeToLiveKey, iterReg->m_TimeToLive);
+    }
+
+    m_manager.StopRegistrars();
+    m_manager.m_registrars = newRegistrars;
+    m_manager.StartRegistrars();
   }
 
   ////////////////////////////////////////
@@ -2940,6 +3024,117 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
   m_NewAlias->SetValue(m_Aliases->GetStringSelection());
   m_Aliases->Delete(m_Aliases->GetSelection());
   m_RemoveAlias->Disable();
+}
+
+
+////////////////////////////////////////
+// SIP fields
+
+void OptionsDialog::FieldsToRegistrar(RegistrarInfo & registrar)
+{
+  registrar.m_Domain = m_RegistrarDomain->GetValue();
+  registrar.m_User = m_RegistrarUser->GetValue();
+  registrar.m_Password = m_RegistrarPassword->GetValue();
+  registrar.m_TimeToLive = m_RegistrarTimeToLive->GetValue();
+  registrar.m_Active = m_RegistrarActive->GetValue();
+}
+
+
+void OptionsDialog::RegistrarToList(bool overwrite, RegistrarInfo * registrar, int position)
+{
+  if (overwrite)
+    m_Registrars->SetItem(position, 0, registrar->m_Domain);
+  else {
+    position = m_Registrars->InsertItem(position, registrar->m_Domain);
+    m_Registrars->SetItemPtrData(position, (wxUIntPtr)registrar);
+  }
+
+  m_Registrars->SetItem(position, 1, registrar->m_User);
+
+  wxString str;
+  str.sprintf("%u:%02u", registrar->m_TimeToLive/60, registrar->m_TimeToLive%60);
+  m_Registrars->SetItem(position, 2, str);
+
+  m_Registrars->SetItem(position, 3, registrar->m_Active ? "ACTIVE" : "disabled");
+}
+
+
+void OptionsDialog::AddRegistrar(wxCommandEvent & event)
+{
+  RegistrarInfo * registrar = new RegistrarInfo();
+  FieldsToRegistrar(*registrar);
+  RegistrarToList(false, registrar, m_SelectedRegistrar);
+  if (m_SelectedRegistrar != INT_MAX) {
+    m_Registrars->SetItemState(m_SelectedRegistrar, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+    m_Registrars->SetItemState(m_SelectedRegistrar+1, 0, wxLIST_STATE_SELECTED);
+  }
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::ChangeRegistrar(wxCommandEvent & event)
+{
+  RegistrarInfo * registrar = (RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
+  FieldsToRegistrar(*registrar);
+  RegistrarToList(true, registrar, m_SelectedRegistrar);
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::RemoveRegistrar(wxCommandEvent & event)
+{
+  delete (RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
+  m_Registrars->DeleteItem(m_SelectedRegistrar);
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::SelectedRegistrar(wxListEvent & event)
+{
+  m_SelectedRegistrar = event.GetIndex();
+  m_ChangeRegistrar->Enable(true);
+  m_RemoveRegistrar->Enable(true);
+
+  RegistrarInfo & registrar = *(RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
+  m_RegistrarDomain->SetValue(registrar.m_Domain);
+  m_RegistrarUser->SetValue(registrar.m_User);
+  m_RegistrarPassword->SetValue(registrar.m_Password);
+  m_RegistrarTimeToLive->SetValue(registrar.m_TimeToLive);
+  m_RegistrarActive->SetValue(registrar.m_Active);
+
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::DeselectedRegistrar(wxListEvent & event)
+{
+  m_SelectedRegistrar = INT_MAX;
+  m_ChangeRegistrar->Enable(false);
+  m_RemoveRegistrar->Enable(false);
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::ChangedRegistrarInfo(wxCommandEvent & /*event*/)
+{
+  RegistrarInfo registrar;
+  FieldsToRegistrar(registrar);
+
+  bool add = !registrar.m_Domain.IsEmpty() && !registrar.m_User.IsEmpty();
+  bool change = add && m_SelectedRegistrar != INT_MAX;
+
+  // Check for uniqueness
+  for (int i = 0; i < m_Registrars->GetItemCount(); ++i) {
+    if (m_Registrars->GetItemText(i) == registrar.m_Domain) {
+      add = false;
+      if (i != m_SelectedRegistrar)
+        change = false;
+      break;
+    }
+  }
+
+  m_AddRegistrar->Enable(add);
+  m_ChangeRegistrar->Enable(change);
 }
 
 
