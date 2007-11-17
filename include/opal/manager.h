@@ -1362,10 +1362,26 @@ class OpalManager : public PObject
       WORD   max;
       WORD   current;
     } tcpPorts, udpPorts, rtpIpPorts;
+    
+    class InterfaceMonitor : public PInterfaceMonitorClient
+    {
+      PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
+      
+      public:
+        InterfaceMonitor(PSTUNClient * stun);
+        virtual PINDEX GetPriority() const { return 100; }
+        
+      protected:
+        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
+        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
+        
+        PSTUNClient * stun;
+    };
 
     PIPSocket::Address translationAddress;
     PString            stunServer;
     PSTUNClient      * stun;
+    InterfaceMonitor * interfaceMonitor;
 
     RouteTable routeTable;
     PMutex     routeTableMutex;
