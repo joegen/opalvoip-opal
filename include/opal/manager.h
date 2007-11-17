@@ -264,6 +264,7 @@
 #include <codec/silencedetect.h>
 #include <codec/echocancel.h>
 #include <ptclib/pstun.h>
+#include <ptclib/psockbun.h>
 
 #if OPAL_VIDEO
 #include <ptlib/videoio.h>
@@ -1306,10 +1307,26 @@ class OpalManager : public PObject
       WORD   max;
       WORD   current;
     } tcpPorts, udpPorts, rtpIpPorts;
+    
+    class InterfaceMonitor : public PInterfaceMonitorClient
+    {
+      PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
+      
+      public:
+        InterfaceMonitor(PSTUNClient * stun);
+        virtual PINDEX GetPriority() const { return 0; }
+      
+      protected:
+        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
+        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
+        
+        PSTUNClient * stun;
+    };
 
     PIPSocket::Address translationAddress;
     PString            stunServer;
     PSTUNClient      * stun;
+    InterfaceMonitor *interfaceMonitor;
 
     RouteTable routeTable;
     PMutex     routeTableMutex;
