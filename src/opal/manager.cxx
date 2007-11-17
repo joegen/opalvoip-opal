@@ -445,6 +445,7 @@ OpalManager::OpalManager()
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
   stun = NULL;
+  interfaceMonitor = NULL;
 
   clearingAllCalls = FALSE;
 
@@ -518,6 +519,7 @@ OpalManager::~OpalManager()
   endpoints.RemoveAll();
 
   delete stun;
+  delete interfaceMonitor;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
 }
@@ -1189,16 +1191,22 @@ PSTUNClient::NatTypes OpalManager::SetSTUNServer(const PString & server)
   stunServer = server;
 
   if (server.IsEmpty()) {
+    if (stun) {
+      PInterfaceMonitor::GetInstance().OnRemoveSTUNClient(stun);
+    }
     delete stun;
+    delete interfaceMonitor;
     stun = NULL;
+    interfaceMonitor = NULL;
     return PSTUNClient::UnknownNat;
   }
 
-  if (stun == NULL)
+  if (stun == NULL) {
     stun = new PSTUNClient(server,
                            GetUDPPortBase(), GetUDPPortMax(),
                            GetRtpIpPortBase(), GetRtpIpPortMax());
-  else
+    interfaceMonitor = new InterfaceMonitor(stun);
+  } else
     stun->SetServer(server);
   
   PSTUNClient::NatTypes type = stun->GetNatType();
@@ -1466,6 +1474,25 @@ BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
     
   return remoteIsNAT;
 }
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalManager::InterfaceMonitor::InterfaceMonitor(PSTUNClient * _stun)
+: stun(_stun)
+{
+}
+
+void OpalManager::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
+{
+  stun->InvalidateExternalAddressCache();
+}
+
+void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
+{
+  stun->InvalidateExternalAddressCache();
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 
