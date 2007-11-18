@@ -2688,8 +2688,13 @@ bool OptionsDialog::TransferDataFromWindow()
     newRegistrars.push_back(*(RegistrarInfo *)m_Registrars->GetItemData(i));
 
   if (newRegistrars != m_manager.m_registrars) {
-    int registrarIndex = 1;
+    config->DeleteEntry(RegistrarUsedKey);
+    config->DeleteEntry(RegistrarNameKey);
+    config->DeleteEntry(RegistrarUsernameKey);
+    config->DeleteEntry(RegistrarPasswordKey);
     config->DeleteGroup(RegistrarGroup);
+
+    int registrarIndex = 1;
     for (RegistrarList::iterator iterReg = newRegistrars.begin(); iterReg != newRegistrars.end(); ++iterReg) {
       wxString group;
       group.sprintf("%s/%04u", RegistrarGroup, registrarIndex++);
