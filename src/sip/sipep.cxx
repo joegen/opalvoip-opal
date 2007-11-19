@@ -1132,6 +1132,9 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
   }
 
   switch (response.GetStatusCode()) {
+    case SIP_PDU::Failure_IntervalTooBrief :
+      OnReceivedIntervalTooBrief(transaction, response);
+      break;
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       OnReceivedAuthenticationRequired(transaction, response);
@@ -1194,6 +1197,28 @@ BOOL SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
   return TRUE;
 }
 
+void SIPEndPoint::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_PDU & response)
+{
+  SIPTransaction *newTransaction = NULL;
+  const SIPMIMEInfo & responseMIME = response.GetMIME();
+  PSafePtr<SIPHandler> callid_handler = activeSIPHandlers.FindSIPHandlerByCallID(response.GetMIME().GetCallID(), PSafeReadOnly);
+
+  if (!callid_handler)
+    return;
+
+  newTransaction = callid_handler->CreateTransaction(transaction.GetTransport());
+  if (newTransaction) {
+    callid_handler->SetIntervalRetries(++retries);
+    callid_handler->SetExpire(responseMIME.GetMinExpires());
+    newTransaction->GetMIME().SetExpires(responseMIME.GetMinExpires());
+    newTransaction->GetMIME().SetCallID(callid_handler->GetCallID());
+    if (newTransaction->Start())
+      return;
+  }
+  PTRACE(1, "SIP\t Could not restart REGISTER after IntervalTooBrief error!");
+  callid_handler->OnFailed(SIP_PDU::Failure_IntervalTooBrief);
+  return;
+}
 
 void SIPEndPoint::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
 {
