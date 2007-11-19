@@ -1208,7 +1208,6 @@ void SIPEndPoint::OnReceivedIntervalTooBrief(SIPTransaction & transaction, SIP_P
 
   newTransaction = callid_handler->CreateTransaction(transaction.GetTransport());
   if (newTransaction) {
-    callid_handler->SetIntervalRetries(++retries);
     callid_handler->SetExpire(responseMIME.GetMinExpires());
     newTransaction->GetMIME().SetExpires(responseMIME.GetMinExpires());
     newTransaction->GetMIME().SetCallID(callid_handler->GetCallID());
