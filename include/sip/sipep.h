@@ -618,6 +618,13 @@ class SIPEndPoint : public OpalEndPoint
       OpalTransport & transport,
       SIP_PDU * pdu
     );
+
+    /**Handle an incoming IntervalTooBrief response PDU
+      */
+    virtual void OnReceivedIntervalTooBrief(
+      SIPTransaction & transaction, 
+      SIP_PDU & response)
+    ;
   
     /**Handle an incoming Proxy Authentication Required response PDU
       */
