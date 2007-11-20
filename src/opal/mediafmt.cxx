@@ -1473,7 +1473,7 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                             timeStamp)
 {
   AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
 }
 
 
