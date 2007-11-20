@@ -477,7 +477,6 @@ void SimpleOpalProcess::Main()
              "-no-h323s."
              "-h323s-listen:"
              "-h323s-gk:"
-             "-no-h323s-gk."
 #endif
              "-h323-listen:"
              "I-no-sip."
@@ -488,7 +487,6 @@ void SimpleOpalProcess::Main()
              "-lid:"
              "-country:"
 #endif
-             "n-no-gatekeeper."
              "-no-std-dial-peer."
 #if PTRACING
              "o-output:"
@@ -610,14 +608,10 @@ void SimpleOpalProcess::Main()
 #if P_SSL
             "     --no-h323s           : Do not create secure H.323 endpoint\n"
 #endif
-            "  -g --gatekeeper host    : Specify gatekeeper host.\n"
+            "  -g --gatekeeper host    : Specify gatekeeper host, '*' indicates broadcast discovery.\n"
             "  -G --gk-id name         : Specify gatekeeper identifier.\n"
 #if P_SSL
             "     --h323s-gk host      : Specify gatekeeper host for secure H.323 endpoint\n"
-#endif
-            "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
-#if P_SSL
-            "     --no-h323s-gk        : Disable gatekeeper discovery for secure H.323 endpoint\n"
 #endif
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
             "     --gk-token str       : Set gatekeeper security token OID.\n"
@@ -1320,8 +1314,10 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h3
     h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
 
   // Establish link with gatekeeper if required.
-  if (!args.HasOption(secure ? "no-h323s-gk" : "no-gatekeeper")) {
+  if (args.HasOption(secure ? "h323s-gk" : "gatekeeper")) {
     PString gkHost      = args.GetOptionString(secure ? "h323s-gk" : "gatekeeper");
+    if (gkHost == "*")
+      gkHost = PString::Empty();
     PString gkIdentifer = args.GetOptionString('G');
     PString gkInterface = args.GetOptionString(secure ? "h323s-listen" : "h323-listen");
     cout << "Gatekeeper: " << flush;
