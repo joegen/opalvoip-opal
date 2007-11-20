@@ -112,7 +112,7 @@
 
  */
 
-
+#define _CRT_NONSTDC_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
 #include <codec/opalplugin.h>
 
@@ -143,11 +143,11 @@ extern "C" {
 #endif
 
 #  ifdef  _WIN32
-#    define P_DEFAULT_PLUGIN_DIR "C:\\PWLIB_PLUGINS"
+#    define P_DEFAULT_PLUGIN_DIR "C:\\PTLIB_PLUGINS;C:\\PWLIB_PLUGINS"
 #    define DIR_SEPERATOR "\\"
 #    define DIR_TOKENISER ";"
 #  else
-#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/pwlib"
+#    define P_DEFAULT_PLUGIN_DIR "/usr/lib/ptlib:/usr/lib/pwlib"
 #    define DIR_SEPERATOR "/"
 #    define DIR_TOKENISER ":"
 #  endif
@@ -274,9 +274,22 @@ class DynaLink
 
     virtual bool Open(const char *name)
     {
-      char * env = ::getenv("PWLIBPLUGINDIR");
-      if (env == NULL) 
-        return InternalOpen(P_DEFAULT_PLUGIN_DIR, name);
+#ifdef _WIN32
+      char exe_path[_MAX_PATH];
+      if (GetModuleFileName(NULL, exe_path, sizeof(exe_path))) {
+        char * slash = strrchr(exe_path, '\\');
+        if (slash != NULL) {
+          *++slash = '\0';
+          if (InternalOpen(exe_path, name))
+            return true;
+        }
+      }
+#endif // _WIN32
+
+      char * env;
+      if ((env = ::getenv("PTLIBPLUGINDIR")) == NULL &&
+          (env = ::getenv("PWLIBPLUGINDIR")) == NULL) 
+        env = strdup(P_DEFAULT_PLUGIN_DIR);
 
       const char * token = strtok(env, DIR_TOKENISER);
       while (token != NULL) {
@@ -284,7 +297,7 @@ class DynaLink
           return true;
         token = strtok(NULL, DIR_TOKENISER);
       }
-      return false;
+      return InternalOpen(NULL, name); // Last ditch effort
     }
 
   // split into directories on correct seperator
@@ -842,6 +855,8 @@ class H263EncoderContext
       CIF, 
       CIF4, 
       CIF16, 
+      i480,
+	  p720,
       NumStdSizes,
       UnknownStdSize = NumStdSizes
     };
@@ -857,6 +872,8 @@ class H263EncoderContext
         {  352,  288}, // CIF
         {  704,  576}, // 4CIF
         { 1408, 1152}, // 16CIF
+        {  640,  480}, // i480
+        { 1280,  720}, // p720
       };
 
       int sizeIndex;
@@ -1569,7 +1586,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263CIFDesc,                        // text decription
@@ -1602,7 +1619,7 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263CIFDesc,                        // text decription
@@ -1703,7 +1720,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263Desc,                           // text decription
@@ -1736,7 +1754,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
-  PluginCodec_MediaTypeVideo |        // audio codec
+  PluginCodec_MediaTypeVideo |        // video codec
+  PluginCodec_MediaTypeExtVideo |     // Extended video codec
   PluginCodec_RTPTypeExplicit,        // specified RTP type
 
   h263Desc,                           // text decription
