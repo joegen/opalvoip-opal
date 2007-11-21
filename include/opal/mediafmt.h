@@ -613,7 +613,8 @@ class OpalMediaOptionValue : public OpalMediaOption
        }
     }
 
-    virtual Comparison CompareValue(const OpalMediaOption & option) const {
+    virtual Comparison CompareValue(const OpalMediaOption & option) const
+    {
       const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
       if (otherOption == NULL)
         return GreaterThan;
@@ -632,8 +633,20 @@ class OpalMediaOptionValue : public OpalMediaOption
         m_value = otherOption->m_value;
     }
 
-    T GetValue() const { return m_value; }
-    void SetValue(T value) { m_value = value; }
+    T GetValue() const
+    {
+      return m_value;
+    }
+
+    void SetValue(T value)
+    {
+      if (value < m_minimum)
+        m_value = m_minimum;
+      else if (value > m_maximum)
+        m_value = m_maximum;
+      else
+        m_value = value;
+    }
 
   protected:
     T m_value;
@@ -765,9 +778,12 @@ class OpalMediaFormatInternal : public PObject
       time_t timeStamp
     );
 
+    virtual void PrintOn(ostream & strm) const;
+
     BOOL IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
     BOOL IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
 
+    PStringToString GetOptions() const;
     bool GetOptionValue(const PString & name, PString & value) const;
     bool SetOptionValue(const PString & name, const PString & value);
     bool GetOptionBoolean(const PString & name, bool dflt) const;
@@ -786,9 +802,10 @@ class OpalMediaFormatInternal : public PObject
     bool AddOption(OpalMediaOption * option, BOOL overwrite = FALSE);
     OpalMediaOption * FindOption(const PString & name) const;
 
+    virtual bool ToNormalisedOptions();
+    virtual bool ToCustomisedOptions();
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
     virtual bool IsValidForProtocol(const PString & protocol) const;
-    virtual void PrintOptions(ostream & strm) const;
 
   protected:
     PCaselessString              formatName;
@@ -933,12 +950,25 @@ class OpalMediaFormat : public PContainer
     virtual Comparison Compare(const PObject & obj) const;
 
     /**Print media format.
+       Note if the user specifies a width (using setw() for example) of -1, then
+       a details multi-line output of all the options for the format is included.
       */
     virtual void PrintOn(ostream & strm) const;
 
     /**Read media format.
       */
     virtual void ReadFrom(istream & strm);
+
+    /**This will translate the codec specific "custom" options to OPAL
+       "normalised" options, e.g. For H.261 "QCIF MPI"="1", "CIF MPI"="5"
+        would be translated to "Frame Width"="176", "Frame Height"="144".
+      */
+    bool ToNormalisedOptions() { MakeUnique(); return m_info != NULL && m_info->ToNormalisedOptions(); }
+
+    /**This will do the reverse of ToNormalisedOptions, translating the OPAL
+       "normalised" options to codec specific "custom" options.
+      */
+    bool ToCustomisedOptions() { MakeUnique(); return m_info != NULL && m_info->ToCustomisedOptions(); }
 
     /**Merge with another media format. This will alter and validate
        the options for this media format according to the merge rule for
@@ -952,7 +982,7 @@ class OpalMediaFormat : public PContainer
       */
     bool Merge(
       const OpalMediaFormat & mediaFormat
-    ) { return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
+    ) { MakeUnique(); return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
 
     /**Get the name of the format
       */
@@ -1029,6 +1059,11 @@ class OpalMediaFormat : public PContainer
       */
     unsigned GetClockRate() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
+
+    /**Get all of the option values of the format as a dictionary.
+       Each entry is a name value pair.
+      */
+    PStringToString GetOptions() const { return m_info == NULL ? PStringToString() : m_info->GetOptions(); }
 
     /**Get the number of options this media format has.
       */
@@ -1229,10 +1264,9 @@ class OpalMediaFormat : public PContainer
     ostream & PrintOptions(ostream & strm) const
     {
       if (m_info != NULL)
-        m_info->PrintOptions(strm);
+        strm << setw(-1) << m_info;
       return strm;
     }
-
 
     // Backward compatibility
     virtual BOOL IsEmpty() const { return m_info == NULL || !m_info->IsValid(); }
@@ -1350,10 +1384,13 @@ class OpalVideoFormat : public OpalMediaFormat
 
     static const PString & FrameWidthOption();
     static const PString & FrameHeightOption();
-    static const PString & EncodingQualityOption();
+    static const PString & MinRxFrameWidthOption();
+    static const PString & MinRxFrameHeightOption();
+    static const PString & MaxRxFrameWidthOption();
+    static const PString & MaxRxFrameHeightOption();
     static const PString & TargetBitRateOption();
-    static const PString & DynamicVideoQualityOption();
-    static const PString & AdaptivePacketDelayOption();
+    static const PString & TemporalSpatialTradeOffOption();
+    static const PString & TxKeyFramePeriodOption();
 };
 #endif
 
