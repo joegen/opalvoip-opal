@@ -24,7 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_ENDPOINT_H

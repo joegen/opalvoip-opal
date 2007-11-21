@@ -23,7 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptclib/httpsvc.h>

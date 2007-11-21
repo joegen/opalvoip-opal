@@ -19,7 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_H323H224_H

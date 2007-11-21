@@ -22,7 +22,9 @@
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_SVCCTRL_H

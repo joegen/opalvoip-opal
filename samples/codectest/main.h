@@ -21,7 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _CodecTest_MAIN_H

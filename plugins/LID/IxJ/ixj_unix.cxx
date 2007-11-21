@@ -19,7 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #define PLUGIN_DLL_EXPORTS

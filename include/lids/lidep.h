@@ -26,7 +26,9 @@
  * 
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __LIDS_LIDEP_H

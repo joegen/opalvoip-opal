@@ -25,7 +25,9 @@
  */
 
 /*
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "g72x.h"

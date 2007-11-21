@@ -25,7 +25,9 @@
  * Contributor(s): Michele Piccini (michele@piccini.com)
  *                 Derek Smithies (derek@indranet.co.nz)
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*

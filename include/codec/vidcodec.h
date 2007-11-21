@@ -23,7 +23,9 @@
  *
  * Contributor(s): 
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_VIDCODEC_H

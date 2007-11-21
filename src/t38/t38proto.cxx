@@ -23,7 +23,9 @@
  *
  * Contributor(s): Vyacheslav Frolov.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

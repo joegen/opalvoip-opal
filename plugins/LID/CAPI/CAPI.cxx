@@ -19,7 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
