@@ -1,6 +1,8 @@
 /**
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 #if !defined G726_PRIVATE
 #define G726_PRIVATE

@@ -36,7 +36,9 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *                 Craig Southeren (craigs@postincrement.com)
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*

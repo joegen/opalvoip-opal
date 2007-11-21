@@ -25,7 +25,9 @@
  *
  * The author of this code is Derek J Smithies
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_IAX2_MEDIASTRM_H

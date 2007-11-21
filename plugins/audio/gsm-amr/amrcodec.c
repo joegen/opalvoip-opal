@@ -3,9 +3,13 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 

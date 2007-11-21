@@ -26,7 +26,9 @@
  *
  *
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _IAX2_VERSION_H

@@ -28,7 +28,9 @@
  * The processor parts were abstracted out by  by Stephen Cook (sitiveni@gmail.com)
  * and this work was sponsored by the Google summer of code 
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
