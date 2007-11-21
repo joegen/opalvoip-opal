@@ -263,13 +263,15 @@ class OpalPluginControl
 
     int Call(void * parm, unsigned * parmLen, void * context = NULL) const
     {
-      return controlDef != NULL ? (*controlDef->control)(codecDef, context, fnName, parm, parmLen) : 0;
+      return controlDef != NULL ? (*controlDef->control)(codecDef, context, fnName, parm, parmLen) : -1;
     }
 
     int Call(void * parm, unsigned   parmLen, void * context = NULL) const
     {
       return Call(parm, &parmLen, context);
     }
+
+    const char * GetName() const { return fnName; }
 
   protected:
     const PluginCodec_Definition  * codecDef;
@@ -285,6 +287,7 @@ class OpalPluginMediaFormatInternal
   public:
     OpalPluginMediaFormatInternal(const PluginCodec_Definition * defn);
 
+    bool AdjustOptions(OpalMediaFormatInternal & fmt, OpalPluginControl & control) const;
     void PopulateOptions(OpalMediaFormatInternal & format);
     void SetOldStyleOption(OpalMediaFormatInternal & format, const PString & _key, const PString & _val, const PString & type);
     bool IsValidForProtocol(const PString & _protocol) const;
@@ -293,6 +296,8 @@ class OpalPluginMediaFormatInternal
     OpalPluginControl getOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl validForProtocolControl;
+    OpalPluginControl toNormalisedControl;
+    OpalPluginControl toCustomisedControl;
 };
 
 
@@ -314,6 +319,7 @@ class OpalPluginTranscoder
     OpalPluginTranscoder(const PluginCodec_Definition * defn, BOOL isEnc);
     ~OpalPluginTranscoder();
 
+    bool UpdateOptions(const OpalMediaFormat & fmt);
     BOOL Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
     {
       return codecDef != NULL && codecDef->codecFunction != NULL &&
@@ -348,6 +354,8 @@ class OpalPluginAudioFormatInternal : public OpalAudioFormatInternal, public Opa
     );
     virtual PObject * Clone() const;
     virtual bool IsValidForProtocol(const PString & protocol) const;
+    virtual bool ToNormalisedOptions();
+    virtual bool ToCustomisedOptions();
 };
 
 
@@ -356,6 +364,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
     OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = OpalPCM16);
+    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
     BOOL ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual BOOL ConvertSilentFrame(BYTE * buffer);
 };
@@ -366,6 +375,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
     OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
+    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
 };
 
 
@@ -401,6 +411,8 @@ class OpalPluginVideoFormatInternal : public OpalVideoFormatInternal, public Opa
     );
     virtual PObject * Clone() const;
     virtual bool IsValidForProtocol(const PString & protocol) const;
+    virtual bool ToNormalisedOptions();
+    virtual bool ToCustomisedOptions();
 };
 
 
@@ -688,7 +700,7 @@ class H323VideoPluginCapability : public H323VideoCapability,
 
     virtual unsigned GetSubType() const;
 
-    static BOOL SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
+    static BOOL SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
 
     virtual void PrintOn(std::ostream & strm) const;
 
