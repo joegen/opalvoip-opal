@@ -791,6 +791,12 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 }
 
 
+PObject * OpalMediaFormatInternal::Clone() const
+{
+  return new OpalMediaFormatInternal(*this);
+}
+
+
 bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
   PWaitAndSignal m1(media_format_mutex);
