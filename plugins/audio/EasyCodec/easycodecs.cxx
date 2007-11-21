@@ -24,18 +24,8 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: easycodecs.cxx,v $
- * Revision 1.2  2007/06/26 23:54:42  rjongbloed
- * Fixed compile after change to anonymous structure in header (for GCC).
- *
- * Revision 1.1  2006/08/10 07:04:59  csoutheren
- * Added EasyCodec
- *
- * Revision 1.1  2005/04/25 18:43:44  shorne
- * Initial version
- *
- *
-*/
+ * $Id$
+ */
 /*
 #define HAS_EASYG722	1
 #define HAS_EASYG729A	1

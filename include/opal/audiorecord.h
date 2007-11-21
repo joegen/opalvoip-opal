@@ -24,10 +24,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: audiorecord.h,v $
- * Revision 2.1  2007/05/07 14:13:51  csoutheren
- * Add call record capability
- *
+ * $Id$
  */
 
 

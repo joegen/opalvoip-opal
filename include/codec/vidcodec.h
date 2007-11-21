@@ -23,68 +23,7 @@
  *
  * Contributor(s): 
  *
- * $Log: vidcodec.h,v $
- * Revision 2.16  2007/09/25 09:49:54  rjongbloed
- * Fixed videoFastUpdate, is not a count but a simple boolean.
- *
- * Revision 2.15  2007/08/17 11:14:17  csoutheren
- * Add OnLostPicture and OnLostPartialPicture commands
- *
- * Revision 2.14  2007/02/16 07:56:02  dereksmithies
- * Change flag used so H.323 capabiliites are included  if H.323 was enabled
- * when the library was configured.
- *
- * Revision 2.13  2006/07/24 14:03:38  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 2.12.4.2  2006/04/19 07:52:30  csoutheren
- * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
- *
- * Revision 2.12.4.1  2006/04/06 01:21:16  csoutheren
- * More implementation of video codec plugins
- *
- * Revision 2.12  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.11  2005/10/21 17:58:31  dsandras
- * Applied patch from Hannes Friederich <hannesf AATT ee.ethz.ch> to fix OpalVideoUpdatePicture - PIsDescendant problems. Thanks!
- *
- * Revision 2.10  2005/09/06 12:44:49  rjongbloed
- * Many fixes to finalise the video processing: merging remote media
- *
- * Revision 2.9  2005/09/04 06:23:38  rjongbloed
- * Added OpalMediaCommand mechanism (via PNotifier) for media streams
- *   and media transcoders to send commands back to remote.
- *
- * Revision 2.8  2005/08/31 13:19:25  rjongbloed
- * Added mechanism for controlling media (especially codecs) including
- *   changing the OpalMediaFormat option list (eg bit rate) and a completely
- *   new OpalMediaCommand abstraction for things like video fast update.
- *
- * Revision 2.7  2005/08/28 07:59:17  rjongbloed
- * Converted OpalTranscoder to use factory, requiring sme changes in making sure
- *   OpalMediaFormat instances are initialised before use.
- *
- * Revision 2.6  2005/07/24 07:33:07  rjongbloed
- * Simplified "uncompressed" transcoder sp can test video media streams.
- *
- * Revision 2.5  2005/02/21 12:19:45  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 2.4  2004/09/01 12:21:27  rjongbloed
- * Added initialisation of H323EndPoints capability table to be all codecs so can
- *   correctly build remote caps from fqast connect params. This had knock on effect
- *   with const keywords added in numerous places.
- *
- * Revision 2.3  2004/03/11 06:54:26  csoutheren
- * Added ability to disable SIP or H.323 stacks
- *
- * Revision 2.2  2004/01/18 15:35:20  rjongbloed
- * More work on video support
- *
- * Revision 2.1  2003/03/17 10:26:59  robertj
- * Added video support.
- *
+ * $Id$
  */
 
 #ifndef __OPAL_VIDCODEC_H

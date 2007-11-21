@@ -26,43 +26,7 @@
  *
  *
  *
- * $Log: iax2medstrm.cxx,v $
- * Revision 1.9  2007/03/29 05:16:49  csoutheren
- * Pass OpalConnection to OpalMediaSream constructor
- * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
- *
- * Revision 1.8  2007/01/11 03:02:16  dereksmithies
- * Remove the previous audio buffering code, and switch to using the jitter
- * buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- * Revision 1.7  2007/01/10 09:16:55  csoutheren
- * Allow compilation with video disabled
- *
- * Revision 1.6  2006/09/11 03:08:50  dereksmithies
- * Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
- * improve call handling. Notably, IAX2 call transfer. Many thanks.
- * Thanks also to the Google summer of code for sponsoring this work.
- *
- * Revision 1.5  2006/08/09 03:46:39  dereksmithies
- * Add ability to register to a remote Asterisk box. The iaxProcessor class is split
- * into a callProcessor and a regProcessor class.
- * Big thanks to Stephen Cook, (sitiveni@gmail.com) for this work.
- *
- * Revision 1.4  2005/08/26 03:26:51  dereksmithies
- * Add some tidyups from Adrian Sietsma.  Many thanks..
- *
- * Revision 1.3  2005/08/26 03:07:38  dereksmithies
- * Change naming convention, so all class names contain the string "IAX2"
- *
- * Revision 1.2  2005/08/24 01:38:38  dereksmithies
- * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
- *
- * Revision 1.1  2005/07/30 07:01:33  csoutheren
- * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- * Thanks to Derek Smithies of Indranet Technologies Ltd. for
- * writing and contributing this code
- *
- *
+ * $Id$
  */
 
 #include <ptlib.h>

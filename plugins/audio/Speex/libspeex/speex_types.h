@@ -12,7 +12,7 @@
  ********************************************************************
 
  function: #ifdef jail to whip a few platforms into the UNIX ideal.
- last mod: $Id: speex_types.h,v 1.1 2006/08/24 01:32:36 csoutheren Exp $
+ last mod: $Id$
 
  ********************************************************************/
 /**

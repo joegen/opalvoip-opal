@@ -23,10 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.cxx,v $
- * Revision 1.1  2003/03/26 02:49:00  robertj
- * Added service/daemon sample application.
- *
+ * $Id$
  */
 
 #include "precompile.h"

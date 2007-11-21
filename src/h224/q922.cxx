@@ -18,25 +18,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: q922.cxx,v $
- * Revision 1.6  2007/04/02 05:51:33  rjongbloed
- * Tidied some trace logs to assure all have a category (bit before a tab character) set.
- *
- * Revision 1.5  2007/03/12 23:19:01  csoutheren
- * Add ability to remove H.224
- *
- * Revision 1.4  2006/05/03 17:45:51  hfriederich
- * reverting incorrect byte orderings in fcs from previous patch
- *
- * Revision 1.3  2006/05/01 10:29:50  csoutheren
- * Added pragams for gcc < 4
- *
- * Revision 1.2  2006/04/24 12:53:50  rjongbloed
- * Port of H.224 Far End Camera Control to DevStudio/Windows
- *
- * Revision 1.1  2006/04/20 16:48:17  hfriederich
- * Initial version of H.224/H.281 implementation.
- *
+ * $Id$
  */
 
 #include <ptlib.h>

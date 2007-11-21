@@ -22,22 +22,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: silencedetect.h,v $
- * Revision 1.4  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 1.3  2005/07/09 06:52:38  rjongbloed
- * Added print (operator<<) of silence detect mode enum.
- *
- * Revision 1.2  2004/05/24 13:39:26  rjongbloed
- * Fixed setting marker bit when silence suppression transitions from
- *   silence to signal, thanks Ted Szoczei
- * Added a separate structure for the silence suppression paramters to make
- *   it easier to set from global defaults in the manager class.
- *
- * Revision 1.1  2004/05/17 13:24:26  rjongbloed
- * Added silence suppression.
- *
+ * $Id$
  */
 
 #ifndef __OPAL_SILENCEDETECT_H

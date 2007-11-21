@@ -57,31 +57,7 @@
  * 2:1 over the G.711 format. For 24 kbps 40 kbps operation, the quantized
  * difference signal is 3 bits and 5 bits, respectively.
  *
- * $Log: g726_32.c,v $
- * Revision 1.2  2006/08/01 13:06:48  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
- * Revision 1.1.2.1  2006/07/22 14:03:09  rjongbloed
- * Added more plug ins
- *
- * Revision 1.1.2.1  2006/05/08 13:49:57  rjongbloed
- * Imported all the audio codec plug ins from OpenH323
- *
- * Revision 1.1  2004/05/09 14:58:35  csoutheren
- * Initial version - not yet finished
- *
- * Revision 1.5  2002/11/20 04:29:13  robertj
- * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
- *
- * Revision 1.1  2002/02/11 23:24:23  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 1.2  2002/02/10 21:14:54  dereks
- * Add cvs log history to head of the file.
- * Ensure file is terminated by a newline.
- *
- *
- *
+ * $Id$
  */
 #include "g72x.h"
 #include "private.h"
