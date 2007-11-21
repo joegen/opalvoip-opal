@@ -54,7 +54,9 @@
  * 2:1 over the G.711 format. For 24 kbps 40 kbps operation, the quantized
  * difference signal is 3 bits and 5 bits, respectively.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "g72x.h"

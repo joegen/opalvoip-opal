@@ -26,7 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*! \page pageIAX2Protocol IAX2 section of the OPAL library.

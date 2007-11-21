@@ -24,7 +24,9 @@
  *
  * Contributor(s): 
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifdef __GNUG__

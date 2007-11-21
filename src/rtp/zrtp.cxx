@@ -21,7 +21,9 @@
  *
  * The Initial Developer of the Original Code is Post Increment
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

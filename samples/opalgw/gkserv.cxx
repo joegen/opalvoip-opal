@@ -7,7 +7,9 @@
  *
  * Copyright (c) 2007 Equivalence Pty. Ltd.
  *
- * $Id$
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "precompile.h"

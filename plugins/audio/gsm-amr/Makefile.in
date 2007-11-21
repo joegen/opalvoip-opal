@@ -3,7 +3,9 @@
 #
 # Copyright (C) 2004 MX Telecom Ltd.
 #
-# $Id: Makefile.in,v 1.5 2007/04/19 06:09:04 csoutheren Exp $
+# $Revision$
+# $Author$
+# $Date$
 
 PREFIX=@INSTALLPREFIX@
 exec_prefix = ${PREFIX}
