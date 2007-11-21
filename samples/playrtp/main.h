@@ -21,13 +21,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.2  2007/10/03 05:30:32  rjongbloed
- * Added display of when a decoder error occurs.
- *
- * Revision 1.1  2007/09/28 02:33:26  rjongbloed
- * Added application to play back RTP out of a Wireshark capture file.
- *
+ * $Id$
  */
 
 #ifndef _PlayRTP_MAIN_H

@@ -19,32 +19,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h323h224.cxx,v $
- * Revision 1.7  2007/03/12 23:19:01  csoutheren
- * Add ability to remove H.224
- *
- * Revision 1.6  2006/08/21 05:29:25  csoutheren
- * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
- * and secure H.323 signalling via the sh323 URL scheme
- *
- * Revision 1.5  2006/08/10 05:10:30  csoutheren
- * Various H.323 stability patches merged in from DeimosPrePLuginBranch
- *
- * Revision 1.4.2.1  2006/08/09 12:49:21  csoutheren
- * Improve stablity under heavy H.323 load
- *
- * Revision 1.4  2006/06/07 08:02:22  hfriederich
- * Fixing crashes when creating the RTP session failed
- *
- * Revision 1.3  2006/05/01 10:29:50  csoutheren
- * Added pragams for gcc < 4
- *
- * Revision 1.2  2006/04/24 12:53:50  rjongbloed
- * Port of H.224 Far End Camera Control to DevStudio/Windows
- *
- * Revision 1.1  2006/04/20 16:48:17  hfriederich
- * Initial version of H.224/H.281 implementation.
- *
+ * $Id$
  */
 
 #include <ptlib.h>

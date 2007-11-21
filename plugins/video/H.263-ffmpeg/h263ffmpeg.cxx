@@ -36,70 +36,7 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *                 Craig Southeren (craigs@postincrement.com)
  *
- * $Log: h263ffmpeg.cxx,v $
- * Revision 1.16  2007/08/31 07:01:06  rjongbloed
- * Fixed incorrect search directory for avcodec DLL
- *
- * Revision 1.15  2007/08/16 03:13:36  rjongbloed
- * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
- *   so plug ins can provide it as required.
- *
- * Revision 1.14  2007/06/25 22:49:52  rjongbloed
- * Fixed compile after change to anonymous structure in header (for GCC).
- *
- * Revision 1.13  2007/06/22 05:41:47  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- *
- * Revision 1.12  2007/06/02 12:30:33  dsandras
- * Added security checks against the FFMpeg version to prevent problems in case
- * they are not coherent as all our plugins require different versions of
- * FFMPEG. Thanks Michael Smith <msmith cbnco com>.
- *
- * Revision 1.11  2007/06/02 12:24:28  dsandras
- * Fixed H.263 plugin search directory thanks to Michael Smith
- * <msmith cbnco com>. Many thanks!
- *
- * Revision 1.10  2007/04/05 05:47:54  rjongbloed
- * Fixed crash in H.263 plug in if do not have PWLIBPLUGINDIR environment variable set.
- *
- * Revision 1.9  2006/11/01 06:57:23  csoutheren
- * Fixed usage of YUV frame header
- *
- * Revision 1.8  2006/10/31 05:53:30  csoutheren
- * More changes to copyright information
- *
- * Revision 1.7  2006/10/31 05:47:56  csoutheren
- * Clarified copyright and heritage of original codec source
- *
- * Revision 1.6  2006/10/26 08:35:59  rjongbloed
- * Fixed DevStudio 2005 warning
- *
- * Revision 1.5  2006/10/04 08:44:14  csoutheren
- * Fixed loading problems on Linux
- *
- * Revision 1.4  2006/09/06 23:09:21  csoutheren
- * Add Makefile and more implementation for Linux H.263
- *
- * Revision 1.3  2006/08/10 07:05:46  csoutheren
- * Fixed compile warnings on VC 2005
- *
- * Revision 1.2  2006/07/31 09:09:23  csoutheren
- * Checkin of validated codec used during development
- *
- * Revision 1.1.2.3  2006/04/26 08:03:58  csoutheren
- * H.263 encoding and decoding now working from plugin for both SIP and H.323
- *
- * Revision 1.1.2.2  2006/04/26 05:05:59  csoutheren
- * H.263 decoding working via codec plugin
- *
- * Revision 1.1.2.1  2006/04/24 09:07:34  csoutheren
- * Initial implementation of H.263 codec plugin using ffmpeg.
- * Not yet tested - decoder only implemented
- *
+ * $Id$
  */
 
 /*

@@ -21,76 +21,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.13  2007/09/20 00:54:07  rjongbloed
- * Fixed correct codec version loading.
- *
- * Revision 1.12  2007/09/20 00:34:37  rjongbloed
- * Moved samples binary to common directory to make it easier to clean.
- * Fixed "No Trace" builds.
- *
- * Revision 1.11  2007/09/12 04:19:53  rjongbloed
- * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
- *   the plug in capabilities, that then do not get updated values from the master
- *   list, or worse from the user modified master list, causing much confusion.
- *
- * Revision 1.10  2007/09/10 03:15:04  rjongbloed
- * Fixed issues in creating and subsequently using correctly unique
- *   payload types in OpalMediaFormat instances and transcoders.
- *
- * Revision 1.9  2007/06/25 05:09:09  rjongbloed
- * Fixed compile after change to anonymous structure in header (for GCC).
- *
- * Revision 1.8  2007/06/22 05:49:44  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- * Added test for video codec, feed simple raw frames and output the
- *   encoded RTP packets, then feed them back to decoder.
- * Added display of media format information, epecially option list.
- *
- * Revision 1.7  2007/05/20 05:56:26  rjongbloed
- * Added ability to debug audio plug in codecs encode/decode function.
- * General clean up.
- *
- * Revision 1.6  2006/10/02 22:04:19  rjongbloed
- * Added LID plug ins
- *
- * Revision 1.5  2006/09/06 22:36:11  csoutheren
- * Fix problem with IsValidForProtocol on video codecs
- *
- * Revision 1.4  2006/09/05 22:50:57  csoutheren
- * Show protocol valid for status
- *
- * Revision 1.3  2006/07/24 14:03:39  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 1.1.2.6  2006/04/26 05:09:57  csoutheren
- * Cleanup bit rate settings
- *
- * Revision 1.1.2.5  2006/04/19 07:52:30  csoutheren
- * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
- *
- * Revision 1.1.2.4  2006/04/06 01:21:18  csoutheren
- * More implementation of video codec plugins
- *
- * Revision 1.1.2.3  2006/03/23 07:55:54  csoutheren
- * Added in options for capability handling
- *
- * Revision 1.1.2.2  2006/03/20 05:04:54  csoutheren
- * Add check to ensure codec can be instantiated
- *
- * Revision 1.1.2.1  2006/03/16 07:06:27  csoutheren
- * Update for new code
- *
- * Revision 1.2  2006/06/29 08:47:20  csoutheren
- * Removed compiler warning
- *
- * Revision 1.1  2006/03/13 06:56:37  csoutheren
- * Initial version
- *
+ * $Id$
  */
 
 #include <ptlib.h>

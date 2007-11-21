@@ -23,10 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.cxx,v $
- * Revision 1.1  2007/09/28 02:33:26  rjongbloed
- * Added application to play back RTP out of a Wireshark capture file.
- *
+ * $Id$
  */
 
 #include "precompile.h"

@@ -19,47 +19,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ilbccodec.c,v $
- * Revision 1.5  2007/09/05 07:49:07  csoutheren
- * Set output buffers correctly and check input buffers correctly
- *
- * Revision 1.4  2007/09/05 06:22:32  rjongbloed
- * Update iLBC plug in to latest API so get FMTP parameter for mode.
- *
- * Revision 1.3  2006/08/28 01:21:54  csoutheren
- * Disable 15k for SIP
- *
- * Revision 1.2  2006/07/31 09:09:19  csoutheren
- * Checkin of validated codec used during development
- *
- * Revision 1.1.2.2  2006/04/08 06:09:09  rjongbloed
- * Fix correct directory for OPAL headers
- *
- * Revision 1.1.2.1  2006/04/06 01:20:05  csoutheren
- * Ported audio codec plugins from OpenH323 to OPAL
- *
- * Revision 1.8  2005/07/15 10:09:00  rogerhardiman
- * Fix SF bug 1237507. Windows uses malloc.h. Linux and FreeBSD uses stdlib.h
- * Wrap #include with _WIN32 to be consistent with malloc.h in pwlib.
- *
- * Revision 1.7  2004/12/20 23:18:01  csoutheren
- * Added stdlib.h to all plugins to keep FreeBSD happy
- * Thanks to Kevin Oberman
- *
- * Revision 1.6  2004/11/29 06:29:58  csoutheren
- * Added flag to reuse RTP payload types rather than allocaing new ones for each codec
- *  variant
- *
- * Revision 1.5  2004/06/17 22:04:57  csoutheren
- * Changed codec version number to be sensible rather than string $Ver$
- *
- * Revision 1.4  2004/04/09 12:24:19  csoutheren
- * Renamed h323plugin.h to opalplugin.h, and modified everything else
- * as required
- *
- * Revision 1.3  2004/04/04 12:43:59  csoutheren
- * Added file headers and fixd formatting
- *
+ * $Id$
  */
 
 #include <codec/opalplugin.h>

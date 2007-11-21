@@ -23,10 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: custom.cxx,v $
- * Revision 1.1  2003/03/26 02:49:00  robertj
- * Added service/daemon sample application.
- *
+ * $Id$
  */
 
 #ifdef RC_INVOKED

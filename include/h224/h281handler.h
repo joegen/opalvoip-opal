@@ -18,16 +18,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h281handler.h,v $
- * Revision 1.3  2007/04/19 06:17:20  csoutheren
- * Fixes for precompiled headers with gcc
- *
- * Revision 1.2  2006/04/23 18:52:19  dsandras
- * Removed warnings when compiling with gcc on Linux.
- *
- * Revision 1.1  2006/04/20 16:48:17  hfriederich
- * Initial version of H.224/H.281 implementation.
- *
+ * $Id$
  */
 
 #ifndef __OPAL_H281HANDLER_H

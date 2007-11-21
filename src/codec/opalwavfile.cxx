@@ -21,41 +21,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: opalwavfile.cxx,v $
- * Revision 2.5  2006/10/09 07:21:47  csoutheren
- * Fix problem with reading last block of uLaw/ALaw files
- *
- * Revision 2.4  2006/02/13 03:46:17  csoutheren
- * Added initialisation stuff to make sure that everything works OK
- *
- * Revision 2.3  2004/07/15 12:19:23  rjongbloed
- * Various enhancements to the VXML code
- *
- * Revision 2.2  2004/02/19 10:53:04  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.1  2002/09/06 07:19:21  robertj
- * OPAL port.
- *
- * Revision 1.5  2004/07/15 11:14:25  rjongbloed
- * Added missing purity to G.711 decoder function
- *
- * Revision 1.4  2004/07/15 03:18:00  csoutheren
- * Migrated changes from crs_vxnml_devel branch into main trunk
- *
- * Revision 1.3.6.1  2004/07/07 07:10:11  csoutheren
- * Changed to use new factory based PWAVFile
- * Removed redundant blocking/unblocking when using G.723.1
- *
- * Revision 1.3  2003/12/28 00:07:56  csoutheren
- * Added support for 8-bit PCM WAV files
- *
- * Revision 1.2  2002/08/05 10:03:48  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.1  2002/06/20 01:21:32  craigs
- * Initial version
- *
+ * $Id$
  */
 
 #include <ptlib.h>

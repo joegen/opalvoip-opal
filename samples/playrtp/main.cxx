@@ -23,16 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.3  2007/10/03 05:30:32  rjongbloed
- * Added display of when a decoder error occurs.
- *
- * Revision 1.2  2007/10/03 03:52:52  rjongbloed
- * Fixed warning
- *
- * Revision 1.1  2007/09/28 02:33:26  rjongbloed
- * Added application to play back RTP out of a Wireshark capture file.
- *
+ * $Id$
  */
 
 #include "precompile.h"

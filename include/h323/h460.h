@@ -24,14 +24,8 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h460.h,v $
- * Revision 1.2  2006/06/15 15:34:25  shorne
- * More updates
- *
- * Revision 1.1  2006/05/27 07:24:00  hfriederich
- * Initial port of H.460 files from OpenH323 to OPAL
- *
-*/
+ * $Id$
+ */
 
 
 #ifdef P_USE_PRAGMA

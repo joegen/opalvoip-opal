@@ -24,15 +24,8 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g728codec.h,v $
- * Revision 1.1  2006/08/10 07:04:59  csoutheren
- * Added EasyCodec
- *
- * Revision 1.1  2005/04/25 18:43:44  shorne
- * Initial version
- *
- *
-*/
+ * $Id$
+ */
 #include "easycodecs.h"
 
 #include "EasyG728/EasyG728.h"

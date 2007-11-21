@@ -24,72 +24,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: patch.h,v $
- * Revision 2.17  2007/09/05 13:43:04  csoutheren
- * Applied 1748637 - RTP payload translation
- * Thanks to Borko Jandras
- *
- * Revision 2.16  2007/08/01 08:37:46  csoutheren
- * Add function to lock sink transcoders so options can be set
- *
- * Revision 2.15  2007/02/12 02:44:27  csoutheren
- * Start of support for ZRTP
- *
- * Revision 2.14  2007/02/05 19:43:17  dsandras
- * Added additional mutex to prevent temporary deadlock when nothing is
- * received on the remote media stream during the establishment phase.
- *
- * Revision 2.13  2007/01/25 11:48:11  hfriederich
- * OpalMediaPatch code refactorization.
- * Split into OpalMediaPatch (using a thread) and OpalPassiveMediaPatch
- * (not using a thread). Also adds the possibility for source streams
- * to push frames down to the sink streams instead of having a patch
- * thread around.
- *
- * Revision 2.12  2006/06/30 01:33:43  csoutheren
- * Add function to get patch sink media format
- *
- * Revision 2.11  2006/02/02 07:02:57  csoutheren
- * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
- * to change the payload type used for outgoing RTP.
- *
- * Revision 2.10  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.9  2005/11/07 06:34:52  csoutheren
- * Changed PMutex to PTimedMutex
- *
- * Revision 2.8  2005/09/04 06:23:38  rjongbloed
- * Added OpalMediaCommand mechanism (via PNotifier) for media streams
- *   and media transcoders to send commands back to remote.
- *
- * Revision 2.7  2005/08/31 13:19:25  rjongbloed
- * Added mechanism for controlling media (especially codecs) including
- *   changing the OpalMediaFormat option list (eg bit rate) and a completely
- *   new OpalMediaCommand abstraction for things like video fast update.
- *
- * Revision 2.6  2004/08/15 10:10:27  rjongbloed
- * Fixed possible deadlock when closing media patch
- *
- * Revision 2.5  2004/08/14 07:56:29  rjongbloed
- * Major revision to utilise the PSafeCollection classes for the connections and calls.
- *
- * Revision 2.4  2004/03/11 06:54:27  csoutheren
- * Added ability to disable SIP or H.323 stacks
- *
- * Revision 2.3  2003/03/17 10:26:59  robertj
- * Added video support.
- *
- * Revision 2.2  2002/09/16 02:52:35  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.1  2002/01/22 05:07:49  robertj
- * Added filter functions to media patch.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
+ * $Id$
  */
 
 #ifndef __OPAL_PATCH_H

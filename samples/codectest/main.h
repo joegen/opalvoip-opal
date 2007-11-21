@@ -21,12 +21,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2007/08/20 06:28:15  rjongbloed
- * Added new application to test audio and video codecs by taking real media
- *   (camera/YUV file/microphone/WAV file etc) encoding it, decoding it and playing
- *   back on real output device (screen/speaker etc)
- *
+ * $Id$
  */
 
 #ifndef _CodecTest_MAIN_H

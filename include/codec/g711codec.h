@@ -22,25 +22,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g711codec.h,v $
- * Revision 2.5  2005/08/28 07:59:17  rjongbloed
- * Converted OpalTranscoder to use factory, requiring sme changes in making sure
- *   OpalMediaFormat instances are initialised before use.
- *
- * Revision 2.4  2002/09/16 02:52:33  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.3  2002/09/04 06:01:46  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.2  2002/03/15 03:07:25  robertj
- * Added static access to internal conversion functions.
- *
- * Revision 2.1  2001/08/01 05:03:26  robertj
- * Changes to allow control of linking software transcoders, use macros
- *   to force linking.
- *
+ * $Id$
  */
 
 #ifndef __OPAL_G711CODEC_H

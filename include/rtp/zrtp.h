@@ -23,16 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: zrtp.h,v $
- * Revision 2.2  2007/05/21 04:30:30  dereksmithies
- * put #ifndef _PTLIB_H protection around the include of ptlib.h
- *
- * Revision 2.1  2007/02/12 02:44:27  csoutheren
- * Start of support for ZRTP
- *
- * Revision 2.1  2007/02/10 07:08:41  craigs
- * Start of support for ZRTP
- *
+ * $Id$
  */
 
 #ifndef __OPAL_ZRTP_H

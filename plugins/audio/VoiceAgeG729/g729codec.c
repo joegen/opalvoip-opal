@@ -19,28 +19,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g729codec.c,v $
- * Revision 1.4  2007/10/09 10:30:17  rjongbloed
- * Cosmetic change.
- *
- * Revision 1.3  2006/10/26 08:39:25  rjongbloed
- * Updated to latest Voice Age download library
- *
- * Revision 1.2  2006/08/01 13:06:53  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
- * Revision 1.1.2.1  2006/07/22 13:42:49  rjongbloed
- * Added more plug ins
- *
- * Revision 1.1.2.1  2006/05/08 13:49:58  rjongbloed
- * Imported all the audio codec plug ins from OpenH323
- *
- * Revision 1.2  2004/06/17 22:04:56  csoutheren
- * Changed codec version number to be sensible rather than string $Ver$
- *
- * Revision 1.1  2004/05/02 08:59:56  rjongbloed
- * Added VoiceAge G.729 codec plug in.
- *
+ * $Id$
  */
 
 #include <codec/opalplugin.h>
