@@ -18,29 +18,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h281.cxx,v $
- * Revision 1.7  2007/04/04 02:12:00  rjongbloed
- * Reviewed and adjusted PTRACE log levels
- *   Now follows 1=error,2=warn,3=info,4+=debug
- *
- * Revision 1.6  2007/04/02 05:51:33  rjongbloed
- * Tidied some trace logs to assure all have a category (bit before a tab character) set.
- *
- * Revision 1.5  2007/03/30 02:09:50  rjongbloed
- * Fixed various GCC warnings
- *
- * Revision 1.4  2007/03/12 23:19:01  csoutheren
- * Add ability to remove H.224
- *
- * Revision 1.3  2006/05/01 10:29:50  csoutheren
- * Added pragams for gcc < 4
- *
- * Revision 1.2  2006/04/24 12:53:50  rjongbloed
- * Port of H.224 Far End Camera Control to DevStudio/Windows
- *
- * Revision 1.1  2006/04/20 16:48:17  hfriederich
- * Initial version of H.224/H.281 implementation.
- *
+ * $Id$
  */
 
 #include <ptlib.h>

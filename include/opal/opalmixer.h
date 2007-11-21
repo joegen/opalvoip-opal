@@ -24,16 +24,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: opalmixer.h,v $
- * Revision 2.3  2007/05/21 04:30:30  dereksmithies
- * put #ifndef _PTLIB_H protection around the include of ptlib.h
- *
- * Revision 2.2  2007/05/08 09:31:23  csoutheren
- * Removed warnings on Unix
- *
- * Revision 2.1  2007/05/07 14:13:51  csoutheren
- * Add call record capability
- *
+ * $Id$
  */
 
 

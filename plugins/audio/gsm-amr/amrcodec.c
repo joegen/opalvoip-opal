@@ -3,28 +3,9 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.8 2007/10/09 09:21:13 rjongbloed Exp $
+ * $Id$
  *
- * $Log: amrcodec.c,v $
- * Revision 1.8  2007/10/09 09:21:13  rjongbloed
- * Make sure codec gets, and handles, missing frames.
- *
- * Revision 1.7  2007/08/17 08:56:59  rjongbloed
- * Tiny change to make closer to specification
- *
- * Revision 1.6  2007/08/16 03:13:36  rjongbloed
- * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
- *   so plug ins can provide it as required.
- *
- * Revision 1.5  2007/06/22 05:46:09  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- * Updated GSM-AMR to be RFC3267/RFC4867 compliant.
- * Added VAD option.
- *
+ * $Id$
  */
 
 

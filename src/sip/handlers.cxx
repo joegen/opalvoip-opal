@@ -23,62 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: handlers.cxx,v $
- * Revision 1.12  2007/10/11 21:26:37  dsandras
- * More debugging.
- *
- * Revision 1.11  2007/09/21 01:34:10  rjongbloed
- * Rewrite of SIP transaction handling to:
- *   a) use PSafeObject and safe collections
- *   b) only one database of transactions, remove connection copy
- *   c) fix timers not always firing due to bogus deadlock avoidance
- *   d) cleaning up only occurs in the existing garbage collection thread
- *   e) use of read/write mutex on endpoint list to avoid possible deadlock
- *
- * Revision 1.10  2007/09/04 05:42:55  rjongbloed
- * Added OnRegistrationStatus() call back function so can distinguish
- *   between initial registration and refreshes.
- * Fixed handler states so Refreshing state is actually used!
- *
- * Revision 1.9  2007/07/22 13:02:13  rjongbloed
- * Cleaned up selection of registered name usage of URL versus host name.
- *
- * Revision 1.8  2007/07/22 05:07:40  rjongbloed
- * Fixed incorrect disable of time to live timer when get unauthorised error.
- *
- * Revision 1.7  2007/07/03 16:27:14  dsandras
- * Fixed bug reported by Anand R Setlur : crash when registering to
- * non existant domain (ie no transport).
- *
- * Revision 1.6  2007/07/01 12:15:45  dsandras
- * Fixed cut/paste error. Thanks Robert for noticing this!
- *
- * Revision 1.5  2007/06/30 16:43:18  dsandras
- * Make sure transactions are completed before allowing destruction using
- * WaitForTransactionCompletion. If we have a timeout while unsusbscribing,
- * then allow deleting the handler.
- *
- * Revision 1.4  2007/06/10 08:55:12  rjongbloed
- * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
- *
- * Revision 1.3  2007/05/22 18:19:52  dsandras
- * Added conditional check for P_EXPAT.
- *
- * Revision 1.2  2007/05/16 01:17:07  csoutheren
- * Added new files to Windows build
- * Removed compiler warnings on Windows
- * Added backwards compatible SIP Register function
- *
- * Revision 1.1  2007/05/15 20:45:09  dsandras
- * Added various handlers to manage subscriptions for presence, message
- * waiting indications, registrations, state publishing,
- * message conversations, ...
- * Adds/fixes support for RFC3856, RFC3903, RFC3863, RFC3265, ...
- * Many improvements over the original SIPInfo code.
- * Code contributed by NOVACOM (http://www.novacom.be) thanks to
- * EuroWeb (http://www.euroweb.hu).
- *
- *
+ * $Id$
  */
 
 #ifdef __GNUC__

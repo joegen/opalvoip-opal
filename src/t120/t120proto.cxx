@@ -23,44 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: t120proto.cxx,v $
- * Revision 2.7  2005/02/21 12:20:07  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 2.6  2002/11/10 11:33:20  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.5  2002/09/04 06:01:49  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.4  2002/02/11 09:32:13  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 2.3  2002/01/22 05:22:19  robertj
- * Added RTP encoding name string to media format database.
- * Changed time units to clock rate in Hz.
- *
- * Revision 2.2  2001/08/01 05:05:49  robertj
- * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
- *
- * Revision 2.1  2001/07/30 01:07:52  robertj
- * Post first check in fix ups.
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.4  2002/09/03 06:04:11  robertj
- * Added globally accessible functions for media format name.
- *
- * Revision 1.3  2002/08/05 10:03:48  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.2  2002/02/01 01:47:34  robertj
- * Some more fixes for T.120 channel establishment, more to do!
- *
- * Revision 1.1  2001/07/17 04:44:32  robertj
- * Partial implementation of T.120 and T.38 logical channels.
- *
+ * $Id$
  */
 
 #include <ptlib.h>

@@ -22,41 +22,7 @@
  *
  * Contributor(s): Miguel Rodriguez Perez
  *
- * $Log: echocancel.h,v $
- * Revision 1.11  2006/02/01 09:00:46  csoutheren
- * Changes to remove dependencies in Speex code accidentally introduced
- *
- * Revision 1.10  2006/01/31 10:28:03  csoutheren
- * Added detection for variants to speex 1.11.11.1
- *
- * Revision 1.9  2006/01/31 08:32:34  csoutheren
- * Fixed problem with speex includes. Again
- *
- * Revision 1.8  2006/01/31 03:28:03  csoutheren
- * Changed to compile on MSVC 6
- *
- * Revision 1.7  2006/01/23 23:01:19  dsandras
- * Protect internal speex state changes with a mutex.
- *
- * Revision 1.6  2006/01/07 17:37:50  dsandras
- * Updated to speex 1.1.11.2 to fix divergeance issues.
- *
- * Revision 1.5  2006/01/05 12:02:31  rjongbloed
- * Fixed DevStudio compile errors
- *
- * Revision 1.4  2005/12/29 16:20:53  dsandras
- * Added wideband support to the echo canceller.
- *
- * Revision 1.3  2005/11/25 21:00:38  dsandras
- * Remove the DC or the algorithm is puzzled. Added several post-processing filters. Added missing declaration.
- *
- * Revision 1.2  2005/11/24 20:34:44  dsandras
- * Modified copyright.
- *
- * Revision 1.1  2005/11/24 20:31:54  dsandras
- * Added support for echo cancelation using Speex.
- * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
- *
+ * $Id$
  */
 
 #ifndef __OPAL_ECHOCANCEL_H

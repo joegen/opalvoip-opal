@@ -21,13 +21,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.2  2007/10/04 06:48:04  rjongbloed
- * High speed collision between opengk and opalgw.
- *
- * Revision 1.1  2003/03/26 02:49:00  robertj
- * Added service/daemon sample application.
- *
+ * $Id$
  */
 
 #ifndef _OpalGw_MAIN_H

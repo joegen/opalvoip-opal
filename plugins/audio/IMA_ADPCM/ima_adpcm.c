@@ -19,36 +19,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ima_adpcm.c,v $
- * Revision 1.2  2006/08/01 13:06:49  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
- * Revision 1.1.2.1  2006/07/22 13:42:49  rjongbloed
- * Added more plug ins
- *
- * Revision 1.1.2.1  2006/05/08 13:49:57  rjongbloed
- * Imported all the audio codec plug ins from OpenH323
- *
- * Revision 1.6  2005/07/15 10:08:59  rogerhardiman
- * Fix SF bug 1237507. Windows uses malloc.h. Linux and FreeBSD uses stdlib.h
- * Wrap #include with _WIN32 to be consistent with malloc.h in pwlib.
- *
- * Revision 1.5  2004/12/20 23:18:00  csoutheren
- * Added stdlib.h to all plugins to keep FreeBSD happy
- * Thanks to Kevin Oberman
- *
- * Revision 1.4  2004/06/17 22:04:55  csoutheren
- * Changed codec version number to be sensible rather than string $Ver$
- *
- * Revision 1.3  2004/05/26 03:56:02  csoutheren
- * Fixed codecs using compare functions for non-standard capability matching
- *
- * Revision 1.2  2004/05/11 14:07:58  csoutheren
- * Fixed problems with non-standard codecs using comparefunc
- *
- * Revision 1.1  2004/05/10 12:36:41  csoutheren
- * New implementation
- *
+ * $Id$
  */
 
 #include <codec/opalplugin.h>

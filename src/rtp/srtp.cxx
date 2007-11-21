@@ -26,66 +26,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: srtp.cxx,v $
- * Revision 1.14  2007/03/12 23:03:34  csoutheren
- * Disable warnings on Windows
- *
- * Revision 1.13  2007/02/23 05:24:14  csoutheren
- * Fixed problem linking with ZRTP on Windows
- *
- * Revision 1.12  2007/02/20 04:26:57  csoutheren
- * Ensure outgoing and incoming SSRC are set for SRTP sessions
- * Fixed problem with sending secure RTCP packets
- *
- * Revision 1.11  2007/02/12 02:44:27  csoutheren
- * Start of support for ZRTP
- *
- * Revision 1.11  2007/02/10 07:08:41  craigs
- * Start of support for ZRTP
- *
- * Revision 1.10  2006/12/18 03:18:42  csoutheren
- * Messy but simple fixes
- *   - Add access to SIP REGISTER timeout
- *   - Ensure OpalConnection options are correctly progagated
- *
- * Revision 1.9  2006/11/20 03:37:13  csoutheren
- * Allow optional inclusion of RTP aggregation
- *
- * Revision 1.8  2006/10/24 04:18:28  csoutheren
- * Added support for encrypted RTCP
- *
- * Revision 1.7  2006/10/10 10:59:17  csoutheren
- * Fix SRTP compilation on old compilers
- *
- * Revision 1.6  2006/10/04 06:19:08  csoutheren
- * Fixed SRTP configuration for Linux
- *
- * Revision 1.5  2006/10/04 03:45:43  csoutheren
- * Fixed SRTP transmission
- *
- * Revision 1.4  2006/10/03 01:00:53  rjongbloed
- * Fixed ability to compile without SRTP support.
- *
- * Revision 1.3  2006/09/28 07:42:18  csoutheren
- * Merge of useful SRTP implementation
- *
- * Revision 1.2.2.3  2006/09/12 07:47:15  csoutheren
- * Changed to use seperate incoming and outgoing keys
- *
- * Revision 1.2.2.2  2006/09/12 07:06:58  csoutheren
- * More implementation of SRTP and general call security
- *
- * Revision 1.2.2.1  2006/09/08 06:23:31  csoutheren
- * Implement initial support for SRTP media encryption and H.235-SRTP support
- * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
- * yet populate capabilities or respond to negotiations. This code to follow
- *
- * Revision 1.2  2006/09/05 06:18:23  csoutheren
- * Start bringing in SRTP code for libSRTP
- *
- * Revision 1.1  2006/08/21 06:19:28  csoutheren
- * Added placeholders for SRTP implementation
- *
+ * $Id$
  */
 
 #include <ptlib.h>

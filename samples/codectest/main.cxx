@@ -23,33 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.6  2007/10/09 09:22:41  rjongbloed
- * Allow for 16kHz audio codecs.
- * Allow user to set sound channel buffers.
- *
- * Revision 1.5  2007/10/09 01:53:30  rjongbloed
- * Simplified code for audio/video grab/play devices.
- *
- * Revision 1.4  2007/09/18 02:27:57  rjongbloed
- * Changed so single letter options are consistently lowercase.
- *
- * Revision 1.3  2007/09/11 08:29:24  csoutheren
- * Set marker bits on input frames
- * Allow "codec-less" operation
- * Fix spelling mistakes
- *
- * Revision 1.2  2007/09/07 04:06:39  rjongbloed
- * Added bit rate parameter
- * Fixed propagating frame size, frame rate and bit rate to codec via OpalMediaOptions.
- * Added VideoFastUpdate command.
- * Made end statistics nicer, including bit rate of teh encoding.
- *
- * Revision 1.1  2007/08/20 06:28:15  rjongbloed
- * Added new application to test audio and video codecs by taking real media
- *   (camera/YUV file/microphone/WAV file etc) encoding it, decoding it and playing
- *   back on real output device (screen/speaker etc)
- *
+ * $Id$
  */
 
 #include "precompile.h"

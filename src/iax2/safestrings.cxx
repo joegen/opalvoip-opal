@@ -24,23 +24,7 @@
  *
  * The author of this code is Derek J Smithies
  *
- * $Log: safestrings.cxx,v $
- * Revision 1.3  2007/01/17 22:27:52  dereksmithies
- * Correctly sends DTMF to remote node. Tidy up string handling.
- *
- * Revision 1.2  2005/08/24 04:56:25  dereksmithies
- * Add code from Adrian Sietsma to send FullFrameTexts and FullFrameDtmfs to
- * the remote end.  Many Thanks.
- *
- * Revision 1.1  2005/07/30 07:01:33  csoutheren
- * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- * Thanks to Derek Smithies of Indranet Technologies Ltd. for
- * writing and contributing this code
- *
- *
- *
- *
- *
+ * $Id$
  */
 
 #include <ptlib.h>

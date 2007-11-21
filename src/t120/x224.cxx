@@ -23,53 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: x224.cxx,v $
- * Revision 2.2  2002/09/04 06:01:49  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.1  2002/07/01 04:56:33  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.12  2002/09/03 06:21:01  robertj
- * Cosmetic change to formatting.
- *
- * Revision 1.11  2002/08/05 10:03:48  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.10  2002/06/27 03:11:12  robertj
- * Fixed encoding bugs, thanks Greg Adams
- *
- * Revision 1.9  2001/02/09 05:13:56  craigs
- * Added pragma implementation to (hopefully) reduce the executable image size
- * under Linux
- *
- * Revision 1.8  2000/05/02 04:32:28  robertj
- * Fixed copyright notice comment.
- *
- * Revision 1.7  2000/04/18 11:36:40  robertj
- * Fixed bug in setting data compont size in X224 packet, thanks Wolfgang Platzer
- *
- * Revision 1.6  1999/11/19 01:00:07  robertj
- * Fixed bug that disallowed zero length data PDU's, thanks Dave Kristol.
- *
- * Revision 1.5  1999/11/15 14:11:29  robertj
- * Fixed trace output stream being put back after setting hex/fillchar modes.
- *
- * Revision 1.4  1999/09/03 14:03:54  robertj
- * Fixed warning under GNU compiler.
- *
- * Revision 1.3  1999/08/31 13:30:20  robertj
- * Added gatekeeper support.
- *
- * Revision 1.2  1999/06/09 05:26:20  robertj
- * Major restructuring of classes.
- *
- * Revision 1.1  1998/12/14 09:13:48  robertj
- * Initial revision
- *
+ * $Id$
  */
 
 #include <ptlib.h>

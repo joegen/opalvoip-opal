@@ -23,27 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.6  2007/10/04 06:48:04  rjongbloed
- * High speed collision between opengk and opalgw.
- *
- * Revision 1.5  2006/10/02 13:30:51  rjongbloed
- * Added LID plug ins
- *
- * Revision 1.4  2004/03/16 11:06:28  rjongbloed
- * Changed proxy to URL
- *
- * Revision 1.3  2004/03/13 06:52:30  rjongbloed
- * Slight rearrangement of local party name and alias list to beter match common
- *   behaviour in ancestor.
- * Abstracted local party name for endpoint into ancestor from H.,323.
- *
- * Revision 1.2  2004/03/11 06:54:27  csoutheren
- * Added ability to disable SIP or H.323 stacks
- *
- * Revision 1.1  2003/03/26 02:49:00  robertj
- * Added service/daemon sample application.
- *
+ * $Id$
  */
 
 #include "precompile.h"

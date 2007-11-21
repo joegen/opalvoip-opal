@@ -23,47 +23,7 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: rfc4175.cxx,v $
- * Revision 1.12  2007/10/03 04:06:33  csoutheren
- * Add missing #pragma
- *
- * Revision 1.11.6.1  2007/10/10 06:54:36  csoutheren
- * Updates to RFC4175 to deal with transmission over a wire
- * Not finished yet :)
- *
- * Revision 1.11  2007/09/12 05:55:35  csoutheren
- * Fixed SIP fmtp options for rfc 4175
- *
- * Revision 1.10  2007/09/11 15:48:44  csoutheren
- * Implemented RC4175 RGB
- *
- * Revision 1.9  2007/09/11 13:41:28  csoutheren
- * Fully implemented RFC 4175 codec with YCrCb420 encoding
- *
- * Revision 1.8  2007/09/09 23:44:15  rjongbloed
- * Fixed payload type and encoding name
- *
- * Revision 1.7  2007/08/29 00:46:13  csoutheren
- * Change base class for RFC4175 transcoder
- *
- * Revision 1.6  2007/08/03 07:21:02  csoutheren
- * Remove warnings
- *
- * Revision 1.5  2007/07/05 06:36:22  rjongbloed
- * Fixed MSVC compiler warning.
- *
- * Revision 1.4  2007/07/05 06:25:13  rjongbloed
- * Fixed GNU compiler warnings.
- *
- * Revision 1.3  2007/06/30 14:00:05  dsandras
- * Fixed previous commit so that things at least compile. Untested.
- *
- * Revision 1.2  2007/06/29 23:24:25  csoutheren
- * More RFC4175 implementation
- *
- * Revision 1.1  2007/05/31 14:11:45  csoutheren
- * Add initial support for RFC 4175 uncompressed video encoding
- *
+ * $Id$
  */
 
 #include <ptlib.h>
