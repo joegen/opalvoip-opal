@@ -376,6 +376,8 @@ DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
 DEF_FIELD(VideoAutoReceive);
 DEF_FIELD(VideoFlipRemote);
+DEF_FIELD(VideoMinFrameSize);
+DEF_FIELD(VideoMaxFrameSize);
 DEF_FIELD(LocalVideoFrameX);
 DEF_FIELD(LocalVideoFrameY);
 DEF_FIELD(RemoteVideoFrameX);
@@ -841,7 +843,9 @@ bool MyManager::Initialise()
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
 
-  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize, "CIF");
+  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  "CIF");
+  config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, "SQCIF");
+  config->Read(VideoMaxFrameSizeKey,  &m_VideoMaxFrameSize,   "CIF16");
   AdjustFrameSize();
 
   config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
@@ -2013,8 +2017,22 @@ void MyManager::StopRegistrars()
 bool MyManager::AdjustFrameSize()
 {
   unsigned width, height;
-  if (!PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, width, height))
-    return false;
+  if (!PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, width, height)) {
+    width = PVideoFrameInfo::CIFWidth;
+    height = PVideoFrameInfo::CIFWidth;
+  }
+
+  unsigned minWidth, minHeight;
+  if (!PVideoFrameInfo::ParseSize(m_VideoMinFrameSize, minWidth, minHeight)) {
+    minWidth = PVideoFrameInfo::SQCIFWidth;
+    minHeight = PVideoFrameInfo::SQCIFHeight;
+  }
+
+  unsigned maxWidth, maxHeight;
+  if (!PVideoFrameInfo::ParseSize(m_VideoMaxFrameSize, maxWidth, maxHeight)) {
+    maxWidth = PVideoFrameInfo::CIF16Width;
+    maxHeight = PVideoFrameInfo::CIF16Height;
+  }
 
   OpalMediaFormatList allMediaFormats;
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
@@ -2023,6 +2041,10 @@ bool MyManager::AdjustFrameSize()
     if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), minWidth);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), minHeight);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), maxWidth);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
       OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
@@ -2313,6 +2335,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
   FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  m_VideoMinFrameSize = m_manager.m_VideoMinFrameSize;
+  FindWindowByName(VideoMinFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
+  FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
 
   choice = FindWindowByNameAs<wxChoice>(this, "VideoGrabber");
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -2587,13 +2613,15 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
-  m_manager.AdjustFrameSize();
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
   m_manager.SetVideoInputDevice(grabber);
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
   SAVE_FIELD(VideoAutoReceive, m_manager.SetAutoStartReceiveVideo);
 //  SAVE_FIELD(VideoFlipRemote, );
+  SAVE_FIELD(VideoMinFrameSize, m_manager.m_VideoMinFrameSize = );
+  SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
+  m_manager.AdjustFrameSize();
 
   ////////////////////////////////////////
   // Codec fields

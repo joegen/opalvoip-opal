@@ -505,6 +505,8 @@ class OptionsDialog : public wxDialog
     bool      m_VideoAutoTransmit;
     bool      m_VideoAutoReceive;
     bool      m_VideoFlipRemote;
+    PwxString m_VideoMinFrameSize;
+    PwxString m_VideoMaxFrameSize;
 
     ////////////////////////////////////////
     // Codec fields
@@ -802,6 +804,8 @@ class MyManager : public wxFrame, public OpalManager
     int  m_remoteVideoFrameX;
     int  m_remoteVideoFrameY;
     PwxString m_VideoGrabFrameSize;
+    PwxString m_VideoMinFrameSize;
+    PwxString m_VideoMaxFrameSize;
     bool AdjustFrameSize();
 
     MyMediaList m_mediaInfo;
