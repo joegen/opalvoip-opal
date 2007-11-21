@@ -483,6 +483,7 @@ class OpalMediaFormatInternal : public PObject
       time_t timeStamp
     );
 
+    virtual PObject * Clone() const;
     virtual void PrintOn(ostream & strm) const;
 
     BOOL IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
