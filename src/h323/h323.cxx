@@ -3611,7 +3611,7 @@ void H323Connection::OnSetLocalCapabilities()
     for (PINDEX i = 0; i < formats.GetSize(); i++) {
       OpalMediaFormat format = formats[i];
       if (format.GetDefaultSessionID() == sessionOrder[s] && format.IsTransportable())
-        simultaneous = localCapabilities.AddAllCapabilities(endpoint, 0, simultaneous, format, TRUE);
+        simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, format);
     }
   }
   

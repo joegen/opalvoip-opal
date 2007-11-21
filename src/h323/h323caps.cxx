@@ -2371,6 +2371,24 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
 }
 
 
+PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
+                                        PINDEX simultaneous,
+                                        const OpalMediaFormat & mediaFormat)
+{
+  PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
+
+  if (FindCapability(mediaFormat, H323Capability::e_Unknown, true) == NULL) {
+    H323Capability * capability = H323Capability::Create(mediaFormat);
+    if (capability != NULL) {
+      capability->GetWritableMediaFormat() = mediaFormat;
+      reply = SetCapability(descriptorNum, simultaneous, capability);
+    }
+  }
+
+  return reply;
+}
+
+
 PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
                                             PINDEX simultaneous,
                                             const PString & name,

@@ -367,6 +367,27 @@ struct PluginCodec_Option {
 };
 
 
+// Normalised option names
+#define PLUGINCODEC_OPTION_NEEDS_JITTER               "Needs Jitter"
+#define PLUGINCODEC_OPTION_CLOCK_RATE                 "Clock Rate"
+#define PLUGINCODEC_OPTION_FRAME_TIME                 "Frame Time"
+#define PLUGINCODEC_OPTION_MAX_FRAME_SIZE             "Max Frame Size"
+#define PLUGINCODEC_OPTION_MAX_BIT_RATE               "Max Bit Rate"
+#define PLUGINCODEC_OPTION_TARGET_BIT_RATE            "Target Bit Rate"
+#define PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET       "Rx Frames per Packet"
+#define PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET       "Tx Frames Per Packet"
+#define PLUGINCODEC_OPTION_FRAME_WIDTH                "Frame Width"
+#define PLUGINCODEC_OPTION_FRAME_HEIGHT               "Frame Height"
+#define PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH         "Min Rx Frame Width"
+#define PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT        "Min Rx Frame Height"
+#define PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH         "Max Rx Frame Width"
+#define PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT        "Max Rx Frame Height"
+#define PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF "Temporal Spatial Trade Off"
+#define PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD        "Tx Key Frame Period"
+
+
+// Full definition of the codec
+
 struct PluginCodec_Definition {
   unsigned int version;                     // codec structure version
 

@@ -352,7 +352,10 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat == dstFormat)
-          return srcFormat.Merge(dstFormat) && dstFormat.Merge(srcFormat);
+          return srcFormat.Merge(dstFormat) &&
+                 dstFormat.Merge(srcFormat) &&
+                 srcFormat.ToNormalisedOptions() &&
+                 dstFormat.ToNormalisedOptions();
       }
     }
   }
@@ -371,7 +374,9 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
               return srcFormat.Merge(i->first) &&
                      dstFormat.Merge(i->second) &&
                      srcFormat.Merge(dstFormat) &&
-                     dstFormat.Merge(srcFormat);
+                     dstFormat.Merge(srcFormat) &&
+                     srcFormat.ToNormalisedOptions() &&
+                     dstFormat.ToNormalisedOptions();
           }
         }
       }
