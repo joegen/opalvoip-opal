@@ -1797,7 +1797,7 @@
                                             <cols>4</cols>
                                             <vgap>0</vgap>
                                             <object class="sizeritem">
-                                                <flag>wxTOP|wxALIGN_CENTER_VERTICAL</flag>
+                                                <flag>wxTOP|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
                                                 <option>0</option>
                                                 <object class="spacer" name="spacer" base="EditSpacer">
@@ -1840,7 +1840,7 @@
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
-                                                <flag>wxTOP|wxBOTTOM</flag>
+                                                <flag>wxRIGHT|wxTOP|wxBOTTOM</flag>
                                                 <border>8</border>
                                                 <option>0</option>
                                                 <object class="wxTextCtrl" name="SIPProxy" base="EditTextCtrl">
@@ -1890,6 +1890,7 @@
                                         <object class="wxBoxSizer" name="sizer_63" base="EditBoxSizer">
                                             <orient>wxHORIZONTAL</orient>
                                             <object class="sizeritem">
+                                                <flag>wxEXPAND</flag>
                                                 <border>0</border>
                                                 <option>1</option>
                                                 <object class="spacer" name="spacer" base="EditSpacer">
@@ -1905,6 +1906,7 @@
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
+                                                <flag>wxEXPAND</flag>
                                                 <border>0</border>
                                                 <option>1</option>
                                                 <object class="spacer" name="spacer" base="EditSpacer">
@@ -1920,6 +1922,7 @@
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
+                                                <flag>wxEXPAND</flag>
                                                 <border>0</border>
                                                 <option>1</option>
                                                 <object class="spacer" name="spacer" base="EditSpacer">
@@ -1935,6 +1938,7 @@
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
+                                                <flag>wxEXPAND</flag>
                                                 <border>0</border>
                                                 <option>1</option>
                                                 <object class="spacer" name="spacer" base="EditSpacer">
@@ -1954,20 +1958,20 @@
                                             <cols>6</cols>
                                             <vgap>0</vgap>
                                             <object class="sizeritem">
-                                                <flag>wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+                                                <flag>wxLEFT|wxTOP|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
                                                 <option>0</option>
-                                                <object class="spacer" name="spacer" base="EditSpacer">
-                                                    <height>20</height>
-                                                    <width>20</width>
+                                                <object class="wxStaticText" name="label_49_copy" base="EditStaticText">
+                                                    <attribute>1</attribute>
+                                                    <label>Domain:</label>
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
-                                                <flag>wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+                                                <flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
                                                 <option>0</option>
-                                                <object class="wxCheckBox" name="RegistrarUsed" base="EditCheckBox">
-                                                    <label>Use Registrar</label>
+                                                <object class="wxTextCtrl" name="RegistrarDomain" base="EditTextCtrl">
+                                                    <size>96, 12d</size>
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
@@ -1980,9 +1984,9 @@
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
-                                                <flag>wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+                                                <flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
-                                                <option>0</option>
+                                                <option>1</option>
                                                 <object class="wxTextCtrl" name="RegistrarUsername" base="EditTextCtrl">
                                                     <size>72, 12d</size>
                                                 </object>
@@ -1991,13 +1995,49 @@
                                                 <flag>wxLEFT|wxTOP|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
                                                 <option>0</option>
+                                                <object class="wxStaticText" name="label_51_copy" base="EditStaticText">
+                                                    <attribute>1</attribute>
+                                                    <label>Password:</label>
+                                                </object>
+                                            </object>
+                                            <object class="sizeritem">
+                                                <flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+                                                <border>8</border>
+                                                <option>0</option>
+                                                <object class="wxTextCtrl" name="RegistrarPassword" base="EditTextCtrl">
+                                                    <style>wxTE_PASSWORD</style>
+                                                    <size>72, 12d</size>
+                                                </object>
+                                            </object>
+                                            <object class="sizeritem">
+                                                <flag>wxEXPAND</flag>
+                                                <border>0</border>
+                                                <option>0</option>
+                                                <object class="spacer" name="spacer" base="EditSpacer">
+                                                    <height>20</height>
+                                                    <width>20</width>
+                                                </object>
+                                            </object>
+                                            <object class="sizeritem">
+                                                <flag>wxEXPAND</flag>
+                                                <border>0</border>
+                                                <option>0</option>
+                                                <object class="spacer" name="spacer" base="EditSpacer">
+                                                    <height>20</height>
+                                                    <width>20</width>
+                                                </object>
+                                            </object>
+                                            <object class="sizeritem">
+                                                <flag>wxLEFT|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
+                                                <border>8</border>
+                                                <option>0</option>
                                                 <object class="wxStaticText" name="label_16" base="EditStaticText">
                                                     <attribute>1</attribute>
                                                     <label>Time to Live:</label>
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
-                                                <flag>wxRIGHT|wxTOP|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
+                                                <flag>wxRIGHT|wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
                                                 <option>0</option>
                                                 <object class="wxBoxSizer" name="sizer_48" base="EditBoxSizer">
@@ -2024,53 +2064,21 @@
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
-                                                <flag>wxLEFT|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
-                                                <border>8</border>
+                                                <flag>wxEXPAND</flag>
+                                                <border>0</border>
                                                 <option>0</option>
-                                                <object class="wxStaticText" name="label_49_copy" base="EditStaticText">
-                                                    <attribute>1</attribute>
-                                                    <label>Domain:</label>
+                                                <object class="spacer" name="spacer" base="EditSpacer">
+                                                    <height>20</height>
+                                                    <width>20</width>
                                                 </object>
                                             </object>
                                             <object class="sizeritem">
                                                 <flag>wxBOTTOM|wxALIGN_CENTER_VERTICAL</flag>
                                                 <border>8</border>
                                                 <option>0</option>
-                                                <object class="wxTextCtrl" name="RegistrarDomain" base="EditTextCtrl">
-                                                    <size>96, 12d</size>
-                                                </object>
-                                            </object>
-                                            <object class="sizeritem">
-                                                <flag>wxLEFT|wxBOTTOM|wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL</flag>
-                                                <border>8</border>
-                                                <option>0</option>
-                                                <object class="wxStaticText" name="label_51_copy" base="EditStaticText">
-                                                    <attribute>1</attribute>
-                                                    <label>Password:</label>
-                                                </object>
-                                            </object>
-                                            <object class="sizeritem">
-                                                <flag>wxBOTTOM|wxEXPAND|wxALIGN_CENTER_VERTICAL</flag>
-                                                <border>8</border>
-                                                <option>0</option>
-                                                <object class="wxTextCtrl" name="RegistrarPassword" base="EditTextCtrl">
-                                                    <style>wxTE_PASSWORD</style>
-                                                </object>
-                                            </object>
-                                            <object class="sizeritem">
-                                                <border>0</border>
-                                                <option>0</option>
-                                                <object class="spacer" name="spacer" base="EditSpacer">
-                                                    <height>20</height>
-                                                    <width>20</width>
-                                                </object>
-                                            </object>
-                                            <object class="sizeritem">
-                                                <border>0</border>
-                                                <option>0</option>
-                                                <object class="spacer" name="spacer" base="EditSpacer">
-                                                    <height>20</height>
-                                                    <width>20</width>
+                                                <object class="wxCheckBox" name="RegistrarUsed" base="EditCheckBox">
+                                                    <checked>1</checked>
+                                                    <label>Active</label>
                                                 </object>
                                             </object>
                                         </object>
