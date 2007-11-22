@@ -1028,7 +1028,10 @@ bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
   options.MakeUnique();
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
-    if (option != NULL && !options[i].Merge(*option))
+    if (option == NULL) {
+      PTRACE(2, "MediaFormat\tCannot merge unmatched option " << options[i].GetName());
+    }
+    else if (!options[i].Merge(*option))
       return false;
   }
 
