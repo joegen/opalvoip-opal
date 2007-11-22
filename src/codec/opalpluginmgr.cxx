@@ -1137,7 +1137,7 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
     free(options);
   }
 
-  return TRUE;
+  return OpalVideoTranscoder::UpdateOutputMediaFormat(fmt);
 }
 
 
