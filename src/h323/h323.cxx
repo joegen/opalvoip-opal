@@ -3571,11 +3571,6 @@ void H323Connection::SendCapabilitySet(BOOL empty)
   capabilityExchangeProcedure->Start(TRUE, empty);
 }
 
-OpalMediaFormatList H323Connection::GetLocalMediaFormats()
-{
-  return ownerCall.GetMediaFormats(*this, FALSE);
-}
-
 void H323Connection::OnSetLocalCapabilities()
 {
   if (capabilityExchangeProcedure->HasSentCapabilities())
