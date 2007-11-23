@@ -1,11 +1,12 @@
 /*
  * version.h
  *
- * Version number header file for OpenPhone
+ * An OPAL GUI phone application.
  *
- * A H.323 "net telephone" application.
+ * Open Phone Abstraction Library (OPAL)
+ * Formally known as the Open H323 project.
  *
- * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
+ * Copyright (c) 2007 Vox Lucida
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -17,30 +18,28 @@
  * the License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is Portable Windows Library.
+ * The Original Code is Open Phone client.
  *
- * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
- *
- * Portions of this code were written with the assisance of funding from
- * Vovida Networks, Inc. http://www.vovida.com.
- *
- * Portions are Copyright (C) 1993 Free Software Foundation, Inc.
- * All Rights Reserved.
+ * The Initial Developer of the Original Code is Robert Jongbloed
  *
  * Contributor(s): ______________________________________.
  *
- *
- * Library dependencies:
- *
- *   pwlib: v1.3.5   CVS tag: v1_3_5
- *   opal: v2.0beta1   CVS tag: HEAD
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _OpenPhone_VERSION_H
 #define _OpenPhone_VERSION_H
 
+#define	PRODUCT_NAME_TEXT	"Open Phone"
+#define	EXE_NAME_TEXT	        "openphone"
+#define	MANUFACTURER_TEXT	"Vox Lucida"
+#define	COPYRIGHT_HOLDER	"Vox Lucida (Australia)"
+
+
 #define MAJOR_VERSION 2
-#define MINOR_VERSION 0
+#define MINOR_VERSION 1
 #define BUILD_TYPE    AlphaCode
 #define BUILD_NUMBER 0
 

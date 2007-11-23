@@ -35,7 +35,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Voice Age G.729 Audio Codec
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OPAL Plug Ins", "Install.vdproj", "{A0E82686-4717-4827-8A12-D3D9127C25DF}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OPAL Plug Ins", "Installer_2003.vdproj", "{A0E82686-4717-4827-8A12-D3D9127C25DF}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject

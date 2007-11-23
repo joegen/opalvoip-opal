@@ -6,7 +6,7 @@
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *
- * Copyright (c) 2004 Post Increment
+ * Copyright (c) 2007 Vox Lucida
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -20,7 +20,7 @@
  *
  * The Original Code is Open Phone client.
  *
- * The Initial Developer of the Original Code is Post Increment
+ * The Initial Developer of the Original Code is Robert Jongbloed
  *
  * Contributor(s): ______________________________________.
  *

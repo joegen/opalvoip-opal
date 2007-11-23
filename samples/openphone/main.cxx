@@ -6,7 +6,7 @@
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *    
- * Copyright (c) 2004 Post Increment
+ * Copyright (c) 2007 Vox Lucida
  *   
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -20,9 +20,9 @@
  *
  * The Original Code is Open Phone client.
  *
- * The Initial Developer of the Original Code is Post Increment
+ * The Initial Developer of the Original Code is Robert Jongbloed
  *
- * Contributor(s): 
+ * Contributor(s): ______________________________________.
  *
  * $Revision$
  * $Author$
@@ -275,8 +275,8 @@ DEFINE_EVENT_TYPE(wxEvtStateChange)
 IMPLEMENT_APP(OpenPhoneApp)
 
 OpenPhoneApp::OpenPhoneApp()
-  : PProcess("Equivalence", "OpenPhone",
-              MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
+  : PProcess(MANUFACTURER_TEXT, PRODUCT_NAME_TEXT,
+             MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
   wxConfig::Set(new wxConfig((const char *)GetName(), (const char *)GetManufacturer()));
 }
