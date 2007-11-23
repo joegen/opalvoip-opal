@@ -2373,9 +2373,10 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
 
 PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
                                             PINDEX simultaneous,
-                                            const PString & name,
+                                            const OpalMediaFormat & format,
                                             BOOL exact)
 {
+  PString name(format);
   PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
 
   PStringArray wildcard = name.Tokenise('*', FALSE);
@@ -2388,6 +2389,7 @@ PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
     if ((exact ? (capName == name) : MatchWildcard(capName, wildcard)) &&
         FindCapability(capName, H323Capability::e_Unknown, exact) == NULL) {
       H323Capability * capability = H323Capability::Create(capName);
+      capability->GetWritableMediaFormat() = format;
       PINDEX num = SetCapability(descriptorNum, simultaneous, capability);
       if (descriptorNum == P_MAX_INDEX) {
         reply = num;

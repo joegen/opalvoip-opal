@@ -316,6 +316,7 @@ class H323Capability : public PObject
   PCLASSINFO(H323Capability, PObject);
 
   public:
+    friend class H323Capabilities;
   /**@name Construction */
   //@{
     /**Create a new capability specification.
@@ -2331,7 +2332,7 @@ class H323Capabilities : public PObject
     PINDEX AddAllCapabilities(
       PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
-      const PString & name,    ///<  New capabilities name, if using "known" one.
+      const OpalMediaFormat & name,    ///<  New capabilities name, if using "known" one.
       BOOL exact = FALSE       ///<  Capability name must be exact match
     );
 
@@ -2340,7 +2341,7 @@ class H323Capabilities : public PObject
       const H323EndPoint &,    ///<  The endpoint adding the capabilities.
       PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
-      const PString & name,    ///<  New capabilities name, if using "known" one.
+      const OpalMediaFormat & name,    ///<  New capabilities name, if using "known" one.
       BOOL exact = FALSE       ///<  Capability name must be exact match
     )
     { return AddAllCapabilities(descriptorNum, simultaneous, name, exact); }
