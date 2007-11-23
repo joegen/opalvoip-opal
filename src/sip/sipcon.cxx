@@ -1919,7 +1919,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     return FALSE;
 #endif
 
-  OpalMediaFormatList formats = ownerCall.GetMediaFormats(*this, FALSE);
+  OpalMediaFormatList formats = GetLocalMediaFormats();
 
   // See if any media formats of this session id, so don't create unused RTP session
   PINDEX i;
