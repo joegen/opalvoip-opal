@@ -1300,4 +1300,9 @@ OpalMediaStream * OpalConnection::InternalCreateMediaStream(const OpalMediaForma
   return CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
+OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
+{
+  return ownerCall.GetMediaFormats(*this, FALSE);
+}
+
 /////////////////////////////////////////////////////////////////////////////

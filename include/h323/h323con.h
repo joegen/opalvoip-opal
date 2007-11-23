@@ -1846,8 +1846,6 @@ class H323Connection : public OpalConnection
 
     virtual BOOL OnOpenIncomingMediaChannels();
 
-    virtual OpalMediaFormatList GetLocalMediaFormats();
-    
   protected:
     /**Internal function to check if call established.
        This checks all the criteria for establishing a call an initiating the
