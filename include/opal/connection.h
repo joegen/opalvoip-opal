@@ -837,6 +837,12 @@ class OpalConnection : public PSafeObject
       */
     virtual OpalMediaFormatList GetMediaFormats() const = 0;
 
+    /**Get the list of data formats used for making calls
+       
+       The default behaviour is to call call.GetMediaFormats();
+      */
+    virtual OpalMediaFormatList GetLocalMediaFormats();
+
     /**Adjust media formats available on a connection.
        This is called by a connection after it has called
        OpalCall::GetMediaFormats() to get all media formats that it can use so
