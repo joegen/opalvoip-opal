@@ -601,13 +601,13 @@ BOOL H323Capability::IsUsable(const H323Connection &) const
 
 OpalMediaFormat H323Capability::GetMediaFormat() const
 {
-  return mediaFormat.IsEmpty() ? OpalMediaFormat(GetFormatName()) : mediaFormat;
+  return mediaFormat.IsValid() ? mediaFormat : OpalMediaFormat(GetFormatName());
 }
 
 
 OpalMediaFormat & H323Capability::GetWritableMediaFormat()
 {
-  if (mediaFormat.IsEmpty())
+  if (!mediaFormat.IsValid())
     mediaFormat = GetFormatName();
   return mediaFormat;
 }
@@ -2371,12 +2371,29 @@ static BOOL MatchWildcard(const PCaselessString & str, const PStringArray & wild
 }
 
 
+PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
+                                        PINDEX simultaneous,
+                                        const OpalMediaFormat & mediaFormat)
+{
+  PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
+
+  if (FindCapability(mediaFormat, H323Capability::e_Unknown, true) == NULL) {
+    H323Capability * capability = H323Capability::Create(mediaFormat);
+    if (capability != NULL) {
+      capability->GetWritableMediaFormat() = mediaFormat;
+      reply = SetCapability(descriptorNum, simultaneous, capability);
+    }
+  }
+
+  return reply;
+}
+
+
 PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
                                             PINDEX simultaneous,
-                                            const OpalMediaFormat & format,
+                                            const PString & name,
                                             BOOL exact)
 {
-  PString name(format);
   PINDEX reply = descriptorNum == P_MAX_INDEX ? P_MAX_INDEX : simultaneous;
 
   PStringArray wildcard = name.Tokenise('*', FALSE);
@@ -2389,7 +2406,6 @@ PINDEX H323Capabilities::AddAllCapabilities(PINDEX descriptorNum,
     if ((exact ? (capName == name) : MatchWildcard(capName, wildcard)) &&
         FindCapability(capName, H323Capability::e_Unknown, exact) == NULL) {
       H323Capability * capability = H323Capability::Create(capName);
-      capability->GetWritableMediaFormat() = format;
       PINDEX num = SetCapability(descriptorNum, simultaneous, capability);
       if (descriptorNum == P_MAX_INDEX) {
         reply = num;
