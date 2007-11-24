@@ -25,7 +25,7 @@
  * Contributor(s): ______________________________________.
  *
  * $Log: manager.h,v $
- * Revision 1.2057.2.5  2007/08/05 13:12:16  hfriederich
+ * Revision 1.57.2.5  2007/08/05 13:12:16  hfriederich
  * Backport from HEAD - Changes since last commit
  *
  * Revision 2.56.2.4  2007/05/28 16:41:44  hfriederich
@@ -1312,9 +1312,11 @@ class OpalManager : public PObject
     {
       PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
       
+      enum {
+        OpalManagerInterfaceMonitorClientPriority = 100,
+      };
       public:
         InterfaceMonitor(PSTUNClient * stun);
-        virtual PINDEX GetPriority() const { return 0; }
       
       protected:
         virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
