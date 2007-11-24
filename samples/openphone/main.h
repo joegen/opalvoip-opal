@@ -464,6 +464,8 @@ class OptionsDialog : public wxDialog
     bool      m_TraceThreadName;
     bool      m_TraceThreadAddress;
     PwxString m_TraceFileName;
+
+    void BrowseTraceFile(wxCommandEvent & event);
 #endif
 
     DECLARE_EVENT_TABLE()
