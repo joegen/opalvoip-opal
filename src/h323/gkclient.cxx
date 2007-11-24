@@ -711,7 +711,9 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans),
     requestMutex(1, 1),
-    authenticators(ep.CreateAuthenticators())
+    authenticators(ep.CreateAuthenticators()),
+    highPriorityMonitor(*this, HighPriority),
+    lowPriorityMonitor(*this, LowPriority)
 #ifdef H323_H460
     ,features(ep.GetFeatureSet())
 #endif
@@ -872,6 +874,49 @@ BOOL H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddress)
   requests.SetAt(request.sequenceNumber, NULL);
   requestsMutex.Signal();
 
+  return discoveryComplete;
+}
+
+
+BOOL H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
+{
+  discoveryComplete = FALSE;
+  
+  H323RasPDU pdu;
+  Request request(SetupGatekeeperRequest(pdu), pdu);
+  
+  H323TransportAddress addr = address;
+  request.responseInfo = &addr;
+  
+  requestsMutex.Wait();
+  requests.SetAt(request.sequenceNumber, &request);
+  requestsMutex.Signal();
+  
+  BOOL ok = FALSE;
+  
+  for (unsigned retry = 0; retry < endpoint.GetGatekeeperRequestRetries(); retry++) {
+    if (!transport->WriteConnect(WriteGRQ, &pdu)) {
+      PTRACE(1, "RAS\tError writing discovery PDU: " << transport->GetErrorText());
+      break;
+    }
+    
+    ok = request.Poll(*this);
+    if (ok)
+      break;
+  }
+  
+  transport->EndConnect(transport->GetInterface());
+  
+  if (discoveryComplete) {
+    PTRACE(3, "RAS\tGatekeeper discovered at: "
+           << transport->GetRemoteAddress()
+           << " (if=" << transport->GetLocalAddress() << ')');
+  }
+  
+  requestsMutex.Wait();
+  requests.SetAt(request.sequenceNumber, NULL);
+  requestsMutex.Signal();
+  
   return discoveryComplete;
 }
 
@@ -1243,7 +1288,7 @@ void H323Gatekeeper::RegistrationTimeToLive()
 
   if (requiresDiscovery) {
     PTRACE(3, "RAS\tRepeating discovery on gatekeepers request.");
-
+    
     H323RasPDU pdu;
     Request request(SetupGatekeeperRequest(pdu), pdu);
     if (!MakeRequest(request) || !discoveryComplete) {
@@ -1251,10 +1296,10 @@ void H323Gatekeeper::RegistrationTimeToLive()
       timeToLive = PTimeInterval(0, 0, 1);
       return;
     }
-
+    
     requiresDiscovery = FALSE;
-  }
-
+  }  
+  
   if (!RegistrationRequest(autoReregister)) {
     PTRACE_IF(2, !reregisterNow, "RAS\tTime To Live reregistration failed, retrying in 1 minute");
     timeToLive = PTimeInterval(0, 0, 1);
@@ -2459,6 +2504,87 @@ BOOL H323Gatekeeper::MakeRequest(Request & request)
 }
 
 
+void H323Gatekeeper::OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority)
+{
+  if (priority == HighPriority) {
+    return;
+  }
+  
+  UpdateConnectionStatus();
+}
+
+void H323Gatekeeper::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority)
+{
+  if (priority == LowPriority) {
+    UpdateConnectionStatus();
+    return;
+  }
+
+  if (transport == NULL) {
+    return;
+  }
+
+  PString iface = transport->GetInterface();
+  if (iface.IsEmpty()) { // not connected.
+    return;
+  }
+
+  if (PInterfaceMonitor::IsMatchingInterface(iface, entry)) {
+    // currently used interface went down. make transport listen
+    // on all available interfaces.
+    transport->EndConnect(PString::Empty());
+    PTRACE(1, "Kicked out interface binding");
+  }
+}
+
+void H323Gatekeeper::UpdateConnectionStatus()
+{
+  // sanity check
+  if (transport == NULL) {
+    return;
+  }
+  
+  PString iface = transport->GetInterface();
+  if (!iface.IsEmpty()) { // still connected
+    return;
+  }
+  
+  // not connected anymore. so see if there is an interface available
+  // for connecting to the remote address.
+  PIPSocket::Address addr;
+  if (!transport->GetRemoteAddress().GetIpAddress(addr)) {
+    return;
+  }
+  
+  if (lowPriorityMonitor.GetInterfaces(FALSE, addr).GetSize() > 0) {
+    // at least one interface available, locate gatekeper
+    
+    if (DiscoverGatekeeper(transport->GetRemoteAddress())) {
+      RegistrationRequest();
+    }
+  }
+}
+
+
+BOOL H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
+{
+#ifdef H323_H460
+  return features.SendFeature(pduType, message);
+#else
+  return endpoint.OnSendFeatureSet(pduType, message);
+#endif
+}
+
+void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
+{
+#ifdef H323_H460
+  features.ReceiveFeature(pduType, message);
+#else
+  endpoint.OnReceiveFeatureSet(pduType, message);
+#endif
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 H323Gatekeeper::AlternateInfo::AlternateInfo(H225_AlternateGK & alt)
@@ -2492,30 +2618,32 @@ void H323Gatekeeper::AlternateInfo::PrintOn(ostream & strm) const
 {
   if (!gatekeeperIdentifier)
     strm << gatekeeperIdentifier << '@';
-
+  
   strm << rasAddress;
-
+  
   if (priority > 0)
     strm << ";priority=" << priority;
 }
 
-BOOL H323Gatekeeper::OnSendFeatureSet(unsigned pduType, H225_FeatureSet & message) const
-{
-#ifdef H323_H460
-  return features.SendFeature(pduType, message);
-#else
-  return endpoint.OnSendFeatureSet(pduType, message);
-#endif
-}
-
-void H323Gatekeeper::OnReceiveFeatureSet(unsigned pduType, const H225_FeatureSet & message) const
-{
-#ifdef H323_H460
-  features.ReceiveFeature(pduType, message);
-#else
-  endpoint.OnReceiveFeatureSet(pduType, message);
-#endif
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
+
+H323Gatekeeper::InterfaceMonitor::InterfaceMonitor(H323Gatekeeper & _gk, PINDEX priority)
+: PInterfaceMonitorClient(priority),
+  gk(_gk)
+{
+}
+
+void H323Gatekeeper::InterfaceMonitor::OnAddInterface(const PIPSocket::InterfaceEntry & entry)
+{
+  gk.OnAddInterface(entry, priority);
+}
+
+void H323Gatekeeper::InterfaceMonitor::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry)
+{
+  gk.OnRemoveInterface(entry, priority);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+
