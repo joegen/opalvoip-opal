@@ -1135,9 +1135,11 @@ class OpalManager : public PObject
     {
       PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
       
+      enum {
+        OpalManagerInterfaceMonitorClientPriority = 100,
+      };
       public:
         InterfaceMonitor(PSTUNClient * stun);
-        virtual PINDEX GetPriority() const { return 100; }
         
       protected:
         virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
