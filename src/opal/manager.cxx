@@ -1479,7 +1479,8 @@ BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
 /////////////////////////////////////////////////////////////////////////////
 
 OpalManager::InterfaceMonitor::InterfaceMonitor(PSTUNClient * _stun)
-: stun(_stun)
+: PInterfaceMonitorClient(OpalManagerInterfaceMonitorClientPriority),
+  stun(_stun)
 {
 }
 
