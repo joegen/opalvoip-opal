@@ -95,8 +95,8 @@ class H323Gatekeeper : public H225_RAS
     BOOL OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
-	BOOL OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
-	void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
+    BOOL OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
+    void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
   //@}
 
   /**@name Protocol operations */
@@ -276,7 +276,6 @@ class H323Gatekeeper : public H225_RAS
 
   protected:
     BOOL StartDiscovery(const H323TransportAddress & address);
-    BOOL DiscoverGatekeeper(H323RasPDU & request, const H323TransportAddress & address);
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
@@ -309,13 +308,40 @@ class H323Gatekeeper : public H225_RAS
       Request & request,
       unsigned unregisteredTag
     );
+    
+    
+    // Handling interface changes
+    void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
+    void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
+    BOOL DiscoverGatekeeper(const H323TransportAddress & address);
+    void UpdateConnectionStatus();
 
 
     // Gatekeeper registration state variables
     BOOL     discoveryComplete;
     PString  endpointIdentifier;
     RegistrationFailReasons registrationFailReason;
-
+    
+    enum {
+      HighPriority = 80,
+      LowPriority  = 40,
+    };
+    class InterfaceMonitor : public PInterfaceMonitorClient
+    {
+      PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
+      
+      public:
+        InterfaceMonitor(H323Gatekeeper & gk, PINDEX priority);
+      
+      protected:
+        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
+        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
+        
+        H323Gatekeeper & gk;
+    };
+    InterfaceMonitor highPriorityMonitor;
+    InterfaceMonitor lowPriorityMonitor;
+    
     class AlternateInfo : public PObject {
       PCLASSINFO(AlternateInfo, PObject);
       public:
