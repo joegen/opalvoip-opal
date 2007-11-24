@@ -1885,6 +1885,11 @@ void MyManager::OnOptions(wxCommandEvent& /*event*/)
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
+  // General fields
+  EVT_BUTTON(XRCID("BrowseSoundFile"), OptionsDialog::BrowseSoundFile)
+  EVT_BUTTON(XRCID("PlaySoundFile"), OptionsDialog::PlaySoundFile)
+
+  ////////////////////////////////////////
   // Networking fields
   EVT_CHOICE(XRCID("BandwidthClass"), OptionsDialog::BandwidthClass)
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
@@ -1898,8 +1903,6 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Codec fields
-  EVT_BUTTON(XRCID("BrowseSoundFile"), OptionsDialog::BrowseSoundFile)
-  EVT_BUTTON(XRCID("PlaySoundFile"), OptionsDialog::PlaySoundFile)
   EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
   EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
   EVT_BUTTON(XRCID("MoveUpCodec"), OptionsDialog::MoveUpCodec)
@@ -1938,6 +1941,12 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_BUTTON(XRCID("AddAlias"), OptionsDialog::AddAlias)
   EVT_BUTTON(XRCID("RemoveAlias"), OptionsDialog::RemoveAlias)
   EVT_TEXT(XRCID("NewAlias"), OptionsDialog::ChangedNewAlias)
+
+  ////////////////////////////////////////
+  // Tracing fields
+#if PTRACING
+  EVT_BUTTON(XRCID("BrowseTraceFile"), OptionsDialog::BrowseTraceFile)
+#endif
 END_EVENT_TABLE()
 
 
@@ -2972,6 +2981,27 @@ void OptionsDialog::ChangedRouteInfo(wxCommandEvent & /*event*/)
 {
   m_AddRoute->Enable(!m_RoutePattern->GetValue().IsEmpty() && !m_RouteDestination->GetValue().IsEmpty());
 }
+
+
+#if PTRACING
+////////////////////////////////////////
+// Tracing fields
+
+void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
+{
+  wxString newFile = wxFileSelector("Trace log file",
+                                    "",
+                                    m_TraceFileName,
+                                    ".log",
+                                    "Log Files (*.log)|*.log|Text Files (*.txt)|*.txt||",
+                                    wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+  if (!newFile.empty()) {
+    m_TraceFileName = newFile;
+    TransferDataToWindow();
+  }
+}
+#endif
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
