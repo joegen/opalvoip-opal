@@ -15,54 +15,6 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_07E5FA3778C249FA84D6FFC23976DA6F"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_5FC42C08C99C42DB9D6A57C5CC0C5ED7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_CFD5FE0B100B47D8A087CBB976A20C9E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_7603C2A0F34E4B72B717A4DC9382222D"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_6D2FF0405B9E4B1390868B95B2DAB468"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_6BF62E2B726D47E3AE4432482B838E89"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_59CF82581CE64B9DA80E955E0FC7363E"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
-        "OwnerKey" = "8:_36D1E6E697A347269D0417DA1A17B1B4"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_07E5FA3778C249FA84D6FFC23976DA6F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -75,8 +27,56 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_177BA2131AA94FCAB14CF52971A226D9"
-        "OwnerKey" = "8:_07D7E5987209480DA2802FA7DAF825E5"
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_07E5FA3778C249FA84D6FFC23976DA6F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_CFD5FE0B100B47D8A087CBB976A20C9E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_7603C2A0F34E4B72B717A4DC9382222D"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_6D2FF0405B9E4B1390868B95B2DAB468"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_6BF62E2B726D47E3AE4432482B838E89"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_5FC42C08C99C42DB9D6A57C5CC0C5ED7"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_59CF82581CE64B9DA80E955E0FC7363E"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
+        "OwnerKey" = "8:_36D1E6E697A347269D0417DA1A17B1B4"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_3268E6803E8946F793830EFC4C186321"
+        "OwnerKey" = "8:_1FAFC513CE16435993C55A7D52E68388"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -189,7 +189,7 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_D9252B406D71486BA8EDE37B13168299"
+        "MsmKey" = "8:_E9966DCD085E431E91AEE5FD914E1AA6"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -203,6 +203,12 @@
         {
         "MsmKey" = "8:_F7110F58D0F9024335E6EE01B60693D2"
         "OwnerKey" = "8:_5FC42C08C99C42DB9D6A57C5CC0C5ED7"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_F7A799A288F24734B1740F1A036126BE"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -472,9 +478,9 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_D9252B406D71486BA8EDE37B13168299"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_E9966DCD085E431E91AEE5FD914E1AA6"
             {
-            "SourcePath" = "8:C:\\Tools\\openldap.dll"
+            "SourcePath" = "8:..\\..\\..\\External\\openldap\\DLLRelease\\openldap.dll"
             "TargetName" = "8:openldap.dll"
             "Tag" = "8:"
             "Folder" = "8:_17710AB2ED2B4B0AAE334A19AC84FA5B"
@@ -510,6 +516,26 @@
             "Register" = "3:1"
             "Exclude" = "11:FALSE"
             "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_F7A799A288F24734B1740F1A036126BE"
+            {
+            "SourcePath" = "8:..\\..\\..\\External\\sasl\\lib\\libsasl.dll"
+            "TargetName" = "8:libsasl.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_17710AB2ED2B4B0AAE334A19AC84FA5B"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
         }
@@ -1448,7 +1474,7 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_07D7E5987209480DA2802FA7DAF825E5"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_1FAFC513CE16435993C55A7D52E68388"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
@@ -1462,7 +1488,7 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_177BA2131AA94FCAB14CF52971A226D9"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_3268E6803E8946F793830EFC4C186321"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
