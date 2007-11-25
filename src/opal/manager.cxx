@@ -913,6 +913,26 @@ BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
 }
 
 
+bool OpalManager::SetTranslationHost(const PString & host)
+{
+  if (PIPSocket::GetHostAddress(host, translationAddress)) {
+    translationHost = host;
+    return true;
+  }
+
+  translationHost = PString::Empty();
+  translationAddress = PIPSocket::GetDefaultIpAny();
+  return false;
+}
+
+
+void OpalManager::SetTranslationAddress(const PIPSocket::Address & address)
+{
+  translationAddress = address;
+  translationHost = PIPSocket::GetHostName(address);
+}
+
+
 PSTUNClient * OpalManager::GetSTUN(const PIPSocket::Address & ip) const
 {
   if (ip.IsValid() && IsLocalAddress(ip))
