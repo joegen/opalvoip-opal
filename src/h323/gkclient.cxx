@@ -77,8 +77,14 @@ static PTimeInterval AdjustTimeout(unsigned seconds)
 
 H323Gatekeeper::H323Gatekeeper(H323EndPoint & ep, H323Transport * trans)
   : H225_RAS(ep, trans),
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
     highPriorityMonitor(*this, HighPriority),
     lowPriorityMonitor(*this, LowPriority),
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
     requestMutex(1, 1),
     authenticators(ep.CreateAuthenticators())
 #ifdef H323_H460
