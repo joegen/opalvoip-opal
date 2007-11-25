@@ -535,7 +535,7 @@ bool MyManager::Initialise()
   if (config->Read(RTPTOSKey, &value1))
     SetRtpIpTypeofService(value1);
   if (config->Read(NATRouterKey, &str))
-    SetTranslationAddress(str);
+    SetTranslationHost(str);
   if (config->Read(STUNServerKey, &str) && !str.IsEmpty()) {
     m_logWindow->WriteText("STUN server \"" + str + "\" being contacted ...\n");
     Update();
@@ -2010,7 +2010,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(STUNServer, m_manager.GetSTUNServer());
   PwxString natRouter;
   if (m_manager.GetTranslationAddress().IsValid())
-    natRouter = m_manager.GetTranslationAddress().AsString();
+    natRouter = m_manager.GetTranslationHost();
   INIT_FIELD(NATRouter, natRouter);
 
   m_AddInterface = FindWindowByNameAs<wxButton>(this, "AddInterface");
@@ -2332,7 +2332,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
   SAVE_FIELD(RTPTOS, m_manager.SetRtpIpTypeofService);
   SAVE_FIELD(STUNServer, m_manager.SetSTUNServer);
-  SAVE_FIELD(NATRouter, m_manager.SetTranslationAddress);
+  SAVE_FIELD(NATRouter, m_manager.SetTranslationHost);
 
   config->DeleteGroup(LocalInterfacesGroup);
   config->SetPath(LocalInterfacesGroup);

@@ -835,6 +835,16 @@ class OpalManager : public PObject
       const PIPSocket::Address & remoteAddress
     );
 
+    /**Get the translation host to use for TranslateIPAddress().
+      */
+    const PString & GetTranslationHost() const { return translationHost; }
+
+    /**Set the translation host to use for TranslateIPAddress().
+      */
+    bool SetTranslationHost(
+      const PString & host
+    );
+
     /**Get the translation address to use for TranslateIPAddress().
       */
     const PIPSocket::Address & GetTranslationAddress() const { return translationAddress; }
@@ -843,7 +853,7 @@ class OpalManager : public PObject
       */
     void SetTranslationAddress(
       const PIPSocket::Address & address
-    ) { translationAddress = address; }
+    );
 
     /**Return the STUN server to use.
        Returns NULL if address is a local address as per IsLocalAddress().
@@ -1148,6 +1158,7 @@ class OpalManager : public PObject
         PSTUNClient * stun;
     };
 
+    PString            translationHost;
     PIPSocket::Address translationAddress;
     PString            stunServer;
     PSTUNClient      * stun;
