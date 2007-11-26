@@ -150,14 +150,9 @@ BOOL OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::Payl
   OpalMediaFormat sourceFormat = source.GetMediaFormat();
   OpalMediaFormat destinationFormat = stream->GetMediaFormat();
 
-{
-stringstream strm;
-strm << "source " << sourceFormat << "\n";
-sourceFormat.PrintOptions(strm);
-strm << "destination " << destinationFormat << "\n";
-destinationFormat.PrintOptions(strm);
-PTRACE(5, "patch\tiCreating transcoder with following media formats:" << strm.str());
-}
+  PTRACE(5, "Patch\tAddSink\n"
+            "Source format:\n" << setw(-1) << sourceFormat << "\n"
+            "Destination format:\n" << setw(-1) << destinationFormat);
 
   if ((sourceFormat == destinationFormat) && ((sourceFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) || (source.GetDataSize() <= stream->GetDataSize()))) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
