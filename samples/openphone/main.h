@@ -475,25 +475,17 @@ class OptionsDialog : public wxDialog
 class MyMedia
 {
 public:
-  MyMedia()
-    : sourceProtocol(NULL),
-      preferenceOrder(-1), // -1 indicates disabled
-      dirty(false)
-  { }
-
+  MyMedia();
   MyMedia(
     const char * source,
     const PString & format
-  ) : sourceProtocol(source),
-      mediaFormat(format),
-      preferenceOrder(-1), // -1 indicates disabled
-      dirty(false)
-  { }
+  );
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
 
   const char    * sourceProtocol;
   OpalMediaFormat mediaFormat;
+  const char    * validProtocols;
   int             preferenceOrder;
   bool            dirty;
 };
