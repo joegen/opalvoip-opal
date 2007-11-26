@@ -127,7 +127,7 @@ OpalRFC4175Transcoder::OpalRFC4175Transcoder(
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
       const OpalMediaFormat & outputMediaFormat  ///<  Output media format
 )
- : OpalUncompVideoTranscoder(inputMediaFormat, outputMediaFormat)
+ : OpalVideoTranscoder(inputMediaFormat, outputMediaFormat)
 {
 }
 
