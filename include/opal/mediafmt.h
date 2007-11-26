@@ -970,7 +970,7 @@ class OpalMediaFormat : public PContainer
     ostream & PrintOptions(ostream & strm) const
     {
       if (m_info != NULL)
-        strm << setw(-1) << m_info;
+        strm << setw(-1) << *m_info;
       return strm;
     }
 
