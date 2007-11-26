@@ -908,7 +908,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
   unsigned flags;
 
   if (isEncoder) {
-
+    bool firstPacketForFrame = true;
     do {
 
       // create the output buffer, outputDataSize is supposed to include the
@@ -926,8 +926,9 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
         return FALSE;
       }
 
-      if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
+      if (firstPacketForFrame && (flags & PluginCodec_ReturnCoderIFrame) != 0) {
         PTRACE(forceIFrame ? 3 : 4, "OpalPlugin\tSending I-Frame" << (forceIFrame ? " in response to videoFastUpdate" : ""));
+        firstPacketForFrame = false;
         forceIFrame = false;
       }
 
