@@ -1851,6 +1851,34 @@ void MyManager::ApplyMediaInfo()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+MyMedia::MyMedia()
+  : sourceProtocol(NULL)
+  , preferenceOrder(-1) // -1 indicates disabled
+  , validProtocols(NULL)
+  , dirty(false)
+{
+}
+
+
+MyMedia::MyMedia(const char * source, const PString & format)
+  : sourceProtocol(source)
+  , mediaFormat(format)
+  , preferenceOrder(-1) // -1 indicates disabled
+  , dirty(false)
+{
+  bool hasSIP = mediaFormat.IsValidForProtocol("sip");
+  bool hasH323 = mediaFormat.IsValidForProtocol("h.323");
+  if (hasSIP && !hasH323)
+    validProtocols = " (SIP only)";
+  else if (!hasSIP && hasH323)
+    validProtocols = " (H.323 only)";
+  else
+    validProtocols = NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 class wxFrameSizeValidator: public wxGenericValidator
 {
 public:
@@ -2137,6 +2165,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     wxString str = mm->sourceProtocol;
     str += ": ";
     str += (const char *)mm->mediaFormat;
+    str += mm->validProtocols;
     m_allCodecs->Append(str, &*mm);
 
     str = (const char *)mm->mediaFormat;
