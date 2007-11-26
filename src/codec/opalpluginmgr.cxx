@@ -2288,34 +2288,32 @@ BOOL H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
   H245_VideoCapability & video    = (H245_VideoCapability &)subTypePDU;
   H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
 
-#define COMPARE_MPI(field, slowField) \
-  if ( \
-      IsValidMPI(GetMediaFormat().GetOptionInteger(field##_tag)) \
-      != \
-      (h263.HasOptionalField(H245_H263VideoCapability::e_##field) ? (h263.m_##field != 0) : false) \
-      ) \
-    return false; \
-  if ( \
-      IsValidMPI(GetMediaFormat().GetOptionInteger(field##_tag)) \
-      != \
-      (h263.HasOptionalField(H245_H263VideoCapability::e_##slowField) ? (h263.m_##slowField != 0) : false) \
-      ) \
-    return false; \
-  if ( \
-      IsValidMPI(GetMediaFormat().GetOptionInteger(field##_tag)) \
-      != \
-      (h263.HasOptionalField(H245_H263VideoCapability::e_##slowField) ? (h263.m_##slowField != 0) : false) \
-      ) \
-    return false; \
+  const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
-  COMPARE_MPI(sqcifMPI,  slowSqcifMPI);
-  COMPARE_MPI(qcifMPI,   slowQcifMPI);
-  COMPARE_MPI(cifMPI,    slowCifMPI);
-  COMPARE_MPI(cif4MPI,   slowCif4MPI);
-  COMPARE_MPI(cif16MPI,  slowCif16MPI);
+  int sqcifMPI = mediaFormat.GetOptionInteger(sqcifMPI_tag);
+  int qcifMPI  = mediaFormat.GetOptionInteger(qcifMPI_tag);
+  int cifMPI   = mediaFormat.GetOptionInteger(cifMPI_tag);
+  int cif4MPI  = mediaFormat.GetOptionInteger(cif4MPI_tag);
+  int cif16MPI = mediaFormat.GetOptionInteger(cif16MPI_tag);
 
+  int other_sqcifMPI = h263.HasOptionalField(H245_H263VideoCapability::e_sqcifMPI) ? (int)h263.m_sqcifMPI : 0;
+  int other_qcifMPI  = h263.HasOptionalField(H245_H263VideoCapability::e_qcifMPI)  ? (int)h263.m_qcifMPI : 0;
+  int other_cifMPI   = h263.HasOptionalField(H245_H263VideoCapability::e_cifMPI)   ? (int)h263.m_cifMPI : 0;
+  int other_cif4MPI  = h263.HasOptionalField(H245_H263VideoCapability::e_cif4MPI)  ? (int)h263.m_cif4MPI : 0;
+  int other_cif16MPI = h263.HasOptionalField(H245_H263VideoCapability::e_cif16MPI) ? (int)h263.m_cif16MPI : 0;
 
-  return TRUE;
+  if ((sqcifMPI && other_sqcifMPI) ||
+      (qcifMPI && other_qcifMPI) ||
+      (cifMPI && other_cifMPI) ||
+      (cif4MPI && other_cif4MPI) ||
+      (cif16MPI && other_cif16MPI)) {
+    PTRACE(5, "H.263\t" << *this << " == " << h263);
+    return TRUE;
+  }
+
+  PTRACE(5, "H.263\t" << *this << " != " << h263);
+
+  return FALSE;
 }
 
 
