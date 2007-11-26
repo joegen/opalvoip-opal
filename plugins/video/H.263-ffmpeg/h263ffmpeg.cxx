@@ -980,9 +980,11 @@ unsigned int H263EncoderContext::GetNextEncodedPacket(RTPFrame & dstRTP, unsigne
   dstRTP.SetPayloadType(payloadCode);
   dstRTP.SetTimestamp(lastTimeStamp);
 
-  flags = 0;
-  flags |= (encodedPackets.size() == 0) ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
-  flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
+  flags = (encodedPackets.size() == 0) ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
+
+  const unsigned char * header = dstRTP.GetPayloadPtr();
+  if ( (header[0] & 0x80) != 0 ? ((header[5] & 0x80) == 0) : ((header[1] & 0x10) == 0))
+    flags |= PluginCodec_ReturnCoderIFrame;
 
   return dstRTP.GetPacketLen();
 }
