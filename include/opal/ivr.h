@@ -340,9 +340,12 @@ class OpalIVRMediaStream : public OpalRawMediaStream
        Returns FALSE for IVR streams.
       */
     virtual BOOL IsSynchronous() const;
+
+    BOOL ReadPacket(RTP_DataFrame & packet);
   //@}
 
   protected:
+    OpalConnection & conn;
     PVXMLSession & vxmlSession;
 };
 
