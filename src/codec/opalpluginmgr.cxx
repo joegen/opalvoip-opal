@@ -891,11 +891,6 @@ BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & 
 }
 
 
-PINDEX OpalPluginVideoTranscoder::GetOptimalDataFrameSize(BOOL /*input*/) const
-{
-  return (frameWidth * frameHeight * 12) / 8;
-}
-
 BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
   dstList.RemoveAll();

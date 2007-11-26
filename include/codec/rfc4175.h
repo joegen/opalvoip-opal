@@ -58,9 +58,9 @@ extern const OpalVideoFormat & GetOpalRFC4175_RGB();
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalRFC4175Transcoder : public OpalUncompVideoTranscoder
+class OpalRFC4175Transcoder : public OpalVideoTranscoder
 {
-  PCLASSINFO(OpalRFC4175Transcoder, OpalUncompVideoTranscoder);
+  PCLASSINFO(OpalRFC4175Transcoder, OpalVideoTranscoder);
   public:
     OpalRFC4175Transcoder(      
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format

@@ -94,10 +94,11 @@ const OpalVideoFormat & GetOpalYUV420P()
 OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
+  , inDataSize(0)
+  , outDataSize(0)
   , forceIFrame(false)
 {
   UpdateOutputMediaFormat(outputMediaFormat);
-  fillLevel = 5;
 }
 
 
@@ -108,7 +109,25 @@ BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaF
   if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
     return FALSE;
 
+  inDataSize  = PVideoDevice::CalculateFrameBytes(mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), PVideoFrameInfo::CIFWidth),
+                                                  mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), PVideoFrameInfo::CIFHeight),
+                                                  GetInputFormat());
+  outDataSize = PVideoDevice::CalculateFrameBytes(mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::CIFWidth),
+                                                  mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::CIFHeight),
+                                                  GetOutputFormat());
   return TRUE;
+}
+
+
+PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
+{
+  if (input)
+    return inDataSize;
+
+  if (outDataSize < maxOutputSize)
+    return outDataSize;
+
+  return maxOutputSize;
 }
 
 
@@ -149,109 +168,6 @@ PString OpalLostPicture::GetName() const
   return "Lost Picture";
 }
 
-///////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_H323
-
-H323_UncompVideoCapability::H323_UncompVideoCapability(const H323EndPoint & /*endpoint*/,
-                                                       const PString & colourFmt)
-  : H323NonStandardVideoCapability((const BYTE *)(const char *)colourFmt,
-                                   colourFmt.GetLength()),
-    colourFormat(colourFmt)
-{
-}
-
-
-PObject * H323_UncompVideoCapability::Clone() const
-{
-  return new H323_UncompVideoCapability(*this);
-}
-
-
-PString H323_UncompVideoCapability::GetFormatName() const
-{
-  return colourFormat;
-}
-
-#endif // OPAL_H323
-
-
-/////////////////////////////////////////////////////////////////////////////
-
-OpalUncompVideoTranscoder::OpalUncompVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
-                                                     const OpalMediaFormat & outputMediaFormat)
-  : OpalVideoTranscoder(inputMediaFormat, outputMediaFormat)
-{
-}
-
-
-OpalUncompVideoTranscoder::~OpalUncompVideoTranscoder()
-{
-}
-
-
-PINDEX OpalUncompVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
-{
-#ifndef NO_OPAL_VIDEO
-  PINDEX frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, GetOutputFormat());
-  if (!input && frameBytes > maxOutputSize)
-    frameBytes = maxOutputSize;
-
-  return frameBytes;
-#else
-  return 0;
-#endif
-}
-
-
-BOOL OpalUncompVideoTranscoder::ConvertFrames(const RTP_DataFrame & input,
-                                              RTP_DataFrameList & output)
-{
-#ifndef NO_OPAL_VIDEO
-  output.RemoveAll();
-
-  const FrameHeader * srcHeader = (const FrameHeader *)input.GetPayloadPtr();
-  if (srcHeader->x != 0 || srcHeader->y != 0)
-    return FALSE;
-
-  if (srcHeader->width != frameWidth || srcHeader->height != frameHeight) {
-    frameWidth = srcHeader->width;
-    frameHeight = srcHeader->height;
-  }
-
-  PINDEX frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, GetOutputFormat());
-
-  // Calculate number of output frames
-  PINDEX bytesPerScanLine = frameBytes/frameHeight;
-
-  unsigned scanLinesPerBand = maxOutputSize/bytesPerScanLine;
-  if (scanLinesPerBand > frameHeight)
-    scanLinesPerBand = frameHeight;
-
-  unsigned bandCount = (frameHeight+scanLinesPerBand-1)/scanLinesPerBand;
-  if (bandCount < 1)
-    return FALSE;
-
-  for (unsigned band = 0; band < bandCount; band++) {
-    RTP_DataFrame * pkt = new RTP_DataFrame(scanLinesPerBand*bytesPerScanLine);
-    pkt->SetPayloadType(outputMediaFormat.GetPayloadType());
-    pkt->SetTimestamp(input.GetTimestamp());
-    output.Append(pkt);
-    FrameHeader * dstHeader = (FrameHeader *)pkt->GetPayloadPtr();
-    dstHeader->x = srcHeader->x;
-    dstHeader->y = srcHeader->y + band*scanLinesPerBand;
-    dstHeader->width = srcHeader->width;
-    dstHeader->height = scanLinesPerBand;
-    memcpy(OPAL_VIDEO_FRAME_DATA_PTR(dstHeader), OPAL_VIDEO_FRAME_DATA_PTR(srcHeader)+band*bytesPerScanLine, scanLinesPerBand*bytesPerScanLine);
-  }
-
-  output[output.GetSize()-1].SetMarker(TRUE);
-
-  return TRUE;
-#else
-  return FALSE;
-#endif
-}
 
 #endif // OPAL_VIDEO
 

@@ -96,6 +96,16 @@ class OpalVideoTranscoder : public OpalTranscoder
       const OpalMediaFormat & mediaFormat  ///<  New media format
     );
 
+    /**Get the optimal size for data frames to be converted.
+       This function returns the size of frames that will be most efficient
+       in conversion. A RTP_DataFrame will attempt to provide or use data in
+       multiples of this size. Note that it may not do so, so the transcoder
+       must be able to handle any sized packets.
+      */
+    virtual PINDEX GetOptimalDataFrameSize(
+      BOOL input      ///<  Flag for input or output data size
+    ) const;
+
     /**Execute the command specified to the transcoder. The commands are
        highly context sensitive, for example VideoFastUpdate would only apply
        to a video transcoder.
@@ -124,15 +134,9 @@ class OpalVideoTranscoder : public OpalTranscoder
   //@}
 
   protected:
-    unsigned frameWidth;
-    unsigned frameHeight;
-    unsigned videoQuality;
-    unsigned targetBitRate;
-    bool     dynamicVideoQuality;
-    bool     adaptivePacketDelay;
-    unsigned fillLevel;
-
-    bool     forceIFrame;
+    PINDEX inDataSize;
+    PINDEX outDataSize;
+    bool   forceIFrame;
 };
 
 
@@ -193,134 +197,8 @@ class OpalLostPicture : public OpalMediaCommand
 };
 
 
-///////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_H323
-/* This code is only built if the user has enabled the H.323 voip
-   protocol in the configure step. The default configuration enables
-   H.323 */
-
-/**This class is a uncompressed video capability.
- */
-class H323_UncompVideoCapability : public H323NonStandardVideoCapability
-{
-  PCLASSINFO(H323_UncompVideoCapability, H323NonStandardVideoCapability)
-
-  public:
-  /**@name Construction */
-  //@{
-    /**Create a new uncompressed video Capability
-     */
-    H323_UncompVideoCapability(
-      const H323EndPoint & endpoint, ///<  Endpoint to get t35 information
-      const PString & colourFormat   ///<  Video colour format name
-    );
-  //@}
-
-  /**@name Overrides from class PObject */
-  //@{
-    /**Create a copy of the object.
-      */
-    virtual PObject * Clone() const;
-   //@}
-
-  /**@name Identification functions */
-  //@{
-    /**Get the name of the media data format this class represents.
-     */
-    virtual PString GetFormatName() const;
-  //@}
-
-  protected:
-    PString colourFormat;
-};
-
-#define OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323 \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_RGB24, OPAL_RGB24, ep) \
-    { return new H323_UncompVideoCapability(ep, OpalRGB24); } \
-  H323_REGISTER_CAPABILITY_FUNCTION(H323_RGB32, OPAL_RGB32, ep) \
-    { return new H323_UncompVideoCapability(ep, OpalRGB32); }
-
-#else // ifndef NO_H323
-
-#define OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323
-
-#endif // ifndef NO_H323
 
 
-///////////////////////////////////////////////////////////////////////////////
-
-/**This class defines a transcoder implementation class that will
-   encode/decode uncompressed video.
- */
-class OpalUncompVideoTranscoder : public OpalVideoTranscoder
-{
-  PCLASSINFO(OpalUncompVideoTranscoder, OpalVideoTranscoder);
-  public:
-  /**@name Construction */
-  //@{
-    /** Create a new video transcoder implementation.
-      */
-    OpalUncompVideoTranscoder(
-      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
-      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
-    );
-
-    /**Destroy the video transcoder cleaning up the colour converter.
-      */
-    ~OpalUncompVideoTranscoder();
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Get the optimal size for data frames to be converted.
-       This function returns the size of frames that will be most efficient
-       in conversion. A RTP_DataFrame will attempt to provide or use data in
-       multiples of this size. Note that it may not do so, so the transcoder
-       must be able to handle any sized packets.
-      */
-    virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      ///<  Flag for input or output data size
-    ) const;
-
-    /**Convert the data from one format to another.
-       This function takes the input data as a RTP_DataFrame and converts it
-       to its output format, placing it (possibly) into multiple RTP_DataFrame
-       objects.
-
-       The default behaviour makes sure the output list has only one element
-       in it and calls the Convert() function.
-
-       Returns FALSE if the conversion fails.
-      */
-    virtual BOOL ConvertFrames(
-      const RTP_DataFrame & input,  ///<  Input data
-      RTP_DataFrameList & output    ///<  Output data
-    );
-  //@}
-};
-
-
-class Opal_RGB24_RGB24 : public OpalUncompVideoTranscoder {
-  PCLASSINFO(Opal_RGB24_RGB24, OpalUncompVideoTranscoder);
-  public:
-    Opal_RGB24_RGB24() : OpalUncompVideoTranscoder(OpalRGB24, OpalRGB24) { }
-};
-
-
-class Opal_RGB32_RGB32 : public OpalUncompVideoTranscoder {
-  PCLASSINFO(Opal_RGB32_RGB32, OpalUncompVideoTranscoder);
-  public:
-    Opal_RGB32_RGB32() : OpalUncompVideoTranscoder(OpalRGB32, OpalRGB32) { }
-};
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-#define OPAL_REGISTER_UNCOMPRESSED_VIDEO() \
-          OPAL_REGISTER_UNCOMPRESSED_VIDEO_H323 \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB32_RGB32, OpalRGB32, OpalRGB32); \
-          OPAL_REGISTER_TRANSCODER(Opal_RGB24_RGB24, OpalRGB24, OpalRGB24)
 
 
 #endif // __OPAL_VIDCODEC_H

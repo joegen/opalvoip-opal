@@ -335,7 +335,6 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, BOOL _isEncoder);
     ~OpalPluginVideoTranscoder();
 
-    PINDEX GetOptimalDataFrameSize(BOOL input) const;
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
     BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
 
