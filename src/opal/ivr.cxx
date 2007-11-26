@@ -307,7 +307,7 @@ BOOL OpalIVRConnection::StartVXML()
     }
   }
 
-  vxmlSession.SetFinishWhenEmpty(TRUE);
+  vxmlSession.PlayStop();
 
   return TRUE;
 }
@@ -383,13 +383,13 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & conn,
+OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & _conn,
                                        const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
                                        BOOL isSourceStream,
                                        PVXMLSession & vxml)
-  : OpalRawMediaStream(conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
-    vxmlSession(vxml)
+  : OpalRawMediaStream(_conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
+    conn(_conn), vxmlSession(vxml)
 {
   PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
 }
@@ -426,6 +426,16 @@ BOOL OpalIVRMediaStream::Open()
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
   return FALSE;
+}
+
+BOOL OpalIVRMediaStream::ReadPacket(RTP_DataFrame & packet)
+{
+  BOOL stat = OpalRawMediaStream::ReadPacket(packet);
+
+  if (!stat)
+    conn.Release();
+
+  return stat;
 }
 
 
