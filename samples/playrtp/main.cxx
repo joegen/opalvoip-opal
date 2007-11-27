@@ -265,6 +265,7 @@ void PlayRTP::Play(const PFilePath & filename)
   PBYTEArray packetData(pcap_hdr.snaplen); // Every packet is smaller than this
 
   RTP_DataFrame::PayloadTypes rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
+  RTP_DataFrame::PayloadTypes lastUnsupportedPayloadType = RTP_DataFrame::IllegalPayloadType;
   DWORD lastTimeStamp = 0;
 
   while (!pcap.IsEndOfFile()) {
@@ -345,8 +346,12 @@ void PlayRTP::Play(const PFilePath & filename)
 
     if (m_transcoder == NULL) {
       if (m_payloadType2mediaFormat.find(rtpStreamPayloadType) == m_payloadType2mediaFormat.end()) {
-        cout << "Unsupported Payload Type " << rtpStreamPayloadType << " in file \"" << filename << '"' << endl;
-        return;
+        if (lastUnsupportedPayloadType != rtpStreamPayloadType) {
+          cout << "Unsupported Payload Type " << rtpStreamPayloadType << " in file \"" << filename << '"' << endl;
+          lastUnsupportedPayloadType = rtpStreamPayloadType;
+        }
+        rtpStreamPayloadType = RTP_DataFrame::IllegalPayloadType;
+        continue;
       }
 
       OpalMediaFormat srcFmt = m_payloadType2mediaFormat[rtpStreamPayloadType];
@@ -362,7 +367,7 @@ void PlayRTP::Play(const PFilePath & filename)
           break;
 
         default :
-          cout << "Unsupported Media Class " << srcFmt.GetDefaultSessionID() << " in file \"" << filename << '"' << endl;
+          cout << "Unsupported Media Type " << srcFmt.GetDefaultSessionID() << " in file \"" << filename << '"' << endl;
           return;
       }
 
