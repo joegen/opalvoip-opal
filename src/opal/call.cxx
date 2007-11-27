@@ -186,9 +186,10 @@ BOOL OpalCall::OnAlerting(OpalConnection & connection)
   return ok;
 }
 
-OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & /*connection*/,
-                                                          const PString & /*caller*/)
+OpalConnection::AnswerCallResponse OpalCall::OnAnswerCall(OpalConnection & PTRACE_PARAM(connection),
+                                                          const PString & PTRACE_PARAM(caller))
 {
+  PTRACE(3, "Call\tOnAnswerCall " << connection << " caller \"" << caller << '"');
   return OpalConnection::AnswerCallPending;
 }
 
