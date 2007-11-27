@@ -430,7 +430,7 @@ bool MyManager::Initialise()
 
   // Log window - gets informative text
   initialSize.y /= 2;
-  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxSUNKEN_BORDER);
+  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
@@ -523,6 +523,10 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Networking fields
+  PIPSocket::InterfaceTable interfaceTable;
+  if (PIPSocket::GetInterfaceTable(interfaceTable))
+    LogWindow << interfaceTable.GetSize() << " network interfaces:\n" << setfill('\n') << interfaceTable << setfill(' ');
+
   config->SetPath(NetworkingGroup);
   if (config->Read(BandwidthKey, &value1))
     h323EP->SetInitialBandwidth(value1);
