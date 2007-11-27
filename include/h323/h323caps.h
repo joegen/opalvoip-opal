@@ -566,6 +566,8 @@ class H323Capability : public PObject
 
   private:
     OpalMediaFormat     mediaFormat;
+
+  friend class H323Capabilities;
 };
 
 
@@ -2322,6 +2324,14 @@ class H323Capabilities : public PObject
       PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
       H323Capability * cap  ///<  New capability specification
+    );
+
+    /**Add matching capability to media format.
+      */
+    PINDEX AddMediaFormat(
+      PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
+      const OpalMediaFormat & mediaFormat ///<  Media format to add.
     );
 
     /**Add all matching capabilities to descriptor lists.
