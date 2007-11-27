@@ -1129,7 +1129,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   PTRACE(3, "SIP\tAdding authentication information");
 
   PMessageDigest5 digestor;
-  PMessageDigest5::Code a1, a2, response;
+  PMessageDigest5::Code a1, a2, entityBodyCode, response;
 
   PString uriText = pdu.GetURI().AsString();
   PINDEX pos = uriText.Find(";");
@@ -1145,12 +1145,16 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Complete(a1);
 
   digestor.Start();
+  digestor.Process(pdu.GetEntityBody());
+  digestor.Complete(entityBodyCode);
+
+  digestor.Start();
   digestor.Process(MethodNames[pdu.GetMethod()]);
   digestor.Process(":");
   digestor.Process(uriText);
   if (qopAuthInt) {
     digestor.Process(":");
-    digestor.Process(pdu.GetEntityBody());
+    digestor.Process(AsHex(entityBodyCode));
   }
   digestor.Complete(a2);
 
@@ -1169,7 +1173,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Process(":");
 
   if (qopAuthInt || qopAuth) {
-    PString nc(psprintf("%08i", (unsigned int)nonceCount));
+    PString nc(psprintf("%08x", (unsigned int)nonceCount));
     ++nonceCount;
     PString qop;
     if (qopAuthInt)
