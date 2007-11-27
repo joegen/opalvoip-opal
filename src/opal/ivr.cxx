@@ -258,6 +258,7 @@ BOOL OpalIVRConnection::StartVXML()
 
     if (str.Find("file://") == 0) {
       PString fn = str.Mid(7).Trim();
+      PTRACE(3, "IVR\tPlaying file " << fn);
       if (fn.Right(5) *= ".vxml") {
         if (!voice.IsEmpty())
           fn = voice + PDIR_SEPARATOR + fn;
@@ -297,12 +298,15 @@ BOOL OpalIVRConnection::StartVXML()
       }
     }
 
-    else if (key *= "tone") 
+    else if (key *= "tone") {
+      PTRACE(3, "IVR\tPlaying tone " << val);
       vxmlSession.PlayTone(val, repeat, delay);
+   }
 
     else if (key *= "speak") {
       if (!val.IsEmpty() && (val[0] == '$'))
         val = vars(val.Mid(1));
+      PTRACE(3, "IVR\tSpeaking text '" << val << "'");
       vxmlSession.PlayText(val, PTextToSpeech::Default, repeat, delay);
     }
   }
@@ -413,8 +417,8 @@ BOOL OpalIVRMediaStream::Open()
     vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
     vxmlSession.UnLockVXMLChannel();
     
-    if (mediaFormat != vxmlChannelMediaFormat) {
-      PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media format");
+    if (mediaFormat.GetName() != vxmlChannelMediaFormat) {
+      PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << mediaFormat << " <-> " << vxmlChannelMediaFormat);
       return FALSE;
     }
 
