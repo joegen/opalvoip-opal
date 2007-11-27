@@ -227,16 +227,15 @@ bool AudioThread::Initialise(PArgList & args)
       return true;
   }
 
-  readSize = encoder->GetOptimalDataFrameSize(TRUE);
+  readSize = encoder != NULL ? encoder->GetOptimalDataFrameSize(TRUE) : 480;
+  OpalMediaFormat mediaFormat = encoder != NULL ? encoder->GetOutputFormat() : OpalYUV420P;
 
-  cout << "Audio media format set to " << encoder->GetOutputFormat() << endl;
+  cout << "Audio media format set to " << mediaFormat << endl;
 
   // Audio recorder
   PString driverName = args.GetOptionString("record-driver");
   PString deviceName = args.GetOptionString("record-device");
-  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName,
-                                                PSoundChannel::Recorder, 1,
-                                                encoder->GetInputFormat().GetClockRate());
+  recorder = PSoundChannel::CreateOpenedChannel(driverName, deviceName, PSoundChannel::Recorder, 1, mediaFormat.GetClockRate());
   if (recorder == NULL) {
     cerr << "Cannot use ";
     if (driverName.IsEmpty() && deviceName.IsEmpty())
@@ -301,7 +300,7 @@ bool VideoThread::Initialise(PArgList & args)
       return true;
   }
 
-  OpalMediaFormat mediaFormat = encoder->GetOutputFormat();
+  OpalMediaFormat mediaFormat = encoder != NULL ? encoder->GetOutputFormat() : OpalYUV420P;
 
   cout << "Video media format set to " << mediaFormat << endl;
 
@@ -482,7 +481,8 @@ bool VideoThread::Initialise(PArgList & args)
   }
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
-  encoder->UpdateOutputMediaFormat(mediaFormat);
+  if (encoder != NULL)
+    encoder->UpdateOutputMediaFormat(mediaFormat);
 
   return true;
 }
@@ -511,9 +511,6 @@ void VideoThread::Main()
 
 void TranscoderThread::Main()
 {
-  //if (encoder == NULL || decoder == NULL)
-  //  return;
-
   unsigned byteCount = 0;
   unsigned frameCount = 0;
   unsigned packetCount = 0;
