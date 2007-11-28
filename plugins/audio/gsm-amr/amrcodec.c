@@ -160,6 +160,8 @@ static int amr_codec_encoder(const struct PluginCodec_Definition * codec,
 
   memcpy(toPtr, buffer, *toLen);
   *toLen = byteCount+1;
+  *fromLen = L_FRAME*sizeof(short);
+
   return TRUE; 
 }
 
