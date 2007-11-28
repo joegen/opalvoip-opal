@@ -276,7 +276,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
     OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat = OpalPCM16);
-    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
+    bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     BOOL ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual BOOL ConvertSilentFrame(BYTE * buffer);
 };
@@ -287,7 +287,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
     OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
-    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
+    bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
 };
 
 
@@ -336,7 +336,7 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     ~OpalPluginVideoTranscoder();
 
     BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
-    BOOL UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
+    bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
 
   protected:
     RTP_DataFrame * bufferRTP;
