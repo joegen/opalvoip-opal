@@ -370,7 +370,8 @@ void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
     unsigned frameTime = mediaFormat.GetFrameTime();
     unsigned newCount = (ptime*mediaFormat.GetTimeUnits()+frameTime-1)/frameTime;
     mediaFormat.SetOptionInteger(optionName, newCount);
-    PTRACE(4, "SDP\tMedia format " << optionName << " set to " << newCount << " packets from " << ptime << " milliseconds");
+    PTRACE(4, "SDP\tMedia format \"" << mediaFormat << "\" option \"" << optionName
+           << "\" set to " << newCount << " packets from " << ptime << " milliseconds");
   }
 }
 
