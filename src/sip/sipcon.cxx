@@ -1783,7 +1783,7 @@ void SIPConnection::OnReceivedSessionProgress(SIP_PDU & response)
   }
 
   PTRACE(4, "SIP\tStarting receive media to annunciate remote progress tones");
-  OnConnected();                        // start media streams
+  StartMediaStreams();
 }
 
 
