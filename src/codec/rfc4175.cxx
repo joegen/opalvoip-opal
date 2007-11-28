@@ -418,7 +418,7 @@ BOOL OpalRFC4175Decoder::ConvertFrames(const RTP_DataFrame & input, RTP_DataFram
   }
 
   // add the frame to the input frame list
-  inputFrames.Append(new RTP_DataFrame(input));
+  inputFrames.Append(input.Clone());
   scanlineCounts.push_back(lineCount);
 
   // if marker set, decode the frames
