@@ -436,13 +436,16 @@ void OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 
 bool OpalMediaPatch::Sink::UpdateMediaFormat(const OpalMediaFormat & mediaFormat)
 {
-  if (secondaryCodec != NULL)
-    return secondaryCodec->UpdateOutputMediaFormat(mediaFormat);
+  if (primaryCodec == NULL)
+    return stream->UpdateMediaFormat(mediaFormat);
 
-  if (primaryCodec != NULL)
-    return primaryCodec->UpdateOutputMediaFormat(mediaFormat);
+  if (secondaryCodec != NULL && secondaryCodec->GetOutputFormat() == mediaFormat)
+    return secondaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
 
-  return stream->UpdateMediaFormat(mediaFormat);
+  if (primaryCodec->GetOutputFormat() == mediaFormat)
+    return primaryCodec->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
+  else
+    return primaryCodec->UpdateMediaFormats(mediaFormat, OpalMediaFormat());
 }
 
 
