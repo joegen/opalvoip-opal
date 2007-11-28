@@ -466,6 +466,12 @@ bool MyManager::Initialise()
   // Show the frame window
   Show(TRUE);
 
+  LogWindow << PProcess::Current().GetName()
+            << " Version " << PProcess::Current().GetVersion(TRUE)
+            << " by " << PProcess::Current().GetManufacturer()
+            << " on " << PProcess::Current().GetOSClass() << ' ' << PProcess::Current().GetOSName()
+            << " (" << PProcess::Current().GetOSVersion() << '-' << PProcess::Current().GetOSHardware() << ')' << endl;
+
   m_ClipboardFormat.SetId("OpenPhone Speed Dial");
 
 #if PTRACING
@@ -525,7 +531,7 @@ bool MyManager::Initialise()
   // Networking fields
   PIPSocket::InterfaceTable interfaceTable;
   if (PIPSocket::GetInterfaceTable(interfaceTable))
-    LogWindow << interfaceTable.GetSize() << " network interfaces:\n" << setfill('\n') << interfaceTable << setfill(' ');
+    LogWindow << interfaceTable.GetSize() << " network interfaces:\n" << setfill('\n') << interfaceTable << setfill(' ') << flush;
 
   config->SetPath(NetworkingGroup);
   if (config->Read(BandwidthKey, &value1))
@@ -541,7 +547,8 @@ bool MyManager::Initialise()
   if (config->Read(NATRouterKey, &str))
     SetTranslationHost(str);
   if (config->Read(STUNServerKey, &str) && !str.IsEmpty()) {
-    m_logWindow->WriteText("STUN server \"" + str + "\" being contacted ...\n");
+    LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
+    GetEventHandler()->ProcessPendingEvents();
     Update();
     LogWindow << "STUN server \"" << str << "\" replies " << SetSTUNServer(str) << endl;
   }
@@ -1516,21 +1523,15 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream &
   if (prefix == pcssEP->GetPrefixName())
     return TRUE;
 
-  LogWindow << "Started ";
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  LogWindow << "Started " << (stream.IsSource() ? "receiving " : "sending ") << mediaFormat;
 
-  if (stream.IsSource())
-    LogWindow << "receiving ";
-  else
-    LogWindow << "sending ";
+  if (!stream.IsSource() && mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+    LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
-  LogWindow << stream.GetMediaFormat();
-
-  if (stream.IsSource())
-    LogWindow << " from ";
-  else
-    LogWindow << " to ";
-
-  LogWindow << connection.GetEndPoint().GetPrefixName() << " endpoint" << endl;
+  LogWindow << (stream.IsSource() ? " from " : " to ")
+            << connection.GetEndPoint().GetPrefixName() << " endpoint"
+            << endl;
 
   return TRUE;
 }
