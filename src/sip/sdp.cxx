@@ -660,6 +660,11 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
       str << ' ' << (int)formats[i].GetPayloadType();
     str << "\r\n";
 
+    // output attributes for each payload type
+    for (i = 0; i < formats.GetSize(); i++)
+      str << formats[i];
+
+#if OPAL_AUDIO && defined(HAVE_PTIME)
     // Fill in the ptime  as maximum tx packets of all media formats
     // and maxptime as minimum rx packets of all media formats
     unsigned ptime = 0;
@@ -667,17 +672,9 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
 
     // output attributes for each payload type
     for (i = 0; i < formats.GetSize(); i++) {
-      str << formats[i];
-
       const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
-#if OPAL_AUDIO
       if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
-        unsigned txFrames = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption());
         unsigned ptime1 = txFrames*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
-
-        // Some Ciscos barf if ptime is > 60. Go figure
-        if (ptime1 > 60)
-          ptime1 = 60;
         if (ptime < ptime1)
           ptime = ptime1;
       }
@@ -686,7 +683,6 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
         if (maxptime > maxptime1)
           maxptime = maxptime1;
       }
-#endif
     }
 
     // don't output ptime parameters, as some Cisco endpoints barf on it
@@ -696,6 +692,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
 
     if (maxptime < UINT_MAX)
       str << "a=maxptime:" << maxptime << "\r\n";
+#endif // OPAL_AUDIO
 
     // media format direction
     switch (direction) {
