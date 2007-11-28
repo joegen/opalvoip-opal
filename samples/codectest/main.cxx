@@ -482,7 +482,7 @@ bool VideoThread::Initialise(PArgList & args)
   cout << "Target bit rate set to " << mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption()) << " bps" << endl;
 
   if (encoder != NULL)
-    encoder->UpdateOutputMediaFormat(mediaFormat);
+    encoder->UpdateMediaFormats(OpalMediaFormat(), mediaFormat);
 
   return true;
 }

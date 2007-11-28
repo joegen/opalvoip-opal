@@ -84,16 +84,21 @@ class OpalVideoTranscoder : public OpalTranscoder
 
   /**@name Operations */
   //@{
-    /**Update the output media format. This can be used to adjust the
-       parameters of a codec at run time. Note you cannot change the basic
+    /**Update the input and output media formats. This can be used to adjust
+       the parameters of a codec at run time. Note you cannot change the basic
        media format, eg change GSM0610 to G.711, only options for that
        format, eg 6k3 mode to 5k3 mode in G.723.1.
 
-       The default behaviour updates the outputMediaFormat member variable
-       and sets the outputMediaFormatUpdated flag.
+       If a format is empty (invalid) it is ignored and does not update the
+       internal variable. In this way only the input or output side can be
+       updated.
+
+       The default behaviour updates the inputMediaFormat and outputMediaFormat
+       member variables.
       */
-    virtual BOOL UpdateOutputMediaFormat(
-      const OpalMediaFormat & mediaFormat  ///<  New media format
+    virtual bool UpdateMediaFormats(
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
 
     /**Get the optimal size for data frames to be converted.

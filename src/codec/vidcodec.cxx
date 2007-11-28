@@ -98,23 +98,22 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   , outDataSize(0)
   , forceIFrame(false)
 {
-  UpdateOutputMediaFormat(outputMediaFormat);
 }
 
 
-BOOL OpalVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
+bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
 
-  if (!OpalTranscoder::UpdateOutputMediaFormat(mediaFormat))
+  if (!OpalTranscoder::UpdateMediaFormats(input, output))
     return FALSE;
 
-  inDataSize  = PVideoDevice::CalculateFrameBytes(mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), PVideoFrameInfo::CIFWidth),
-                                                  mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), PVideoFrameInfo::CIFHeight),
-                                                  GetInputFormat());
-  outDataSize = PVideoDevice::CalculateFrameBytes(mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::CIFWidth),
-                                                  mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::CIFHeight),
-                                                  GetOutputFormat());
+  inDataSize  = PVideoDevice::CalculateFrameBytes(inputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), PVideoFrameInfo::CIFWidth),
+                                                  inputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), PVideoFrameInfo::CIFHeight),
+                                                  inputMediaFormat);
+  outDataSize = PVideoDevice::CalculateFrameBytes(outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::CIFWidth),
+                                                  outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::CIFHeight),
+                                                  outputMediaFormat);
   return TRUE;
 }
 

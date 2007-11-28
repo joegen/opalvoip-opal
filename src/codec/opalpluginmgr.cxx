@@ -261,7 +261,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
     else {
       // New scheme
       struct PluginCodec_Option const * const * options = (struct PluginCodec_Option const * const *)rawOptions;
-      PTRACE_IF(5, options != NULL, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using new style method");
+      PTRACE(5, "OpalPlugin\tAdding options to OpalMediaFormat " << format << " using new style method");
       while (*options != NULL) {
         struct PluginCodec_Option const * option = *options++;
         OpalMediaOption * newOption;
@@ -752,10 +752,12 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Def
   outputIsRTP = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
 }
 
-BOOL OpalPluginFramedAudioTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
+
+bool OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
-  return OpalFramedTranscoder::UpdateOutputMediaFormat(fmt) && UpdateOptions(fmt);
+  return OpalFramedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
+
 
 BOOL OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    PINDEX & consumed,
@@ -773,6 +775,7 @@ BOOL OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
   return stat;
 }
 
+
 BOOL OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 { 
   if (codecDef == NULL)
@@ -783,9 +786,8 @@ BOOL OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
   // for a decoder, this mean that we need to create a silence frame
   // which is easy - ask the decoder, or just create silence
   if (!isEncoder) {
-    length = codecDef->parm.audio.samplesPerFrame*2;
     if ((codecDef->flags & PluginCodec_DecodeSilence) == 0) {
-      memset(buffer, 0, length); 
+      memset(buffer, 0, outputBytesPerFrame); 
       return TRUE;
     }
   }
@@ -794,9 +796,8 @@ BOOL OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
   else {
     length = codecDef->parm.audio.bytesPerFrame;
     if ((codecDef->flags & PluginCodec_EncodeSilence) == 0) {
-      PShortArray silence(codecDef->parm.audio.samplesPerFrame);
-      memset(silence.GetPointer(), 0, codecDef->parm.audio.samplesPerFrame*sizeof(short));
-      unsigned silenceLen = codecDef->parm.audio.samplesPerFrame * sizeof(short);
+      PBYTEArray silence(inputBytesPerFrame);
+      unsigned silenceLen = inputBytesPerFrame;
       unsigned flags = 0;
       return Transcode(silence, &silenceLen, buffer, &length, &flags);
     }
@@ -824,9 +825,9 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
 { 
 }
 
-BOOL OpalPluginStreamedAudioTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
+bool OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
-  return OpalStreamedTranscoder::UpdateOutputMediaFormat(fmt) && UpdateOptions(fmt);
+  return OpalStreamedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
 
 
@@ -885,9 +886,9 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 }
 
 
-BOOL OpalPluginVideoTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & fmt)
+bool OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
-  return OpalVideoTranscoder::UpdateOutputMediaFormat(fmt) && UpdateOptions(fmt);
+  return OpalVideoTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
 
 

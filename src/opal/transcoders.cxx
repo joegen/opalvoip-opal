@@ -79,15 +79,22 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
 }
 
 
-BOOL OpalTranscoder::UpdateOutputMediaFormat(const OpalMediaFormat & mediaFormat)
+bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
 
-  if (outputMediaFormat != mediaFormat)
+  if (( input.IsValid() &&  input !=  inputMediaFormat) ||
+      (output.IsValid() && output != outputMediaFormat)) {
+    PAssertAlways(PInvalidParameter);
     return FALSE;
+  }
 
-  outputMediaFormat = mediaFormat;
-  outputMediaFormatUpdated = true;
+  if (input.IsValid())
+    inputMediaFormat = input;
+
+  if (output.IsValid())
+    outputMediaFormat = output;
+
   return TRUE;
 }
 
@@ -168,7 +175,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 {
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder != NULL) {
-    transcoder->UpdateOutputMediaFormat(destFormat);
+    transcoder->UpdateMediaFormats(srcFormat, destFormat);
     transcoder->SetInstanceID(instance, instanceLen);
   }
   return transcoder;
@@ -308,12 +315,9 @@ OpalMediaFormatList OpalTranscoder::GetPossibleFormats(const OpalMediaFormatList
       if (dstFormats.GetSize() > 0) {
         possibleFormats += srcFormats[i];
 
-        // if using video, check for two step encoders
-        if (format.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
-          for (PINDEX j = 0; j < dstFormats.GetSize(); ++j) {
-            if (dstFormats[j].IsValid())
-              possibleFormats += dstFormats[j];
-          }
+        for (PINDEX j = 0; j < dstFormats.GetSize(); ++j) {
+          if (dstFormats[j].IsValid())
+            possibleFormats += dstFormats[j];
         }
       }
     }
@@ -333,6 +337,29 @@ OpalFramedTranscoder::OpalFramedTranscoder(const OpalMediaFormat & inputMediaFor
   PINDEX framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
   inputBytesPerFrame = inputBytes*framesPerPacket;
   outputBytesPerFrame = outputBytes*framesPerPacket;
+}
+
+
+static unsigned GreatestCommonDivisor(unsigned a, unsigned b)
+{
+  return b == 0 ? a : GreatestCommonDivisor(b, a % b);
+}
+
+
+bool OpalFramedTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
+{
+  if (!OpalTranscoder::UpdateMediaFormats(input, output))
+    return false;
+
+  unsigned framesPerPacket = outputMediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption(), 1);
+  unsigned inFrameSize = inputMediaFormat.GetFrameSize();
+  unsigned outFrameSize = outputMediaFormat.GetFrameSize();
+  unsigned inFrameTime = inputMediaFormat.GetFrameTime();
+  unsigned outFrameTime = outputMediaFormat.GetFrameTime();
+  unsigned leastCommonMultiple = inFrameTime*outFrameTime/GreatestCommonDivisor(inFrameTime, outFrameTime);
+  inputBytesPerFrame = leastCommonMultiple/inFrameTime*inFrameSize*framesPerPacket;
+  outputBytesPerFrame = leastCommonMultiple/outFrameTime*outFrameSize*framesPerPacket;
+  return true;
 }
 
 
