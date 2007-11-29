@@ -191,8 +191,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   forkedInvitations.DisallowDeleteObjects();
 
   referTransaction = (SIPTransaction *)NULL;
-  local_hold = FALSE;
-  remote_hold = FALSE;
+  local_hold = PFalse;
+  remote_hold = PFalse;
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
 
@@ -307,9 +307,9 @@ void SIPConnection::TransferConnection(const PString & remoteParty, const PStrin
   referTransaction->Start ();
 }
 
-BOOL SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
+PBoolean SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
 {
-  BOOL sdpOK;
+  PBoolean sdpOK;
 
   // get the remote media formats, if any
   if (originalInvite->HasSDP()) {
@@ -343,24 +343,24 @@ BOOL SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
     return phase < ReleasingPhase; // abort if already in releasing phase
 
   Release(EndedByCapabilityExchange);
-  return FALSE;
+  return PFalse;
 }
 
-BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
+PBoolean SIPConnection::SetAlerting(const PString & /*calleeName*/, PBoolean withMedia)
 {
   if (IsOriginating()) {
     PTRACE(2, "SIP\tSetAlerting ignored on call we originated.");
-    return TRUE;
+    return PTrue;
   }
 
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
-    return FALSE;
+    return PFalse;
   
   PTRACE(3, "SIP\tSetAlerting");
 
   if (phase != SetUpPhase) 
-    return FALSE;
+    return PFalse;
 
   if (!withMedia) 
     SendInviteResponse(SIP_PDU::Information_Ringing);
@@ -368,37 +368,37 @@ BOOL SIPConnection::SetAlerting(const PString & /*calleeName*/, BOOL withMedia)
     SDPSessionDescription sdpOut(GetLocalAddress());
     if (!ConstructSDP(sdpOut)) {
       SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
-      return FALSE;
+      return PFalse;
     }
     if (!SendInviteResponse(SIP_PDU::Information_Session_Progress, NULL, NULL, &sdpOut))
-      return FALSE;
+      return PFalse;
   }
 
   SetPhase(AlertingPhase);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPConnection::SetConnected()
+PBoolean SIPConnection::SetConnected()
 {
   if (transport == NULL) {
     Release(EndedByTransportFail);
-    return FALSE;
+    return PFalse;
   }
 
   if (IsOriginating()) {
     PTRACE(2, "SIP\tSetConnected ignored on call we originated.");
-    return TRUE;
+    return PTrue;
   }
 
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
-    return FALSE;
+    return PFalse;
   
   if (GetPhase() >= ConnectedPhase) {
     PTRACE(2, "SIP\tSetConnected ignored on already connected call.");
-    return FALSE;
+    return PFalse;
   }
   
   PTRACE(3, "SIP\tSetConnected");
@@ -407,7 +407,7 @@ BOOL SIPConnection::SetConnected()
 
   if (!ConstructSDP(sdpOut)) {
     SendInviteResponse(SIP_PDU::Failure_NotAcceptableHere);
-    return FALSE;
+    return PFalse;
   }
     
   // update the route set and the target address according to 12.1.1
@@ -428,7 +428,7 @@ BOOL SIPConnection::SetConnected()
   SetPhase(ConnectedPhase);
   connectedTime = PTime ();
   
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -478,23 +478,23 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
 }
 
 
-BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpIn,
+PBoolean SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpIn,
                                               SDPMediaDescription::MediaType rtpMediaType,
                                               unsigned rtpSessionId,
                                               SDPSessionDescription & sdpOut)
 {
   RTP_UDP * rtpSession = NULL;
 
-  // if no matching media type, return FALSE
+  // if no matching media type, return PFalse
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
   if (incomingMedia == NULL) {
     PTRACE(2, "SIP\tCould not find matching media type for session " << rtpSessionId);
-    return FALSE;
+    return PFalse;
   }
 
   if (incomingMedia->GetMediaFormats(rtpSessionId).GetSize() == 0) {
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
-    return FALSE;
+    return PFalse;
   }
   
   // Create the list of Opal format names for the remote end.
@@ -504,7 +504,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (remoteFormatList.GetSize() == 0) {
     Release(EndedByCapabilityExchange);
-    return FALSE;
+    return PFalse;
   }
 
   SDPMediaDescription * localMedia = NULL;
@@ -513,21 +513,21 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
   {
     // find the payload type used for telephone-event, if present
     const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
-    BOOL hasTelephoneEvent = FALSE;
+    PBoolean hasTelephoneEvent = PFalse;
 #if OPAL_T38FAX
-    BOOL hasNSE = FALSE;
+    PBoolean hasNSE = PFalse;
 #endif
     PINDEX i;
     for (i = 0; !hasTelephoneEvent && (i < sdpMediaList.GetSize()); i++) {
       if (sdpMediaList[i].GetEncodingName() == "telephone-event") {
         rfc2833Handler->SetPayloadType(sdpMediaList[i].GetPayloadType());
-        hasTelephoneEvent = TRUE;
+        hasTelephoneEvent = PTrue;
         remoteFormatList += OpalRFC2833;
       }
 #if OPAL_T38FAX
       if (sdpMediaList[i].GetEncodingName() == "nse") {
         ciscoNSEHandler->SetPayloadType(sdpMediaList[i].GetPayloadType());
-        hasNSE = TRUE;
+        hasNSE = PTrue;
         remoteFormatList += OpalCiscoNSE;
       }
 #endif
@@ -539,17 +539,17 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
       if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
         Release(EndedByTransportFail);
-      return FALSE;
+      return PFalse;
     }
 
     // set the remote address
     PIPSocket::Address ip;
     WORD port;
-    if (!mediaAddress.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE))) {
+    if (!mediaAddress.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, PTrue))) {
       PTRACE(1, "SIP\tCannot set remote ports on RTP session");
       if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
         Release(EndedByTransportFail);
-      return FALSE;
+      return PFalse;
     }
 
     // construct a new media session list 
@@ -559,7 +559,7 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
     incomingMedia->CreateRTPMap(rtpSessionId, rtpPayloadMap);
 
     // Open the streams and the reverse media streams
-    BOOL reverseStreamsFailed = TRUE;
+    PBoolean reverseStreamsFailed = PTrue;
     reverseStreamsFailed = OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, localMedia);
   
     // Add in the RFC2833 handler, if used
@@ -577,22 +577,22 @@ BOOL SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpI
       SDPSessionDescription *sdp = (SDPSessionDescription *) &sdpOut;
       if (!BuildSDP(sdp, rtpSessions, rtpSessionId)) {
         delete localMedia;
-        return FALSE;
+        return PFalse;
       }
-      return TRUE;
+      return PTrue;
     }
   }
 
   localMedia->SetDirection(GetDirection(rtpSessionId));
   sdpOut.AddMediaDescription(localMedia);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteFormatList, unsigned sessionId, SDPMediaDescription *localMedia)
+PBoolean SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteFormatList, unsigned sessionId, SDPMediaDescription *localMedia)
 {
-  BOOL reverseStreamsFailed = TRUE;
+  PBoolean reverseStreamsFailed = PTrue;
 
   ownerCall.OpenSourceMediaStreams(*this, remoteFormatList, sessionId);
 
@@ -601,7 +601,7 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
     if (otherParty == NULL) {
       PTRACE(1, "SIP\tCannot get other connection");
-      return FALSE;
+      return PFalse;
     }
     otherList = otherParty->GetMediaFormats();
   }
@@ -611,7 +611,7 @@ BOOL SIPConnection::OnOpenSourceMediaStreams(const OpalMediaFormatList & remoteF
     if (mediaStream.GetSessionID() == sessionId) {
       if (OpenSourceMediaStream(otherList, sessionId) && localMedia) {
         localMedia->AddMediaFormat(mediaStream.GetMediaFormat(), rtpPayloadMap);
-        reverseStreamsFailed = FALSE;
+        reverseStreamsFailed = PFalse;
       }
     }
   }
@@ -672,14 +672,14 @@ OpalMediaFormatList SIPConnection::GetMediaFormats() const
 }
 
 
-BOOL SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
+PBoolean SIPConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
                                           unsigned sessionID)
 {
   // The remote user is in recvonly mode or in inactive mode for that session
   switch (remoteSDP.GetDirection(sessionID)) {
     case SDPMediaDescription::Inactive :
     case SDPMediaDescription::RecvOnly :
-      return FALSE;
+      return PFalse;
 
     default :
       return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
@@ -703,7 +703,7 @@ OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
 
 OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                    unsigned sessionID,
-                                                   BOOL isSource)
+                                                   PBoolean isSource)
 {
   // Use a NULL stream if media is bypassing us, 
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
@@ -720,7 +720,7 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
                                 GetMaxAudioJitterDelay());
 }
 
-void SIPConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
+void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);
   if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
@@ -735,14 +735,14 @@ void SIPConnection::OnConnected ()
 }
 
 
-BOOL SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
+PBoolean SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
 {
   return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
          sessionID == OpalMediaFormat::DefaultVideoSessionID;
 }
 
 
-BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
+PBoolean SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
 {
   SIPConnection & connection = *(SIPConnection *)param;
 
@@ -757,20 +757,20 @@ BOOL SIPConnection::WriteINVITE(OpalTransport & transport, void * param)
   if (connection.GetPhase() >= OpalConnection::ReleasingPhase) {
     PTRACE(2, "SIP\tAborting INVITE transaction since connection is in releasing phase");
     delete invite; // Before Start() is called we are responsible for deletion
-    return FALSE;
+    return PFalse;
   }
   
   if (invite->Start()) {
     connection.forkedInvitations.Append(invite);
-    return TRUE;
+    return PTrue;
   }
 
   PTRACE(2, "SIP\tDid not start INVITE transaction on " << transport);
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL SIPConnection::SetUpConnection()
+PBoolean SIPConnection::SetUpConnection()
 {
   PTRACE(3, "SIP\tSetUpConnection: " << remotePartyAddress);
 
@@ -787,23 +787,23 @@ BOOL SIPConnection::SetUpConnection()
     PTRACE(4, "SIP\tConnecting to " << targetAddress << " via " << transportAddress);
   }
 
-  originating = TRUE;
+  originating = PTrue;
 
   delete transport;
   transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
   if (transport == NULL) {
     Release(EndedByTransportFail);
-    return FALSE;
+    return PFalse;
   }
 
   if (!transport->WriteConnect(WriteINVITE, this)) {
     PTRACE(1, "SIP\tCould not write to " << transportAddress << " - " << transport->GetErrorText());
     Release(EndedByTransportFail);
-    return FALSE;
+    return PFalse;
   }
 
   releaseMethod = ReleaseWithCANCEL;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -814,18 +814,18 @@ void SIPConnection::HoldConnection()
 
   PTRACE(3, "SIP\tWill put connection on hold");
 
-  local_hold = TRUE;
+  local_hold = PTrue;
 
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
     // Pause the media streams
-    PauseMediaStreams(TRUE);
+    PauseMediaStreams(PTrue);
     
     // Signal the manager that there is a hold
     endpoint.OnHold(*this);
   }
   else
-    local_hold = FALSE;
+    local_hold = PFalse;
 }
 
 
@@ -834,7 +834,7 @@ void SIPConnection::RetrieveConnection()
   if (!local_hold)
     return;
 
-  local_hold = FALSE;
+  local_hold = PFalse;
 
   if (transport == NULL)
     return;
@@ -844,7 +844,7 @@ void SIPConnection::RetrieveConnection()
   SIPTransaction * invite = new SIPInvite(*this, *transport, rtpSessions);
   if (invite->Start()) {
     // Un-Pause the media streams
-    PauseMediaStreams(FALSE);
+    PauseMediaStreams(PFalse);
 
     // Signal the manager that there is a hold
     endpoint.OnHold(*this);
@@ -852,7 +852,7 @@ void SIPConnection::RetrieveConnection()
 }
 
 
-BOOL SIPConnection::IsConnectionOnHold()
+PBoolean SIPConnection::IsConnectionOnHold()
 {
   return (local_hold || remote_hold);
 }
@@ -887,7 +887,7 @@ static void SetNXEPayloadCode(SDPMediaDescription * localMedia,
   handler->SetPayloadType(nxePayloadCode);
 }
 
-BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp, 
+PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp, 
                              RTP_SessionManager & rtpSessions,
                              unsigned rtpSessionId)
 {
@@ -901,10 +901,10 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   if (rtpSessionId == OpalMediaFormat::DefaultVideoSessionID &&
            !endpoint.GetManager().CanAutoStartReceiveVideo() &&
            !endpoint.GetManager().CanAutoStartTransmitVideo())
-    return FALSE;
+    return PFalse;
 #endif
 
-  OpalMediaFormatList formats = GetLocalMediaFormats();
+  OpalMediaFormatList formats = GetMediaFormats();
 
   // See if any media formats of this session id, so don't create unused RTP session
   PINDEX i;
@@ -916,7 +916,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   }
   if (i >= formats.GetSize()) {
     PTRACE(3, "SIP\tNo media formats for session id " << rtpSessionId << ", not adding SDP");
-    return FALSE;
+    return PFalse;
   }
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
@@ -948,7 +948,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
       if (rtpSession == NULL) {
         PTRACE(1, "SIP\tCould not create session id " << rtpSessionId << ", released " << *this);
         Release(OpalConnection::EndedByTransportFail);
-        return FALSE;
+        return PFalse;
       }
 
       rtpSession->SetUserData(new SIP_RTP_Session(*this));
@@ -1011,7 +1011,7 @@ BOOL SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     sdp->AddMediaDescription(localMedia);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1132,15 +1132,15 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
     return;
 
   PINDEX i;
-  BOOL ignoreErrorResponse = FALSE;
-  BOOL reInvite = FALSE;
+  PBoolean ignoreErrorResponse = PFalse;
+  PBoolean reInvite = PFalse;
 
   if (transaction.GetMethod() == SIP_PDU::Method_INVITE) {
     // See if this is an initial INVITE or a re-INVITE
-    reInvite = TRUE;
+    reInvite = PTrue;
     for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
       if (invitation == &transaction) {
-        reInvite = FALSE;
+        reInvite = PFalse;
         break;
       }
     }
@@ -1198,7 +1198,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
       // release connection until all of them have failed.
       for (PSafePtr<SIPTransaction> invitation(forkedInvitations, PSafeReference); invitation != NULL; ++invitation) {
         if (invitation->IsInProgress()) {
-          ignoreErrorResponse = TRUE;
+          ignoreErrorResponse = PTrue;
           break;
         }
       }
@@ -1251,8 +1251,8 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
   // If we are doing a local hold, and fail, we do not release the conneciton
   if (reInvite && local_hold) {
-    local_hold = FALSE;       // It failed
-    PauseMediaStreams(FALSE); // Un-Pause the media streams
+    local_hold = PFalse;       // It failed
+    PauseMediaStreams(PFalse); // Un-Pause the media streams
     endpoint.OnHold(*this);   // Signal the manager that there is no more hold
     return;
   }
@@ -1275,7 +1275,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
 
 void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 {
-  BOOL isReinvite;
+  PBoolean isReinvite;
 
   const SIPMIMEInfo & requestMIME = request.GetMIME();
   PString requestTo = requestMIME.GetTo();
@@ -1290,10 +1290,10 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
 
     // We originated the call, so any INVITE must be a re-INVITE, 
-    isReinvite = TRUE;
+    isReinvite = PTrue;
   }
   else if (originalInvite == NULL) {
-    isReinvite = FALSE; // First time incoming call
+    isReinvite = PFalse; // First time incoming call
     PTRACE(4, "SIP\tInitial INVITE from " << request.GetURI());
   }
   else {
@@ -1320,7 +1320,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     }
 
     // A new INVITE in the same "dialog" but different cseq must be a re-INVITE
-    isReinvite = TRUE;
+    isReinvite = PTrue;
   }
    
 
@@ -1349,7 +1349,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   mime.SetTo(localPartyAddress);
 
   // get the called destination
-  calledDestinationName   = originalInvite->GetURI().GetDisplayName(FALSE);   
+  calledDestinationName   = originalInvite->GetURI().GetDisplayName(PFalse);   
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
   calledDestinationURL    = originalInvite->GetURI().AsString();
 
@@ -1370,7 +1370,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   transport->GetLocalAddress().GetIpAddress(localAddr);
 
   // allow the application to determine if RTP NAT is enabled or not
-  remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, TRUE);
+  remoteIsNAT = IsRTPNATEnabled(localAddr, peerAddr, sigAddr, PTrue);
 
   // indicate the other is to start ringing (but look out for clear calls)
   if (!OnIncomingConnection(0, NULL)) {
@@ -1417,8 +1417,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
         sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID) == SDPMediaDescription::SendOnly) {
 
       PTRACE(3, "SIP\tRemote hold detected");
-      remote_hold = TRUE;
-      PauseMediaStreams(TRUE);
+      remote_hold = PTrue;
+      PauseMediaStreams(PTrue);
       endpoint.OnHold(*this);
     }
     else {
@@ -1427,8 +1427,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
       // parameter, then we are not on hold anymore
       if (remote_hold) {
         PTRACE(3, "SIP\tRemote retrieve from hold detected");
-        remote_hold = FALSE;
-        PauseMediaStreams(FALSE);
+        remote_hold = PFalse;
+        PauseMediaStreams(PFalse);
         endpoint.OnHold(*this);
       }
     }
@@ -1436,8 +1436,8 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   else {
     if (remote_hold) {
       PTRACE(3, "SIP\tRemote retrieve from hold without SDP detected");
-      remote_hold = FALSE;
-      PauseMediaStreams(FALSE);
+      remote_hold = PFalse;
+      PauseMediaStreams(PFalse);
       endpoint.OnHold(*this);
     }
   }
@@ -1447,16 +1447,16 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   if (!IsConnectionOnHold()) {
     RemoveMediaStreams();
     GetCall().RemoveMediaStreams();
-    ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, TRUE);
+    ReleaseSession(OpalMediaFormat::DefaultAudioSessionID, PTrue);
 #if OPAL_VIDEO
-    ReleaseSession(OpalMediaFormat::DefaultVideoSessionID, TRUE);
+    ReleaseSession(OpalMediaFormat::DefaultVideoSessionID, PTrue);
 #endif
 #if OPAL_T38FAX
-    ReleaseSession(OpalMediaFormat::DefaultDataSessionID, TRUE);
+    ReleaseSession(OpalMediaFormat::DefaultDataSessionID, PTrue);
 #endif
   }
 
-  BOOL sdpOK;
+  PBoolean sdpOK;
 
   if (originalInvite->HasSDP()) {
 
@@ -1494,7 +1494,7 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 }
 
 
-BOOL SIPConnection::OnOpenIncomingMediaChannels()
+PBoolean SIPConnection::OnOpenIncomingMediaChannels()
 {
   ApplyStringOptions();
 
@@ -1535,7 +1535,7 @@ BOOL SIPConnection::OnOpenIncomingMediaChannels()
   ownerCall.OnSetUp(*this);
 
   AnsweringCall(OnAnswerCall(remotePartyAddress));
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1556,11 +1556,11 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
           break;
 
         case AnswerCallPending:
-          SetAlerting(GetLocalPartyName(), FALSE);
+          SetAlerting(GetLocalPartyName(), PFalse);
           break;
 
         case AnswerCallAlertWithMedia:
-          SetAlerting(GetLocalPartyName(), TRUE);
+          SetAlerting(GetLocalPartyName(), PTrue);
           break;
 
         default:
@@ -1799,10 +1799,10 @@ void SIPConnection::OnReceivedRedirection(SIP_PDU & response)
 }
 
 
-BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
+PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transaction,
                                                      SIP_PDU & response)
 {
-  BOOL isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+  PBoolean isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
   SIPURL proxy;
   SIPAuthentication auth;
   PString lastUsername;
@@ -1814,7 +1814,7 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   
   if (transaction.GetMethod() != SIP_PDU::Method_INVITE) {
     PTRACE(1, "SIP\tCannot do " << proxyTrace << "Authentication Required for non INVITE");
-    return FALSE;
+    return PFalse;
   }
 
   PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
@@ -1824,7 +1824,7 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   // Received authentication required response, try to find authentication
   // for the given realm if no proxy
   if (!auth.Parse(response.GetMIME()(authenticateTag), isProxy)) {
-    return FALSE;
+    return PFalse;
   }
 
   // Save the username, realm and nonce
@@ -1837,18 +1837,18 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
     PTRACE (3, "SIP\tCouldn't find authentication information for realm " << auth.GetAuthRealm()
             << ", will use SIP Outbound Proxy authentication settings, if any");
     if (endpoint.GetProxy().IsEmpty())
-      return FALSE;
+      return PFalse;
 
     authentication.SetUsername(endpoint.GetProxy().GetUserName());
     authentication.SetPassword(endpoint.GetProxy().GetPassword());
   }
 
   if (!authentication.Parse(response.GetMIME()(authenticateTag), isProxy))
-    return FALSE;
+    return PFalse;
   
   if (!authentication.IsValid() || (lastUsername == authentication.GetUsername() && lastNonce == authentication.GetNonce())) {
     PTRACE(2, "SIP\tAlready done INVITE for " << proxyTrace << "Authentication Required");
-    return FALSE;
+    return PFalse;
   }
 
   // Restart the transaction with new authentication info
@@ -1871,11 +1871,11 @@ BOOL SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transactio
   if (invite->Start())
   {
     forkedInvitations.Append(invite);
-    return TRUE;
+    return PTrue;
   }
 
   PTRACE(2, "SIP\tCould not restart INVITE for " << proxyTrace << "Authentication Required");
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1923,7 +1923,7 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 }
 
 
-BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
+PBoolean SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
                                                   SDPMediaDescription::MediaType mediaType,
                                                   unsigned rtpSessionId)
 {
@@ -1932,7 +1932,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
   
   if (mediaDescription == NULL) {
     PTRACE(mediaType <= SDPMediaDescription::Video ? 2 : 3, "SIP\tCould not find SDP media description for " << mediaType);
-    return FALSE;
+    return PFalse;
   }
 
   {
@@ -1940,7 +1940,7 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     OpalMediaFormatList mediaFormatList = mediaDescription->GetMediaFormats(rtpSessionId);
     if (mediaFormatList.GetSize() == 0) {
       PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
-      return FALSE;
+      return PFalse;
     }
 
     // create the RTPSession
@@ -1950,17 +1950,17 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
       if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
         Release(EndedByTransportFail);
-      return FALSE;
+      return PFalse;
     }
 
     // set the remote address 
     PIPSocket::Address ip;
     WORD port;
-    if (!address.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, TRUE))) {
+    if (!address.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, PTrue))) {
       PTRACE(1, "SIP\tCannot set remote ports on RTP session");
       if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
         Release(EndedByTransportFail);
-      return FALSE;
+      return PFalse;
     }
 
     // When receiving an answer SDP, keep the remote SDP media formats order
@@ -1973,10 +1973,10 @@ BOOL SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
     
     // Open the streams and the reverse streams
     if (!OnOpenSourceMediaStreams(remoteFormatList, rtpSessionId, NULL))
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -2053,20 +2053,20 @@ void SIPConnection::OnAckTimeout(PThread &, INT)
 }
 
 
-BOOL SIPConnection::ForwardCall (const PString & fwdParty)
+PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 {
   if (fwdParty.IsEmpty ())
-    return FALSE;
+    return PFalse;
   
   forwardParty = fwdParty;
   PTRACE(2, "SIP\tIncoming SIP connection will be forwarded to " << forwardParty);
   Release(EndedByCallForwarded);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
+PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 {
   SIPURL localPartyURL(GetLocalPartyAddress());
   PString userName = endpoint.GetRegisteredPartyName(localPartyURL).GetUserName();
@@ -2075,10 +2075,10 @@ BOOL SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
 }
 
-BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
+PBoolean SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
 {
   if (invite.GetMethod() != SIP_PDU::Method_INVITE) { // Sanity check
-    return FALSE;
+    return PFalse;
   }
 
   SIP_PDU ack;
@@ -2092,16 +2092,16 @@ BOOL SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
   // Send the PDU using the connection transport
   if (!SendPDU(ack, ack.GetSendAddress(ack.GetMIME().GetRoute()))) {
     Release(EndedByTransportFail);
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
+PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
 {
   if (NULL == originalInvite)
-    return FALSE;
+    return PFalse;
 
   SIP_PDU response(*originalInvite, code, contact, extra);
   if (NULL != sdp)
@@ -2115,7 +2115,7 @@ BOOL SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * c
 }
 
 
-BOOL SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
+PBoolean SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & address)
 {
   PWaitAndSignal m(transportMutex); 
   return transport != NULL && pdu.Write(*transport, address);
@@ -2138,7 +2138,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
     char tone = -1;
     int duration = -1;
     for (i = 0; i < lines.GetSize(); ++i) {
-      PStringArray tokens = lines[i].Tokenise('=', FALSE);
+      PStringArray tokens = lines[i].Tokenise('=', PFalse);
       PString val;
       if (tokens.GetSize() > 1)
         val = tokens[1].Trim();
@@ -2196,7 +2196,7 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
   return SendUserInputAsInlineRFC2833;
 }
 
-BOOL SIPConnection::SendUserInputTone(char tone, unsigned duration)
+PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 {
   SendUserInputModes mode = GetRealSendUserInputMode();
 
@@ -2307,7 +2307,7 @@ class VFUXML : public QDXML
     VFUXML()
     { vfu = false; }
 
-    BOOL Parse(const std::string & xml)
+    PBoolean Parse(const std::string & xml)
     {
       static const struct statedef states[] = {
         { 0, "?xml",                1 },
@@ -2331,7 +2331,7 @@ class VFUXML : public QDXML
     }
 };
 
-BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
+PBoolean SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
 {
   VFUXML vfu;
   if (!vfu.Parse(pdu.GetEntityBody())) {
@@ -2347,9 +2347,9 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
   }
   else if (vfu.vfu) {
     if (!LockReadWrite())
-      return FALSE;
+      return PFalse;
 
-    OpalMediaStream * encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, TRUE);
+    OpalMediaStream * encodingStream = GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, PTrue);
 
     if (!encodingStream){
       OpalVideoUpdatePicture updatePictureCommand;
@@ -2362,7 +2362,7 @@ BOOL SIPConnection::OnMediaControlXML(SIP_PDU & pdu)
     UnlockReadWrite();
   }
 
-  return TRUE;
+  return PTrue;
 }
 #endif
 
@@ -2404,7 +2404,7 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
     return; // No other connection.  Bail.
 
   // Found the encoding stream, send an OpalVideoFastUpdatePicture
-  OpalMediaStream * encodingStream = otherConnection->GetMediaStream(session.GetSessionID(), TRUE);
+  OpalMediaStream * encodingStream = otherConnection->GetMediaStream(session.GetSessionID(), PTrue);
   if (encodingStream) {
     OpalVideoUpdatePicture updatePictureCommand;
     encodingStream->ExecuteCommand(updatePictureCommand);

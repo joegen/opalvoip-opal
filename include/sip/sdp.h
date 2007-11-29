@@ -165,7 +165,7 @@ class SDPMediaDescription : public PObject
     void PrintOn(ostream & strm) const;
     void PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const;
 
-    BOOL Decode(const PString & str);
+    PBoolean Decode(const PString & str);
 
     MediaType GetMediaType() const { return mediaType; }
 
@@ -186,7 +186,7 @@ class SDPMediaDescription : public PObject
     Direction GetDirection() const { return direction; }
 
     const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
-    BOOL SetTransportAddress(const OpalTransportAddress &t);
+    PBoolean SetTransportAddress(const OpalTransportAddress &t);
 
     PString GetTransport() const         { return transport; }
     void SetTransport(const PString & v) { transport = v; }
@@ -229,7 +229,7 @@ class SDPSessionDescription : public PObject
 
     void PrintOn(ostream & strm) const;
     PString Encode() const;
-    BOOL Decode(const PString & str);
+    PBoolean Decode(const PString & str);
 
     void SetSessionName(const PString & v) { sessionName = v; }
     PString GetSessionName() const         { return sessionName; }

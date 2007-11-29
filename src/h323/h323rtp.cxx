@@ -78,7 +78,7 @@ H323_RTP_UDP::H323_RTP_UDP(const H323Connection & conn,
 }
 
 
-BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
+PBoolean H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
                                 H245_H2250LogicalChannelParameters & param) const
 {
   PTRACE(3, "RTP\tOnSendingPDU");
@@ -86,7 +86,7 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
   param.m_sessionID = rtp.GetSessionID();
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
-  param.m_mediaGuaranteedDelivery = FALSE;
+  param.m_mediaGuaranteedDelivery = PFalse;
 
   // unicast must have mediaControlChannel
   H323TransportAddress mediaControlAddress(rtp.GetLocalAddress(), rtp.GetLocalControlPort());
@@ -120,7 +120,7 @@ BOOL H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
   if (H323SetRTPPacketization(param.m_mediaPacketization, channel.GetMediaStream()->GetMediaFormat(), rtpPayloadType))
     param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -148,14 +148,14 @@ void H323_RTP_UDP::OnSendingAckPDU(const H323_RTPChannel & channel,
 }
 
 
-BOOL H323_RTP_UDP::ExtractTransport(const H245_TransportAddress & pdu,
-                                    BOOL isDataPort,
+PBoolean H323_RTP_UDP::ExtractTransport(const H245_TransportAddress & pdu,
+                                    PBoolean isDataPort,
                                     unsigned & errorCode)
 {
   if (pdu.GetTag() != H245_TransportAddress::e_unicastAddress) {
     PTRACE(1, "RTP_UDP\tOnly unicast supported at this time");
     errorCode = H245_OpenLogicalChannelReject_cause::e_multicastChannelNotAllowed;
-    return FALSE;
+    return PFalse;
   }
 
   H323TransportAddress transAddr = pdu;
@@ -165,38 +165,38 @@ BOOL H323_RTP_UDP::ExtractTransport(const H245_TransportAddress & pdu,
   if (transAddr.GetIpAndPort(ip, port))
     return rtp.SetRemoteSocketInfo(ip, port, isDataPort);
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
+PBoolean H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  const H245_H2250LogicalChannelParameters & param,
                                  unsigned & errorCode)
 {
   if (param.m_sessionID != rtp.GetSessionID()) {
     PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
-    return FALSE;
+    return PFalse;
   }
 
-  BOOL ok = FALSE;
+  PBoolean ok = PFalse;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaControlChannel)) {
-    if (!ExtractTransport(param.m_mediaControlChannel, FALSE, errorCode)) {
+    if (!ExtractTransport(param.m_mediaControlChannel, PFalse, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract mediaControl transport for " << channel);
-      return FALSE;
+      return PFalse;
     }
-    ok = TRUE;
+    ok = PTrue;
   }
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_mediaChannel)) {
     if (ok && channel.GetDirection() == H323Channel::IsReceiver)
       PTRACE(2, "RTP_UDP\tIgnoring media transport for " << channel);
-    else if (!ExtractTransport(param.m_mediaChannel, TRUE, errorCode)) {
+    else if (!ExtractTransport(param.m_mediaChannel, PTrue, errorCode)) {
       PTRACE(1, "RTP_UDP\tFailed to extract media transport for " << channel);
-      return FALSE;
+      return PFalse;
     }
-    ok = TRUE;
+    ok = PTrue;
   }
 
   if (param.HasOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType))
@@ -210,19 +210,19 @@ BOOL H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
   }
 
   if (ok)
-    return TRUE;
+    return PTrue;
 
   PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
 
   if (rtp.GetSessionID() == OpalMediaFormat::DefaultDataSessionID)
-    return TRUE;
+    return PTrue;
 
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
+PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
                                     const H245_H2250LogicalChannelAckParameters & param)
 {
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID)) {
@@ -238,24 +238,24 @@ BOOL H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
     PTRACE(1, "RTP_UDP\tNo mediaControlChannel specified");
     if (rtp.GetSessionID() != OpalMediaFormat::DefaultDataSessionID)
-      return FALSE;
+      return PFalse;
   }
   else
-  if (!ExtractTransport(param.m_mediaControlChannel, FALSE, errorCode))
-    return FALSE;
+  if (!ExtractTransport(param.m_mediaControlChannel, PFalse, errorCode))
+    return PFalse;
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaChannel)) {
     PTRACE(1, "RTP_UDP\tNo mediaChannel specified");
-    return FALSE;
+    return PFalse;
   }
 
-  if (!ExtractTransport(param.m_mediaChannel, TRUE, errorCode))
-    return FALSE;
+  if (!ExtractTransport(param.m_mediaChannel, PTrue, errorCode))
+    return PFalse;
 
   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_dynamicRTPPayloadType))
     channel.SetDynamicRTPPayloadType(param.m_dynamicRTPPayloadType);
 
-  return TRUE;
+  return PTrue;
 }
 
 

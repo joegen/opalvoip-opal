@@ -48,7 +48,7 @@
  *
  *  Revision 1.11  2007/03/01 05:51:03  rjongbloed
  *  Fixed backward compatibility of OnIncomingConnection() virtual
- *    functions on various classes. If an old override returned FALSE
+ *    functions on various classes. If an old override returned PFalse
  *    then it will now abort the call as it used to.
  *
  *  Revision 1.10  2007/01/24 04:00:55  csoutheren
@@ -161,7 +161,7 @@ public:
   PSyncPoint activate;
 
   /**Flag to indicate if this receiver thread should keep listening for network data */
-  BOOL           keepGoing;
+  PBoolean           keepGoing;
 };
 
 
@@ -190,7 +190,7 @@ class IAX2EndPoint : public OpalEndPoint
 
   The default behaviour does nothing.
   */
-  virtual BOOL NewIncomingConnection(
+  virtual PBoolean NewIncomingConnection(
     OpalTransport * transport  /// Transport connection came in on
   );
   
@@ -210,12 +210,12 @@ class IAX2EndPoint : public OpalEndPoint
      
      The proto field is optional when passed to a specific endpoint. If it
      is present, however, it must agree with the endpoints protocol name or
-     FALSE is returned.
+     PFalse is returned.
      
      This function usually returns almost immediately with the connection
      continuing to occur in a new background thread.
      
-     If FALSE is returned then the connection could not be established. For
+     If PFalse is returned then the connection could not be established. For
      example if a PSTN endpoint is used and the assiciated line is engaged
      then it may return immediately. Returning a non-NULL value does not
      mean that the connection will succeed, only that an attempt is being
@@ -223,7 +223,7 @@ class IAX2EndPoint : public OpalEndPoint
      
      The default behaviour is pure.
   */
-  virtual BOOL MakeConnection(
+  virtual PBoolean MakeConnection(
 			      OpalCall & call,          ///<  Owner of connection
 			      const PString & party,    ///<  Remote party to call
 			      void * userData = NULL,   ///<  Arbitrary data to pass to connection
@@ -247,7 +247,7 @@ class IAX2EndPoint : public OpalEndPoint
   //@{
   /**Setup the Endpoint internval variables, which is called at program 
      startup.*/
-  BOOL Initialise();
+  PBoolean Initialise();
 
   /**Handle a received IAX frame. This may be a mini frame or full frame */
   virtual void IncomingEthernetFrame (IAX2Frame *frame);
@@ -257,7 +257,7 @@ class IAX2EndPoint : public OpalEndPoint
      frame. If the connection is gone, don't bother transmitting the
      frame. There are exceptins to this rule, such as when a hangup
      packet is sent (which is after the connections has died. */
-  BOOL ConectionForFrameIsAlive(IAX2Frame *f);
+  PBoolean ConectionForFrameIsAlive(IAX2Frame *f);
   
   /**Request a new source call number, one that is different to 
      all other source call numbers for this program.  
@@ -304,7 +304,7 @@ class IAX2EndPoint : public OpalEndPoint
 
      @return True if a connection (which matches this Frame ) can be
      found. */
-  BOOL ConnectionForFrameIsAlive(IAX2Frame *f);
+  PBoolean ConnectionForFrameIsAlive(IAX2Frame *f);
  
   /**Get out sequence number to use on status query frames*/
   PINDEX GetOutSequenceNumberForStatusQuery();
@@ -314,8 +314,8 @@ class IAX2EndPoint : public OpalEndPoint
   
     /**Handle new incoming connection from listener.
        
-    A return value of TRUE indicates that the transport object should be
-    deleted by the caller. FALSE indicates that something else (eg the
+    A return value of PTrue indicates that the transport object should be
+    deleted by the caller. PFalse indicates that something else (eg the
     connection) has taken over responsibility for deleting the transport.
     
     Well, that is true of Opal. In iax2, we do all the work of creating a new
@@ -344,7 +344,7 @@ class IAX2EndPoint : public OpalEndPoint
       */
   virtual OpalMediaFormatList GetMediaFormats() const;
 
-  virtual BOOL OnIncomingCall(IAX2Connection & conn);
+  virtual PBoolean OnIncomingCall(IAX2Connection & conn);
 
   /**Return the bitmask which specifies the possible codecs we support */
   PINDEX GetSupportedCodecs(OpalMediaFormatList & list);
@@ -413,7 +413,7 @@ class IAX2EndPoint : public OpalEndPoint
   virtual void OnRegistered(
       const PString & host,
       const PString & userName,
-      BOOL isFailure,
+      PBoolean isFailure,
       RegisteredError reason = RegisteredFailureUnknown);
    
    /**Unregister from a registrar. This function is synchronous so it
@@ -433,12 +433,12 @@ class IAX2EndPoint : public OpalEndPoint
   virtual void OnUnregistered(
       const PString & host,
       const PString & userName,
-      BOOL isFailure,
+      PBoolean isFailure,
       UnregisteredError reason = UnregisteredFailureUnknown);
       
   
   /**Check if an account is registered or being registered*/
-  BOOL IsRegistered(const PString & host, const PString & username);
+  PBoolean IsRegistered(const PString & host, const PString & username);
   
   /**Get the number of accounts that are being registered*/
   PINDEX GetRegistrationsCount();
@@ -500,21 +500,21 @@ class IAX2EndPoint : public OpalEndPoint
     
   /**For the supplied IAX2Frame, pass it to a connection in the
      connectionsActive structure.  If no matching connection is found, return
-     FALSE;
+     PFalse;
      
      If a matching connections is found, give the frame to the
-     connection (for the connection to process) and return TRUE;
+     connection (for the connection to process) and return PTrue;
   */
-  BOOL ProcessInMatchingConnection(IAX2Frame *f);  
+  PBoolean ProcessInMatchingConnection(IAX2Frame *f);  
     
   /**The TokenTranslationDict may need a new entry. Examine
      the list of active connections, to see if any match this frame.
      If any do, then we add a new translation entry in tokenTable;
      
      If a matching connection is found in connectionsActive, create a
-     new translation entry and return TRUE. The connection, after
+     new translation entry and return PTrue. The connection, after
      processing the frame, will then delete the frame. */
-  BOOL AddNewTranslationEntry(IAX2Frame *f);
+  PBoolean AddNewTranslationEntry(IAX2Frame *f);
   
   /**tokenTable is a hack to allow IAX2 to fit in with one of the
      demands of the opal library. 

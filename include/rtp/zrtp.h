@@ -77,7 +77,7 @@ class OpalZRTP_UDP : public SecureRTP_UDP
     OpalZRTP_UDP(
       PHandleAggregator * _aggregator,   ///< handle aggregator
       unsigned id,                       ///<  Session ID for RTP channel
-      BOOL remoteIsNAT                  ///<  TRUE is remote is behind NAT
+      PBoolean remoteIsNAT                  ///<  PTrue is remote is behind NAT
     );
 
     ~OpalZRTP_UDP();

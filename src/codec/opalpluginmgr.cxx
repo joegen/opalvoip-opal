@@ -207,35 +207,35 @@ void OpalPluginMediaFormatInternal::SetOldStyleOption(OpalMediaFormatInternal & 
   }
 
   if (type[0] != '\0') {
-    PStringArray tokens = PString(val+1).Tokenise(':', FALSE);
+    PStringArray tokens = PString(val+1).Tokenise(':', PFalse);
     char ** array = tokens.ToCharArray();
     switch (toupper(type[0])) {
       case 'E':
         PTRACE(5, "OpalPlugin\tAdding enum option '" << key << "' " << tokens.GetSize() << " options");
-        format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)), TRUE);
+        format.AddOption(new OpalMediaOptionEnum(key, false, array, tokens.GetSize(), op, tokens.GetStringsIndex(val)), PTrue);
         break;
       case 'B':
         PTRACE(5, "OpalPlugin\tAdding boolean option '" << key << "'=" << val);
-        format.AddOption(new OpalMediaOptionBoolean(key, false, op, (val[0] == '1') || (toupper(val[0]) == 'T')), TRUE);
+        format.AddOption(new OpalMediaOptionBoolean(key, false, op, (val[0] == '1') || (toupper(val[0]) == 'T')), PTrue);
         break;
       case 'R':
         PTRACE(5, "OpalPlugin\tAdding real option '" << key << "'=" << val);
         if (tokens.GetSize() < 2)
           format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal()));
         else
-          format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal(), tokens[0].AsReal(), tokens[1].AsReal()), TRUE);
+          format.AddOption(new OpalMediaOptionReal(key, false, op, PString(val).AsReal(), tokens[0].AsReal(), tokens[1].AsReal()), PTrue);
         break;
       case 'I':
         PTRACE(5, "OpalPlugin\tAdding integer option '" << key << "'=" << val);
         if (tokens.GetSize() < 2)
-          format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()), TRUE);
+          format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned()), PTrue);
         else
-          format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()), TRUE);
+          format.AddOption(new OpalMediaOptionUnsigned(key, false, op, PString(val).AsUnsigned(), tokens[0].AsUnsigned(), tokens[1].AsUnsigned()), PTrue);
         break;
       case 'S':
       default:
         PTRACE(5, "OpalPlugin\tAdding string option '" << key << "'=" << val);
-        format.AddOption(new OpalMediaOptionString(key, false, val), TRUE);
+        format.AddOption(new OpalMediaOptionString(key, false, val), PTrue);
         break;
     }
     free(array);
@@ -336,7 +336,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
         genericInfo.excludeReqMode = (option->m_H245Generic&PluginCodec_H245_ReqMode) == 0;
         newOption->SetH245Generic(genericInfo);
 
-        format.AddOption(newOption, TRUE);
+        format.AddOption(newOption, PTrue);
       }
     }
     freeOptionsControl.Call(rawOptions, &optionsLen);
@@ -441,7 +441,7 @@ bool OpalPluginMediaFormatInternal::IsValidForProtocol(const PString & _protocol
   if (protocol == "sip") 
     return codecDef->sdpFormat != NULL;
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -617,7 +617,7 @@ OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Defin
                             OpalMediaFormat::DefaultDataSessionID,
                             (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                             rtpEncodingName,
-                            FALSE,                                // need jitter
+                            false,                                // need jitter
                             8*_encoderCodec->parm.audio.bytesPerFrame*OpalMediaFormat::AudioClockRate/frameTime, // bandwidth
                             _encoderCodec->parm.audio.bytesPerFrame,         // size of frame in bytes
                             frameTime,                            // time for frame
@@ -707,7 +707,7 @@ static H323CodecPluginCapabilityMapEntry videoMaps[] = {
 
 //////////////////////////////////////////////////////////////////////////////
 
-OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, BOOL isEnc)
+OpalPluginTranscoder::OpalPluginTranscoder(const PluginCodec_Definition * defn, PBoolean isEnc)
   : codecDef(defn)
   , isEncoder(isEnc)
   , context(codecDef->createCodec != NULL ? (*codecDef->createCodec)(codecDef) : NULL)
@@ -729,7 +729,7 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
   PTRACE(4, "OpalPlugin\t" << (isEncoder ? "Setting encoder options" : "Setting decoder options") << ":\n" << setw(-1) << fmt);
 
   char ** options = fmt.GetOptions().ToCharArray(false);
-  BOOL ok = setCodecOptions.Call(options, sizeof(options), context) != 0;
+  bool ok = setCodecOptions.Call(options, sizeof(options), context) != 0;
   free(options);
   return ok;
 }
@@ -741,7 +741,7 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
 //
 
 #if OPAL_AUDIO
-OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder, const char * rawFormat)
+OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat)
   : OpalFramedTranscoder( (strcmp(_codec->sourceFormat, "L16") == 0) ? rawFormat : _codec->sourceFormat,
                           (strcmp(_codec->destFormat, "L16") == 0)   ? rawFormat : _codec->destFormat,
                          _isEncoder ? _codec->parm.audio.samplesPerFrame*2 : _codec->parm.audio.bytesPerFrame,
@@ -752,14 +752,13 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Def
   outputIsRTP = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
 }
 
-
-bool OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
+PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   return OpalFramedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
 
 
-BOOL OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
+PBoolean OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
                                                    PINDEX & consumed,
                                                    BYTE * output,
                                                    PINDEX & created)
@@ -768,18 +767,17 @@ BOOL OpalPluginFramedAudioTranscoder::ConvertFrame(const BYTE * input,
   unsigned int toLen   = created;
   unsigned flags = 0;
 
-  BOOL stat = Transcode(input, &fromLen, output, &toLen, &flags);
+  PBoolean stat = Transcode(input, &fromLen, output, &toLen, &flags);
   consumed = fromLen;
   created  = toLen;
 
   return stat;
 }
 
-
-BOOL OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
+PBoolean OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 { 
   if (codecDef == NULL)
-    return FALSE;
+    return PFalse;
 
   unsigned length;
 
@@ -788,7 +786,7 @@ BOOL OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
   if (!isEncoder) {
     if ((codecDef->flags & PluginCodec_DecodeSilence) == 0) {
       memset(buffer, 0, outputBytesPerFrame); 
-      return TRUE;
+      return PTrue;
     }
   }
 
@@ -814,7 +812,7 @@ BOOL OpalPluginFramedAudioTranscoder::ConvertSilentFrame(BYTE * buffer)
 //
 
 OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec,
-                                                                     BOOL _isEncoder,
+                                                                     PBoolean _isEncoder,
                                                                      unsigned inputBits,
                                                                      unsigned outputBits,
                                                                      PINDEX optimalBits)
@@ -825,14 +823,14 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
 { 
 }
 
-bool OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
+PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   return OpalStreamedTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
 
 
-OpalPluginStreamedAudioEncoder::OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, BOOL)
-  : OpalPluginStreamedAudioTranscoder(_codec, TRUE,
+OpalPluginStreamedAudioEncoder::OpalPluginStreamedAudioEncoder(PluginCodec_Definition * _codec, PBoolean)
+  : OpalPluginStreamedAudioTranscoder(_codec, PTrue,
                                       16,
                                       (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos,
                                       _codec->parm.audio.recommendedFramesPerPacket)
@@ -850,8 +848,8 @@ int OpalPluginStreamedAudioEncoder::ConvertOne(int _sample) const
 }
 
 
-OpalPluginStreamedAudioDecoder::OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, BOOL)
-  : OpalPluginStreamedAudioTranscoder(_codec, FALSE,
+OpalPluginStreamedAudioDecoder::OpalPluginStreamedAudioDecoder(PluginCodec_Definition * _codec, PBoolean)
+  : OpalPluginStreamedAudioTranscoder(_codec, PFalse,
                                       (_codec->flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos,
                                       16,
                                       _codec->parm.audio.recommendedFramesPerPacket)
@@ -873,7 +871,7 @@ int OpalPluginStreamedAudioDecoder::ConvertOne(int codedSample) const
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, BOOL _isEncoder)
+OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, PBoolean _isEncoder)
   : OpalVideoTranscoder(_codec->sourceFormat, _codec->destFormat)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
@@ -886,20 +884,20 @@ OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
 }
 
 
-bool OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
+PBoolean OpalPluginVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   return OpalVideoTranscoder::UpdateMediaFormats(input, output) && UpdateOptions(isEncoder ? output : input);
 }
 
 
-BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
+PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
   dstList.RemoveAll();
 
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
   if (outputDataSize <= 0)
-    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(FALSE);
+    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(PFalse);
 
   unsigned flags;
 
@@ -910,7 +908,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
       // create the output buffer, outputDataSize is supposed to include the
       // RTP header size, so take that off as ctor adds it back.
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize - PluginCodec_RTP_MinHeaderSize);
-      dst->SetPayloadType(GetPayloadType(FALSE));
+      dst->SetPayloadType(GetPayloadType(PFalse));
 
       // call the codec function
       unsigned int fromLen = src.GetSize();
@@ -919,7 +917,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
 
       if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
         delete dst;
-        return FALSE;
+        return PFalse;
       }
 
       if (firstPacketForFrame && (flags & PluginCodec_ReturnCoderIFrame) != 0) {
@@ -945,7 +943,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
       bufferRTP = new RTP_DataFrame(outputDataSize);
     else
       bufferRTP->SetPayloadSize(outputDataSize);
-    bufferRTP->SetPayloadType(GetPayloadType(FALSE));
+    bufferRTP->SetPayloadType(GetPayloadType(PFalse));
 
     // call the codec function
     unsigned int fromLen = src.GetHeaderSize() + src.GetPayloadSize();
@@ -953,7 +951,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
     flags = 0;
 
     if (!Transcode((const BYTE *)src, &fromLen, bufferRTP->GetPointer(), &toLen, &flags))
-      return FALSE;
+      return PFalse;
 
     if ((flags & PluginCodec_ReturnCoderRequestIFrame) != 0) {
       if (commandNotifier != PNotifier()) {
@@ -970,7 +968,7 @@ BOOL OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_Dat
     }
   }
 
-  return TRUE;
+  return PTrue;
 };
 
 
@@ -989,7 +987,7 @@ class OpalFaxAudioTranscoder : public OpalPluginFramedAudioTranscoder
 {
   PCLASSINFO(OpalFaxAudioTranscoder, OpalPluginFramedAudioTranscoder);
   public:
-    OpalFaxAudioTranscoder(PluginCodec_Definition * _codec, BOOL _isEncoder)
+    OpalFaxAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder)
       : OpalPluginFramedAudioTranscoder(_codec, _isEncoder, "PCM-16-Fax") 
     { 
       bufferRTP = NULL;
@@ -1007,20 +1005,20 @@ class OpalFaxAudioTranscoder : public OpalPluginFramedAudioTranscoder
       }
     }
 
-    BOOL ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
+    PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
 
   protected:
     RTP_DataFrame * bufferRTP;
 };
 
-BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
+PBoolean OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList)
 {
   dstList.RemoveAll();
 
   // get the size of the output buffer
   int outputDataSize = 400;
   //if (!CallCodecControl(GET_OUTPUT_DATA_SIZE_CONTROL, NULL, NULL, outputDataSize))
-  // return FALSE;
+  // return PFalse;
 
   unsigned flags = 0;
 
@@ -1030,17 +1028,17 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
 
       // create the output buffer
       RTP_DataFrame * dst = new RTP_DataFrame(outputDataSize);
-      dst->SetPayloadType(GetPayloadType(FALSE));
+      dst->SetPayloadType(GetPayloadType(PFalse));
 
       // call the codec function
       unsigned int fromLen = src.GetSize();
       unsigned int toLen = dst->GetSize();
 
-      BOOL stat = Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags);
+      PBoolean stat = Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags);
 
       if (!stat) {
         delete dst;
-        return FALSE;
+        return PFalse;
       }
 
       if (toLen > 0) {
@@ -1060,13 +1058,13 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
         bufferRTP = new RTP_DataFrame(outputDataSize);
       else
         bufferRTP->SetPayloadSize(outputDataSize);
-      bufferRTP->SetPayloadType(GetPayloadType(FALSE));
+      bufferRTP->SetPayloadType(GetPayloadType(PFalse));
 
       // call the codec function
       unsigned int toLen = bufferRTP->GetSize();
       flags = 0;
       if (!Transcode((const BYTE *)src, &fromLen, bufferRTP->GetPointer(), &toLen, &flags))
-        return FALSE;
+        return PFalse;
 
       if (toLen > (unsigned)bufferRTP->GetHeaderSize()) {
         bufferRTP->SetPayloadSize(toLen - bufferRTP->GetHeaderSize());
@@ -1079,7 +1077,7 @@ BOOL OpalFaxAudioTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP_DataFr
     } while ((flags & PluginCodec_ReturnCoderLastFrame) == 0);
   }
 
-  return TRUE;
+  return PTrue;
 };
 
 #endif // OPAL_T38FAX
@@ -1142,13 +1140,13 @@ unsigned H323AudioPluginCapability::GetSubType() const
 
 H323PluginG7231Capability::H323PluginG7231Capability(const PluginCodec_Definition * _encoderCodec,
                           const PluginCodec_Definition * _decoderCodec,
-                          BOOL _annexA)
+                          PBoolean _annexA)
   : H323AudioPluginCapability(_encoderCodec, _decoderCodec, H245_AudioCapability::e_g7231),
     annexA(_annexA)
 { }
 
 // this constructor is used for creating empty codecs
-H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt, BOOL _annexA)
+H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt, PBoolean _annexA)
   : H323AudioPluginCapability(fmt, fmt, PluginCodec_H323AudioCodec_g7231),
     annexA(_annexA)
 { }
@@ -1156,23 +1154,23 @@ H323PluginG7231Capability::H323PluginG7231Capability(const OpalMediaFormat & fmt
 PObject * H323PluginG7231Capability::Clone() const
 { return new H323PluginG7231Capability(*this); }
 
-BOOL H323PluginG7231Capability::OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
+PBoolean H323PluginG7231Capability::OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
 {
   cap.SetTag(H245_AudioCapability::e_g7231);
   H245_AudioCapability_g7231 & g7231 = cap;
   g7231.m_maxAl_sduAudioFrames = packetSize;
   g7231.m_silenceSuppression = annexA;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PluginG7231Capability::OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize)
+PBoolean H323PluginG7231Capability::OnReceivedPDU(const H245_AudioCapability & cap,  unsigned & packetSize)
 {
   if (cap.GetTag() != H245_AudioCapability::e_g7231)
-    return FALSE;
+    return PFalse;
   const H245_AudioCapability_g7231 & g7231 = cap;
   packetSize = g7231.m_maxAl_sduAudioFrames;
   annexA = g7231.m_silenceSuppression;
-  return TRUE;
+  return PTrue;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1196,12 +1194,12 @@ class H323GSMPluginCapability : public H323AudioPluginCapability
     virtual PObject * Clone() const
     { return new H323GSMPluginCapability(*this); }
 
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_AudioCapability & pdu,  /// PDU to set information on
       unsigned packetSize          /// Packet size to use in capability
     ) const;
 
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_AudioCapability & pdu,  /// PDU to get information from
       unsigned & packetSize              /// Packet size to use in capability
     );
@@ -1235,7 +1233,7 @@ OpalPluginCodecManager::OpalPluginCodecManager(PPluginManager * _pluginMgr)
   }
 
   // cause the plugin manager to load all dynamic plugins
-  pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), TRUE);
+  pluginMgr->AddNotifier(PCREATE_NOTIFIER(OnLoadModule), PTrue);
 
 #if OPAL_H323
   // register the capabilities
@@ -1340,12 +1338,12 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
 
     PluginCodec_Definition & encoder = codecList[i];
 
-    BOOL videoSupported = encoder.version >= PLUGIN_CODEC_VERSION_VIDEO;
-    BOOL faxSupported   = encoder.version >= PLUGIN_CODEC_VERSION_FAX;
+    PBoolean videoSupported = encoder.version >= PLUGIN_CODEC_VERSION_VIDEO;
+    PBoolean faxSupported   = encoder.version >= PLUGIN_CODEC_VERSION_FAX;
 
     // for every encoder, we need a decoder
-    BOOL found = FALSE;
-    BOOL isEncoder = FALSE;
+    PBoolean found = PFalse;
+    PBoolean isEncoder = PFalse;
     if (encoder.h323CapabilityType != PluginCodec_H323Codec_undefined &&
          (
            ((encoder.flags & PluginCodec_MediaTypeMask) == PluginCodec_MediaTypeAudio) && 
@@ -1366,7 +1364,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
            strcmp(encoder.sourceFormat, "L16") == 0
         )
        ) {
-      isEncoder = TRUE;
+      isEncoder = PTrue;
       for (j = 0; j < count; j++) {
 
         PluginCodec_Definition & decoder = codecList[j];
@@ -1385,7 +1383,7 @@ void OpalPluginCodecManager::RegisterCodecPlugins(unsigned int count, PluginCode
 
           // create the media format, transcoder and capability associated with this plugin
           RegisterPluginPair(&encoder, &decoder, handler);
-          found = TRUE;
+          found = PTrue;
 
           PTRACE(3, "OpalPlugin\tPlugin codec " << encoder.descr << " defined");
           break;
@@ -1512,20 +1510,20 @@ void OpalPluginCodecManager::RegisterPluginPair(
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      handler->RegisterVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, TRUE);
-      handler->RegisterVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, FALSE);
+      handler->RegisterVideoTranscoder(OpalYUV420P, encoderCodec->destFormat, encoderCodec, PTrue);
+      handler->RegisterVideoTranscoder(encoderCodec->destFormat, OpalYUV420P, decoderCodec, PFalse);
       break;
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
       if (encoderCodec->sampleRate == 8000) {
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, PFalse);
       }
       else if (encoderCodec->sampleRate == 16000)
       {
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginFramedAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, PFalse);
       }
       else
       {
@@ -1534,13 +1532,13 @@ void OpalPluginCodecManager::RegisterPluginPair(
       break;
     case PluginCodec_MediaTypeAudioStreamed:
       if (encoderCodec->sampleRate == 8000) {
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16,                encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16),                 decoderCodec, PFalse);
       }
       else if (encoderCodec->sampleRate == 16000)
       {
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, TRUE);
-        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, FALSE);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioEncoder>::Worker(OpalTranscoderKey(OpalPCM16_16KHZ,          encoderCodec->destFormat), encoderCodec, PTrue);
+        new OpalPluginTranscoderFactory<OpalPluginStreamedAudioDecoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, OpalPCM16_16KHZ),                 decoderCodec, PFalse);
       }
       else
       {
@@ -1550,8 +1548,8 @@ void OpalPluginCodecManager::RegisterPluginPair(
 #endif
 #if OPAL_T38FAX
     case PluginCodec_MediaTypeFax:
-      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(GetOpalPCM16Fax(),        encoderCodec->destFormat), encoderCodec, TRUE);
-      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, GetOpalPCM16Fax()),        decoderCodec, FALSE);
+      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(GetOpalPCM16Fax(),        encoderCodec->destFormat), encoderCodec, PTrue);
+      new OpalPluginTranscoderFactory<OpalFaxAudioTranscoder>::Worker(OpalTranscoderKey(encoderCodec->destFormat, GetOpalPCM16Fax()),        decoderCodec, PFalse);
       break;
 #endif
     default:
@@ -1663,7 +1661,7 @@ OpalMediaFormatInternal * OpalPluginCodecHandler::OnCreateVideoFormat(OpalPlugin
   return new OpalPluginVideoFormatInternal(encoderCodec, rtpEncodingName, timeStamp);
 }
 
-void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, BOOL v)
+void OpalPluginCodecHandler::RegisterVideoTranscoder(const PString & src, const PString & dst, PluginCodec_Definition * codec, PBoolean v)
 {
   new OpalPluginTranscoderFactory<OpalPluginVideoTranscoder>::Worker(OpalTranscoderKey(src, dst), codec, v);
 }
@@ -1884,7 +1882,7 @@ PObject::Comparison H323GSMPluginCapability::Compare(const PObject & obj) const
 }
 
 
-BOOL H323GSMPluginCapability::OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
+PBoolean H323GSMPluginCapability::OnSendingPDU(H245_AudioCapability & cap, unsigned packetSize) const
 {
   cap.SetTag(pluginSubType);
   H245_GSMAudioCapability & gsm = cap;
@@ -1892,11 +1890,11 @@ BOOL H323GSMPluginCapability::OnSendingPDU(H245_AudioCapability & cap, unsigned 
   gsm.m_comfortNoise  = comfortNoise;
   gsm.m_scrambled     = scrambled;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, unsigned & packetSize)
+PBoolean H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, unsigned & packetSize)
 {
   const H245_GSMAudioCapability & gsm = cap;
   packetSize   = gsm.m_audioUnitSize / encoderCodec->parm.audio.bytesPerFrame;
@@ -1906,7 +1904,7 @@ BOOL H323GSMPluginCapability::OnReceivedPDU(const H245_AudioCapability & cap, un
   scrambled    = gsm.m_scrambled;
   comfortNoise = gsm.m_comfortNoise;
 
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1939,19 +1937,18 @@ unsigned H323VideoPluginCapability::GetSubType() const
   return pluginSubType;
 }
 
-
-BOOL H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
+PBoolean H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
 {
   if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), frameWidth))
-    return FALSE;
+    return PFalse;
 
   if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), frameHeight))
-    return FALSE;
+    return PFalse;
 
   if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -2002,7 +1999,7 @@ PObject * H323H261PluginCapability::Clone() const
   return new H323H261PluginCapability(*this); 
 }
 
-BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
+PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 {
   cap.SetTag(H245_VideoCapability::e_h261VideoCapability);
 
@@ -2033,15 +2030,15 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
     h261.m_cifMPI = cifMPI;
   }
 
-  h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
+  h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, PFalse);
   h261.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700)+50)/100;
-  h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
+  h261.m_stillImageTransmission            = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, PFalse);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
+PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
 {
   pdu.SetTag(H245_VideoMode::e_h261VideoMode);
   H245_H261VideoMode & mode = pdu;
@@ -2054,15 +2051,15 @@ BOOL H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
                                                : H245_H261VideoMode_resolution::e_cif);
 
   mode.m_bitRate                = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 621700) + 50) / 1000;
-  mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, FALSE);
+  mode.m_stillImageTransmission = mediaFormat.GetOptionBoolean(h323_stillImageTransmission_tag, PFalse);
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
+PBoolean H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
 {
   if (cap.GetTag() != H245_VideoCapability::e_h261VideoCapability)
-    return FALSE;
+    return PFalse;
 
   OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
 
@@ -2070,26 +2067,26 @@ BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
   if (h261.HasOptionalField(H245_H261VideoCapability::e_qcifMPI)) {
 
     if (!mediaFormat.SetOptionInteger(qcifMPI_tag, h261.m_qcifMPI))
-      return FALSE;
+      return PFalse;
 
     if (!SetOptionsFromMPI(mediaFormat, PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight, h261.m_qcifMPI))
-      return FALSE;
+      return PFalse;
   }
 
   if (h261.HasOptionalField(H245_H261VideoCapability::e_cifMPI)) {
 
     if (!mediaFormat.SetOptionInteger(cifMPI_tag, h261.m_cifMPI))
-      return FALSE;
+      return PFalse;
 
     if (!SetOptionsFromMPI(mediaFormat, PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight, h261.m_cifMPI))
-      return FALSE;
+      return PFalse;
   }
 
   mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(),        h261.m_maxBitRate*100);
   mediaFormat.SetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, h261.m_temporalSpatialTradeOffCapability);
   mediaFormat.SetOptionBoolean(h323_stillImageTransmission_tag,            h261.m_stillImageTransmission);
 
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -2171,7 +2168,7 @@ static void SetTransmittedCap(const OpalMediaFormat & mediaFormat,
 }
 
 
-BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
+PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
 {
   cap.SetTag(H245_VideoCapability::e_h263VideoCapability);
   H245_H263VideoCapability & h263 = cap;
@@ -2188,12 +2185,12 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
   SetTransmittedCap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI);
 
   h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
-  h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, FALSE);
-  h263.m_unrestrictedVector	           = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
-  h263.m_arithmeticCoding	           = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
-  h263.m_advancedPrediction	           = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
-  h263.m_pbFrames	                   = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
-  h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
+  h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, PFalse);
+  h263.m_unrestrictedVector	           = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, PFalse);
+  h263.m_arithmeticCoding	           = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, PFalse);
+  h263.m_advancedPrediction	           = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, PFalse);
+  h263.m_pbFrames	                   = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, PFalse);
+  h263.m_errorCompensation                 = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, PFalse);
 
   {
     int hrdB = mediaFormat.GetOptionInteger(h323_hrdB_tag, -1);
@@ -2211,11 +2208,11 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) const
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
+PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
 {
   pdu.SetTag(H245_VideoMode::e_h263VideoMode);
   H245_H263VideoMode & mode = pdu;
@@ -2234,16 +2231,16 @@ BOOL H323H263PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
                          :                        H245_H263VideoMode_resolution::e_sqcif))));
 
   mode.m_bitRate              = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
-  mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, FALSE);
-  mode.m_arithmeticCoding     = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, FALSE);
-  mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, FALSE);
-  mode.m_pbFrames             = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, FALSE);
-  mode.m_errorCompensation    = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, FALSE);
+  mode.m_unrestrictedVector   = mediaFormat.GetOptionBoolean(h323_unrestrictedVector_tag, PFalse);
+  mode.m_arithmeticCoding     = mediaFormat.GetOptionBoolean(h323_arithmeticCoding_tag, PFalse);
+  mode.m_advancedPrediction   = mediaFormat.GetOptionBoolean(h323_advancedPrediction_tag, PFalse);
+  mode.m_pbFrames             = mediaFormat.GetOptionBoolean(h323_pbFrames_tag, PFalse);
+  mode.m_errorCompensation    = mediaFormat.GetOptionBoolean(h323_errorCompensation_tag, PFalse);
 
-  return TRUE;
+  return PTrue;
 }
 
-static BOOL SetReceivedH263Cap(OpalMediaFormat & mediaFormat, 
+static PBoolean SetReceivedH263Cap(OpalMediaFormat & mediaFormat, 
                                const H245_H263VideoCapability & h263, 
                                const char * mpiTag,
                                int mpiEnum,
@@ -2251,36 +2248,36 @@ static BOOL SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
                                int slowMpiEnum,
                                const PASN_Integer & slowMpi,
                                int frameWidth, int frameHeight,
-                               BOOL & formatDefined)
+                               PBoolean & formatDefined)
 {
   if (h263.HasOptionalField(mpiEnum)) {
     if (!mediaFormat.SetOptionInteger(mpiTag, mpi))
-      return FALSE;
+      return PFalse;
     if (mpi != 0) {
       if (!H323VideoPluginCapability::SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, mpi))
-        return FALSE;
-      formatDefined = TRUE;
+        return PFalse;
+      formatDefined = PTrue;
     }
   }
   else if (h263.HasOptionalField(slowMpiEnum)) {
     if (!mediaFormat.SetOptionInteger(mpiTag, -(signed)slowMpi))
-      return FALSE;
+      return PFalse;
     if (slowMpi != 0) {
       if (!H323VideoPluginCapability::SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, -(signed)slowMpi))
-        return FALSE;
-      formatDefined = TRUE;
+        return PFalse;
+      formatDefined = PTrue;
     }
   } 
   else
     mediaFormat.SetOptionInteger(mpiTag, 0);
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
+PBoolean H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
 {
   if (!H323Capability::IsMatch(subTypePDU))
-    return FALSE;
+    return PFalse;
 
   H245_VideoCapability & video    = (H245_VideoCapability &)subTypePDU;
   H245_H263VideoCapability & h263 = (H245_H263VideoCapability &)video;
@@ -2305,47 +2302,47 @@ BOOL H323H263PluginCapability::IsMatch(const PASN_Choice & subTypePDU) const
       (cif4MPI && other_cif4MPI) ||
       (cif16MPI && other_cif16MPI)) {
     PTRACE(5, "H.263\t" << *this << " == " << h263);
-    return TRUE;
+    return PTrue;
   }
 
   PTRACE(5, "H.263\t" << *this << " != " << h263);
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
+PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
 {
   if (cap.GetTag() != H245_VideoCapability::e_h263VideoCapability)
-    return FALSE;
+    return PFalse;
 
   OpalMediaFormat & mediaFormat = GetWritableMediaFormat();
 
-  BOOL formatDefined = FALSE;
+  PBoolean formatDefined = PFalse;
 
   const H245_H263VideoCapability & h263 = cap;
 
   if (!SetReceivedH263Cap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, H245_H263VideoCapability::e_slowSqcifMPI, h263.m_slowSqcifMPI, PVideoFrameInfo::SQCIFWidth, PVideoFrameInfo::SQCIFHeight, formatDefined))
-    return FALSE;
+    return PFalse;
 
   if (!SetReceivedH263Cap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  H245_H263VideoCapability::e_slowQcifMPI,  h263.m_slowQcifMPI,  PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight,  formatDefined))
-    return FALSE;
+    return PFalse;
 
   if (!SetReceivedH263Cap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI,   H245_H263VideoCapability::e_slowCifMPI,   h263.m_slowCifMPI,   PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight,   formatDefined))
-    return FALSE;
+    return PFalse;
 
   if (!SetReceivedH263Cap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  H245_H263VideoCapability::e_slowCif4MPI,  h263.m_slowCif4MPI,  PVideoFrameInfo::CIF4Width, PVideoFrameInfo::CIF4Height,  formatDefined))
-    return FALSE;
+    return PFalse;
 
   if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, formatDefined))
-    return FALSE;
+    return PFalse;
 
   if (!formatDefined)
-    return FALSE;
+    return PFalse;
 
   unsigned maxBitRate = h263.m_maxBitRate*100;
   if (!mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(), maxBitRate))
-    return FALSE;
+    return PFalse;
   unsigned targetBitRate = mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption());
   if (targetBitRate > maxBitRate)
     mediaFormat.SetOptionInteger(OpalVideoFormat::TargetBitRateOption(),     maxBitRate);
@@ -2366,7 +2363,7 @@ BOOL H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
 //PStringStream str; mediaFormat.PrintOptions(str);
 //PTRACE(4, "OpalPlugin\tCreated H.263 cap from incoming PDU with format " << mediaFormat << " and options\n" << str);
 
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////

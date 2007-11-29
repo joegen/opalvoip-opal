@@ -265,7 +265,7 @@ PObject * H235_KeyMaterial::Clone() const
 //
 
 H235_NonStandardParameter::H235_NonStandardParameter(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -309,15 +309,15 @@ PINDEX H235_NonStandardParameter::GetDataLength() const
 }
 
 
-BOOL H235_NonStandardParameter::Decode(PASN_Stream & strm)
+PBoolean H235_NonStandardParameter::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_nonStandardIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_data.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -348,7 +348,7 @@ PObject * H235_NonStandardParameter::Clone() const
 //
 
 H235_DHset::H235_DHset(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_halfkey.SetConstraints(PASN_Object::FixedConstraint, 0, 2048);
   m_modSize.SetConstraints(PASN_Object::FixedConstraint, 0, 2048);
@@ -399,17 +399,17 @@ PINDEX H235_DHset::GetDataLength() const
 }
 
 
-BOOL H235_DHset::Decode(PASN_Stream & strm)
+PBoolean H235_DHset::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_halfkey.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_modSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_generator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -441,7 +441,7 @@ PObject * H235_DHset::Clone() const
 //
 
 H235_ECpoint::H235_ECpoint(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_x.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
   m_y.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
@@ -491,15 +491,15 @@ PINDEX H235_ECpoint::GetDataLength() const
 }
 
 
-BOOL H235_ECpoint::Decode(PASN_Stream & strm)
+PBoolean H235_ECpoint::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_x) && !m_x.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_y) && !m_y.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -539,7 +539,7 @@ const static PASN_Names Names_H235_ECKASDH[]={
 //
 
 H235_ECKASDH::H235_ECKASDH(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_ECKASDH,2
 #endif
@@ -592,19 +592,19 @@ H235_ECKASDH::operator const H235_ECKASDH_eckasdh2 &() const
 }
 
 
-BOOL H235_ECKASDH::CreateObject()
+PBoolean H235_ECKASDH::CreateObject()
 {
   switch (tag) {
     case e_eckasdhp :
       choice = new H235_ECKASDH_eckasdhp();
-      return TRUE;
+      return PTrue;
     case e_eckasdh2 :
       choice = new H235_ECKASDH_eckasdh2();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -622,7 +622,7 @@ PObject * H235_ECKASDH::Clone() const
 //
 
 H235_ECGDSASignature::H235_ECGDSASignature(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_r.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
   m_s.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
@@ -668,15 +668,15 @@ PINDEX H235_ECGDSASignature::GetDataLength() const
 }
 
 
-BOOL H235_ECGDSASignature::Decode(PASN_Stream & strm)
+PBoolean H235_ECGDSASignature::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_r.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_s.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -707,7 +707,7 @@ PObject * H235_ECGDSASignature::Clone() const
 //
 
 H235_TypedCertificate::H235_TypedCertificate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -751,15 +751,15 @@ PINDEX H235_TypedCertificate::GetDataLength() const
 }
 
 
-BOOL H235_TypedCertificate::Decode(PASN_Stream & strm)
+PBoolean H235_TypedCertificate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_certificate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -797,7 +797,7 @@ const static PASN_Names Names_H235_AuthenticationBES[]={
 //
 
 H235_AuthenticationBES::H235_AuthenticationBES(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_AuthenticationBES,2
 #endif
@@ -806,7 +806,7 @@ H235_AuthenticationBES::H235_AuthenticationBES(unsigned tag, PASN_Object::TagCla
 }
 
 
-BOOL H235_AuthenticationBES::CreateObject()
+PBoolean H235_AuthenticationBES::CreateObject()
 {
   choice = (tag <= e_radius) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -841,7 +841,7 @@ const static PASN_Names Names_H235_AuthenticationMechanism[]={
 //
 
 H235_AuthenticationMechanism::H235_AuthenticationMechanism(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, TRUE
+  : PASN_Choice(tag, tagClass, 7, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_AuthenticationMechanism,9
 #endif
@@ -894,7 +894,7 @@ H235_AuthenticationMechanism::operator const H235_AuthenticationBES &() const
 }
 
 
-BOOL H235_AuthenticationMechanism::CreateObject()
+PBoolean H235_AuthenticationMechanism::CreateObject()
 {
   switch (tag) {
     case e_dhExch :
@@ -904,20 +904,20 @@ BOOL H235_AuthenticationMechanism::CreateObject()
     case e_ipsec :
     case e_tls :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_nonStandard :
       choice = new H235_NonStandardParameter();
-      return TRUE;
+      return PTrue;
     case e_authenticationBES :
       choice = new H235_AuthenticationBES();
-      return TRUE;
+      return PTrue;
     case e_keyExch :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -945,7 +945,7 @@ const static PASN_Names Names_H235_Element[]={
 //
 
 H235_Element::H235_Element(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_Element,5
 #endif
@@ -954,28 +954,28 @@ H235_Element::H235_Element(unsigned tag, PASN_Object::TagClass tagClass)
 }
 
 
-BOOL H235_Element::CreateObject()
+PBoolean H235_Element::CreateObject()
 {
   switch (tag) {
     case e_octets :
       choice = new PASN_OctetString();
-      return TRUE;
+      return PTrue;
     case e_integer :
       choice = new PASN_Integer();
-      return TRUE;
+      return PTrue;
     case e_bits :
       choice = new PASN_BitString();
-      return TRUE;
+      return PTrue;
     case e_name :
       choice = new PASN_BMPString();
-      return TRUE;
+      return PTrue;
     case e_flag :
       choice = new PASN_Boolean();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1111,7 +1111,7 @@ PObject * H235_IV16::Clone() const
 //
 
 H235_Params::H235_Params(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 3)
 {
 }
 
@@ -1165,21 +1165,21 @@ PINDEX H235_Params::GetDataLength() const
 }
 
 
-BOOL H235_Params::Decode(PASN_Stream & strm)
+PBoolean H235_Params::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_ranInt) && !m_ranInt.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_iv8) && !m_iv8.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_iv16, m_iv16))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_iv, m_iv))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_clearSalt, m_clearSalt))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1215,7 +1215,7 @@ PObject * H235_Params::Clone() const
 //
 
 H235_ReturnSig::H235_ReturnSig(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
 {
 }
 
@@ -1271,19 +1271,19 @@ PINDEX H235_ReturnSig::GetDataLength() const
 }
 
 
-BOOL H235_ReturnSig::Decode(PASN_Stream & strm)
+PBoolean H235_ReturnSig::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_generalId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_responseRandom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_requestRandom) && !m_requestRandom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_certificate) && !m_certificate.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1337,7 +1337,7 @@ PObject * H235_EncodedReturnSig::Clone() const
 //
 
 H235_KeySyncMaterial::H235_KeySyncMaterial(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1381,15 +1381,15 @@ PINDEX H235_KeySyncMaterial::GetDataLength() const
 }
 
 
-BOOL H235_KeySyncMaterial::Decode(PASN_Stream & strm)
+PBoolean H235_KeySyncMaterial::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_generalID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_keyMaterial.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1439,7 +1439,7 @@ PObject * H235_EncodedKeySyncMaterial::Clone() const
 //
 
 H235_V3KeySyncMaterial::H235_V3KeySyncMaterial(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 7, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 7, PTrue, 1)
 {
 }
 
@@ -1523,29 +1523,29 @@ PINDEX H235_V3KeySyncMaterial::GetDataLength() const
 }
 
 
-BOOL H235_V3KeySyncMaterial::Decode(PASN_Stream & strm)
+PBoolean H235_V3KeySyncMaterial::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_generalID) && !m_generalID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_algorithmOID) && !m_algorithmOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_paramS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_encryptedSessionKey) && !m_encryptedSessionKey.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_encryptedSaltingKey) && !m_encryptedSaltingKey.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_clearSaltingKey) && !m_clearSaltingKey.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_paramSsalt) && !m_paramSsalt.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_keyDerivationOID) && !m_keyDerivationOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericKeyMaterial, m_genericKeyMaterial))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1590,7 +1590,7 @@ PObject * H235_V3KeySyncMaterial::Clone() const
 //
 
 H235_ECKASDH_eckasdhp::H235_ECKASDH_eckasdhp(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_modulus.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
   m_weierstrassA.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
@@ -1649,21 +1649,21 @@ PINDEX H235_ECKASDH_eckasdhp::GetDataLength() const
 }
 
 
-BOOL H235_ECKASDH_eckasdhp::Decode(PASN_Stream & strm)
+PBoolean H235_ECKASDH_eckasdhp::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_public_key.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_modulus.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_base.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_weierstrassA.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_weierstrassB.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1697,7 +1697,7 @@ PObject * H235_ECKASDH_eckasdhp::Clone() const
 //
 
 H235_ECKASDH_eckasdh2::H235_ECKASDH_eckasdh2(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_fieldSize.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
   m_weierstrassA.SetConstraints(PASN_Object::FixedConstraint, 0, 511);
@@ -1756,21 +1756,21 @@ PINDEX H235_ECKASDH_eckasdh2::GetDataLength() const
 }
 
 
-BOOL H235_ECKASDH_eckasdh2::Decode(PASN_Stream & strm)
+PBoolean H235_ECKASDH_eckasdh2::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_public_key.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_fieldSize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_base.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_weierstrassA.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_weierstrassB.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1835,7 +1835,7 @@ PObject * H235_ArrayOf_ProfileElement::Clone() const
 //
 
 H235_ProfileElement::H235_ProfileElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_elementID.SetConstraints(PASN_Object::FixedConstraint, 0, 255);
 }
@@ -1888,17 +1888,17 @@ PINDEX H235_ProfileElement::GetDataLength() const
 }
 
 
-BOOL H235_ProfileElement::Decode(PASN_Stream & strm)
+PBoolean H235_ProfileElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_elementID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_paramS) && !m_paramS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_element) && !m_element.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1932,7 +1932,7 @@ PObject * H235_ProfileElement::Clone() const
 //
 
 H235_KeySignedMaterial::H235_KeySignedMaterial(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
 {
 }
 
@@ -1992,21 +1992,21 @@ PINDEX H235_KeySignedMaterial::GetDataLength() const
 }
 
 
-BOOL H235_KeySignedMaterial::Decode(PASN_Stream & strm)
+PBoolean H235_KeySignedMaterial::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_generalId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_mrandom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_srandom) && !m_srandom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_timeStamp) && !m_timeStamp.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_encrptval.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2061,7 +2061,7 @@ PObject * H235_EncodedKeySignedMaterial::Clone() const
 //
 
 H235_H235CertificateSignature::H235_H235CertificateSignature(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -2115,19 +2115,19 @@ PINDEX H235_H235CertificateSignature::GetDataLength() const
 }
 
 
-BOOL H235_H235CertificateSignature::Decode(PASN_Stream & strm)
+PBoolean H235_H235CertificateSignature::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_certificate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_responseRandom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_requesterRandom) && !m_requesterRandom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_signature.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2170,7 +2170,7 @@ const static PASN_Names Names_H235_H235Key[]={
 //
 
 H235_H235Key::H235_H235Key(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_H235Key,4
 #endif
@@ -2267,25 +2267,25 @@ H235_H235Key::operator const H235_V3KeySyncMaterial &() const
 }
 
 
-BOOL H235_H235Key::CreateObject()
+PBoolean H235_H235Key::CreateObject()
 {
   switch (tag) {
     case e_secureChannel :
       choice = new H235_KeyMaterial();
-      return TRUE;
+      return PTrue;
     case e_sharedSecret :
       choice = new H235_ENCRYPTED<H235_EncodedKeySyncMaterial>();
-      return TRUE;
+      return PTrue;
     case e_certProtectedKey :
       choice = new H235_SIGNED<H235_EncodedKeySignedMaterial>();
-      return TRUE;
+      return PTrue;
     case e_secureSharedSecret :
       choice = new H235_V3KeySyncMaterial();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2303,7 +2303,7 @@ PObject * H235_H235Key::Clone() const
 //
 
 H235_ClearToken::H235_ClearToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 8, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 8, PTrue, 4)
 {
 }
 
@@ -2399,37 +2399,37 @@ PINDEX H235_ClearToken::GetDataLength() const
 }
 
 
-BOOL H235_ClearToken::Decode(PASN_Stream & strm)
+PBoolean H235_ClearToken::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_timeStamp) && !m_timeStamp.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_password) && !m_password.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_dhkey) && !m_dhkey.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_challenge) && !m_challenge.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_random) && !m_random.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_certificate) && !m_certificate.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_generalID) && !m_generalID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_eckasdhkey, m_eckasdhkey))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_sendersID, m_sendersID))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_h235Key, m_h235Key))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_profileInfo, m_profileInfo))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2547,7 +2547,7 @@ const static PASN_Names Names_H235_CryptoToken[]={
 //
 
 H235_CryptoToken::H235_CryptoToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H235_CryptoToken,4
 #endif
@@ -2644,25 +2644,25 @@ H235_CryptoToken::operator const H235_ENCRYPTED<H235_EncodedPwdCertToken> &() co
 }
 
 
-BOOL H235_CryptoToken::CreateObject()
+PBoolean H235_CryptoToken::CreateObject()
 {
   switch (tag) {
     case e_cryptoEncryptedToken :
       choice = new H235_CryptoToken_cryptoEncryptedToken();
-      return TRUE;
+      return PTrue;
     case e_cryptoSignedToken :
       choice = new H235_CryptoToken_cryptoSignedToken();
-      return TRUE;
+      return PTrue;
     case e_cryptoHashedToken :
       choice = new H235_CryptoToken_cryptoHashedToken();
-      return TRUE;
+      return PTrue;
     case e_cryptoPwdEncr :
       choice = new H235_ENCRYPTED<H235_EncodedPwdCertToken>();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2680,7 +2680,7 @@ PObject * H235_CryptoToken::Clone() const
 //
 
 H235_CryptoToken_cryptoEncryptedToken::H235_CryptoToken_cryptoEncryptedToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2724,15 +2724,15 @@ PINDEX H235_CryptoToken_cryptoEncryptedToken::GetDataLength() const
 }
 
 
-BOOL H235_CryptoToken_cryptoEncryptedToken::Decode(PASN_Stream & strm)
+PBoolean H235_CryptoToken_cryptoEncryptedToken::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_token.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2763,7 +2763,7 @@ PObject * H235_CryptoToken_cryptoEncryptedToken::Clone() const
 //
 
 H235_CryptoToken_cryptoSignedToken::H235_CryptoToken_cryptoSignedToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2807,15 +2807,15 @@ PINDEX H235_CryptoToken_cryptoSignedToken::GetDataLength() const
 }
 
 
-BOOL H235_CryptoToken_cryptoSignedToken::Decode(PASN_Stream & strm)
+PBoolean H235_CryptoToken_cryptoSignedToken::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_token.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2846,7 +2846,7 @@ PObject * H235_CryptoToken_cryptoSignedToken::Clone() const
 //
 
 H235_CryptoToken_cryptoHashedToken::H235_CryptoToken_cryptoHashedToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2894,17 +2894,17 @@ PINDEX H235_CryptoToken_cryptoHashedToken::GetDataLength() const
 }
 
 
-BOOL H235_CryptoToken_cryptoHashedToken::Decode(PASN_Stream & strm)
+PBoolean H235_CryptoToken_cryptoHashedToken::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenOID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_hashedVals.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_token.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

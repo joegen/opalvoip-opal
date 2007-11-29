@@ -6,10 +6,6 @@
  * $Revision$
  * $Author$
  * $Date$
- *
- * $Revision$
- * $Author$
- * $Date$
  */
 
 

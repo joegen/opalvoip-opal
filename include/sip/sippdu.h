@@ -99,7 +99,7 @@ class SIPURL : public PURL
 
     /** Returns display name only
       */
-    PString GetDisplayName(BOOL useDefault = TRUE) const;
+    PString GetDisplayName(PBoolean useDefault = PTrue) const;
     
     void SetDisplayName(const PString & str) 
       { displayName = str; }
@@ -116,7 +116,7 @@ class SIPURL : public PURL
         @return FALSE if DNS is available but entry is larger than last SRV record entry,
                 TRUE if DNS lookup fails or no DNS is available
       */
-    BOOL AdjustToDNS(
+    PBoolean AdjustToDNS(
       PINDEX entry = 0  /// Entry in the SRV record to adjust to
     );
 
@@ -139,7 +139,7 @@ class SIPURL : public PURL
         Note that tag parameter outside of <> will be lost,
         but tag in URL without <> will be kept until AdjustForRequestURI
      */
-    virtual BOOL InternalParse(
+    virtual PBoolean InternalParse(
       const char * cstr,
       const char * defaultScheme
     );
@@ -185,9 +185,9 @@ class SIPMIMEInfo : public PMIMEInfo
 {
   PCLASSINFO(SIPMIMEInfo, PMIMEInfo);
   public:
-    SIPMIMEInfo(BOOL compactForm = FALSE);
+    SIPMIMEInfo(PBoolean compactForm = PFalse);
 
-    void SetForm(BOOL v) { compactForm = v; }
+    void SetForm(PBoolean v) { compactForm = v; }
 
     PString GetContentType() const;
     void SetContentType(const PString & v);
@@ -243,7 +243,7 @@ class SIPMIMEInfo : public PMIMEInfo
 
     PINDEX  GetContentLength() const;
     void SetContentLength(PINDEX v);
-		BOOL IsContentLengthPresent() const;
+		PBoolean IsContentLengthPresent() const;
 
     PString GetCSeq() const;
     void SetCSeq(const PString & v);
@@ -316,9 +316,9 @@ class SIPMIMEInfo : public PMIMEInfo
 			   PString &,
 			   const PString &);
     
-    /** return TRUE if the header field parameter is present
+    /** return PTrue if the header field parameter is present
      */
-    BOOL HasFieldParameter(const PString &,
+    PBoolean HasFieldParameter(const PString &,
 			   const PString &);
 
   protected:
@@ -336,7 +336,7 @@ class SIPMIMEInfo : public PMIMEInfo
     PString GetFullOrCompact(const char * fullForm, char compactForm) const;
 
     /// Encode using compact form
-    BOOL compactForm;
+    PBoolean compactForm;
 };
 
 
@@ -370,14 +370,14 @@ class SIPAuthentication : public PObject
       return *this;
     }
 
-    BOOL Parse(
+    PBoolean Parse(
       const PCaselessString & auth,
-      BOOL proxy
+      PBoolean proxy
     );
 
-    BOOL IsValid() const;
+    PBoolean IsValid() const;
 
-    BOOL Authorise(
+    PBoolean Authorise(
       SIP_PDU & pdu
     ) const;
 
@@ -386,7 +386,7 @@ class SIPAuthentication : public PObject
       NumAlgorithms
     };
 
-    BOOL IsProxy() const                   { return isProxy; }
+    PBoolean IsProxy() const                   { return isProxy; }
     const PString & GetAuthRealm() const   { return authRealm; }
     const PString & GetUsername() const    { return username; }
     const PString & GetPassword() const    { return password; }
@@ -399,7 +399,7 @@ class SIPAuthentication : public PObject
     void SetAuthRealm(const PString & r)   { authRealm = r; }
 
   protected:
-    BOOL      isProxy;
+    PBoolean      isProxy;
     PString   authRealm;
     PString   username;
     PString   password;
@@ -407,8 +407,8 @@ class SIPAuthentication : public PObject
     Algorithm algorithm;
     PString   opaque;
 
-    BOOL qopAuth;
-    BOOL qopAuthInt;
+    PBoolean qopAuth;
+    PBoolean qopAuthInt;
     PString cnonce;
     mutable PAtomicInteger nonceCount;
 };
@@ -573,9 +573,9 @@ class SIP_PDU : public PSafeObject
 
     /**Add and populate Route header following the given routeSet.
       If first route is strict, exchange with URI.
-      Returns TRUE if routeSet.
+      Returns PTrue if routeSet.
       */
-    BOOL SetRoute(const PStringList & routeSet);
+    PBoolean SetRoute(const PStringList & routeSet);
 
     /**Set mime allow field to all supported methods.
       */
@@ -597,13 +597,13 @@ class SIP_PDU : public PSafeObject
     
     /**Read PDU from the specified transport.
       */
-    BOOL Read(
+    PBoolean Read(
       OpalTransport & transport
     );
 
     /**Write the PDU to the transport.
       */
-    BOOL Write(
+    PBoolean Write(
       OpalTransport & transport,
       const OpalTransportAddress & remoteAddress = OpalTransportAddress()
     );
@@ -625,7 +625,7 @@ class SIP_PDU : public PSafeObject
     const PString & GetInfo() const          { return info; }
     const SIPMIMEInfo & GetMIME() const      { return mime; }
           SIPMIMEInfo & GetMIME()            { return mime; }
-    BOOL HasSDP() const                      { return sdp != NULL; }
+    PBoolean HasSDP() const                      { return sdp != NULL; }
     SDPSessionDescription & GetSDP() const   { return *PAssertNULL(sdp); }
     void SetSDP(SDPSessionDescription * s)   { sdp = s; }
     void SetSDP(const SDPSessionDescription & s) { sdp = new SDPSessionDescription(s); }
@@ -682,18 +682,18 @@ class SIPTransaction : public SIP_PDU
     );
     ~SIPTransaction();
 
-    BOOL Start();
-    BOOL IsInProgress() const { return state == Trying || state == Proceeding; }
-    BOOL IsFailed() const { return state > Terminated_Success; }
-    BOOL IsCompleted() const { return state >= Completed; }
-    BOOL IsCanceled() const { return state == Terminated_Cancelled; }
-    BOOL IsTerminated() const { return state >= Terminated_Success; }
+    PBoolean Start();
+    PBoolean IsInProgress() const { return state == Trying || state == Proceeding; }
+    PBoolean IsFailed() const { return state > Terminated_Success; }
+    PBoolean IsCompleted() const { return state >= Completed; }
+    PBoolean IsCanceled() const { return state == Terminated_Cancelled; }
+    PBoolean IsTerminated() const { return state >= Terminated_Success; }
     void WaitForCompletion();
-    BOOL Cancel();
+    PBoolean Cancel();
     void Abort();
 
-    virtual BOOL OnReceivedResponse(SIP_PDU & response);
-    virtual BOOL OnCompleted(SIP_PDU & response);
+    virtual PBoolean OnReceivedResponse(SIP_PDU & response);
+    virtual PBoolean OnCompleted(SIP_PDU & response);
 
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
@@ -705,7 +705,7 @@ class SIPTransaction : public SIP_PDU
       const PTimeInterval & minRetryTime = PMaxTimeInterval,
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
-    BOOL ResendCANCEL();
+    PBoolean ResendCANCEL();
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
@@ -772,7 +772,7 @@ class SIPInvite : public SIPTransaction
       unsigned rtpSessionId
     );
 
-    virtual BOOL OnReceivedResponse(SIP_PDU & response);
+    virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 
     RTP_SessionManager & GetSessionManager() { return rtpSessions; }
 

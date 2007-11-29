@@ -73,7 +73,7 @@ OpalSilenceDetector::OpalSilenceDetector()
 #endif
 {
   // Start off in silent mode
-  inTalkBurst = FALSE;
+  inTalkBurst = PFalse;
 
   // Initialise the adaptive threshold variables.
   SetParameters(param);
@@ -101,13 +101,13 @@ void OpalSilenceDetector::SetParameters(const Params & newParam)
   silenceReceivedTime = 0;
 
   // Restart in silent mode
-  inTalkBurst = FALSE;
+  inTalkBurst = PFalse;
   lastTimestamp = 0;
   receivedTime = 0;
 }
 
 
-OpalSilenceDetector::Mode OpalSilenceDetector::GetStatus(BOOL * isInTalkBurst,
+OpalSilenceDetector::Mode OpalSilenceDetector::GetStatus(PBoolean * isInTalkBurst,
                                                        unsigned * currentThreshold) const
 {
   if (isInTalkBurst != NULL)
@@ -149,7 +149,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
   level = linear2ulaw(level) ^ 0xff;
 
   // Now if signal level above threshold we are "talking"
-  BOOL haveSignal = level > levelThreshold;
+  PBoolean haveSignal = level > levelThreshold;
 
   // If no change ie still talking or still silent, resent frame counter
   if (inTalkBurst == haveSignal)
@@ -171,7 +171,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
 
       // If we just have moved to sending a talk burst, set the RTP marker
       if (inTalkBurst)
-        frame.SetMarker(TRUE);
+        frame.SetMarker(PTrue);
     }
   }
 
@@ -187,7 +187,7 @@ void OpalSilenceDetector::ReceivedPacket(RTP_DataFrame & frame, INT)
       levelThreshold = level/2;
       PTRACE(4, "Silence\tThreshold initialised to: " << levelThreshold);
     }
-    // inTalkBurst always FALSE here, so return silent
+    // inTalkBurst always PFalse here, so return silent
     frame.SetPayloadSize(0);
     return;
   }

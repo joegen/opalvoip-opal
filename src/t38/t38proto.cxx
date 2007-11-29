@@ -67,7 +67,7 @@ const OpalMediaFormat & GetOpalT38()
     OpalMediaFormat::DefaultDataSessionID,
     RTP_DataFrame::IllegalPayloadType,
     "t38",
-    FALSE, // No jitter for data
+    PFalse, // No jitter for data
     1440, // 100's bits/sec
     0,
     0,
@@ -98,7 +98,7 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
                     OpalMediaFormat::DefaultDataSessionID,
                     rtpPayloadType,
                     encodingName,
-                    TRUE,
+                    PTrue,
                     8*frameSize*AudioClockRate/frameTime,  // bits per second = 8*frameSize * framesPerSecond
                     frameSize,
                     frameTime,
@@ -116,8 +116,8 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
 OpalT38Protocol::OpalT38Protocol()
 {
   transport = NULL;
-  autoDeleteTransport = FALSE;
-  corrigendumASN = TRUE;
+  autoDeleteTransport = PFalse;
+  corrigendumASN = PTrue;
   indicatorRedundancy = 0;
   lowSpeedRedundancy = 0;
   highSpeedRedundancy = 0;
@@ -137,7 +137,7 @@ void OpalT38Protocol::Close()
 }
 
 
-void OpalT38Protocol::SetTransport(H323Transport * t, BOOL autoDelete)
+void OpalT38Protocol::SetTransport(H323Transport * t, PBoolean autoDelete)
 {
   if (transport != t) {
     if (autoDeleteTransport)
@@ -150,7 +150,7 @@ void OpalT38Protocol::SetTransport(H323Transport * t, BOOL autoDelete)
 }
 
 
-BOOL OpalT38Protocol::Originate()
+PBoolean OpalT38Protocol::Originate()
 {
   PTRACE(3, "T38\tOriginate, transport=" << *transport);
 
@@ -159,11 +159,11 @@ BOOL OpalT38Protocol::Originate()
   while (WriteIndicator(T38_Type_of_msg_t30_indicator::e_no_signal))
     PThread::Sleep(500);
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL OpalT38Protocol::WritePacket(const T38_IFPPacket & ifp)
+PBoolean OpalT38Protocol::WritePacket(const T38_IFPPacket & ifp)
 {
   T38_UDPTLPacket udptl;
 
@@ -225,7 +225,7 @@ BOOL OpalT38Protocol::WritePacket(const T38_IFPPacket & ifp)
 
   if (!transport->WritePDU(rawData)) {
     PTRACE(1, "T38\tWritePacket error: " << transport->GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
   // Calculate the level of redundency for this data phase
@@ -245,11 +245,11 @@ BOOL OpalT38Protocol::WritePacket(const T38_IFPPacket & ifp)
   while (redundantIFPs.GetSize() > maxRedundancy)
     redundantIFPs.RemoveAt(maxRedundancy);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::WriteIndicator(unsigned indicator)
+PBoolean OpalT38Protocol::WriteIndicator(unsigned indicator)
 {
   T38_IFPPacket ifp;
 
@@ -261,7 +261,7 @@ BOOL OpalT38Protocol::WriteIndicator(unsigned indicator)
 }
 
 
-BOOL OpalT38Protocol::WriteMultipleData(unsigned mode,
+PBoolean OpalT38Protocol::WriteMultipleData(unsigned mode,
                                         PINDEX count,
                                         unsigned * type,
                                         const PBYTEArray * data)
@@ -283,13 +283,13 @@ BOOL OpalT38Protocol::WriteMultipleData(unsigned mode,
 }
 
 
-BOOL OpalT38Protocol::WriteData(unsigned mode, unsigned type, const PBYTEArray & data)
+PBoolean OpalT38Protocol::WriteData(unsigned mode, unsigned type, const PBYTEArray & data)
 {
   return WriteMultipleData(mode, 1, &type, &data);
 }
 
 
-BOOL OpalT38Protocol::Answer()
+PBoolean OpalT38Protocol::Answer()
 {
   PTRACE(3, "T38\tAnswer, transport=" << *transport);
 
@@ -299,13 +299,13 @@ BOOL OpalT38Protocol::Answer()
 
   int consecutiveBadPackets = 0;
   int expectedSequenceNumber = 0;	// 16 bit
-  BOOL firstPacket = TRUE;
+  PBoolean firstPacket = PTrue;
 
   for (;;) {
     PPER_Stream rawData;
     if (!transport->ReadPDU(rawData)) {
       PTRACE(1, "T38\tError reading PDU: " << transport->GetErrorText(PChannel::LastReadError));
-      return FALSE;
+      return PFalse;
     }
 
     /* when we get the first packet, set the RemoteAddress and then turn off
@@ -313,7 +313,7 @@ BOOL OpalT38Protocol::Answer()
     if (firstPacket) {
       PTRACE(3, "T38\tReceived first packet, remote=" << transport->GetRemoteAddress());
       transport->SetPromiscuous(H323Transport::AcceptFromRemoteOnly);
-      firstPacket = FALSE;
+      firstPacket = PFalse;
     }
 
     // Decode the PDU
@@ -327,7 +327,7 @@ BOOL OpalT38Protocol::Answer()
              << setprecision(2) << udptl);
       if (consecutiveBadPackets > 3) {
         PTRACE(1, "T38\tRaw data decode failed multiple times, aborting!");
-        return FALSE;
+        return PFalse;
       }
       continue;
     }
@@ -376,34 +376,34 @@ BOOL OpalT38Protocol::Answer()
         if (lostPackets >= nRedundancy) {
           if (!HandlePacketLost(lostPackets - nRedundancy)) {
             PTRACE(1, "T38\tHandle packet failed, aborting answer");
-            return FALSE;
+            return PFalse;
           }
           lostPackets = nRedundancy;
         }
         while (lostPackets > 0) {
           if (!HandleRawIFP(secondary[lostPackets++])) {
             PTRACE(1, "T38\tHandle packet failed, aborting answer");
-            return FALSE;
+            return PFalse;
           }
         }
       }
       else {
         if (!HandlePacketLost(lostPackets)) {
           PTRACE(1, "T38\tHandle lost packet, aborting answer");
-          return FALSE;
+          return PFalse;
         }
       }
     }
 
     if (!HandleRawIFP(udptl.m_primary_ifp_packet)) {
       PTRACE(1, "T38\tHandle packet failed, aborting answer");
-      return FALSE;
+      return PFalse;
     }
   }
 }
 
 
-BOOL OpalT38Protocol::HandleRawIFP(const PASN_OctetString & pdu)
+PBoolean OpalT38Protocol::HandleRawIFP(const PASN_OctetString & pdu)
 {
   T38_IFPPacket ifp;
 
@@ -412,13 +412,13 @@ BOOL OpalT38Protocol::HandleRawIFP(const PASN_OctetString & pdu)
       return HandlePacket(ifp);
 
     PTRACE(2, "T38\tIFP decode failure:\n  " << setprecision(2) << ifp);
-    return TRUE;
+    return PTrue;
   }
 
   T38_PreCorrigendum_IFPPacket old_ifp;
   if (!pdu.DecodeSubType(old_ifp)) {
     PTRACE(2, "T38\tPre-corrigendum IFP decode failure:\n  " << setprecision(2) << old_ifp);
-    return TRUE;
+    return PTrue;
   }
 
   ifp.m_type_of_msg = old_ifp.m_type_of_msg;
@@ -440,7 +440,7 @@ BOOL OpalT38Protocol::HandleRawIFP(const PASN_OctetString & pdu)
 }
 
 
-BOOL OpalT38Protocol::HandlePacket(const T38_IFPPacket & ifp)
+PBoolean OpalT38Protocol::HandlePacket(const T38_IFPPacket & ifp)
 {
   if (ifp.m_type_of_msg.GetTag() == T38_Type_of_msg::e_t30_indicator)
     return OnIndicator((T38_Type_of_msg_t30_indicator)ifp.m_type_of_msg);
@@ -449,13 +449,13 @@ BOOL OpalT38Protocol::HandlePacket(const T38_IFPPacket & ifp)
     if (!OnData((T38_Type_of_msg_data)ifp.m_type_of_msg,
                 ifp.m_data_field[i].m_field_type,
                 ifp.m_data_field[i].m_field_data.GetValue()))
-      return FALSE;
+      return PFalse;
   }
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::OnIndicator(unsigned indicator)
+PBoolean OpalT38Protocol::OnIndicator(unsigned indicator)
 {
   switch (indicator) {
     case T38_Type_of_msg_t30_indicator::e_no_signal :
@@ -488,39 +488,39 @@ BOOL OpalT38Protocol::OnIndicator(unsigned indicator)
       break;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::OnCNG()
+PBoolean OpalT38Protocol::OnCNG()
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::OnCED()
+PBoolean OpalT38Protocol::OnCED()
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::OnPreamble()
+PBoolean OpalT38Protocol::OnPreamble()
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::OnTraining(unsigned /*indicator*/)
+PBoolean OpalT38Protocol::OnTraining(unsigned /*indicator*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT38Protocol::OnData(unsigned /*mode*/,
+PBoolean OpalT38Protocol::OnData(unsigned /*mode*/,
                              unsigned /*type*/,
                              const PBYTEArray & /*data*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -530,21 +530,21 @@ BOOL OpalT38Protocol::OnData(unsigned /*mode*/,
 #define PTRACE_nLost
 #endif
 
-BOOL OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
+PBoolean OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
 {
   PTRACE(2, "T38\tHandlePacketLost, n=" << PTRACE_nLost);
   /* don't handle lost packets yet */
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, unsigned _id, BOOL _remoteIsNAT)
+T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, unsigned _id, PBoolean _remoteIsNAT)
   : RTP_UDP(_aggregator, _id, _remoteIsNAT)
 {
   PTRACE(4, "RTP_T38\tPseudoRTP session created with NAT flag set to " << remoteIsNAT);
 
-  corrigendumASN = TRUE;
+  corrigendumASN = PTrue;
   consecutiveBadPackets = 0;
 
   reportTimer = 20;
@@ -557,7 +557,7 @@ T38PseudoRTP::~T38PseudoRTP()
   PTRACE(4, "RTP_T38\tPseudoRTP session destroyed");
 }
 
-BOOL T38PseudoRTP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL isDataPort)
+PBoolean T38PseudoRTP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort)
 {
   return RTP_UDP::SetRemoteSocketInfo(address, port, isDataPort);
 }
@@ -628,25 +628,25 @@ PTRACE(1, "T38_RTP\tWriting RTP T.38 seq " << udptl.m_seq_number << " of size " 
   return e_ProcessPacket;
 }
 
-BOOL T38PseudoRTP::WriteData(RTP_DataFrame & frame)
+PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
 {
   if (shutdownWrite) {
     PTRACE(3, "RTP_T38\tSession " << sessionID << ", Write shutdown.");
-    shutdownWrite = FALSE;
-    return FALSE;
+    shutdownWrite = PFalse;
+    return PFalse;
   }
 
   // Trying to send a PDU before we are set up!
   if (!remoteAddress.IsValid() || remoteDataPort == 0)
-    return TRUE;
+    return PTrue;
 
   switch (OnSendData(frame)) {
     case e_ProcessPacket :
       break;
     case e_IgnorePacket :
-      return TRUE;
+      return PTrue;
     case e_AbortTransport :
-      return FALSE;
+      return PFalse;
   }
 
   while (!dataSocket->WriteTo(frame.GetPointer(),
@@ -663,11 +663,11 @@ BOOL T38PseudoRTP::WriteData(RTP_DataFrame & frame)
                << ", Write error on data port ("
                << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << dataSocket->GetErrorText(PChannel::LastWriteError));
-        return FALSE;
+        return PFalse;
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -678,7 +678,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendControl(RTP_ControlFrame & /*
 
 RTP_Session::SendReceiveStatus T38PseudoRTP::ReadDataPDU(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, TRUE);
+  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
   if (status != e_ProcessPacket)
     return status;
 
@@ -732,37 +732,37 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
   return RTP_UDP::OnReceiveData(frame);
 }
 
-BOOL T38PseudoRTP::ReadData(RTP_DataFrame & frame, BOOL loop)
+PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
 {
   do {
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
       PTRACE(3, "T38_RTP\tSession " << sessionID << ", Read shutdown.");
-      shutdownRead = FALSE;
-      return FALSE;
+      shutdownRead = PFalse;
+      return PFalse;
     }
 
     switch (selectStatus) {
       case -2 :
         if (ReadControlPDU() == e_AbortTransport)
-          return FALSE;
+          return PFalse;
         break;
 
       case -3 :
         if (ReadControlPDU() == e_AbortTransport)
-          return FALSE;
+          return PFalse;
         // Then do -1 case
 
       case -1 :
         switch (ReadDataPDU(frame)) {
           case e_ProcessPacket :
             if (!shutdownRead)
-              return TRUE;
+              return PTrue;
           case e_IgnorePacket :
             break;
           case e_AbortTransport :
-            return FALSE;
+            return PFalse;
         }
         break;
 
@@ -770,21 +770,21 @@ BOOL T38PseudoRTP::ReadData(RTP_DataFrame & frame, BOOL loop)
         // for timeouts, send a "fake" payload of one byte of 0xff to keep the T.38 engine emitting PCM
         frame.SetPayloadSize(1);
         frame.GetPayloadPtr()[0] = 0xff;
-        return TRUE;
+        return PTrue;
 
       case PSocket::Interrupted:
         PTRACE(3, "T38_RTP\tSession " << sessionID << ", Interrupted.");
-        return FALSE;
+        return PFalse;
 
       default :
         PTRACE(1, "T38_RTP\tSession " << sessionID << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
-        return FALSE;
+        return PFalse;
     }
   } while (loop);
 
   frame.SetSize(0);
-  return TRUE;
+  return PTrue;
 }
 
 int T38PseudoRTP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
@@ -809,18 +809,18 @@ OpalFaxCallInfo::OpalFaxCallInfo()
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource, const PString & _token, const PString & _filename, BOOL _receive)
+OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource, const PString & _token, const PString & _filename, PBoolean _receive)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource), sessionToken(_token), filename(_filename), receive(_receive)
 {
   faxCallInfo = NULL;
   SetDataSize(300);
 }
 
-BOOL OpalFaxMediaStream::Open()
+PBoolean OpalFaxMediaStream::Open()
 {
   if (sessionToken.IsEmpty()) {
     PTRACE(1, "T38\tCannot open unknown media stream");
-    return FALSE;
+    return PFalse;
   }
 
   PWaitAndSignal m2(faxMapMutex);
@@ -835,7 +835,7 @@ BOOL OpalFaxMediaStream::Open()
       faxCallInfo = new OpalFaxCallInfo();
       if (!faxCallInfo->socket.Listen()) {
         PTRACE(1, "Fax\tCannot open listening socket for SpanDSP");
-        return FALSE;
+        return PFalse;
       }
       faxCallInfo->socket.SetReadTimeout(1000);
       faxCallInfoMap.insert(OpalFaxCallInfoMap_T::value_type((const char *)sessionToken, faxCallInfo));
@@ -845,12 +845,12 @@ BOOL OpalFaxMediaStream::Open()
   return OpalMediaStream::Open();
 }
 
-BOOL OpalFaxMediaStream::Start()
+PBoolean OpalFaxMediaStream::Start()
 {
   PWaitAndSignal m(infoMutex);
   if (faxCallInfo == NULL) {
     PTRACE(1, "Fax\tCannot start unknown media stream");
-    return FALSE;
+    return PFalse;
   }
 
   // reset the output buffer
@@ -866,19 +866,19 @@ BOOL OpalFaxMediaStream::Start()
     // open connection to spandsp
     if (!faxCallInfo->spanDSP.Open(cmdLine, PPipeChannel::ReadWriteStd)) {
       PTRACE(1, "Fax\tCannot open SpanDSP");
-      return FALSE;
+      return PFalse;
     }
 
     if (!faxCallInfo->spanDSP.Execute()) {
       PTRACE(1, "Fax\tCannot execute SpanDSP");
-      return FALSE;
+      return PFalse;
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
+PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   // it is possible for ReadPacket to be called before the media stream has been opened, so deal with that case
   PWaitAndSignal m(infoMutex);
@@ -894,12 +894,12 @@ BOOL OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
     if (faxCallInfo->spanDSPPort > 0) {
       if (!faxCallInfo->socket.Read(packet.GetPointer()+RTP_DataFrame::MinHeaderSize, packet.GetSize()-RTP_DataFrame::MinHeaderSize)) {
         faxCallInfo->socket.Close();
-        return FALSE;
+        return PFalse;
       }
     } else{ 
       if (!faxCallInfo->socket.ReadFrom(packet.GetPointer()+RTP_DataFrame::MinHeaderSize, packet.GetSize()-RTP_DataFrame::MinHeaderSize, faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
         faxCallInfo->socket.Close();
-        return FALSE;
+        return PFalse;
       }
     }
 
@@ -918,10 +918,10 @@ BOOL OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
 #endif    
   }
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
+PBoolean OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
 {
   PWaitAndSignal m(infoMutex);
   if ((faxCallInfo == NULL) || !faxCallInfo->spanDSP.IsRunning()) {
@@ -933,7 +933,7 @@ BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
 
     if (!faxCallInfo->spanDSP.IsRunning()) {
       PTRACE(1, "Fax\tspandsp ended");
-      return FALSE;
+      return PFalse;
     }
 
 #if WRITE_PCM_FILE
@@ -958,7 +958,7 @@ BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
         if (writeBufferLen == 0) {
           if (!faxCallInfo->socket.WriteTo(ptr, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
             PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
-            return FALSE;
+            return PFalse;
           }
           len = sizeof(writeBuffer);
         }
@@ -967,7 +967,7 @@ BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
           memcpy(writeBuffer + writeBufferLen, ptr, len);
           if (!faxCallInfo->socket.WriteTo(writeBuffer, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
             PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
-            return FALSE;
+            return PFalse;
           }
         }
         ptr += len;
@@ -984,19 +984,19 @@ BOOL OpalFaxMediaStream::WritePacket(RTP_DataFrame & packet)
       if (writeBufferLen == sizeof(writeBuffer)) {
         if (!faxCallInfo->socket.WriteTo(writeBuffer, sizeof(writeBuffer), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
           PTRACE(1, "Fax\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
-          return FALSE;
+          return PFalse;
         }
         writeBufferLen = 0;
       }
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalFaxMediaStream::Close()
+PBoolean OpalFaxMediaStream::Close()
 {
-  BOOL stat = OpalMediaStream::Close();
+  PBoolean stat = OpalMediaStream::Close();
 
   PWaitAndSignal m2(faxMapMutex);
 
@@ -1054,9 +1054,9 @@ BOOL OpalFaxMediaStream::Close()
   return stat;
 }
 
-BOOL OpalFaxMediaStream::IsSynchronous() const
+PBoolean OpalFaxMediaStream::IsSynchronous() const
 {
-  return TRUE;
+  return PTrue;
 }
 
 PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
@@ -1084,10 +1084,10 @@ OpalT38MediaStream::OpalT38MediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID, 
-      BOOL isSource,                       ///<  Is a source stream
+      PBoolean isSource,                       ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & _filename,
-      BOOL _receive
+      PBoolean _receive
     )
   : OpalFaxMediaStream(conn, mediaFormat, sessionID, isSource, token, _filename, _receive)
 {
@@ -1110,46 +1110,46 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   return cmdline;
 }
 
-BOOL OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
+PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   if (faxCallInfo == NULL)
-    return FALSE;
+    return PFalse;
 
   if (!faxCallInfo->spanDSP.IsRunning()) {
     PTRACE(1, "Fax\tspandsp ended");
-    return FALSE;
+    return PFalse;
   }
 
   packet.SetSize(2048);
 
   if (faxCallInfo->spanDSPPort > 0) {
     if (!faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize()))
-      return FALSE;
+      return PFalse;
   } else{ 
     if (!faxCallInfo->socket.ReadFrom(packet.GetPointer(), packet.GetSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort))
-      return FALSE;
+      return PFalse;
   }
 
   PINDEX len = faxCallInfo->socket.GetLastReadCount();
   if (len < RTP_DataFrame::MinHeaderSize)
-    return FALSE;
+    return PFalse;
 
   packet.SetSize(len);
   packet.SetPayloadSize(len - RTP_DataFrame::MinHeaderSize);
 
 //PTRACE(1, "Fax\tT.38 Read RTP payload size = " << packet.GetPayloadSize());
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
+PBoolean OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
 {
   if (faxCallInfo == NULL)
-    return FALSE;
+    return PFalse;
 
   if (!faxCallInfo->spanDSP.IsRunning()) {
     PTRACE(1, "Fax\tspandsp ended");
-    return FALSE;
+    return PFalse;
   }
 
 //PTRACE(1, "Fax\tT.38 Write RTP payload size = " << packet.GetPayloadSize());
@@ -1158,11 +1158,11 @@ BOOL OpalT38MediaStream::WritePacket(RTP_DataFrame & packet)
     PTRACE(1, "Fax\tT.38 Write RTP packet size = " << packet.GetHeaderSize() + packet.GetPayloadSize() <<" to " << faxCallInfo->spanDSPAddr << ":" << faxCallInfo->spanDSPPort);
     if (!faxCallInfo->socket.WriteTo(packet.GetPointer(), packet.GetHeaderSize() + packet.GetPayloadSize(), faxCallInfo->spanDSPAddr, faxCallInfo->spanDSPPort)) {
       PTRACE(1, "T38_UDP\tSocket write error - " << faxCallInfo->socket.GetErrorText(PChannel::LastWriteError));
-      return FALSE;
+      return PFalse;
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1178,7 +1178,7 @@ OpalFaxEndPoint::~OpalFaxEndPoint()
   PTRACE(3, "Fax\tDeleted Fax endpoint.");
 }
 
-OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call, const PString & filename, BOOL receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions)
+OpalFaxConnection * OpalFaxEndPoint::CreateConnection(OpalCall & call, const PString & filename, PBoolean receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions)
 {
   return new OpalFaxConnection(call, *this, filename, receive, MakeToken(), stringOptions);
 }
@@ -1204,7 +1204,7 @@ void OpalFaxEndPoint::AcceptIncomingConnection(const PString & token)
     connection->AcceptIncoming();
 }
 
-BOOL OpalFaxEndPoint::MakeConnection(OpalCall & call,
+PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
                                 const PString & remoteParty,
                                          void * userData,
                                  unsigned int /*options*/,
@@ -1217,7 +1217,7 @@ BOOL OpalFaxEndPoint::MakeConnection(OpalCall & call,
 
   PString filename = remoteParty.Mid(prefixLength);
 
-  BOOL receive = FALSE;
+  PBoolean receive = PFalse;
 
   PINDEX options = filename.Find(";");
   if (options != P_MAX_INDEX) {
@@ -1227,7 +1227,7 @@ BOOL OpalFaxEndPoint::MakeConnection(OpalCall & call,
   }
 
   if (!receive && !PFile::Exists(filename)) {
-    return FALSE;
+    return PFalse;
   }
 
 /*
@@ -1250,24 +1250,24 @@ BOOL OpalFaxEndPoint::MakeConnection(OpalCall & call,
 
   PSafePtr<OpalFaxConnection> connection = PSafePtrCast<OpalConnection, OpalFaxConnection>(GetConnectionWithLock(MakeToken()));
   if (connection != NULL)
-    return FALSE;
+    return PFalse;
 
   connection = CreateConnection(call, filename, receive, userData, stringOptions);
   if (connection == NULL)
-    return FALSE;
+    return PFalse;
 
   connectionsActive.SetAt(connection->GetToken(), connection);
 
-  return TRUE;
+  return PTrue;
 }
 
-void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*/, BOOL /*isSource*/, OpalMediaPatch & /*patch*/)
+void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*/, PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
 {
 }
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, BOOL _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
+OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
   : OpalConnection(call, ep, _token), endpoint(ep), filename(_filename), receive(_receive)
 {
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
@@ -1281,7 +1281,7 @@ OpalFaxConnection::~OpalFaxConnection()
   PTRACE(3, "FAX\tDeleted FAX connection.");
 }
 
-OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource)
+OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
   if (sessionID == OpalMediaFormat::DefaultAudioSessionID) {
@@ -1301,29 +1301,29 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
   return NULL;
 }
 
-BOOL OpalFaxConnection::SetUpConnection()
+PBoolean OpalFaxConnection::SetUpConnection()
 {
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
     if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
-      return FALSE;
+      return PFalse;
     }
 
     PTRACE(2, "FAX\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
-      return FALSE;
+      return PFalse;
     }
 
-    return TRUE;
+    return PTrue;
   }
 
   {
     PSafePtr<OpalConnection> otherConn = ownerCall.GetOtherPartyConnection(*this);
     if (otherConn == NULL)
-      return FALSE;
+      return PFalse;
 
     remotePartyName    = otherConn->GetRemotePartyName();
     remotePartyAddress = otherConn->GetRemotePartyAddress();
@@ -1343,38 +1343,38 @@ BOOL OpalFaxConnection::SetUpConnection()
     OnEstablished();
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalFaxConnection::SetAlerting(const PString & calleeName, BOOL)
+PBoolean OpalFaxConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
   PTRACE(3, "Fax\tSetAlerting(" << calleeName << ')');
   phase = AlertingPhase;
   remotePartyName = calleeName;
   //return endpoint.OnShowOutgoing(*this);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalFaxConnection::SetConnected()
+PBoolean OpalFaxConnection::SetConnected()
 {
   PTRACE(3, "Fax\tSetConnected()");
 
   {
     PSafeLockReadWrite safeLock(*this);
     if (!safeLock.IsLocked())
-      return FALSE;
+      return PFalse;
 
     if (mediaStreams.IsEmpty())
-      return TRUE;
+      return PTrue;
 
     phase = EstablishedPhase;
   }
 
   OnEstablished();
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1397,17 +1397,17 @@ void OpalFaxConnection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) c
     mediaFormats.Remove(PStringArray(OpalT38));
 }
 
-void OpalFaxConnection::OnPatchMediaStream(BOOL isSource, OpalMediaPatch & patch)
+void OpalFaxConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   endpoint.OnPatchMediaStream(*this, isSource, patch);
 }
 
 
-BOOL OpalFaxConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
+PBoolean OpalFaxConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
 {
 #if OPAL_VIDEO
   if (sessionID == OpalMediaFormat::DefaultVideoSessionID)
-    return FALSE;
+    return PFalse;
 #endif
 
   return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
@@ -1475,7 +1475,7 @@ OpalMediaFormatList OpalT38EndPoint::GetMediaFormats() const
   return formats;
 }
 
-OpalFaxConnection * OpalT38EndPoint::CreateConnection(OpalCall & call, const PString & filename, BOOL receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions)
+OpalFaxConnection * OpalT38EndPoint::CreateConnection(OpalCall & call, const PString & filename, PBoolean receive, void * /*userData*/, OpalConnection::StringOptions * stringOptions)
 {
   return new OpalT38Connection(call, *this, filename, receive, MakeToken(), stringOptions);
 }
@@ -1487,14 +1487,14 @@ PString OpalT38EndPoint::MakeToken()
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, const PString & _filename, BOOL _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
+OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
   : OpalFaxConnection(call, ep, _filename, _receive, _token, stringOptions)
 {
   PTRACE(3, "FAX\tCreated T.38 connection with token '" << callToken << "'");
-  forceFaxAudio = FALSE;
+  forceFaxAudio = PFalse;
 }
 
-OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, BOOL isSource)
+OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
   if (sessionID == OpalMediaFormat::DefaultAudioSessionID) 

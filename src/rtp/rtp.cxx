@@ -76,13 +76,13 @@ RTP_DataFrame::RTP_DataFrame(PINDEX sz)
 }
 
 
-RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, BOOL dynamic)
+RTP_DataFrame::RTP_DataFrame(const BYTE * data, PINDEX len, PBoolean dynamic)
   : PBYTEArray(data, len, dynamic)
 {
   payloadSize = len - GetHeaderSize();
 }
 
-void RTP_DataFrame::SetExtension(BOOL ext)
+void RTP_DataFrame::SetExtension(PBoolean ext)
 {
   if (ext)
     theArray[0] |= 0x10;
@@ -91,7 +91,7 @@ void RTP_DataFrame::SetExtension(BOOL ext)
 }
 
 
-void RTP_DataFrame::SetMarker(BOOL m)
+void RTP_DataFrame::SetMarker(PBoolean m)
 {
   if (m)
     theArray[1] |= 0x80;
@@ -155,7 +155,7 @@ int RTP_DataFrame::GetExtensionType() const
 void RTP_DataFrame::SetExtensionType(int type)
 {
   if (type < 0)
-    SetExtension(FALSE);
+    SetExtension(PFalse);
   else {
     if (!GetExtension())
       SetExtensionSize(0);
@@ -173,14 +173,14 @@ PINDEX RTP_DataFrame::GetExtensionSize() const
 }
 
 
-BOOL RTP_DataFrame::SetExtensionSize(PINDEX sz)
+PBoolean RTP_DataFrame::SetExtensionSize(PINDEX sz)
 {
   if (!SetMinSize(MinHeaderSize + 4*GetContribSrcCount() + 4+4*sz + payloadSize))
-    return FALSE;
+    return PFalse;
 
-  SetExtension(TRUE);
+  SetExtension(PTrue);
   *(PUInt16b *)&theArray[MinHeaderSize + 4*GetContribSrcCount() + 2] = (WORD)sz;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -193,7 +193,7 @@ BYTE * RTP_DataFrame::GetExtensionPtr() const
 }
 
 
-BOOL RTP_DataFrame::SetPayloadSize(PINDEX sz)
+PBoolean RTP_DataFrame::SetPayloadSize(PINDEX sz)
 {
   payloadSize = sz;
   return SetMinSize(GetHeaderSize()+payloadSize);
@@ -335,25 +335,25 @@ BYTE * RTP_ControlFrame::GetPayloadPtr() const
   return (BYTE *)(theArray + compoundOffset + 4); 
 }
 
-BOOL RTP_ControlFrame::ReadNextPacket()
+PBoolean RTP_ControlFrame::ReadNextPacket()
 {
   // skip over current packet
   compoundOffset += GetPayloadSize() + 4;
 
   // see if another packet is feasible
   if (compoundOffset + 4 > GetSize())
-    return FALSE;
+    return PFalse;
 
   // check if payload size for new packet is legal
   return compoundOffset + GetPayloadSize() + 4 <= GetSize();
 }
 
 
-BOOL RTP_ControlFrame::StartNewPacket()
+PBoolean RTP_ControlFrame::StartNewPacket()
 {
   // allocate storage for new packet header
   if (!SetMinSize(compoundOffset + 4))
-    return FALSE;
+    return PFalse;
 
   theArray[compoundOffset] = '\x80'; // Set version 2
   theArray[compoundOffset+1] = 0;    // Set payload type to illegal
@@ -364,7 +364,7 @@ BOOL RTP_ControlFrame::StartNewPacket()
   payloadSize = 0;
   SetPayloadSize(payloadSize);
 
-  return TRUE;
+  return PTrue;
 }
 
 void RTP_ControlFrame::EndPacket()
@@ -448,7 +448,7 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 
 RTP_Session::RTP_Session(
                          PHandleAggregator * _aggregator, 
-                         unsigned id, RTP_UserData * data, BOOL autoDelete)
+                         unsigned id, RTP_UserData * data, PBoolean autoDelete)
 : canonicalName(PProcess::Current().GetUserName()),
   toolName(PProcess::Current().GetName()),
   reportTimeInterval(0, 12),  // Seconds
@@ -463,21 +463,21 @@ RTP_Session::RTP_Session(
   autoDeleteUserData = autoDelete;
   jitter = NULL;
 
-  ignoreOtherSources = TRUE;
-  ignoreOutOfOrderPackets = TRUE;
-  ignorePayloadTypeChanges = TRUE;
+  ignoreOtherSources = PTrue;
+  ignoreOutOfOrderPackets = PTrue;
+  ignorePayloadTypeChanges = PTrue;
   syncSourceOut = PRandom::Number();
 
   timeStampOut = PRandom::Number();
   timeStampOffs = 0;
-  timeStampOffsetEstablished = FALSE;
-  timeStampIsPremedia = FALSE;
+  timeStampOffsetEstablished = PFalse;
+  timeStampIsPremedia = PFalse;
   lastSentPacketTime = PTimer::Tick();
 
   syncSourceIn = 0;
-  allowSyncSourceInChange = FALSE;
-  allowRemoteTransmitAddressChange = FALSE;
-  allowSequenceChange = FALSE;
+  allowSyncSourceInChange = PFalse;
+  allowRemoteTransmitAddressChange = PFalse;
+  allowSequenceChange = PFalse;
   txStatisticsInterval = 100;  // Number of data packets between tx reports
   rxStatisticsInterval = 100;  // Number of data packets between rx reports
   lastSentSequenceNumber = (WORD)PRandom::Number();
@@ -516,8 +516,8 @@ RTP_Session::RTP_Session(
 
   lastReceivedPayloadType = RTP_DataFrame::IllegalPayloadType;
 
-  closeOnBye = FALSE;
-  byeSent    = FALSE;
+  closeOnBye = PFalse;
+  byeSent    = PFalse;
 }
 
 RTP_Session::~RTP_Session()
@@ -550,7 +550,7 @@ void RTP_Session::SendBYE()
   if (byeSent)
     return;
 
-  byeSent = TRUE;
+  byeSent = PTrue;
 
   RTP_ControlFrame report;
 
@@ -624,7 +624,7 @@ void RTP_Session::SetToolName(const PString & name)
 }
 
 
-void RTP_Session::SetUserData(RTP_UserData * data, BOOL autoDelete)
+void RTP_Session::SetUserData(RTP_UserData * data, PBoolean autoDelete)
 {
   if (autoDeleteUserData)
     delete userData;
@@ -645,7 +645,7 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
   else if (jitter != NULL)
     jitter->SetDelay(minJitterDelay, maxJitterDelay);
   else {
-    SetIgnoreOutOfOrderPackets(FALSE);
+    SetIgnoreOutOfOrderPackets(PFalse);
     jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
     jitter->Resume(aggregator);
   }
@@ -663,12 +663,12 @@ unsigned RTP_Session::GetJitterTimeUnits() const
 }
 
 
-BOOL RTP_Session::ReadBufferedData(DWORD timestamp, RTP_DataFrame & frame)
+PBoolean RTP_Session::ReadBufferedData(DWORD timestamp, RTP_DataFrame & frame)
 {
   if (jitter != NULL)
     return jitter->ReadData(timestamp, frame);
   else
-    return ReadData(frame, TRUE);
+    return ReadData(frame, PTrue);
 }
 
 
@@ -735,7 +735,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   if (packetsSent == 0) {
     if (!timeStampIsPremedia) {
       timeStampOffs = frame.GetTimestamp() - timeStampOut;
-      timeStampOffsetEstablished = TRUE;
+      timeStampOffsetEstablished = PTrue;
     }
     frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
 
@@ -866,7 +866,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
       else if (allowSyncSourceInChange) {
         PTRACE(2, "RTP\tSession " << sessionID << ", allowed one SSRC change from SSRC=" << syncSourceIn << " to =" << frame.GetSyncSource());
         syncSourceIn = frame.GetSyncSource();
-        allowSyncSourceInChange = FALSE;
+        allowSyncSourceInChange = PFalse;
       }
       else {
         PTRACE(2, "RTP\tSession " << sessionID << ", packet from SSRC=" << frame.GetSyncSource() << " ignored, expecting SSRC=" << syncSourceIn);
@@ -906,7 +906,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
     }
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
-      allowSequenceChange = FALSE;
+      allowSequenceChange = PFalse;
     }
     else if (sequenceNumber < expectedSequenceNumber) {
       PTRACE(2, "RTP\tSession " << sessionID << ", out of order packet, received "
@@ -978,7 +978,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
-BOOL RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
+PBoolean RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
 {
   // No packets sent yet, so only set RR
   if (packetsSent == 0) {
@@ -1040,20 +1040,20 @@ BOOL RTP_Session::InsertReportPacket(RTP_ControlFrame & report)
   interval -= third;
   reportTimer = interval;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL RTP_Session::SendReport()
+PBoolean RTP_Session::SendReport()
 {
   PWaitAndSignal mutex(reportMutex);
 
   if (reportTimer.IsRunning())
-    return TRUE;
+    return PTrue;
 
   // Have not got anything yet, do nothing
   if (packetsSent == 0 && packetsReceived == 0) {
     reportTimer = reportTimeInterval;
-    return TRUE;
+    return PTrue;
   }
 
   RTP_ControlFrame report;
@@ -1070,7 +1070,7 @@ BOOL RTP_Session::SendReport()
   report.AddSourceDescriptionItem(RTP_ControlFrame::e_TOOL, toolName);
   report.EndPacket();
 
-  BOOL stat = WriteControl(report);
+  PBoolean stat = WriteControl(report);
 
   return stat;
 }
@@ -1338,9 +1338,9 @@ DWORD RTP_Session::GetPacketsTooLate() const
   return jitter != NULL ? jitter->GetPacketsTooLate() : 0;
 }
 
-BOOL RTP_Session::WriteOOBData(RTP_DataFrame &)
+PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &)
 {
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1394,7 +1394,7 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
 
 
 void RTP_SessionManager::ReleaseSession(unsigned sessionID,
-                                        BOOL clearAll)
+                                        PBoolean clearAll)
 {
   PTRACE(3, "RTP\tReleasing session " << sessionID);
 
@@ -1404,7 +1404,7 @@ void RTP_SessionManager::ReleaseSession(unsigned sessionID,
     RTP_Session * session = &sessions[sessionID];
     if (session->DecrementReference()) {
       PTRACE(3, "RTP\tDeleting session " << sessionID);
-      session->Close(TRUE);
+      session->Close(PTrue);
       session->SetJitterBufferSize(0, 0);
       sessions.SetAt(sessionID, NULL);
     }
@@ -1469,7 +1469,7 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
 }
 
 
-RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, unsigned id, BOOL _remoteIsNAT)
+RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, unsigned id, PBoolean _remoteIsNAT)
   : RTP_Session(_aggregator, id),
     remoteAddress(0),
     remoteTransmitAddress(0),
@@ -1478,18 +1478,18 @@ RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, unsigned id, BOOL _remoteIsNAT
   PTRACE(4, "RTP_UDP\tSession " << sessionID << ", created with NAT flag set to " << remoteIsNAT);
   remoteDataPort = 0;
   remoteControlPort = 0;
-  shutdownRead = FALSE;
-  shutdownWrite = FALSE;
+  shutdownRead = PFalse;
+  shutdownWrite = PFalse;
   dataSocket = NULL;
   controlSocket = NULL;
-  appliedQOS = FALSE;
+  appliedQOS = PFalse;
 }
 
 
 RTP_UDP::~RTP_UDP()
 {
-  Close(TRUE);
-  Close(FALSE);
+  Close(PTrue);
+  Close(PFalse);
 
   // We need to do this to make sure that the sockets are not
   // deleted before select decides there is no more data coming
@@ -1508,13 +1508,13 @@ void RTP_UDP::ApplyQOS(const PIPSocket::Address & addr)
     controlSocket->SetSendAddress(addr,GetRemoteControlPort());
   if (dataSocket != NULL)
     dataSocket->SetSendAddress(addr,GetRemoteDataPort());
-  appliedQOS = TRUE;
+  appliedQOS = PTrue;
 }
 
 
-BOOL RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
+PBoolean RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
 {
-  BOOL retval = FALSE;
+  PBoolean retval = PFalse;
 
   if (rtpqos == NULL)
     return retval;
@@ -1525,17 +1525,17 @@ BOOL RTP_UDP::ModifyQOS(RTP_QOS * rtpqos)
   if (dataSocket != NULL)
     retval &= dataSocket->ModifyQoSSpec(&(rtpqos->dataQoS));
 
-  appliedQOS = FALSE;
+  appliedQOS = PFalse;
   return retval;
 }
 
-BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
+PBoolean RTP_UDP::Open(PIPSocket::Address _localAddress,
                    WORD portBase, WORD portMax,
                    BYTE tos,
                    PSTUNClient * stun,
                    RTP_QOS * rtpQos)
 {
-  first = TRUE;
+  first = PTrue;
   // save local address 
   localAddress = _localAddress;
 
@@ -1547,7 +1547,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
   dataSocket = NULL;
   controlSocket = NULL;
 
-  byeSent = FALSE;
+  byeSent = PFalse;
 
   PQoS * dataQos = NULL;
   PQoS * ctrlQos = NULL;
@@ -1570,7 +1570,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
         }
         else {
           PTRACE(1, "RTP\tSession " << sessionID << ", STUN could not create RTP socket either.");
-          return FALSE;
+          return PFalse;
         }
         if (stun->CreateSocket(controlSocket)) {
           controlSocket->GetLocalAddress(localAddress, localControlPort);
@@ -1586,7 +1586,7 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
         dataSocket->Close();
         controlSocket->Close();
         if ((localDataPort > portMax) || (localDataPort > 0xfffd))
-          return FALSE; // If it ever gets to here the OS has some SERIOUS problems!
+          return PFalse; // If it ever gets to here the OS has some SERIOUS problems!
         localDataPort    += 2;
         localControlPort += 2;
       }
@@ -1607,8 +1607,8 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
 #   endif
   }
 
-  shutdownRead = FALSE;
-  shutdownWrite = FALSE;
+  shutdownRead = PFalse;
+  shutdownWrite = PFalse;
 
   if (canonicalName.Find('@') == P_MAX_INDEX)
     canonicalName += '@' + GetLocalHostName();
@@ -1618,20 +1618,20 @@ BOOL RTP_UDP::Open(PIPSocket::Address _localAddress,
          << " ssrc=" << syncSourceOut);
   
 
-  return TRUE;
+  return PTrue;
 }
 
 
-void RTP_UDP::Reopen(BOOL reading)
+void RTP_UDP::Reopen(PBoolean reading)
 {
   if (reading)
-    shutdownRead = FALSE;
+    shutdownRead = PFalse;
   else
-    shutdownWrite = FALSE;
+    shutdownWrite = PFalse;
 }
 
 
-void RTP_UDP::Close(BOOL reading)
+void RTP_UDP::Close(PBoolean reading)
 {
   if (!shutdownRead && !shutdownWrite)
     SendBYE();
@@ -1640,7 +1640,7 @@ void RTP_UDP::Close(BOOL reading)
     if (!shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down read.");
       syncSourceIn = 0;
-      shutdownRead = TRUE;
+      shutdownRead = PTrue;
       if (dataSocket != NULL && controlSocket != NULL) {
         PIPSocket::Address addr;
         controlSocket->GetLocalAddress(addr);
@@ -1652,7 +1652,7 @@ void RTP_UDP::Close(BOOL reading)
   }
   else {
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Shutting down write.");
-    shutdownWrite = TRUE;
+    shutdownWrite = PTrue;
   }
 }
 
@@ -1663,11 +1663,11 @@ PString RTP_UDP::GetLocalHostName()
 }
 
 
-BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL isDataPort)
+PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort)
 {
   if (remoteIsNAT) {
     PTRACE(2, "RTP_UDP\tSession " << sessionID << ", ignoring remote socket info as remote is behind NAT");
-    return TRUE;
+    return PTrue;
   }
 
   PTRACE(3, "RTP_UDP\tSession " << sessionID << ", SetRemoteSocketInfo: "
@@ -1677,13 +1677,13 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
             "remote=" << remoteAddress << ':' << remoteDataPort << '-' << remoteControlPort);
 
   if (localAddress == address && remoteAddress == address && (isDataPort ? localDataPort : localControlPort) == port)
-    return TRUE;
+    return PTrue;
   
   remoteAddress = address;
   
-  allowSyncSourceInChange = TRUE;
-  allowRemoteTransmitAddressChange = TRUE;
-  allowSequenceChange = TRUE;
+  allowSyncSourceInChange = PTrue;
+  allowRemoteTransmitAddressChange = PTrue;
+  allowSequenceChange = PTrue;
 
   if (isDataPort) {
     remoteDataPort = port;
@@ -1703,58 +1703,58 @@ BOOL RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, BOOL is
 }
 
 
-BOOL RTP_UDP::ReadData(RTP_DataFrame & frame, BOOL loop)
+PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame, PBoolean loop)
 {
   do {
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
       PTRACE(3, "RTP_UDP\tSession " << sessionID << ", Read shutdown.");
-      shutdownRead = FALSE;
-      return FALSE;
+      shutdownRead = PFalse;
+      return PFalse;
     }
 
     switch (selectStatus) {
       case -2 :
         if (ReadControlPDU() == e_AbortTransport)
-          return FALSE;
+          return PFalse;
         break;
 
       case -3 :
         if (ReadControlPDU() == e_AbortTransport)
-          return FALSE;
+          return PFalse;
         // Then do -1 case
 
       case -1 :
         switch (ReadDataPDU(frame)) {
           case e_ProcessPacket :
             if (!shutdownRead)
-              return TRUE;
+              return PTrue;
           case e_IgnorePacket :
             break;
           case e_AbortTransport :
-            return FALSE;
+            return PFalse;
         }
         break;
 
       case 0 :
         if (!SendReport())
-          return FALSE;
+          return PFalse;
         break;
 
       case PSocket::Interrupted:
         PTRACE(2, "RTP_UDP\tSession " << sessionID << ", Interrupted.");
-        return FALSE;
+        return PFalse;
 
       default :
         PTRACE(1, "RTP_UDP\tSession " << sessionID << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
-        return FALSE;
+        return PFalse;
     }
   } while (loop);
 
   frame.SetSize(0);
-  return TRUE;
+  return PTrue;
 }
 
 int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
@@ -1777,7 +1777,7 @@ int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, con
           ++count;
           break;
         case 0:
-          first = FALSE;
+          first = PFalse;
           break;
       }
     } while (first);
@@ -1789,7 +1789,7 @@ int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, con
 
 RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket,
                                                              PBYTEArray & frame,
-                                                             BOOL fromDataChannel)
+                                                             PBoolean fromDataChannel)
 {
 #if PTRACING
   const char * channelName = fromDataChannel ? "Data" : "Control";
@@ -1819,7 +1819,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
         remoteTransmitAddress = addr;
       else if (allowRemoteTransmitAddressChange && remoteAddress == addr) {
         remoteTransmitAddress = addr;
-        allowRemoteTransmitAddressChange = FALSE;
+        allowRemoteTransmitAddressChange = PFalse;
       }
       else if (remoteTransmitAddress != addr && !allowRemoteTransmitAddressChange && !ignoreOtherSources) {
         PTRACE(2, "RTP_UDP\tSession " << sessionID << ", "
@@ -1861,7 +1861,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
 
 RTP_Session::SendReceiveStatus RTP_UDP::ReadDataPDU(RTP_DataFrame & frame)
 {
-  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, TRUE);
+  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
   if (status != e_ProcessPacket)
     return status;
 
@@ -1882,7 +1882,7 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
 {
   RTP_ControlFrame frame(2048);
 
-  SendReceiveStatus status = ReadDataOrControlPDU(*controlSocket, frame, FALSE);
+  SendReceiveStatus status = ReadDataOrControlPDU(*controlSocket, frame, PFalse);
   if (status != e_ProcessPacket)
     return status;
 
@@ -1897,44 +1897,44 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadControlPDU()
   return OnReceiveControl(frame);
 }
 
-BOOL RTP_UDP::WriteOOBData(RTP_DataFrame & frame)
+PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame)
 {
   PWaitAndSignal m(sendDataMutex);
 
   // if media has not already established a timestamp, ensure that OnSendData does not use this one
   if (!timeStampOffsetEstablished) {
     timeStampOffs = 0;
-    timeStampIsPremedia = TRUE;
+    timeStampIsPremedia = PTrue;
   }
 
   // set the timestamp
   frame.SetTimestamp(timeStampOffs + timeStampOut + (PTimer::Tick() - lastSentPacketTime).GetInterval() * 8);
 
   // write the data
-  BOOL stat = WriteData(frame);
-  timeStampIsPremedia = FALSE;
+  PBoolean stat = WriteData(frame);
+  timeStampIsPremedia = PFalse;
   return stat;
 }
 
-BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
+PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)
 {
   if (shutdownWrite) {
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
-    shutdownWrite = FALSE;
-    return FALSE;
+    shutdownWrite = PFalse;
+    return PFalse;
   }
 
   // Trying to send a PDU before we are set up!
   if (!remoteAddress.IsValid() || remoteDataPort == 0)
-    return TRUE;
+    return PTrue;
 
   switch (OnSendData(frame)) {
     case e_ProcessPacket :
       break;
     case e_IgnorePacket :
-      return TRUE;
+      return PTrue;
     case e_AbortTransport :
-      return FALSE;
+      return PFalse;
   }
 
   while (!dataSocket->WriteTo(frame.GetPointer(),
@@ -1951,28 +1951,28 @@ BOOL RTP_UDP::WriteData(RTP_DataFrame & frame)
                << ", write error on data port ("
                << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << dataSocket->GetErrorText(PChannel::LastWriteError));
-        return FALSE;
+        return PFalse;
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
+PBoolean RTP_UDP::WriteControl(RTP_ControlFrame & frame)
 {
   // Trying to send a PDU before we are set up!
   if (!remoteAddress.IsValid() || remoteControlPort == 0 || controlSocket == NULL)
-    return TRUE;
+    return PTrue;
 
   PINDEX len = frame.GetCompoundSize();
   switch (OnSendControl(frame, len)) {
     case e_ProcessPacket :
       break;
     case e_IgnorePacket :
-      return TRUE;
+      return PTrue;
     case e_AbortTransport :
-      return FALSE;
+      return PFalse;
   }
 
   while (!controlSocket->WriteTo(frame.GetPointer(), len,
@@ -1988,11 +1988,11 @@ BOOL RTP_UDP::WriteControl(RTP_ControlFrame & frame)
                << ", write error on control port ("
                << controlSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << controlSocket->GetErrorText(PChannel::LastWriteError));
-        return FALSE;
+        return PFalse;
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 #if OPAL_VIDEO
@@ -2014,7 +2014,7 @@ void RTP_Session::SendIntraFrameRequest(){
 
 /////////////////////////////////////////////////////////////////////////////
 
-SecureRTP_UDP::SecureRTP_UDP(PHandleAggregator * _aggregator, unsigned id, BOOL remoteIsNAT)
+SecureRTP_UDP::SecureRTP_UDP(PHandleAggregator * _aggregator, unsigned id, PBoolean remoteIsNAT)
   : RTP_UDP(_aggregator, id, remoteIsNAT)
 
 {

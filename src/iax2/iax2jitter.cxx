@@ -45,8 +45,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 PendingRtpDataFrames::PendingRtpDataFrames()
 { 
-    keepGoing = TRUE;
-    AllowDeleteObjects(FALSE);
+    keepGoing = PTrue;
+    AllowDeleteObjects(PFalse);
 }
 
 PendingRtpDataFrames::~PendingRtpDataFrames()
@@ -95,7 +95,7 @@ void PendingRtpDataFrames::AddNewFrame(RTP_DataFrame *newElem)
 
 void PendingRtpDataFrames::CloseDown()
 {
-    keepGoing = FALSE;
+    keepGoing = PFalse;
     activate.Signal();
 }
 
@@ -113,21 +113,21 @@ IAX2JitterBuffer::~IAX2JitterBuffer()
     WaitForTermination(1000);
 }
 
-BOOL IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
-				    BOOL /*loop*/)
+PBoolean IAX2JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
+				    PBoolean /*loop*/)
 {
     RTP_DataFrame *oldestFrame = receivedFrames.GetLastFrame();
 
     if (oldestFrame == NULL)
-	return FALSE;
+	return PFalse;
 
     frame = *oldestFrame;
     delete oldestFrame;
 
-    return TRUE;
+    return PTrue;
 }
 
-BOOL IAX2JitterBuffer::IsEmpty()
+PBoolean IAX2JitterBuffer::IsEmpty()
 {
     PWaitAndSignal m(bufferMutex);
 

@@ -104,19 +104,19 @@ class RTP_AggregatedHandle : public PAggregatedHandle
       return list; 
     }
 
-    BOOL Init()
+    PBoolean Init()
     {
       return jitterBuffer.Init(currentReadFrame, markerWarning);
     }
 
-    BOOL PreRead()
+    PBoolean PreRead()
     {
       return jitterBuffer.PreRead(currentReadFrame, markerWarning);
     }
 
-    BOOL OnRead()
+    PBoolean OnRead()
     {
-      return jitterBuffer.OnRead(currentReadFrame, markerWarning, FALSE);
+      return jitterBuffer.OnRead(currentReadFrame, markerWarning, PFalse);
     }
 
     void DeInit()
@@ -127,12 +127,12 @@ class RTP_AggregatedHandle : public PAggregatedHandle
     PTimeInterval GetTimeout()
     { return jitterBuffer.session.GetReportTimer(); }
 
-    BOOL Remove()
+    PBoolean Remove()
     { return owner->RemoveHandle(this); }
 
     RTP_JitterBuffer & jitterBuffer;
     RTP_JitterBuffer::Entry * currentReadFrame;
-    BOOL markerWarning;
+    PBoolean markerWarning;
 
   protected:
     PAggregatorFD dataFd, controlFd;
@@ -175,17 +175,17 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
   maxConsecutiveMarkerBits = 10;
   consecutiveMarkerBits = 0;
   consecutiveEarlyPacketStartTime = 0;
-  doJitterReductionImmediately = FALSE;
-  doneFreeTrash = FALSE;
+  doJitterReductionImmediately = PFalse;
+  doneFreeTrash = PFalse;
 
   lastWriteTimestamp = 0;
   lastWriteTick = 0;
   jitterCalc = 0;
   jitterCalcPacketCount = 0;
 
-  shuttingDown = FALSE;
-  preBuffering = TRUE;
-  doneFirstWrite = FALSE;
+  shuttingDown = PFalse;
+  preBuffering = PTrue;
+  doneFirstWrite = PFalse;
 
   // Allocate the frames and put them all into the free list
   freeFrames = new Entry;
@@ -211,7 +211,7 @@ OpalJitterBuffer::OpalJitterBuffer(unsigned minJitterDelay,
 
 OpalJitterBuffer::~OpalJitterBuffer()
 {
-  shuttingDown = TRUE;
+  shuttingDown = PTrue;
 
   if (jitterThread != NULL) {
     PTRACE(3, "RTP\tRemoving jitter buffer " << this << ' ' << jitterThread->GetThreadName());
@@ -305,8 +305,8 @@ void OpalJitterBuffer::SetDelay(unsigned minJitterDelay, unsigned maxJitterDelay
 
       oldestFrame = newestFrame = currentWriteFrame = NULL;
 
-      shuttingDown = FALSE;
-      preBuffering = TRUE;
+      shuttingDown = PFalse;
+      preBuffering = PTrue;
 
       PTRACE(3, "RTP\tJitter buffer restarted:" << *this);
       jitterThread->Restart();
@@ -326,7 +326,7 @@ void OpalJitterBuffer::Resume(PHandleAggregator * /*aggregator */)
 void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
 {
   OpalJitterBuffer::Entry * currentReadFrame;
-  BOOL markerWarning;
+  PBoolean markerWarning;
 
   PTRACE(4, "RTP\tJitter RTP receive thread started: " << this);
 
@@ -336,7 +336,7 @@ void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
       if (!PreRead(currentReadFrame, markerWarning))
         break;
 
-      if (!OnRead(currentReadFrame, markerWarning, TRUE))
+      if (!OnRead(currentReadFrame, markerWarning, PTrue))
         break;
     }
 
@@ -347,18 +347,18 @@ void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
 }
 
 //void OpalJitterBuffer::Main()
-BOOL OpalJitterBuffer::Init(Entry * & /*currentReadFrame*/, BOOL & markerWarning)
+PBoolean OpalJitterBuffer::Init(Entry * & /*currentReadFrame*/, PBoolean & markerWarning)
 {
   bufferMutex.Wait();
-  markerWarning = FALSE;
-  return TRUE;
+  markerWarning = PFalse;
+  return PTrue;
 }
 
-void OpalJitterBuffer::DeInit(Entry * & /*currentReadFrame*/, BOOL & /*markerWarning*/)
+void OpalJitterBuffer::DeInit(Entry * & /*currentReadFrame*/, PBoolean & /*markerWarning*/)
 {
 }
 
-BOOL OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL & /*markerWarning*/)
+PBoolean OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame, PBoolean & /*markerWarning*/)
 {
   // Get the next free frame available for use for reading from the RTP
   // transport. Place it into a parking spot.
@@ -387,7 +387,7 @@ BOOL OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame, BOO
       PTRACE(2, "RTP\tJitter buffer continuously full, throwing away entire buffer.");
       freeFrames = oldestFrame;
       oldestFrame = newestFrame = NULL;
-      preBuffering = TRUE;
+      preBuffering = PTrue;
     }
     else {
       PTRACE_IF(2, consecutiveBufferOverruns == 1,
@@ -401,19 +401,19 @@ BOOL OpalJitterBuffer::PreRead(OpalJitterBuffer::Entry * & currentReadFrame, BOO
 
   bufferMutex.Signal();
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop)
+PBoolean OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, PBoolean & markerWarning, PBoolean loop)
 {
   do {
     // Keep reading from the RTP transport frames
     if (!OnReadPacket(*currentReadFrame, loop)) {
       if (currentReadFrame != NULL)
         delete currentReadFrame;  // Destructor won't delete this one, so do it here.
-      shuttingDown = TRUE; // Flag to stop the reading side thread
+      shuttingDown = PTrue; // Flag to stop the reading side thread
       PTRACE(3, "RTP\tJitter RTP receive thread ended");
-      return FALSE;
+      return PFalse;
     }
   } while (currentReadFrame->GetSize() == 0);
 
@@ -422,7 +422,7 @@ BOOL OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL
   if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
     if (currentReadFrame != NULL && currentReadFrame->GetMarker()) {
       PTRACE(3, "RTP\tReceived start of talk burst: " << currentReadFrame->GetTimestamp());
-      //preBuffering = TRUE;
+      //preBuffering = PTrue;
       consecutiveMarkerBits++;
     }
     else
@@ -430,9 +430,9 @@ BOOL OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL
   }
   else {
     if (currentReadFrame != NULL && currentReadFrame->GetMarker())
-      currentReadFrame->SetMarker(FALSE);
+      currentReadFrame->SetMarker(PFalse);
     if (!markerWarning && consecutiveMarkerBits == maxConsecutiveMarkerBits) {
-      markerWarning = TRUE;
+      markerWarning = PTrue;
       PTRACE(2, "RTP\tEvery packet has Marker bit, ignoring them from this client!");
     }
   }
@@ -478,14 +478,14 @@ BOOL OpalJitterBuffer::OnRead(OpalJitterBuffer::Entry * & currentReadFrame, BOOL
 
   currentDepth++;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
+PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 {
   if (shuttingDown)
-    return FALSE;
+    return PFalse;
 
   /*Free the frame just written to codec, putting it back into
     the free list and clearing the parking spot for it.
@@ -518,14 +518,14 @@ BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
     /*No data to play! We ran the buffer down to empty, restart buffer by
       setting flag that will fill it again before returning any data.
      */
-    preBuffering = TRUE;
+    preBuffering = PTrue;
     currentJitterTime = targetJitterTime;
     
 
 #if PTRACING && !defined(NO_ANALYSER)
     analyser->Out(0, currentDepth, "Empty");
 #endif
-    return TRUE;
+    return PTrue;
   }
 
  
@@ -570,23 +570,23 @@ BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 #if PTRACING && !defined(NO_ANALYSER)
       analyser->Out(oldestTimestamp, currentDepth, "PreBuf");
 #endif
-      return TRUE;
+      return PTrue;
     }
 
-    preBuffering = FALSE;
+    preBuffering = PFalse;
   }
 
 
   //Handle short silence bursts in the middle of the buffer
   // - if we think we're getting marker bit information, use that
-  BOOL shortSilence = FALSE;
+  PBoolean shortSilence = PFalse;
   if (consecutiveMarkerBits < maxConsecutiveMarkerBits) {
       if (oldestFrame->GetMarker() &&
           (PTimer::Tick() - oldestFrame->tick).GetInterval()* timeUnits < currentJitterTime / 2)
-        shortSilence = TRUE;
+        shortSilence = PTrue;
   }
   else if (timestamp < oldestTimestamp && timestamp > (newestTimestamp - currentJitterTime))
-    shortSilence = TRUE;
+    shortSilence = PTrue;
   
   if (shortSilence) {
     // It is not yet time for something in the buffer
@@ -595,7 +595,7 @@ BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 #endif
     lastWriteTimestamp = 0;
     lastWriteTick = 0;
-    return TRUE;
+    return PTrue;
   }
 
   // Detatch oldest packet from the list, put into parking space
@@ -701,9 +701,9 @@ BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
           oldestFrame->prev = NULL;
         }
         
-        doneFirstWrite = TRUE;
+        doneFirstWrite = PTrue;
         frame = *currentWriteFrame;
-        return TRUE;
+        return PTrue;
       }
 
 
@@ -797,9 +797,9 @@ BOOL OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
 
   }
 
-  doneFirstWrite = TRUE;
+  doneFirstWrite = PTrue;
   frame = *currentWriteFrame;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -830,10 +830,10 @@ RTP_JitterBuffer::~RTP_JitterBuffer()
 #endif
 }
 
-BOOL RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
-				    BOOL loop)
+PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
+				    PBoolean loop)
 {
-    BOOL success = session.ReadData(frame, loop);
+    PBoolean success = session.ReadData(frame, loop);
     PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
     return success;
 }

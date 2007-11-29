@@ -101,29 +101,29 @@ void Q922_Frame::SetInformationFieldSize(PINDEX size)
 }
 
 
-BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
+PBoolean Q922_Frame::Decode(const BYTE *data, PINDEX size)
 {	
   // a valid frame must contain at least 2xFLAG, 3 octets Q922 header,
   // 2 octets FCS and at least 1 octet information
   if(size < 2+3+2+1)
-    return FALSE;
+    return PFalse;
 
   PINDEX octetIndex = 0;
   BYTE bitIndex = 7;
   BYTE onesCounter = 0;
 
   if(!FindFlagEnd(data, size, octetIndex, bitIndex))
-    return FALSE;
+    return PFalse;
 
   BYTE firstOctet;
   BYTE secondOctet;
 
   // read the two first octets
   if(octetIndex >= size || DecodeByte(data, &firstOctet, octetIndex, bitIndex, onesCounter) != Q922_OK)
-    return FALSE;
+    return PFalse;
 
   if(octetIndex >= size || DecodeByte(data, &secondOctet, octetIndex, bitIndex, onesCounter) != Q922_OK)
-    return FALSE;
+    return PFalse;
 
   PINDEX arrayIndex = 0;
   while(octetIndex < size) {
@@ -132,7 +132,7 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
     BYTE result = DecodeByte(data, &decodedByte, octetIndex, bitIndex, onesCounter);
 
     if(result == Q922_ERROR)
-      return FALSE;
+      return PFalse;
 
     if(result == Q922_FLAG) {
 
@@ -145,15 +145,15 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
 
       if (fcs != calculatedFCS) {
         PTRACE(2, "Q.922\tFrame has incorrect checksum");
-        return FALSE;
+        return PFalse;
       }
 
       if(arrayIndex > Q922_HEADER_SIZE) {
         SetInformationFieldSize(arrayIndex - Q922_HEADER_SIZE);
-        return TRUE;
+        return PTrue;
       }
 
-      return FALSE;
+      return PFalse;
     }
 
     theArray[arrayIndex] = firstOctet;
@@ -164,10 +164,10 @@ BOOL Q922_Frame::Decode(const BYTE *data, PINDEX size)
 
     // Q922-frames must not exceed an information field size of 260 octets
     if(arrayIndex >= 260+Q922_HEADER_SIZE)
-      return FALSE;
+      return PFalse;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 PINDEX Q922_Frame::GetEncodedSize() const
@@ -186,16 +186,16 @@ PINDEX Q922_Frame::GetEncodedSize() const
   return 3+2*dataSize+3;
 }
 
-BOOL Q922_Frame::Encode(BYTE *buffer, PINDEX & size) const
+PBoolean Q922_Frame::Encode(BYTE *buffer, PINDEX & size) const
 {
   BYTE bitIndex = 7;
   return Encode(buffer, size, bitIndex);
 }
 
-BOOL Q922_Frame::Encode(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
+PBoolean Q922_Frame::Encode(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
 {
   if(informationFieldSize == 0)	{
-    return FALSE;
+    return PFalse;
   }
 	
   PINDEX octetIndex = 0;
@@ -244,11 +244,11 @@ BOOL Q922_Frame::Encode(BYTE *buffer, PINDEX & size, BYTE & theBitIndex) const
   size = octetIndex;
   theBitIndex = bitIndex;
 	
-  return TRUE;
+  return PTrue;
   
 }
 
-BOOL Q922_Frame::FindFlagEnd(const BYTE *buffer, 
+PBoolean Q922_Frame::FindFlagEnd(const BYTE *buffer, 
 							 PINDEX bufferSize, 
 							 PINDEX & octetIndex, BYTE & bitIndex)
 {
@@ -281,11 +281,11 @@ BOOL Q922_Frame::FindFlagEnd(const BYTE *buffer,
           positionsCorrect = 0xff;
         } else {
           // got 0x7f, ABORT sequence
-          return FALSE;
+          return PFalse;
         }
         break;
       default:
-        return FALSE;
+        return PFalse;
     }
 		
     if(positionsCorrect == 0xff) {
@@ -294,7 +294,7 @@ BOOL Q922_Frame::FindFlagEnd(const BYTE *buffer,
   }
 	
   if(positionsCorrect != 0xff) {
-    return FALSE;
+    return PFalse;
   }
 	
   // First FLAG sequence found, bit index determined.
@@ -336,22 +336,22 @@ BOOL Q922_Frame::FindFlagEnd(const BYTE *buffer,
 		case 7:
 		  if(bit == 1) {
 			// 0x7f read
-		    return FALSE;
+		    return PFalse;
 		  }
 		  break;
         default:
-          return FALSE;
+          return PFalse;
       }
 			
       if(positionsCorrect == 0xf0) {
         octetIndex = startOctetIndex;
         bitIndex = startBitIndex;
-        return TRUE;
+        return PTrue;
       }
     }
   }
 	
-  return FALSE;
+  return PFalse;
 }
 
 BYTE Q922_Frame::DecodeByte(const BYTE *buffer, 

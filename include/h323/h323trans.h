@@ -51,8 +51,8 @@ class H323TransactionPDU {
 
     virtual ~H323TransactionPDU() { }
 
-    virtual BOOL Read(H323Transport & transport);
-    virtual BOOL Write(H323Transport & transport);
+    virtual PBoolean Read(H323Transport & transport);
+    virtual PBoolean Write(H323Transport & transport);
 
     virtual PASN_Object & GetPDU() = 0;
     virtual PASN_Choice & GetChoice() = 0;
@@ -133,21 +133,21 @@ class H323Transactor : public PObject
   //@{
     /**Set a new transport for use by the transactor.
       */
-    BOOL SetTransport(
+    PBoolean SetTransport(
       const H323TransportAddress & iface ///<  Local interface for transport
     );
 
     /**Return the list of addresses used for this peer element
       */
     H323TransportAddressArray GetInterfaceAddresses(
-      BOOL excludeLocalHost = TRUE,       ///<  Flag to exclude 127.0.0.1
+      PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
       H323Transport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
     );
 
     /**Start the channel processing transactions
       */
-    virtual BOOL StartChannel();
+    virtual PBoolean StartChannel();
 
     /**Stop the channel processing transactions.
        Must be called in each descendants destructor.
@@ -160,7 +160,7 @@ class H323Transactor : public PObject
 
     /**Handle and dispatch a transaction PDU
       */
-    virtual BOOL HandleTransaction(
+    virtual PBoolean HandleTransaction(
       const PASN_Object & rawPDU
     ) = 0;
 
@@ -172,16 +172,16 @@ class H323Transactor : public PObject
 
     /**Write PDU to transport after executing callback.
       */
-    virtual BOOL WritePDU(
+    virtual PBoolean WritePDU(
       H323TransactionPDU & pdu
     );
 
     /**Write PDU to transport after executing callback.
       */
-    virtual BOOL WriteTo(
+    virtual PBoolean WriteTo(
       H323TransactionPDU & pdu,
       const H323TransportAddressArray & addresses,
-      BOOL callback = TRUE
+      PBoolean callback = PTrue
     );
   //@}
 
@@ -198,19 +198,19 @@ class H323Transactor : public PObject
     /**Set flag to check all crypto tokens on responses.
       */
     void SetCheckResponseCryptoTokens(
-      BOOL value    ///<  New value for checking crypto tokens.
+      PBoolean value    ///<  New value for checking crypto tokens.
     ) { checkResponseCryptoTokens = value; }
 
     /**Get flag to check all crypto tokens on responses.
       */
-    BOOL GetCheckResponseCryptoTokens() { return checkResponseCryptoTokens; }
+    PBoolean GetCheckResponseCryptoTokens() { return checkResponseCryptoTokens; }
   //@}
 
   protected:
     void Construct();
 
     unsigned GetNextSequenceNumber();
-    BOOL SetUpCallSignalAddresses(
+    PBoolean SetUpCallSignalAddresses(
       H225_ArrayOf_TransportAddress & addresses
     );
 
@@ -231,7 +231,7 @@ class H323Transactor : public PObject
           const H323TransportAddressArray & addresses
         );
 
-        BOOL Poll(H323Transactor &);
+        PBoolean Poll(H323Transactor &);
         void CheckResponse(unsigned, const PASN_Choice *);
         void OnReceiveRIP(unsigned milliseconds);
 
@@ -258,19 +258,19 @@ class H323Transactor : public PObject
         } responseResult;
     };
 
-    virtual BOOL MakeRequest(
+    virtual PBoolean MakeRequest(
       Request & request
     );
-    BOOL CheckForResponse(
+    PBoolean CheckForResponse(
       unsigned,
       unsigned,
       const PASN_Choice * = NULL
     );
-    BOOL HandleRequestInProgress(
+    PBoolean HandleRequestInProgress(
       const H323TransactionPDU & pdu,
       unsigned delay
     );
-    BOOL CheckCryptoTokens(
+    PBoolean CheckCryptoTokens(
       const H323TransactionPDU & pdu,
       const PASN_Array & clearTokens,
       unsigned clearOptionalField,
@@ -279,7 +279,7 @@ class H323Transactor : public PObject
     );
 
     void AgeResponses();
-    BOOL SendCachedResponse(
+    PBoolean SendCachedResponse(
       const H323TransactionPDU & pdu
     );
 
@@ -291,7 +291,7 @@ class H323Transactor : public PObject
         ~Response();
 
         void SetPDU(const H323TransactionPDU & pdu);
-        BOOL SendCachedResponse(H323Transport & transport);
+        PBoolean SendCachedResponse(H323Transport & transport);
 
         PTime                lastUsedTime;
         PTimeInterval        retirementAge;
@@ -303,7 +303,7 @@ class H323Transactor : public PObject
     WORD            defaultLocalPort;
     WORD            defaultRemotePort;
     H323Transport * transport;
-    BOOL            checkResponseCryptoTokens;
+    PBoolean            checkResponseCryptoTokens;
 
     unsigned  nextSequenceNumber;
     PMutex    nextSequenceNumberMutex;
@@ -348,13 +348,13 @@ class H323Transaction : public PObject
       unsigned delay
     ) const = 0;
 
-    BOOL HandlePDU();
+    PBoolean HandlePDU();
 
-    virtual BOOL WritePDU(
+    virtual PBoolean WritePDU(
       H323TransactionPDU & pdu
     );
 
-    BOOL CheckCryptoTokens(
+    PBoolean CheckCryptoTokens(
       const H235Authenticators & authenticators
     );
 
@@ -366,11 +366,11 @@ class H323Transaction : public PObject
       unsigned reasonCode
     ) = 0;
 
-    BOOL IsFastResponseRequired() const { return fastResponseRequired && canSendRIP; }
-    BOOL CanSendRIP() const { return canSendRIP; }
+    PBoolean IsFastResponseRequired() const { return fastResponseRequired && canSendRIP; }
+    PBoolean CanSendRIP() const { return canSendRIP; }
     H323TransportAddress GetReplyAddress() const { return replyAddresses[0]; }
     const H323TransportAddressArray & GetReplyAddresses() const { return replyAddresses; }
-    BOOL IsBehindNAT() const { return isBehindNAT; }
+    PBoolean IsBehindNAT() const { return isBehindNAT; }
     H323Transactor & GetTransactor() const { return transactor; }
     H235Authenticator::ValidationResult GetAuthenticatorResult() const { return authenticatorResult; }
 
@@ -381,15 +381,15 @@ class H323Transaction : public PObject
     H323Transactor         & transactor;
     unsigned                 requestSequenceNumber;
     H323TransportAddressArray replyAddresses;
-    BOOL                     fastResponseRequired;
+    PBoolean                     fastResponseRequired;
     H323TransactionPDU     * request;
     H323TransactionPDU     * confirm;
     H323TransactionPDU     * reject;
 
     H235Authenticators                  authenticators;
     H235Authenticator::ValidationResult authenticatorResult;
-    BOOL                                isBehindNAT;
-    BOOL                                canSendRIP;
+    PBoolean                                isBehindNAT;
+    PBoolean                                canSendRIP;
 };
 
 
@@ -431,36 +431,36 @@ class H323TransactionServer : public PObject
        If the array is empty then the string "*" is assumed which will listen
        on the standard UDP port on INADDR_ANY.
 
-       Returns TRUE if at least one interface was successfully started.
+       Returns PTrue if at least one interface was successfully started.
       */
-    BOOL AddListeners(
+    PBoolean AddListeners(
       const H323TransportAddressArray & ifaces ///<  Interfaces to listen on.
     );
 
     /**Add a gatekeeper listener to this gatekeeper server given the
        transport address for the local interface.
       */
-    BOOL AddListener(
+    PBoolean AddListener(
       const H323TransportAddress & interfaceName
     );
 
     /**Add a gatekeeper listener to this gatekeeper server given the transport.
        Note that the transport is then owned by the listener and will be
        deleted automatically when the listener is destroyed. Note also the
-       transport is deleted if this function returns FALSE and no listener was
+       transport is deleted if this function returns PFalse and no listener was
        created.
       */
-    BOOL AddListener(
+    PBoolean AddListener(
       H323Transport * transport
     );
 
     /**Add a gatekeeper listener to this gatekeeper server.
        Note that the gatekeeper listener is then owned by the gatekeeper
        server and will be deleted automatically when the listener is removed.
-       Note also the listener is deleted if this function returns FALSE and
+       Note also the listener is deleted if this function returns PFalse and
        the listener was not used.
       */
-    BOOL AddListener(
+    PBoolean AddListener(
       H323Transactor * listener
     );
 
@@ -479,11 +479,11 @@ class H323TransactionServer : public PObject
     /**Remove a gatekeeper listener from this gatekeeper server.
        The gatekeeper listener is automatically deleted.
       */
-    BOOL RemoveListener(
+    PBoolean RemoveListener(
       H323Transactor * listener
     );
 
-    BOOL SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress & addresses);
+    PBoolean SetUpCallSignalAddresses(H225_ArrayOf_TransportAddress & addresses);
   //@}
 
   protected:

@@ -43,7 +43,7 @@
 H281_Frame::H281_Frame()
 : H224_Frame(3)
 {
-  SetHighPriority(TRUE);
+  SetHighPriority(PTrue);
 	
   BYTE *data = GetClientDataPtr();
 	
@@ -341,7 +341,7 @@ void H281_Frame::SetPresetNumber(BYTE presetNumber)
 H281VideoSource::H281VideoSource()
 {
   // disabled camera with no options
-  isEnabled = FALSE;
+  isEnabled = PFalse;
   firstOctet = 0x00;
   secondOctet = 0x00;
 }
@@ -361,7 +361,7 @@ void H281VideoSource::SetVideoSourceNumber(BYTE number)
   firstOctet |= (number << 4) & 0xf0;
 }
 
-void H281VideoSource::SetCanMotionVideo(BOOL flag)
+void H281VideoSource::SetCanMotionVideo(PBoolean flag)
 {
   if(flag) {
     firstOctet |= 0x04;
@@ -370,7 +370,7 @@ void H281VideoSource::SetCanMotionVideo(BOOL flag)
   }
 }
 
-void H281VideoSource::SetCanNormalResolutionStillImage(BOOL flag)
+void H281VideoSource::SetCanNormalResolutionStillImage(PBoolean flag)
 {
   if(flag) {
     firstOctet |= 0x02;
@@ -379,7 +379,7 @@ void H281VideoSource::SetCanNormalResolutionStillImage(BOOL flag)
   }
 }
 
-void H281VideoSource::SetCanDoubleResolutionStillImage(BOOL flag)
+void H281VideoSource::SetCanDoubleResolutionStillImage(PBoolean flag)
 {
   if(flag) {
     firstOctet |= 0x01;
@@ -388,7 +388,7 @@ void H281VideoSource::SetCanDoubleResolutionStillImage(BOOL flag)
   }
 }
 
-void H281VideoSource::SetCanPan(BOOL flag)
+void H281VideoSource::SetCanPan(PBoolean flag)
 {
   if(flag) {
     secondOctet |= 0x80;
@@ -397,7 +397,7 @@ void H281VideoSource::SetCanPan(BOOL flag)
   }
 }
 
-void H281VideoSource::SetCanTilt(BOOL flag)
+void H281VideoSource::SetCanTilt(PBoolean flag)
 {
   if(flag) {
     secondOctet |= 0x40;
@@ -406,7 +406,7 @@ void H281VideoSource::SetCanTilt(BOOL flag)
   }
 }
 
-void H281VideoSource::SetCanZoom(BOOL flag)
+void H281VideoSource::SetCanZoom(PBoolean flag)
 {
   if(flag) {
     secondOctet |= 0x20;
@@ -415,7 +415,7 @@ void H281VideoSource::SetCanZoom(BOOL flag)
   }
 }
 
-void H281VideoSource::SetCanFocus(BOOL flag)
+void H281VideoSource::SetCanFocus(PBoolean flag)
 {
   if(flag) {
     secondOctet |= 0x10;
@@ -430,18 +430,18 @@ void H281VideoSource::Encode(BYTE *data) const
   data[1] = secondOctet;
 }
 
-BOOL H281VideoSource::Decode(const BYTE *data)
+PBoolean H281VideoSource::Decode(const BYTE *data)
 {	
   // only accepting the standard video sources
   BYTE videoSourceNumber = (data[0] >> 4) & 0x0f;
   if(videoSourceNumber > 5)	{
-    return FALSE;
+    return PFalse;
   }
 		
   firstOctet = data[0];
   secondOctet = data[1];
 	
-  return TRUE;
+  return PTrue;
 }
 
 ///////////////////////////////
@@ -449,7 +449,7 @@ BOOL H281VideoSource::Decode(const BYTE *data)
 OpalH281Handler::OpalH281Handler(OpalH224Handler & theH224Handler)
 : h224Handler(theH224Handler)
 {
-  remoteHasH281 = FALSE;
+  remoteHasH281 = PFalse;
   localNumberOfPresets = 0;
   remoteNumberOfPresets = 0;
 	
@@ -461,15 +461,15 @@ OpalH281Handler::OpalH281Handler(OpalH224Handler & theH224Handler)
 	
   // initiate the local cameras so that the main camera is enabled
   // and provides motion video (nothing more)
-  localVideoSources[MainCamera].SetEnabled(TRUE);
-  localVideoSources[MainCamera].SetCanMotionVideo(TRUE); 
-  //localVideoSources[MainCamera].SetCanPan(TRUE);
-  //localVideoSources[MainCamera].SetCanTilt(TRUE);
-  //localVideoSources[MainCamera].SetCanZoom(TRUE);
+  localVideoSources[MainCamera].SetEnabled(PTrue);
+  localVideoSources[MainCamera].SetCanMotionVideo(PTrue); 
+  //localVideoSources[MainCamera].SetCanPan(PTrue);
+  //localVideoSources[MainCamera].SetCanTilt(PTrue);
+  //localVideoSources[MainCamera].SetCanZoom(PTrue);
 	
   transmitFrame.SetRequestType(H281_Frame::IllegalRequest);
-  transmitFrame.SetBS(TRUE);
-  transmitFrame.SetES(TRUE);
+  transmitFrame.SetBS(PTrue);
+  transmitFrame.SetES(PTrue);
 	
   transmitTimer.SetNotifier(PCREATE_NOTIFIER(ContinueAction));
 	
@@ -615,7 +615,7 @@ void OpalH281Handler::SendExtraCapabilities() const
 
 void OpalH281Handler::OnReceivedExtraCapabilities(const BYTE *capabilities, PINDEX size)
 {
-  remoteHasH281 = TRUE;
+  remoteHasH281 = PTrue;
 	
   remoteNumberOfPresets = (capabilities[0] & 0x0f);
 	
@@ -626,7 +626,7 @@ void OpalH281Handler::OnReceivedExtraCapabilities(const BYTE *capabilities, PIND
     BYTE videoSource = (capabilities[i] >> 4) & 0x0f;
 		
     if(videoSource <= 5) {
-      remoteVideoSources[videoSource].SetEnabled(TRUE);
+      remoteVideoSources[videoSource].SetEnabled(PTrue);
       remoteVideoSources[videoSource].Decode(capabilities + i);
       i += 2;
 	  

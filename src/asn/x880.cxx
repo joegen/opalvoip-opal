@@ -30,7 +30,7 @@ const static PASN_Names Names_X880_ROS[]={
 //
 
 X880_ROS::X880_ROS(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, FALSE
+  : PASN_Choice(tag, tagClass, 4, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_X880_ROS,4
 #endif
@@ -127,25 +127,25 @@ X880_ROS::operator const X880_Reject &() const
 }
 
 
-BOOL X880_ROS::CreateObject()
+PBoolean X880_ROS::CreateObject()
 {
   switch (tag) {
     case e_invoke :
       choice = new X880_Invoke(1, ContextSpecificTagClass);
-      return TRUE;
+      return PTrue;
     case e_returnResult :
       choice = new X880_ReturnResult(2, ContextSpecificTagClass);
-      return TRUE;
+      return PTrue;
     case e_returnError :
       choice = new X880_ReturnError(3, ContextSpecificTagClass);
-      return TRUE;
+      return PTrue;
     case e_reject :
       choice = new X880_Reject(4, ContextSpecificTagClass);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -368,7 +368,7 @@ const static PASN_Names Names_X880_Code[]={
 //
 
 X880_Code::X880_Code(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, FALSE
+  : PASN_Choice(tag, tagClass, 2, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_X880_Code,2
 #endif
@@ -377,19 +377,19 @@ X880_Code::X880_Code(unsigned tag, PASN_Object::TagClass tagClass)
 }
 
 
-BOOL X880_Code::CreateObject()
+PBoolean X880_Code::CreateObject()
 {
   switch (tag) {
     case e_local :
       choice = new PASN_Integer();
-      return TRUE;
+      return PTrue;
     case e_global :
       choice = new PASN_ObjectId();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -407,7 +407,7 @@ PObject * X880_Code::Clone() const
 //
 
 X880_ReturnResult_result::X880_ReturnResult_result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -451,15 +451,15 @@ PINDEX X880_ReturnResult_result::GetDataLength() const
 }
 
 
-BOOL X880_ReturnResult_result::Decode(PASN_Stream & strm)
+PBoolean X880_ReturnResult_result::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_opcode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -499,7 +499,7 @@ const static PASN_Names Names_X880_Reject_problem[]={
 //
 
 X880_Reject_problem::X880_Reject_problem(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, FALSE
+  : PASN_Choice(tag, tagClass, 4, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_X880_Reject_problem,4
 #endif
@@ -596,25 +596,25 @@ X880_Reject_problem::operator const X880_ReturnErrorProblem &() const
 }
 
 
-BOOL X880_Reject_problem::CreateObject()
+PBoolean X880_Reject_problem::CreateObject()
 {
   switch (tag) {
     case e_general :
       choice = new X880_GeneralProblem();
-      return TRUE;
+      return PTrue;
     case e_invoke :
       choice = new X880_InvokeProblem();
-      return TRUE;
+      return PTrue;
     case e_returnResult :
       choice = new X880_ReturnResultProblem();
-      return TRUE;
+      return PTrue;
     case e_returnError :
       choice = new X880_ReturnErrorProblem();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -632,7 +632,7 @@ PObject * X880_Reject_problem::Clone() const
 //
 
 X880_Invoke::X880_Invoke(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PFalse, 0)
 {
   m_invokeId.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
 }
@@ -689,19 +689,19 @@ PINDEX X880_Invoke::GetDataLength() const
 }
 
 
-BOOL X880_Invoke::Decode(PASN_Stream & strm)
+PBoolean X880_Invoke::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_invokeId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_linkedId) && !m_linkedId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_opcode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_argument) && !m_argument.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -736,7 +736,7 @@ PObject * X880_Invoke::Clone() const
 //
 
 X880_ReturnResult::X880_ReturnResult(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
 }
 
@@ -782,15 +782,15 @@ PINDEX X880_ReturnResult::GetDataLength() const
 }
 
 
-BOOL X880_ReturnResult::Decode(PASN_Stream & strm)
+PBoolean X880_ReturnResult::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_invokeId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_result) && !m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -822,7 +822,7 @@ PObject * X880_ReturnResult::Clone() const
 //
 
 X880_ReturnError::X880_ReturnError(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
 }
 
@@ -872,17 +872,17 @@ PINDEX X880_ReturnError::GetDataLength() const
 }
 
 
-BOOL X880_ReturnError::Decode(PASN_Stream & strm)
+PBoolean X880_ReturnError::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_invokeId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_errorCode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_parameter) && !m_parameter.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -915,7 +915,7 @@ PObject * X880_ReturnError::Clone() const
 //
 
 X880_Reject::X880_Reject(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -959,15 +959,15 @@ PINDEX X880_Reject::GetDataLength() const
 }
 
 
-BOOL X880_Reject::Decode(PASN_Stream & strm)
+PBoolean X880_Reject::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_invokeId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_problem.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

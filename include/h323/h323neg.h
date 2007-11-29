@@ -77,19 +77,19 @@ class H245NegMasterSlaveDetermination : public H245Negotiator
   public:
     H245NegMasterSlaveDetermination(H323EndPoint & endpoint, H323Connection & connection);
 
-    BOOL Start(BOOL renegotiate);
+    PBoolean Start(PBoolean renegotiate);
     void Stop();
-    BOOL HandleIncoming(const H245_MasterSlaveDetermination & pdu);
-    BOOL HandleAck(const H245_MasterSlaveDeterminationAck & pdu);
-    BOOL HandleReject(const H245_MasterSlaveDeterminationReject & pdu);
-    BOOL HandleRelease(const H245_MasterSlaveDeterminationRelease & pdu);
+    PBoolean HandleIncoming(const H245_MasterSlaveDetermination & pdu);
+    PBoolean HandleAck(const H245_MasterSlaveDeterminationAck & pdu);
+    PBoolean HandleReject(const H245_MasterSlaveDeterminationReject & pdu);
+    PBoolean HandleRelease(const H245_MasterSlaveDeterminationRelease & pdu);
     void HandleTimeout(PTimer &, INT);
 
-    BOOL IsMaster() const     { return status == e_DeterminedMaster; }
-    BOOL IsDetermined() const { return state == e_Idle && status != e_Indeterminate; }
+    PBoolean IsMaster() const     { return status == e_DeterminedMaster; }
+    PBoolean IsDetermined() const { return state == e_Idle && status != e_Indeterminate; }
 
   protected:
-    BOOL Restart();
+    PBoolean Restart();
 
     enum States {
       e_Idle, e_Outgoing, e_Incoming,
@@ -123,16 +123,16 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
   public:
     H245NegTerminalCapabilitySet(H323EndPoint & endpoint, H323Connection & connection);
 
-    BOOL Start(BOOL renegotiate, BOOL empty = FALSE);
-    void Stop(BOOL dec = FALSE);
-    BOOL HandleIncoming(const H245_TerminalCapabilitySet & pdu);
-    BOOL HandleAck(const H245_TerminalCapabilitySetAck & pdu);
-    BOOL HandleReject(const H245_TerminalCapabilitySetReject & pdu);
-    BOOL HandleRelease(const H245_TerminalCapabilitySetRelease & pdu);
+    PBoolean Start(PBoolean renegotiate, PBoolean empty = PFalse);
+    void Stop(PBoolean dec = PFalse);
+    PBoolean HandleIncoming(const H245_TerminalCapabilitySet & pdu);
+    PBoolean HandleAck(const H245_TerminalCapabilitySetAck & pdu);
+    PBoolean HandleReject(const H245_TerminalCapabilitySetReject & pdu);
+    PBoolean HandleRelease(const H245_TerminalCapabilitySetRelease & pdu);
     void HandleTimeout(PTimer &, INT);
 
-    BOOL HasSentCapabilities() const { return state == e_Sent; }
-    BOOL HasReceivedCapabilities() const { return receivedCapabilites; }
+    PBoolean HasSentCapabilities() const { return state == e_Sent; }
+    PBoolean HasReceivedCapabilities() const { return receivedCapabilites; }
 
   protected:
     enum States {
@@ -147,7 +147,7 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     unsigned inSequenceNumber;
     unsigned outSequenceNumber;
 
-    BOOL receivedCapabilites;
+    PBoolean receivedCapabilites;
 };
 
 
@@ -166,34 +166,34 @@ class H245NegLogicalChannel : public H245Negotiator
                           H323Channel & channel);
     ~H245NegLogicalChannel();
 
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const H323Capability & capability,
       unsigned sessionID,
       unsigned replacementFor = 0
     );
-    virtual BOOL Close();
-    virtual BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
-    virtual BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
-    virtual BOOL HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
-    virtual BOOL HandleReject(const H245_OpenLogicalChannelReject & pdu);
-    virtual BOOL HandleClose(const H245_CloseLogicalChannel & pdu);
-    virtual BOOL HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
-    virtual BOOL HandleRequestClose(const H245_RequestChannelClose & pdu);
-    virtual BOOL HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
-    virtual BOOL HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
-    virtual BOOL HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
+    virtual PBoolean Close();
+    virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);
+    virtual PBoolean HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
+    virtual PBoolean HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
+    virtual PBoolean HandleReject(const H245_OpenLogicalChannelReject & pdu);
+    virtual PBoolean HandleClose(const H245_CloseLogicalChannel & pdu);
+    virtual PBoolean HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
+    virtual PBoolean HandleRequestClose(const H245_RequestChannelClose & pdu);
+    virtual PBoolean HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
+    virtual PBoolean HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
+    virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
     virtual void HandleTimeout(PTimer &, INT);
 
     H323Channel * GetChannel();
 
 
   protected:
-    virtual BOOL OpenWhileLocked(
+    virtual PBoolean OpenWhileLocked(
       const H323Capability & capability,
       unsigned sessionID,
       unsigned replacementFor = 0
     );
-    virtual BOOL CloseWhileLocked();
+    virtual PBoolean CloseWhileLocked();
     virtual void Release();
 
 
@@ -233,30 +233,30 @@ class H245NegLogicalChannels : public H245Negotiator
 
     virtual void Add(H323Channel & channel);
 
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const H323Capability & capability,
       unsigned sessionID,
       unsigned replacementFor = 0
     );
-    virtual BOOL Close(unsigned channelNumber, BOOL fromRemote);
-    virtual BOOL HandleOpen(const H245_OpenLogicalChannel & pdu);
-    virtual BOOL HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
-    virtual BOOL HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
-    virtual BOOL HandleReject(const H245_OpenLogicalChannelReject & pdu);
-    virtual BOOL HandleClose(const H245_CloseLogicalChannel & pdu);
-    virtual BOOL HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
-    virtual BOOL HandleRequestClose(const H245_RequestChannelClose & pdu);
-    virtual BOOL HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
-    virtual BOOL HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
-    virtual BOOL HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
+    virtual PBoolean Close(unsigned channelNumber, PBoolean fromRemote);
+    virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);
+    virtual PBoolean HandleOpenAck(const H245_OpenLogicalChannelAck & pdu);
+    virtual PBoolean HandleOpenConfirm(const H245_OpenLogicalChannelConfirm & pdu);
+    virtual PBoolean HandleReject(const H245_OpenLogicalChannelReject & pdu);
+    virtual PBoolean HandleClose(const H245_CloseLogicalChannel & pdu);
+    virtual PBoolean HandleCloseAck(const H245_CloseLogicalChannelAck & pdu);
+    virtual PBoolean HandleRequestClose(const H245_RequestChannelClose & pdu);
+    virtual PBoolean HandleRequestCloseAck(const H245_RequestChannelCloseAck & pdu);
+    virtual PBoolean HandleRequestCloseReject(const H245_RequestChannelCloseReject & pdu);
+    virtual PBoolean HandleRequestCloseRelease(const H245_RequestChannelCloseRelease & pdu);
 
     H323ChannelNumber GetNextChannelNumber();
     PINDEX GetSize() const { return channels.GetSize(); }
     H323Channel * GetChannelAt(PINDEX i);
-    H323Channel * FindChannel(unsigned channelNumber, BOOL fromRemote);
+    H323Channel * FindChannel(unsigned channelNumber, PBoolean fromRemote);
     H245NegLogicalChannel & GetNegLogicalChannelAt(PINDEX i);
-    H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, BOOL fromRemote);
-    H323Channel * FindChannelBySession(unsigned rtpSessionId, BOOL fromRemote);
+    H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, PBoolean fromRemote);
+    H323Channel * FindChannelBySession(unsigned rtpSessionId, PBoolean fromRemote);
     void RemoveAll();
 
   protected:
@@ -274,16 +274,16 @@ class H245NegRequestMode : public H245Negotiator
   public:
     H245NegRequestMode(H323EndPoint & endpoint, H323Connection & connection);
 
-    virtual BOOL StartRequest(const PString & newModes);
-    virtual BOOL StartRequest(const H245_ArrayOf_ModeDescription & newModes);
-    virtual BOOL HandleRequest(const H245_RequestMode & pdu);
-    virtual BOOL HandleAck(const H245_RequestModeAck & pdu);
-    virtual BOOL HandleReject(const H245_RequestModeReject & pdu);
-    virtual BOOL HandleRelease(const H245_RequestModeRelease & pdu);
+    virtual PBoolean StartRequest(const PString & newModes);
+    virtual PBoolean StartRequest(const H245_ArrayOf_ModeDescription & newModes);
+    virtual PBoolean HandleRequest(const H245_RequestMode & pdu);
+    virtual PBoolean HandleAck(const H245_RequestModeAck & pdu);
+    virtual PBoolean HandleReject(const H245_RequestModeReject & pdu);
+    virtual PBoolean HandleRelease(const H245_RequestModeRelease & pdu);
     virtual void HandleTimeout(PTimer &, INT);
 
   protected:
-    BOOL awaitingResponse;
+    PBoolean awaitingResponse;
     unsigned inSequenceNumber;
     unsigned outSequenceNumber;
 };
@@ -298,16 +298,16 @@ class H245NegRoundTripDelay : public H245Negotiator
   public:
     H245NegRoundTripDelay(H323EndPoint & endpoint, H323Connection & connection);
 
-    BOOL StartRequest();
-    BOOL HandleRequest(const H245_RoundTripDelayRequest & pdu);
-    BOOL HandleResponse(const H245_RoundTripDelayResponse & pdu);
+    PBoolean StartRequest();
+    PBoolean HandleRequest(const H245_RoundTripDelayRequest & pdu);
+    PBoolean HandleResponse(const H245_RoundTripDelayResponse & pdu);
     void HandleTimeout(PTimer &, INT);
 
     PTimeInterval GetRoundTripDelay() const { return roundTripTime; }
-    BOOL IsRemoteOffline() const { return retryCount == 0; }
+    PBoolean IsRemoteOffline() const { return retryCount == 0; }
 
   protected:
-    BOOL          awaitingResponse;
+    PBoolean          awaitingResponse;
     unsigned      sequenceNumber;
     PTimeInterval tripStartTime;
     PTimeInterval roundTripTime;

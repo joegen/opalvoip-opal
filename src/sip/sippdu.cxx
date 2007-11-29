@@ -206,7 +206,7 @@ SIPURL::SIPURL(const PString & name,
 }
 
 
-BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
+PBoolean SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
 {
   if (defaultScheme == NULL)
     defaultScheme = "sip";
@@ -222,13 +222,13 @@ BOOL SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
   // see if URL is just a URI or it contains a display address as well
   if (start == P_MAX_INDEX || end == P_MAX_INDEX) {
     if (!PURL::InternalParse(cstr, defaultScheme)) {
-      return FALSE;
+      return PFalse;
     }
   }
   else {
     // get the URI from between the angle brackets
     if (!PURL::InternalParse(str(start+1, end-1), defaultScheme))
-      return FALSE;
+      return PFalse;
 
     // extract the display address
     end = str.FindLast('"', start);
@@ -287,7 +287,7 @@ PString SIPURL::AsQuotedString() const
 }
 
 
-PString SIPURL::GetDisplayName (BOOL useDefault) const
+PString SIPURL::GetDisplayName (PBoolean useDefault) const
 {
   PString s;
   PINDEX tag;
@@ -337,43 +337,43 @@ void SIPURL::AdjustForRequestURI()
 
 
 #if P_DNS
-BOOL SIPURL::AdjustToDNS(PINDEX entry)
+PBoolean SIPURL::AdjustToDNS(PINDEX entry)
 {
   // RFC3263 states we do not do lookup if explicit port mentioned
   if (GetPortSupplied())
-    return TRUE;
+    return PTrue;
 
   // Or it is a valid IP address, not a domain name
   PIPSocket::Address ip = GetHostName();
   if (ip.IsValid())
-    return TRUE;
+    return PTrue;
 
   // Do the SRV lookup, if fails, then we actually return TRUE so outer loops
   // can use the original host name value.
   PIPSocketAddressAndPortVector addrs;
   if (!PDNS::LookupSRV(GetHostName(), "_sip._" + paramVars("transport", "udp"), GetPort(), addrs))
-    return TRUE;
+    return PTrue;
 
   // Got the SRV list, return FALSE if outer loop has got to the end of it
   if (entry >= (PINDEX)addrs.size())
-    return FALSE;
+    return PFalse;
 
   // Adjust our host and port to what the DNS SRV record says
   SetHostName(addrs[entry].address.AsString());
   SetPort(addrs[entry].port);
-  return TRUE;
+  return PTrue;
 }
 #else
-BOOL SIPURL::AdjustToDNS(PINDEX)
+PBoolean SIPURL::AdjustToDNS(PINDEX)
 {
-  return TRUE;
+  return PTrue;
 }
 #endif
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-SIPMIMEInfo::SIPMIMEInfo(BOOL _compactForm)
+SIPMIMEInfo::SIPMIMEInfo(PBoolean _compactForm)
   : compactForm(_compactForm)
 {
 }
@@ -387,7 +387,7 @@ PINDEX SIPMIMEInfo::GetContentLength() const
   return len.AsInteger();
 }
 
-BOOL SIPMIMEInfo::IsContentLengthPresent() const
+PBoolean SIPMIMEInfo::IsContentLengthPresent() const
 {
   return !GetFullOrCompact("Content-Length", 'l').IsEmpty();
 }
@@ -521,7 +521,7 @@ PStringList SIPMIMEInfo::GetViaList() const
   if (s.FindOneOf("\r\n") != P_MAX_INDEX)
     viaList = s.Lines();
   else
-    viaList = s.Tokenise(",", FALSE);
+    viaList = s.Tokenise(",", PFalse);
 
   return viaList;
 }
@@ -878,14 +878,14 @@ void SIPMIMEInfo::SetProductInfo(const PString & ua, const OpalProductInfo & inf
   if (userAgent.IsEmpty()) {
     PINDEX pos;
     PCaselessString temp = info.name;
-    temp.Replace(' ', '-', TRUE);
+    temp.Replace(' ', '-', PTrue);
     while ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX)
       temp.Delete(pos, 1);
     if (!temp.IsEmpty()) {
       userAgent = temp;
 
       temp = info.version;
-      temp.Replace(' ', '-', TRUE);
+      temp.Replace(' ', '-', PTrue);
       while ((pos = temp.FindSpan(UserAgentTokenChars)) != P_MAX_INDEX)
         temp.Delete(pos, 1);
       if (!temp.IsEmpty())
@@ -990,7 +990,7 @@ PString SIPMIMEInfo::GetFieldParameter(const PString & param,
 }
 
 
-BOOL SIPMIMEInfo::HasFieldParameter(const PString & param, const PString & field)
+PBoolean SIPMIMEInfo::HasFieldParameter(const PString & param, const PString & field)
 {
   PCaselessString val = field;
   
@@ -1012,7 +1012,7 @@ SIPAuthentication::SIPAuthentication(const PString & user, const PString & pwd)
   : username(user), password(pwd)
 {
   algorithm = NumAlgorithms;
-  isProxy = FALSE;
+  isProxy = PFalse;
 }
 
 
@@ -1046,20 +1046,20 @@ static PString GetAuthParam(const PString & auth, const char * name)
 }
 
 
-BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
+PBoolean SIPAuthentication::Parse(const PCaselessString & auth, PBoolean proxy)
 {
   authRealm.MakeEmpty();
   nonce.MakeEmpty();
   opaque.MakeEmpty();
   algorithm = NumAlgorithms;
 
-  qopAuth = qopAuthInt = FALSE;
+  qopAuth = qopAuthInt = PFalse;
   cnonce.MakeEmpty();
   nonceCount.SetValue(1);
 
   if (auth.Find("digest") != 0) {
     PTRACE(1, "SIP\tUnknown authentication type");
-    return FALSE;
+    return PFalse;
   }
 
   PCaselessString str = GetAuthParam(auth, "algorithm");
@@ -1069,19 +1069,19 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
     algorithm = Algorithm_MD5;
   else {
     PTRACE(1, "SIP\tUnknown authentication algorithm");
-    return FALSE;
+    return PFalse;
   }
 
   authRealm = GetAuthParam(auth, "realm");
   if (authRealm.IsEmpty()) {
     PTRACE(1, "SIP\tNo realm in authentication");
-    return FALSE;
+    return PFalse;
   }
 
   nonce = GetAuthParam(auth, "nonce");
   if (nonce.IsEmpty()) {
     PTRACE(1, "SIP\tNo nonce in authentication");
-    return FALSE;
+    return PFalse;
   }
 
   opaque = GetAuthParam(auth, "opaque");
@@ -1092,18 +1092,18 @@ BOOL SIPAuthentication::Parse(const PCaselessString & auth, BOOL proxy)
   PString qopStr = GetAuthParam(auth, "qop");
   if (!qopStr.IsEmpty()) {
     PTRACE(3, "SIP\tAuthentication contains qop-options " << qopStr);
-    PStringList options = qopStr.Tokenise(',', TRUE);
+    PStringList options = qopStr.Tokenise(',', PTrue);
     qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
     qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
     cnonce = OpalGloballyUniqueID().AsString();
   }
 
   isProxy = proxy;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPAuthentication::IsValid() const
+PBoolean SIPAuthentication::IsValid() const
 {
   return /*!authRealm && */ !username && !nonce && algorithm < NumAlgorithms;
 }
@@ -1119,11 +1119,11 @@ static PString AsHex(PMessageDigest5::Code & digest)
 }
 
 
-BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
+PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
 {
   if (!IsValid()) {
     PTRACE(2, "SIP\tNo authentication information present");
-    return FALSE;
+    return PFalse;
   }
 
   PTRACE(3, "SIP\tAdding authentication information");
@@ -1204,7 +1204,7 @@ BOOL SIPAuthentication::Authorise(SIP_PDU & pdu) const
     auth << ", opaque=\"" << opaque << "\"";
 
   pdu.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1399,12 +1399,12 @@ void SIP_PDU::Construct(Methods meth,
 }
 
 
-BOOL SIP_PDU::SetRoute(const PStringList & set)
+PBoolean SIP_PDU::SetRoute(const PStringList & set)
 {
   PStringList routeSet = set;
 
   if (routeSet.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   SIPURL firstRoute = routeSet[0];
   if (!firstRoute.GetParamVars().Contains("lr")) {
@@ -1417,7 +1417,7 @@ BOOL SIP_PDU::SetRoute(const PStringList & set)
   }
 
   mime.SetRoute(routeSet);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1548,7 +1548,7 @@ void SIP_PDU::PrintOn(ostream & strm) const
 }
 
 
-BOOL SIP_PDU::Read(OpalTransport & transport)
+PBoolean SIP_PDU::Read(OpalTransport & transport)
 {
   // Do this to force a Read() by the PChannelBuffer outside of the
   // ios::lock() mutex which would prevent simultaneous reads and writes.
@@ -1562,7 +1562,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   if (!transport.IsOpen()) {
     PTRACE(1, "SIP\tAttempt to read PDU from closed tansport " << transport);
-    return FALSE;
+    return PFalse;
   }
 
   // get the message from transport into cmd and parse MIME
@@ -1576,12 +1576,12 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   if (transport.bad()) {
     PTRACE_IF(1, transport.GetErrorCode(PChannel::LastReadError) != PChannel::NoError,
               "SIP\tPDU Read failed: " << transport.GetErrorText(PChannel::LastReadError));
-    return FALSE;
+    return PFalse;
   }
 
   if (cmd.IsEmpty()) {
     PTRACE(2, "SIP\tNo Request-Line or Status-Line received on " << transport);
-    return FALSE;
+    return PFalse;
   }
 
   if (cmd.Left(4) *= "SIP/") {
@@ -1589,7 +1589,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     PINDEX space = cmd.Find(' ');
     if (space == P_MAX_INDEX) {
       PTRACE(2, "SIP\tBad Status-Line received on " << transport);
-      return FALSE;
+      return PFalse;
     }
 
     versionMajor = cmd.Mid(4).AsUnsigned();
@@ -1600,10 +1600,10 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   }
   else {
     // parse the method, URI and version
-    PStringArray cmds = cmd.Tokenise( ' ', FALSE);
+    PStringArray cmds = cmd.Tokenise( ' ', PFalse);
     if (cmds.GetSize() < 3) {
       PTRACE(2, "SIP\tBad Request-Line received on " << transport);
-      return FALSE;
+      return PFalse;
     }
 
     int i = 0;
@@ -1611,7 +1611,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
       i++;
       if (i >= NumMethods) {
         PTRACE(2, "SIP\tUnknown method name " << cmds[0] << " received on " << transport);
-        return FALSE;
+        return PFalse;
       }
     }
     method = (Methods)i;
@@ -1624,7 +1624,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
 
   if (versionMajor < 2) {
     PTRACE(2, "SIP\tInvalid version received on " << transport);
-    return FALSE;
+    return PFalse;
   }
 
   // get the SDP content body
@@ -1636,11 +1636,11 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   // assume entity bodies can't be longer than a UDP packet
   if (contentLength > 1500) {
     PTRACE(2, "SIP\tImplausibly long Content-Length " << contentLength << " received on " << transport);
-    return FALSE;
+    return PFalse;
   }
   else if (contentLength < 0) {
     PTRACE(2, "SIP\tImpossible negative Content-Length on " << transport);
-    return FALSE;
+    return PFalse;
   }
 
   if (contentLength > 0)
@@ -1680,7 +1680,7 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
 #endif
 
-  BOOL removeSDP = TRUE;
+  PBoolean removeSDP = PTrue;
 
   // 'application/' is case sensitive, 'sdp' is not
   PString ContentType = mime.GetContentType();
@@ -1694,15 +1694,15 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     sdp = NULL;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
+PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remoteAddress)
 {
   if (!transport.IsOpen()) {
     PTRACE(1, "SIP\tAttempt to write PDU to closed tansport " << transport);
-    return FALSE;
+    return PFalse;
   }
 
   if (!remoteAddress.IsEmpty() && !transport.GetRemoteAddress().IsEquivalent(remoteAddress)) {
@@ -1730,10 +1730,10 @@ BOOL SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & remo
 #endif
 
   if (transport.WriteString(str))
-    return TRUE;
+    return PTrue;
 
   PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1819,13 +1819,13 @@ SIPTransaction::~SIPTransaction()
 }
 
 
-BOOL SIPTransaction::Start()
+PBoolean SIPTransaction::Start()
 {
   endpoint.AddTransaction(this);
 
   if (state != NotStarted) {
     PAssertAlways(PLogicError);
-    return FALSE;
+    return PFalse;
   }
 
   if (connection != NULL)
@@ -1847,15 +1847,15 @@ BOOL SIPTransaction::Start()
   if (connection != NULL) {
     // Use the connection transport to send the request
     if (connection->SendPDU(*this, GetSendAddress(routeSet)))
-      return TRUE;
+      return PTrue;
   }
   else {
     if (Write(transport, GetSendAddress(routeSet)))
-      return TRUE;
+      return PTrue;
   }
 
   SetTerminated(Terminated_TransportError);
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1871,13 +1871,13 @@ void SIPTransaction::WaitForCompletion()
 }
 
 
-BOOL SIPTransaction::Cancel()
+PBoolean SIPTransaction::Cancel()
 {
   PSafeLockReadWrite lock(*this);
 
   if (state == NotStarted || state >= Cancelling) {
     PTRACE(3, "SIP\tTransaction " << mime.GetCSeq() << " cannot be cancelled.");
-    return FALSE;
+    return PFalse;
   }
 
   completionTimer = endpoint.GetPduCleanUpTimeout();
@@ -1894,7 +1894,7 @@ void SIPTransaction::Abort()
 }
 
 
-BOOL SIPTransaction::ResendCANCEL()
+PBoolean SIPTransaction::ResendCANCEL()
 {
   SIP_PDU cancel(Method_CANCEL,
                  uri,
@@ -1909,7 +1909,7 @@ BOOL SIPTransaction::ResendCANCEL()
 
   if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
     SetTerminated(Terminated_TransportError);
-    return FALSE;
+    return PFalse;
   }
 
   if (state < Cancelling) {
@@ -1918,11 +1918,11 @@ BOOL SIPTransaction::ResendCANCEL()
     retryTimer = retryTimeoutMin;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
+PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
 {
   // Stop the timers outside of the mutex to avoid deadlock
   retryTimer.Stop();
@@ -1937,20 +1937,20 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       SetTerminated(Terminated_Cancelled);
       UnlockReadWrite();
     }
-    return FALSE;
+    return PFalse;
   }
 
   // Something wrong here, response is not for the request we made!
   if (cseq.Find(MethodNames[method]) == P_MAX_INDEX) {
     PTRACE(2, "SIP\tTransaction " << cseq << " response not for " << *this);
-    return FALSE;
+    return PFalse;
   }
 
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
-    return FALSE;
+    return PFalse;
 
-  BOOL notCompletedFlag = state < Completed;
+  PBoolean notCompletedFlag = state < Completed;
 
   /* Really need to check if response is actually meant for us. Have a
      temporary cheat in assuming that we are only sending a given CSeq to one
@@ -1987,13 +1987,13 @@ BOOL SIPTransaction::OnReceivedResponse(SIP_PDU & response)
       return OnCompleted(response);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
+PBoolean SIPTransaction::OnCompleted(SIP_PDU & /*response*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -2131,16 +2131,16 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsi
   connection.BuildSDP(sdp, rtpSessions, rtpSessionId);
 }
 
-BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
+PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
   States originalState = state;
 
   if (!SIPTransaction::OnReceivedResponse(response))
-    return FALSE;
+    return PFalse;
 
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
-    return FALSE;
+    return PFalse;
 
   if (response.GetStatusCode()/100 == 1)
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
@@ -2153,7 +2153,7 @@ BOOL SIPInvite::OnReceivedResponse(SIP_PDU & response)
   if (response.GetStatusCode() == Failure_RequestTerminated)
     SetTerminated(Terminated_Success);
 
-  return TRUE;
+  return PTrue;
 }
 
 

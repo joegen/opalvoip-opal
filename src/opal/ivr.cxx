@@ -72,7 +72,7 @@ OpalIVREndPoint::~OpalIVREndPoint()
 }
 
 
-BOOL OpalIVREndPoint::MakeConnection(OpalCall & call,
+PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
                                      const PString & remoteParty,
                                      void * userData,
                                unsigned int /*options*/,
@@ -134,9 +134,9 @@ void OpalIVREndPoint::SetDefaultMediaFormats(const OpalMediaFormatList & formats
   inUseFlag.Signal();
 }
 
-BOOL OpalIVREndPoint::StartVXML()
+PBoolean OpalIVREndPoint::StartVXML()
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -173,23 +173,23 @@ OpalIVRConnection::~OpalIVRConnection()
 }
 
 
-BOOL OpalIVRConnection::SetUpConnection()
+PBoolean OpalIVRConnection::SetUpConnection()
 {
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
     if (!OnIncomingConnection(0, NULL)) {
       Release(EndedByCallerAbort);
-      return FALSE;
+      return PFalse;
     }
 
     PTRACE(3, "IVR\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
     if (!ownerCall.OnSetUp(*this)) {
       Release(EndedByNoAccept);
-      return FALSE;
+      return PFalse;
     }
 
-    return TRUE;
+    return PTrue;
   }
 
   remotePartyName = ownerCall.GetOtherPartyConnection(*this)->GetRemotePartyName();
@@ -201,7 +201,7 @@ BOOL OpalIVRConnection::SetUpConnection()
   //if (!StartVXML()) {
   //  PTRACE(1, "IVR\tVXML session not loaded, aborting.");
   //  Release(EndedByLocalUser);
-  //  return FALSE;
+  //  return PFalse;
   //}
 
   phase = AlertingPhase;
@@ -210,7 +210,7 @@ BOOL OpalIVRConnection::SetUpConnection()
   phase = ConnectedPhase;
   OnConnected();
 
-  return TRUE;
+  return PTrue;
 }
 
 void OpalIVRConnection::OnEstablished()
@@ -220,7 +220,7 @@ void OpalIVRConnection::OnEstablished()
 }
 
 
-BOOL OpalIVRConnection::StartVXML()
+PBoolean OpalIVRConnection::StartVXML()
 {
   PStringToString & vars = vxmlSession.GetSessionVars();
 
@@ -252,7 +252,7 @@ BOOL OpalIVRConnection::StartVXML()
   PString voice;
 
   PINDEX i;
-  PStringArray tokens = vxmlToLoad.Tokenise(';', FALSE);
+  PStringArray tokens = vxmlToLoad.Tokenise(';', PFalse);
   for (i = 0; i < tokens.GetSize(); ++i) {
     PString str(tokens[i]);
 
@@ -313,50 +313,50 @@ BOOL OpalIVRConnection::StartVXML()
 
   vxmlSession.PlayStop();
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalIVRConnection::SetAlerting(const PString & calleeName, BOOL)
+PBoolean OpalIVRConnection::SetAlerting(const PString & calleeName, PBoolean)
 {
   PTRACE(3, "IVR\tSetAlerting(" << calleeName << ')');
 
   if (!LockReadWrite())
-    return FALSE;
+    return PFalse;
 
   phase = AlertingPhase;
   remotePartyName = calleeName;
   UnlockReadWrite();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalIVRConnection::SetConnected()
+PBoolean OpalIVRConnection::SetConnected()
 {
   PTRACE(3, "IVR\tSetConnected()");
 
   {
     PSafeLockReadWrite safeLock(*this);
     if (!safeLock.IsLocked())
-      return FALSE;
+      return PFalse;
 
     phase = ConnectedPhase;
 
     if (!StartVXML()) {
       PTRACE(1, "IVR\tVXML session not loaded, aborting.");
       Release(EndedByLocalUser);
-      return FALSE;
+      return PFalse;
     }
 
     if (mediaStreams.IsEmpty())
-      return TRUE;
+      return PTrue;
 
     phase = EstablishedPhase;
   }
 
   OnEstablished();
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -368,20 +368,20 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 
 OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                        unsigned sessionID,
-                                                       BOOL isSource)
+                                                       PBoolean isSource)
 {
   return new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, vxmlSession);
 }
 
 
-BOOL OpalIVRConnection::SendUserInputString(const PString & value)
+PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
 {
   PTRACE(3, "IVR\tSendUserInputString(" << value << ')');
 
   for (PINDEX i = 0; i < value.GetLength(); i++)
     vxmlSession.OnUserInput(value[i]);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -390,7 +390,7 @@ BOOL OpalIVRConnection::SendUserInputString(const PString & value)
 OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & _conn,
                                        const OpalMediaFormat & mediaFormat,
                                        unsigned sessionID,
-                                       BOOL isSourceStream,
+                                       PBoolean isSourceStream,
                                        PVXMLSession & vxml)
   : OpalRawMediaStream(_conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
     conn(_conn), vxmlSession(vxml)
@@ -399,11 +399,11 @@ OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & _conn,
 }
 
 
-BOOL OpalIVRMediaStream::Open()
+PBoolean OpalIVRMediaStream::Open()
 {
   PTRACE(3, "IVR\tOpen");
   if (isOpen)
-    return TRUE;
+    return PTrue;
 
   if (vxmlSession.IsOpen()) {
     PVXMLChannel * vxmlChannel = vxmlSession.GetAndLockVXMLChannel();
@@ -411,7 +411,7 @@ BOOL OpalIVRMediaStream::Open()
     
     if (vxmlChannel == NULL) {
       PTRACE(1, "IVR\tVXML engine not really open");
-      return FALSE;
+      return PFalse;
     }
 
     vxmlChannelMediaFormat = vxmlChannel->GetMediaFormat();
@@ -419,7 +419,7 @@ BOOL OpalIVRMediaStream::Open()
     
     if (mediaFormat.GetName() != vxmlChannelMediaFormat) {
       PTRACE(1, "IVR\tCannot use VXML engine: asymmetrical media formats: " << mediaFormat << " <-> " << vxmlChannelMediaFormat);
-      return FALSE;
+      return PFalse;
     }
 
     return OpalMediaStream::Open();
@@ -429,12 +429,12 @@ BOOL OpalIVRMediaStream::Open()
     return OpalMediaStream::Open();
 
   PTRACE(1, "IVR\tCannot open VXML engine: incompatible media format");
-  return FALSE;
+  return PFalse;
 }
 
-BOOL OpalIVRMediaStream::ReadPacket(RTP_DataFrame & packet)
+PBoolean OpalIVRMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  BOOL stat = OpalRawMediaStream::ReadPacket(packet);
+  PBoolean stat = OpalRawMediaStream::ReadPacket(packet);
 
   if (!stat)
     conn.Release();
@@ -443,9 +443,9 @@ BOOL OpalIVRMediaStream::ReadPacket(RTP_DataFrame & packet)
 }
 
 
-BOOL OpalIVRMediaStream::IsSynchronous() const
+PBoolean OpalIVRMediaStream::IsSynchronous() const
 {
-  return FALSE;
+  return PFalse;
 }
 
 
