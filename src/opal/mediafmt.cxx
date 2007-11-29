@@ -98,7 +98,7 @@ const OpalMediaFormat & GetOpalRFC2833()
     0,
     (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
     "telephone-event",
-    TRUE,   // Needs jitter
+    true,   // Needs jitter
     32*(1000/50), // bits/sec  (32 bits every 50ms)
     4,      // bytes/frame
     150*8,  // 150 millisecond
@@ -114,7 +114,7 @@ const OpalMediaFormat & GetOpalCiscoNSE()
     0,
     (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
     "NSE",
-    TRUE,   // Needs jitter
+    true,   // Needs jitter
     32*(1000/50), // bits/sec  (32 bits every 50ms)
     4,      // bytes/frame
     150*8,  // 150 millisecond
@@ -173,7 +173,7 @@ OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType mer
   , m_readOnly(readOnly)
   , m_merge(merge)
 {
-  m_name.Replace("=", "_", TRUE);
+  m_name.Replace("=", "_", true);
   memset(&m_H245Generic, 0, sizeof(m_H245Generic));
 }
 
@@ -572,7 +572,7 @@ OpalMediaFormat::OpalMediaFormat(const char * fullName,
                                  unsigned dsid,
                                  RTP_DataFrame::PayloadTypes pt,
                                  const char * en,
-                                 BOOL     nj,
+                                 PBoolean     nj,
                                  unsigned bw,
                                  PINDEX   fs,
                                  unsigned ft,
@@ -733,7 +733,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
                                                  unsigned dsid,
                                                  RTP_DataFrame::PayloadTypes pt,
                                                  const char * en,
-                                                 BOOL     nj,
+                                                 PBoolean     nj,
                                                  unsigned bw,
                                                  PINDEX   fs,
                                                  unsigned ft,
@@ -1038,7 +1038,7 @@ bool OpalMediaFormatInternal::SetOptionOctets(const PString & name, const BYTE *
 }
 
 
-bool OpalMediaFormatInternal::AddOption(OpalMediaOption * option, BOOL overwrite)
+bool OpalMediaFormatInternal::AddOption(OpalMediaOption * option, PBoolean overwrite)
 {
   PWaitAndSignal m(media_format_mutex);
   if (PAssertNULL(option) == NULL)
@@ -1085,7 +1085,7 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
   if (protocol *= "sip")
     return rtpEncodingName != NULL;
 
-  return TRUE;
+  return true;
 }
 
 
@@ -1172,7 +1172,7 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                             OpalMediaFormat::DefaultAudioSessionID,
                             rtpPayloadType,
                             encodingName,
-                            TRUE,
+                            true,
                             8*frameSize*OpalAudioFormat::AudioClockRate/frameTime,  // bits per second = 8*frameSize * framesPerSecond
                             frameSize,
                             frameTime,
@@ -1250,7 +1250,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                             OpalMediaFormat::DefaultVideoSessionID,
                             rtpPayloadType,
                             encodingName,
-                            FALSE,
+                            PFalse,
                             bitRate,
                             0,
                             OpalMediaFormat::VideoClockRate/frameRate,
@@ -1386,7 +1386,7 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
 }
 
 
-static BOOL WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
+static bool WildcardMatch(const PCaselessString & str, const PStringArray & wildcards)
 {
   if (wildcards.GetSize() == 1)
     return str == wildcards[0];
@@ -1402,27 +1402,27 @@ static BOOL WildcardMatch(const PCaselessString & str, const PStringArray & wild
     else {
       next = str.Find(wildcard, last);
       if (next == P_MAX_INDEX)
-        return FALSE;
+        return false;
     }
 
     // Check for having * at beginning of search string
     if (i == 0 && next != 0 && !wildcard)
-      return FALSE;
+      return false;
 
     last = next + wildcard.GetLength();
 
     // Check for having * at end of search string
     if (i == wildcards.GetSize()-1 && !wildcard && last != str.GetLength())
-      return FALSE;
+      return false;
   }
 
-  return TRUE;
+  return true;
 }
 
 
 PINDEX OpalMediaFormatList::FindFormat(const PString & search, PINDEX pos) const
 {
-  PStringArray wildcards = search.Tokenise('*', TRUE);
+  PStringArray wildcards = search.Tokenise('*', true);
   PINDEX idx;
   for (idx = pos; idx < GetSize(); idx++) {
     if (WildcardMatch((*this)[idx].m_info->formatName, wildcards))
@@ -1438,7 +1438,7 @@ void OpalMediaFormatList::Reorder(const PStringArray & order)
   DisallowDeleteObjects();
   PINDEX nextPos = 0;
   for (PINDEX i = 0; i < order.GetSize(); i++) {
-    PStringArray wildcards = order[i].Tokenise('*', TRUE);
+    PStringArray wildcards = order[i].Tokenise('*', true);
 
     PINDEX findPos = 0;
     while (findPos < GetSize()) {

@@ -66,9 +66,9 @@ public:
 									  unsigned sesionID,
 									  const H245_H2250LogicalChannelParameters * param) const;
 	
-  virtual BOOL OnSendingPDU(H245_DataApplicationCapability & pdu) const;
-  virtual BOOL OnSendingPDU(H245_DataMode & pdu) const;
-  virtual BOOL OnReceivedPDU(const H245_DataApplicationCapability & pdu);
+  virtual PBoolean OnSendingPDU(H245_DataApplicationCapability & pdu) const;
+  virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
+  virtual PBoolean OnReceivedPDU(const H245_DataApplicationCapability & pdu);
 	
 };
 
@@ -87,35 +87,35 @@ public:
   ~H323_H224Channel();
 	
   virtual H323Channel::Directions GetDirection() const;
-  virtual BOOL SetInitialBandwidth();
+  virtual PBoolean SetInitialBandwidth();
 		
-  virtual BOOL Open();
-  virtual BOOL Start();
+  virtual PBoolean Open();
+  virtual PBoolean Start();
   virtual void Close();
 	
-  virtual BOOL OnSendingPDU(H245_OpenLogicalChannel & openPDU) const;
+  virtual PBoolean OnSendingPDU(H245_OpenLogicalChannel & openPDU) const;
   virtual void OnSendOpenAck(const H245_OpenLogicalChannel & openPDU, 
 							 H245_OpenLogicalChannelAck & ack) const;
-  virtual BOOL OnReceivedPDU(const H245_OpenLogicalChannel & pdu, unsigned & errorCode);
-  virtual BOOL OnReceivedAckPDU(const H245_OpenLogicalChannelAck & pdu);
+  virtual PBoolean OnReceivedPDU(const H245_OpenLogicalChannel & pdu, unsigned & errorCode);
+  virtual PBoolean OnReceivedAckPDU(const H245_OpenLogicalChannelAck & pdu);
 	
-  virtual BOOL OnSendingPDU(H245_H2250LogicalChannelParameters & param) const;
+  virtual PBoolean OnSendingPDU(H245_H2250LogicalChannelParameters & param) const;
   virtual void OnSendOpenAck(H245_H2250LogicalChannelAckParameters & param) const;
-  virtual BOOL OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
+  virtual PBoolean OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
 							 unsigned & errorCode);
-  virtual BOOL OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param);
+  virtual PBoolean OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param);
 	
-  virtual BOOL SetDynamicRTPPayloadType(int newType);
+  virtual PBoolean SetDynamicRTPPayloadType(int newType);
   RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
 	
-  virtual OpalMediaStream * GetMediaStream(BOOL deleted = FALSE) const;
+  virtual OpalMediaStream * GetMediaStream(PBoolean deleted = PFalse) const;
 	
   OpalH224Handler * GetHandler() const { return h224Handler; }
 	
 protected:
 		
-  virtual BOOL ExtractTransport(const H245_TransportAddress & pdu,
-								BOOL isDataPort,
+  virtual PBoolean ExtractTransport(const H245_TransportAddress & pdu,
+								PBoolean isDataPort,
 								unsigned & errorCode);
 	
   unsigned sessionID;

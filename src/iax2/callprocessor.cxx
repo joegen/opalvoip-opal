@@ -73,23 +73,23 @@ IAX2CallProcessor::IAX2CallProcessor(IAX2EndPoint &ep)
   
   selectedCodec = 0;
   
-  audioCanFlow = FALSE;
-  audioFramesNotStarted = TRUE;
+  audioCanFlow = PFalse;
+  audioFramesNotStarted = PTrue;
 
   con = NULL;
 
-  firstMediaFrame = TRUE;
-  answerCallNow = FALSE;
+  firstMediaFrame = PTrue;
+  answerCallNow = PFalse;
   audioFrameDuration = 0;
   audioCompressedBytes = 0;
   
-  holdCall = FALSE;
-  holdReleaseCall = FALSE;
+  holdCall = PFalse;
+  holdReleaseCall = PFalse;
   
-  doTransfer = FALSE;
+  doTransfer = PFalse;
   
   statusCheckTimer.SetNotifier(PCREATE_NOTIFIER(OnStatusCheck));
-  statusCheckOtherEnd = FALSE;
+  statusCheckOtherEnd = PFalse;
   
   soundBufferState = BufferToSmall;
   callStartTick = PTimer::Tick();
@@ -426,18 +426,18 @@ void IAX2CallProcessor::SendSoundMessage(PBYTEArray *sound)
   DWORD lastTimeStamp = currentSoundTimeStamp;
   DWORD thisTimeStamp = currentSoundTimeStamp + audioFrameDuration;
 
-  BOOL sendFullFrame =  (((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
+  PBoolean sendFullFrame =  (((thisTimeStamp & 0xffff) < (lastTimeStamp & 0xffff))
 			 || audioFramesNotStarted);
 
   currentSoundTimeStamp = thisTimeStamp;
 
   if (sendFullFrame) {
-    audioFramesNotStarted = FALSE;
+    audioFramesNotStarted = PFalse;
     IAX2FullFrameVoice *f = new IAX2FullFrameVoice(this, *sound, thisTimeStamp);
     PTRACE(5, "Send a full audio frame" << thisTimeStamp << " On " << f->IdString());
     TransmitFrameToRemoteEndpoint(f);
   } else {
-    IAX2MiniFrame *f = new IAX2MiniFrame(this, *sound, TRUE, thisTimeStamp & 0xffff);
+    IAX2MiniFrame *f = new IAX2MiniFrame(this, *sound, PTrue, thisTimeStamp & 0xffff);
     TransmitFrameToRemoteEndpoint(f);
   }
   
@@ -460,12 +460,12 @@ void IAX2CallProcessor::SendText(const PString & text)
 
 void IAX2CallProcessor::SendHold()
 {
-  holdCall = TRUE;
+  holdCall = PTrue;
 }
 
 void IAX2CallProcessor::SendHoldRelease()
 {
-  holdReleaseCall = TRUE;
+  holdReleaseCall = PTrue;
 }
 
 void IAX2CallProcessor::SendTransfer(
@@ -474,7 +474,7 @@ void IAX2CallProcessor::SendTransfer(
 {
   {
     PWaitAndSignal m(transferMutex);
-    doTransfer = TRUE;
+    doTransfer = PTrue;
     transferCalledNumber = calledNumber;
     transferCalledContext = calledContext;
   }
@@ -500,7 +500,7 @@ void IAX2CallProcessor::SendTransferMessage()
       f->AppendIe(new IAX2IeCalledContext(transferCalledContext));
     TransmitFrameToRemoteEndpoint(f);
     
-    doTransfer = FALSE;
+    doTransfer = PFalse;
   }
 }
 
@@ -513,7 +513,7 @@ void IAX2CallProcessor::SendTextMessage(PString & message)
 
 void IAX2CallProcessor::SendQuelchMessage()
 {
-  holdCall = FALSE;
+  holdCall = PFalse;
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdQuelch);
   //we'll request that music is played to them because everyone likes music when they're on hold ;)
@@ -523,7 +523,7 @@ void IAX2CallProcessor::SendQuelchMessage()
 
 void IAX2CallProcessor::SendUnQuelchMessage()
 {
-  holdReleaseCall = FALSE;
+  holdReleaseCall = PFalse;
   
   IAX2FullFrameProtocol *f = new IAX2FullFrameProtocol(this, IAX2FullFrameProtocol::cmdUnquelch); 
   TransmitFrameToRemoteEndpoint(f);
@@ -583,7 +583,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameVoice * src)
 {
   if (firstMediaFrame) {
     PTRACE(5, "Processor\tReceived first voice media frame " << src->IdString());
-    firstMediaFrame = FALSE;
+    firstMediaFrame = PFalse;
   }
   PTRACE(5, "ProcessNetworkFrame(IAX2FullFrameVoice * src)" << src->IdString());
   SendAckFrame(src);
@@ -596,7 +596,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameVideo * src)
 {
   if (firstMediaFrame) {
     PTRACE(5, "Processor\tReceived first video media frame ");
-    firstMediaFrame = FALSE;
+    firstMediaFrame = PFalse;
   }
 
   PTRACE(5, "ProcessNetworkFrame(IAX2FullFrameVideo * src)");
@@ -615,7 +615,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
   
   switch(src->GetSubClass()) {
   case IAX2FullFrameSessionControl::hangup:          // Other end has hungup
-    SetCallTerminating(TRUE);
+    SetCallTerminating(PTrue);
     cout << "Other end has hungup, so exit" << endl;
     con->EndCallNow();
     break;
@@ -689,7 +689,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameSessionControl * src)
   return;
 }
 
-BOOL IAX2CallProcessor::SetUpConnection()
+PBoolean IAX2CallProcessor::SetUpConnection()
 {
   PTRACE(3, "IAX2\tSet Up Connection to remote node " 
 	 << con->GetRemotePartyName() << " " 
@@ -698,7 +698,7 @@ BOOL IAX2CallProcessor::SetUpConnection()
   callList.AppendString(con->GetRemotePartyAddress());
   
   CleanPendingLists();
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameNull * src)
@@ -708,7 +708,7 @@ void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameNull * src)
   return;
 }
 
-BOOL IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
+PBoolean IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
 { /* these frames are labelled as AST_FRAME_IAX in the asterisk souces.
      These frames contain Information Elements in the data field.*/  
   PTRACE(4, "ProcessNetworkFrame " << *src);
@@ -719,7 +719,7 @@ BOOL IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
   
   //check if the common method can process it?
   if (IAX2Processor::ProcessNetworkFrame(src)) {
-    return TRUE;
+    return PTrue;
   }
 
   switch(src->GetSubClass()) {
@@ -806,7 +806,7 @@ BOOL IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameProtocol * src)
     SendUnsupportedFrame(src);   //This method will delete the frame src.
   };
   
-  return FALSE;
+  return PFalse;
 }
 
 void IAX2CallProcessor::ProcessNetworkFrame(IAX2FullFrameText * src)
@@ -850,7 +850,7 @@ void IAX2CallProcessor::CheckForRemoteCapabilities(IAX2FullFrameProtocol *src)
   con->BuildRemoteCapabilityTable(remoteCapability, format);
 }
 
-BOOL IAX2CallProcessor::RemoteSelectedCodecOk()
+PBoolean IAX2CallProcessor::RemoteSelectedCodecOk()
 {
   selectedCodec = con->ChooseCodec();
   
@@ -861,10 +861,10 @@ BOOL IAX2CallProcessor::RemoteSelectedCodecOk()
     reply->AppendIe(new IAX2IeCauseCode(IAX2IeCauseCode::BearerCapabilityNotAvail));
     TransmitFrameToRemoteEndpoint(reply);
     con->ClearCall(OpalConnection::EndedByCapabilityExchange);
-    return FALSE;
+    return PFalse;
   }
   
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
@@ -905,7 +905,7 @@ void IAX2CallProcessor::ProcessIaxCmdNew(IAX2FullFrameProtocol *src)
   con->OnSetUp();   //ONLY the  callee (person receiving call) does ownerCall.OnSetUp();
 
   PString calleeName = con->GetRemotePartyName();
-  con->SetAlerting(calleeName, TRUE);
+  con->SetAlerting(calleeName, PTrue);
 
 
   con->GetEndPoint().GetCodecLengths(selectedCodec, audioCompressedBytes, audioFrameDuration);
@@ -974,7 +974,7 @@ void IAX2CallProcessor::AcceptIncomingCall()
 
 }
 
-void IAX2CallProcessor::SetEstablished(BOOL PTRACE_PARAM(originator))
+void IAX2CallProcessor::SetEstablished(PBoolean PTRACE_PARAM(originator))
 {
   PTRACE(4, "Processor\tStatusCheck timer set to 10 seconds");
   StartStatusCheckTimer();
@@ -985,7 +985,7 @@ void IAX2CallProcessor::SetEstablished(BOOL PTRACE_PARAM(originator))
 
 void IAX2CallProcessor::SendAnswerMessageToRemoteNode()
 {
-  answerCallNow = FALSE;
+  answerCallNow = PFalse;
   PTRACE(4, "Processor\tSend Answer message");
   IAX2FullFrameSessionControl * reply;
   reply = new IAX2FullFrameSessionControl(this, IAX2FullFrameSessionControl::answer);
@@ -996,20 +996,20 @@ void IAX2CallProcessor::SetConnected()
 {
   PTRACE(4, "SetConnected");
 
-  answerCallNow = TRUE;
+  answerCallNow = PTrue;
   CleanPendingLists();
 }  
 
-BOOL IAX2CallProcessor::SetAlerting(const PString & PTRACE_PARAM(calleeName), BOOL /*withMedia*/)
+PBoolean IAX2CallProcessor::SetAlerting(const PString & PTRACE_PARAM(calleeName), PBoolean /*withMedia*/)
 {
   PTRACE(3, "Processor\tSetAlerting from " << calleeName);
-  return TRUE;
+  return PTrue;
 }
 
 /*The remote node has told us to hangup and go away */
 void IAX2CallProcessor::ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)
 { 
-  SetCallTerminating(TRUE);
+  SetCallTerminating(PTrue);
 
   PTRACE(3, "ProcessIaxCmdHangup(IAX2FullFrameProtocol *src)");
   SendAckFrame(src);
@@ -1219,7 +1219,7 @@ void IAX2CallProcessor::StartStatusCheckTimer(PINDEX msToWait)
   PTRACE(3, "Processor\tStatusCheck time. Now set flag to  send a ping and a lagrq packet");
 
   statusCheckTimer = PTimeInterval(msToWait); 
-  statusCheckOtherEnd = TRUE;
+  statusCheckOtherEnd = PTrue;
   CleanPendingLists();
 }
 
@@ -1237,7 +1237,7 @@ void IAX2CallProcessor::RemoteNodeIsRinging()
 
 void IAX2CallProcessor::DoStatusCheck()
 {
-  statusCheckOtherEnd = FALSE;
+  statusCheckOtherEnd = PFalse;
   if (IsCallTerminating())
     return;
 

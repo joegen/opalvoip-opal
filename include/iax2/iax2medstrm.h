@@ -62,7 +62,7 @@ class OpalIAX2MediaStream : public OpalMediaStream
 		   IAX2Connection &con,                 /*!< IAX connection to read/send incoming packets */
 		   const OpalMediaFormat & mediaFormat, /*!< Media format for stream */
 		   unsigned sessionID,                  /*!< Session number for stream */
-		   BOOL isSource                        /*!< Is a source stream */
+		   PBoolean isSource                        /*!< Is a source stream */
 		   );
   //@}
  
@@ -73,34 +73,34 @@ class OpalIAX2MediaStream : public OpalMediaStream
  
  
       */
-    virtual BOOL Open();
+    virtual PBoolean Open();
  
     /**Start the media stream.
        
     The default behaviour calls Resume() on the associated
     OpalMediaPatch thread if it was suspended.
     */
-    virtual BOOL Start();
+    virtual PBoolean Start();
 
     /**Close the media stream.
  
        The default does nothing.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
  
     /**
        Goes to the IAX2Connection class, and removes a packet from the connection. The connection class turned the media 
        packet into a RTP_DataFrame class, and jitter buffered it.
 
-    @return TRUE on successful read of a packet, FALSE on faulty read.*/
-    virtual BOOL ReadPacket(
+    @return PTrue on successful read of a packet, PFalse on faulty read.*/
+    virtual PBoolean ReadPacket(
       RTP_DataFrame & packet ///< Data buffer to read to
     );
 
    /**Write raw media data to the sink media stream.
        The default behaviour writes to the OpalLine object.
       */
-    virtual BOOL WriteData(
+    virtual PBoolean WriteData(
       const BYTE * data,   ///< Data to write
       PINDEX length,       ///< Length of data to write.
       PINDEX & written     ///<Length of data actually written
@@ -110,7 +110,7 @@ class OpalIAX2MediaStream : public OpalMediaStream
        A synchronous stream is one that is regular, such as the sound frames
        from a sound card.
       */
-    virtual BOOL IsSynchronous() const;
+    virtual PBoolean IsSynchronous() const;
   //@}
 
   protected:

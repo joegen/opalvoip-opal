@@ -102,7 +102,7 @@ class H323_T120Capability : public H323DataCapability
        The default behaviour sets the pdu and calls OnSendingPDU with a
        H245_DataProtocolCapability parameter.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_DataApplicationCapability & pdu
     ) const;
 
@@ -114,7 +114,7 @@ class H323_T120Capability : public H323DataCapability
        The default behaviour sets the pdu and calls OnSendingPDU with a
        H245_DataProtocolCapability parameter.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_DataMode & pdu  ///<  PDU to set information on
     ) const;
 
@@ -124,7 +124,7 @@ class H323_T120Capability : public H323DataCapability
 
        The default behaviour sets separate LAN stack.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_DataProtocolCapability & pdu  ///<  PDU to set information on
     ) const;
 
@@ -135,7 +135,7 @@ class H323_T120Capability : public H323DataCapability
 
        The default behaviour gets the data rate field from the PDU.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_DataApplicationCapability & pdu  ///<  PDU to set information on
     );
   //@}
@@ -145,16 +145,16 @@ class H323_T120Capability : public H323DataCapability
     /**Get the dynamic port capability.
        Indicates endpoint can use something other than port 1503.
       */
-    BOOL GetDynamicPortCapability() const { return dynamicPortCapability; }
+    PBoolean GetDynamicPortCapability() const { return dynamicPortCapability; }
 
     /**Set the dynamic port capability.
        Indicates endpoint can use something other than port 1503.
       */
-    void SetDynamicPortCapability(BOOL dynamic) { dynamicPortCapability = dynamic; }
+    void SetDynamicPortCapability(PBoolean dynamic) { dynamicPortCapability = dynamic; }
   //@}
 
   protected:
-    BOOL dynamicPortCapability;
+    PBoolean dynamicPortCapability;
 };
 
 
@@ -199,7 +199,7 @@ class H323_T120Channel : public H323DataChannel
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
@@ -218,7 +218,7 @@ class H323_T120Channel : public H323DataChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
       unsigned & errorCode                    ///<  Error code on failure
     );
@@ -230,7 +230,7 @@ class H323_T120Channel : public H323DataChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_OpenLogicalChannelAck & pdu ///<  Acknowledgement PDU
     );
   //@}

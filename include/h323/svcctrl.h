@@ -69,7 +69,7 @@ class H323ServiceControlSession : public PObject
 
        Default behaviour is pure.
       */
-    virtual BOOL IsValid() const = 0;
+    virtual PBoolean IsValid() const = 0;
 
     /**Get identification name for the Control Service.
        This function separates the dynamic data from the fundamental type of
@@ -83,22 +83,22 @@ class H323ServiceControlSession : public PObject
     /**Handle a received PDU.
        Update in the internal state from the received PDU.
 
-       Returns FALSE is PDU is not sutiable for the class type.
+       Returns PFalse is PDU is not sutiable for the class type.
 
        Default behaviour is pure.
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H225_ServiceControlDescriptor & descriptor
     ) = 0;
 
     /**Handle a sent PDU.
        Set the PDU fields from in the internal state.
 
-       Returns FALSE is PDU cannot be created.
+       Returns PFalse is PDU cannot be created.
 
        Default behaviour is pure.
       */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H225_ServiceControlDescriptor & descriptor
     ) const = 0;
 
@@ -149,9 +149,9 @@ class H323HTTPServiceControl : public H323ServiceControlSession
     /**Determine of the session is valid.
        That is has all of the data it needs to correctly encode a PDU.
 
-       Default behaviour returns TRUE if url is not an empty string.
+       Default behaviour returns PTrue if url is not an empty string.
       */
-    virtual BOOL IsValid() const;
+    virtual PBoolean IsValid() const;
 
     /**Get identification name for the Control Service.
        This function separates the dynamic data from the fundamental type of
@@ -167,7 +167,7 @@ class H323HTTPServiceControl : public H323ServiceControlSession
 
        Default behaviour gets the contents for an e_url.
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H225_ServiceControlDescriptor & contents
     );
 
@@ -176,7 +176,7 @@ class H323HTTPServiceControl : public H323ServiceControlSession
 
        Default behaviour sets the contents to an e_url.
       */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H225_ServiceControlDescriptor & contents
     ) const;
 
@@ -224,7 +224,7 @@ class H323H248ServiceControl : public H323ServiceControlSession
        Default behaviour converts to pdu to H248_SignalsDescriptor and calls
        that version of OnReceivedPDU().
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H225_ServiceControlDescriptor & contents
     );
 
@@ -234,7 +234,7 @@ class H323H248ServiceControl : public H323ServiceControlSession
        Default behaviour calls the H248_SignalsDescriptor version of
        OnSendingPDU() and converts that to the contents pdu.
       */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H225_ServiceControlDescriptor & contents
     ) const;
 
@@ -244,7 +244,7 @@ class H323H248ServiceControl : public H323ServiceControlSession
        Default behaviour calls the H248_SignalRequest version of
        OnReceivedPDU() for every element in H248_SignalsDescriptor.
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H248_SignalsDescriptor & descriptor
     );
 
@@ -254,7 +254,7 @@ class H323H248ServiceControl : public H323ServiceControlSession
        Default behaviour calls the H248_SignalRequest version of
        OnSendingPDU() and appends it to the H248_SignalsDescriptor.
       */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H248_SignalsDescriptor & descriptor
     ) const;
 
@@ -263,7 +263,7 @@ class H323H248ServiceControl : public H323ServiceControlSession
 
        Default behaviour is pure.
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H248_SignalRequest & request
     ) = 0;
 
@@ -272,7 +272,7 @@ class H323H248ServiceControl : public H323ServiceControlSession
 
        Default behaviour is pure.
       */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H248_SignalRequest & request
     ) const = 0;
   //@}
@@ -291,7 +291,7 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
      */
     H323CallCreditServiceControl(
       const PString & amount,
-      BOOL mode,
+      PBoolean mode,
       unsigned duration = 0
     );
 
@@ -307,16 +307,16 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
     /**Determine of the session is valid.
        That is has all of the data it needs to correctly encode a PDU.
 
-       Default behaviour returns TRUE if amount or duration is set.
+       Default behaviour returns PTrue if amount or duration is set.
       */
-    virtual BOOL IsValid() const;
+    virtual PBoolean IsValid() const;
 
     /**Handle a received PDU.
        Update in the internal state from the received PDU.
 
        Default behaviour gets the contents for an e_callCreditServiceControl.
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H225_ServiceControlDescriptor & contents
     );
 
@@ -325,7 +325,7 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
 
        Default behaviour sets the contents to an e_callCreditServiceControl.
       */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H225_ServiceControlDescriptor & contents
     ) const;
 
@@ -344,7 +344,7 @@ class H323CallCreditServiceControl : public H323ServiceControlSession
 
   protected:
     PString  amount;
-    BOOL     mode;
+    PBoolean     mode;
     unsigned durationLimit;
 };
 

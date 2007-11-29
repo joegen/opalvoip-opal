@@ -104,9 +104,9 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
   : payloadType(pt)
   , clockRate(0)
   , encodingName(_name)
-  , nteSet(TRUE)
+  , nteSet(PTrue)
 #if OPAL_T38FAX
-  , nseSet(TRUE)
+  , nseSet(PTrue)
 #endif
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
@@ -127,9 +127,9 @@ SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
   , payloadType(pt)
   , clockRate(fmt.GetClockRate())
   , encodingName(fmt.GetEncodingName())
-  , nteSet(TRUE)
+  , nteSet(PTrue)
 #if OPAL_T38FAX
-  , nseSet(TRUE)
+  , nseSet(PTrue)
 #endif
 {
   if (nxeString != NULL) {
@@ -314,7 +314,7 @@ PString SDPMediaFormat::GetNXEString(POrdinalSet & nxeSet) const
 
 void SDPMediaFormat::AddNXEString(POrdinalSet & nxeSet, const PString & str)
 {
-  PStringArray tokens = str.Tokenise(",", FALSE);
+  PStringArray tokens = str.Tokenise(",", PFalse);
   PINDEX i;
   for (i = 0; i < tokens.GetSize(); i++)
     AddNXEToken(nxeSet, tokens[i]);
@@ -376,15 +376,15 @@ void SDPMediaFormat::SetPacketTime(const PString & optionName, unsigned ptime)
 }
 
 
-BOOL SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
+PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
 {
   PIPSocket::Address ip;
   WORD port = 0;
   if (transportAddress.GetIpAndPort(ip, port)) {
     transportAddress = OpalTransportAddress(t, port);
-    return TRUE;
+    return PTrue;
   }
-  return FALSE;
+  return PFalse;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -429,13 +429,13 @@ SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, M
 }
 
 
-BOOL SDPMediaDescription::Decode(const PString & str)
+PBoolean SDPMediaDescription::Decode(const PString & str)
 {
   PStringArray tokens = str.Tokenise(" ");
 
   if (tokens.GetSize() < 4) {
     PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
-    return FALSE;
+    return PFalse;
   }
 
   media = tokens[0];
@@ -471,7 +471,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
 
     if ((transport != SDP_MEDIA_TRANSPORT) && (transport != SDP_MEDIA_TRANSPORT_UDPTL)) {
       PTRACE(2, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
-      return FALSE;
+      return PFalse;
     }
 
     PIPSocket::Address ip;
@@ -488,7 +488,7 @@ BOOL SDPMediaDescription::Decode(const PString & str)
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -852,7 +852,7 @@ SDPSessionDescription::SDPSessionDescription(const OpalTransportAddress & addres
 void SDPSessionDescription::PrintOn(ostream & str) const
 {
   OpalTransportAddress connectionAddress(defaultConnectAddress);
-  BOOL useCommonConnect = TRUE;
+  PBoolean useCommonConnect = PTrue;
 
   // see common connect address is needed
   {
@@ -872,7 +872,7 @@ void SDPSessionDescription::PrintOn(ostream & str) const
       if ((descrMatched > matched))
         connectionAddress = descrAddress;
       else
-        useCommonConnect = FALSE;
+        useCommonConnect = PFalse;
     }
   }
 
@@ -933,7 +933,7 @@ PString SDPSessionDescription::Encode() const
 }
 
 
-BOOL SDPSessionDescription::Decode(const PString & str)
+PBoolean SDPSessionDescription::Decode(const PString & str)
 {
   // break string into lines
   PStringArray lines = str.Lines();
@@ -1058,7 +1058,7 @@ BOOL SDPSessionDescription::Decode(const PString & str)
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 

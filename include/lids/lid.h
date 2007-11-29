@@ -58,17 +58,17 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Open the line interface device.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PString & device      ///<  Device identifier name.
     ) = 0;
 
     /**Determine if the line interface device is open.
       */
-    virtual BOOL IsOpen() const;
+    virtual PBoolean IsOpen() const;
 
     /**Close the line interface device.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
     /**Get the device type identifier.
        This is as is used in the factory registration.
@@ -102,25 +102,25 @@ class OpalLineInterfaceDevice : public PObject
        The alternative is a "network" line, that is one connected to switched
        network eg the standard PSTN.
       */
-    virtual BOOL IsLineTerminal(
+    virtual PBoolean IsLineTerminal(
       unsigned line   ///<  Number of line
     ) = 0;
 
 
     /**Determine if a physical line is present on the logical line.
       */
-    virtual BOOL IsLinePresent(
+    virtual PBoolean IsLinePresent(
       unsigned line,      ///<  Number of line
-      BOOL force = FALSE  ///<  Force test, do not optimise
+      PBoolean force = PFalse  ///<  Force test, do not optimise
     );
 
 
     /**Determine if line is currently off hook.
        This function implies that the state is debounced and that a return
-       value of TRUE indicates that the phone is really off hook. That is
+       value of PTrue indicates that the phone is really off hook. That is
        hook flashes and winks are masked out.
       */
-    virtual BOOL IsLineOffHook(
+    virtual PBoolean IsLineOffHook(
       unsigned line   ///<  Number of line
     ) = 0;
 
@@ -129,34 +129,34 @@ class OpalLineInterfaceDevice : public PObject
        a standard telephone handset. The hook state is determined by external
        hardware and cannot be changed by the software.
       */
-    virtual BOOL SetLineOffHook(
+    virtual PBoolean SetLineOffHook(
       unsigned line,        ///<  Number of line
-      BOOL newState = TRUE  ///<  New state to set
+      PBoolean newState = PTrue  ///<  New state to set
     ) = 0;
 
     /**Set the hook state of the line.
        This is the complement of SetLineOffHook().
       */
-    virtual BOOL SetLineOnHook(
+    virtual PBoolean SetLineOnHook(
       unsigned line        ///<  Number of line
-    ) { return SetLineOffHook(line, FALSE); }
+    ) { return SetLineOffHook(line, PFalse); }
 
     /**Set the hook state off then straight back on again.
        This will only operate if the line is currently off hook.
       */
-    virtual BOOL HookFlash(
+    virtual PBoolean HookFlash(
       unsigned line,              ///<  Number of line
       unsigned flashTime = 200    ///<  Time for hook flash in milliseconds
     );
 
-    /**Return TRUE if a hook flash has been detected
+    /**Return PTrue if a hook flash has been detected
       */
-    virtual BOOL HasHookFlash(unsigned line);
+    virtual PBoolean HasHookFlash(unsigned line);
 
 
     /**Determine if line is ringing.
        This function implies that the state is "debounced" and that a return
-       value of TRUE indicates that the phone is still ringing and it is not
+       value of PTrue indicates that the phone is still ringing and it is not
        simply a pause in the ring cadence.
 
        If cadence is not NULL then it is set with the bit pattern for the
@@ -164,7 +164,7 @@ class OpalLineInterfaceDevice : public PObject
        sequence to return. If it is NULL it can be assumed that the function
        will return quickly.
       */
-    virtual BOOL IsLineRinging(
+    virtual PBoolean IsLineRinging(
       unsigned line,          ///<  Number of line
       DWORD * cadence = NULL  ///<  Cadence of incoming ring
     );
@@ -186,7 +186,7 @@ class OpalLineInterfaceDevice : public PObject
        If the nCadence in non-zero and the pattern parameter is NULL, then
        the standard ring pattern for the selected country is used.
       */
-    virtual BOOL RingLine(
+    virtual PBoolean RingLine(
       unsigned line,                   ///< Number of line
       PINDEX nCadence,                 ///< Number of entries in cadence array
       const unsigned * pattern = NULL, ///< Ring pattern times
@@ -200,23 +200,23 @@ class OpalLineInterfaceDevice : public PObject
 
        For a POTS port this is equivalent to !IsLineOffHook().
       */
-    virtual BOOL IsLineDisconnected(
+    virtual PBoolean IsLineDisconnected(
       unsigned line,   ///<  Number of line
-      BOOL checkForWink = TRUE
+      PBoolean checkForWink = PTrue
     );
 
 
     /**Directly connect the two lines.
       */
-    virtual BOOL SetLineToLineDirect(
+    virtual PBoolean SetLineToLineDirect(
       unsigned line1,   ///<  Number of first line
       unsigned line2,   ///<  Number of second line
-      BOOL connect      ///<  Flag for connect/disconnect
+      PBoolean connect      ///<  Flag for connect/disconnect
     );
 
     /**Determine if the two lines are directly connected.
       */
-    virtual BOOL IsLineToLineDirect(
+    virtual PBoolean IsLineToLineDirect(
       unsigned line1,   ///<  Number of first line
       unsigned line2    ///<  Number of second line
     );
@@ -228,14 +228,14 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Set the media format (codec) for reading on the specified line.
       */
-    virtual BOOL SetReadFormat(
+    virtual PBoolean SetReadFormat(
       unsigned line,    ///<  Number of line
       const OpalMediaFormat & mediaFormat   ///<  Codec type
     ) = 0;
 
     /**Set the media format (codec) for writing on the specified line.
       */
-    virtual BOOL SetWriteFormat(
+    virtual PBoolean SetWriteFormat(
       unsigned line,    ///<  Number of line
       const OpalMediaFormat & mediaFormat   ///<  Codec type
     ) = 0;
@@ -254,13 +254,13 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Stop the read codec.
       */
-    virtual BOOL StopReading(
+    virtual PBoolean StopReading(
       unsigned line   ///<  Number of line
     );
 
     /**Stop the write codec.
       */
-    virtual BOOL StopWriting(
+    virtual PBoolean StopWriting(
       unsigned line   ///<  Number of line
     );
 
@@ -268,7 +268,7 @@ class OpalLineInterfaceDevice : public PObject
        Note that a LID may ignore this value so always use GetReadFrameSize()
        for I/O.
       */
-    virtual BOOL SetReadFrameSize(
+    virtual PBoolean SetReadFrameSize(
       unsigned line,    ///<  Number of line
       PINDEX frameSize  ///<  New frame size
     ) = 0;
@@ -277,7 +277,7 @@ class OpalLineInterfaceDevice : public PObject
        Note that a LID may ignore this value so always use GetReadFrameSize()
        for I/O.
       */
-    virtual BOOL SetWriteFrameSize(
+    virtual PBoolean SetWriteFrameSize(
       unsigned line,    ///<  Number of line
       PINDEX frameSize  ///<  New frame size
     ) = 0;
@@ -298,7 +298,7 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Low level read of a frame from the device.
      */
-    virtual BOOL ReadFrame(
+    virtual PBoolean ReadFrame(
       unsigned line,    ///<  Number of line
       void * buf,       ///<  Pointer to a block of memory to receive data.
       PINDEX & count    ///<  Number of bytes read, <= GetReadFrameSize()
@@ -306,7 +306,7 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Low level write frame to the device.
      */
-    virtual BOOL WriteFrame(
+    virtual PBoolean WriteFrame(
       unsigned line,    ///<  Number of line
       const void * buf, ///<  Pointer to a block of memory to write.
       PINDEX count,     ///<  Number of bytes to write, <= GetWriteFrameSize()
@@ -316,7 +316,7 @@ class OpalLineInterfaceDevice : public PObject
     /**High level read of audio data from the device.
        This version will allow non-integral number of frames to be read.
      */
-    virtual BOOL ReadBlock(
+    virtual PBoolean ReadBlock(
       unsigned line,    ///<  Number of line
       void * buf,   ///<  Pointer to a block of memory to receive the read bytes.
       PINDEX count  ///<  Count of bytes to read.
@@ -324,7 +324,7 @@ class OpalLineInterfaceDevice : public PObject
 
     /**High level write audio data to the device.
      */
-    virtual BOOL WriteBlock(
+    virtual PBoolean WriteBlock(
       unsigned line,    ///<  Number of line
       const void * buf, ///<  Pointer to a block of memory to write.
       PINDEX count      ///<  Count of bytes to write.
@@ -335,26 +335,26 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual unsigned GetAverageSignalLevel(
       unsigned line,  ///<  Number of line
-      BOOL playback   ///<  Get average playback or record level.
+      PBoolean playback   ///<  Get average playback or record level.
     );
 
 
     /**Enable audio for the line.
       */
-    virtual BOOL EnableAudio(
+    virtual PBoolean EnableAudio(
       unsigned line,      ///<  Number of line
-      BOOL enable = TRUE
+      PBoolean enable = PTrue
     );
 
     /**Disable audio for the line.
       */
-    BOOL DisableAudio(
+    PBoolean DisableAudio(
       unsigned line   ///<  Number of line
-    ) { return EnableAudio(line, FALSE); }
+    ) { return EnableAudio(line, PFalse); }
 
     /**Determine if audio for the line is enabled.
       */
-    virtual BOOL IsAudioEnabled(
+    virtual PBoolean IsAudioEnabled(
       unsigned line      ///<  Number of line
     );
 
@@ -367,7 +367,7 @@ class OpalLineInterfaceDevice : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL SetRecordVolume(
+    virtual PBoolean SetRecordVolume(
       unsigned line,    ///<  Number of line
       unsigned volume   ///<  Volume level from 0 to 100%
     );
@@ -376,7 +376,7 @@ class OpalLineInterfaceDevice : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL SetPlayVolume(
+    virtual PBoolean SetPlayVolume(
       unsigned line,    ///<  Number of line
       unsigned volume   ///<  Volume level from 0 to 100%
     );
@@ -385,7 +385,7 @@ class OpalLineInterfaceDevice : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL GetRecordVolume(
+    virtual PBoolean GetRecordVolume(
       unsigned line,      ///<  Number of line
       unsigned & volume   ///<  Volume level from 0 to 100%
     );
@@ -394,7 +394,7 @@ class OpalLineInterfaceDevice : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL GetPlayVolume(
+    virtual PBoolean GetPlayVolume(
       unsigned line,      ///<  Number of line
       unsigned & volume   ///<  Volume level from 0 to 100%
     );
@@ -420,7 +420,7 @@ class OpalLineInterfaceDevice : public PObject
     /**Set acoustic echo cancellation.
        Note, not all devices may support this function.
       */
-    virtual BOOL SetAEC(
+    virtual PBoolean SetAEC(
       unsigned line,    ///<  Number of line
       AECLevels level   ///<  AEC level
     );
@@ -428,30 +428,30 @@ class OpalLineInterfaceDevice : public PObject
     /**Get voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
       */
-    virtual BOOL GetVAD(
+    virtual PBoolean GetVAD(
       unsigned line    ///<  Number of line
     );
 
     /**Set voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
       */
-    virtual BOOL SetVAD(
+    virtual PBoolean SetVAD(
       unsigned line,    ///<  Number of line
-      BOOL enable       ///<  Flag for enabling VAD
+      PBoolean enable       ///<  Flag for enabling VAD
     );
 
 
     /**Get Caller ID from the last incoming ring.
        The idString parameter is either simply the "number" field of the caller
-       ID data, or if full is TRUE, all of the fields in the caller ID data.
+       ID data, or if full is PTrue, all of the fields in the caller ID data.
 
        The full data of the caller ID string consists of the number field, the
        time/date and the name field separated by tabs ('\t').
       */
-    virtual BOOL GetCallerID(
+    virtual PBoolean GetCallerID(
       unsigned line,      ///<  Number of line
       PString & idString, ///<  ID string returned
-      BOOL full = FALSE   ///<  Get full information in idString
+      PBoolean full = PFalse   ///<  Get full information in idString
     );
 
     /**Set Caller ID for use in next RingLine() call.
@@ -462,7 +462,7 @@ class OpalLineInterfaceDevice : public PObject
        time and date is used. Using an empty string will clear the caller ID
        so that no caller ID is sent on the next RingLine() call.
       */
-    virtual BOOL SetCallerID(
+    virtual PBoolean SetCallerID(
       unsigned line,            ///<  Number of line
       const PString & idString  ///<  ID string to use
     );
@@ -475,16 +475,16 @@ class OpalLineInterfaceDevice : public PObject
        time and date is used. Using an empty string will clear the caller ID
        so that no caller ID is sent on the next RingLine() call.
       */
-    virtual BOOL SendCallerIDOnCallWaiting(
+    virtual PBoolean SendCallerIDOnCallWaiting(
       unsigned line,            ///<  Number of line
       const PString & idString  ///<  ID string to use
     );
 
     /**Send a Visual Message Waiting Indicator
       */
-    virtual BOOL SendVisualMessageWaitingIndicator(
+    virtual PBoolean SendVisualMessageWaitingIndicator(
       unsigned line,            ///<  Number of line
-      BOOL on
+      PBoolean on
     );
 
 
@@ -496,7 +496,7 @@ class OpalLineInterfaceDevice : public PObject
     /**Play a DTMF digit.
        Any characters that are not in the set 0-9, A-D, * or # will be ignored.
       */
-    virtual BOOL PlayDTMF(
+    virtual PBoolean PlayDTMF(
       unsigned line,            ///<  Number of line
       const char * digits,      ///<  DTMF digits to be played
       DWORD onTime = DefaultDTMFOnTime,  ///<  Number of milliseconds to play each DTMF digit
@@ -520,7 +520,7 @@ class OpalLineInterfaceDevice : public PObject
        When set in this mode the DTMF tones detected are removed from the
        encoded data stream as returned by ReadFrame().
       */
-    virtual BOOL GetRemoveDTMF(
+    virtual PBoolean GetRemoveDTMF(
       unsigned line   ///<  Number of line
     );
 
@@ -528,9 +528,9 @@ class OpalLineInterfaceDevice : public PObject
        When set in this mode the DTMF tones detected are removed from the
        encoded data stream as returned by ReadFrame().
       */
-    virtual BOOL SetRemoveDTMF(
+    virtual PBoolean SetRemoveDTMF(
       unsigned line,     ///<  Number of line
-      BOOL removeTones   ///<  Flag for removing DTMF tones.
+      PBoolean removeTones   ///<  Flag for removing DTMF tones.
     );
 
 
@@ -561,7 +561,7 @@ class OpalLineInterfaceDevice : public PObject
 
     /**See if a specific tone is detected.
       */
-    virtual BOOL WaitForTone(
+    virtual PBoolean WaitForTone(
       unsigned line,          ///<  Number of line
       CallProgressTones tone, ///<  Tone to wait for
       unsigned timeout = 3000 ///<  Milliseconds to wait for
@@ -584,7 +584,7 @@ class OpalLineInterfaceDevice : public PObject
           425:0.4-0.2-0.4-2    425Hz with cadence
                                 400ms on, 200ms off, 400ms on, 2 seconds off
       */
-    virtual BOOL SetToneFilter(
+    virtual PBoolean SetToneFilter(
       unsigned line,              ///<  Number of line
       CallProgressTones tone,     ///<  Tone filter to change
       const PString & description ///<  Description of filter parameters
@@ -592,7 +592,7 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Set a tones filter information.
       */
-    virtual BOOL SetToneFilterParameters(
+    virtual PBoolean SetToneFilterParameters(
       unsigned line,            ///<  Number of line
       CallProgressTones tone,   ///<  Tone filter to change
       unsigned lowFrequency,    ///<  Low frequency
@@ -604,20 +604,20 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Play a tone.
       */
-    virtual BOOL PlayTone(
+    virtual PBoolean PlayTone(
       unsigned line,          ///<  Number of line
       CallProgressTones tone  ///<  Tone to be played
     );
 
     /**Determine if a tone is still playing
       */
-    virtual BOOL IsTonePlaying(
+    virtual PBoolean IsTonePlaying(
       unsigned line   ///<  Number of line
     );
 
     /**Stop playing a tone.
       */
-    virtual BOOL StopTone(
+    virtual PBoolean StopTone(
       unsigned line   ///<  Number of line
     );
 
@@ -628,7 +628,7 @@ class OpalLineInterfaceDevice : public PObject
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.
 
-       If the requireTones flag is TRUE the call is aborted of the call
+       If the requireTones flag is PTrue the call is aborted of the call
        progress tones are not detected. Otherwise the call proceeds with short
        delays while it tries to detect the call progress tones.
 
@@ -642,7 +642,7 @@ class OpalLineInterfaceDevice : public PObject
     virtual CallProgressTones DialOut(
       unsigned line,                ///< Number of line
       const PString & number,       ///< Number to dial
-      BOOL requireTones = FALSE,    ///< Require dial/ring tone to be detected
+      PBoolean requireTones = PFalse,    ///< Require dial/ring tone to be detected
       unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
     );
 
@@ -657,7 +657,7 @@ class OpalLineInterfaceDevice : public PObject
     /**Set wink detect minimum duration.
        This is the signal used by telcos to end PSTN call.
       */
-    virtual BOOL SetWinkDuration(
+    virtual PBoolean SetWinkDuration(
       unsigned line,        ///<  Number of line
       unsigned winkDuration ///<  New minimum duration
     );
@@ -717,13 +717,13 @@ class OpalLineInterfaceDevice : public PObject
        disconnect detect and call progress tones to fit the countries
        telephone network.
       */
-    virtual BOOL SetCountryCode(
+    virtual PBoolean SetCountryCode(
       T35CountryCodes country   ///<  COuntry code for device
     );
 
     /**Set the country code set for the device.
       */
-    virtual BOOL SetCountryCodeName(
+    virtual PBoolean SetCountryCodeName(
       const PString & countryName   ///<  COuntry code for device
     );
 
@@ -734,14 +734,14 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Play a wav file
       */
-    virtual BOOL PlayAudio(
+    virtual PBoolean PlayAudio(
       unsigned line,            ///<  Number of line
       const PString & filename  ///<  File Name
     );
     
     /**Stop playing the Wave File
       */
-    virtual BOOL StopAudio(
+    virtual PBoolean StopAudio(
       unsigned line   ///Number of line
     );
 
@@ -749,7 +749,7 @@ class OpalLineInterfaceDevice : public PObject
     /**
       * start recording audio
       */
-    virtual BOOL RecordAudioStart(
+    virtual PBoolean RecordAudioStart(
       unsigned line,            /// line
       const PString & filename  /// File Name
     );
@@ -758,7 +758,7 @@ class OpalLineInterfaceDevice : public PObject
      * stop recording audio
      */
         
-    virtual BOOL RecordAudioStop(
+    virtual PBoolean RecordAudioStop(
       unsigned line            /// line
     );
     
@@ -865,50 +865,50 @@ class OpalLine : public PObject
        The alternative is a "network" line, that is one connected to switched
        network eg the standard PSTN.
       */
-    virtual BOOL IsTerminal() { return device.IsLineTerminal(lineNumber); }
+    virtual PBoolean IsTerminal() { return device.IsLineTerminal(lineNumber); }
 
 
     /**Determine if a physical line is present on the logical line.
       */
-    virtual BOOL IsPresent(
-      BOOL force = FALSE  ///<  Force test, do not optimise
+    virtual PBoolean IsPresent(
+      PBoolean force = PFalse  ///<  Force test, do not optimise
     ) { return device.IsLinePresent(lineNumber, force); }
 
 
     /**Determine if line is currently off hook.
        This function implies that the state is debounced and that a return
-       value of TRUE indicates that the phone is really off hook. That is
+       value of PTrue indicates that the phone is really off hook. That is
        hook flashes and winks are masked out.
       */
-    virtual BOOL IsOffHook() { return device.IsLineOffHook(lineNumber); }
+    virtual PBoolean IsOffHook() { return device.IsLineOffHook(lineNumber); }
 
     /**Set the hook state of the line.
        Note that not be possible on a given line, for example a POTS line with
        a standard telephone handset. The hook state is determined by external
        hardware and cannot be changed by the software.
       */
-    virtual BOOL SetOffHook() { return device.SetLineOffHook(lineNumber, TRUE); }
+    virtual PBoolean SetOffHook() { return device.SetLineOffHook(lineNumber, PTrue); }
 
     /**Set the hook state of the line.
        This is the complement of SetLineOffHook().
       */
-    virtual BOOL SetOnHook() { return device.SetLineOffHook(lineNumber, FALSE); }
+    virtual PBoolean SetOnHook() { return device.SetLineOffHook(lineNumber, PFalse); }
 
     /**Set the hook state off then straight back on again.
        This will only operate if the line is currently off hook.
       */
-    virtual BOOL HookFlash(
+    virtual PBoolean HookFlash(
       unsigned flashTime = 200    ///<  Time for hook flash in milliseconds
     ) { return device.HookFlash(lineNumber, flashTime); }
 
-    /**Return TRUE if a hook flash has been detected
+    /**Return PTrue if a hook flash has been detected
       */
-    virtual BOOL HasHookFlash() { return device.HasHookFlash(lineNumber); }
+    virtual PBoolean HasHookFlash() { return device.HasHookFlash(lineNumber); }
 
 
     /**Determine if line is ringing.
        This function implies that the state is "debounced" and that a return
-       value of TRUE indicates that the phone is still ringing and it is not
+       value of PTrue indicates that the phone is still ringing and it is not
        simply a pause in the ring cadence.
 
        If cadence is not NULL then it is set with the bit pattern for the
@@ -916,7 +916,7 @@ class OpalLine : public PObject
        sequence to return. If it is NULL it can be assumed that the function
        will return quickly.
       */
-    virtual BOOL IsRinging(
+    virtual PBoolean IsRinging(
       DWORD * cadence = NULL  ///<  Cadence of incoming ring
     ) { return device.IsLineRinging(lineNumber, cadence); }
 
@@ -944,7 +944,7 @@ class OpalLine : public PObject
        If the nCadence in non-zero and the pattern parameter is NULL, then
        the standard ring pattern for the selected country is used.
       */
-    virtual BOOL Ring(
+    virtual PBoolean Ring(
       PINDEX nCadence,                 ///< Number of entries in cadence array
       const unsigned * pattern = NULL, ///< Ring pattern times
       unsigned frequency = 400         ///< Frequency of ring (if relevant)
@@ -954,17 +954,17 @@ class OpalLine : public PObject
     /**Determine if line has been disconnected from a call.
        This uses the hardware (and country) dependent means for determining
       */
-    virtual BOOL IsDisconnected() { return device.IsLineDisconnected(lineNumber); }
+    virtual PBoolean IsDisconnected() { return device.IsLineDisconnected(lineNumber); }
 
     /**Set the media format (codec) for reading on the specified line.
       */
-    virtual BOOL SetReadFormat(
+    virtual PBoolean SetReadFormat(
       const OpalMediaFormat & mediaFormat   ///<  Codec type
     ) { return device.SetReadFormat(lineNumber, mediaFormat); }
 
     /**Set the media format (codec) for writing on the specified line.
       */
-    virtual BOOL SetWriteFormat(
+    virtual PBoolean SetWriteFormat(
       const OpalMediaFormat & mediaFormat   ///<  Codec type
     ) { return device.SetWriteFormat(lineNumber, mediaFormat); }
 
@@ -978,17 +978,17 @@ class OpalLine : public PObject
 
     /**Stop the read codec.
       */
-    virtual BOOL StopReading() { return device.StopReading(lineNumber); }
+    virtual PBoolean StopReading() { return device.StopReading(lineNumber); }
 
     /**Stop the write codec.
       */
-    virtual BOOL StopWriting() { return device.StopWriting(lineNumber); }
+    virtual PBoolean StopWriting() { return device.StopWriting(lineNumber); }
 
     /**Set the read frame size in bytes.
        Note that a LID may ignore this value so always use GetReadFrameSize()
        for I/O.
       */
-    virtual BOOL SetReadFrameSize(
+    virtual PBoolean SetReadFrameSize(
       PINDEX frameSize  ///<  New frame size
     ) { return device.SetReadFrameSize(lineNumber, frameSize); }
 
@@ -996,7 +996,7 @@ class OpalLine : public PObject
        Note that a LID may ignore this value so always use GetReadFrameSize()
        for I/O.
       */
-    virtual BOOL SetWriteFrameSize(
+    virtual PBoolean SetWriteFrameSize(
       PINDEX frameSize  ///<  New frame size
     ) { return device.SetWriteFrameSize(lineNumber, frameSize); }
 
@@ -1012,14 +1012,14 @@ class OpalLine : public PObject
 
     /**Low level read of a frame from the device.
      */
-    virtual BOOL ReadFrame(
+    virtual PBoolean ReadFrame(
       void * buf,       ///<  Pointer to a block of memory to receive data.
       PINDEX & count    ///<  Number of bytes read, <= GetReadFrameSize()
     ) { return device.ReadFrame(lineNumber, buf, count); }
 
     /**Low level write frame to the device.
      */
-    virtual BOOL WriteFrame(
+    virtual PBoolean WriteFrame(
       const void * buf, ///<  Pointer to a block of memory to write.
       PINDEX count,     ///<  Number of bytes to write, <= GetWriteFrameSize()
       PINDEX & written  ///<  Number of bytes written, <= GetWriteFrameSize()
@@ -1028,14 +1028,14 @@ class OpalLine : public PObject
     /**High level read of audio data from the device.
        This version will allow non-integral number of frames to be read.
      */
-    virtual BOOL ReadBlock(
+    virtual PBoolean ReadBlock(
       void * buf,   ///<  Pointer to a block of memory to receive the read bytes.
       PINDEX count  ///<  Count of bytes to read.
     ) { return device.ReadBlock(lineNumber, buf, count); }
 
     /**High level write audio data to the device.
      */
-    virtual BOOL WriteBlock(
+    virtual PBoolean WriteBlock(
       const void * buf, ///<  Pointer to a block of memory to write.
       PINDEX count      ///<  Count of bytes to write.
     ) { return device.WriteBlock(lineNumber, buf, count); }
@@ -1044,30 +1044,30 @@ class OpalLine : public PObject
     /**Get average signal level in last frame.
       */
     virtual unsigned GetAverageSignalLevel(
-      BOOL playback   ///<  Get average playback or record level.
+      PBoolean playback   ///<  Get average playback or record level.
     ) { return device.GetAverageSignalLevel(lineNumber, playback); }
 
 
     /**Enable audio for the line.
       */
-    virtual BOOL EnableAudio(
-      BOOL enable = TRUE
+    virtual PBoolean EnableAudio(
+      PBoolean enable = PTrue
     ) { return device.EnableAudio(lineNumber, enable); }
 
     /**Disable audio for the line.
       */
-    BOOL DisableAudio() { return EnableAudio(FALSE); }
+    PBoolean DisableAudio() { return EnableAudio(PFalse); }
 
     /**Determine if audio is ebabled for the line.
       */
-    virtual BOOL IsAudioEnabled() { return device.IsAudioEnabled(lineNumber); }
+    virtual PBoolean IsAudioEnabled() { return device.IsAudioEnabled(lineNumber); }
 
 
     /**Set volume level for recording.
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL SetRecordVolume(
+    virtual PBoolean SetRecordVolume(
       unsigned volume   ///<  Volume level from 0 to 100%
     ) { return device.SetRecordVolume(lineNumber, volume); }
 
@@ -1075,7 +1075,7 @@ class OpalLine : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL SetPlayVolume(
+    virtual PBoolean SetPlayVolume(
       unsigned volume   ///<  Volume level from 0 to 100%
     ) { return device.SetPlayVolume(lineNumber, volume); }
 
@@ -1083,7 +1083,7 @@ class OpalLine : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL GetRecordVolume(
+    virtual PBoolean GetRecordVolume(
       unsigned & volume   ///<  Volume level from 0 to 100%
     ) { return device.GetRecordVolume(lineNumber, volume); }
 
@@ -1091,7 +1091,7 @@ class OpalLine : public PObject
        A value of 100 is the maximum volume possible for the hardware.
        A value of 0 is the minimum volume possible for the hardware.
       */
-    virtual BOOL GetPlayVolume(
+    virtual PBoolean GetPlayVolume(
       unsigned & volume   ///<  Volume level from 0 to 100%
     ) { return device.GetPlayVolume(lineNumber, volume); }
 
@@ -1104,7 +1104,7 @@ class OpalLine : public PObject
     /**Set acoustic echo cancellation.
        Note, not all devices may support this function.
       */
-    virtual BOOL SetAEC(
+    virtual PBoolean SetAEC(
       OpalLineInterfaceDevice::AECLevels level  ///<  AEC level
     ) { return device.SetAEC(lineNumber, level); }
 
@@ -1112,26 +1112,26 @@ class OpalLine : public PObject
     /**Get voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
       */
-    virtual BOOL GetVAD() { return device.GetVAD(lineNumber); }
+    virtual PBoolean GetVAD() { return device.GetVAD(lineNumber); }
 
     /**Set voice activity detection.
        Note, not all devices, or selected codecs, may support this function.
       */
-    virtual BOOL SetVAD(
-      BOOL enable       ///<  Flag for enabling VAD
+    virtual PBoolean SetVAD(
+      PBoolean enable       ///<  Flag for enabling VAD
     ) { return device.SetVAD(lineNumber, enable); }
 
 
     /**Get Caller ID from the last incoming ring.
        The idString parameter is either simply the "number" field of the caller
-       ID data, or if full is TRUE, all of the fields in the caller ID data.
+       ID data, or if full is PTrue, all of the fields in the caller ID data.
 
        The full data of the caller ID string consists of the number field, the
        time/date and the name field separated by tabs ('\t').
       */
-    virtual BOOL GetCallerID(
+    virtual PBoolean GetCallerID(
       PString & idString, ///<  ID string returned
-      BOOL full = FALSE   ///<  Get full information in idString
+      PBoolean full = PFalse   ///<  Get full information in idString
     ) { return device.GetCallerID(lineNumber, idString, full); }
 
     /**Set Caller ID for use in next RingLine() call.
@@ -1142,7 +1142,7 @@ class OpalLine : public PObject
        time and date is used. Using an empty string will clear the caller ID
        so that no caller ID is sent on the next RingLine() call.
       */
-    virtual BOOL SetCallerID(
+    virtual PBoolean SetCallerID(
       const PString & idString  ///<  ID string to use
     ) { return device.SetCallerID(lineNumber, idString); }
 
@@ -1154,21 +1154,21 @@ class OpalLine : public PObject
        time and date is used. Using an empty string will clear the caller ID
        so that no caller ID is sent on the next RingLine() call.
       */
-    virtual BOOL SendCallerIDOnCallWaiting(
+    virtual PBoolean SendCallerIDOnCallWaiting(
       const PString & idString  ///<  ID string to use
     ) { return device.SendCallerIDOnCallWaiting(lineNumber, idString); }
 
     /**Send a Visual Message Waiting Indicator
       */
-    virtual BOOL SendVisualMessageWaitingIndicator(
-      BOOL on
+    virtual PBoolean SendVisualMessageWaitingIndicator(
+      PBoolean on
     ) { return device.SendVisualMessageWaitingIndicator(lineNumber, on); }
 
 
     /**Play a DTMF digit.
        Any characters that are not in the set 0-9, A-D, * or # will be ignored.
       */
-    virtual BOOL PlayDTMF(
+    virtual PBoolean PlayDTMF(
       const char * digits,      ///<  DTMF digits to be played
       DWORD onTime = OpalLineInterfaceDevice::DefaultDTMFOnTime,  ///<  Number of milliseconds to play each DTMF digit
       DWORD offTime = OpalLineInterfaceDevice::DefaultDTMFOffTime ///<  Number of milliseconds between digits
@@ -1189,14 +1189,14 @@ class OpalLine : public PObject
        When set in this mode the DTMF tones detected are removed from the
        encoded data stream as returned by ReadFrame().
       */
-    virtual BOOL GetRemoveDTMF() { return device.GetRemoveDTMF(lineNumber); }
+    virtual PBoolean GetRemoveDTMF() { return device.GetRemoveDTMF(lineNumber); }
 
     /**Set DTMF removal mode.
        When set in this mode the DTMF tones detected are removed from the
        encoded data stream as returned by ReadFrame().
       */
-    virtual BOOL SetRemoveDTMF(
-      BOOL removeTones   ///<  Flag for removing DTMF tones.
+    virtual PBoolean SetRemoveDTMF(
+      PBoolean removeTones   ///<  Flag for removing DTMF tones.
     ) { return device.SetRemoveDTMF(lineNumber, removeTones); }
 
 
@@ -1212,31 +1212,31 @@ class OpalLine : public PObject
 
     /**See if a specific tone is detected.
       */
-    virtual BOOL WaitForTone(
+    virtual PBoolean WaitForTone(
       OpalLineInterfaceDevice::CallProgressTones tone, ///<  Tone to wait for
       unsigned timeout = 3000 ///<  Milliseconds to wait for
     ) { return device.WaitForTone(lineNumber, tone, timeout); }
 
     /**Play a tone.
       */
-    virtual BOOL PlayTone(
+    virtual PBoolean PlayTone(
       OpalLineInterfaceDevice::CallProgressTones tone  ///<  Tone to be played
     ) { return device.PlayTone(lineNumber, tone); }
 
     /**Determine if a tone is still playing
       */
-    virtual BOOL IsTonePlaying() { return device.IsTonePlaying(lineNumber); }
+    virtual PBoolean IsTonePlaying() { return device.IsTonePlaying(lineNumber); }
 
     /**Stop playing a tone.
       */
-    virtual BOOL StopTone() { return device.StopTone(lineNumber); }
+    virtual PBoolean StopTone() { return device.StopTone(lineNumber); }
 
 
     /**Dial a number on network line.
        The takes the line off hook, waits for dial tone, and transmits the
        specified number as DTMF tones.
 
-       If the requireTones flag is TRUE the call is aborted of the call
+       If the requireTones flag is PTrue the call is aborted of the call
        progress tones are not detected. Otherwise the call proceeds with short
        delays while it tries to detect the call progress tones.
 
@@ -1249,7 +1249,7 @@ class OpalLine : public PObject
       */
     virtual OpalLineInterfaceDevice::CallProgressTones DialOut(
       const PString & number,       ///< Number to dial
-      BOOL requireTones = FALSE,    ///< Require dial/ring tone to be detected
+      PBoolean requireTones = PFalse,    ///< Require dial/ring tone to be detected
       unsigned uiDialDelay = 0      ///< time in msec to wait between the dial tone detection and dialing the dtmf
     ) { return device.DialOut(lineNumber, number, requireTones, uiDialDelay); }
   //@}

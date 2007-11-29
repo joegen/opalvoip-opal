@@ -87,12 +87,12 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       FALSE is returned.
+       PFalse is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If FALSE is returned then the connection could not be established. For
+       If PFalse is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -100,7 +100,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,           ///<  Owner of connection
       const PString & party,     ///<  Remote party to call
       void * userData = NULL,    ///<  Arbitrary data to pass to connection
@@ -137,7 +137,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
     virtual PSoundChannel * CreateSoundChannel(
       const OpalPCSSConnection & connection, ///<  Connection needing created sound channel
       const OpalMediaFormat & mediaFormat,   ///<  Media format for the connection
-      BOOL isSource                          ///<  Direction for channel
+      PBoolean isSource                          ///<  Direction for channel
     );
   //@}
 
@@ -153,37 +153,37 @@ class OpalPCSSEndPoint : public OpalEndPoint
     ) { return PSafePtrCast<OpalConnection, OpalPCSSConnection>(GetConnectionWithLock(token, mode)); }
 
     /**Call back to indicate that remote is ringing.
-       If FALSE is returned the call is aborted.
+       If PFalse is returned the call is aborted.
 
        The default implementation is pure.
       */
-    virtual BOOL OnShowIncoming(
+    virtual PBoolean OnShowIncoming(
       const OpalPCSSConnection & connection ///<  Connection having event
     ) = 0;
 
     /**Accept the incoming connection.
-       Returns FALSE if the connection token does not correspond to a valid
+       Returns PFalse if the connection token does not correspond to a valid
        connection.
       */
-    virtual BOOL AcceptIncomingConnection(
+    virtual PBoolean AcceptIncomingConnection(
       const PString & connectionToken ///<  Token of connection to accept call
     );
 
     /**Call back to indicate that remote is ringing.
-       If FALSE is returned the call is aborted.
+       If PFalse is returned the call is aborted.
 
        The default implementation is pure.
       */
-    virtual BOOL OnShowOutgoing(
+    virtual PBoolean OnShowOutgoing(
       const OpalPCSSConnection & connection ///<  Connection having event
     ) = 0;
 
     /**Call back to indicate that the remote user has indicated something.
-       If FALSE is returned the call is aborted.
+       If PFalse is returned the call is aborted.
 
        The default implementation does nothing.
       */
-    virtual BOOL OnShowUserInput(
+    virtual PBoolean OnShowUserInput(
       const OpalPCSSConnection & connection, ///<  Connection having event
       const PString & indication
     );
@@ -195,7 +195,7 @@ class OpalPCSSEndPoint : public OpalEndPoint
       */
     virtual void OnPatchMediaStream(
       const OpalPCSSConnection & connection, ///<  Connection having new patch
-      BOOL isSource,                         ///<  Source patch
+      PBoolean isSource,                         ///<  Source patch
       OpalMediaPatch & patch                 ///<  New patch
     );
   //@}
@@ -204,12 +204,12 @@ class OpalPCSSEndPoint : public OpalEndPoint
   //@{
     /**Set the name for the sound channel to be used for output.
        If the name is not suitable for use with the PSoundChannel class then
-       the function will return FALSE and not change the device.
+       the function will return PFalse and not change the device.
 
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
      */
-    virtual BOOL SetSoundChannelPlayDevice(const PString & name);
+    virtual PBoolean SetSoundChannelPlayDevice(const PString & name);
 
     /**Get the name for the sound channel to be used for output.
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
@@ -219,12 +219,12 @@ class OpalPCSSEndPoint : public OpalEndPoint
 
     /**Set the name for the sound channel to be used for input.
        If the name is not suitable for use with the PSoundChannel class then
-       the function will return FALSE and not change the device.
+       the function will return PFalse and not change the device.
 
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
        function.
      */
-    virtual BOOL SetSoundChannelRecordDevice(const PString & name);
+    virtual PBoolean SetSoundChannelRecordDevice(const PString & name);
 
     /**Get the name for the sound channel to be used for input.
        This defaults to the value of the PSoundChannel::GetDefaultDevice()
@@ -281,7 +281,7 @@ class OpalPCSSConnection : public OpalConnection
 
        The default behaviour does.
       */
-    virtual BOOL SetUpConnection();
+    virtual PBoolean SetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -293,16 +293,16 @@ class OpalPCSSConnection : public OpalConnection
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetAlerting(
+    virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      BOOL withMedia                ///<  Open media with alerting
+      PBoolean withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetConnected();
+    virtual PBoolean SetConnected();
 
     /**Get the data formats this connection is capable of operating.
        This provides a list of media data format names that an
@@ -330,7 +330,7 @@ class OpalPCSSConnection : public OpalConnection
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource                        ///<  Is a source stream
+      PBoolean isSource                        ///<  Is a source stream
     );
 
     /**Call back when patching a media stream.
@@ -341,13 +341,13 @@ class OpalPCSSConnection : public OpalConnection
        Add a PCM silence detector filter.
       */
     virtual void OnPatchMediaStream(
-      BOOL isSource,
+      PBoolean isSource,
       OpalMediaPatch & patch    ///<  New patch
     );
 
     /**Open source transmitter media stream for session.
       */
-    virtual BOOL OpenSourceMediaStream(
+    virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
       unsigned sessionID                   ///<  Session to start stream on
     );
@@ -360,8 +360,8 @@ class OpalPCSSConnection : public OpalConnection
 
     /**Set  the volume (gain) for the audio media channel to the specified percentage.
       */
-    virtual BOOL SetAudioVolume(
-      BOOL source,                  ///< true for source (microphone), false for sink (speaker)
+    virtual PBoolean SetAudioVolume(
+      PBoolean source,                  ///< true for source (microphone), false for sink (speaker)
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
 
@@ -369,7 +369,7 @@ class OpalPCSSConnection : public OpalConnection
        A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
       */
     virtual unsigned GetAudioSignalLevel(
-      BOOL source                   ///< true for source (microphone), false for sink (speaker)
+      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -379,7 +379,7 @@ class OpalPCSSConnection : public OpalConnection
 
        The default behaviour plays the DTMF tones on the line.
       */
-    virtual BOOL SendUserInputString(
+    virtual PBoolean SendUserInputString(
       const PString & value                   ///<  String value of indication
     );
   //@}
@@ -394,7 +394,7 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual PSoundChannel * CreateSoundChannel(
       const OpalMediaFormat & mediaFormat, ///<  Media format for the connection
-      BOOL isSource                        ///<  Direction for channel
+      PBoolean isSource                        ///<  Direction for channel
     );
   //@}
 

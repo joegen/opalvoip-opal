@@ -60,7 +60,7 @@ const static PASN_Names Names_H501_MessageBody[]={
 //
 
 H501_MessageBody::H501_MessageBody(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 29, TRUE
+  : PASN_Choice(tag, tagClass, 29, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_MessageBody,32
 #endif
@@ -773,109 +773,109 @@ H501_MessageBody::operator const H501_AuthenticationRejection &() const
 }
 
 
-BOOL H501_MessageBody::CreateObject()
+PBoolean H501_MessageBody::CreateObject()
 {
   switch (tag) {
     case e_serviceRequest :
       choice = new H501_ServiceRequest();
-      return TRUE;
+      return PTrue;
     case e_serviceConfirmation :
       choice = new H501_ServiceConfirmation();
-      return TRUE;
+      return PTrue;
     case e_serviceRejection :
       choice = new H501_ServiceRejection();
-      return TRUE;
+      return PTrue;
     case e_serviceRelease :
       choice = new H501_ServiceRelease();
-      return TRUE;
+      return PTrue;
     case e_descriptorRequest :
       choice = new H501_DescriptorRequest();
-      return TRUE;
+      return PTrue;
     case e_descriptorConfirmation :
       choice = new H501_DescriptorConfirmation();
-      return TRUE;
+      return PTrue;
     case e_descriptorRejection :
       choice = new H501_DescriptorRejection();
-      return TRUE;
+      return PTrue;
     case e_descriptorIDRequest :
       choice = new H501_DescriptorIDRequest();
-      return TRUE;
+      return PTrue;
     case e_descriptorIDConfirmation :
       choice = new H501_DescriptorIDConfirmation();
-      return TRUE;
+      return PTrue;
     case e_descriptorIDRejection :
       choice = new H501_DescriptorIDRejection();
-      return TRUE;
+      return PTrue;
     case e_descriptorUpdate :
       choice = new H501_DescriptorUpdate();
-      return TRUE;
+      return PTrue;
     case e_descriptorUpdateAck :
       choice = new H501_DescriptorUpdateAck();
-      return TRUE;
+      return PTrue;
     case e_accessRequest :
       choice = new H501_AccessRequest();
-      return TRUE;
+      return PTrue;
     case e_accessConfirmation :
       choice = new H501_AccessConfirmation();
-      return TRUE;
+      return PTrue;
     case e_accessRejection :
       choice = new H501_AccessRejection();
-      return TRUE;
+      return PTrue;
     case e_requestInProgress :
       choice = new H501_RequestInProgress();
-      return TRUE;
+      return PTrue;
     case e_nonStandardRequest :
       choice = new H501_NonStandardRequest();
-      return TRUE;
+      return PTrue;
     case e_nonStandardConfirmation :
       choice = new H501_NonStandardConfirmation();
-      return TRUE;
+      return PTrue;
     case e_nonStandardRejection :
       choice = new H501_NonStandardRejection();
-      return TRUE;
+      return PTrue;
     case e_unknownMessageResponse :
       choice = new H501_UnknownMessageResponse();
-      return TRUE;
+      return PTrue;
     case e_usageRequest :
       choice = new H501_UsageRequest();
-      return TRUE;
+      return PTrue;
     case e_usageConfirmation :
       choice = new H501_UsageConfirmation();
-      return TRUE;
+      return PTrue;
     case e_usageIndication :
       choice = new H501_UsageIndication();
-      return TRUE;
+      return PTrue;
     case e_usageIndicationConfirmation :
       choice = new H501_UsageIndicationConfirmation();
-      return TRUE;
+      return PTrue;
     case e_usageIndicationRejection :
       choice = new H501_UsageIndicationRejection();
-      return TRUE;
+      return PTrue;
     case e_usageRejection :
       choice = new H501_UsageRejection();
-      return TRUE;
+      return PTrue;
     case e_validationRequest :
       choice = new H501_ValidationRequest();
-      return TRUE;
+      return PTrue;
     case e_validationConfirmation :
       choice = new H501_ValidationConfirmation();
-      return TRUE;
+      return PTrue;
     case e_validationRejection :
       choice = new H501_ValidationRejection();
-      return TRUE;
+      return PTrue;
     case e_authenticationRequest :
       choice = new H501_AuthenticationRequest();
-      return TRUE;
+      return PTrue;
     case e_authenticationConfirmation :
       choice = new H501_AuthenticationConfirmation();
-      return TRUE;
+      return PTrue;
     case e_authenticationRejection :
       choice = new H501_AuthenticationRejection();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -909,7 +909,7 @@ const static PASN_Names Names_H501_ServiceRejectionReason[]={
 //
 
 H501_ServiceRejectionReason::H501_ServiceRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_ServiceRejectionReason,11
 #endif
@@ -918,7 +918,7 @@ H501_ServiceRejectionReason::H501_ServiceRejectionReason(unsigned tag, PASN_Obje
 }
 
 
-BOOL H501_ServiceRejectionReason::CreateObject()
+PBoolean H501_ServiceRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownUsageSendTo) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -948,7 +948,7 @@ const static PASN_Names Names_H501_ServiceReleaseReason[]={
 //
 
 H501_ServiceReleaseReason::H501_ServiceReleaseReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_ServiceReleaseReason,4
 #endif
@@ -957,7 +957,7 @@ H501_ServiceReleaseReason::H501_ServiceReleaseReason(unsigned tag, PASN_Object::
 }
 
 
-BOOL H501_ServiceReleaseReason::CreateObject()
+PBoolean H501_ServiceReleaseReason::CreateObject()
 {
   choice = (tag <= e_expired) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -992,7 +992,7 @@ const static PASN_Names Names_H501_DescriptorRejectionReason[]={
 //
 
 H501_DescriptorRejectionReason::H501_DescriptorRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_DescriptorRejectionReason,9
 #endif
@@ -1001,7 +1001,7 @@ H501_DescriptorRejectionReason::H501_DescriptorRejectionReason(unsigned tag, PAS
 }
 
 
-BOOL H501_DescriptorRejectionReason::CreateObject()
+PBoolean H501_DescriptorRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1022,7 +1022,7 @@ PObject * H501_DescriptorRejectionReason::Clone() const
 //
 
 H501_DescriptorIDRequest::H501_DescriptorIDRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1044,10 +1044,10 @@ PINDEX H501_DescriptorIDRequest::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorIDRequest::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorIDRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1090,7 +1090,7 @@ const static PASN_Names Names_H501_DescriptorIDRejectionReason[]={
 //
 
 H501_DescriptorIDRejectionReason::H501_DescriptorIDRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_DescriptorIDRejectionReason,8
 #endif
@@ -1099,7 +1099,7 @@ H501_DescriptorIDRejectionReason::H501_DescriptorIDRejectionReason(unsigned tag,
 }
 
 
-BOOL H501_DescriptorIDRejectionReason::CreateObject()
+PBoolean H501_DescriptorIDRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1120,7 +1120,7 @@ PObject * H501_DescriptorIDRejectionReason::Clone() const
 //
 
 H501_DescriptorUpdateAck::H501_DescriptorUpdateAck(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1142,10 +1142,10 @@ PINDEX H501_DescriptorUpdateAck::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorUpdateAck::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorUpdateAck::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1197,7 +1197,7 @@ const static PASN_Names Names_H501_AccessRejectionReason[]={
 //
 
 H501_AccessRejectionReason::H501_AccessRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, TRUE
+  : PASN_Choice(tag, tagClass, 7, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_AccessRejectionReason,17
 #endif
@@ -1206,7 +1206,7 @@ H501_AccessRejectionReason::H501_AccessRejectionReason(unsigned tag, PASN_Object
 }
 
 
-BOOL H501_AccessRejectionReason::CreateObject()
+PBoolean H501_AccessRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownUsageSendTo) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1227,7 +1227,7 @@ PObject * H501_AccessRejectionReason::Clone() const
 //
 
 H501_UsageConfirmation::H501_UsageConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1249,10 +1249,10 @@ PINDEX H501_UsageConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_UsageConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_UsageConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1282,7 +1282,7 @@ PObject * H501_UsageConfirmation::Clone() const
 //
 
 H501_UsageField::H501_UsageField(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1326,15 +1326,15 @@ PINDEX H501_UsageField::GetDataLength() const
 }
 
 
-BOOL H501_UsageField::Decode(PASN_Stream & strm)
+PBoolean H501_UsageField::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_id.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_value.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1378,7 +1378,7 @@ const static PASN_Names Names_H501_UsageRejectReason[]={
 //
 
 H501_UsageRejectReason::H501_UsageRejectReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_UsageRejectReason,8
 #endif
@@ -1387,7 +1387,7 @@ H501_UsageRejectReason::H501_UsageRejectReason(unsigned tag, PASN_Object::TagCla
 }
 
 
-BOOL H501_UsageRejectReason::CreateObject()
+PBoolean H501_UsageRejectReason::CreateObject()
 {
   choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1408,7 +1408,7 @@ PObject * H501_UsageRejectReason::Clone() const
 //
 
 H501_UsageIndicationConfirmation::H501_UsageIndicationConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1430,10 +1430,10 @@ PINDEX H501_UsageIndicationConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_UsageIndicationConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_UsageIndicationConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1476,7 +1476,7 @@ const static PASN_Names Names_H501_UsageIndicationRejectionReason[]={
 //
 
 H501_UsageIndicationRejectionReason::H501_UsageIndicationRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, TRUE
+  : PASN_Choice(tag, tagClass, 5, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_UsageIndicationRejectionReason,8
 #endif
@@ -1485,7 +1485,7 @@ H501_UsageIndicationRejectionReason::H501_UsageIndicationRejectionReason(unsigne
 }
 
 
-BOOL H501_UsageIndicationRejectionReason::CreateObject()
+PBoolean H501_UsageIndicationRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1521,7 +1521,7 @@ const static PASN_Names Names_H501_ValidationRejectionReason[]={
 //
 
 H501_ValidationRejectionReason::H501_ValidationRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 7, TRUE
+  : PASN_Choice(tag, tagClass, 7, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_ValidationRejectionReason,10
 #endif
@@ -1530,7 +1530,7 @@ H501_ValidationRejectionReason::H501_ValidationRejectionReason(unsigned tag, PAS
 }
 
 
-BOOL H501_ValidationRejectionReason::CreateObject()
+PBoolean H501_ValidationRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1551,7 +1551,7 @@ PObject * H501_ValidationRejectionReason::Clone() const
 //
 
 H501_NonStandardRequest::H501_NonStandardRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1573,10 +1573,10 @@ PINDEX H501_NonStandardRequest::GetDataLength() const
 }
 
 
-BOOL H501_NonStandardRequest::Decode(PASN_Stream & strm)
+PBoolean H501_NonStandardRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1606,7 +1606,7 @@ PObject * H501_NonStandardRequest::Clone() const
 //
 
 H501_NonStandardConfirmation::H501_NonStandardConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1628,10 +1628,10 @@ PINDEX H501_NonStandardConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_NonStandardConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_NonStandardConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1672,7 +1672,7 @@ const static PASN_Names Names_H501_NonStandardRejectionReason[]={
 //
 
 H501_NonStandardRejectionReason::H501_NonStandardRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_NonStandardRejectionReason,6
 #endif
@@ -1681,7 +1681,7 @@ H501_NonStandardRejectionReason::H501_NonStandardRejectionReason(unsigned tag, P
 }
 
 
-BOOL H501_NonStandardRejectionReason::CreateObject()
+PBoolean H501_NonStandardRejectionReason::CreateObject()
 {
   choice = (tag <= e_unknownServiceID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1709,7 +1709,7 @@ const static PASN_Names Names_H501_UnknownMessageReason[]={
 //
 
 H501_UnknownMessageReason::H501_UnknownMessageReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_UnknownMessageReason,2
 #endif
@@ -1718,7 +1718,7 @@ H501_UnknownMessageReason::H501_UnknownMessageReason(unsigned tag, PASN_Object::
 }
 
 
-BOOL H501_UnknownMessageReason::CreateObject()
+PBoolean H501_UnknownMessageReason::CreateObject()
 {
   choice = (tag <= e_undefined) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1797,7 +1797,7 @@ PObject * H501_ApplicationMessage::Clone() const
 //
 
 H501_AuthenticationConfirmation::H501_AuthenticationConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1819,10 +1819,10 @@ PINDEX H501_AuthenticationConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_AuthenticationConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_AuthenticationConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1870,7 +1870,7 @@ const static PASN_Names Names_H501_AuthenticationRejectionReason[]={
 //
 
 H501_AuthenticationRejectionReason::H501_AuthenticationRejectionReason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 13, TRUE
+  : PASN_Choice(tag, tagClass, 13, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_AuthenticationRejectionReason,13
 #endif
@@ -1879,7 +1879,7 @@ H501_AuthenticationRejectionReason::H501_AuthenticationRejectionReason(unsigned 
 }
 
 
-BOOL H501_AuthenticationRejectionReason::CreateObject()
+PBoolean H501_AuthenticationRejectionReason::CreateObject()
 {
   choice = (tag <= e_securityWrongOID) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -1908,7 +1908,7 @@ const static PASN_Names Names_H501_Pattern[]={
 //
 
 H501_Pattern::H501_Pattern(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_Pattern,3
 #endif
@@ -1961,20 +1961,20 @@ H501_Pattern::operator const H501_Pattern_range &() const
 }
 
 
-BOOL H501_Pattern::CreateObject()
+PBoolean H501_Pattern::CreateObject()
 {
   switch (tag) {
     case e_specific :
     case e_wildcard :
       choice = new H225_AliasAddress();
-      return TRUE;
+      return PTrue;
     case e_range :
       choice = new H501_Pattern_range();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2000,7 +2000,7 @@ const static PASN_Names Names_H501_AccessToken[]={
 //
 
 H501_AccessToken::H501_AccessToken(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_AccessToken,3
 #endif
@@ -2075,22 +2075,22 @@ H501_AccessToken::operator const H225_GenericData &() const
 }
 
 
-BOOL H501_AccessToken::CreateObject()
+PBoolean H501_AccessToken::CreateObject()
 {
   switch (tag) {
     case e_token :
       choice = new H235_ClearToken();
-      return TRUE;
+      return PTrue;
     case e_cryptoToken :
       choice = new H225_CryptoH323Token();
-      return TRUE;
+      return PTrue;
     case e_genericData :
       choice = new H225_GenericData();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2108,7 +2108,7 @@ PObject * H501_AccessToken::Clone() const
 //
 
 H501_CallInformation::H501_CallInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -2154,17 +2154,17 @@ PINDEX H501_CallInformation::GetDataLength() const
 }
 
 
-BOOL H501_CallInformation::Decode(PASN_Stream & strm)
+PBoolean H501_CallInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_callIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_conferenceID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_circuitID, m_circuitID))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2205,7 +2205,7 @@ const static PASN_Names Names_H501_UsageCallStatus[]={
 //
 
 H501_UsageCallStatus::H501_UsageCallStatus(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_UsageCallStatus,4
 #endif
@@ -2214,7 +2214,7 @@ H501_UsageCallStatus::H501_UsageCallStatus(unsigned tag, PASN_Object::TagClass t
 }
 
 
-BOOL H501_UsageCallStatus::CreateObject()
+PBoolean H501_UsageCallStatus::CreateObject()
 {
   choice = (tag <= e_registrationLost) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -2243,7 +2243,7 @@ const static PASN_Names Names_H501_Role[]={
 //
 
 H501_Role::H501_Role(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_Role,3
 #endif
@@ -2274,20 +2274,20 @@ H501_Role::operator const H225_NonStandardParameter &() const
 }
 
 
-BOOL H501_Role::CreateObject()
+PBoolean H501_Role::CreateObject()
 {
   switch (tag) {
     case e_originator :
     case e_destination :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
     case e_nonStandardData :
       choice = new H225_NonStandardParameter();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2339,7 +2339,7 @@ PObject * H501_TimeZone::Clone() const
 //
 
 H501_TerminationCause::H501_TerminationCause(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
   m_causeIE.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -2392,17 +2392,17 @@ PINDEX H501_TerminationCause::GetDataLength() const
 }
 
 
-BOOL H501_TerminationCause::Decode(PASN_Stream & strm)
+PBoolean H501_TerminationCause::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_releaseCompleteReason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_causeIE) && !m_causeIE.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_nonStandardData) && !m_nonStandardData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2885,7 +2885,7 @@ const static PASN_Names Names_H501_UpdateInformation_descriptorInfo[]={
 //
 
 H501_UpdateInformation_descriptorInfo::H501_UpdateInformation_descriptorInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_UpdateInformation_descriptorInfo,2
 #endif
@@ -2938,19 +2938,19 @@ H501_UpdateInformation_descriptorInfo::operator const H501_Descriptor &() const
 }
 
 
-BOOL H501_UpdateInformation_descriptorInfo::CreateObject()
+PBoolean H501_UpdateInformation_descriptorInfo::CreateObject()
 {
   switch (tag) {
     case e_descriptorID :
       choice = new H225_GloballyUniqueID();
-      return TRUE;
+      return PTrue;
     case e_descriptor :
       choice = new H501_Descriptor();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -2976,7 +2976,7 @@ const static PASN_Names Names_H501_UpdateInformation_updateType[]={
 //
 
 H501_UpdateInformation_updateType::H501_UpdateInformation_updateType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_UpdateInformation_updateType,3
 #endif
@@ -2985,7 +2985,7 @@ H501_UpdateInformation_updateType::H501_UpdateInformation_updateType(unsigned ta
 }
 
 
-BOOL H501_UpdateInformation_updateType::CreateObject()
+PBoolean H501_UpdateInformation_updateType::CreateObject()
 {
   choice = (tag <= e_changed) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -3223,7 +3223,7 @@ PObject * H501_ArrayOf_RouteInformation::Clone() const
 //
 
 H501_Pattern_range::H501_Pattern_range(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -3267,15 +3267,15 @@ PINDEX H501_Pattern_range::GetDataLength() const
 }
 
 
-BOOL H501_Pattern_range::Decode(PASN_Stream & strm)
+PBoolean H501_Pattern_range::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_startOfRange.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_endOfRange.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3314,7 +3314,7 @@ const static PASN_Names Names_H501_RouteInformation_messageType[]={
 //
 
 H501_RouteInformation_messageType::H501_RouteInformation_messageType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_RouteInformation_messageType,3
 #endif
@@ -3323,7 +3323,7 @@ H501_RouteInformation_messageType::H501_RouteInformation_messageType(unsigned ta
 }
 
 
-BOOL H501_RouteInformation_messageType::CreateObject()
+PBoolean H501_RouteInformation_messageType::CreateObject()
 {
   choice = (tag <= e_nonExistent) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -3479,7 +3479,7 @@ const static PASN_Names Names_H501_PriceElement_units[]={
 //
 
 H501_PriceElement_units::H501_PriceElement_units(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 6, TRUE
+  : PASN_Choice(tag, tagClass, 6, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H501_PriceElement_units,6
 #endif
@@ -3488,7 +3488,7 @@ H501_PriceElement_units::H501_PriceElement_units(unsigned tag, PASN_Object::TagC
 }
 
 
-BOOL H501_PriceElement_units::CreateObject()
+PBoolean H501_PriceElement_units::CreateObject()
 {
   choice = (tag <= e_maximum) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -3540,7 +3540,7 @@ PObject * H501_ArrayOf_AlternatePE::Clone() const
 //
 
 H501_UsageSpecification_when::H501_UsageSpecification_when(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
 {
   m_period.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -3607,21 +3607,21 @@ PINDEX H501_UsageSpecification_when::GetDataLength() const
 }
 
 
-BOOL H501_UsageSpecification_when::Decode(PASN_Stream & strm)
+PBoolean H501_UsageSpecification_when::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_never) && !m_never.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_start) && !m_start.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_end) && !m_end.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_period) && !m_period.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_failures) && !m_failures.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3691,7 +3691,7 @@ PObject * H501_ArrayOf_AliasAddress::Clone() const
 //
 
 H501_MessageCommonInfo::H501_MessageCommonInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 4)
 {
   m_sequenceNumber.SetConstraints(PASN_Object::FixedConstraint, 0, 65535);
   m_hopCount.SetConstraints(PASN_Object::FixedConstraint, 1, 255);
@@ -3780,35 +3780,35 @@ PINDEX H501_MessageCommonInfo::GetDataLength() const
 }
 
 
-BOOL H501_MessageCommonInfo::Decode(PASN_Stream & strm)
+PBoolean H501_MessageCommonInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sequenceNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_annexGversion.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_hopCount.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_replyAddress) && !m_replyAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_integrityCheckValue) && !m_integrityCheckValue.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_tokens) && !m_tokens.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_cryptoTokens) && !m_cryptoTokens.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_nonStandard) && !m_nonStandard.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_serviceID, m_serviceID))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_genericData, m_genericData))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_version, m_version))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3854,7 +3854,7 @@ PObject * H501_MessageCommonInfo::Clone() const
 //
 
 H501_SecurityMode::H501_SecurityMode(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 0)
 {
 }
 
@@ -3908,17 +3908,17 @@ PINDEX H501_SecurityMode::GetDataLength() const
 }
 
 
-BOOL H501_SecurityMode::Decode(PASN_Stream & strm)
+PBoolean H501_SecurityMode::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_authentication) && !m_authentication.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_integrity) && !m_integrity.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_algorithmOIDs) && !m_algorithmOIDs.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -3953,7 +3953,7 @@ PObject * H501_SecurityMode::Clone() const
 //
 
 H501_DescriptorRequest::H501_DescriptorRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -3993,13 +3993,13 @@ PINDEX H501_DescriptorRequest::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorRequest::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_descriptorID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4029,7 +4029,7 @@ PObject * H501_DescriptorRequest::Clone() const
 //
 
 H501_DescriptorConfirmation::H501_DescriptorConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4069,13 +4069,13 @@ PINDEX H501_DescriptorConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_descriptor.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4105,7 +4105,7 @@ PObject * H501_DescriptorConfirmation::Clone() const
 //
 
 H501_DescriptorRejection::H501_DescriptorRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -4151,15 +4151,15 @@ PINDEX H501_DescriptorRejection::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorRejection::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_descriptorID) && !m_descriptorID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4191,7 +4191,7 @@ PObject * H501_DescriptorRejection::Clone() const
 //
 
 H501_DescriptorIDConfirmation::H501_DescriptorIDConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4231,13 +4231,13 @@ PINDEX H501_DescriptorIDConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorIDConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorIDConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_descriptorInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4267,7 +4267,7 @@ PObject * H501_DescriptorIDConfirmation::Clone() const
 //
 
 H501_DescriptorIDRejection::H501_DescriptorIDRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4307,13 +4307,13 @@ PINDEX H501_DescriptorIDRejection::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorIDRejection::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorIDRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4343,7 +4343,7 @@ PObject * H501_DescriptorIDRejection::Clone() const
 //
 
 H501_DescriptorUpdate::H501_DescriptorUpdate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4387,15 +4387,15 @@ PINDEX H501_DescriptorUpdate::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorUpdate::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorUpdate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sender.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_updateInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4426,7 +4426,7 @@ PObject * H501_DescriptorUpdate::Clone() const
 //
 
 H501_UpdateInformation::H501_UpdateInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4470,15 +4470,15 @@ PINDEX H501_UpdateInformation::GetDataLength() const
 }
 
 
-BOOL H501_UpdateInformation::Decode(PASN_Stream & strm)
+PBoolean H501_UpdateInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_descriptorInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_updateType.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4509,7 +4509,7 @@ PObject * H501_UpdateInformation::Clone() const
 //
 
 H501_AccessConfirmation::H501_AccessConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 2)
 {
 }
 
@@ -4557,19 +4557,19 @@ PINDEX H501_AccessConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_AccessConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_AccessConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_templates.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_partialResponse.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_supportedProtocols, m_supportedProtocols))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4602,7 +4602,7 @@ PObject * H501_AccessConfirmation::Clone() const
 //
 
 H501_AccessRejection::H501_AccessRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -4644,15 +4644,15 @@ PINDEX H501_AccessRejection::GetDataLength() const
 }
 
 
-BOOL H501_AccessRejection::Decode(PASN_Stream & strm)
+PBoolean H501_AccessRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4683,7 +4683,7 @@ PObject * H501_AccessRejection::Clone() const
 //
 
 H501_UsageRejection::H501_UsageRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4723,13 +4723,13 @@ PINDEX H501_UsageRejection::GetDataLength() const
 }
 
 
-BOOL H501_UsageRejection::Decode(PASN_Stream & strm)
+PBoolean H501_UsageRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4759,7 +4759,7 @@ PObject * H501_UsageRejection::Clone() const
 //
 
 H501_UsageIndicationRejection::H501_UsageIndicationRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4799,13 +4799,13 @@ PINDEX H501_UsageIndicationRejection::GetDataLength() const
 }
 
 
-BOOL H501_UsageIndicationRejection::Decode(PASN_Stream & strm)
+PBoolean H501_UsageIndicationRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4835,7 +4835,7 @@ PObject * H501_UsageIndicationRejection::Clone() const
 //
 
 H501_ValidationRejection::H501_ValidationRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -4875,13 +4875,13 @@ PINDEX H501_ValidationRejection::GetDataLength() const
 }
 
 
-BOOL H501_ValidationRejection::Decode(PASN_Stream & strm)
+PBoolean H501_ValidationRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4911,7 +4911,7 @@ PObject * H501_ValidationRejection::Clone() const
 //
 
 H501_RequestInProgress::H501_RequestInProgress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
   m_delay.SetConstraints(PASN_Object::FixedConstraint, 1, 65535);
 }
@@ -4954,15 +4954,15 @@ PINDEX H501_RequestInProgress::GetDataLength() const
 }
 
 
-BOOL H501_RequestInProgress::Decode(PASN_Stream & strm)
+PBoolean H501_RequestInProgress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_delay.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_serviceControl, m_serviceControl))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4993,7 +4993,7 @@ PObject * H501_RequestInProgress::Clone() const
 //
 
 H501_NonStandardRejection::H501_NonStandardRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5033,13 +5033,13 @@ PINDEX H501_NonStandardRejection::GetDataLength() const
 }
 
 
-BOOL H501_NonStandardRejection::Decode(PASN_Stream & strm)
+PBoolean H501_NonStandardRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5069,7 +5069,7 @@ PObject * H501_NonStandardRejection::Clone() const
 //
 
 H501_UnknownMessageResponse::H501_UnknownMessageResponse(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5113,15 +5113,15 @@ PINDEX H501_UnknownMessageResponse::GetDataLength() const
 }
 
 
-BOOL H501_UnknownMessageResponse::Decode(PASN_Stream & strm)
+PBoolean H501_UnknownMessageResponse::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_unknownMessage.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5152,7 +5152,7 @@ PObject * H501_UnknownMessageResponse::Clone() const
 //
 
 H501_AuthenticationRequest::H501_AuthenticationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5192,13 +5192,13 @@ PINDEX H501_AuthenticationRequest::GetDataLength() const
 }
 
 
-BOOL H501_AuthenticationRequest::Decode(PASN_Stream & strm)
+PBoolean H501_AuthenticationRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_applicationMessage.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5228,7 +5228,7 @@ PObject * H501_AuthenticationRequest::Clone() const
 //
 
 H501_AuthenticationRejection::H501_AuthenticationRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5268,13 +5268,13 @@ PINDEX H501_AuthenticationRejection::GetDataLength() const
 }
 
 
-BOOL H501_AuthenticationRejection::Decode(PASN_Stream & strm)
+PBoolean H501_AuthenticationRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5304,7 +5304,7 @@ PObject * H501_AuthenticationRejection::Clone() const
 //
 
 H501_AddressTemplate::H501_AddressTemplate(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 2)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 2)
 {
   m_timeToLive.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
 }
@@ -5357,21 +5357,21 @@ PINDEX H501_AddressTemplate::GetDataLength() const
 }
 
 
-BOOL H501_AddressTemplate::Decode(PASN_Stream & strm)
+PBoolean H501_AddressTemplate::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_pattern.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_routeInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_timeToLive.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_supportedProtocols, m_supportedProtocols))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5405,7 +5405,7 @@ PObject * H501_AddressTemplate::Clone() const
 //
 
 H501_ContactInformation::H501_ContactInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 4)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 4)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 0, 127);
 }
@@ -5476,29 +5476,29 @@ PINDEX H501_ContactInformation::GetDataLength() const
 }
 
 
-BOOL H501_ContactInformation::Decode(PASN_Stream & strm)
+PBoolean H501_ContactInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_transportAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_priority.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_transportQoS) && !m_transportQoS.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_security) && !m_security.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_accessTokens) && !m_accessTokens.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_multipleCalls, m_multipleCalls))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_circuitID, m_circuitID))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_supportedCircuits, m_supportedCircuits))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5539,7 +5539,7 @@ PObject * H501_ContactInformation::Clone() const
 //
 
 H501_PriceInfoSpec::H501_PriceInfoSpec(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 6, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 6, PTrue, 0)
 {
   m_currency.SetConstraints(PASN_Object::FixedConstraint, 3);
   m_currencyScale.SetConstraints(PASN_Object::FixedConstraint, -127, 127);
@@ -5624,27 +5624,27 @@ PINDEX H501_PriceInfoSpec::GetDataLength() const
 }
 
 
-BOOL H501_PriceInfoSpec::Decode(PASN_Stream & strm)
+PBoolean H501_PriceInfoSpec::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_currency.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_currencyScale.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_validFrom) && !m_validFrom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_validUntil) && !m_validUntil.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_hoursFrom) && !m_hoursFrom.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_hoursUntil) && !m_hoursUntil.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_priceElement) && !m_priceElement.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_priceFormula) && !m_priceFormula.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5687,7 +5687,7 @@ PObject * H501_PriceInfoSpec::Clone() const
 //
 
 H501_PriceElement::H501_PriceElement(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
   m_amount.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
   m_quantum.SetConstraints(PASN_Object::FixedConstraint, 0, 4294967295U);
@@ -5737,17 +5737,17 @@ PINDEX H501_PriceElement::GetDataLength() const
 }
 
 
-BOOL H501_PriceElement::Decode(PASN_Stream & strm)
+PBoolean H501_PriceElement::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_amount.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_quantum.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_units.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5779,7 +5779,7 @@ PObject * H501_PriceElement::Clone() const
 //
 
 H501_DescriptorInfo::H501_DescriptorInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5823,15 +5823,15 @@ PINDEX H501_DescriptorInfo::GetDataLength() const
 }
 
 
-BOOL H501_DescriptorInfo::Decode(PASN_Stream & strm)
+PBoolean H501_DescriptorInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_descriptorID.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_lastChanged.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5862,7 +5862,7 @@ PObject * H501_DescriptorInfo::Clone() const
 //
 
 H501_AlternatePEInfo::H501_AlternatePEInfo(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -5906,15 +5906,15 @@ PINDEX H501_AlternatePEInfo::GetDataLength() const
 }
 
 
-BOOL H501_AlternatePEInfo::Decode(PASN_Stream & strm)
+PBoolean H501_AlternatePEInfo::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_alternatePE.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_alternateIsPermanent.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5945,7 +5945,7 @@ PObject * H501_AlternatePEInfo::Clone() const
 //
 
 H501_AlternatePE::H501_AlternatePE(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
   m_priority.SetConstraints(PASN_Object::FixedConstraint, 1, 127);
 }
@@ -5996,17 +5996,17 @@ PINDEX H501_AlternatePE::GetDataLength() const
 }
 
 
-BOOL H501_AlternatePE::Decode(PASN_Stream & strm)
+PBoolean H501_AlternatePE::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_contactAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_priority.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_elementIdentifier) && !m_elementIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6039,7 +6039,7 @@ PObject * H501_AlternatePE::Clone() const
 //
 
 H501_UserInformation::H501_UserInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -6085,15 +6085,15 @@ PINDEX H501_UserInformation::GetDataLength() const
 }
 
 
-BOOL H501_UserInformation::Decode(PASN_Stream & strm)
+PBoolean H501_UserInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_userIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_userAuthenticator) && !m_userAuthenticator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6125,7 +6125,7 @@ PObject * H501_UserInformation::Clone() const
 //
 
 H501_UsageSpecification::H501_UsageSpecification(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 1)
 {
 }
 
@@ -6179,21 +6179,21 @@ PINDEX H501_UsageSpecification::GetDataLength() const
 }
 
 
-BOOL H501_UsageSpecification::Decode(PASN_Stream & strm)
+PBoolean H501_UsageSpecification::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sendTo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_when.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_required.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_preferred.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_sendToPEAddress, m_sendToPEAddress))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6227,7 +6227,7 @@ PObject * H501_UsageSpecification::Clone() const
 //
 
 H501_PartyInformation::H501_PartyInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
 {
 }
 
@@ -6297,23 +6297,23 @@ PINDEX H501_PartyInformation::GetDataLength() const
 }
 
 
-BOOL H501_PartyInformation::Decode(PASN_Stream & strm)
+PBoolean H501_PartyInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_logicalAddresses.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_domainIdentifier) && !m_domainIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_transportAddress) && !m_transportAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_endpointType) && !m_endpointType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_userInfo) && !m_userInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_timeZone) && !m_timeZone.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6353,7 +6353,7 @@ PObject * H501_PartyInformation::Clone() const
 //
 
 H501_Message::H501_Message(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -6397,15 +6397,15 @@ PINDEX H501_Message::GetDataLength() const
 }
 
 
-BOOL H501_Message::Decode(PASN_Stream & strm)
+PBoolean H501_Message::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_body.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_common.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6436,7 +6436,7 @@ PObject * H501_Message::Clone() const
 //
 
 H501_ServiceRequest::H501_ServiceRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 4, PTrue, 1)
 {
   m_timeToLive.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
 }
@@ -6499,21 +6499,21 @@ PINDEX H501_ServiceRequest::GetDataLength() const
 }
 
 
-BOOL H501_ServiceRequest::Decode(PASN_Stream & strm)
+PBoolean H501_ServiceRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_elementIdentifier) && !m_elementIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_domainIdentifier) && !m_domainIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_securityMode) && !m_securityMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_timeToLive) && !m_timeToLive.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_usageSpec, m_usageSpec))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6551,7 +6551,7 @@ PObject * H501_ServiceRequest::Clone() const
 //
 
 H501_ServiceConfirmation::H501_ServiceConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 1)
 {
   m_timeToLive.SetConstraints(PASN_Object::FixedConstraint, 1, 4294967295U);
 }
@@ -6616,23 +6616,23 @@ PINDEX H501_ServiceConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_ServiceConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_ServiceConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_elementIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_domainIdentifier.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_alternates) && !m_alternates.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_securityMode) && !m_securityMode.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_timeToLive) && !m_timeToLive.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_usageSpec, m_usageSpec))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6670,7 +6670,7 @@ PObject * H501_ServiceConfirmation::Clone() const
 //
 
 H501_ServiceRejection::H501_ServiceRejection(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -6716,15 +6716,15 @@ PINDEX H501_ServiceRejection::GetDataLength() const
 }
 
 
-BOOL H501_ServiceRejection::Decode(PASN_Stream & strm)
+PBoolean H501_ServiceRejection::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_alternates) && !m_alternates.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6756,7 +6756,7 @@ PObject * H501_ServiceRejection::Clone() const
 //
 
 H501_ServiceRelease::H501_ServiceRelease(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -6802,15 +6802,15 @@ PINDEX H501_ServiceRelease::GetDataLength() const
 }
 
 
-BOOL H501_ServiceRelease::Decode(PASN_Stream & strm)
+PBoolean H501_ServiceRelease::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_alternates) && !m_alternates.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6842,7 +6842,7 @@ PObject * H501_ServiceRelease::Clone() const
 //
 
 H501_AccessRequest::H501_AccessRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 1)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 1)
 {
 }
 
@@ -6902,21 +6902,21 @@ PINDEX H501_AccessRequest::GetDataLength() const
 }
 
 
-BOOL H501_AccessRequest::Decode(PASN_Stream & strm)
+PBoolean H501_AccessRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_destinationInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_sourceInfo) && !m_sourceInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_callInfo) && !m_callInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_usageSpec) && !m_usageSpec.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_desiredProtocols, m_desiredProtocols))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6953,7 +6953,7 @@ PObject * H501_AccessRequest::Clone() const
 //
 
 H501_UsageRequest::H501_UsageRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -6997,15 +6997,15 @@ PINDEX H501_UsageRequest::GetDataLength() const
 }
 
 
-BOOL H501_UsageRequest::Decode(PASN_Stream & strm)
+PBoolean H501_UsageRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_callInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_usageSpec.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7036,7 +7036,7 @@ PObject * H501_UsageRequest::Clone() const
 //
 
 H501_UsageIndication::H501_UsageIndication(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 5, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 5, PTrue, 0)
 {
 }
 
@@ -7122,31 +7122,31 @@ PINDEX H501_UsageIndication::GetDataLength() const
 }
 
 
-BOOL H501_UsageIndication::Decode(PASN_Stream & strm)
+PBoolean H501_UsageIndication::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_callInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_accessTokens) && !m_accessTokens.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_senderRole.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_usageCallStatus.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_srcInfo) && !m_srcInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_destAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_startTime) && !m_startTime.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_endTime) && !m_endTime.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_terminationCause) && !m_terminationCause.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_usageFields.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7190,7 +7190,7 @@ PObject * H501_UsageIndication::Clone() const
 //
 
 H501_ValidationRequest::H501_ValidationRequest(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 4, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 4, PTrue, 0)
 {
 }
 
@@ -7254,21 +7254,21 @@ PINDEX H501_ValidationRequest::GetDataLength() const
 }
 
 
-BOOL H501_ValidationRequest::Decode(PASN_Stream & strm)
+PBoolean H501_ValidationRequest::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_accessToken) && !m_accessToken.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_destinationInfo) && !m_destinationInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_sourceInfo) && !m_sourceInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_callInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_usageSpec) && !m_usageSpec.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7306,7 +7306,7 @@ PObject * H501_ValidationRequest::Clone() const
 //
 
 H501_ValidationConfirmation::H501_ValidationConfirmation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -7354,15 +7354,15 @@ PINDEX H501_ValidationConfirmation::GetDataLength() const
 }
 
 
-BOOL H501_ValidationConfirmation::Decode(PASN_Stream & strm)
+PBoolean H501_ValidationConfirmation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_destinationInfo) && !m_destinationInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_usageSpec) && !m_usageSpec.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7395,7 +7395,7 @@ PObject * H501_ValidationConfirmation::Clone() const
 //
 
 H501_RouteInformation::H501_RouteInformation(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 3, TRUE, 3)
+  : PASN_Sequence(tag, tagClass, 3, PTrue, 3)
 {
 }
 
@@ -7467,29 +7467,29 @@ PINDEX H501_RouteInformation::GetDataLength() const
 }
 
 
-BOOL H501_RouteInformation::Decode(PASN_Stream & strm)
+PBoolean H501_RouteInformation::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_messageType.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_callSpecific.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_usageSpec) && !m_usageSpec.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_priceInfo) && !m_priceInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_contacts.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_type) && !m_type.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_featureSet, m_featureSet))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_circuitID, m_circuitID))
-    return FALSE;
+    return PFalse;
   if (!KnownExtensionDecode(strm, e_supportedCircuits, m_supportedCircuits))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7530,7 +7530,7 @@ PObject * H501_RouteInformation::Clone() const
 //
 
 H501_Descriptor::H501_Descriptor(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -7580,17 +7580,17 @@ PINDEX H501_Descriptor::GetDataLength() const
 }
 
 
-BOOL H501_Descriptor::Decode(PASN_Stream & strm)
+PBoolean H501_Descriptor::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_descriptorInfo.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_templates.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_gatekeeperID) && !m_gatekeeperID.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

@@ -161,9 +161,9 @@ class OpalTranscoder : public OpalMediaFormatPair
        highly context sensitive, for example VideoFastUpdate would only apply
        to a video transcoder.
 
-       The default behaviour simply returns FALSE.
+       The default behaviour simply returns PFalse.
       */
-    virtual BOOL ExecuteCommand(
+    virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
     );
 
@@ -174,7 +174,7 @@ class OpalTranscoder : public OpalMediaFormatPair
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      ///<  Flag for input or output data size
+      PBoolean input      ///<  Flag for input or output data size
     ) const = 0;
 
     /**Convert the data from one format to another.
@@ -185,9 +185,9 @@ class OpalTranscoder : public OpalMediaFormatPair
        The default behaviour makes sure the output list has only one element
        in it and calls the Convert() function.
 
-       Returns FALSE if the conversion fails.
+       Returns PFalse if the conversion fails.
       */
-    virtual BOOL ConvertFrames(
+    virtual PBoolean ConvertFrames(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrameList & output    ///<  Output data
     );
@@ -196,9 +196,9 @@ class OpalTranscoder : public OpalMediaFormatPair
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
 
-       Returns FALSE if the conversion fails.
+       Returns PFalse if the conversion fails.
       */
-    virtual BOOL Convert(
+    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
     ) = 0;
@@ -222,10 +222,10 @@ class OpalTranscoder : public OpalMediaFormatPair
        There could be many possible matches between the two lists, so
        preference is given to the order of the destination formats.
 
-       Returns FALSE if there is no registered media transcoder that can be used
+       Returns PFalse if there is no registered media transcoder that can be used
        between the two named formats.
       */
-    static BOOL SelectFormats(
+    static PBoolean SelectFormats(
       unsigned sessionID,               ///<  Session ID for media formats
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
@@ -238,10 +238,10 @@ class OpalTranscoder : public OpalMediaFormatPair
        allow two transcoders to be used to get data from the source format to
        the destination format.
 
-       Returns FALSE if there is no registered media transcoder that can be used
+       Returns PFalse if there is no registered media transcoder that can be used
        between the two named formats.
       */
-    static BOOL FindIntermediateFormat(
+    static PBoolean FindIntermediateFormat(
       OpalMediaFormat & srcFormat,          ///<  Selected destination format to be used
       OpalMediaFormat & dstFormat,          ///<  Selected destination format to be used
       OpalMediaFormat & intermediateFormat  ///<  Intermediate format that can be used
@@ -306,7 +306,7 @@ class OpalTranscoder : public OpalMediaFormatPair
     { payloadTypeMap.insert(RTP_DataFrame::PayloadMapType::value_type(from, to)); }
 
     RTP_DataFrame::PayloadTypes GetPayloadType(
-      BOOL input      ///<  Flag for input or output data size
+      PBoolean input      ///<  Flag for input or output data size
     ) const;
   //@}
 
@@ -317,7 +317,7 @@ class OpalTranscoder : public OpalMediaFormatPair
 
     RTP_DataFrame::PayloadMapType payloadTypeMap;
 
-    BOOL outputIsRTP, inputIsRTP;
+    PBoolean outputIsRTP, inputIsRTP;
 };
 
 
@@ -370,7 +370,7 @@ class OpalFramedTranscoder : public OpalTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      ///<  Flag for input or output data size
+      PBoolean input      ///<  Flag for input or output data size
     ) const;
 
     /**Convert the data from one format to another.
@@ -379,7 +379,7 @@ class OpalFramedTranscoder : public OpalTranscoder
 
        Returns FALSE if the conversion fails.
       */
-    virtual BOOL Convert(
+    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
     );
@@ -387,17 +387,17 @@ class OpalFramedTranscoder : public OpalTranscoder
     /**Convert a frame of data from one format to another.
        This function implicitly knows the input and output frame sizes.
       */
-    virtual BOOL ConvertFrame(
+    virtual PBoolean ConvertFrame(
       const BYTE * input,   ///<  Input data
       BYTE * output         ///<  Output data
     );
-    virtual BOOL ConvertFrame(
+    virtual PBoolean ConvertFrame(
       const BYTE * input,   ///<  Input data
       PINDEX & consumed,    ///<  number of input bytes consumed
       BYTE * output,        ///<  Output data
-      PINDEX & created      ///<  number of output bytes created  
+      PINDEX & created      ///<  number of output bytes created
     );
-    virtual BOOL ConvertSilentFrame(
+    virtual PBoolean ConvertSilentFrame(
       BYTE * output         ///<  Output data
     );
   //@}
@@ -443,16 +443,16 @@ class OpalStreamedTranscoder : public OpalTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      ///<  Flag for input or output data size
+      PBoolean input      ///<  Flag for input or output data size
     ) const;
 
     /**Convert the data from one format to another.
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
 
-       Returns FALSE if the conversion fails.
+       Returns PFalse if the conversion fails.
       */
-    virtual BOOL Convert(
+    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
     );
@@ -506,8 +506,8 @@ class OpalEmptyFramedAudioTranscoder : public OpalFramedTranscoder
       : OpalFramedTranscoder(inFormat, outFormat, 100, 100)
     {  }
 
-    BOOL ConvertFrame(const BYTE *, PINDEX &, BYTE *, PINDEX &)
-    { return FALSE; }
+    PBoolean ConvertFrame(const BYTE *, PINDEX &, BYTE *, PINDEX &)
+    { return PFalse; }
 };
 
 #define OPAL_DECLARE_EMPTY_TRANSCODER(fmt) \

@@ -44,16 +44,16 @@
 class T120_X224 : public X224 {
     PCLASSINFO(T120_X224, X224);
   public:
-    BOOL Read(H323Transport & transport);
-    BOOL Write(H323Transport & transport);
+    PBoolean Read(H323Transport & transport);
+    PBoolean Write(H323Transport & transport);
 };
 
 
 class T120ConnectPDU : public MCS_ConnectMCSPDU {
     PCLASSINFO(T120ConnectPDU, MCS_ConnectMCSPDU);
   public:
-    BOOL Read(H323Transport & transport);
-    BOOL Write(H323Transport & transport);
+    PBoolean Read(H323Transport & transport);
+    PBoolean Write(H323Transport & transport);
   protected:
     T120_X224 x224;
 };
@@ -64,7 +64,7 @@ const OpalMediaFormat OpalT120(
   OpalMediaFormat::DefaultDataSessionID,
   RTP_DataFrame::IllegalPayloadType,
   "t120",
-  FALSE,   // No jitter for data
+  PFalse,   // No jitter for data
   825000, // 100's bits/sec
   0,
   0,
@@ -76,26 +76,26 @@ const OpalMediaFormat OpalT120(
 
 /////////////////////////////////////////////////////////////////////////////
 
-BOOL T120_X224::Read(H323Transport & transport)
+PBoolean T120_X224::Read(H323Transport & transport)
 {
   PBYTEArray rawData;
 
   if (!transport.ReadPDU(rawData)) {
     PTRACE(1, "T120\tRead of X224 failed: " << transport.GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
   if (Decode(rawData)) {
     PTRACE(1, "T120\tDecode of PDU failed:\n  " << setprecision(2) << *this);
-    return FALSE;
+    return PFalse;
   }
 
   PTRACE(4, "T120\tRead X224 PDU:\n  " << setprecision(2) << *this);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL T120_X224::Write(H323Transport & transport)
+PBoolean T120_X224::Write(H323Transport & transport)
 {
   PBYTEArray rawData;
 
@@ -103,44 +103,44 @@ BOOL T120_X224::Write(H323Transport & transport)
 
   if (!Encode(rawData)) {
     PTRACE(1, "T120\tEncode of PDU failed:\n  " << setprecision(2) << *this);
-    return FALSE;
+    return PFalse;
   }
 
   if (!transport.WritePDU(rawData)) {
     PTRACE(1, "T120\tWrite X224 PDU failed: " << transport.GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
 /////////////////////////////////////////////////////////////////////////////
 
-BOOL T120ConnectPDU::Read(H323Transport & transport)
+PBoolean T120ConnectPDU::Read(H323Transport & transport)
 {
   if (!x224.Read(transport))
-    return FALSE;
+    return PFalse;
 
   // An X224 Data PDU...
   if (x224.GetCode() != X224::DataPDU) {
     PTRACE(1, "T120\tX224 must be data PDU");
-    return FALSE;
+    return PFalse;
   }
 
   // ... contains the T120 MCS PDU
   PBER_Stream ber = x224.GetData();
   if (!Decode(ber)) {
     PTRACE(1, "T120\tDecode of PDU failed:\n  " << setprecision(2) << *this);
-    return FALSE;
+    return PFalse;
   }
 
   PTRACE(4, "T120\tReceived MCS Connect PDU:\n  " << setprecision(2) << *this);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL T120ConnectPDU::Write(H323Transport & transport)
+PBoolean T120ConnectPDU::Write(H323Transport & transport)
 {
   PTRACE(4, "T120\tSending MCS Connect PDU:\n  " << setprecision(2) << *this);
 
@@ -159,35 +159,35 @@ OpalT120Protocol::OpalT120Protocol()
 }
 
 
-BOOL OpalT120Protocol::Originate(H323Transport & transport)
+PBoolean OpalT120Protocol::Originate(H323Transport & transport)
 {
   PTRACE(3, "T120\tOriginate, sending X224 CONNECT-REQUEST");
 
   T120_X224 x224;
   x224.BuildConnectRequest();
   if (!x224.Write(transport))
-    return FALSE;
+    return PFalse;
 
   transport.SetReadTimeout(10000); // Wait 10 seconds for reply
   if (!x224.Read(transport))
-    return FALSE;
+    return PFalse;
 
   if (x224.GetCode() != X224::ConnectConfirm) {
     PTRACE(1, "T120\tPDU was not X224 CONNECT-CONFIRM");
-    return FALSE;
+    return PFalse;
   }
 
   T120ConnectPDU pdu;
   while (pdu.Read(transport)) {
     if (!HandleConnect(pdu))
-      return TRUE;
+      return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL OpalT120Protocol::Answer(H323Transport & transport)
+PBoolean OpalT120Protocol::Answer(H323Transport & transport)
 {
   PTRACE(3, "T120\tAnswer, awaiting X224 CONNECT-REQUEST");
 
@@ -196,32 +196,32 @@ BOOL OpalT120Protocol::Answer(H323Transport & transport)
 
   do {
     if (!x224.Read(transport))
-      return FALSE;
+      return PFalse;
   } while (x224.GetCode() != X224::ConnectRequest);
 
   x224.BuildConnectConfirm();
   if (!x224.Write(transport))
-    return FALSE;
+    return PFalse;
 
   T120ConnectPDU pdu;
   while (pdu.Read(transport)) {
     if (!HandleConnect(pdu))
-      return TRUE;
+      return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL OpalT120Protocol::HandleConnect(const MCS_ConnectMCSPDU & /*pdu*/)
+PBoolean OpalT120Protocol::HandleConnect(const MCS_ConnectMCSPDU & /*pdu*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalT120Protocol::HandleDomain(const MCS_DomainMCSPDU & /*pdu*/)
+PBoolean OpalT120Protocol::HandleDomain(const MCS_DomainMCSPDU & /*pdu*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 

@@ -72,7 +72,7 @@ SimpleOpalProcess::SimpleOpalProcess()
 void SimpleOpalProcess::Main()
 {
   cout << GetName()
-       << " Version " << GetVersion(TRUE)
+       << " Version " << GetVersion(PTrue)
        << " by " << GetManufacturer()
        << " on " << GetOSClass() << ' ' << GetOSName()
        << " (" << GetOSVersion() << '-' << GetOSHardware() << ")\n\n";
@@ -163,7 +163,7 @@ void SimpleOpalProcess::Main()
 #if OPAL_IAX2
 	     "X-no-iax2."
 #endif
-          , FALSE);
+          , PFalse);
 
 
   if (args.HasOption('h') || (!args.HasOption('l') && args.GetCount() == 0)) {
@@ -392,7 +392,7 @@ MyManager::MyManager()
   t38EP = NULL;
 #endif
 
-  pauseBeforeDialing = FALSE;
+  pauseBeforeDialing = PFalse;
 }
 
 
@@ -406,18 +406,18 @@ MyManager::~MyManager()
 }
 
 
-BOOL MyManager::Initialise(PArgList & args)
+PBoolean MyManager::Initialise(PArgList & args)
 {
 #if OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
-    autoStartReceiveVideo = TRUE;
+    autoStartReceiveVideo = PTrue;
   if (args.HasOption("no-rx-video"))
-    autoStartReceiveVideo = FALSE;
+    autoStartReceiveVideo = PFalse;
   if (args.HasOption("tx-video"))
-    autoStartTransmitVideo = TRUE;
+    autoStartTransmitVideo = PTrue;
   if (args.HasOption("no-tx-video"))
-    autoStartTransmitVideo = FALSE;
+    autoStartTransmitVideo = PFalse;
 
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -427,7 +427,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (!SetVideoInputDevice(video)) {
       cerr << "Unknown grabber device " << video.deviceName << endl
            << "options are:" << setfill(',') << PVideoInputDevice::GetDriversDeviceNames("") << endl;
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -438,7 +438,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (!SetVideoOutputDevice(video)) {
       cerr << "Unknown display device " << video.deviceName << endl
            << "options are:" << setfill(',') << PVideoOutputDevice::GetDriversDeviceNames("") << endl;
-      return FALSE;
+      return PFalse;
     }
   }
 #endif
@@ -459,7 +459,7 @@ BOOL MyManager::Initialise(PArgList & args)
       SetAudioJitterDelay(minJitter, maxJitter);
     else {
       cerr << "Jitter should be between 20 and 1000 milliseconds." << endl;
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -502,7 +502,7 @@ BOOL MyManager::Initialise(PArgList & args)
     unsigned tos = args.GetOptionString("rtp-tos").AsUnsigned();
     if (tos > 255) {
       cerr << "IP Type Of Service bits must be 0 to 255." << endl;
-      return FALSE;
+      return PFalse;
     }
     SetRtpIpTypeofService(tos);
   }
@@ -569,13 +569,13 @@ BOOL MyManager::Initialise(PArgList & args)
     cout << "Auto answer is " << (pcssEP->autoAnswer ? "on" : "off") << "\n";
           
     if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Recorder))
-      return FALSE;
+      return PFalse;
     if (!pcssEP->SetSoundDevice(args, "sound", PSoundChannel::Player))
-      return FALSE;
+      return PFalse;
     if (!pcssEP->SetSoundDevice(args, "sound-in", PSoundChannel::Recorder))
-      return FALSE;
+      return PFalse;
     if (!pcssEP->SetSoundDevice(args, "sound-out", PSoundChannel::Player))
-      return FALSE;
+      return PFalse;
 
     allMediaFormats += pcssEP->GetMediaFormats();
 
@@ -595,12 +595,12 @@ BOOL MyManager::Initialise(PArgList & args)
   if (!args.HasOption("no-h323")) {
     h323EP = new H323EndPoint(*this);
     if (!InitialiseH323EP(args, false, h323EP))
-      return FALSE;
+      return PFalse;
 #if P_SSL
     if (!args.HasOption("no-h323s")) {
       h323sEP = new H323SecureEndPoint(*this);
       if (!InitialiseH323EP(args, true, h323sEP))
-        return FALSE;
+        return PFalse;
     }
 #endif
   }
@@ -662,7 +662,7 @@ BOOL MyManager::Initialise(PArgList & args)
     if (!sipEP->StartListeners(listeners)) {
       cerr <<  "Could not open any SIP listener from "
             << setfill(',') << listeners << endl;
-      return FALSE;
+      return PFalse;
     }
     cout <<  "SIP started on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
 
@@ -674,7 +674,7 @@ BOOL MyManager::Initialise(PArgList & args)
       else
         cout << "failed!";
       cout << endl;
-      pauseBeforeDialing = TRUE;
+      pauseBeforeDialing = PTrue;
     }
   }
 
@@ -716,7 +716,7 @@ BOOL MyManager::Initialise(PArgList & args)
   if (args.HasOption('d')) {
     if (!SetRouteTable(args.GetOptionString('d').Lines())) {
       cerr <<  "No legal entries in dial peer!" << endl;
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -881,12 +881,12 @@ BOOL MyManager::Initialise(PArgList & args)
     allMediaFormats[i].PrintOptions(traceStream);
   traceStream << PTrace::End;
 #endif
-  return TRUE;
+  return PTrue;
 }
 
 #if OPAL_H323
 
-BOOL MyManager::InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h323EP)
+PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPoint * h323EP)
 {
   h323EP->DisableFastStart(args.HasOption('f'));
   h323EP->DisableH245Tunneling(args.HasOption('T'));
@@ -905,7 +905,7 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h3
     unsigned initialBandwidth = args.GetOptionString('b').AsUnsigned()*100;
     if (initialBandwidth == 0) {
       cerr << "Illegal bandwidth specified." << endl;
-      return FALSE;
+      return PFalse;
     }
     h323EP->SetInitialBandwidth(initialBandwidth);
   }
@@ -925,7 +925,7 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h3
   if (!h323EP->StartListeners(listeners)) {
     cerr <<  "Could not open any " << prefix << " listener from "
          << setfill(',') << listeners << endl;
-    return FALSE;
+    return PFalse;
   }
   cout << prefix << " listeners: " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
 
@@ -972,10 +972,10 @@ BOOL MyManager::InitialiseH323EP(PArgList & args, BOOL secure, H323EndPoint * h3
       }
       cerr << '.' << endl;
       if (args.HasOption("require-gatekeeper")) 
-        return FALSE;
+        return PFalse;
     }
   }
-  return TRUE;
+  return PTrue;
 }
 
 #endif  //OPAL_H323
@@ -1350,11 +1350,11 @@ void MyManager::OnClearedCall(OpalCall & call)
 }
 
 
-BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
+PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection,
                                   OpalMediaStream & stream)
 {
   if (!OpalManager::OnOpenMediaStream(connection, stream))
-    return FALSE;
+    return PFalse;
 
   cout << "Started ";
 
@@ -1369,7 +1369,7 @@ BOOL MyManager::OnOpenMediaStream(OpalConnection & connection,
 
   cout << endl;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1389,7 +1389,7 @@ MyPCSSEndPoint::MyPCSSEndPoint(MyManager & mgr)
 }
 
 
-BOOL MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
+PBoolean MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
 {
   incomingConnectionToken = connection.GetToken();
 
@@ -1402,35 +1402,35 @@ BOOL MyPCSSEndPoint::OnShowIncoming(const OpalPCSSConnection & connection)
          << ", answer (Y/N)? " << flush;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
+PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 {
   PTime now;
   cout << connection.GetRemotePartyName() << " is ringing on "
        << now.AsString("w h:mma") << " ..." << endl;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL MyPCSSEndPoint::SetSoundDevice(PArgList & args,
+PBoolean MyPCSSEndPoint::SetSoundDevice(PArgList & args,
                                     const char * optionName,
                                     PSoundChannel::Directions dir)
 {
   if (!args.HasOption(optionName))
-    return TRUE;
+    return PTrue;
 
   PString dev = args.GetOptionString(optionName);
 
   if (dir == PSoundChannel::Player) {
     if (SetSoundChannelPlayDevice(dev))
-      return TRUE;
+      return PTrue;
   }
   else {
     if (SetSoundChannelRecordDevice(dev))
-      return TRUE;
+      return PTrue;
   }
 
   cerr << "Device for " << optionName << " (\"" << dev << "\") must be one of:\n";
@@ -1439,7 +1439,7 @@ BOOL MyPCSSEndPoint::SetSoundDevice(PArgList & args,
   for (PINDEX i = 0; i < names.GetSize(); i++)
     cerr << "  \"" << names[i] << "\"\n";
 
-  return FALSE;
+  return PFalse;
 }
 
 // End of File ///////////////////////////////////////////////////////////////

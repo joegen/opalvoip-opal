@@ -71,11 +71,11 @@ class PWAVFileConverterXLaw : public PWAVFileConverter
 {
   public:
     off_t GetPosition     (const PWAVFile & file) const;
-    BOOL SetPosition      (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin);
+    PBoolean SetPosition      (PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin);
     unsigned GetSampleSize(const PWAVFile & file) const;
     off_t GetDataLength   (PWAVFile & file);
-    BOOL Read             (PWAVFile & file, void * buf, PINDEX len);
-    BOOL Write            (PWAVFile & file, const void * buf, PINDEX len);
+    PBoolean Read             (PWAVFile & file, void * buf, PINDEX len);
+    PBoolean Write            (PWAVFile & file, const void * buf, PINDEX len);
 
     virtual short DecodeSample(int sample) = 0;
 };
@@ -86,7 +86,7 @@ off_t PWAVFileConverterXLaw::GetPosition(const PWAVFile & file) const
   return pos * 2;
 }
 
-BOOL PWAVFileConverterXLaw::SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
+PBoolean PWAVFileConverterXLaw::SetPosition(PWAVFile & file, off_t pos, PFile::FilePositionOrigin origin)
 {
   pos /= 2;
   return file.SetPosition(pos, origin);
@@ -102,13 +102,13 @@ off_t PWAVFileConverterXLaw::GetDataLength(PWAVFile & file)
   return file.RawGetDataLength() * 2;
 }
 
-BOOL PWAVFileConverterXLaw::Read(PWAVFile & file, void * buf, PINDEX len)
+PBoolean PWAVFileConverterXLaw::Read(PWAVFile & file, void * buf, PINDEX len)
 {
   // read the xLaw data
   PINDEX samples = (len / 2);
   PBYTEArray xlaw;
   if (!file.PFile::Read(xlaw.GetPointer(samples), samples))
-    return FALSE;
+    return PFalse;
 
   samples = PMIN(samples, file.PFile::GetLastReadCount());
 
@@ -121,13 +121,13 @@ BOOL PWAVFileConverterXLaw::Read(PWAVFile & file, void * buf, PINDEX len)
   // fake the lastReadCount
   file.SetLastReadCount(samples * 2);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PWAVFileConverterXLaw::Write(PWAVFile & /*file*/, const void * /*buf*/, PINDEX /*len*/)
+PBoolean PWAVFileConverterXLaw::Write(PWAVFile & /*file*/, const void * /*buf*/, PINDEX /*len*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 //////////////////////////////////////////////////////////////////////

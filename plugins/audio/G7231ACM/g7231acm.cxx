@@ -66,7 +66,7 @@ class WaveFormat
     }
 
 
-    BOOL SetSize(unsigned sz)
+    PBoolean SetSize(unsigned sz)
     {
       if (waveFormat != NULL)
         free(waveFormat);
@@ -144,7 +144,7 @@ static int codec_encoder(const struct PluginCodec_Definition * /*defn*/,
   HACMSTREAM hStream = (HACMSTREAM)context;
 
   if (hStream == NULL)
-    return FALSE;
+    return PFalse;
 
   ACMSTREAMHEADER header;
   memset(&header, 0, sizeof(header));
@@ -158,19 +158,19 @@ static int codec_encoder(const struct PluginCodec_Definition * /*defn*/,
   MMRESULT result = acmStreamPrepareHeader(hStream, &header, 0);
   if (result != 0) {
     //PTRACE(1, "Codec\tError in encode acmStreamPrepareHeader: error=" << result);
-    return FALSE;
+    return PFalse;
   }
 
   result = acmStreamConvert(hStream, &header, 0);
   if (result != 0) {
     //PTRACE(1, "Codec\tError in encode acmStreamConvert: error=" << result);
-    return FALSE;
+    return PFalse;
   }
 
   *fromLen = 240*2;
   *toLen   = G7231PacketSizes[((unsigned char *)to)[0]&3];
 
-  return TRUE;
+  return PTrue;
 
 }
 
@@ -215,7 +215,7 @@ static int codec_decoder(const struct PluginCodec_Definition * /*defn*/,
   HACMSTREAM hStream = (HACMSTREAM)context;
 
   if (hStream == NULL)
-    return FALSE;
+    return PFalse;
 
   ACMSTREAMHEADER header;
   memset(&header, 0, sizeof(header));
@@ -242,18 +242,18 @@ static int codec_decoder(const struct PluginCodec_Definition * /*defn*/,
   MMRESULT result = acmStreamPrepareHeader(hStream, &header, 0); 
   if (result != 0) {
     //PTRACE(1, "Codec\tError in decode acmStreamPrepareHeader: error=" << result);
-    return FALSE;
+    return PFalse;
   }
 
   result = acmStreamConvert(hStream, &header, 0);
   if (result != 0) {
     //PTRACE(1, "Codec\tError in decode acmStreamConvert: error=" << result);
-    return FALSE;
+    return PFalse;
   }
 
   *toLen = header.cbSrcLength;
 
-  return TRUE;
+  return PTrue;
 
 }
 

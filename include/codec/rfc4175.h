@@ -91,7 +91,7 @@ class OpalRFC4175Encoder : public OpalRFC4175Transcoder
       const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
 
-    BOOL ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
+    PBoolean ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
     virtual void StartEncoding(const RTP_DataFrame & input);
@@ -131,20 +131,20 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     virtual PINDEX PixelsToBytes(PINDEX pixels) const = 0;
     virtual PINDEX BytesToPixels(PINDEX pixels) const = 0;
 
-    BOOL ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
+    PBoolean ConvertFrames(const RTP_DataFrame & input, RTP_DataFrameList & output);
 
   protected:
-    BOOL Initialise();
-    virtual BOOL DecodeFrames(RTP_DataFrameList & output) = 0;
+    PBoolean Initialise();
+    virtual PBoolean DecodeFrames(RTP_DataFrameList & output) = 0;
 
     RTP_DataFrameList inputFrames;
     std::vector<PINDEX> scanlineCounts;
     PINDEX frameWidth, frameHeight;
 
-    BOOL  first;
+    PBoolean  first;
     DWORD lastSequenceNumber;
     DWORD lastTimeStamp;
-    BOOL  waitingForMarker;
+    bool  waitingForMarker;
     PINDEX packetCount;
 };
 
@@ -164,7 +164,7 @@ class Opal_RFC4175YCbCr420_to_YUV420P : public OpalRFC4175Decoder
     PINDEX PixelsToBytes(PINDEX pixels) const { return pixels*12/8; }
     PINDEX BytesToPixels(PINDEX bytes) const  { return bytes*8/12; }
 
-    BOOL DecodeFrames(RTP_DataFrameList & output);
+    PBoolean DecodeFrames(RTP_DataFrameList & output);
 };
 
 class Opal_YUV420P_to_RFC4175YCbCr420 : public OpalRFC4175Encoder
@@ -202,7 +202,7 @@ class Opal_RFC4175RGB_to_RGB24 : public OpalRFC4175Decoder
     PINDEX PixelsToBytes(PINDEX pixels) const { return pixels * 3; }
     PINDEX BytesToPixels(PINDEX bytes) const  { return bytes / 3; }
 
-    BOOL DecodeFrames(RTP_DataFrameList & output);
+    PBoolean DecodeFrames(RTP_DataFrameList & output);
 };
 
 class Opal_RGB24_to_RFC4175RGB : public OpalRFC4175Encoder

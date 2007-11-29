@@ -106,7 +106,7 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   PWaitAndSignal mutex(updateMutex);
 
   if (!OpalTranscoder::UpdateMediaFormats(input, output))
-    return FALSE;
+    return PFalse;
 
   inDataSize  = PVideoDevice::CalculateFrameBytes(inputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), PVideoFrameInfo::CIFWidth),
                                                   inputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), PVideoFrameInfo::CIFHeight),
@@ -114,11 +114,11 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   outDataSize = PVideoDevice::CalculateFrameBytes(outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::CIFWidth),
                                                   outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::CIFHeight),
                                                   outputMediaFormat);
-  return TRUE;
+  return PTrue;
 }
 
 
-PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
+PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
   if (input)
     return inDataSize;
@@ -130,21 +130,21 @@ PINDEX OpalVideoTranscoder::GetOptimalDataFrameSize(BOOL input) const
 }
 
 
-BOOL OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
+PBoolean OpalVideoTranscoder::ExecuteCommand(const OpalMediaCommand & command)
 {
   if (PIsDescendant(&command, OpalVideoUpdatePicture)) {
     forceIFrame = true; // Reset when I-Frame is sent
-    return TRUE;
+    return PTrue;
   }
 
   return OpalTranscoder::ExecuteCommand(command);
 }
 
 
-BOOL OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
+PBoolean OpalVideoTranscoder::Convert(const RTP_DataFrame & /*input*/,
                                   RTP_DataFrame & /*output*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 PString OpalVideoUpdatePicture::GetName() const
@@ -166,7 +166,6 @@ PString OpalLostPicture::GetName() const
 {
   return "Lost Picture";
 }
-
 
 #endif // OPAL_VIDEO
 

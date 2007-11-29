@@ -158,9 +158,9 @@ OpalManager::OpalManager()
   , stun(NULL)
   , interfaceMonitor(NULL)
   , activeCalls(*this)
-  , clearingAllCalls(FALSE)
+  , clearingAllCalls(PFalse)
 #if OPAL_RTP_AGGREGATE
-  , useRTPAggregation(TRUE)
+  , useRTPAggregation(PTrue)
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;
@@ -272,7 +272,7 @@ OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
 }
 
 
-BOOL OpalManager::SetUpCall(const PString & partyA,
+PBoolean OpalManager::SetUpCall(const PString & partyA,
                             const PString & partyB,
                             PString & token,
                             void * userData,
@@ -292,7 +292,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
   // thread.
   if (MakeConnection(*call, partyA, userData, options, stringOptions) && call->GetConnection(0)->SetUpConnection()) {
     PTRACE(3, "OpalMan\tSetUpCall succeeded, call=" << *call);
-    return TRUE;
+    return PTrue;
   }
 
   PSafePtr<OpalConnection> connection = call->GetConnection(0);
@@ -305,7 +305,7 @@ BOOL OpalManager::SetUpCall(const PString & partyA,
 
   token.MakeEmpty();
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -314,17 +314,17 @@ void OpalManager::OnEstablishedCall(OpalCall & /*call*/)
 }
 
 
-BOOL OpalManager::IsCallEstablished(const PString & token)
+PBoolean OpalManager::IsCallEstablished(const PString & token)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReadOnly);
   if (call == NULL)
-    return FALSE;
+    return PFalse;
 
   return call->IsEstablished();
 }
 
 
-BOOL OpalManager::ClearCall(const PString & token,
+PBoolean OpalManager::ClearCall(const PString & token,
                             OpalConnection::CallEndReason reason,
                             PSyncPoint * sync)
 {
@@ -340,7 +340,7 @@ BOOL OpalManager::ClearCall(const PString & token,
     // Find the call by token, callid or conferenceid
     PSafePtr<OpalCall> call = activeCalls.FindWithLock(token, PSafeReference);
     if (call == NULL)
-      return FALSE;
+      return PFalse;
 
     call->Clear(reason, sync);
   }
@@ -348,11 +348,11 @@ BOOL OpalManager::ClearCall(const PString & token,
   if (sync != NULL)
     sync->Wait();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalManager::ClearCallSynchronous(const PString & token,
+PBoolean OpalManager::ClearCallSynchronous(const PString & token,
                                        OpalConnection::CallEndReason reason)
 {
   PSyncPoint wait;
@@ -360,7 +360,7 @@ BOOL OpalManager::ClearCallSynchronous(const PString & token,
 }
 
 
-void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
+void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean wait)
 {
   // Remove all calls from the active list first
   for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call) {
@@ -368,9 +368,9 @@ void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, BOOL wait)
   }
 
   if (wait) {
-    clearingAllCalls = TRUE;
+    clearingAllCalls = PTrue;
     allCallsCleared.Wait();
-    clearingAllCalls = FALSE;
+    clearingAllCalls = PFalse;
   }
 }
 
@@ -403,12 +403,12 @@ PString OpalManager::GetNextCallToken()
   return psprintf("%u", ++lastCallTokenID);
 }
 
-BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
+PBoolean OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, void * userData, unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tSet up connection to \"" << remoteParty << '"');
 
   if (remoteParty.IsEmpty() || endpoints.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   PCaselessString epname = remoteParty.Left(remoteParty.Find(':'));
 
@@ -420,39 +420,39 @@ BOOL OpalManager::MakeConnection(OpalCall & call, const PString & remoteParty, v
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (epname == endpoints[i].GetPrefixName()) {
       if (endpoints[i].MakeConnection(call, remoteParty, userData, options, stringOptions))
-        return TRUE;
+        return PTrue;
     }
   }
 
   PTRACE(1, "OpalMan\tCould not find endpoint to handle protocol \"" << epname << '"');
-  return FALSE;
+  return PFalse;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & /*connection*/)
+PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
+PBoolean OpalManager::OnIncomingConnection(OpalConnection & /*connection*/, unsigned /*options*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
+PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
 
   if (!OnIncomingConnection(connection))
-    return FALSE;
+    return PFalse;
 
   if (!OnIncomingConnection(connection, options))
-    return FALSE;
+    return PFalse;
 
   OpalCall & call = connection.GetCall();
 
   // See if we already have a B-Party in the call. If not, make one.
   if (call.GetOtherPartyConnection(connection) != NULL)
-    return TRUE;
+    return PTrue;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
   return MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions);
@@ -530,11 +530,11 @@ void OpalManager::OnHold(OpalConnection & PTRACE_PARAM(connection))
 }
 
 
-BOOL OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
+PBoolean OpalManager::OnForwarded(OpalConnection & PTRACE_PARAM(connection),
 			      const PString & /*forwardParty*/)
 {
   PTRACE(4, "OpalEP\tOnForwarded " << connection);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -548,7 +548,7 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 }
 
 
-BOOL OpalManager::IsMediaBypassPossible(const OpalConnection & source,
+PBoolean OpalManager::IsMediaBypassPossible(const OpalConnection & source,
                                         const OpalConnection & destination,
                                         unsigned sessionID) const
 {
@@ -559,7 +559,7 @@ BOOL OpalManager::IsMediaBypassPossible(const OpalConnection & source,
 }
 
 
-BOOL OpalManager::OnOpenMediaStream(OpalConnection & connection,
+PBoolean OpalManager::OnOpenMediaStream(OpalConnection & connection,
                                     OpalMediaStream & stream)
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
@@ -567,7 +567,7 @@ BOOL OpalManager::OnOpenMediaStream(OpalConnection & connection,
   if (stream.IsSource())
     return connection.GetCall().PatchMediaStreams(connection, stream);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -595,32 +595,32 @@ void OpalManager::AddVideoMediaFormats(OpalMediaFormatList & mediaFormats,
 }
 
 
-BOOL OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
+PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection*/,
                                          const OpalMediaFormat & mediaFormat,
                                          PVideoInputDevice * & device,
-                                         BOOL & autoDelete)
+                                         PBoolean & autoDelete)
 {
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = videoInputDevice;
   args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
 
-  autoDelete = TRUE;
+  autoDelete = PTrue;
   device = PVideoInputDevice::CreateOpenedDevice(args);
   PTRACE_IF(2, device == NULL, "OpalCon\tCould not open video device \"" << args.deviceName << '"');
   return device != NULL;
 }
 
 
-BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
+PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                           const OpalMediaFormat & mediaFormat,
-                                          BOOL preview,
+                                          PBoolean preview,
                                           PVideoOutputDevice * & device,
-                                          BOOL & autoDelete)
+                                          PBoolean & autoDelete)
 {
   // Donot use our one and only SDl window, if we need it for the video output.
   if (preview && videoPreviewDevice.driverName == "SDL" && videoOutputDevice.driverName == "SDL")
-    return FALSE;
+    return PFalse;
 
   // Make copy so we can adjust the size
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
@@ -633,7 +633,7 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
     args.deviceName.Splice(preview ? "Local Preview" : connection.GetRemotePartyName(), start, args.deviceName.Find('"', start)-start);
   }
 
-  autoDelete = TRUE;
+  autoDelete = PTrue;
   device = PVideoOutputDevice::CreateOpenedDevice(args);
   return device != NULL;
 }
@@ -642,7 +642,7 @@ BOOL OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
 
 
 OpalMediaPatch * OpalManager::CreateMediaPatch(OpalMediaStream & source,
-                                               BOOL requiresPatchThread)
+                                               PBoolean requiresPatchThread)
 {
   if (requiresPatchThread) {
     return new OpalMediaPatch(source);
@@ -658,9 +658,9 @@ void OpalManager::DestroyMediaPatch(OpalMediaPatch * patch)
 }
 
 
-BOOL OpalManager::OnStartMediaPatch(const OpalMediaPatch & /*patch*/)
+PBoolean OpalManager::OnStartMediaPatch(const OpalMediaPatch & /*patch*/)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -686,9 +686,9 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
 {
   PTRACE(3, "OpalCon\tReadUserInput from " << connection);
 
-  connection.PromptUserInput(TRUE);
+  connection.PromptUserInput(PTrue);
   PString digit = connection.GetUserInput(firstDigitTimeout);
-  connection.PromptUserInput(FALSE);
+  connection.PromptUserInput(PFalse);
 
   if (digit.IsEmpty()) {
     PTRACE(2, "OpalCon\tReadUserInput first character timeout (" << firstDigitTimeout << "ms) on " << *this);
@@ -756,24 +756,24 @@ void OpalManager::RouteEntry::PrintOn(ostream & strm) const
 }
 
 
-BOOL OpalManager::AddRouteEntry(const PString & spec)
+PBoolean OpalManager::AddRouteEntry(const PString & spec)
 {
   if (spec[0] == '#') // Comment
-    return FALSE;
+    return PFalse;
 
   if (spec[0] == '@') { // Load from file
     PTextFile file;
     if (!file.Open(spec.Mid(1), PFile::ReadOnly)) {
       PTRACE(1, "OpalMan\tCould not open route file \"" << file.GetFilePath() << '"');
-      return FALSE;
+      return PFalse;
     }
     PTRACE(4, "OpalMan\tAdding routes from file \"" << file.GetFilePath() << '"');
-    BOOL ok = FALSE;
+    PBoolean ok = PFalse;
     PString line;
     while (file.good()) {
       file >> line;
       if (AddRouteEntry(line))
-        ok = TRUE;
+        ok = PTrue;
     }
     return ok;
   }
@@ -781,34 +781,34 @@ BOOL OpalManager::AddRouteEntry(const PString & spec)
   PINDEX equal = spec.Find('=');
   if (equal == P_MAX_INDEX) {
     PTRACE(2, "OpalMan\tInvalid route table entry: \"" << spec << '"');
-    return FALSE;
+    return PFalse;
   }
 
   RouteEntry * entry = new RouteEntry(spec.Left(equal).Trim(), spec.Mid(equal+1).Trim());
   if (entry->regex.GetErrorCode() != PRegularExpression::NoError) {
     PTRACE(2, "OpalMan\tIllegal regular expression in route table entry: \"" << spec << '"');
     delete entry;
-    return FALSE;
+    return PFalse;
   }
 
   PTRACE(4, "OpalMan\tAdded route \"" << *entry << '"');
   routeTableMutex.Wait();
   routeTable.Append(entry);
   routeTableMutex.Signal();
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalManager::SetRouteTable(const PStringArray & specs)
+PBoolean OpalManager::SetRouteTable(const PStringArray & specs)
 {
-  BOOL ok = FALSE;
+  PBoolean ok = PFalse;
 
   routeTableMutex.Wait();
   routeTable.RemoveAll();
 
   for (PINDEX i = 0; i < specs.GetSize(); i++) {
     if (AddRouteEntry(specs[i].Trim()))
-      ok = TRUE;
+      ok = PTrue;
   }
 
   routeTableMutex.Signal();
@@ -888,28 +888,28 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
 }
 
 
-BOOL OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
+PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 {
   /* Check if the remote address is a private IP, broadcast, or us */
   return ip.IsAny() || ip.IsBroadcast() || ip.IsRFC1918() || PIPSocket::IsLocalHost(ip);
 }
 
 
-BOOL OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
+PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
                                      const PIPSocket::Address & remoteAddress)
 {
   if (!translationAddress.IsValid())
-    return FALSE; // Have nothing to translate it to
+    return PFalse; // Have nothing to translate it to
 
   if (!IsLocalAddress(localAddress))
-    return FALSE; // Is already translated
+    return PFalse; // Is already translated
 
   if (IsLocalAddress(remoteAddress))
-    return FALSE; // Does not need to be translated
+    return PFalse; // Does not need to be translated
 
   // Tranlsate it!
   localAddress = translationAddress;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1081,72 +1081,72 @@ void OpalManager::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 
 #if OPAL_VIDEO
 template<class PVideoXxxDevice>
-static BOOL SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)
+static PBoolean SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice::OpenArgs & member)
 {
   // Check that the input device is legal
   PVideoXxxDevice * pDevice = PVideoXxxDevice::CreateDeviceByName(args.deviceName, args.driverName, args.pluginMgr);
   if (pDevice != NULL) {
     delete pDevice;
     member = args;
-    return TRUE;
+    return PTrue;
   }
 
   if (args.deviceName[0] != '#')
-    return FALSE;
+    return PFalse;
 
   // Selected device by ordinal
   PStringList devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
   if (devices.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   PINDEX id = args.deviceName.Mid(1).AsUnsigned();
   if (id <= 0 || id > devices.GetSize())
-    return FALSE;
+    return PFalse;
 
   member = args;
   member.deviceName = devices[id-1];
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
+PBoolean OpalManager::SetVideoInputDevice(const PVideoDevice::OpenArgs & args)
 {
   return SetVideoDevice<PVideoInputDevice>(args, videoInputDevice);
 }
 
 
-BOOL OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
+PBoolean OpalManager::SetVideoPreviewDevice(const PVideoDevice::OpenArgs & args)
 {
   return SetVideoDevice<PVideoOutputDevice>(args, videoPreviewDevice);
 }
 
 
-BOOL OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
+PBoolean OpalManager::SetVideoOutputDevice(const PVideoDevice::OpenArgs & args)
 {
   return SetVideoDevice<PVideoOutputDevice>(args, videoOutputDevice);
 }
 
 #endif
 
-BOOL OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval) 
+PBoolean OpalManager::SetNoMediaTimeout(const PTimeInterval & newInterval) 
 {
   if (newInterval < 10)
-    return FALSE;
+    return PFalse;
 
   noMediaTimeout = newInterval; 
-  return TRUE; 
+  return PTrue; 
 }
 
 
 void OpalManager::GarbageCollection()
 {
-  BOOL allCleared = activeCalls.DeleteObjectsToBeRemoved();
+  PBoolean allCleared = activeCalls.DeleteObjectsToBeRemoved();
 
   endpointsMutex.StartRead();
 
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     if (!endpoints[i].GarbageCollection())
-      allCleared = FALSE;
+      allCleared = PFalse;
   }
 
   endpointsMutex.EndRead();
@@ -1172,20 +1172,20 @@ void OpalManager::OnNewConnection(OpalConnection & /*conn*/)
 {
 }
 
-BOOL OpalManager::UseRTPAggregation() const
+PBoolean OpalManager::UseRTPAggregation() const
 { 
 #if OPAL_RTP_AGGREGATE
   return useRTPAggregation; 
 #else
-  return FALSE;
+  return PFalse;
 #endif
 }
 
-BOOL OpalManager::StartRecording(const PString & callToken, const PFilePath & fn)
+PBoolean OpalManager::StartRecording(const PString & callToken, const PFilePath & fn)
 {
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
   if (call == NULL)
-    return FALSE;
+    return PFalse;
 
   return call->StartRecording(fn);
 }
@@ -1198,13 +1198,13 @@ void OpalManager::StopRecording(const PString & callToken)
 }
 
 
-BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
+PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
                     const PIPSocket::Address & localAddr, 
                     const PIPSocket::Address & peerAddr,
                     const PIPSocket::Address & sigAddr,
-                                          BOOL incoming)
+                                          PBoolean incoming)
 {
-  BOOL remoteIsNAT = FALSE;
+  PBoolean remoteIsNAT = PFalse;
 
   PTRACE(4, "OPAL\tChecking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ",peer=" << peerAddr << ",sig=" << sigAddr);
 
@@ -1226,7 +1226,7 @@ BOOL OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
       // if the application specific routine changed the local address, then enable RTP NAT mode
       if (localAddr != trialAddr) {
         PTRACE(3, "OPAL\tSource signal address " << sigAddr << " and peer address " << peerAddr << " indicate remote endpoint is behind NAT");
-        remoteIsNAT = TRUE;
+        remoteIsNAT = PTrue;
       }
     }
   }
@@ -1260,13 +1260,13 @@ void OpalManager::InterfaceMonitor::OnRemoveInterface(const PIPSocket::Interface
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRecordManager::Mixer_T::Mixer_T()
-  : OpalAudioMixer(TRUE)
+  : OpalAudioMixer(PTrue)
 { 
-  mono = FALSE; 
-  started = FALSE; 
+  mono = PFalse; 
+  started = PFalse; 
 }
 
-BOOL OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
+PBoolean OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
 {
   PWaitAndSignal m(mutex);
 
@@ -1275,19 +1275,19 @@ BOOL OpalRecordManager::Mixer_T::Open(const PFilePath & fn)
     file.Open(fn, PFile::ReadWrite);
     if (!mono)
       file.SetChannels(2);
-    started = TRUE;
+    started = PTrue;
   }
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalRecordManager::Mixer_T::Close()
+PBoolean OpalRecordManager::Mixer_T::Close()
 {
   PWaitAndSignal m(mutex);
   file.Close();
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
+PBoolean OpalRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
 {
   if (file.IsOpen()) {
     OpalAudioMixerStream::StreamFrame frame;
@@ -1301,59 +1301,59 @@ BOOL OpalRecordManager::Mixer_T::OnWriteAudio(const MixerFrame & mixerFrame)
       frame.Unlock();
     }
   }
-  return TRUE;
+  return PTrue;
 }
 
 OpalRecordManager::OpalRecordManager()
 {
-  started = FALSE;
+  started = PFalse;
 }
 
-BOOL OpalRecordManager::Open(const PString & _callToken, const PFilePath & fn)
+PBoolean OpalRecordManager::Open(const PString & _callToken, const PFilePath & fn)
 {
   PWaitAndSignal m(mutex);
 
   if (_callToken.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   if (token.IsEmpty())
     token = _callToken;
   else if (_callToken != token)
-    return FALSE;
+    return PFalse;
 
   return mixer.Open(fn);
 }
 
-BOOL OpalRecordManager::CloseStream(const PString & _callToken, const std::string & _strm)
+PBoolean OpalRecordManager::CloseStream(const PString & _callToken, const std::string & _strm)
 {
   {
     PWaitAndSignal m(mutex);
     if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
-      return FALSE;
+      return PFalse;
 
     mixer.RemoveStream(_strm);
   }
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalRecordManager::Close(const PString & _callToken)
+PBoolean OpalRecordManager::Close(const PString & _callToken)
 {
   {
     PWaitAndSignal m(mutex);
     if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
-      return FALSE;
+      return PFalse;
 
     mixer.RemoveAllStreams();
   }
   mixer.Close();
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalRecordManager::WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp)
+PBoolean OpalRecordManager::WriteAudio(const PString & _callToken, const std::string & strm, const RTP_DataFrame & rtp)
 { 
   PWaitAndSignal m(mutex);
   if (_callToken.IsEmpty() || token.IsEmpty() || (token != _callToken))
-    return FALSE;
+    return PFalse;
 
   return mixer.Write(strm, rtp);
 }

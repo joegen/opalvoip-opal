@@ -87,7 +87,7 @@ class H323_RTP_Session : public RTP_UserData
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       const H323_RTPChannel & channel,            ///<  Channel using this session.
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const = 0;
@@ -104,7 +104,7 @@ class H323_RTP_Session : public RTP_UserData
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
@@ -114,7 +114,7 @@ class H323_RTP_Session : public RTP_UserData
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) = 0;
@@ -166,7 +166,7 @@ class H323_RTP_UDP : public H323_RTP_Session
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       const H323_RTPChannel & channel,            ///<  Channel using this session.
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
@@ -185,7 +185,7 @@ class H323_RTP_UDP : public H323_RTP_Session
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
@@ -197,7 +197,7 @@ class H323_RTP_UDP : public H323_RTP_Session
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       H323_RTPChannel & channel,                  ///<  Channel using this session.
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
@@ -214,9 +214,9 @@ class H323_RTP_UDP : public H323_RTP_Session
   //@}
 
   protected:
-    virtual BOOL ExtractTransport(
+    virtual PBoolean ExtractTransport(
       const H245_TransportAddress & pdu,
-      BOOL isDataPort,
+      PBoolean isDataPort,
       unsigned & errorCode
     );
 

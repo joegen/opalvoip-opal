@@ -81,7 +81,7 @@ iax2Processor(*new IAX2CallProcessor(ep))
 
   iax2Processor.AssignConnection(this);
   SetCallToken(token);
-  originating = FALSE;
+  originating = PFalse;
 
   ep.CopyLocalMediaFormats(localMediaFormats);
   AdjustMediaFormats(localMediaFormats);
@@ -89,8 +89,8 @@ iax2Processor(*new IAX2CallProcessor(ep))
     PTRACE(5, "Local ordered codecs are " << localMediaFormats[i]);
   }
   
-  local_hold = FALSE;
-  remote_hold = FALSE;
+  local_hold = PFalse;
+  remote_hold = PFalse;
 
   phase = SetUpPhase;
 
@@ -168,11 +168,11 @@ void IAX2Connection::OnSetUp()
   ownerCall.OnSetUp(*this); 
 }
 
-BOOL IAX2Connection::OnIncomingCall(unsigned int options, OpalConnection::StringOptions * stringOptions)
+PBoolean IAX2Connection::OnIncomingCall(unsigned int options, OpalConnection::StringOptions * stringOptions)
 {
   PTRACE(3, "IAX2Con\tOnIncomingCall()");
   phase = SetUpPhase;
-  originating = FALSE;
+  originating = PFalse;
   PTRACE(3, "IAX2Con\tWe are receiving an incoming IAX2 call");
   PTRACE(3, "IAX2Con\tOnIncomingConnection  - we have received a cmdNew packet");
   return OnIncomingConnection(options, stringOptions);
@@ -192,31 +192,31 @@ void IAX2Connection::OnAlerting()
   jitterBuffer.Resume(NULL);
 }
 
-BOOL IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), BOOL /*withMedia*/) 
+PBoolean IAX2Connection::SetAlerting(const PString & PTRACE_PARAM(calleeName), PBoolean /*withMedia*/) 
 { 
   if (IsOriginating()) {
     PTRACE(2, "IAX2\tSetAlerting ignored on call we originated.");
-    return TRUE;
+    return PTrue;
   }
 
   PSafeLockReadWrite safeLock(*this);
   if (!safeLock.IsLocked())
-    return FALSE;
+    return PFalse;
 
   PTRACE(3, "IAX2Con\tSetAlerting  from " << calleeName << " " << *this); 
 
   if (phase == AlertingPhase)
-    return FALSE;
+    return PFalse;
 
   alertingTime = PTime();
   phase = AlertingPhase;
 
   OnAlerting();
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL IAX2Connection::SetConnected()
+PBoolean IAX2Connection::SetConnected()
 {
   PTRACE(3, "IAX2Con\tSetConnected " << *this);
   PTRACE(3, "IAX2Con\tSETCONNECTED " 
@@ -233,7 +233,7 @@ BOOL IAX2Connection::SetConnected()
   connectedTime = PTime();
   SetPhase(ConnectedPhase);
   OnConnected();
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2Connection::OnConnected()
@@ -251,7 +251,7 @@ void IAX2Connection::SendDtmf(const PString & dtmf)
   iax2Processor.SendDtmf(dtmf); 
 }
 
-BOOL IAX2Connection::SendUserInputString(const PString & value) 
+PBoolean IAX2Connection::SendUserInputString(const PString & value) 
 { 
   SendUserInputModes mode = GetRealSendUserInputMode();
 
@@ -259,7 +259,7 @@ BOOL IAX2Connection::SendUserInputString(const PString & value)
 
   if (mode == SendUserInputAsString) {
     iax2Processor.SendText(value); 
-    return TRUE;
+    return PTrue;
   }
 
   return OpalConnection::SendUserInputString(value);
@@ -278,10 +278,10 @@ OpalConnection::SendUserInputModes IAX2Connection::GetRealSendUserInputMode() co
   return SendUserInputAsTone;
 }
   
-BOOL IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
+PBoolean IAX2Connection::SendUserInputTone(char tone, unsigned /*duration*/ ) 
 { 
   iax2Processor.SendDtmf(tone); 
-  return TRUE;
+  return PTrue;
 }
 
 void IAX2Connection::OnEstablished()
@@ -295,7 +295,7 @@ void IAX2Connection::OnEstablished()
 
 OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                    unsigned sessionID,
-                                                   BOOL isDataSource)
+                                                   PBoolean isDataSource)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     PTRACE(3, "connection\t  create a null media stream ");
@@ -311,7 +311,7 @@ void IAX2Connection::PutSoundPacketToNetwork(PBYTEArray *sound)
   iax2Processor.PutSoundPacketToNetwork(sound);
 } 
 
-BOOL IAX2Connection::SetUpConnection() 
+PBoolean IAX2Connection::SetUpConnection() 
 {
   PTRACE(3, "IAX2Con\tSetUpConnection() ");
   PTRACE(3, "IAX2Con\tWe are making a call");
@@ -319,7 +319,7 @@ BOOL IAX2Connection::SetUpConnection()
   iax2Processor.SetUserName(userName);
   iax2Processor.SetPassword(password);
   
-  originating = TRUE;
+  originating = PTrue;
   return iax2Processor.SetUpConnection(); 
 }
 
@@ -424,7 +424,7 @@ unsigned int IAX2Connection::ChooseCodec()
   return IAX2FullFrameVoice::OpalNameToIax2Value(strm);
 }
 
-BOOL IAX2Connection::IsConnectionOnHold()
+PBoolean IAX2Connection::IsConnectionOnHold()
 {
   return (local_hold || remote_hold);
 }
@@ -434,8 +434,8 @@ void IAX2Connection::HoldConnection()
   if (local_hold)
     return;
     
-  local_hold = TRUE;
-  PauseMediaStreams(TRUE);
+  local_hold = PTrue;
+  PauseMediaStreams(PTrue);
   endpoint.OnHold(*this);
   
   iax2Processor.SendHold();
@@ -446,8 +446,8 @@ void IAX2Connection::RetrieveConnection()
   if (!local_hold)
     return;
   
-  local_hold = FALSE;
-  PauseMediaStreams(FALSE);  
+  local_hold = PFalse;
+  PauseMediaStreams(PFalse);  
   endpoint.OnHold(*this);
   
   iax2Processor.SendHoldRelease();
@@ -458,7 +458,7 @@ void IAX2Connection::RemoteHoldConnection()
   if (remote_hold)
     return;
     
-  remote_hold = TRUE;
+  remote_hold = PTrue;
   endpoint.OnHold(*this);
 }
 
@@ -467,7 +467,7 @@ void IAX2Connection::RemoteRetrieveConnection()
   if (!remote_hold)
     return;
     
-  remote_hold = FALSE;    
+  remote_hold = PFalse;    
   endpoint.OnHold(*this);
 }
 
@@ -508,11 +508,11 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
       break;
 
     case AnswerCallAlertWithMedia :
-      SetAlerting(GetLocalPartyName(), TRUE);
+      SetAlerting(GetLocalPartyName(), PTrue);
       break;
 
     case AnswerCallPending :
-      SetAlerting(GetLocalPartyName(), FALSE);
+      SetAlerting(GetLocalPartyName(), PFalse);
       break;
 
     case AnswerCallNow :
@@ -525,11 +525,11 @@ void IAX2Connection::AnsweringCall(AnswerCallResponse response)
   }
 }
 
-BOOL IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
+PBoolean IAX2Connection::ForwardCall(const PString & PTRACE_PARAM(forwardParty))
 {
   PTRACE(3, "Forward call to " + forwardParty);
   //we can not currently forward calls that have not been accepted.
-  return FALSE;
+  return PFalse;
 }
 
 void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
@@ -545,7 +545,7 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
 
     RTP_DataFrame *mediaFrame = new RTP_DataFrame();
     mediaFrame->SetTimestamp(soundFrame->GetTimeStamp() * 8);
-    mediaFrame->SetMarker(FALSE);
+    mediaFrame->SetMarker(PFalse);
     mediaFrame->SetPayloadType(opalPayloadType);
 
     mediaFrame->SetPayloadSize(soundFrame->GetMediaDataSize());
@@ -556,15 +556,15 @@ void IAX2Connection::ReceivedSoundPacketFromNetwork(IAX2Frame *soundFrame)
     delete soundFrame;
 }
 
-BOOL IAX2Connection::ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet)
+PBoolean IAX2Connection::ReadSoundPacket(DWORD timestamp, RTP_DataFrame & packet)
 { 
-  BOOL success = jitterBuffer.ReadData(timestamp, packet); 
+  PBoolean success = jitterBuffer.ReadData(timestamp, packet); 
   if (success) {
     packet.SetPayloadSize(packet.GetSize() - packet.GetHeaderSize());
-    return TRUE;
+    return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 /* The comment below is magic for those who use emacs to edit this file. */

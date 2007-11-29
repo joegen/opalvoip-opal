@@ -38,7 +38,7 @@ class MyCall : public OpalCall
 
     virtual void OnEstablishedCall();
     virtual void OnReleased(OpalConnection & connection);
-    virtual BOOL OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
     virtual void OnRTPStatistics(const OpalConnection & connection, const RTP_Session & session);
 
     MyManager          & manager;
@@ -61,7 +61,7 @@ class MyManager : public OpalManager
 
     virtual OpalCall * CreateCall(void * userData);
 
-    virtual BOOL OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
+    virtual PBoolean OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream);
 
     PINDEX GetActiveCalls() const { return activeCalls.GetSize(); }
 };
