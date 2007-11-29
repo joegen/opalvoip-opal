@@ -84,12 +84,12 @@ class H323TransportAddress : public OpalTransportAddress
       const char * proto = NULL ///<  default to udp
     );
 
-    BOOL SetPDU(
+    PBoolean SetPDU(
       H225_ArrayOf_TransportAddress & pdu,  ///<  List of transport addresses listening on
       const OpalTransport & associatedTransport ///<  Associated transport for precendence and translation
     );
-    BOOL SetPDU(H225_TransportAddress & pdu, WORD defPort = 0) const;
-    BOOL SetPDU(H245_TransportAddress & pdu, WORD defPort = 0) const;
+    PBoolean SetPDU(H225_TransportAddress & pdu, WORD defPort = 0) const;
+    PBoolean SetPDU(H245_TransportAddress & pdu, WORD defPort = 0) const;
 };
 
 

@@ -83,25 +83,25 @@ class OpalTransportAddress : public PString
   //@{
     /**Determine if the two transport addresses are equivalent.
       */
-    BOOL IsEquivalent(
+    PBoolean IsEquivalent(
       const OpalTransportAddress & address
     ) const;
 
     /**Determine if the two transport addresses are compatible.
       */
-    BOOL IsCompatible(
+    PBoolean IsCompatible(
       const OpalTransportAddress & address
     ) const;
 
     /**Extract the ip address from transport address.
-       Returns FALSE, if the address is not an IP transport address.
+       Returns PFalse, if the address is not an IP transport address.
       */
-    BOOL GetIpAddress(PIPSocket::Address & ip) const;
+    PBoolean GetIpAddress(PIPSocket::Address & ip) const;
 
     /**Extract the ip address and port number from transport address.
-       Returns FALSE, if the address is not an IP transport address.
+       Returns PFalse, if the address is not an IP transport address.
       */
-    BOOL GetIpAndPort(PIPSocket::Address & ip, WORD & port) const;
+    PBoolean GetIpAndPort(PIPSocket::Address & ip, WORD & port) const;
 
     /**Translate the transport address to a more human readable form.
        Returns the hostname if using IP.
@@ -283,21 +283,21 @@ class OpalListener : public PObject
         OpalTransport instance created by the listener. If this is NULL then
         it indicates an error occurred during the accept.
 
-        If singleThread is FALSE the acceptHandler function is called in the
+        If singleThread is PFalse the acceptHandler function is called in the
         context of a new thread and the continues to listen for more
-        connections. If TRUE, then the acceptHandler function is called from
+        connections. If PTrue, then the acceptHandler function is called from
         within the listener threads context and no more connections are
         created. That is only a single connection is ever created by this
         listener.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PNotifier & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode = SpawnNewThreadMode ///<  How handler function is called thread wise
     ) = 0;
 
     /** Indicate if the listener is open.
       */
-    virtual BOOL IsOpen() = 0;
+    virtual PBoolean IsOpen() = 0;
 
     /**Stop the listener thread and no longer accept incoming connections.
      */
@@ -348,7 +348,7 @@ class OpalListener : public PObject
        or there is some other error.
      */
     PDECLARE_NOTIFIER(PThread, OpalListener, ListenForConnections);
-    BOOL StartThread(
+    PBoolean StartThread(
       const PNotifier & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode                   ///<  How handler function is called thread wise
     );
@@ -367,14 +367,14 @@ PLIST(OpalListenerList, OpalListener);
   */
 OpalTransportAddressArray OpalGetInterfaceAddresses(
   const OpalListenerList & listeners, ///<  List of listeners
-  BOOL excludeLocalHost = TRUE,       ///<  Flag to exclude 127.0.0.1
+  PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
   OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
 );
 
 OpalTransportAddressArray OpalGetInterfaceAddresses(
   const OpalTransportAddress & addr,  ///<  Possible INADDR_ANY address
-  BOOL excludeLocalHost = TRUE,       ///<  Flag to exclude 127.0.0.1
+  PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
   OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
 );
@@ -392,7 +392,7 @@ class OpalListenerIP : public OpalListener
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
-      BOOL exclusive = TRUE
+      PBoolean exclusive = PTrue
     );
     OpalListenerIP(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -421,7 +421,7 @@ class OpalListenerIP : public OpalListener
   protected:
     PIPSocket::Address localAddress;
     WORD               listenerPort;
-    BOOL               exclusiveListener;
+    PBoolean               exclusiveListener;
 };
 
 
@@ -437,7 +437,7 @@ class OpalListenerTCP : public OpalListenerIP
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
-      BOOL exclusive = TRUE
+      PBoolean exclusive = PTrue
     );
     OpalListenerTCP(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -461,9 +461,9 @@ class OpalListenerTCP : public OpalListenerIP
         new connection is created. The INT parameter to the acceptHandler is
         a pointer to the new OpalTransport instance created by the listener.
 
-        If singleThread is FALSE the acceptHandler function is called in the
+        If singleThread is PFalse the acceptHandler function is called in the
         context of a new thread and the continues to listen for more
-        connections. If TRUE, then the acceptHandler function is called from
+        connections. If PTrue, then the acceptHandler function is called from
         within the listener threads context and no more connections are
         created. That is only a single connection is ever created by this
         listener.
@@ -472,14 +472,14 @@ class OpalListenerTCP : public OpalListenerIP
         that the caller is responsible for calling Accept() and waiting for
         the new connection.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PNotifier & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode = SpawnNewThreadMode ///<  How handler function is called thread wise
     );
 
     /** Indicate if the listener is open.
       */
-    virtual BOOL IsOpen();
+    virtual PBoolean IsOpen();
 
     /**Stop the listener thread and no longer accept incoming connections.
      */
@@ -519,7 +519,7 @@ class OpalListenerUDP : public OpalListenerIP
       OpalEndPoint & endpoint,  ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,            ///<  TCP port to listen for connections
-      BOOL exclusive = TRUE
+      PBoolean exclusive = PTrue
     );
     OpalListenerUDP(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -543,9 +543,9 @@ class OpalListenerUDP : public OpalListenerIP
         new connection is created. The INT parameter to the acceptHandler is
         a pointer to the new OpalTransport instance created by the listener.
 
-        If singleThread is FALSE the acceptHandler function is called in the
+        If singleThread is PFalse the acceptHandler function is called in the
         context of a new thread and the continues to listen for more
-        connections. If TRUE, then the acceptHandler function is called from
+        connections. If PTrue, then the acceptHandler function is called from
         within the listener threads context and no more connections are
         created. That is only a single connection is ever created by this
         listener.
@@ -554,14 +554,14 @@ class OpalListenerUDP : public OpalListenerIP
         that the caller is responsible for calling Accept() and waiting for
         the new connection.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PNotifier & acceptHandler,  ///<  Handler function for new connections
       ThreadMode mode = SpawnNewThreadMode ///<  How handler function is called thread wise
     );
 
     /** Indicate if the listener is open.
       */
-    virtual BOOL IsOpen();
+    virtual PBoolean IsOpen();
 
     /**Stop the listener thread and no longer accept incoming connections.
      */
@@ -623,7 +623,7 @@ class OpalTransport : public PIndirectChannel
   //@{
     /**Get indication of the type of underlying transport.
       */
-    virtual BOOL IsReliable() const = 0;
+    virtual PBoolean IsReliable() const = 0;
 
     /** Get the interface this transport is bound to.
       */
@@ -637,7 +637,7 @@ class OpalTransport : public PIndirectChannel
        Note that this may not work for all transport types or may work only
        before Connect() has been called.
       */
-    virtual BOOL SetLocalAddress(
+    virtual PBoolean SetLocalAddress(
       const OpalTransportAddress & address
     ) = 0;
 
@@ -650,17 +650,17 @@ class OpalTransport : public PIndirectChannel
        connection, but only indicates where to connect to. The actual
        connection is made by the Connect() function.
       */
-    virtual BOOL SetRemoteAddress(
+    virtual PBoolean SetRemoteAddress(
       const OpalTransportAddress & address
     ) = 0;
 
     /**Connect to the remote address.
       */
-    virtual BOOL Connect() = 0;
+    virtual PBoolean Connect() = 0;
 
     /**Connect to the specified address.
       */
-    BOOL ConnectTo(
+    PBoolean ConnectTo(
       const OpalTransportAddress & address
     ) { return SetRemoteAddress(address) && Connect(); }
 
@@ -676,7 +676,7 @@ class OpalTransport : public PIndirectChannel
 
     /**Close the channel.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
     /**Close channel and wait for associated thread to terminate.
       */
@@ -689,7 +689,7 @@ class OpalTransport : public PIndirectChannel
 
     /**Check that the transport address is compatible with transport.
       */
-    virtual BOOL IsCompatibleTransport(
+    virtual PBoolean IsCompatibleTransport(
       const OpalTransportAddress & address
     ) const = 0;
 
@@ -726,7 +726,7 @@ class OpalTransport : public PIndirectChannel
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
-    virtual BOOL ReadPDU(
+    virtual PBoolean ReadPDU(
       PBYTEArray & packet   ///<  Packet read from transport
     ) = 0;
 
@@ -735,11 +735,11 @@ class OpalTransport : public PIndirectChannel
        example UDP is a single Write() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
-    virtual BOOL WritePDU(
+    virtual PBoolean WritePDU(
       const PBYTEArray & pdu     ///<  Packet to write
     ) = 0;
 
-    typedef BOOL (*WriteConnectCallback)(OpalTransport & transport, void * userData);
+    typedef PBoolean (*WriteConnectCallback)(OpalTransport & transport, void * userData);
 
     /**Write the first packet to the transport, after a connect.
        This will adjust the transport object and call the callback function,
@@ -753,7 +753,7 @@ class OpalTransport : public PIndirectChannel
 
        The default behaviour simply calls the WriteConnectCallback function.
       */
-    virtual BOOL WriteConnect(
+    virtual PBoolean WriteConnect(
       WriteConnectCallback function,  ///<  Function for writing data
       void * userData                 ///<  user data to pass to write function
     );
@@ -766,7 +766,7 @@ class OpalTransport : public PIndirectChannel
 
     /**Determine of the transport is running with a background thread.
       */
-    virtual BOOL IsRunning() const;
+    virtual PBoolean IsRunning() const;
   //@}
 
     OpalEndPoint & GetEndPoint() const { return endpoint; }
@@ -802,7 +802,7 @@ class OpalTransportIP : public OpalTransport
        Note that this may not work for all transport types or may work only
        before Connect() has been called.
       */
-    virtual BOOL SetLocalAddress(
+    virtual PBoolean SetLocalAddress(
       const OpalTransportAddress & address
     );
 
@@ -815,7 +815,7 @@ class OpalTransportIP : public OpalTransport
        connection, but only indicates where to connect to. The actual
        connection is made by the Connect() function.
       */
-    virtual BOOL SetRemoteAddress(
+    virtual PBoolean SetRemoteAddress(
       const OpalTransportAddress & address
     );
 
@@ -845,7 +845,7 @@ class OpalTransportTCP : public OpalTransportIP
       OpalEndPoint & endpoint,    ///<  Endpoint object
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
       WORD port = 0,              ///<  Local port to bind to
-      BOOL reuseAddr = FALSE      ///<  Flag for binding to already bound interface
+      PBoolean reuseAddr = PFalse      ///<  Flag for binding to already bound interface
     );
     OpalTransportTCP(
       OpalEndPoint & endpoint,    ///<  Endpoint object
@@ -860,24 +860,24 @@ class OpalTransportTCP : public OpalTransportIP
   //@{
     /**Get indication of the type of underlying transport.
       */
-    virtual BOOL IsReliable() const;
+    virtual PBoolean IsReliable() const;
 
     /**Check that the transport address is compatible with transport.
       */
-    virtual BOOL IsCompatibleTransport(
+    virtual PBoolean IsCompatibleTransport(
       const OpalTransportAddress & address
     ) const;
 
     /**Connect to the remote address.
       */
-    virtual BOOL Connect();
+    virtual PBoolean Connect();
 
     /**Read a packet from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
-    virtual BOOL ReadPDU(
+    virtual PBoolean ReadPDU(
       PBYTEArray & pdu  ///<  PDU read from transport
     );
 
@@ -886,7 +886,7 @@ class OpalTransportTCP : public OpalTransportIP
        example UDP is a single Write() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
-    virtual BOOL WritePDU(
+    virtual PBoolean WritePDU(
       const PBYTEArray & pdu     ///<  Packet to write
     );
   //@}
@@ -901,15 +901,15 @@ class OpalTransportTCP : public OpalTransportIP
        open channels. It may be used by descendent channels to do any
        handshaking required by the protocol that channel embodies.
 
-       The default behaviour is to simply return TRUE.
+       The default behaviour is to simply return PTrue.
 
        @return
-       Returns TRUE if the protocol handshaking is successful.
+       Returns PTrue if the protocol handshaking is successful.
      */
-    virtual BOOL OnOpen();
+    virtual PBoolean OnOpen();
 
 
-    BOOL reuseAddressFlag;
+    PBoolean reuseAddressFlag;
 };
 
 
@@ -925,7 +925,7 @@ class OpalTransportUDP : public OpalTransportIP
       OpalEndPoint & endpoint,    ///<  Endpoint object
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
       WORD port = 0,              ///<  Local port to bind to
-      BOOL reuseAddr = FALSE      ///<  Flag for binding to already bound interface
+      PBoolean reuseAddr = PFalse      ///<  Flag for binding to already bound interface
     );
 
     /**Create a new transport channel.
@@ -945,7 +945,7 @@ class OpalTransportUDP : public OpalTransportIP
 
   /**@name Overides from class PChannel */
   //@{
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buffer,
       PINDEX length
     );
@@ -955,11 +955,11 @@ class OpalTransportUDP : public OpalTransportIP
   //@{
     /**Get indication of the type of underlying transport.
       */
-    virtual BOOL IsReliable() const;
+    virtual PBoolean IsReliable() const;
 
     /**Check that the transport address is compatible with transport.
       */
-    virtual BOOL IsCompatibleTransport(
+    virtual PBoolean IsCompatibleTransport(
       const OpalTransportAddress & address
     ) const;
 
@@ -970,7 +970,7 @@ class OpalTransportUDP : public OpalTransportIP
        which interface it wants by further calls to ReadPDU(). Once it has
        selected one it calls EndConnect() to finalise the selection process.
       */
-    virtual BOOL Connect();
+    virtual PBoolean Connect();
 
     /**End a connection to the remote address.
        This is requried in some circumstances where the connection to the
@@ -995,7 +995,7 @@ class OpalTransportUDP : public OpalTransportIP
        Note that this may not work for all transport types or may work only
        before Connect() has been called.
       */
-    virtual BOOL SetLocalAddress(
+    virtual PBoolean SetLocalAddress(
       const OpalTransportAddress & address
     );
 
@@ -1004,7 +1004,7 @@ class OpalTransportUDP : public OpalTransportIP
        connection, but only indicates where to connect to. The actual
        connection is made by the Connect() function.
       */
-    virtual BOOL SetRemoteAddress(
+    virtual PBoolean SetRemoteAddress(
       const OpalTransportAddress & address
     );
 
@@ -1034,7 +1034,7 @@ class OpalTransportUDP : public OpalTransportIP
        example UDP is a single Read() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
-    virtual BOOL ReadPDU(
+    virtual PBoolean ReadPDU(
       PBYTEArray & packet   ///<  Packet read from transport
     );
 
@@ -1043,7 +1043,7 @@ class OpalTransportUDP : public OpalTransportIP
        example UDP is a single Write() call, while for TCP there is a TPKT
        header that indicates the size of the PDU.
       */
-    virtual BOOL WritePDU(
+    virtual PBoolean WritePDU(
       const PBYTEArray & pdu     ///<  Packet to write
     );
 
@@ -1057,7 +1057,7 @@ class OpalTransportUDP : public OpalTransportIP
        WriteConnect() calls WriteConnectCallback for each interface. The
        subsequent ReadPDU() returns the answer from the first interface.
       */
-    virtual BOOL WriteConnect(
+    virtual PBoolean WriteConnect(
       WriteConnectCallback function,  ///<  Function for writing data
       void * userData                 ///<  User data to pass to write function
     );
@@ -1085,7 +1085,7 @@ class OpalInternalTransport : public PObject
       const OpalTransportAddress & address
     ) const;
 
-    virtual BOOL GetIpAndPort(
+    virtual PBoolean GetIpAndPort(
       const OpalTransportAddress & address,
       PIPSocket::Address & ip,
       WORD & port
@@ -1114,18 +1114,18 @@ class OpalInternalIPTransport : public OpalInternalTransport
     virtual PString GetHostName(
       const OpalTransportAddress & address
     ) const;
-    virtual BOOL GetIpAndPort(
+    virtual PBoolean GetIpAndPort(
       const OpalTransportAddress & address,
       PIPSocket::Address & ip,
       WORD & port
     ) const;
 
-    static BOOL GetAdjustedIpAndPort(const OpalTransportAddress & address,
+    static PBoolean GetAdjustedIpAndPort(const OpalTransportAddress & address,
                                      OpalEndPoint & endpoint,
                                      OpalTransportAddress::BindOptions option,
                                      PIPSocket::Address & ip,
                                      WORD & port,
-                                     BOOL & reuseAddr);
+                                     PBoolean & reuseAddr);
 };
 
 template <class ListenerType, class TransportType, unsigned AltTypeOption, class AltTypeClass>
@@ -1149,7 +1149,7 @@ class OpalInternalIPTransportTemplate : public OpalInternalIPTransport
     {
       PIPSocket::Address ip;
       WORD port;
-      BOOL reuseAddr;
+      PBoolean reuseAddr;
       if (GetAdjustedIpAndPort(address, endpoint, options, ip, port, reuseAddr)) {
         if (options == AltTypeOption)
           return new AltTypeClass(endpoint, ip, 0, reuseAddr);
@@ -1175,7 +1175,7 @@ class OpalListenerTCPS : public OpalListenerTCP
       OpalEndPoint & endpoint,                 ///<  Endpoint listener is used for
       PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to listen on
       WORD port = 0,                           ///<  TCP port to listen for connections
-      BOOL exclusive = TRUE
+      PBoolean exclusive = PTrue
     );
     OpalListenerTCPS(
       OpalEndPoint & endpoint,                  ///<  Endpoint listener is used for
@@ -1204,7 +1204,7 @@ class OpalTransportTCPS : public OpalTransportTCP
         OpalEndPoint & endpoint,    ///<  Endpoint object
         PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), ///<  Local interface to use
         WORD port = 0,              ///<  Local port to bind to
-        BOOL reuseAddr = FALSE      ///<  Flag for binding to already bound interface
+        PBoolean reuseAddr = PFalse      ///<  Flag for binding to already bound interface
       );
       OpalTransportTCPS(
         OpalEndPoint & endpoint,    ///<  Endpoint object
@@ -1214,9 +1214,9 @@ class OpalTransportTCPS : public OpalTransportTCP
       /// Destroy the TCPS channel
       ~OpalTransportTCPS();
 
-      BOOL IsCompatibleTransport(const OpalTransportAddress & address) const;
-      BOOL Connect();
-      BOOL OnOpen();
+      PBoolean IsCompatibleTransport(const OpalTransportAddress & address) const;
+      PBoolean Connect();
+      PBoolean OnOpen();
       const char * GetProtoPrefix() const;
 
     protected:

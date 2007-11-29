@@ -57,7 +57,7 @@
 H323_T120Capability::H323_T120Capability()
   : H323DataCapability(T120_MAX_BIT_RATE)
 {
-  dynamicPortCapability = TRUE;
+  dynamicPortCapability = PTrue;
 }
 
 
@@ -88,31 +88,31 @@ H323Channel * H323_T120Capability::CreateChannel(H323Connection & connection,
 }
 
 
-BOOL H323_T120Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
+PBoolean H323_T120Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
   pdu.m_application.SetTag(H245_DataApplicationCapability_application::e_t120);
   return OnSendingPDU((H245_DataProtocolCapability &)pdu.m_application);
 }
 
 
-BOOL H323_T120Capability::OnSendingPDU(H245_DataMode & pdu) const
+PBoolean H323_T120Capability::OnSendingPDU(H245_DataMode & pdu) const
 {
   pdu.m_application.SetTag(H245_DataMode_application::e_t120);
   return OnSendingPDU((H245_DataProtocolCapability &)pdu.m_application);
 }
 
 
-BOOL H323_T120Capability::OnSendingPDU(H245_DataProtocolCapability & pdu) const
+PBoolean H323_T120Capability::OnSendingPDU(H245_DataProtocolCapability & pdu) const
 {
   pdu.SetTag(H245_DataProtocolCapability::e_separateLANStack);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323_T120Capability::OnReceivedPDU(const H245_DataApplicationCapability & cap)
+PBoolean H323_T120Capability::OnReceivedPDU(const H245_DataApplicationCapability & cap)
 {
   if (cap.m_application.GetTag() != H245_DataApplicationCapability_application::e_t120)
-    return FALSE;
+    return PFalse;
 
   const H245_DataProtocolCapability & dataCap = cap.m_application;
 
@@ -174,14 +174,14 @@ void H323_T120Channel::HandleChannel()
 }
 
 
-BOOL H323_T120Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
+PBoolean H323_T120Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
   if (!H323DataChannel::OnSendingPDU(open))
-    return FALSE;
+    return PFalse;
 
   if (!((H323_T120Channel*)this)->CreateListener()) {
     PTRACE(1, "H323T120\tCould not create listener");
-    return FALSE;
+    return PFalse;
   }
 
   PTRACE(3, "H323T120\tOnSendingPDU");
@@ -218,10 +218,10 @@ void H323_T120Channel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
 }
 
 
-BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
+PBoolean H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
                                      unsigned & errorCode)
 {
-  number = H323ChannelNumber(open.m_forwardLogicalChannelNumber, TRUE);
+  number = H323ChannelNumber(open.m_forwardLogicalChannelNumber, PTrue);
 
   PTRACE(3, "H323T120\tOnReceivedPDU for channel: " << number);
 
@@ -231,10 +231,10 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
   if (t120handler == NULL) {
     PTRACE(1, "H323T120\tCould not create protocol handler");
     errorCode = H245_OpenLogicalChannelReject_cause::e_dataTypeNotAvailable;
-    return FALSE;
+    return PFalse;
   }
 
-  BOOL listen = connection.HadAnsweredCall();
+  PBoolean listen = connection.HadAnsweredCall();
 
   H323TransportAddress address;
   if (open.HasOptionalField(H245_OpenLogicalChannel::e_separateStack) &&
@@ -254,15 +254,15 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
       if (!connection.GetControlChannel().GetLocalAddress().GetIpAddress(ip)) {
         PTRACE(1, "H323T120\tOnly IPv4 supported");
         errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
-        return FALSE;
+        return PFalse;
       }
-      listener = new OpalListenerTCP(endpoint, ip, OpalT120Protocol::DefaultTcpPort, FALSE);
+      listener = new OpalListenerTCP(endpoint, ip, OpalT120Protocol::DefaultTcpPort, PFalse);
     }
 
     if (!listener->Open(NULL)) {
       PTRACE(1, "H323T120\tCould not open listener");
       errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
-      return FALSE;
+      return PFalse;
     }
 
     PTRACE(2, "H323T120\tCreated listener on " << listener->GetLocalAddress());
@@ -274,7 +274,7 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
       if (!connection.GetControlChannel().GetRemoteAddress().GetIpAddress(ip)) {
         PTRACE(1, "H323T120\tOnly IPv4 supported");
         errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
-        return FALSE;
+        return PFalse;
       }
       address = OpalTransportAddress(ip, OpalT120Protocol::DefaultTcpPort);
     }
@@ -283,35 +283,35 @@ BOOL H323_T120Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
     if (transport == NULL) {
       PTRACE(1, "H323T120\tCould not create transport");
       errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
-      return FALSE;
+      return PFalse;
     }
 
     transport->SetReadTimeout(10000); // 10 second wait for connect
     if (!transport->ConnectTo(address)) {
       PTRACE(1, "H323T120\tCould not connect to remote address: " << address);
       errorCode = H245_OpenLogicalChannelReject_cause::e_separateStackEstablishmentFailed;
-      return FALSE;
+      return PFalse;
     }
 
     PTRACE(2, "H323T120\tCreated transport from "
            << transport->GetLocalAddress() << " to " << transport->GetRemoteAddress());
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323_T120Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & /*ack*/)
+PBoolean H323_T120Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & /*ack*/)
 {
   PTRACE(3, "H323T120\tOnReceivedAckPDU");
 
   t120handler = connection.CreateT120ProtocolHandler();
   if (t120handler == NULL) {
     PTRACE(1, "H323T120\tCould not create protocol handler");
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 #endif // OPAL_T120DATA

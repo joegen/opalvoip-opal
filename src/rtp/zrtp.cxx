@@ -65,10 +65,10 @@ class LibZRTPSecurityMode_Base : public OpalZRTPSecurityMode
 
     RTP_UDP * CreateRTPSession(PHandleAggregator * _aggregator,   ///< handle aggregator
                                             unsigned id,          ///<  Session ID for RTP channel
-                                            BOOL remoteIsNAT      ///<  TRUE is remote is behind NAT
+                                            PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
     );
 
-    BOOL Open();
+    PBoolean Open();
 
     zrtp_zid_t zid;
     zrtp_conn_ctx_t zrtpConn;
@@ -208,7 +208,7 @@ void LibZRTPSecurityMode_Base::Init()
 RTP_UDP * LibZRTPSecurityMode_Base::CreateRTPSession(
   PHandleAggregator * _aggregator,   ///< handle aggregator
   unsigned id,                       ///<  Session ID for RTP channel
-  BOOL remoteIsNAT                   ///<  TRUE is remote is behind NAT
+  PBoolean remoteIsNAT                   ///<  PTrue is remote is behind NAT
 )
 {
   OpalZRTP_UDP * session = new OpalZRTP_UDP(_aggregator, id, remoteIsNAT);
@@ -216,16 +216,16 @@ RTP_UDP * LibZRTPSecurityMode_Base::CreateRTPSession(
   return session;
 }
 
-BOOL LibZRTPSecurityMode_Base::Open()
+PBoolean LibZRTPSecurityMode_Base::Open()
 {
-  return TRUE;
+  return PTrue;
 }
 
 ///////////////////////////////////////////////////////
 
 OpalZRTP_UDP::OpalZRTP_UDP(PHandleAggregator * _aggregator,   ///<  RTP aggregator
                                       unsigned id,            ///<  Session ID for RTP channel
-                                          BOOL remoteIsNAT)   ///<  TRUE is remote is behind NAT
+                                          PBoolean remoteIsNAT)   ///<  PTrue is remote is behind NAT
   : SecureRTP_UDP(_aggregator, id, remoteIsNAT)
 {
 }

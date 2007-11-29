@@ -101,7 +101,7 @@ class SIPEndPoint : public OpalEndPoint
 
        The default behaviour does nothing.
       */
-    virtual BOOL NewIncomingConnection(
+    virtual PBoolean NewIncomingConnection(
       OpalTransport * transport  ///<  Transport connection came in on
     );
 
@@ -121,12 +121,12 @@ class SIPEndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       FALSE is returned.
+       PFalse is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If FALSE is returned then the connection could not be established. For
+       If PFalse is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -134,7 +134,7 @@ class SIPEndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,                         ///<  Owner of connection
       const PString & party,                   ///<  Remote party to call
       void * userData,                         ///<  Arbitrary data to pass to connection
@@ -154,10 +154,10 @@ class SIPEndPoint : public OpalEndPoint
     virtual OpalMediaFormatList GetMediaFormats() const;
 
     /** Execute garbage collection for endpoint.
-        Returns TRUE if all garbage has been collected.
+        Returns PTrue if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
       */
-    virtual BOOL GarbageCollection();
+    virtual PBoolean GarbageCollection();
   //@}
 
   /**@name Customisation call backs */
@@ -179,7 +179,7 @@ class SIPEndPoint : public OpalEndPoint
     
     /**Setup a connection transfer a connection for the SIP endpoint.
       */
-    virtual BOOL SetupTransfer(
+    virtual PBoolean SetupTransfer(
       const PString & token,        ///<  Existing connection to be transferred
       const PString & callIdentity, ///<  Call identity of the secondary call (if it exists)
       const PString & remoteParty,  ///<  Remote party to transfer the existing call to
@@ -187,9 +187,9 @@ class SIPEndPoint : public OpalEndPoint
     );
     
     /**Forward the connection using the same token as the specified connection.
-       Return TRUE if the connection is being redirected.
+       Return PTrue if the connection is being redirected.
       */
-    virtual BOOL ForwardConnection(
+    virtual PBoolean ForwardConnection(
       SIPConnection & connection,     ///<  Connection to be forwarded
       const PString & forwardParty    ///<  Remote party to forward to
     );
@@ -213,7 +213,7 @@ class SIPEndPoint : public OpalEndPoint
 
     /**Handle an incoming SIP PDU that has been full decoded
       */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       OpalTransport & transport,
       SIP_PDU * pdu
     );
@@ -227,7 +227,7 @@ class SIPEndPoint : public OpalEndPoint
 
     /**Handle an incoming INVITE request.
       */
-    virtual BOOL OnReceivedINVITE(
+    virtual PBoolean OnReceivedINVITE(
       OpalTransport & transport,
       SIP_PDU * pdu
     );
@@ -256,21 +256,21 @@ class SIPEndPoint : public OpalEndPoint
     
     /**Handle an incoming NOTIFY PDU.
       */
-    virtual BOOL OnReceivedNOTIFY(
+    virtual PBoolean OnReceivedNOTIFY(
       OpalTransport & transport,
       SIP_PDU & response
     );
 
     /**Handle an incoming REGISTER PDU.
       */
-    virtual BOOL OnReceivedREGISTER(
+    virtual PBoolean OnReceivedREGISTER(
       OpalTransport & transport, 
       SIP_PDU & pdu
     );
 
     /**Handle an incoming SUBSCRIBE PDU.
       */
-    virtual BOOL OnReceivedSUBSCRIBE(
+    virtual PBoolean OnReceivedSUBSCRIBE(
       OpalTransport & transport, 
       SIP_PDU & pdu
     );
@@ -311,7 +311,7 @@ class SIPEndPoint : public OpalEndPoint
       PSafetyMode mode = PSafeReadWrite
     ) { return PSafePtrCast<OpalConnection, SIPConnection>(GetConnectionWithLock(token, mode)); }
 
-    virtual BOOL IsAcceptedAddress(const SIPURL & toAddr);
+    virtual PBoolean IsAcceptedAddress(const SIPURL & toAddr);
 
 
     /**Callback for SIP message received
@@ -332,7 +332,7 @@ class SIPEndPoint : public OpalEndPoint
      * requested. If no realm is specified, authentication will
      * occur with the "best guess" of authentication parameters.
      */
-    BOOL Register(
+    PBoolean Register(
       unsigned expire,
       const PString & aor = PString::Empty(),                 ///< user@host
       const PString & authName = PString::Empty(),            ///< authentication user name
@@ -341,7 +341,7 @@ class SIPEndPoint : public OpalEndPoint
       const PTimeInterval & minRetryTime = PMaxTimeInterval, 
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
-    BOOL Register(
+    PBoolean Register(
       const PString & host,
       const PString & user = PString::Empty(),
       const PString & autName = PString::Empty(),
@@ -355,20 +355,20 @@ class SIPEndPoint : public OpalEndPoint
 
     /**Unregister from a registrar. 
      */
-    BOOL Unregister(const PString & aor);
+    PBoolean Unregister(const PString & aor);
 
     
     /**Subscribe to a notifier. This function is asynchronous to permit
      * several subscriptions to occur at the same time.
      */
-    BOOL Subscribe(
+    PBoolean Subscribe(
       SIPSubscribe::SubscribeType & type,
       unsigned expire,
       const PString & to
     );
 
 
-    BOOL Unsubscribe(
+    PBoolean Unsubscribe(
       SIPSubscribe::SubscribeType & type,
       const PString & to
     );
@@ -376,7 +376,7 @@ class SIPEndPoint : public OpalEndPoint
 
     /**Send a message to the given URL.
      */
-    BOOL Message (
+    PBoolean Message (
       const PString & to, 
       const PString & body
     );
@@ -385,7 +385,7 @@ class SIPEndPoint : public OpalEndPoint
     /**Publish new state information.
      * Only the basic & note fields of the PIDF+xml are supported for now.
      */
-    BOOL Publish(
+    PBoolean Publish(
       const PString & to,
       const PString & body,
       unsigned expire = 0
@@ -394,7 +394,7 @@ class SIPEndPoint : public OpalEndPoint
 
     /**Send a SIP PING to the remote host
       */
-    BOOL Ping(
+    PBoolean Ping(
       const PString & to
     );
 
@@ -415,45 +415,45 @@ class SIPEndPoint : public OpalEndPoint
 
     
     /**Callback called when a registration to a SIP registrar status.
-     * The BOOL indicates if the operation that failed was a REGISTER or 
+     * The PBoolean indicates if the operation that failed was a REGISTER or 
      * an (UN)REGISTER.
      */
     virtual void OnRegistrationStatus(
       const PString & aor,
-      BOOL wasRegistering,
-      BOOL reRegistering,
+      PBoolean wasRegistering,
+      PBoolean reRegistering,
       SIP_PDU::StatusCodes reason
     );
 
     /**Callback called when a registration to a SIP registrars fails.
-     * The BOOL indicates if the operation that failed was a REGISTER or 
+     * The PBoolean indicates if the operation that failed was a REGISTER or 
      * an (UN)REGISTER.
      */
     virtual void OnRegistrationFailed(
       const PString & aor,
       SIP_PDU::StatusCodes reason,
-      BOOL wasRegistering
+      PBoolean wasRegistering
     );
 
     /**Callback called when a registration or an unregistration is successful.
-     * The BOOL indicates if the operation that failed was a registration or
+     * The PBoolean indicates if the operation that failed was a registration or
      * not.
      */
     virtual void OnRegistered(
       const PString & aor,
-      BOOL wasRegistering
+      PBoolean wasRegistering
     );
 
     
-    /**Returns TRUE if the given URL has been registered 
+    /**Returns PTrue if the given URL has been registered 
      * (e.g.: 6001@seconix.com).
      */
-    BOOL IsRegistered(const PString & aor);
+    PBoolean IsRegistered(const PString & aor);
 
-    /**Returns TRUE if the endpoint is subscribed to some
+    /**Returns PTrue if the endpoint is subscribed to some
      * event for the given to address.
      */
-    BOOL IsSubscribed(
+    PBoolean IsSubscribed(
       SIPSubscribe::SubscribeType type,
       const PString & to); 
 
@@ -472,8 +472,8 @@ class SIPEndPoint : public OpalEndPoint
       SIP_PDU::StatusCodes reason);
     
 
-    void SetMIMEForm(BOOL v) { mimeForm = v; }
-    BOOL GetMIMEForm() const { return mimeForm; }
+    void SetMIMEForm(PBoolean v) { mimeForm = v; }
+    PBoolean GetMIMEForm() const { return mimeForm; }
 
     void SetMaxRetries(unsigned r) { maxRetries = r; }
     unsigned GetMaxRetries() const { return maxRetries; }
@@ -534,7 +534,7 @@ class SIPEndPoint : public OpalEndPoint
     
     /**Return the SIPAuthentication for a specific realm.
      */
-    BOOL GetAuthentication(const PString & authRealm, SIPAuthentication &); 
+    PBoolean GetAuthentication(const PString & authRealm, SIPAuthentication &); 
     
 
     /**Return the registered party name URL for the given host.
@@ -611,7 +611,7 @@ class SIPEndPoint : public OpalEndPoint
     void SetUserAgent(const PString & str) { userAgentString = str; }
 
 
-    BOOL SendResponse(
+    PBoolean SendResponse(
       SIP_PDU::StatusCodes code, 
       OpalTransport & transport, 
       SIP_PDU & pdu
@@ -653,7 +653,7 @@ class SIPEndPoint : public OpalEndPoint
     SIPURL        proxy;
     PString       userAgentString;
 
-    BOOL          mimeForm;
+    PBoolean          mimeForm;
     unsigned      maxRetries;
     PTimeInterval retryTimeoutMin;   // T1
     PTimeInterval retryTimeoutMax;   // T2

@@ -140,7 +140,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
 
     /**Determine if a format matching the payload type is in the list.
       */
-    BOOL HasFormat(
+    PBoolean HasFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType ///<  RTP payload type code
     ) const { return FindFormat(rtpPayloadType) != P_MAX_INDEX; }
 
@@ -149,7 +149,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
        character. For example: "G.711*" would match "G.711-uLaw-64k" and
        "G.711-ALaw-64k".
       */
-    BOOL HasFormat(
+    PBoolean HasFormat(
       const PString & wildcard    ///<  Wildcard string name.
     ) const { return FindFormat(wildcard) != P_MAX_INDEX; }
 
@@ -172,7 +172,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
     virtual PINDEX Append(PObject *) { return P_MAX_INDEX; }
     virtual PINDEX Insert(const PObject &, PObject *) { return P_MAX_INDEX; }
     virtual PINDEX InsertAt(PINDEX, PObject *) { return P_MAX_INDEX; }
-    virtual BOOL SetAt(PINDEX, PObject *) { return FALSE; }
+    virtual PBoolean SetAt(PINDEX, PObject *) { return PFalse; }
 };
 
 
@@ -475,7 +475,7 @@ class OpalMediaFormatInternal : public PObject
       unsigned defaultSessionID,
       RTP_DataFrame::PayloadTypes rtpPayloadType,
       const char * encodingName,
-      BOOL     needsJitter,
+      PBoolean     needsJitter,
       unsigned bandwidth,
       PINDEX   frameSize,
       unsigned frameTime,
@@ -486,8 +486,8 @@ class OpalMediaFormatInternal : public PObject
     virtual PObject * Clone() const;
     virtual void PrintOn(ostream & strm) const;
 
-    BOOL IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
-    BOOL IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
+    PBoolean IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
+    PBoolean IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
 
     PStringToString GetOptions() const;
     bool GetOptionValue(const PString & name, PString & value) const;
@@ -505,7 +505,7 @@ class OpalMediaFormatInternal : public PObject
     bool GetOptionOctets(const PString & name, PBYTEArray & octets) const;
     bool SetOptionOctets(const PString & name, const PBYTEArray & octets);
     bool SetOptionOctets(const PString & name, const BYTE * data, PINDEX length);
-    bool AddOption(OpalMediaOption * option, BOOL overwrite = FALSE);
+    bool AddOption(OpalMediaOption * option, PBoolean overwrite = PFalse);
     OpalMediaOption * FindOption(const PString & name) const;
 
     virtual bool ToNormalisedOptions();
@@ -568,7 +568,7 @@ class OpalMediaFormat : public PContainer
       unsigned defaultSessionID,  ///<  Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,  ///<  RTP encoding name
-      BOOL     needsJitter,       ///<  Indicate format requires a jitter buffer
+      PBoolean     needsJitter,       ///<  Indicate format requires a jitter buffer
       unsigned bandwidth,         ///<  Bandwidth in bits/second
       PINDEX   frameSize,         ///<  Size of frame in bytes (if applicable)
       unsigned frameTime,         ///<  Time for frame in RTP units (if applicable)
@@ -683,7 +683,7 @@ class OpalMediaFormat : public PContainer
        object has a tx number of frames of 3, but the parameter has a value
        of 1, then the current object will be set to 1.
 
-       Returns FALSE if the media formats are incompatible and cannot be
+       Returns PFalse if the media formats are incompatible and cannot be
        merged.
       */
     bool Merge(
@@ -694,16 +694,16 @@ class OpalMediaFormat : public PContainer
       */
     PString GetName() const { return m_info == NULL ? "" : m_info->formatName; }
 
-    /**Return TRUE if media format info is valid. This may be used if the
+    /**Return PTrue if media format info is valid. This may be used if the
        single string constructor is used to check that it matched something
        in the registered media formats database.
       */
-    BOOL IsValid() const { return m_info != NULL && m_info->IsValid(); }
+    PBoolean IsValid() const { return m_info != NULL && m_info->IsValid(); }
 
-    /**Return TRUE if media format info may be sent via RTP. Some formats are internal
+    /**Return PTrue if media format info may be sent via RTP. Some formats are internal
        use only and are never transported "over the wire".
       */
-    BOOL IsTransportable() const { return m_info != NULL && m_info->IsTransportable(); }
+    PBoolean IsTransportable() const { return m_info != NULL && m_info->IsTransportable(); }
 
     /**Get the RTP payload type that is to be used for this media format.
        This will either be an intrinsic one for the media format eg GSM or it
@@ -731,7 +731,7 @@ class OpalMediaFormat : public PContainer
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    bool NeedsJitterBuffer() const { return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), FALSE); }
+    bool NeedsJitterBuffer() const { return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), PFalse); }
     static const PString & NeedsJitterOption();
 
     /**Get the average bandwidth used in bits/second.
@@ -807,7 +807,7 @@ class OpalMediaFormat : public PContainer
       */
     bool GetOptionBoolean(
       const PString & name,   ///<  Option name
-      bool dflt = FALSE       ///<  Default value if option not present
+      bool dflt = PFalse       ///<  Default value if option not present
     ) const { return m_info != NULL && m_info->GetOptionBoolean(name, dflt); }
 
     /**Set the option value of the specified name as a boolean.
@@ -900,7 +900,7 @@ class OpalMediaFormat : public PContainer
     ) { MakeUnique(); return m_info != NULL && m_info->SetOptionString(name, value); }
 
     /**Get the option value of the specified name as an octet array.
-       Returns FALSE if not present.
+       Returns PFalse if not present.
       */
     bool GetOptionOctets(
       const PString & name, ///<  Option name
@@ -942,7 +942,7 @@ class OpalMediaFormat : public PContainer
       */
     bool AddOption(
       OpalMediaOption * option,
-      BOOL overwrite = FALSE
+      PBoolean overwrite = PFalse
     ) { MakeUnique(); return m_info != NULL && m_info->AddOption(option, overwrite); }
 
     /**
@@ -958,7 +958,7 @@ class OpalMediaFormat : public PContainer
       const PString & name
     ) const { return m_info == NULL ? NULL : m_info->FindOption(name); }
 
-    /** Returns TRUE if the media format is valid for the protocol specified
+    /** Returns PTrue if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for
         The default implementation returns true unless the protocol is H.323
         and the rtpEncodingName is NULL
@@ -975,7 +975,7 @@ class OpalMediaFormat : public PContainer
     }
 
     // Backward compatibility
-    virtual BOOL IsEmpty() const { return m_info == NULL || !m_info->IsValid(); }
+    virtual PBoolean IsEmpty() const { return m_info == NULL || !m_info->IsValid(); }
     operator PString() const { return m_info == NULL ? "" : m_info->formatName; }
     operator const char *() const { return m_info == NULL ? "" : m_info->formatName; }
     bool operator==(const char * other) const { return m_info != NULL && m_info->formatName == other; }
@@ -990,7 +990,7 @@ class OpalMediaFormat : public PContainer
     friend bool operator!=(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName == other; }
 
   private:
-    BOOL SetSize(PINDEX) { return TRUE; }
+    PBoolean SetSize(PINDEX) { return PTrue; }
 
   protected:
     void Construct(OpalMediaFormatInternal * info);

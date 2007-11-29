@@ -88,12 +88,12 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       FALSE is returned.
+       PFalse is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If FALSE is returned then the connection could not be established. For
+       If PFalse is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -101,7 +101,7 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        The default behaviour is pure.
      */
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,          ///< Owner of connection
       const PString & party,    ///< Remote party to call
       void * userData = NULL,   ///< Arbitrary data to pass to connection
@@ -112,7 +112,7 @@ class OpalLIDEndPoint : public OpalEndPoint
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
        This function allows the application to set up some parameters or to log some messages
       */
-    virtual BOOL OnSetUpConnection(OpalLineConnection &connection);
+    virtual PBoolean OnSetUpConnection(OpalLineConnection &connection);
     
     /**Get the data formats this endpoint is capable of operating.
        This provides a list of media data format names that may be used by an
@@ -152,9 +152,9 @@ class OpalLIDEndPoint : public OpalEndPoint
        should not be deleted directly. Use the RemoveLine() function to
        delete the line.
 
-       Returns TRUE if the lines device was open and the line was added.
+       Returns PTrue if the lines device was open and the line was added.
       */
-    BOOL AddLine(
+    PBoolean AddLine(
       OpalLine * line
     );
 
@@ -192,9 +192,9 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        Note the device should already be open or no lines are added.
 
-       Returns TRUE if at least one line was added.
+       Returns PTrue if at least one line was added.
       */
-    virtual BOOL AddLinesFromDevice(
+    virtual PBoolean AddLinesFromDevice(
       OpalLineInterfaceDevice & device  ///<  Device to add lines
     );
 
@@ -208,9 +208,9 @@ class OpalLIDEndPoint : public OpalEndPoint
     /**Add a line interface devices to the endpoint by name.
        This calls AddDeviceName() for each entry in the array.
 
-       Returns TRUE if at least one line from one device was added.
+       Returns PTrue if at least one line from one device was added.
       */
-    BOOL AddDeviceNames(
+    PBoolean AddDeviceNames(
       const PStringArray & descriptors  ///<  Device descritptions to add
     );
 
@@ -220,10 +220,10 @@ class OpalLIDEndPoint : public OpalEndPoint
        as would be returned from the OpalLineInterfaceDevice::GetAllDevices()
        function.
 
-       Returns TRUE if at least one line was added or the descriptor was
+       Returns PTrue if at least one line was added or the descriptor was
        already present.
       */
-    BOOL AddDeviceName(
+    PBoolean AddDeviceName(
       const PString & descriptor  ///<  Device descritption to add
     );
 
@@ -236,9 +236,9 @@ class OpalLIDEndPoint : public OpalEndPoint
 
        Note the device should already be open or no lines are added.
 
-       Returns TRUE if at least one line was added.
+       Returns PTrue if at least one line was added.
       */
-    virtual BOOL AddDevice(
+    virtual PBoolean AddDevice(
       OpalLineInterfaceDevice * device    ///<  Device to add
     );
 
@@ -252,13 +252,13 @@ class OpalLIDEndPoint : public OpalEndPoint
     /**Get the line by name.
        The lineName parameter may be "*" to matche the first line.
 
-       If the enableAudio flag is TRUE then the EnableAudio() function is
+       If the enableAudio flag is PTrue then the EnableAudio() function is
        called on the line and it is returns only if successful. This
        effectively locks the line for exclusive use of the caller.
       */
     OpalLine * GetLine(
       const PString & lineName,  ///<  Name of line to get.
-      BOOL enableAudio = FALSE   ///<  Flag to enable audio on the line.
+      PBoolean enableAudio = PFalse   ///<  Flag to enable audio on the line.
     ) const;
 
     /**Set the default line to be used on call.
@@ -352,11 +352,11 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour does.
       */
-    virtual BOOL SetUpConnection();
+    virtual PBoolean SetUpConnection();
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
        This function allows the application to set up some parameters or to log some messages
       */
-    virtual BOOL OnSetUpConnection();
+    virtual PBoolean OnSetUpConnection();
 
     /**Indicate to remote endpoint an alert is in progress.
        If this is an incoming connection and the AnswerCallResponse is in a
@@ -368,16 +368,16 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour starts the ring back tone.
       */
-    virtual BOOL SetAlerting(
+    virtual PBoolean SetAlerting(
       const PString & calleeName,   ///<  Name of endpoint being alerted.
-      BOOL withMedia                ///<  Open media with alerting
+      PBoolean withMedia                ///<  Open media with alerting
     );
 
     /**Indicate to remote endpoint we are connected.
 
        The default behaviour stops the ring back tone.
       */
-    virtual BOOL SetConnected();
+    virtual PBoolean SetConnected();
 
     /**Clean up the termination of the connection.
        This function can do any internal cleaning up and waiting on background
@@ -432,7 +432,7 @@ class OpalLineConnection : public OpalConnection
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource                        ///<  Is a source stream
+      PBoolean isSource                        ///<  Is a source stream
     );
 
     /**Call back when opening a media stream.
@@ -447,14 +447,14 @@ class OpalLineConnection : public OpalConnection
        The default behaviour calls the ancestor and adds a LID silence
        detector filter.
       */
-    virtual BOOL OnOpenMediaStream(
+    virtual PBoolean OnOpenMediaStream(
       OpalMediaStream & stream    ///<  New media stream being opened
     );
 
     /**Set  the volume (gain) for the audio media channel to the specified percentage.
       */
-    virtual BOOL SetAudioVolume(
-      BOOL source,                  ///< true for source (microphone), false for sink (speaker)
+    virtual PBoolean SetAudioVolume(
+      PBoolean source,                  ///< true for source (microphone), false for sink (speaker)
       unsigned percentage           ///< Gain, 0=silent, 100=maximun
     );
 
@@ -462,7 +462,7 @@ class OpalLineConnection : public OpalConnection
        A return value of UINT_MAX indicates no valid signal, eg no audio channel opened.
       */
     virtual unsigned GetAudioSignalLevel(
-      BOOL source                   ///< true for source (microphone), false for sink (speaker)
+      PBoolean source                   ///< true for source (microphone), false for sink (speaker)
     );
 
     /**Send a user input indication to the remote endpoint.
@@ -472,7 +472,7 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour plays the DTMF tones on the line.
       */
-    virtual BOOL SendUserInputString(
+    virtual PBoolean SendUserInputString(
       const PString & value                   ///<  String value of indication
     );
 
@@ -482,7 +482,7 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour plays the DTMF tone on the line.
       */
-    virtual BOOL SendUserInputTone(
+    virtual PBoolean SendUserInputTone(
       char tone,    ///<  DTMF tone code
       int duration  ///<  Duration of tone in milliseconds
     );
@@ -493,8 +493,8 @@ class OpalLineConnection : public OpalConnection
 
        The default behaviour does nothing.
       */
-    virtual BOOL PromptUserInput(
-      BOOL play   ///<  Flag to start or stop playing the prompt
+    virtual PBoolean PromptUserInput(
+      PBoolean play   ///<  Flag to start or stop playing the prompt
     );
   //@}
 
@@ -507,7 +507,7 @@ class OpalLineConnection : public OpalConnection
     /**Check for line hook state, DTMF tone for user indication etc.
       */
     virtual void Monitor(
-      BOOL offHook
+      PBoolean offHook
     );
   //@}
 
@@ -526,9 +526,9 @@ class OpalLineConnection : public OpalConnection
   protected:
     OpalLIDEndPoint & endpoint;
     OpalLine        & line;
-    BOOL              wasOffHook;
+    PBoolean              wasOffHook;
     unsigned          answerRingCount;
-    BOOL              requireTonesForDial;
+    PBoolean              requireTonesForDial;
     /* time in msec to wait between the dial tone detection and dialing the dtmf */
     unsigned          m_uiDialDelay; 
 
@@ -552,7 +552,7 @@ class OpalLineMediaStream : public OpalMediaStream
       OpalLineConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
       unsigned sessionID,                  ///<  Session number for stream
-      BOOL isSource,                       ///<  Is a source stream
+      PBoolean isSource,                       ///<  Is a source stream
       OpalLine & line                      ///<  LID line to stream to/from
     );
   //@}
@@ -564,18 +564,18 @@ class OpalLineMediaStream : public OpalMediaStream
        The default behaviour sets the OpalLineInterfaceDevice format and
        calls Resume() on the associated OpalMediaPatch thread.
       */
-    virtual BOOL Open();
+    virtual PBoolean Open();
 
     /**Close the media stream.
 
        The default does nothing.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
     /**Read raw media data from the source media stream.
        The default behaviour reads from the OpalLine object.
       */
-    virtual BOOL ReadData(
+    virtual PBoolean ReadData(
       BYTE * data,      ///<  Data buffer to read to
       PINDEX size,      ///<  Size of buffer
       PINDEX & length   ///<  Length of data actually read
@@ -584,7 +584,7 @@ class OpalLineMediaStream : public OpalMediaStream
     /**Write raw media data to the sink media stream.
        The default behaviour writes to the OpalLine object.
       */
-    virtual BOOL WriteData(
+    virtual PBoolean WriteData(
       const BYTE * data,   ///<  Data to write
       PINDEX length,       ///<  Length of data to read.
       PINDEX & written     ///<  Length of data actually written
@@ -595,14 +595,14 @@ class OpalLineMediaStream : public OpalMediaStream
 
        The default behaviour does nothing.
       */
-    virtual BOOL SetDataSize(
+    virtual PBoolean SetDataSize(
       PINDEX dataSize  ///<  New data size
     );
 
     /**Indicate if the media stream is synchronous.
-       Returns TRUE for LID streams.
+       Returns PTrue for LID streams.
       */
-    virtual BOOL IsSynchronous() const;
+    virtual PBoolean IsSynchronous() const;
   //@}
 
   /**@name Member variable access */
@@ -614,10 +614,10 @@ class OpalLineMediaStream : public OpalMediaStream
 
   protected:
     OpalLine & line;
-    BOOL       useDeblocking;
+    PBoolean       useDeblocking;
     unsigned   missedCount;
     BYTE       lastSID[4];
-    BOOL       lastFrameWasSignal;
+    PBoolean       lastFrameWasSignal;
 };
 
 

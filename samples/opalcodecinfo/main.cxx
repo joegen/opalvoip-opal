@@ -136,7 +136,7 @@ PString DisplayLicenseInfo(PluginCodec_information * info)
 
 void DisplayCodecDefn(PluginCodec_Definition & defn)
 {
-  BOOL isVideo = FALSE;
+  PBoolean isVideo = PFalse;
 
   cout << "  Version:             " << defn.version << endl
        << DisplayLicenseInfo(defn.info)
@@ -147,7 +147,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
       break;
     case PluginCodec_MediaTypeVideo:
       cout << "Video";
-      isVideo = TRUE;
+      isVideo = PTrue;
       break;
     case PluginCodec_MediaTypeAudioStreamed:
       cout << "Streamed audio (" << ((defn.flags & PluginCodec_BitsPerSampleMask) >> PluginCodec_BitsPerSamplePos) << " bits per sample)";
@@ -264,7 +264,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
         if ((data->data == NULL) || (data->dataLength == 0))
           cout << ", empty data";
         else {
-          BOOL printable = TRUE;
+          PBoolean printable = PTrue;
           for (unsigned i = 0; i < data->dataLength; ++i) 
             printable = printable && (0x20 <= data->data[i] && data->data[i] < 0x7e);
           if (printable)
@@ -472,8 +472,8 @@ void AudioTest(const PString & fmtName)
     return;
   }
 
-  PINDEX decBlkSize = encoder->GetOptimalDataFrameSize(TRUE);
-  if (decBlkSize != decoder->GetOptimalDataFrameSize(FALSE)) {
+  PINDEX decBlkSize = encoder->GetOptimalDataFrameSize(PTrue);
+  if (decBlkSize != decoder->GetOptimalDataFrameSize(PFalse)) {
     cout << "error: Encoder and decoder have different frame sizes, mode not supported." << endl;
     return;
   }
@@ -483,7 +483,7 @@ void AudioTest(const PString & fmtName)
   RTP_DataFrame source, output, encoded;
   source.SetPayloadSize(decBlkSize);
   output.SetPayloadSize(decBlkSize);
-  encoded.SetPayloadSize(PMAX(encoder->GetOptimalDataFrameSize(FALSE), decoder->GetOptimalDataFrameSize(TRUE)));
+  encoded.SetPayloadSize(PMAX(encoder->GetOptimalDataFrameSize(PFalse), decoder->GetOptimalDataFrameSize(PTrue)));
   encoded.SetPayloadType(mediaFormat.GetPayloadType());
 
   int count = 0;
@@ -576,7 +576,7 @@ void VideoTest(const PString & fmtName)
 void OpalCodecInfo::Main()
 {
   cout << GetName()
-       << " Version " << GetVersion(TRUE)
+       << " Version " << GetVersion(PTrue)
        << " by " << GetManufacturer()
        << " on " << GetOSClass() << ' ' << GetOSName()
        << " (" << GetOSVersion() << '-' << GetOSHardware() << ")\n\n";
@@ -598,7 +598,7 @@ void OpalCodecInfo::Main()
              "o-output:"
 #endif
              "V-video-test:"
-             , FALSE);
+             , PFalse);
 
 #if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),

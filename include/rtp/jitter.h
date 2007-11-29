@@ -73,10 +73,10 @@ class OpalJitterBuffer : public PObject
        outside world.  A descendant class of OpalJitterBuffer will override
        this method
 
-    @return TRUE on successful read, FALSE on faulty read. */
-    virtual BOOL OnReadPacket    (
+    @return PTrue on successful read, PFalse on faulty read. */
+    virtual PBoolean OnReadPacket    (
 	RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-	BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+	PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
 	) = 0;
 
 //    PINDEX GetSize() const { return bufferSize; }
@@ -87,14 +87,14 @@ class OpalJitterBuffer : public PObject
       unsigned maxJitterDelay  ///<  Maximum delay in RTP timestamp units
     );
 
-    void UseImmediateReduction(BOOL state) { doJitterReductionImmediately = state; }
+    void UseImmediateReduction(PBoolean state) { doJitterReductionImmediately = state; }
 
     /**Read a data frame from the RTP channel.
        Any control frames received are dispatched to callbacks and are not
        returned by this function. It will block until a data frame is
        available or an error occurs.
       */
-    virtual BOOL ReadData(
+    virtual PBoolean ReadData(
       DWORD timestamp,        ///<  Timestamp to read from buffer.
       RTP_DataFrame & frame   ///<  Frame read from the RTP session
     );
@@ -129,8 +129,8 @@ class OpalJitterBuffer : public PObject
 
     PDECLARE_NOTIFIER(PThread, OpalJitterBuffer, JitterThreadMain);
 
-    BOOL WaitForTermination(const PTimeInterval & t)
-    { return (jitterThread == NULL) ? TRUE : jitterThread->WaitForTermination(t); }
+    PBoolean WaitForTermination(const PTimeInterval & t)
+    { return (jitterThread == NULL) ? PTrue : jitterThread->WaitForTermination(t); }
 
   protected:
     class Entry : public RTP_DataFrame
@@ -159,8 +159,8 @@ class OpalJitterBuffer : public PObject
     DWORD    jitterCalc;
     DWORD    targetJitterTime;
     unsigned jitterCalcPacketCount;
-    BOOL     doJitterReductionImmediately;
-    BOOL     doneFreeTrash;
+    PBoolean     doJitterReductionImmediately;
+    PBoolean     doneFreeTrash;
 
     Entry * oldestFrame;
     Entry * newestFrame;
@@ -168,19 +168,19 @@ class OpalJitterBuffer : public PObject
     Entry * currentWriteFrame;
 
     PMutex bufferMutex;
-    BOOL   shuttingDown;
-    BOOL   preBuffering;
-    BOOL   doneFirstWrite;
+    PBoolean   shuttingDown;
+    PBoolean   preBuffering;
+    PBoolean   doneFirstWrite;
 
     RTP_JitterBufferAnalyser * analyser;
 
     PThread * jitterThread;
     PINDEX    jitterStackSize;
 
-    BOOL Init(Entry * & currentReadFrame, BOOL & markerWarning);
-    BOOL PreRead(Entry * & currentReadFrame, BOOL & markerWarning);
-    BOOL OnRead(Entry * & currentReadFrame, BOOL & markerWarning, BOOL loop);
-    void DeInit(Entry * & currentReadFrame, BOOL & markerWarning);
+    PBoolean Init(Entry * & currentReadFrame, PBoolean & markerWarning);
+    PBoolean PreRead(Entry * & currentReadFrame, PBoolean & markerWarning);
+    PBoolean OnRead(Entry * & currentReadFrame, PBoolean & markerWarning, PBoolean loop);
+    void DeInit(Entry * & currentReadFrame, PBoolean & markerWarning);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -206,10 +206,10 @@ class RTP_JitterBuffer : public OpalJitterBuffer
     /**This class instance collects data from the outside world in this
        method.
 
-    @return TRUE on successful read, FALSE on faulty read. */
-    virtual BOOL OnReadPacket    (
+    @return PTrue on successful read, PFalse on faulty read. */
+    virtual PBoolean OnReadPacket    (
 	RTP_DataFrame & frame,  ///<  Frame read from the RTP session
-	BOOL loop               ///<  If TRUE, loop as long as data is available, if FALSE, only process once
+	PBoolean loop               ///<  If PTrue, loop as long as data is available, if PFalse, only process once
 	) ;
 
     /**Start jitter thread

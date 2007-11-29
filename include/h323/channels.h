@@ -71,8 +71,8 @@ class H323ChannelNumber : public PObject
   PCLASSINFO(H323ChannelNumber, PObject);
 
   public:
-    H323ChannelNumber() { number = 0; fromRemote = FALSE; }
-    H323ChannelNumber(unsigned number, BOOL fromRemote);
+    H323ChannelNumber() { number = 0; fromRemote = PFalse; }
+    H323ChannelNumber(unsigned number, PBoolean fromRemote);
 
     virtual PObject * Clone() const;
     virtual PINDEX HashFunction() const;
@@ -81,11 +81,11 @@ class H323ChannelNumber : public PObject
 
     H323ChannelNumber & operator++(int);
     operator unsigned() const { return number; }
-    BOOL IsFromRemote() const { return fromRemote; }
+    PBoolean IsFromRemote() const { return fromRemote; }
     
   protected:
     unsigned number;
-    BOOL     fromRemote;
+    PBoolean     fromRemote;
 };
 
 
@@ -152,31 +152,31 @@ class H323Channel : public PObject
        This is primarily used to determine if media bypass is possible for the
        call between two connections.
 
-       The default behaviour returns FALSE.
+       The default behaviour returns PFalse.
      */
-    virtual BOOL GetMediaTransportAddress(
+    virtual PBoolean GetMediaTransportAddress(
       OpalTransportAddress & data,        ///<  Data channel address
       OpalTransportAddress & control      ///<  Control channel address
     ) const;
 
     /**Set the initial bandwidth for the channel.
        This calculates the initial bandwidth required by the channel and
-       returns TRUE if the connection can support this bandwidth.
+       returns PTrue if the connection can support this bandwidth.
 
        The default behaviour gets the bandwidth requirement from the codec
        object created by the channel.
      */
-    virtual BOOL SetInitialBandwidth() = 0;
+    virtual PBoolean SetInitialBandwidth() = 0;
 
     /**Open the channel.
        The default behaviour just calls connection.OnStartLogicalChannel() and
        if successful sets the opened member variable.
       */
-    virtual BOOL Open();
+    virtual PBoolean Open();
 
     /**This is called when the channel can start transferring data.
      */
-    virtual BOOL Start() = 0;
+    virtual PBoolean Start() = 0;
 
     /**This is called to clean up any threads on connection termination.
      */
@@ -184,23 +184,23 @@ class H323Channel : public PObject
 
     /**Indicate if has been opened.
      */
-    BOOL IsOpen() const { return opened && !terminating; }
+    PBoolean IsOpen() const { return opened && !terminating; }
 
     /**Get the media stream associated with this logical channel.
 
-       If the argument is set to TRUE, the mediaStream is about to be deleted
+       If the argument is set to PTrue, the mediaStream is about to be deleted
        so all internal references to the mediaStream must be removed.
 
        The default behaviour returns NULL.
       */
     virtual OpalMediaStream * GetMediaStream(
-      BOOL deleted = FALSE
+      PBoolean deleted = PFalse
     ) const = 0;
 
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const = 0;
 
@@ -218,9 +218,9 @@ class H323Channel : public PObject
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
 
-       The default behaviour just returns TRUE.
+       The default behaviour just returns PTrue.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
       unsigned & errorCode                    ///<  Error code on failure
     );
@@ -229,9 +229,9 @@ class H323Channel : public PObject
        local machine via the H245LogicalChannelDict::Open() function, and
        the request has been acknowledged by the remote endpoint.
 
-       The default behaviour just returns TRUE.
+       The default behaviour just returns PTrue.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_OpenLogicalChannelAck & pdu  ///<  Acknowledgement PDU
     );
 
@@ -290,7 +290,7 @@ class H323Channel : public PObject
 
     /**Get the bandwidth used by the channel in 100's of bits/sec.
      */
-    BOOL SetBandwidthUsed(
+    PBoolean SetBandwidthUsed(
       unsigned bandwidth  ///<  New bandwidth
     );
 
@@ -306,7 +306,7 @@ class H323Channel : public PObject
        Note that channel is not stopped, and may continue to actually receive
        data, it is just that nothing is done with it.
       */
-    BOOL IsPaused() const { return paused; }
+    PBoolean IsPaused() const { return paused; }
 
     /**Set the "pause" flag.
        A paused channel is one that prevents the annunciation of the channels
@@ -317,7 +317,7 @@ class H323Channel : public PObject
        data, it is just that nothing is done with it.
       */
     void SetPause(
-      BOOL pause   ///<  New pause flag
+      PBoolean pause   ///<  New pause flag
     ) { paused = pause; }
   //@}
 
@@ -327,9 +327,9 @@ class H323Channel : public PObject
     H323Capability       * capability;
     H323ChannelNumber      number;
     H323ChannelNumber      reverseChannel;
-    BOOL                   opened;
-    BOOL                   paused;
-    BOOL                   terminating;
+    PBoolean                   opened;
+    PBoolean                   paused;
+    PBoolean                   terminating;
 
   private:
     unsigned bandwidthUsed;
@@ -376,22 +376,22 @@ class H323UnidirectionalChannel : public H323Channel
 
     /**Set the initial bandwidth for the channel.
        This calculates the initial bandwidth required by the channel and
-       returns TRUE if the connection can support this bandwidth.
+       returns PTrue if the connection can support this bandwidth.
 
        The default behaviour gets the bandwidth requirement from the codec
        object created by the channel.
      */
-    virtual BOOL SetInitialBandwidth();
+    virtual PBoolean SetInitialBandwidth();
 
     /**Open the channel.
       */
-    virtual BOOL Open();
+    virtual PBoolean Open();
 
     /**This is called when the channel can start transferring data.
        The default action is to start one threads, with it either calling
        Receive() or Transmit() depending on the receiver member variable.
      */
-    virtual BOOL Start();
+    virtual PBoolean Start();
 
     /**This is called to clean up any threads on connection termination.
      */
@@ -410,13 +410,13 @@ class H323UnidirectionalChannel : public H323Channel
     /**Get the media stream associated with this logical channel.
        The default behaviour returns NULL.
       */
-    virtual OpalMediaStream * GetMediaStream(BOOL deleted = FALSE) const;
+    virtual OpalMediaStream * GetMediaStream(PBoolean deleted = PFalse) const;
   //@}
 
   protected:
     PDECLARE_NOTIFIER(OpalMediaCommand, H323UnidirectionalChannel, OnMediaCommand);
 
-    BOOL              receiver;
+    PBoolean              receiver;
     mutable OpalMediaStream * mediaStream;
 };
 
@@ -454,7 +454,7 @@ class H323BidirectionalChannel : public H323Channel
        The default action is to start two threads, one calls Receive() and the
        other calls Transmit().
      */
-    virtual BOOL Start();
+    virtual PBoolean Start();
   //@}
 };
 
@@ -483,7 +483,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
@@ -502,7 +502,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
       unsigned & errorCode                    ///<  Error code on failure
     );
@@ -514,7 +514,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_OpenLogicalChannelAck & pdu ///<  Acknowledgement PDU
     );
   //@}
@@ -523,7 +523,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const = 0;
 
@@ -540,7 +540,7 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
     ) = 0;
@@ -551,13 +551,13 @@ class H323_RealTimeChannel : public H323UnidirectionalChannel
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     ) = 0;
 
     /**Set the dynamic payload type used by this channel.
       */
-    virtual BOOL SetDynamicRTPPayloadType(
+    virtual PBoolean SetDynamicRTPPayloadType(
       int newType  ///<  New RTP payload type number
     );
 
@@ -606,7 +606,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
@@ -623,7 +623,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
     );
@@ -634,7 +634,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
   //@}
@@ -699,16 +699,16 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        This is primarily used to determine if media bypass is possible for the
        call between two connections.
 
-       The default behaviour returns FALSE.
+       The default behaviour returns PFalse.
      */
-    virtual BOOL GetMediaTransportAddress(
+    virtual PBoolean GetMediaTransportAddress(
       OpalTransportAddress & data,        ///<  Data channel address
       OpalTransportAddress & control      ///<  Control channel address
     ) const;
 
     /**Start the channel.
       */
-    virtual BOOL Start();
+    virtual PBoolean Start();
 
     /**Handle channel data reception.
 
@@ -731,7 +731,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
   //@{
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_H2250LogicalChannelParameters & param  ///<  Open PDU to send.
     ) const;
 
@@ -748,7 +748,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_H2250LogicalChannelParameters & param, ///<  Acknowledgement PDU
       unsigned & errorCode                              ///<  Error on failure
     );
@@ -759,7 +759,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
 
        The default behaviour sets the remote ports to send UDP packets to.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_H2250LogicalChannelAckParameters & param ///<  Acknowledgement PDU
     );
   //@}
@@ -772,7 +772,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     const H323TransportAddress & GetRemoteMediaAddress()        const { return remoteMediaAddress; }
     const H323TransportAddress & GetRemoteMediaControlAddress() const { return remoteMediaControlAddress; }
 
-    BOOL GetRemoteAddress(
+    PBoolean GetRemoteAddress(
       PIPSocket::Address & ip,
       WORD & dataPort
     ) const;
@@ -831,7 +831,7 @@ class H323DataChannel : public H323UnidirectionalChannel
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
-    virtual BOOL OnSendingPDU(
+    virtual PBoolean OnSendingPDU(
       H245_OpenLogicalChannel & openPDU  ///<  Open PDU to send. 
     ) const;
 
@@ -850,7 +850,7 @@ class H323DataChannel : public H323UnidirectionalChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedPDU(
+    virtual PBoolean OnReceivedPDU(
       const H245_OpenLogicalChannel & pdu,    ///<  Open PDU
       unsigned & errorCode                    ///<  Error code on failure
     );
@@ -862,7 +862,7 @@ class H323DataChannel : public H323UnidirectionalChannel
        The default makes sure the parameters are compatible and passes on
        the PDU to the rtp session.
      */
-    virtual BOOL OnReceivedAckPDU(
+    virtual PBoolean OnReceivedAckPDU(
       const H245_OpenLogicalChannelAck & pdu ///<  Acknowledgement PDU
     );
   //@}
@@ -873,27 +873,27 @@ class H323DataChannel : public H323UnidirectionalChannel
        This is called on receipt of an OpenLogicalChannel request.
 
        The default behaviour creates a compatible listener using the
-       connections control channel as a basis and returns TRUE if successful.
+       connections control channel as a basis and returns PTrue if successful.
       */
-    virtual BOOL CreateListener();
+    virtual PBoolean CreateListener();
 
     /**Create the H323Transport class to be used.
        This is called on receipt of an OpenLogicalChannelAck response. It
-       should not return TRUE unless the transport member variable is set.
+       should not return PTrue unless the transport member variable is set.
 
        The default behaviour uses the connection signalling channel to create
-       the transport and returns TRUE if successful.
+       the transport and returns PTrue if successful.
       */
-    virtual BOOL CreateTransport();
+    virtual PBoolean CreateTransport();
   //@}
 
   protected:
     unsigned        sessionID;
     H323Listener  * listener;
-    BOOL            autoDeleteListener;
+    PBoolean            autoDeleteListener;
     H323Transport * transport;
-    BOOL            autoDeleteTransport;
-    BOOL            separateReverseChannel;
+    PBoolean            autoDeleteTransport;
+    PBoolean            separateReverseChannel;
 };
 
 

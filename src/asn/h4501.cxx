@@ -30,7 +30,7 @@ const static PASN_Names Names_H4501_EntityType[]={
 //
 
 H4501_EntityType::H4501_EntityType(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_EntityType,2
 #endif
@@ -39,7 +39,7 @@ H4501_EntityType::H4501_EntityType(unsigned tag, PASN_Object::TagClass tagClass)
 }
 
 
-BOOL H4501_EntityType::CreateObject()
+PBoolean H4501_EntityType::CreateObject()
 {
   choice = (tag <= e_anyEntity) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -87,7 +87,7 @@ const static PASN_Names Names_H4501_InterpretationApdu[]={
 //
 
 H4501_InterpretationApdu::H4501_InterpretationApdu(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 3, TRUE
+  : PASN_Choice(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_InterpretationApdu,3
 #endif
@@ -96,7 +96,7 @@ H4501_InterpretationApdu::H4501_InterpretationApdu(unsigned tag, PASN_Object::Ta
 }
 
 
-BOOL H4501_InterpretationApdu::CreateObject()
+PBoolean H4501_InterpretationApdu::CreateObject()
 {
   choice = (tag <= e_rejectAnyUnrecognizedInvokePdu) ? new PASN_Null() : NULL;
   return choice != NULL;
@@ -123,7 +123,7 @@ const static PASN_Names Names_H4501_ServiceApdus[]={
 //
 
 H4501_ServiceApdus::H4501_ServiceApdus(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 1, TRUE
+  : PASN_Choice(tag, tagClass, 1, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_ServiceApdus,1
 #endif
@@ -154,17 +154,17 @@ H4501_ServiceApdus::operator const H4501_ArrayOf_ROS &() const
 }
 
 
-BOOL H4501_ServiceApdus::CreateObject()
+PBoolean H4501_ServiceApdus::CreateObject()
 {
   switch (tag) {
     case e_rosApdus :
       choice = new H4501_ArrayOf_ROS();
       choice->SetConstraints(PASN_Object::FixedConstraint, 1, MaximumValue);
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -258,7 +258,7 @@ const static PASN_Names Names_H4501_PresentedAddressScreened[]={
 //
 
 H4501_PresentedAddressScreened::H4501_PresentedAddressScreened(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_PresentedAddressScreened,4
 #endif
@@ -289,21 +289,21 @@ H4501_PresentedAddressScreened::operator const H4501_AddressScreened &() const
 }
 
 
-BOOL H4501_PresentedAddressScreened::CreateObject()
+PBoolean H4501_PresentedAddressScreened::CreateObject()
 {
   switch (tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H4501_AddressScreened();
-      return TRUE;
+      return PTrue;
     case e_presentationRestricted :
     case e_numberNotAvailableDueToInterworking :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -330,7 +330,7 @@ const static PASN_Names Names_H4501_PresentedAddressUnscreened[]={
 //
 
 H4501_PresentedAddressUnscreened::H4501_PresentedAddressUnscreened(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_PresentedAddressUnscreened,4
 #endif
@@ -361,21 +361,21 @@ H4501_PresentedAddressUnscreened::operator const H4501_Address &() const
 }
 
 
-BOOL H4501_PresentedAddressUnscreened::CreateObject()
+PBoolean H4501_PresentedAddressUnscreened::CreateObject()
 {
   switch (tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H4501_Address();
-      return TRUE;
+      return PTrue;
     case e_presentationRestricted :
     case e_numberNotAvailableDueToInterworking :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -402,7 +402,7 @@ const static PASN_Names Names_H4501_PresentedNumberScreened[]={
 //
 
 H4501_PresentedNumberScreened::H4501_PresentedNumberScreened(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_PresentedNumberScreened,4
 #endif
@@ -433,21 +433,21 @@ H4501_PresentedNumberScreened::operator const H4501_NumberScreened &() const
 }
 
 
-BOOL H4501_PresentedNumberScreened::CreateObject()
+PBoolean H4501_PresentedNumberScreened::CreateObject()
 {
   switch (tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H4501_NumberScreened();
-      return TRUE;
+      return PTrue;
     case e_presentationRestricted :
     case e_numberNotAvailableDueToInterworking :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -474,7 +474,7 @@ const static PASN_Names Names_H4501_PresentedNumberUnscreened[]={
 //
 
 H4501_PresentedNumberUnscreened::H4501_PresentedNumberUnscreened(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, TRUE
+  : PASN_Choice(tag, tagClass, 4, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_PresentedNumberUnscreened,4
 #endif
@@ -505,21 +505,21 @@ H4501_PresentedNumberUnscreened::operator const H225_PartyNumber &() const
 }
 
 
-BOOL H4501_PresentedNumberUnscreened::CreateObject()
+PBoolean H4501_PresentedNumberUnscreened::CreateObject()
 {
   switch (tag) {
     case e_presentationAllowedAddress :
     case e_presentationRestrictedAddress :
       choice = new H225_PartyNumber();
-      return TRUE;
+      return PTrue;
     case e_presentationRestricted :
     case e_numberNotAvailableDueToInterworking :
       choice = new PASN_Null();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -544,7 +544,7 @@ const static PASN_Names Names_H4501_PartySubaddress[]={
 //
 
 H4501_PartySubaddress::H4501_PartySubaddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 2, TRUE
+  : PASN_Choice(tag, tagClass, 2, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_PartySubaddress,2
 #endif
@@ -597,19 +597,19 @@ H4501_PartySubaddress::operator const H4501_NSAPSubaddress &() const
 }
 
 
-BOOL H4501_PartySubaddress::CreateObject()
+PBoolean H4501_PartySubaddress::CreateObject()
 {
   switch (tag) {
     case e_userSpecifiedSubaddress :
       choice = new H4501_UserSpecifiedSubaddress();
-      return TRUE;
+      return PTrue;
     case e_nsapSubaddress :
       choice = new H4501_NSAPSubaddress();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -753,7 +753,7 @@ const static PASN_Names Names_H4501_ScreeningIndicator[]={
 //
 
 H4501_ScreeningIndicator::H4501_ScreeningIndicator(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, TRUE
+  : PASN_Enumeration(tag, tagClass, 3, PTrue
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_ScreeningIndicator,4
 #endif
@@ -788,7 +788,7 @@ H4501_PresentationAllowedIndicator::H4501_PresentationAllowedIndicator(unsigned 
 }
 
 
-H4501_PresentationAllowedIndicator & H4501_PresentationAllowedIndicator::operator=(BOOL v)
+H4501_PresentationAllowedIndicator & H4501_PresentationAllowedIndicator::operator=(PBoolean v)
 {
   SetValue(v);
   return *this;
@@ -826,7 +826,7 @@ const static PASN_Names Names_H4501_GeneralErrorList[]={
 //
 
 H4501_GeneralErrorList::H4501_GeneralErrorList(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 43, FALSE
+  : PASN_Enumeration(tag, tagClass, 43, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_H4501_GeneralErrorList,13
 #endif
@@ -914,7 +914,7 @@ PObject * H4501_H225InformationElement::Clone() const
 //
 
 H4501_Extension::H4501_Extension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -958,15 +958,15 @@ PINDEX H4501_Extension::GetDataLength() const
 }
 
 
-BOOL H4501_Extension::Decode(PASN_Stream & strm)
+PBoolean H4501_Extension::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_extensionId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_extensionArgument.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1059,7 +1059,7 @@ PObject * H4501_ArrayOf_AliasAddress::Clone() const
 //
 
 H4501_NetworkFacilityExtension::H4501_NetworkFacilityExtension(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -1115,19 +1115,19 @@ PINDEX H4501_NetworkFacilityExtension::GetDataLength() const
 }
 
 
-BOOL H4501_NetworkFacilityExtension::Decode(PASN_Stream & strm)
+PBoolean H4501_NetworkFacilityExtension::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_sourceEntity.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_sourceEntityAddress) && !m_sourceEntityAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_destinationEntity.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_destinationEntityAddress) && !m_destinationEntityAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1162,7 +1162,7 @@ PObject * H4501_NetworkFacilityExtension::Clone() const
 //
 
 H4501_AddressScreened::H4501_AddressScreened(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -1212,17 +1212,17 @@ PINDEX H4501_AddressScreened::GetDataLength() const
 }
 
 
-BOOL H4501_AddressScreened::Decode(PASN_Stream & strm)
+PBoolean H4501_AddressScreened::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_partyNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_screeningIndicator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_partySubaddress) && !m_partySubaddress.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1255,7 +1255,7 @@ PObject * H4501_AddressScreened::Clone() const
 //
 
 H4501_NumberScreened::H4501_NumberScreened(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PTrue, 0)
 {
 }
 
@@ -1299,15 +1299,15 @@ PINDEX H4501_NumberScreened::GetDataLength() const
 }
 
 
-BOOL H4501_NumberScreened::Decode(PASN_Stream & strm)
+PBoolean H4501_NumberScreened::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_partyNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_screeningIndicator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1338,7 +1338,7 @@ PObject * H4501_NumberScreened::Clone() const
 //
 
 H4501_Address::H4501_Address(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -1384,15 +1384,15 @@ PINDEX H4501_Address::GetDataLength() const
 }
 
 
-BOOL H4501_Address::Decode(PASN_Stream & strm)
+PBoolean H4501_Address::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_partyNumber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_partySubaddress) && !m_partySubaddress.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1424,7 +1424,7 @@ PObject * H4501_Address::Clone() const
 //
 
 H4501_EndpointAddress::H4501_EndpointAddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -1470,15 +1470,15 @@ PINDEX H4501_EndpointAddress::GetDataLength() const
 }
 
 
-BOOL H4501_EndpointAddress::Decode(PASN_Stream & strm)
+PBoolean H4501_EndpointAddress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_destinationAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_remoteExtensionAddress) && !m_remoteExtensionAddress.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1510,7 +1510,7 @@ PObject * H4501_EndpointAddress::Clone() const
 //
 
 H4501_UserSpecifiedSubaddress::H4501_UserSpecifiedSubaddress(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PTrue, 0)
 {
 }
 
@@ -1556,15 +1556,15 @@ PINDEX H4501_UserSpecifiedSubaddress::GetDataLength() const
 }
 
 
-BOOL H4501_UserSpecifiedSubaddress::Decode(PASN_Stream & strm)
+PBoolean H4501_UserSpecifiedSubaddress::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_subaddressInformation.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_oddCountIndicator) && !m_oddCountIndicator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1596,7 +1596,7 @@ PObject * H4501_UserSpecifiedSubaddress::Clone() const
 //
 
 H4501_SupplementaryService::H4501_SupplementaryService(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 2, TRUE, 0)
+  : PASN_Sequence(tag, tagClass, 2, PTrue, 0)
 {
 }
 
@@ -1648,17 +1648,17 @@ PINDEX H4501_SupplementaryService::GetDataLength() const
 }
 
 
-BOOL H4501_SupplementaryService::Decode(PASN_Stream & strm)
+PBoolean H4501_SupplementaryService::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (HasOptionalField(e_networkFacilityExtension) && !m_networkFacilityExtension.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_interpretationApdu) && !m_interpretationApdu.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_serviceApdu.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

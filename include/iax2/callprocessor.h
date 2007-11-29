@@ -48,7 +48,7 @@
  *  buffer provided in Opal. Reduce the verbosity of the log mesasges.
  *
  *  Revision 1.3  2006/09/22 00:33:19  csoutheren
- *  Changed PAtomicInteger to BOOL
+ *  Changed PAtomicInteger to PBoolean
  *
  *  Revision 1.2  2006/09/11 03:08:51  dereksmithies
  *  Add fixes from Stephen Cook (sitiveni@gmail.com) for new patches to
@@ -164,11 +164,11 @@ class IAX2CallProcessor : public IAX2Processor
      
      The behaviour at the opal level is pure. Here, the method is defined.
   */
-  virtual BOOL SetUpConnection();
+  virtual PBoolean SetUpConnection();
 
-  /**Return TRUE if the remote info in the frame matches the remote info in
+  /**Return PTrue if the remote info in the frame matches the remote info in
      this connection */
-  BOOL Matches(IAX2Frame *frame) { return remote == (frame->GetRemoteInfo()); }
+  PBoolean Matches(IAX2Frame *frame) { return remote == (frame->GetRemoteInfo()); }
   
   /**A method to cause some of the values in this class to be formatted
      into a printable stream */
@@ -178,8 +178,8 @@ class IAX2CallProcessor : public IAX2Processor
      in/out packets) to be printed*/
   void ReportStatistics();  
 
-  /**Return TRUE if the arg matches the source call number for this connection */
-  BOOL MatchingLocalCallNumber(PINDEX compare) { return (compare == remote.SourceCallNumber()); }  
+  /**Return PTrue if the arg matches the source call number for this connection */
+  PBoolean MatchingLocalCallNumber(PINDEX compare) { return (compare == remote.SourceCallNumber()); }  
   
   /**Get the bit pattern of the selected codec */
   unsigned short GetSelectedCodec() { return (unsigned short) selectedCodec; }
@@ -201,14 +201,14 @@ class IAX2CallProcessor : public IAX2Processor
 
      The default behaviour is pure.
   */
-  virtual BOOL SetAlerting(
+  virtual PBoolean SetAlerting(
          const PString & calleeName,   /// Name of endpoint being alerted.
-         BOOL withMedia                /// Open media with alerting
+         PBoolean withMedia                /// Open media with alerting
          ) ;
 
   /**Advise the procesor that this call is totally setup, and answer accordingly
    */
-  void SetEstablished(BOOL originator        ///Flag to indicate if we created the call
+  void SetEstablished(PBoolean originator        ///Flag to indicate if we created the call
           );
 
   /**Cause this thread to hangup the current call, but not die. Death
@@ -218,7 +218,7 @@ class IAX2CallProcessor : public IAX2Processor
 
   /**Report the status of the flag callEndingNow, which indicates if
      the call is terminating under iax2 control  */
-  BOOL IsCallTerminating() { return callStatus & callTerminating; }
+  PBoolean IsCallTerminating() { return callStatus & callTerminating; }
   
   /**Put the remote connection on hold*/
   void SendHold();
@@ -263,7 +263,7 @@ class IAX2CallProcessor : public IAX2Processor
      thread*/
   //@{
   /** Test the value supplied in the format Ie is compatible.*/
-  BOOL RemoteSelectedCodecOk();
+  PBoolean RemoteSelectedCodecOk();
  
   /** Check to see if there is an outstanding request to send a hangup frame. This needs
       to be done in two places, so we use a routine to see if need to send a hanup frame.*/
@@ -297,7 +297,7 @@ class IAX2CallProcessor : public IAX2Processor
      
   A frame of FullFrameProtocol type is labelled as AST_FRAME_IAX in the asterisk souces,
   It will contain 0, 1, 2 or more Information Elements (Ie) in the data section.*/
-  virtual BOOL ProcessNetworkFrame(IAX2FullFrameProtocol * src);
+  virtual PBoolean ProcessNetworkFrame(IAX2FullFrameProtocol * src);
   
   /**Internal method to process an incoming network frame of type  IAX2FullFrameText */
   void ProcessNetworkFrame(IAX2FullFrameText * src);
@@ -327,7 +327,7 @@ class IAX2CallProcessor : public IAX2Processor
      The data in the array is already compressed. */
   void SendSoundMessage(PBYTEArray *sound);
   
-  /**Sends a transfer message ONLY if doTransfer is TRUE*/
+  /**Sends a transfer message ONLY if doTransfer is PTrue*/
   void SendTransferMessage();
   
   /**Send a message to put the remote connection on hold*/
@@ -483,10 +483,10 @@ class IAX2CallProcessor : public IAX2Processor
   SafeStrings hangList;
   
   /**Flag to indicate we have to send hold call*/
-  BOOL holdCall;
+  PBoolean holdCall;
   
   /**Flag to indicate we have to send hold release*/
-  BOOL holdReleaseCall;
+  PBoolean holdReleaseCall;
   
   /**Array of sound packets read from the audio device, and is about
      to be transmitted to the remote node */
@@ -511,7 +511,7 @@ class IAX2CallProcessor : public IAX2Processor
   PINDEX lastFullFrameTimeStamp;
     
   /**Flag to indicate we are ready for audio to flow */
-  BOOL audioCanFlow;
+  PBoolean audioCanFlow;
 
   /** Bitmask of FullFrameVoice::AudioSc values to specify which codec is used*/
   unsigned int selectedCodec;
@@ -532,60 +532,60 @@ class IAX2CallProcessor : public IAX2Processor
   unsigned short callStatus;
   
   /** Mark call status as having sent a iaxcmdRinging packet */
-  void SetCallSentRinging(BOOL newValue = TRUE) 
+  void SetCallSentRinging(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callSentRinging; else callStatus &= ~callSentRinging; }
   
   /** Mark call status as having received a new packet */
-  void SetCallNewed(BOOL newValue = TRUE) 
+  void SetCallNewed(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callNewed; else callStatus &= ~callNewed; }
   
   /** Mark call status Registered (argument determines flag status) */
-  void SetCallRegistered(BOOL newValue = TRUE) 
+  void SetCallRegistered(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callRegistered; else callStatus &= ~callRegistered; }
   
   /** Mark call status Authorised (argument determines flag status) */
-  void SetCallAuthorised(BOOL newValue = TRUE) 
+  void SetCallAuthorised(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callAuthorised; else callStatus &= ~callAuthorised; }
   
   /** Mark call status Accepted (argument determines flag status) */
-  void SetCallAccepted(BOOL newValue = TRUE) 
+  void SetCallAccepted(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callAccepted; else callStatus &= ~callAccepted; }
   
   /** Mark call status Ringing (argument determines flag status) */
-  void SetCallRinging(BOOL newValue = TRUE) 
+  void SetCallRinging(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callRinging; else callStatus &= ~callRinging; }
   
   /** Mark call status Answered (argument determines flag status) */
-  void SetCallAnswered(BOOL newValue = TRUE) 
+  void SetCallAnswered(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callAnswered; else callStatus &= ~callAnswered; }
 
   /** Mark call status as terminated (is processing IAX2 hangup packets etc ) */
-  void SetCallTerminating(BOOL newValue = TRUE) 
+  void SetCallTerminating(PBoolean newValue = PTrue) 
     { if (newValue) callStatus |= callTerminating; else callStatus &= ~callTerminating; }
   
   /** See if any of the flag bits are on, which indicate this call is actually active */
-  BOOL IsCallHappening() { return callStatus > 0; }
+  PBoolean IsCallHappening() { return callStatus > 0; }
   
   /** Get marker to indicate that some packets have flowed etc for this call  */
-  BOOL IsCallNewed() { return callStatus & callNewed; }
+  PBoolean IsCallNewed() { return callStatus & callNewed; }
   
   /** Get marker to indicate that we are waiting on the ack for the iaxcommandringing packet we sent  */
-  BOOL IsCallSentRinging() { return callStatus & callSentRinging; }
+  PBoolean IsCallSentRinging() { return callStatus & callSentRinging; }
   
   /** Get the current value of the call status flag callRegistered */
-  BOOL IsCallRegistered() { return callStatus & callRegistered; }
+  PBoolean IsCallRegistered() { return callStatus & callRegistered; }
   
   /** Get the current value of the call status flag callAuthorised */
-  BOOL IsCallAuthorised() { return callStatus & callAuthorised; }
+  PBoolean IsCallAuthorised() { return callStatus & callAuthorised; }
   
   /** Get the current value of the call status flag callAccepted */
-  BOOL IsCallAccepted() { return callStatus & callAccepted; }
+  PBoolean IsCallAccepted() { return callStatus & callAccepted; }
   
   /** Get the current value of the call status flag callRinging */
-  BOOL IsCallRinging() { return callStatus & callRinging; }
+  PBoolean IsCallRinging() { return callStatus & callRinging; }
   
   /** Get the current value of the call status flag callAnswered */
-  BOOL IsCallAnswered() { return callStatus & callAnswered; }
+  PBoolean IsCallAnswered() { return callStatus & callAnswered; }
   
   /** Advise the other end that we have picked up the phone */
   void SendAnswerMessageToRemoteNode();
@@ -627,17 +627,17 @@ class IAX2CallProcessor : public IAX2Processor
   /**Flag to indicate if we are waiting on the first full frame of
      media (voice or video). The arrival of this frame causes the
      IAX2Connection::OnEstablished method to be called. */
-  BOOL firstMediaFrame;
+  PBoolean firstMediaFrame;
 
   /**Flag to indicate we have to answer this call (i.e. send a
      FullFrameSessionControl::answer packet). */
-  BOOL answerCallNow;
+  PBoolean answerCallNow;
 
   /**Flag to indicate we need to do a status query on the other
      end. this means, send a PING and a LAGRQ packet, which happens
      every 10 seconds. The timer, timeStatusCheck controls when this
      happens */
-  BOOL statusCheckOtherEnd;
+  PBoolean statusCheckOtherEnd;
 
   /** The timer which is used to do the status check */
   PTimer statusCheckTimer;
@@ -652,7 +652,7 @@ class IAX2CallProcessor : public IAX2Processor
   /**A flag to indicate we have yet to send an audio frame to remote
      endpoint. If this is on, then the first audio frame sent is a
      full one.  */
-  BOOL audioFramesNotStarted;
+  PBoolean audioFramesNotStarted;
 
   /**If the incoming frame has Information Elements defining remote
      capability, define the list of remote capabilities */
@@ -679,7 +679,7 @@ class IAX2CallProcessor : public IAX2Processor
   PMutex transferMutex;
   
   /**Whether we want a transfer event to occur or not*/
-  BOOL doTransfer;
+  PBoolean doTransfer;
   
   /**The number to call for a transfer*/
   PString transferCalledNumber;

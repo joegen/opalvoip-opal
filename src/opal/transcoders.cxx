@@ -75,7 +75,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
   : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
 {
   maxOutputSize = RTP_DataFrame::MaxEthernetPayloadSize;
-  outputIsRTP = inputIsRTP = FALSE;
+  outputIsRTP = inputIsRTP = PFalse;
 }
 
 
@@ -86,7 +86,7 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
   if (( input.IsValid() &&  input !=  inputMediaFormat) ||
       (output.IsValid() && output != outputMediaFormat)) {
     PAssertAlways(PInvalidParameter);
-    return FALSE;
+    return PFalse;
   }
 
   if (input.IsValid())
@@ -95,13 +95,13 @@ bool OpalTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const Opa
   if (output.IsValid())
     outputMediaFormat = output;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
+PBoolean OpalTranscoder::ExecuteCommand(const OpalMediaCommand & /*command*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -110,7 +110,7 @@ void OpalTranscoder::SetInstanceID(const BYTE * /*instance*/, unsigned /*instanc
 }
 
 
-RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
+RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(PBoolean input) const
 {
   RTP_DataFrame::PayloadTypes pt = (input ? inputMediaFormat : outputMediaFormat).GetPayloadType();
   if (payloadTypeMap.size() > 0) {
@@ -123,7 +123,7 @@ RTP_DataFrame::PayloadTypes OpalTranscoder::GetPayloadType(BOOL input) const
 }
 
 
-BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
+PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
                                    RTP_DataFrameList & output)
 {
   // make sure there is at least one output frame available
@@ -161,7 +161,7 @@ BOOL OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
   if (pt != RTP_DataFrame::MaxPayloadType && pt != input.GetPayloadType()) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
     output.RemoveAll();
-    return TRUE;
+    return PTrue;
   }
 
   return Convert(input, output[0]);
@@ -181,7 +181,7 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
   return transcoder;
 }
 
-BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
+PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
                                    const OpalMediaFormatList & srcFormats,
                                    const OpalMediaFormatList & dstFormats,
                                    OpalMediaFormat & srcFormat,
@@ -237,17 +237,17 @@ BOOL OpalTranscoder::SelectFormats(unsigned sessionID,
         if (srcFormat.GetDefaultSessionID() == sessionID) {
           OpalMediaFormat intermediateFormat;
           if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-            return TRUE;
+            return PTrue;
         }
       }
     }
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
+PBoolean OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
                                             OpalMediaFormat & dstFormat,
                                             OpalMediaFormat & intermediateFormat)
 {
@@ -268,7 +268,7 @@ BOOL OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
     }
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -363,13 +363,13 @@ bool OpalFramedTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, con
 }
 
 
-PINDEX OpalFramedTranscoder::GetOptimalDataFrameSize(BOOL input) const
+PINDEX OpalFramedTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
   return input ? inputBytesPerFrame : outputBytesPerFrame;
 }
 
 
-BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
+PBoolean OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & output)
 {
   if (inputIsRTP || outputIsRTP) {
 
@@ -399,7 +399,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
     }
 
     if (!ConvertFrame(inputPtr, inLen, outputPtr, outLen))
-      return FALSE;
+      return PFalse;
 
     if (!outputIsRTP)
       output.SetPayloadSize(outLen);
@@ -410,7 +410,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
     else 
       output.SetPayloadSize(outLen - output.GetHeaderSize());
 
-    return TRUE;
+    return PTrue;
   }
 
   const BYTE * inputPtr = input.GetPayloadPtr();
@@ -423,7 +423,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
 
   // set maximum output payload size
   if (!output.SetPayloadSize((inputLength + inputBytesPerFrame - 1)/inputBytesPerFrame*outputBytesPerFrame))
-    return FALSE;
+    return PFalse;
 
   BYTE * outputPtr = output.GetPayloadPtr();
 
@@ -435,7 +435,7 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
     PINDEX created  = output.GetPayloadSize() - outLen;
 
     if (!ConvertFrame(inputPtr, consumed, outputPtr, created))
-      return FALSE;
+      return PFalse;
 
     if (consumed == 0 && created == 0)
       break;
@@ -449,23 +449,23 @@ BOOL OpalFramedTranscoder::Convert(const RTP_DataFrame & input, RTP_DataFrame & 
   // set actual output payload size
   output.SetPayloadSize(outLen);
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consumed*/, BYTE * outputPtr, PINDEX & /*created*/)
+PBoolean OpalFramedTranscoder::ConvertFrame(const BYTE * inputPtr, PINDEX & /*consumed*/, BYTE * outputPtr, PINDEX & /*created*/)
 {
   return ConvertFrame(inputPtr, outputPtr);
 }
 
-BOOL OpalFramedTranscoder::ConvertFrame(const BYTE * /*inputPtr*/, BYTE * /*outputPtr*/)
+PBoolean OpalFramedTranscoder::ConvertFrame(const BYTE * /*inputPtr*/, BYTE * /*outputPtr*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
-BOOL OpalFramedTranscoder::ConvertSilentFrame(BYTE *dst)
+PBoolean OpalFramedTranscoder::ConvertSilentFrame(BYTE *dst)
 {
   memset(dst, 0, outputBytesPerFrame);
-  return TRUE;
+  return PTrue;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -483,13 +483,13 @@ OpalStreamedTranscoder::OpalStreamedTranscoder(const OpalMediaFormat & inputMedi
 }
 
 
-PINDEX OpalStreamedTranscoder::GetOptimalDataFrameSize(BOOL input) const
+PINDEX OpalStreamedTranscoder::GetOptimalDataFrameSize(PBoolean input) const
 {
   return ((input ? inputBitsPerSample : outputBitsPerSample)+7)/8 * optimalSamples;
 }
 
 
-BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
+PBoolean OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
                                      RTP_DataFrame & output)
 {
   PINDEX i;
@@ -528,7 +528,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return FALSE;
+          return PFalse;
       }
       break;
 
@@ -555,7 +555,7 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return FALSE;
+          return PFalse;
       }
       break;
 
@@ -588,16 +588,16 @@ BOOL OpalStreamedTranscoder::Convert(const RTP_DataFrame & input,
 
         default :
           PAssertAlways("Unsupported bit size");
-          return FALSE;
+          return PFalse;
       }
       break;
 
     default :
       PAssertAlways("Unsupported bit size");
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 

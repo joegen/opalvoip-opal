@@ -108,7 +108,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        must be able to handle any sized packets.
       */
     virtual PINDEX GetOptimalDataFrameSize(
-      BOOL input      ///<  Flag for input or output data size
+      PBoolean input      ///<  Flag for input or output data size
     ) const;
 
     /**Execute the command specified to the transcoder. The commands are
@@ -118,7 +118,7 @@ class OpalVideoTranscoder : public OpalTranscoder
        The default behaviour checks for a OpalVideoUpdatePicture and sets the
        updatePicture member variable if that is the command.
       */
-    virtual BOOL ExecuteCommand(
+    virtual PBoolean ExecuteCommand(
       const OpalMediaCommand & command    ///<  Command to execute.
     );
 
@@ -130,9 +130,9 @@ class OpalVideoTranscoder : public OpalTranscoder
        have a one to one input to output frames ratio, so the ConvertFrames()
        function is used instead.
 
-       Returns FALSE if the conversion fails.
+       Returns PFalse if the conversion fails.
       */
-    virtual BOOL Convert(
+    virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
       RTP_DataFrame & output        ///<  Output data
     );
@@ -200,11 +200,6 @@ class OpalLostPicture : public OpalMediaCommand
     OpalLostPicture() { }
     virtual PString GetName() const;
 };
-
-
-
-
-
 
 #endif // __OPAL_VIDCODEC_H
 

@@ -62,7 +62,7 @@
 OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn, 
                                   const OpalMediaFormat & mediaFormat,
 				                                         unsigned sessionID,   
-				                                             BOOL isSource)
+				                                             PBoolean isSource)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     connection(conn)
 {
@@ -70,48 +70,48 @@ OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn,
 }
  
  
-BOOL OpalIAX2MediaStream::Open()
+PBoolean OpalIAX2MediaStream::Open()
 {
   if (isOpen)
-    return TRUE;
+    return PTrue;
 
-  BOOL res = OpalMediaStream::Open();
+  PBoolean res = OpalMediaStream::Open();
   PTRACE(3, "Media\tOpalIAX2MediaStream set to " << mediaFormat << " is now open");
  
   return res;
 }
  
-BOOL OpalIAX2MediaStream::Start()
+PBoolean OpalIAX2MediaStream::Start()
 {
   PTRACE(2, "Media\tOpalMediaStream is a " << PString(IsSink() ? "sink" : "source"));
 
   return OpalMediaStream::Start();
 }
   
-BOOL OpalIAX2MediaStream::Close()
+PBoolean OpalIAX2MediaStream::Close()
 {
-  BOOL res = OpalMediaStream::Close();
+  PBoolean res = OpalMediaStream::Close();
 
   PTRACE(3, "Media\tOpalIAX2MediaStream of " << mediaFormat << " is now closed"); 
   return res;
 }
  
  
-BOOL OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
+PBoolean OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 {
   PTRACE(6, "Media\tRead media comppressed audio packet from the iax2 connection");
 
   if (IsSink()) {
     PTRACE(1, "Media\tTried to read from sink media stream");
-    return FALSE;
+    return PFalse;
   }
 
   if (!isOpen) {
     PTRACE(3, "Media\tStream has been closed, so exit now");
-    return FALSE;
+    return PFalse;
   }
     
-  BOOL success = connection.ReadSoundPacket(timestamp, packet); 
+  PBoolean success = connection.ReadSoundPacket(timestamp, packet); 
 
   return success;
 }
@@ -127,28 +127,28 @@ BOOL OpalIAX2MediaStream::ReadPacket(RTP_DataFrame & packet)
 /////////////////////////////////////////////////////////////////////////////
 
 // This routine takes data from the source (eg mic) and sends the data to the remote host.
-BOOL OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
+PBoolean OpalIAX2MediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDEX & written)
 {
   written = 0;
   if (IsSource()) {
     PTRACE(1, "Media\tTried to write to source media stream");
-    return FALSE;
+    return PFalse;
   }
   PTRACE(6, "Media\tSend data to the network : have " << length << " bytes to send to remote host");
   PBYTEArray *sound = new PBYTEArray(buffer, length);
   written = length;
   connection.PutSoundPacketToNetwork(sound);
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL OpalIAX2MediaStream::IsSynchronous() const
+PBoolean OpalIAX2MediaStream::IsSynchronous() const
 {
   if (IsSource())
-    return TRUE;
+    return PTrue;
 
   /**We are reading from a sound card, which generates a frame at a regular rate*/
-  return TRUE;
+  return PTrue;
 }
 
 

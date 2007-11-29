@@ -51,7 +51,7 @@ const unsigned ServiceRelationshipTimeToLive = 60;
 
 ////////////////////////////////////////////////////////////////
 
-H501Transaction::H501Transaction(H323PeerElement & pe, const H501PDU & pdu, BOOL hasReject)
+H501Transaction::H501Transaction(H323PeerElement & pe, const H501PDU & pdu, PBoolean hasReject)
 : H323Transaction(pe, pdu, new H501PDU, hasReject ? new H501PDU : NULL),
     requestCommon(((H501PDU &)request->GetPDU()).m_common),
     confirmCommon(((H501PDU &)confirm->GetPDU()).m_common),
@@ -80,7 +80,7 @@ H235Authenticator::ValidationResult H501Transaction::ValidatePDU() const
 
 H501ServiceRequest::H501ServiceRequest(H323PeerElement & pe,
                                        const H501PDU & pdu)
-  : H501Transaction(pe, pdu, TRUE),
+  : H501Transaction(pe, pdu, PTrue),
     srq((H501_ServiceRequest &)request->GetChoice().GetObject()),
     scf(((H501PDU &)confirm->GetPDU()).BuildServiceConfirmation(pdu.m_common.m_sequenceNumber)),
     srj(((H501PDU &)reject->GetPDU()).BuildServiceRejection(pdu.m_common.m_sequenceNumber,
@@ -113,7 +113,7 @@ H323Transaction::Response H501ServiceRequest::OnHandlePDU()
 
 H501DescriptorUpdate::H501DescriptorUpdate(H323PeerElement & pe,
                                            const H501PDU & pdu)
-  : H501Transaction(pe, pdu, FALSE),
+  : H501Transaction(pe, pdu, PFalse),
     du((H501_DescriptorUpdate &)request->GetChoice().GetObject()),
     ack(((H501PDU &)confirm->GetPDU()).BuildDescriptorUpdateAck(pdu.m_common.m_sequenceNumber))
 {
@@ -144,7 +144,7 @@ H323Transaction::Response H501DescriptorUpdate::OnHandlePDU()
 
 H501AccessRequest::H501AccessRequest(H323PeerElement & pe,
                                      const H501PDU & pdu)
-  : H501Transaction(pe, pdu, TRUE),
+  : H501Transaction(pe, pdu, PTrue),
     arq((H501_AccessRequest &)request->GetChoice().GetObject()),
     acf(((H501PDU &)confirm->GetPDU()).BuildAccessConfirmation(pdu.m_common.m_sequenceNumber)),
     arj(((H501PDU &)reject->GetPDU()).BuildAccessRejection(pdu.m_common.m_sequenceNumber,
@@ -194,7 +194,7 @@ void H323PeerElement::Construct()
   if (transport != NULL)
     transport->SetPromiscuous(H323Transport::AcceptFromAny);
 
-  monitorStop       = FALSE;
+  monitorStop       = PFalse;
   localIdentifier   = endpoint.GetLocalUserName();
   basePeerOrdinal   = RemoteServiceRelationshipOrdinal;
 
@@ -209,7 +209,7 @@ void H323PeerElement::Construct()
 H323PeerElement::~H323PeerElement()
 {
   if (monitor != NULL) {
-    monitorStop = TRUE;
+    monitorStop = PTrue;
     monitorTickle.Signal();
     monitor->WaitForTermination();
     delete monitor;
@@ -361,11 +361,11 @@ H323PeerElementServiceRelationship * H323PeerElement::CreateServiceRelationship(
   return new H323PeerElementServiceRelationship();
 }
 
-BOOL H323PeerElement::SetOnlyServiceRelationship(const PString & peer, BOOL keepTrying)
+PBoolean H323PeerElement::SetOnlyServiceRelationship(const PString & peer, PBoolean keepTrying)
 {
   if (peer.IsEmpty()) {
     RemoveAllServiceRelationships();
-    return TRUE;
+    return PTrue;
   }
 
   for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstRemoteServiceRelationship(PSafeReadOnly); sr != NULL; sr++)
@@ -375,29 +375,29 @@ BOOL H323PeerElement::SetOnlyServiceRelationship(const PString & peer, BOOL keep
   return AddServiceRelationship(peer, keepTrying);
 }
 
-BOOL H323PeerElement::AddServiceRelationship(const H323TransportAddress & addr, BOOL keepTrying)
+PBoolean H323PeerElement::AddServiceRelationship(const H323TransportAddress & addr, PBoolean keepTrying)
 {
   OpalGloballyUniqueID serviceID;
   return AddServiceRelationship(addr, serviceID, keepTrying);
 }
 
-BOOL H323PeerElement::AddServiceRelationship(const H323TransportAddress & addr, OpalGloballyUniqueID & serviceID, BOOL keepTrying)
+PBoolean H323PeerElement::AddServiceRelationship(const H323TransportAddress & addr, OpalGloballyUniqueID & serviceID, PBoolean keepTrying)
 
 {
   switch (ServiceRequestByAddr(addr, serviceID)) {
     case Confirmed:
     case ServiceRelationshipReestablished:
-      return TRUE;
+      return PTrue;
 
     case NoResponse:
       if (!keepTrying)
-        return FALSE;
+        return PFalse;
       break;    
     
     case Rejected:
     case NoServiceRelationship:
     default:
-      return FALSE;
+      return PFalse;
   }
 
   PTRACE(2, "PeerElement\tRetrying ServiceRequest to " << addr << " in " << ServiceRequestRetryTime);
@@ -419,10 +419,10 @@ BOOL H323PeerElement::AddServiceRelationship(const H323TransportAddress & addr, 
 
   monitorTickle.Signal();
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::RemoveServiceRelationship(const OpalGloballyUniqueID & serviceID, int reason)
+PBoolean H323PeerElement::RemoveServiceRelationship(const OpalGloballyUniqueID & serviceID, int reason)
 {
   {
     PWaitAndSignal m(remotePeerListMutex);
@@ -430,7 +430,7 @@ BOOL H323PeerElement::RemoveServiceRelationship(const OpalGloballyUniqueID & ser
     // if no service relationship exists for this peer, then nothing to do
     PSafePtr<H323PeerElementServiceRelationship> sr = remoteServiceRelationships.FindWithLock(H323PeerElementServiceRelationship(serviceID), PSafeReadOnly);
     if (sr == NULL) {
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -438,7 +438,7 @@ BOOL H323PeerElement::RemoveServiceRelationship(const OpalGloballyUniqueID & ser
 }
 
 
-BOOL H323PeerElement::RemoveServiceRelationship(const H323TransportAddress & peer, int reason)
+PBoolean H323PeerElement::RemoveServiceRelationship(const H323TransportAddress & peer, int reason)
 {
   OpalGloballyUniqueID serviceID;
 
@@ -446,20 +446,20 @@ BOOL H323PeerElement::RemoveServiceRelationship(const H323TransportAddress & pee
   {
     PWaitAndSignal m(remotePeerListMutex);
     if (!remotePeerAddrToServiceID.Contains(peer))
-      return FALSE;
+      return PFalse;
     serviceID = remotePeerAddrToServiceID[peer];
   }
 
   return ServiceRelease(serviceID, reason);
 }
 
-BOOL H323PeerElement::RemoveAllServiceRelationships()
+PBoolean H323PeerElement::RemoveAllServiceRelationships()
 {
   // if a service relationship exists for this peer, then reconfirm it
   for (PSafePtr<H323PeerElementServiceRelationship> sr = GetFirstRemoteServiceRelationship(PSafeReadOnly); sr != NULL; sr++)
     RemoveServiceRelationship(sr->peer);
 
-  return TRUE;
+  return PTrue;
 }
 
 H323PeerElement::Error H323PeerElement::ServiceRequestByAddr(const H323TransportAddress & peer, OpalGloballyUniqueID & serviceID)
@@ -695,32 +695,32 @@ H323Transaction::Response H323PeerElement::HandleServiceRequest(H501ServiceReque
   return H323Transaction::Confirm;
 }
 
-BOOL H323PeerElement::OnReceiveServiceRequest(const H501PDU & pdu, const H501_ServiceRequest & /*pduBody*/)
+PBoolean H323PeerElement::OnReceiveServiceRequest(const H501PDU & pdu, const H501_ServiceRequest & /*pduBody*/)
 {
   H501ServiceRequest * info = new H501ServiceRequest(*this, pdu);
   if (!info->HandlePDU())
     delete info;
 
-  return FALSE;
+  return PFalse;
 }
 
-BOOL H323PeerElement::OnReceiveServiceConfirmation(const H501PDU & pdu, const H501_ServiceConfirmation & pduBody)
+PBoolean H323PeerElement::OnReceiveServiceConfirmation(const H501PDU & pdu, const H501_ServiceConfirmation & pduBody)
 {
   if (!H323_AnnexG::OnReceiveServiceConfirmation(pdu, pduBody))
-    return FALSE;
+    return PFalse;
 
   if (lastRequest->responseInfo != NULL)
     *(H501PDU *)lastRequest->responseInfo = pdu;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::ServiceRelease(const OpalGloballyUniqueID & serviceID, unsigned reason)
+PBoolean H323PeerElement::ServiceRelease(const OpalGloballyUniqueID & serviceID, unsigned reason)
 {
   // remove any previous check to see if we have a service relationship with the peer already
   PSafePtr<H323PeerElementServiceRelationship> sr = remoteServiceRelationships.FindWithLock(H323PeerElementServiceRelationship(serviceID), PSafeReadWrite);
   if (sr == NULL)
-    return FALSE;
+    return PFalse;
 
   // send the request - no response
   H501PDU pdu;
@@ -733,10 +733,10 @@ BOOL H323PeerElement::ServiceRelease(const OpalGloballyUniqueID & serviceID, uns
   InternalRemoveServiceRelationship(sr->peer);
   remoteServiceRelationships.Remove(sr);
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::OnRemoteServiceRelationshipDisappeared(OpalGloballyUniqueID & serviceID, const H323TransportAddress & peer)
+PBoolean H323PeerElement::OnRemoteServiceRelationshipDisappeared(OpalGloballyUniqueID & serviceID, const H323TransportAddress & peer)
 {
   OpalGloballyUniqueID oldServiceID = serviceID;
 
@@ -750,14 +750,14 @@ BOOL H323PeerElement::OnRemoteServiceRelationshipDisappeared(OpalGloballyUniqueI
   if (ServiceRequestByAddr(peer, serviceID) != Confirmed) { 
     PTRACE(2, "PeerElement\tService relationship with " << peer << " disappeared and refused new relationship");
     OnRemoveServiceRelationship(peer);
-    return FALSE;
+    return PFalse;
   }
 
   // we have a new service ID
   PTRACE(2, "PeerElement\tService relationship with " << peer << " disappeared and new relationship established");
   serviceID = remotePeerAddrToServiceID(peer);
 
-  return TRUE;
+  return PTrue;
 }
 
 void H323PeerElement::InternalRemoveServiceRelationship(const H323TransportAddress & peer)
@@ -782,11 +782,11 @@ H323PeerElementDescriptor * H323PeerElement::CreateDescriptor(const OpalGlobally
   return new H323PeerElementDescriptor(descriptorID);
 }
 
-BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
+PBoolean H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
                                             const PStringArray & aliasStrings, 
                                const H323TransportAddressArray & transportAddresses, 
                                                         unsigned options, 
-                                                            BOOL now)
+                                                            PBoolean now)
 {
   // convert transport addresses to aliases
   H225_ArrayOf_AliasAddress aliases;
@@ -796,11 +796,11 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
 }
 
 
-BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
+PBoolean H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
                                const H225_ArrayOf_AliasAddress & aliases, 
                                const H323TransportAddressArray & transportAddresses, 
                                                         unsigned options, 
-                                                            BOOL now)
+                                                            PBoolean now)
 {
   H225_ArrayOf_AliasAddress addresses;
   H323SetAliasAddresses(transportAddresses, addresses);
@@ -810,11 +810,11 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
 }
 
 
-BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
+PBoolean H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
                                const H225_ArrayOf_AliasAddress & aliases, 
                                const H225_ArrayOf_AliasAddress & transportAddress, 
                                                         unsigned options, 
-                                                            BOOL now)
+                                                            PBoolean now)
 {
   // create a new descriptor
   return AddDescriptor(descriptorID,
@@ -822,12 +822,12 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
                        aliases, transportAddress, options, now);
 }
 
-BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
+PBoolean H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
                                              const POrdinalKey & creator,
                                const H225_ArrayOf_AliasAddress & aliases, 
                                const H225_ArrayOf_AliasAddress & transportAddresses, 
                                                         unsigned options, 
-                                                            BOOL now)
+                                                            PBoolean now)
 {
   // create an const H501_ArrayOf_AddressTemplate with the template information
   H501_ArrayOf_AddressTemplate addressTemplates;
@@ -841,16 +841,16 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
   return AddDescriptor(descriptorID, creator, addressTemplates, now);
 }
 
-BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
+PBoolean H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
                                              const POrdinalKey & creator,
                             const H501_ArrayOf_AddressTemplate & addressTemplates,
                                                    const PTime & updateTime,
-                                                            BOOL now)
+                                                            PBoolean now)
 {
   // see if there is actually a descriptor with this ID
   PSafePtr<H323PeerElementDescriptor> descriptor = descriptors.FindWithLock(H323PeerElementDescriptor(descriptorID), PSafeReadWrite);
   H501_UpdateInformation_updateType::Choices updateType = H501_UpdateInformation_updateType::e_changed;
-  BOOL add = FALSE;
+  PBoolean add = PFalse;
   {
     PWaitAndSignal m(aliasMutex);
     if (descriptor != NULL) {
@@ -858,10 +858,10 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
 
       // only update if the update time is later than what we already have
       if (updateTime < descriptor->lastChanged)
-        return TRUE;
+        return PTrue;
 
     } else {
-      add = TRUE;
+      add = PTrue;
       descriptor                   = CreateDescriptor(descriptorID);
       descriptor->creator          = creator;
       descriptor->addressTemplates = addressTemplates;
@@ -879,10 +879,10 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
         H501_Pattern & pattern = addressTemplate.m_pattern[j];
         switch (pattern.GetTag()) {
           case H501_Pattern::e_specific:
-            specificAliasToDescriptorID.Append(CreateAliasKey((H225_AliasAddress &)pattern, descriptorID, i, FALSE));
+            specificAliasToDescriptorID.Append(CreateAliasKey((H225_AliasAddress &)pattern, descriptorID, i, PFalse));
             break;
           case H501_Pattern::e_wildcard:
-            wildcardAliasToDescriptorID.Append(CreateAliasKey((H225_AliasAddress &)pattern, descriptorID, i, TRUE));
+            wildcardAliasToDescriptorID.Append(CreateAliasKey((H225_AliasAddress &)pattern, descriptorID, i, PTrue));
             break;
           case H501_Pattern::e_range:
             break;
@@ -919,10 +919,10 @@ BOOL H323PeerElement::AddDescriptor(const OpalGloballyUniqueID & descriptorID,
     monitorTickle.Signal();
   }
 
-  return TRUE;
+  return PTrue;
 }
   
-H323PeerElement::AliasKey * H323PeerElement::CreateAliasKey(const H225_AliasAddress & alias, const OpalGloballyUniqueID & id, PINDEX pos, BOOL wild)
+H323PeerElement::AliasKey * H323PeerElement::CreateAliasKey(const H225_AliasAddress & alias, const OpalGloballyUniqueID & id, PINDEX pos, PBoolean wild)
 {
   return new AliasKey(alias, id, pos, wild);
 }
@@ -970,14 +970,14 @@ void H323PeerElement::RemoveDescriptorInformation(const H501_ArrayOf_AddressTemp
   }
 }
 
-BOOL H323PeerElement::DeleteDescriptor(const PString & str, BOOL now)
+PBoolean H323PeerElement::DeleteDescriptor(const PString & str, PBoolean now)
 {
   H225_AliasAddress alias;
   H323SetAliasAddress(str, alias);
   return DeleteDescriptor(alias, now);
 }
 
-BOOL H323PeerElement::DeleteDescriptor(const H225_AliasAddress & alias, BOOL now)
+PBoolean H323PeerElement::DeleteDescriptor(const H225_AliasAddress & alias, PBoolean now)
 {
   OpalGloballyUniqueID descriptorID("");
 
@@ -986,19 +986,19 @@ BOOL H323PeerElement::DeleteDescriptor(const H225_AliasAddress & alias, BOOL now
     PWaitAndSignal m(aliasMutex);
     PINDEX idx = specificAliasToDescriptorID.GetValuesIndex(alias);
     if (idx == P_MAX_INDEX)
-      return FALSE;
+      return PFalse;
     descriptorID = ((AliasKey &)specificAliasToDescriptorID[idx]).id;
   }
 
   return DeleteDescriptor(descriptorID, now);
 }
 
-BOOL H323PeerElement::DeleteDescriptor(const OpalGloballyUniqueID & descriptorID, BOOL now)
+PBoolean H323PeerElement::DeleteDescriptor(const OpalGloballyUniqueID & descriptorID, PBoolean now)
 {
   // see if there is a descriptor with this ID
   PSafePtr<H323PeerElementDescriptor> descriptor = descriptors.FindWithLock(H323PeerElementDescriptor(descriptorID), PSafeReadWrite);
   if (descriptor == NULL)
-    return FALSE;
+    return PFalse;
 
   OnRemoveDescriptor(*descriptor);
 
@@ -1014,15 +1014,15 @@ BOOL H323PeerElement::DeleteDescriptor(const OpalGloballyUniqueID & descriptorID
     monitorTickle.Signal();
   }
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descriptor)
+PBoolean H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descriptor)
 {
   H501_UpdateInformation_updateType::Choices updateType = H501_UpdateInformation_updateType::e_changed;
   switch (descriptor->state) {
     case H323PeerElementDescriptor::Clean:
-      return TRUE;
+      return PTrue;
     
     case H323PeerElementDescriptor::Dirty:
       break;
@@ -1035,14 +1035,14 @@ BOOL H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descriptor)
   return UpdateDescriptor(descriptor, updateType);
 }
 
-BOOL H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descriptor, H501_UpdateInformation_updateType::Choices updateType)
+PBoolean H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descriptor, H501_UpdateInformation_updateType::Choices updateType)
 {
   if (updateType == H501_UpdateInformation_updateType::e_deleted)
     descriptor->state = H323PeerElementDescriptor::Deleted;
   else if (descriptor->state == H323PeerElementDescriptor::Deleted)
     updateType = H501_UpdateInformation_updateType::e_deleted;
   else if (descriptor->state == H323PeerElementDescriptor::Clean)
-    return TRUE;
+    return PTrue;
   else
     descriptor->state = H323PeerElementDescriptor::Clean;
 
@@ -1053,7 +1053,7 @@ BOOL H323PeerElement::UpdateDescriptor(H323PeerElementDescriptor * descriptor, H
   if (descriptor->state == H323PeerElementDescriptor::Deleted)
     descriptors.Remove(descriptor);
 
-  return TRUE;
+  return PTrue;
 }
 
 ///////////////////////////////////////////////////////////
@@ -1147,24 +1147,24 @@ H323Transaction::Response H323PeerElement::OnDescriptorUpdate(H501DescriptorUpda
   return H323Transaction::Ignore;
 }
 
-BOOL H323PeerElement::OnReceiveDescriptorUpdate(const H501PDU & pdu, const H501_DescriptorUpdate & /*pduBody*/)
+PBoolean H323PeerElement::OnReceiveDescriptorUpdate(const H501PDU & pdu, const H501_DescriptorUpdate & /*pduBody*/)
 {
   H501DescriptorUpdate * info = new H501DescriptorUpdate(*this, pdu);
   if (!info->HandlePDU())
     delete info;
 
-  return FALSE;
+  return PFalse;
 }
 
-BOOL H323PeerElement::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, const H501_DescriptorUpdateAck & pduBody)
+PBoolean H323PeerElement::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, const H501_DescriptorUpdateAck & pduBody)
 {
   if (!H323_AnnexG::OnReceiveDescriptorUpdateACK(pdu, pduBody))
-    return FALSE;
+    return PFalse;
 
   if (lastRequest->responseInfo != NULL)
     *(H501_MessageCommonInfo *)lastRequest->responseInfo = pdu.m_common;
 
-  return TRUE;
+  return PTrue;
 }
 
 ///////////////////////////////////////////////////////////
@@ -1172,7 +1172,7 @@ BOOL H323PeerElement::OnReceiveDescriptorUpdateACK(const H501PDU & pdu, const H5
 // access request functions
 //
 
-BOOL H323PeerElement::AccessRequest(const PString & searchAlias,
+PBoolean H323PeerElement::AccessRequest(const PString & searchAlias,
                                      PStringArray & destAliases,
                             H323TransportAddress & transportAddress,
                                           unsigned options)
@@ -1182,14 +1182,14 @@ BOOL H323PeerElement::AccessRequest(const PString & searchAlias,
 
   H225_ArrayOf_AliasAddress h225destAliases;
   if (!AccessRequest(h225searchAlias, h225destAliases, transportAddress, options))
-    return FALSE;
+    return PFalse;
 
   destAliases = H323GetAliasAddressStrings(h225destAliases);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL H323PeerElement::AccessRequest(const PString & searchAlias, 
+PBoolean H323PeerElement::AccessRequest(const PString & searchAlias, 
                         H225_ArrayOf_AliasAddress & destAliases,
                              H323TransportAddress & transportAddress, 
                                            unsigned options)
@@ -1199,20 +1199,20 @@ BOOL H323PeerElement::AccessRequest(const PString & searchAlias,
   return AccessRequest(h225searchAlias, destAliases, transportAddress, options);
 }
 
-BOOL H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias, 
+PBoolean H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias, 
                                   H225_ArrayOf_AliasAddress & destAliases,
                                        H323TransportAddress & transportAddress, 
                                                      unsigned options)
 {
   H225_AliasAddress h225Address;
   if (!AccessRequest(searchAlias, destAliases, h225Address, options))
-    return FALSE;
+    return PFalse;
 
   transportAddress = H323GetAliasAddressString(h225Address);
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias, 
+PBoolean H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias, 
                                   H225_ArrayOf_AliasAddress & destAliases,
                                           H225_AliasAddress & transportAddress, 
                                                      unsigned options)
@@ -1297,7 +1297,7 @@ BOOL H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias,
 
         transportAddress = contactAddress;
         PTRACE(3, "Main\tAccessRequest for " << searchAlias << " returned " << transportAddress << " from " << peerAddr);
-        return TRUE;
+        return PTrue;
       }
       else { // H501_RouteInformation_messageType::e_nonExistent
         PTRACE(3, "Main\tAccessRequest for " << searchAlias << " from " << peerAddr << " returned nonExistent");
@@ -1324,7 +1324,7 @@ BOOL H323PeerElement::AccessRequest(const H225_AliasAddress & searchAlias,
     }
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 ///////////////////////////////////////////////////////////
@@ -1427,38 +1427,38 @@ H323Transaction::Response H323PeerElement::OnAccessRequest(H501AccessRequest & i
   return H323Transaction::Reject;
 }
 
-BOOL H323PeerElement::OnReceiveAccessRequest(const H501PDU & pdu, const H501_AccessRequest & /*pduBody*/)
+PBoolean H323PeerElement::OnReceiveAccessRequest(const H501PDU & pdu, const H501_AccessRequest & /*pduBody*/)
 {
   H501AccessRequest * info = new H501AccessRequest(*this, pdu);
   if (!info->HandlePDU())
     delete info;
 
-  return FALSE;
+  return PFalse;
 }
 
-BOOL H323PeerElement::OnReceiveAccessConfirmation(const H501PDU & pdu, const H501_AccessConfirmation & pduBody)
+PBoolean H323PeerElement::OnReceiveAccessConfirmation(const H501PDU & pdu, const H501_AccessConfirmation & pduBody)
 {
   if (!H323_AnnexG::OnReceiveAccessConfirmation(pdu, pduBody))
-    return FALSE;
+    return PFalse;
 
   if (lastRequest->responseInfo != NULL)
     *(H501PDU *)lastRequest->responseInfo = pdu;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::OnReceiveAccessRejection(const H501PDU & pdu, const H501_AccessRejection & pduBody)
+PBoolean H323PeerElement::OnReceiveAccessRejection(const H501PDU & pdu, const H501_AccessRejection & pduBody)
 {
   if (!H323_AnnexG::OnReceiveAccessRejection(pdu, pduBody))
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL H323PeerElement::MakeRequest(Request & request)
+PBoolean H323PeerElement::MakeRequest(Request & request)
 {
   requestMutex.Wait();
-  BOOL stat = H323_AnnexG::MakeRequest(request);
+  PBoolean stat = H323_AnnexG::MakeRequest(request);
   requestMutex.Signal();
   return stat;
 }
@@ -1484,9 +1484,9 @@ void H323PeerElementDescriptor::CopyTo(H501_Descriptor & descriptor)
 }
 
 
-BOOL H323PeerElementDescriptor::ContainsNonexistent()
+PBoolean H323PeerElementDescriptor::ContainsNonexistent()
 {
-  BOOL blocked = FALSE;
+  PBoolean blocked = PFalse;
 
   // look for any nonexistent routes, which means this descriptor does NOT match
   PINDEX k, j;
@@ -1494,7 +1494,7 @@ BOOL H323PeerElementDescriptor::ContainsNonexistent()
 	  H501_ArrayOf_RouteInformation & routeInfo = addressTemplates[k].m_routeInfo;
     for (j = 0; !blocked && (j < routeInfo.GetSize()); j++) {
       if (routeInfo[j].m_messageType.GetTag() == H501_RouteInformation_messageType::e_nonExistent)
-        blocked = TRUE;
+        blocked = PTrue;
     }
   }
 
@@ -1502,7 +1502,7 @@ BOOL H323PeerElementDescriptor::ContainsNonexistent()
 }
 
 
-BOOL H323PeerElementDescriptor::CopyToAddressTemplate(H501_AddressTemplate & addressTemplate,
+PBoolean H323PeerElementDescriptor::CopyToAddressTemplate(H501_AddressTemplate & addressTemplate,
                                                    const H225_EndpointType & epInfo,
                                            const H225_ArrayOf_AliasAddress & aliases, 
                                            const H225_ArrayOf_AliasAddress & transportAddresses, 
@@ -1533,12 +1533,12 @@ BOOL H323PeerElementDescriptor::CopyToAddressTemplate(H501_AddressTemplate & add
 
   else {
     routeInfo.m_messageType.SetTag(H501_RouteInformation_messageType::e_sendSetup);
-    routeInfo.m_callSpecific = FALSE;
+    routeInfo.m_callSpecific = PFalse;
     routeInfo.IncludeOptionalField(H501_RouteInformation::e_type);
     routeInfo.m_type = epInfo;
   }
 
-  routeInfo.m_callSpecific = FALSE;
+  routeInfo.m_callSpecific = PFalse;
   H501_ArrayOf_ContactInformation & contacts = routeInfos[0].m_contacts;
   contacts.SetSize(transportAddresses.GetSize());
   PINDEX i;
@@ -1552,11 +1552,11 @@ BOOL H323PeerElementDescriptor::CopyToAddressTemplate(H501_AddressTemplate & add
   addressTemplate.IncludeOptionalField(H501_AddressTemplate::e_supportedProtocols);
   SetProtocolList(addressTemplate.m_supportedProtocols, options);
 
-  return TRUE;
+  return PTrue;
 }
 
 /*
-BOOL H323PeerElementDescriptor::CopyFrom(const H501_Descriptor & descriptor)
+PBoolean H323PeerElementDescriptor::CopyFrom(const H501_Descriptor & descriptor)
 {
   descriptorID                           = descriptor.m_descriptorInfo.m_descriptorID;
   //lastChanged.AsString("yyyyMMddhhmmss") = descriptor.m_descriptorInfo.m_lastChanged;
@@ -1567,7 +1567,7 @@ BOOL H323PeerElementDescriptor::CopyFrom(const H501_Descriptor & descriptor)
   else
     gatekeeperID = PString::Empty();
 
-  return TRUE;
+  return PTrue;
 }
 */
 

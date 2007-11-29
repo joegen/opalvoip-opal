@@ -49,7 +49,7 @@
 
 IAX2Ie::IAX2Ie()
 {
-  validData = FALSE;
+  validData = PFalse;
 }
 
 IAX2Ie * IAX2Ie::BuildInformationElement(BYTE _typeCode, BYTE length, BYTE *srcData)
@@ -139,7 +139,7 @@ void IAX2Ie::WriteBinary(void *_data, PINDEX &writeIndex)
 
 IAX2IeNone::IAX2IeNone(BYTE /*length*/, BYTE * /*srcData*/)
 {
-  validData = TRUE;
+  validData = PTrue;
 }
 
 
@@ -153,7 +153,7 @@ void IAX2IeNone::PrintOn(ostream & str) const
 IAX2IeDateAndTime::IAX2IeDateAndTime(BYTE length, BYTE *srcData)
 {
   if (length != sizeof(unsigned int)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
@@ -166,7 +166,7 @@ IAX2IeDateAndTime::IAX2IeDateAndTime(BYTE length, BYTE *srcData)
   int year   = ((tmp >> 25) & 0x7f) + 2000;
   dataValue = PTime(second, minute, hour, day, month, year, PTime::Local);
   
-  validData = TRUE;
+  validData = PTrue;
 }
 
 
@@ -196,11 +196,11 @@ IAX2IeByte::IAX2IeByte(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(BYTE)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   dataValue = *((BYTE *)srcData);
 }
 
@@ -218,11 +218,11 @@ IAX2IeChar::IAX2IeChar(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(BYTE)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   dataValue = *((char *)srcData);
 }
 
@@ -241,11 +241,11 @@ IAX2IeUShort::IAX2IeUShort(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(unsigned short)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   dataValue = (unsigned short)((srcData[0] << 8) | srcData[1]);
 }
 
@@ -269,11 +269,11 @@ IAX2IeShort::IAX2IeShort(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(short)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   dataValue = (short)((srcData[0] << 8) | srcData[1]);
 }
 
@@ -297,11 +297,11 @@ IAX2IeInt::IAX2IeInt(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(int)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   dataValue = (srcData[0] << 24) | (srcData[1] << 16) | (srcData[2] << 8) | srcData[3];
 }
 
@@ -328,11 +328,11 @@ IAX2IeUInt::IAX2IeUInt(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(unsigned int)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   dataValue = (srcData[0] << 24) | (srcData[1] << 16) | (srcData[2] << 8) | srcData[3];     
 }
 
@@ -357,7 +357,7 @@ void IAX2IeUInt::WriteBinary(BYTE *data)
 IAX2IeString::IAX2IeString(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
-  validData = TRUE;
+  validData = PTrue;
   dataValue = PString((const char *)srcData, length);
 }
 
@@ -387,13 +387,13 @@ BYTE IAX2IeString::GetLengthOfData()
 void IAX2IeString::SetData(const PString & newData) 
 { 
   dataValue = newData; 
-  validData = TRUE; 
+  validData = PTrue; 
 }
 
 void IAX2IeString::SetData(const char * newData) 
 { 
   dataValue = PString(newData); 
-  validData = TRUE; 
+  validData = PTrue; 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -402,11 +402,11 @@ IAX2IeSockaddrIn::IAX2IeSockaddrIn(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
   if (length != sizeof(sockaddr_in)) {
-    validData = FALSE;
+    validData = PFalse;
     return;
   }
   
-  validData = TRUE;
+  validData = PTrue;
   
   sockaddr_in a = * (sockaddr_in *)(srcData);
   portNumber = a.sin_port;
@@ -437,7 +437,7 @@ void IAX2IeSockaddrIn::WriteBinary(BYTE *data)
 IAX2IeBlockOfData::IAX2IeBlockOfData(BYTE length, BYTE *srcData)
   : IAX2Ie()
 {
-  validData = TRUE;
+  validData = PTrue;
   
   dataValue = PBYTEArray(srcData, length);
 }

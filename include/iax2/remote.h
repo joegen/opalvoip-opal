@@ -136,15 +136,15 @@ class IAX2Remote : public PObject
   /**Return true if remote port & address & destCallNumber & source
      call number match up.  This is used when finding a Connection
      that generated an ethernet frame which is to be transmitted*/
-  BOOL operator == (IAX2Remote & other);
+  PBoolean operator == (IAX2Remote & other);
   
   /**Return true if remote port & address & destCallNumber==sourceCallNumber match up.
      This is used when finding a Connection to process an incoming ethernet frame */
-  BOOL operator *= (IAX2Remote & other);
+  PBoolean operator *= (IAX2Remote & other);
   
   
   /**Returns true if these are are different */
-  BOOL operator != (IAX2Remote & other);
+  PBoolean operator != (IAX2Remote & other);
   
   
  protected:
@@ -221,7 +221,7 @@ class IAX2PacketIdList : public PSortedList
   
   /**Return true if a FrameIdValue object is found in the list that
    * matches the value in the supplied arguement*/
-  BOOL Contains(IAX2FrameIdValue &src);
+  PBoolean Contains(IAX2FrameIdValue &src);
   
   /**Return the value at the beginning of the list. Use this value as
      the InSeqNo of this endpoint.*/
@@ -276,7 +276,7 @@ class IAX2SequenceNumbers
   
   /**Report true if the frame has inSeqNo and outSeqNo of zero,
      indicating if it is a "New" packet. */
-  BOOL IsSequenceNosZero();
+  PBoolean IsSequenceNosZero();
 
   /**Assign new value to the in (or expected) seq number */
   void SetInSeqNo(PINDEX newVal);
@@ -293,10 +293,10 @@ class IAX2SequenceNumbers
   void SetAckSequenceInfo(IAX2SequenceNumbers & other);
   
   /**Comparison operator - tests if sequence numbers are different */
-  BOOL  operator !=(IAX2SequenceNumbers &other);
+  PBoolean  operator !=(IAX2SequenceNumbers &other);
   
   /**Comparison operator - tests if sequence numbers are equal */
-  BOOL operator ==(IAX2SequenceNumbers &other);
+  PBoolean operator ==(IAX2SequenceNumbers &other);
   
   /**Increment this sequences outSeqNo, and assign the results to the source arg */
   void MassageSequenceForSending(IAX2FullFrame &src /*<!src will be transmitted to the remote node */
@@ -322,9 +322,9 @@ class IAX2SequenceNumbers
   /**Pretty print in and out sequence numbers  to the designated stream*/
   virtual void PrintOn(ostream & strm) const;
 
-  /**Report TRUE if this sequnece info is the very first packet
+  /**Report PTrue if this sequnece info is the very first packet
      received from a remote node, where we have initiated the call */
-  BOOL IsFirstReply() { return (inSeqNo == 1) && (outSeqNo == 0); }
+  PBoolean IsFirstReply() { return (inSeqNo == 1) && (outSeqNo == 0); }
 
   /**Add an offset to the inSeqNo and outSeqNo variables */
   void AddWrapAroundValue(PINDEX newOffset);
@@ -363,7 +363,7 @@ class IAX2Encryption : public PObject
   IAX2Encryption();
 
   /**Set the flag that indicates this communication session is all encrypted.. */
-  void SetEncryptionOn (BOOL newState = TRUE);
+  void SetEncryptionOn (PBoolean newState = PTrue);
 
   /**Set the password/key used in encryption process */
   void SetEncryptionKey(PString & newKey);
@@ -378,7 +378,7 @@ class IAX2Encryption : public PObject
   const PString & ChallengeKey() const;
 
   /**Report if the encryption is enabled  (or turned on) */
-  const BOOL IsEncrypted() const;
+  const PBoolean IsEncrypted() const;
 
 #if P_SSL_AES
   /**Get a pointer to a filled AES_KEY encrypt structure */
@@ -400,7 +400,7 @@ class IAX2Encryption : public PObject
   PString challengeKey;
 
   /**Flag to specify if encryption is happening */
-  BOOL encryptionEnabled;
+  PBoolean encryptionEnabled;
 
 #if P_SSL_AES
   /**key to be used for AES 128 encryption */

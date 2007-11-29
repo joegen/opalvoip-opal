@@ -268,7 +268,7 @@ const static PASN_Names Names_MCS_TokenStatus[]={
 //
 
 MCS_TokenStatus::MCS_TokenStatus(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 7, FALSE
+  : PASN_Enumeration(tag, tagClass, 7, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_TokenStatus,8
 #endif
@@ -306,7 +306,7 @@ const static PASN_Names Names_MCS_DataPriority[]={
 //
 
 MCS_DataPriority::MCS_DataPriority(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 3, FALSE
+  : PASN_Enumeration(tag, tagClass, 3, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_DataPriority,4
 #endif
@@ -356,7 +356,7 @@ PObject * MCS_Segmentation::Clone() const
 //
 
 MCS_DomainParameters::MCS_DomainParameters(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_maxChannelIds.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
   m_maxUserIds.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
@@ -432,27 +432,27 @@ PINDEX MCS_DomainParameters::GetDataLength() const
 }
 
 
-BOOL MCS_DomainParameters::Decode(PASN_Stream & strm)
+PBoolean MCS_DomainParameters::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_maxChannelIds.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxUserIds.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxTokenIds.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_numPriorities.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_minThroughput.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxHeight.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maxMCSPDUsize.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_protocolVersion.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -489,7 +489,7 @@ PObject * MCS_DomainParameters::Clone() const
 //
 
 MCS_Connect_Initial::MCS_Connect_Initial(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -553,25 +553,25 @@ PINDEX MCS_Connect_Initial::GetDataLength() const
 }
 
 
-BOOL MCS_Connect_Initial::Decode(PASN_Stream & strm)
+PBoolean MCS_Connect_Initial::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_callingDomainSelector.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_calledDomainSelector.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_upwardFlag.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_targetParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_minimumParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_maximumParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -607,7 +607,7 @@ PObject * MCS_Connect_Initial::Clone() const
 //
 
 MCS_Connect_Additional::MCS_Connect_Additional(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_calledConnectId.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
 }
@@ -652,15 +652,15 @@ PINDEX MCS_Connect_Additional::GetDataLength() const
 }
 
 
-BOOL MCS_Connect_Additional::Decode(PASN_Stream & strm)
+PBoolean MCS_Connect_Additional::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_calledConnectId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataPriority.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -691,7 +691,7 @@ PObject * MCS_Connect_Additional::Clone() const
 //
 
 MCS_PDin::MCS_PDin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_heightLimit.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
 }
@@ -732,13 +732,13 @@ PINDEX MCS_PDin::GetDataLength() const
 }
 
 
-BOOL MCS_PDin::Decode(PASN_Stream & strm)
+PBoolean MCS_PDin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_heightLimit.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -768,7 +768,7 @@ PObject * MCS_PDin::Clone() const
 //
 
 MCS_EDrq::MCS_EDrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_subHeight.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
   m_subInterval.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
@@ -814,15 +814,15 @@ PINDEX MCS_EDrq::GetDataLength() const
 }
 
 
-BOOL MCS_EDrq::Decode(PASN_Stream & strm)
+PBoolean MCS_EDrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_subHeight.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_subInterval.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -862,7 +862,7 @@ const static PASN_Names Names_MCS_ChannelAttributes[]={
 //
 
 MCS_ChannelAttributes::MCS_ChannelAttributes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, FALSE
+  : PASN_Choice(tag, tagClass, 4, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_ChannelAttributes,4
 #endif
@@ -959,25 +959,25 @@ MCS_ChannelAttributes::operator const MCS_ChannelAttributes_assigned &() const
 }
 
 
-BOOL MCS_ChannelAttributes::CreateObject()
+PBoolean MCS_ChannelAttributes::CreateObject()
 {
   switch (tag) {
     case e_static :
       choice = new MCS_ChannelAttributes_static();
-      return TRUE;
+      return PTrue;
     case e_userId :
       choice = new MCS_ChannelAttributes_userId();
-      return TRUE;
+      return PTrue;
     case e_private :
       choice = new MCS_ChannelAttributes_private();
-      return TRUE;
+      return PTrue;
     case e_assigned :
       choice = new MCS_ChannelAttributes_assigned();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1005,7 +1005,7 @@ const static PASN_Names Names_MCS_TokenAttributes[]={
 //
 
 MCS_TokenAttributes::MCS_TokenAttributes(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 5, FALSE
+  : PASN_Choice(tag, tagClass, 5, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_TokenAttributes,5
 #endif
@@ -1124,28 +1124,28 @@ MCS_TokenAttributes::operator const MCS_TokenAttributes_given &() const
 }
 
 
-BOOL MCS_TokenAttributes::CreateObject()
+PBoolean MCS_TokenAttributes::CreateObject()
 {
   switch (tag) {
     case e_grabbed :
       choice = new MCS_TokenAttributes_grabbed();
-      return TRUE;
+      return PTrue;
     case e_inhibited :
       choice = new MCS_TokenAttributes_inhibited();
-      return TRUE;
+      return PTrue;
     case e_giving :
       choice = new MCS_TokenAttributes_giving();
-      return TRUE;
+      return PTrue;
     case e_ungivable :
       choice = new MCS_TokenAttributes_ungivable();
-      return TRUE;
+      return PTrue;
     case e_given :
       choice = new MCS_TokenAttributes_given();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1163,7 +1163,7 @@ PObject * MCS_TokenAttributes::Clone() const
 //
 
 MCS_AUrq::MCS_AUrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1185,10 +1185,10 @@ PINDEX MCS_AUrq::GetDataLength() const
 }
 
 
-BOOL MCS_AUrq::Decode(PASN_Stream & strm)
+PBoolean MCS_AUrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
 
   return UnknownExtensionsDecode(strm);
@@ -1218,7 +1218,7 @@ PObject * MCS_AUrq::Clone() const
 //
 
 MCS_CJrq::MCS_CJrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1262,15 +1262,15 @@ PINDEX MCS_CJrq::GetDataLength() const
 }
 
 
-BOOL MCS_CJrq::Decode(PASN_Stream & strm)
+PBoolean MCS_CJrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1301,7 +1301,7 @@ PObject * MCS_CJrq::Clone() const
 //
 
 MCS_CCrq::MCS_CCrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1341,13 +1341,13 @@ PINDEX MCS_CCrq::GetDataLength() const
 }
 
 
-BOOL MCS_CCrq::Decode(PASN_Stream & strm)
+PBoolean MCS_CCrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1377,7 +1377,7 @@ PObject * MCS_CCrq::Clone() const
 //
 
 MCS_CDrq::MCS_CDrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1421,15 +1421,15 @@ PINDEX MCS_CDrq::GetDataLength() const
 }
 
 
-BOOL MCS_CDrq::Decode(PASN_Stream & strm)
+PBoolean MCS_CDrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1460,7 +1460,7 @@ PObject * MCS_CDrq::Clone() const
 //
 
 MCS_CDin::MCS_CDin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1500,13 +1500,13 @@ PINDEX MCS_CDin::GetDataLength() const
 }
 
 
-BOOL MCS_CDin::Decode(PASN_Stream & strm)
+PBoolean MCS_CDin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1536,7 +1536,7 @@ PObject * MCS_CDin::Clone() const
 //
 
 MCS_SDrq::MCS_SDrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1592,21 +1592,21 @@ PINDEX MCS_SDrq::GetDataLength() const
 }
 
 
-BOOL MCS_SDrq::Decode(PASN_Stream & strm)
+PBoolean MCS_SDrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataPriority.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_segmentation.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1640,7 +1640,7 @@ PObject * MCS_SDrq::Clone() const
 //
 
 MCS_SDin::MCS_SDin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1696,21 +1696,21 @@ PINDEX MCS_SDin::GetDataLength() const
 }
 
 
-BOOL MCS_SDin::Decode(PASN_Stream & strm)
+PBoolean MCS_SDin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataPriority.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_segmentation.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1744,7 +1744,7 @@ PObject * MCS_SDin::Clone() const
 //
 
 MCS_USrq::MCS_USrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1800,21 +1800,21 @@ PINDEX MCS_USrq::GetDataLength() const
 }
 
 
-BOOL MCS_USrq::Decode(PASN_Stream & strm)
+PBoolean MCS_USrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataPriority.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_segmentation.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1848,7 +1848,7 @@ PObject * MCS_USrq::Clone() const
 //
 
 MCS_USin::MCS_USin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1904,21 +1904,21 @@ PINDEX MCS_USin::GetDataLength() const
 }
 
 
-BOOL MCS_USin::Decode(PASN_Stream & strm)
+PBoolean MCS_USin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_dataPriority.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_segmentation.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -1952,7 +1952,7 @@ PObject * MCS_USin::Clone() const
 //
 
 MCS_TGrq::MCS_TGrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -1996,15 +1996,15 @@ PINDEX MCS_TGrq::GetDataLength() const
 }
 
 
-BOOL MCS_TGrq::Decode(PASN_Stream & strm)
+PBoolean MCS_TGrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2035,7 +2035,7 @@ PObject * MCS_TGrq::Clone() const
 //
 
 MCS_TIrq::MCS_TIrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2079,15 +2079,15 @@ PINDEX MCS_TIrq::GetDataLength() const
 }
 
 
-BOOL MCS_TIrq::Decode(PASN_Stream & strm)
+PBoolean MCS_TIrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2118,7 +2118,7 @@ PObject * MCS_TIrq::Clone() const
 //
 
 MCS_TVrq::MCS_TVrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2166,17 +2166,17 @@ PINDEX MCS_TVrq::GetDataLength() const
 }
 
 
-BOOL MCS_TVrq::Decode(PASN_Stream & strm)
+PBoolean MCS_TVrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_recipient.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2208,7 +2208,7 @@ PObject * MCS_TVrq::Clone() const
 //
 
 MCS_TVin::MCS_TVin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2256,17 +2256,17 @@ PINDEX MCS_TVin::GetDataLength() const
 }
 
 
-BOOL MCS_TVin::Decode(PASN_Stream & strm)
+PBoolean MCS_TVin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_recipient.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2298,7 +2298,7 @@ PObject * MCS_TVin::Clone() const
 //
 
 MCS_TPrq::MCS_TPrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2342,15 +2342,15 @@ PINDEX MCS_TPrq::GetDataLength() const
 }
 
 
-BOOL MCS_TPrq::Decode(PASN_Stream & strm)
+PBoolean MCS_TPrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2381,7 +2381,7 @@ PObject * MCS_TPrq::Clone() const
 //
 
 MCS_TPin::MCS_TPin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2425,15 +2425,15 @@ PINDEX MCS_TPin::GetDataLength() const
 }
 
 
-BOOL MCS_TPin::Decode(PASN_Stream & strm)
+PBoolean MCS_TPin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2464,7 +2464,7 @@ PObject * MCS_TPin::Clone() const
 //
 
 MCS_TRrq::MCS_TRrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2508,15 +2508,15 @@ PINDEX MCS_TRrq::GetDataLength() const
 }
 
 
-BOOL MCS_TRrq::Decode(PASN_Stream & strm)
+PBoolean MCS_TRrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2547,7 +2547,7 @@ PObject * MCS_TRrq::Clone() const
 //
 
 MCS_TTrq::MCS_TTrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2591,15 +2591,15 @@ PINDEX MCS_TTrq::GetDataLength() const
 }
 
 
-BOOL MCS_TTrq::Decode(PASN_Stream & strm)
+PBoolean MCS_TTrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2630,7 +2630,7 @@ PObject * MCS_TTrq::Clone() const
 //
 
 MCS_TTcf::MCS_TTcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -2678,17 +2678,17 @@ PINDEX MCS_TTcf::GetDataLength() const
 }
 
 
-BOOL MCS_TTcf::Decode(PASN_Stream & strm)
+PBoolean MCS_TTcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenStatus.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -2729,7 +2729,7 @@ const static PASN_Names Names_MCS_Reason[]={
 //
 
 MCS_Reason::MCS_Reason(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 4, FALSE
+  : PASN_Enumeration(tag, tagClass, 4, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_Reason,5
 #endif
@@ -2779,7 +2779,7 @@ const static PASN_Names Names_MCS_Result[]={
 //
 
 MCS_Result::MCS_Result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 15, FALSE
+  : PASN_Enumeration(tag, tagClass, 15, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_Result,16
 #endif
@@ -2827,7 +2827,7 @@ const static PASN_Names Names_MCS_Diagnostic[]={
 //
 
 MCS_Diagnostic::MCS_Diagnostic(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Enumeration(tag, tagClass, 13, FALSE
+  : PASN_Enumeration(tag, tagClass, 13, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_Diagnostic,14
 #endif
@@ -2866,7 +2866,7 @@ const static PASN_Names Names_MCS_ConnectMCSPDU[]={
 //
 
 MCS_ConnectMCSPDU::MCS_ConnectMCSPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 4, FALSE
+  : PASN_Choice(tag, tagClass, 4, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_ConnectMCSPDU,4
 #endif
@@ -2963,25 +2963,25 @@ MCS_ConnectMCSPDU::operator const MCS_Connect_Result &() const
 }
 
 
-BOOL MCS_ConnectMCSPDU::CreateObject()
+PBoolean MCS_ConnectMCSPDU::CreateObject()
 {
   switch (tag) {
     case e_connect_initial :
       choice = new MCS_Connect_Initial();
-      return TRUE;
+      return PTrue;
     case e_connect_response :
       choice = new MCS_Connect_Response();
-      return TRUE;
+      return PTrue;
     case e_connect_additional :
       choice = new MCS_Connect_Additional();
-      return TRUE;
+      return PTrue;
     case e_connect_result :
       choice = new MCS_Connect_Result();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -3047,7 +3047,7 @@ const static PASN_Names Names_MCS_DomainMCSPDU[]={
 //
 
 MCS_DomainMCSPDU::MCS_DomainMCSPDU(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Choice(tag, tagClass, 43, FALSE
+  : PASN_Choice(tag, tagClass, 43, PFalse
 #ifndef PASN_NOPRINTON
     ,(const PASN_Names *)Names_MCS_DomainMCSPDU,43
 #endif
@@ -4002,142 +4002,142 @@ MCS_DomainMCSPDU::operator const MCS_TTcf &() const
 }
 
 
-BOOL MCS_DomainMCSPDU::CreateObject()
+PBoolean MCS_DomainMCSPDU::CreateObject()
 {
   switch (tag) {
     case e_pdin :
       choice = new MCS_PDin();
-      return TRUE;
+      return PTrue;
     case e_edrq :
       choice = new MCS_EDrq();
-      return TRUE;
+      return PTrue;
     case e_mcrq :
       choice = new MCS_MCrq();
-      return TRUE;
+      return PTrue;
     case e_mccf :
       choice = new MCS_MCcf();
-      return TRUE;
+      return PTrue;
     case e_pcin :
       choice = new MCS_PCin();
-      return TRUE;
+      return PTrue;
     case e_mtrq :
       choice = new MCS_MTrq();
-      return TRUE;
+      return PTrue;
     case e_mtcf :
       choice = new MCS_MTcf();
-      return TRUE;
+      return PTrue;
     case e_ptin :
       choice = new MCS_PTin();
-      return TRUE;
+      return PTrue;
     case e_dpum :
       choice = new MCS_DPum();
-      return TRUE;
+      return PTrue;
     case e_rjum :
       choice = new MCS_RJum();
-      return TRUE;
+      return PTrue;
     case e_aurq :
       choice = new MCS_AUrq();
-      return TRUE;
+      return PTrue;
     case e_aucf :
       choice = new MCS_AUcf();
-      return TRUE;
+      return PTrue;
     case e_durq :
       choice = new MCS_DUrq();
-      return TRUE;
+      return PTrue;
     case e_duin :
       choice = new MCS_DUin();
-      return TRUE;
+      return PTrue;
     case e_cjrq :
       choice = new MCS_CJrq();
-      return TRUE;
+      return PTrue;
     case e_cjcf :
       choice = new MCS_CJcf();
-      return TRUE;
+      return PTrue;
     case e_clrq :
       choice = new MCS_CLrq();
-      return TRUE;
+      return PTrue;
     case e_ccrq :
       choice = new MCS_CCrq();
-      return TRUE;
+      return PTrue;
     case e_cccf :
       choice = new MCS_CCcf();
-      return TRUE;
+      return PTrue;
     case e_cdrq :
       choice = new MCS_CDrq();
-      return TRUE;
+      return PTrue;
     case e_cdin :
       choice = new MCS_CDin();
-      return TRUE;
+      return PTrue;
     case e_carq :
       choice = new MCS_CArq();
-      return TRUE;
+      return PTrue;
     case e_cain :
       choice = new MCS_CAin();
-      return TRUE;
+      return PTrue;
     case e_cerq :
       choice = new MCS_CErq();
-      return TRUE;
+      return PTrue;
     case e_cein :
       choice = new MCS_CEin();
-      return TRUE;
+      return PTrue;
     case e_sdrq :
       choice = new MCS_SDrq();
-      return TRUE;
+      return PTrue;
     case e_sdin :
       choice = new MCS_SDin();
-      return TRUE;
+      return PTrue;
     case e_usrq :
       choice = new MCS_USrq();
-      return TRUE;
+      return PTrue;
     case e_usin :
       choice = new MCS_USin();
-      return TRUE;
+      return PTrue;
     case e_tgrq :
       choice = new MCS_TGrq();
-      return TRUE;
+      return PTrue;
     case e_tgcf :
       choice = new MCS_TGcf();
-      return TRUE;
+      return PTrue;
     case e_tirq :
       choice = new MCS_TIrq();
-      return TRUE;
+      return PTrue;
     case e_ticf :
       choice = new MCS_TIcf();
-      return TRUE;
+      return PTrue;
     case e_tvrq :
       choice = new MCS_TVrq();
-      return TRUE;
+      return PTrue;
     case e_tvin :
       choice = new MCS_TVin();
-      return TRUE;
+      return PTrue;
     case e_tvrs :
       choice = new MCS_TVrs();
-      return TRUE;
+      return PTrue;
     case e_tvcf :
       choice = new MCS_TVcf();
-      return TRUE;
+      return PTrue;
     case e_tprq :
       choice = new MCS_TPrq();
-      return TRUE;
+      return PTrue;
     case e_tpin :
       choice = new MCS_TPin();
-      return TRUE;
+      return PTrue;
     case e_trrq :
       choice = new MCS_TRrq();
-      return TRUE;
+      return PTrue;
     case e_trcf :
       choice = new MCS_TRcf();
-      return TRUE;
+      return PTrue;
     case e_ttrq :
       choice = new MCS_TTrq();
-      return TRUE;
+      return PTrue;
     case e_ttcf :
       choice = new MCS_TTcf();
-      return TRUE;
+      return PTrue;
   }
 
   choice = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -4155,7 +4155,7 @@ PObject * MCS_DomainMCSPDU::Clone() const
 //
 
 MCS_ChannelAttributes_static::MCS_ChannelAttributes_static(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4195,13 +4195,13 @@ PINDEX MCS_ChannelAttributes_static::GetDataLength() const
 }
 
 
-BOOL MCS_ChannelAttributes_static::Decode(PASN_Stream & strm)
+PBoolean MCS_ChannelAttributes_static::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4231,7 +4231,7 @@ PObject * MCS_ChannelAttributes_static::Clone() const
 //
 
 MCS_ChannelAttributes_userId::MCS_ChannelAttributes_userId(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4275,15 +4275,15 @@ PINDEX MCS_ChannelAttributes_userId::GetDataLength() const
 }
 
 
-BOOL MCS_ChannelAttributes_userId::Decode(PASN_Stream & strm)
+PBoolean MCS_ChannelAttributes_userId::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_joined.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4314,7 +4314,7 @@ PObject * MCS_ChannelAttributes_userId::Clone() const
 //
 
 MCS_ChannelAttributes_assigned::MCS_ChannelAttributes_assigned(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4354,13 +4354,13 @@ PINDEX MCS_ChannelAttributes_assigned::GetDataLength() const
 }
 
 
-BOOL MCS_ChannelAttributes_assigned::Decode(PASN_Stream & strm)
+PBoolean MCS_ChannelAttributes_assigned::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4483,7 +4483,7 @@ PObject * MCS_ArrayOf_UserId::Clone() const
 //
 
 MCS_TokenAttributes_grabbed::MCS_TokenAttributes_grabbed(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4527,15 +4527,15 @@ PINDEX MCS_TokenAttributes_grabbed::GetDataLength() const
 }
 
 
-BOOL MCS_TokenAttributes_grabbed::Decode(PASN_Stream & strm)
+PBoolean MCS_TokenAttributes_grabbed::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_grabber.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4566,7 +4566,7 @@ PObject * MCS_TokenAttributes_grabbed::Clone() const
 //
 
 MCS_TokenAttributes_inhibited::MCS_TokenAttributes_inhibited(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4610,15 +4610,15 @@ PINDEX MCS_TokenAttributes_inhibited::GetDataLength() const
 }
 
 
-BOOL MCS_TokenAttributes_inhibited::Decode(PASN_Stream & strm)
+PBoolean MCS_TokenAttributes_inhibited::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_inhibitors.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4649,7 +4649,7 @@ PObject * MCS_TokenAttributes_inhibited::Clone() const
 //
 
 MCS_TokenAttributes_giving::MCS_TokenAttributes_giving(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4697,17 +4697,17 @@ PINDEX MCS_TokenAttributes_giving::GetDataLength() const
 }
 
 
-BOOL MCS_TokenAttributes_giving::Decode(PASN_Stream & strm)
+PBoolean MCS_TokenAttributes_giving::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_grabber.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_recipient.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4739,7 +4739,7 @@ PObject * MCS_TokenAttributes_giving::Clone() const
 //
 
 MCS_TokenAttributes_ungivable::MCS_TokenAttributes_ungivable(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4783,15 +4783,15 @@ PINDEX MCS_TokenAttributes_ungivable::GetDataLength() const
 }
 
 
-BOOL MCS_TokenAttributes_ungivable::Decode(PASN_Stream & strm)
+PBoolean MCS_TokenAttributes_ungivable::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_grabber.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4822,7 +4822,7 @@ PObject * MCS_TokenAttributes_ungivable::Clone() const
 //
 
 MCS_TokenAttributes_given::MCS_TokenAttributes_given(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -4866,15 +4866,15 @@ PINDEX MCS_TokenAttributes_given::GetDataLength() const
 }
 
 
-BOOL MCS_TokenAttributes_given::Decode(PASN_Stream & strm)
+PBoolean MCS_TokenAttributes_given::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_recipient.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -4967,7 +4967,7 @@ PObject * MCS_ArrayOf_TokenId::Clone() const
 //
 
 MCS_Connect_Response::MCS_Connect_Response(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
   m_calledConnectId.SetConstraints(PASN_Object::FixedConstraint, 0, MaximumValue);
 }
@@ -5020,19 +5020,19 @@ PINDEX MCS_Connect_Response::GetDataLength() const
 }
 
 
-BOOL MCS_Connect_Response::Decode(PASN_Stream & strm)
+PBoolean MCS_Connect_Response::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_calledConnectId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_domainParameters.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userData.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5065,7 +5065,7 @@ PObject * MCS_Connect_Response::Clone() const
 //
 
 MCS_Connect_Result::MCS_Connect_Result(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5105,13 +5105,13 @@ PINDEX MCS_Connect_Result::GetDataLength() const
 }
 
 
-BOOL MCS_Connect_Result::Decode(PASN_Stream & strm)
+PBoolean MCS_Connect_Result::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5141,7 +5141,7 @@ PObject * MCS_Connect_Result::Clone() const
 //
 
 MCS_MCrq::MCS_MCrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5185,15 +5185,15 @@ PINDEX MCS_MCrq::GetDataLength() const
 }
 
 
-BOOL MCS_MCrq::Decode(PASN_Stream & strm)
+PBoolean MCS_MCrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mergeChannels.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_purgeChannelIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5224,7 +5224,7 @@ PObject * MCS_MCrq::Clone() const
 //
 
 MCS_MCcf::MCS_MCcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5268,15 +5268,15 @@ PINDEX MCS_MCcf::GetDataLength() const
 }
 
 
-BOOL MCS_MCcf::Decode(PASN_Stream & strm)
+PBoolean MCS_MCcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mergeChannels.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_purgeChannelIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5307,7 +5307,7 @@ PObject * MCS_MCcf::Clone() const
 //
 
 MCS_PCin::MCS_PCin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5351,15 +5351,15 @@ PINDEX MCS_PCin::GetDataLength() const
 }
 
 
-BOOL MCS_PCin::Decode(PASN_Stream & strm)
+PBoolean MCS_PCin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_detachUserIds.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_purgeChannelIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5390,7 +5390,7 @@ PObject * MCS_PCin::Clone() const
 //
 
 MCS_MTrq::MCS_MTrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5434,15 +5434,15 @@ PINDEX MCS_MTrq::GetDataLength() const
 }
 
 
-BOOL MCS_MTrq::Decode(PASN_Stream & strm)
+PBoolean MCS_MTrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mergeTokens.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_purgeTokenIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5473,7 +5473,7 @@ PObject * MCS_MTrq::Clone() const
 //
 
 MCS_MTcf::MCS_MTcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5517,15 +5517,15 @@ PINDEX MCS_MTcf::GetDataLength() const
 }
 
 
-BOOL MCS_MTcf::Decode(PASN_Stream & strm)
+PBoolean MCS_MTcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_mergeTokens.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_purgeTokenIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5556,7 +5556,7 @@ PObject * MCS_MTcf::Clone() const
 //
 
 MCS_PTin::MCS_PTin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5596,13 +5596,13 @@ PINDEX MCS_PTin::GetDataLength() const
 }
 
 
-BOOL MCS_PTin::Decode(PASN_Stream & strm)
+PBoolean MCS_PTin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_purgeTokenIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5632,7 +5632,7 @@ PObject * MCS_PTin::Clone() const
 //
 
 MCS_DPum::MCS_DPum(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5672,13 +5672,13 @@ PINDEX MCS_DPum::GetDataLength() const
 }
 
 
-BOOL MCS_DPum::Decode(PASN_Stream & strm)
+PBoolean MCS_DPum::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5708,7 +5708,7 @@ PObject * MCS_DPum::Clone() const
 //
 
 MCS_RJum::MCS_RJum(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5752,15 +5752,15 @@ PINDEX MCS_RJum::GetDataLength() const
 }
 
 
-BOOL MCS_RJum::Decode(PASN_Stream & strm)
+PBoolean MCS_RJum::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_diagnostic.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initialOctets.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5791,7 +5791,7 @@ PObject * MCS_RJum::Clone() const
 //
 
 MCS_AUcf::MCS_AUcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
 }
 
@@ -5837,15 +5837,15 @@ PINDEX MCS_AUcf::GetDataLength() const
 }
 
 
-BOOL MCS_AUcf::Decode(PASN_Stream & strm)
+PBoolean MCS_AUcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_initiator) && !m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5877,7 +5877,7 @@ PObject * MCS_AUcf::Clone() const
 //
 
 MCS_DUrq::MCS_DUrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -5921,15 +5921,15 @@ PINDEX MCS_DUrq::GetDataLength() const
 }
 
 
-BOOL MCS_DUrq::Decode(PASN_Stream & strm)
+PBoolean MCS_DUrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -5960,7 +5960,7 @@ PObject * MCS_DUrq::Clone() const
 //
 
 MCS_DUin::MCS_DUin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6004,15 +6004,15 @@ PINDEX MCS_DUin::GetDataLength() const
 }
 
 
-BOOL MCS_DUin::Decode(PASN_Stream & strm)
+PBoolean MCS_DUin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_reason.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6043,7 +6043,7 @@ PObject * MCS_DUin::Clone() const
 //
 
 MCS_CJcf::MCS_CJcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
 }
 
@@ -6097,19 +6097,19 @@ PINDEX MCS_CJcf::GetDataLength() const
 }
 
 
-BOOL MCS_CJcf::Decode(PASN_Stream & strm)
+PBoolean MCS_CJcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_requested.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_channelId) && !m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6143,7 +6143,7 @@ PObject * MCS_CJcf::Clone() const
 //
 
 MCS_CLrq::MCS_CLrq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6183,13 +6183,13 @@ PINDEX MCS_CLrq::GetDataLength() const
 }
 
 
-BOOL MCS_CLrq::Decode(PASN_Stream & strm)
+PBoolean MCS_CLrq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_channelIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6219,7 +6219,7 @@ PObject * MCS_CLrq::Clone() const
 //
 
 MCS_CCcf::MCS_CCcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 1, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 1, PFalse, 0)
 {
 }
 
@@ -6269,17 +6269,17 @@ PINDEX MCS_CCcf::GetDataLength() const
 }
 
 
-BOOL MCS_CCcf::Decode(PASN_Stream & strm)
+PBoolean MCS_CCcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (HasOptionalField(e_channelId) && !m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6312,7 +6312,7 @@ PObject * MCS_CCcf::Clone() const
 //
 
 MCS_CArq::MCS_CArq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6360,17 +6360,17 @@ PINDEX MCS_CArq::GetDataLength() const
 }
 
 
-BOOL MCS_CArq::Decode(PASN_Stream & strm)
+PBoolean MCS_CArq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6402,7 +6402,7 @@ PObject * MCS_CArq::Clone() const
 //
 
 MCS_CAin::MCS_CAin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6450,17 +6450,17 @@ PINDEX MCS_CAin::GetDataLength() const
 }
 
 
-BOOL MCS_CAin::Decode(PASN_Stream & strm)
+PBoolean MCS_CAin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6492,7 +6492,7 @@ PObject * MCS_CAin::Clone() const
 //
 
 MCS_CErq::MCS_CErq(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6540,17 +6540,17 @@ PINDEX MCS_CErq::GetDataLength() const
 }
 
 
-BOOL MCS_CErq::Decode(PASN_Stream & strm)
+PBoolean MCS_CErq::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6582,7 +6582,7 @@ PObject * MCS_CErq::Clone() const
 //
 
 MCS_CEin::MCS_CEin(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6626,15 +6626,15 @@ PINDEX MCS_CEin::GetDataLength() const
 }
 
 
-BOOL MCS_CEin::Decode(PASN_Stream & strm)
+PBoolean MCS_CEin::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_userIds.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6665,7 +6665,7 @@ PObject * MCS_CEin::Clone() const
 //
 
 MCS_TGcf::MCS_TGcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6717,19 +6717,19 @@ PINDEX MCS_TGcf::GetDataLength() const
 }
 
 
-BOOL MCS_TGcf::Decode(PASN_Stream & strm)
+PBoolean MCS_TGcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenStatus.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6762,7 +6762,7 @@ PObject * MCS_TGcf::Clone() const
 //
 
 MCS_TIcf::MCS_TIcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6814,19 +6814,19 @@ PINDEX MCS_TIcf::GetDataLength() const
 }
 
 
-BOOL MCS_TIcf::Decode(PASN_Stream & strm)
+PBoolean MCS_TIcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenStatus.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6859,7 +6859,7 @@ PObject * MCS_TIcf::Clone() const
 //
 
 MCS_TVrs::MCS_TVrs(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -6907,17 +6907,17 @@ PINDEX MCS_TVrs::GetDataLength() const
 }
 
 
-BOOL MCS_TVrs::Decode(PASN_Stream & strm)
+PBoolean MCS_TVrs::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_recipient.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -6949,7 +6949,7 @@ PObject * MCS_TVrs::Clone() const
 //
 
 MCS_TVcf::MCS_TVcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -7001,19 +7001,19 @@ PINDEX MCS_TVcf::GetDataLength() const
 }
 
 
-BOOL MCS_TVcf::Decode(PASN_Stream & strm)
+PBoolean MCS_TVcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenStatus.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7046,7 +7046,7 @@ PObject * MCS_TVcf::Clone() const
 //
 
 MCS_TRcf::MCS_TRcf(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -7098,19 +7098,19 @@ PINDEX MCS_TRcf::GetDataLength() const
 }
 
 
-BOOL MCS_TRcf::Decode(PASN_Stream & strm)
+PBoolean MCS_TRcf::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_result.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_initiator.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_tokenStatus.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }
@@ -7143,7 +7143,7 @@ PObject * MCS_TRcf::Clone() const
 //
 
 MCS_ChannelAttributes_private::MCS_ChannelAttributes_private(unsigned tag, PASN_Object::TagClass tagClass)
-  : PASN_Sequence(tag, tagClass, 0, FALSE, 0)
+  : PASN_Sequence(tag, tagClass, 0, PFalse, 0)
 {
 }
 
@@ -7195,19 +7195,19 @@ PINDEX MCS_ChannelAttributes_private::GetDataLength() const
 }
 
 
-BOOL MCS_ChannelAttributes_private::Decode(PASN_Stream & strm)
+PBoolean MCS_ChannelAttributes_private::Decode(PASN_Stream & strm)
 {
   if (!PreambleDecode(strm))
-    return FALSE;
+    return PFalse;
 
   if (!m_joined.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_channelId.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_manager.Decode(strm))
-    return FALSE;
+    return PFalse;
   if (!m_admitted.Decode(strm))
-    return FALSE;
+    return PFalse;
 
   return UnknownExtensionsDecode(strm);
 }

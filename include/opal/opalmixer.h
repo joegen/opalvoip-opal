@@ -115,7 +115,7 @@ class PMemBuffer
     {
       if (common != NULL) {
         common->mutex.Wait();
-        BOOL last = common->refCount == 1;
+        PBoolean last = common->refCount == 1;
         if (last) {
           common->mutex.Signal();
           delete common;
@@ -137,7 +137,7 @@ class PMemBuffer
 
       if (common != NULL) {
         common->mutex.Wait();
-        BOOL last = common->refCount == 1;
+        PBoolean last = common->refCount == 1;
         if (last) {
           common->mutex.Signal();
           delete common;
@@ -289,15 +289,15 @@ class OpalAudioMixerStream {
     StreamFrame frameCache;
     DWORD cacheTimeStamp;
 
-    BOOL active;
-    BOOL first;
+    PBoolean active;
+    PBoolean first;
     unsigned channelNumber;
 
     OpalAudioMixerStream();
     void WriteFrame(const StreamFrame & frame);
     void FillSilence(StreamFrame & retFrame, PINDEX ms);
     void PopFrame(StreamFrame & retFrame, PINDEX ms);
-    BOOL ReadFrame(StreamFrame & retFrame, PINDEX ms);
+    PBoolean ReadFrame(StreamFrame & retFrame, PINDEX ms);
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -325,9 +325,9 @@ class OpalAudioMixer
 
         MixerFrame(PINDEX _frameLength);
         void CreateMixedData() const;
-        BOOL GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const;
-        BOOL GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const;
-        BOOL GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const;
+        PBoolean GetMixedFrame(OpalAudioMixerStream::StreamFrame & frame) const;
+        PBoolean GetStereoFrame(OpalAudioMixerStream::StreamFrame & frame) const;
+        PBoolean GetChannelFrame(Key_T key, OpalAudioMixerStream::StreamFrame & frame) const;
     };
 
   protected:
@@ -337,29 +337,29 @@ class OpalAudioMixer
     StreamInfoMap_T streamInfoMap;         ///< list of streams
     unsigned channelNumber;                ///< counter for channels
 
-    BOOL realTime;                         ///< TRUE if realtime mixing
-    BOOL pushThread;                       ///< TRUE if to use a thread to push data out
+    PBoolean realTime;                         ///< PTrue if realtime mixing
+    PBoolean pushThread;                       ///< PTrue if to use a thread to push data out
     PThread * thread;                      ///< reader thread handle
-    BOOL threadRunning;                    ///< used to stop reader thread
+    PBoolean threadRunning;                    ///< used to stop reader thread
 
-    BOOL audioStarted;                     ///< TRUE if output audio is running
-    BOOL firstRead;                        ///< TRUE if first use of CheckForRead
+    PBoolean audioStarted;                     ///< PTrue if output audio is running
+    PBoolean firstRead;                        ///< PTrue if first use of CheckForRead
 
     PTime timeOfNextRead;                  ///< absolute timestamp for next scheduled read
     DWORD outputTimestamp;                 ///< RTP timestamp for output data
 
   public:
-    OpalAudioMixer(BOOL realTime = TRUE, BOOL _pushThread = TRUE);
+    OpalAudioMixer(PBoolean realTime = PTrue, PBoolean _pushThread = PTrue);
     virtual ~OpalAudioMixer() { }
-    virtual BOOL OnWriteAudio(const MixerFrame &);
-    BOOL AddStream(const Key_T & key, OpalAudioMixerStream * stream);
+    virtual PBoolean OnWriteAudio(const MixerFrame &);
+    PBoolean AddStream(const Key_T & key, OpalAudioMixerStream * stream);
     void RemoveStream(const Key_T & key);
     void RemoveAllStreams();
     void StartThread();
     void ThreadMain();
     void ReadRoutine();
     void WriteMixedFrame();
-    BOOL Write(const Key_T & key, const RTP_DataFrame & rtp);
+    PBoolean Write(const Key_T & key, const RTP_DataFrame & rtp);
 };
 
 #endif // _OPAL_MIXER

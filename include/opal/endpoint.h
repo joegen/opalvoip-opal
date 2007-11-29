@@ -111,7 +111,7 @@ class OpalEndPoint : public PObject
 
        If the list is empty then GetDefaultListeners() is used.
       */
-    BOOL StartListeners(
+    PBoolean StartListeners(
       const PStringArray & interfaces ///<  Address of interface to listen on.
     );
 
@@ -122,7 +122,7 @@ class OpalEndPoint : public PObject
 
        If the address is empty then the first entry of GetDefaultListeners() is used.
       */
-    BOOL StartListener(
+    PBoolean StartListener(
       const OpalTransportAddress & iface ///<  Address of interface to listen on.
     );
 
@@ -131,7 +131,7 @@ class OpalEndPoint : public PObject
        application should use OnConnectionEstablished() to monitor when calls
        have arrived and been successfully negotiated.
       */
-    BOOL StartListener(
+    PBoolean StartListener(
       OpalListener * listener ///<  Transport dependent listener.
     );
 
@@ -148,23 +148,23 @@ class OpalEndPoint : public PObject
     );
 
     /**Stop a listener given the transport address.
-       Returns TRUE if a listener was on that interface, and was stopped.
+       Returns PTrue if a listener was on that interface, and was stopped.
       */
-    BOOL StopListener(
+    PBoolean StopListener(
         const OpalTransportAddress & iface ///<  Address of interface we may be listening on.
     );
 
     /**Remove a listener from the endoint.
        If the listener parameter is NULL then all listeners are removed.
       */
-    BOOL RemoveListener(
+    PBoolean RemoveListener(
       OpalListener * listener ///<  Transport dependent listener.
     );
 
     /**Return a list of the transport addresses for all listeners on this endpoint
       */
     OpalTransportAddressArray GetInterfaceAddresses(
-      BOOL excludeLocalHost = TRUE,       ///<  Flag to exclude 127.0.0.1
+      PBoolean excludeLocalHost = PTrue,       ///<  Flag to exclude 127.0.0.1
       OpalTransport * associatedTransport = NULL
                           ///<  Associated transport for precedence and translation
     );
@@ -177,13 +177,13 @@ class OpalEndPoint : public PObject
 
     /**Handle new incoming connection from listener.
 
-       A return value of TRUE indicates that the transport object should be
-       deleted by the caller. FALSE indicates that something else (eg the
+       A return value of PTrue indicates that the transport object should be
+       deleted by the caller. PFalse indicates that something else (eg the
        connection) has taken over responsibility for deleting the transport.
 
-       The default behaviour just returns TRUE.
+       The default behaviour just returns PTrue.
       */
-    virtual BOOL NewIncomingConnection(
+    virtual PBoolean NewIncomingConnection(
       OpalTransport * transport  ///<  Transport connection came in on
     );
   //@}
@@ -206,12 +206,12 @@ class OpalEndPoint : public PObject
 
        The proto field is optional when passed to a specific endpoint. If it
        is present, however, it must agree with the endpoints protocol name or
-       FALSE is returned.
+       PFalse is returned.
 
        This function usually returns almost immediately with the connection
        continuing to occur in a new background thread.
 
-       If FALSE is returned then the connection could not be established. For
+       If PFalse is returned then the connection could not be established. For
        example if a PSTN endpoint is used and the assiciated line is engaged
        then it may return immediately. Returning a non-NULL value does not
        mean that the connection will succeed, only that an attempt is being
@@ -219,7 +219,7 @@ class OpalEndPoint : public PObject
 
        The default behaviour is pure.
      */
-    virtual BOOL MakeConnection(
+    virtual PBoolean MakeConnection(
       OpalCall & call,          ///<  Owner of connection
       const PString & party,    ///<  Remote party to call
       void * userData = NULL,          ///<  Arbitrary data to pass to connection
@@ -230,13 +230,13 @@ class OpalEndPoint : public PObject
     /**Callback for outgoing connection, it is invoked after OpalLineConnection::SetUpConnection
        This function allows the application to set up some parameters or to log some messages
        */
-    virtual BOOL OnSetUpConnection(OpalConnection &connection);
+    virtual PBoolean OnSetUpConnection(OpalConnection &connection);
     
     /**Call back for answering an incoming call.
        This function is used for an application to control the answering of
        incoming calls.
 
-       If TRUE is returned then the connection continues. If FALSE then the
+       If PTrue is returned then the connection continues. If PFalse then the
        connection is aborted.
 
        Note this function should not block for any length of time. If the
@@ -253,16 +253,16 @@ class OpalEndPoint : public PObject
 
        The default behaviour calls the OpalManager function of the same name.
      */
-    virtual BOOL OnIncomingConnection(
+    virtual PBoolean OnIncomingConnection(
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options,             ///<  options for new connection (can't use default value as overrides will fail)
       OpalConnection::StringOptions * stringOptions
     );
-    virtual BOOL OnIncomingConnection(
+    virtual PBoolean OnIncomingConnection(
       OpalConnection & connection,  ///<  Connection that is calling
       unsigned options              ///<  options for new connection (can't use default value as overrides will fail)
     );
-    virtual BOOL OnIncomingConnection(
+    virtual PBoolean OnIncomingConnection(
       OpalConnection & connection   ///<  Connection that is calling
     );
 
@@ -271,7 +271,7 @@ class OpalEndPoint : public PObject
        remote endpoint is "ringing". Generally some time after the
        MakeConnection() function was called, this is function is called.
 
-       If FALSE is returned the connection is aborted.
+       If PFalse is returned the connection is aborted.
 
        If an application overrides this function, it should generally call the
        ancestor version for correct operation. An application would typically
@@ -371,7 +371,7 @@ class OpalEndPoint : public PObject
 
        The default behaviour does nothing.
       */
-    virtual BOOL OnForwarded(
+    virtual PBoolean OnForwarded(
       OpalConnection & connection,  ///<  Connection that was held
       const PString & remoteParty         ///<  The new remote party
     );
@@ -383,7 +383,7 @@ class OpalEndPoint : public PObject
        disposal happens at some later time by a background thread. This it is
        safe to call this function from anywhere.
       */
-    virtual BOOL ClearCall(
+    virtual PBoolean ClearCall(
       const PString & token,    ///<  Token for identifying connection
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
       PSyncPoint * sync = NULL  ///<  Sync point to wait on.
@@ -393,7 +393,7 @@ class OpalEndPoint : public PObject
        This hangs up the connection to a remote endpoint. Note that these functions
        are synchronous
       */
-    virtual BOOL ClearCallSynchronous(
+    virtual PBoolean ClearCallSynchronous(
       const PString & token,    ///<  Token for identifying connection
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
       PSyncPoint * sync = NULL  ///<  Sync point to wait on.
@@ -407,7 +407,7 @@ class OpalEndPoint : public PObject
       */
     virtual void ClearAllCalls(
       OpalConnection::CallEndReason reason = OpalConnection::EndedByLocalUser, ///<  Reason for call clearing
-      BOOL wait = TRUE   ///<  Flag for wait for calls to e cleared.
+      PBoolean wait = PTrue   ///<  Flag for wait for calls to e cleared.
     );
 
     /**Find a connection that uses the specified token.
@@ -425,7 +425,7 @@ class OpalEndPoint : public PObject
 
     /**Determine if a connection is active.
       */
-    virtual BOOL HasConnection(
+    virtual PBoolean HasConnection(
       const PString & token   ///<  Token for identifying connection
     );
 
@@ -473,7 +473,7 @@ class OpalEndPoint : public PObject
 
        The default behaviour calls the OpalManager function of the same name.
       */
-    virtual BOOL OnOpenMediaStream(
+    virtual PBoolean OnOpenMediaStream(
       OpalConnection & connection,  ///<  Connection that owns the media stream
       OpalMediaStream & stream      ///<  New media stream being opened
     );
@@ -498,22 +498,22 @@ class OpalEndPoint : public PObject
 
     /**Create an PVideoInputDevice for a source media stream.
       */
-    virtual BOOL CreateVideoInputDevice(
+    virtual PBoolean CreateVideoInputDevice(
       const OpalConnection & connection,    ///<  Connection needing created video device
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
       PVideoInputDevice * & device,         ///<  Created device
-      BOOL & autoDelete                     ///<  Flag for auto delete device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 
     /**Create an PVideoOutputDevice for a sink media stream or the preview
        display for a source media stream.
       */
-    virtual BOOL CreateVideoOutputDevice(
+    virtual PBoolean CreateVideoOutputDevice(
       const OpalConnection & connection,    ///<  Connection needing created video device
       const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
-      BOOL preview,                         ///<  Flag indicating is a preview output
+      PBoolean preview,                         ///<  Flag indicating is a preview output
       PVideoOutputDevice * & device,        ///<  Created device
-      BOOL & autoDelete                     ///<  Flag for auto delete device
+      PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
 #endif
   //@}
@@ -618,10 +618,10 @@ class OpalEndPoint : public PObject
 #endif
 
     /** Execute garbage collection for endpoint.
-        Returns TRUE if all garbage has been collected.
+        Returns PTrue if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
       */
-    virtual BOOL GarbageCollection();
+    virtual PBoolean GarbageCollection();
   //@}
 
   /**@name Member variable access */
@@ -636,7 +636,7 @@ class OpalEndPoint : public PObject
 
     /**Get an indication of if this endpoint has particular option.
       */
-    BOOL HasAttribute(Attributes opt) const { return (attributeBits&opt) != 0; }
+    PBoolean HasAttribute(Attributes opt) const { return (attributeBits&opt) != 0; }
 
     /**Get the default signal port for this endpoint.
      */
@@ -703,7 +703,7 @@ class OpalEndPoint : public PObject
     virtual PString GetDefaultSecurityMode() const 
     { return defaultSecurityMode; }
 
-    virtual BOOL UseRTPAggregation() const;
+    virtual PBoolean UseRTPAggregation() const;
 
     /**Set the RTP aggregation size
       */
@@ -720,16 +720,16 @@ class OpalEndPoint : public PObject
     PHandleAggregator * GetRTPAggregator();
 	
     /**Callback to allow interface adjustments before connecting to the remote party
-       The default implementation does nothing and returns TRUE
+       The default implementation does nothing and returns PTrue
       */
-    virtual BOOL AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
+    virtual PBoolean AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
                                       PIPSocket::InterfaceTable & interfaceTable);
 
-    virtual BOOL IsRTPNATEnabled(OpalConnection & conn, 
+    virtual PBoolean IsRTPNATEnabled(OpalConnection & conn, 
                        const PIPSocket::Address & localAddr, 
                        const PIPSocket::Address & peerAddr,
                        const PIPSocket::Address & sigAddr,
-                                             BOOL incoming);
+                                             PBoolean incoming);
 
   protected:
     OpalManager   & manager;
@@ -749,7 +749,7 @@ class OpalEndPoint : public PObject
     {
         virtual void DeleteObject(PObject * object) const;
     } connectionsActive;
-    BOOL AddConnection(OpalConnection * connection);
+    PBoolean AddConnection(OpalConnection * connection);
 
     PMutex inUseFlag;
 
@@ -757,7 +757,7 @@ class OpalEndPoint : public PObject
 
 #if OPAL_RTP_AGGREGATE
     PMutex rtpAggregationMutex;
-    BOOL useRTPAggregation; 
+    PBoolean useRTPAggregation; 
     PINDEX rtpAggregationSize;
     PHandleAggregator * rtpAggregator;
 #endif

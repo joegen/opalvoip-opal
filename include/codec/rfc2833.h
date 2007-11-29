@@ -57,7 +57,7 @@ class OpalRFC2833Info : public PObject {
     char GetTone() const { return tone; }
     unsigned GetDuration() const { return duration; }
     unsigned GetTimestamp() const { return timestamp; }
-    BOOL IsToneStart() const { return duration == 0; }
+    PBoolean IsToneStart() const { return duration == 0; }
 
   protected:
     char     tone;
@@ -76,15 +76,15 @@ class OpalRFC2833Proto : public PObject {
     );
     ~OpalRFC2833Proto();
 
-    virtual BOOL SendToneAsync(
+    virtual PBoolean SendToneAsync(
       char tone, 
       unsigned duration
     );
 
-    virtual BOOL BeginTransmit(
+    virtual PBoolean BeginTransmit(
       char tone  ///<  DTMF tone code
     );
-    virtual BOOL EndTransmit();
+    virtual PBoolean EndTransmit();
 
     virtual void OnStartReceive(
       char tone
@@ -118,7 +118,7 @@ class OpalRFC2833Proto : public PObject {
     PMutex mutex;
 
     PNotifier receiveNotifier;
-    BOOL      receiveComplete;
+    PBoolean      receiveComplete;
     BYTE      receivedTone;
     unsigned  receivedDuration;
     unsigned  receiveTimestamp;
@@ -136,7 +136,7 @@ class OpalRFC2833Proto : public PObject {
     PTimer        asyncTransmitTimer;
     PTimer        asyncDurationTimer;
     DWORD         transmitTimestamp;
-    BOOL          transmitTimestampSet;
+    PBoolean          transmitTimestampSet;
     PTimeInterval asyncStart;
 };
 
