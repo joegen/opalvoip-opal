@@ -144,7 +144,7 @@ class OpalRFC4175Decoder : public OpalRFC4175Transcoder
     PBoolean  first;
     DWORD lastSequenceNumber;
     DWORD lastTimeStamp;
-    BOOL  waitingForMarker;
+    bool  waitingForMarker;
     PINDEX packetCount;
 };
 

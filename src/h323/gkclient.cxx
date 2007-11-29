@@ -251,9 +251,9 @@ PBoolean H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddr
 }
 
 
-BOOL H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
+bool H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
 {
-  discoveryComplete = FALSE;
+  discoveryComplete = false;
   
   H323RasPDU pdu;
   Request request(SetupGatekeeperRequest(pdu), pdu);
@@ -265,7 +265,7 @@ BOOL H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
   requests.SetAt(request.sequenceNumber, &request);
   requestsMutex.Signal();
   
-  BOOL ok = FALSE;
+  bool ok = false;
   
   for (unsigned retry = 0; retry < endpoint.GetGatekeeperRequestRetries(); retry++) {
     if (!transport->WriteConnect(WriteGRQ, &pdu)) {

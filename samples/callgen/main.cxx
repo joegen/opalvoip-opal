@@ -369,7 +369,7 @@ void CallGen::Main()
       threadEnded.Wait();
       PThread::Sleep(100);
 
-      BOOL finished = TRUE;
+      bool finished = TRUE;
       for (PINDEX i = 0; i < threadList.GetSize(); i++) {
         if (!threadList[i].IsTerminated()) {
           finished = FALSE;
@@ -485,7 +485,7 @@ void CallThread::Main()
     if (!callgen.manager.SetUpCall("ivr:*", destination, token, this))
       OUTPUT(index, token, "Failed to start call to " << destination)
     else {
-      BOOL stopping = FALSE;
+      bool stopping = FALSE;
 
       delay = RandomRange(rand, params.tmin_call, params.tmax_call);
 
@@ -561,7 +561,7 @@ OpalCall * MyManager:: CreateCall(void * userData)
 }
 
 
-BOOL MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   dynamic_cast<MyCall &>(connection.GetCall()).OnOpenMediaStream(connection, stream);
   return OpalManager::OnOpenMediaStream(connection, stream);
@@ -663,7 +663,7 @@ void MyCall::OnReleased(OpalConnection & connection)
 }
 
 
-BOOL MyCall::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+PBoolean MyCall::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
 {
   (stream.IsSink() ? openedTransmitMedia : openedReceiveMedia) = PTime();
 

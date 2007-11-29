@@ -153,7 +153,7 @@ MainStatusPage::MainStatusPage(OpalGw & _app, PHTTPAuthority & auth)
 }
 
 
-BOOL MainStatusPage::Post(PHTTPRequest & request,
+PBoolean MainStatusPage::Post(PHTTPRequest & request,
                           const PStringToString & data,
                           PHTML & msg)
 {
@@ -176,9 +176,9 @@ BOOL MainStatusPage::Post(PHTTPRequest & request,
 }
 
 
-BOOL MyManager::OnPostControl(const PStringToString & data, PHTML & msg)
+PBoolean MyManager::OnPostControl(const PStringToString & data, PHTML & msg)
 {
-  BOOL gotOne = FALSE;
+  bool gotOne = FALSE;
 
   for (PINDEX i = 0; i < data.GetSize(); i++) {
     PString key = data.GetKeyAt(i);
@@ -305,7 +305,7 @@ MyGatekeeperServer::MyGatekeeperServer(H323EndPoint & ep)
 }
 
 
-BOOL MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
+PBoolean MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
 {
   PINDEX i;
 
@@ -335,7 +335,7 @@ BOOL MyGatekeeperServer::Initialise(PConfig & cfg, PConfigPage * rsrc)
   PString oldOSPServer = ospRoutingURL;
   ospRoutingURL = cfg.GetString(OSPRoutingURLKey, ospRoutingURL);
   rsrc->Add(new PHTTPStringField(OSPRoutingURLKey, 25, ospRoutingURL));
-  BOOL ospChanged = oldOSPServer != ospRoutingURL;
+  bool ospChanged = oldOSPServer != ospRoutingURL;
 
   ospPrivateKeyFileName = cfg.GetString(OSPPrivateKeyFileKey, ospPrivateKeyFileName);
   rsrc->Add(new PHTTPStringField(OSPPrivateKeyFileKey, 25, ospPrivateKeyFileName));
@@ -466,10 +466,10 @@ H323GatekeeperCall * MyGatekeeperServer::CreateCall(const OpalGloballyUniqueID &
 }
 
 
-BOOL MyGatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias,
+PBoolean MyGatekeeperServer::TranslateAliasAddress(const H225_AliasAddress & alias,
                                                H225_ArrayOf_AliasAddress & aliases,
                                                H323TransportAddress & address,
-                                               BOOL & isGkRouted,
+                                               PBoolean & isGkRouted,
                                                H323GatekeeperCall * call)
 {
 #ifdef H323_TRANSNEXUS_OSP
@@ -514,13 +514,13 @@ void MyGatekeeperServer::RouteMap::PrintOn(ostream & strm) const
 }
 
 
-BOOL MyGatekeeperServer::RouteMap::IsValid() const
+PBoolean MyGatekeeperServer::RouteMap::IsValid() const
 {
   return !alias && regex.GetErrorCode() == PRegularExpression::NoError && !host;
 }
 
 
-BOOL MyGatekeeperServer::RouteMap::IsMatch(const PString & alias) const
+PBoolean MyGatekeeperServer::RouteMap::IsMatch(const PString & alias) const
 {
   PINDEX start;
   return regex.Execute(alias, start);
@@ -540,7 +540,7 @@ MyGatekeeperCall::MyGatekeeperCall(MyGatekeeperServer & gk,
 }
 
 #ifdef H323_TRANSNEXUS_OSP
-static BOOL GetE164Alias(const H225_ArrayOf_AliasAddress & aliases, H225_AliasAddress & destAlias)
+static bool GetE164Alias(const H225_ArrayOf_AliasAddress & aliases, H225_AliasAddress & destAlias)
 {
   PINDEX i;
   for (i = 0; i < aliases.GetSize(); ++i) {
@@ -552,7 +552,7 @@ static BOOL GetE164Alias(const H225_ArrayOf_AliasAddress & aliases, H225_AliasAd
   return FALSE;
 }
 
-BOOL MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
+PBoolean MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
 {
   int result;
 
@@ -667,7 +667,7 @@ BOOL MyGatekeeperCall::AuthoriseOSPCall(H323GatekeeperARQ & info)
   valInfo.callID = this->GetCallIdentifier();
 
   // validate the token
-  BOOL authorised;
+  bool authorised;
   unsigned timeLimit;
   if ((result = ospTransaction->Validate(valInfo, authorised, timeLimit)) != 0) {
     PTRACE(1, "OSP\tCannot validate ARQ - result = " << result);

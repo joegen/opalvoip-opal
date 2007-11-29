@@ -313,7 +313,7 @@ class H323Gatekeeper : public H225_RAS
     // Handling interface changes
     void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
     void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
-    BOOL DiscoverGatekeeper(const H323TransportAddress & address);
+    bool DiscoverGatekeeper(const H323TransportAddress & address);
     void UpdateConnectionStatus();
 
 
