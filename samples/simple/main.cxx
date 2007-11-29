@@ -21,389 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 2.98  2007/10/04 07:01:18  rjongbloed
- * Added ability to have different gk for h323 and h323s endpoints.
- *
- * Revision 2.97  2007/09/11 09:18:05  rjongbloed
- * Added full dump of all codecs and their options to trace log.
- *
- * Revision 2.96  2007/09/10 00:11:13  rjongbloed
- * AddedOpalMediaFormat::IsTransportable() function as better test than simply
- *   checking the payload type, condition is more complex.
- *
- * Revision 2.95  2007/09/08 12:01:34  rjongbloed
- * Improved memory checking (leaks etc), especially when using MSVC debug library.
- *
- * Revision 2.94  2007/07/26 01:03:38  csoutheren
- * Remove debug code
- *
- * Revision 2.93  2007/07/26 00:42:57  csoutheren
- * Don't send zero length tones
- *
- * Revision 2.92  2007/06/09 06:06:17  rjongbloed
- * Added check that --srcep parameter has endpoing type existing before selection.
- *
- * Revision 2.91  2007/05/07 14:15:22  csoutheren
- * Add z and Z commands to start and stop call recording
- *
- * Revision 2.90  2007/05/01 05:32:03  rjongbloed
- * Added display of active SIP listeners
- *
- * Revision 2.89  2007/04/16 04:12:25  rjongbloed
- * Added ability to set transmitted video frame size (qcif etc).
- * Added ability to set any media format option.
- *
- * Revision 2.88  2007/04/10 06:44:07  rjongbloed
- * Cosmetic change, removed non-wire media formats from print out of "Available Media Formats". Also resorted and removed formats as per -P and -D.
- *
- * Revision 2.87  2007/04/10 05:15:54  rjongbloed
- * Fixed issue with use of static C string variables in DLL environment,
- *   must use functional interface for correct initialisation.
- *
- * Revision 2.86  2007/04/03 13:04:23  rjongbloed
- * Added driverName to PVideoDevice::OpenArgs (so can select YUVFile)
- * Added new statics to create correct video input/output device object
- *   given a PVideoDevice::OpenArgs structure.
- * Fixed incorrect initialisation of default video input device.
- * Fixed last calls video size changing the default value.
- *
- * Revision 2.85  2007/04/03 07:59:14  rjongbloed
- * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to PBoolean, now agrees with
- *     documentation and allows UI to abort calls early.
- *   added PBoolean to AcceptIncomingConnection indicating the
- *     supplied token is invalid.
- *   removed redundent OnGetDestination() function, was never required.
- *
- * Revision 2.84  2007/04/03 05:27:30  rjongbloed
- * Cleaned up somewhat confusing usage of the OnAnswerCall() virtual
- *   function. The name is innaccurate and exists as a legacy from the
- *   OpenH323 days. it now only indicates how alerting is done
- *   (with/without media) and does not actually answer the call.
- *
- * Revision 2.83  2007/03/29 08:32:22  csoutheren
- * Pause before dialing when using two endpoint mode
- *
- * Revision 2.82  2007/03/29 05:24:00  csoutheren
- * Add support for T.38
- *
- * Revision 2.81  2007/03/01 05:07:32  csoutheren
- * Only include video code when video enabled
- *
- * Revision 2.80  2006/11/01 00:46:40  csoutheren
- * Implement video output file device
- *
- * Revision 2.79  2006/10/31 04:41:47  csoutheren
- * Add support for new methods needed for vidfiledevices
- *
- * Revision 2.78  2006/10/28 00:39:42  rjongbloed
- * Added argument to set country on LID
- *
- * Revision 2.77  2006/10/22 12:09:57  rjongbloed
- * Fixed minor error in user output string.
- *
- * Revision 2.76  2006/10/15 06:12:48  rjongbloed
- * Fixed correct local A-Party endpoint type depending on compiler flags and command line arguments.
- * Fixed being able to select IVR via wildcard (routing table order) on source endpoint type.
- * Fixed correctly trimming spaces from POTS device name.
- *
- * Revision 2.75  2006/10/10 07:18:18  csoutheren
- * Allow compilation with and without various options
- *
- * Revision 2.74  2006/10/05 07:11:49  csoutheren
- * Add --disable-lid option
- *
- * Revision 2.73  2006/10/02 13:30:51  rjongbloed
- * Added LID plug ins
- *
- * Revision 2.72  2006/08/29 01:37:11  csoutheren
- * Change secure URLs to use h323s and tcps to be inline with sips
- *
- * Revision 2.71  2006/08/21 05:30:48  csoutheren
- * Add support for sh323
- *
- * Revision 2.70  2006/08/01 12:46:32  rjongbloed
- * Added build solution for plug ins
- * Removed now redundent code due to plug ins addition
- *
- * Revision 2.69  2006/07/24 14:03:39  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 2.68  2006/07/21 00:38:31  csoutheren
- * Applied 1483215 - Opal simpleOPAL deadlock patch & DTMF support
- * Thanks to Mike T
- *
- * Revision 2.67  2006/07/03 03:28:44  dereksmithies
- * Fix arg handling on disableui, and look for args to srcep, not srcEp
- *
- * Revision 2.66  2006/06/26 02:03:07  csoutheren
- * Fixed problem when no TTS code installed
- *
- * Revision 2.65  2006/06/05 05:26:39  csoutheren
- * Added ability to test outgoing SIP INFO messages
- *
- * Revision 2.64  2006/04/30 14:42:00  dereksmithies
- * Fix compile Sleep statement so it compiles on unix.
- *
- * Revision 2.63  2006/04/30 14:36:54  csoutheren
- * backports from PLuginBranch
- *
- * Revision 2.62  2006/04/30 14:34:42  csoutheren
- * Backport of IVR updates from PluginBranch
- *
- * Revision 2.60.2.4  2006/04/30 14:28:25  csoutheren
- * Added disableui and srcep options
- *
- * Revision 2.60.2.3  2006/04/30 13:50:29  csoutheren
- * Add ability to set TextToSpeech algorithm
- * Revision 2.60.2.2  2006/04/10 08:54:11  csoutheren
- * Fix problem when H323 disabled
- *
- * Revision 2.60.2.1  2006/03/20 02:25:26  csoutheren
- * Backports from CVS head
- *
- * Revision 2.61  2006/03/07 11:24:15  csoutheren
- * Add --disable-grq flag
- *
- * Revision 2.60  2006/01/23 22:56:57  csoutheren
- * Added 2 second pause before dialling outgoing SIP calls from command line args when
- *  registrar used
- *
- * Revision 2.59  2005/12/11 19:14:21  dsandras
- * Added support for setting a different user name and authentication user name
- * as required by some providers like digisip.
- *
- * Revision 2.58  2005/11/07 02:27:48  dereksmithies
- * Get the answer call Y/N mechanism to work correctly.
- *
- * Revision 2.57  2005/09/06 04:58:42  dereksmithies
- * Add console input options. This is an initial release, and some "refinement"
- * help immensely.
- *
- * Revision 2.56  2005/08/20 09:03:10  rjongbloed
- * Some cosmetic fixes in output messages
- *
- * Revision 2.55  2005/08/13 09:16:18  rjongbloed
- * Added no-Xt-video to "usage" output
- *
- * Revision 2.54  2005/08/04 08:47:38  rjongbloed
- * Some cosmetic changes, and print out the codecs that are available
- *
- * Revision 2.53  2005/07/30 07:42:15  csoutheren
- * Added IAX2 functions
- *
- * Revision 2.52  2005/07/24 07:56:35  rjongbloed
- * Removed -l parameter, as it always listens.
- *
- * Revision 2.51  2005/07/11 01:57:31  csoutheren
- * Fixed error message
- *
- * Revision 2.50  2005/06/23 06:14:02  csoutheren
- * Fixed rtp-tos argument parsing. Thanks to Paul Nader
- *
- * Revision 2.49  2005/06/09 04:51:58  dereksmithies
- * Fix formatting.
- *
- * Revision 2.48  2005/06/09 04:45:57  dereksmithies
- * Correctly close the incoming connection  if the user rejects the incoming call.
- * Thanks to Robert Jongbloed for some helpful advice.
- *
- * Revision 2.47  2005/03/11 18:12:09  dsandras
- * Added support to specify the realm when registering. That way softphones already know what authentication information to use when required. The realm/domain can also be used in the From field.
- *
- * Revision 2.46  2005/02/19 22:46:19  dsandras
- * Temporarily removed support for SetDomain.
- *
- * Revision 2.45  2004/11/29 08:20:04  csoutheren
- * Added support for setting SIP authentication domain
- *
- * Revision 2.44  2004/08/18 07:14:00  csoutheren
- * Called ancestor OnClearedCall
- *
- * Revision 2.43  2004/08/14 07:56:30  rjongbloed
- * Major revision to utilise the PSafeCollection classes for the connections and calls.
- *
- * Revision 2.42  2004/04/26 07:06:07  rjongbloed
- * Removed some ancient pieces of code and used new API's for them.
- *
- * Revision 2.41  2004/04/26 06:33:18  rjongbloed
- * Added ability to specify more than one defualt listener for an endpoint,
- *   required by SIP which listens on both UDP and TCP.
- *
- * Revision 2.40  2004/04/25 09:32:48  rjongbloed
- * Fixed correct usage of HAS_IXJ
- *
- * Revision 2.39  2004/03/29 10:53:23  rjongbloed
- * Fixed missing mutex unlock which would invariably cause a deadlock.
- *
- * Revision 2.38  2004/03/22 10:20:34  rjongbloed
- * Changed to use UseGatekeeper() function so can select by gk-id as well as host.
- *
- * Revision 2.37  2004/03/14 11:32:20  rjongbloed
- * Changes to better support SIP proxies.
- *
- * Revision 2.36  2004/03/14 08:34:09  csoutheren
- * Added ability to set User-Agent string
- *
- * Revision 2.35  2004/03/14 06:15:36  rjongbloed
- * Must set ports before stun as stun code uses those port numbers.
- *
- * Revision 2.34  2004/03/13 06:32:17  rjongbloed
- * Fixes for removal of SIP and H.323 subsystems.
- * More registration work.
- *
- * Revision 2.33  2004/03/11 06:54:27  csoutheren
- * Added ability to disable SIP or H.323 stacks
- *
- * Revision 2.32  2004/03/09 12:09:56  rjongbloed
- * More work on SIP register.
- *
- * Revision 2.31  2004/02/24 11:37:01  rjongbloed
- * More work on NAT support, manual external address translation and STUN
- *
- * Revision 2.30  2004/02/21 02:41:10  rjongbloed
- * Tidied up the translate address to utilise more of the library infrastructure.
- * Changed cmd line args port-base/port-max to portbase/portmax, same as OhPhone.
- *
- * Revision 2.29  2004/02/17 11:00:06  csoutheren
- * Added --translate, --port-base and --port-max options
- *
- * Revision 2.28  2004/02/03 12:22:28  rjongbloed
- * Added call command
- *
- * Revision 2.27  2004/01/18 15:36:07  rjongbloed
- * Added stun support
- *
- * Revision 2.26  2003/04/09 01:38:27  robertj
- * Changed default to not send/receive video and added options to turn it on.
- *
- * Revision 2.25  2003/03/26 03:51:46  robertj
- * Fixed failure to compile if not statically linked.
- *
- * Revision 2.24  2003/03/24 07:18:29  robertj
- * Added registration system for LIDs so can work with various LID types by
- *   name instead of class instance.
- *
- * Revision 2.23  2003/03/19 02:30:45  robertj
- * Added removal of IVR stuff if EXPAT is not installed on system.
- *
- * Revision 2.22  2003/03/17 08:12:08  robertj
- * Added protocol name to media stream open output.
- *
- * Revision 2.21  2003/03/07 08:18:47  robertj
- * Fixed naming convention of PC sound system in routing table.
- *
- * Revision 2.20  2003/03/07 05:56:47  robertj
- * Changed so a # from whatever source routes to IVR.
- *
- * Revision 2.19  2003/03/06 03:57:47  robertj
- * IVR support (work in progress) requiring large changes everywhere.
- *
- * Revision 2.18  2002/11/11 06:52:01  robertj
- * Added correct flag for including static global variables.
- *
- * Revision 2.17  2002/11/10 11:33:17  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.16  2002/09/06 02:46:00  robertj
- * Added routing table system to route calls by regular expressions.
- * Added ability to set gatekeeper access token OID and password.
- *
- * Revision 2.15  2002/07/01 09:05:54  robertj
- * Changed TCp/UDP port allocation to use new thread safe functions.
- *
- * Revision 2.14  2002/04/12 14:02:41  robertj
- * Separated interface option for SIP and H.323.
- *
- * Revision 2.13  2002/03/27 05:34:55  robertj
- * Removed redundent busy forward field.
- * Added ability to set tcp and udp port bases.
- *
- * Revision 2.12  2002/03/27 04:36:46  robertj
- * Changed to add all possible xJack cards to pots endpoint.
- *
- * Revision 2.11  2002/03/27 04:16:20  robertj
- * Restructured default router for sample to allow more options.
- *
- * Revision 2.10  2002/02/13 08:17:31  robertj
- * Changed routing algorithm to route call to H323/SIP if contains an '@'
- *
- * Revision 2.9  2002/02/11 09:45:35  robertj
- * Moved version file to library root directoy
- *
- * Revision 2.8  2002/02/06 13:29:03  rogerh
- * H245 tunnelling is controlled by 'T' and not by 'h'
- *
- * Revision 2.7  2002/02/01 04:53:01  robertj
- * Added (very primitive!) SIP support.
- *
- * Revision 2.6  2002/01/22 05:34:58  robertj
- * Revamp of user input API triggered by RFC2833 support
- *
- * Revision 2.5  2001/08/21 11:18:55  robertj
- * Added conditional compile for xJack code.
- *
- * Revision 2.4  2001/08/17 08:35:41  robertj
- * Changed OnEstablished() to OnEstablishedCall() to be consistent.
- * Moved call end reasons enum from OpalConnection to global.
- * Used LID management in lid EP.
- * More implementation.
- *
- * Revision 2.3  2001/08/01 06:19:00  robertj
- * Added flags for disabling H.323 or Quicknet endpoints.
- *
- * Revision 2.2  2001/08/01 05:48:30  robertj
- * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
- * Fixed loading of transcoders from static library.
- *
- * Revision 2.1  2001/07/30 07:22:25  robertj
- * Abstracted listener management from H.323 to OpalEndPoint class.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.12  2001/07/13 08:44:16  robertj
- * Fixed incorrect inclusion of hardware codec capabilities.
- *
- * Revision 1.11  2001/05/17 07:11:29  robertj
- * Added more call end types for common transport failure modes.
- *
- * Revision 1.10  2001/05/14 05:56:26  robertj
- * Added H323 capability registration system so can add capabilities by
- *   string name instead of having to instantiate explicit classes.
- *
- * Revision 1.9  2001/03/21 04:52:40  robertj
- * Added H.235 security to gatekeepers, thanks Fürbass Franz!
- *
- * Revision 1.8  2001/03/20 23:42:55  robertj
- * Used the new PTrace::Initialise function for starting trace code.
- *
- * Revision 1.7  2000/10/16 08:49:31  robertj
- * Added single function to add all UserInput capability types.
- *
- * Revision 1.6  2000/07/31 14:08:09  robertj
- * Added fast start and H.245 tunneling flags to the H323Connection constructor so can
- *    disabled these features in easier manner to overriding virtuals.
- *
- * Revision 1.5  2000/06/20 02:38:27  robertj
- * Changed H323TransportAddress to default to IP.
- *
- * Revision 1.4  2000/06/07 05:47:55  robertj
- * Added call forwarding.
- *
- * Revision 1.3  2000/05/23 11:32:27  robertj
- * Rewrite of capability table to combine 2 structures into one and move functionality into that class
- *    allowing some normalisation of usage across several applications.
- * Changed H323Connection so gets a copy of capabilities instead of using endponts, allows adjustments
- *    to be done depending on the remote client application.
- *
- * Revision 1.2  2000/05/11 10:00:02  robertj
- * Fixed setting and resetting of current call token variable.
- *
- * Revision 1.1  2000/05/11 04:05:57  robertj
- * Simple sample program.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
@@ -477,7 +97,6 @@ void SimpleOpalProcess::Main()
              "-no-h323s."
              "-h323s-listen:"
              "-h323s-gk:"
-             "-no-h323s-gk."
 #endif
              "-h323-listen:"
              "I-no-sip."
@@ -488,7 +107,6 @@ void SimpleOpalProcess::Main()
              "-lid:"
              "-country:"
 #endif
-             "n-no-gatekeeper."
              "-no-std-dial-peer."
 #if PTRACING
              "o-output:"
@@ -610,14 +228,10 @@ void SimpleOpalProcess::Main()
 #if P_SSL
             "     --no-h323s           : Do not create secure H.323 endpoint\n"
 #endif
-            "  -g --gatekeeper host    : Specify gatekeeper host.\n"
+            "  -g --gatekeeper host    : Specify gatekeeper host, '*' indicates broadcast discovery.\n"
             "  -G --gk-id name         : Specify gatekeeper identifier.\n"
 #if P_SSL
             "     --h323s-gk host      : Specify gatekeeper host for secure H.323 endpoint\n"
-#endif
-            "  -n --no-gatekeeper      : Disable gatekeeper discovery.\n"
-#if P_SSL
-            "     --no-h323s-gk        : Disable gatekeeper discovery for secure H.323 endpoint\n"
 #endif
             "  -R --require-gatekeeper : Exit if gatekeeper discovery fails.\n"
             "     --gk-token str       : Set gatekeeper security token OID.\n"
@@ -1320,8 +934,10 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
     h323EP->SetGatekeeperPassword(args.GetOptionString('p'));
 
   // Establish link with gatekeeper if required.
-  if (!args.HasOption(secure ? "no-h323s-gk" : "no-gatekeeper")) {
+  if (args.HasOption(secure ? "h323s-gk" : "gatekeeper")) {
     PString gkHost      = args.GetOptionString(secure ? "h323s-gk" : "gatekeeper");
+    if (gkHost == "*")
+      gkHost = PString::Empty();
     PString gkIdentifer = args.GetOptionString('G');
     PString gkInterface = args.GetOptionString(secure ? "h323s-listen" : "h323-listen");
     cout << "Gatekeeper: " << flush;

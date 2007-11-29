@@ -23,81 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h450pdu.h,v $
- * Revision 2.11  2006/06/27 12:54:35  csoutheren
- * Patch 1374489 - h450.7 message center support
- * Thanks to Frederich Heem
- *
- * Revision 2.10  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.9  2005/07/12 12:34:37  csoutheren
- * Fixes for H.450 errors and return values
- * Thanks to Iker Perez San Roman
- *
- * Revision 2.8  2003/01/07 04:39:52  robertj
- * Updated to OpenH323 v1.11.2
- *
- * Revision 2.7  2002/11/10 11:33:17  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.6  2002/09/16 02:52:34  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.5  2002/09/04 06:01:47  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.4  2002/07/01 04:56:30  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.3  2002/02/11 09:32:11  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 2.2  2002/01/14 06:35:57  robertj
- * Updated to OpenH323 v1.7.9
- *
- * Revision 2.1  2001/08/17 08:20:26  robertj
- * Update from OpenH323
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.10  2002/11/21 22:37:24  robertj
- * Fixed problems with unrecognized invoke APDU, thanks Andrea Bondavalli
- *
- * Revision 1.9  2002/09/16 01:14:15  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.8  2002/09/03 06:19:37  robertj
- * Normalised the multi-include header prevention ifdef/define symbol.
- *
- * Revision 1.7  2002/08/05 10:03:47  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.6  2002/07/04 00:40:31  robertj
- * More H.450.11 call intrusion implementation, thanks Aleksandar Todorovic
- *
- * Revision 1.5  2002/06/22 05:48:38  robertj
- * Added partial implementation for H.450.11 Call Intrusion
- *
- * Revision 1.4  2002/02/04 07:17:52  robertj
- * Added H.450.2 Consultation Transfer, thanks Norwood Systems.
- *
- * Revision 1.3  2002/01/14 00:02:40  robertj
- * Added H.450.6
- * Added extra "failure mode" parts of H.250.2.
- * Various other bug fixes.
- *   Thanks Ben Madsen of Norwood Systems
- *
- * Revision 1.2  2001/08/16 07:49:16  robertj
- * Changed the H.450 support to be more extensible. Protocol handlers
- *   are now in separate classes instead of all in H323Connection.
- *
- * Revision 1.1  2001/04/11 03:01:27  robertj
- * Added H.450.2 (call transfer), thanks a LOT to Graeme Reid & Norwood Systems
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_H450PDU_H

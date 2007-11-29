@@ -19,13 +19,9 @@
  *
  * Contributor(s): Equivalence Pty. Ltd.
  *
- * $Log: main.h,v $
- * Revision 1.2  2007/09/19 22:52:39  rjongbloed
- * Fixed minor issues with console output.
- *
- * Revision 1.1  2007/09/18 12:17:44  rjongbloed
- * Added call generator
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 

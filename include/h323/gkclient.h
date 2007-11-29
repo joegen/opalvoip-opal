@@ -26,229 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: gkclient.h,v $
- * Revision 2.14  2006/08/21 04:51:51  csoutheren
- * Fixed formatting
- *
- * Revision 2.13  2006/05/30 11:33:02  hfriederich
- * Porting support for H.460 from OpenH323
- *
- * Revision 2.12  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.11  2004/02/19 10:46:43  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.10  2003/01/07 04:39:52  robertj
- * Updated to OpenH323 v1.11.2
- *
- * Revision 2.9  2002/11/10 11:33:16  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.8  2002/09/16 02:52:33  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.7  2002/09/04 06:01:46  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.6  2002/07/01 04:56:29  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.5  2002/03/22 06:57:48  robertj
- * Updated to OpenH323 version 1.8.2
- *
- * Revision 2.4  2001/11/09 05:49:47  robertj
- * Abstracted UDP connection algorithm
- *
- * Revision 2.3  2001/10/05 00:22:13  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.2  2001/08/17 08:20:26  robertj
- * Update from OpenH323
- *
- * Revision 2.1  2001/08/13 05:10:39  robertj
- * Updates from OpenH323 v1.6.0 release.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.51  2003/03/26 00:46:25  robertj
- * Had another go at making H323Transactor being able to be created
- *   without having a listener running.
- *
- * Revision 1.50  2003/02/12 23:59:22  robertj
- * Fixed adding missing endpoint identifer in SETUP packet when gatekeeper
- * routed, pointed out by Stefan Klein
- * Also fixed correct rutrn of gk routing in IRR packet.
- *
- * Revision 1.49  2003/02/07 06:37:42  robertj
- * Changed registration state to an enum so can determine why the RRQ failed.
- *
- * Revision 1.48  2003/01/06 07:09:28  robertj
- * Further fixes for alternate gatekeeper, thanks Kevin Bouchard
- *
- * Revision 1.47  2002/12/23 22:46:38  robertj
- * Changed gatekeeper discovery so an GRJ does not indicate "discovered".
- * Added trace output of alternate gatekeepers list.
- *
- * Revision 1.46  2002/11/28 04:41:44  robertj
- * Added support for RAS ServiceControlIndication command.
- *
- * Revision 1.45  2002/11/27 06:54:52  robertj
- * Added Service Control Session management as per Annex K/H.323 via RAS
- *   only at this stage.
- * Added H.248 ASN and very primitive infrastructure for linking into the
- *   Service Control Session management system.
- * Added basic infrastructure for Annex K/H.323 HTTP transport system.
- * Added Call Credit Service Control to display account balances.
- *
- * Revision 1.44  2002/11/21 07:21:46  robertj
- * Improvements to alternate gatekeeper client code, thanks Kevin Bouchard
- *
- * Revision 1.43  2002/09/18 06:58:29  robertj
- * Fixed setting of IRR frequency, an RCF could reset timer so it did not time
- *   out correctly and send IRR in time causing problems with gatekeeper.
- *
- * Revision 1.42  2002/09/16 01:14:15  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.41  2002/09/03 06:19:36  robertj
- * Normalised the multi-include header prevention ifdef/define symbol.
- *
- * Revision 1.40  2002/08/15 04:13:21  robertj
- * Fixed correct status of isRegistered flag on various reject/errors.
- *
- * Revision 1.39  2002/08/12 05:38:20  robertj
- * Changes to the RAS subsystem to support ability to make requests to client
- *   from gkserver without causing bottlenecks and race conditions.
- *
- * Revision 1.38  2002/08/05 05:17:36  robertj
- * Fairly major modifications to support different authentication credentials
- *   in ARQ to the logged in ones on RRQ. For both client and server.
- * Various other H.235 authentication bugs and anomalies fixed on the way.
- *
- * Revision 1.37  2002/07/18 03:03:38  robertj
- * Fixed bug with continually doing lightweight RRQ if no timeToLive present
- *   and it should not be doing it at all, ditto for unsolicited IRR.
- *
- * Revision 1.36  2002/07/16 11:06:21  robertj
- * Added more alternate gatekeeper implementation, thanks Kevin Bouchard
- *
- * Revision 1.35  2002/06/26 03:47:45  robertj
- * Added support for alternate gatekeepers.
- *
- * Revision 1.34  2002/05/29 00:03:15  robertj
- * Fixed unsolicited IRR support in gk client and server,
- *   including support for IACK and INAK.
- *
- * Revision 1.33  2002/05/17 04:12:38  robertj
- * Added support for unsolicited IRR transmission in background (heartbeat).
- *
- * Revision 1.32  2002/03/19 05:17:11  robertj
- * Normalised ACF destExtraCallIInfo to be same as other parameters.
- * Added ability to get multiple endpoint addresses and tokens from ACF.
- *
- * Revision 1.31  2001/09/26 07:02:49  robertj
- * Added needed mutex for SeparateAuthenticationInARQ mode, thanks Nick Hoath
- *
- * Revision 1.30  2001/09/18 10:36:54  robertj
- * Allowed multiple overlapping requests in RAS channel.
- *
- * Revision 1.29  2001/09/13 03:21:16  robertj
- * Added ability to override authentication credentials for ARQ, thanks Nick Hoath
- *
- * Revision 1.28  2001/09/12 06:57:58  robertj
- * Added support for iNow Access Token from gk, thanks Nick Hoath
- *
- * Revision 1.27  2001/09/12 06:04:36  robertj
- * Added support for sending UUIE's to gk on request, thanks Nick Hoath
- *
- * Revision 1.26  2001/09/06 02:32:26  robertj
- * Added overloaded AdmissionRequest for backward compatibility.
- *
- * Revision 1.25  2001/08/14 04:26:46  robertj
- * Completed the Cisco compatible MD5 authentications, thanks Wolfgang Platzer.
- *
- * Revision 1.24  2001/08/13 01:27:00  robertj
- * Changed GK admission so can return multiple aliases to be used in
- *   setup packet, thanks Nick Hoath.
- *
- * Revision 1.23  2001/08/10 11:03:49  robertj
- * Major changes to H.235 support in RAS to support server.
- *
- * Revision 1.22  2001/08/06 07:44:52  robertj
- * Fixed problems with building without SSL
- *
- * Revision 1.21  2001/08/06 03:18:35  robertj
- * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
- * Improved access to H.235 secure RAS functionality.
- * Changes to H.323 secure RAS contexts to help use with gk server.
- *
- * Revision 1.20  2001/08/02 04:30:09  robertj
- * Added ability for AdmissionRequest to alter destination alias used in
- *   the outgoing call.
- *
- * Revision 1.19  2001/06/18 06:23:47  robertj
- * Split raw H.225 RAS protocol out of gatekeeper client class.
- *
- * Revision 1.18  2001/04/05 03:39:42  robertj
- * Fixed deadlock if tried to do discovery in time to live timeout.
- *
- * Revision 1.17  2001/03/28 07:12:56  robertj
- * Changed RAS thread interlock to allow for what should not happen, the
- *   syncpoint being signalled before receiving any packets.
- *
- * Revision 1.16  2001/03/27 02:18:41  robertj
- * Changed to send gk a GRQ if it gives a discoveryRequired error on RRQ.
- *
- * Revision 1.15  2001/03/17 00:05:52  robertj
- * Fixed problems with Gatekeeper RIP handling.
- *
- * Revision 1.14  2001/02/28 00:20:15  robertj
- * Added DiscoverByNameAndAddress() function, thanks Chris Purvis.
- *
- * Revision 1.13  2001/02/09 05:16:24  robertj
- * Added #pragma interface for GNU C++.
- *
- * Revision 1.12  2000/09/25 06:47:54  robertj
- * Removed use of alias if there is no alias present, ie only have transport address.
- *
- * Revision 1.11  2000/09/01 02:12:54  robertj
- * Added ability to select a gatekeeper on LAN via it's identifier name.
- *
- * Revision 1.10  2000/07/11 19:20:02  robertj
- * Fixed problem with endpoint identifiers from some gatekeepers not being a string, just binary info.
- *
- * Revision 1.9  2000/06/20 03:17:56  robertj
- * Added function to get name of gatekeeper, subtle difference from getting identifier.
- *
- * Revision 1.8  2000/05/18 11:53:33  robertj
- * Changes to support doc++ documentation generation.
- *
- * Revision 1.7  2000/05/09 08:52:36  robertj
- * Added support for preGrantedARQ fields on registration.
- *
- * Revision 1.6  2000/05/02 04:32:24  robertj
- * Fixed copyright notice comment.
- *
- * Revision 1.5  2000/04/11 03:10:40  robertj
- * Added ability to reject reason on gatekeeper requests.
- * Added ability to get the transport being used to talk to the gatekeeper.
- *
- * Revision 1.4  2000/04/10 17:37:13  robertj
- * Added access function to get the gatekeeper identification string.
- *
- * Revision 1.3  1999/12/09 21:49:17  robertj
- * Added reregister on unregister and time to live reregistration
- *
- * Revision 1.2  1999/09/14 06:52:54  robertj
- * Added better support for multi-homed client hosts.
- *
- * Revision 1.1  1999/08/31 12:34:18  robertj
- * Added gatekeeper support.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_GKCLIENT_H
@@ -315,8 +95,8 @@ class H323Gatekeeper : public H225_RAS
     PBoolean OnReceiveServiceControlIndication(const H225_ServiceControlIndication &);
     void OnSendGatekeeperRequest(H225_GatekeeperRequest & grq);
     void OnSendAdmissionRequest(H225_AdmissionRequest & arq);
-	PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
-	void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
+    PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet & features) const;
+    void OnReceiveFeatureSet(unsigned, const H225_FeatureSet & features) const;
   //@}
 
   /**@name Protocol operations */
@@ -496,7 +276,6 @@ class H323Gatekeeper : public H225_RAS
 
   protected:
     PBoolean StartDiscovery(const H323TransportAddress & address);
-    PBoolean DiscoverGatekeeper(H323RasPDU & request, const H323TransportAddress & address);
     unsigned SetupGatekeeperRequest(H323RasPDU & request);
 	
     void Connect(const H323TransportAddress & address, const PString & gatekeeperIdentifier);
@@ -529,13 +308,40 @@ class H323Gatekeeper : public H225_RAS
       Request & request,
       unsigned unregisteredTag
     );
+    
+    
+    // Handling interface changes
+    void OnAddInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
+    void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, PINDEX priority);
+    BOOL DiscoverGatekeeper(const H323TransportAddress & address);
+    void UpdateConnectionStatus();
 
 
     // Gatekeeper registration state variables
     PBoolean     discoveryComplete;
     PString  endpointIdentifier;
     RegistrationFailReasons registrationFailReason;
-
+    
+    enum {
+      HighPriority = 80,
+      LowPriority  = 40,
+    };
+    class InterfaceMonitor : public PInterfaceMonitorClient
+    {
+      PCLASSINFO(InterfaceMonitor, PInterfaceMonitorClient);
+      
+      public:
+        InterfaceMonitor(H323Gatekeeper & gk, PINDEX priority);
+      
+      protected:
+        virtual void OnAddInterface(const PIPSocket::InterfaceEntry & entry);
+        virtual void OnRemoveInterface(const PIPSocket::InterfaceEntry & entry);
+        
+        H323Gatekeeper & gk;
+    };
+    InterfaceMonitor highPriorityMonitor;
+    InterfaceMonitor lowPriorityMonitor;
+    
     class AlternateInfo : public PObject {
       PCLASSINFO(AlternateInfo, PObject);
       public:

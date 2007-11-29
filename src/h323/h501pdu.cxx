@@ -23,43 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h501pdu.cxx,v $
- * Revision 2.1  2004/02/19 10:47:04  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 1.11  2003/04/10 01:00:12  craigs
- * Changed to allow reply address to be a list
- *
- * Revision 1.10  2003/03/28 05:34:06  robertj
- * Added implementation for GetRequestInProgressDelay
- *
- * Revision 1.9  2003/03/28 05:08:39  robertj
- * Added delay parameter to BuildRequestInProgress
- *
- * Revision 1.8  2003/03/25 04:56:21  robertj
- * Fixed issues to do with multiple inheritence in transaction reply cache.
- *
- * Revision 1.7  2003/03/20 01:51:12  robertj
- * More abstraction of H.225 RAS and H.501 protocols transaction handling.
- *
- * Revision 1.6  2003/03/18 13:57:53  craigs
- * More H.501 implementation
- *
- * Revision 1.5  2003/03/17 13:19:31  craigs
- * More H501 implementation
- *
- * Revision 1.4  2003/03/14 06:01:16  craigs
- * More updates
- *
- * Revision 1.3  2003/03/01 00:22:10  craigs
- * New PeerElement implementation
- *
- * Revision 1.2  2003/02/25 06:48:19  robertj
- * More work on PDU transaction abstraction.
- *
- * Revision 1.1  2003/02/21 05:27:06  craigs
- * Initial version
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 

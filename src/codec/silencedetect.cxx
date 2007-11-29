@@ -22,26 +22,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: silencedetect.cxx,v $
- * Revision 1.5  2007/04/04 02:12:00  rjongbloed
- * Reviewed and adjusted PTRACE log levels
- *   Now follows 1=error,2=warn,3=info,4+=debug
- *
- * Revision 1.4  2005/07/09 06:52:39  rjongbloed
- * Added print (operator<<) of silence detect mode enum.
- *
- * Revision 1.3  2005/03/06 15:00:26  dsandras
- * Fixed silence detection, we are now working with time frames, not the number of frames.
- *
- * Revision 1.2  2004/05/24 13:39:26  rjongbloed
- * Fixed setting marker bit when silence suppression transitions from
- *   silence to signal, thanks Ted Szoczei
- * Added a separate structure for the silence suppression paramters to make
- *   it easier to set from global defaults in the manager class.
- *
- * Revision 1.1  2004/05/17 13:24:26  rjongbloed
- * Added silence suppression.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

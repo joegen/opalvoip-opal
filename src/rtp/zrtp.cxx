@@ -21,22 +21,9 @@
  *
  * The Initial Developer of the Original Code is Post Increment
  *
- * $Log: zrtp.cxx,v $
- * Revision 2.4  2007/03/12 23:03:34  csoutheren
- * Disable warnings on Windows
- *
- * Revision 2.3  2007/02/23 08:06:20  csoutheren
- * More implementation of ZRTP (not yet complete)
- *
- * Revision 2.2  2007/02/23 05:24:14  csoutheren
- * Fixed problem linking with ZRTP on Windows
- *
- * Revision 2.1  2007/02/12 02:44:27  csoutheren
- * Start of support for ZRTP
- *
- * Revision 2.1  2007/02/10 07:08:41  craigs
- * Start of support for ZRTP
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

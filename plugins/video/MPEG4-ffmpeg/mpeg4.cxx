@@ -38,59 +38,9 @@
  * Initial implementation of MPEG4 codec plugin using ffmpeg.
  * Untested under Windows or H.323
  *
- * $Log: mpeg4.cxx,v $
- * Revision 1.11  2007/09/02 12:00:50  dominance
- * * Improved x264 and libavcodec detection: version check & library name check
- * * changed BOOL to bool in mpeg4 ( completion of previous commit)
- *
- * patch received from and thus thanks goes to Matthias Schneider.
- *
- * Revision 1.10  2007/08/31 07:55:09  dsandras
- * Applied patch from Matthias Schneider <ma30002000 yahoo de> to fix
- * compilation on WIN32.
- *
- * Revision 1.9  2007/08/29 19:32:20  dsandras
- * Applied cleanup patch from Matthias Schneider <ma30002000 yahoo de> :
- * * make use of common plugin code
- * * added debug traces
- * * switch to new plugin capability API
- * Thanks !
- *
- * Revision 1.8  2007/06/30 09:57:27  dsandras
- * Added patch from Matthias Schneider <ma30002000 yahoo de> to fix
- * dynamic payload type for H.264 and MPEG-4 codecs.
- * Added pipe mechanism for win32 for the H.264 codec.
- *
- * Revision 1.7  2007/06/16 21:46:40  dsandras
- * Cleanups, stability fixes, and documentation for the codec parameters.
- *
- * - document recommended encoder and decoder settings for various bitrates
- * - allow for older ffmpeg version
- * - fixes for stack alignment problems which were causing crashes with MMX
- * enabled in FFmpeg
- * - sweep "marker does not match f_code" errors under the rug to save CPU
- * - whitespace fixes: try to keep formatting consistent at least within the
- * same function :)
- * - ensure pointers are set to NULL on free to make bugs appear faster
- * - use "frame time" instead of fps, to match other video codecs
- * - don't open encoder until first frame is encoded - avoids needless reopens
- * after initial config changes
- * - always encode from _rawFrameBuffer since we know it has
- * FF_INPUT_BUFFER_PADDING_SIZE at the end
- * - remove some cerr's / cout's
- * - display I-frame even if it had errors so we aren't hosed for the rest of
- * the GOP
- * Thanks to Michael Smith <msmith cbnco com>.
- * Huge thanks for the contribution!
- *
- * Revision 1.6  2007/06/02 12:28:13  dsandras
- * Fixed various aspects of the build system for the MPEG-4 plugin thanks
- * to Michael Smith <msmith cbnco com>. Thanks a lot!
- *
- * Revision 1.5  2007/05/28 07:22:15  csoutheren
- * Changed to use compliant SDP name
- * Thanks to Matthias Schneider
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*

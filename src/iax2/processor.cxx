@@ -28,39 +28,11 @@
  * The processor parts were abstracted out by  by Stephen Cook (sitiveni@gmail.com)
  * and this work was sponsored by the Google summer of code 
  *
- * $Log: processor.cxx,v $
- * Revision 1.26  2007/01/23 02:10:38  dereksmithies
- *  Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
- *
- * Revision 1.25  2007/01/17 03:48:48  dereksmithies
- * Tidy up comments, remove leaks, improve reporting of packet types.
- *
- * Revision 1.24  2007/01/16 03:17:42  dereksmithies
- * tidyup of comments. Remove unused variables.
- * Guarantee that media frames are sent with a monotonically increasing timestamp
- *
- * Revision 1.23  2007/01/12 02:39:00  dereksmithies
- * Remove the notion of srcProcessors and dstProcessor lists from the ep.
- * Ensure that the connection looks after the callProcessor.
- *
- * Revision 1.22  2007/01/11 03:02:16  dereksmithies
- * Remove the previous audio buffering code, and switch to using the jitter
- * buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- * Revision 1.21  2007/01/09 03:32:23  dereksmithies
- * Tidy up and improve the close down process - make it more robust.
- * Alter level of several PTRACE statements. Add Terminate() method to transmitter and receiver.
- *
- * Revision 1.20  2007/01/08 20:10:48  dereksmithies
- * Lower trace levels statements.
- *
- * Revision 1.19  2007/01/08 20:02:58  dereksmithies
- * Add license statement, and  cvs log statement.
- *
- *
- *
- *
- *****************************************************************************/
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
+
 #include <ptlib.h>
 #include <typeinfo>
 

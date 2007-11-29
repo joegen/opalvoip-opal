@@ -23,44 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: handlers.h,v $
- * Revision 1.7  2007/09/21 01:34:09  rjongbloed
- * Rewrite of SIP transaction handling to:
- *   a) use PSafeObject and safe collections
- *   b) only one database of transactions, remove connection copy
- *   c) fix timers not always firing due to bogus deadlock avoidance
- *   d) cleaning up only occurs in the existing garbage collection thread
- *   e) use of read/write mutex on endpoint list to avoid possible deadlock
- *
- * Revision 1.6  2007/09/04 11:54:49  csoutheren
- * Fixed compilation on Linux
- *
- * Revision 1.5  2007/09/04 05:42:55  rjongbloed
- * Added OnRegistrationStatus() call back function so can distinguish
- *   between initial registration and refreshes.
- * Fixed handler states so Refreshing state is actually used!
- *
- * Revision 1.4  2007/06/30 16:43:19  dsandras
- * Make sure transactions are completed before allowing destruction using
- * WaitForTransactionCompletion. If we have a timeout while unsusbscribing,
- * then allow deleting the handler.
- *
- * Revision 1.3  2007/06/10 08:55:11  rjongbloed
- * Major rework of how SIP utilises sockets, using new "socket bundling" subsystem.
- *
- * Revision 1.2  2007/05/21 04:30:30  dereksmithies
- * put #ifndef _PTLIB_H protection around the include of ptlib.h
- *
- * Revision 1.1  2007/05/15 20:45:09  dsandras
- * Added various handlers to manage subscriptions for presence, message
- * waiting indications, registrations, state publishing,
- * message conversations, ...
- * Adds/fixes support for RFC3856, RFC3903, RFC3863, RFC3265, ...
- * Many improvements over the original SIPInfo code.
- * Code contributed by NOVACOM (http://www.novacom.be) thanks to
- * EuroWeb (http://www.euroweb.hu).
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_HANDLERS_H

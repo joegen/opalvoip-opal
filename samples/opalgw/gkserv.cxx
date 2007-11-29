@@ -7,10 +7,9 @@
  *
  * Copyright (c) 2007 Equivalence Pty. Ltd.
  *
- * $Log: gkserv.cxx,v $
- * Revision 1.1  2007/10/04 06:48:04  rjongbloed
- * High speed collision between opengk and opalgw.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "precompile.h"

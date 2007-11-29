@@ -19,19 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ixj_unix.cxx,v $
- * Revision 1.4  2006/11/06 05:31:45  csoutheren
- * Fixed Unix compile
- *
- * Revision 1.3  2006/10/26 09:21:44  rjongbloed
- * Fixed GNU compiler error
- *
- * Revision 1.2  2006/10/25 22:26:15  rjongbloed
- * Changed LID tone handling to use new tone generation for accurate country based tones.
- *
- * Revision 1.1  2006/10/03 09:42:03  rjongbloed
- * Start of unix support for LID plug ins
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #define PLUGIN_DLL_EXPORTS

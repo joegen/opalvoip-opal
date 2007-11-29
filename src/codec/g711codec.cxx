@@ -22,21 +22,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g711codec.cxx,v $
- * Revision 2.4  2005/08/28 07:59:17  rjongbloed
- * Converted OpalTranscoder to use factory, requiring sme changes in making sure
- *   OpalMediaFormat instances are initialised before use.
- *
- * Revision 2.3  2002/11/20 04:53:16  robertj
- * Included optimisations for G.711 and G.726 codecs, thanks Ted Szoczei
- *
- * Revision 2.2  2002/03/15 03:07:25  robertj
- * Added static access to internal conversion functions.
- *
- * Revision 2.1  2001/08/01 05:04:14  robertj
- * Changes to allow control of linking software transcoders, use macros
- *   to force linking.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

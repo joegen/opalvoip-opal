@@ -6,7 +6,7 @@
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *    
- * Copyright (c) 2004 Post Increment
+ * Copyright (c) 2007 Vox Lucida
  *   
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -20,247 +20,13 @@
  *
  * The Original Code is Open Phone client.
  *
- * The Initial Developer of the Original Code is Post Increment
+ * The Initial Developer of the Original Code is Robert Jongbloed
  *
- * Contributor(s): 
+ * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.42  2007/10/12 04:07:26  rjongbloed
- * Fixed recently used addresses in call dialog being in reverse order, ie last
- *   called address should be at top of list.
- *
- * Revision 1.41  2007/10/09 23:44:39  rjongbloed
- * Fixed detection of interface list change.
- *
- * Revision 1.40  2007/10/09 10:27:15  rjongbloed
- * Fixed ring sound being played if auto answer enabled.
- *
- * Revision 1.39  2007/10/09 00:53:51  rjongbloed
- * Fixed wxWidgets 2.6 compatibility
- *
- * Revision 1.38  2007/09/30 12:49:22  rjongbloed
- * Added desired video size to options dialog.
- *
- * Revision 1.37  2007/09/26 04:21:30  rjongbloed
- * Added saving of video output and preview window positions.
- *
- * Revision 1.36  2007/09/18 12:50:29  rjongbloed
- * Fixed call back reporting registration status.
- *
- * Revision 1.35  2007/09/18 02:26:01  rjongbloed
- * Use correct mechanism for forcing windows video output device.
- *
- * Revision 1.34  2007/09/12 03:51:12  rjongbloed
- * Changed to avoid display of non-existent memory leak.
- *
- * Revision 1.33  2007/09/11 09:18:05  rjongbloed
- * Added full dump of all codecs and their options to trace log.
- *
- * Revision 1.32  2007/09/10 00:11:13  rjongbloed
- * AddedOpalMediaFormat::IsTransportable() function as better test than simply
- *   checking the payload type, condition is more complex.
- *
- * Revision 1.31  2007/09/04 07:12:28  rjongbloed
- * Fixed crash when change a media format option after moving it in dialog.
- *
- * Revision 1.30  2007/09/04 06:22:50  rjongbloed
- * Fixed OpenPhone auto answer (threading issue)
- *
- * Revision 1.29  2007/09/04 05:40:15  rjongbloed
- * Added OnRegistrationStatus() call back function so can distinguish
- *   between initial registration and refreshes.
- *
- * Revision 1.28  2007/09/03 09:48:27  rjongbloed
- * Fixed assert when run OpenPhone for first time.
- *
- * Revision 1.27  2007/08/24 09:35:35  rjongbloed
- * Fixed GNU compiler compatibility.
- *
- * Revision 1.26  2007/08/19 02:05:00  rjongbloed
- * Made sure deregister from previous regisrar when changed in options dialog.
- *
- * Revision 1.25  2007/07/27 01:42:10  rjongbloed
- * Added cut, copy, paste and most important DELETE of speed dials.
- *
- * Revision 1.24  2007/07/20 05:50:47  rjongbloed
- * Added member variable for stun server name in OpalManager, so can be remembered
- *   in original form so change in IP address or temporary STUN server failures do not
- *   lose the server being selected by the user.
- * Tidied the look of the main window while searching for STUN server.
- *
- * Revision 1.23  2007/07/08 13:12:47  rjongbloed
- * Fixed being able to make a call to arbitrary address from dialog.
- *
- * Revision 1.22  2007/06/28 12:06:04  rjongbloed
- * Fixed endless search for "user" endpoint.
- *
- * Revision 1.21  2007/06/27 12:39:08  rjongbloed
- * Further de-synchronising OPAL callbacks and GUI to avoid deadlocks.
- *
- * Revision 1.20  2007/06/21 08:16:30  rjongbloed
- * Fixed various multi-threaded GUI issues.
- *
- * Revision 1.19  2007/06/06 09:08:56  rjongbloed
- * Fixed deadlocks in OpenPhone Timer/GUI interaction.
- *
- * Revision 1.18  2007/05/20 08:16:12  rjongbloed
- * Added various handlers to manage subscriptions for presence, message
- * waiting indications, registrations, state publishing,
- * message conversations, ...
- *
- * Revision 1.17  2007/05/10 01:03:54  rjongbloed
- * Updated build for wxWidgets 2.8.x
- *
- * Revision 1.16  2007/04/03 07:59:13  rjongbloed
- * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to PBoolean, now agrees with
- *     documentation and allows UI to abort calls early.
- *   added PBoolean to AcceptIncomingConnection indicating the
- *     supplied token is invalid.
- *   removed redundent OnGetDestination() function, was never required.
- *
- * Revision 1.15  2006/11/19 06:06:01  rjongbloed
- * Added override for dialing on a LID to use unique speed dial code immediately.
- *
- * Revision 1.14  2006/11/12 03:39:17  rjongbloed
- * Fixed setting and saving of LID country code from Options dialog.
- *
- * Revision 1.13  2006/10/02 13:30:51  rjongbloed
- * Added LID plug ins
- *
- * Revision 1.12  2006/09/16 04:20:36  rjongbloed
- * Fixed crash when entering opetions dialog.
- * Added recent calls list to Call dialog.
- * Added "no trace" version.
- *
- * Revision 1.11  2006/09/07 10:09:24  rjongbloed
- * Linux/GNU compiler compatibility
- *
- * Revision 1.10  2006/08/29 08:54:36  rjongbloed
- * Added VU meters
- *
- * Revision 1.9  2006/08/17 23:09:03  rjongbloed
- * Added volume controls
- *
- * Revision 1.8  2006/08/15 12:10:01  rjongbloed
- * Added local interfaces to config dialog
- *
- * Revision 1.7  2006/08/14 22:39:27  rjongbloed
- * Added aslias to config dialog
- *
- * Revision 1.6  2006/08/13 08:33:36  rjongbloed
- * Completed bandwidth configuration from options dialog.
- *
- * Revision 1.5  2006/08/13 04:41:39  rjongbloed
- * Fixed saving of ring device name
- *
- * Revision 1.4  2006/07/31 10:57:52  rjongbloed
- * Added play of WAV file on incoming calls.
- *
- * Revision 1.3  2006/07/31 08:05:24  rjongbloed
- * Fixed unix version of icons.
- * Fixed some GNU compiler compatibility issues.
- *
- * Revision 1.2  2006/07/21 23:41:28  dereksmithies
- * Move main.cpp contents to main.cxx. This fixes many issues under linux.
- *
- * Revision 1.37  2006/07/19 10:41:51  dereksmithies
- * First steps towards having a unix compiled openphone.
- *
- * Revision 1.36  2006/04/30 10:36:24  rjongbloed
- * Added icons to speed dial list.
- *
- * Revision 1.35  2006/04/09 12:15:30  rjongbloed
- * Added extra trace log to dump all known media formats and their options.
- *
- * Revision 1.34  2005/12/11 19:14:21  dsandras
- * Added support for setting a different user name and authentication user name
- * as required by some providers like digisip.
- *
- * Revision 1.33  2005/08/31 13:21:20  rjongbloed
- * Moved some video options to be in the options list from OpalMediaFormat
- * Added selection of video grabber preview window.
- *
- * Revision 1.32  2005/08/24 10:43:51  rjongbloed
- * Changed create video functions yet again so can return pointers that are not to be deleted.
- *
- * Revision 1.31  2005/08/24 10:21:36  rjongbloed
- * Added function to create video output windows, can now get correct titles.
- *
- * Revision 1.30  2005/08/10 08:07:44  rjongbloed
- * Upgraded to support wxWidgets 2.6
- * Also improved build so uses WXDIR environment variable
- *
- * Revision 1.29  2005/07/09 07:05:16  rjongbloed
- * Changed so resources are included in compile and not separate file at run time.
- * General code clean ups.
- *
- * Revision 1.28  2005/06/02 13:21:49  rjongbloed
- * Save and restore media format options to registry.
- * Added check for valid value for media format option in dialog.
- *
- * Revision 1.27  2005/02/21 12:19:49  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 1.26  2004/10/06 13:08:19  rjongbloed
- * Implemented partial support for LIDs
- *
- * Revision 1.25  2004/10/03 14:16:34  rjongbloed
- * Added panels for calling, answering and in call phases.
- *
- * Revision 1.24  2004/09/29 12:47:39  rjongbloed
- * Added gatekeeper support
- *
- * Revision 1.23  2004/09/29 12:02:40  rjongbloed
- * Added popup menu to edit Speed DIals
- *
- * Revision 1.22  2004/09/28 23:00:17  rjongbloed
- * Added ability to add and edit Speed DIals
- *
- * Revision 1.21  2004/08/22 12:27:45  rjongbloed
- * More work on SIP registration, time to live refresh and deregistration on exit.
- *
- * Revision 1.20  2004/08/14 07:56:30  rjongbloed
- * Major revision to utilise the PSafeCollection classes for the connections and calls.
- *
- * Revision 1.19  2004/07/17 08:21:24  rjongbloed
- * Added ability to manipulate codec lists
- *
- * Revision 1.18  2004/07/14 13:17:42  rjongbloed
- * Added saving of the width of columns in the speed dial list.
- * Fixed router display in options dialog so is empty if IP address invalid.
- *
- * Revision 1.17  2004/07/11 12:42:11  rjongbloed
- * Added function on endpoints to get the list of all media formats any
- *   connection the endpoint may create can support.
- *
- * Revision 1.16  2004/07/04 12:53:09  rjongbloed
- * Added support for route editing.
- *
- * Revision 1.15  2004/06/05 14:37:03  rjongbloed
- * More implemntation of options dialog.
- *
- * Revision 1.14  2004/05/25 12:55:52  rjongbloed
- * Added all silence suppression modes to Options dialog.
- *
- * Revision 1.13  2004/05/24 13:44:03  rjongbloed
- * More implementation on OPAL OpenPhone.
- *
- * Revision 1.12  2004/05/15 12:18:23  rjongbloed
- * More work on wxWindows based OpenPhone
- *
- * Revision 1.11  2004/05/12 12:41:38  rjongbloed
- * More work on wxWindows based OpenPhone
- *
- * Revision 1.10  2004/05/09 13:24:25  rjongbloed
- * More work on wxWindows based OpenPhone
- *
- * Revision 1.9  2004/05/06 13:23:43  rjongbloed
- * Work on wxWindows based OpenPhone
- *
- * Revision 1.8  2004/05/01 13:38:05  rjongbloed
- * Some early implementation of wxWIndows based OPAL GUI client.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifdef __GNUG__
@@ -279,6 +45,7 @@
 #include <wx/gdicmn.h>     //Required for icons on linux. 
 #include <wx/image.h>
 #include <wx/listctrl.h>
+#include <wx/spinctrl.h>
 #include <wx/splitter.h>
 #include <wx/valgen.h>
 #include <wx/notebook.h>
@@ -335,6 +102,8 @@ DEF_FIELD(AutoAnswer);
 DEF_FIELD(IVRScript);
 DEF_FIELD(SpeakerVolume);
 DEF_FIELD(MicrophoneVolume);
+DEF_FIELD(LastDialed);
+DEF_FIELD(LastReceived);
 
 static const char NetworkingGroup[] = "/Networking";
 DEF_FIELD(Bandwidth);
@@ -375,6 +144,8 @@ DEF_FIELD(VideoFlipLocal);
 DEF_FIELD(VideoAutoTransmit);
 DEF_FIELD(VideoAutoReceive);
 DEF_FIELD(VideoFlipRemote);
+DEF_FIELD(VideoMinFrameSize);
+DEF_FIELD(VideoMaxFrameSize);
 DEF_FIELD(LocalVideoFrameX);
 DEF_FIELD(LocalVideoFrameY);
 DEF_FIELD(RemoteVideoFrameX);
@@ -403,8 +174,11 @@ DEF_FIELD(SIPProxyUsed);
 DEF_FIELD(SIPProxy);
 DEF_FIELD(SIPProxyUsername);
 DEF_FIELD(SIPProxyPassword);
+
+static const char RegistrarGroup[] = "/SIP/Registrars";
 DEF_FIELD(RegistrarUsed);
 DEF_FIELD(RegistrarName);
+DEF_FIELD(RegistrarDomain);
 DEF_FIELD(RegistrarUsername);
 DEF_FIELD(RegistrarPassword);
 DEF_FIELD(RegistrarTimeToLive);
@@ -503,8 +277,8 @@ DEFINE_EVENT_TYPE(wxEvtStateChange)
 IMPLEMENT_APP(OpenPhoneApp)
 
 OpenPhoneApp::OpenPhoneApp()
-  : PProcess("Equivalence", "OpenPhone",
-              MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
+  : PProcess(MANUFACTURER_TEXT, PRODUCT_NAME_TEXT,
+             MAJOR_VERSION, MINOR_VERSION, BUILD_TYPE, BUILD_NUMBER)
 {
   wxConfig::Set(new wxConfig((const char *)GetName(), (const char *)GetManufacturer()));
 }
@@ -538,6 +312,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuQuit"),     MyManager::OnMenuQuit)
   EVT_MENU(XRCID("MenuAbout"),    MyManager::OnMenuAbout)
   EVT_MENU(XRCID("MenuCall"),     MyManager::OnMenuCall)
+  EVT_MENU(XRCID("MenuCallLastDialed"), MyManager::OnMenuCallLastDialed)
+  EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
   EVT_MENU(XRCID("MenuAnswer"),   MyManager::OnMenuAnswer)
   EVT_MENU(XRCID("MenuHangUp"),   MyManager::OnMenuHangUp)
   EVT_MENU(XRCID("NewSpeedDial"), MyManager::OnNewSpeedDial)
@@ -658,7 +434,7 @@ bool MyManager::Initialise()
 
   // Log window - gets informative text
   initialSize.y /= 2;
-  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxSUNKEN_BORDER);
+  m_logWindow = new wxTextCtrl(m_splitter, -1, wxEmptyString, wxPoint(), initialSize, wxTE_MULTILINE | wxTE_DONTWRAP | wxSUNKEN_BORDER);
   m_logWindow->SetForegroundColour(wxColour(0,255,0)); // Green
   m_logWindow->SetBackgroundColour(wxColour(0,0,0)); // Black
 
@@ -693,6 +469,12 @@ bool MyManager::Initialise()
 
   // Show the frame window
   Show(PTrue);
+
+  LogWindow << PProcess::Current().GetName()
+            << " Version " << PProcess::Current().GetVersion(TRUE)
+            << " by " << PProcess::Current().GetManufacturer()
+            << " on " << PProcess::Current().GetOSClass() << ' ' << PProcess::Current().GetOSName()
+            << " (" << PProcess::Current().GetOSVersion() << '-' << PProcess::Current().GetOSHardware() << ')' << endl;
 
   m_ClipboardFormat.SetId("OpenPhone Speed Dial");
 
@@ -751,6 +533,10 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Networking fields
+  PIPSocket::InterfaceTable interfaceTable;
+  if (PIPSocket::GetInterfaceTable(interfaceTable))
+    LogWindow << interfaceTable.GetSize() << " network interfaces:\n" << setfill('\n') << interfaceTable << setfill(' ') << flush;
+
   config->SetPath(NetworkingGroup);
   if (config->Read(BandwidthKey, &value1))
     h323EP->SetInitialBandwidth(value1);
@@ -763,9 +549,10 @@ bool MyManager::Initialise()
   if (config->Read(RTPTOSKey, &value1))
     SetRtpIpTypeofService(value1);
   if (config->Read(NATRouterKey, &str))
-    SetTranslationAddress(str);
+    SetTranslationHost(str);
   if (config->Read(STUNServerKey, &str) && !str.IsEmpty()) {
-    m_logWindow->WriteText("STUN server \"" + str + "\" being contacted ...\n");
+    LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
+    GetEventHandler()->ProcessPendingEvents();
     Update();
     LogWindow << "STUN server \"" << str << "\" replies " << SetSTUNServer(str) << endl;
   }
@@ -837,7 +624,9 @@ bool MyManager::Initialise()
   config->Read(VideoFlipLocalKey, &videoArgs.flip);
   SetVideoInputDevice(videoArgs);
 
-  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize, "CIF");
+  config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  "CIF");
+  config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, "SQCIF");
+  config->Read(VideoMaxFrameSizeKey,  &m_VideoMaxFrameSize,   "CIF16");
   AdjustFrameSize();
 
   config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
@@ -987,6 +776,7 @@ bool MyManager::Initialise()
       return false;
   }
 
+#if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -1002,11 +792,33 @@ bool MyManager::Initialise()
   if (config->Read(RegistrarTimeToLiveKey, &value1))
     sipEP->SetRegistrarTimeToLive(PTimeInterval(0, value1));
 
-  if (config->Read(RegistrarUsedKey, &m_registrarUsed, false) &&
-      config->Read(RegistrarNameKey, &m_registrarName) &&
-      config->Read(RegistrarUsernameKey, &m_registrarUser) &&
-      config->Read(RegistrarPasswordKey, &m_registrarPassword))
-    StartRegistrar();
+  // Original backward compatibility entry
+  RegistrarInfo registrar;
+  if (config->Read(RegistrarUsedKey, &registrar.m_Active, false) &&
+      config->Read(RegistrarNameKey, &registrar.m_Domain) &&
+      config->Read(RegistrarUsernameKey, &registrar.m_User) &&
+      config->Read(RegistrarPasswordKey, &registrar.m_Password))
+    m_registrars.push_back(registrar);
+
+  config->SetPath(RegistrarGroup);
+  wxString groupName;
+  long groupIndex;
+  if (config->GetFirstGroup(groupName, groupIndex)) {
+    do {
+      config->SetPath(groupName);
+      if (config->Read(RegistrarUsedKey, &registrar.m_Active, false) &&
+          config->Read(RegistrarDomainKey, &registrar.m_Domain) &&
+          config->Read(RegistrarUsernameKey, &registrar.m_User) &&
+          config->Read(RegistrarPasswordKey, &registrar.m_Password) &&
+          config->Read(RegistrarTimeToLiveKey, &registrar.m_TimeToLive))
+        m_registrars.push_back(registrar);
+      config->SetPath("..");
+    } while (config->GetNextGroup(groupName, groupIndex));
+  }
+
+  StartRegistrars();
+#endif
+
 
   ////////////////////////////////////////
   // Routing fields
@@ -1175,7 +987,7 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameHeightKey, h);
 
   ClearAllCalls();
-  StopRegistrar();
+  StopRegistrars();
 
   Destroy();
 }
@@ -1191,6 +1003,8 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
   wxMenuBar * menubar = GetMenuBar();
   menubar->Enable(XRCID("MenuCall"),    m_callState == IdleState);
+  menubar->Enable(XRCID("MenuCallLastDialed"), m_callState == IdleState && !m_LastDialed.IsEmpty());
+  menubar->Enable(XRCID("MenuCallLastReceived"), m_callState == IdleState && !m_LastReceived.IsEmpty());
   menubar->Enable(XRCID("MenuAnswer"),  m_callState == RingingState);
   menubar->Enable(XRCID("MenuHangUp"),  m_callState == InCallState);
 
@@ -1230,6 +1044,18 @@ void MyManager::OnMenuCall(wxCommandEvent& WXUNUSED(event))
   CallDialog dlg(this);
   if (dlg.ShowModal() == wxID_OK)
     MakeCall(dlg.m_Address);
+}
+
+
+void MyManager::OnMenuCallLastDialed(wxCommandEvent& WXUNUSED(event))
+{
+  MakeCall(m_LastDialed);
+}
+
+
+void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
+{
+  MakeCall(m_LastReceived);
 }
 
 
@@ -1557,6 +1383,11 @@ void MyManager::MakeCall(const PwxString & address)
 
   LogWindow << "Calling \"" << address << '"' << endl;
 
+  m_LastDialed = address;
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(GeneralGroup);
+  config->Write(LastDialedKey, m_LastDialed);
+
   if (potsEP != NULL && potsEP->GetLine("*") != NULL)
     SetUpCall("pots:*", address, m_currentCallToken);
   else
@@ -1604,6 +1435,11 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
   PTime now;
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
             << " from " << connection.GetRemotePartyName() << endl;
+
+  m_LastReceived = connection.GetRemotePartyAddress();
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(GeneralGroup);
+  config->Write(LastReceivedKey, m_LastDialed);
 
   if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
@@ -1715,21 +1551,15 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
   if (prefix == pcssEP->GetPrefixName())
     return PTrue;
 
-  LogWindow << "Started ";
+  OpalMediaFormat mediaFormat = stream.GetMediaFormat();
+  LogWindow << "Started " << (stream.IsSource() ? "receiving " : "sending ") << mediaFormat;
 
-  if (stream.IsSource())
-    LogWindow << "receiving ";
-  else
-    LogWindow << "sending ";
+  if (!stream.IsSource() && mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+    LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
-  LogWindow << stream.GetMediaFormat();
-
-  if (stream.IsSource())
-    LogWindow << " from ";
-  else
-    LogWindow << " to ";
-
-  LogWindow << connection.GetEndPoint().GetPrefixName() << " endpoint" << endl;
+  LogWindow << (stream.IsSource() ? " from " : " to ")
+            << connection.GetEndPoint().GetPrefixName() << " endpoint"
+            << endl;
 
   return PTrue;
 }
@@ -1953,37 +1783,55 @@ bool MyManager::StartGatekeeper()
 }
 
 
-bool MyManager::StartRegistrar()
+void MyManager::StartRegistrars()
 {
-  if (sipEP == NULL || !m_registrarUsed)
-    return false;
+  if (sipEP == NULL)
+    return;
 
-  PBoolean ok = sipEP->Register(m_registrarName, m_registrarUser, m_registrarUser, m_registrarPassword);
-  LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << m_registrarUser << '@' << m_registrarName << endl;
-  return ok;
+  for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
+    if (iter->m_Active) {
+      bool ok = sipEP->Register(iter->m_Domain, iter->m_User, iter->m_User, iter->m_Password);
+      LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
+    }
+  }
 }
 
 
-bool MyManager::StopRegistrar()
+void MyManager::StopRegistrars()
 {
   if (sipEP == NULL)
-    return false;
+    return;
 
-  PStringStream aor;
-  aor << m_registrarUser << '@' << m_registrarName;
-  if (!sipEP->IsRegistered(aor))
-    return false;
-
-  LogWindow << "SIP registration ended for " << aor << endl;
-  return sipEP->Unregister(aor);
+  for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
+    PStringStream aor;
+    aor << iter->m_User << '@' << iter->m_Domain;
+    if (sipEP->IsRegistered(aor)) {
+      LogWindow << "SIP registration ended for " << aor << endl;
+      sipEP->Unregister(aor);
+    }
+  }
 }
 
 
 bool MyManager::AdjustFrameSize()
 {
   unsigned width, height;
-  if (!PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, width, height))
-    return false;
+  if (!PVideoFrameInfo::ParseSize(m_VideoGrabFrameSize, width, height)) {
+    width = PVideoFrameInfo::CIFWidth;
+    height = PVideoFrameInfo::CIFWidth;
+  }
+
+  unsigned minWidth, minHeight;
+  if (!PVideoFrameInfo::ParseSize(m_VideoMinFrameSize, minWidth, minHeight)) {
+    minWidth = PVideoFrameInfo::SQCIFWidth;
+    minHeight = PVideoFrameInfo::SQCIFHeight;
+  }
+
+  unsigned maxWidth, maxHeight;
+  if (!PVideoFrameInfo::ParseSize(m_VideoMaxFrameSize, maxWidth, maxHeight)) {
+    maxWidth = PVideoFrameInfo::CIF16Width;
+    maxHeight = PVideoFrameInfo::CIF16Height;
+  }
 
   OpalMediaFormatList allMediaFormats;
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
@@ -1992,6 +1840,10 @@ bool MyManager::AdjustFrameSize()
     if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), minWidth);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(), minHeight);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), maxWidth);
+      mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), maxHeight);
       OpalMediaFormat::SetRegisteredMediaFormat(mediaFormat);
     }
   }
@@ -2032,6 +1884,34 @@ void MyManager::ApplyMediaInfo()
 
 ///////////////////////////////////////////////////////////////////////////////
 
+MyMedia::MyMedia()
+  : sourceProtocol(NULL)
+  , preferenceOrder(-1) // -1 indicates disabled
+  , validProtocols(NULL)
+  , dirty(false)
+{
+}
+
+
+MyMedia::MyMedia(const char * source, const PString & format)
+  : sourceProtocol(source)
+  , mediaFormat(format)
+  , preferenceOrder(-1) // -1 indicates disabled
+  , dirty(false)
+{
+  bool hasSIP = mediaFormat.IsValidForProtocol("sip");
+  bool hasH323 = mediaFormat.IsValidForProtocol("h.323");
+  if (hasSIP && !hasH323)
+    validProtocols = " (SIP only)";
+  else if (!hasSIP && hasH323)
+    validProtocols = " (H.323 only)";
+  else
+    validProtocols = NULL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
 class wxFrameSizeValidator: public wxGenericValidator
 {
 public:
@@ -2066,6 +1946,11 @@ void MyManager::OnOptions(wxCommandEvent& /*event*/)
 
 BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
+  // General fields
+  EVT_BUTTON(XRCID("BrowseSoundFile"), OptionsDialog::BrowseSoundFile)
+  EVT_BUTTON(XRCID("PlaySoundFile"), OptionsDialog::PlaySoundFile)
+
+  ////////////////////////////////////////
   // Networking fields
   EVT_CHOICE(XRCID("BandwidthClass"), OptionsDialog::BandwidthClass)
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
@@ -2079,8 +1964,6 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
 
   ////////////////////////////////////////
   // Codec fields
-  EVT_BUTTON(XRCID("BrowseSoundFile"), OptionsDialog::BrowseSoundFile)
-  EVT_BUTTON(XRCID("PlaySoundFile"), OptionsDialog::PlaySoundFile)
   EVT_BUTTON(XRCID("AddCodec"), OptionsDialog::AddCodec)
   EVT_BUTTON(XRCID("RemoveCodec"), OptionsDialog::RemoveCodec)
   EVT_BUTTON(XRCID("MoveUpCodec"), OptionsDialog::MoveUpCodec)
@@ -2090,6 +1973,19 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_LIST_ITEM_SELECTED(XRCID("CodecOptionsList"), OptionsDialog::SelectedCodecOption)
   EVT_LIST_ITEM_DESELECTED(XRCID("CodecOptionsList"), OptionsDialog::DeselectedCodecOption)
   EVT_TEXT(XRCID("CodecOptionValue"), OptionsDialog::ChangedCodecOptionValue)
+
+  ////////////////////////////////////////
+  // SIP fields
+  EVT_BUTTON(XRCID("AddRegistrar"), OptionsDialog::AddRegistrar)
+  EVT_BUTTON(XRCID("ChangeRegistrar"), OptionsDialog::ChangeRegistrar)
+  EVT_BUTTON(XRCID("RemoveRegistrar"), OptionsDialog::RemoveRegistrar)
+  EVT_LIST_ITEM_SELECTED(XRCID("Registrars"), OptionsDialog::SelectedRegistrar)
+  EVT_LIST_ITEM_DESELECTED(XRCID("Registrars"), OptionsDialog::DeselectedRegistrar)
+  EVT_TEXT(XRCID("RegistrarDomain"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_TEXT(XRCID("RegistrarUsername"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_TEXT(XRCID("RegistrarPassword"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_TEXT(XRCID("RegistrarTimeToLive"), OptionsDialog::ChangedRegistrarInfo)
+  EVT_BUTTON(XRCID("RegistrarUsed"), OptionsDialog::ChangedRegistrarInfo)
 
   ////////////////////////////////////////
   // Routing fields
@@ -2106,6 +2002,12 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_BUTTON(XRCID("AddAlias"), OptionsDialog::AddAlias)
   EVT_BUTTON(XRCID("RemoveAlias"), OptionsDialog::RemoveAlias)
   EVT_TEXT(XRCID("NewAlias"), OptionsDialog::ChangedNewAlias)
+
+  ////////////////////////////////////////
+  // Tracing fields
+#if PTRACING
+  EVT_BUTTON(XRCID("BrowseTraceFile"), OptionsDialog::BrowseTraceFile)
+#endif
 END_EVENT_TABLE()
 
 
@@ -2169,7 +2071,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(STUNServer, m_manager.GetSTUNServer());
   PwxString natRouter;
   if (m_manager.GetTranslationAddress().IsValid())
-    natRouter = m_manager.GetTranslationAddress().AsString();
+    natRouter = m_manager.GetTranslationHost();
   INIT_FIELD(NATRouter, natRouter);
 
   m_AddInterface = FindWindowByNameAs<wxButton>(this, "AddInterface");
@@ -2269,6 +2171,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 
   m_VideoGrabFrameSize = m_manager.m_VideoGrabFrameSize;
   FindWindowByName(VideoGrabFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoGrabFrameSize));
+  m_VideoMinFrameSize = m_manager.m_VideoMinFrameSize;
+  FindWindowByName(VideoMinFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMinFrameSize));
+  m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
+  FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
 
   choice = FindWindowByNameAs<wxChoice>(this, "VideoGrabber");
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
@@ -2292,6 +2198,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     wxString str = mm->sourceProtocol;
     str += ": ";
     str += (const char *)mm->mediaFormat;
+    str += mm->validProtocols;
     m_allCodecs->Append(str, &*mm);
 
     str = (const char *)mm->mediaFormat;
@@ -2337,11 +2244,35 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(SIPProxy, m_manager.sipEP->GetProxy().GetHostName());
   INIT_FIELD(SIPProxyUsername, m_manager.sipEP->GetProxy().GetUserName());
   INIT_FIELD(SIPProxyPassword, m_manager.sipEP->GetProxy().GetPassword());
-  INIT_FIELD(RegistrarUsed, m_manager.m_registrarUsed);
-  INIT_FIELD(RegistrarName, m_manager.m_registrarName);
-  INIT_FIELD(RegistrarUsername, m_manager.m_registrarUser);
-  INIT_FIELD(RegistrarPassword, m_manager.m_registrarPassword);
-  INIT_FIELD(RegistrarTimeToLive, m_manager.sipEP->GetRegistrarTimeToLive().GetSeconds());
+
+  m_SelectedRegistrar = INT_MAX;
+
+  m_Registrars = FindWindowByNameAs<wxListCtrl>(this, "Registrars");
+  m_Registrars->InsertColumn(0, _T("Domain"));
+  m_Registrars->InsertColumn(1, _T("User"));
+  m_Registrars->InsertColumn(2, _T("Refresh"));
+  m_Registrars->InsertColumn(3, _T("Status"));
+  for (RegistrarList::iterator registrar = m_manager.m_registrars.begin(); registrar != m_manager.m_registrars.end(); ++registrar)
+    RegistrarToList(false, new RegistrarInfo(*registrar), INT_MAX);
+  m_Registrars->SetColumnWidth(0, 200);
+  m_Registrars->SetColumnWidth(1, 150);
+  m_Registrars->SetColumnWidth(2, 75);
+  m_Registrars->SetColumnWidth(3, 75);
+
+  m_AddRegistrar = FindWindowByNameAs<wxButton>(this, "AddRegistrar");
+  m_AddRegistrar->Disable();
+
+  m_ChangeRegistrar = FindWindowByNameAs<wxButton>(this, "ChangeRegistrar");
+  m_ChangeRegistrar->Disable();
+
+  m_RemoveRegistrar = FindWindowByNameAs<wxButton>(this, "RemoveRegistrar");
+  m_RemoveRegistrar->Disable();
+
+  m_RegistrarDomain = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarDomain");
+  m_RegistrarUser = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarUsername");
+  m_RegistrarPassword = FindWindowByNameAs<wxTextCtrl>(this, "RegistrarPassword");
+  m_RegistrarTimeToLive = FindWindowByNameAs<wxSpinCtrl>(this, "RegistrarTimeToLive");
+  m_RegistrarActive = FindWindowByNameAs<wxCheckBox>(this, "RegistrarUsed");
 
   ////////////////////////////////////////
   // Routing fields
@@ -2411,6 +2342,13 @@ OptionsDialog::OptionsDialog(MyManager * manager)
 }
 
 
+OptionsDialog::~OptionsDialog()
+{
+  for (int i = 0; i < m_Registrars->GetItemCount(); ++i)
+    delete (RegistrarInfo *)m_Registrars->GetItemData(i);
+}
+
+
 #define SAVE_FIELD(name, set) \
   set(m_##name); \
   config->Write(name##Key, m_##name)
@@ -2456,7 +2394,7 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
   SAVE_FIELD(RTPTOS, m_manager.SetRtpIpTypeofService);
   SAVE_FIELD(STUNServer, m_manager.SetSTUNServer);
-  SAVE_FIELD(NATRouter, m_manager.SetTranslationAddress);
+  SAVE_FIELD(NATRouter, m_manager.SetTranslationHost);
 
   config->DeleteGroup(LocalInterfacesGroup);
   config->SetPath(LocalInterfacesGroup);
@@ -2512,13 +2450,15 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(VideoGrabSource, grabber.channelNumber = );
   SAVE_FIELD(VideoGrabFrameRate, grabber.rate = );
   SAVE_FIELD(VideoGrabFrameSize, m_manager.m_VideoGrabFrameSize = );
-  m_manager.AdjustFrameSize();
   SAVE_FIELD(VideoFlipLocal, grabber.flip = );
   m_manager.SetVideoInputDevice(grabber);
   SAVE_FIELD(VideoGrabPreview, m_manager.m_VideoGrabPreview = );
   SAVE_FIELD(VideoAutoTransmit, m_manager.SetAutoStartTransmitVideo);
   SAVE_FIELD(VideoAutoReceive, m_manager.SetAutoStartReceiveVideo);
 //  SAVE_FIELD(VideoFlipRemote, );
+  SAVE_FIELD(VideoMinFrameSize, m_manager.m_VideoMinFrameSize = );
+  SAVE_FIELD(VideoMaxFrameSize, m_manager.m_VideoMaxFrameSize = );
+  m_manager.AdjustFrameSize();
 
   ////////////////////////////////////////
   // Codec fields
@@ -2607,19 +2547,33 @@ bool OptionsDialog::TransferDataFromWindow()
   config->Write(SIPProxyUsernameKey, m_SIPProxyUsername);
   config->Write(SIPProxyPasswordKey, m_SIPProxyPassword);
 
-  config->Write(RegistrarTimeToLiveKey, m_RegistrarTimeToLive);
-  m_manager.sipEP->SetRegistrarTimeToLive(PTimeInterval(0, m_RegistrarTimeToLive));
+  RegistrarList newRegistrars;
 
-  if (m_manager.m_registrarUsed != m_RegistrarUsed ||
-      m_manager.m_registrarName != m_RegistrarName ||
-      m_manager.m_registrarUser != m_RegistrarUsername ||
-      m_manager.m_registrarPassword != m_RegistrarPassword) {
-    m_manager.StopRegistrar();
-    SAVE_FIELD(RegistrarUsed, m_manager.m_registrarUsed =);
-    SAVE_FIELD(RegistrarName, m_manager.m_registrarName =);
-    SAVE_FIELD(RegistrarUsername, m_manager.m_registrarUser =);
-    SAVE_FIELD(RegistrarPassword, m_manager.m_registrarPassword =);
-    m_manager.StartRegistrar();
+  for (int i = 0; i < m_Registrars->GetItemCount(); ++i)
+    newRegistrars.push_back(*(RegistrarInfo *)m_Registrars->GetItemData(i));
+
+  if (newRegistrars != m_manager.m_registrars) {
+    config->DeleteEntry(RegistrarUsedKey);
+    config->DeleteEntry(RegistrarNameKey);
+    config->DeleteEntry(RegistrarUsernameKey);
+    config->DeleteEntry(RegistrarPasswordKey);
+    config->DeleteGroup(RegistrarGroup);
+
+    int registrarIndex = 1;
+    for (RegistrarList::iterator iterReg = newRegistrars.begin(); iterReg != newRegistrars.end(); ++iterReg) {
+      wxString group;
+      group.sprintf("%s/%04u", RegistrarGroup, registrarIndex++);
+      config->SetPath(group);
+      config->Write(RegistrarUsedKey, iterReg->m_Active);
+      config->Write(RegistrarDomainKey, iterReg->m_Domain);
+      config->Write(RegistrarUsernameKey, iterReg->m_User);
+      config->Write(RegistrarPasswordKey, iterReg->m_Password);
+      config->Write(RegistrarTimeToLiveKey, iterReg->m_TimeToLive);
+    }
+
+    m_manager.StopRegistrars();
+    m_manager.m_registrars = newRegistrars;
+    m_manager.StartRegistrars();
   }
 
   ////////////////////////////////////////
@@ -2944,6 +2898,117 @@ void OptionsDialog::RemoveAlias(wxCommandEvent & /*event*/)
 
 
 ////////////////////////////////////////
+// SIP fields
+
+void OptionsDialog::FieldsToRegistrar(RegistrarInfo & registrar)
+{
+  registrar.m_Domain = m_RegistrarDomain->GetValue();
+  registrar.m_User = m_RegistrarUser->GetValue();
+  registrar.m_Password = m_RegistrarPassword->GetValue();
+  registrar.m_TimeToLive = m_RegistrarTimeToLive->GetValue();
+  registrar.m_Active = m_RegistrarActive->GetValue();
+}
+
+
+void OptionsDialog::RegistrarToList(bool overwrite, RegistrarInfo * registrar, int position)
+{
+  if (overwrite)
+    m_Registrars->SetItem(position, 0, registrar->m_Domain);
+  else {
+    position = m_Registrars->InsertItem(position, registrar->m_Domain);
+    m_Registrars->SetItemPtrData(position, (wxUIntPtr)registrar);
+  }
+
+  m_Registrars->SetItem(position, 1, registrar->m_User);
+
+  wxString str;
+  str.sprintf("%u:%02u", registrar->m_TimeToLive/60, registrar->m_TimeToLive%60);
+  m_Registrars->SetItem(position, 2, str);
+
+  m_Registrars->SetItem(position, 3, registrar->m_Active ? "ACTIVE" : "disabled");
+}
+
+
+void OptionsDialog::AddRegistrar(wxCommandEvent & event)
+{
+  RegistrarInfo * registrar = new RegistrarInfo();
+  FieldsToRegistrar(*registrar);
+  RegistrarToList(false, registrar, m_SelectedRegistrar);
+  if (m_SelectedRegistrar != INT_MAX) {
+    m_Registrars->SetItemState(m_SelectedRegistrar, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+    m_Registrars->SetItemState(m_SelectedRegistrar+1, 0, wxLIST_STATE_SELECTED);
+  }
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::ChangeRegistrar(wxCommandEvent & event)
+{
+  RegistrarInfo * registrar = (RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
+  FieldsToRegistrar(*registrar);
+  RegistrarToList(true, registrar, m_SelectedRegistrar);
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::RemoveRegistrar(wxCommandEvent & event)
+{
+  delete (RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
+  m_Registrars->DeleteItem(m_SelectedRegistrar);
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::SelectedRegistrar(wxListEvent & event)
+{
+  m_SelectedRegistrar = event.GetIndex();
+  m_ChangeRegistrar->Enable(true);
+  m_RemoveRegistrar->Enable(true);
+
+  RegistrarInfo & registrar = *(RegistrarInfo *)m_Registrars->GetItemData(m_SelectedRegistrar);
+  m_RegistrarDomain->SetValue(registrar.m_Domain);
+  m_RegistrarUser->SetValue(registrar.m_User);
+  m_RegistrarPassword->SetValue(registrar.m_Password);
+  m_RegistrarTimeToLive->SetValue(registrar.m_TimeToLive);
+  m_RegistrarActive->SetValue(registrar.m_Active);
+
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::DeselectedRegistrar(wxListEvent & event)
+{
+  m_SelectedRegistrar = INT_MAX;
+  m_ChangeRegistrar->Enable(false);
+  m_RemoveRegistrar->Enable(false);
+  ChangedRegistrarInfo(event);
+}
+
+
+void OptionsDialog::ChangedRegistrarInfo(wxCommandEvent & /*event*/)
+{
+  RegistrarInfo registrar;
+  FieldsToRegistrar(registrar);
+
+  bool add = !registrar.m_Domain.IsEmpty() && !registrar.m_User.IsEmpty();
+  bool change = add && m_SelectedRegistrar != INT_MAX;
+
+  // Check for uniqueness
+  for (int i = 0; i < m_Registrars->GetItemCount(); ++i) {
+    if (m_Registrars->GetItemText(i) == registrar.m_Domain) {
+      add = false;
+      if (i != m_SelectedRegistrar)
+        change = false;
+      break;
+    }
+  }
+
+  m_AddRegistrar->Enable(add);
+  m_ChangeRegistrar->Enable(change);
+}
+
+
+////////////////////////////////////////
 // Routing fields
 
 void OptionsDialog::AddRoute(wxCommandEvent & /*event*/)
@@ -2978,6 +3043,27 @@ void OptionsDialog::ChangedRouteInfo(wxCommandEvent & /*event*/)
 {
   m_AddRoute->Enable(!m_RoutePattern->GetValue().IsEmpty() && !m_RouteDestination->GetValue().IsEmpty());
 }
+
+
+#if PTRACING
+////////////////////////////////////////
+// Tracing fields
+
+void OptionsDialog::BrowseTraceFile(wxCommandEvent & /*event*/)
+{
+  wxString newFile = wxFileSelector("Trace log file",
+                                    "",
+                                    m_TraceFileName,
+                                    ".log",
+                                    "Log Files (*.log)|*.log|Text Files (*.txt)|*.txt||",
+                                    wxFD_SAVE|wxFD_OVERWRITE_PROMPT);
+  if (!newFile.empty()) {
+    m_TraceFileName = newFile;
+    TransferDataToWindow();
+  }
+}
+#endif
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3092,6 +3178,9 @@ const int VU_UPDATE_TIMER_ID = 1000;
 
 BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
+  EVT_BUTTON(XRCID("StartStopVideo"), InCallPanel::OnStartStopVideo)
+  EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
+  EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
   EVT_BUTTON(XRCID("Input2"), InCallPanel::OnUserInput2)
   EVT_BUTTON(XRCID("Input3"), InCallPanel::OnUserInput3)
@@ -3118,6 +3207,9 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
+  m_StartStopVideo = FindWindowByNameAs<wxButton>(this, "StartStopVideo");
+  m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, "SpeakerMute");
+  m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, "MicrophoneMute");
   m_SpeakerVolume = FindWindowByNameAs<wxSlider>(this, "SpeakerVolume");
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, "MicrophoneVolume");
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGauge");
@@ -3137,15 +3229,29 @@ bool InCallPanel::Show(bool show)
   if (show || m_FirstTime) {
     m_FirstTime = false;
 
+    PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
+    if (connection != NULL) {
+      OpalMediaFormatList availableFormats = connection->GetCall().GetOtherPartyConnection(*connection)->GetMediaFormats();
+      PINDEX idx;
+      for (idx = 0; idx < availableFormats.GetSize(); idx++) {
+        if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID)
+          break;
+      }
+      if (idx < availableFormats.GetSize()) {
+        m_StartStopVideo->Enable();
+        m_StartStopVideo->SetLabel(connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true) != NULL ? "Stop Video" : "Start Video");
+      }
+    }
+
     int value = 50;
     config->Read(SpeakerVolumeKey, &value);
     m_SpeakerVolume->SetValue(value);
-    SetVolume(false, value);
+    SetVolume(false, value, false);
 
     value = 50;
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
-    SetVolume(true, value);
+    SetVolume(true, value, false);
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
@@ -3160,6 +3266,24 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
   m_manager.HangUpCall();
 }
+
+
+void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
+{
+}
+
+
+void InCallPanel::OnSpeakerMute(wxCommandEvent & event)
+{
+  SetVolume(false, m_SpeakerVolume->GetValue(), !event.IsChecked());
+}
+
+
+void InCallPanel::OnMicrophoneMute(wxCommandEvent & event)
+{
+  SetVolume(true, m_MicrophoneVolume->GetValue(), !event.IsChecked());
+}
+
 
 #define ON_USER_INPUT_HANDLER(i,c) \
   void InCallPanel::OnUserInput##i(wxCommandEvent &) \
@@ -3182,21 +3306,21 @@ ON_USER_INPUT_HANDLER(Flash,'!')
 
 void InCallPanel::SpeakerVolume(wxScrollEvent & event)
 {
-  SetVolume(false, event.GetPosition());
+  SetVolume(false, event.GetPosition(), m_SpeakerMute->GetValue());
 }
 
 
 void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
 {
-  SetVolume(true, event.GetPosition());
+  SetVolume(true, event.GetPosition(), m_MicrophoneMute->GetValue());
 }
 
 
-void InCallPanel::SetVolume(bool isMicrophone, int value)
+void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
   PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
   if (connection != NULL)
-    connection->SetAudioVolume(isMicrophone, value);
+    connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
 }
 
 
@@ -3207,7 +3331,7 @@ static void SetGauge(wxGauge * gauge, int level)
     return;
   }
   gauge->Show();
-  gauge->SetValue((int)(log10(9.0*level/32768.0+1)*100)); // Convert to logarithmic scale
+  gauge->SetValue((int)(100*log10(1.0 + 9.0*level/8192.0))); // Convert to logarithmic scale
 }
 
 

@@ -23,17 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: svcctrl.cxx,v $
- * Revision 2.2  2007/04/04 02:12:00  rjongbloed
- * Reviewed and adjusted PTRACE log levels
- *   Now follows 1=error,2=warn,3=info,4+=debug
- *
- * Revision 2.1  2004/02/19 10:47:05  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 1.1  2003/04/01 01:06:28  robertj
- * Split service control handlers from H.225 RAS header.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

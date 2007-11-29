@@ -24,23 +24,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: easycodecs.cxx,v $
- * Revision 1.2  2007/06/26 23:54:42  rjongbloed
- * Fixed compile after change to anonymous structure in header (for GCC).
- *
- * Revision 1.1  2006/08/10 07:04:59  csoutheren
- * Added EasyCodec
- *
- * Revision 1.1  2005/04/25 18:43:44  shorne
- * Initial version
- *
- *
-*/
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 /*
-#define HAS_EASYG722	1
-#define HAS_EASYG729A	1
-#define HAS_EASYG728	1
-#define HAS_EASYG7231	1
+#define HAS_EASYG722    1
+#define HAS_EASYG729A    1
+#define HAS_EASYG728    1
+#define HAS_EASYG7231    1
 */
 
 #ifdef HAS_EASYG722
@@ -73,40 +65,41 @@ static void * create_encoder(const struct PluginCodec_Definition * codec)
   struct EasySession * session = new EasySession;
 
   switch ((int)codec->userData) {
-	  case Plugin_EasyG722:
+    case Plugin_EasyG722:
 #ifdef HAS_EASYG722
-		  if (m_G722codec == NULL)
-			  m_G722codec = new G722_EasyCodec();
-		session->easy = m_G722codec;
+      if (m_G722codec == NULL)
+        m_G722codec = new G722_EasyCodec();
+      session->easy = m_G722codec;
 #endif
-		  break;
-	  case Plugin_EasyG729A:
+      break;
+    case Plugin_EasyG729A:
 #ifdef HAS_EASYG729A
-		  if (m_G729Acodec == NULL)
-			  m_G729Acodec = new G729A_EasyCodec();
-		session->easy = m_G729Acodec;
+      if (m_G729Acodec == NULL)
+        m_G729Acodec = new G729A_EasyCodec();
+      session->easy = m_G729Acodec;
 #endif
-		  break;
-	  case Plugin_EasyG728:
+      break;
+    case Plugin_EasyG728:
 #ifdef HAS_EASYG728
-		  if (m_G728codec == NULL)
-			m_G728codec = new G728_EasyCodec();
-		session->easy = m_G728codec;
+      if (m_G728codec == NULL)
+        m_G728codec = new G728_EasyCodec();
+      session->easy = m_G728codec;
 #endif
-		  break;
-	  case Plugin_EasyG7231_63:
+      break;
+    case Plugin_EasyG7231_63:
 #ifdef HAS_EASYG7231
-		  if (m_G7231_63_codec == NULL)
-			m_G7231_63_codec = new G7231_63_EasyCodec();
-		session->easy = m_G7231_63_codec;
+      if (m_G7231_63_codec == NULL)
+        m_G7231_63_codec = new G7231_63_EasyCodec();
+      session->easy = m_G7231_63_codec;
 #endif
-		  break;
+      break;
   }
 
   session->hEcoder = session->easy->init_enc();
 
   return session; 
 }
+
 
 static int codec_encoder(const struct PluginCodec_Definition * codec, 
                                            void * context,
@@ -118,22 +111,25 @@ static int codec_encoder(const struct PluginCodec_Definition * codec,
 {
   struct EasySession * session = (EasySession *)context;
 
-  if (*fromLen != codec->parm.audio.samplesPerFrame *2)
+  if (*fromLen != codec->parm.audio.samplesPerFrame*2)
     return 0;
 
   session->easy->enc(session->hEcoder, (short *)from, (unsigned char *)to);
 
   *toLen   = codec->parm.audio.bytesPerFrame;
+  *fromLen = codec->parm.audio.samplesPerFrame*2;
 
   return 1; 
 }
+
 
 static void destroy_encoder(const struct PluginCodec_Definition * codec, void * context)
 {
   struct EasySession * session = (EasySession *)context;
 
-	session->easy->release_enc(session->hEcoder);
+  session->easy->release_enc(session->hEcoder);
 }
+
 
 static void * create_decoder(const struct PluginCodec_Definition * codec)
 {
@@ -141,40 +137,41 @@ static void * create_decoder(const struct PluginCodec_Definition * codec)
  struct EasySession * session = new EasySession;
 
   switch ((int)codec->userData) {
-	  case Plugin_EasyG722:
+      case Plugin_EasyG722:
 #ifdef HAS_EASYG722
-		  if (m_G722codec == NULL)
-			  m_G722codec = new G722_EasyCodec();
-		session->easy = m_G722codec;
+          if (m_G722codec == NULL)
+              m_G722codec = new G722_EasyCodec();
+        session->easy = m_G722codec;
 #endif
-		  break;
-	  case Plugin_EasyG729A:
+          break;
+      case Plugin_EasyG729A:
 #ifdef HAS_EASYG729A
-		  if (m_G729Acodec == NULL)
-			  m_G729Acodec = new G729A_EasyCodec();
-		session->easy = m_G729Acodec;
+          if (m_G729Acodec == NULL)
+              m_G729Acodec = new G729A_EasyCodec();
+        session->easy = m_G729Acodec;
 #endif
-		  break;
-	  case Plugin_EasyG728:
+          break;
+      case Plugin_EasyG728:
 #ifdef HAS_EASYG728
-		  if (m_G728codec == NULL)
-			m_G728codec = new G728_EasyCodec();
-		session->easy = m_G728codec;
+          if (m_G728codec == NULL)
+            m_G728codec = new G728_EasyCodec();
+        session->easy = m_G728codec;
 #endif
-		  break;
-	  case Plugin_EasyG7231_63:
+          break;
+      case Plugin_EasyG7231_63:
 #ifdef HAS_EASYG7231
-		  if (m_G7231_63_codec == NULL)
-			m_G7231_63_codec = new G7231_63_EasyCodec();
-		session->easy = m_G7231_63_codec;
+          if (m_G7231_63_codec == NULL)
+            m_G7231_63_codec = new G7231_63_EasyCodec();
+        session->easy = m_G7231_63_codec;
 #endif
-		  break;
+          break;
   }
 
    session->hDcoder = session->easy->init_dec();
 
   return session; 
 }
+
 
 static int codec_decoder(const struct PluginCodec_Definition * codec, 
                                            void * context,
@@ -192,17 +189,20 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
 
    session->easy->dec(session->hDcoder,(unsigned char *)from, (short *)to);
 
-  *toLen   = codec->parm.audio.samplesPerFrame * 2;
+  *toLen   = codec->parm.audio.samplesPerFrame*2;
+  *fromLen = codec->parm.audio.bytesPerFrame;
 
   return 1; 
 }
+
 
 static void destroy_decoder(const struct PluginCodec_Definition * codec, void * context)
 {
   struct EasySession * session = (EasySession *)context;
 
-   session->easy->release_dec(session->hDcoder);
+  session->easy->release_dec(session->hDcoder);
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -226,11 +226,11 @@ static struct PluginCodec_Definition EasyCodecDefn[] = {
 
 extern "C" {
 
-PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
-{
-  *count = NUM_EASY_DEFNS;
-  return EasyCodecDefn;	
-}
+  PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
+  {
+    *count = NUM_EASY_DEFNS;
+    return EasyCodecDefn;    
+  }
 
 };
 

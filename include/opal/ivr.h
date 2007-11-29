@@ -24,78 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ivr.h,v $
- * Revision 2.18  2007/09/04 07:46:24  csoutheren
- * Fixed tts
- *
- * Revision 2.17  2007/09/04 04:48:13  csoutheren
- * Fix state machine problems
- *
- * Revision 2.16  2007/03/29 05:15:48  csoutheren
- * Pass OpalConnection to OpalMediaSream constructor
- * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
- *
- * Revision 2.15  2007/03/13 00:32:16  csoutheren
- * Simple but messy changes to allow compile time removal of protocol
- * options such as H.450 and H.460
- * Fix MakeConnection overrides
- *
- * Revision 2.14  2007/03/01 05:51:04  rjongbloed
- * Fixed backward compatibility of OnIncomingConnection() virtual
- *   functions on various classes. If an old override returned PFalse
- *   then it will now abort the call as it used to.
- *
- * Revision 2.13  2007/01/24 04:00:56  csoutheren
- * Arrrghh. Changing OnIncomingConnection turned out to have a lot of side-effects
- * Added some pure viritual functions to prevent old code from breaking silently
- * New OpalEndpoint and OpalConnection descendants will need to re-implement
- * OnIncomingConnection. Sorry :)
- *
- * Revision 2.12  2006/12/18 03:18:41  csoutheren
- * Messy but simple fixes
- *   - Add access to SIP REGISTER timeout
- *   - Ensure OpalConnection options are correctly progagated
- *
- * Revision 2.11  2006/10/15 06:23:35  rjongbloed
- * Fixed the mechanism where both A-party and B-party are indicated by the application. This now works
- *   for LIDs as well as PC endpoint, wheich is the only one that was used before.
- *
- * Revision 2.10  2006/04/30 14:34:42  csoutheren
- * Backport of IVR updates from PluginBranch
- *
- * Revision 2.9.4.1  2006/04/30 13:49:34  csoutheren
- * Add ability to set TextToSpeech driver
- * Add useful defaults for VXML handling
- *
- * Revision 2.9  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.8  2004/08/14 07:56:29  rjongbloed
- * Major revision to utilise the PSafeCollection classes for the connections and calls.
- *
- * Revision 2.7  2004/07/15 12:32:29  rjongbloed
- * Various enhancements to the VXML code
- *
- * Revision 2.6  2004/07/11 12:42:10  rjongbloed
- * Added function on endpoints to get the list of all media formats any
- *   connection the endpoint may create can support.
- *
- * Revision 2.5  2004/04/18 13:35:27  rjongbloed
- * Fixed ability to make calls where both endpoints are specified a priori. In particular
- *   fixing the VXML support for an outgoing sip/h323 call.
- *
- * Revision 2.4  2003/03/19 02:30:45  robertj
- * Added removal of IVR stuff if EXPAT is not installed on system.
- *
- * Revision 2.3  2003/03/17 10:26:59  robertj
- * Added video support.
- *
- * Revision 2.2  2003/03/07 05:49:54  robertj
- * Use OpalVXMLSession so OnEndSession() to automatically closes connection.
- *
- * Revision 2.1  2003/03/06 03:57:47  robertj
- * IVR support (work in progress) requiring large changes everywhere.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_IVR_H
@@ -409,9 +340,12 @@ class OpalIVRMediaStream : public OpalRawMediaStream
        Returns PFalse for IVR streams.
       */
     virtual PBoolean IsSynchronous() const;
+
+    PBoolean ReadPacket(RTP_DataFrame & packet);
   //@}
 
   protected:
+    OpalConnection & conn;
     PVXMLSession & vxmlSession;
 };
 

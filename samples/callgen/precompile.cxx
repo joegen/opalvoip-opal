@@ -21,10 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.cxx,v $
- * Revision 1.1  2007/09/18 12:17:44  rjongbloed
- * Added call generator
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "precompile.h"

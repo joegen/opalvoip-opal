@@ -19,16 +19,9 @@
  *
  * Contributor(s): Equivalence Pty. Ltd.
  *
- * $Log: main.cxx,v $
- * Revision 1.3  2007/09/20 04:35:58  rjongbloed
- * Added check that there are enough RTP ports to support simultaneous calls.
- *
- * Revision 1.2  2007/09/19 22:52:39  rjongbloed
- * Fixed minor issues with console output.
- *
- * Revision 1.1  2007/09/18 12:17:44  rjongbloed
- * Added call generator
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "precompile.h"

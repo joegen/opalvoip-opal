@@ -25,106 +25,9 @@
  * Contributor(s): Michele Piccini (michele@piccini.com)
  *                 Derek Smithies (derek@indranet.co.nz)
  *
- * $Log: h261vic.cxx,v $
- * Revision 1.17  2007/08/26 19:06:03  shorne
- * Added VS2003 trace support removed compile warnings
- *
- * Revision 1.16  2007/08/26 09:27:33  dominance
- * Large video codecs cleanup by Matthias Schneider (ma30002000 _at_ yahoo.de),
- * consisting of:
- *
- * plugins/common:
- *  * Add display calling plugin in debug output
- *  * Only check for ffmpeg functions the calling plugin really depends on
- * plugins/H.261-vic:
- *  * Introduce debug tracing
- * plugins/H.263+:
- *  * Check for correct codec initialization
- *  * Really drop frame if it doesn't contain a picture header
- *  * Change description from H.263 to H.263P (p as in plus)
- *  * Make use of shared code
- * plugins/H.264:
- *  * Fix include of x264.h for MPL build
- *  * Allow disabling of sending STAP-A packets
- * plugins/THEORA:
- *  * Make use of shared code
- *
- * Revision 1.15  2007/08/09 08:28:54  dsandras
- * Committed patch from Matthias Schneider <ma30002000 yahoo de> to add
- * debug tracing to video codecs. Thanks a lot ! (as usual).
- *
- * Revision 1.14  2007/08/06 09:22:28  dsandras
- * Reintroduces the adaptive packet delay from the old OPAL. Patch from
- * Matthias Schneider <ma30002000 yahoo de>. Thanks !
- *
- * Revision 1.13  2007/06/22 17:58:53  csoutheren
- * Fixed for gcc
- *
- * Revision 1.12  2007/06/22 05:41:47  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- *
- * Revision 1.11  2006/12/19 03:11:54  dereksmithies
- * Add excellent fixes from Ben Weekes to suppress valgrind error messages.
- * This will help memory management - many thanks.
- *
- * Revision 1.10  2006/11/02 02:32:15  csoutheren
- * Fixed corruption problem on linux
- *
- * Revision 1.9  2006/11/01 07:26:55  csoutheren
- * Fix debugging
- *
- * Revision 1.8  2006/11/01 06:59:06  csoutheren
- * Turn off debuggng by default
- *
- * Revision 1.7  2006/11/01 06:57:23  csoutheren
- * Fixed usage of YUV frame header
- *
- * Revision 1.6  2006/11/01 05:19:49  csoutheren
- * Add optional debugging
- *
- * Revision 1.5  2006/09/09 18:04:58  dsandras
- * Fixed crash when starting to decode H.261 on Linux.
- *
- * Revision 1.4  2006/08/12 10:59:14  rjongbloed
- * Added Linux build for H.261 plug-in.
- *
- * Revision 1.3  2006/08/10 07:05:45  csoutheren
- * Fixed compile warnings on VC 2005
- *
- * Revision 1.2  2006/07/31 09:09:21  csoutheren
- * Checkin of validated codec used during development
- *
- * Revision 1.1.2.9  2006/04/26 08:03:57  csoutheren
- * H.263 encoding and decoding now working from plugin for both SIP and H.323
- *
- * Revision 1.1.2.8  2006/04/26 05:09:57  csoutheren
- * Cleanup bit rate settings
- *
- * Revision 1.1.2.7  2006/04/25 01:07:00  csoutheren
- * Rename SIP options
- *
- * Revision 1.1.2.6  2006/04/24 09:08:49  csoutheren
- * Cleanups
- *
- * Revision 1.1.2.5  2006/04/21 05:42:49  csoutheren
- * Checked in forgotten changes to fix iFrame requests
- *
- * Revision 1.1.2.4  2006/04/19 07:52:30  csoutheren
- * Add ability to have SIP-only and H.323-only codecs, and implement for H.261
- *
- * Revision 1.1.2.3  2006/04/19 05:56:23  csoutheren
- * Fix marker bits on outgoing video
- *
- * Revision 1.1.2.2  2006/04/19 04:59:29  csoutheren
- * Allow specification of CIF and QCIF capabilities
- *
- * Revision 1.1.2.1  2006/04/06 01:17:16  csoutheren
- * Initial version of H.261 video codec plugin for OPAL
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*
@@ -145,6 +48,9 @@
  */
 
 //#define DEBUG_OUTPUT 1
+
+#define _CRT_NONSTDC_NO_DEPRECATE 1
+#define _CRT_SECURE_NO_WARNINGS 1
 
 #include <codec/opalplugin.h>
 
@@ -624,11 +530,11 @@ static int encoder_set_options(const PluginCodec_Definition *,
     const char ** options = (const char **)parm;
     int i;
     for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "Target Bit Rate") == 0)
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
          context->SetTargetBitRate(atoi(options[i+1]));
-      if (STRCMPI(options[i], "Frame Height") == 0)
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
         height = atoi(options[i+1]);
-      if (STRCMPI(options[i], "Frame Width") == 0)
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         width = atoi(options[i+1]);
       if (STRCMPI(options[i], "Adaptive Packet Delay") == 0)
         context->packetDelay = atoi(options[i+1]);
@@ -792,72 +698,6 @@ debug_write_data(decoderOutput, "decoder output", "decoder.yuv", OPAL_VIDEO_FRAM
     }
 };
 
-static void * create_decoder(const struct PluginCodec_Definition *)
-{
-  return new H261DecoderContext;
-}
-
-static int decoder_set_options(
-      const struct PluginCodec_Definition *, 
-      void * _context, 
-      const char *, 
-      void * parm, 
-      unsigned * parmLen)
-{
-  H261DecoderContext * context = (H261DecoderContext *)_context;
-
-  if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
-    return 0;
-
-  // get the "frame width" media format parameter to use as a hint for the encoder to start off
-  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], "Frame Width") == 0) {
-      context->videoDecoder->fmt_ = (atoi(option[1]) == QCIF_WIDTH) ? IT_QCIF : IT_CIF;
-      context->videoDecoder->init();
-    }
-  }
-
-  return 1;
-}
-
-static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
-{
-  H261DecoderContext * context = (H261DecoderContext *)_context;
-  delete context;
-}
-
-static int codec_decoder(const struct PluginCodec_Definition *, 
-                                           void * _context,
-                                     const void * from, 
-                                       unsigned * fromLen,
-                                           void * to,         
-                                       unsigned * toLen,
-                                   unsigned int * flag)
-{
-  H261DecoderContext * context = (H261DecoderContext *)_context;
-  return context->DecodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
-}
-
-static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
-{
-  // this is really frame height * frame width;
-  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
-}
-
-
-static int get_codec_options(const struct PluginCodec_Definition * codec,
-                             void *, 
-                             const char *,
-                             void * parm,
-                             unsigned * parmLen)
-{
-  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
-    return 0;
-
-  *(const void **)parm = codec->userData;
-  return 1;
-}
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -890,25 +730,305 @@ static const char h261Desc[]      = { "H.261" };
 
 static const char sdpH261[]   = { "h261" };
 
+static const char QCIF_MPI[]  = "QCIF MPI";
+static const char  CIF_MPI[]  =  "CIF MPI";
+
+
+static void * create_decoder(const struct PluginCodec_Definition *)
+{
+  return new H261DecoderContext;
+}
+
+
+static int decoder_set_options(
+      const struct PluginCodec_Definition *, 
+      void * _context, 
+      const char *, 
+      void * parm, 
+      unsigned * parmLen)
+{
+  H261DecoderContext * context = (H261DecoderContext *)_context;
+
+  if (parmLen == NULL || *parmLen != sizeof(const char **) || parm == NULL)
+    return 0;
+
+  // get the "frame width" media format parameter to use as a hint for the encoder to start off
+  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "Frame Width") == 0) {
+      context->videoDecoder->fmt_ = (atoi(option[1]) == QCIF_WIDTH) ? IT_QCIF : IT_CIF;
+      context->videoDecoder->init();
+    }
+  }
+
+  return 1;
+}
+
+
+static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
+{
+  H261DecoderContext * context = (H261DecoderContext *)_context;
+  delete context;
+}
+
+
+static int codec_decoder(const struct PluginCodec_Definition *, 
+                                           void * _context,
+                                     const void * from, 
+                                       unsigned * fromLen,
+                                           void * to,         
+                                       unsigned * toLen,
+                                   unsigned int * flag)
+{
+  H261DecoderContext * context = (H261DecoderContext *)_context;
+  return context->DecodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
+}
+
+
+static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
+{
+  // this is really frame height * frame width;
+  return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
+}
+
+
+static int get_codec_options(const struct PluginCodec_Definition * codec,
+                                 void *, 
+                                 const char *,
+                                 void * parm,
+                                 unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+    return 0;
+
+  *(const void **)parm = codec->userData;
+  *parmLen = 0;
+  return 1;
+}
+
+
+static char * num2str(int num)
+{
+  char buf[20];
+  sprintf(buf, "%i", num);
+  return strdup(buf);
+}
+
+
+static int ClampSize(int pixels, int maximum)
+{
+  // Set to nearest of the two possible sizes
+  return pixels < maximum ? maximum/2 : maximum;
+}
+
+
+/* Convert the custom options for the codec to normalised options.
+   For H.261 the custom options are "QCIF MPI" and "CIF MPI" which will
+   restrict the min/max width/height and maximum frame rate.
+ */
+static int to_normalised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  int qcif_mpi = 5;
+  int cif_mpi = 5;
+  int frameWidth = 352;
+  int frameHeight = 288;
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], QCIF_MPI) == 0)
+      qcif_mpi = atoi(option[1]);
+    else if (STRCMPI(option[0], CIF_MPI) == 0)
+      cif_mpi = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+      frameWidth = ClampSize(atoi(option[1]), 352);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+      frameHeight = ClampSize(atoi(option[1]), 288);
+  }
+
+  int minWidth = 176;
+  int minHeight = 144;
+  int maxWidth = 352;
+  int maxHeight = 288;
+  int frameTime = 3003;
+  if (qcif_mpi != 5 && cif_mpi != 5)
+    frameTime = 3003*(qcif_mpi > cif_mpi ? qcif_mpi : cif_mpi);
+  else if (qcif_mpi != 5) {
+    maxWidth = 176;
+    maxHeight = 144;
+    frameTime = 3003*qcif_mpi;
+  }
+  else if (cif_mpi != 5) {
+    minWidth = 352;
+    minHeight = 288;
+    frameTime = 3003*cif_mpi;
+  }
+  else
+    return 0; // Illegal!
+
+  char ** options = (char **)calloc(15, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+  options[ 0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
+  options[ 1] = num2str(frameWidth);
+  options[ 2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
+  options[ 3] = num2str(frameHeight);
+  options[ 4] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+  options[ 5] = num2str(minWidth);
+  options[ 6] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+  options[ 7] = num2str(minHeight);
+  options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+  options[ 9] = num2str(maxWidth);
+  options[10] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+  options[11] = num2str(maxHeight);
+  options[12] = strdup(PLUGINCODEC_OPTION_FRAME_TIME);
+  options[13] = num2str(frameTime);
+
+  return 1;
+}
+
+
+/* Convert the normalised options to the codec custom options.
+   For H.261 the custom options are "QCIF MPI" and "CIF MPI" which are
+   set according to the min/max width/height and frame time.
+ */
+static int to_customised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  int frameWidth = 352;
+  int frameHeight = 288;
+  int minWidth = 176;
+  int minHeight = 144;
+  int maxWidth = 352;
+  int maxHeight = 288;
+  int mpi = 1;
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+      frameWidth = ClampSize(atoi(option[1]), 352);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+      frameHeight = ClampSize(atoi(option[1]), 288);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH) == 0)
+      minWidth = ClampSize(atoi(option[1]), 352);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
+      minHeight = ClampSize(atoi(option[1]), 288);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH) == 0)
+      maxWidth = ClampSize(atoi(option[1]), 352);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
+      maxHeight = ClampSize(atoi(option[1]), 288);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+      mpi = atoi(option[1])/3003;
+  }
+
+  int qcif_mpi = 1;
+  int cif_mpi = 1;
+  if (minWidth > 176 || minHeight > 144)
+    qcif_mpi = 5;
+  if (maxWidth < 352 || maxHeight < 288)
+    cif_mpi = 5;
+
+  if (mpi < 1)
+    mpi = 1;
+  else if (mpi > 4)
+    mpi = 4;
+  if (qcif_mpi < 5 && mpi > qcif_mpi)
+    qcif_mpi = mpi;
+  if (cif_mpi < 5 && mpi > cif_mpi)
+    cif_mpi = mpi;
+
+  char ** options = (char **)calloc(17, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+  options[ 0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
+  options[ 1] = num2str(frameWidth);
+  options[ 2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
+  options[ 3] = num2str(frameHeight);
+  options[ 4] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH);
+  options[ 5] = num2str(minWidth);
+  options[ 6] = strdup(PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT);
+  options[ 7] = num2str(minHeight);
+  options[ 8] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH);
+  options[ 9] = num2str(maxWidth);
+  options[10] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
+  options[11] = num2str(maxHeight);
+  options[12] = strdup(QCIF_MPI);
+  options[13] = num2str(qcif_mpi);
+  options[14] = strdup(CIF_MPI);
+  options[15] = num2str(cif_mpi);
+
+  return 1;
+}
+  
+
+static int free_codec_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  char ** strings = (char **) parm;
+  for (char ** string = strings; *string != NULL; string++)
+    free(*string);
+  free(strings);
+  return 1;
+}
+
+
 static PluginCodec_ControlDefn EncoderControls[] = {
-  { "get_codec_options",    get_codec_options },
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
   { NULL }
 };
 
 static PluginCodec_ControlDefn DecoderControls[] = {
-  { "get_codec_options",    get_codec_options },
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
+static struct PluginCodec_Option const minRxFrameWidth =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "176", NULL, NULL, 0, "176", "352" };
+static struct PluginCodec_Option const minRxFrameHeight =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "144", NULL, NULL, 0, "144", "288"  };
+static struct PluginCodec_Option const maxRxFrameWidth =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "352", NULL, NULL, 0, "176", "352"  };
+static struct PluginCodec_Option const maxRxFrameHeight =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "144", "288"  };
+
+static struct PluginCodec_Option const minRxFrameWidthQCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "176", NULL, NULL, 0, "176", "176" };
+static struct PluginCodec_Option const minRxFrameHeightQCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "144", NULL, NULL, 0, "144", "144"  };
+static struct PluginCodec_Option const maxRxFrameWidthQCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "176", NULL, NULL, 0, "176", "176"  };
+static struct PluginCodec_Option const maxRxFrameHeightQCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "144", NULL, NULL, 0, "144", "144"  };
+
+static struct PluginCodec_Option const minRxFrameWidthCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "352", NULL, NULL, 0, "352", "352" };
+static struct PluginCodec_Option const minRxFrameHeightCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "288", "288"  };
+static struct PluginCodec_Option const maxRxFrameWidthCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "352", NULL, NULL, 0, "352", "352"  };
+static struct PluginCodec_Option const maxRxFrameHeightCIF =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "288", "288"  };
+
 static struct PluginCodec_Option const qcifMPI =
-  { PluginCodec_IntegerOption, "QCIF MPI", false, PluginCodec_MaxMerge, "1", "QCIF", "0", 0, "0", "4" };
+  { PluginCodec_IntegerOption, QCIF_MPI, false, PluginCodec_MaxMerge, "1", "QCIF", "5", 0, "1", "5" }; // 5 is disabled
 
 static struct PluginCodec_Option const cifMPI =
-  { PluginCodec_IntegerOption, "CIF MPI",  false, PluginCodec_MaxMerge, "1", "CIF",  "0", 0, "0", "4" };
+  { PluginCodec_IntegerOption,  CIF_MPI, false, PluginCodec_MaxMerge, "1", "CIF",  "5", 0, "1", "5" }; // 5 is disabled
 
 /* The annex below is turned off and set to read/only because this
    implementation does not support them. It's presence here is so that if
@@ -922,12 +1042,20 @@ static struct PluginCodec_Option const annexD =
 static struct PluginCodec_Option const * const qcifOptionTable[] = {
   &qcifMPI,
   &annexD,
+  &minRxFrameWidthQCIF,
+  &minRxFrameHeightQCIF,
+  &maxRxFrameWidthQCIF,
+  &maxRxFrameHeightQCIF,
   NULL
 };
 
 static struct PluginCodec_Option const * const cifOptionTable[] = {
   &cifMPI,
   &annexD,
+  &minRxFrameWidthCIF,
+  &minRxFrameHeightCIF,
+  &maxRxFrameWidthCIF,
+  &maxRxFrameHeightCIF,
   NULL
 };
 
@@ -935,6 +1063,10 @@ static struct PluginCodec_Option const * const xcifOptionTable[] = {
   &qcifMPI,
   &cifMPI,
   &annexD,
+  &minRxFrameWidth,
+  &minRxFrameHeight,
+  &maxRxFrameWidth,
+  &maxRxFrameHeight,
   NULL
 };
 

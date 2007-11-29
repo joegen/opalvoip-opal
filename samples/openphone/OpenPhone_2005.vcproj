@@ -311,7 +311,7 @@
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
-			RelativePathToProject="..\pwlib\src\ptlib\msos\PTLib_2005.vcproj"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2005.vcproj"
 		/>
 	</References>
 	<Files>
@@ -374,6 +374,10 @@
 			>
 			<File
 				RelativePath=".\openphone.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\openphone.wxg"
 				>
 			</File>
 			<File

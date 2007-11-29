@@ -19,22 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h323h224.h,v $
- * Revision 1.4  2007/04/19 06:17:20  csoutheren
- * Fixes for precompiled headers with gcc
- *
- * Revision 1.3  2006/08/10 05:10:30  csoutheren
- * Various H.323 stability patches merged in from DeimosPrePLuginBranch
- *
- * Revision 1.2.2.1  2006/08/09 12:49:20  csoutheren
- * Improve stablity under heavy H.323 load
- *
- * Revision 1.2  2006/04/30 09:25:08  csoutheren
- * Remove warning about missing newline
- *
- * Revision 1.1  2006/04/20 16:48:17  hfriederich
- * Initial version of H.224/H.281 implementation.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_H323H224_H

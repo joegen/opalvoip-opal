@@ -24,32 +24,10 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h4601.cxx,v $
- * Revision 1.8  2006/07/01 05:31:36  shorne
- * added building featureset from generic data field
- *
- * Revision 1.7  2006/06/15 15:34:25  shorne
- * More updates
- *
- * Revision 1.6  2006/06/11 00:18:35  csoutheren
- * Added pragma for old gcc versions
- *
- * Revision 1.5  2006/06/08 13:27:18  shorne
- * Resnc Opal and OpenH323 versions
- *
- * Revision 1.4  2006/06/08 02:01:57  csoutheren
- * Removed error on gcc
- *
- * Revision 1.3  2006/05/30 18:15:52  hfriederich
- * Reverting part of last change and alter function call
- *
- * Revision 1.2  2006/05/30 11:30:41  hfriederich
- * Fixing some bugs introduced when porting H.460 from OpenH323 to OPAL and gcc4
- *
- * Revision 1.1  2006/05/27 07:24:00  hfriederich
- * Initial port of H.460 files from OpenH323 to OPAL
- *
-*/
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 
 #include <ptlib.h>
 

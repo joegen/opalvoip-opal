@@ -24,21 +24,10 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: easycodecs.h,v $
- * Revision 1.3  2007/10/16 05:02:57  csoutheren
- * Fix IANA name
- *
- * Revision 1.2  2006/10/16 09:46:49  rjongbloed
- * Fixed various MSVC 8 warnings
- *
- * Revision 1.1  2006/08/10 07:04:59  csoutheren
- * Added EasyCodec
- *
- * Revision 1.1  2005/04/25 18:43:44  shorne
- * Initial version
- *
- *
-*/
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 
 #include <codec/opalplugin.h>
 #include<windows.h>

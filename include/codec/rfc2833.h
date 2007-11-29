@@ -22,32 +22,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: rfc2833.h,v $
- * Revision 2.8  2007/09/30 17:46:46  dsandras
- * Added missing const.
- *
- * Revision 2.7  2007/07/26 00:38:56  csoutheren
- * Make transmission of RFC2833 independent of the media stream
- *
- * Revision 2.6  2007/03/12 23:36:23  csoutheren
- * Add support for Cisco NSE
- *
- * Revision 2.5  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.4  2002/09/16 02:52:33  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.3  2002/09/04 06:01:46  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.2  2002/02/19 07:34:44  robertj
- * Added OpalRFC2833 as a OpalMediaFormat variable.
- *
- * Revision 2.1  2002/01/22 05:35:28  robertj
- * Added RFC2833 support
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_RFC2833_H

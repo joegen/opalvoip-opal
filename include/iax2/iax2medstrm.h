@@ -25,22 +25,9 @@
  *
  * The author of this code is Derek J Smithies
  *
- * $Log: iax2medstrm.h,v $
- * Revision 1.3  2007/03/29 05:15:48  csoutheren
- * Pass OpalConnection to OpalMediaSream constructor
- * Add ID to OpalMediaStreams so that transcoders can match incoming and outgoing codecs
- *
- * Revision 1.2  2007/01/11 03:02:15  dereksmithies
- * Remove the previous audio buffering code, and switch to using the jitter
- * buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- * Revision 1.1  2005/07/30 07:01:32  csoutheren
- * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- * Thanks to Derek Smithies of Indranet Technologies Ltd. for
- * writing and contributing this code
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_IAX2_MEDIASTRM_H

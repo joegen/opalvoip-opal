@@ -22,36 +22,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: rfc2833.cxx,v $
- * Revision 2.9  2007/09/30 17:39:32  dsandras
- * Killed more GCC 4.2 warnings. Patch from Matthias Schneider <ma30002000
- * yahoo de>.
- *
- * Revision 2.8  2007/08/17 08:59:20  csoutheren
- * Changed logging message
- *
- * Revision 2.7  2007/08/09 08:22:47  csoutheren
- * Fix typo
- *
- * Revision 2.6  2007/07/26 00:39:30  csoutheren
- * Make transmission of RFC2833 independent of the media stream
- *
- * Revision 2.5  2007/04/04 02:12:00  rjongbloed
- * Reviewed and adjusted PTRACE log levels
- *   Now follows 1=error,2=warn,3=info,4+=debug
- *
- * Revision 2.4  2007/03/12 23:36:31  csoutheren
- * Add support for Cisco NSE
- *
- * Revision 2.3  2006/11/02 21:17:29  hfriederich
- * Set marker bit at the beginning of an event
- *
- * Revision 2.2  2002/02/19 07:35:08  robertj
- * Added OpalRFC2833 as a OpalMediaFormat variable.
- *
- * Revision 2.1  2002/01/22 05:35:28  robertj
- * Added RFC2833 support
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
