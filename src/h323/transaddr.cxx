@@ -26,42 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: transaddr.cxx,v $
- * Revision 2.10  2006/08/21 05:29:25  csoutheren
- * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
- * and secure H.323 signalling via the sh323 URL scheme
- *
- * Revision 2.9  2005/01/16 23:07:34  csoutheren
- * Fixed problem with IPv6 INADDR_ANY
- *
- * Revision 2.8  2004/04/07 08:21:10  rjongbloed
- * Changes for new RTTI system.
- *
- * Revision 2.7  2004/02/24 11:37:02  rjongbloed
- * More work on NAT support, manual external address translation and STUN
- *
- * Revision 2.6  2004/02/19 10:47:04  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.5  2002/11/10 11:33:19  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.4  2002/09/12 06:58:33  robertj
- * Removed protocol prefix strings as static members as has problems with
- *   use in DLL environment.
- *
- * Revision 2.3  2002/07/01 04:56:32  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.2  2001/11/12 05:32:12  robertj
- * Added OpalTransportAddress::GetIpAddress when don't need port number.
- *
- * Revision 2.1  2001/11/09 05:49:47  robertj
- * Abstracted UDP connection algorithm
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

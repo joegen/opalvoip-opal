@@ -6,7 +6,7 @@
  * Open Phone Abstraction Library (OPAL)
  * Formally known as the Open H323 project.
  *
- * Copyright (c) 2004 Post Increment
+ * Copyright (c) 2007 Vox Lucida
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -20,159 +20,13 @@
  *
  * The Original Code is Open Phone client.
  *
- * The Initial Developer of the Original Code is Post Increment
+ * The Initial Developer of the Original Code is Robert Jongbloed
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.48  2007/09/30 12:49:23  rjongbloed
- * Added desired video size to options dialog.
- *
- * Revision 1.47  2007/09/26 04:21:30  rjongbloed
- * Added saving of video output and preview window positions.
- *
- * Revision 1.46  2007/09/18 02:26:01  rjongbloed
- * Use correct mechanism for forcing windows video output device.
- *
- * Revision 1.45  2007/09/04 05:40:15  rjongbloed
- * Added OnRegistrationStatus() call back function so can distinguish
- *   between initial registration and refreshes.
- *
- * Revision 1.44  2007/08/19 02:05:01  rjongbloed
- * Made sure deregister from previous regisrar when changed in options dialog.
- *
- * Revision 1.43  2007/08/03 01:00:47  rjongbloed
- * Fixed compile on DevStudio 2003
- *
- * Revision 1.42  2007/07/27 01:42:10  rjongbloed
- * Added cut, copy, paste and most important DELETE of speed dials.
- *
- * Revision 1.41  2007/06/27 12:39:08  rjongbloed
- * Further de-synchronising OPAL callbacks and GUI to avoid deadlocks.
- *
- * Revision 1.40  2007/06/21 08:16:30  rjongbloed
- * Fixed various multi-threaded GUI issues.
- *
- * Revision 1.39  2007/06/06 09:08:56  rjongbloed
- * Fixed deadlocks in OpenPhone Timer/GUI interaction.
- *
- * Revision 1.38  2007/05/21 04:30:30  dereksmithies
- * put #ifndef _PTLIB_H protection around the include of ptlib.h
- *
- * Revision 1.37  2007/04/03 07:59:13  rjongbloed
- * Warning: API change to PCSS callbacks:
- *   changed return on OnShowIncoming to PBoolean, now agrees with
- *     documentation and allows UI to abort calls early.
- *   added PBoolean to AcceptIncomingConnection indicating the
- *     supplied token is invalid.
- *   removed redundent OnGetDestination() function, was never required.
- *
- * Revision 1.36  2006/11/19 06:06:01  rjongbloed
- * Added override for dialing on a LID to use unique speed dial code immediately.
- *
- * Revision 1.35  2006/09/16 04:20:36  rjongbloed
- * Fixed crash when entering opetions dialog.
- * Added recent calls list to Call dialog.
- * Added "no trace" version.
- *
- * Revision 1.34  2006/08/29 08:54:36  rjongbloed
- * Added VU meters
- *
- * Revision 1.33  2006/08/17 23:09:03  rjongbloed
- * Added volume controls
- *
- * Revision 1.32  2006/08/15 12:10:01  rjongbloed
- * Added local interfaces to config dialog
- *
- * Revision 1.31  2006/08/14 22:39:27  rjongbloed
- * Added aslias to config dialog
- *
- * Revision 1.30  2006/08/13 08:33:36  rjongbloed
- * Completed bandwidth configuration from options dialog.
- *
- * Revision 1.29  2006/08/11 07:19:37  rjongbloed
- * Fixed DevStudio 2005 warning
- *
- * Revision 1.28  2006/07/31 10:57:52  rjongbloed
- * Added play of WAV file on incoming calls.
- *
- * Revision 1.27  2006/04/30 10:36:24  rjongbloed
- * Added icons to speed dial list.
- *
- * Revision 1.26  2005/08/31 13:21:20  rjongbloed
- * Moved some video options to be in the options list from OpalMediaFormat
- * Added selection of video grabber preview window.
- *
- * Revision 1.25  2005/08/24 10:43:51  rjongbloed
- * Changed create video functions yet again so can return pointers that are not to be deleted.
- *
- * Revision 1.24  2005/08/24 10:21:36  rjongbloed
- * Added function to create video output windows, can now get correct titles.
- *
- * Revision 1.23  2005/08/10 08:07:44  rjongbloed
- * Upgraded to support wxWidgets 2.6
- * Also improved build so uses WXDIR environment variable
- *
- * Revision 1.22  2005/07/09 07:05:16  rjongbloed
- * Changed so resources are included in compile and not separate file at run time.
- * General code clean ups.
- *
- * Revision 1.21  2005/06/02 13:21:49  rjongbloed
- * Save and restore media format options to registry.
- * Added check for valid value for media format option in dialog.
- *
- * Revision 1.20  2005/02/21 12:19:50  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 1.19  2004/10/06 13:08:19  rjongbloed
- * Implemented partial support for LIDs
- *
- * Revision 1.18  2004/10/03 14:16:34  rjongbloed
- * Added panels for calling, answering and in call phases.
- *
- * Revision 1.17  2004/09/29 12:47:39  rjongbloed
- * Added gatekeeper support
- *
- * Revision 1.16  2004/09/29 12:02:40  rjongbloed
- * Added popup menu to edit Speed DIals
- *
- * Revision 1.15  2004/09/28 23:00:18  rjongbloed
- * Added ability to add and edit Speed DIals
- *
- * Revision 1.14  2004/08/22 12:27:45  rjongbloed
- * More work on SIP registration, time to live refresh and deregistration on exit.
- *
- * Revision 1.13  2004/07/17 08:21:24  rjongbloed
- * Added ability to manipulate codec lists
- *
- * Revision 1.12  2004/07/14 13:17:42  rjongbloed
- * Added saving of the width of columns in the speed dial list.
- * Fixed router display in options dialog so is empty if IP address invalid.
- *
- * Revision 1.11  2004/07/04 12:53:09  rjongbloed
- * Added support for route editing.
- *
- * Revision 1.10  2004/06/05 14:37:03  rjongbloed
- * More implemntation of options dialog.
- *
- * Revision 1.9  2004/05/25 12:56:07  rjongbloed
- * Added all silence suppression modes to Options dialog.
- *
- * Revision 1.8  2004/05/24 13:44:04  rjongbloed
- * More implementation on OPAL OpenPhone.
- *
- * Revision 1.7  2004/05/15 12:18:23  rjongbloed
- * More work on wxWindows based OpenPhone
- *
- * Revision 1.6  2004/05/12 12:41:38  rjongbloed
- * More work on wxWindows based OpenPhone
- *
- * Revision 1.5  2004/05/06 13:23:43  rjongbloed
- * Work on wxWindows based OpenPhone
- *
- * Revision 1.4  2004/05/01 13:38:05  rjongbloed
- * Some early implementation of wxWIndows based OPAL GUI client.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _OpenPhone_MAIN_H
@@ -336,6 +190,9 @@ class InCallPanel : public wxPanel
 
   private:
     void OnHangUp(wxCommandEvent & event);
+    void OnStartStopVideo(wxCommandEvent & event);
+    void OnSpeakerMute(wxCommandEvent & event);
+    void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
     void OnUserInput2(wxCommandEvent & event);
     void OnUserInput3(wxCommandEvent & event);
@@ -353,9 +210,12 @@ class InCallPanel : public wxPanel
 
     void SpeakerVolume(wxScrollEvent & event);
     void MicrophoneVolume(wxScrollEvent & event);
-    void SetVolume(bool microphone, int value);
+    void SetVolume(bool microphone, int value, bool muted);
 
     MyManager & m_manager;
+    wxButton  * m_StartStopVideo;
+    wxCheckBox* m_SpeakerMute;
+    wxCheckBox* m_MicrophoneMute;
     wxSlider  * m_SpeakerVolume;
     wxSlider  * m_MicrophoneVolume;
     wxGauge   * m_vuSpeaker;
@@ -393,10 +253,45 @@ class SpeedDialDialog : public wxDialog
 };
 
 
+#if OPAL_SIP
+
+class RegistrarInfo
+{
+  public:
+    RegistrarInfo()
+      : m_Active(false)
+      , m_TimeToLive(300)
+    {
+    }
+
+    bool operator==(const RegistrarInfo & other) const
+    {
+      return m_Active     == other.m_Active &&
+             m_Domain     == other.m_Domain &&
+             m_User       == other.m_User &&
+             m_Password   == other.m_Password &&
+             m_TimeToLive == other.m_TimeToLive &&
+             m_Proxy      == other.m_Proxy;
+    }
+
+    bool      m_Active;
+    PwxString m_Domain;
+    PwxString m_User;
+    PwxString m_Password;
+    int       m_TimeToLive;
+    PwxString m_Proxy;
+};
+
+typedef list<RegistrarInfo> RegistrarList;
+
+#endif
+
+
 class OptionsDialog : public wxDialog
 {
   public:
     OptionsDialog(MyManager *parent);
+    ~OptionsDialog();
     virtual bool TransferDataFromWindow();
 
   private:
@@ -470,6 +365,8 @@ class OptionsDialog : public wxDialog
     bool      m_VideoAutoTransmit;
     bool      m_VideoAutoReceive;
     bool      m_VideoFlipRemote;
+    PwxString m_VideoMinFrameSize;
+    PwxString m_VideoMaxFrameSize;
 
     ////////////////////////////////////////
     // Codec fields
@@ -517,15 +414,32 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // SIP fields
+#if OPAL_SIP
     bool      m_SIPProxyUsed;
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
     PwxString m_SIPProxyPassword;
-    bool      m_RegistrarUsed;
-    PwxString m_RegistrarName;
-    PwxString m_RegistrarUsername;
-    PwxString m_RegistrarPassword;
-    int       m_RegistrarTimeToLive;
+
+    wxListCtrl * m_Registrars;
+    int          m_SelectedRegistrar;
+    wxButton   * m_AddRegistrar;
+    wxButton   * m_ChangeRegistrar;
+    wxButton   * m_RemoveRegistrar;
+    wxTextCtrl * m_RegistrarDomain;
+    wxTextCtrl * m_RegistrarUser;
+    wxTextCtrl * m_RegistrarPassword;
+    wxSpinCtrl * m_RegistrarTimeToLive;
+    wxCheckBox * m_RegistrarActive;
+
+    void FieldsToRegistrar(RegistrarInfo & info);
+    void RegistrarToList(bool overwrite, RegistrarInfo * registrar, int position);
+    void AddRegistrar(wxCommandEvent & event);
+    void ChangeRegistrar(wxCommandEvent & event);
+    void RemoveRegistrar(wxCommandEvent & event);
+    void SelectedRegistrar(wxListEvent & event);
+    void DeselectedRegistrar(wxListEvent & event);
+    void ChangedRegistrarInfo(wxCommandEvent & event);
+#endif
 
     ////////////////////////////////////////
     // Routing fields
@@ -556,6 +470,8 @@ class OptionsDialog : public wxDialog
     bool      m_TraceThreadName;
     bool      m_TraceThreadAddress;
     PwxString m_TraceFileName;
+
+    void BrowseTraceFile(wxCommandEvent & event);
 #endif
 
     DECLARE_EVENT_TABLE()
@@ -565,25 +481,17 @@ class OptionsDialog : public wxDialog
 class MyMedia
 {
 public:
-  MyMedia()
-    : sourceProtocol(NULL),
-      preferenceOrder(-1), // -1 indicates disabled
-      dirty(false)
-  { }
-
+  MyMedia();
   MyMedia(
     const char * source,
     const PString & format
-  ) : sourceProtocol(source),
-      mediaFormat(format),
-      preferenceOrder(-1), // -1 indicates disabled
-      dirty(false)
-  { }
+  );
 
   bool operator<(const MyMedia & other) { return preferenceOrder < other.preferenceOrder; }
 
   const char    * sourceProtocol;
   OpalMediaFormat mediaFormat;
+  const char    * validProtocols;
   int             preferenceOrder;
   bool            dirty;
 };
@@ -657,6 +565,8 @@ class MyManager : public wxFrame, public OpalManager
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
     void OnMenuCall(wxCommandEvent& event);
+    void OnMenuCallLastDialed(wxCommandEvent& event);
+    void OnMenuCallLastReceived(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
     void OnNewSpeedDial(wxCommandEvent& event);
@@ -733,19 +643,18 @@ class MyManager : public wxFrame, public OpalManager
 #if OPAL_SIP
     MySIPEndPoint * sipEP;
     bool            m_SIPProxyUsed;
-    bool            m_registrarUsed;
-    PwxString       m_registrarName;
-    PwxString       m_registrarUser;
-    PwxString       m_registrarPassword;
-    bool StartRegistrar();
-    bool StopRegistrar();
+    RegistrarList   m_registrars;
+    void StartRegistrars();
+    void StopRegistrars();
 #endif
 
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;
 #endif
 
-    bool m_autoAnswer;
+    bool      m_autoAnswer;
+    PwxString m_LastDialed;
+    PwxString m_LastReceived;
 
     bool m_VideoGrabPreview;
     int  m_localVideoFrameX;
@@ -753,6 +662,8 @@ class MyManager : public wxFrame, public OpalManager
     int  m_remoteVideoFrameX;
     int  m_remoteVideoFrameY;
     PwxString m_VideoGrabFrameSize;
+    PwxString m_VideoMinFrameSize;
+    PwxString m_VideoMaxFrameSize;
     bool AdjustFrameSize();
 
     MyMediaList m_mediaInfo;

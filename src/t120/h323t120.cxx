@@ -23,89 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h323t120.cxx,v $
- * Revision 2.13  2007/03/12 23:35:39  csoutheren
- * Add ability to remove T.120
- *
- * Revision 2.12  2006/08/21 05:29:25  csoutheren
- * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
- * and secure H.323 signalling via the sh323 URL scheme
- *
- * Revision 2.11  2005/02/21 12:20:06  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 2.10  2002/11/10 11:33:20  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.9  2002/09/04 06:01:49  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.8  2002/07/01 04:56:33  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.7  2002/02/11 09:32:13  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 2.6  2002/01/14 06:35:58  robertj
- * Updated to OpenH323 v1.7.9
- *
- * Revision 2.5  2001/11/13 04:29:48  robertj
- * Changed OpalTransportAddress CreateTransport and CreateListsner functions
- *   to have extra parameter to control local binding of sockets.
- *
- * Revision 2.4  2001/11/12 05:32:12  robertj
- * Added OpalTransportAddress::GetIpAddress when don't need port number.
- *
- * Revision 2.3  2001/10/05 00:22:14  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.2  2001/08/13 05:10:40  robertj
- * Updates from OpenH323 v1.6.0 release.
- *
- * Revision 2.1  2001/08/01 05:05:49  robertj
- * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.12  2002/11/10 08:10:43  robertj
- * Moved constants for "well known" ports to better place (OPAL change).
- *
- * Revision 1.11  2002/08/05 10:03:47  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.10  2002/07/02 10:02:32  robertj
- * Added H323TransportAddress::GetIpAddress() so don't have to provide port
- *   when you don't need it as in GetIpAndPort(),.
- *
- * Revision 1.9  2002/06/28 03:34:28  robertj
- * Fixed issues with address translation on gatekeeper RAS channel.
- *
- * Revision 1.8  2002/05/10 05:48:13  robertj
- * Added the max bit rate field to the data channel capability class.
- * Added session ID to the data logical channel class.
- *
- * Revision 1.7  2002/02/01 01:47:18  robertj
- * Some more fixes for T.120 channel establishment, more to do!
- *
- * Revision 1.6  2002/01/09 00:21:40  robertj
- * Changes to support outgoing H.245 RequstModeChange.
- *
- * Revision 1.5  2001/12/22 03:22:29  robertj
- * Added create protocol function to H323Connection.
- *
- * Revision 1.4  2001/09/12 07:48:05  robertj
- * Fixed various problems with tracing.
- *
- * Revision 1.3  2001/08/06 03:08:57  robertj
- * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
- *
- * Revision 1.2  2001/07/18 02:27:24  robertj
- * Fixed GNU warning.
- *
- * Revision 1.1  2001/07/17 04:44:32  robertj
- * Partial implementation of T.120 and T.38 logical channels.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

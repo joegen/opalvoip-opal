@@ -22,66 +22,9 @@
  *
  * Contributor(s): Miguel Rodriguez Perez.
  *
- * $Log: echocancel.cxx,v $
- * Revision 1.19  2007/04/04 02:12:00  rjongbloed
- * Reviewed and adjusted PTRACE log levels
- *   Now follows 1=error,2=warn,3=info,4+=debug
- *
- * Revision 1.18  2006/02/04 14:27:18  dsandras
- * Fixed leak.
- *
- * Revision 1.17  2006/02/01 09:00:46  csoutheren
- * Changes to remove dependencies in Speex code accidentally introduced
- *
- * Revision 1.16  2006/01/31 10:28:04  csoutheren
- * Added detection for variants to speex 1.11.11.1
- *
- * Revision 1.15  2006/01/31 03:28:03  csoutheren
- * Changed to compile on MSVC 6
- *
- * Revision 1.14  2006/01/23 23:01:19  dsandras
- * Protect internal speex state changes with a mutex.
- *
- * Revision 1.13  2006/01/21 23:33:36  csoutheren
- * Fixed error again :)
- *
- * Revision 1.12  2006/01/21 23:27:06  csoutheren
- * Fixed error under MSVC 6
- *
- * Revision 1.11  2006/01/07 17:37:50  dsandras
- * Updated to speex 1.1.11.2 to fix divergeance issues.
- *
- * Revision 1.10  2005/12/31 09:18:44  dsandras
- * Some fine-tuning.
- *
- * Revision 1.9  2005/12/30 17:13:34  dsandras
- * Fixed typo.
- *
- * Revision 1.8  2005/12/30 14:33:47  dsandras
- * Denoise the signal even when there is no echo to remove in it.
- *
- * Revision 1.7  2005/12/29 16:20:53  dsandras
- * Added wideband support to the echo canceller.
- *
- * Revision 1.6  2005/12/28 20:03:36  dsandras
- * Do not cancel echo when the frame is silent.
- *
- * Revision 1.5  2005/12/25 11:49:01  dsandras
- * Return if Read is unsuccessful.
- *
- * Revision 1.4  2005/11/27 20:48:05  dsandras
- * Changed ReadTimeout, WriteTimeout in case the remote is not sending data. Fixed compilation warning.
- *
- * Revision 1.3  2005/11/25 21:00:37  dsandras
- * Remove the DC or the algorithm is puzzled. Added several post-processing filters. Added missing declaration.
- *
- * Revision 1.2  2005/11/24 20:34:44  dsandras
- * Modified copyright.
- *
- * Revision 1.1  2005/11/24 20:31:54  dsandras
- * Added support for echo cancelation using Speex.
- * Added possibility to add a filter to an OpalMediaPatch for all patches of a connection.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

@@ -24,18 +24,10 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g7231codec.h,v $
- * Revision 1.2  2007/10/16 05:02:57  csoutheren
- * Fix IANA name
- *
- * Revision 1.1  2006/08/10 07:04:59  csoutheren
- * Added EasyCodec
- *
- * Revision 1.1  2005/04/25 18:43:44  shorne
- * Initial version
- *
- *
-*/
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 #include "easycodecs.h"
 
 #include "EasyG7231/EasyG7231.h"

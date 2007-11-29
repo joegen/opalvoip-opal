@@ -23,353 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mediafmt.cxx,v $
- * Revision 2.78  2007/09/25 19:35:39  csoutheren
- * Fix compilation when using --disable-audio
- *
- * Revision 2.77  2007/09/21 00:51:38  rjongbloed
- * Fixed weird divide by zero error on clock rate.
- *
- * Revision 2.76  2007/09/20 04:26:36  rjongbloed
- * Fixed missing mutex in video media format merge.
- *
- * Revision 2.75  2007/09/18 03:20:11  rjongbloed
- * Allow frame width/height to be altered by user.
- *
- * Revision 2.74  2007/09/10 03:15:04  rjongbloed
- * Fixed issues in creating and subsequently using correctly unique
- *   payload types in OpalMediaFormat instances and transcoders.
- *
- * Revision 2.73  2007/09/10 00:16:16  rjongbloed
- * Fixed allocating dynamic payload types to media formats maked as internal via
- *   having an IllegalPayloadType
- * Added extra fields to the PrintOptions() function.
- *
- * Revision 2.72  2007/09/07 05:40:12  rjongbloed
- * Fixed issue where OpalMediaOptions are lost when an OpalMediaFormat
- *    is added to an OpalMediaFormatList.
- * Also fixes a memory leak in GetAllRegisteredMediaFormats().
- *
- * Revision 2.71  2007/09/05 07:56:03  csoutheren
- * Change default frame size for PCM-16 to 1
- *
- * Revision 2.70  2007/08/17 07:50:09  dsandras
- * Applied patch from Matthias Schneider <ma30002000 yahoo.de>. Thanks!
- *
- * Revision 2.69  2007/08/17 07:01:18  csoutheren
- * Shortcut media format copy when src and dest are the same
- *
- * Revision 2.68  2007/08/08 11:17:50  csoutheren
- * Removed warning
- *
- * Revision 2.67  2007/08/02 07:54:49  csoutheren
- * Add function to print options on media format
- *
- * Revision 2.66  2007/07/24 12:57:55  rjongbloed
- * Made sure all integer OpalMediaOptions are unsigned so is compatible with H.245 generic capabilities.
- *
- * Revision 2.65  2007/06/27 07:56:08  rjongbloed
- * Add new OpalMediaOption for octet strings (simple block of bytes).
- *
- * Revision 2.64  2007/06/22 05:41:47  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- *
- * Revision 2.63  2007/06/16 21:37:01  dsandras
- * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
- * Thanks a lot !
- *
- * Baseline Profile:
- * no B-frames
- * We make use of the baseline profile (which is the designated profile for interactive vide) ,
- * that means:
- * no B-Frames (too much latency in interactive video)
- * CBR (we want to get the max. quality making use of all the bitrate that is available)
- * We allow one exeption: configuring a bitrate of > 786 kbit/s
- *
- * This plugin implements
- * - Single Time Aggregation Packets A
- * - Single NAL units
- * - Fragmentation Units
- * like described in RFC3984
- *
- * It requires x264 and ffmpeg.
- *
- * Revision 2.62  2007/04/10 05:15:54  rjongbloed
- * Fixed issue with use of static C string variables in DLL environment,
- *   must use functional interface for correct initialisation.
- *
- * Revision 2.61  2007/03/13 00:33:11  csoutheren
- * Simple but messy changes to allow compile time removal of protocol
- * options such as H.450 and H.460
- * Fix MakeConnection overrides
- *
- * Revision 2.60  2007/02/14 06:51:44  csoutheren
- * Extended FindFormat to allow finding multiple matching formats
- *
- * Revision 2.59  2007/02/10 18:14:32  hfriederich
- * Add copy constructor to have consistent code with assignment operator.
- * Only make options unique when they actually differ
- *
- * Revision 2.58  2006/12/08 07:33:13  csoutheren
- * Fix problem with wideband audio plugins and sound channel
- *
- * Revision 2.57  2006/11/21 01:01:00  csoutheren
- * Ensure SDP only uses codecs that are valid for SIP
- *
- * Revision 2.56  2006/10/10 07:18:18  csoutheren
- * Allow compilation with and without various options
- *
- * Revision 2.55  2006/09/11 04:48:55  csoutheren
- * Fixed problem with cloning plugin media formats
- *
- * Revision 2.54  2006/09/07 09:05:44  csoutheren
- * Fix case significance in IsValidForProtocol
- *
- * Revision 2.53  2006/09/06 22:36:11  csoutheren
- * Fix problem with IsValidForProtocol on video codecs
- *
- * Revision 2.52  2006/09/05 22:50:05  csoutheren
- * Make sure codecs match full name if specified, or not at all
- *
- * Revision 2.51  2006/09/05 06:21:07  csoutheren
- * Add useful comment
- *
- * Revision 2.50  2006/08/24 02:19:56  csoutheren
- * Fix problem with calculating the bandwidth of wide-band codecs
- *
- * Revision 2.49  2006/08/20 03:45:54  csoutheren
- * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
- * rather than relying on the presence of the IANA rtp encoding name field
- *
- * Revision 2.48  2006/08/15 23:35:36  csoutheren
- * Fixed problem with OpalMediaFormat compare which stopped RTP payload map from working
- *   which disabled iLBC codec on SIP
- *
- * Revision 2.47  2006/08/01 12:46:32  rjongbloed
- * Added build solution for plug ins
- * Removed now redundent code due to plug ins addition
- *
- * Revision 2.46  2006/07/24 14:03:40  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 2.45  2006/07/14 04:22:43  csoutheren
- * Applied 1517397 - More Phobos stability fix
- * Thanks to Dinis Rosario
- *
- * Revision 2.44  2006/04/09 12:01:44  rjongbloed
- * Added missing Clone() functions so media options propagate correctly.
- *
- * Revision 2.43  2006/03/20 10:37:47  csoutheren
- * Applied patch #1453753 - added locking on media stream manipulation
- * Thanks to Dinis Rosario
- *
- * Revision 2.42.2.4  2006/04/06 05:33:08  csoutheren
- * Backports from CVS head up to Plugin_Merge2
- *
- * Revision 2.42.2.3  2006/04/06 01:21:20  csoutheren
- * More implementation of video codec plugins
- *
- * Revision 2.42.2.2  2006/03/16 07:06:00  csoutheren
- * Initial support for audio plugins
- *
- * Revision 2.42.2.1  2006/03/13 07:20:28  csoutheren
- * Added OpalMediaFormat clone function
- *
- * Revision 2.44  2006/04/09 12:01:44  rjongbloed
- * Added missing Clone() functions so media options propagate correctly.
- *
- * Revision 2.43  2006/03/20 10:37:47  csoutheren
- * Applied patch #1453753 - added locking on media stream manipulation
- * Thanks to Dinis Rosario
- *
- * Revision 2.42  2006/02/21 09:38:28  csoutheren
- * Fix problem with incorrect timestamps for uLaw and ALaw
- *
- * Revision 2.41  2006/02/13 03:46:17  csoutheren
- * Added initialisation stuff to make sure that everything works OK
- *
- * Revision 2.40  2006/01/23 22:53:14  csoutheren
- * Reverted previous change that prevents multiple codecs from being removed using the
- *  removeMask
- *
- * Revision 2.39  2005/12/27 20:50:46  dsandras
- * Added clockRate parameter to the media format. Added new merging method that
- * merges the parameter option from the source into the destination.
- *
- * Revision 2.38  2005/12/24 17:50:20  dsandras
- * Added clockRate parameter support to allow wideband audio codecs.
- *
- * Revision 2.37  2005/12/06 21:38:16  dsandras
- * Fixed SetMediaFormatMask thanks for Frederic Heem <frederic.heem _Atttt_ telsey.it>. Thanks! (Patch #1368040).
- *
- * Revision 2.36  2005/09/13 20:48:22  dominance
- * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
- *
- * Revision 2.35  2005/09/06 12:44:49  rjongbloed
- * Many fixes to finalise the video processing: merging remote media
- *
- * Revision 2.34  2005/09/02 14:49:21  csoutheren
- * Fixed link problem in Linux
- *
- * Revision 2.33  2005/08/31 13:19:25  rjongbloed
- * Added mechanism for controlling media (especially codecs) including
- *   changing the OpalMediaFormat option list (eg bit rate) and a completely
- *   new OpalMediaCommand abstraction for things like video fast update.
- *
- * Revision 2.32  2005/08/28 07:59:17  rjongbloed
- * Converted OpalTranscoder to use factory, requiring sme changes in making sure
- *   OpalMediaFormat instances are initialised before use.
- *
- * Revision 2.31  2005/08/24 10:18:23  rjongbloed
- * Fix incorrect session ID for video media format, doesn't work if thinks is audio!
- *
- * Revision 2.30  2005/08/20 07:33:30  rjongbloed
- * Added video specific OpalMediaFormat
- *
- * Revision 2.29  2005/06/02 13:20:46  rjongbloed
- * Added minimum and maximum check to media format options.
- * Added ability to set the options on the primordial media format list.
- *
- * Revision 2.28  2005/03/12 00:33:28  csoutheren
- * Fixed problems with STL compatibility on MSVC 6
- * Fixed problems with video streams
- * Thanks to Adrian Sietsma
- *
- * Revision 2.27  2005/02/21 20:27:18  dsandras
- * Fixed compilation with gcc.
- *
- * Revision 2.26  2005/02/21 12:20:05  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 2.25  2004/10/24 10:46:41  rjongbloed
- * Back out change of strcasecmp to strcmp for WinCE
- *
- * Revision 2.24  2004/10/23 11:42:38  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 2.23  2004/07/11 12:32:51  rjongbloed
- * Added functions to add/subtract lists of media formats from a media format list
- *
- * Revision 2.22  2004/05/03 00:59:19  csoutheren
- * Fixed problem with OpalMediaFormat::GetMediaFormatsList
- * Added new version of OpalMediaFormat::GetMediaFormatsList that minimses copying
- *
- * Revision 2.21  2004/03/25 11:48:48  rjongbloed
- * Changed PCM-16 from IllegalPayloadType to MaxPayloadType to avoid problems
- *   in other parts of the code.
- *
- * Revision 2.20  2004/03/22 11:32:42  rjongbloed
- * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
- *   format used by such things as the sound card and the RTP payload format which
- *   is always big endian.
- *
- * Revision 2.19  2004/02/13 22:15:35  csoutheren
- * Changed stricmp to strcascmp thanks to Diana Cionoiu
- *
- * Revision 2.18  2004/02/07 02:18:19  rjongbloed
- * Improved searching for media format to use payload type AND the encoding name.
- *
- * Revision 2.17  2003/03/17 10:13:41  robertj
- * Fixed mutex problem with media format database.
- *
- * Revision 2.16  2003/01/07 04:39:53  robertj
- * Updated to OpenH323 v1.11.2
- *
- * Revision 2.15  2002/11/10 11:33:19  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.14  2002/09/04 06:01:49  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.13  2002/07/01 04:56:33  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.12  2002/03/27 05:36:44  robertj
- * Set RFC2833 payload type to be 101 for Cisco compatibility
- *
- * Revision 2.11  2002/02/19 07:36:51  robertj
- * Added OpalRFC2833 as a OpalMediaFormat variable.
- *
- * Revision 2.10  2002/02/11 09:32:13  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 2.9  2002/01/22 05:14:38  robertj
- * Added RTP encoding name string to media format database.
- * Changed time units to clock rate in Hz.
- *
- * Revision 2.8  2002/01/14 06:35:58  robertj
- * Updated to OpenH323 v1.7.9
- *
- * Revision 2.7  2001/11/15 06:55:26  robertj
- * Fixed Reorder() function so reorders EVERY format that matches wildcard.
- *
- * Revision 2.6  2001/10/05 00:22:14  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.5  2001/10/04 00:43:57  robertj
- * Added function to remove wildcard from list.
- * Added constructor to make a list with one format in it.
- * Fixed wildcard matching so trailing * works.
- * Optimised reorder so does not reorder if already in order.
- *
- * Revision 2.4  2001/08/23 05:51:17  robertj
- * Completed implementation of codec reordering.
- *
- * Revision 2.3  2001/08/22 03:51:44  robertj
- * Added functions to look up media format by payload type.
- *
- * Revision 2.2  2001/08/01 06:22:07  robertj
- * Fixed GNU warning.
- *
- * Revision 2.1  2001/08/01 05:45:34  robertj
- * Made OpalMediaFormatList class global to help with documentation.
- *
- * Revision 2.0  2001/07/27 15:48:25  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.11  2002/12/03 09:20:01  craigs
- * Fixed problem with RFC2833 and a dynamic RTP type using the same RTP payload number
- *
- * Revision 1.10  2002/12/02 03:06:26  robertj
- * Fixed over zealous removal of code when NO_AUDIO_CODECS set.
- *
- * Revision 1.9  2002/10/30 05:54:17  craigs
- * Fixed compatibilty problems with G.723.1 6k3 and 5k3
- *
- * Revision 1.8  2002/08/05 10:03:48  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.7  2002/06/25 08:30:13  robertj
- * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
- *   the OLC dataType silenceSuppression field so does not send SID frames
- *   to receiver codecs that do not understand them.
- *
- * Revision 1.6  2002/01/22 07:08:26  robertj
- * Added IllegalPayloadType enum as need marker for none set
- *   and MaxPayloadType is a legal value.
- *
- * Revision 1.5  2001/12/11 04:27:28  craigs
- * Added support for 5.3kbps G723.1
- *
- * Revision 1.4  2001/09/21 02:51:45  robertj
- * Implemented static object for all "known" media formats.
- * Added default session ID to media format description.
- *
- * Revision 1.3  2001/05/11 04:43:43  robertj
- * Added variable names for standard PCM-16 media format name.
- *
- * Revision 1.2  2001/02/09 05:13:56  craigs
- * Added pragma implementation to (hopefully) reduce the executable image size
- * under Linux
- *
- * Revision 1.1  2001/01/25 07:27:16  robertj
- * Major changes to add more flexible OpalMediaFormat class to normalise
- *   all information about media types, especially codecs.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
@@ -381,7 +37,9 @@
 
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
+#include <codec/opalplugin.h>
 #include <codec/opalwavfile.h>
+#include <ptlib/videoio.h>
 #include <ptclib/cypher.h>
 
 
@@ -484,6 +142,19 @@ static PMutex & GetMediaFormatsListMutex()
 {
   static PMutex mutex;
   return mutex;
+}
+
+
+static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal & fmt2, const PString & variableOption, const PString & minOption, const PString & maxOption)
+{
+  unsigned value    = fmt1.GetOptionInteger(variableOption, 0);
+
+  unsigned minValue = fmt2.GetOptionInteger(minOption, 0);
+  unsigned maxValue = fmt2.GetOptionInteger(maxOption, UINT_MAX);
+  if (value < minValue)
+    fmt1.SetOptionInteger(variableOption, minValue);
+  else if (value > maxValue)
+    fmt1.SetOptionInteger(variableOption, maxValue);
 }
 
 
@@ -857,11 +528,12 @@ void OpalMediaOptionOctets::SetValue(const BYTE * data, PINDEX length)
 
 /////////////////////////////////////////////////////////////////////////////
 
-const PString & OpalMediaFormat::NeedsJitterOption() { static PString s = "Needs Jitter";   return s; }
-const PString & OpalMediaFormat::MaxBitRateOption()  { static PString s = "Max Bit Rate";   return s; }
-const PString & OpalMediaFormat::MaxFrameSizeOption(){ static PString s = "Max Frame Size"; return s; }
-const PString & OpalMediaFormat::FrameTimeOption()   { static PString s = "Frame Time";     return s; }
-const PString & OpalMediaFormat::ClockRateOption()   { static PString s = "Clock Rate";     return s; }
+const PString & OpalMediaFormat::NeedsJitterOption()  { static PString s = PLUGINCODEC_OPTION_NEEDS_JITTER;   return s; }
+const PString & OpalMediaFormat::MaxFrameSizeOption() { static PString s = PLUGINCODEC_OPTION_MAX_FRAME_SIZE; return s; }
+const PString & OpalMediaFormat::FrameTimeOption()    { static PString s = PLUGINCODEC_OPTION_FRAME_TIME;     return s; }
+const PString & OpalMediaFormat::ClockRateOption()    { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;     return s; }
+const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;   return s; }
+
 
 OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
   : m_info(NULL)
@@ -1005,7 +677,7 @@ PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 void OpalMediaFormat::PrintOn(ostream & strm) const
 {
   if (m_info != NULL)
-    strm << m_info->formatName;
+    strm << *m_info;
 }
 
 
@@ -1119,17 +791,35 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 }
 
 
+PObject * OpalMediaFormatInternal::Clone() const
+{
+  return new OpalMediaFormatInternal(*this);
+}
+
+
 bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(mediaFormat.media_format_mutex);
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
-    if (option != NULL && !options[i].Merge(*option))
+    if (option == NULL) {
+      PTRACE(2, "MediaFormat\tCannot merge unmatched option " << options[i].GetName());
+    }
+    else if (!options[i].Merge(*option))
       return false;
   }
 
   return true;
+}
+
+
+PStringToString OpalMediaFormatInternal::GetOptions() const
+{
+  PStringToString dict;
+  for (PINDEX i = 0; i < options.GetSize(); i++)
+    dict.SetAt(options[i].GetName(), options[i].AsString());
+  return dict;
 }
 
 
@@ -1198,6 +888,18 @@ int OpalMediaFormatInternal::GetOptionInteger(const PString & name, int dflt) co
 
   PAssertAlways(PInvalidCast);
   return dflt;
+}
+
+
+bool OpalMediaFormatInternal::ToNormalisedOptions()
+{
+  return true;
+}
+
+
+bool OpalMediaFormatInternal::ToCustomisedOptions()
+{
+  return true;
 }
 
 
@@ -1387,9 +1089,14 @@ bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 }
 
 
-void OpalMediaFormatInternal::PrintOptions(ostream & strm) const
+void OpalMediaFormatInternal::PrintOn(ostream & strm) const
 {
   PWaitAndSignal m(media_format_mutex);
+
+  if (strm.width() != -1) {
+    strm << formatName;
+    return;
+  }
 
   static const char * const SessionNames[] = { "", " Audio", " Video", " Data", " H.224" };
   static const int TitleWidth = 25;
@@ -1424,8 +1131,8 @@ void OpalMediaFormatInternal::PrintOptions(ostream & strm) const
 
 #if OPAL_AUDIO
 
-const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = "Rx Frames Per Packet"; return s; }
-const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = "Tx Frames Per Packet"; return s; }
+const PString & OpalAudioFormat::RxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET; return s; }
+const PString & OpalAudioFormat::TxFramesPerPacketOption() { static PString s = PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET; return s; }
 
 OpalAudioFormat::OpalAudioFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1472,8 +1179,8 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
                             clockRate,
                             timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, rxFrames, 1, maxFrames));
-  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::MinMerge, txFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::RxFramesPerPacketOption(), false, OpalMediaOption::NoMerge,  rxFrames, 1, maxFrames));
+  AddOption(new OpalMediaOptionUnsigned(OpalAudioFormat::TxFramesPerPacketOption(), false, OpalMediaOption::NoMerge, txFrames, 1, maxFrames));
 }
 
 
@@ -1490,6 +1197,7 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   if (!OpalMediaFormatInternal::Merge(mediaFormat))
     return false;
 
+  Clamp(*this, mediaFormat, OpalAudioFormat::TxFramesPerPacketOption(), PString::Empty(), OpalAudioFormat::RxFramesPerPacketOption());
   return true;
 }
 
@@ -1499,12 +1207,16 @@ bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 
 #if OPAL_VIDEO
 
-const PString & OpalVideoFormat::FrameWidthOption()          { static PString s = "Frame Width";           return s; }
-const PString & OpalVideoFormat::FrameHeightOption()         { static PString s = "Frame Height";          return s; }
-const PString & OpalVideoFormat::EncodingQualityOption()     { static PString s = "Encoding Quality";      return s; }
-const PString & OpalVideoFormat::TargetBitRateOption()       { static PString s = "Target Bit Rate";       return s; }
-const PString & OpalVideoFormat::DynamicVideoQualityOption() { static PString s = "Dynamic Video Quality"; return s; }
-const PString & OpalVideoFormat::AdaptivePacketDelayOption() { static PString s = "Adaptive Packet Delay"; return s; }
+const PString & OpalVideoFormat::FrameWidthOption()             { static PString s = PLUGINCODEC_OPTION_FRAME_WIDTH;               return s; }
+const PString & OpalVideoFormat::FrameHeightOption()            { static PString s = PLUGINCODEC_OPTION_FRAME_HEIGHT;              return s; }
+const PString & OpalVideoFormat::MinRxFrameWidthOption()        { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH;        return s; }
+const PString & OpalVideoFormat::MinRxFrameHeightOption()       { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT;       return s; }
+const PString & OpalVideoFormat::MaxRxFrameWidthOption()        { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH;        return s; }
+const PString & OpalVideoFormat::MaxRxFrameHeightOption()       { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT;       return s; }
+const PString & OpalVideoFormat::TargetBitRateOption()          { static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE;           return s; }
+const PString & OpalVideoFormat::TemporalSpatialTradeOffOption(){ static PString s = PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF;return s; }
+const PString & OpalVideoFormat::TxKeyFramePeriodOption()       { static PString s = PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD;       return s; }
+
 
 OpalVideoFormat::OpalVideoFormat(const char * fullName,
                                  RTP_DataFrame::PayloadTypes rtpPayloadType,
@@ -1545,12 +1257,13 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                             OpalMediaFormat::VideoClockRate,
                             timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 11, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight, 9, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::EncodingQualityOption(),    false, OpalMediaOption::MinMerge, 15,          1, 31));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000,    1000));
-  AddOption(new OpalMediaOptionBoolean(OpalVideoFormat::DynamicVideoQualityOption(), false, OpalMediaOption::NoMerge,  false));
-  AddOption(new OpalMediaOptionBoolean(OpalVideoFormat::AdaptivePacketDelayOption(), false, OpalMediaOption::NoMerge,  false));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight,16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::SQCIFWidth, 16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),   false, OpalMediaOption::MinMerge, PVideoFrameInfo::SQCIFHeight,16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Width, 16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameHeightOption(),   false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Height,16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000, 100));
 
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
@@ -1572,10 +1285,9 @@ bool OpalVideoFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   if (!OpalMediaFormatInternal::Merge(mediaFormat))
     return false;
 
-  unsigned maxBitRate = GetOptionInteger(OpalVideoFormat::MaxBitRateOption(), 0);
-  unsigned targetBitRate = GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 0);
-  if (targetBitRate > maxBitRate)
-    SetOptionInteger(OpalVideoFormat::TargetBitRateOption(), maxBitRate);
+  Clamp(*this, mediaFormat, OpalVideoFormat::TargetBitRateOption(), PString::Empty(),                          OpalMediaFormat::MaxBitRateOption());
+  Clamp(*this, mediaFormat, OpalVideoFormat::FrameWidthOption(),    OpalVideoFormat::MinRxFrameWidthOption(),  OpalVideoFormat::MaxRxFrameWidthOption());
+  Clamp(*this, mediaFormat, OpalVideoFormat::FrameHeightOption(),   OpalVideoFormat::MinRxFrameHeightOption(), OpalVideoFormat::MaxRxFrameHeightOption());
 
   return true;
 }

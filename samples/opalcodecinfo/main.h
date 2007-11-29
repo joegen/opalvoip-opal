@@ -21,41 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2006/03/13 06:56:37  csoutheren
- * Initial version
- *
- * Revision 1.1  2004/05/11 01:19:37  csoutheren
- * Initial version
- *
- * Revision 1.8  2001/11/01 01:35:25  robertj
- * Added default Fast Start disabled and H.245 tunneling disable flags
- *   to the endpoint instance.
- *
- * Revision 1.7  2001/08/06 03:18:35  robertj
- * Fission of h323.h to h323ep.h & h323con.h, h323.h now just includes files.
- * Improved access to H.235 secure RAS functionality.
- * Changes to H.323 secure RAS contexts to help use with gk server.
- *
- * Revision 1.6  2001/08/03 11:56:26  robertj
- * Added conditional compile for H.235 stuff.
- *
- * Revision 1.5  2001/03/21 04:52:40  robertj
- * Added H.235 security to gatekeepers, thanks Fürbass Franz!
- *
- * Revision 1.4  2001/03/20 23:42:55  robertj
- * Used the new PTrace::Initialise function for starting trace code.
- *
- * Revision 1.3  2000/07/31 14:08:09  robertj
- * Added fast start and H.245 tunneling flags to the H323Connection constructor so can
- *    disabled these features in easier manner to overriding virtuals.
- *
- * Revision 1.2  2000/06/07 05:47:56  robertj
- * Added call forwarding.
- *
- * Revision 1.1  2000/05/11 04:05:57  robertj
- * Simple sample program.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef _SimpleH323_MAIN_H

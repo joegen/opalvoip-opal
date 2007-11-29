@@ -19,20 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: CAPI.cxx,v $
- * Revision 1.4  2007/03/30 00:06:44  rjongbloed
- * Further implementation, still incomplete.
- *
- * Revision 1.3  2006/11/25 03:44:02  rjongbloed
- * Changed CAPI library interface so uses late binding on Win32 DLL preventing annoying
- *   dialogs from appearing of no ISDN on your system.
- *
- * Revision 1.2  2006/11/25 00:17:16  rjongbloed
- * Changed illegal application ID to more compatible zero value.
- *
- * Revision 1.1  2006/11/24 09:22:01  rjongbloed
- * Added files for CAPI LID on both Windows and Linux. Still much implementationto be done!
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #define _CRT_SECURE_NO_DEPRECATE

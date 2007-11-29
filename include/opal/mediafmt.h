@@ -24,304 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mediafmt.h,v $
- * Revision 2.61  2007/09/25 19:35:30  csoutheren
- * Fix compilation when using --disable-audio
- *
- * Revision 2.60  2007/09/21 00:51:38  rjongbloed
- * Fixed weird divide by zero error on clock rate.
- *
- * Revision 2.59  2007/09/18 12:52:34  rjongbloed
- * Removed duplicate change logs
- *
- * Revision 2.58  2007/09/12 04:19:53  rjongbloed
- * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
- *   the plug in capabilities, that then do not get updated values from the master
- *   list, or worse from the user modified master list, causing much confusion.
- *
- * Revision 2.57  2007/09/10 00:11:13  rjongbloed
- * AddedOpalMediaFormat::IsTransportable() function as better test than simply
- *   checking the payload type, condition is more complex.
- *
- * Revision 2.56  2007/08/10 09:30:18  rjongbloed
- * Fixed typos in comments
- *
- * Revision 2.55  2007/08/07 01:38:40  csoutheren
- * Fix problem with rtpEncodingName member going out of scope
- *
- * Revision 2.54  2007/08/02 07:54:15  csoutheren
- * Add function to print options on media format
- *
- * Revision 2.53  2007/07/24 12:51:26  rjongbloed
- * Fixed odd problem where need to allow for sign bit on an unsigned enum in a struct bitfield.
- *
- * Revision 2.52  2007/06/27 07:56:08  rjongbloed
- * Add new OpalMediaOption for octet strings (simple block of bytes).
- *
- * Revision 2.51  2007/06/22 05:41:47  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- *
- * Revision 2.50  2007/06/16 21:36:59  dsandras
- * Added H.264 support thanks to Matthias Schneider <ma30002000 yahoo de>.
- * Thanks a lot !
- *
- * Baseline Profile:
- * no B-frames
- * We make use of the baseline profile (which is the designated profile for interactive vide) ,
- * that means:
- * no B-Frames (too much latency in interactive video)
- * CBR (we want to get the max. quality making use of all the bitrate that is available)
- * We allow one exeption: configuring a bitrate of > 786 kbit/s
- *
- * This plugin implements
- * - Single Time Aggregation Packets A
- * - Single NAL units
- * - Fragmentation Units
- * like described in RFC3984
- *
- * It requires x264 and ffmpeg.
- *
- * Revision 2.49  2007/04/10 05:15:53  rjongbloed
- * Fixed issue with use of static C string variables in DLL environment,
- *   must use functional interface for correct initialisation.
- *
- * Revision 2.48  2007/03/13 00:32:16  csoutheren
- * Simple but messy changes to allow compile time removal of protocol
- * options such as H.450 and H.460
- * Fix MakeConnection overrides
- *
- * Revision 2.47  2007/02/14 06:51:28  csoutheren
- * Extended FindFormat to allow finding multiple matching formats
- *
- * Revision 2.46  2007/02/10 18:14:31  hfriederich
- * Add copy constructor to have consistent code with assignment operator.
- * Only make options unique when they actually differ
- *
- * Revision 2.45  2006/12/08 07:33:13  csoutheren
- * Fix problem with wideband audio plugins and sound channel
- *
- * Revision 2.44  2006/11/21 01:00:59  csoutheren
- * Ensure SDP only uses codecs that are valid for SIP
- *
- * Revision 2.43  2006/08/20 03:45:54  csoutheren
- * Add OpalMediaFormat::IsValidForProtocol to allow plugin codecs to be enabled only for certain protocols
- * rather than relying on the presence of the IANA rtp encoding name field
- *
- * Revision 2.42  2006/08/11 07:52:01  csoutheren
- * Fix problem with media format factory in VC 2005
- * Fixing problems with Speex codec
- * Remove non-portable usages of PFactory code
- *
- * Revision 2.41  2006/07/24 14:03:38  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 2.40  2006/07/14 04:22:42  csoutheren
- * Applied 1517397 - More Phobos stability fix
- * Thanks to Dinis Rosario
- *
- * Revision 2.39  2006/04/20 16:52:22  hfriederich
- * Adding support for H.224/H.281
- *
- * Revision 2.38  2006/04/09 12:01:43  rjongbloed
- * Added missing Clone() functions so media options propagate correctly.
- *
- * Revision 2.37.4.6  2006/04/26 05:05:59  csoutheren
- * H.263 decoding working via codec plugin
- *
- * Revision 2.37.4.5  2006/04/19 04:58:56  csoutheren
- * Debugging and testing of new video plugins
- * H.261 working in both CIF and QCIF modes in H.323
- *
- * Revision 2.37.4.4  2006/04/10 06:24:30  csoutheren
- * Backport from CVS head up to Plugin_Merge3
- *
- * Revision 2.37.4.3  2006/04/06 01:21:17  csoutheren
- * More implementation of video codec plugins
- *
- * Revision 2.37.4.2  2006/03/16 07:06:00  csoutheren
- * Initial support for audio plugins
- *
- * Revision 2.37.4.1  2006/03/13 07:20:28  csoutheren
- * Added OpalMediaFormat clone function
- *
-
- * Revision 2.37  2005/12/27 20:46:09  dsandras
- * Added clockRate to the media format. Added "AlwaysMerge" method for merging
- * media format options.
- *
- * Revision 2.36  2005/12/24 17:51:02  dsandras
- * Added clockRate parameter to allow wideband audio codecs.
- *
- * Revision 2.35  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.34  2005/09/13 20:48:22  dominance
- * minor cleanups needed to support mingw compilation. Thanks goes to Julien Puydt.
- *
- * Revision 2.33  2005/09/06 12:44:49  rjongbloed
- * Many fixes to finalise the video processing: merging remote media
- *
- * Revision 2.32  2005/08/31 13:19:25  rjongbloed
- * Added mechanism for controlling media (especially codecs) including
- *   changing the OpalMediaFormat option list (eg bit rate) and a completely
- *   new OpalMediaCommand abstraction for things like video fast update.
- *
- * Revision 2.31  2005/08/28 07:59:17  rjongbloed
- * Converted OpalTranscoder to use factory, requiring sme changes in making sure
- *   OpalMediaFormat instances are initialised before use.
- *
- * Revision 2.30  2005/08/24 02:07:56  dereksmithies
- * Put guard around a MSVC pragma, so GCC does not generate zillions of warnings.
- *
- * Revision 2.29  2005/08/22 01:26:25  shorne
- * Removed warning on numeric_limits on MSVC6
- *
- * Revision 2.28  2005/08/20 07:32:49  rjongbloed
- * Added video specific OpalMediaFormat
- *
- * Revision 2.27  2005/07/11 01:42:21  csoutheren
- * Fixed problems with some constants names not being available
- *
- * Revision 2.26  2005/06/20 16:47:52  shorne
- * Fix STL compatibility issue on MSVC6
- *
- * Revision 2.25  2005/06/02 13:20:45  rjongbloed
- * Added minimum and maximum check to media format options.
- * Added ability to set the options on the primordial media format list.
- *
- * Revision 2.24  2005/03/12 00:33:26  csoutheren
- * Fixed problems with STL compatibility on MSVC 6
- * Fixed problems with video streams
- * Thanks to Adrian Sietsma
- *
- * Revision 2.23  2005/02/21 12:19:47  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 2.22  2004/07/11 12:32:51  rjongbloed
- * Added functions to add/subtract lists of media formats from a media format list
- *
- * Revision 2.21  2004/05/03 00:59:18  csoutheren
- * Fixed problem with OpalMediaFormat::GetMediaFormatsList
- * Added new version of OpalMediaFormat::GetMediaFormatsList that minimses copying
- *
- * Revision 2.20  2004/03/22 11:32:41  rjongbloed
- * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
- *   format used by such things as the sound card and the RTP payload format which
- *   is always big endian.
- *
- * Revision 2.19  2004/03/11 06:54:27  csoutheren
- * Added ability to disable SIP or H.323 stacks
- *
- * Revision 2.18  2004/02/07 02:18:18  rjongbloed
- * Improved searching for media format to use payload type AND the encoding name.
- *
- * Revision 2.17  2003/03/17 10:12:02  robertj
- * Fixed mutex problem with media format database.
- *
- * Revision 2.16  2003/01/07 04:39:53  robertj
- * Updated to OpenH323 v1.11.2
- *
- * Revision 2.15  2002/11/10 11:33:17  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.14  2002/09/16 02:52:35  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.13  2002/09/04 06:01:47  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.12  2002/07/01 04:56:31  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.11  2002/03/22 06:57:49  robertj
- * Updated to OpenH323 version 1.8.2
- *
- * Revision 2.10  2002/02/19 07:36:28  robertj
- * Added OpalRFC2833 as a OpalMediaFormat variable.
- *
- * Revision 2.9  2002/02/11 09:32:12  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 2.8  2002/01/22 05:06:30  robertj
- * Added RTP encoding name string to media format database.
- * Changed time units to clock rate in Hz.
- *
- * Revision 2.7  2002/01/14 06:35:57  robertj
- * Updated to OpenH323 v1.7.9
- *
- * Revision 2.6  2001/10/05 00:22:13  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.5  2001/10/04 00:42:12  robertj
- * Added function to remove wildcard from list.
- * Added constructor to make a list with one format in it.
- *
- * Revision 2.4  2001/08/23 05:51:17  robertj
- * Completed implementation of codec reordering.
- *
- * Revision 2.3  2001/08/22 03:51:31  robertj
- * Added functions to look up media format by payload type.
- *
- * Revision 2.2  2001/08/17 08:23:02  robertj
- * Put in missing dots in G.729 media formats.
- *
- * Revision 2.1  2001/08/01 05:51:39  robertj
- * Made OpalMediaFormatList class global to help with documentation.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.13  2002/12/02 03:06:26  robertj
- * Fixed over zealous removal of code when NO_AUDIO_CODECS set.
- *
- * Revision 1.12  2002/09/16 01:14:15  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.11  2002/09/03 06:19:37  robertj
- * Normalised the multi-include header prevention ifdef/define symbol.
- *
- * Revision 1.10  2002/08/05 10:03:47  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.9  2002/06/25 08:30:08  robertj
- * Changes to differentiate between stright G.723.1 and G.723.1 Annex A using
- *   the OLC dataType silenceSuppression field so does not send SID frames
- *   to receiver codecs that do not understand them.
- *
- * Revision 1.8  2002/03/21 02:39:15  robertj
- * Added backward compatibility define
- *
- * Revision 1.7  2002/02/11 04:15:56  robertj
- * Put G.723.1 at 6.3kbps back to old string value of "G.723.1" to improve
- *   backward compatibility. New #define is a synonym for it.
- *
- * Revision 1.6  2002/01/22 07:08:26  robertj
- * Added IllegalPayloadType enum as need marker for none set
- *   and MaxPayloadType is a legal value.
- *
- * Revision 1.5  2001/12/11 04:27:50  craigs
- * Added support for 5.3kbps G723.1
- *
- * Revision 1.4  2001/09/21 02:49:44  robertj
- * Implemented static object for all "known" media formats.
- * Added default session ID to media format description.
- *
- * Revision 1.3  2001/05/11 04:43:41  robertj
- * Added variable names for standard PCM-16 media format name.
- *
- * Revision 1.2  2001/02/09 05:16:24  robertj
- * Added #pragma interface for GNU C++.
- *
- * Revision 1.1  2001/01/25 07:27:14  robertj
- * Major changes to add more flexible OpalMediaFormat class to normalise
- *   all information about media types, especially codecs.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_MEDIAFMT_H
@@ -613,7 +318,8 @@ class OpalMediaOptionValue : public OpalMediaOption
        }
     }
 
-    virtual Comparison CompareValue(const OpalMediaOption & option) const {
+    virtual Comparison CompareValue(const OpalMediaOption & option) const
+    {
       const OpalMediaOptionValue * otherOption = PDownCast(const OpalMediaOptionValue, &option);
       if (otherOption == NULL)
         return GreaterThan;
@@ -632,8 +338,20 @@ class OpalMediaOptionValue : public OpalMediaOption
         m_value = otherOption->m_value;
     }
 
-    T GetValue() const { return m_value; }
-    void SetValue(T value) { m_value = value; }
+    T GetValue() const
+    {
+      return m_value;
+    }
+
+    void SetValue(T value)
+    {
+      if (value < m_minimum)
+        m_value = m_minimum;
+      else if (value > m_maximum)
+        m_value = m_maximum;
+      else
+        m_value = value;
+    }
 
   protected:
     T m_value;
@@ -765,9 +483,13 @@ class OpalMediaFormatInternal : public PObject
       time_t timeStamp
     );
 
+    virtual PObject * Clone() const;
+    virtual void PrintOn(ostream & strm) const;
+
     PBoolean IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
     PBoolean IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
 
+    PStringToString GetOptions() const;
     bool GetOptionValue(const PString & name, PString & value) const;
     bool SetOptionValue(const PString & name, const PString & value);
     bool GetOptionBoolean(const PString & name, bool dflt) const;
@@ -786,9 +508,10 @@ class OpalMediaFormatInternal : public PObject
     bool AddOption(OpalMediaOption * option, PBoolean overwrite = PFalse);
     OpalMediaOption * FindOption(const PString & name) const;
 
+    virtual bool ToNormalisedOptions();
+    virtual bool ToCustomisedOptions();
     virtual bool Merge(const OpalMediaFormatInternal & mediaFormat);
     virtual bool IsValidForProtocol(const PString & protocol) const;
-    virtual void PrintOptions(ostream & strm) const;
 
   protected:
     PCaselessString              formatName;
@@ -933,12 +656,25 @@ class OpalMediaFormat : public PContainer
     virtual Comparison Compare(const PObject & obj) const;
 
     /**Print media format.
+       Note if the user specifies a width (using setw() for example) of -1, then
+       a details multi-line output of all the options for the format is included.
       */
     virtual void PrintOn(ostream & strm) const;
 
     /**Read media format.
       */
     virtual void ReadFrom(istream & strm);
+
+    /**This will translate the codec specific "custom" options to OPAL
+       "normalised" options, e.g. For H.261 "QCIF MPI"="1", "CIF MPI"="5"
+        would be translated to "Frame Width"="176", "Frame Height"="144".
+      */
+    bool ToNormalisedOptions() { MakeUnique(); return m_info != NULL && m_info->ToNormalisedOptions(); }
+
+    /**This will do the reverse of ToNormalisedOptions, translating the OPAL
+       "normalised" options to codec specific "custom" options.
+      */
+    bool ToCustomisedOptions() { MakeUnique(); return m_info != NULL && m_info->ToCustomisedOptions(); }
 
     /**Merge with another media format. This will alter and validate
        the options for this media format according to the merge rule for
@@ -952,7 +688,7 @@ class OpalMediaFormat : public PContainer
       */
     bool Merge(
       const OpalMediaFormat & mediaFormat
-    ) { return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
+    ) { MakeUnique(); return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
 
     /**Get the name of the format
       */
@@ -1029,6 +765,11 @@ class OpalMediaFormat : public PContainer
       */
     unsigned GetClockRate() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
+
+    /**Get all of the option values of the format as a dictionary.
+       Each entry is a name value pair.
+      */
+    PStringToString GetOptions() const { return m_info == NULL ? PStringToString() : m_info->GetOptions(); }
 
     /**Get the number of options this media format has.
       */
@@ -1229,10 +970,9 @@ class OpalMediaFormat : public PContainer
     ostream & PrintOptions(ostream & strm) const
     {
       if (m_info != NULL)
-        m_info->PrintOptions(strm);
+        strm << setw(-1) << *m_info;
       return strm;
     }
-
 
     // Backward compatibility
     virtual PBoolean IsEmpty() const { return m_info == NULL || !m_info->IsValid(); }
@@ -1350,10 +1090,13 @@ class OpalVideoFormat : public OpalMediaFormat
 
     static const PString & FrameWidthOption();
     static const PString & FrameHeightOption();
-    static const PString & EncodingQualityOption();
+    static const PString & MinRxFrameWidthOption();
+    static const PString & MinRxFrameHeightOption();
+    static const PString & MaxRxFrameWidthOption();
+    static const PString & MaxRxFrameHeightOption();
     static const PString & TargetBitRateOption();
-    static const PString & DynamicVideoQualityOption();
-    static const PString & AdaptivePacketDelayOption();
+    static const PString & TemporalSpatialTradeOffOption();
+    static const PString & TxKeyFramePeriodOption();
 };
 #endif
 

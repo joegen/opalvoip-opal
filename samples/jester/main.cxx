@@ -21,56 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.14  2007/02/24 09:29:08  dereksmithies
- * Add ability to turn off the first packet in an audio burst. Test the jitter buffer
- * can cope with missing the first packet.
- *
- * Revision 1.13  2007/01/14 22:18:35  dereksmithies
- * MOdify the period when doing silence detect, to be 69sec off,  6 sec on.
- *
- * Revision 1.12  2007/01/14 20:52:32  dereksmithies
- * Report available audio devices if it fails to open the specified device.
- *
- * Revision 1.11  2007/01/13 00:05:40  rjongbloed
- * Fixed compilation on DevStudio 2003
- *
- * Revision 1.10  2007/01/12 10:00:57  dereksmithies
- * bring it up to date so it compiles.
- *
- * Revision 1.9  2007/01/11 09:20:41  dereksmithies
- * Use the new OpalJitterBufer class, allowing easy access to the jitter buffer's internal
- * variables. Play output audio to the specified sound device.
- *
- * Revision 1.8  2006/12/08 09:00:20  dereksmithies
- * Add mutex protection of a pointer.
- * Change default to send packets at a non uniform rate, so they go at 0 20 60 80 120 140 180 etc.
- * Add ability to suppress the sending of packets, so we simulate silence suppression.
- *
- * Revision 1.7  2006/12/02 07:31:00  dereksmithies
- * Add more options - duration of each packet.
- *
- * Revision 1.6  2006/12/02 04:16:13  dereksmithies
- * Get it to terminate correctly.
- * Report on when each frame is commited, and when each frame is received.
- *
- * Revision 1.5  2006/11/23 07:55:15  rjongbloed
- * Fixed sample app build due to RTP session class API breakage.
- *
- * Revision 1.4  2006/10/02 13:30:51  rjongbloed
- * Added LID plug ins
- *
- * Revision 1.3  2006/08/25 06:04:44  dereksmithies
- * Add to the docs on the functions.  Add a new thread to generate the frames,
- * which helps make the operation of the jitterbuffer clearer.
- *
- * Revision 1.2  2006/07/29 13:42:20  rjongbloed
- * Fixed compiler warning
- *
- * Revision 1.1  2006/06/19 09:32:09  dereksmithies
- * Initial cut of a program to test the jitter buffer in OPAL.
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifdef P_USE_PRAGMA

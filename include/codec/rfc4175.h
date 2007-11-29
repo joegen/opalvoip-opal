@@ -23,29 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: rfc4175.h,v $
- * Revision 1.6.6.1  2007/10/10 06:54:26  csoutheren
- * Updates to RFC4175 to deal with transmission over a wire
- * Not finished yet :)
- *
- * Revision 1.6  2007/09/11 15:48:35  csoutheren
- * Implemented RC4175 RGB
- *
- * Revision 1.5  2007/09/11 13:41:19  csoutheren
- * Fully implemented RFC 4175 codec with YCrCb420 encoding
- *
- * Revision 1.4  2007/08/29 00:45:57  csoutheren
- * Change base class for RFC4175 transcoder
- *
- * Revision 1.3  2007/06/30 14:00:05  dsandras
- * Fixed previous commit so that things at least compile. Untested.
- *
- * Revision 1.2  2007/06/29 23:24:19  csoutheren
- * More RFC4175 implementation
- *
- * Revision 1.1  2007/05/31 14:11:16  csoutheren
- * Add initial support for RFC 4175 uncompressed video encoding
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_RFC4175_H
@@ -78,9 +58,9 @@ extern const OpalVideoFormat & GetOpalRFC4175_RGB();
 
 /////////////////////////////////////////////////////////////////////////////
 
-class OpalRFC4175Transcoder : public OpalUncompVideoTranscoder
+class OpalRFC4175Transcoder : public OpalVideoTranscoder
 {
-  PCLASSINFO(OpalRFC4175Transcoder, OpalUncompVideoTranscoder);
+  PCLASSINFO(OpalRFC4175Transcoder, OpalVideoTranscoder);
   public:
     OpalRFC4175Transcoder(      
       const OpalMediaFormat & inputMediaFormat,  ///<  Input media format

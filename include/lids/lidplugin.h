@@ -24,26 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: lidplugin.h,v $
- * Revision 2.6  2007/09/04 02:21:20  rjongbloed
- * Allow for plug in API versions other than zero.
- *
- * Revision 2.5  2006/11/05 05:04:46  rjongbloed
- * Improved the terminal LID line ringing, epecially for country emulation.
- *
- * Revision 2.4  2006/10/25 22:26:14  rjongbloed
- * Changed LID tone handling to use new tone generation for accurate country based tones.
- *
- * Revision 2.3  2006/10/22 12:08:51  rjongbloed
- * Major change so that sound card based LIDs, eg USB handsets. are handled in
- *   common code so not requiring lots of duplication.
- *
- * Revision 2.2  2006/10/15 06:29:12  rjongbloed
- * Added more error codes
- *
- * Revision 2.1  2006/10/02 13:30:50  rjongbloed
- * Added LID plug ins
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_LIDPLUGIN_H

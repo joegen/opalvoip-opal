@@ -23,15 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.cxx,v $
- * Revision 1.1  2007/08/20 06:28:15  rjongbloed
- * Added new application to test audio and video codecs by taking real media
- *   (camera/YUV file/microphone/WAV file etc) encoding it, decoding it and playing
- *   back on real output device (screen/speaker etc)
- *
- * Revision 1.1  2003/04/28 08:18:42  craigs
- * Initial version
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include "precompile.h"

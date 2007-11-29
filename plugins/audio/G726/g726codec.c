@@ -19,63 +19,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g726codec.c,v $
- * Revision 1.5  2006/08/28 01:37:36  csoutheren
- * Normalised case of SDP names
- *
- * Revision 1.4  2006/08/28 01:19:22  csoutheren
- * Changed payload types and SDP names
- *
- * Revision 1.3  2006/08/28 01:17:15  csoutheren
- * Changed payload types and SDP names
- *
- * Revision 1.2  2006/08/01 13:06:48  rjongbloed
- * Added a raft of unvalidated audio codecs from OpenH323 tree
- *
- * Revision 1.1.2.1  2006/07/22 13:42:48  rjongbloed
- * Added more plug ins
- *
- * Revision 1.1.2.1  2006/05/08 13:49:57  rjongbloed
- * Imported all the audio codec plug ins from OpenH323
- *
- * Revision 1.12  2005/07/15 10:08:58  rogerhardiman
- * Fix SF bug 1237507. Windows uses malloc.h. Linux and FreeBSD uses stdlib.h
- * Wrap #include with _WIN32 to be consistent with malloc.h in pwlib.
- *
- * Revision 1.11  2005/03/19 03:22:11  csoutheren
- * Removed warnings from gcc snapshot 4.1-20050313
- *
- * Revision 1.10  2004/12/20 23:17:44  csoutheren
- * Added stdlib.h to all plugins to keep FreeBSD happy
- * Thanks to Kevin Oberman
- *
- * Revision 1.9  2004/06/17 22:04:40  csoutheren
- * Changed codec version number to be sensible rather than string $Ver$
- *
- * Revision 1.8  2004/05/27 10:52:10  csoutheren
- * Changed samples per frame to 8, thanks to David Parr
- *
- * Revision 1.7  2004/05/26 23:41:44  csoutheren
- * Fixed problem with incorrect types on encode and decode functions
- *
- * Revision 1.6  2004/05/12 12:32:44  csoutheren
- * More name fixes
- *
- * Revision 1.5  2004/05/12 12:09:59  csoutheren
- * Fixed accidental use of dynamic RTP types
- *
- * Revision 1.4  2004/05/10 11:57:06  csoutheren
- * Changed function to be static
- *
- * Revision 1.3  2004/05/10 11:36:29  csoutheren
- * Compiled under Windows
- *
- * Revision 1.2  2004/05/10 11:20:59  csoutheren
- * Compiled under Windows
- *
- * Revision 1.1  2004/05/09 14:58:34  csoutheren
- * Initial version - not yet finished
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <codec/opalplugin.h>

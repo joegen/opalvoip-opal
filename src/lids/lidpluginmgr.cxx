@@ -24,47 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: lidpluginmgr.cxx,v $
- * Revision 2.12  2007/06/10 08:25:14  rjongbloed
- * Fixed race condition with tones on LID handset.
- *
- * Revision 2.11  2007/06/09 07:37:59  rjongbloed
- * Fixed some bugs in the LID code so USB handsets work correctly.
- *
- * Revision 2.10  2007/02/12 23:55:41  dereksmithies
- * Fix GCC warnings about unused enumeration values in switch statements.
- *
- * Revision 2.9  2007/01/24 04:02:46  csoutheren
- * Removed warnings on Linux
- *
- * Revision 2.8  2006/11/19 04:58:09  rjongbloed
- * Fixed being able to restart tones on LIDs
- *
- * Revision 2.7  2006/11/12 03:36:42  rjongbloed
- * Fixed setting country code on LIDs that do not directly support them.
- *
- * Revision 2.6  2006/11/05 05:04:47  rjongbloed
- * Improved the terminal LID line ringing, epecially for country emulation.
- *
- * Revision 2.5  2006/10/28 00:38:43  rjongbloed
- * Fixed setting of country tones.
- * Added initialisation of country tones.
- * Fixed playing of country tones in generic sound driver LID (eg TigerJet)
- * Added some more country tone information.
- *
- * Revision 2.4  2006/10/25 22:26:16  rjongbloed
- * Changed LID tone handling to use new tone generation for accurate country based tones.
- *
- * Revision 2.3  2006/10/22 12:08:51  rjongbloed
- * Major change so that sound card based LIDs, eg USB handsets. are handled in
- *   common code so not requiring lots of duplication.
- *
- * Revision 2.2  2006/10/03 01:06:35  rjongbloed
- * Fixed GNU compiler compatibility.
- *
- * Revision 2.1  2006/10/02 13:30:51  rjongbloed
- * Added LID plug ins
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifdef __GNUC__

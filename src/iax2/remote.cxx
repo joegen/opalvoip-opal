@@ -26,36 +26,9 @@
  *
  *
  *
- * $Log: remote.cxx,v $
- * Revision 1.8  2007/01/23 02:10:39  dereksmithies
- *  Handle Vnak frames correctly.  Handle iseqno and oseqno correctly.
- *
- * Revision 1.7  2007/01/11 03:02:16  dereksmithies
- * Remove the previous audio buffering code, and switch to using the jitter
- * buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- * Revision 1.6  2005/08/28 23:51:30  dereksmithies
- * Improve test for massaging timestamps in fullframes. Thanks to Adrian Sietsma
- *
- * Revision 1.5  2005/08/26 03:07:38  dereksmithies
- * Change naming convention, so all class names contain the string "IAX2"
- *
- * Revision 1.4  2005/08/24 13:06:19  rjongbloed
- * Added configuration define for AEC encryption
- *
- * Revision 1.3  2005/08/24 01:38:38  dereksmithies
- * Add encryption, iax2 style. Numerous tidy ups. Use the label iax2, not iax
- *
- * Revision 1.2  2005/08/04 08:14:17  rjongbloed
- * Fixed Windows build under DevStudio 2003 of IAX2 code
- *
- * Revision 1.1  2005/07/30 07:01:33  csoutheren
- * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- * Thanks to Derek Smithies of Indranet Technologies Ltd. for
- * writing and contributing this code
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

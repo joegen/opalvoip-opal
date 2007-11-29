@@ -23,10 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.h,v $
- * Revision 1.1  2007/09/28 02:33:26  rjongbloed
- * Added application to play back RTP out of a Wireshark capture file.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

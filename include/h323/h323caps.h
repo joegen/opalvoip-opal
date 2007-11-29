@@ -26,237 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h323caps.h,v $
- * Revision 2.22  2007/09/19 10:43:00  csoutheren
- * Exposed G.7231 capability class
- * Added macros to create empty transcoders and capabilities
- *
- * Revision 2.21  2007/09/12 04:19:53  rjongbloed
- * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
- *   the plug in capabilities, that then do not get updated values from the master
- *   list, or worse from the user modified master list, causing much confusion.
- *
- * Revision 2.20  2007/06/22 06:29:13  rjongbloed
- * Fixed GCC warnings.
- *
- * Revision 2.19  2007/06/22 05:49:12  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- * Fixed removal of H.323 capabilities just because media format name is a
- *   substring of capability name.
- * Fixed inadequacies in H.245 Generic Capabilities (must be able to
- *   distinguish between TCS, OLC and ReqMode).
- *
- * Revision 2.18  2007/04/10 05:15:53  rjongbloed
- * Fixed issue with use of static C string variables in DLL environment,
- *   must use functional interface for correct initialisation.
- *
- * Revision 2.17  2006/08/11 07:52:01  csoutheren
- * Fix problem with media format factory in VC 2005
- * Fixing problems with Speex codec
- * Remove non-portable usages of PFactory code
- *
- * Revision 2.16  2006/07/24 14:03:38  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 2.15.4.3  2006/04/10 06:24:29  csoutheren
- * Backport from CVS head up to Plugin_Merge3
- *
- * Revision 2.15.4.2  2006/04/06 01:21:17  csoutheren
- * More implementation of video codec plugins
- *
- * Revision 2.15.4.1  2006/03/23 07:55:18  csoutheren
- * Audio plugin H.323 capability merging completed.
- * GSM, LBC, G.711 working. Speex and LPC-10 are not
- *
- * Revision 2.15  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.14  2005/02/21 12:19:45  rjongbloed
- * Added new "options list" to the OpalMediaFormat class.
- *
- * Revision 2.13  2004/09/01 12:21:27  rjongbloed
- * Added initialisation of H323EndPoints capability table to be all codecs so can
- *   correctly build remote caps from fqast connect params. This had knock on effect
- *   with const keywords added in numerous places.
- *
- * Revision 2.12  2004/02/19 10:46:43  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.11  2002/11/10 11:33:16  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.10  2002/09/16 02:52:33  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.9  2002/09/04 06:01:46  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.8  2002/07/01 04:56:29  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.7  2002/02/19 07:44:13  robertj
- * Added function to set teh RTP payload type for the capability.
- *
- * Revision 2.6  2002/02/11 09:32:11  robertj
- * Updated to openH323 v1.8.0
- *
- * Revision 2.5  2002/01/22 04:59:04  robertj
- * Update from OpenH323, RFC2833 support
- *
- * Revision 2.4  2002/01/14 06:35:56  robertj
- * Updated to OpenH323 v1.7.9
- *
- * Revision 2.3  2001/11/02 10:45:19  robertj
- * Updated to OpenH323 v1.7.3
- *
- * Revision 2.2  2001/10/05 00:22:13  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.1  2001/08/01 05:12:04  robertj
- * Major changes to H.323 capabilities, uses OpalMediaFormat for base name.
- * Added "known" codecs capability clases.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.40  2003/10/27 06:03:39  csoutheren
- * Added support for QoS
- *   Thanks to Henry Harrison of AliceStreet
- *
- * Revision 1.39  2003/06/06 02:13:10  rjongbloed
- * Changed non-standard capability semantics so can use C style strings as
- *   the embedded data block (ie automatically call strlen)
- *
- * Revision 1.38  2003/04/28 07:00:00  robertj
- * Fixed problem with compiler(s) not correctly initialising static globals
- *
- * Revision 1.37  2003/04/27 23:49:21  craigs
- * Fixed some comments and made list of registered codecs
- * available outside h323caps.cxx
- *
- * Revision 1.36  2002/11/09 04:24:01  robertj
- * Fixed minor documentation errors.
- *
- * Revision 1.35  2002/09/16 01:14:15  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.34  2002/09/03 06:19:36  robertj
- * Normalised the multi-include header prevention ifdef/define symbol.
- *
- * Revision 1.33  2002/08/05 10:03:47  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.32  2002/05/29 03:55:17  robertj
- * Added protocol version number checking infrastructure, primarily to improve
- *   interoperability with stacks that are unforgiving of new features.
- *
- * Revision 1.31  2002/05/10 05:44:50  robertj
- * Added the max bit rate field to the data channel capability class.
- *
- * Revision 1.30  2002/01/22 06:25:02  robertj
- * Moved payload type to ancestor so any capability can adjust it on logical channel.
- *
- * Revision 1.29  2002/01/17 07:04:57  robertj
- * Added support for RFC2833 embedded DTMF in the RTP stream.
- *
- * Revision 1.28  2002/01/16 05:37:41  robertj
- * Added missing mode change functions on non standard capabilities.
- *
- * Revision 1.27  2002/01/09 00:21:36  robertj
- * Changes to support outgoing H.245 RequstModeChange.
- *
- * Revision 1.26  2001/12/22 01:44:05  robertj
- * Added more support for H.245 RequestMode operation.
- *
- * Revision 1.25  2001/10/24 01:20:34  robertj
- * Added code to help with static linking of H323Capability names database.
- *
- * Revision 1.24  2001/09/21 02:48:51  robertj
- * Added default implementation for PDU encode/decode for codecs
- *   that have simple integer as frames per packet.
- *
- * Revision 1.23  2001/09/11 10:21:40  robertj
- * Added direction field to capabilities, thanks Nick Hoath.
- *
- * Revision 1.22  2001/07/19 09:50:40  robertj
- * Added code for default session ID on data channel being three.
- *
- * Revision 1.21  2001/07/17 04:44:29  robertj
- * Partial implementation of T.120 and T.38 logical channels.
- *
- * Revision 1.20  2001/05/21 07:20:47  robertj
- * Removed redundent class name in declaration.
- *
- * Revision 1.19  2001/05/14 05:56:26  robertj
- * Added H323 capability registration system so can add capabilities by
- *   string name instead of having to instantiate explicit classes.
- *
- * Revision 1.18  2001/05/02 16:22:21  rogerh
- * Add IsAllow() for a single capability to check if it is in the
- * capabilities set. This fixes the bug where OpenH323 would accept
- * incoming H261 video even when told not to accept it.
- *
- * Revision 1.17  2001/03/16 23:00:21  robertj
- * Improved validation of codec selection against capability set, thanks Chris Purvis.
- *
- * Revision 1.16  2001/02/09 05:16:24  robertj
- * Added #pragma interface for GNU C++.
- *
- * Revision 1.15  2001/01/25 07:27:14  robertj
- * Major changes to add more flexible OpalMediaFormat class to normalise
- *   all information about media types, especially codecs.
- *
- * Revision 1.14  2001/01/09 23:05:22  robertj
- * Fixed inability to have 2 non standard codecs in capability table.
- *
- * Revision 1.13  2000/10/16 08:49:30  robertj
- * Added single function to add all UserInput capability types.
- *
- * Revision 1.12  2000/08/23 14:23:11  craigs
- * Added prototype support for Microsoft GSM codec
- *
- * Revision 1.11  2000/07/13 12:25:47  robertj
- * Fixed problems with fast start frames per packet adjustment.
- *
- * Revision 1.10  2000/07/10 16:01:50  robertj
- * Started fixing capability set merging, still more to do.
- *
- * Revision 1.9  2000/07/04 01:16:49  robertj
- * Added check for capability allowed in "combinations" set, still needs more done yet.
- *
- * Revision 1.8  2000/06/03 03:16:47  robertj
- * Fixed using the wrong capability table (should be connections) for some operations.
- *
- * Revision 1.7  2000/05/23 11:32:27  robertj
- * Rewrite of capability table to combine 2 structures into one and move functionality into that class
- *    allowing some normalisation of usage across several applications.
- * Changed H323Connection so gets a copy of capabilities instead of using endponts, allows adjustments
- *    to be done depending on the remote client application.
- *
- * Revision 1.6  2000/05/18 11:53:34  robertj
- * Changes to support doc++ documentation generation.
- *
- * Revision 1.5  2000/05/10 04:05:26  robertj
- * Changed capabilities so has a function to get name of codec, instead of relying on PrintOn.
- *
- * Revision 1.4  2000/05/02 04:32:24  robertj
- * Fixed copyright notice comment.
- *
- * Revision 1.3  2000/04/05 19:01:12  robertj
- * Added function so can change desired transmit packet size.
- *
- * Revision 1.2  2000/03/21 03:06:47  robertj
- * Changes to make RTP TX of exact numbers of frames in some codecs.
- *
- * Revision 1.1  1999/12/23 23:02:35  robertj
- * File reorganision for separating RTP from H.323 and creation of LID for VPB support.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_H323CAPS_H
@@ -566,6 +338,8 @@ class H323Capability : public PObject
 
   private:
     OpalMediaFormat     mediaFormat;
+
+  friend class H323Capabilities;
 };
 
 
@@ -2322,6 +2096,14 @@ class H323Capabilities : public PObject
       PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
       PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
       H323Capability * cap  ///<  New capability specification
+    );
+
+    /**Add matching capability to media format.
+      */
+    PINDEX AddMediaFormat(
+      PINDEX descriptorNum,    ///<  The member of the capabilityDescriptor to add
+      PINDEX simultaneous,     ///<  The member of the SimultaneousCapabilitySet to add
+      const OpalMediaFormat & mediaFormat ///<  Media format to add.
     );
 
     /**Add all matching capabilities to descriptor lists.

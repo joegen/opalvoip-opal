@@ -24,10 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: sip.h,v $
- * Revision 2.1  2002/02/01 04:53:01  robertj
- * Added (very primitive!) SIP support.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_SIP_H

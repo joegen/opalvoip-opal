@@ -26,37 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: transaddr.h,v $
- * Revision 2.8  2006/08/21 05:29:25  csoutheren
- * Messy but relatively simple change to add support for secure (SSL/TLS) TCP transport
- * and secure H.323 signalling via the sh323 URL scheme
- *
- * Revision 2.7  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.6  2004/02/19 10:46:44  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.5  2002/11/10 11:33:17  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.4  2002/09/16 02:52:34  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.3  2002/09/12 06:58:17  robertj
- * Removed protocol prefix strings as static members as has problems with
- *   use in DLL environment.
- *
- * Revision 2.2  2002/07/01 04:56:30  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.1  2001/11/09 05:49:47  robertj
- * Abstracted UDP connection algorithm
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __H323_TRANSADDR_H

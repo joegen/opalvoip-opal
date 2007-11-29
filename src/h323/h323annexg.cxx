@@ -23,48 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h323annexg.cxx,v $
- * Revision 2.2  2007/04/02 05:51:33  rjongbloed
- * Tidied some trace logs to assure all have a category (bit before a tab character) set.
- *
- * Revision 2.1  2004/02/19 10:47:04  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 1.11  2003/04/09 03:08:10  robertj
- * Fixed race condition in shutting down transactor (pure virtual call)
- *
- * Revision 1.10  2003/04/01 03:14:40  robertj
- * Fixed passing thru H.501 RIP packet to transactor to handle.
- *
- * Revision 1.9  2003/03/26 00:46:29  robertj
- * Had another go at making H323Transactor being able to be created
- *   without having a listener running.
- *
- * Revision 1.8  2003/03/21 05:27:34  robertj
- * Added setting of remote port in UDP transport constructor.
- * Added call backs for cached responses.
- *
- * Revision 1.7  2003/03/20 01:51:11  robertj
- * More abstraction of H.225 RAS and H.501 protocols transaction handling.
- *
- * Revision 1.6  2003/03/18 13:57:53  craigs
- * More H.501 implementation
- *
- * Revision 1.5  2003/03/17 13:19:31  craigs
- * More H501 implementation
- *
- * Revision 1.4  2003/03/14 06:01:16  craigs
- * More updates
- *
- * Revision 1.3  2003/03/01 00:22:10  craigs
- * New PeerElement implementation
- *
- * Revision 1.2  2003/02/25 06:48:19  robertj
- * More work on PDU transaction abstraction.
- *
- * Revision 1.1  2003/02/21 05:27:06  craigs
- * Initial version
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

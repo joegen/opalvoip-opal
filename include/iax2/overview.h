@@ -26,19 +26,9 @@
  * The author of this code is Derek J Smithies
  *
  *
- * $Log: overview.h,v $
- * Revision 1.1  2006/03/11 06:29:55  dereksmithies
- * Place IAX2 documentation in the include directory, in a .h file
- *
- * Revision 1.1  2005/07/30 07:01:33  csoutheren
- * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- * Thanks to Derek Smithies of Indranet Technologies Ltd. for
- * writing and contributing this code
- *
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 /*! \page pageIAX2Protocol IAX2 section of the OPAL library.

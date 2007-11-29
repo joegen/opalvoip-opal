@@ -23,19 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.h,v $
- * Revision 1.3  2007/10/04 06:48:04  rjongbloed
- * High speed collision between opengk and opalgw.
- *
- * Revision 1.2  2007/05/21 04:30:30  dereksmithies
- * put #ifndef _PTLIB_H protection around the include of ptlib.h
- *
- * Revision 1.1  2003/03/26 02:49:00  robertj
- * Added service/daemon sample application.
- *
- * Revision 1.1  2003/02/20 01:10:52  robertj
- * Changed precompiled header so can precompile more than just ptlib.h
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

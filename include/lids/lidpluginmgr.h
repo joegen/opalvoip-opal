@@ -24,17 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: lidpluginmgr.h,v $
- * Revision 2.3  2006/11/05 05:04:46  rjongbloed
- * Improved the terminal LID line ringing, epecially for country emulation.
- *
- * Revision 2.2  2006/10/22 12:08:51  rjongbloed
- * Major change so that sound card based LIDs, eg USB handsets. are handled in
- *   common code so not requiring lots of duplication.
- *
- * Revision 2.1  2006/10/02 13:30:50  rjongbloed
- * Added LID plug ins
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __LIDPLUGINMGR_H

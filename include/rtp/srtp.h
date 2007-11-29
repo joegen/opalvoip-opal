@@ -26,49 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: srtp.h,v $
- * Revision 1.9  2007/04/19 06:17:21  csoutheren
- * Fixes for precompiled headers with gcc
- *
- * Revision 1.8  2007/04/17 23:45:08  csoutheren
- * Fix name of SRTP libraries on Windows
- *
- * Revision 1.7  2007/02/20 04:26:43  csoutheren
- * Ensure outgoing and incoming SSRC are set for SRTP sessions
- * Fixed problem with sending secure RTCP packets
- *
- * Revision 1.6  2007/02/12 02:44:27  csoutheren
- * Start of support for ZRTP
- *
- * Revision 1.6  2007/02/10 07:08:41  craigs
- * Start of support for ZRTP
- *
- * Revision 1.5  2006/11/20 03:37:12  csoutheren
- * Allow optional inclusion of RTP aggregation
- *
- * Revision 1.4  2006/10/24 04:18:28  csoutheren
- * Added support for encrypted RTCP
- *
- * Revision 1.3  2006/09/28 07:42:17  csoutheren
- * Merge of useful SRTP implementation
- *
- * Revision 1.2.2.3  2006/09/12 07:47:15  csoutheren
- * Changed to use seperate incoming and outgoing keys
- *
- * Revision 1.2.2.2  2006/09/12 07:06:58  csoutheren
- * More implementation of SRTP and general call security
- *
- * Revision 1.2.2.1  2006/09/08 06:23:28  csoutheren
- * Implement initial support for SRTP media encryption and H.235-SRTP support
- * This code currently inserts SRTP offers into outgoing H.323 OLC, but does not
- * yet populate capabilities or respond to negotiations. This code to follow
- *
- * Revision 1.2  2006/09/05 06:18:23  csoutheren
- * Start bringing in SRTP code for libSRTP
- *
- * Revision 1.1  2006/08/21 06:19:28  csoutheren
- * Added placeholders for SRTP implementation
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_SRTP_H

@@ -23,89 +23,9 @@
  *
  * Contributor(s): Fürbass Franz <franz.fuerbass@infonova.at>
  *
- * $Log: h235auth.h,v $
- * Revision 2.9  2006/02/13 03:46:17  csoutheren
- * Added initialisation stuff to make sure that everything works OK
- *
- * Revision 2.8  2004/02/19 10:46:43  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.7  2002/11/10 11:33:16  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.6  2002/09/16 02:52:33  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.5  2002/09/04 06:01:46  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.4  2002/07/01 04:56:29  robertj
- * Updated to OpenH323 v1.9.1
- *
- * Revision 2.3  2002/01/14 06:35:56  robertj
- * Updated to OpenH323 v1.7.9
- *
- * Revision 2.2  2001/10/05 00:22:13  robertj
- * Updated to PWLib 1.2.0 and OpenH323 1.7.0
- *
- * Revision 2.1  2001/08/13 05:10:39  robertj
- * Updates from OpenH323 v1.6.0 release.
- *
- * Revision 1.15  2003/04/30 00:28:50  robertj
- * Redesigned the alternate credentials in ARQ system as old implementation
- *   was fraught with concurrency issues, most importantly it can cause false
- *   detection of replay attacks taking out an endpoint completely.
- *
- * Revision 1.14  2003/04/01 04:47:48  robertj
- * Abstracted H.225 RAS transaction processing (RIP and secondary thread) in
- *   server environment for use by H.501 peer elements.
- *
- * Revision 1.13  2003/02/25 06:48:14  robertj
- * More work on PDU transaction abstraction.
- *
- * Revision 1.12  2003/02/11 04:43:22  robertj
- * Fixed use of asymmetrical authentication schemes such as MD5.
- *
- * Revision 1.11  2003/02/01 13:31:14  robertj
- * Changes to support CAT authentication in RAS.
- *
- * Revision 1.10  2003/01/08 04:40:31  robertj
- * Added more debug tracing for H.235 authenticators.
- *
- * Revision 1.9  2002/09/16 01:14:15  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.8  2002/09/03 06:19:36  robertj
- * Normalised the multi-include header prevention ifdef/define symbol.
- *
- * Revision 1.7  2002/08/05 10:03:47  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.6  2002/08/05 05:17:37  robertj
- * Fairly major modifications to support different authentication credentials
- *   in ARQ to the logged in ones on RRQ. For both client and server.
- * Various other H.235 authentication bugs and anomalies fixed on the way.
- *
- * Revision 1.5  2002/05/17 03:39:28  robertj
- * Fixed problems with H.235 authentication on RAS for server and client.
- *
- * Revision 1.4  2001/12/06 06:44:42  robertj
- * Removed "Win32 SSL xxx" build configurations in favour of system
- *   environment variables to select optional libraries.
- *
- * Revision 1.3  2001/09/14 00:13:37  robertj
- * Fixed problem with some athenticators needing extra conditions to be
- *   "active", so make IsActive() virtual and add localId to H235AuthSimpleMD5
- *
- * Revision 1.2  2001/09/13 01:15:18  robertj
- * Added flag to H235Authenticator to determine if gkid and epid is to be
- *   automatically set as the crypto token remote id and local id.
- *
- * Revision 1.1  2001/08/10 11:03:49  robertj
- * Major changes to H.235 support in RAS to support server.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_H235AUTH_H

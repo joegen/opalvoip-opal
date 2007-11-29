@@ -23,97 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: opalpluginmgr.h,v $
- * Revision 2.22  2007/10/08 01:45:16  rjongbloed
- * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
- * Some more clean ups.
- *
- * Revision 2.21  2007/10/05 04:14:47  rjongbloed
- * Quite a large code clean up.
- *
- * Revision 2.20  2007/09/25 09:49:54  rjongbloed
- * Fixed videoFastUpdate, is not a count but a simple boolean.
- *
- * Revision 2.19  2007/09/19 10:43:00  csoutheren
- * Exposed G.7231 capability class
- * Added macros to create empty transcoders and capabilities
- *
- * Revision 2.18  2007/09/12 04:19:53  rjongbloed
- * CHanges to avoid creation of long duration OpalMediaFormat instances, eg in
- *   the plug in capabilities, that then do not get updated values from the master
- *   list, or worse from the user modified master list, causing much confusion.
- *
- * Revision 2.17  2007/09/10 03:15:04  rjongbloed
- * Fixed issues in creating and subsequently using correctly unique
- *   payload types in OpalMediaFormat instances and transcoders.
- *
- * Revision 2.16  2007/09/07 17:49:47  ykiryanov
- * File was missing transcoders.h include. This had an effect while building code with no video.
- *
- * Revision 2.15  2007/08/13 06:07:51  csoutheren
- * Expose more functions
- *
- * Revision 2.14  2007/08/08 17:35:15  csoutheren
- * Final plugin manager changes
- *
- * Revision 2.13  2007/08/08 11:18:47  csoutheren
- * Fixed Linux compile errors
- *
- * Revision 2.12  2007/08/08 08:59:06  csoutheren
- * More plugin manager changes, as the last approach dead-ended :(
- *
- * Revision 2.11  2007/08/08 07:12:38  csoutheren
- * #ifdef out unused code - to be removed later if nobody complains :)
- *
- * Revision 2.10  2007/08/07 09:04:02  csoutheren
- * Export more functions
- *
- * Revision 2.9  2007/08/07 08:25:16  csoutheren
- * Expose plugin media format classes
- *
- * Revision 2.8  2007/08/06 07:14:22  csoutheren
- * Fix logging
- * Correct matching of H.263 capabilities
- *
- * Revision 2.7  2007/08/03 08:04:56  csoutheren
- * Add PrintOn for plugin video caps
- *
- * Revision 2.6  2007/07/02 18:53:36  csoutheren
- * Exposed classes
- *
- * Revision 2.5  2007/06/22 05:41:47  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- *
- * Revision 2.4  2006/10/02 13:30:50  rjongbloed
- * Added LID plug ins
- *
- * Revision 2.3  2006/09/28 07:42:14  csoutheren
- * Merge of useful SRTP implementation
- *
- * Revision 2.2  2006/08/11 07:52:01  csoutheren
- * Fix problem with media format factory in VC 2005
- * Fixing problems with Speex codec
- * Remove non-portable usages of PFactory code
- *
- * Revision 2.1  2006/07/24 14:03:38  csoutheren
- * Merged in audio and video plugins from CVS branch PluginBranch
- *
- * Revision 1.1.2.3  2006/04/06 01:21:16  csoutheren
- * More implementation of video codec plugins
- *
- * Revision 1.1.2.2  2006/03/23 07:55:18  csoutheren
- * Audio plugin H.323 capability merging completed.
- * GSM, LBC, G.711 working. Speex and LPC-10 are not
- *
- * Revision 1.1.2.1  2006/03/16 07:06:00  csoutheren
- * Initial support for audio plugins
- *
- * Created from OpenH323 h323pluginmgr.h
- * Revision 1.24  2005/11/30 13:05:01  csoutheren
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPALPLUGINMGR_H
@@ -262,13 +174,15 @@ class OpalPluginControl
 
     int Call(void * parm, unsigned * parmLen, void * context = NULL) const
     {
-      return controlDef != NULL ? (*controlDef->control)(codecDef, context, fnName, parm, parmLen) : 0;
+      return controlDef != NULL ? (*controlDef->control)(codecDef, context, fnName, parm, parmLen) : -1;
     }
 
     int Call(void * parm, unsigned   parmLen, void * context = NULL) const
     {
       return Call(parm, &parmLen, context);
     }
+
+    const char * GetName() const { return fnName; }
 
   protected:
     const PluginCodec_Definition  * codecDef;
@@ -284,6 +198,7 @@ class OpalPluginMediaFormatInternal
   public:
     OpalPluginMediaFormatInternal(const PluginCodec_Definition * defn);
 
+    bool AdjustOptions(OpalMediaFormatInternal & fmt, OpalPluginControl & control) const;
     void PopulateOptions(OpalMediaFormatInternal & format);
     void SetOldStyleOption(OpalMediaFormatInternal & format, const PString & _key, const PString & _val, const PString & type);
     bool IsValidForProtocol(const PString & _protocol) const;
@@ -292,6 +207,8 @@ class OpalPluginMediaFormatInternal
     OpalPluginControl getOptionsControl;
     OpalPluginControl freeOptionsControl;
     OpalPluginControl validForProtocolControl;
+    OpalPluginControl toNormalisedControl;
+    OpalPluginControl toCustomisedControl;
 };
 
 
@@ -313,6 +230,7 @@ class OpalPluginTranscoder
     OpalPluginTranscoder(const PluginCodec_Definition * defn, PBoolean isEnc);
     ~OpalPluginTranscoder();
 
+    bool UpdateOptions(const OpalMediaFormat & fmt);
     PBoolean Transcode(const void * from, unsigned * fromLen, void * to, unsigned * toLen, unsigned * flags) const
     {
       return codecDef != NULL && codecDef->codecFunction != NULL &&
@@ -347,6 +265,8 @@ class OpalPluginAudioFormatInternal : public OpalAudioFormatInternal, public Opa
     );
     virtual PObject * Clone() const;
     virtual bool IsValidForProtocol(const PString & protocol) const;
+    virtual bool ToNormalisedOptions();
+    virtual bool ToCustomisedOptions();
 };
 
 
@@ -355,6 +275,7 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
   PCLASSINFO(OpalPluginFramedAudioTranscoder, OpalFramedTranscoder);
   public:
     OpalPluginFramedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, const char * rawFormat = OpalPCM16);
+    bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
 };
@@ -365,6 +286,7 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
   PCLASSINFO(OpalPluginStreamedAudioTranscoder, OpalStreamedTranscoder);
   public:
     OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
+    bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
 };
 
 
@@ -400,6 +322,8 @@ class OpalPluginVideoFormatInternal : public OpalVideoFormatInternal, public Opa
     );
     virtual PObject * Clone() const;
     virtual bool IsValidForProtocol(const PString & protocol) const;
+    virtual bool ToNormalisedOptions();
+    virtual bool ToCustomisedOptions();
 };
 
 
@@ -410,9 +334,8 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
     OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, PBoolean _isEncoder);
     ~OpalPluginVideoTranscoder();
 
-    PINDEX GetOptimalDataFrameSize(PBoolean input) const;
     PBoolean ConvertFrames(const RTP_DataFrame & src, RTP_DataFrameList & dstList);
-    PBoolean UpdateOutputMediaFormat(const OpalMediaFormat & fmt);
+    bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
 
   protected:
     RTP_DataFrame * bufferRTP;
@@ -687,7 +610,7 @@ class H323VideoPluginCapability : public H323VideoCapability,
 
     virtual unsigned GetSubType() const;
 
-    static PBoolean SetCommonOptions(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
+    static PBoolean SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate);
 
     virtual void PrintOn(std::ostream & strm) const;
 

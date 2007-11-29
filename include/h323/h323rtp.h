@@ -26,64 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: h323rtp.h,v $
- * Revision 2.6  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.5  2004/02/24 11:28:45  rjongbloed
- * Normalised RTP session management across protocols
- *
- * Revision 2.4  2004/02/19 10:46:44  rjongbloed
- * Merged OpenH323 version 1.13.1 changes.
- *
- * Revision 2.3  2002/11/10 11:33:17  robertj
- * Updated to OpenH323 v1.10.3
- *
- * Revision 2.2  2002/09/16 02:52:34  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.1  2002/09/04 06:01:47  robertj
- * Updated to OpenH323 v1.9.6
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
- * Revision 1.11  2003/10/27 06:03:39  csoutheren
- * Added support for QoS
- *   Thanks to Henry Harrison of AliceStreet
- *
- * Revision 1.10  2003/02/07 00:27:59  robertj
- * Changed function to virtual to help in using external multiicast RTP stacks.
- *
- * Revision 1.9  2002/09/16 01:14:15  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.8  2002/09/03 06:19:37  robertj
- * Normalised the multi-include header prevention ifdef/define symbol.
- *
- * Revision 1.7  2002/08/05 10:03:47  robertj
- * Cosmetic changes to normalise the usage of pragma interface/implementation.
- *
- * Revision 1.6  2001/02/09 05:16:24  robertj
- * Added #pragma interface for GNU C++.
- *
- * Revision 1.5  2000/08/31 08:15:32  robertj
- * Added support for dynamic RTP payload types in H.245 OpenLogicalChannel negotiations.
- *
- * Revision 1.4  2000/05/18 11:53:34  robertj
- * Changes to support doc++ documentation generation.
- *
- * Revision 1.3  2000/05/02 04:32:24  robertj
- * Fixed copyright notice comment.
- *
- * Revision 1.2  2000/04/05 03:17:31  robertj
- * Added more RTP statistics gathering and H.245 round trip delay calculation.
- *
- * Revision 1.1  1999/12/23 23:02:35  robertj
- * File reorganision for separating RTP from H.323 and creation of LID for VPB support.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_H323RTP_H

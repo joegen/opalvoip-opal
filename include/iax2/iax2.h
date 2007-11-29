@@ -27,14 +27,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: iax2.h,v $
- * Revision 1.1  2005/07/30 07:01:32  csoutheren
- * Added implementation of IAX2 (Inter Asterisk Exchange 2) protocol
- * Thanks to Derek Smithies of Indranet Technologies Ltd. for
- * writing and contributing this code
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_IAX_H

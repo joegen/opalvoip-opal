@@ -26,21 +26,9 @@
  *
  *
  *
- * $Log: iax2jitter.cxx,v $
- * Revision 1.3  2007/01/14 21:06:07  dereksmithies
- * Fix a memory leak. The RTP_DataFrame class does need to be handled more
- * efficiently, but this will do for now.
- *
- * Revision 1.2  2007/01/13 00:04:57  rjongbloed
- * Fixed compilation on DevStudio 2003
- *
- * Revision 1.1  2007/01/11 03:02:16  dereksmithies
- * Remove the previous audio buffering code, and switch to using the jitter
- * buffer provided in Opal. Reduce the verbosity of the log mesasges.
- *
- *
- *
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>

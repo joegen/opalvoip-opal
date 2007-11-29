@@ -24,115 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: transcoders.h,v $
- * Revision 2.29  2007/10/08 01:45:16  rjongbloed
- * Fixed bad virtual function causing uninitialised variable whcih prevented video from working.
- * Some more clean ups.
- *
- * Revision 2.28  2007/09/19 10:43:00  csoutheren
- * Exposed G.7231 capability class
- * Added macros to create empty transcoders and capabilities
- *
- * Revision 2.27  2007/09/10 03:15:04  rjongbloed
- * Fixed issues in creating and subsequently using correctly unique
- *   payload types in OpalMediaFormat instances and transcoders.
- *
- * Revision 2.26  2007/06/22 05:47:19  rjongbloed
- * Fixed setting of output RTP payload types on plug in video codecs.
- *
- * Revision 2.25  2007/03/29 05:22:32  csoutheren
- * Add extra logging
- *
- * Revision 2.24  2006/11/29 06:28:57  csoutheren
- * Add ability call codec control functions on all transcoders
- *
- * Revision 2.23  2006/04/09 12:12:54  rjongbloed
- * Changed the media format option merging to include the transcoder formats.
- *
- * Revision 2.22  2006/02/02 07:02:57  csoutheren
- * Added RTP payload map to transcoders and connections to allow remote SIP endpoints
- * to change the payload type used for outgoing RTP.
- *
- * Revision 2.21  2005/12/30 14:33:12  dsandras
- * Added support for Packet Loss Concealment frames for framed codecs supporting it similarly to what was done for OpenH323.
- *
- * Revision 2.20  2005/11/30 13:35:26  csoutheren
- * Changed tags for Doxygen
- *
- * Revision 2.19  2005/09/06 12:44:49  rjongbloed
- * Many fixes to finalise the video processing: merging remote media
- *
- * Revision 2.18  2005/09/04 06:23:38  rjongbloed
- * Added OpalMediaCommand mechanism (via PNotifier) for media streams
- *   and media transcoders to send commands back to remote.
- *
- * Revision 2.17  2005/09/02 14:31:40  csoutheren
- * Use inline function to work around compiler foo in gcc
- *
- * Revision 2.16  2005/08/31 13:19:25  rjongbloed
- * Added mechanism for controlling media (especially codecs) including
- *   changing the OpalMediaFormat option list (eg bit rate) and a completely
- *   new OpalMediaCommand abstraction for things like video fast update.
- *
- * Revision 2.15  2005/08/28 07:59:17  rjongbloed
- * Converted OpalTranscoder to use factory, requiring sme changes in making sure
- *   OpalMediaFormat instances are initialised before use.
- *
- * Revision 2.14  2005/03/19 04:08:10  csoutheren
- * Fixed warnings with gcc snapshot 4.1-20050313
- * Updated to configure 2.59
- *
- * Revision 2.13  2005/02/17 03:25:05  csoutheren
- * Added support for audio codecs that consume and produce variable size
- * frames, such as G.723.1
- *
- * Revision 2.12  2004/07/11 12:34:48  rjongbloed
- * Added function to get a list of all possible media formats that may be used given
- *   a list of media and taking into account all of the registered transcoders.
- *
- * Revision 2.11  2004/03/22 11:32:41  rjongbloed
- * Added new codec type for 16 bit Linear PCM as must distinguish between the internal
- *   format used by such things as the sound card and the RTP payload format which
- *   is always big endian.
- *
- * Revision 2.10  2004/03/11 06:54:27  csoutheren
- * Added ability to disable SIP or H.323 stacks
- *
- * Revision 2.9  2004/02/17 08:47:38  csoutheren
- * Changed codec loading macros to work with Linux
- *
- * Revision 2.8  2004/01/18 15:35:20  rjongbloed
- * More work on video support
- *
- * Revision 2.7  2003/06/02 02:59:43  rjongbloed
- * Changed transcoder search so uses destination list as preference order.
- *
- * Revision 2.6  2003/03/24 04:32:11  robertj
- * Fixed macro for transcoder with parameter (not used yet!)
- * Fixed so OPAL_NO_PARAM can be defined in other modules.
- *
- * Revision 2.5  2003/03/17 10:26:59  robertj
- * Added video support.
- *
- * Revision 2.4  2002/09/16 02:52:35  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 2.3  2002/02/13 02:30:21  robertj
- * Added ability for media patch (and transcoders) to handle multiple RTP frames.
- *
- * Revision 2.2  2002/01/22 05:07:02  robertj
- * Added ability to get input and output media format names from transcoder.
- *
- * Revision 2.1  2001/08/01 05:52:08  robertj
- * Made OpalMediaFormatList class global to help with documentation.
- * Added functions to aid in determining if a transcoder can be used to get
- *   to another media format.
- * Fixed problem with streamed transcoder used in G.711.
- *
- * Revision 2.0  2001/07/27 15:48:24  robertj
- * Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_TRANSCODERS_H
@@ -246,16 +140,21 @@ class OpalTranscoder : public OpalMediaFormatPair
 
   /**@name Operations */
   //@{
-    /**Update the output media format. This can be used to adjust the
-       parameters of a codec at run time. Note you cannot change the basic
+    /**Update the input and output media formats. This can be used to adjust
+       the parameters of a codec at run time. Note you cannot change the basic
        media format, eg change GSM0610 to G.711, only options for that
        format, eg 6k3 mode to 5k3 mode in G.723.1.
 
-       The default behaviour updates the outputMediaFormat member variable
-       and sets the outputMediaFormatUpdated flag.
+       If a format is empty (invalid) it is ignored and does not update the
+       internal variable. In this way only the input or output side can be
+       updated.
+
+       The default behaviour updates the inputMediaFormat and outputMediaFormat
+       member variables.
       */
-    virtual PBoolean UpdateOutputMediaFormat(
-      const OpalMediaFormat & mediaFormat  ///<  New media format
+    virtual bool UpdateMediaFormats(
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
     );
 
     /**Execute the command specified to the transcoder. The commands are
@@ -413,7 +312,6 @@ class OpalTranscoder : public OpalMediaFormatPair
 
   protected:
     PINDEX    maxOutputSize;
-    bool      outputMediaFormatUpdated;
     PNotifier commandNotifier;
     PMutex    updateMutex;
 
@@ -448,6 +346,23 @@ class OpalFramedTranscoder : public OpalTranscoder
 
   /**@name Operations */
   //@{
+    /**Update the input and output media formats. This can be used to adjust
+       the parameters of a codec at run time. Note you cannot change the basic
+       media format, eg change GSM0610 to G.711, only options for that
+       format, eg 6k3 mode to 5k3 mode in G.723.1.
+
+       If a format is empty (invalid) it is ignored and does not update the
+       internal variable. In this way only the input or output side can be
+       updated.
+
+       The default behaviour updates the inputMediaFormat and outputMediaFormat
+       member variables.
+      */
+    virtual bool UpdateMediaFormats(
+      const OpalMediaFormat & inputMediaFormat,  ///<  Input media format
+      const OpalMediaFormat & outputMediaFormat  ///<  Output media format
+    );
+
     /**Get the optimal size for data frames to be converted.
        This function returns the size of frames that will be most efficient
        in conversion. A RTP_DataFrame will attempt to provide or use data in
@@ -462,7 +377,7 @@ class OpalFramedTranscoder : public OpalTranscoder
        This function takes the input data as a RTP_DataFrame and converts it
        to its output format, placing it into the RTP_DataFrame provided.
 
-       Returns PFalse if the conversion fails.
+       Returns FALSE if the conversion fails.
       */
     virtual PBoolean Convert(
       const RTP_DataFrame & input,  ///<  Input data
@@ -480,7 +395,7 @@ class OpalFramedTranscoder : public OpalTranscoder
       const BYTE * input,   ///<  Input data
       PINDEX & consumed,    ///<  number of input bytes consumed
       BYTE * output,        ///<  Output data
-      PINDEX & created      ///<  number of output bytes created  
+      PINDEX & created      ///<  number of output bytes created
     );
     virtual PBoolean ConvertSilentFrame(
       BYTE * output         ///<  Output data

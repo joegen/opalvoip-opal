@@ -3,28 +3,9 @@
  *
  * Copyright (C) 2004 MX Telecom Ltd.
  *
- * $Id: amrcodec.c,v 1.8 2007/10/09 09:21:13 rjongbloed Exp $
- *
- * $Log: amrcodec.c,v $
- * Revision 1.8  2007/10/09 09:21:13  rjongbloed
- * Make sure codec gets, and handles, missing frames.
- *
- * Revision 1.7  2007/08/17 08:56:59  rjongbloed
- * Tiny change to make closer to specification
- *
- * Revision 1.6  2007/08/16 03:13:36  rjongbloed
- * Added H.323 Media Packetization OLC field, sourced from an OpalMediaOption
- *   so plug ins can provide it as required.
- *
- * Revision 1.5  2007/06/22 05:46:09  rjongbloed
- * Major codec API update:
- *   Automatically map OpalMediaOptions to SIP/SDP FMTP parameters.
- *   Automatically map OpalMediaOptions to H.245 Generic Capability parameters.
- *   Largely removed need to distinguish between SIP and H.323 codecs.
- *   New mechanism for setting OpalMediaOptions from within a plug in.
- * Updated GSM-AMR to be RFC3267/RFC4867 compliant.
- * Added VAD option.
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 
@@ -68,6 +49,10 @@
  *
  * The amr codec itself is not distributed with this plugin. See amrcodec.txt
  * in the src subdirectory of the plugin source.
+ *
+ * This code can currently only handle one frame per packet due to the RFC3267
+ * packetisation method which is ... difficult ... with the current OPAL plug in
+ * architecture. So make sure "Rx Frames Per Packet" doesn;t change till it's fixed!
  *
  **************************************************************************/
     
@@ -175,6 +160,8 @@ static int amr_codec_encoder(const struct PluginCodec_Definition * codec,
 
   memcpy(toPtr, buffer, *toLen);
   *toLen = byteCount+1;
+  *fromLen = L_FRAME*sizeof(short);
+
   return TRUE; 
 }
 
@@ -248,16 +235,55 @@ static int amr_get_quality(const struct PluginCodec_Definition * codec, void * c
 /////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Option const amrRxFramesPerPacket =
-  { PluginCodec_IntegerOption, "Rx Frames Per Packet", 0, PluginCodec_MinMerge, "1", NULL, NULL, H245_AMR_MAXAL_SDUFRAMES, "1", "10" };
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  "Rx Frames Per Packet",     // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "1",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  H245_AMR_MAXAL_SDUFRAMES,   // H.245 Generic Capability number and scope bits
+  "1",                        // Minimum value
+  "1"                         // Maximum value    // Do not change!! See above.
+};
 
+static const char InitialModeStr[] = "Initial Mode";
 static struct PluginCodec_Option const amrInitialMode =
-  { PluginCodec_IntegerOption, "Initial Mode",         0, PluginCodec_NoMerge,  "7", NULL, NULL, H245_AMR_BITRATE,         "0", "7" };
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  InitialModeStr,             // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_NoMerge,        // Merge mode
+  "7",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  H245_AMR_BITRATE,           // H.245 Generic Capability number and scope bits
+  "0",                        // Minimum value
+  "7"                         // Maximum value
+};
 
+static const char VADStr[] = "VAD";
 static struct PluginCodec_Option const amrVAD =
-  { PluginCodec_BoolOption,    "VAD",                  0, PluginCodec_AndMerge, "True", NULL, NULL, H245_AMR_GSMAMRCOMFORTNOISE };
+{
+  PluginCodec_BoolOption,     // PluginCodec_OptionTypes
+  VADStr,                     // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_AndMerge,       // Merge mode
+  "True",                     // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  H245_AMR_GSMAMRCOMFORTNOISE // H.245 Generic Capability number and scope bitsSE,
+};
 
 static struct PluginCodec_Option const amrMediaPacketization =
-  { PluginCodec_StringOption,  "Media Packetization",  0, PluginCodec_EqualMerge, "RFC3267" };
+{
+  PluginCodec_StringOption, // PluginCodec_OptionTypes
+  "Media Packetization",    // Generic (human readable) option name
+  0,                        // Read Only flag
+  PluginCodec_EqualMerge,   // Merge mode
+  "RFC3267"                 // Initial value
+};
 
 static struct PluginCodec_Option const * const amrOptionTable[] = {
   &amrRxFramesPerPacket,
@@ -296,12 +322,12 @@ static int set_codec_options(const struct PluginCodec_Definition * defn,
   amr = (AmrEncoderContext *)context;
 
   for (option = (const char * const *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], "Initial Mode") == 0) {
+    if (STRCMPI(option[0], InitialModeStr) == 0) {
       amr->mode = strtoul(option[1], NULL, 10);
       if (amr->mode > AMR_BITRATE_1220)
         amr->mode = AMR_BITRATE_1220;
     }
-    else if (STRCMPI(option[0], "VAD") == 0)
+    else if (STRCMPI(option[0], VADStr) == 0)
       amr->vad = atoi(option[1]) != 0;
   }
 

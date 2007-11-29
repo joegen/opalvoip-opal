@@ -24,15 +24,10 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: g729Acodec.h,v $
- * Revision 1.1  2006/08/10 07:04:59  csoutheren
- * Added EasyCodec
- *
- * Revision 1.1  2005/04/25 18:43:44  shorne
- * Initial version
- *
- *
-*/
+ * $Revision$
+ * $Author$
+ * $Date$
+ */
 #include "easycodecs.h"
 
 #include "EasyG729A/EasyG729A.h"
