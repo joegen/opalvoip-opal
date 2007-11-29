@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="iLBC Audio Codec"
 	ProjectGUID="{F1C13640-A056-4280-B1C6-6582E5890B89}"
+	RootNamespace="iLBC Audio Codec"
 	>
 	<Platforms>
 		<Platform
