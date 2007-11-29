@@ -132,8 +132,8 @@ class RTP_DataFrame : public PBYTEArray
     PBoolean GetMarker() const { return (theArray[1]&0x80) != 0; }
     void SetMarker(PBoolean m);
 
-    BOOL GetPadding() const { return (theArray[0]&0x20) != 0; }
-    void SetPadding(BOOL v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
+    bool GetPadding() const { return (theArray[0]&0x20) != 0; }
+    void SetPadding(bool v)  { if (v) theArray[0] |= 0x20; else theArray[0] &= 0xdf; }
 
     unsigned GetPaddingSize() const;
 

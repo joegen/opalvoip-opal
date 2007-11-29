@@ -551,7 +551,7 @@ PBYTEArray Q931::GetIE(InformationElementCodes ie, PINDEX idx) const
 }
 
 
-void Q931::SetIE(InformationElementCodes ie, const PBYTEArray & userData, BOOL append)
+void Q931::SetIE(InformationElementCodes ie, const PBYTEArray & userData, bool append)
 {
   if (append && informationElements.Contains(ie))
     informationElements[ie].Append(new PBYTEArray(userData));

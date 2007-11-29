@@ -729,7 +729,7 @@ bool OpalPluginTranscoder::UpdateOptions(const OpalMediaFormat & fmt)
   PTRACE(4, "OpalPlugin\t" << (isEncoder ? "Setting encoder options" : "Setting decoder options") << ":\n" << setw(-1) << fmt);
 
   char ** options = fmt.GetOptions().ToCharArray(false);
-  BOOL ok = setCodecOptions.Call(options, sizeof(options), context) != 0;
+  bool ok = setCodecOptions.Call(options, sizeof(options), context) != 0;
   free(options);
   return ok;
 }

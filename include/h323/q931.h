@@ -134,7 +134,7 @@ class Q931 : public PObject
     void SetIE(
       InformationElementCodes ie,
       const PBYTEArray & userData,
-      BOOL append = FALSE
+      bool append = FALSE
     );
     void RemoveIE(InformationElementCodes ie);
 
