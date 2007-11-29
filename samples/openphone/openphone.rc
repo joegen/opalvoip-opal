@@ -37,7 +37,7 @@ SIPPhone   ICON "SIPPhone.ico"
 OtherPhone ICON "OtherPhone.ico"
 SmallPhone ICON "SmallPhone.ico"
 
-//#include "wx/msw/wx.rc"
+#include "wx/msw/wx.rc"
 
 
 #define AlphaCode alpha
