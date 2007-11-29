@@ -193,10 +193,8 @@ class OpalMediaOption : public PObject
       AlwaysMerge,
 
       // Synonyms
-      AndMerge = MaxMerge,
-      OrMerge  = MinMerge,
-      XorMerge = NotEqualMerge,
-      NotXorMerge = EqualMerge
+      AndMerge = MinMerge,
+      OrMerge  = MaxMerge
     };
 
   protected:
