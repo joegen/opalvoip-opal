@@ -3178,6 +3178,9 @@ const int VU_UPDATE_TIMER_ID = 1000;
 
 BEGIN_EVENT_TABLE(InCallPanel, wxPanel)
   EVT_BUTTON(XRCID("HangUp"), InCallPanel::OnHangUp)
+  EVT_BUTTON(XRCID("StartStopVideo"), InCallPanel::OnStartStopVideo)
+  EVT_CHECKBOX(XRCID("SpeakerMute"), InCallPanel::OnSpeakerMute)
+  EVT_CHECKBOX(XRCID("MicrophoneMute"), InCallPanel::OnMicrophoneMute)
   EVT_BUTTON(XRCID("Input1"), InCallPanel::OnUserInput1)
   EVT_BUTTON(XRCID("Input2"), InCallPanel::OnUserInput2)
   EVT_BUTTON(XRCID("Input3"), InCallPanel::OnUserInput3)
@@ -3204,6 +3207,9 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
 {
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
+  m_StartStopVideo = FindWindowByNameAs<wxButton>(this, "StartStopVideo");
+  m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, "SpeakerMute");
+  m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, "MicrophoneMute");
   m_SpeakerVolume = FindWindowByNameAs<wxSlider>(this, "SpeakerVolume");
   m_MicrophoneVolume = FindWindowByNameAs<wxSlider>(this, "MicrophoneVolume");
   m_vuSpeaker = FindWindowByNameAs<wxGauge>(this, "SpeakerGauge");
@@ -3223,15 +3229,29 @@ bool InCallPanel::Show(bool show)
   if (show || m_FirstTime) {
     m_FirstTime = false;
 
+    PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
+    if (connection != NULL) {
+      OpalMediaFormatList availableFormats = connection->GetCall().GetOtherPartyConnection(*connection)->GetMediaFormats();
+      PINDEX idx;
+      for (idx = 0; idx < availableFormats.GetSize(); idx++) {
+        if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID)
+          break;
+      }
+      if (idx < availableFormats.GetSize()) {
+        m_StartStopVideo->Enable();
+        m_StartStopVideo->SetLabel(connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true) != NULL ? "Stop Video" : "Start Video");
+      }
+    }
+
     int value = 50;
     config->Read(SpeakerVolumeKey, &value);
     m_SpeakerVolume->SetValue(value);
-    SetVolume(false, value);
+    SetVolume(false, value, false);
 
     value = 50;
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
-    SetVolume(true, value);
+    SetVolume(true, value, false);
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
@@ -3246,6 +3266,24 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 {
   m_manager.HangUpCall();
 }
+
+
+void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
+{
+}
+
+
+void InCallPanel::OnSpeakerMute(wxCommandEvent & event)
+{
+  SetVolume(false, m_SpeakerVolume->GetValue(), !event.IsChecked());
+}
+
+
+void InCallPanel::OnMicrophoneMute(wxCommandEvent & event)
+{
+  SetVolume(true, m_MicrophoneVolume->GetValue(), !event.IsChecked());
+}
+
 
 #define ON_USER_INPUT_HANDLER(i,c) \
   void InCallPanel::OnUserInput##i(wxCommandEvent &) \
@@ -3268,21 +3306,21 @@ ON_USER_INPUT_HANDLER(Flash,'!')
 
 void InCallPanel::SpeakerVolume(wxScrollEvent & event)
 {
-  SetVolume(false, event.GetPosition());
+  SetVolume(false, event.GetPosition(), m_SpeakerMute->GetValue());
 }
 
 
 void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
 {
-  SetVolume(true, event.GetPosition());
+  SetVolume(true, event.GetPosition(), m_MicrophoneMute->GetValue());
 }
 
 
-void InCallPanel::SetVolume(bool isMicrophone, int value)
+void InCallPanel::SetVolume(bool isMicrophone, int value, bool muted)
 {
   PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
   if (connection != NULL)
-    connection->SetAudioVolume(isMicrophone, value);
+    connection->SetAudioVolume(isMicrophone, muted ? 0 : value);
 }
 
 
@@ -3293,7 +3331,7 @@ static void SetGauge(wxGauge * gauge, int level)
     return;
   }
   gauge->Show();
-  gauge->SetValue((int)(log10(9.0*level/32768.0+1)*100)); // Convert to logarithmic scale
+  gauge->SetValue((int)(100*log10(1.0 + 9.0*level/8192.0))); // Convert to logarithmic scale
 }
 
 
