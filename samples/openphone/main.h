@@ -559,6 +559,8 @@ class MyManager : public wxFrame, public OpalManager
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
     void OnMenuCall(wxCommandEvent& event);
+    void OnMenuCallLastDialed(wxCommandEvent& event);
+    void OnMenuCallLastReceived(wxCommandEvent& event);
     void OnMenuAnswer(wxCommandEvent& event);
     void OnMenuHangUp(wxCommandEvent& event);
     void OnNewSpeedDial(wxCommandEvent& event);
@@ -644,7 +646,9 @@ class MyManager : public wxFrame, public OpalManager
     OpalIVREndPoint  * ivrEP;
 #endif
 
-    bool m_autoAnswer;
+    bool      m_autoAnswer;
+    PwxString m_LastDialed;
+    PwxString m_LastReceived;
 
     bool m_VideoGrabPreview;
     int  m_localVideoFrameX;
