@@ -102,6 +102,8 @@ DEF_FIELD(AutoAnswer);
 DEF_FIELD(IVRScript);
 DEF_FIELD(SpeakerVolume);
 DEF_FIELD(MicrophoneVolume);
+DEF_FIELD(LastDialed);
+DEF_FIELD(LastReceived);
 
 static const char NetworkingGroup[] = "/Networking";
 DEF_FIELD(Bandwidth);
@@ -310,6 +312,8 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
   EVT_MENU(XRCID("MenuQuit"),     MyManager::OnMenuQuit)
   EVT_MENU(XRCID("MenuAbout"),    MyManager::OnMenuAbout)
   EVT_MENU(XRCID("MenuCall"),     MyManager::OnMenuCall)
+  EVT_MENU(XRCID("MenuCallLastDialed"), MyManager::OnMenuCallLastDialed)
+  EVT_MENU(XRCID("MenuCallLastReceived"),MyManager::OnMenuCallLastReceived)
   EVT_MENU(XRCID("MenuAnswer"),   MyManager::OnMenuAnswer)
   EVT_MENU(XRCID("MenuHangUp"),   MyManager::OnMenuHangUp)
   EVT_MENU(XRCID("NewSpeedDial"), MyManager::OnNewSpeedDial)
@@ -999,6 +1003,8 @@ void MyManager::OnAdjustMenus(wxMenuEvent& WXUNUSED(event))
 {
   wxMenuBar * menubar = GetMenuBar();
   menubar->Enable(XRCID("MenuCall"),    m_callState == IdleState);
+  menubar->Enable(XRCID("MenuCallLastDialed"), m_callState == IdleState && !m_LastDialed.IsEmpty());
+  menubar->Enable(XRCID("MenuCallLastReceived"), m_callState == IdleState && !m_LastReceived.IsEmpty());
   menubar->Enable(XRCID("MenuAnswer"),  m_callState == RingingState);
   menubar->Enable(XRCID("MenuHangUp"),  m_callState == InCallState);
 
@@ -1038,6 +1044,18 @@ void MyManager::OnMenuCall(wxCommandEvent& WXUNUSED(event))
   CallDialog dlg(this);
   if (dlg.ShowModal() == wxID_OK)
     MakeCall(dlg.m_Address);
+}
+
+
+void MyManager::OnMenuCallLastDialed(wxCommandEvent& WXUNUSED(event))
+{
+  MakeCall(m_LastDialed);
+}
+
+
+void MyManager::OnMenuCallLastReceived(wxCommandEvent& WXUNUSED(event))
+{
+  MakeCall(m_LastReceived);
 }
 
 
@@ -1365,6 +1383,11 @@ void MyManager::MakeCall(const PwxString & address)
 
   LogWindow << "Calling \"" << address << '"' << endl;
 
+  m_LastDialed = address;
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(GeneralGroup);
+  config->Write(LastDialedKey, m_LastDialed);
+
   if (potsEP != NULL && potsEP->GetLine("*") != NULL)
     SetUpCall("pots:*", address, m_currentCallToken);
   else
@@ -1412,6 +1435,11 @@ void MyManager::OnRinging(const OpalPCSSConnection & connection)
   PTime now;
   LogWindow << "\nIncoming call at " << now.AsString("w h:mma")
             << " from " << connection.GetRemotePartyName() << endl;
+
+  m_LastReceived = connection.GetRemotePartyAddress();
+  wxConfigBase * config = wxConfig::Get();
+  config->SetPath(GeneralGroup);
+  config->Write(LastReceivedKey, m_LastDialed);
 
   if (!m_autoAnswer && !m_RingSoundFileName.empty()) {
     m_RingSoundChannel.Open(m_RingSoundDeviceName, PSoundChannel::Player);
