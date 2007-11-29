@@ -278,6 +278,12 @@ exit 1
 			Filter="ico;cur;bmp;dlg;rc2;rct;bin;cnt;rtf;gif;jpg;jpeg;jpe">
 			<File
 				RelativePath=".\openphone.rc">
+				<FileConfiguration
+					Name="Debug|Win32">
+					<Tool
+						Name="VCResourceCompilerTool"
+						AdditionalIncludeDirectories="&quot;$(WXDIR)\include&quot;"/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath=".\openphone.xrc">
