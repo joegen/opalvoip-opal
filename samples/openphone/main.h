@@ -190,6 +190,9 @@ class InCallPanel : public wxPanel
 
   private:
     void OnHangUp(wxCommandEvent & event);
+    void OnStartStopVideo(wxCommandEvent & event);
+    void OnSpeakerMute(wxCommandEvent & event);
+    void OnMicrophoneMute(wxCommandEvent & event);
     void OnUserInput1(wxCommandEvent & event);
     void OnUserInput2(wxCommandEvent & event);
     void OnUserInput3(wxCommandEvent & event);
@@ -207,9 +210,12 @@ class InCallPanel : public wxPanel
 
     void SpeakerVolume(wxScrollEvent & event);
     void MicrophoneVolume(wxScrollEvent & event);
-    void SetVolume(bool microphone, int value);
+    void SetVolume(bool microphone, int value, bool muted);
 
     MyManager & m_manager;
+    wxButton  * m_StartStopVideo;
+    wxCheckBox* m_SpeakerMute;
+    wxCheckBox* m_MicrophoneMute;
     wxSlider  * m_SpeakerVolume;
     wxSlider  * m_MicrophoneVolume;
     wxGauge   * m_vuSpeaker;
