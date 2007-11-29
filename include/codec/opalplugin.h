@@ -335,10 +335,8 @@ enum PluginCodec_OptionMerge {
   PluginCodec_AlwaysMerge,
   PluginCodec_NumOptionMerge,
 
-  PluginCodec_AndMerge = PluginCodec_MaxMerge,
-  PluginCodec_OrMerge  = PluginCodec_MinMerge,
-  PluginCodec_XorMerge = PluginCodec_NotEqualMerge,
-  PluginCodec_NotXorMerge = PluginCodec_EqualMerge
+  PluginCodec_AndMerge = PluginCodec_MinMerge,
+  PluginCodec_OrMerge  = PluginCodec_MaxMerge
 };
 
 #define PluginCodec_H245_Collapsing    0x40000000
