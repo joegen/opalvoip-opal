@@ -166,11 +166,33 @@ enum
 
 
 static struct PluginCodec_Option const RxFramesPerPacket =
-  { PluginCodec_IntegerOption, "Rx Frames Per Packet", 0, PluginCodec_MinMerge, "5", NULL, NULL, H245_iLBC_MAXAL_SDUFRAMES, "1", "10" };
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  "Rx Frames Per Packet",     // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MinMerge,       // Merge mode
+  "5",                        // Initial value
+  NULL,                       // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  H245_iLBC_MAXAL_SDUFRAMES,  // H.245 Generic Capability number and scope bits
+  "1",                        // Minimum value
+  "10"                        // Maximum value
+};
 
 static const char PreferredModeStr[] = "Preferred Mode";
 static struct PluginCodec_Option const PreferredMode =
-  { PluginCodec_IntegerOption, PreferredModeStr, 0, PluginCodec_MaxMerge,  "20", "mode", NULL, H245_iLBC_MODE, "20", "30" };
+{
+  PluginCodec_IntegerOption,  // PluginCodec_OptionTypes
+  PreferredModeStr,           // Generic (human readable) option name
+  0,                          // Read Only flag
+  PluginCodec_MaxMerge,       // Merge mode
+  "20",                       // Initial value
+  "mode",                     // SIP/SDP FMTP name
+  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  H245_iLBC_MODE,             // H.245 Generic Capability number and scope bits
+  "20",                       // Minimum value
+  "30"                        // Maximum value
+};
 
 
 static struct PluginCodec_Option const * const OptionTable[] = {
