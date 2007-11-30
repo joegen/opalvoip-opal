@@ -3306,13 +3306,13 @@ ON_USER_INPUT_HANDLER(Flash,'!')
 
 void InCallPanel::SpeakerVolume(wxScrollEvent & event)
 {
-  SetVolume(false, event.GetPosition(), m_SpeakerMute->GetValue());
+  SetVolume(false, event.GetPosition(), !m_SpeakerMute->GetValue());
 }
 
 
 void InCallPanel::MicrophoneVolume(wxScrollEvent & event)
 {
-  SetVolume(true, event.GetPosition(), m_MicrophoneMute->GetValue());
+  SetVolume(true, event.GetPosition(), !m_MicrophoneMute->GetValue());
 }
 
 
