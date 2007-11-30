@@ -604,6 +604,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
   PVideoDevice::OpenArgs args = videoInputDevice;
   args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+  args.rate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
 
   autoDelete = PTrue;
   device = PVideoInputDevice::CreateOpenedDevice(args);
@@ -618,7 +619,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
                                           PVideoOutputDevice * & device,
                                           PBoolean & autoDelete)
 {
-  // Donot use our one and only SDl window, if we need it for the video output.
+  // Donot use our one and only SDL window, if we need it for the video output.
   if (preview && videoPreviewDevice.driverName == "SDL" && videoOutputDevice.driverName == "SDL")
     return PFalse;
 
@@ -626,6 +627,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
   PVideoDevice::OpenArgs args = preview ? videoPreviewDevice : videoOutputDevice;
   args.width = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::QCIFWidth);
   args.height = mediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::QCIFHeight);
+  args.rate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
 
   PINDEX start = args.deviceName.Find("TITLE=\"");
   if (start != P_MAX_INDEX) {
