@@ -67,6 +67,7 @@
 #include <string.h>
 
 #include <stdio.h>
+#include <math.h>
 
 #ifdef _MSC_VER
 #pragma warning(disable:4800)
@@ -297,7 +298,6 @@ class H261EncoderContext
     unsigned frameWidth;
     unsigned frameHeight;
     long waitFactor;
-    bool packetDelay;
     unsigned frameLength;
     #ifdef _WIN32
       long newTime;
@@ -317,7 +317,6 @@ class H261EncoderContext
       forceIFrame = false;
       videoQuality = DEFAULT_ENCODER_QUALITY;
       waitFactor = 0;
-      packetDelay = false;
 
     #ifdef _WIN32
       newTime = 0;
@@ -350,6 +349,53 @@ class H261EncoderContext
          else
           waitFactor = 8000000 / bitrate;  // on UNIX we deal with usecs
       #endif
+    }
+
+    /* The only way to influence the amount of data that the H.261 codec produces is 
+    to change the "quality" variable that specifies the static quantisation level for
+    BACKGROUND blocks. This "quality" value divided by 2 is used as quantisation level
+    for IDLE blocks. MOTION blocks are always transmitted with quantisation level 1.
+    One could map the TSTO values 1-to-1 to the quality, but that would lead to sending
+    with lower quality than possible with higher bitrates. The following two mean-looking 
+    functions scale the TSTO value in dependence of the bitrate and resolution (CIF or QCIF).
+      
+    At QCIF resolution, TSTO values 0..31 will be mapped to quality values 1..31 at
+    bitrates <=128kbit/s. At higher bitrates, the same TSTO values will be 
+    mapped to lower quality values, e.g. to 1..19 at 256kbit/s and 1..5 at 512kbit/s. Above 
+    approx. 656kbit/s, all TSTO values will be mapped to a quality of 1. 
+      
+    At CIF, TSTO values 0..31 will be mapped to quality values 1..31 at up to 224kbit/s, to 1..11 
+    at 512kbit/s and to 1 at bitrates >=912kbit/s. 
+      
+    The basis of these functions is a nonlinear regression based on the observation of the 
+    effectve framrate obtained at specific quality settings and bitrates. */
+    
+    void SetQualityFromTSTO (int tsto, unsigned bitrate, int width, int height)
+    {
+      if (tsto == -1) 
+        return;
+
+      if ((width==CIF_WIDTH) && (height==CIF_HEIGHT)) {
+        double bitrate_d = std::max((int)bitrate, 128000);
+        double factor =  std::max (   0.0031 * pow ((double) (bitrate_d/64000), 4)
+	                            - 0.0758 * pow ((double) (bitrate_d/64000), 3)
+			            + 0.6518 * pow ((double) (bitrate_d/64000), 2)
+			            - 1.9377 * (double) (bitrate_d/64000)
+			            + 2.5342
+			            , 1.0);
+        videoQuality = std::max ((int)( floor ( tsto / factor)), 1);
+      } 
+      else if ((width==QCIF_WIDTH) && (height==QCIF_HEIGHT)) {
+        double bitrate_d = std::max((int)bitrate, 64000);
+        double factor =  std::max ( 0.0036 * pow ((double) (bitrate_d / 64000), 4)
+	                          - 0.0462 * pow ((double) (bitrate_d / 64000), 3)
+				  + 0.2792 * pow ((double) (bitrate_d / 64000), 2)
+				  - 0.5321 * (double) (bitrate_d / 64000)
+				  + 1.3438    -0.0844
+				  , 1.0);
+	videoQuality = std::max ((int)( floor ( tsto / factor)), 1); 
+      } 
+      TRACE(4, "H261\tf(tsto=" << tsto << ", bitrate=" << bitrate << ", width=" << width <<", height=" << height << ")=" << videoQuality);
     }
 
     int EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -466,7 +512,7 @@ unsigned H261EncoderContext::SetEncodedPacket(RTPFrame & dstRTP, bool isLast, un
   frameLength += dstRTP.GetPacketLen();
 
   if (isLast) {
-    if (packetDelay) adaptiveDelay(frameLength);
+    adaptiveDelay(frameLength);
     frameLength = 0;
   }
 
@@ -522,26 +568,33 @@ static int encoder_set_options(const PluginCodec_Definition *,
                                void * parm, 
                                unsigned * parmLen)
 {
+  int width=0;
+  int height=0;
+  int tsto=-1;
+  unsigned bitrate=H261_BITRATE;
+
   H261EncoderContext * context = (H261EncoderContext *)_context;
   if (parmLen == NULL || *parmLen != sizeof(const char **))
     return 0;
-  int width=0, height=0;
+  
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     int i;
     for (i = 0; options[i] != NULL; i += 2) {
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
-         context->SetTargetBitRate(atoi(options[i+1]));
+         bitrate = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
         height = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         width = atoi(options[i+1]);
-      if (STRCMPI(options[i], "Adaptive Packet Delay") == 0)
-        context->packetDelay = atoi(options[i+1]);
-      printf ("%s = %s - %d\n", options[i], options[i+1], atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
+        tsto = atoi(options[i+1]);
+      printf ("%s = %s \n", options[i], options[i+1]);
     }
   }
   context->SetFrameSize (width, height);
+  context->SetTargetBitRate(bitrate);
+  context->SetQualityFromTSTO (tsto, bitrate, width, height);
 
   return 1;
 }
