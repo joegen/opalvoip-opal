@@ -216,9 +216,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
           OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
           for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
             if (search == *i)
-              return srcFormat.Merge(i->first) &&
-                     dstFormat.Merge(i->second) &&
-                     srcFormat.Merge(dstFormat) &&
+              return srcFormat.Merge(dstFormat) &&
                      dstFormat.Merge(srcFormat) &&
                      srcFormat.ToNormalisedOptions() &&
                      dstFormat.ToNormalisedOptions();

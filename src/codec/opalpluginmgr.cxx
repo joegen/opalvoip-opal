@@ -1939,11 +1939,21 @@ unsigned H323VideoPluginCapability::GetSubType() const
 
 PBoolean H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFormat, int frameWidth, int frameHeight, int frameRate)
 {
-  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), frameWidth))
-    return PFalse;
+  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption()) < frameWidth)
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(),   frameWidth))
+      return PFalse;
 
-  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), frameHeight))
-    return PFalse;
+  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption()) > frameWidth)
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(),   frameWidth))
+      return PFalse;
+
+  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption()) < frameWidth)
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(),   frameHeight))
+      return PFalse;
+
+  if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption()) > frameWidth)
+    if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(),   frameHeight))
+      return PFalse;
 
   if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
     return PFalse;
