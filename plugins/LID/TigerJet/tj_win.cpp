@@ -401,7 +401,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      *isTerminal = PTrue;
+      *isTerminal = true;
       return PluginLID_NoError;
     }
 
