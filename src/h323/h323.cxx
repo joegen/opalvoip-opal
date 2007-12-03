@@ -1000,7 +1000,7 @@ PBoolean H323Connection::OnOpenIncomingMediaChannels()
           direction = H323Channel::IsReceiver;
         }
         if (dataType != NULL) {
-          H323Capability * capability = endpoint.FindCapability(*dataType);
+          H323Capability * capability = localCapabilities.FindCapability(*dataType);
           if (capability != NULL)
             previewFormats += capability->GetMediaFormat();
         }
@@ -3853,7 +3853,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
       // had a fast connect entry it could not do. If we have not yet got a remote
       // cap table then build one using all possible caps.
       if (capabilityExchangeProcedure->HasReceivedCapabilities() ||
-                (capability = endpoint.FindCapability(*dataType)) == NULL) {
+                (capability = localCapabilities.FindCapability(*dataType)) == NULL) {
         errorCode = H245_OpenLogicalChannelReject_cause::e_unknownDataType;
         PTRACE(1, "H323\tCreateLogicalChannel - unknown data type");
         return NULL; // If codec not supported, return error

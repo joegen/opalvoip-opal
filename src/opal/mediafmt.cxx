@@ -1257,8 +1257,8 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
                             OpalMediaFormat::VideoClockRate,
                             timeStamp)
 {
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::MinMerge, frameWidth, 16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::MinMerge, frameHeight,16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::AlwaysMerge, frameWidth,  16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::AlwaysMerge, frameHeight, 16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::SQCIFWidth, 16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),   false, OpalMediaOption::MinMerge, PVideoFrameInfo::SQCIFHeight,16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Width, 16, 32767));
