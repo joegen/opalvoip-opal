@@ -65,9 +65,6 @@
 #include <dlfcn.h>
 #define STRCMPI  strcasecmp
 typedef unsigned char BYTE;
-typedef bool PBoolean;
-#define PFalse false
-#define PTrue  true
 
 #endif
 
@@ -291,7 +288,7 @@ class DynaLink
     bool GetFunction(const char * name, Function & func)
     {
       if (_hDLL == NULL)
-        return PFalse;
+        return false;
 #ifdef _WIN32
 
 # ifdef UNICODE
@@ -301,16 +298,16 @@ class DynaLink
       FARPROC p = GetProcAddress(_hDLL, name);
 # endif // UNICODE
       if (p == NULL)
-        return PFalse;
+        return false;
 
       func = (Function)p;
-      return PTrue;
+      return true;
 #else
       void * p = dlsym(_hDLL, (const char *)name);
       if (p == NULL)
-        return PFalse;
+        return false;
       func = (Function &)p;
-      return PTrue;
+      return true;
 #endif // _WIN32
     }
 
@@ -387,7 +384,7 @@ static FFMPEGLibrary FFMPEGLibraryInstance;
 
 FFMPEGLibrary::FFMPEGLibrary()
 {
-  isLoadedOK = PFalse;
+  isLoadedOK = false;
 }
 
 bool FFMPEGLibrary::Load()
@@ -520,7 +517,7 @@ bool FFMPEGLibrary::Load()
   
   //Favcodec_set_print_fn(h263_ffmpeg_printon);
 
-  isLoadedOK = PTrue;
+  isLoadedOK = true;
 
   return true;
 }
@@ -676,8 +673,8 @@ class RTPFrame
     inline int GetMaxPacketLen() const                 { return maxPacketLen; }
     inline unsigned GetVersion() const                 { return (packetLen < 1) ? 0 : (packet[0]>>6)&3; }
     inline bool GetExtension() const                   { return (packetLen < 1) ? 0 : (packet[0]&0x10) != 0; }
-    inline bool GetMarker()  const                     { return (packetLen < 2) ? PFalse : ((packet[1]&0x80) != 0); }
-    inline unsigned char GetPayloadType() const        { return (packetLen < 2) ? PFalse : (packet[1] & 0x7f);  }
+    inline bool GetMarker()  const                     { return (packetLen < 2) ? false : ((packet[1]&0x80) != 0); }
+    inline unsigned char GetPayloadType() const        { return (packetLen < 2) ? false : (packet[1] & 0x7f);  }
     inline unsigned short GetSequenceNumber() const    { return GetShort(2); }
     inline unsigned long GetTimestamp() const          { return GetLong(4); }
     inline unsigned long GetSyncSource() const         { return GetLong(8); }
@@ -764,7 +761,7 @@ class H263EncoderContext
     ~H263EncoderContext();
     int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
 
-    PBoolean OpenCodec();
+    bool OpenCodec();
     void CloseCodec();
 
     unsigned GetNextEncodedPacket(RTPFrame & dstRTP, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned & flags);
@@ -880,7 +877,7 @@ H263EncoderContext::~H263EncoderContext()
   }
 }
 
-PBoolean H263EncoderContext::OpenCodec()
+bool H263EncoderContext::OpenCodec()
 {
   // avoid copying input/output
   avcontext->flags |= CODEC_FLAG_INPUT_PRESERVED; // we guarantee to preserve input for max_b_frames+1 frames
@@ -1021,7 +1018,7 @@ int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE *
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)srcRTP.GetPayloadPtr();
   if (header->x != 0 || header->y != 0) {
     //PTRACE(1,"H263\tVideo grab of partial frame unsupported, Close down video transmission thread.");
-    return PFalse;
+    return false;
   }
 
   // if this is the first frame, or the frame size has changed, deal wth it
@@ -1032,7 +1029,7 @@ int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE *
     int sizeIndex = GetStdSize(header->width, header->height);
     if (sizeIndex == UnknownStdSize) {
       //PTRACE(3, "H263\tCannot resize to " << header->width << "x" << header->height << " (non-standard format), Close down video transmission thread.");
-      return PFalse;
+      return false;
     }
 
     frameWidth  = header->width;
@@ -1045,7 +1042,7 @@ int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE *
 
     CloseCodec();
     if (!OpenCodec())
-      return PFalse;
+      return false;
   }
 
   unsigned char * payload;
@@ -1209,10 +1206,10 @@ bool H263DecoderContext::OpenCodec()
 
   if (FFMPEGLibraryInstance.AvcodecOpen(avcontext, avcodec) < 0) {
     //PTRACE(1, "H263\tFailed to open H.263 decoder");
-    return PFalse;
+    return false;
   }
 
-  return PTrue;
+  return true;
 }
 
 void H263DecoderContext::CloseCodec()
@@ -1338,7 +1335,7 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   dstRTP.SetPayloadSize(sizeof(PluginCodec_Video_FrameHeader) + frameBytes);
   dstRTP.SetPayloadType(RTP_DYNAMIC_PAYLOAD);
   dstRTP.SetTimestamp(srcRTP.GetTimestamp());
-  dstRTP.SetMarker(PTrue);
+  dstRTP.SetMarker(true);
 
   dstLen = dstRTP.GetPacketLen();
 
