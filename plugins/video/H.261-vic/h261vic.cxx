@@ -92,6 +92,11 @@ typedef unsigned int u_int;
 #include "vic/p64.h"
 #include "vic/p64encoder.h"
 
+#ifdef _WIN32
+  #undef min
+  #undef max
+#endif
+
 #ifdef _MSC_VER
    #include "../common/trace.h"
 #else
@@ -446,6 +451,12 @@ debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPa
       // make sure the incoming frame is big enough for the specified frame size
       if (srcRTP.GetPayloadSize() < (int)(sizeof(PluginCodec_Video_FrameHeader) + frameWidth*frameHeight*12/8)) {
         TRACE(1,"H261\tPayload of grabbed frame too small for full frame");
+        return 0;
+      }
+
+      if ((header->width  != 176 && header->width  != 352) ||
+          (header->height != 144 && header->height != 288)) {
+        TRACE(1,"H261\tInvalid frame size");
         return 0;
       }
 
