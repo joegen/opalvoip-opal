@@ -136,7 +136,7 @@ class Context
     int    m_queueLen;
     CRITICAL_SECTION m_mutex;
 
-    PBoolean   m_isOffHook;
+    bool   m_isOffHook;
 
     int    m_readFrameSize;
     int    m_writeFrameSize;
@@ -152,7 +152,7 @@ class Context
       m_queuePos = m_queueLen = 0;
       InitializeCriticalSection(&m_mutex);
 
-      m_isOffHook = PFalse;
+      m_isOffHook = false;
       m_readFrameSize = 1;
       m_writeFrameSize = 1;
     }
@@ -245,7 +245,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      *isTerminal = PFalse;
+      *isTerminal = false;
       return PluginLID_NoError;
     }
 
@@ -261,7 +261,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      *present = PTrue;
+      *present = true;
       return PluginLID_NoError;
     }
 
@@ -367,7 +367,7 @@ class Context
       m_threadId = GetCurrentThreadId();
 
       static const char WndClassName[] = "CM_HID";	 
-      static PBoolean registered = PFalse;
+      static bool registered = false;
       if (!registered) {
         // Register the main window class. 
         WNDCLASS wc;
@@ -482,10 +482,10 @@ class Context
               Enqueue(KeyHash);  // Hash Key
               break;
             case 13:
-              m_isOffHook = PTrue;  // Dial key
+              m_isOffHook = true;  // Dial key
               break;
             case 14:
-              m_isOffHook = PFalse;;  // Stop Dial key
+              m_isOffHook = false;;  // Stop Dial key
               break;
             case 15:
               Enqueue(KeyC);  // left Navigator Keys

@@ -49,19 +49,19 @@ class Context
       public:
         int fd;
 
-        PBoolean hasRing;
-        PBoolean hookState;
-        PBoolean hasWink;
-        PBoolean hasFlash;
+        bool hasRing;
+        bool hookState;
+        bool hasWink;
+        bool hasFlash;
         char dtmf[16];
         int dtmfIn;
         int dtmfOut;
 #ifdef IXJCTL_VMWI
-        PBoolean hasCid;
+        bool hasCid;
         PHONE_CID cid;
 #endif
-        PBoolean filter[4];
-        PBoolean cadence[4];
+        bool filter[4];
+        bool cadence[4];
         telephony_exception data;
         timeval lastHookChange;
     };
@@ -70,19 +70,19 @@ class Context
     ExceptionInfo * GetException();
     int GetOSHandle() { return os_handle; }
 
-    PBoolean ConvertOSError(int err);
+    bool ConvertOSError(int err);
 
     static ExceptionInfo exceptionInfo[MaxIxjDevices];
     static PMutex        exceptionMutex;
-    static PBoolean          exceptionInit;
+    static bool          exceptionInit;
 
     AECLevels aecLevel;
-    PBoolean removeDTMF;
+    bool removeDTMF;
     PMutex toneMutex;
-    PBoolean tonePlaying;
+    bool tonePlaying;
     PTimer lastRingTime;
-    PBoolean pstnIsOffHook;
-    PBoolean gotWink;
+    bool pstnIsOffHook;
+    bool gotWink;
     int  userPlayVol, userRecVol;
 
     int  savedPlayVol, savedRecVol;

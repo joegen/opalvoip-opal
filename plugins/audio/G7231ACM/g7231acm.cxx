@@ -66,7 +66,7 @@ class WaveFormat
     }
 
 
-    PBoolean SetSize(unsigned sz)
+    bool SetSize(unsigned sz)
     {
       if (waveFormat != NULL)
         free(waveFormat);
