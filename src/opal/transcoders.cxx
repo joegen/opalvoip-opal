@@ -197,10 +197,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat == dstFormat)
-          return srcFormat.Merge(dstFormat) &&
-                 dstFormat.Merge(srcFormat) &&
-                 srcFormat.ToNormalisedOptions() &&
-                 dstFormat.ToNormalisedOptions();
+          return srcFormat.Merge(dstFormat) && dstFormat.Merge(srcFormat);
       }
     }
   }
@@ -216,10 +213,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
           OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
           for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
             if (search == *i)
-              return srcFormat.Merge(dstFormat) &&
-                     dstFormat.Merge(srcFormat) &&
-                     srcFormat.ToNormalisedOptions() &&
-                     dstFormat.ToNormalisedOptions();
+              return srcFormat.Merge(dstFormat) && dstFormat.Merge(srcFormat);
           }
         }
       }
@@ -235,7 +229,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
         if (srcFormat.GetDefaultSessionID() == sessionID) {
           OpalMediaFormat intermediateFormat;
           if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-            return PTrue;
+            return srcFormat.Merge(dstFormat) && dstFormat.Merge(srcFormat);
         }
       }
     }
