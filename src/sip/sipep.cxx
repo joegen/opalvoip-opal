@@ -1115,7 +1115,9 @@ SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByDomain(host, SIP_PDU::Method_REGISTER, PSafeReadOnly);
-  return GetLocalURL(handler != NULL ? handler->GetTransport() : transport, userName);
+  if (handler == NULL)
+    return GetLocalURL(transport, userName);
+  return GetLocalURL(handler->GetTransport(), handler->GetTargetAddress().GetUserName());
 }
 
 

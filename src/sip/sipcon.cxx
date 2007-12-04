@@ -1017,23 +1017,34 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 
 void SIPConnection::SetLocalPartyAddress()
 {
+  // preserve tag to be re-added to explicitFrom below, if there are
+  // stringOptions
+  PString tag = ";tag=" + OpalGloballyUniqueID().AsString();
   SIPURL registeredPartyName = endpoint.GetRegisteredPartyName(remotePartyAddress);
-  localPartyAddress = registeredPartyName.AsQuotedString() + ";tag=" + OpalGloballyUniqueID().AsString();
+  localPartyAddress = registeredPartyName.AsQuotedString() + tag; 
 
   // allow callers to override the From field
   if (stringOptions != NULL) {
     SIPURL newFrom(GetLocalPartyAddress());
+
+    // only allow override of calling party number if the local party
+    // name hasn't been first specified by a register handler. i.e a
+    // register handler's target number is always used
+
+    // $$$ perhaps a register handler could have a configurable option
+    // to control this behavior
     PString number((*stringOptions)("Calling-Party-Number"));
-    if (!number.IsEmpty())
+    if (!number.IsEmpty() && newFrom.GetUserName() == endpoint.GetDefaultLocalPartyName())
       newFrom.SetUserName(number);
 
     PString name((*stringOptions)("Calling-Party-Name"));
     if (!name.IsEmpty())
       newFrom.SetDisplayName(name);
 
-    explicitFrom = newFrom.AsQuotedString();
+    explicitFrom = newFrom.AsQuotedString() + tag;
 
-    PTRACE(1, "SIP\tChanging From from " << GetLocalPartyAddress() << " to " << explicitFrom << " using " << name << " and " << number);
+    PTRACE(1, "SIP\tChanging From from " << GetLocalPartyAddress()
+           << " to " << explicitFrom << " using " << name << " and " << number);
   }
 }
 
