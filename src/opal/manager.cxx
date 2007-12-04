@@ -1212,24 +1212,15 @@ PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/,
 
   if (incoming) {
 
-    // by default, only check for NAT under two conditions
+    // Assume remote is behind a NAT if the following two conditions are true
     //    1. Peer is not local, but the peer thinks it is
     //    2. Peer address and local address are both private, but not the same
     //
     if ((!peerAddr.IsRFC1918() && sigAddr.IsRFC1918()) ||
         ((peerAddr.IsRFC1918() && localAddr.IsRFC1918()) && (localAddr != peerAddr))) {
 
-      // given these paramaters, translate the local address
-      PIPSocket::Address trialAddr = localAddr;
-      TranslateIPAddress(trialAddr, peerAddr);
-
-      PTRACE(3, "OPAL\tTranslateIPAddress has converted " << localAddr << " to " << trialAddr);
-
-      // if the application specific routine changed the local address, then enable RTP NAT mode
-      if (localAddr != trialAddr) {
-        PTRACE(3, "OPAL\tSource signal address " << sigAddr << " and peer address " << peerAddr << " indicate remote endpoint is behind NAT");
-        remoteIsNAT = PTrue;
-      }
+      PTRACE(3, "OPAL\tSource signal address " << sigAddr << " and peer address " << peerAddr << " indicate remote endpoint is behind NAT");
+      remoteIsNAT = PTrue;
     }
   }
   else
