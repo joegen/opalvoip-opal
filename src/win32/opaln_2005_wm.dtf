@@ -21896,6 +21896,7 @@ EXPORTS
     ?AddListener@H323TransactionServer@@QAAHPAVOpalTransport@@@Z @45766 NONAME
     ?AddListeners@H323TransactionServer@@QAAHABVH323TransportAddressArray@@@Z @45767 NONAME
     ?AddMediaDescription@SDPSessionDescription@@QAAXPAVSDPMediaDescription@@@Z @45768 NONAME
+    ?AddMediaFormat@H323Capabilities@@QAAHHHABVOpalMediaFormat@@@Z @57279 NONAME
     ?AddMediaFormat@SDPMediaDescription@@QAAXABVOpalMediaFormat@@ABV?$map@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@@std@@@Z @45769 NONAME
     ?AddMediaFormats@SDPMediaDescription@@QAAXABVOpalMediaFormatList@@IABV?$map@W4PayloadTypes@RTP_DataFrame@@W412@U?$less@W4PayloadTypes@RTP_DataFrame@@@std@@V?$allocator@U?$pair@$$CBW4PayloadTypes@RTP_DataFrame@@W412@@std@@@4@@std@@@Z @45770 NONAME
     ?AddNewDstFrame@OpalRFC4175Encoder@@IAAXXZ @45771 NONAME
@@ -30011,7 +30012,7 @@ EXPORTS
     ?GetLocalControlPort@RTP_UDP@@UBAGXZ @53392 NONAME
     ?GetLocalDataPort@RTP_UDP@@UBAGXZ @53393 NONAME
     ?GetLocalHostName@RTP_UDP@@UAA?AVPString@@XZ @53394 NONAME
-    ?GetLocalMediaFormats@H323Connection@@UAA?AVOpalMediaFormatList@@XZ @53395 NONAME
+    ?GetLocalMediaFormats@OpalConnection@@UAA?AVOpalMediaFormatList@@XZ @57280 NONAME
     ?GetLocalName@H323PeerElement@@QBA?AVPString@@XZ @53396 NONAME
     ?GetLocalNumber@IAX2EndPoint@@QAA?AVPString@@XZ @53397 NONAME
     ?GetLocalPartyAddress@SIPConnection@@UBA?AVPString@@XZ @53398 NONAME
