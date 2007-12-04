@@ -179,6 +179,8 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
 {
   UpdateOutputMediaFormat(outputMediaFormat);
   fillLevel = 5;
+  frameWidth = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::CIFWidth);
+  frameHeight = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::CIFHeight);
 }
 
 
