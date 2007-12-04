@@ -801,14 +801,19 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(mediaFormat.media_format_mutex);
+
+  ToNormalisedOptions();
+
   for (PINDEX i = 0; i < options.GetSize(); i++) {
     OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
     if (option == NULL) {
-      PTRACE(2, "MediaFormat\tCannot merge unmatched option " << options[i].GetName());
+      PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << options[i].GetName());
     }
     else if (!options[i].Merge(*option))
       return false;
   }
+
+  ToNormalisedOptions();
 
   return true;
 }
