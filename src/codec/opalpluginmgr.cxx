@@ -2359,7 +2359,7 @@ BOOL H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & cap)
     if (!mediaFormat.SetOptionInteger(cifMPI_tag, h261.m_cifMPI))
       return FALSE;
 
-    if (!SetCommonOptions(mediaFormat, QCIF_WIDTH, QCIF_HEIGHT, h261.m_cifMPI))
+    if (!SetCommonOptions(mediaFormat, CIF_WIDTH, CIF_HEIGHT, h261.m_cifMPI))
       return FALSE;
   }
 
