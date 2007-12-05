@@ -554,7 +554,12 @@ bool MyManager::Initialise()
     LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
     GetEventHandler()->ProcessPendingEvents();
     Update();
-    LogWindow << "STUN server \"" << str << "\" replies " << SetSTUNServer(str) << endl;
+    PSTUNClient::NatTypes nat = SetSTUNServer(str);
+    LogWindow << "STUN server \"" << str << "\" replies " << nat;
+    PIPSocket::Address externalAddress;
+    if (nat != PSTUNClient::BlockedNat && GetSTUN()->GetExternalAddress(externalAddress))
+      LogWindow << " with address " << externalAddress;
+    LogWindow << endl;
   }
 
   config->SetPath(LocalInterfacesGroup);
@@ -627,7 +632,6 @@ bool MyManager::Initialise()
   config->Read(VideoGrabFrameSizeKey, &m_VideoGrabFrameSize,  "CIF");
   config->Read(VideoMinFrameSizeKey,  &m_VideoMinFrameSize, "SQCIF");
   config->Read(VideoMaxFrameSizeKey,  &m_VideoMaxFrameSize,   "CIF16");
-  AdjustFrameSize();
 
   config->Read(VideoGrabPreviewKey, &m_VideoGrabPreview);
   if (config->Read(VideoAutoTransmitKey, &onoff))
@@ -727,6 +731,7 @@ bool MyManager::Initialise()
     }
     m_mediaInfo.sort();
   }
+  AdjustFrameSize();
 
 #if PTRACING
   mediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
