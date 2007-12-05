@@ -1159,6 +1159,30 @@ class OpalConnection : public PSafeObject
     PBoolean RemoteIsNAT() const
     { return remoteIsNAT; }
 
+    /**Determine if the RTP session needs to accommodate a NAT router.
+       For endpoints that do not use STUN or something similar to set up all the
+       correct protocol embeddded addresses correctly when a NAT router is between
+       the endpoints, it is possible to still accommodate the call, with some
+       restrictions. This function determines if the RTP can proceed with special
+       NAT allowances.
+
+       The special allowance is that the RTP code will ignore whatever the remote
+       indicates in the protocol for the address to send RTP data and wait for
+       the first packet to arrive from the remote and will then proceed to send
+       all RTP data back to that address AND port.
+
+       The default behaviour checks the values of the physical link
+       (localAddr/peerAddr) against the signaling address the remote indicated in
+       the protocol, eg H.323 SETUP sourceCallSignalAddress or SIP "To" or
+       "Contact" fields, and makes a guess that the remote is behind a NAT router.
+     */
+    virtual PBoolean IsRTPNATEnabled(
+      const PIPSocket::Address & localAddr,   ///< Local physical address of connection
+      const PIPSocket::Address & peerAddr,    ///< Remote physical address of connection
+      const PIPSocket::Address & signalAddr,  ///< Remotes signaling address as indicated by protocol of connection
+      PBoolean incoming                       ///< Incoming/outgoing connection
+    );
+
     virtual void SetSecurityMode(const PString & v)
     { securityMode = v; }
 
@@ -1178,11 +1202,6 @@ class OpalConnection : public PSafeObject
 
     virtual void EnableRecording();
     virtual void DisableRecording();
-
-    virtual PBoolean IsRTPNATEnabled(const PIPSocket::Address & localAddr, 
-                                 const PIPSocket::Address & peerAddr,
-                                 const PIPSocket::Address & sigAddr,
-                                                       PBoolean incoming);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
