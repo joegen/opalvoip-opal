@@ -874,8 +874,11 @@ int OpalPluginStreamedAudioDecoder::ConvertOne(int codedSample) const
 OpalPluginVideoTranscoder::OpalPluginVideoTranscoder(const PluginCodec_Definition * _codec, PBoolean _isEncoder)
   : OpalVideoTranscoder(_codec->sourceFormat, _codec->destFormat)
   , OpalPluginTranscoder(_codec, _isEncoder)
+  , bufferRTP(NULL)
+#if PTRACING
+  , consecutiveIntraFrames(0)
+#endif
 { 
-  bufferRTP = NULL;
 }
 
 OpalPluginVideoTranscoder::~OpalPluginVideoTranscoder()
@@ -920,10 +923,25 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
         return PFalse;
       }
 
-      if (firstPacketForFrame && (flags & PluginCodec_ReturnCoderIFrame) != 0) {
-        PTRACE(forceIFrame ? 3 : 4, "OpalPlugin\tSending I-Frame" << (forceIFrame ? " in response to videoFastUpdate" : ""));
+      if (firstPacketForFrame) {
+        if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
+#if PTRACING
+          if (forceIFrame)
+            PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
+          else if (consecutiveIntraFrames < 10) {
+            if (++consecutiveIntraFrames >= 10)
+              PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
+            else
+              PTRACE(4, "OpalPlugin\tSending I-Frame");
+          }
+#endif
+          forceIFrame = false;
+        }
+#if PTRACING
+        else
+          consecutiveIntraFrames = 0;
+#endif
         firstPacketForFrame = false;
-        forceIFrame = false;
       }
 
       if (toLen > 0) {
