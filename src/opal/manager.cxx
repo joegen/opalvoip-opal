@@ -897,6 +897,78 @@ PBoolean OpalManager::IsLocalAddress(const PIPSocket::Address & ip) const
 }
 
 
+PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
+                                      const PIPSocket::Address & localAddr,
+                                      const PIPSocket::Address & peerAddr,
+                                      const PIPSocket::Address & sigAddr,
+                                      PBoolean PTRACE_PARAM(incoming))
+{
+  PTRACE(4, "OPAL\tChecking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ", peer=" << peerAddr << ", sig=" << sigAddr);
+
+  /* The peer endpoint may be on a public address, the local network (LAN) or
+     NATed. If the last, it either knows it is behind the NAT or is blissfully
+     unaware of it.
+
+     If the remote is public or on a LAN/VPN then no special treatment of RTP
+     is needed. We do make the assumption that the remote will indicate correct
+     addresses everywhere, in SETUP/OLC and INVITE/SDP.
+
+     Now if the endpoint is NATed and knows it is behind a NAT, and is doing
+     it correctly, it is indistinguishable from being on a public address.
+
+     If the remote endpoint is unaware of it's NAT status then there will be a
+     discrepency between the physical address of the connection and the
+     signaling adddress indicated in the protocol, the H.323 SETUP
+     sourceCallSignalAddress or SIP "To" or "Contact" fields.
+
+     So this is the first test to make: if those addresses the same, we will
+     assume the other guy is public or LAN/VPN and either no NAT is involved,
+     or we leave them in charge of any NAT traversal as he has the ability to
+     do it. In either case we don't do anything.
+   */
+
+  if (peerAddr == sigAddr)
+    return false;
+
+  /* So now we have a remote that is confused in some way, so needs help. Our
+     next test is for cases of where we are on a multi-homed machine and we
+     ended up with a call from interface to another. No NAT needed.
+   */
+  if (PIPSocket::IsLocalHost(peerAddr))
+    return false;
+
+  /* So, call is from a remote host somewhere and is still confused. We now
+     need to check if we are actually ABLE to help. We test if the local end
+     of the connection is public, i.e. no NAT at this end so we can help.
+   */
+  if (!localAddr.IsRFC1918())
+    return true;
+
+  /* Another test for if we can help, we are behind a NAT too, but the user has
+     provided information so we can compensate for it, i.e. we "know" about the
+     NAT. We determine this by translating the localAddr and seing if it gets
+     changed to the NAT router address. If so, we can help.
+   */
+  PIPSocket::Address natAddr = localAddr;
+  if (TranslateIPAddress(natAddr, peerAddr))
+    return true;
+
+  /* If we get here, we appear to be in a situation which, if we tried to do the
+     NAT translation, we could end up in a staring match as the NAT traversal
+     technique does not send anything till it receives something. If both side
+     do that then .....
+
+     So, we do nothing and hope for the best. This means that either the call
+     gets no media, or there is some other magic entity (smart router, proxy,
+     etc) between the two endpoints we know nothing about that will do NAT
+     translations for us.
+
+     Are there any other cases?
+  */
+  return false;
+}
+
+
 PBoolean OpalManager::TranslateIPAddress(PIPSocket::Address & localAddress,
                                      const PIPSocket::Address & remoteAddress)
 {
@@ -1197,37 +1269,6 @@ void OpalManager::StopRecording(const PString & callToken)
   PSafePtr<OpalCall> call = activeCalls.FindWithLock(callToken, PSafeReadWrite);
   if (call != NULL)
     call->StopRecording();
-}
-
-
-PBoolean OpalManager::IsRTPNATEnabled(OpalConnection & /*conn*/, 
-                    const PIPSocket::Address & localAddr, 
-                    const PIPSocket::Address & peerAddr,
-                    const PIPSocket::Address & sigAddr,
-                                          PBoolean incoming)
-{
-  PBoolean remoteIsNAT = PFalse;
-
-  PTRACE(4, "OPAL\tChecking " << (incoming ? "incoming" : "outgoing") << " call for NAT: local=" << localAddr << ",peer=" << peerAddr << ",sig=" << sigAddr);
-
-  if (incoming) {
-
-    // Assume remote is behind a NAT if the following two conditions are true
-    //    1. Peer is not local, but the peer thinks it is
-    //    2. Peer address and local address are both private, but not the same
-    //
-    if ((!peerAddr.IsRFC1918() && sigAddr.IsRFC1918()) ||
-        ((peerAddr.IsRFC1918() && localAddr.IsRFC1918()) && (localAddr != peerAddr))) {
-
-      PTRACE(3, "OPAL\tSource signal address " << sigAddr << " and peer address " << peerAddr << " indicate remote endpoint is behind NAT");
-      remoteIsNAT = PTrue;
-    }
-  }
-  else
-  {
-  }
-
-  return remoteIsNAT;
 }
 
 
