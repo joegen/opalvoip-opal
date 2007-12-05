@@ -271,7 +271,9 @@ MyManager::MyManager()
   ivrEP = NULL;
 #endif
 
+#if OPAL_VIDEO
   autoStartReceiveVideo = autoStartTransmitVideo = PFalse;
+#endif
 }
 
 
