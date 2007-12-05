@@ -339,6 +339,10 @@ class OpalPluginVideoTranscoder : public OpalVideoTranscoder, public OpalPluginT
 
   protected:
     RTP_DataFrame * bufferRTP;
+
+#if PTRACING
+    unsigned consecutiveIntraFrames;
+#endif
 };
 
 #endif
