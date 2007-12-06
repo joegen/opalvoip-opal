@@ -2127,8 +2127,6 @@ void H323Capabilities::RemoveAll()
 
 H323Capability * H323Capabilities::FindCapability(unsigned capabilityNumber) const
 {
-  PTRACE(4, "H323\tFindCapability: " << capabilityNumber);
-
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i].GetCapabilityNumber() == capabilityNumber) {
       PTRACE(3, "H323\tFound capability: " << table[i]);
@@ -2136,6 +2134,7 @@ H323Capability * H323Capabilities::FindCapability(unsigned capabilityNumber) con
     }
   }
 
+  PTRACE(4, "H323\tCould not find capability: " << capabilityNumber);
   return NULL;
 }
 
@@ -2144,8 +2143,6 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
                                                   H323Capability::CapabilityDirection direction,
                                                   PBoolean exact) const
 {
-  PTRACE(4, "H323\tFindCapability: \"" << formatName << '"');
-
   PStringArray wildcard = formatName.Tokenise('*', PFalse);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
@@ -2158,6 +2155,7 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
     }
   }
 
+  PTRACE(4, "H323\tCould not find capability: \"" << formatName << '"');
   return NULL;
 }
 
@@ -2165,8 +2163,6 @@ H323Capability * H323Capabilities::FindCapability(const PString & formatName,
 H323Capability * H323Capabilities::FindCapability(
                               H323Capability::CapabilityDirection direction) const
 {
-  PTRACE(4, "H323\tFindCapability: \"" << direction << '"');
-
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i].GetCapabilityDirection() == direction) {
       PTRACE(3, "H323\tFound capability: " << table[i]);
@@ -2174,13 +2170,13 @@ H323Capability * H323Capabilities::FindCapability(
     }
   }
 
+  PTRACE(4, "H323\tCould not find capability: \"" << direction << '"');
   return NULL;
 }
 
 
 H323Capability * H323Capabilities::FindCapability(const H323Capability & capability) const
 {
-  PTRACE(4, "H323\tFindCapability: " << capability);
 
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     if (table[i] == capability) {
@@ -2189,6 +2185,7 @@ H323Capability * H323Capabilities::FindCapability(const H323Capability & capabil
     }
   }
 
+  PTRACE(4, "H323\tCould not find capability: " << capability);
   return NULL;
 }
 
@@ -2203,7 +2200,6 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitAudioCapability :
         if (capability.GetMainType() == H323Capability::e_Audio) {
           const H245_AudioCapability & audio = cap;
-          PTRACE(4, "H323\tFindCapability: " << audio.GetTagName());
           if (capability.IsMatch(audio))
             return &capability;
         }
@@ -2214,7 +2210,6 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitVideoCapability :
         if (capability.GetMainType() == H323Capability::e_Video) {
           const H245_VideoCapability & video = cap;
-          PTRACE(4, "H323\tFindCapability: " << video.GetTagName());
           if (capability.IsMatch(video))
             return &capability;
         }
@@ -2225,7 +2220,6 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitDataApplicationCapability :
         if (capability.GetMainType() == H323Capability::e_Data) {
           const H245_DataApplicationCapability & data = cap;
-          PTRACE(4, "H323\tFindCapability: " << data.m_application.GetTagName());
           if (capability.IsMatch(data.m_application))
             return &capability;
         }
@@ -2236,22 +2230,51 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
       case H245_Capability::e_receiveAndTransmitUserInputCapability :
         if (capability.GetMainType() == H323Capability::e_UserInput) {
           const H245_UserInputCapability & ui = cap;
-          PTRACE(4, "H323\tFindCapability: " << ui.GetTagName());
           if (capability.IsMatch(ui))
             return &capability;
         }
         break;
 
       case H245_Capability::e_receiveRTPAudioTelephonyEventCapability :
-        PTRACE(4, "H323\tFindCapability: " << cap.GetTagName());
         return FindCapability(H323Capability::e_UserInput, SignalToneRFC2833_SubType);
-
-      default :
-        PTRACE(4, "H323\tFindCapability: " << cap.GetTagName());
-        break;
     }
   }
 
+#if PTRACING
+  if (PTrace::CanTrace(4)) {
+    PString tagName;
+    switch (cap.GetTag()) {
+      case H245_Capability::e_receiveAudioCapability :
+      case H245_Capability::e_transmitAudioCapability :
+      case H245_Capability::e_receiveAndTransmitAudioCapability :
+        tagName = ((const H245_AudioCapability &)cap).GetTagName();
+        break;
+
+      case H245_Capability::e_receiveVideoCapability :
+      case H245_Capability::e_transmitVideoCapability :
+      case H245_Capability::e_receiveAndTransmitVideoCapability :
+        tagName = ((const H245_VideoCapability &)cap).GetTagName();
+        break;
+
+      case H245_Capability::e_receiveDataApplicationCapability :
+      case H245_Capability::e_transmitDataApplicationCapability :
+      case H245_Capability::e_receiveAndTransmitDataApplicationCapability :
+        tagName = ((const H245_DataApplicationCapability &)cap).m_application.GetTagName();
+        break;
+
+      case H245_Capability::e_receiveUserInputCapability :
+      case H245_Capability::e_transmitUserInputCapability :
+      case H245_Capability::e_receiveAndTransmitUserInputCapability :
+        tagName = ((const H245_UserInputCapability &)cap).GetTagName();
+        break;
+
+      default :
+        tagName = "unknown";
+        break;
+    }
+    PTRACE(4, "H323\tCould not find capability: " << cap.GetTagName() << ", type " << tagName);
+  }
+#endif
   return NULL;
 }
 
@@ -2260,35 +2283,22 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
 {
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
-    PBoolean checkExact;
+    bool checkExact;
     switch (dataType.GetTag()) {
       case H245_DataType::e_audioData :
-      {
-        const H245_AudioCapability & audio = dataType;
-        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << audio.GetTagName());
-        checkExact = capability.IsMatch(audio);
+        checkExact = capability.IsMatch((const H245_AudioCapability &)dataType);
         break;
-      }
 
       case H245_DataType::e_videoData :
-      {
-        const H245_VideoCapability & video = dataType;
-        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << video.GetTagName());
-        checkExact = capability.IsMatch(video);
+        checkExact = capability.IsMatch((const H245_VideoCapability &)dataType);
         break;
-      }
 
       case H245_DataType::e_data :
-      {
-        const H245_DataApplicationCapability & data = dataType;
-        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", type " << data.m_application.GetTagName());
-        checkExact = capability.IsMatch(data.m_application);
+        checkExact = capability.IsMatch(((const H245_DataApplicationCapability &)dataType).m_application);
         break;
-      }
 
       default :
-        checkExact = PFalse;
-        PTRACE(4, "H323\tFindCapability: " << dataType.GetTagName() << ", unknown type");
+        checkExact = false;
     }
 
     if (checkExact) {
@@ -2302,6 +2312,29 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
     }
   }
 
+#if PTRACING
+  if (PTrace::CanTrace(4)) {
+    PString tagName;
+    switch (dataType.GetTag()) {
+      case H245_DataType::e_audioData :
+        tagName = ((const H245_AudioCapability &)dataType).GetTagName();
+        break;
+
+      case H245_DataType::e_videoData :
+        tagName = ((const H245_VideoCapability &)dataType).GetTagName();
+        break;
+
+      case H245_DataType::e_data :
+        tagName = ((const H245_DataApplicationCapability &)dataType).m_application.GetTagName();
+        break;
+
+      default :
+        tagName = "unknown";
+        break;
+    }
+    PTRACE(4, "H323\tCould not find capability: " << dataType.GetTagName() << ", type " << tagName);
+  }
+#endif
   return NULL;
 }
 
@@ -2342,6 +2375,29 @@ H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeE
     }
   }
 
+#if PTRACING
+  if (PTrace::CanTrace(4)) {
+    PString tagName;
+    switch (modeElement.m_type.GetTag()) {
+      case H245_ModeElementType::e_audioMode :
+        tagName = ((const H245_AudioMode &)modeElement.m_type).GetTagName();
+        break;
+
+      case H245_ModeElementType::e_videoMode :
+        tagName = ((const H245_VideoMode &)modeElement.m_type).GetTagName();
+        break;
+
+      case H245_ModeElementType::e_dataMode :
+        tagName = ((const H245_DataMode &)modeElement.m_type).m_application.GetTagName();
+        break;
+
+      default :
+        tagName = "unknown";
+        break;
+    }
+    PTRACE(4, "H323\tCould not find capability: " << modeElement.m_type.GetTagName() << ", type " << tagName);
+  }
+#endif
   return NULL;
 }
 
@@ -2349,8 +2405,6 @@ H323Capability * H323Capabilities::FindCapability(const H245_ModeElement & modeE
 H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes mainType,
                                                   unsigned subType) const
 {
-  PTRACE(4, "H323\tFindCapability: " << mainType << " subtype=" << subType);
-
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
     if (capability.GetMainType() == mainType &&
@@ -2360,6 +2414,7 @@ H323Capability * H323Capabilities::FindCapability(H323Capability::MainTypes main
     }
   }
 
+  PTRACE(4, "H323\tCould not find capability: " << mainType << " subtype=" << subType);
   return NULL;
 }
 
@@ -2441,8 +2496,7 @@ void H323Capabilities::BuildPDU(const H323Connection & connection,
 
 PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
 {
-  PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge of:\n" << newCaps
-            << "\nInto:\n" << *this);
+  PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge of:\n" << newCaps << "\nInto:\n" << *this);
 
   // Add any new capabilities not already in set.
   PINDEX i;
@@ -2470,8 +2524,7 @@ PBoolean H323Capabilities::Merge(const H323Capabilities & newCaps)
   }
 
   PTRACE_IF(4, !table.IsEmpty(), "H245\tCapability merge result:\n" << *this);
-  PTRACE(3, "H245\tReceived capability set, is "
-                 << (table.IsEmpty() ? "rejected" : "accepted"));
+  PTRACE(3, "H245\tReceived capability set, is " << (table.IsEmpty() ? "rejected" : "accepted"));
   return !table.IsEmpty();
 }
 
