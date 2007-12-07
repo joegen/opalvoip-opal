@@ -194,7 +194,6 @@ class SDPMediaDescription : public PObject
 
     OpalMediaType mediaType;
     WORD portCount;
-    PCaselessString media;
     PCaselessString transport;
     OpalTransportAddress transportAddress;
     WORD port;
