@@ -471,7 +471,7 @@ class OpalMediaFormatInternal : public PObject
   public:
     OpalMediaFormatInternal(
       const char * fullName,
-      const OpalMediaType & mtype,
+      const char * mediaType,
       RTP_DataFrame::PayloadTypes rtpPayloadType,
       const char * encodingName,
       PBoolean     needsJitter,
@@ -564,7 +564,7 @@ class OpalMediaFormat : public PContainer
       */
     OpalMediaFormat(
       const char * fullName,                      ///<  Full name of media format
-      const OpalMediaType & mediaType,            ///<  Default session for codec type
+      const char * mediaType,                     ///<  Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const char * encodingName,                  ///<  RTP encoding name
       PBoolean     needsJitter,                   ///<  Indicate format requires a jitter buffer
@@ -1177,4 +1177,4 @@ extern const OpalMediaFormat & GetOpalCiscoNSE();
 #endif  // __OPAL_MEDIAFMT_H
 
 
-// End of File ///////////////////////////////////////////////////////////////
+// End of File /////////////////////////////////////////////////////////////

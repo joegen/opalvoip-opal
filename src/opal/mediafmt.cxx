@@ -95,7 +95,7 @@ const OpalMediaFormat & GetOpalRFC2833()
 {
   static const OpalMediaFormat RFC2833(
     OPAL_RFC2833,
-    0,
+    "rfc2833",
     (RTP_DataFrame::PayloadTypes)101,  // Set to this for Cisco compatibility
     "telephone-event",
     true,   // Needs jitter
@@ -111,7 +111,7 @@ const OpalMediaFormat & GetOpalCiscoNSE()
 {
   static const OpalMediaFormat CiscoNSE(
     OPAL_CISCONSE,
-    0,
+    "cisconse",
     (RTP_DataFrame::PayloadTypes)100,  // Set to this for Cisco compatibility
     "NSE",
     true,   // Needs jitter
@@ -569,7 +569,7 @@ OpalMediaFormat::OpalMediaFormat(const PString & wildcard)
 
 
 OpalMediaFormat::OpalMediaFormat(const char * fullName,
-                                 const OpalMediaType & mtype,
+                                 const char * mtype,
                                  RTP_DataFrame::PayloadTypes pt,
                                  const char * en,
                                  PBoolean     nj,
@@ -730,7 +730,7 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 /////////////////////////////////////////////////////////////////////////////
 
 OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
-                                                 const OpalMediaType & mtype,
+                                                 const char * mtype,
                                                  RTP_DataFrame::PayloadTypes pt,
                                                  const char * en,
                                                  PBoolean     nj,
@@ -744,7 +744,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
   codecVersionTime = ts;
   rtpPayloadType = pt;
   rtpEncodingName = en;
-  mediaType = mtype;
+  mediaType = (mtype == NULL) ? "null" : mtype;
 
   if (nj)
     AddOption(new OpalMediaOptionBoolean(OpalMediaFormat::NeedsJitterOption(), true, OpalMediaOption::OrMerge, true));
