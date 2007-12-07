@@ -657,13 +657,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(
   const OpalMediaSessionId & sessionID,
   PBoolean isSource)
 {
-  OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(mediaFormat.GetMediaType());
-  if (defn == NULL) {
-    PTRACE(2, "OpalCon\tCannot create media stream for unknown media type " << mediaFormat.GetMediaType());
-    return NULL;
-  }
-
-  return defn->CreateMediaStream(*this, mediaFormat, sessionID, isSource);
+  return InternalCreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
 
@@ -1253,7 +1247,13 @@ PBoolean OpalConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr,
 
 OpalMediaStream * OpalConnection::InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
 {
-  return CreateMediaStream(mediaFormat, sessionID, isSource);
+  OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(mediaFormat.GetMediaType());
+  if (defn == NULL) {
+    PTRACE(2, "OpalCon\tCannot create media stream for unknown media type " << mediaFormat.GetMediaType());
+    return NULL;
+  }
+
+  return defn->CreateMediaStream(*this, mediaFormat, sessionID, isSource);
 }
 
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()

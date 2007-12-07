@@ -37,7 +37,11 @@
 #include <opal/buildopts.h>
 #include <opal/mediatype.h>
 #include <opal/connection.h>
+#include <opal/call.h>
+
+#if OPAL_H323
 #include <h323/channels.h>
+#endif
 
 namespace PWLibStupidLinkerHacks {
 extern int opalLoader;
@@ -111,11 +115,24 @@ H323Channel * OpalNULLMediaType::CreateH323Channel(H323Connection &, const H323C
 PBoolean OpalCommonMediaType::IsMediaBypassPossible() const
 { return TRUE; }
 
-RTP_UDP * OpalCommonMediaType::CreateNonSecureSession(OpalConnection &, PHandleAggregator * , const OpalMediaSessionId & , PBoolean )
-{ return NULL; }
+RTP_UDP * OpalCommonMediaType::CreateNonSecureSession(OpalConnection &, PHandleAggregator * aggregator, const OpalMediaSessionId & sessionID, PBoolean remoteIsNAT)
+{  return new RTP_UDP(aggregator, sessionID, remoteIsNAT); }
 
-OpalMediaStream * OpalCommonMediaType::CreateMediaStream(OpalConnection &, const OpalMediaFormat &, const OpalMediaSessionId &, PBoolean)
-{  return NULL; }
+OpalMediaStream * OpalCommonMediaType::CreateMediaStream(OpalConnection & connection, const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
+{  
+  if (connection.GetCall().IsMediaBypassPossible(connection, sessionID))
+    return new OpalNullMediaStream(connection, mediaFormat, sessionID, isSource);
+
+  RTP_Session * session = connection.GetSession(sessionID);
+  if (session == NULL) {
+    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID.mediaType);
+    return NULL;
+  }
+
+  return new OpalRTPMediaStream(connection, mediaFormat, isSource, *session,
+                                connection.GetMinAudioJitterDelay(),
+                                connection.GetMaxAudioJitterDelay());
+}
 
 #if OPAL_H323
 

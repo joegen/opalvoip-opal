@@ -231,26 +231,6 @@ class H323Connection : public OpalConnection
       const OpalMediaSessionId & sessionID      ///<  Session to start stream on
     );
     
-    /**Open a new media stream.
-       This will create a media stream of an appropriate subclass as required
-       by the underlying connection protocol. For instance H.323 would create
-       an OpalRTPStream.
-
-       The sessionID parameter may not be needed by a particular media stream
-       and may be ignored. In the case of an OpalRTPStream it us used.
-
-       Note that media streams may be created internally to the underlying
-       protocol. This function is not the only way a stream can come into
-       existance.
-
-       The default behaviour is pure.
-     */
-    virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat,   ///<  Media format for stream
-      const OpalMediaSessionId & sessionID,  ///<  Session number for stream
-      PBoolean isSource                      ///<  Is a source stream
-    );
-
     /**Overrides from OpalConnection
       */
     void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
