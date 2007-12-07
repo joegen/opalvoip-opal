@@ -653,16 +653,9 @@ void OpalConnection::PauseMediaStreams(PBoolean paused)
 
 
 OpalMediaStream * OpalConnection::CreateMediaStream(
-#if OPAL_VIDEO
   const OpalMediaFormat & mediaFormat,
   const OpalMediaSessionId & sessionID,
-  PBoolean isSource
-#else
-  const OpalMediaFormat & ,
-  unsigned ,
-  PBoolean 
-#endif
-  )
+  PBoolean isSource)
 {
   OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(mediaFormat.GetMediaType());
   if (defn == NULL) {
