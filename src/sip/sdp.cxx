@@ -616,7 +616,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
 
   // output media header
   str << "m=" 
-      << media << " "
+      << mediaType << " "
       << port << " "
       << transport;
 

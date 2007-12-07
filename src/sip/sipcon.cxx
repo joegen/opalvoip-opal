@@ -940,7 +940,7 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   if (sdp == NULL)
     sdp = new SDPSessionDescription(localAddress);
 
-  if (!localAddress.IsEmpty()) {
+  if (localAddress.IsEmpty()) {
     PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << sessionID.sessionId << " with no transport address");
   }
   else {
@@ -1882,17 +1882,14 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 
   remoteSDP = pdu.GetSDP();
 
-  OnReceivedSDPMediaDescription(remoteSDP, OpalMediaSessionId("audio"));
+  const SDPMediaDescriptionList & mediaDescs = remoteSDP.GetMediaDescriptions();
+  PINDEX i;
+  for (i = 0; i < mediaDescs.GetSize(); ++i) {
+    SDPMediaDescription & mediaDescription = *(SDPMediaDescription *)mediaDescs.GetAt(i);
+    OnReceivedSDPMediaDescription(remoteSDP, OpalMediaSessionId(mediaDescription.GetMediaType(), mediaDescription.GetPort()));
+  }
 
   remoteFormatList += OpalRFC2833;
-
-#if OPAL_VIDEO
-  OnReceivedSDPMediaDescription(remoteSDP, OpalMediaSessionId("video"));
-#endif
-
-#if OPAL_T38FAX
-  OnReceivedSDPMediaDescription(remoteSDP, OpalMediaSessionId("image"));
-#endif
 }
 
 
