@@ -352,10 +352,10 @@ OpalMediaFormatList OpalPCSSConnection::GetMediaFormats() const
 
 
 OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                        unsigned sessionID,
+                                                        const OpalMediaSessionId & sessionID,
                                                         PBoolean isSource)
 {
-  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
+  if (mediaFormat.GetMediaType() != "audio")
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   PSoundChannel * soundChannel = CreateSoundChannel(mediaFormat, isSource);
@@ -366,12 +366,11 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 }
 
 
-void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
-					    OpalMediaPatch & patch)
+void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   PTRACE(3, "OpalCon\tNew patch created");
   int clockRate;
-  if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+  if (patch.GetSource().GetMediaFormat().GetMediaType() == "audio") {
     if (isSource) {
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
       patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
@@ -386,11 +385,10 @@ void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
 }
 
 
-PBoolean OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
-					       unsigned sessionID)
+PBoolean OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, const OpalMediaSessionId & sessionID)
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
+  if (sessionID.mediaType == "video" && !endpoint.GetManager().CanAutoStartTransmitVideo())
     return PFalse;
 #endif
 
@@ -401,7 +399,7 @@ PBoolean OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & m
 OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
 #if OPAL_VIDEO
-  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
+  if (source.GetSessionID().mediaType == "video" && !endpoint.GetManager().CanAutoStartReceiveVideo())
     return NULL;
 #endif
 
@@ -411,7 +409,7 @@ OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & sour
 
 PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaSessionId("audio", 1), source));
   if (stream == NULL)
     return PFalse;
 
@@ -425,7 +423,7 @@ PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage
 
 unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 {
-  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaSessionId("audio", 1), source));
   if (stream == NULL)
     return UINT_MAX;
 

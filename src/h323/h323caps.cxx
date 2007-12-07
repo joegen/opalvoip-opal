@@ -84,8 +84,8 @@ ostream & operator<<(ostream & o , H323Capability::CapabilityDirection d)
 H323Capability::H323Capability()
 {
   assignedCapabilityNumber = 0; // Unassigned
-  capabilityDirection = e_Unknown;
-  rtpPayloadType = RTP_DataFrame::IllegalPayloadType;
+  capabilityDirection      = e_Unknown;
+  rtpPayloadType           = RTP_DataFrame::IllegalPayloadType;
 }
 
 
@@ -130,9 +130,9 @@ H323Capability * H323Capability::Create(const PString & name)
 }
 
 
-unsigned H323Capability::GetDefaultSessionID() const
+OpalMediaType H323Capability::GetMediaType() const
 {
-  return 0;
+  return "null";
 }
 
 
@@ -214,6 +214,30 @@ OpalMediaFormat & H323Capability::GetWritableMediaFormat()
   return mediaFormat;
 }
 
+H323Channel * H323Capability::InternalCreateChannel(H323Connection & connection,   ///<  Owner connection for channel
+                                             H323Channel::Directions dir,          ///<  Direction of channel
+                                          const OpalMediaSessionId & sessionID,
+                          const H245_H2250LogicalChannelParameters * param) const
+{
+  OpalMediaTypeDefinition * mediaDef = OpalMediaTypeFactory::CreateInstance(GetMediaType());
+  if (mediaDef == NULL)
+    return NULL;
+
+  RTP_Session * session = connection.UseSession(connection.GetTransport(), sessionID);
+  if (session == NULL)
+    return NULL;
+
+  return mediaDef->CreateH323Channel(connection, *this, dir, (RTP_UDP &)*session, sessionID, param);
+}
+
+H323Channel * H323Capability::CreateChannel(H323Connection & connection,   ///<  Owner connection for channel
+                                     H323Channel::Directions dir,          ///<  Direction of channel
+                                  const OpalMediaSessionId & sessionID,    ///<  Session ID for RTP channel
+                  const H245_H2250LogicalChannelParameters * param) const  ///<  Parameters for channel
+{
+  return InternalCreateChannel(connection, dir, sessionID, param);
+}
+ 
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -248,9 +272,9 @@ void H323RealTimeCapability::AttachQoS(RTP_QOS * _rtpqos)
 }
 
 H323Channel * H323RealTimeCapability::CreateChannel(H323Connection & connection,
-                                                    H323Channel::Directions dir,
-                                                    unsigned sessionID,
-                                 const H245_H2250LogicalChannelParameters * param) const
+                                             H323Channel::Directions dir,
+                                          const OpalMediaSessionId & sessionID,
+                          const H245_H2250LogicalChannelParameters * param) const
 {
   return connection.CreateRealTimeLogicalChannel(*this, dir, sessionID, param, rtpqos);
 }
@@ -694,12 +718,8 @@ H323Capability::MainTypes H323AudioCapability::GetMainType() const
   return e_Audio;
 }
 
-
-unsigned H323AudioCapability::GetDefaultSessionID() const
-{
-  return OpalMediaFormat::DefaultAudioSessionID;
-}
-
+OpalMediaType H323AudioCapability::GetMediaType() const
+{ return "audio"; }
 
 void H323AudioCapability::SetTxFramesInPacket(unsigned frames)
 {
@@ -1016,6 +1036,8 @@ H323Capability::MainTypes H323VideoCapability::GetMainType() const
   return e_Video;
 }
 
+OpalMediaType H323VideoCapability::GetMediaType() const
+{ return "video"; }
 
 PBoolean H323VideoCapability::OnSendingPDU(H245_Capability & cap) const
 {
@@ -1080,12 +1102,6 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_VideoCapability &)
 PBoolean H323VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu, CommandType)
 {
   return OnReceivedPDU(pdu);
-}
-
-
-unsigned H323VideoCapability::GetDefaultSessionID() const
-{
-  return OpalMediaFormat::DefaultVideoSessionID;
 }
 
 
@@ -1235,9 +1251,9 @@ H323Capability::MainTypes H323DataCapability::GetMainType() const
 }
 
 
-unsigned H323DataCapability::GetDefaultSessionID() const
+OpalMediaType H323DataCapability::GetMediaType() const
 {
-  return 3;
+  return "image";
 }
 
 
@@ -1692,7 +1708,7 @@ PString H323_UserInputCapability::GetFormatName() const
 
 H323Channel * H323_UserInputCapability::CreateChannel(H323Connection &,
                                                       H323Channel::Directions,
-                                                      unsigned,
+                                                      const OpalMediaSessionId & ,
                                                       const H245_H2250LogicalChannelParameters *) const
 {
   PTRACE(1, "Codec\tCannot create UserInputCapability channel");

@@ -276,9 +276,9 @@ class IAX2Connection : public OpalConnection
      can come into existance.
   */
   OpalMediaStream * CreateMediaStream(
-				      const OpalMediaFormat & mediaFormat, /// Media format for stream
-				      unsigned sessionID,                  /// Session number for stream
-				      PBoolean isSource                        /// Is a source stream
+				      const OpalMediaFormat & mediaFormat,   /// Media format for stream
+				      const OpalMediaSessionId & sessionID,  /// Session number for stream
+				      PBoolean isSource                      /// Is a source stream
 				      );
 
   /**Give the call token a value. The call token is the ipaddress of

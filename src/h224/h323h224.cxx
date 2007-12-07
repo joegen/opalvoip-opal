@@ -43,6 +43,41 @@
 
 #include <asn/h245.h>
 
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  declare a media type for H.224
+//
+
+class OpalH224MediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    BYTE GetPreferredSessionId() const;
+    RTP_UDP * CreateNonSecureSession(OpalConnection & conn, PHandleAggregator * aggregator, const OpalMediaSessionId & id, PBoolean remoteIsNAT);
+    OpalMediaStream * CreateMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat,const OpalMediaSessionId & sessionID, PBoolean isSource);
+
+#if OPAL_H323
+    virtual H323Channel * CreateH323Channel(H323Connection & conn, 
+                                      const H323Capability & capability, 
+                                                    unsigned direction, 
+                                               RTP_Session & session,
+                                                    unsigned sessionId,
+                  const H245_H2250LogicalChannelParameters * param)
+    {
+      return new H323_H224Channel(conn, capability, (H323Channel::Directions)direction, (RTP_UDP &)session, OpalMediaSessionId("h.224", sessionId));
+    }
+#endif
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalMediaType &, OpalTransportAddress & localAddress);
+#endif
+};
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  declare capabilities for H.224
+//
+
 H323_H224Capability::H323_H224Capability()
 : H323DataCapability(640)
 {
@@ -81,20 +116,6 @@ PString H323_H224Capability::GetFormatName() const
   return "H.224";
 }
 
-H323Channel * H323_H224Capability::CreateChannel(H323Connection & connection,
-                                                 H323Channel::Directions direction,
-                                                 unsigned int sessionID,
-                                                 const H245_H2250LogicalChannelParameters * /*params*/) const
-{
-  RTP_Session *session = connection.UseSession(connection.GetTransport(), sessionID);
-	
-  if(session == NULL) {
-    return NULL;
-  }
-  
-  return new H323_H224Channel(connection, *this, direction, (RTP_UDP &)*session, sessionID);
-}
-
 PBoolean H323_H224Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
   pdu.m_maxBitRate = maxBitRate;
@@ -123,13 +144,13 @@ H323_H224Channel::H323_H224Channel(H323Connection & connection,
                                    const H323Capability & capability,
                                    H323Channel::Directions theDirection,
                                    RTP_UDP & theSession,
-                                   unsigned theSessionID)
+                                   const OpalMediaSessionId & theSessionID)
 : H323Channel(connection, capability),
+  sessionID(theSessionID),
   rtpSession(theSession),
   rtpCallbacks(*(H323_RTP_Session *)theSession.GetUserData())
 {
   direction = theDirection;
-  sessionID = theSessionID;
 	
   h224Handler = NULL;
 	
@@ -164,15 +185,14 @@ PBoolean H323_H224Channel::Open()
 
 PBoolean H323_H224Channel::Start()
 {
-  if(!Open()) {
+  if (!Open()) {
     return PFalse;
   }
 	
-  if(h224Handler == NULL) {
-  	h224Handler = connection.CreateH224ProtocolHandler(sessionID);
-  }
+  if (h224Handler == NULL) 
+  	h224Handler =  new OpalH224Handler(connection, sessionID);
 	
-  if(direction == H323Channel::IsReceiver) {
+  if (direction == H323Channel::IsReceiver) {
     h224Handler->StartReceive();
   }	else {
     h224Handler->StartTransmit();
@@ -183,13 +203,13 @@ PBoolean H323_H224Channel::Start()
 
 void H323_H224Channel::Close()
 {
-  if(terminating) {
+  if (terminating) {
     return;
   }
 	
-  if(h224Handler != NULL) {
+  if (h224Handler != NULL) {
 	
-    if(direction == H323Channel::IsReceiver) {
+    if (direction == H323Channel::IsReceiver) {
       h224Handler->StopReceive();
     } else {
       h224Handler->StopTransmit();
@@ -203,7 +223,7 @@ PBoolean H323_H224Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
   open.m_forwardLogicalChannelNumber = (unsigned)number;
 		
-  if(open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
+  if (open.HasOptionalField(H245_OpenLogicalChannel::e_reverseLogicalChannelParameters)) {
 	  
 	open.m_reverseLogicalChannelParameters.IncludeOptionalField(
 		H245_OpenLogicalChannel_reverseLogicalChannelParameters::e_multiplexParameters);
@@ -299,7 +319,7 @@ PBoolean H323_H224Channel::OnReceivedAckPDU(const H245_OpenLogicalChannelAck & a
 
 PBoolean H323_H224Channel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
-  param.m_sessionID = sessionID;
+  param.m_sessionID = sessionID.sessionId;
 	
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = PFalse;
@@ -353,9 +373,9 @@ void H323_H224Channel::OnSendOpenAck(H245_H2250LogicalChannelAckParameters & par
 PBoolean H323_H224Channel::OnReceivedPDU(const H245_H2250LogicalChannelParameters & param,
 						   unsigned & errorCode)
 {
-  if (param.m_sessionID != sessionID) {
-	errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
-	return PFalse;
+  if (param.m_sessionID != sessionID.sessionId) {
+	  errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
+	  return PFalse;
   }
 	
   PBoolean ok = PFalse;

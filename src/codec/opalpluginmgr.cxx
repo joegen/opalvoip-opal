@@ -614,7 +614,7 @@ OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Defin
                                                                    unsigned /*timeUnits*/,
                                                                    time_t timeStamp)
   : OpalMediaFormatInternal(CreateCodecName(_encoderCodec),
-                            OpalMediaFormat::DefaultDataSessionID,
+                            "image",
                             (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                             rtpEncodingName,
                             false,                                // need jitter
@@ -1432,26 +1432,26 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (timeStamp > mediaNow)
     timeStamp = mediaNow;
 
-  unsigned defaultSessionID = 0;
+  OpalMediaType defaultMediaType;
   unsigned frameTime = 0;
   unsigned clockRate = 0;
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
+      defaultMediaType = "video";
       break;
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
-      defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
+      defaultMediaType = "audio";
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
       break;
 #endif
 #if OPAL_T38FAX
     case PluginCodec_MediaTypeFax:
-      defaultSessionID = OpalMediaFormat::DefaultDataSessionID;
+      defaultMediaType = "image";
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
       break;
@@ -1461,7 +1461,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
   }
 
   // add the media format
-  if (defaultSessionID == 0) {
+  if (defaultMediaType.empty()) {
     PTRACE(1, "OpalPlugin\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec);

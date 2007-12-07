@@ -228,7 +228,7 @@ class H323Connection : public OpalConnection
       */
     virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaSessionId & sessionID      ///<  Session to start stream on
     );
     
     /**Open a new media stream.
@@ -246,30 +246,22 @@ class H323Connection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource                        ///<  Is a source stream
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,  ///<  Session number for stream
+      PBoolean isSource                      ///<  Is a source stream
     );
 
     /**Overrides from OpalConnection
       */
     void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
 
-    /**See if the media can bypass the local host.
-
-       The default behaviour returns PTrue if the session is audio or video.
-     */
-    virtual PBoolean IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
-    ) const;
-
     /**Get information on the media channel for the connection.
        The default behaviour returns PTrue and fills the info structure if
        there is a media channel active for the sessionID.
      */
     virtual PBoolean GetMediaInformation(
-      unsigned sessionID,     ///<  Session ID for media channel
-      MediaInformation & info ///<  Information on media channel
+      const OpalMediaSessionId & sessionID, ///<  Session ID for media channel
+      MediaInformation & info               ///<  Information on media channel
     ) const;
   //@}
 
@@ -1177,25 +1169,28 @@ class H323Connection : public OpalConnection
     /**Select default logical channel for normal start.
       */
     virtual void SelectDefaultLogicalChannel(
-      unsigned sessionID    ///<  Session ID to find default logical channel.
+      const OpalMediaSessionId &  sessionID    ///<  Session ID to find default logical channel.
     );
+    void SelectDefaultLogicalChannelByType(const OpalMediaType & type);
 
     /**Select default logical channel for fast start.
        Internal function, not for normal use.
       */
     virtual void SelectFastStartChannels(
-      unsigned sessionID,   ///<  Session ID to find default logical channel.
-      PBoolean transmitter,     ///<  Whether to open transmitters
-      PBoolean receiver         ///<  Whether to open receivers
+      const OpalMediaSessionId & sessionID,   ///<  Session ID to find default logical channel.
+      PBoolean transmitter,                   ///<  Whether to open transmitters
+      PBoolean receiver                       ///<  Whether to open receivers
     );
+    void SelectFastStartChannelsByType(const OpalMediaType & type);
 
     /**Start a logical channel for fast start.
        Internal function, not for normal use.
       */
     virtual void StartFastStartChannel(
-      unsigned sessionID,               ///<  Session ID to find logical channel.
-      H323Channel::Directions direction ///<  Direction of channel to start
+      const OpalMediaSessionId & sessionID, ///<  Session ID to find logical channel.
+      H323Channel::Directions direction     ///<  Direction of channel to start
     );
+    void StartFastStartChannelByType(const OpalMediaType & type);
 
     /**Open a new logical channel.
        This function will open a channel between the endpoints for the
@@ -1212,9 +1207,9 @@ class H323Connection : public OpalConnection
        channel, ie fromRemote must be PFalse.
       */
     virtual PBoolean OpenLogicalChannel(
-      const H323Capability & capability,  ///<  Capability to open channel with
-      unsigned sessionID,                 ///<  Session for the channel
-      H323Channel::Directions dir         ///<  Direction of channel
+      const H323Capability & capability,    ///<  Capability to open channel with
+      const OpalMediaSessionId & sessionID, ///<  Session for the channel
+      H323Channel::Directions dir           ///<  Direction of channel
     );
 
     /**This function is called when the remote endpoint want's to open
@@ -1288,12 +1283,11 @@ class H323Connection : public OpalConnection
        media to the local host.
       */
     virtual H323Channel * CreateRealTimeLogicalChannel(
-      const H323Capability & capability, ///<  Capability creating channel
-      H323Channel::Directions dir,       ///<  Direction of channel
-      unsigned sessionID,                ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param,
-                                         ///<  Parameters for channel
-      RTP_QOS * rtpqos = NULL            ///<  QoS for RTP
+                          const H323Capability & capability,    ///<  Capability creating channel
+                         H323Channel::Directions dir,           ///<  Direction of channel
+                      const OpalMediaSessionId & sessionID,     ///<  Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param,         ///<  Parameters for channel
+                                       RTP_QOS * rtpqos = NULL  ///<  QoS for RTP
     );
 
     /**This function is called when the remote endpoint want's to create
@@ -1402,8 +1396,8 @@ class H323Connection : public OpalConnection
        bay be used to distinguish which channel to return.
       */
     H323Channel * FindChannel(
-      unsigned sessionId,   ///<  Session ID to search for.
-      PBoolean fromRemote       ///<  Indicates the direction of RTP data.
+      const OpalMediaSessionId & sessionId,  ///<  Session ID to search for.
+      PBoolean fromRemote                    ///<  Indicates the direction of RTP data.
     ) const;
   //@}
 
@@ -1538,7 +1532,7 @@ class H323Connection : public OpalConnection
        If there is no session of the specified ID, NULL is returned.
       */
     virtual H323_RTP_Session * GetSessionCallbacks(
-      unsigned sessionID
+      const OpalMediaSessionId & sessionID
     ) const;
 
     /**Use an RTP session for the specified ID and for the given direction.
@@ -1551,16 +1545,16 @@ class H323Connection : public OpalConnection
        connection.
       */
     virtual RTP_Session * UseSession(
-      const OpalTransport & transport,
-      unsigned sessionID,
-      RTP_QOS * rtpqos = NULL
+           const OpalTransport & transport,
+      const OpalMediaSessionId & sessionID,
+                       RTP_QOS * rtpqos = NULL
     );
 
     /**Release the session. If the session ID is not being used any more any
        clients via the UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
-      unsigned sessionID
+      const OpalMediaSessionId & sessionID
     );
 
     /**Callback from the RTP session for statistics monitoring.
@@ -1578,7 +1572,7 @@ class H323Connection : public OpalConnection
        If there is no session of the specified ID, an empty string is returned.
       */
     virtual PString GetSessionCodecNames(
-      unsigned sessionID
+      const OpalMediaSessionId & sessionID
     ) const;
 
   //@}
@@ -1915,12 +1909,7 @@ class H323Connection : public OpalConnection
     PBoolean mediaWaitForConnect;
     PBoolean transmitterSidePaused;
     PBoolean earlyStart;
-#if OPAL_T120
-    PBoolean startT120;
-#endif
-#if OPAL_H224
-    PBoolean startH224;
-#endif
+
     PString    t38ModeChangeCapabilities;
     PSyncPoint digitsWaitFlag;
     PBoolean       endSessionNeeded;
@@ -1975,7 +1964,12 @@ class H323Connection : public OpalConnection
 	H460_FeatureSet & features;
 #endif
 
-    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource);
+
+    typedef std::map<OpalMediaType, unsigned> SessionIDMap;
+    SessionIDMap sessionIDMap;
+    PMutex sessionIDMutex;
+    unsigned nextSessionID;
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);

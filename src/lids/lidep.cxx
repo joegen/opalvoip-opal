@@ -538,10 +538,10 @@ OpalMediaFormatList OpalLineConnection::GetMediaFormats() const
 
 
 OpalMediaStream * OpalLineConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                        unsigned sessionID,
-                                                        PBoolean isSource)
+                                                     const OpalMediaSessionId & sessionID,
+                                                                       PBoolean isSource)
 {
-  if (sessionID != OpalMediaFormat::DefaultAudioSessionID)
+  if (mediaFormat.GetMediaType() != "audio")
     return OpalConnection::CreateMediaStream(mediaFormat, sessionID, isSource);
 
   return new OpalLineMediaStream(*this, mediaFormat, sessionID, isSource, line);
@@ -567,7 +567,7 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
 PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaSessionId("audio", 1), source));
   if (stream == NULL)
     return PFalse;
 
@@ -578,7 +578,7 @@ PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage
 
 unsigned OpalLineConnection::GetAudioSignalLevel(PBoolean source)
 {
-  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaSessionId("audio", 1), source));
   if (stream == NULL)
     return UINT_MAX;
 
@@ -762,10 +762,10 @@ PBoolean OpalLineConnection::SetUpConnection()
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalLineMediaStream::OpalLineMediaStream(OpalLineConnection & conn, 
-                                  const OpalMediaFormat & mediaFormat,
-                                                 unsigned sessionID,
+                                      const OpalMediaFormat & mediaFormat,
+                                   const OpalMediaSessionId & sessionID,
                                                      PBoolean isSource,
-                                               OpalLine & ln)
+                                                   OpalLine & ln)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     line(ln)
 {

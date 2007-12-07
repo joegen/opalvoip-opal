@@ -41,7 +41,7 @@
 
 #include <rtp/rtp.h>
 #include <h323/transaddr.h>
-
+#include <opal/mediatype.h>
 
 class OpalMediaStream;
 class OpalMediaCommand;
@@ -146,7 +146,7 @@ class H323Channel : public PObject
        channels, for channels for which the concept of a session is not
        meaningfull, the default simply returns 0.
      */
-    virtual unsigned GetSessionID() const;
+    virtual OpalMediaSessionId GetSessionID() const;
 
     /**Get the media transport address for the connection.
        This is primarily used to determine if media bypass is possible for the
@@ -599,7 +599,7 @@ class H323_RTPChannel : public H323_RealTimeChannel
        Return session for channel. This returns the session ID of the
        RTP_Session member variable.
      */
-    virtual unsigned GetSessionID() const;
+    virtual OpalMediaSessionId GetSessionID() const;
   //@}
 
   /**@name Overrides from class H323_RealTimeChannel */
@@ -660,30 +660,30 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     /**Create a new channel.
      */
     H323_ExternalRTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID                  ///<  Session ID for channel
+      H323Connection & connection,          ///<  Connection to endpoint for channel
+      const H323Capability & capability,    ///<  Capability channel is using
+      Directions direction,                 ///<  Direction of channel
+      const OpalMediaSessionId & sessionID  ///<  Session ID for channel
     );
     /**Create a new channel.
      */
     H323_ExternalRTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID,                 ///<  Session ID for channel
-      const H323TransportAddress & data,  ///<  Data address
-      const H323TransportAddress & control///<  Control address
+      H323Connection & connection,          ///<  Connection to endpoint for channel
+      const H323Capability & capability,    ///<  Capability channel is using
+      Directions direction,                 ///<  Direction of channel
+      const OpalMediaSessionId & sessionID, ///<  Session ID for channel
+      const H323TransportAddress & data,    ///<  Data address
+      const H323TransportAddress & control  ///<  Control address
     );
     /**Create a new channel.
      */
     H323_ExternalRTPChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID,                 ///<  Session ID for channel
-      const PIPSocket::Address & ip,      ///<  IP address of media server
-      WORD dataPort                       ///<  Data port (control is dataPort+1)
+      H323Connection & connection,           ///<  Connection to endpoint for channel
+      const H323Capability & capability,     ///<  Capability channel is using
+      Directions direction,                  ///<  Direction of channel
+      const OpalMediaSessionId &  sessionID, ///<  Session ID for channel
+      const PIPSocket::Address & ip,         ///<  IP address of media server
+      WORD dataPort                          ///<  Data port (control is dataPort+1)
     );
   //@}
 
@@ -693,7 +693,7 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
        Return session for channel. This returns the session ID of the
        RTP_Session member variable.
      */
-    virtual unsigned GetSessionID() const;
+    virtual OpalMediaSessionId GetSessionID() const;
 
     /**Get the media transport address for the connection.
        This is primarily used to determine if media bypass is possible for the
@@ -778,9 +778,9 @@ class H323_ExternalRTPChannel : public H323_RealTimeChannel
     ) const;
 
   protected:
-    void Construct(H323Connection & conn, unsigned id);
+    void Construct(H323Connection & conn);
 
-    unsigned             sessionID;
+    OpalMediaSessionId   sessionID;
     H323TransportAddress externalMediaAddress;
     H323TransportAddress externalMediaControlAddress;
     H323TransportAddress remoteMediaAddress;
@@ -806,10 +806,10 @@ class H323DataChannel : public H323UnidirectionalChannel
     /**Create a new channel.
      */
     H323DataChannel(
-      H323Connection & connection,        ///<  Connection to endpoint for channel
-      const H323Capability & capability,  ///<  Capability channel is using
-      Directions direction,               ///<  Direction of channel
-      unsigned sessionID                  ///<  Session ID for channel
+      H323Connection & connection,         ///<  Connection to endpoint for channel
+      const H323Capability & capability,   ///<  Capability channel is using
+      Directions direction,                ///<  Direction of channel
+      const OpalMediaSessionId & sessionID  ///<  Session ID for channel
     );
 
     /**Destroy the channel.
@@ -827,7 +827,7 @@ class H323DataChannel : public H323UnidirectionalChannel
        Return session for channel. This returns the session ID of the
        RTP_Session member variable.
      */
-    virtual unsigned GetSessionID() const;
+    virtual OpalMediaSessionId GetSessionID() const;
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
      */
@@ -888,12 +888,12 @@ class H323DataChannel : public H323UnidirectionalChannel
   //@}
 
   protected:
-    unsigned        sessionID;
-    H323Listener  * listener;
-    PBoolean            autoDeleteListener;
-    H323Transport * transport;
-    PBoolean            autoDeleteTransport;
-    PBoolean            separateReverseChannel;
+    OpalMediaSessionId sessionID;
+    H323Listener     * listener;
+    PBoolean           autoDeleteListener;
+    H323Transport    * transport;
+    PBoolean           autoDeleteTransport;
+    PBoolean           separateReverseChannel;
 };
 
 

@@ -43,6 +43,7 @@
 #endif
 
 #include <opal/buildopts.h>
+#include <opal/mediatype.h>
 
 #include <rtp/rtp.h>
 
@@ -470,7 +471,7 @@ class OpalMediaFormatInternal : public PObject
   public:
     OpalMediaFormatInternal(
       const char * fullName,
-      unsigned defaultSessionID,
+      const OpalMediaType & mtype,
       RTP_DataFrame::PayloadTypes rtpPayloadType,
       const char * encodingName,
       PBoolean     needsJitter,
@@ -515,7 +516,7 @@ class OpalMediaFormatInternal : public PObject
     PCaselessString              formatName;
     RTP_DataFrame::PayloadTypes  rtpPayloadType;
     PString                      rtpEncodingName;
-    unsigned                     defaultSessionID;
+    OpalMediaType                mediaType;
     PMutex                       media_format_mutex;
     PSortedList<OpalMediaOption> options;
     time_t                       codecVersionTime;
@@ -562,16 +563,16 @@ class OpalMediaFormat : public PContainer
        long. If zero then there is no intrinsic maximum, eg G.711.
       */
     OpalMediaFormat(
-      const char * fullName,      ///<  Full name of media format
-      unsigned defaultSessionID,  ///<  Default session for codec type
+      const char * fullName,                      ///<  Full name of media format
+      const OpalMediaType & mediaType,            ///<  Default session for codec type
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
-      const char * encodingName,  ///<  RTP encoding name
-      PBoolean     needsJitter,       ///<  Indicate format requires a jitter buffer
-      unsigned bandwidth,         ///<  Bandwidth in bits/second
-      PINDEX   frameSize,         ///<  Size of frame in bytes (if applicable)
-      unsigned frameTime,         ///<  Time for frame in RTP units (if applicable)
-      unsigned clockRate,         ///<  Clock rate for data (if applicable)
-      time_t timeStamp = 0        ///<  timestamp (for versioning)
+      const char * encodingName,                  ///<  RTP encoding name
+      PBoolean     needsJitter,                   ///<  Indicate format requires a jitter buffer
+      unsigned bandwidth,                         ///<  Bandwidth in bits/second
+      PINDEX   frameSize,                         ///<  Size of frame in bytes (if applicable)
+      unsigned frameTime,                         ///<  Time for frame in RTP units (if applicable)
+      unsigned clockRate,                         ///<  Clock rate for data (if applicable)
+      time_t timeStamp = 0                        ///<  timestamp (for versioning)
     );
 
     /**Construct a media format, searching database for information.
@@ -715,16 +716,16 @@ class OpalMediaFormat : public PContainer
       */
     const char * GetEncodingName() const { return m_info == NULL ? "" : m_info->rtpEncodingName; }
 
-    enum {
-      DefaultAudioSessionID = 1,
-      DefaultVideoSessionID = 2,
-      DefaultDataSessionID  = 3,
-      DefaultH224SessionID  = 4
-    };
+    //enum {
+    //  DefaultAudioSessionID = 1,
+    //  DefaultVideoSessionID = 2,
+    //  DefaultDataSessionID  = 3,
+    //  DefaultH224SessionID  = 4
+    //};
 
-    /**Get the default session ID for media format.
+    /**Get the media type for the media format.
       */
-    unsigned GetDefaultSessionID() const { return m_info == NULL ? 0 : m_info->defaultSessionID; }
+    OpalMediaType GetMediaType() const { return OpalMediaType(m_info == NULL ? "null" : m_info->mediaType); }
 
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.

@@ -81,7 +81,7 @@ PString H323_T120Capability::GetFormatName() const
 
 H323Channel * H323_T120Capability::CreateChannel(H323Connection & connection,
                                                  H323Channel::Directions direction,
-                                                 unsigned sessionID,
+                                                 const OpalMediaSessionId & sessionID,
                                 const H245_H2250LogicalChannelParameters *) const
 {
   return new H323_T120Channel(connection, *this, direction, sessionID);

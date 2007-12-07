@@ -328,8 +328,8 @@ class OpalPCSSConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
+      const OpalMediaFormat & mediaFormat,     ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,    ///<  Session number for stream
       PBoolean isSource                        ///<  Is a source stream
     );
 
@@ -349,7 +349,7 @@ class OpalPCSSConnection : public OpalConnection
       */
     virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaSessionId & sessionID      ///<  Session to start stream on
     );
 
     /**Open source transmitter media stream for session.

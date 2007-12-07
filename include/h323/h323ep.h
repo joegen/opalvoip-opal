@@ -983,16 +983,6 @@ class H323EndPoint : public OpalEndPoint
       */
     virtual void OnReceivedInitiateReturnError();
 
-#if OPAL_VIDEO
-    /**See if should auto-start receive video channels on connection.
-     */
-    PBoolean CanAutoStartReceiveVideo() const { return manager.CanAutoStartReceiveVideo(); }
-
-    /**See if should auto-start transmit video channels on connection.
-     */
-    PBoolean CanAutoStartTransmitVideo() const { return manager.CanAutoStartTransmitVideo(); }
-#endif
-
 #if OPAL_T38FAX
     /**See if should auto-start receive fax channels on connection.
      */

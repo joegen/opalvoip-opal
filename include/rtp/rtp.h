@@ -53,6 +53,8 @@ typedef void * PHandleAggregator;
 typedef void * RTP_AggregatedHandle;
 #endif
 
+#include <opal/mediatype.h>
+
 ///////////////////////////////////////////////////////////////////////////////
 // 
 // class to hold the QoS definitions for an RTP channel
@@ -350,9 +352,9 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
-      PHandleAggregator * aggregator, ///<  RTP aggregator
-      unsigned id,                    ///<  Session ID for RTP channel
-      RTP_UserData * userData = NULL, ///<  Optional data for session.
+      PHandleAggregator * aggregator,      ///<  RTP aggregator
+      const OpalMediaSessionId & id,       ///<  Session ID for RTP channel
+      RTP_UserData * userData = NULL,      ///<  Optional data for session.
       PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
     );
 
@@ -521,7 +523,7 @@ class RTP_Session : public PObject
   //@{
     /**Get the ID for the RTP session.
       */
-    unsigned GetSessionID() const { return sessionID; }
+    OpalMediaSessionId GetSessionID() const { return sessionID; }
 
     /**Get the canonical name for the RTP session.
       */
@@ -732,22 +734,23 @@ class RTP_Session : public PObject
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
 
-    unsigned           sessionID;
+    OpalMediaSessionId sessionID;
     PString            canonicalName;
     PString            toolName;
     unsigned           referenceCount;
     RTP_UserData     * userData;
-    PBoolean               autoDeleteUserData;
+    PBoolean           autoDeleteUserData;
     RTP_JitterBuffer * jitter;
 
     PBoolean          ignoreOtherSources;
     PBoolean          ignoreOutOfOrderPackets;
-    DWORD         syncSourceOut;
-    DWORD         syncSourceIn;
-    DWORD         lastSentTimestamp;
+    DWORD             syncSourceOut;
+    DWORD             syncSourceIn;
+    DWORD             lastSentTimestamp;
     PBoolean	        allowSyncSourceInChange;
     PBoolean	        allowRemoteTransmitAddressChange;
     PBoolean	        allowSequenceChange;
+
     PTimeInterval reportTimeInterval;
     unsigned      txStatisticsInterval;
     unsigned      rxStatisticsInterval;
@@ -840,7 +843,7 @@ class RTP_SessionManager : public PObject
        and unlocks it automatically.
       */
     RTP_Session * UseSession(
-      unsigned sessionID    ///<  Session ID to use.
+      const OpalMediaSessionId & sessionID    ///<  Session ID to use.
     );
 
     /**Add an RTP session for the specified ID.
@@ -857,7 +860,7 @@ class RTP_SessionManager : public PObject
        clients via the UseSession() function, then the session is deleted.
      */
     void ReleaseSession(
-      unsigned sessionID,    ///<  Session ID to release.
+      const OpalMediaSessionId & sessionID,    ///<  Session ID to release.
       PBoolean clearAll = PFalse  ///<  Clear all sessions with that ID
     );
 
@@ -866,7 +869,7 @@ class RTP_SessionManager : public PObject
        session so may be used to just gain a pointer to an RTP session.
      */
     RTP_Session * GetSession(
-      unsigned sessionID    ///<  Session ID to get.
+      const OpalMediaSessionId & sessionID    ///<  Session ID to get.
     ) const;
 
     /**Begin an enumeration of the RTP sessions.
@@ -927,9 +930,9 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
-      PHandleAggregator * aggregator, ///< RTP aggregator
-      unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      PHandleAggregator * aggregator,    ///< RTP aggregator
+      const OpalMediaSessionId & id,     ///<  Session ID for RTP channel
+      PBoolean remoteIsNAT               ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP
@@ -1097,8 +1100,8 @@ class SecureRTP_UDP : public RTP_UDP
      */
     SecureRTP_UDP(
       PHandleAggregator * aggregator, ///< RTP aggregator
-      unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      const OpalMediaSessionId & id,  ///<  Session ID for RTP channel
+      PBoolean remoteIsNAT            ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP

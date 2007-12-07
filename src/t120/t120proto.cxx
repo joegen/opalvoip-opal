@@ -61,7 +61,7 @@ class T120ConnectPDU : public MCS_ConnectMCSPDU {
 
 const OpalMediaFormat OpalT120(
   OPAL_T120,
-  OpalMediaFormat::DefaultDataSessionID,
+  "t.120",
   RTP_DataFrame::IllegalPayloadType,
   "t120",
   PFalse,   // No jitter for data

@@ -41,6 +41,7 @@
 #include <opal/call.h>
 #include <opal/patch.h>
 #include <opal/mediastrm.h>
+#include <opal/mediatype.h>
 
 #if OPAL_VIDEO
 #include <codec/vidcodec.h>
@@ -181,7 +182,7 @@ OpalManager::OpalManager()
     videoInputDevice.deviceName = devices[i];
     break;
   }
-  autoStartTransmitVideo = !videoInputDevice.deviceName.IsEmpty();
+  SetMediaAutoStart("video", false, !videoInputDevice.deviceName.IsEmpty());
 
   devices = PVideoOutputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   for (i = 0; i < devices.GetSize(); ++i) {
@@ -190,11 +191,23 @@ OpalManager::OpalManager()
     videoOutputDevice.deviceName = devices[i];
     break;
   }
-  autoStartReceiveVideo = !videoOutputDevice.deviceName.IsEmpty();
+  SetMediaAutoStart("video", true, !videoOutputDevice.deviceName.IsEmpty());
 
-  if (autoStartReceiveVideo)
+  if (!videoOutputDevice.deviceName.IsEmpty())
     videoPreviewDevice = videoOutputDevice;
 #endif
+
+  {
+    OpalMediaTypeFactory::KeyList_T mediaTypes = OpalMediaTypeFactory::GetKeyList();
+    OpalMediaTypeFactory::KeyList_T::const_iterator r;
+    for (r = mediaTypes.begin(); r != mediaTypes.end(); ++r) {
+      if (*r != "video") {
+        OpalMediaTypeDefinition * def = OpalMediaTypeFactory::CreateInstance(*r);
+        SetMediaAutoStart(*r, true, def->IsMediaAutoStart(true));
+        SetMediaAutoStart(*r, false, def->IsMediaAutoStart(false));
+      }
+    }
+  }
 
   garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), 0,
                                      PThread::NoAutoDeleteThread,
@@ -549,10 +562,10 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 
 
 PBoolean OpalManager::IsMediaBypassPossible(const OpalConnection & source,
-                                        const OpalConnection & destination,
-                                        unsigned sessionID) const
+                                            const OpalConnection & destination,
+                                        const OpalMediaSessionId & sessionID) const
 {
-  PTRACE(3, "OpalMan\tIsMediaBypassPossible: session " << sessionID);
+  PTRACE(3, "OpalMan\tIsMediaBypassPossible: session " << sessionID.sessionId);
 
   return source.IsMediaBypassPossible(sessionID) &&
          destination.IsMediaBypassPossible(sessionID);
@@ -710,39 +723,6 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
 
   return input.IsEmpty() ? digit : input;
 }
-
-#if OPAL_T120DATA
-
-OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection & ) const
-{
-  return NULL;
-}
-
-#endif
-
-#if OPAL_T38FAX
-
-OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
-{
-  return NULL;
-}
-
-#endif
-
-#ifdef OPAL_H224
-
-OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection,
-														 unsigned sessionID) const
-{
-  return new OpalH224Handler(connection, sessionID);
-}
-
-OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
-{
-  return new OpalH281Handler(h224Handler);
-}
-
-#endif
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
@@ -1270,7 +1250,6 @@ void OpalManager::StopRecording(const PString & callToken)
   if (call != NULL)
     call->StopRecording();
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -294,8 +294,8 @@ void IAX2Connection::OnEstablished()
 }
 
 OpalMediaStream * IAX2Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                   unsigned sessionID,
-                                                   PBoolean isDataSource)
+                                                 const OpalMediaSessionId & sessionID,
+                                                                   PBoolean isDataSource)
 {
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     PTRACE(3, "connection\t  create a null media stream ");

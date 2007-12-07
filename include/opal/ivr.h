@@ -36,6 +36,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #if P_EXPAT
 
@@ -267,8 +268,8 @@ class OpalIVRConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
+      const OpalMediaFormat & mediaFormat,     ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,    ///<  Session number for stream
       PBoolean isSource                        ///<  Is a source stream
     );
 
@@ -320,10 +321,10 @@ class OpalIVRMediaStream : public OpalRawMediaStream
       */
     OpalIVRMediaStream(
       OpalIVRConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource,                       ///<  Is a source stream
-      PVXMLSession & vxml                  ///<  vxml session to use
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,  ///<  Session number for stream
+      PBoolean isSource,                     ///<  Is a source stream
+      PVXMLSession & vxml                    ///<  vxml session to use
     );
   //@}
 

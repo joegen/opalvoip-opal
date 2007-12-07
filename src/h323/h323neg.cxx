@@ -520,8 +520,8 @@ H245NegLogicalChannel::~H245NegLogicalChannel()
 
 
 PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
-                                 unsigned sessionID,
-                                 unsigned replacementFor)
+                                 const OpalMediaSessionId & sessionID,
+                                                   unsigned replacementFor)
 {
   PWaitAndSignal wait(mutex);
   return OpenWhileLocked(capability, sessionID, replacementFor);
@@ -529,8 +529,8 @@ PBoolean H245NegLogicalChannel::Open(const H323Capability & capability,
 
 
 PBoolean H245NegLogicalChannel::OpenWhileLocked(const H323Capability & capability,
-                                            unsigned sessionID,
-                                            unsigned replacementFor)
+                                            const OpalMediaSessionId & sessionID,
+                                                              unsigned replacementFor)
 {
   if (state != e_Released && state != e_AwaitingRelease) {
     PTRACE(2, "H245\tOpen of channel currently in negotiations: " << channelNumber);
@@ -992,8 +992,8 @@ void H245NegLogicalChannels::Add(H323Channel & channel)
 
 
 PBoolean H245NegLogicalChannels::Open(const H323Capability & capability,
-                                  unsigned sessionID,
-                                  unsigned replacementFor)
+                                  const OpalMediaSessionId & sessionID,
+                                                    unsigned replacementFor)
 {
   mutex.Wait();
 
@@ -1191,8 +1191,7 @@ H245NegLogicalChannel * H245NegLogicalChannels::FindNegLogicalChannel(unsigned c
 }
 
 
-H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId,
-                                                           PBoolean fromRemote)
+H323Channel * H245NegLogicalChannels::FindChannelBySession(const OpalMediaSessionId & sessionId, PBoolean fromRemote)
 {
   PWaitAndSignal wait(mutex);
 
@@ -1200,8 +1199,8 @@ H323Channel * H245NegLogicalChannels::FindChannelBySession(unsigned rtpSessionId
   H323Channel::Directions desiredDirection = fromRemote ? H323Channel::IsReceiver : H323Channel::IsTransmitter;
   for (i = 0; i < GetSize(); i++) {
     H323Channel * channel = channels.GetDataAt(i).GetChannel();
-    if (channel != NULL && channel->GetSessionID() == rtpSessionId &&
-                           channel->GetDirection() == desiredDirection)
+    if (channel != NULL && channel->GetSessionID().sessionId == sessionId.sessionId &&
+                           channel->GetDirection()           == desiredDirection)
       return channel;
   }
 
