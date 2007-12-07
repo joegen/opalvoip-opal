@@ -101,18 +101,6 @@ PString H323_T38Capability::GetFormatName() const
   return PString(OPAL_T38"{") + modes[mode] + '}';
 }
 
-
-H323Channel * H323_T38Capability::CreateChannel(H323Connection & connection,
-                                                H323Channel::Directions direction,
-                                                unsigned int sessionID,
-                             const H245_H2250LogicalChannelParameters * /*params*/) const
-{
-  PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
-
-  return new H323_T38Channel(connection, *this, direction, sessionID, mode);
-}
-
-
 PBoolean H323_T38Capability::OnSendingPDU(H245_DataApplicationCapability & pdu) const
 {
   PTRACE(3, "H323T38\tOnSendingPDU for capability");
@@ -210,24 +198,14 @@ PString H323_T38NonStandardCapability::GetFormatName() const
 }
 
 
-H323Channel * H323_T38NonStandardCapability::CreateChannel(H323Connection & connection,
-                                                H323Channel::Directions direction,
-                                                unsigned int sessionID,
-                             const H245_H2250LogicalChannelParameters * /*params*/) const
-{
-  PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
-
-  return new H323_T38Channel(connection, *this, direction, sessionID, H323_T38Capability::e_UDP);
-}
-
 
 //////////////////////////////////////////////////////////////
 
 H323_T38Channel::H323_T38Channel(H323Connection & connection,
-                                 const H323Capability & capability,
-                                 H323Channel::Directions dir,
-                                 unsigned sessionID,
-                                 H323_T38Capability::TransportMode mode)
+                           const H323Capability & capability,
+                          H323Channel::Directions dir,
+                       const OpalMediaSessionId & sessionID,
+                H323_T38Capability::TransportMode mode)
   : H323DataChannel(connection, capability, dir, sessionID)
 {
   PTRACE(3, "H323T38\tH323 channel created");
@@ -252,7 +230,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
 
   if (t38handler == NULL) {
     PTRACE(3, "H323T38\tCreating new T.38 handler");
-    t38handler = connection.CreateT38ProtocolHandler();
+    t38handler = NULL; // TODO new OpalT38ProtocolHandler(;
   }
 
   if (t38handler != NULL) {

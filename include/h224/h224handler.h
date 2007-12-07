@@ -75,7 +75,7 @@ class OpalH224Handler : public PObject
 	
 public:
 	
-  OpalH224Handler(OpalConnection & connection, unsigned sessionID);
+  OpalH224Handler(OpalConnection & connection, const OpalMediaSessionId & sessionID);
   ~OpalH224Handler();
 	
   virtual void StartTransmit();

@@ -40,6 +40,7 @@
 
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
+#include <opal/mediatype.h>
 #include <opal/mediacmd.h>
 #include <ptclib/guid.h>
 
@@ -65,9 +66,9 @@ class OpalMediaStream : public PObject
       */
     OpalMediaStream(
       OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource                        ///<  Is a source stream
+      const OpalMediaFormat & mediaFormat,    ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,   ///<  Session number for stream
+      PBoolean isSource                       ///<  Is a source stream
     );
 
   public:
@@ -260,9 +261,9 @@ class OpalMediaStream : public PObject
       */
     PBoolean IsSink() const { return !isSource; }
 
-    /**Get the session number of the stream.
+    /**Get the session number and type of the stream.
      */
-    unsigned GetSessionID() const { return sessionID; }
+    OpalMediaSessionId GetSessionID() const { return sessionID; }
 
     /**Get the timestamp of last read.
       */
@@ -334,15 +335,15 @@ class OpalMediaStream : public PObject
     { return PFalse; }
 
   protected:
-    OpalMediaFormat mediaFormat;
-    unsigned        sessionID;
-    PBoolean	          paused;
-    PBoolean            isSource;
-    PBoolean            isOpen;
-    PINDEX          defaultDataSize;
-    unsigned        timestamp;
-    PBoolean            marker;
-    unsigned        mismatchedPayloadTypes;
+    OpalMediaFormat    mediaFormat;
+    OpalMediaSessionId sessionID;
+    PBoolean	         paused;
+    PBoolean           isSource;
+    PBoolean           isOpen;
+    PINDEX             defaultDataSize;
+    unsigned           timestamp;
+    PBoolean           marker;
+    unsigned           mismatchedPayloadTypes;
 
     OpalMediaPatch * mediaPatch;
     PMutex           patchMutex;
@@ -368,9 +369,9 @@ class OpalNullMediaStream : public OpalMediaStream
       */
     OpalNullMediaStream(
       OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource                        ///<  Is a source stream
+      const OpalMediaFormat & mediaFormat,    ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,   ///<  Session number for stream
+      PBoolean isSource                       ///<  Is a source stream
     );
   //@}
 
@@ -519,11 +520,11 @@ class OpalRawMediaStream : public OpalMediaStream
       */
     OpalRawMediaStream(
       OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource,                       ///<  Is a source stream
-      PChannel * channel,                  ///<  I/O channel to stream to/from
-      PBoolean autoDelete                      ///<  Automatically delete channel
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,  ///<  Session number for stream
+      PBoolean isSource,                     ///<  Is a source stream
+      PChannel * channel,                    ///<  I/O channel to stream to/from
+      PBoolean autoDelete                    ///<  Automatically delete channel
     );
 
     /**Delete attached channel if autoDelete enabled.
@@ -592,10 +593,10 @@ class OpalFileMediaStream : public OpalRawMediaStream
     OpalFileMediaStream(
       OpalConnection &,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource,                       ///<  Is a source stream
+      const OpalMediaSessionId & sessionID,   ///<  Session number for stream
+      PBoolean isSource,                   ///<  Is a source stream
       PFile * file,                        ///<  File to stream to/from
-      PBoolean autoDelete = PTrue               ///<  Automatically delete file
+      PBoolean autoDelete = PTrue          ///<  Automatically delete file
     );
 
     /**Construct a new media stream for files.
@@ -603,8 +604,8 @@ class OpalFileMediaStream : public OpalRawMediaStream
     OpalFileMediaStream(
       OpalConnection & ,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource,                       ///<  Is a source stream
+      const OpalMediaSessionId & sessionID,   ///<  Session number for stream
+      PBoolean isSource,                   ///<  Is a source stream
       const PFilePath & path               ///<  File path to stream to/from
     );
   //@}
@@ -656,7 +657,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     OpalAudioMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
+      const OpalMediaSessionId & sessionID,                  ///<  Session number for stream
       PBoolean isSource,                       ///<  Is a source stream
       PINDEX buffers,                      ///<  Number of buffers on sound channel
       PSoundChannel * channel,             ///<  Audio device to stream to/from
@@ -668,7 +669,7 @@ class OpalAudioMediaStream : public OpalRawMediaStream
     OpalAudioMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
+      const OpalMediaSessionId & sessionID,                  ///<  Session number for stream
       PBoolean isSource,                       ///<  Is a source stream
       PINDEX buffers,                      ///<  Number of buffers on sound channel
       const PString & deviceName           ///<  Name of audio device to stream to/from
@@ -718,11 +719,11 @@ class OpalVideoMediaStream : public OpalMediaStream
       */
     OpalVideoMediaStream(
       OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PVideoInputDevice * inputDevice,     ///<  Device to use for video grabbing
-      PVideoOutputDevice * outputDevice,   ///<  Device to use for video display
-      PBoolean autoDelete = PTrue               ///<  Automatically delete PVideoDevices
+      const OpalMediaFormat & mediaFormat,  ///<  Media format for stream
+      const OpalMediaSessionId & sessionID, ///<  Session number for stream
+      PVideoInputDevice * inputDevice,      ///<  Device to use for video grabbing
+      PVideoOutputDevice * outputDevice,    ///<  Device to use for video display
+      PBoolean autoDelete = PTrue           ///<  Automatically delete PVideoDevices
     );
 
     /**Delete attached channel if autoDelete enabled.
@@ -809,10 +810,10 @@ class OpalUDPMediaStream : public OpalMediaStream
       */
     OpalUDPMediaStream(
       OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource,                       ///<  Is a source stream
-      OpalTransportUDP & transport         ///<  UDP transport instance
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,  ///<  Session number for stream
+      PBoolean isSource,                     ///<  Is a source stream
+      OpalTransportUDP & transport           ///<  UDP transport instance
     );
   //@}
 

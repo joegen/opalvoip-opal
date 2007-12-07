@@ -79,19 +79,6 @@ class H323_T120Capability : public H323DataCapability
     virtual PString GetFormatName() const;
   //@}
 
-  /**@name Operations */
-  //@{
-    /**Create the channel instance, allocating resources as required.
-     */
-    virtual H323Channel * CreateChannel(
-      H323Connection & connection,    ///<  Owner connection for channel
-      H323Channel::Directions dir,    ///<  Direction of channel
-      unsigned sessionID,             ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
-                                      ///<  Parameters for channel
-    ) const;
-  //@}
-
   /**@name Protocol manipulation */
   //@{
     /**This function is called whenever and outgoing TerminalCapabilitySet

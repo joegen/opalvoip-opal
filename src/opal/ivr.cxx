@@ -367,7 +367,7 @@ OpalMediaFormatList OpalIVRConnection::GetMediaFormats() const
 
 
 OpalMediaStream * OpalIVRConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                       unsigned sessionID,
+                                                       const OpalMediaSessionId & sessionID,
                                                        PBoolean isSource)
 {
   return new OpalIVRMediaStream(*this, mediaFormat, sessionID, isSource, vxmlSession);
@@ -389,13 +389,13 @@ PBoolean OpalIVRConnection::SendUserInputString(const PString & value)
 
 OpalIVRMediaStream::OpalIVRMediaStream(OpalIVRConnection & _conn,
                                        const OpalMediaFormat & mediaFormat,
-                                       unsigned sessionID,
+                                       const OpalMediaSessionId & sessionID,
                                        PBoolean isSourceStream,
                                        PVXMLSession & vxml)
   : OpalRawMediaStream(_conn, mediaFormat, sessionID, isSourceStream, &vxml, FALSE),
     conn(_conn), vxmlSession(vxml)
 {
-  PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID << ", isSourceStream = " << isSourceStream);
+  PTRACE(3, "IVR\tOpalIVRMediaStream sessionID = " << sessionID.sessionId << ", isSourceStream = " << isSourceStream);
 }
 
 

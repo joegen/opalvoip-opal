@@ -411,13 +411,13 @@ PBoolean MyManager::Initialise(PArgList & args)
 #if OPAL_VIDEO
   // Set the various global options
   if (args.HasOption("rx-video"))
-    autoStartReceiveVideo = PTrue;
+    SetAutoStartReceiveVideo(PTrue);
   if (args.HasOption("no-rx-video"))
-    autoStartReceiveVideo = PFalse;
+    SetAutoStartReceiveVideo(PFalse);
   if (args.HasOption("tx-video"))
-    autoStartTransmitVideo = PTrue;
+    SetAutoStartTransmitVideo(PTrue);
   if (args.HasOption("no-tx-video"))
-    autoStartTransmitVideo = PFalse;
+    SetAutoStartTransmitVideo(PFalse);
 
   if (args.HasOption("grabber")) {
     PVideoDevice::OpenArgs video = GetVideoInputDevice();
@@ -823,7 +823,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaFormat.GetMediaType() == "video") {
       if (args.HasOption("video-size")) {
         PString sizeStr = args.GetOptionString("video-size");
         unsigned width, height;

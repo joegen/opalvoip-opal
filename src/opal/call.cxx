@@ -171,8 +171,7 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
 
   UnlockReadWrite();
 
-
-  PBoolean hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue) != NULL;
+  PBoolean hasMedia = connection.HasMedia();
 
   PBoolean ok = PFalse;
 
@@ -223,11 +222,13 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
     }
 
     OpalMediaFormatList formats = GetMediaFormats(*conn, PTrue);
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
+
+    // extract list of media types
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaSessionId("audio")))
       createdOne = PTrue;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaSessionId("video")))
       createdOne = PTrue;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaSessionId("image")))
       createdOne = PTrue;
   }
 
@@ -314,10 +315,10 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
 }
 
 PBoolean OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
-                                      const OpalMediaFormatList & mediaFormats,
-                                      unsigned sessionID)
+                                     const OpalMediaFormatList & mediaFormats,
+                                      const OpalMediaSessionId & sessionID)
 {
-  PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID
+  PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID.sessionId
          << " with media " << setfill(',') << mediaFormats << setfill(' '));
 
   PBoolean startedOne = PFalse;
@@ -325,7 +326,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
   OpalMediaFormatList adjustableMediaFormats;
   // Keep the media formats for the session ID
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    if (mediaFormats[i].GetDefaultSessionID() == sessionID)
+    if (mediaFormats[i].GetMediaType() == sessionID.mediaType)
       adjustableMediaFormats += mediaFormats[i];
   }
 
@@ -420,9 +421,9 @@ void OpalCall::OnRTPStatistics(const OpalConnection & /*connection*/, const RTP_
 
 
 PBoolean OpalCall::IsMediaBypassPossible(const OpalConnection & connection,
-                                     unsigned sessionID) const
+                                     const OpalMediaSessionId & sessionID) const
 {
-  PTRACE(3, "Call\tIsMediaBypassPossible " << connection << " session " << sessionID);
+  PTRACE(3, "Call\tIsMediaBypassPossible " << connection << " session " << sessionID.sessionId);
 
   PBoolean ok = PFalse;
 

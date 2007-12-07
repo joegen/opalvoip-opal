@@ -94,19 +94,6 @@ class H323_T38Capability : public H323DataCapability
     virtual PString GetFormatName() const;
   //@}
 
-  /**@name Operations */
-  //@{
-    /**Create the channel instance, allocating resources as required.
-     */
-    virtual H323Channel * CreateChannel(
-      H323Connection & connection,    ///<  Owner connection for channel
-      H323Channel::Directions dir,    ///<  Direction of channel
-      unsigned sessionID,             ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
-                                      ///<  Parameters for channel
-    ) const;
-  //@}
-
   /**@name Protocol manipulation */
   //@{
     /**This function is called whenever and outgoing TerminalCapabilitySet
@@ -193,19 +180,6 @@ class H323_T38NonStandardCapability : public H323NonStandardDataCapability
      */
     virtual PString GetFormatName() const;
   //@}
-
-  /**@name Operations */
-  //@{
-    /**Create the channel instance, allocating resources as required.
-     */
-    virtual H323Channel * CreateChannel(
-      H323Connection & connection,    ///<  Owner connection for channel
-      H323Channel::Directions dir,    ///<  Direction of channel
-      unsigned sessionID,             ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
-                                      ///<  Parameters for channel
-    ) const;
-  //@}
 };
 
 
@@ -219,11 +193,11 @@ class H323_T38Channel : public H323DataChannel
   //@{
     /**Create a new channel.
      */
-    H323_T38Channel(
-      H323Connection & connection,       ///<  Connection to endpoint for channel
-      const H323Capability & capability, ///<  Capability channel is using
-      Directions direction,              ///<  Direction of channel
-      unsigned sessionID,                ///<  Session ID for channel
+    H323_T38Channel(   
+                       H323Connection & connection,       ///<  Connection to endpoint for channel
+                 const H323Capability & capability, ///<  Capability channel is using
+                             Directions direction,              ///<  Direction of channel
+             const OpalMediaSessionId & sessionID,                ///<  Session ID for channel
       H323_T38Capability::TransportMode mode
     );
     ~H323_T38Channel();

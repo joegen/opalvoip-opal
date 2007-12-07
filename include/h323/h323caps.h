@@ -148,15 +148,9 @@ class H323Capability : public PObject
       const PString & name     ///<  Name of capability
     );
 
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
+    /**Get the media type of this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const;
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -188,12 +182,11 @@ class H323Capability : public PObject
        this is taken from the fields in param.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    ///<  Owner connection for channel
-      H323Channel::Directions dir,    ///<  Direction of channel
-      unsigned sessionID,             ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
-                                      ///<  Parameters for channel
-    ) const = 0;
+                                H323Connection & connection,   ///<  Owner connection for channel
+                         H323Channel::Directions dir,          ///<  Direction of channel
+                      const OpalMediaSessionId & sessionID, ///<  Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param         ///<  Parameters for channel
+    ) const;
   //@}
 
   /**@name Protocol manipulation */
@@ -335,6 +328,12 @@ class H323Capability : public PObject
     unsigned            assignedCapabilityNumber;  /// Unique ID assigned to capability
     CapabilityDirection capabilityDirection;
     RTP_DataFrame::PayloadTypes rtpPayloadType;
+
+    H323Channel * InternalCreateChannel(
+                                H323Connection & connection,   ///<  Owner connection for channel
+                         H323Channel::Directions dir,          ///<  Direction of channel
+                      const OpalMediaSessionId & sessionID, ///<  Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param) const;
 
   private:
     OpalMediaFormat     mediaFormat;
@@ -508,11 +507,10 @@ class H323RealTimeCapability : public H323Capability
     /**Create the channel instance, allocating resources as required.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    ///<  Owner connection for channel
-      H323Channel::Directions dir,    ///<  Direction of channel
-      unsigned sessionID,             ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
-                                      ///<  Parameters for channel
+      H323Connection & connection,                     ///<  Owner connection for channel
+      H323Channel::Directions dir,                     ///<  Direction of channel
+      const OpalMediaSessionId & sessionID,            ///<  Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param ///<  Parameters for channel
     ) const;
 
     H323RealTimeCapability();
@@ -555,15 +553,9 @@ class H323AudioCapability : public H323RealTimeCapability
 
   /**@name Operations */
   //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
+    /**Get the media type of this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const;
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -944,15 +936,9 @@ class H323VideoCapability : public H323RealTimeCapability
 
   /**@name Operations */
   //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
+    /**Get the media type of this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -1301,14 +1287,9 @@ class H323DataCapability : public H323Capability
 
   /**@name Operations */
   //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns 3, indicating a data session.
+    /**Get the media type of this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -1897,11 +1878,10 @@ class H323_UserInputCapability : public H323Capability
        this is taken from the fields in param.
      */
     virtual H323Channel * CreateChannel(
-      H323Connection & connection,    ///<  Owner connection for channel
-      H323Channel::Directions dir,    ///<  Direction of channel
-      unsigned sessionID,             ///<  Session ID for RTP channel
-      const H245_H2250LogicalChannelParameters * param
-                                      ///<  Parameters for channel
+      H323Connection & connection,                     ///<  Owner connection for channel
+      H323Channel::Directions dir,                     ///<  Direction of channel
+      const OpalMediaSessionId & sessionID,            ///<  Session ID for RTP channel
+      const H245_H2250LogicalChannelParameters * param ///<  Parameters for channel
     ) const;
   //@}
 

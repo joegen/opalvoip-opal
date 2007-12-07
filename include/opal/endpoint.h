@@ -515,7 +515,19 @@ class OpalEndPoint : public PObject
       PVideoOutputDevice * & device,        ///<  Created device
       PBoolean & autoDelete                     ///<  Flag for auto delete device
     );
+
+    // retained for backwards compatibility only
+
+    /**See if should auto-start receive video channels on connection.
+     */
+    virtual PBoolean CanAutoStartReceiveVideo() const { return manager.IsMediaAutoStart("video", PTrue);  }
+
+    /**See if should auto-start transmit video channels on connection.
+     */
+    virtual PBoolean CanAutoStartTransmitVideo() const { return manager.IsMediaAutoStart("video", PFalse); }
+
 #endif
+
   //@}
 
   /**@name User indications */
@@ -550,72 +562,6 @@ class OpalEndPoint : public PObject
       unsigned firstDigitTimeout = 30     ///<  Timeout on receiving any digits
     );
   //@}
-
-  /**@name Other services */
-  //@{
-#if OPAL_T120DATA
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       Note that if the application overrides this it should return a pointer to a
-       heap variable (using new) as it will be automatically deleted when the
-       H323Connection is deleted.
-
-       The default behavour calls the OpalManager function of the same name.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.120 handler created
-    ) const;
-#endif
-
-#if OPAL_T38FAX
-
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       Note that if the application overrides this it should return a pointer to a
-       heap variable (using new) as it will be automatically deleted when the
-       H323Connection is deleted.
-
-       The default behavour calls the OpalManager function of the same name.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.38 handler created
-    ) const;
-	
-#endif
-
-#if OPAL_H224
-
-	/** Create an instance of the H.224 protocol handler.
-        This is called when the subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer to a
-        heap variable (using new) as it will be automatically deleted when the Connection
-        is deleted.
-		
-        The default behaviour calls the OpalManager function of the same name.
-      */
-    virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, 
-      unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer to a
-        heap variable (using new) as it will be automatically deleted when the Connection
-        is deleted.
-		
-        The default behaviour calls the OpalManager function of the same name
-      */
-    virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
-    ) const;
-#endif
 
     /** Execute garbage collection for endpoint.
         Returns PTrue if all garbage has been collected.
@@ -750,6 +696,10 @@ class OpalEndPoint : public PObject
       PBoolean incoming                       ///< Incoming/outgoing connection
     );
 
+    virtual bool IsMediaAutoStart(const OpalMediaType & t, PBoolean r) const { return manager.IsMediaAutoStart(t, r); }
+    virtual void SetMediaAutoStart(const OpalMediaType & t, PBoolean r, PBoolean v) { manager.SetMediaAutoStart(t, r, v); }
+
+    virtual OpalAutoStartMediaMap & GetAutoStartMediaMap() { return manager.GetAutoStartMediaMap(); }
 
   protected:
     OpalManager   & manager;

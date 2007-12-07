@@ -51,6 +51,32 @@ namespace PWLibStupidLinkerHacks {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+//
+//  declare a media type for T.38
+//
+
+class OpalImageMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+    BYTE GetPreferredSessionId() const;
+    RTP_UDP * CreateNonSecureSession(OpalConnection & conn, PHandleAggregator * aggregator, const OpalMediaSessionId & id, PBoolean remoteIsNAT);
+    OpalMediaStream * CreateMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat,const OpalMediaSessionId & sessionID, PBoolean isSource);
+
+#if OPAL_H323
+    virtual H323Channel * CreateH323Channel(H323Connection & conn, 
+                                      const H323Capability & capability, 
+                                                    unsigned direction, 
+                                               RTP_Session & session,
+                                  const OpalMediaSessionId & sessionId,
+                  const H245_H2250LogicalChannelParameters * param);
+#endif
+
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(const OpalMediaType &, OpalTransportAddress & localAddress);
+#endif
+};
+
+///////////////////////////////////////////////////////////////////////////////
 
 /**This class handles the processing of the T.38 protocol.
   */
@@ -241,9 +267,9 @@ class T38PseudoRTP : public RTP_UDP
     /**Create a new RTP channel.
      */
     T38PseudoRTP(
-      PHandleAggregator * aggregator, ///< RTP aggregator
-      unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      PHandleAggregator * aggregator,  ///< RTP aggregator
+      const OpalMediaSessionId & id,   ///<  Session ID for RTP channel
+      PBoolean remoteIsNAT             ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP
@@ -301,7 +327,7 @@ class OpalFaxMediaStream : public OpalMediaStream
     OpalFaxMediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID, 
+      const OpalMediaSessionId & sessionId, 
       PBoolean isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename,
@@ -374,7 +400,7 @@ class OpalT38MediaStream : public OpalFaxMediaStream
     OpalT38MediaStream(
       OpalConnection & conn,
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID, 
+      const OpalMediaSessionId & sessionID, 
       PBoolean isSource ,                      ///<  Is a source stream
       const PString & token,               ///<  token used to match incoming/outgoing streams
       const PString & filename,            ///<  filename
@@ -527,7 +553,7 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
-    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource);
 
     /**Call back when patching a media stream.
        This function is called when a connection has created a new media
@@ -545,7 +571,7 @@ class OpalFaxConnection : public OpalConnection
       */
     virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaSessionId & sessionID           ///<  Session to start stream on
     );
 
     /**Open source transmitter media stream for session.
@@ -563,6 +589,9 @@ class OpalFaxConnection : public OpalConnection
   //@}
 
     void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
+
+    PFilePath GetFilename() const { return filename; }
+    bool IsFaxReceive() const     { return receive; }
 
   protected:
     OpalFaxEndPoint & endpoint;
@@ -615,7 +644,6 @@ class OpalT38Connection : public OpalFaxConnection
       OpalConnection::StringOptions * stringOptions = NULL
     );
     void AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const;
-    OpalMediaStream * CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
     OpalMediaFormatList GetMediaFormats() const;
 };
 

@@ -41,12 +41,21 @@
 #include <ptlib/pipechan.h>
 
 #include <t38/t38proto.h>
+#include <t38/h323t38.h>
+#include <asn/t38.h>
 
 #include <opal/mediastrm.h>
+#include <opal/mediatype.h>
 #include <opal/patch.h>
 
+#if OPAL_SIP
+#include <sip/sdp.h>
+#endif
+
+#if OPAL_H323
 #include <h323/transaddr.h>
-#include <asn/t38.h>
+#endif
+
 
 //#define USE_SEQ
 
@@ -58,13 +67,19 @@ namespace PWLibStupidLinkerHacks {
 
 #define SPANDSP_AUDIO_SIZE    320
 
+#define  SDP_MEDIA_TRANSPORT_UDPTL "udptl"
+
 static PAtomicInteger faxCallIndex;
+
+#if OPAL_T38FAX
+OPAL_DECLARE_MEDIA_TYPE(image, OpalImageMediaType);
+#endif
 
 const OpalMediaFormat & GetOpalT38()
 {
   static const OpalMediaFormat opalT38(
     OPAL_T38,
-    OpalMediaFormat::DefaultDataSessionID,
+    "image",
     RTP_DataFrame::IllegalPayloadType,
     "t38",
     PFalse, // No jitter for data
@@ -95,7 +110,7 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
 				                         unsigned clockRate,
                                    time_t timeStamp)
   : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultDataSessionID,
+                    "image",
                     rtpPayloadType,
                     encodingName,
                     PTrue,
@@ -539,7 +554,7 @@ PBoolean OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
 
 /////////////////////////////////////////////////////////////////////////////
 
-T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, unsigned _id, PBoolean _remoteIsNAT)
+T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, const OpalMediaSessionId & _id, PBoolean _remoteIsNAT)
   : RTP_UDP(_aggregator, _id, _remoteIsNAT)
 {
   PTRACE(4, "RTP_T38\tPseudoRTP session created with NAT flag set to " << remoteIsNAT);
@@ -631,7 +646,7 @@ PTRACE(1, "T38_RTP\tWriting RTP T.38 seq " << udptl.m_seq_number << " of size " 
 PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
 {
   if (shutdownWrite) {
-    PTRACE(3, "RTP_T38\tSession " << sessionID << ", Write shutdown.");
+    PTRACE(3, "RTP_T38\tSession " << sessionID.sessionId << ", Write shutdown.");
     shutdownWrite = PFalse;
     return PFalse;
   }
@@ -655,11 +670,11 @@ PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
     switch (dataSocket->GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        PTRACE(2, "RTP_T38\tSession " << sessionID << ", data port on remote not ready.");
+        PTRACE(2, "RTP_T38\tSession " << sessionID.sessionId << ", data port on remote not ready.");
         break;
 
       default:
-        PTRACE(1, "RTP_T38\tSession " << sessionID
+        PTRACE(1, "RTP_T38\tSession " << sessionID.sessionId
                << ", Write error on data port ("
                << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
                << dataSocket->GetErrorText(PChannel::LastWriteError));
@@ -738,7 +753,7 @@ PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
     if (shutdownRead) {
-      PTRACE(3, "T38_RTP\tSession " << sessionID << ", Read shutdown.");
+      PTRACE(3, "T38_RTP\tSession " << sessionID.sessionId << ", Read shutdown.");
       shutdownRead = PFalse;
       return PFalse;
     }
@@ -773,11 +788,11 @@ PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
         return PTrue;
 
       case PSocket::Interrupted:
-        PTRACE(3, "T38_RTP\tSession " << sessionID << ", Interrupted.");
+        PTRACE(3, "T38_RTP\tSession " << sessionID.sessionId << ", Interrupted.");
         return PFalse;
 
       default :
-        PTRACE(1, "T38_RTP\tSession " << sessionID << ", Select error: "
+        PTRACE(1, "T38_RTP\tSession " << sessionID.sessionId << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
         return PFalse;
     }
@@ -809,7 +824,7 @@ OpalFaxCallInfo::OpalFaxCallInfo()
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource, const PString & _token, const PString & _filename, PBoolean _receive)
+OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & , PBoolean isSource, const PString & _token, const PString & _filename, PBoolean _receive)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource), sessionToken(_token), filename(_filename), receive(_receive)
 {
   faxCallInfo = NULL;
@@ -1082,10 +1097,10 @@ PString OpalFaxMediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   */
 OpalT38MediaStream::OpalT38MediaStream(
       OpalConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID, 
+      const OpalMediaFormat & mediaFormat,     ///<  Media format for stream
+      const OpalMediaSessionId & sessionID, 
       PBoolean isSource,                       ///<  Is a source stream
-      const PString & token,               ///<  token used to match incoming/outgoing streams
+      const PString & token,                   ///<  token used to match incoming/outgoing streams
       const PString & _filename,
       PBoolean _receive
     )
@@ -1281,10 +1296,10 @@ OpalFaxConnection::~OpalFaxConnection()
   PTRACE(3, "FAX\tDeleted FAX connection.");
 }
 
-OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
+OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) {
+  if (mediaFormat.GetMediaType() == "audio") {
     if (forceFaxAudio && (mediaFormat == OpalPCM16))
       return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
     else
@@ -1292,7 +1307,7 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
   }
 
   // if creating a data stream, see what type it is
-  else if (!forceFaxAudio && (sessionID == OpalMediaFormat::DefaultDataSessionID)) {
+  else if (!forceFaxAudio && (mediaFormat.GetMediaType() == "image")) {
     if (mediaFormat == OpalPCM16Fax)
       return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
   }
@@ -1403,10 +1418,10 @@ void OpalFaxConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 }
 
 
-PBoolean OpalFaxConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
+PBoolean OpalFaxConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, const OpalMediaSessionId & sessionID)
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID)
+  if (sessionID.mediaType != "audio" && sessionID.mediaType != "image")
     return PFalse;
 #endif
 
@@ -1417,7 +1432,8 @@ PBoolean OpalFaxConnection::OpenSourceMediaStream(const OpalMediaFormatList & me
 OpalMediaStream * OpalFaxConnection::OpenSinkMediaStream(OpalMediaStream & source)
 {
 #if OPAL_VIDEO
-  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID)
+  OpalMediaType mediaType = source.GetMediaFormat().GetMediaType();
+  if (mediaType != "audio" && mediaType != "image")
     return NULL;
 #endif
 
@@ -1494,19 +1510,6 @@ OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, cons
   forceFaxAudio = PFalse;
 }
 
-OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
-{
-  // if creating an audio session, use a NULL stream
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) 
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-
-  // if creating a data stream, see what type it is
-  else if ((sessionID == OpalMediaFormat::DefaultDataSessionID) && (mediaFormat == OpalT38))
-    return new OpalT38MediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
-
-  return NULL;
-}
-
 void OpalT38Connection::AdjustMediaFormats(OpalMediaFormatList & mediaFormats) const
 {
   endpoint.AdjustMediaFormats(*this, mediaFormats);
@@ -1523,8 +1526,124 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
   return formats;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+BYTE OpalImageMediaType::GetPreferredSessionId() const
+{ return 3; }
+
+RTP_UDP * OpalImageMediaType::CreateNonSecureSession(OpalConnection &, PHandleAggregator *, const OpalMediaSessionId & sessionID, PBoolean remoteIsNAT)
+{ return new T38PseudoRTP(NULL, sessionID, remoteIsNAT); }
+
+OpalMediaStream * OpalImageMediaType::CreateMediaStream(OpalConnection & _conn, const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
+{ 
+  // if creating an audio session, use a NULL stream
+  if (sessionID.mediaType == "audio") 
+    return new OpalNullMediaStream(_conn, mediaFormat, sessionID, isSource);
+
+  if (sessionID.mediaType != "image") 
+    return NULL;
+
+  OpalT38Connection * conn = dynamic_cast<OpalT38Connection *>(&_conn);
+  if (conn == NULL)
+    return NULL;
+
+  return new OpalT38MediaStream(_conn, mediaFormat, sessionID, isSource, conn->GetToken(), conn->GetFilename(), conn->IsFaxReceive());
+}
+
+
+#if OPAL_H323
+H323Channel * OpalImageMediaType::CreateH323Channel(H323Connection & conn, 
+                                              const H323Capability & capability, 
+                                                            unsigned direction, 
+                                                       RTP_Session & /*session*/,
+                                          const OpalMediaSessionId & sessionId,
+                          const H245_H2250LogicalChannelParameters * /*param*/)
+{
+  PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionId.sessionId << " direction=" << direction);
+  return new H323_T38Channel(conn, capability, (H323Channel::Directions)direction, sessionId, H323_T38Capability::e_UDP);
+}
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SIP
+
+class UDPTL_SDPMediaDescription : public SDPMediaDescription
+{
+  public:
+    UDPTL_SDPMediaDescription(const OpalTransportAddress & address);
+    SDPMediaFormat * CreateSDPMediaFormatFromName(const PString & token);
+    SDPMediaFormat * CreateSDPMediaFormatFromFormat(const OpalMediaFormat & mediaFormat, RTP_DataFrame::PayloadTypes pt, const char * nteString = NULL);
+    void SetAttribute(const PString & attr, const PString & value);
+    bool PrintFormat(ostream & str) const;
+    void AddSDPMediaFormat(const OpalMediaFormat & mediaFormat, RTP_DataFrame::PayloadTypes pt, const char * nteString);
+
+  protected:      
+    PStringToString t38Attributes;
+};
+
+SDPMediaDescription * OpalImageMediaType::CreateSDPMediaDescription(const OpalMediaType &, OpalTransportAddress & localAddress)
+{
+  if (!localAddress.IsEmpty()) 
+    return new UDPTL_SDPMediaDescription(localAddress);
+
+  PTRACE(2, "SIP\tRefusing to add image SDP media description with no transport address");
+  return NULL;
+}
+
+UDPTL_SDPMediaDescription::UDPTL_SDPMediaDescription(const OpalTransportAddress & address)
+  : SDPMediaDescription(address, "image", SDP_MEDIA_TRANSPORT_UDPTL)
+{ }
+
+SDPMediaFormat * UDPTL_SDPMediaDescription::CreateSDPMediaFormatFromName(const PString & token)
+{
+  return new SDPMediaFormat(RTP_DataFrame::DynamicBase, token);
+}
+
+SDPMediaFormat * UDPTL_SDPMediaDescription::CreateSDPMediaFormatFromFormat(const OpalMediaFormat & mediaFormat, RTP_DataFrame::PayloadTypes pt, const char * nteString)
+{
+  return new SDPMediaFormat(mediaFormat, pt, nteString);
+}
+
+void UDPTL_SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
+{
+#if OPAL_T38FAX
+  if (attr.Left(3) *= "t38") {
+    t38Attributes.SetAt(attr, value);
+    return;
+  }
+#endif
+
+  SDPMediaDescription::SetAttribute(attr, value);
+}
+
+bool UDPTL_SDPMediaDescription::PrintFormat(ostream & str) const
+{
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++)
+    str << ' ' << formats[i].GetEncodingName();
+  str << "\r\n";
+
+  // output options
+  for (i = 0; i < t38Attributes.GetSize(); i++) 
+    str << "a=" << t38Attributes.GetKeyAt(i) << ":" << t38Attributes.GetDataAt(i) << "\r\n";
+
+  return true;
+}
+
+void UDPTL_SDPMediaDescription::AddSDPMediaFormat(const OpalMediaFormat & mediaFormat, RTP_DataFrame::PayloadTypes pt, const char * nteString)
+{
+  for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
+    const OpalMediaOption & option = mediaFormat.GetOption(i);
+    if (option.GetName().Left(3) *= "t38") 
+      t38Attributes.SetAt(option.GetName(), option.AsString());
+  }
+
+  return SDPMediaDescription::AddSDPMediaFormat(mediaFormat, pt, nteString);
+}
+
+#endif  // OPAL_SIP
 
 #endif // OPAL_T38FAX
 

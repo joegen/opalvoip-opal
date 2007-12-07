@@ -39,7 +39,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/call.h>
-#include <opal/connection.h> //OpalConnection::AnswerCallResponse
+#include <opal/connection.h> //OpalConnection::AnswerCallResponse and OpalAutoStartMediaMap
 #include <opal/guid.h>
 #include <opal/audiorecord.h>
 #include <codec/silencedetect.h>
@@ -486,7 +486,7 @@ class OpalManager : public PObject
     virtual PBoolean IsMediaBypassPossible(
       const OpalConnection & source,      ///<  Source connection
       const OpalConnection & destination, ///<  Destination connection
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaSessionId & sessionID                  ///<  Session ID for media channel
     ) const;
 
     /**Call back when opening a media stream.
@@ -627,69 +627,6 @@ class OpalManager : public PObject
     );
   //@}
 
-  /**@name Other services */
-  //@{
-#if OPAL_T120DATA
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       Note that if the application overrides this it should return a pointer
-       to a heap variable (using new) as it will be automatically deleted when
-       the H323Connection is deleted.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.120 handler created
-    ) const;
-#endif
-
-#if OPAL_T38FAX
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       Note that if the application overrides this it should return a pointer
-       to a heap variable (using new) as it will be automatically deleted when
-       the H323Connection is deleted.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.38 handler created
-    ) const;
-	
-#endif
-
-#if OPAL_H224
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the call subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH224Handler instance
-      */
-	virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.281 protocol handler.
-        This is called when a H.224 channel is established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH281Handler instance
-      */
-	virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
-    ) const;
-#endif
-
     class RouteEntry : public PObject
     {
         PCLASSINFO(RouteEntry, PObject);
@@ -793,26 +730,6 @@ class OpalManager : public PObject
     void SetDefaultDisplayName(
       const PString & name
     ) { defaultDisplayName = name; }
-
-#if OPAL_VIDEO
-
-    /**See if should auto-start receive video channels on connection.
-     */
-    PBoolean CanAutoStartReceiveVideo() const { return autoStartReceiveVideo; }
-
-    /**Set if should auto-start receive video channels on connection.
-     */
-    void SetAutoStartReceiveVideo(PBoolean can) { autoStartReceiveVideo = can; }
-
-    /**See if should auto-start transmit video channels on connection.
-     */
-    PBoolean CanAutoStartTransmitVideo() const { return autoStartTransmitVideo; }
-
-    /**Set if should auto-start transmit video channels on connection.
-     */
-    void SetAutoStartTransmitVideo(PBoolean can) { autoStartTransmitVideo = can; }
-
-#endif
 
     /**Determine if the address is "local", ie does not need any address
        translation (fixed or via STUN) to access.
@@ -1060,6 +977,22 @@ class OpalManager : public PObject
      */
     const PVideoDevice::OpenArgs & GetVideoOutputDevice() const { return videoOutputDevice; }
 
+    /**See if should auto-start receive video channels on connection.
+     */
+    virtual PBoolean CanAutoStartReceiveVideo() const { return IsMediaAutoStart("video", PTrue); }
+
+    /**Set if should auto-start receive video channels on connection.
+     */
+    virtual void SetAutoStartReceiveVideo(PBoolean can) { SetMediaAutoStart("video", PTrue, can); }
+
+    /**See if should auto-start transmit video channels on connection.
+     */
+    virtual PBoolean CanAutoStartTransmitVideo() const { return IsMediaAutoStart("video", PFalse); }
+
+    /**Set if should auto-start transmit video channels on connection.
+     */
+    virtual void SetAutoStartTransmitVideo(PBoolean can) { SetMediaAutoStart("video", PFalse, can); }
+
 #endif
 
     PBoolean DetectInBandDTMFDisabled() const
@@ -1111,17 +1044,20 @@ class OpalManager : public PObject
     virtual PBoolean StartRecording(const PString & callToken, const PFilePath & fn);
     virtual void StopRecording(const PString & callToken);
 
+    virtual bool IsMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx) const
+    { return autoStartMediaMap.IsMediaAutoStart(mediaType, rx); }
+
+    virtual void SetMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx, PBoolean v)
+    { return autoStartMediaMap.SetMediaAutoStart(mediaType, rx, v); }
+
+    virtual OpalAutoStartMediaMap & GetAutoStartMediaMap() { return autoStartMediaMap; }
+
   protected:
     // Configuration variables
     OpalProductInfo productInfo;
 
     PString       defaultUserName;
     PString       defaultDisplayName;
-
-#if OPAL_VIDEO
-    PBoolean          autoStartReceiveVideo;
-    PBoolean          autoStartTransmitVideo;
-#endif
 
     BYTE          rtpIpTypeofService;
     unsigned      minAudioJitterDelay;
@@ -1214,6 +1150,8 @@ class OpalManager : public PObject
 
     friend OpalCall::OpalCall(OpalManager & mgr);
     friend void OpalCall::OnReleased(OpalConnection & connection);
+
+    OpalAutoStartMediaMap autoStartMediaMap;
 };
 
 

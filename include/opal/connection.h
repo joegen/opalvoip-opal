@@ -61,7 +61,7 @@ class OpalH224Handler;
 class OpalH281Handler;
 
 
-/** Class for carying vendor/product information.
+/** Class for carrying vendor/product information.
   */
 class OpalProductInfo
 {
@@ -80,6 +80,23 @@ class OpalProductInfo
     WORD    manufacturerCode;
 };
 
+/** Class for storing media autostart information
+  */
+struct OpalMediaAutoStartInfo {
+  OpalMediaAutoStartInfo()  { autoStartReceive = autoStartTransmit = false; } 
+  bool autoStartReceive;
+  bool autoStartTransmit;
+};
+
+class OpalAutoStartMediaMap : public std::map<OpalMediaType, OpalMediaAutoStartInfo> 
+{
+  public:
+    bool IsMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx) const;
+    void SetMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx, PBoolean v);
+
+  protected:
+    PMutex mutex;
+};
 
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
@@ -541,7 +558,7 @@ class OpalConnection : public PSafeObject
       */
     virtual PBoolean OpenSourceMediaStream(
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+      const OpalMediaSessionId & sessionID      ///<  Session to start stream on
     );
 
     /**Open source transmitter media stream for session.
@@ -581,8 +598,8 @@ class OpalConnection : public PSafeObject
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
+      const OpalMediaFormat & mediaFormat,     ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,    ///<  Session number for stream
       PBoolean isSource                        ///<  Is a source stream
     );
 
@@ -630,9 +647,13 @@ class OpalConnection : public PSafeObject
        may be used to distinguish which channel to return.
       */
     OpalMediaStream * GetMediaStream(
-      unsigned sessionId,  ///<  Session ID to search for.
-      PBoolean source          ///<  Indicates the direction of stream.
+      const OpalMediaSessionId & sessionId,  ///<  Session ID to search for.
+                        PBoolean source      ///<  Indicates the direction of stream.
     ) const;
+
+    /**Return true if any source media streams are active
+      */
+    virtual bool HasMedia() const;
 
     /**
       Remove the specified media stream from the list of streams for this channel.
@@ -652,7 +673,7 @@ class OpalConnection : public PSafeObject
        possible.
      */
     virtual PBoolean IsMediaBypassPossible(
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaSessionId & sessionID                  ///<  Session ID for media channel
     ) const;
 
     /**Meda information structure for GetMediaInformation() function.
@@ -682,8 +703,8 @@ class OpalConnection : public PSafeObject
        dictionary is set correctly before OnIncomingCall() is executed.
      */
     virtual PBoolean GetMediaInformation(
-      unsigned sessionID,     ///<  Session ID for media channel
-      MediaInformation & info ///<  Information on media channel
+      const OpalMediaSessionId & sessionID, ///<  Session ID for media channel
+      MediaInformation & info               ///<  Information on media channel
     ) const;
 
 #if OPAL_VIDEO
@@ -736,7 +757,7 @@ class OpalConnection : public PSafeObject
        If there is no session of the specified ID, NULL is returned.
       */
     virtual RTP_Session * GetSession(
-      unsigned sessionID    ///<  RTP session number
+      const OpalMediaSessionId & sessionID    ///<  RTP session number
     ) const;
 
     /**Use an RTP session for the specified ID.
@@ -754,12 +775,12 @@ class OpalConnection : public PSafeObject
        transport. At this time only IP (RTp over UDP) is supported.
       */
     virtual RTP_Session * UseSession(
-      unsigned sessionID
+      const OpalMediaSessionId & sessionID
     );
     virtual RTP_Session * UseSession(
-      const OpalTransport & transport,  ///<  Transport of signalling
-      unsigned sessionID,               ///<  RTP session number
-      RTP_QOS * rtpqos = NULL           ///<  Quiality of Service information
+      const OpalTransport & transport,      ///<  Transport of signalling
+      const OpalMediaSessionId & sessionID, ///<  RTP session number
+      RTP_QOS * rtpqos = NULL               ///<  Quiality of Service information
     );
 
     /**Release the session.
@@ -767,7 +788,7 @@ class OpalConnection : public PSafeObject
        UseSession() function, then the session is deleted.
      */
     virtual void ReleaseSession(
-      unsigned sessionID,    ///<  RTP session number
+      const OpalMediaSessionId & sessionID,    ///<  RTP session number
       PBoolean clearAll = PFalse  ///<  Clear all sessions
     );
 
@@ -777,7 +798,7 @@ class OpalConnection : public PSafeObject
       */
     virtual RTP_Session * CreateSession(
       const OpalTransport & transport,
-      unsigned sessionID,
+      const OpalMediaSessionId & sessionID,
       RTP_QOS * rtpqos
     );
   //@}
@@ -939,73 +960,6 @@ class OpalConnection : public PSafeObject
     );
   //@}
 
-  /**@name Other services */
-  //@{
-#if OPAL_T120DATA
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       Note that if the application overrides this and returns a pointer to a
-       heap variable (using new) then it is the responsibility of the creator
-       to subsequently delete the object. The user of this function (the 
-       H323_T120Channel class) will not do so.
-
-       The default behavour returns H323Endpoint::CreateT120ProtocolHandler()
-       while keeping track of that variable for autmatic deletion.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler();
-#endif
-
-#if OPAL_T38FAX
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       Note that if the application overrides this and returns a pointer to a
-       heap variable (using new) then it is the responsibility of the creator
-       to subsequently delete the object. The user of this function (the 
-       H323_T38Channel class) will not do so.
-
-       The default behavour returns H323Endpoint::CreateT38ProtocolHandler()
-       while keeping track of that variable for autmatic deletion.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler();
-#endif
-
-#if OPAL_H224
-	
-	/** Create an instance of the H.224 protocol handler.
-	    This is called when the subsystem requires that a H.224 channel be established.
-		
-	    Note that if the application overrides this it should return a pointer
-	    to a heap variable (using new) as it will be automatically deleted when
-	    the OpalConnection is deleted.
-	
-	    The default behaviour calls the OpalEndpoint function of the same name if
-        there is not already a H.224 handler associated with this connection. If there
-        is already such a H.224 handler associated, this instance is returned instead.
-	  */
-	virtual OpalH224Handler *CreateH224ProtocolHandler(unsigned sessionID);
-	
-	/** Create an instance of the H.281 protocol handler.
-		This is called when the subsystem requires that a H.224 channel be established.
-		
-		Note that if the application overrides this it should return a pointer
-		to a heap variable (using new) as it will be automatically deleted when
-		the associated H.224 handler is deleted.
-		
-		The default behaviour calls the OpalEndpoint function of the same name.
-	*/
-	virtual OpalH281Handler *CreateH281ProtocolHandler(OpalH224Handler & h224Handler);
-	
-    /** Returns the H.224 handler associated with this connection or NULL if no
-		handler was created
-	  */
-	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
-#endif
-
-  //@}
 
   /**@name Member variable access */
   //@{
@@ -1203,6 +1157,17 @@ class OpalConnection : public PSafeObject
     virtual void EnableRecording();
     virtual void DisableRecording();
 
+    virtual bool IsMediaAutoStart(const OpalMediaType & t, PBoolean rx) const        { return autoStartMediaMap.IsMediaAutoStart(t, rx); }
+    virtual void SetMediaAutoStart(const OpalMediaType & t, PBoolean rx, PBoolean v) { autoStartMediaMap.SetMediaAutoStart(t, rx, v); }
+
+    /**See if should auto-start receive video channels on connection.
+     */
+    virtual BOOL CanAutoStartReceiveVideo() const { return IsMediaAutoStart("video", PTrue); }
+
+    /**See if should auto-start transmit video channels on connection.
+     */
+    virtual BOOL CanAutoStartTransmitVideo() const { return IsMediaAutoStart("video", PFalse); }
+
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineCiscoNSE);
@@ -1221,7 +1186,7 @@ class OpalConnection : public PSafeObject
 
     PString              callToken;
     OpalGloballyUniqueID callIdentifier;
-    PBoolean                 originating;
+    PBoolean             originating;
     PTime                setupTime;
     PTime                alertingTime;
     PTime                connectedTime;
@@ -1237,12 +1202,12 @@ class OpalConnection : public PSafeObject
     PString              calledDestinationNumber;
     PString              calledDestinationName;
     PString              calledDestinationURL;
-    PBoolean                 remoteIsNAT;
+    PBoolean             remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PSyncPoint            userInputAvailable;
-    PBoolean                  detectInBandDTMF;
+    PBoolean              detectInBandDTMF;
     unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;
@@ -1290,7 +1255,9 @@ class OpalConnection : public PSafeObject
     StringOptions * stringOptions;
     PString recordAudioFilename;
 
-    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
+    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource);
+
+    OpalAutoStartMediaMap autoStartMediaMap; 
 };
 
 class RTP_UDP;

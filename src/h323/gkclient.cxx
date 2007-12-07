@@ -1457,14 +1457,14 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_originator);
   info.m_originator = !connection.HadAnsweredCall();
 
-  H323_RTP_Session * session = connection.GetSessionCallbacks(OpalMediaFormat::DefaultAudioSessionID);
+  H323_RTP_Session * session = connection.GetSessionCallbacks(OpalMediaSessionId("audio"));
   if (session != NULL) {
     info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_audio);
     info.m_audio.SetSize(1);
     session->OnSendRasInfo(info.m_audio[0]);
   }
 
-  session = connection.GetSessionCallbacks(OpalMediaFormat::DefaultVideoSessionID);
+  session = connection.GetSessionCallbacks(OpalMediaSessionId("video"));
   if (session != NULL) {
     info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_video);
     info.m_video.SetSize(1);

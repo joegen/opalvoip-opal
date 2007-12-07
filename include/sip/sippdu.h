@@ -769,7 +769,7 @@ class SIPInvite : public SIPTransaction
     SIPInvite(
       SIPConnection & connection,
       OpalTransport & transport,
-      unsigned rtpSessionId
+      const OpalMediaSessionId & rtpSessionId
     );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);

@@ -2090,14 +2090,14 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetDate() ;                             // now
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("audio", 1));
 #if OPAL_VIDEO
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+    connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("video", 2));
 #endif
 #if OPAL_T38FAX
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("image", 3));
 #endif
   connection.OnCreatingINVITE(*this);
 }
@@ -2110,19 +2110,19 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   rtpSessions = sm;
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("audio"));
 #if OPAL_VIDEO
   if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
       || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
+    connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("video"));
 #endif
 #if OPAL_T38FAX
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
+  connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("image"));
 #endif
   connection.OnCreatingINVITE(*this);
 }
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsigned rtpSessionId)
+SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, const OpalMediaSessionId & rtpSessionId)
   : SIPTransaction(connection, transport, Method_INVITE)
 {
   mime.SetDate() ;                             // now

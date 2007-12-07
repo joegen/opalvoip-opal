@@ -83,7 +83,7 @@ PBoolean H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
 {
   PTRACE(3, "RTP\tOnSendingPDU");
 
-  param.m_sessionID = rtp.GetSessionID();
+  param.m_sessionID = rtp.GetSessionID().sessionId;
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = PFalse;
@@ -173,7 +173,7 @@ PBoolean H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
                                  const H245_H2250LogicalChannelParameters & param,
                                  unsigned & errorCode)
 {
-  if (param.m_sessionID != rtp.GetSessionID()) {
+  if (param.m_sessionID != rtp.GetSessionID().sessionId) {
     PTRACE(1, "RTP_UDP\tOpen of " << channel << " with invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return PFalse;
@@ -214,7 +214,7 @@ PBoolean H323_RTP_UDP::OnReceivedPDU(H323_RTPChannel & channel,
 
   PTRACE(1, "RTP_UDP\tNo mediaChannel or mediaControlChannel specified for " << channel);
 
-  if (rtp.GetSessionID() == OpalMediaFormat::DefaultDataSessionID)
+  if (rtp.GetSessionID().mediaType == "image")
     return PTrue;
 
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
@@ -229,7 +229,7 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
     PTRACE(1, "RTP_UDP\tNo session specified");
   }
 
-  if (param.m_sessionID != rtp.GetSessionID()) {
+  if (param.m_sessionID != rtp.GetSessionID().sessionId) {
     PTRACE(1, "RTP_UDP\tAck for invalid session: " << param.m_sessionID);
   }
 
@@ -237,7 +237,7 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
 
   if (!param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_mediaControlChannel)) {
     PTRACE(1, "RTP_UDP\tNo mediaControlChannel specified");
-    if (rtp.GetSessionID() != OpalMediaFormat::DefaultDataSessionID)
+    if (rtp.GetSessionID().mediaType != "image")
       return PFalse;
   }
   else
@@ -261,7 +261,7 @@ PBoolean H323_RTP_UDP::OnReceivedAckPDU(H323_RTPChannel & channel,
 
 void H323_RTP_UDP::OnSendRasInfo(H225_RTPSession & info)
 {
-  info.m_sessionId = rtp.GetSessionID();
+  info.m_sessionId = rtp.GetSessionID().sessionId;
   info.m_ssrc = rtp.GetSyncSourceOut();
   info.m_cname = rtp.GetCanonicalName();
 

@@ -234,16 +234,12 @@ PBoolean H224_Frame::Decode(const BYTE *data,
 
 ////////////////////////////////////
 
-OpalH224Handler::OpalH224Handler(OpalConnection & connection,
-								 unsigned sessionID)
+OpalH224Handler::OpalH224Handler(OpalConnection & connection, const OpalMediaSessionId & sessionID)
 : transmitMutex()
 {
-  session = connection.UseSession(connection.GetTransport(),
-							      sessionID);
-	
-  h281Handler = connection.CreateH281ProtocolHandler(*this);
+  session = connection.UseSession(connection.GetTransport(), sessionID);
+  h281Handler = new OpalH281Handler(*this);
   receiverThread = NULL;
-	
 }
 
 OpalH224Handler::~OpalH224Handler()

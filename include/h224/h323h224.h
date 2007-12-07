@@ -61,11 +61,6 @@ public:
 	
   virtual PString GetFormatName() const;
 	
-  virtual H323Channel * CreateChannel(H323Connection & connection,
-									  H323Channel::Directions dir,
-									  unsigned sesionID,
-									  const H245_H2250LogicalChannelParameters * param) const;
-	
   virtual PBoolean OnSendingPDU(H245_DataApplicationCapability & pdu) const;
   virtual PBoolean OnSendingPDU(H245_DataMode & pdu) const;
   virtual PBoolean OnReceivedPDU(const H245_DataApplicationCapability & pdu);
@@ -79,11 +74,11 @@ class H323_H224Channel : public H323Channel
   PCLASSINFO(H323_H224Channel, H323Channel);
 	
 public:
-  H323_H224Channel(H323Connection & connection,
-				   const H323Capability & capability,
-				   Directions direction,
-				   RTP_UDP & session,
-				   unsigned sessionID);
+  H323_H224Channel(  H323Connection & connection,
+				       const H323Capability & capability,
+				                   Directions direction,
+				                    RTP_UDP & session,
+				   const OpalMediaSessionId & sessionID);
   ~H323_H224Channel();
 	
   virtual H323Channel::Directions GetDirection() const;
@@ -118,7 +113,7 @@ protected:
 								PBoolean isDataPort,
 								unsigned & errorCode);
 	
-  unsigned sessionID;
+  OpalMediaSessionId sessionID;
   Directions direction;
   RTP_UDP & rtpSession;
   H323_RTP_Session & rtpCallbacks;

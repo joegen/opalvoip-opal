@@ -167,9 +167,9 @@ class H245NegLogicalChannel : public H245Negotiator
     ~H245NegLogicalChannel();
 
     virtual PBoolean Open(
-      const H323Capability & capability,
-      unsigned sessionID,
-      unsigned replacementFor = 0
+          const H323Capability & capability,
+      const OpalMediaSessionId & sessionID,
+                        unsigned replacementFor = 0
     );
     virtual PBoolean Close();
     virtual PBoolean HandleOpen(const H245_OpenLogicalChannel & pdu);
@@ -189,9 +189,9 @@ class H245NegLogicalChannel : public H245Negotiator
 
   protected:
     virtual PBoolean OpenWhileLocked(
-      const H323Capability & capability,
-      unsigned sessionID,
-      unsigned replacementFor = 0
+          const H323Capability & capability,
+      const OpalMediaSessionId & sessionID,
+                        unsigned replacementFor = 0
     );
     virtual PBoolean CloseWhileLocked();
     virtual void Release();
@@ -235,7 +235,7 @@ class H245NegLogicalChannels : public H245Negotiator
 
     virtual PBoolean Open(
       const H323Capability & capability,
-      unsigned sessionID,
+      const OpalMediaSessionId & sessionID,
       unsigned replacementFor = 0
     );
     virtual PBoolean Close(unsigned channelNumber, PBoolean fromRemote);
@@ -256,7 +256,7 @@ class H245NegLogicalChannels : public H245Negotiator
     H323Channel * FindChannel(unsigned channelNumber, PBoolean fromRemote);
     H245NegLogicalChannel & GetNegLogicalChannelAt(PINDEX i);
     H245NegLogicalChannel * FindNegLogicalChannel(unsigned channelNumber, PBoolean fromRemote);
-    H323Channel * FindChannelBySession(unsigned rtpSessionId, PBoolean fromRemote);
+    H323Channel * FindChannelBySession(const OpalMediaSessionId & sessionId, PBoolean fromRemote);
     void RemoveAll();
 
   protected:

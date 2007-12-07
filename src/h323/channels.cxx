@@ -162,9 +162,9 @@ void H323Channel::PrintOn(ostream & strm) const
 }
 
 
-unsigned H323Channel::GetSessionID() const
+OpalMediaSessionId H323Channel::GetSessionID() const
 {
-  return 0;
+  return OpalMediaSessionId("null", 0);
 }
 
 
@@ -654,7 +654,7 @@ H323_RTPChannel::H323_RTPChannel(H323Connection & conn,
   // If we are the receiver of RTP data then we create a source media stream
   mediaStream = conn.CreateMediaStream(capability->GetMediaFormat(), GetSessionID(), receiver);
   PTRACE(3, "H323RTP\t" << (receiver ? "Receiver" : "Transmitter")
-         << " created using session " << GetSessionID());
+         << " created using session " << GetSessionID().sessionId);
 }
 
 
@@ -666,7 +666,7 @@ H323_RTPChannel::~H323_RTPChannel()
 }
 
 
-unsigned H323_RTPChannel::GetSessionID() const
+OpalMediaSessionId H323_RTPChannel::GetSessionID() const
 {
   return rtpSession.GetSessionID();
 }
@@ -702,51 +702,53 @@ PBoolean H323_RTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckPara
 H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
                                                  const H323Capability & capability,
                                                  Directions direction,
-                                                 unsigned id)
-  : H323_RealTimeChannel(connection, capability, direction)
+                                                 const OpalMediaSessionId & id)
+  : H323_RealTimeChannel(connection, capability, direction),
+    sessionID(id)
 {
-  Construct(connection, id);
+  Construct(connection);
 }
 
 
 H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
                                                  const H323Capability & capability,
                                                  Directions direction,
-                                                 unsigned id,
+                                                 const OpalMediaSessionId & id,
                                                  const H323TransportAddress & data,
                                                  const H323TransportAddress & control)
   : H323_RealTimeChannel(connection, capability, direction),
+    sessionID(id),
     externalMediaAddress(data),
     externalMediaControlAddress(control)
 {
-  Construct(connection, id);
+  Construct(connection);
 }
 
 
 H323_ExternalRTPChannel::H323_ExternalRTPChannel(H323Connection & connection,
                                                  const H323Capability & capability,
                                                  Directions direction,
-                                                 unsigned id,
+                                                 const OpalMediaSessionId & id,
                                                  const PIPSocket::Address & ip,
                                                  WORD dataPort)
   : H323_RealTimeChannel(connection, capability, direction),
+    sessionID(id),
     externalMediaAddress(ip, dataPort),
     externalMediaControlAddress(ip, (WORD)(dataPort+1))
 {
-  Construct(connection, id);
+  Construct(connection);
 }
 
-void H323_ExternalRTPChannel::Construct(H323Connection & conn, unsigned id)
+void H323_ExternalRTPChannel::Construct(H323Connection & conn)
 {
-  mediaStream = new OpalNullMediaStream(conn, capability->GetMediaFormat(), id, receiver);
-  sessionID = id;
+  mediaStream = new OpalNullMediaStream(conn, capability->GetMediaFormat(), sessionID, receiver);
 
   PTRACE(3, "H323RTP\tExternal " << (receiver ? "receiver" : "transmitter")
-         << " created using session " << GetSessionID());
+         << " created using session " << GetSessionID().sessionId);
 }
 
 
-unsigned H323_ExternalRTPChannel::GetSessionID() const
+OpalMediaSessionId H323_ExternalRTPChannel::GetSessionID() const
 {
   return sessionID;
 }
@@ -806,7 +808,7 @@ void H323_ExternalRTPChannel::Transmit()
 
 PBoolean H323_ExternalRTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameters & param) const
 {
-  param.m_sessionID = sessionID;
+  param.m_sessionID = sessionID.sessionId;
 
   param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaGuaranteedDelivery);
   param.m_mediaGuaranteedDelivery = PFalse;
@@ -844,7 +846,7 @@ PBoolean H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelPa
                                           unsigned & errorCode)
 {
   // Only support a single audio session
-  if (param.m_sessionID != sessionID) {
+  if (param.m_sessionID != sessionID.sessionId) {
     PTRACE(1, "LogChan\tOpen for invalid session: " << param.m_sessionID);
     errorCode = H245_OpenLogicalChannelReject_cause::e_invalidSessionID;
     return PFalse;
@@ -883,7 +885,7 @@ PBoolean H323_ExternalRTPChannel::OnReceivedPDU(const H245_H2250LogicalChannelPa
 
 PBoolean H323_ExternalRTPChannel::OnReceivedAckPDU(const H245_H2250LogicalChannelAckParameters & param)
 {
-   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID) && (param.m_sessionID != sessionID)) {
+   if (param.HasOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID) && (param.m_sessionID != sessionID.sessionId)) {
      PTRACE(2, "LogChan\tAck for invalid session: " << param.m_sessionID);
   }
 
@@ -953,10 +955,10 @@ PBoolean H323_ExternalRTPChannel::GetRemoteAddress(PIPSocket::Address & ip,
 H323DataChannel::H323DataChannel(H323Connection & conn,
                                  const H323Capability & cap,
                                  Directions dir,
-                                 unsigned id)
-  : H323UnidirectionalChannel(conn, cap, dir)
+                                 const OpalMediaSessionId & id)
+  : H323UnidirectionalChannel(conn, cap, dir),
+    sessionID(id)
 {
-  sessionID = id;
   listener = NULL;
   autoDeleteListener = PTrue;
   transport = NULL;
@@ -992,7 +994,7 @@ void H323DataChannel::Close()
 }
 
 
-unsigned H323DataChannel::GetSessionID() const
+OpalMediaSessionId H323DataChannel::GetSessionID() const
 {
   return sessionID;
 }
@@ -1008,7 +1010,7 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_forwardLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & fparam = open.m_forwardLogicalChannelParameters.m_multiplexParameters;
-  fparam.m_sessionID = GetSessionID();
+  fparam.m_sessionID = GetSessionID().sessionId;
 
   if (separateReverseChannel)
     return PTrue;
@@ -1020,7 +1022,7 @@ PBoolean H323DataChannel::OnSendingPDU(H245_OpenLogicalChannel & open) const
               H245_OpenLogicalChannel_reverseLogicalChannelParameters_multiplexParameters
                   ::e_h2250LogicalChannelParameters);
   H245_H2250LogicalChannelParameters & rparam = open.m_reverseLogicalChannelParameters.m_multiplexParameters;
-  rparam.m_sessionID = GetSessionID();
+  rparam.m_sessionID = GetSessionID().sessionId;
 
   return capability->OnSendingPDU(open.m_reverseLogicalChannelParameters.m_dataType);
 }
@@ -1053,10 +1055,10 @@ void H323DataChannel::OnSendOpenAck(const H245_OpenLogicalChannel & /*open*/,
                 &ack.m_reverseLogicalChannelParameters.m_multiplexParameters.GetObject();
   }
 
-  unsigned session = GetSessionID();
+  unsigned session = GetSessionID().sessionId;
   if (session != 0) {
     param->IncludeOptionalField(H245_H2250LogicalChannelAckParameters::e_sessionID);
-    param->m_sessionID = GetSessionID();
+    param->m_sessionID = GetSessionID().sessionId;
   }
 
   H323TransportAddress address;

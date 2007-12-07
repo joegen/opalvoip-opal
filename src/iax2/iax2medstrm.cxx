@@ -61,8 +61,8 @@
 
 OpalIAX2MediaStream::OpalIAX2MediaStream(IAX2Connection & conn, 
                                   const OpalMediaFormat & mediaFormat,
-				                                         unsigned sessionID,   
-				                                             PBoolean isSource)
+				                       const OpalMediaSessionId & sessionID,   
+				                                         PBoolean isSource)
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource),
     connection(conn)
 {

@@ -59,10 +59,10 @@ class OpalIAX2MediaStream : public OpalMediaStream
     /**Construct a new media stream for connecting to the media 
       */
     OpalIAX2MediaStream(
-		   IAX2Connection &con,                 /*!< IAX connection to read/send incoming packets */
-		   const OpalMediaFormat & mediaFormat, /*!< Media format for stream */
-		   unsigned sessionID,                  /*!< Session number for stream */
-		   PBoolean isSource                        /*!< Is a source stream */
+		   IAX2Connection &con,                   /*!< IAX connection to read/send incoming packets */
+		   const OpalMediaFormat & mediaFormat,   /*!< Media format for stream */
+		   const OpalMediaSessionId & sessionID,  /*!< Session number for stream */
+		   PBoolean isSource                      /*!< Is a source stream */
 		   );
   //@}
  

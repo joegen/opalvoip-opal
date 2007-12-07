@@ -263,7 +263,7 @@ class OpalCall : public PSafeObject
     virtual PBoolean OpenSourceMediaStreams(
       const OpalConnection & connection,        ///<  Connection requesting open
       const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                        ///<  Session to start streams on
+      const OpalMediaSessionId & sessionID      ///<  Session to start streams on
     );
 
     /**Connect up the media streams on the connections.
@@ -300,7 +300,7 @@ class OpalCall : public PSafeObject
      */
     virtual PBoolean IsMediaBypassPossible(
       const OpalConnection & connection,  ///<  Source connection
-      unsigned sessionID                  ///<  Session ID for media channel
+      const OpalMediaSessionId & sessionID                  ///<  Session ID for media channel
     ) const;
   //@}
 

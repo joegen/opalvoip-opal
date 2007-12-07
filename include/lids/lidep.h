@@ -430,8 +430,8 @@ class OpalLineConnection : public OpalConnection
        The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
+      const OpalMediaFormat & mediaFormat,     ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,    ///<  Session number for stream
       PBoolean isSource                        ///<  Is a source stream
     );
 
@@ -550,10 +550,10 @@ class OpalLineMediaStream : public OpalMediaStream
       */
     OpalLineMediaStream(
       OpalLineConnection & conn,
-      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
-      unsigned sessionID,                  ///<  Session number for stream
-      PBoolean isSource,                       ///<  Is a source stream
-      OpalLine & line                      ///<  LID line to stream to/from
+      const OpalMediaFormat & mediaFormat,   ///<  Media format for stream
+      const OpalMediaSessionId & sessionID,  ///<  Session number for stream
+      PBoolean isSource,                     ///<  Is a source stream
+      OpalLine & line                        ///<  LID line to stream to/from
     );
   //@}
 

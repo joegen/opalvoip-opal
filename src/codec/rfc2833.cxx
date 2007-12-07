@@ -85,7 +85,7 @@ OpalRFC2833Proto::OpalRFC2833Proto(OpalConnection & _conn, const PNotifier & rx)
 OpalRFC2833Proto::~OpalRFC2833Proto()
 {
   if (rtpSession != NULL)
-    conn.ReleaseSession(1);
+    conn.ReleaseSession(OpalMediaSessionId("audio"));
 }
 
 PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
@@ -93,7 +93,7 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
   PWaitAndSignal m(mutex);
 
   if (rtpSession == NULL) {
-    rtpSession = conn.UseSession(1);
+    rtpSession = conn.UseSession(OpalMediaSessionId("audio"));
     if (rtpSession == NULL) {
       PTRACE(4, "RFC2833\tNo RTP session suitable for RFC2833");
       return PFalse;
