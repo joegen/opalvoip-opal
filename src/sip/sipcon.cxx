@@ -703,26 +703,6 @@ OpalMediaStream * SIPConnection::OpenSinkMediaStream(OpalMediaStream & source)
   }
 }
 
-
-OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                   const OpalMediaSessionId & sessionID,
-                                                   PBoolean isSource)
-{
-  // Use a NULL stream if media is bypassing us, 
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-    PTRACE(3, "SIP\tBypassing media for session " << sessionID.mediaType);
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-  }
-
-  // if no RTP sessions matching this session ID, then nothing to do
-  if (rtpSessions.GetSession(sessionID) == NULL)
-    return NULL;
-
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
-}
-
 void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
   OpalConnection::OnPatchMediaStream(isSource, patch);

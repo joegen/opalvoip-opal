@@ -3498,24 +3498,6 @@ OpalMediaStream * H323Connection::InternalCreateMediaStream(const OpalMediaForma
   return CreateMediaStream(mediaFormat, sessionID, isSource);
 }
 
-OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                 const OpalMediaSessionId & sessionID,
-                                                                   PBoolean isSource)
-{
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-
-  RTP_Session * session = GetSession(sessionID);
-  if (session == NULL) {
-    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID.mediaType);
-    return NULL;
-  }
-
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
-}
-
 
 void H323Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {
