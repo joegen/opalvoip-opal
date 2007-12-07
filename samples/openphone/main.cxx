@@ -1559,7 +1559,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << "Started " << (stream.IsSource() ? "receiving " : "sending ") << mediaFormat;
 
-  if (!stream.IsSource() && mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+  if (!stream.IsSource() && mediaFormat.GetMediaType() == "audio")
     LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
   LogWindow << (stream.IsSource() ? " from " : " to ")
@@ -1842,7 +1842,7 @@ bool MyManager::AdjustFrameSize()
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaFormat.GetMediaType() == "video") {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), minWidth);
@@ -3239,12 +3239,12 @@ bool InCallPanel::Show(bool show)
       OpalMediaFormatList availableFormats = connection->GetCall().GetOtherPartyConnection(*connection)->GetMediaFormats();
       PINDEX idx;
       for (idx = 0; idx < availableFormats.GetSize(); idx++) {
-        if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID)
+        if (availableFormats[idx].GetMediaType() == "video")
           break;
       }
       if (idx < availableFormats.GetSize()) {
         m_StartStopVideo->Enable();
-        m_StartStopVideo->SetLabel(connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true) != NULL ? "Stop Video" : "Start Video");
+        m_StartStopVideo->SetLabel(connection->GetMediaStream(OpalMediaSessionId("video"), true) != NULL ? "Stop Video" : "Start Video");
       }
     }
 
