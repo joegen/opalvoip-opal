@@ -706,7 +706,7 @@ const char * SIP_PDU::GetStatusCodeDescription (int code)
 
 
 static const char * const AlgorithmNames[SIPAuthentication::NumAlgorithms] = {
-  "md5"
+  "MD5"
 };
 
 
