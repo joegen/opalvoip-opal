@@ -313,21 +313,27 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // Networking fields
-    wxString     m_Bandwidth;
-    int          m_TCPPortBase;
-    int          m_TCPPortMax;
-    int          m_UDPPortBase;
-    int          m_UDPPortMax;
-    int          m_RTPPortBase;
-    int          m_RTPPortMax;
-    int          m_RTPTOS;
-    PwxString    m_STUNServer;
-    PwxString    m_NATRouter;
-    wxListBox  * m_LocalInterfaces;
-    wxTextCtrl * m_InterfaceToAdd;
-    wxButton   * m_AddInterface;
-    wxButton   * m_RemoveInterface;
+    wxString        m_Bandwidth;
+    int             m_TCPPortBase;
+    int             m_TCPPortMax;
+    int             m_UDPPortBase;
+    int             m_UDPPortMax;
+    int             m_RTPPortBase;
+    int             m_RTPPortMax;
+    int             m_RTPTOS;
+    wxRadioButton * m_NoNATUsedRadio;
+    wxRadioButton * m_NATRouterRadio;
+    wxRadioButton * m_STUNServerRadio;
+    PwxString       m_NATRouter;
+    wxTextCtrl    * m_NATRouterWnd;
+    PwxString       m_STUNServer;
+    wxTextCtrl    * m_STUNServerWnd;
+    wxListBox     * m_LocalInterfaces;
+    wxTextCtrl    * m_InterfaceToAdd;
+    wxButton      * m_AddInterface;
+    wxButton      * m_RemoveInterface;
     void BandwidthClass(wxCommandEvent & event);
+    void NATHandling(wxCommandEvent & event);
     void SelectedLocalInterface(wxCommandEvent & event);
     void ChangedInterfaceToAdd(wxCommandEvent & event);
     void AddInterface(wxCommandEvent & event);
@@ -629,7 +635,12 @@ class MyManager : public wxFrame, public OpalManager
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
 
-    PStringArray     m_LocalInterfaces;
+    int       m_NATHandling;
+    PwxString m_NATRouter;
+    PwxString m_STUNServer;
+    void SetNATHandling();
+
+    PStringArray m_LocalInterfaces;
     void StartAllListeners();
 
 #if OPAL_H323
