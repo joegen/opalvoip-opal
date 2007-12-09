@@ -114,8 +114,9 @@ DEF_FIELD(UDPPortMax);
 DEF_FIELD(RTPPortBase);
 DEF_FIELD(RTPPortMax);
 DEF_FIELD(RTPTOS);
-DEF_FIELD(STUNServer);
+DEF_FIELD(NATHandling);
 DEF_FIELD(NATRouter);
+DEF_FIELD(STUNServer);
 
 static const char LocalInterfacesGroup[] = "/Networking/Interfaces";
 
@@ -548,19 +549,12 @@ bool MyManager::Initialise()
     SetRtpIpPorts(value1, value2);
   if (config->Read(RTPTOSKey, &value1))
     SetRtpIpTypeofService(value1);
-  if (config->Read(NATRouterKey, &str))
-    SetTranslationHost(str);
-  if (config->Read(STUNServerKey, &str) && !str.IsEmpty()) {
-    LogWindow << "STUN server \"" << str << "\" being contacted ..." << endl;
-    GetEventHandler()->ProcessPendingEvents();
-    Update();
-    PSTUNClient::NatTypes nat = SetSTUNServer(str);
-    LogWindow << "STUN server \"" << str << "\" replies " << nat;
-    PIPSocket::Address externalAddress;
-    if (nat != PSTUNClient::BlockedNat && GetSTUN()->GetExternalAddress(externalAddress))
-      LogWindow << " with address " << externalAddress;
-    LogWindow << endl;
-  }
+  config->Read(NATRouterKey, &m_NATRouter);
+  config->Read(STUNServerKey, &m_STUNServer);
+  if (!config->Read(NATHandlingKey, &m_NATHandling))
+    m_NATHandling = m_STUNServer.IsEmpty() ? (m_NATRouter.IsEmpty() ? 0 : 1) : 2;
+
+  SetNATHandling();
 
   config->SetPath(LocalInterfacesGroup);
   wxString entryName;
@@ -871,6 +865,39 @@ bool MyManager::Initialise()
   }
 
   return true;
+}
+
+
+void MyManager::SetNATHandling()
+{
+  switch (m_NATHandling) {
+    case 1 :
+      if (!m_NATRouter.IsEmpty())
+        SetTranslationHost(m_NATRouter);
+      SetSTUNServer(PString::Empty());
+      break;
+      
+    case 2 :
+      if (!m_STUNServer.IsEmpty()) {
+        LogWindow << "STUN server \"" << m_STUNServer << "\" being contacted ..." << endl;
+        GetEventHandler()->ProcessPendingEvents();
+        Update();
+
+        PSTUNClient::NatTypes nat = SetSTUNServer(m_STUNServer);
+
+        LogWindow << "STUN server \"" << stun << "\" replies " << nat;
+        PIPSocket::Address externalAddress;
+        if (nat != PSTUNClient::BlockedNat && GetSTUN()->GetExternalAddress(externalAddress))
+          LogWindow << " with address " << externalAddress;
+        LogWindow << endl;
+      }
+      SetTranslationHost(PString::Empty());
+      break;
+
+    default :
+      SetTranslationHost(PString::Empty());
+      SetSTUNServer(PString::Empty());
+  }
 }
 
 
@@ -1775,6 +1802,8 @@ bool MyManager::StartGatekeeper()
       gkDesc == '@';
     gkDesc += (const char *)m_gatekeeperAddress;
     LogWindow << "H.323 registration started for " << gkDesc << endl;
+    GetEventHandler()->ProcessPendingEvents();
+    Update();
 
     if (h323EP->UseGatekeeper(m_gatekeeperAddress, m_gatekeeperIdentifier)) {
       LogWindow << "H.323 registration successful to " << *h323EP->GetGatekeeper() << endl;
@@ -1958,6 +1987,9 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   ////////////////////////////////////////
   // Networking fields
   EVT_CHOICE(XRCID("BandwidthClass"), OptionsDialog::BandwidthClass)
+  EVT_RADIOBUTTON(XRCID("NoNATUsed"), OptionsDialog::NATHandling)
+  EVT_RADIOBUTTON(XRCID("UseNATRouter"), OptionsDialog::NATHandling)
+  EVT_RADIOBUTTON(XRCID("UseSTUNServer"), OptionsDialog::NATHandling)
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
   EVT_TEXT(XRCID("InterfaceToAdd"), OptionsDialog::ChangedInterfaceToAdd)
   EVT_BUTTON(XRCID("AddInterface"), OptionsDialog::AddInterface)
@@ -2073,11 +2105,30 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   INIT_FIELD(RTPPortBase, m_manager.GetRtpIpPortBase());
   INIT_FIELD(RTPPortMax, m_manager.GetRtpIpPortMax());
   INIT_FIELD(RTPTOS, m_manager.GetRtpIpTypeofService());
-  INIT_FIELD(STUNServer, m_manager.GetSTUNServer());
-  PwxString natRouter;
-  if (m_manager.GetTranslationAddress().IsValid())
-    natRouter = m_manager.GetTranslationHost();
-  INIT_FIELD(NATRouter, natRouter);
+
+  m_NoNATUsedRadio = FindWindowByNameAs<wxRadioButton>(this, "NoNATUsed");
+  m_NATRouterRadio = FindWindowByNameAs<wxRadioButton>(this, "UseNATRouter");
+  m_STUNServerRadio= FindWindowByNameAs<wxRadioButton>(this, "UseSTUNServer");
+  m_NATRouter = m_manager.m_NATRouter;
+  m_NATRouterWnd = FindWindowByNameAs<wxTextCtrl>(this, "NATRouter");
+  m_NATRouterWnd->SetValidator(wxGenericValidator(&m_NATRouter));
+  m_STUNServer = m_manager.m_STUNServer;
+  m_STUNServerWnd = FindWindowByNameAs<wxTextCtrl>(this, "STUNServer");
+  m_STUNServerWnd->SetValidator(wxGenericValidator(&m_STUNServer));
+  switch (m_manager.m_NATHandling) {
+    case 2 :
+      m_STUNServerRadio->SetValue(true);
+      m_NATRouterWnd->Disable();
+      break;
+    case 1 :
+      m_NATRouterRadio->SetValue(true);
+      m_STUNServerWnd->Disable();
+      break;
+    default :
+      m_NoNATUsedRadio->SetValue(true);
+      m_NATRouterWnd->Disable();
+      m_STUNServerWnd->Disable();
+  }
 
   m_AddInterface = FindWindowByNameAs<wxButton>(this, "AddInterface");
   m_AddInterface->Disable();
@@ -2398,8 +2449,11 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD2(UDPPortBase, UDPPortMax, m_manager.SetUDPPorts);
   SAVE_FIELD2(RTPPortBase, RTPPortMax, m_manager.SetRtpIpPorts);
   SAVE_FIELD(RTPTOS, m_manager.SetRtpIpTypeofService);
-  SAVE_FIELD(STUNServer, m_manager.SetSTUNServer);
-  SAVE_FIELD(NATRouter, m_manager.SetTranslationHost);
+  m_manager.m_NATHandling = m_STUNServerRadio->GetValue() ? 2 : m_NATRouterRadio->GetValue() ? 1 : 0;
+  config->Write(NATHandlingKey, m_manager.m_NATHandling);
+  SAVE_FIELD(STUNServer, m_manager.m_STUNServer = );
+  SAVE_FIELD(NATRouter, m_manager.m_NATRouter = );
+  m_manager.SetNATHandling();
 
   config->DeleteGroup(LocalInterfacesGroup);
   config->SetPath(LocalInterfacesGroup);
@@ -2667,6 +2721,23 @@ void OptionsDialog::BandwidthClass(wxCommandEvent & event)
 
   m_Bandwidth = bandwidthClasses[event.GetSelection()];
   TransferDataToWindow();
+}
+
+
+void OptionsDialog::NATHandling(wxCommandEvent &)
+{
+  if (m_STUNServerRadio->GetValue()) {
+    m_STUNServerWnd->Enable();
+    m_NATRouterWnd->Disable();
+  }
+  else if (m_NATRouterRadio->GetValue()) {
+    m_STUNServerWnd->Disable();
+    m_NATRouterWnd->Enable();
+  }
+  else {
+    m_STUNServerWnd->Disable();
+    m_NATRouterWnd->Disable();
+  }
 }
 
 
