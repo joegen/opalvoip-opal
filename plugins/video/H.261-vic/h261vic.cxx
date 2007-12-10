@@ -1041,6 +1041,39 @@ static int free_codec_options(const struct PluginCodec_Definition *, void *, con
 }
 
 
+static int valid_for_protocol(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "h.323") == 0 ||
+          STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;
+
+}
+
+
+static PluginCodec_ControlDefn h323EncoderControls[] = {
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
+  { NULL }
+};
+
+static PluginCodec_ControlDefn h323DecoderControls[] = {
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
+  { NULL }
+};
+
 static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
@@ -1165,7 +1198,7 @@ static struct PluginCodec_Definition h261CodecDefn[] = {
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
   codec_encoder,                      // encode/decode
-  EncoderControls,                    // codec controls
+  h323EncoderControls,                // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
@@ -1198,7 +1231,7 @@ static struct PluginCodec_Definition h261CodecDefn[] = {
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
   codec_decoder,                      // encode/decode
-  DecoderControls,                    // codec controls
+  h323DecoderControls,                // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
@@ -1232,7 +1265,7 @@ static struct PluginCodec_Definition h261CodecDefn[] = {
   create_encoder,                     // create codec function
   destroy_encoder,                    // destroy codec
   codec_encoder,                      // encode/decode
-  EncoderControls,                    // codec controls
+  h323EncoderControls,                // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
@@ -1265,7 +1298,7 @@ static struct PluginCodec_Definition h261CodecDefn[] = {
   create_decoder,                     // create codec function
   destroy_decoder,                    // destroy codec
   codec_decoder,                      // encode/decode
-  DecoderControls,                    // codec controls
+  h323DecoderControls,                // codec controls
 
   PluginCodec_H323VideoCodec_h261,    // h323CapabilityType 
   NULL                                // h323CapabilityData
