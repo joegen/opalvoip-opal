@@ -66,6 +66,7 @@ class theoraEncoderContext
     ~theoraEncoderContext ();
 
     void SetMaxRTPFrameSize (int size);
+    void SetMaxKeyFramePeriod (unsigned period);
     void SetTargetBitrate (int rate);
     void SetFrameRate (int rate);
     void SetFrameWidth (int width);
@@ -106,24 +107,37 @@ class theoraDecoderContext
 
 const char* theoraErrorMessage(int code);
 
-static void * create_encoder     ( const struct PluginCodec_Definition * /*codec*/);
-static int encoder_set_options   ( const struct PluginCodec_Definition *, void * _context, const char *, 
+static int valid_for_protocol    ( const struct PluginCodec_Definition *, void *, const char *,
                                    void * parm, unsigned * parmLen);
-static void destroy_encoder      ( const struct PluginCodec_Definition * /*codec*/, void * _context);
-static int codec_encoder         ( const struct PluginCodec_Definition * , void * _context,
+static int get_codec_options     ( const struct PluginCodec_Definition * codec, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int free_codec_options    ( const struct PluginCodec_Definition *, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+
+
+static void * create_encoder     ( const struct PluginCodec_Definition *);
+static void destroy_encoder      ( const struct PluginCodec_Definition *, void * _context);
+static int codec_encoder         ( const struct PluginCodec_Definition *, void * _context,
                                    const void * from, unsigned * fromLen,
                                    void * to, unsigned * toLen,
                                    unsigned int * flag);
+static int to_normalised_options ( const struct PluginCodec_Definition *, void *, const char *,
+                                   void * parm, unsigned * parmLen);
+static int to_customised_options ( const struct PluginCodec_Definition *, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int encoder_set_options   ( const struct PluginCodec_Definition *, void * _context, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int encoder_get_output_data_size ( const PluginCodec_Definition *, void *, const char *,
+                                   void *, unsigned *);
 
 static void * create_decoder     ( const struct PluginCodec_Definition *);
-static int get_codec_options     ( const struct PluginCodec_Definition * codec, void *, const char *, 
-                                   void * parm,unsigned * parmLen);
-static void destroy_decoder      ( const struct PluginCodec_Definition * /*codec*/, void * _context);
+static void destroy_decoder      ( const struct PluginCodec_Definition *, void * _context);
 static int codec_decoder         ( const struct PluginCodec_Definition *, void * _context, 
                                    const void * from, unsigned * fromLen,
                                    void * to, unsigned * toLen,
                                    unsigned int * flag);
-static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *);
+static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, void *, const char *,
+                                   void *, unsigned *);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -158,19 +172,24 @@ static const char sdpTHEORA[]    = { "theora" };
 #define THEORA_BITRATE         768000
 #define THEORA_PAYLOAD_SIZE      1400
 #define THEORA_FRAME_RATE          25
-#define THEORA_KEY_FRAME_INTERVAL 2.0
+#define THEORA_KEY_FRAME_INTERVAL 125
 
 /////////////////////////////////////////////////////////////////////////////
 
 static PluginCodec_ControlDefn EncoderControls[] = {
-  { "get_codec_options", get_codec_options },
-  { "set_codec_options", encoder_set_options },
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
   { NULL }
 };
 
 static PluginCodec_ControlDefn DecoderControls[] = {
-  { "get_codec_options",    get_codec_options },
-  { "get_output_data_size", decoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
@@ -178,13 +197,23 @@ static struct PluginCodec_Option const samplingOption =
   { PluginCodec_StringOption, "CAP Sampling",  false, PluginCodec_EqualMerge, "YCbCr-4:2:0", "sampling", "YCbCr-4:2:0"};
 
 static struct PluginCodec_Option const widthOption =
-  { PluginCodec_IntegerOption, "CAP Width", false, PluginCodec_MinMerge, "704", "width", "352", 0, "1", "1048561" };
+  { PluginCodec_IntegerOption, "CAP Width", false, PluginCodec_MinMerge, "704", "width", "352", 0, "16", "1280" };
 
 static struct PluginCodec_Option const heightOption =
-  { PluginCodec_IntegerOption, "CAP Height",  false, PluginCodec_MinMerge, "576", "height",  "288", 0, "1", "1048561" };
+  { PluginCodec_IntegerOption, "CAP Height",  false, PluginCodec_MinMerge, "576", "height",  "288", 0, "16", "720" };
 
 static struct PluginCodec_Option const deliveryOption =
   { PluginCodec_StringOption, "CAP Delivery",  false, PluginCodec_EqualMerge, "in_band", "delivery-method",  "in_band"};
+
+static struct PluginCodec_Option const minRxFrameWidth =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "176", NULL, NULL, 0, "16", "1280" };
+static struct PluginCodec_Option const minRxFrameHeight =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "144", NULL, NULL, 0, "16", "720"  };
+static struct PluginCodec_Option const maxRxFrameWidth =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH,  true, PluginCodec_NoMerge, "1280", NULL, NULL, 0, "16", "1280"  };
+static struct PluginCodec_Option const maxRxFrameHeight =
+  { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "720", NULL, NULL, 0, "16", "720"  };
+
 
 //configuration
 
@@ -193,6 +222,10 @@ static struct PluginCodec_Option const * const optionTable[] = {
   &widthOption,
   &heightOption,
   &deliveryOption,
+  &minRxFrameWidth,
+  &minRxFrameHeight,
+  &maxRxFrameWidth,
+  &maxRxFrameHeight,
   NULL
 };
 
