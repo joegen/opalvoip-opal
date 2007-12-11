@@ -78,6 +78,7 @@ void theoraFrame::SetFromHeaderConfig (ogg_packet* headerPacket) {
   memcpy (_packedConfigData.ptr, headerPacket->packet, THEORA_HEADER_PACKET_SIZE);
   if (_packedConfigData.len == 0) _packedConfigData.len = THEORA_HEADER_PACKET_SIZE;
   _packedConfigData.pos = 0;
+  _configSent = false;
 }
 
 void theoraFrame::SetFromTableConfig (ogg_packet* tablePacket) {
@@ -86,6 +87,7 @@ void theoraFrame::SetFromTableConfig (ogg_packet* tablePacket) {
   memcpy (_packedConfigData.ptr + THEORA_HEADER_PACKET_SIZE, tablePacket->packet, tablePacket->bytes);
   _packedConfigData.len = tablePacket->bytes + THEORA_HEADER_PACKET_SIZE;
   _packedConfigData.pos = 0;
+  _configSent = false;
 }
 
 
