@@ -70,15 +70,14 @@ theoraEncoderContext::theoraEncoderContext()
   _theoraInfo.aspect_numerator   = _theoraInfo.width;  // Aspect =  width/height
   _theoraInfo.aspect_denominator = _theoraInfo.height; //
   _theoraInfo.colorspace         = OC_CS_UNSPECIFIED;
-  _theoraInfo.target_bitrate     = THEORA_BITRATE; // Anywhere between 45kbps and 2000kbps
+  _theoraInfo.target_bitrate     = THEORA_BITRATE * 2 / 3; // Anywhere between 45kbps and 2000kbps
   _theoraInfo.quality            = 16; 
   _theoraInfo.dropframes_p                 = 0;
   _theoraInfo.quick_p                      = 1;
   _theoraInfo.keyframe_auto_p              = 1;
-  _theoraInfo.keyframe_frequency = (int)(THEORA_FRAME_RATE * THEORA_KEY_FRAME_INTERVAL);
-  _theoraInfo.keyframe_frequency           = 64;
+  _theoraInfo.keyframe_frequency = THEORA_KEY_FRAME_INTERVAL;
   _theoraInfo.keyframe_frequency_force     = _theoraInfo.keyframe_frequency;
-  _theoraInfo.keyframe_data_target_bitrate = _theoraInfo.target_bitrate * 3 / 2;
+  _theoraInfo.keyframe_data_target_bitrate = THEORA_BITRATE;
   _theoraInfo.keyframe_auto_threshold      = 80;
   _theoraInfo.keyframe_mindistance         = 8;
   _theoraInfo.noise_sensitivity            = 1;
@@ -107,7 +106,6 @@ void theoraEncoderContext::SetTargetBitrate(int rate)
 
 void theoraEncoderContext::SetFrameRate(int rate)
 {
-  _theoraInfo.keyframe_frequency = (int)(rate * THEORA_KEY_FRAME_INTERVAL);
   _theoraInfo.fps_numerator      = (int)((rate + .5) * 1000); // ???
   _theoraInfo.fps_denominator    = 1000;
 }
@@ -236,6 +234,11 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
 void theoraEncoderContext::SetMaxRTPFrameSize (int size)
 {
   _txTheoraFrame->SetMaxPayloadSize(size);
+}
+
+void theoraEncoderContext::SetMaxKeyFramePeriod (unsigned period)
+{
+  _theoraInfo.keyframe_frequency = period;
 }
 
 theoraDecoderContext::theoraDecoderContext()
@@ -467,48 +470,57 @@ theoraErrorMessage(int code)
   return (errormsg);
 }
 
+static char * num2str(int num)
+{
+  char buf[20];
+  sprintf(buf, "%i", num);
+  return strdup(buf);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
-static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
+static int get_codec_options(const struct PluginCodec_Definition * codec,
+                                                  void *,
+                                                  const char *,
+                                                  void * parm,
+                                                  unsigned * parmLen)
+{
+    if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+        return 0;
+
+    *(const void **)parm = codec->userData;
+    *parmLen = 0; //FIXME
+    return 1;
+}
+
+static int free_codec_options ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  char ** strings = (char **) parm;
+  for (char ** string = strings; *string != NULL; string++)
+    free(*string);
+  free(strings);
+  return 1;
+}
+
+static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+static void * create_encoder(const struct PluginCodec_Definition *)
 {
   return new theoraEncoderContext;
 }
 
-static int encoder_set_options(
-      const struct PluginCodec_Definition *, 
-      void * _context, 
-      const char *, 
-      void * parm, 
-      unsigned * parmLen)
-{
-  theoraEncoderContext * context = (theoraEncoderContext *)_context;
-
-  if (parmLen == NULL || *parmLen != sizeof(const char **)) return 0;
-
-  if (parm != NULL) {
-    const char ** options = (const char **)parm;
-    int i;
-    for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "Target Bit Rate") == 0)
-         context->SetTargetBitrate(atoi(options[i+1]));
-      if (STRCMPI(options[i], "Frame Time") == 0)
-         context->SetFrameRate((int)(THEORA_CLOCKRATE / atoi(options[i+1])));
-      if (STRCMPI(options[i], "Frame Height") == 0)
-         context->SetFrameHeight(atoi(options[i+1]));
-      if (STRCMPI(options[i], "Frame Width") == 0)
-         context->SetFrameWidth(atoi(options[i+1]));
-      if (STRCMPI(options[i], "Max Frame Size") == 0)
-	 context->SetMaxRTPFrameSize (atoi(options[i+1]));
-      TRACE (4, "THEORA\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
-    }
-    context->ApplyOptions();
-
-  }
-  return 1;
-}
-
-static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
+static void destroy_encoder(const struct PluginCodec_Definition *, void * _context)
 {
   theoraEncoderContext * context = (theoraEncoderContext *)_context;
   delete context;
@@ -526,25 +538,137 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
   return context->EncodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
 }
 
+static int to_normalised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  int capWidth = 352;
+  int capHeight = 288;
+  int frameWidth = 352;
+  int frameHeight = 288;
+
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], "CAP Width") == 0)
+      capWidth = atoi(option[1]);
+    else if (STRCMPI(option[0], "CAP Height") == 0)
+      capHeight = atoi(option[1]) ;
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+      frameWidth = atoi(option[1]);
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+      frameHeight = atoi(option[1]);
+  }
+
+  frameWidth = min (capWidth, frameWidth);
+  frameHeight = min (capHeight, frameHeight);
+    
+  frameWidth -= frameWidth % 16;
+  frameHeight -= frameHeight % 16;
+
+  char ** options = (char **)calloc(5, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+  options[ 0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
+  options[ 1] = num2str(frameWidth);
+  options[ 2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
+  options[ 3] = num2str(frameHeight);
+
+  return 1;
+}
+
+static int to_customised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  int capWidth = 352;
+  int capHeight = 288;
+  int frameWidth = 352;
+  int frameHeight = 288;
+  int maxWidth = 1280;
+  int maxHeight = 720;
+
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+    if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH) == 0)
+      maxWidth = atoi(option[1]) - (atoi(option[1]) % 16); // FIXME
+    else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
+      maxHeight = atoi(option[1]) - (atoi(option[1]) % 16);
+    else if (STRCMPI(option[0], "CAP Width") == 0)
+      capWidth = atoi(option[1]);
+    else if (STRCMPI(option[0], "CAP Height") == 0)
+      capHeight = atoi(option[1]) ;
+
+  }
+
+  capWidth = min (capWidth, maxWidth);
+  capHeight = min (capHeight, maxHeight);
+
+  capWidth -= capWidth % 16;
+  capHeight -= capHeight % 16;
+
+  char ** options = (char **)calloc(5, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+  options[ 0] = strdup("CAP Width");
+  options[ 1] = num2str(capWidth);
+  options[ 2] = strdup("CAP Height");
+  options[ 3] = num2str(capHeight);
+
+  return 1;
+
+}
+
+static int encoder_set_options(
+      const struct PluginCodec_Definition *, 
+      void * _context, 
+      const char *, 
+      void * parm, 
+      unsigned * parmLen)
+{
+  theoraEncoderContext * context = (theoraEncoderContext *)_context;
+
+  if (parmLen == NULL || *parmLen != sizeof(const char **)) return 0;
+
+  if (parm != NULL) {
+    const char ** options = (const char **)parm;
+    int i;
+    for (i = 0; options[i] != NULL; i += 2) {
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+         context->SetTargetBitrate(atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+         context->SetFrameRate((int)(THEORA_CLOCKRATE / atoi(options[i+1])));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+         context->SetFrameHeight(atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+         context->SetFrameWidth(atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_MAX_FRAME_SIZE) == 0)
+	 context->SetMaxRTPFrameSize (atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
+	 context->SetMaxKeyFramePeriod (atoi(options[i+1]));
+      TRACE (4, "THEORA\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
+    }
+    context->ApplyOptions();
+
+  }
+  return 1;
+}
+
+
+static int encoder_get_output_data_size(const PluginCodec_Definition *, void *, const char *, void *, unsigned *)
+{
+  return 2000; //FIXME
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 
 static void * create_decoder(const struct PluginCodec_Definition *)
 {
   return new theoraDecoderContext;
-}
-
-static int get_codec_options(const struct PluginCodec_Definition * codec,
-                                                  void *,
-                                                  const char *,
-                                                  void * parm,
-                                                  unsigned * parmLen)
-{
-    if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
-        return 0;
-
-    *(const void **)parm = codec->userData;
-    return 1;
 }
 
 static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
