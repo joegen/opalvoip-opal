@@ -1323,6 +1323,14 @@ bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaForm
 
 bool OpalMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
+  OpalMediaOption * opt = FindOption("forceValidFor");
+  if (opt != NULL) {
+    PString val =  opt->AsString();
+    val.Replace("\"", "", true);
+    if (val *= protocol)
+      return true;
+  }
+
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
     return rtpEncodingName != NULL;
@@ -1534,11 +1542,13 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
     OpalMediaFormat & mediaFormat = (*this)[idx];
 
     // clock rates must always match
-    if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
+    if (clockRate != 0 && clockRate != mediaFormat.GetClockRate()) {
+PTRACE(4, "No match "  << mediaFormat << " - clockrate");
       continue;
+    }
 
     // if protocol is specified, must be valid for the protocol
-    if ((protocol != NULL) && !mediaFormat.IsValidForProtocol(protocol))
+    if ((protocol != NULL) && !mediaFormat.IsValidForProtocol(protocol)) 
       continue;
 
     // if an encoding name is specified, and it matches exactly, then use it
@@ -1552,7 +1562,7 @@ PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned 
     }
 
     // if the payload type is not dynamic, and matches, then this is a match
-    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
+    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt) 
       return idx;
 
     //if (RTP_DataFrame::IllegalPayloadType == pt)
