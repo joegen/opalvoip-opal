@@ -163,11 +163,11 @@ SIPConnection::SIPConnection(OpalCall & call,
   , local_hold(false)
   , remote_hold(false)
   , originalInvite(NULL)
+  , needReINVITE(false)
   , targetAddress(destination)
   , pduSemaphore(0, P_MAX_INDEX)
   , pduHandler(NULL)
   , releaseMethod(ReleaseWithNothing)
-  , needReINVITE(false)
 {
   // Look for a "proxy" parameter to override default proxy
   PStringToString params = targetAddress.GetParamVars();
