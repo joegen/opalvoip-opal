@@ -1807,7 +1807,7 @@ BOOL SIPConnection::SetUpConnection()
   delete transport;
   transport = endpoint.CreateTransport(transportAddress.GetHostAddress());
   if (transport == NULL) {
-    Release(EndedByTransportFail);
+    Release(EndedByUnreachable);
     return FALSE;
   }
 
