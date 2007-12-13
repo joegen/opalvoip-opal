@@ -302,13 +302,6 @@ class H261EncoderContext
     P64Encoder * videoEncoder;
     unsigned frameWidth;
     unsigned frameHeight;
-    long waitFactor;
-    unsigned frameLength;
-    #ifdef _WIN32
-      long newTime;
-    #else
-      timeval newTime;
-    #endif
 
     bool forceIFrame;
     int videoQuality;
@@ -321,15 +314,6 @@ class H261EncoderContext
       videoEncoder = new P64Encoder(DEFAULT_ENCODER_QUALITY, DEFAULT_FILL_LEVEL);
       forceIFrame = false;
       videoQuality = DEFAULT_ENCODER_QUALITY;
-      waitFactor = 0;
-
-    #ifdef _WIN32
-      newTime = 0;
-    #else
-      newTime.tv_sec = 0;
-      newTime.tv_usec = 0;
-    #endif
-      frameLength = 0;
     }
 
     ~H261EncoderContext()
@@ -342,18 +326,6 @@ class H261EncoderContext
       frameWidth = w;
       frameHeight = h;
       videoEncoder->SetSize(frameWidth, frameHeight);
-    }
-
-    void SetTargetBitRate(unsigned bitrate) 
-    {
-      #ifdef _WIN32
-        waitFactor = bitrate;
-      #else
-        if (bitrate==0)
-          waitFactor = 0;
-         else
-          waitFactor = 8000000 / bitrate;  // on UNIX we deal with usecs
-      #endif
     }
 
     /* The only way to influence the amount of data that the H.261 codec produces is 
@@ -504,7 +476,6 @@ debug_write_data(encoderOutput, "encoder output", "encoder.output", dstRTP.GetPa
 
   protected:
     unsigned SetEncodedPacket(RTPFrame & dstRTP, bool isLast, unsigned char payloadCode, unsigned long lastTimeStamp, unsigned payloadLength, unsigned & flags);
-    void adaptiveDelay(unsigned totalLength);
 };
 
 
@@ -520,52 +491,7 @@ unsigned H261EncoderContext::SetEncodedPacket(RTPFrame & dstRTP, bool isLast, un
   flags |= isLast ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
   flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
 
-  frameLength += dstRTP.GetPacketLen();
-
-  if (isLast) {
-    adaptiveDelay(frameLength);
-    frameLength = 0;
-  }
-
   return dstRTP.GetPacketLen();
-}
-
-void H261EncoderContext::adaptiveDelay(unsigned totalLength) {
-  #ifdef _WIN32
-    long waitBeforeSending =  0; 
-    if (newTime!= 0) { // calculate delay and wait
-      waitBeforeSending = newTime - GetTickCount();
-      if (waitBeforeSending > 0)
-        Sleep(waitBeforeSending);
-    }
-    if (waitFactor) {
-      newTime = GetTickCount() +  8000 / waitFactor  * totalLength;
-    }
-    else {
-      newTime = 0;
-    }
-  #else
-    struct timeval currentTime;
-    long waitBeforeSending;
-    long waitAtNextFrame;
-  
-    if ((newTime.tv_sec != 0)  || (newTime.tv_usec != 0) ) { // calculate delay and wait
-      gettimeofday(&currentTime, NULL); 
-      waitBeforeSending = ((newTime.tv_sec - currentTime.tv_sec) * 1000000) + ((newTime.tv_usec - currentTime.tv_usec));  // in useconds
-      if (waitBeforeSending > 0) 
-        usleep(waitBeforeSending);
-    }
-    gettimeofday(&currentTime, NULL); 
-    if (waitFactor) {
-      waitAtNextFrame = waitFactor * totalLength ; // in us in ms
-      newTime.tv_sec = currentTime.tv_sec + (int)((waitAtNextFrame  + currentTime.tv_usec) / 1000000);
-      newTime.tv_usec = (int)((waitAtNextFrame + currentTime.tv_usec) % 1000000);
-    }
-    else {
-      newTime.tv_sec = 0;
-      newTime.tv_usec = 0;
-    }
-  #endif
 }
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
@@ -592,8 +518,6 @@ static int encoder_set_options(const PluginCodec_Definition *,
     const char ** options = (const char **)parm;
     int i;
     for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
-         bitrate = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
         height = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
@@ -604,7 +528,6 @@ static int encoder_set_options(const PluginCodec_Definition *,
     }
   }
   context->SetFrameSize (width, height);
-  context->SetTargetBitRate(bitrate);
   context->SetQualityFromTSTO (tsto, bitrate, width, height);
 
   return 1;
