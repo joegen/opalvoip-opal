@@ -114,6 +114,9 @@ void OpalEndPoint::PrintOn(ostream & strm) const
 
 PBoolean OpalEndPoint::GarbageCollection()
 {
+  for (PSafePtr<OpalConnection> connection(connectionsActive, PSafeReference); connection != NULL; ++connection)
+    connection->GarbageCollection();
+
   return connectionsActive.DeleteObjectsToBeRemoved();
 }
 

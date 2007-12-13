@@ -137,12 +137,14 @@ class SDPMediaDescription : public PObject
 {
   PCLASSINFO(SDPMediaDescription, PObject);
   public:
+    // The following enum is arranged so it can be used as a bit mask,
+    // e.g. GetDirection()&SendOnly indicates send is available
     enum Direction {
+      Undefined = -1,
+      Inactive,
       RecvOnly,
       SendOnly,
-      SendRecv,
-      Inactive,
-      Undefined
+      SendRecv
     };
     
     enum MediaType {

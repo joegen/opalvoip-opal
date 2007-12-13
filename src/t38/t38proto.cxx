@@ -1403,28 +1403,6 @@ void OpalFaxConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
 }
 
 
-PBoolean OpalFaxConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats, unsigned sessionID)
-{
-#if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID)
-    return PFalse;
-#endif
-
-  return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
-}
-
-
-OpalMediaStream * OpalFaxConnection::OpenSinkMediaStream(OpalMediaStream & source)
-{
-#if OPAL_VIDEO
-  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID)
-    return NULL;
-#endif
-
-  return OpalConnection::OpenSinkMediaStream(source);
-}
-
-
 void OpalFaxConnection::AcceptIncoming()
 {
   if (!LockReadOnly())

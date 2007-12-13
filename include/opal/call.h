@@ -255,27 +255,29 @@ class OpalCall : public PSafeObject
       PBoolean includeSpecifiedConnection     ///<  Include parameters media
     );
 
-    /**Open transmitter media streams for each connection.
-       All connections in the call except the one specified are requested to
-       open a source media stream. If successful, then PatchMediaStreams() is
-       called which in turns starts the sink media stream on the connection.
+    /**Open source media streams for the specified connection.
+       A source media stream is opened for the connection, if successful then
+       sink media streams are created for every other connection in the call.
+       If at least one sink is created then an OpalMediaPatch is created to
+       transfer data from the source to the sinks.
       */
-    virtual PBoolean OpenSourceMediaStreams(
-      const OpalConnection & connection,        ///<  Connection requesting open
-      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
+    virtual bool OpenSourceMediaStreams(
+      OpalConnection & connection,              ///<  Connection requesting open
       unsigned sessionID                        ///<  Session to start streams on
     );
 
-    /**Connect up the media streams on the connections.
-       This creates a media patch and a sink media stream on the specified
-       connection for the specified source media stream. The created media
-       patch is a thread, but it is not started immediately.
-     */
-    virtual PBoolean PatchMediaStreams(
-      const OpalConnection & connection, ///<  Source connection
-      OpalMediaStream & source           ///<  Source media stream to patch
-    );
-    
+    /**Select media format pair from the source/destination list.
+
+       Default behavour calls OpalTranscoder::SelectFormats().
+      */
+    virtual bool SelectMediaFormats(
+      unsigned sessionID,                     ///<  Session for selection
+      const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
+      const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
+      OpalMediaFormat & srcFormat,            ///<  Selected source format to be used
+      OpalMediaFormat & dstFormat             ///<  Selected destination format to be used
+    ) const;
+
     /**Callback from the RTP session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
        threads of the RTP session indicating that the statistics have been
@@ -292,10 +294,6 @@ class OpalCall : public PSafeObject
      */
     virtual void CloseMediaStreams();
     
-    /**Remove the media streams on the connections.
-     */
-    virtual void RemoveMediaStreams();
-
     /**See if the media can bypass the local host.
      */
     virtual PBoolean IsMediaBypassPossible(

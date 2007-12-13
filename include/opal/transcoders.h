@@ -238,12 +238,16 @@ class OpalTranscoder : public OpalMediaFormatPair
        allow two transcoders to be used to get data from the source format to
        the destination format.
 
-       Returns PFalse if there is no registered media transcoder that can be used
+       If there is a transcoder that can go directly from the source format to
+       the destination format then the function returns true but the
+       intermediateFormat parmaeter will be an invlid format.
+
+       Returns false if there is no registered media transcoder that can be used
        between the two named formats.
       */
-    static PBoolean FindIntermediateFormat(
-      OpalMediaFormat & srcFormat,          ///<  Selected destination format to be used
-      OpalMediaFormat & dstFormat,          ///<  Selected destination format to be used
+    static bool FindIntermediateFormat(
+      const OpalMediaFormat & srcFormat,    ///<  Selected destination format to be used
+      const OpalMediaFormat & dstFormat,    ///<  Selected destination format to be used
       OpalMediaFormat & intermediateFormat  ///<  Intermediate format that can be used
     );
 

@@ -38,11 +38,10 @@
 
 #include <opal/buildopts.h>
 
-#include <opal/mediafmt.h>
+#include <opal/mediastrm.h>
 #include <opal/mediacmd.h>
 
 
-class OpalMediaStream;
 class OpalTranscoder;
 
 
@@ -105,7 +104,7 @@ class OpalMediaPatch : public PObject
        able to write to it.
       */
     PBoolean AddSink(
-      OpalMediaStream * stream,                     ///< Media stream to add.
+      const OpalMediaStreamPtr & stream,            ///< Media stream to add.
       const RTP_DataFrame::PayloadMapType & rtpMap  ///< Outgoing RTP type map
     );
 
@@ -114,7 +113,7 @@ class OpalMediaPatch : public PObject
        nothing.
       */
     void RemoveSink(
-      OpalMediaStream * stream  ///<  Medai stream to remove
+      const OpalMediaStreamPtr & stream  ///<  Media stream to remove
     );
 
     /**Get the current source stream for patch.
@@ -204,15 +203,15 @@ class OpalMediaPatch : public PObject
     class Sink : public PObject {
         PCLASSINFO(Sink, PObject);
       public:
-        Sink(OpalMediaPatch & p, OpalMediaStream * s, const RTP_DataFrame::PayloadMapType & m);
+        Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, const RTP_DataFrame::PayloadMapType & m);
         ~Sink();
         bool UpdateMediaFormat(const OpalMediaFormat & mediaFormat);
         bool ExecuteCommand(const OpalMediaCommand & command);
         void SetCommandNotifier(const PNotifier & notifier);
         bool WriteFrame(RTP_DataFrame & sourceFrame);
 
-        OpalMediaPatch  & patch;
-        OpalMediaStream * stream;
+        OpalMediaPatch  &  patch;
+        OpalMediaStreamPtr stream;
         RTP_DataFrame::PayloadMapType payloadTypeMap;
         OpalTranscoder  * primaryCodec;
         OpalTranscoder  * secondaryCodec;

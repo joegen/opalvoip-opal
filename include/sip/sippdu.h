@@ -766,11 +766,6 @@ class SIPInvite : public SIPTransaction
       OpalTransport & transport,
       RTP_SessionManager & sm
     );
-    SIPInvite(
-      SIPConnection & connection,
-      OpalTransport & transport,
-      unsigned rtpSessionId
-    );
 
     virtual PBoolean OnReceivedResponse(SIP_PDU & response);
 

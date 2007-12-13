@@ -101,7 +101,7 @@ PBoolean H323_RTP_UDP::OnSendingPDU(const H323_RTPChannel & channel,
   }
   else {
     // Set flag for we are going to stop sending audio on silence
-    OpalMediaStream * mediaStream = channel.GetMediaStream();
+    OpalMediaStreamPtr mediaStream = channel.GetMediaStream();
     if (mediaStream != NULL) {
       param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_silenceSuppression);
       param.m_silenceSuppression = (connection.GetEndPoint ().GetManager ().GetSilenceDetectParams ().m_mode != OpalSilenceDetector::NoSilenceDetection);

@@ -369,9 +369,11 @@ OpalMediaStream * OpalPCSSConnection::CreateMediaStream(const OpalMediaFormat & 
 void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
 					    OpalMediaPatch & patch)
 {
-  PTRACE(3, "OpalCon\tNew patch created");
+  endpoint.OnPatchMediaStream(*this, isSource, patch);
+
   int clockRate;
   if (patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
+    PTRACE(3, "PCSS\tAdding filters to patch");
     if (isSource) {
       silenceDetector->SetParameters(endpoint.GetManager().GetSilenceDetectParams());
       patch.AddFilter(silenceDetector->GetReceiveHandler(), OpalPCM16);
@@ -381,37 +383,28 @@ void OpalPCSSConnection::OnPatchMediaStream(PBoolean isSource,
     echoCanceler->SetClockRate(clockRate);
     patch.AddFilter(isSource?echoCanceler->GetReceiveHandler():echoCanceler->GetSendHandler(), OpalPCM16);
   }
-
-  endpoint.OnPatchMediaStream(*this, isSource, patch);
 }
 
 
-PBoolean OpalPCSSConnection::OpenSourceMediaStream(const OpalMediaFormatList & mediaFormats,
-					       unsigned sessionID)
+OpalMediaStreamPtr OpalPCSSConnection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartTransmitVideo())
-    return PFalse;
-#endif
-
-  return OpalConnection::OpenSourceMediaStream(mediaFormats, sessionID);
-}
-
-
-OpalMediaStream * OpalPCSSConnection::OpenSinkMediaStream(OpalMediaStream & source)
-{
-#if OPAL_VIDEO
-  if (source.GetSessionID() == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
+  if ( isSource &&
+       sessionID == OpalMediaFormat::DefaultVideoSessionID &&
+      !ownerCall.IsEstablished() &&
+      !endpoint.GetManager().CanAutoStartTransmitVideo()) {
+    PTRACE(3, "PCSS\tOpenMediaStream auto start disabled, refusing video open");
     return NULL;
+  }
 #endif
 
-  return OpalConnection::OpenSinkMediaStream(source);
+  return OpalConnection::OpenMediaStream(mediaFormat, sessionID, isSource);
 }
 
 
 PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return PFalse;
 
@@ -425,7 +418,7 @@ PBoolean OpalPCSSConnection::SetAudioVolume(PBoolean source, unsigned percentage
 
 unsigned OpalPCSSConnection::GetAudioSignalLevel(PBoolean source)
 {
-  OpalAudioMediaStream * stream = dynamic_cast<OpalAudioMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalAudioMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalAudioMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return UINT_MAX;
 

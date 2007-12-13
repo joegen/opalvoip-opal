@@ -189,6 +189,12 @@ void H323Channel::Close()
 }
 
 
+OpalMediaStreamPtr H323Channel::GetMediaStream() const
+{
+  return NULL;
+}
+
+
 PBoolean H323Channel::OnReceivedPDU(const H245_OpenLogicalChannel & /*pdu*/,
                                 unsigned & /*errorCode*/)
 {
@@ -217,7 +223,7 @@ void H323Channel::OnFlowControl(long PTRACE_PARAM(bitRateRestriction))
 void H323Channel::OnMiscellaneousCommand(const H245_MiscellaneousCommand_type & type)
 {
   PTRACE(3, "LogChan\tOnMiscellaneousCommand: chan=" << number << ", type=" << type.GetTagName());
-  OpalMediaStream * mediaStream = GetMediaStream();
+  OpalMediaStreamPtr mediaStream = GetMediaStream();
   if (mediaStream == NULL)
     return;
 
@@ -310,10 +316,6 @@ H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
 
 H323UnidirectionalChannel::~H323UnidirectionalChannel()
 {
-  if (!connection.RemoveMediaStream(mediaStream)) {
-    delete mediaStream;
-    mediaStream = NULL;
-  }
 }
 
 
@@ -332,24 +334,32 @@ PBoolean H323UnidirectionalChannel::SetInitialBandwidth()
 PBoolean H323UnidirectionalChannel::Open()
 {
   if (opened)
-    return PTrue;
+    return true;
 
   if (PAssertNULL(mediaStream) == NULL)
-    return PFalse;
-
-  if (!mediaStream->Open()) {
-    PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
-           << " open failed (OpalMediaStream::Open fail)");
-    return PFalse;
-  }
+    return false;
 
   if (!H323Channel::Open())
-    return PFalse;
+    return false;
 
-  if (!mediaStream->IsSource())
-    return PTrue;
+  mediaStream->UpdateMediaFormat(capability->GetMediaFormat());
 
-  return connection.OnOpenMediaStream(*mediaStream);
+  OpalCall & call = connection.GetCall();
+
+  PSafePtr<OpalConnection> otherConnection;
+  if (GetDirection() == IsReceiver) {
+    if (call.OpenSourceMediaStreams(connection, GetSessionID()))
+      return true;
+  }
+  else {
+    otherConnection = call.GetOtherPartyConnection(connection);
+    if (otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, GetSessionID()))
+      return true;
+  }
+
+  PTRACE(1, "LogChan\t" << (GetDirection() == IsReceiver ? "Receive" : "Transmit")
+         << " open failed (OpalMediaStream::Open fail)");
+  return false;
 }
 
 
@@ -360,8 +370,6 @@ PBoolean H323UnidirectionalChannel::Start()
 
   if (!mediaStream->Start())
     return PFalse;
-
-  //mediaStream->SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));  // TODO: HERE
 
   paused = PFalse;
   return PTrue;
@@ -376,8 +384,8 @@ void H323UnidirectionalChannel::Close()
   PTRACE(4, "H323RTP\tCleaning up media stream on " << number);
 
   // If we have source media stream close it
-  if (mediaStream != NULL)
-    mediaStream->Close();
+  connection.RemoveMediaStream(*mediaStream);
+  mediaStream = NULL;
 
   H323Channel::Close();
 }
@@ -469,12 +477,9 @@ void H323UnidirectionalChannel::OnMediaCommand(
 }
 
 
-OpalMediaStream * H323UnidirectionalChannel::GetMediaStream(PBoolean deleted) const
+OpalMediaStreamPtr H323UnidirectionalChannel::GetMediaStream() const
 {
-  OpalMediaStream * t = mediaStream;
-  if (deleted)
-    mediaStream = NULL;
-  return t;
+  return mediaStream;
 }
 
 
