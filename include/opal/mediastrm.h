@@ -331,6 +331,9 @@ class OpalMediaStream : public PSafeObject
   //@}
 
   protected:
+
+    virtual void BitRateLimit (PINDEX byteCount, PBoolean mayDelay);
+
     OpalConnection & connection;
     unsigned         sessionID;
     PString          identifier;
@@ -345,6 +348,10 @@ class OpalMediaStream : public PSafeObject
 
     OpalMediaPatch * mediaPatch;
     PNotifier        commandNotifier;
+
+    unsigned targetBitRateKbit;
+    PINDEX totalLength;
+    PTimeInterval newTime;
 };
 
 typedef PSafePtr<OpalMediaStream> OpalMediaStreamPtr;
