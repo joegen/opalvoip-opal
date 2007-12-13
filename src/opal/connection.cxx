@@ -743,6 +743,7 @@ void OpalConnection::SetCallEndReason(CallEndReason reason)
     }
     PTRACE(3, "OpalCon\tCall end reason for " << GetToken() << " set to " << reason);
     callEndReason = reason;
+    ownerCall.SetCallEndReason(reason);
   }
 }
 
