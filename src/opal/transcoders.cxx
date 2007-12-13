@@ -158,7 +158,7 @@ PBoolean OpalTranscoder::ConvertFrames(const RTP_DataFrame & input,
   }
 
   // do not transcode if no match
-  if (pt != RTP_DataFrame::MaxPayloadType && pt != input.GetPayloadType()) {
+  if (pt != RTP_DataFrame::MaxPayloadType && pt != input.GetPayloadType() && input.GetPayloadSize() > 0) {
     PTRACE(2, "Opal\tExpected payload type " << pt << ", but received " << input.GetPayloadType() << ". Ignoring packet");
     output.RemoveAll();
     return PTrue;
@@ -196,8 +196,8 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
     if (dstFormat.GetDefaultSessionID() == sessionID) {
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
-        if (srcFormat == dstFormat)
-          return dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat);
+        if (srcFormat == dstFormat && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
+          return true;
       }
     }
   }
@@ -212,8 +212,8 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
           OpalTranscoderKey search(srcFormat, dstFormat);
           OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
           for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-            if (search == *i)
-              return dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat);
+            if (search == *i && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
+              return true;
           }
         }
       }
@@ -228,8 +228,8 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
         srcFormat = srcFormats[s];
         if (srcFormat.GetDefaultSessionID() == sessionID) {
           OpalMediaFormat intermediateFormat;
-          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat))
-            return dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat);
+          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
+            return true;
         }
       }
     }
@@ -239,8 +239,8 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
 }
 
 
-PBoolean OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
-                                            OpalMediaFormat & dstFormat,
+bool OpalTranscoder::FindIntermediateFormat(const OpalMediaFormat & srcFormat,
+                                            const OpalMediaFormat & dstFormat,
                                             OpalMediaFormat & intermediateFormat)
 {
   intermediateFormat = OpalMediaFormat();
@@ -248,13 +248,15 @@ PBoolean OpalTranscoder::FindIntermediateFormat(OpalMediaFormat & srcFormat,
   OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
   for (OpalTranscoderIterator find1 = availableTranscoders.begin(); find1 != availableTranscoders.end(); ++find1) {
     if (find1->first == srcFormat) {
+      if (find1->second == dstFormat)
+        return true;
       for (OpalTranscoderIterator find2 = availableTranscoders.begin(); find2 != availableTranscoders.end(); ++find2) {
         if (find2->first == find1->second && find2->second == dstFormat) {
-          intermediateFormat = find1->second;
-          intermediateFormat.Merge(find2->first);
-          return srcFormat.Merge(find1->first) &&
-                 dstFormat.Merge(find2->second) &&
-                 srcFormat.Merge(dstFormat);
+          OpalMediaFormat probableFormat = find1->second;
+          if (probableFormat.Merge(srcFormat) && probableFormat.Merge(dstFormat)) {
+            intermediateFormat = probableFormat;
+            return true;
+          }
         }
       }
     }

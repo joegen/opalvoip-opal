@@ -570,7 +570,7 @@ PBoolean H323EndPoint::SetupTransfer(const PString & oldToken,
 
   OpalCall & call = otherConnection->GetCall();
 
-  call.RemoveMediaStreams();
+  call.CloseMediaStreams();
 
   PTRACE(3, "H323\tTransferring call to: " << remoteParty);
   PBoolean ok = InternalMakeCall(call,

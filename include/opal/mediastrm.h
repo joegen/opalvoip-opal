@@ -41,6 +41,7 @@
 #include <opal/buildopts.h>
 #include <opal/mediafmt.h>
 #include <opal/mediacmd.h>
+#include <ptlib/safecoll.h>
 #include <ptclib/guid.h>
 
 
@@ -55,9 +56,9 @@ class OpalConnection;
    entities. For example, data being sent to an RTP session over a network
    would be through a media stream.
   */
-class OpalMediaStream : public PObject
+class OpalMediaStream : public PSafeObject
 {
-    PCLASSINFO(OpalMediaStream, PObject);
+    PCLASSINFO(OpalMediaStream, PSafeObject);
   protected:
   /**@name Construction */
   //@{
@@ -155,7 +156,7 @@ class OpalMediaStream : public PObject
     /**Callback that is called on the source stream once the media patch has started.
        The default behaviour does nothing
       */
-    virtual void OnPatchStart() {};
+    virtual void OnPatchStart() { }
 
     /**Write a list of RTP frames of data to the sink media stream.
        The default behaviour simply calls WritePacket() on each of the
@@ -252,6 +253,10 @@ class OpalMediaStream : public PObject
 
   /**@name Member variable access */
   //@{
+    /** Get the owner connection.
+     */
+    OpalConnection & GetConnection() const { return connection; }
+
     /**Determine of media stream is a source or a sink.
       */
     PBoolean IsSource() const { return isSource; }
@@ -263,6 +268,11 @@ class OpalMediaStream : public PObject
     /**Get the session number of the stream.
      */
     unsigned GetSessionID() const { return sessionID; }
+
+    /**  Get the ID associated with this stream. Used for detecting two 
+      *  the streams associated with a bidirectional media channel
+      */
+    PString GetID() const { return identifier; }
 
     /**Get the timestamp of last read.
       */
@@ -320,40 +330,24 @@ class OpalMediaStream : public PObject
 
   //@}
 
-    /**Get the mutex that prevents the destructor from completing.
-      */
-    PMutex &  GetDeleteMutex() const { return deleteMutex; }
-
-    /**  Get the ID associated with this stream. Used for detecting two 
-      *  the streams associated with a bidirectional media channel
-      */
-    PString GetID() const
-    { return id; }
-
-    virtual PBoolean IsNull() const
-    { return PFalse; }
-
   protected:
-    OpalMediaFormat mediaFormat;
-    unsigned        sessionID;
-    PBoolean	          paused;
-    PBoolean            isSource;
-    PBoolean            isOpen;
-    PINDEX          defaultDataSize;
-    unsigned        timestamp;
-    PBoolean            marker;
-    unsigned        mismatchedPayloadTypes;
+    OpalConnection & connection;
+    unsigned         sessionID;
+    PString          identifier;
+    OpalMediaFormat  mediaFormat;
+    bool             paused;
+    bool             isSource;
+    bool             isOpen;
+    PINDEX           defaultDataSize;
+    unsigned         timestamp;
+    bool             marker;
+    unsigned         mismatchedPayloadTypes;
 
     OpalMediaPatch * mediaPatch;
-    PMutex           patchMutex;
     PNotifier        commandNotifier;
-
-    mutable PMutex  deleteMutex;
-
-    PString id;   
 };
 
-PLIST(OpalMediaStreamList, OpalMediaStream);
+typedef PSafePtr<OpalMediaStream> OpalMediaStreamPtr;
 
 
 /**This class describes a media stream that is used for media bypass.

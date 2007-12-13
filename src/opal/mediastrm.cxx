@@ -59,37 +59,26 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaStream::OpalMediaStream(OpalConnection & connection, const OpalMediaFormat & fmt, unsigned _sessionID, PBoolean isSourceStream)
-  : mediaFormat(fmt), 
-    sessionID(_sessionID), 
-    paused(PFalse), 
-    isSource(isSourceStream), 
-    isOpen(PFalse), 
-    defaultDataSize(0),
-    timestamp(0), 
-    marker(PTrue),
-    mismatchedPayloadTypes(0),
-    mediaPatch(NULL)
+OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & fmt, unsigned _sessionID, PBoolean isSourceStream)
+  : connection(conn)
+  , sessionID(_sessionID)
+  , identifier(conn.GetCall().GetToken() + psprintf("_%u", sessionID))
+  , mediaFormat(fmt)
+  , paused(false)
+  , isSource(isSourceStream)
+  , isOpen(false)
+  , defaultDataSize(mediaFormat.GetFrameSize())
+  , timestamp(0)
+  , marker(true)
+  , mismatchedPayloadTypes(0)
+  , mediaPatch(NULL)
 {
-  // Set default frame size to 50ms of audio, otherwise just one frame
-  unsigned frameTime = mediaFormat.GetFrameTime();
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID && 
-      frameTime != 0 && 
-      mediaFormat.GetClockRate() == OpalMediaFormat::AudioClockRate)
-    SetDataSize(((400+frameTime-1)/frameTime)*mediaFormat.GetFrameSize());
-  else
-    SetDataSize(mediaFormat.GetFrameSize());
-
-  PString tok = connection.GetCall().GetToken();
-
-  id = connection.GetCall().GetToken() + psprintf("_%i", sessionID);
 }
 
 
 OpalMediaStream::~OpalMediaStream()
 {
   Close();
-  PWaitAndSignal deleteLock(deleteMutex);
 }
 
 
@@ -112,7 +101,9 @@ OpalMediaFormat OpalMediaStream::GetMediaFormat() const
 
 PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaFormat)
 {
-  PWaitAndSignal mutex(patchMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
 
   // If we are source, then update the sink side, and vice versa
   if (mediaPatch != NULL) {
@@ -132,7 +123,9 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
 
 PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 {
-  PWaitAndSignal mutex(patchMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
 
   if (mediaPatch == NULL)
     return PFalse;
@@ -143,12 +136,15 @@ PBoolean OpalMediaStream::ExecuteCommand(const OpalMediaCommand & command)
 
 void OpalMediaStream::SetCommandNotifier(const PNotifier & notifier)
 {
-  PWaitAndSignal mutex(patchMutex);
+  if (!LockReadWrite())
+    return;
 
   if (mediaPatch != NULL)
     mediaPatch->SetCommandNotifier(notifier, IsSink());
 
   commandNotifier = notifier;
+
+  UnlockReadWrite();
 }
 
 
@@ -162,28 +158,31 @@ PBoolean OpalMediaStream::Open()
 PBoolean OpalMediaStream::Start()
 {
   if (!Open())
-    return PFalse;
+    return false;
 
-  patchMutex.Wait();
-  if (mediaPatch != NULL) {
+  if (!LockReadOnly())
+    return false;
+
+  if (mediaPatch != NULL)
     mediaPatch->Start();
-  }
-  patchMutex.Signal();
 
-  return PTrue;
+  UnlockReadOnly();
+
+  return true;
 }
 
 
 PBoolean OpalMediaStream::Close()
 {
   if (!isOpen)
-    return PFalse;
+    return false;
 
   PTRACE(4, "Media\tClosing stream " << *this);
 
-  patchMutex.Wait();
+  if (!LockReadWrite())
+    return false;
 
-  isOpen = PFalse;
+  isOpen = false;
 
   if (mediaPatch != NULL) {
     PTRACE(4, "Media\tDisconnecting " << *this << " from patch thread " << *mediaPatch);
@@ -193,7 +192,7 @@ PBoolean OpalMediaStream::Close()
     if (IsSink())
       patch->RemoveSink(this);
 	
-    patchMutex.Signal();
+    UnlockReadWrite();
 
     if (IsSource()) {
       patch->Close();
@@ -201,9 +200,14 @@ PBoolean OpalMediaStream::Close()
     }
   }
   else
-    patchMutex.Signal();
+    UnlockReadWrite();
 
-  return PTrue;
+  if (connection.CloseMediaStream(*this))
+    return true;
+
+  connection.OnClosedMediaStream(*this);
+  connection.RemoveMediaStream(*this);
+  return true;
 }
 
 
@@ -388,7 +392,10 @@ void OpalMediaStream::EnableJitterBuffer() const
 
 PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 {
-  PWaitAndSignal m(patchMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
+
   if (IsOpen()) {
     mediaPatch = patch;
     return PTrue;
@@ -399,14 +406,20 @@ PBoolean OpalMediaStream::SetPatch(OpalMediaPatch * patch)
 
 void OpalMediaStream::AddFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
 {
-  PWaitAndSignal Lock(patchMutex);
-  if (mediaPatch != NULL) mediaPatch->AddFilter(Filter, Stage);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return;
+
+  if (mediaPatch != NULL)
+    mediaPatch->AddFilter(Filter, Stage);
 }
 
 
 PBoolean OpalMediaStream::RemoveFilter(const PNotifier & Filter, const OpalMediaFormat & Stage)
 {
-  PWaitAndSignal Lock(patchMutex);
+  PSafeLockReadWrite safeLock(*this);
+  if (!safeLock.IsLocked())
+    return false;
 
   if (mediaPatch != NULL) return mediaPatch->RemoveFilter(Filter, Stage);
 

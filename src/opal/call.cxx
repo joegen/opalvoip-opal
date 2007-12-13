@@ -199,9 +199,9 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
   PTRACE(3, "Call\tOnConnected " << connection);
 
   if (isClearing || !LockReadOnly())
-    return PFalse;
+    return false;
 
-  PBoolean ok = connectionsActive.GetSize() == 1 && !partyB.IsEmpty();
+  bool ok = connectionsActive.GetSize() == 1 && !partyB.IsEmpty();
 
   UnlockReadOnly();
 
@@ -211,60 +211,47 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
     return OnSetUp(connection);
   }
 
-  PBoolean createdOne = PFalse;
-
   if (!LockReadOnly())
-    return PFalse;
+    return false;
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       if (conn->SetConnected())
-        ok = PTrue;
+        ok = true;
     }
-
-    OpalMediaFormatList formats = GetMediaFormats(*conn, PTrue);
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
-      createdOne = PTrue;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
-      createdOne = PTrue;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
-      createdOne = PTrue;
   }
 
   UnlockReadOnly();
   
-  if (ok && createdOne) {
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
-      conn->StartMediaStreams();
-  }
-
   return ok;
 }
 
 
-PBoolean OpalCall::OnEstablished(OpalConnection & PTRACE_PARAM(connection))
+PBoolean OpalCall::OnEstablished(OpalConnection & connection)
 {
   PTRACE(3, "Call\tOnEstablished " << connection);
 
   PSafeLockReadWrite lock(*this);
   if (isClearing || !lock.IsLocked())
-    return PFalse;
+    return false;
 
   if (isEstablished)
-    return PTrue;
+    return true;
 
   if (connectionsActive.GetSize() < 2)
-    return PFalse;
+    return false;
+
+  connection.StartMediaStreams();
 
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReference); conn != NULL; ++conn) {
     if (conn->GetPhase() != OpalConnection::EstablishedPhase)
-      return PFalse;
+      return false;
   }
 
-  isEstablished = PTrue;
+  isEstablished = true;
   OnEstablishedCall();
 
-  return PTrue;
+  return true;
 }
 
 
@@ -313,90 +300,63 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   return commonFormats;
 }
 
-PBoolean OpalCall::OpenSourceMediaStreams(const OpalConnection & connection,
-                                      const OpalMediaFormatList & mediaFormats,
-                                      unsigned sessionID)
+PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned sessionID)
 {
-  PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID
-         << " with media " << setfill(',') << mediaFormats << setfill(' '));
-
-  PBoolean startedOne = PFalse;
-
-  OpalMediaFormatList adjustableMediaFormats;
-  // Keep the media formats for the session ID
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
-    if (mediaFormats[i].GetDefaultSessionID() == sessionID)
-      adjustableMediaFormats += mediaFormats[i];
-  }
-
-  if (adjustableMediaFormats.GetSize() == 0)
-    return PFalse;
-
-  // if there is already a connection with an open stream then reorder the 
-  // media formats to match that connection so we get symmetric codecs
-  if (connectionsActive.GetSize() > 0) {
-    OpalMediaStream * strm = connection.GetMediaStream(sessionID, PTrue);
-    if (strm != NULL)
-      adjustableMediaFormats.Reorder(strm->GetMediaFormat().GetName());
-  }
-  
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-    if (conn != &connection) {
-      if (conn->OpenSourceMediaStream(adjustableMediaFormats, sessionID)) 
-        startedOne = PTrue;
-    }
-  }
-
-  return startedOne;
-}
-
-
-void OpalCall::CloseMediaStreams()
-{
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
-    conn->CloseMediaStreams();
-}
-
-
-void OpalCall::RemoveMediaStreams()
-{
-  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
-    conn->RemoveMediaStreams();
-}
-
-
-PBoolean OpalCall::PatchMediaStreams(const OpalConnection & connection,
-                                 OpalMediaStream & source)
-{
-  PTRACE(3, "Call\tPatchMediaStreams " << connection);
-
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
-    return PFalse;
+    return false;
 
+  // Check if already done
+  if (connection.GetMediaStream(sessionID, true) != NULL) {
+    PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
+    return true;
+  }
+
+  PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID << " on " << connection);
+
+  // handle RTP payload translation
+  RTP_DataFrame::PayloadMapType map;
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
+    map.insert(conn->GetRTPPayloadMap().begin(), conn->GetRTPPayloadMap().end());
+
+  // Create the sinks and patch if needed
+  bool startedOne = false;
   OpalMediaPatch * patch = NULL;
+  OpalMediaStreamPtr source;
+  OpalMediaFormat sourceFormat, sinkFormat;
 
-  {
-    // handle RTP payload translation
-    RTP_DataFrame::PayloadMapType map;
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (conn != &connection) {
-        map = conn->GetRTPPayloadMap();
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
+    if (conn != &connection) {
+      OpalMediaFormatList sinkMediaFormats = conn->GetMediaFormats();
+
+      // Reorder destinations so we give preference to symmetric codecs
+      OpalMediaStreamPtr otherDirection = connection.GetMediaStream(sessionID, false);
+      if (otherDirection != NULL)
+        sinkMediaFormats.Reorder(otherDirection->GetMediaFormat().GetName());
+
+      if (source == NULL) {
+        // Use the first other connection we find to get source format
+        if (!SelectMediaFormats(sessionID, connection.GetMediaFormats(), sinkMediaFormats, sourceFormat, sinkFormat))
+          return false;
+
+        source = connection.OpenMediaStream(sourceFormat, sessionID, true);
+        if (source == NULL)
+          return false;
       }
-    }
-    if (map.size() == 0)
-      map = connection.GetRTPPayloadMap();
+      else if (!sinkMediaFormats.HasFormat(sinkFormat)) {
+        // Use the first other connection we find to get source format
+        if (!SelectMediaFormats(sessionID, sourceFormat, sinkMediaFormats, sourceFormat, sinkFormat))
+          return false;
+      }
 
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
-      if (conn != &connection) {
-        OpalMediaStream * sink = conn->OpenSinkMediaStream(source);
-        if (sink == NULL)
-          return PFalse;
-        if (source.RequiresPatch()) {
+      OpalMediaStreamPtr sink = conn->OpenMediaStream(sinkFormat, sessionID, false);
+      if (sink != NULL) {
+        startedOne = true;
+        if (source->RequiresPatch()) {
           if (patch == NULL) {
-            patch = manager.CreateMediaPatch(source, source.RequiresPatchThread());
+            patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
             if (patch == NULL)
-              return PFalse;
+              return false;
           }
           patch->AddSink(sink, map);
         }
@@ -404,13 +364,44 @@ PBoolean OpalCall::PatchMediaStreams(const OpalConnection & connection,
     }
   }
 
-  // if a patch was created, make sure the callback is called
-  if (patch) {
-    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
+  if (!startedOne) {
+    connection.RemoveMediaStream(*source);
+    return false;
+  }
+
+  if (patch != NULL) {
+    // if a patch was created, make sure the callback is called, just once per connection
+    for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn)
       conn->OnPatchMediaStream(conn == &connection, *patch);
   }
-  
-  return PTrue;
+
+  return true;
+}
+
+
+bool OpalCall::SelectMediaFormats(unsigned sessionID,
+                                  const OpalMediaFormatList & srcFormats,
+                                  const OpalMediaFormatList & dstFormats,
+                                  OpalMediaFormat & srcFormat,
+                                  OpalMediaFormat & dstFormat) const
+{
+  if (OpalTranscoder::SelectFormats(sessionID, srcFormats, dstFormats, srcFormat, dstFormat)) {
+    PTRACE(3, "Call\tSelected media formats " << srcFormat << " -> " << dstFormat);
+    return true;
+  }
+
+  PTRACE(2, "Call\tSelectMediaFormats session " << sessionID
+        << ", could not find compatible media format:\n"
+            "  source formats=" << setfill(',') << srcFormats << "\n"
+            "   sink  formats=" << dstFormats << setfill(' '));
+  return false;
+}
+
+
+void OpalCall::CloseMediaStreams()
+{
+  for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) 
+    conn->CloseMediaStreams();
 }
 
 

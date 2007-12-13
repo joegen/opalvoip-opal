@@ -188,6 +188,8 @@ class InCallPanel : public wxPanel
     InCallPanel(MyManager & manager, wxWindow * parent);
     virtual bool Show(bool show = true);
 
+    void UpdateButtons();
+
   private:
     void OnHangUp(wxCommandEvent & event);
     void OnStartStopVideo(wxCommandEvent & event);
@@ -627,9 +629,9 @@ class MyManager : public wxFrame, public OpalManager
     wxListCtrl       * m_speedDials;
     wxImageList      * m_imageListNormal;
     wxImageList      * m_imageListSmall;
-    wxPanel          * m_answerPanel;
-    wxPanel          * m_callingPanel;
-    wxPanel          * m_inCallPanel;
+    AnswerPanel      * m_answerPanel;
+    CallingPanel     * m_callingPanel;
+    InCallPanel      * m_inCallPanel;
     wxDataFormat       m_ClipboardFormat;
 
     MyPCSSEndPoint   * pcssEP;

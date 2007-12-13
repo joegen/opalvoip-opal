@@ -464,8 +464,10 @@ PBoolean SDPMediaDescription::Decode(const PString & str)
   }
   port = (WORD)portStr.AsUnsigned();
 
-  if (port == 0) 
+  if (port == 0) {
     PTRACE(4, "SDP\tIgnoring media session " << mediaType << " with port=0");
+    direction = Inactive;
+  }
   else {
     PTRACE(4, "SDP\tMedia session port=" << port);
 

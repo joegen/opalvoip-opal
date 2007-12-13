@@ -2090,15 +2090,12 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetDate() ;                             // now
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
-      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
-#endif
-#if OPAL_T38FAX
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
-#endif
+  sdp = new SDPSessionDescription();
+  if (!connection.OnSendSDP(false, rtpSessions, *sdp)) {
+    delete sdp;
+    sdp = NULL;
+  }
+
   connection.OnCreatingINVITE(*this);
 }
 
@@ -2110,26 +2107,15 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
   rtpSessions = sm;
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultAudioSessionID);
-#if OPAL_VIDEO
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
-      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultVideoSessionID);
-#endif
-#if OPAL_T38FAX
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaFormat::DefaultDataSessionID);
-#endif
+  sdp = new SDPSessionDescription();
+  if (!connection.OnSendSDP(false, rtpSessions, *sdp)) {
+    delete sdp;
+    sdp = NULL;
+  }
+
   connection.OnCreatingINVITE(*this);
 }
 
-SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, unsigned rtpSessionId)
-  : SIPTransaction(connection, transport, Method_INVITE)
-{
-  mime.SetDate() ;                             // now
-  mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
-
-  connection.BuildSDP(sdp, rtpSessions, rtpSessionId);
-}
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {

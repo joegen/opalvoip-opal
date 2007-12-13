@@ -224,14 +224,23 @@ class H323Connection : public OpalConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
 
-    /**Open source transmitter media stream for session.
+    /**Open source or sink media stream for session.
       */
-    virtual PBoolean OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+    virtual OpalMediaStreamPtr OpenMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format to open
+      unsigned sessionID,                  ///<  Session to start stream on
+      bool isSource                        ///< Stream is a source/sink
     );
     
-    /**Open a new media stream.
+    /**Request close of a specific media stream.
+       Note that this is usually asymchronous, the OnClosedMediaStream() function is
+       called when the stream is really closed.
+      */
+    virtual bool CloseMediaStream(
+      OpalMediaStream & stream  ///< Stream to close
+    );
+
+    /**Create a new media stream.
        This will create a media stream of an appropriate subclass as required
        by the underlying connection protocol. For instance H.323 would create
        an OpalRTPStream.
@@ -1944,7 +1953,7 @@ class H323Connection : public OpalConnection
     };
     FastStartStates        fastStartState;
     H323LogicalChannelList fastStartChannels;
-    OpalMediaStream      * transmitterMediaStream;
+    OpalMediaStreamPtr     fastStartMediaStream;
 
 #if PTRACING
     static const char * GetConnectionStatesName(ConnectionStates s);
@@ -1974,8 +1983,6 @@ class H323Connection : public OpalConnection
 #ifdef H323_H460
 	H460_FeatureSet & features;
 #endif
-
-    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);

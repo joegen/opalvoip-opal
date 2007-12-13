@@ -108,8 +108,6 @@ public:
   virtual PBoolean SetDynamicRTPPayloadType(int newType);
   RTP_DataFrame::PayloadTypes GetDynamicRTPPayloadType() const { return rtpPayloadType; }
 	
-  virtual OpalMediaStream * GetMediaStream(PBoolean deleted = PFalse) const;
-	
   OpalH224Handler * GetHandler() const { return h224Handler; }
 	
 protected:

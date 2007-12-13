@@ -125,7 +125,7 @@ static void ReceiveSetupFeatureSet(const H323Connection * connection, const H225
   }
   
   if (hasFeaturePDU) {
-  	connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
+      connection->OnReceiveFeatureSet(H460_MessageType::e_setup, fs);
   }
 }
 #endif
@@ -162,8 +162,6 @@ H323Connection::H323Connection(OpalCall & call,
   /* Add the local alias name in the ARQ, TODO: overwrite alias name from partyB */
   localAliasNames = ep.GetAliasNames();
   
-  mediaStreams.DisallowDeleteObjects();
-
   gatekeeperRouted = PFalse;
   distinctiveRing = 0;
   callReference = token.Mid(token.Find('/')+1).AsUnsigned();
@@ -213,7 +211,7 @@ H323Connection::H323Connection(OpalCall & call,
 
   mediaWaitForConnect = PFalse;
   transmitterSidePaused = PFalse;
-  transmitterMediaStream = NULL;
+  fastStartMediaStream = NULL;
 
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
@@ -896,8 +894,8 @@ PBoolean H323Connection::OnReceivedSignalSetup(const H323SignalPDU & originalSet
     }
 
     /** Here is a spot where we should wait in case of Call Intrusion
-	for CIPL from other endpoints 
-	if (isCallIntrusion) return PTrue;
+    for CIPL from other endpoints 
+    if (isCallIntrusion) return PTrue;
     */
 
     // if the application indicates not to contine, then send a Q931 Release Complete PDU
@@ -1227,7 +1225,7 @@ PBoolean H323Connection::OnReceivedAlerting(const H323SignalPDU & pdu)
   const H225_Alerting_UUIE & alert = pdu.m_h323_uu_pdu.m_h323_message_body;
 
   if (alertDone) 
-	return PTrue;
+    return PTrue;
 
   SetRemoteVersions(alert.m_protocolIdentifier);
   SetRemotePartyInfo(pdu);
@@ -1258,8 +1256,8 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   if (!alertDone) {
     alertDone = PTrue;
     alertingTime = PTime();
-		if (!OnAlerting(pdu, remotePartyName))
-			return PFalse;
+        if (!OnAlerting(pdu, remotePartyName))
+            return PFalse;
   }
 
   if (connectionState == ShuttingDownConnection)
@@ -1504,7 +1502,7 @@ void H323Connection::OnReceivedReleaseComplete(const H323SignalPDU & pdu)
         h4502handler->OnReceivedSetupReturnError(H4501_GeneralErrorList::e_notAvailable);
       }
 #endif
-		  
+          
 #ifdef H323_H460
       ReceiveFeatureSet<H225_ReleaseComplete_UUIE>(this, H460_MessageType::e_releaseComplete, rc);
 #endif
@@ -2291,24 +2289,16 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
               // localCapability or remoteCapability structures.
               if (OnCreateLogicalChannel(*channelCapability, dir, error)) {
                 if (channelToStart.SetInitialBandwidth()) {
+                  fastStartMediaStream = channelToStart.GetMediaStream();
+                  PTRACE(3, "H225\tOpening fast start channel using stream " << *fastStartMediaStream);
                   if (channelToStart.Open()) {
-                    PBoolean started = PFalse;
-                    if (channelToStart.GetDirection() == H323Channel::IsTransmitter) {
-                      transmitterMediaStream = ((H323UnidirectionalChannel &)channelToStart).GetMediaStream();
-                      if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channelToStart.GetSessionID())) {
-                        if (!mediaWaitForConnect)
-                          started = channelToStart.Start();
-                      }
-                      else {
-                        transmitterMediaStream = NULL;
-                        channelToStart.Close();
-                      }
-                    }
-                    else
-                      started = channelToStart.Start();
-                    if (started && channelToStart.IsOpen())
+                    if (channelToStart.GetDirection() == H323Channel::IsTransmitter && mediaWaitForConnect)
                       break;
+                    if (channelToStart.Start())
+                      break;
+                    channelToStart.Close();
                   }
+                  fastStartMediaStream = NULL;
                 }
                 else
                   PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
@@ -2952,7 +2942,7 @@ H323Channel * H323Connection::FindChannel(unsigned rtpSessionId, PBoolean fromRe
 #if OPAL_H450
 
 void H323Connection::TransferConnection(const PString & remoteParty,
-					const PString & callIdentity)
+                    const PString & callIdentity)
 {
   TransferCall(remoteParty, callIdentity);
 }
@@ -3112,24 +3102,24 @@ PChannel * H323Connection::SwapHoldMediaChannels(PChannel * newChannel)
       const H323ChannelNumber & channelNumber = channel->GetNumber();
 
       H323_RTPChannel * chan2 = reinterpret_cast<H323_RTPChannel*>(channel);
-      OpalMediaStream *stream = GetMediaStream (session_id, PFalse);
+      OpalMediaStreamPtr stream = GetMediaStream (session_id, PFalse);
 
       if (!channelNumber.IsFromRemote()) { // Transmit channel
         if (IsMediaOnHold()) {
 //          H323Codec & codec = *channel->GetCodec();
 //          existingTransmitChannel = codec.GetRawDataChannel();
-	  //FIXME
+      //FIXME
         }
         else {
           // Enable/mute the transmit channel depending on whether the remote end is held
           chan2->SetPause(IsLocalHold());
-	        stream->SetPaused(IsLocalHold());
+            stream->SetPaused(IsLocalHold());
         }
       }
       else {
         // Enable/mute the receive channel depending on whether the remote endis held
         chan2->SetPause(IsLocalHold());
-	stream->SetPaused(IsLocalHold());
+    stream->SetPaused(IsLocalHold());
       }
     }
   }
@@ -3253,7 +3243,7 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
       if (channel != NULL && !channel->GetNumber().IsFromRemote())
         negChannel.Close();
     }
-    ownerCall.RemoveMediaStreams();
+    ownerCall.CloseMediaStreams();
     transmitterSidePaused = PTrue;
   }
   else {
@@ -3447,16 +3437,16 @@ void H323Connection::InternalEstablishedConnectionCheck()
     if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
       H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);
       if (capability != NULL) {
-	      if (logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
-		      H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
+        if (logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
+          H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
           if  (channel != NULL) {
-			      channel->SetNumber(logicalChannels->GetNextChannelNumber());
-			      fastStartChannels.Append(channel);
+            channel->SetNumber(logicalChannels->GetNextChannelNumber());
+            fastStartChannels.Append(channel);
           }
         }
       }
     }
-	  startH224 = PFalse;
+    startH224 = PFalse;
   }
 #endif
 }
@@ -3465,47 +3455,101 @@ void H323Connection::InternalEstablishedConnectionCheck()
 OpalMediaFormatList H323Connection::GetMediaFormats() const
 {
   OpalMediaFormatList list;
-  
-  list = remoteCapabilities.GetMediaFormats();
-  AdjustMediaFormats(list);
+
+  if (fastStartMediaStream != NULL)
+    list += fastStartMediaStream->GetMediaFormat();
+  else {
+    list = remoteCapabilities.GetMediaFormats();
+    AdjustMediaFormats(list);
+  }
 
   return list;
 }
 
 
-PBoolean H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*mediaFormats*/,
-                                           unsigned sessionID)
+OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID && !endpoint.GetManager().CanAutoStartReceiveVideo())
-    return PFalse;
+  if ( isSource &&
+       sessionID == OpalMediaFormat::DefaultVideoSessionID &&
+      !ownerCall.IsEstablished() &&
+      !endpoint.GetManager().CanAutoStartReceiveVideo()) {
+    PTRACE(3, "H323\tOpenMediaStream auto start disabled, refusing video open");
+    return NULL;
+  }
 #endif
 
-  // Check if we have already got a transmitter running, select one if not
-  if ((fastStartState == FastStartDisabled ||
-       fastStartState == FastStartAcknowledged) &&
-      FindChannel(sessionID, PFalse) != NULL)
-    return PFalse;
+  OpalMediaStreamPtr stream;
+  if (fastStartMediaStream != NULL) {
+    stream = fastStartMediaStream;
+    fastStartMediaStream = NULL;
+    PTRACE(4, "H323\tOpenMediaStream fast started for session " << sessionID);
+  }
+  else {
+    H323Channel * channel = FindChannel(sessionID, isSource);
+    if (channel == NULL) {
+      // Logical channel not open, if receiver that is an error
+      if (isSource) {
+        PTRACE(2, "H323\tOpenMediaStream has no logical channel for session " << sessionID);
+        return NULL;
+      }
 
-  PTRACE(3, "H323\tOpenSourceMediaStream called: session " << sessionID);
-  return PTrue;
-}
+      // If transmitter, send OpenLogicalChannel using the capability associated with the media format
+      H323Capability * capability = remoteCapabilities.FindCapability(mediaFormat.GetName());
+      if (capability == NULL) {
+        PTRACE(2, "H323\tOpenMediaStream could not find capability for " << mediaFormat);
+        return NULL;
+      }
+      if (!OpenLogicalChannel(*capability, sessionID, H323Channel::IsTransmitter)) {
+        PTRACE(2, "H323\tOpenMediaStream could not open logical channel for " << mediaFormat);
+        return NULL;
+      }
+      channel = FindChannel(sessionID, isSource);
+      if (PAssertNULL(channel) == NULL)
+        return NULL;
+    }
 
-
-
-OpalMediaStream * H323Connection::InternalCreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
-                                                    PBoolean isSource)
-{
-  if (!isSource && (transmitterMediaStream != NULL)) {
-    OpalMediaStream * stream = transmitterMediaStream;
-    transmitterMediaStream = NULL;
-    stream->UpdateMediaFormat(mediaFormat);
-    return stream;
+    PTRACE(3, "H323\tOpenMediaStream using channel " << channel->GetNumber() << " for session " << sessionID);
+    stream = channel->GetMediaStream();
   }
 
-  return CreateMediaStream(mediaFormat, sessionID, isSource);
+  if (stream->Open()) {
+    stream->UpdateMediaFormat(mediaFormat);
+
+    if (OnOpenMediaStream(*stream)) {
+      mediaStreams.Append(stream);
+      return stream;
+    }
+
+    PTRACE(2, "H323\tOnOpenMediaStream failed for " << mediaFormat << ", session " << sessionID);
+  }
+  else {
+    PTRACE(2, "H323\tMedia stream open failed for " << mediaFormat << ", session " << sessionID);
+  }
+
+  stream->Close();
+
+  return NULL;
 }
+
+
+bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
+{
+  // For a channel, this gets called twice. The first time we send CLC to remote
+  // The second time is after CLC Ack or a timeout occurs, then we call the ancestor
+  // function to clean up the media stream.
+  if (GetPhase() < ReleasingPhase) {
+    for (PINDEX i = 0; i < logicalChannels->GetSize(); i++) {
+      H323Channel * channel = logicalChannels->GetNegLogicalChannelAt(i).GetChannel();
+      if (channel != NULL && channel->GetMediaStream() == &stream) {
+        const H323ChannelNumber & number = channel->GetNumber();
+        return logicalChannels->Close(number, number.IsFromRemote());
+      }
+    }
+  }
+  return OpalConnection::CloseMediaStream(stream);;
+}
+
 
 OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
                                                     unsigned sessionID,
@@ -3570,23 +3614,16 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
   for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++) {
     H323Channel & channel = fastStartChannels[i];
     if (channel.GetSessionID() == sessionID && channel.GetDirection() == direction) {
+      fastStartMediaStream = channel.GetMediaStream();
+      PTRACE(3, "H225\tOpening fast start channel using stream " << *fastStartMediaStream);
       if (channel.Open()) {
-        if (direction == H323Channel::IsTransmitter) {
-          transmitterMediaStream = ((H323UnidirectionalChannel &)channel).GetMediaStream();
-          if (GetCall().OpenSourceMediaStreams(*this, transmitterMediaStream->GetMediaFormat(), channel.GetSessionID())) {
-            if (!mediaWaitForConnect)
-              channel.Start();
-          }
-          else {
-            transmitterMediaStream = NULL;
-            channel.Close();
-          }
-        }
-        else
-          channel.Start();
-        if (channel.IsOpen())
+        if (channel.GetDirection() == H323Channel::IsTransmitter && mediaWaitForConnect)
           break;
+        if (channel.Start())
+          break;
+        channel.Close();
       }
+      fastStartMediaStream = NULL;
     }
   }
 }
@@ -3704,13 +3741,7 @@ PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
         return PFalse;
 
       // Traditional H245 handshake
-      if (!logicalChannels->Open(capability, sessionID))
-        return PFalse;
-      transmitterMediaStream = logicalChannels->FindChannelBySession(sessionID, PFalse)->GetMediaStream();
-      if (GetCall().OpenSourceMediaStreams(*this, capability.GetMediaFormat(), sessionID))
-        return PTrue;
-      PTRACE(1, "H323\tOpenLogicalChannel, OpenSourceMediaStreams failed: " << capability);
-      return PFalse;
+      return logicalChannels->Open(capability, sessionID);
 
     case FastStartResponse :
       // Do not use OpenLogicalChannel for starting these.
@@ -3917,7 +3948,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
 H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability & capability,
                                                           H323Channel::Directions dir,
                                                                          unsigned sessionID,
-							                         const H245_H2250LogicalChannelParameters * param,
+                                                     const H245_H2250LogicalChannelParameters * param,
                                                                         RTP_QOS * rtpqos)
 {
   {
@@ -4060,10 +4091,6 @@ PBoolean H323Connection::OnClosingLogicalChannel(H323Channel & /*channel*/)
 
 void H323Connection::OnClosedLogicalChannel(const H323Channel & channel)
 {
-  if (LockReadWrite()) {
-    mediaStreams.Remove(channel.GetMediaStream(PTrue));
-    UnlockReadWrite();
-  }
   endpoint.OnClosedLogicalChannel(*this, channel);
 }
 
@@ -4332,7 +4359,7 @@ static void AddSessionCodecName(PStringStream & name, H323Channel * channel)
   if (channel == NULL)
     return;
 
-  OpalMediaStream * stream = ((H323UnidirectionalChannel*)channel)->GetMediaStream();
+  OpalMediaStreamPtr stream = channel->GetMediaStream();
   if (stream == NULL)
     return;
 
@@ -4546,7 +4573,7 @@ void H323Connection::OnReceiveFeatureSet(unsigned code, const H225_FeatureSet & 
 #ifdef H323_H460
 H460_FeatureSet * H323Connection::GetFeatureSet()
 {
-	return &features;
+    return &features;
 }
 #endif
 

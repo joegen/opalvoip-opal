@@ -1574,32 +1574,44 @@ void MyManager::OnClearedCall(OpalCall & call)
 }
 
 
-PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const PString & epPrefix)
 {
-  if (!OpalManager::OnOpenMediaStream(connection, stream))
-    return PFalse;
-
-  PString prefix = connection.GetEndPoint().GetPrefixName();
-  if (prefix == pcssEP->GetPrefixName())
-    return PTrue;
-
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
-  LogWindow << "Started " << (stream.IsSource() ? "receiving " : "sending ") << mediaFormat;
+  LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ") << mediaFormat;
 
   if (!stream.IsSource() && mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
     LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
   LogWindow << (stream.IsSource() ? " from " : " to ")
-            << connection.GetEndPoint().GetPrefixName() << " endpoint"
+            << epPrefix << " endpoint"
             << endl;
+}
 
-  return PTrue;
+
+PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStream & stream)
+{
+  if (!OpalManager::OnOpenMediaStream(connection, stream))
+    return false;
+
+  PString prefix = connection.GetEndPoint().GetPrefixName();
+  if (prefix != pcssEP->GetPrefixName())
+    LogMediaStream("Started", stream, prefix);
+
+  SetState(m_callState);
+
+  return true;
 }
 
 
 void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
+
+  PString prefix = stream.GetConnection().GetEndPoint().GetPrefixName();
+  if (prefix != pcssEP->GetPrefixName())
+    LogMediaStream("Stopped", stream, prefix);
+
+  SetState(m_callState);
 
   if (PIsDescendant(&stream, OpalVideoMediaStream)) {
     PVideoOutputDevice * device = ((const OpalVideoMediaStream &)stream).GetVideoOutputDevice();
@@ -1753,8 +1765,11 @@ void MyManager::SetState(CallState newState)
 
 void MyManager::OnStateChange(wxCommandEvent & event)
 {
-  if (m_callState == event.GetInt())
+  if (m_callState == event.GetInt()) {
+    if (m_callState == InCallState)
+      m_inCallPanel->UpdateButtons();
     return;
+  }
 
   m_callState = (CallState)event.GetInt();
 
@@ -3305,20 +3320,6 @@ bool InCallPanel::Show(bool show)
   if (show || m_FirstTime) {
     m_FirstTime = false;
 
-    PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
-    if (connection != NULL) {
-      OpalMediaFormatList availableFormats = connection->GetCall().GetOtherPartyConnection(*connection)->GetMediaFormats();
-      PINDEX idx;
-      for (idx = 0; idx < availableFormats.GetSize(); idx++) {
-        if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID)
-          break;
-      }
-      if (idx < availableFormats.GetSize()) {
-        m_StartStopVideo->Enable();
-        m_StartStopVideo->SetLabel(connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true) != NULL ? "Stop Video" : "Start Video");
-      }
-    }
-
     int value = 50;
     config->Read(SpeakerVolumeKey, &value);
     m_SpeakerVolume->SetValue(value);
@@ -3328,6 +3329,8 @@ bool InCallPanel::Show(bool show)
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
     SetVolume(true, value, false);
+
+    UpdateButtons();
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
@@ -3335,6 +3338,30 @@ bool InCallPanel::Show(bool show)
   }
 
   return wxPanel::Show(show);
+}
+
+
+void InCallPanel::UpdateButtons()
+{
+  PSafePtr<OpalCall> call = m_manager.GetCall();
+  if (call != NULL) {
+    PSafePtr<OpalConnection> connection;
+    for (int connIdx = 0; (connection = call->GetConnection(connIdx)) != NULL; connIdx++) {
+      if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
+        OpalMediaFormatList availableFormats = connection->GetMediaFormats();
+        for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
+          if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+            m_StartStopVideo->Enable();
+            OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+            m_StartStopVideo->SetLabel(stream != NULL && stream->IsOpen() ? "Stop Video" : "Start Video");
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  m_StartStopVideo->Disable();
 }
 
 
@@ -3346,6 +3373,17 @@ void InCallPanel::OnHangUp(wxCommandEvent & /*event*/)
 
 void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
 {
+  PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
+  if (connection != NULL) {
+    m_StartStopVideo->Disable();
+    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+    if (stream != NULL)
+      connection->CloseMediaStream(*stream);
+    else {
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
+        LogWindow << "Could not open video to remote!" << endl;
+    }
+  }
 }
 
 
