@@ -748,6 +748,14 @@ OpalPluginAudioMediaFormat::OpalPluginAudioMediaFormat(const PluginCodec_Definit
 
 bool OpalPluginAudioMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
+  OpalMediaOption * opt = FindOption("forceValidFor");
+  if (opt != NULL) {
+    PString val =  opt->AsString();
+    val.Replace("\"", "", true);
+    if (val *= protocol)
+      return true;
+  }
+
   return OpalPluginMediaFormat::IsValidForProtocol(protocol);
 }
 
@@ -816,6 +824,14 @@ PObject * OpalPluginVideoMediaFormat::Clone() const
 
 bool OpalPluginVideoMediaFormat::IsValidForProtocol(const PString & protocol) const
 {
+  OpalMediaOption * opt = FindOption("forceValidFor");
+  if (opt != NULL) {
+    PString val =  opt->AsString();
+    val.Replace("\"", "", true);
+    if (val *= protocol)
+      return true;
+  }
+
   return OpalPluginMediaFormat::IsValidForProtocol(protocol);
 }
 

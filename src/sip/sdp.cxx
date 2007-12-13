@@ -992,7 +992,7 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
     if (opalFormat.IsEmpty())
-      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
+      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to codec of type " << sessionID);
     else {
       if (opalFormat.GetDefaultSessionID() == sessionID && 
           opalFormat.IsValidForProtocol("sip") &&
