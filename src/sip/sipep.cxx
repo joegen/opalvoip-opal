@@ -200,7 +200,12 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
     }
   }
 
-  transport->SetRemoteAddress(remoteAddress);
+  if (!transport->SetRemoteAddress(remoteAddress)) {
+    PTRACE(1, "SIP\tCould not find " << remoteAddress);
+    delete transport;
+    return NULL;
+  }
+
   PTRACE(4, "SIP\tCreated transport " << *transport);
 
   transport->SetBufferSize(SIP_PDU::MaxSize);
