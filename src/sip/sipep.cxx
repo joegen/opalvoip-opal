@@ -319,36 +319,34 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
 
 PBoolean SIPEndPoint::SetupTransfer(const PString & token,  
 				const PString & /*callIdentity*/, 
-				const PString & _remoteParty,  
+				const PString & remoteParty,  
 				void * userData)
 {
-  PString remoteParty;
   // Make a new connection
-  PSafePtr<OpalConnection> otherConnection = 
-    GetConnectionWithLock(token, PSafeReference);
-  if (otherConnection == NULL) {
-    return PFalse;
-  }
+  PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(token, PSafeReference);
+  if (otherConnection == NULL)
+    return false;
   
   OpalCall & call = otherConnection->GetCall();
   
-  call.RemoveMediaStreams();
+  call.CloseMediaStreams();
   
-  ParsePartyName(_remoteParty, remoteParty);
+  PString parsedParty;
+  ParsePartyName(remoteParty, parsedParty);
 
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, remoteParty, NULL, NULL);
+  SIPConnection * connection = CreateConnection(call, callID, userData, parsedParty, NULL, NULL);
   if (!AddConnection(connection))
-    return PFalse;
+    return false;
 
   call.OnReleased(*otherConnection);
   
   connection->SetUpConnection();
   otherConnection->Release(OpalConnection::EndedByCallForwarded);
 
-  return PTrue;
+  return true;
 }
 
 

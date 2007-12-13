@@ -537,32 +537,51 @@ class OpalConnection : public PSafeObject
       OpalMediaFormatList & mediaFormats  ///<  Media formats to use
     ) const;
     
-    /**Open source transmitter media stream for session.
+    /**Open source or sink media stream for session.
       */
-    virtual PBoolean OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+    virtual OpalMediaStreamPtr OpenMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format to open
+      unsigned sessionID,                  ///<  Session to start stream on
+      bool isSource                        ///< Stream is a source/sink
     );
 
-    /**Open source transmitter media stream for session.
+    /**Request close of a media stream by session.
+       Note that this is usually asymchronous, the OnClosedMediaStream() function is
+       called when the stream is really closed.
       */
-    virtual OpalMediaStream * OpenSinkMediaStream(
-      OpalMediaStream & source    ///<  Source media sink format to open to
+    virtual bool CloseMediaStream(
+      unsigned sessionId,  ///<  Session ID to search for.
+      bool source          ///<  Indicates the direction of stream.
     );
 
-    /**Start media streams for session.
+    /**Request close of a specific media stream.
+       Note that this is usually asymchronous, the OnClosedMediaStream() function is
+       called when the stream is really closed.
+      */
+    virtual bool CloseMediaStream(
+      OpalMediaStream & stream  ///< Stream to close
+    );
+
+    /**Remove the specified media stream from the list of streams for this channel.
+       This will automatically delete the stream if the stream was found in the
+       stream list.
+
+      Returns true if the media stream was removed the list and deleted, else
+      returns false if the media stream was unchanged
+      */
+    bool RemoveMediaStream(
+      OpalMediaStream & strm     // media stream to remove
+    );
+
+    /**Start all media streams for connection.
       */
     virtual void StartMediaStreams();
     
-    /**Close media streams for session.
+    /**Request close all media streams on connection.
       */
     virtual void CloseMediaStreams();
     
-    /**Close media streams from session.
-      */
-    virtual void RemoveMediaStreams();
-    
-    /**Pause media streams for session.
+    /**Pause media streams for connection.
       */
     virtual void PauseMediaStreams(PBoolean paused);
 
@@ -585,6 +604,16 @@ class OpalConnection : public PSafeObject
       unsigned sessionID,                  ///<  Session number for stream
       PBoolean isSource                        ///<  Is a source stream
     );
+
+    /**Get a media stream.
+       Locates a stream given a RTP session ID. Each session would usually
+       have two media streams associated with it, so the source flag
+       may be used to distinguish which channel to return.
+      */
+    OpalMediaStreamPtr GetMediaStream(
+      unsigned sessionId,  ///<  Session ID to search for.
+      bool source          ///<  Indicates the direction of stream.
+    ) const;
 
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
@@ -623,28 +652,6 @@ class OpalConnection : public PSafeObject
        OnPatchMediaStream()
       */
     virtual void AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch);
-
-    /**Get a media stream.
-       Locates a stream given a RTP session ID. Each session would usually
-       have two media streams associated with it, so the source flag
-       may be used to distinguish which channel to return.
-      */
-    OpalMediaStream * GetMediaStream(
-      unsigned sessionId,  ///<  Session ID to search for.
-      PBoolean source          ///<  Indicates the direction of stream.
-    ) const;
-
-    /**
-      Remove the specified media stream from the list of streams for this channel.
-      This will automatically delete the stream if the stream was found in the
-      stream list.
-
-      Returns PTrue if the media stream was removed the list and deleted, else
-      returns PFalse if the media stream was unchanged
-      */
-    PBoolean RemoveMediaStream(
-      OpalMediaStream * strm     // media stream to remove
-    );
 
     /**See if the media can bypass the local host.
 
@@ -1005,6 +1012,11 @@ class OpalConnection : public PSafeObject
 	OpalH224Handler * GetH224Handler() const { return  h224Handler; }
 #endif
 
+    /** Execute garbage collection for endpoint.
+        Returns PTrue if all garbage has been collected.
+        Default behaviour deletes the objects in the connectionsActive list.
+      */
+    virtual bool GarbageCollection();
   //@}
 
   /**@name Member variable access */
@@ -1259,9 +1271,10 @@ class OpalConnection : public PSafeObject
     OpalH224Handler		  * h224Handler;
 #endif
 
-    MediaAddressesDict  mediaTransportAddresses;
-    OpalMediaStreamList mediaStreams;
-    RTP_SessionManager  rtpSessions;
+    MediaAddressesDict         mediaTransportAddresses;
+    PSafeList<OpalMediaStream> mediaStreams;
+    RTP_SessionManager         rtpSessions;
+
     unsigned            minAudioJitterDelay;
     unsigned            maxAudioJitterDelay;
     unsigned            bandwidthAvailable;
@@ -1289,8 +1302,6 @@ class OpalConnection : public PSafeObject
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
-
-    virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource);
 };
 
 class RTP_UDP;

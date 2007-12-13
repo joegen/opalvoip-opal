@@ -567,7 +567,7 @@ PBoolean OpalLineConnection::OnOpenMediaStream(OpalMediaStream & mediaStream)
 
 PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage)
 {
-  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return PFalse;
 
@@ -578,7 +578,7 @@ PBoolean OpalLineConnection::SetAudioVolume(PBoolean source, unsigned percentage
 
 unsigned OpalLineConnection::GetAudioSignalLevel(PBoolean source)
 {
-  OpalLineMediaStream * stream = dynamic_cast<OpalLineMediaStream *>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
+  PSafePtr<OpalLineMediaStream> stream = PSafePtrCast<OpalMediaStream, OpalLineMediaStream>(GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, source));
   if (stream == NULL)
     return UINT_MAX;
 

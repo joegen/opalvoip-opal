@@ -559,13 +559,10 @@ PBoolean OpalManager::IsMediaBypassPossible(const OpalConnection & source,
 }
 
 
-PBoolean OpalManager::OnOpenMediaStream(OpalConnection & connection,
-                                    OpalMediaStream & stream)
+PBoolean OpalManager::OnOpenMediaStream(OpalConnection & PTRACE_PARAM(connection),
+                                        OpalMediaStream & PTRACE_PARAM(stream))
 {
   PTRACE(3, "OpalMan\tOnOpenMediaStream " << connection << ',' << stream);
-
-  if (stream.IsSource())
-    return connection.GetCall().PatchMediaStreams(connection, stream);
 
   return PTrue;
 }
@@ -607,7 +604,7 @@ PBoolean OpalManager::CreateVideoInputDevice(const OpalConnection & /*connection
   args.rate = mediaFormat.GetClockRate()/mediaFormat.GetFrameTime();
 
   autoDelete = PTrue;
-  device = PVideoInputDevice::CreateOpenedDevice(args);
+  device = PVideoInputDevice::CreateOpenedDevice(args, false);
   PTRACE_IF(2, device == NULL, "OpalCon\tCould not open video device \"" << args.deviceName << '"');
   return device != NULL;
 }
@@ -636,7 +633,7 @@ PBoolean OpalManager::CreateVideoOutputDevice(const OpalConnection & connection,
   }
 
   autoDelete = PTrue;
-  device = PVideoOutputDevice::CreateOpenedDevice(args);
+  device = PVideoOutputDevice::CreateOpenedDevice(args, false);
   return device != NULL;
 }
 

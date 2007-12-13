@@ -111,13 +111,11 @@ void OpalMediaPatch::Close()
   source.Close();
 
   while (sinks.GetSize() > 0) {
-    OpalMediaStream * stream = sinks[0].stream;
-    stream->GetDeleteMutex().Wait();
+    OpalMediaStreamPtr stream = sinks[0].stream;
+    sinks.RemoveAt(0);
     inUse.Signal();
-    stream->RemovePatch(this);
+    stream->Close();
     inUse.Wait();
-    stream->GetDeleteMutex().Signal();
-    RemoveSink(stream);
   }
 
   PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
@@ -131,7 +129,7 @@ void OpalMediaPatch::Close()
 }
 
 
-PBoolean OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::PayloadMapType & rtpMap)
+PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_DataFrame::PayloadMapType & rtpMap)
 {
   PWaitAndSignal mutex(inUse);
 
@@ -140,8 +138,10 @@ PBoolean OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::
 
   PAssert(stream->IsSink(), "Attempt to set source stream as sink!");
 
-  if (!stream->SetPatch(this))
+  if (!stream->SetPatch(this)) {
+    PTRACE(2, "Patch\tCould not set patch in stream " << *stream);
     return PFalse;
+  }
 
   Sink * sink = new Sink(*this, stream, rtpMap);
   sinks.Append(sink);
@@ -206,21 +206,28 @@ PBoolean OpalMediaPatch::AddSink(OpalMediaStream * stream, const RTP_DataFrame::
 }
 
 
-void OpalMediaPatch::RemoveSink(OpalMediaStream * stream)
+void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 {
   if (PAssertNULL(stream) == NULL)
     return;
 
   PTRACE(3, "Patch\tRemoving media stream sink " << *stream);
 
-  PWaitAndSignal mutex(inUse);
+  inUse.Wait();
 
   for (PINDEX i = 0; i < sinks.GetSize(); i++) {
     if (sinks[i].stream == stream) {
       sinks.RemoveAt(i);
+      if (!sinks.IsEmpty())
+        break;
+
+      inUse.Signal();
+      source.Close();
       return;
     }
   }
+
+  inUse.Signal();
 }
 
 
@@ -266,10 +273,10 @@ void OpalMediaPatch::UnLockSinkTranscoder() const
 }
 
 
-OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, OpalMediaStream * s, const RTP_DataFrame::PayloadMapType & m)
+OpalMediaPatch::Sink::Sink(OpalMediaPatch & p, const OpalMediaStreamPtr & s, const RTP_DataFrame::PayloadMapType & m)
   : patch(p)
+  , stream(s)
 {
-  stream = s;
   payloadTypeMap = m;
   primaryCodec = NULL;
   secondaryCodec = NULL;
@@ -388,8 +395,8 @@ void OpalMediaPatch::Main()
   }
 	
   inUse.Signal();
+
   RTP_DataFrame sourceFrame(source.GetDataSize());
-  RTP_DataFrame emptyFrame(source.GetDataSize());
 	
   while (source.IsOpen()) {
     sourceFrame.SetPayloadSize(0); 
@@ -397,27 +404,12 @@ void OpalMediaPatch::Main()
       break;
  
     inUse.Wait();
-		
-    if(!source.IsOpen() || sinks.GetSize() == 0) {
-      inUse.Signal();
-      break;
-    }
-		
-    PINDEX len = sinks.GetSize();
-		
-    if (sourceFrame.GetPayloadSize() > 0)
-      DispatchFrame(sourceFrame);
-		
+    DispatchFrame(sourceFrame);
     inUse.Signal();
-		
-    if (!isSynchronous || !sourceFrame.GetPayloadSize())
-      PThread::Sleep(5); // Don't starve the CPU if we have empty frames
-		
-    if (len == 0)
-      break;
-		
-    // make a new, clean frame, so that silence frame won't confuse RFC2833 handler
-    sourceFrame = emptyFrame;
+
+    // Don't starve the CPU if we have empty frames
+    if (!isSynchronous || sourceFrame.GetPayloadSize() == 0)
+      PThread::Sleep(5);
   }
 
   PTRACE(4, "Patch\tThread ended for " << *this);

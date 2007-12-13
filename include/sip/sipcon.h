@@ -133,17 +133,20 @@ class SIPConnection : public OpalConnection
       */
     virtual OpalMediaFormatList GetMediaFormats() const;
     
-    /**Open source transmitter media stream for session.
+    /**Open source or sink media stream for session.
       */
-    virtual PBoolean OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
+    virtual OpalMediaStreamPtr OpenMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format to open
+      unsigned sessionID,                  ///<  Session to start stream on
+      bool isSource                        ///< Stream is a source/sink
     );
 
-    /**Open source transmitter media stream for session.
+    /**Request close of a specific media stream.
+       Note that this is usually asymchronous, the OnClosedMediaStream() function is
+       called when the stream is really closed.
       */
-    virtual OpalMediaStream * OpenSinkMediaStream(
-      OpalMediaStream & source    ///<  Source media sink format to open to
+    virtual bool CloseMediaStream(
+      OpalMediaStream & stream  ///< Stream to close
     );
 
     /**Open a new media stream.
@@ -185,19 +188,6 @@ class SIPConnection : public OpalConnection
       AnswerCallResponse response ///<  Answer response to incoming call
     );
 
-
-    /**A call back function whenever a connection is "connected".
-       This indicates that a connection to an endpoint was connected. That
-       is the endpoint received acknowledgement via whatever protocol it uses
-       that the connection may now start media streams.
-
-       In the context of H.323 this means that the CONNECT pdu has been
-       received.
-
-       The default behaviour calls the OpalConnection function of the same 
-       name after having connected the RFC2833 handler to the OpalPatch.
-      */
-    virtual void OnConnected();
 
     /**See if the media can bypass the local host.
 
@@ -407,12 +397,6 @@ class SIPConnection : public OpalConnection
 
     unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
-    PBoolean BuildSDP(
-      SDPSessionDescription * &,     
-      RTP_SessionManager & rtpSessions,
-      unsigned rtpSessionId
-    );
-
     OpalTransportAddress GetLocalAddress(WORD port = 0) const;
 
     OpalTransport & GetTransport() const { return *transport; }
@@ -458,29 +442,36 @@ class SIPConnection : public OpalConnection
       const OpalTransportAddress & mediaAddress,
       OpalTransportAddress & localAddress
     );
-    virtual void OnReceivedSDP(SIP_PDU & pdu);
-    virtual PBoolean OnReceivedSDPMediaDescription(
-      SDPSessionDescription & sdp,
-      SDPMediaDescription::MediaType mediaType,
-      unsigned sessionId
+
+    virtual bool OnSendSDP(
+      bool isAnswerSDP,
+      RTP_SessionManager & rtpSessions,
+      SDPSessionDescription & sdpOut
     );
-    virtual PBoolean OnSendSDPMediaDescription(
+    virtual bool OfferSDPMediaDescription(
+      unsigned rtpSessionId,
+      RTP_SessionManager & rtpSessions,
+      SDPSessionDescription & sdpOut
+    );
+    virtual bool AnswerSDPMediaDescription(
       const SDPSessionDescription & sdpIn,
       SDPMediaDescription::MediaType mediaType,
       unsigned sessionId,
       SDPSessionDescription & sdpOut
     );
-    virtual PBoolean OnOpenSourceMediaStreams(
-      const OpalMediaFormatList & remoteFormatList,
-      unsigned sessionId,
-      SDPMediaDescription *localMedia
+
+    virtual void OnReceivedSDP(
+      SIP_PDU & pdu
     );
-    SDPMediaDescription::Direction GetDirection(unsigned sessionId);
+    virtual bool OnReceivedSDPMediaDescription(
+      SDPSessionDescription & sdp,
+      SDPMediaDescription::MediaType mediaType,
+      unsigned sessionId
+    );
+    friend class SIPInvite;
     static PBoolean WriteINVITE(OpalTransport & transport, void * param);
 
     OpalTransport * CreateTransport(const OpalTransportAddress & address, PBoolean isLocalAddress = PFalse);
-
-    PBoolean ConstructSDP(SDPSessionDescription & sdpOut);
 
     void UpdateRemotePartyNameAndNumber();
 
@@ -488,12 +479,12 @@ class SIPConnection : public OpalConnection
     OpalTransport       * transport;
 
     PMutex                transportMutex;
-    PBoolean                  local_hold;
-    PBoolean                  remote_hold;
+    bool                  local_hold;
+    bool                  remote_hold;
     PString               localPartyAddress;
     PString               forwardParty;
     SIP_PDU             * originalInvite;
-    SDPSessionDescription remoteSDP;
+    bool                  needReINVITE;
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
@@ -577,13 +568,6 @@ class SIP_RTP_Session : public RTP_UserData
 
   protected:
     const SIPConnection & connection; /// Owner of the RTP session
-#if OPAL_VIDEO
-    // Encoding stream to alert with OpalVideoUpdatePicture commands.  Mutable
-    // so functions with constant 'this' pointers (eg: OnRxFrameRequest) can
-    // update it.
-    //mutable OpalMediaStream * encodingStream; 
-
-#endif
 };
 
 

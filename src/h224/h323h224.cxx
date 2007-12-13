@@ -439,11 +439,6 @@ PBoolean H323_H224Channel::SetDynamicRTPPayloadType(int newType)
   return PTrue;
 }
 
-OpalMediaStream * H323_H224Channel::GetMediaStream(PBoolean) const
-{
-  // implemented since declared as an abstract method in H323Channel
-  return NULL;
-}
 
 PBoolean H323_H224Channel::ExtractTransport(const H245_TransportAddress & pdu,
 										PBoolean isDataPort,

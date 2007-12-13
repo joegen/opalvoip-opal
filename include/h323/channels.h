@@ -41,10 +41,8 @@
 
 #include <rtp/rtp.h>
 #include <h323/transaddr.h>
+#include <opal/mediastrm.h>
 
-
-class OpalMediaStream;
-class OpalMediaCommand;
 
 class H245_OpenLogicalChannel;
 class H245_OpenLogicalChannelAck;
@@ -193,9 +191,7 @@ class H323Channel : public PObject
 
        The default behaviour returns NULL.
       */
-    virtual OpalMediaStream * GetMediaStream(
-      PBoolean deleted = PFalse
-    ) const = 0;
+    virtual OpalMediaStreamPtr GetMediaStream() const;
 
 
     /**Fill out the OpenLogicalChannel PDU for the particular channel type.
@@ -410,14 +406,14 @@ class H323UnidirectionalChannel : public H323Channel
     /**Get the media stream associated with this logical channel.
        The default behaviour returns NULL.
       */
-    virtual OpalMediaStream * GetMediaStream(PBoolean deleted = PFalse) const;
+    virtual OpalMediaStreamPtr GetMediaStream() const;
   //@}
 
   protected:
     PDECLARE_NOTIFIER(OpalMediaCommand, H323UnidirectionalChannel, OnMediaCommand);
 
-    PBoolean              receiver;
-    mutable OpalMediaStream * mediaStream;
+    bool               receiver;
+    OpalMediaStreamPtr mediaStream;
 };
 
 

@@ -345,17 +345,12 @@ class OpalPCSSConnection : public OpalConnection
       OpalMediaPatch & patch    ///<  New patch
     );
 
-    /**Open source transmitter media stream for session.
+    /**Open source or sink media stream for session.
       */
-    virtual PBoolean OpenSourceMediaStream(
-      const OpalMediaFormatList & mediaFormats, ///<  Optional media format to open
-      unsigned sessionID                   ///<  Session to start stream on
-    );
-
-    /**Open source transmitter media stream for session.
-      */
-    virtual OpalMediaStream * OpenSinkMediaStream(
-      OpalMediaStream & source    ///<  Source media sink format to open to
+    virtual OpalMediaStreamPtr OpenMediaStream(
+      const OpalMediaFormat & mediaFormat, ///<  Media format to open
+      unsigned sessionID,                  ///<  Session to start stream on
+      bool isSource                        ///< Stream is a source/sink
     );
 
     /**Set  the volume (gain) for the audio media channel to the specified percentage.
