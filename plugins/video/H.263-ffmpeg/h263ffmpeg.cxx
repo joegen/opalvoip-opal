@@ -792,15 +792,6 @@ class H263EncoderContext
     unsigned frameWidth, frameHeight;
     unsigned long lastTimeStamp;
 	int bitRate;
-	// Adaptive Packet delay
-	bool packetDelay;
-	unsigned frameLength;
-    long waitFactor;
-    #ifdef _WIN32
-      long newTime;
-    #else
-      timeval newTime;
-    #endif
 
     enum StdSize { 
       SQCIF, 
@@ -837,7 +828,6 @@ class H263EncoderContext
     }
 
     protected:
-	   void adaptiveDelay(unsigned totalLength);
 };
 
 H263EncoderContext::H263EncoderContext() 
@@ -874,16 +864,6 @@ H263EncoderContext::H263EncoderContext()
   videoQMax = 24;
   frameNum = 0;
   bitRate = 256000;
-
-  packetDelay = false;
-  frameLength = 0;
-  waitFactor = 0;
-  #ifdef _WIN32
-    newTime = 0;
-  #else
-    newTime.tv_sec = 0;
-    newTime.tv_usec = 0;
-  #endif
 
   //PTRACE(3, "Codec\tH263 encoder created");
 }
@@ -929,7 +909,7 @@ bool H263EncoderContext::OpenCodec()
   avcontext->mb_qmax = avcontext->qmax = videoQMax;
   avcontext->max_qdiff = 3; // max q difference between frames
   avcontext->rc_qsquish = 0; // limit q by clipping
-  avcontext->rc_eq= "tex^qComp"; // rate control equation
+  avcontext->rc_eq = (char*) "tex^qComp"; // rate control equation
   avcontext->qcompress = 0.5; // qscale factor between easy & hard scenes (0.0-1.0)
   avcontext->i_quant_factor = (float)-0.6; // qscale factor between p and i frames
   avcontext->i_quant_offset = (float)0.0; // qscale offset between p and i frames
@@ -1009,13 +989,6 @@ unsigned int H263EncoderContext::GetNextEncodedPacket(RTPFrame & dstRTP, unsigne
   flags = 0;
   flags |= (encodedPackets.size() == 0) ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
   flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
-
-  frameLength += dstRTP.GetPacketLen();
-
-  if (encodedPackets.size() == 0) {
-    if (packetDelay) adaptiveDelay(frameLength);
-    frameLength = 0;
-  }
 
   return dstRTP.GetPacketLen();
 }
@@ -1111,45 +1084,6 @@ int H263EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE *
   return 1;
 }
 
-void H263EncoderContext::adaptiveDelay(unsigned totalLength) {
-  #ifdef _WIN32
-    long waitBeforeSending =  0; 
-    if (newTime!= 0) { // calculate delay and wait
-      waitBeforeSending = newTime - GetTickCount();
-      if (waitBeforeSending > 0)
-        Sleep(waitBeforeSending);
-    }
-    if (waitFactor) {
-      newTime = GetTickCount() +  8000 / waitFactor  * totalLength;
-    }
-    else {
-      newTime = 0;
-    }
-  #else
-    struct timeval currentTime;
-    long waitBeforeSending;
-    long waitAtNextFrame;
-  
-    if ((newTime.tv_sec != 0)  || (newTime.tv_usec != 0) ) { // calculate delay and wait
-      gettimeofday(&currentTime, NULL); 
-      waitBeforeSending = ((newTime.tv_sec - currentTime.tv_sec) * 1000000) + ((newTime.tv_usec - currentTime.tv_usec));  // in useconds
-      if (waitBeforeSending > 0) 
-        usleep(waitBeforeSending);
-    }
-    gettimeofday(&currentTime, NULL); 
-    if (waitFactor) {
-      waitAtNextFrame = waitFactor * totalLength ; // in us in ms
-      newTime.tv_sec = currentTime.tv_sec + (int)((waitAtNextFrame  + currentTime.tv_usec) / 1000000);
-      newTime.tv_usec = (int)((waitAtNextFrame + currentTime.tv_usec) % 1000000);
-    }
-    else {
-      newTime.tv_sec = 0;
-      newTime.tv_usec = 0;
-    }
-  #endif
-}
-
-
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
 {
   return new H263EncoderContext;
@@ -1171,8 +1105,6 @@ static int encoder_set_options(const PluginCodec_Definition *,
       context->frameWidth = atoi(option[1]);
     if (STRCMPI(option[0], "Frame Height") == 0)
       context->frameHeight = atoi(option[1]);
-    if (STRCMPI(option[0], "Adaptive Packet Delay") == 0)
-      context->packetDelay = atoi(option[1]);
 	if (STRCMPI(option[0], "Encoding Quality") == 0) 
       context->videoQuality = MIN(context->videoQMax, MAX(atoi(option[1]), context->videoQMin));
 	if (STRCMPI(option[0], "Max Bit Rate") == 0) 
