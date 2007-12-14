@@ -211,18 +211,13 @@ OpalManager::OpalManager()
 
 OpalManager::~OpalManager()
 {
-  // Clear any pending calls on this endpoint
-  ClearAllCalls();
-
-  // Kill off the endpoints, could wait till compiler generated destructor but
-  // prefer to keep the PTRACE's in sequence.
-  endpoints.RemoveAll();
+  ShutDownEndpoints();
 
   // Shut down the cleaner thread
   garbageCollectExit.Signal();
   garbageCollector->WaitForTermination();
 
-  // Clean up any calls that the cleaner thread missed
+  // Clean up any calls that the cleaner thread missed on the way out
   GarbageCollection();
 
   delete garbageCollector;
@@ -231,6 +226,18 @@ OpalManager::~OpalManager()
   delete interfaceMonitor;
 
   PTRACE(4, "OpalMan\tDeleted manager.");
+}
+
+
+void OpalManager::ShutDownEndpoints()
+{
+  // Clear any pending calls, set flag so no calls can be received before endpoints removed
+  clearingAllCalls = true;
+  ClearAllCalls();
+
+  // Kill off the endpoints
+  endpoints.RemoveAll();
+  clearingAllCalls = false;
 }
 
 
@@ -279,6 +286,11 @@ PBoolean OpalManager::SetUpCall(const PString & partyA,
                             unsigned int options,
                             OpalConnection::StringOptions * stringOptions)
 {
+  if (clearingAllCalls) {
+    PTRACE(2, "OpalMan\tSet up call not performed as clearing all calls.");
+    return false;
+  }
+
   PTRACE(3, "OpalMan\tSet up call from " << partyA << " to " << partyB);
 
   OpalCall * call = CreateCall(userData);
@@ -362,22 +374,34 @@ PBoolean OpalManager::ClearCallSynchronous(const PString & token,
 
 void OpalManager::ClearAllCalls(OpalConnection::CallEndReason reason, PBoolean wait)
 {
-  // Remove all calls from the active list first
-  for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call) {
-    call->Clear(reason);
-  }
+  bool oldFlag = clearingAllCalls;
+  clearingAllCalls = true;
 
-  if (wait) {
-    clearingAllCalls = PTrue;
+  // Remove all calls from the active list first
+  for (PSafePtr<OpalCall> call = activeCalls; call != NULL; ++call)
+    call->Clear(reason);
+
+  if (wait)
     allCallsCleared.Wait();
-    clearingAllCalls = PFalse;
-  }
+
+  clearingAllCalls = oldFlag;
 }
 
 
 void OpalManager::OnClearedCall(OpalCall & PTRACE_PARAM(call))
 {
   PTRACE(3, "OpalMan\tOnClearedCall " << call << " from \"" << call.GetPartyA() << "\" to \"" << call.GetPartyB() << '"');
+}
+
+
+OpalCall * OpalManager::InternalCreateCall()
+{
+  if (clearingAllCalls) {
+    PTRACE(2, "OpalMan\tCreate call not performed as clearing all calls.");
+    return NULL;
+  }
+
+  return CreateCall(NULL);
 }
 
 

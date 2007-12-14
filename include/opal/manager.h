@@ -118,6 +118,13 @@ class OpalManager : public PObject
     /**Get the endpoints attached to this manager.
       */
     const PList<OpalEndPoint> & GetEndPoints() const { return endpoints; }
+
+    /**Shut down all of the endpoints, clearing all calls.
+       This is synchonous and will wait till everything is shut down.
+       This will also assure no new calls come in whilein the process of
+       shutting down.
+      */
+    void ShutDownEndpoints();
   //@}
 
   /**@name Call management */
@@ -254,10 +261,11 @@ class OpalManager : public PObject
 
        The default behavious returns an instance of OpalCall.
       */
-    virtual OpalCall * CreateCall();
     virtual OpalCall * CreateCall(
       void * userData            ///<  user data passed to SetUpCall
     );
+    virtual OpalCall * CreateCall();
+    OpalCall * InternalCreateCall();
 
     /**Destroy a call object.
        This gets called from background thread that garbage collects all calls
