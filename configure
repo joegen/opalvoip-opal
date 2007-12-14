@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all plugins"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION BUILD_TYPE PTLIB_CONFIG PTLIBDIR GCC_HAS_CLZ CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO HAS_LIBDL OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX OPAL_H450 OPAL_H460 OPAL_LID OPAL_IVR OPAL_RFC4175 OPAL_ZRTP HAS_LIBZRTP OPAL_SRTP HAS_LIBSRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX OPALDIR INSTALLPREFIX LIBDIR OPAL_VERSION BUILD_TYPE PTLIB_CONFIG PTLIBDIR GCC_HAS_CLZ CPP EGREP SIZE16 SIZE32 OPAL_SYSTEM_SPEEX OPAL_HAVE_SPEEX_SPEEX_H OPAL_AUDIO HAS_LIBDL OPAL_VIDEO OPAL_SIP OPAL_H323 OPAL_IAX2 OPAL_H224 OPAL_T38FAX OPAL_H450 OPAL_H460 OPAL_LID OPAL_IVR OPAL_RFC4175 OPAL_SRTP HAS_LIBSRTP ZRTP_INCDIR ZRTP_LIBDIR BN_INCDIR BN_LIBDIR HAS_LIBZRTP OPAL_ZRTP STDCCFLAGS ENDLDLIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -863,6 +863,21 @@ Optional Features:
   --disable-lid           disable LID support
   --disable-ivr           disable IVR support
   --disable-rfc4175       disable RFC4175 support
+  --enable-zrtp enable zrtp support.
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-zrtp-includedir=DIR
+                          ZRTP includes dir (default /usr/local/include/zrtp)
+
+  --with-zrtp-libdir=DIR  ZRTP3 library dir (deafult /usr/local/lib)
+
+  --with-bn-includedir=DIR
+                          bn includes dir (deafult /usr/local/include/zrtp)
+
+  --with-bn-libdir=DIR    bn library dir (deafult /usr/local/lib)
+
 
 Some influential environment variables:
   CC          C compiler command
@@ -6291,13 +6306,6 @@ fi
 
 
 
-HAS_LIBZRTP=
-
-
-
-
-
-
 HAS_LIBSRTP=
 echo "$as_me:$LINENO: checking for libSRTP" >&5
 echo $ECHO_N "checking for libSRTP... $ECHO_C" >&6
@@ -6358,6 +6366,86 @@ else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
+
+
+
+
+# Check whether --enable-zrtp or --disable-zrtp was given.
+if test "${enable_zrtp+set}" = set; then
+  enableval="$enable_zrtp"
+  enable_zrtp=$enableval
+else
+  enable_zrtp="no"
+fi;
+
+echo "$as_me:$LINENO: checking if ZRTP enabled" >&5
+echo $ECHO_N "checking if ZRTP enabled... $ECHO_C" >&6
+if test "x$enable_zrtp" != "xyes" ; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+else
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  cat >>confdefs.h <<\_ACEOF
+#define HAS_LIBZRTP 1
+_ACEOF
+
+  cat >>confdefs.h <<\_ACEOF
+#define OPAL_ZRTP 1
+_ACEOF
+
+
+# Check whether --with-zrtp_includedir or --without-zrtp_includedir was given.
+if test "${with_zrtp_includedir+set}" = set; then
+  withval="$with_zrtp_includedir"
+  ZRTP_INCDIR=$withval
+
+
+else
+  ZRTP_INCDIR="/usr/local/include/zrtp"
+
+
+fi;
+
+# Check whether --with-zrtp_libdir or --without-zrtp_libdir was given.
+if test "${with_zrtp_libdir+set}" = set; then
+  withval="$with_zrtp_libdir"
+  ZRTP_LIBDIR=$withval
+
+
+else
+  ZRTP_LIBDIR="/usr/local/lib"
+
+
+fi;
+
+# Check whether --with-bn_includedir or --without-bn_includedir was given.
+if test "${with_bn_includedir+set}" = set; then
+  withval="$with_bn_includedir"
+  BN_INCDIR=$withval
+
+
+else
+  BN_INCDIR="/usr/local/include/zrtp"
+
+
+fi;
+
+# Check whether --with-bn_libdir or --without-bn_libdir was given.
+if test "${with_bn_libdir+set}" = set; then
+  withval="$with_bn_libdir"
+  BN_LIBDIR=$withval
+
+
+else
+  BN_LIBDIR="/usr/local/lib"
+
+
+fi;
+fi
+
+
+
 
 
 
@@ -7143,10 +7231,14 @@ s,@OPAL_H460@,$OPAL_H460,;t t
 s,@OPAL_LID@,$OPAL_LID,;t t
 s,@OPAL_IVR@,$OPAL_IVR,;t t
 s,@OPAL_RFC4175@,$OPAL_RFC4175,;t t
-s,@OPAL_ZRTP@,$OPAL_ZRTP,;t t
-s,@HAS_LIBZRTP@,$HAS_LIBZRTP,;t t
 s,@OPAL_SRTP@,$OPAL_SRTP,;t t
 s,@HAS_LIBSRTP@,$HAS_LIBSRTP,;t t
+s,@ZRTP_INCDIR@,$ZRTP_INCDIR,;t t
+s,@ZRTP_LIBDIR@,$ZRTP_LIBDIR,;t t
+s,@BN_INCDIR@,$BN_INCDIR,;t t
+s,@BN_LIBDIR@,$BN_LIBDIR,;t t
+s,@HAS_LIBZRTP@,$HAS_LIBZRTP,;t t
+s,@OPAL_ZRTP@,$OPAL_ZRTP,;t t
 s,@STDCCFLAGS@,$STDCCFLAGS,;t t
 s,@ENDLDLIBS@,$ENDLDLIBS,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t

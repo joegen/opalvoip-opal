@@ -957,6 +957,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   else
 #endif
 
+/* zrtp_new. we use protection only for connections which work with net, but not with microphone and so on
   if (!securityMode.IsEmpty()) {
     OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
     if (parms == NULL) {
@@ -978,6 +979,12 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
                    useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
                    sessionID, remoteIsNAT);
   }
+*/
+
+  rtpSession = new RTP_UDP(
+                 useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                 sessionID, remoteIsNAT);
+
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;

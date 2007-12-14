@@ -160,7 +160,8 @@ SIPConnection::SIPConnection(OpalCall & call,
   : OpalConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
     transport(newTransport),
-    pduSemaphore(0, P_MAX_INDEX)
+    pduSemaphore(0, P_MAX_INDEX),
+    secExtraData(NULL) //zrtp_new
 {
   targetAddress = destination;
 
@@ -2426,5 +2427,103 @@ void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) con
 {
 }
 #endif
+
+// { zrtp_new
+
+RTP_Session *SIPConnection::CreateSession(const OpalTransport & transport,
+                                            unsigned sessionID,
+                                            RTP_QOS * rtpqos)
+{
+  // We only support RTP over UDP at this point in time ...
+  if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
+    return NULL;
+
+  // We support video, audio and T38 over IP
+  if (sessionID != OpalMediaFormat::DefaultAudioSessionID && 
+      sessionID != OpalMediaFormat::DefaultVideoSessionID 
+#if OPAL_T38FAX
+      && sessionID != OpalMediaFormat::DefaultDataSessionID
+#endif
+      )
+    return NULL;
+
+  PIPSocket::Address localAddress;
+  transport.GetLocalAddress().GetIpAddress(localAddress);
+
+  OpalManager & manager = GetEndPoint().GetManager();
+
+  PIPSocket::Address remoteAddress;
+  transport.GetRemoteAddress().GetIpAddress(remoteAddress);
+  PSTUNClient * stun = manager.GetSTUN(remoteAddress);
+
+  // create an (S)RTP session or T38 pseudo-session as appropriate
+  RTP_UDP * rtpSession = NULL;
+
+#if OPAL_T38FAX
+  if (sessionID == OpalMediaFormat::DefaultDataSessionID) {
+    rtpSession = new T38PseudoRTP(NULL, sessionID, remoteIsNAT);
+  }
+  else
+#endif
+
+
+  if (!securityMode.IsEmpty()) {
+    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
+    if (parms == NULL) {
+      PTRACE(1, "OpalCon\tSecurity mode " << securityMode << " unknown");
+      return NULL;
+    }
+    rtpSession = parms->CreateRTPSession(
+                  useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                  sessionID, remoteIsNAT, this);
+    if (rtpSession == NULL) {
+      PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
+      delete parms;
+      return NULL;
+    }
+  }
+  else
+  {
+      rtpSession = new RTP_UDP(
+               useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+               sessionID, remoteIsNAT);
+  }
+
+
+
+  WORD firstPort = manager.GetRtpIpPortPair();
+  WORD nextPort = firstPort;
+  while (!rtpSession->Open(localAddress,
+                           nextPort, nextPort,
+                           manager.GetRtpIpTypeofService(),
+                           stun,
+                           rtpqos)) {
+    nextPort = manager.GetRtpIpPortPair();
+    if (nextPort == firstPort) {
+      PTRACE(1, "OpalCon\tNo ports available for RTP session " << sessionID << " for " << *this);
+      delete rtpSession;
+      return NULL;
+    }
+  }
+
+  localAddress = rtpSession->GetLocalAddress();
+  if (manager.TranslateIPAddress(localAddress, remoteAddress))
+    rtpSession->SetLocalAddress(localAddress);
+  return rtpSession;
+}
+
+void *SIPConnection::GetSecExtraData()
+{
+      return secExtraData;
+}
+ 
+void SIPConnection::SetSecExtraData(void *data)
+{
+      secExtraData = data;
+}
+
+
+//zrtp_new }
+
 
 // End of file ////////////////////////////////////////////////////////////////

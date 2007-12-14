@@ -567,6 +567,10 @@ SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
 
 endif
 
+#zrtp_new
+ifeq ($(HAS_ZRTP),1)
+SOURCES += $(OPAL_SRCDIR)/rtp/zrtp.cxx
+endif
 
 
 ##################
