@@ -190,6 +190,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_H224
     h224Handler(NULL),
 #endif
+    securityData(NULL),
     stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
@@ -957,7 +958,6 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   else
 #endif
 
-/* zrtp_new. we use protection only for connections which work with net, but not with microphone and so on
   if (!securityMode.IsEmpty()) {
     OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
     if (parms == NULL) {
@@ -966,7 +966,7 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
     }
     rtpSession = parms->CreateRTPSession(
                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
-                  sessionID, remoteIsNAT);
+                  sessionID, remoteIsNAT, *this);
     if (rtpSession == NULL) {
       PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
       delete parms;
@@ -979,12 +979,6 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
                    useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
                    sessionID, remoteIsNAT);
   }
-*/
-
-  rtpSession = new RTP_UDP(
-                 useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
-                 sessionID, remoteIsNAT);
-
 
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;
@@ -1310,6 +1304,16 @@ OpalMediaStream * OpalConnection::InternalCreateMediaStream(const OpalMediaForma
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
   return ownerCall.GetMediaFormats(*this, FALSE);
+}
+
+void * OpalConnection::GetSecurityData()
+{
+  return securityData;
+}
+ 
+void OpalConnection::SetSecurityData(void *data)
+{
+  securityData = data;
 }
 
 /////////////////////////////////////////////////////////////////////////////
