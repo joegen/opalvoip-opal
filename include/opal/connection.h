@@ -1302,7 +1302,8 @@ class OpalSecurityMode : public PObject
     virtual RTP_UDP * CreateRTPSession(
       PHandleAggregator * _aggregator,   ///< handle aggregator
       unsigned id,          ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
+      PBoolean remoteIsNAT,      ///<  PTrue is remote is behind NAT
+      OpalConnection  *connection	//zrtp_new we need this in order to save zrtp context into connection
     ) = 0;
     virtual PBoolean Open() = 0;
 };
