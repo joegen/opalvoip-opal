@@ -387,9 +387,7 @@ MyManager::~MyManager()
 {
   LogWindow.SetFrame(NULL);
 
-  // Must do this before we destroy the manager or a crash will result
-  if (potsEP != NULL)
-    potsEP->RemoveAllLines();
+  ShutDownEndpoints();
 
   delete m_imageListNormal;
   delete m_imageListSmall;
@@ -1018,8 +1016,7 @@ void MyManager::OnClose(wxCloseEvent& /*event*/)
   config->Write(MainFrameWidthKey, w);
   config->Write(MainFrameHeightKey, h);
 
-  ClearAllCalls();
-  StopRegistrars();
+  ShutDownEndpoints();
 
   Destroy();
 }

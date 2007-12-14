@@ -420,8 +420,15 @@ void OpalLIDEndPoint::MonitorLine(OpalLine & line)
   if (!line.EnableAudio())
     return;
 
+  // Get new instance of a call, abort if none created
+  OpalCall * call = manager.InternalCreateCall();
+  if (call == NULL) {
+    line.DisableAudio();
+    return;
+  }
+
   // Have incoming ring, create a new LID connection and let it handle it
-  connection = CreateConnection(*manager.CreateCall(NULL), line, NULL, PString::Empty());
+  connection = CreateConnection(*call, line, NULL, PString::Empty());
   if (AddConnection(connection))
     connection->StartIncoming();
 }
