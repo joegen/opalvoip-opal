@@ -168,11 +168,14 @@ void IAX2EndPoint::NewIncomingConnection(IAX2Frame *f)
   ffp.CopyDataFromIeListTo(ieData);
   PString url = BuildUrl(host, userName, ieData.callingNumber);
 
+  // Get new instance of a call, abort if none created
+  OpalCall * call = manager.InternalCreateCall();
+  if (call == NULL)
+    return;
+
 /* We have completed the extraction of information process. Now we can 
    build the matching connection */
-  IAX2Connection *connection = CreateConnection(*manager.CreateCall(NULL), 
-						f->GetConnectionToken(), NULL, 
-						url, ieData.callingName);
+  IAX2Connection *connection = CreateConnection(*call, f->GetConnectionToken(), NULL, url, ieData.callingName);
   if (!AddConnection(connection)) {
     PTRACE(2, "IAX2\tFailed to create IAX2Connection for NEW request from " 
 	   << f->GetConnectionToken());

@@ -507,12 +507,19 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return PFalse;
   }
   
+  // Get new instance of a call, abort if none created
+  OpalCall * call = manager.InternalCreateCall();
+  if (call == NULL) {
+    SendResponse(SIP_PDU::Failure_TemporarilyUnavailable, transport, *request);
+    return false;
+  }
+
   // send provisional response here because creating the connection can take a long time
   // on some systems
   SendResponse(SIP_PDU::Information_Trying, transport, *request);
 
   // ask the endpoint for a connection
-  SIPConnection *connection = CreateConnection(*manager.CreateCall(NULL),
+  SIPConnection *connection = CreateConnection(*call,
                                                mime.GetCallID(),
                                                NULL,
                                                request->GetURI(),

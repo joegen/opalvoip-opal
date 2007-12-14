@@ -495,8 +495,11 @@ PBoolean H323EndPoint::NewIncomingConnection(OpalTransport * transport)
   PSafePtr<H323Connection> connection = FindConnectionWithLock(token);
 
   if (connection == NULL) {
-    connection = CreateConnection(*manager.CreateCall(NULL), token, NULL,
-                                  *transport, PString::Empty(), PString::Empty(), &pdu);
+    // Get new instance of a call, abort if none created
+    OpalCall * call = manager.InternalCreateCall();
+    if (call != NULL)
+      connection = CreateConnection(*call, token, NULL, *transport, PString::Empty(), PString::Empty(), &pdu);
+
     if (!AddConnection(connection)) {
       PTRACE(1, "H225\tEndpoint could not create connection, "
                 "sending release complete PDU: callRef=" << callReference);
@@ -694,12 +697,12 @@ PBoolean H323EndPoint::IntrudeCall(const PString & remoteParty,
                                unsigned capabilityLevel,
                                void * userData)
 {
-  return InternalMakeCall(*manager.CreateCall(NULL),
-                          PString::Empty(),
-                          PString::Empty(),
-                          capabilityLevel,
-                          remoteParty,
-                          userData);
+  // Get new instance of a call, abort if none created
+  OpalCall * call = manager.InternalCreateCall();
+  if (call == NULL)
+    return false;
+
+  return InternalMakeCall(*call, PString::Empty(), PString::Empty(), capabilityLevel, remoteParty, userData);
 }
 
 #endif
