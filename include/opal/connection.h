@@ -1189,6 +1189,9 @@ class OpalConnection : public PSafeObject
     virtual PString GetSecurityMode() const 
     { return securityMode; }
 
+    virtual void * GetSecurityData();         
+    virtual void SetSecurityData(void *data); 
+
     StringOptions * GetStringOptions() const
     { return stringOptions; }
 
@@ -1221,7 +1224,7 @@ class OpalConnection : public PSafeObject
 
     PString              callToken;
     OpalGloballyUniqueID callIdentifier;
-    PBoolean                 originating;
+    PBoolean             originating;
     PTime                setupTime;
     PTime                alertingTime;
     PTime                connectedTime;
@@ -1237,12 +1240,12 @@ class OpalConnection : public PSafeObject
     PString              calledDestinationNumber;
     PString              calledDestinationName;
     PString              calledDestinationURL;
-    PBoolean                 remoteIsNAT;
+    PBoolean             remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
     PSyncPoint            userInputAvailable;
-    PBoolean                  detectInBandDTMF;
+    PBoolean              detectInBandDTMF;
     unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;
@@ -1275,6 +1278,7 @@ class OpalConnection : public PSafeObject
 #endif
 
     PString securityMode;
+    void * securityData;
 
     /**Set the phase of the connection.
        @param phaseToSet the phase to set
@@ -1301,9 +1305,9 @@ class OpalSecurityMode : public PObject
   public:
     virtual RTP_UDP * CreateRTPSession(
       PHandleAggregator * _aggregator,   ///< handle aggregator
-      unsigned id,          ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT,      ///<  PTrue is remote is behind NAT
-      OpalConnection  *connection	//zrtp_new we need this in order to save zrtp context into connection
+      unsigned id,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT,              ///< PTrue is remote is behind NAT
+      OpalConnection & connection	       ///< Connection creating session (may be needed by secure connections)
     ) = 0;
     virtual PBoolean Open() = 0;
 };

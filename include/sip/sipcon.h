@@ -449,19 +449,6 @@ class SIPConnection : public OpalConnection
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
 
-    //zrtp_new. SIP connections may need zrtp support
-    /**Create and open a new RTP session.
-       The type of RTP session that is created will be compatible with the
-       transport. At this time only IP (RTp over UDP) is supported.
-      */
-    virtual RTP_Session * CreateSession(
-      const OpalTransport & transport,
-      unsigned sessionID,
-      RTP_QOS * rtpqos
-    );
-    void *GetSecExtraData(); //zrtp_new getter and setter for the new field
-    void SetSecExtraData(void *data); //zrtp_new
-
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckTimeout);
@@ -530,8 +517,6 @@ class SIPConnection : public OpalConnection
     OpalMediaFormatList remoteFormatList;
 
     PString explicitFrom;
-
-	void    *secExtraData; //zrtp_new. for storing zrtp session context
 };
 
 
