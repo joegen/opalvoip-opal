@@ -209,6 +209,9 @@ static const char SpeedDialDescriptionKey[] = "Description";
 static const char RecentCallsGroup[] = "/Recent Calls";
 static const size_t MaxSavedRecentCalls = 10;
 
+static const char SIPonly[] = " (SIP only)";
+static const char H323only[] = " (H.323 only)";
+
 
 #define ID_LOG_MESSAGE  1001
 #define ID_STATE_CHANGE 1002
@@ -1922,7 +1925,9 @@ void MyManager::ApplyMediaInfo()
   }
 
   if (!mediaFormatOrder.IsEmpty()) {
+    PTRACE(3, "OpenPhone\tMedia order:\n"<< setfill('\n') << mediaFormatOrder << setfill(' '));
     SetMediaFormatOrder(mediaFormatOrder);
+    PTRACE(3, "OpenPhone\tMedia mask:\n"<< setfill('\n') << mediaFormatMask << setfill(' '));
     SetMediaFormatMask(mediaFormatMask);
   }
 }
@@ -1948,9 +1953,9 @@ MyMedia::MyMedia(const char * source, const PString & format)
   bool hasSIP = mediaFormat.IsValidForProtocol("sip");
   bool hasH323 = mediaFormat.IsValidForProtocol("h.323");
   if (hasSIP && !hasH323)
-    validProtocols = " (SIP only)";
+    validProtocols = SIPonly;
   else if (!hasSIP && hasH323)
-    validProtocols = " (H.323 only)";
+    validProtocols = H323only;
   else
     validProtocols = NULL;
 }
@@ -2807,6 +2812,8 @@ void OptionsDialog::AddCodec(wxCommandEvent & /*event*/)
     wxString value = m_allCodecs->GetString(sourceSelection);
     void * data = m_allCodecs->GetClientData(sourceSelection);
     value.Remove(0, value.Find(':')+2);
+    value.Replace(SIPonly, "");
+    value.Replace(H323only, "");
     if (m_selectedCodecs->FindString(value) < 0) {
       if (insertionPoint < 0)
         m_selectedCodecs->Append(value, data);
