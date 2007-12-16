@@ -29,102 +29,38 @@
 /* The Original Code was written by Matthias Schneider <ma30002000@yahoo.de> */
 /*****************************************************************************/
 
-#ifndef __RTPFRAME_H__
-#define __RTPFRAME_H__ 1
+#ifndef __MPI_H__
+#define __MPI_H__ 1
 
-#ifdef _MSC_VER
-#pragma warning(disable:4800)  // disable performance warning
-#endif
+#include <vector>
 
-class RTPFrame {
-public:
-  RTPFrame (const unsigned char* frame, int frameLen) {
-    _frame = (unsigned char*) frame;
-    _frameLen = frameLen;
-  };
+typedef struct MPI {
+  unsigned width;
+  unsigned height;
+  unsigned fps;
+} MPI;
 
-  RTPFrame (unsigned char* frame, int frameLen, unsigned char payloadType) {
-    _frame = frame;
-    _frameLen = frameLen;
-    if (_frameLen > 0)
-      _frame [0] = 0x80;
-    SetPayloadType(payloadType);
-  }
-
-  unsigned GetPayloadSize () {
-    return (_frameLen - GetHeaderSize());
-  }
-
-  void SetPayloadSize (int size) {
-    _frameLen = size + GetHeaderSize();
-  }
-
-  int GetFrameLen () {
-    return (_frameLen);
-  }
-
-  unsigned char* GetPayloadPtr () {
-    return (_frame + GetHeaderSize());
-  }
-
-  int GetHeaderSize () {
-    int size;
-    size = 12;
-    if (_frameLen < 12) 
-      return 0;
-    size += (_frame[0] & 0x0f) * 4;
-    if (!(_frame[0] & 0x10))
-      return size;
-    if ((size + 4) < _frameLen) 
-      return (size + 4 + (_frame[size + 2] << 8) + _frame[size + 3]);
-    return 0;
-  }
-
-  bool GetMarker () {
-    if (_frameLen < 2) 
-      return false;
-    return (_frame[1] & 0x80);
-  }
-
-  void SetMarker (bool set) {
-    if (_frameLen < 2) 
-      return;
-    _frame[1] = _frame[1] & 0x7f;
-    if (set) _frame[1] = _frame[1] | 0x80;
-  }
-
-  void SetPayloadType (unsigned char type) {
-    if (_frameLen < 2) 
-      return;
-    _frame[1] = _frame [1] & 0x80;
-    _frame[1] = _frame [1] | (type & 0x7f);
-  }
-
-  unsigned long GetTimestamp() {
-    if (_frameLen < 8)
-      return 0;
-    return ((_frame[4] << 24) + (_frame[5] << 16) + (_frame[6] << 8) + _frame[7]);
-  }
-
-  void SetTimestamp (unsigned long timestamp) {
-     if (_frameLen < 8)
-       return;
-     _frame[4] = (unsigned char) ((timestamp >> 24) & 0xff);
-     _frame[5] = (unsigned char) ((timestamp >> 16) & 0xff);
-     _frame[6] = (unsigned char) ((timestamp >> 8) & 0xff);
-     _frame[7] = (unsigned char) (timestamp & 0xff);
-  };
-
-protected:
-  unsigned char* _frame;
-  int _frameLen;
+class MPIList
+{
+  public:
+    MPIList();
+    void setMinWidth (unsigned width);
+    void setMinHeight (unsigned height);
+    void setMaxWidth (unsigned width);
+    void setMaxHeight (unsigned height);
+    void addMPI (unsigned width, unsigned height, unsigned fps);
+    void setDesiredWidth (unsigned width);
+    void setDesiredHeight (unsigned height);
+    void setDesiredFPS (unsigned fps);
+    bool getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* fps);
+    unsigned getSupportedMPI( unsigned width, unsigned height);
+  protected:
+    std::vector <MPI> MPIs;
+    MPI desiredMPI;
+    unsigned minWidth;
+    unsigned minHeight;
+    unsigned maxWidth;
+    unsigned maxHeight;
 };
 
-struct frameHeader {
-  unsigned int  x;
-  unsigned int  y;
-  unsigned int  width;
-  unsigned int  height;
-};
-	
-#endif /* __RTPFRAME_H__ */
+#endif /* __MPI_H__ */
