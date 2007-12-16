@@ -59,7 +59,6 @@
   #include <malloc.h>
   #define STRCMPI  _strcmpi
 #else
-  #include <sys/time.h>
   #include <unistd.h>
   #include <semaphore.h>
   #define STRCMPI  strcasecmp
