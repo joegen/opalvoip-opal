@@ -65,12 +65,12 @@ class theoraEncoderContext
     theoraEncoderContext ();
     ~theoraEncoderContext ();
 
-    void SetMaxRTPFrameSize (int size);
+    void SetMaxRTPFrameSize (unsigned size);
     void SetMaxKeyFramePeriod (unsigned period);
-    void SetTargetBitrate (int rate);
-    void SetFrameRate (int rate);
-    void SetFrameWidth (int width);
-    void SetFrameHeight (int height);
+    void SetTargetBitrate (unsigned rate);
+    void SetFrameRate (unsigned rate);
+    void SetFrameWidth (unsigned width);
+    void SetFrameHeight (unsigned height);
     void ApplyOptions ();
 
     int EncodeFrames (const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags);

@@ -98,25 +98,25 @@ theoraEncoderContext::~theoraEncoderContext()
   if (_txTheoraFrame) delete _txTheoraFrame;
 }
 
-void theoraEncoderContext::SetTargetBitrate(int rate)
+void theoraEncoderContext::SetTargetBitrate(unsigned rate)
 {
   _theoraInfo.target_bitrate     = rate * 2 / 3; // Anywhere between 45kbps and 2000kbps}
   _theoraInfo.keyframe_data_target_bitrate = rate;
 }
 
-void theoraEncoderContext::SetFrameRate(int rate)
+void theoraEncoderContext::SetFrameRate(unsigned rate)
 {
   _theoraInfo.fps_numerator      = (int)((rate + .5) * 1000); // ???
   _theoraInfo.fps_denominator    = 1000;
 }
 
-void theoraEncoderContext::SetFrameWidth(int width)
+void theoraEncoderContext::SetFrameWidth(unsigned width)
 {
   _theoraInfo.frame_width        = width;  // Must be multiple of 16
   _theoraInfo.width              = _theoraInfo.frame_width;
 }
 
-void theoraEncoderContext::SetFrameHeight(int height)
+void theoraEncoderContext::SetFrameHeight(unsigned height)
 {
   _theoraInfo.frame_height       = height; // Must be multiple of 16
   _theoraInfo.height             = _theoraInfo.frame_height;
@@ -229,9 +229,11 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
     dstLen = dstRTP.GetFrameLen();
     return 1;
   }
+
+  return 0;
 }
 
-void theoraEncoderContext::SetMaxRTPFrameSize (int size)
+void theoraEncoderContext::SetMaxRTPFrameSize (unsigned size)
 {
   _txTheoraFrame->SetMaxPayloadSize(size);
 }
@@ -585,8 +587,6 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
 
   int capWidth = 352;
   int capHeight = 288;
-  int frameWidth = 352;
-  int frameHeight = 288;
   int maxWidth = 1280;
   int maxHeight = 720;
 
