@@ -211,7 +211,6 @@ H323Connection::H323Connection(OpalCall & call,
 
   mediaWaitForConnect = PFalse;
   transmitterSidePaused = PFalse;
-  fastStartMediaStream = NULL;
 
   switch (options&FastStartOptionMask) {
     case FastStartOptionDisable :
@@ -2298,7 +2297,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
                       break;
                     channelToStart.Close();
                   }
-                  fastStartMediaStream = NULL;
+                  fastStartMediaStream.SetNULL();
                 }
                 else
                   PTRACE(2, "H225\tFast start channel open fail: insufficent bandwidth");
@@ -3482,7 +3481,7 @@ OpalMediaStreamPtr H323Connection::OpenMediaStream(const OpalMediaFormat & media
   OpalMediaStreamPtr stream;
   if (fastStartMediaStream != NULL) {
     stream = fastStartMediaStream;
-    fastStartMediaStream = NULL;
+    fastStartMediaStream.SetNULL();
     PTRACE(4, "H323\tOpenMediaStream fast started for session " << sessionID);
   }
   else {
@@ -3623,7 +3622,7 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
           break;
         channel.Close();
       }
-      fastStartMediaStream = NULL;
+      fastStartMediaStream.SetNULL();
     }
   }
 }
