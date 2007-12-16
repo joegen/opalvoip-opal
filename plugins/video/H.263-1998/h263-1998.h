@@ -58,7 +58,7 @@ typedef unsigned char BYTE;
 #define H263P_BITRATE         327600
 #define H263P_PAYLOAD_SIZE      1400
 #define H263P_FRAME_RATE          25
-#define H263P_KEY_FRAME_INTERVAL 2.0
+#define H263P_KEY_FRAME_INTERVAL 125
 
 #define CIF_WIDTH       352
 #define CIF_HEIGHT      288
@@ -76,29 +76,44 @@ typedef unsigned char BYTE;
 #define SQCIF_HEIGHT    96
 
 #define MAX_YUV420P_FRAME_SIZE (((CIF16_WIDTH * CIF16_HEIGHT * 3) / 2) + FF_INPUT_BUFFER_PADDING_SIZE)
+enum Annex {
+    D,
+    F,
+    I,
+    K,
+    J,
+    S,
+    T,
+    N,
+    P
+};
 
 class H263PEncoderContext
 {
   public:
     H263PEncoderContext();
     ~H263PEncoderContext();
-    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-    unsigned _frameWidth, _frameHeight;
-    void SetMaxRTPFrameSize(int size);
 
-  protected:
+    int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
+    unsigned frameWidth, frameHeight; // there seems to be a memory override somewhere... without these variables there is a segfault
+    void SetMaxRTPFrameSize (unsigned size);
+    void SetMaxKeyFramePeriod (unsigned period);
+    void SetTargetBitrate (unsigned rate);
+    void SetFrameWidth (unsigned width);
+    void SetFrameHeight (unsigned height);
+    void SetTSTO (unsigned tsto);
+    void EnableAnnex (Annex annex);
+    void DisableAnnex (Annex annex);
     bool OpenCodec();
     void CloseCodec();
+
+  protected:
+    void InitContext();
 
     unsigned char _inputFrameBuffer[MAX_YUV420P_FRAME_SIZE];
     AVCodec        *_codec;
     AVCodecContext *_context;
     AVFrame        *_inputFrame;
-
-    int _videoQMax, _videoQMin; // dynamic video quality min/max limits, 1..31
-    int _videoQuality; // current video encode quality setting, 1..31
-
-    int _bitRate;
 
     H263PFrame* _txH263PFrame;
     int _frameCount;
@@ -128,18 +143,36 @@ class H263PDecoderContext
     bool _gotIFrame;
 };
 
-static void * create_encoder(const struct PluginCodec_Definition * /*codec*/);
-static int encoder_set_options(const PluginCodec_Definition *, void * _context, const char * , void * parm, unsigned * parmLen);
-static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/, void * _context);
-static int codec_encoder(const struct PluginCodec_Definition * , void * _context, const void * from, unsigned * fromLen,
-                         void * to, unsigned * toLen, unsigned int * flag);
-static void * create_decoder(const struct PluginCodec_Definition *);
-static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context);
-static int codec_decoder(const struct PluginCodec_Definition *, void * _context, const void * from, unsigned * fromLen, void * to,
-                         unsigned * toLen, unsigned int * flag);
-static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *);
-static int get_codec_options(const struct PluginCodec_Definition * codec, void *, const char *, void * parm, unsigned * parmLen);
+static int valid_for_protocol    ( const struct PluginCodec_Definition *, void *, const char *,
+                                   void * parm, unsigned * parmLen);
+static int get_codec_options     ( const struct PluginCodec_Definition * codec, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int free_codec_options    ( const struct PluginCodec_Definition *, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
 
+static void * create_encoder     ( const struct PluginCodec_Definition *);
+static void destroy_encoder      ( const struct PluginCodec_Definition *, void * _context);
+static int codec_encoder         ( const struct PluginCodec_Definition *, void * _context,
+                                   const void * from, unsigned * fromLen,
+                                   void * to, unsigned * toLen,
+                                   unsigned int * flag);
+static int to_normalised_options ( const struct PluginCodec_Definition *, void *, const char *,
+                                   void * parm, unsigned * parmLen);
+static int to_customised_options ( const struct PluginCodec_Definition *, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int encoder_set_options   ( const struct PluginCodec_Definition *, void * _context, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int encoder_get_output_data_size ( const PluginCodec_Definition *, void *, const char *,
+                                   void *, unsigned *);
+
+static void * create_decoder     ( const struct PluginCodec_Definition *);
+static void destroy_decoder      ( const struct PluginCodec_Definition *, void * _context);
+static int codec_decoder         ( const struct PluginCodec_Definition *, void * _context, 
+                                   const void * from, unsigned * fromLen,
+                                   void * to, unsigned * toLen,
+                                   unsigned int * flag);
+static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, void *, const char *,
+                                   void *, unsigned *);
 /////////////////////////////////////////////////////////////////////////////
 
 
@@ -172,21 +205,24 @@ static struct PluginCodec_information licenseInfo = {
 
 static const char YUV420PDesc[]  = { "YUV420P" };
 
-static const char h263QCIFDesc[]  = { "H.263P-QCIF" };
-static const char h263CIFDesc[]   = { "H.263P-CIF" };
-static const char h263Desc[]      = { "H.263P" };
+static const char h263PDesc[]      = { "H.263P" };
 
 static const char sdpH263[]   = { "h263-1998" };
 
 static PluginCodec_ControlDefn EncoderControls[] = {
-  { "get_codec_options", get_codec_options },
-  { "set_codec_options", encoder_set_options },
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
   { NULL }
 };
 
 static PluginCodec_ControlDefn DecoderControls[] = {
-  { "get_codec_options",    get_codec_options },
-  { "get_output_data_size", decoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
@@ -211,12 +247,6 @@ static struct PluginCodec_Option const sifMPI =
 static struct PluginCodec_Option const sif4MPI =
   { PluginCodec_StringOption, "SIF4 MPI", false, PluginCodec_EqualMerge, "640,480,1", "CUSTOM"};
 
-/* All of the annexes below are turned off and set to read/only because this
-   implementation does not support them. Their presence here is so that if
-   someone out there does a different implementation of the codec and copies
-   this file as a template, they will get them and hopefully notice that they
-   can just make them read/write and/or turned on.
- */
 static struct PluginCodec_Option const annexF =
   { PluginCodec_BoolOption,    "Annex F",   false,  PluginCodec_MinMerge, "T", "F", "F" };
 
@@ -241,19 +271,7 @@ static struct PluginCodec_Option const annexT =
 static struct PluginCodec_Option const annexD =
   { PluginCodec_BoolOption,    "Annex D",   true,  PluginCodec_MinMerge, "T", "D", "F" };
 
-/*
-static struct PluginCodec_Option const * const qcifOptionTable[] = {
-  &qcifMPI,
-  NULL
-};
-
-static struct PluginCodec_Option const * const cifOptionTable[] = {
-  &cifMPI,
-  NULL
-};
-*/
-
-static struct PluginCodec_Option const * const xcifOptionTable[] = {
+static struct PluginCodec_Option const * const optionTable[] = {
   &qcifMPI,
   &cifMPI,
   &sqcifMPI,
@@ -274,148 +292,7 @@ static struct PluginCodec_Option const * const xcifOptionTable[] = {
 
 
 /////////////////////////////////////////////////////////////////////////////
-/*
-static struct PluginCodec_Definition h263CodecDefn[6] = {
-
-{ 
-  // CIF only encoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeShared |         // specified RTP type
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  h263CIFDesc,                        // text decription
-  YUV420PDesc,                        // source format
-  h263CIFDesc,                        // destination format
-
-  cifOptionTable,                     // user data 
-
-  H263P_CLOCKRATE,                     // samples per second
-  H263P_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpH263,                            // RTP payload name
-
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  EncoderControls,                    // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // CIF only decoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeShared |         // specified RTP type
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  h263CIFDesc,                        // text decription
-  h263CIFDesc,                        // source format
-  YUV420PDesc,                        // destination format
-
-  cifOptionTable,                     // user data 
-
-  H263P_CLOCKRATE,                     // samples per second
-  H263P_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpH263,                            // RTP payload name
-
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  DecoderControls,                    // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-
-{ 
-  // QCIF only encoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeShared |         // specified RTP type
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  h263QCIFDesc,                       // text decription
-  YUV420PDesc,                        // source format
-  h263QCIFDesc,                       // destination format
-
-  qcifOptionTable,                    // user data 
-
-  H263P_CLOCKRATE,                     // samples per second
-  H263P_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpH263,                            // RTP payload name
-
-  create_encoder,                     // create codec function
-  destroy_encoder,                    // destroy codec
-  codec_encoder,                      // encode/decode
-  EncoderControls,                    // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-{ 
-  // QCIF only decoder
-  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
-  &licenseInfo,                       // license information
-
-  PluginCodec_MediaTypeVideo |        // audio codec
-  PluginCodec_RTPTypeShared |         // specified RTP type
-  PluginCodec_RTPTypeDynamic,         // specified RTP type
-
-  h263QCIFDesc,                       // text decription
-  h263QCIFDesc,                       // source format
-  YUV420PDesc,                        // destination format
-
-  qcifOptionTable,                    // user data 
-
-  H263P_CLOCKRATE,                     // samples per second
-  H263P_BITRATE,                       // raw bits per second
-  20000,                              // nanoseconds per frame
-
-  QCIF_WIDTH,                         // frame width
-  QCIF_HEIGHT,                        // frame height
-  10,                                 // recommended frame rate
-  60,                                 // maximum frame rate
-  0,                                  // IANA RTP payload code
-  sdpH263,                            // RTP payload name
-
-  create_decoder,                     // create codec function
-  destroy_decoder,                    // destroy codec
-  codec_decoder,                      // encode/decode
-  DecoderControls,                    // codec controls
-
-  PluginCodec_H323VideoCodec_h263,    // h323CapabilityType 
-  NULL                                // h323CapabilityData
-},
-*/
-static struct PluginCodec_Definition h263CodecDefn[2] = {
+static struct PluginCodec_Definition h263PCodecDefn[2] = {
 { 
   // All frame sizes (dynamic) encoder
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
@@ -425,14 +302,14 @@ static struct PluginCodec_Definition h263CodecDefn[2] = {
   PluginCodec_RTPTypeShared |         // specified RTP type
   PluginCodec_RTPTypeDynamic,         // specified RTP type
 
-  h263Desc,                           // text decription
+  h263PDesc,                           // text decription
   YUV420PDesc,                        // source format
-  h263Desc,                           // destination format
+  h263PDesc,                           // destination format
 
-  xcifOptionTable,                    // user data 
+  optionTable,                        // user data 
 
-  H263P_CLOCKRATE,                     // samples per second
-  H263P_BITRATE,                       // raw bits per second
+  H263P_CLOCKRATE,                    // samples per second
+  H263P_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
   CIF4_WIDTH,                         // frame width
@@ -459,14 +336,14 @@ static struct PluginCodec_Definition h263CodecDefn[2] = {
   PluginCodec_RTPTypeShared |         // specified RTP type
   PluginCodec_RTPTypeDynamic,         // specified RTP type
 
-  h263Desc,                           // text decription
-  h263Desc,                           // source format
+  h263PDesc,                           // text decription
+  h263PDesc,                           // source format
   YUV420PDesc,                        // destination format
 
-  xcifOptionTable,                    // user data 
+  optionTable,                        // user data 
 
-  H263P_CLOCKRATE,                     // samples per second
-  H263P_BITRATE,                       // raw bits per second
+  H263P_CLOCKRATE,                    // samples per second
+  H263P_BITRATE,                      // raw bits per second
   20000,                              // nanoseconds per frame
 
   CIF4_WIDTH,                         // frame width
