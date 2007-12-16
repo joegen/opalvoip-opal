@@ -47,7 +47,8 @@ vpath   %.o   $(OBJDIR)
 SRCS	+= h263-1998.cxx \
 	   h263pframe.cxx \
 	   $(COMMONDIR)/trace.cxx \
-	   $(COMMONDIR)/dyna.cxx
+	   $(COMMONDIR)/dyna.cxx \
+	   $(COMMONDIR)/mpi.cxx
 
 $(OBJDIR)/%.o : %.cxx
 	@mkdir -p $(OBJDIR) >/dev/null 2>&1
