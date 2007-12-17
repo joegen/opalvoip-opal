@@ -311,7 +311,6 @@ H323UnidirectionalChannel::H323UnidirectionalChannel(H323Connection & conn,
   : H323Channel(conn, cap),
     receiver(direction == IsReceiver)
 {
-  mediaStream = NULL;
 }
 
 H323UnidirectionalChannel::~H323UnidirectionalChannel()
@@ -385,7 +384,7 @@ void H323UnidirectionalChannel::Close()
 
   // If we have source media stream close it
   connection.RemoveMediaStream(*mediaStream);
-  mediaStream = NULL;
+  mediaStream.SetNULL();
 
   H323Channel::Close();
 }
