@@ -378,7 +378,7 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
 
   _txH263PFrame->BeginNewFrame();
   _txH263PFrame->SetTimestamp(srcRTP.GetTimestamp());
-  _txH263PFrame->SetFrameSize (FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, _txH263PFrame->GetFramePtr(), frameSize, _inputFrame));
+  _txH263PFrame->SetFrameSize (FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, _txH263PFrame->GetFramePtr(), frameSize, _inputFrame));  
   _frameCount++; 
 
   if (_txH263PFrame->GetFrameSize() == 0) {
@@ -655,11 +655,11 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     return 0;
 
   MPIList h263MPIList;
-  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         h263MPIList.setDesiredWidth(atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-        h263MPIList.setDesiredWidth(atoi(option[1]));
+        h263MPIList.setDesiredHeight(atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
         h263MPIList.setDesiredFPS( (int) (90000 / atoi(option[1])) );
       if (STRCMPI(option[0], "QCIF MPI") == 0)
@@ -697,7 +697,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
     return 0;
 
   MPIList h263MPIList;
-  for (const char * const * option = (const char * const *)parm; *option != NULL; option += 2) {
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH) == 0)
         h263MPIList.setMinWidth(atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
@@ -733,7 +733,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
     return 0; // illegal
   }
 
-  char ** options = (char **)calloc(5, sizeof(char *));
+  char ** options = (char **)calloc(11, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
