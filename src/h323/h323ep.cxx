@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323ep.h"
 #endif
@@ -1304,5 +1307,8 @@ PBoolean H323EndPoint::OnSendFeatureSet(unsigned, H225_FeatureSet & /*features*/
 void H323EndPoint::OnReceiveFeatureSet(unsigned, const H225_FeatureSet & /*features*/)
 {
 }
+
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

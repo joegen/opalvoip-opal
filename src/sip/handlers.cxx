@@ -28,22 +28,25 @@
  * $Date$
  */
 
+#include <ptlib.h>
+
+#include <opal/buildopts.h>
+#if OPAL_SIP
+
 #ifdef __GNUC__
 #pragma implementation "handlers.h"
 #endif
 
-#include <ptlib.h>
+#include <sip/handlers.h>
 
+#include <ptclib/pdns.h>
 #include <ptclib/enum.h>
+#include <sip/sipep.h>
 
 #if P_EXPAT
 #include <ptclib/pxml.h>
 #endif
 
-#include <ptclib/pdns.h>
-
-#include <sip/sipep.h>
-#include <sip/handlers.h>
 
 #define new PNEW
 
@@ -957,3 +960,5 @@ PSafePtr<SIPHandler> SIPHandlersList::FindSIPHandlerByDomain(const PString & nam
   return NULL;
 }
 
+
+#endif // OPAL_SIP

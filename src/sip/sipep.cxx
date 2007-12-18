@@ -29,21 +29,21 @@
  */
 
 #include <ptlib.h>
-#include <ptclib/enum.h>
+
+#include <opal/buildopts.h>
+#ifdef OPAL_SIP
 
 #ifdef __GNUC__
 #pragma implementation "sipep.h"
 #endif
 
-
 #include <sip/sipep.h>
 
+#include <ptclib/enum.h>
 #include <sip/sippdu.h>
 #include <sip/sipcon.h>
-
 #include <opal/manager.h>
 #include <opal/call.h>
-
 #include <sip/handlers.h>
 
 
@@ -1181,5 +1181,7 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
   manager.OnRTPStatistics(connection, session);
 }
 
+
+#endif // OPAL_SIP
 
 // End of file ////////////////////////////////////////////////////////////////

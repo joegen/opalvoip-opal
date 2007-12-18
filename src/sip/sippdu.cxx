@@ -30,10 +30,12 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#ifdef OPAL_SIP
+
 #ifdef __GNUC__
 #pragma implementation "sippdu.h"
 #endif
-
 
 #include <sip/sippdu.h>
 
@@ -2438,4 +2440,8 @@ SIPOptions::SIPOptions(SIPEndPoint & ep,
                      viaAddress);
   mime.SetAccept("application/sdp");
 }
+
+
+#endif // OPAL_SIP
+
 // End of file ////////////////////////////////////////////////////////////////

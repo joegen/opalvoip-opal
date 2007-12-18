@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#ifdef OPAL_SIP
+
 #ifdef __GNUC__
 #pragma implementation "sdp.h"
 #endif
@@ -1114,5 +1117,7 @@ void SDPSessionDescription::SetDefaultConnectAddress(const OpalTransportAddress 
      ownerAddress = address;
 }
 
+
+#endif // OPAL_SIP
 
 // End of file ////////////////////////////////////////////////////////////////

@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323con.h"
 #endif
@@ -4576,5 +4579,7 @@ H460_FeatureSet * H323Connection::GetFeatureSet()
 }
 #endif
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

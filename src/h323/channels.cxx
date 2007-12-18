@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "channels.h"
 #endif
@@ -1203,5 +1206,7 @@ PBoolean H323DataChannel::CreateTransport()
   return transport != NULL;
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////
