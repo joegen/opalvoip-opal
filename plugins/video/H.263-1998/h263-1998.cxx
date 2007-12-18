@@ -123,7 +123,7 @@ H263PEncoderContext::~H263PEncoderContext()
 
     FFMPEGLibraryInstance.AvcodecFree(_context);
     FFMPEGLibraryInstance.AvcodecFree(_inputFrame);
-  }
+  }  
   TRACE(3, "H263+\tEncoder\tH263+ encoder closed");
 }
 
@@ -369,10 +369,11 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   int frameSize = (size * 3) >> 1;
  
   // we need FF_INPUT_BUFFER_PADDING_SIZE allocated bytes after the YVU420P image for the encoder
-  memcpy (_inputFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
-  memset (_inputFrameBuffer + frameSize, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
+  memset (_inputFrameBuffer, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
+  memcpy (_inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE, OPAL_VIDEO_FRAME_DATA_PTR(header), frameSize);
+  memset (_inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE + frameSize, 0 , FF_INPUT_BUFFER_PADDING_SIZE);
 
-  _inputFrame->data[0] = _inputFrameBuffer;
+  _inputFrame->data[0] = _inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE;
   _inputFrame->data[1] = _inputFrame->data[0] + size;
   _inputFrame->data[2] = _inputFrame->data[1] + (size / 4);
 
