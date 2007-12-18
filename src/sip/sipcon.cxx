@@ -1832,6 +1832,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   if (!proxy.IsEmpty() && routeSet.GetSize() == 0) 
     routeSet += "sip:" + proxy.GetHostName() + ':' + PString(proxy.GetPort()) + ";lr";
 
+  needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
   if (invite->Start())
