@@ -881,10 +881,10 @@ void SDPSessionDescription::PrintOn(ostream & str) const
   // encode mandatory session information
   str << "v=" << protocolVersion << "\r\n"
          "o=" << ownerUsername << ' '
-        << ownerSessionId << ' '
-        << ownerVersion << ' '
-              << GetConnectAddressString(ownerAddress)
-              << "\r\n"
+      << ownerSessionId << ' '
+      << ownerVersion << ' '
+      << GetConnectAddressString(ownerAddress)
+      << "\r\n"
          "s=" << sessionName << "\r\n";
 
   // make sure the "c=" line (if required) is before the "t=" otherwise the proxy
@@ -1108,5 +1108,14 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
   
   return direction;
 }
+
+
+void SDPSessionDescription::SetDefaultConnectAddress(const OpalTransportAddress & address)
+{
+   defaultConnectAddress = address;
+   if (ownerAddress.IsEmpty())
+     ownerAddress = address;
+}
+
 
 // End of file ////////////////////////////////////////////////////////////////

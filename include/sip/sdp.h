@@ -252,7 +252,7 @@ class SDPSessionDescription : public PObject
     const OpalTransportAddress & GetDefaultConnectAddress() const { return defaultConnectAddress; }
     void SetDefaultConnectAddress(
       const OpalTransportAddress & address
-    ) { defaultConnectAddress = address; }
+    );
 	
     const PString & GetBandwidthModifier() const { return bandwidthModifier; }
     void SetBandwidthModifier(const PString & modifier) { bandwidthModifier = modifier; }
