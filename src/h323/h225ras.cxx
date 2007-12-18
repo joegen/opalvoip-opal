@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h225ras.h"
 #endif
@@ -1557,5 +1560,7 @@ PBoolean H225_RAS::OnReceiveUnknown(const H323RasPDU &)
   return response.Write(*transport);
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

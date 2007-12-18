@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323neg.h"
 #endif
@@ -1462,5 +1465,7 @@ void H245NegRoundTripDelay::HandleTimeout(PTimer &, INT)
   connection.OnControlProtocolError(H323Connection::e_RoundTripDelay, "Timeout");
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

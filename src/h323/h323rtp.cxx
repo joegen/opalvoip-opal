@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323rtp.h"
 #endif
@@ -276,5 +279,7 @@ void H323_RTP_UDP::OnSendRasInfo(H225_RTPSession & info)
   rca.SetPDU(info.m_rtcpAddress.m_sendAddress);
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

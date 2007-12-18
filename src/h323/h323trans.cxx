@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323trans.h"
 #endif
@@ -935,5 +938,7 @@ PBoolean H323TransactionServer::RemoveListener(H323Transactor * listener)
   return ok;
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////////

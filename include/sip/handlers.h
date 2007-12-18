@@ -42,7 +42,6 @@
 #include <ptlib/safecoll.h>
 
 #include <sip/sippdu.h>
-#include <sip/sipep.h>
 
 
 /* Class to handle SIP REGISTER, SUBSCRIBE, MESSAGE, and renew

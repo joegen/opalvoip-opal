@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "transaddr.h"
 #endif
@@ -348,5 +351,6 @@ void H323SetTransportAddresses(const H323Transport & associatedTransport,
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
+#endif // OPAL_H323
 
+/////////////////////////////////////////////////////////////////////////////

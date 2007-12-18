@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323pdu.h"
 #endif
@@ -2035,5 +2038,7 @@ H225_ServiceControlResponse & H323RasPDU::BuildServiceControlResponse(unsigned s
   return scr;
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323annexg.h"
 #endif
@@ -423,5 +426,7 @@ PBoolean H323_AnnexG::OnReceiveAuthenticationRejection(const H501PDU & PTRACE_PA
   return PFalse;
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

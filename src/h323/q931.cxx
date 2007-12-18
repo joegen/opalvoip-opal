@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "q931.h"
 #endif
@@ -1136,5 +1139,7 @@ PBoolean Q931::GetChannelIdentification(unsigned * interfaceType,
   return PTrue;
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

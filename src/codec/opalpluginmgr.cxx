@@ -314,9 +314,12 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
             continue;
         }
 
+#if OPAL_SIP
         newOption->SetFMTPName(option->m_FMTPName);
         newOption->SetFMTPDefault(option->m_FMTPDefault);
+#endif // OPAL_SIP
 
+#if OPAL_H323
         OpalMediaOption::H245GenericInfo genericInfo;
         genericInfo.ordinal = option->m_H245Generic&PluginCodec_H245_OrdinalMask;
         if (option->m_H245Generic&PluginCodec_H245_Collapsing)
@@ -335,6 +338,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
         genericInfo.excludeOLC = (option->m_H245Generic&PluginCodec_H245_OLC) == 0;
         genericInfo.excludeReqMode = (option->m_H245Generic&PluginCodec_H245_ReqMode) == 0;
         newOption->SetH245Generic(genericInfo);
+#endif // OPAL_H323
 
         format.AddOption(newOption, PTrue);
       }
@@ -342,6 +346,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
     freeOptionsControl.Call(rawOptions, &optionsLen);
   }
 
+#if OPAL_H323
   if (codecDef->h323CapabilityType == PluginCodec_H323Codec_generic && codecDef->h323CapabilityData != NULL) {
     const PluginCodec_H323GenericCodecData * genericData = (const PluginCodec_H323GenericCodecData *)codecDef->h323CapabilityData;
     const PluginCodec_H323GenericParameterDefinition *ptr = genericData->params;
@@ -397,6 +402,7 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
       }
     }
   }
+#endif // OPAL_H323
 
 //  PStringStream str; format.PrintOptions(str);
 //  PTRACE(5, "OpalPlugin\tOpalMediaFormat " << format << " has options\n" << str);
@@ -1226,7 +1232,7 @@ class H323GSMPluginCapability : public H323AudioPluginCapability
     int scrambled;
 };
 
-#endif // OPAL_H323
+#endif // OPAL_AUDIO
 
 #endif // OPAL_H323
 
