@@ -886,7 +886,7 @@ void MyManager::SetNATHandling()
 
         PSTUNClient::NatTypes nat = SetSTUNServer(m_STUNServer);
 
-        LogWindow << "STUN server \"" << stun << "\" replies " << nat;
+        LogWindow << "STUN server \"" << stun->GetServer() << "\" replies " << nat;
         PIPSocket::Address externalAddress;
         if (nat != PSTUNClient::BlockedNat && GetSTUN()->GetExternalAddress(externalAddress))
           LogWindow << " with address " << externalAddress;
