@@ -75,7 +75,7 @@ typedef unsigned char BYTE;
 #define SQCIF_WIDTH     128
 #define SQCIF_HEIGHT    96
 
-#define MAX_YUV420P_FRAME_SIZE (((CIF16_WIDTH * CIF16_HEIGHT * 3) / 2) + FF_INPUT_BUFFER_PADDING_SIZE)
+#define MAX_YUV420P_FRAME_SIZE (((CIF16_WIDTH * CIF16_HEIGHT * 3) / 2) + (FF_INPUT_BUFFER_PADDING_SIZE*2))
 enum Annex {
     D,
     F,
@@ -95,7 +95,6 @@ class H263PEncoderContext
     ~H263PEncoderContext();
 
     int EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE * dst, unsigned & dstLen, unsigned int & flags);
-    unsigned frameWidth, frameHeight; // there seems to be a memory override somewhere... without these variables there is a segfault
     void SetMaxRTPFrameSize (unsigned size);
     void SetMaxKeyFramePeriod (unsigned period);
     void SetTargetBitrate (unsigned rate);
