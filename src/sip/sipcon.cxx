@@ -655,6 +655,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
                                               SDPSessionDescription & sdpOut)
 {
   RTP_UDP * rtpSession = NULL;
+  SDPMediaDescription * localMedia = NULL;
 
   // if no matching media type, return PFalse
   SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(rtpMediaType);
@@ -664,8 +665,13 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   }
 
   OpalMediaFormatList sdpFormats = incomingMedia->GetMediaFormats(rtpSessionId);
+  sdpFormats.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (sdpFormats.GetSize() == 0) {
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+    // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
+    localMedia = new SDPMediaDescription(OpalTransportAddress(), rtpMediaType);
+    localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats()[0]));
+    sdpOut.AddMediaDescription(localMedia);
     return PFalse;
   }
   
@@ -673,13 +679,6 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   // We will answer with the media format that will be opened.
   // When sending an answer SDP, remove media formats that we do not support.
   remoteFormatList += sdpFormats;
-  remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
-  if (remoteFormatList.GetSize() == 0) {
-    Release(EndedByCapabilityExchange);
-    return PFalse;
-  }
-
-  SDPMediaDescription * localMedia = NULL;
 
   // find the payload type used for telephone-event, if present
   const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
@@ -1821,9 +1820,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   // and start with a fresh To tag
   // Section 8.1.3.5 of RFC3261 tells that the authenticated
   // request SHOULD have the same value of the Call-ID, To and From.
-  PINDEX j;
-  if ((j = remotePartyAddress.Find (';')) != P_MAX_INDEX)
-    remotePartyAddress = remotePartyAddress.Left(j);
+  remotePartyAddress.Delete(remotePartyAddress.Find (';'), P_MAX_INDEX);
   
   if (proxy.IsEmpty())
     proxy = endpoint.GetProxy();
