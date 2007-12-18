@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "gkserver.h"
 #endif
@@ -3569,6 +3572,8 @@ void H323GatekeeperServer::OnReceiveFeatureSet(unsigned, const H225_FeatureSet &
 {
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////
 

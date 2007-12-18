@@ -30,12 +30,11 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h235auth.h"
-#endif
-
-#ifndef _PTLIB_H
-#include <ptlib.h>
 #endif
 
 #include <ptclib/random.h>
@@ -665,5 +664,7 @@ PBoolean H235AuthCAT::IsSecuredPDU(unsigned rasPDU, PBoolean received) const
   }
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

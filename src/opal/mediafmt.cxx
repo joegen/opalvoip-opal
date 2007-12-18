@@ -174,7 +174,6 @@ OpalMediaOption::OpalMediaOption(const char * name, bool readOnly, MergeType mer
   , m_merge(merge)
 {
   m_name.Replace("=", "_", true);
-  memset(&m_H245Generic, 0, sizeof(m_H245Generic));
 }
 
 
@@ -1114,8 +1113,13 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
     const OpalMediaOption & option = options[i];
     strm << right << setw(TitleWidth) << option.GetName() << " (R/" << (option.IsReadOnly() ? 'O' : 'W')
          << ") = " << left << setw(10) << option.AsString();
+
+#if OPAL_SIP
     if (!option.GetFMTPName().IsEmpty())
       strm << "  FMTP name: " << option.GetFMTPName() << " (" << option.GetFMTPDefault() << ')';
+#endif // OPAL_SIP
+
+#if OPAL_H323
     const OpalMediaOption::H245GenericInfo & genericInfo = option.GetH245Generic();
     if (genericInfo.mode != OpalMediaOption::H245GenericInfo::None) {
       strm << "  H.245 Ordinal: " << genericInfo.ordinal
@@ -1127,6 +1131,7 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
       if (!genericInfo.excludeReqMode)
         strm << " RM";
     }
+#endif // OPAL_H323
     strm << '\n';
   }
   strm << endl;

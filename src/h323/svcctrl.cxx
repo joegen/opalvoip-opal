@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "svcctrl.h"
 #endif
@@ -261,5 +264,7 @@ void H323CallCreditServiceControl::OnChange(unsigned /*type*/,
     connection->SetEnforcedDurationLimit(durationLimit);
 }
 
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////

@@ -231,13 +231,17 @@ class OpalMediaOption : public PObject
     MergeType GetMerge() const { return m_merge; }
     void SetMerge(MergeType merge) { m_merge = merge; }
 
+#if OPAL_SIP
     const PString & GetFMTPName() const { return m_FMTPName; }
     void SetFMTPName(const char * name) { m_FMTPName = name; }
 
     const PString & GetFMTPDefault() const { return m_FMTPDefault; }
     void SetFMTPDefault(const char * value) { m_FMTPDefault = value; }
+#endif // OPAL_SIP
 
+#if OPAL_H323
     struct H245GenericInfo {
+      H245GenericInfo() { memset(this, 0, sizeof(*this)); }
       unsigned ordinal:16;
       enum Modes {
         None,
@@ -256,14 +260,21 @@ class OpalMediaOption : public PObject
 
     const H245GenericInfo & GetH245Generic() const { return m_H245Generic; }
     void SetH245Generic(const H245GenericInfo & generic) { m_H245Generic = generic; }
+#endif // OPAL_H323
 
   protected:
     PCaselessString m_name;
     bool            m_readOnly;
     MergeType       m_merge;
+
+#if OPAL_SIP
     PCaselessString m_FMTPName;
     PString         m_FMTPDefault;
+#endif // OPAL_SIP
+
+#if OPAL_H323
     H245GenericInfo m_H245Generic;
+#endif // OPAL_H323
 };
 
 #ifndef __USE_STL__

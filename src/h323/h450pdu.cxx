@@ -30,13 +30,13 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+#if OPAL_H450
+
 #ifdef __GNUC__
 #pragma implementation "h450pdu.h"
 #endif
-
-#include <opal/buildopts.h>
-
-#if OPAL_H450
 
 #include <h323/h450pdu.h>
 
@@ -2515,4 +2515,5 @@ PBoolean H45011Handler::OnReceivedReject(int PTRACE_PARAM(problemType), int PTRA
 };
 
 #endif // OPAL_H450
+#endif // OPAL_H323
 

@@ -31,6 +31,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h4601.h"
 #endif
@@ -1498,3 +1501,6 @@ H460_Feature * H460_FeatureSet::GetFeature(const H460_FeatureID & id)
 {
 	return &Features[id];
 }
+
+
+#endif // OPAL_H323

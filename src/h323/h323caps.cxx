@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "h323caps.h"
 #endif
@@ -2750,4 +2753,7 @@ void H245_AudioCapability::PrintOn(ostream & strm) const
 
   //PASN_Choice::PrintOn(strm);
 }
-#endif
+
+#endif // PASN_NOPRINTON
+
+#endif // OPAL_H323

@@ -30,6 +30,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#ifdef OPAL_SIP
+
 #ifdef __GNUC__
 #pragma implementation "sipcon.h"
 #endif
@@ -2379,7 +2382,7 @@ void SIP_RTP_Session::OnRxStatistics(const RTP_Session & session) const
   connection.OnRTPStatistics(session);
 }
 
-#if OPAL_VIDEO
+#ifdef OPAL_VIDEO
 void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
 {
   // We got an intra frame request control packet, alert the encoder.
@@ -2400,6 +2403,9 @@ void SIP_RTP_Session::OnRxIntraFrameRequest(const RTP_Session & session) const
 void SIP_RTP_Session::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 {
 }
-#endif
+#endif // OPAL_VIDEO
+
+
+#endif // OPAL_SIP
 
 // End of file ////////////////////////////////////////////////////////////////

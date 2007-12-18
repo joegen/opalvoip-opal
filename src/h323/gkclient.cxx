@@ -33,6 +33,9 @@
 
 #include <ptlib.h>
 
+#include <opal/buildopts.h>
+#if OPAL_H323
+
 #ifdef __GNUC__
 #pragma implementation "gkclient.h"
 #endif
@@ -2002,6 +2005,9 @@ void H323Gatekeeper::InterfaceMonitor::OnRemoveInterface(const PIPSocket::Interf
 {
   gk.OnRemoveInterface(entry, priority);
 }
+
+
+#endif // OPAL_H323
 
 /////////////////////////////////////////////////////////////////////////////
 
