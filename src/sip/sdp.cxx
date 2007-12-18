@@ -89,7 +89,7 @@ static PString GetConnectAddressString(const OpalTransportAddress & address)
   PStringStream str;
 
   PIPSocket::Address ip;
-  if (address != 0 && address.GetIpAddress(ip))
+  if (address.GetIpAddress(ip))
     str << "IN IP" << ip.GetVersion() << ' ' << ip;
   else
     str << "IN IP4 0.0.0.0";
@@ -614,14 +614,9 @@ void SDPMediaDescription::SetPacketTime(const PString & optionName, const PStrin
 
 void SDPMediaDescription::PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const
 {
-  PIPSocket::Address commonIP;
-  commonAddr.GetIpAddress(commonIP);
-
-  PIPSocket::Address transportIP;
-  transportAddress.GetIpAddress(transportIP);
-
   PString connectString;
-  if (commonIP != transportIP)
+  PIPSocket::Address commonIP, transportIP;
+  if (transportAddress.GetIpAddress(transportIP) && commonAddr.GetIpAddress(commonIP) && commonIP != transportIP)
     connectString = GetConnectAddressString(transportAddress);
 
   PrintOn(str, connectString);
@@ -629,8 +624,6 @@ void SDPMediaDescription::PrintOn(const OpalTransportAddress & commonAddr, ostre
 
 void SDPMediaDescription::PrintOn(ostream & str) const
 {
-  PIPSocket::Address ip;
-  transportAddress.GetIpAddress(ip);
   PrintOn(str, GetConnectAddressString(transportAddress));
 }
 
@@ -645,7 +638,7 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
     return;
 
   PIPSocket::Address ip;
-  WORD port;
+  WORD port = 0;
   transportAddress.GetIpAndPort(ip, port);
 
   // output media header
@@ -661,6 +654,10 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
     for (i = 0; i < formats.GetSize(); i++)
       str << ' ' << (int)formats[i].GetPayloadType();
     str << "\r\n";
+
+    // If we have a port of zero, then shutting down SDP stream. No need for anything more
+    if (port == 0)
+      return;
 
     // output attributes for each payload type
     for (i = 0; i < formats.GetSize(); i++)
