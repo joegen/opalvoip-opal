@@ -203,6 +203,7 @@ enum PluginCodec_OptionMerge {
   PluginCodec_EqualMerge,
   PluginCodec_NotEqualMerge,
   PluginCodec_AlwaysMerge,
+  PluginCodec_CustomMerge,
   PluginCodec_NumOptionMerge,
 
   PluginCodec_AndMerge = PluginCodec_MinMerge,
@@ -218,6 +219,9 @@ enum PluginCodec_OptionMerge {
 #define PluginCodec_H245_ReqMode       0x01000000
 #define PluginCodec_H245_OrdinalMask   0x0000ffff
 
+typedef int (*PluginCodec_MergeFunction)(char ** result, const char * dest, const char * src);
+typedef void (*PluginCodec_FreeFunction)(char * string);
+
 struct PluginCodec_Option {
   // start of version 4 fields
   enum PluginCodec_OptionTypes m_type;
@@ -230,6 +234,8 @@ struct PluginCodec_Option {
   int                          m_H245Generic;
   const char *                 m_minimum;
   const char *                 m_maximum;
+  PluginCodec_MergeFunction    m_mergeFunction; // Used if m_merge==PluginCodec_CustomMerge
+  PluginCodec_FreeFunction     m_freeFunction;
 };
 
 
@@ -360,15 +366,15 @@ struct PluginCodec_H323GenericParameterDefinition
     /* these need to be in the same order as the choices in
       H245_ParameterValue::Choices, as the value is just cast to that type
     */
-	PluginCodec_GenericParameter_Logical = 0,
-	PluginCodec_GenericParameter_BooleanArray,
-	PluginCodec_GenericParameter_UnsignedMin,
-	PluginCodec_GenericParameter_UnsignedMax,
-	PluginCodec_GenericParameter_Unsigned32Min,
-	PluginCodec_GenericParameter_Unsigned32Max,
-	PluginCodec_GenericParameter_OctetString,
-	PluginCodec_GenericParameter_GenericParameter,
-	
+    PluginCodec_GenericParameter_Logical = 0,
+    PluginCodec_GenericParameter_BooleanArray,
+    PluginCodec_GenericParameter_UnsignedMin,
+    PluginCodec_GenericParameter_UnsignedMax,
+    PluginCodec_GenericParameter_Unsigned32Min,
+    PluginCodec_GenericParameter_Unsigned32Max,
+    PluginCodec_GenericParameter_OctetString,
+    PluginCodec_GenericParameter_GenericParameter,
+
     PluginCodec_GenericParameter_logical = 0,
     PluginCodec_GenericParameter_booleanArray,
     PluginCodec_GenericParameter_unsignedMin,
@@ -490,6 +496,27 @@ enum {
 
 // ISO/IEC 14496-2 MPEG4 part 2 (as defined in H.245v13 Annex E)
 #define OpalPluginCodec_Identifer_MPEG4           "0.0.8.245.1.0.0"
+
+
+/////////////////
+//
+// Predefined options for H.323 codecs
+//
+
+#define PLUGINCODEC_SQCIF_MPI   "SQCIF MPI"
+#define PLUGINCODEC_QCIF_MPI     "QCIF MPI"
+#define PLUGINCODEC_CIF_MPI       "CIF MPI"
+#define PLUGINCODEC_CIF4_MPI     "CIF4 MPI"
+#define PLUGINCODEC_CIF16_MPI   "CIF16 MPI"
+
+#define PLUGINCODEC_MPI_DISABLED 33
+
+#define PLUGINCODEC_MEDIA_PACKETIZATION "Media Packetization"
+
+#ifndef STRINGIZE
+#define __INTERNAL_STRINGIZE__(v) #v
+#define STRINGIZE(v) __INTERNAL_STRINGIZE__(v)
+#endif
 
 
 /////////////////

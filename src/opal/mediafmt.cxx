@@ -188,15 +188,14 @@ PObject::Comparison OpalMediaOption::Compare(const PObject & obj) const
 
 bool OpalMediaOption::Merge(const OpalMediaOption & option)
 {
+  bool assign;
   switch (m_merge) {
     case MinMerge :
-      if (CompareValue(option) == GreaterThan)
-        Assign(option);
+      assign = CompareValue(option) == GreaterThan;
       break;
 
     case MaxMerge :
-      if (CompareValue(option) == LessThan)
-        Assign(option);
+      assign = CompareValue(option) == LessThan;
       break;
 
     case EqualMerge :
@@ -206,11 +205,17 @@ bool OpalMediaOption::Merge(const OpalMediaOption & option)
       return CompareValue(option) != EqualTo;
       
     case AlwaysMerge :
-      Assign(option);
+      assign = CompareValue(option) != EqualTo;
       break;
 
     default :
+      assign = false;
       break;
+  }
+
+  if (assign) {
+    PTRACE(4, "MediaFormat\tChanged media option \"" << m_name << "\" from " << *this << " to " << option);
+    Assign(option);
   }
 
   return true;
@@ -235,6 +240,13 @@ bool OpalMediaOption::FromString(const PString & value)
 
 
 ///////////////////////////////////////
+
+OpalMediaOptionEnum::OpalMediaOptionEnum(const char * name, bool readOnly)
+  : OpalMediaOption(name, readOnly, EqualMerge)
+  , m_value(0)
+{
+}
+
 
 OpalMediaOptionEnum::OpalMediaOptionEnum(const char * name,
                                          bool readOnly,
