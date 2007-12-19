@@ -33,6 +33,7 @@
 #define __MPI_H__ 1
 
 #include <vector>
+#include <codec/opalplugin.h>
 
 typedef struct MPI {
   unsigned width;
