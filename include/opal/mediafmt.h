@@ -210,7 +210,7 @@ class OpalMediaOption : public PObject
   public:
     virtual Comparison Compare(const PObject & obj) const;
 
-    bool Merge(
+    virtual bool Merge(
       const OpalMediaOption & option
     );
     virtual Comparison CompareValue(
@@ -362,6 +362,16 @@ class OpalMediaOptionValue : public OpalMediaOption
         m_value = value;
     }
 
+    void SetMinimum(T m)
+    {
+      m_minimum = m;
+    }
+
+    void SetMaximum(T m)
+    {
+      m_maximum = m;
+    }
+
   protected:
     T m_value;
     T m_minimum;
@@ -381,6 +391,10 @@ class OpalMediaOptionEnum : public OpalMediaOption
   public:
     OpalMediaOptionEnum(
       const char * name,
+      bool readOnly
+    );
+    OpalMediaOptionEnum(
+      const char * name,
       bool readOnly,
       const char * const * enumerations,
       PINDEX count,
@@ -397,6 +411,11 @@ class OpalMediaOptionEnum : public OpalMediaOption
 
     PINDEX GetValue() const { return m_value; }
     void SetValue(PINDEX value);
+
+    void SetEnumerations(const PStringArray & e)
+    {
+      m_enumerations = e;
+    }
 
   protected:
     PStringArray m_enumerations;
@@ -440,7 +459,7 @@ class OpalMediaOptionOctets : public OpalMediaOption
     OpalMediaOptionOctets(
       const char * name,
       bool readOnly,
-      bool base64
+      bool base64 = false
     );
     OpalMediaOptionOctets(
       const char * name,
@@ -466,6 +485,11 @@ class OpalMediaOptionOctets : public OpalMediaOption
     const PBYTEArray & GetValue() const { return m_value; }
     void SetValue(const PBYTEArray & value);
     void SetValue(const BYTE * data, PINDEX length);
+
+    void SetBase64(bool b)
+    {
+      m_base64 = b;
+    }
 
   protected:
     PBYTEArray m_value;
