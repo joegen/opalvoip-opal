@@ -60,11 +60,11 @@ OPAL_REGISTER_G711();
 
 #if OPAL_H323
 
-static const char * sqcifMPI_tag                          = "SQCIF MPI";
-static const char * qcifMPI_tag                           = "QCIF MPI";
-static const char * cifMPI_tag                            = "CIF MPI";
-static const char * cif4MPI_tag                           = "CIF4 MPI";
-static const char * cif16MPI_tag                          = "CIF16 MPI";
+static const char * sqcifMPI_tag = PLUGINCODEC_SQCIF_MPI;
+static const char * qcifMPI_tag  = PLUGINCODEC_QCIF_MPI;
+static const char * cifMPI_tag   = PLUGINCODEC_CIF_MPI;
+static const char * cif4MPI_tag  = PLUGINCODEC_CIF4_MPI;
+static const char * cif16MPI_tag = PLUGINCODEC_CIF16_MPI;
 
 #define H323CAP_TAG_PREFIX    "h323"
 
@@ -90,12 +90,18 @@ static const char * h323_errorCompensation_tag                 = H323CAP_TAG_PRE
 
 inline static bool IsValidMPI(int mpi)
 {
-  return mpi > 0 && mpi < 5;
+  return mpi > 0 && mpi < PLUGINCODEC_MPI_DISABLED;
 }
 
 #endif // OPAL_H323
 #endif // OPAL_VIDEO
 
+
+
+static PString CreateCodecName(const PluginCodec_Definition * codec)
+{
+  return codec->destFormat != NULL ? codec->destFormat : codec->descr;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -118,10 +124,52 @@ class OpalFixedCodecFactory : public PFactory<OpalFactoryCodec>
 };
 
 
-static PString CreateCodecName(const PluginCodec_Definition * codec)
+///////////////////////////////////////////////////////////////////////////////
+
+template <class base>
+class OpalPluginMediaOption : public base
 {
-  return codec->destFormat != NULL ? codec->destFormat : codec->descr;
-}
+  public:
+    OpalPluginMediaOption(const PluginCodec_Option & descriptor)
+      : base(descriptor.m_name, descriptor.m_readOnly != 0)
+    {
+      if (descriptor.m_merge == PluginCodec_CustomMerge) {
+        m_mergeFunction = descriptor.m_mergeFunction;
+        m_freeFunction = descriptor.m_freeFunction;
+      }
+      else {
+        m_mergeFunction = NULL;
+        m_freeFunction = NULL;
+      }
+    }
+
+    virtual PObject * Clone() const
+    {
+      return new OpalPluginMediaOption(*this);
+    }
+    
+    virtual bool Merge(const OpalMediaOption & option)
+    {
+      if (m_mergeFunction == NULL)
+        return base::Merge(option);
+
+      char * result = NULL;
+      bool ok = m_mergeFunction(&result, AsString(), option.AsString());
+
+      if (ok && result != NULL && FromString(result)) {
+        PTRACE(4, "OpalPlugin\tChanged media option \"" << m_name << "\" from \"" << m_value << "\" to \"" << result << '"');
+      }
+
+      if (result != NULL && m_freeFunction != NULL)
+        m_freeFunction(result);
+
+      return ok;
+    }
+
+  protected:
+    PluginCodec_MergeFunction m_mergeFunction;
+    PluginCodec_FreeFunction  m_freeFunction;
+};
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -267,52 +315,35 @@ void OpalPluginMediaFormatInternal::PopulateOptions(OpalMediaFormatInternal & fo
         OpalMediaOption * newOption;
         switch (option->m_type) {
           case PluginCodec_StringOption :
-            newOption = new OpalMediaOptionString(option->m_name,
-                                                  option->m_readOnly != 0,
-                                                  option->m_value);
+            newOption = new OpalPluginMediaOption<OpalMediaOptionString>(*option);
             break;
           case PluginCodec_BoolOption :
-            newOption = new OpalMediaOptionBoolean(option->m_name,
-                                                   option->m_readOnly != 0,
-                                                   (OpalMediaOption::MergeType)option->m_merge,
-                                                   option->m_value != NULL && (toupper(*option->m_value) == 'T' || atoi(option->m_value) != 0));
+            newOption = new OpalPluginMediaOption<OpalMediaOptionBoolean>(*option);
             break;
           case PluginCodec_IntegerOption :
-            newOption = new OpalMediaOptionUnsigned(option->m_name,
-                                                    option->m_readOnly != 0,
-                                                    (OpalMediaOption::MergeType)option->m_merge,
-                                                    PString(option->m_value).AsInteger(),
-                                                    PString(option->m_minimum).AsInteger(),
-                                                    PString(option->m_maximum).AsInteger());
+            newOption = new OpalPluginMediaOption<OpalMediaOptionUnsigned>(*option);
+            ((OpalMediaOptionUnsigned*)newOption)->SetMinimum(PString(option->m_minimum).AsInteger());
+            ((OpalMediaOptionUnsigned*)newOption)->SetMaximum(PString(option->m_maximum).AsInteger());
             break;
           case PluginCodec_RealOption :
-            newOption = new OpalMediaOptionReal(option->m_name,
-                                                option->m_readOnly != 0,
-                                                (OpalMediaOption::MergeType)option->m_merge,
-                                                PString(option->m_value).AsReal(),
-                                                PString(option->m_minimum).AsReal(),
-                                                PString(option->m_maximum).AsReal());
+            newOption = new OpalPluginMediaOption<OpalMediaOptionReal>(*option);
+            ((OpalMediaOptionReal*)newOption)->SetMinimum(PString(option->m_minimum).AsReal());
+            ((OpalMediaOptionReal*)newOption)->SetMaximum(PString(option->m_maximum).AsReal());
             break;
           case PluginCodec_EnumOption :
-            {
-              PStringArray valueTokens = PString(option->m_minimum).Tokenise(':');
-              char ** enumValues = valueTokens.ToCharArray();
-              newOption = new OpalMediaOptionEnum(option->m_name,
-                                                  option->m_readOnly != 0,
-                                                  enumValues,
-                                                  valueTokens.GetSize(),
-                                                  (OpalMediaOption::MergeType)option->m_merge,
-                                                  valueTokens.GetStringsIndex(option->m_value));
-              free(enumValues);
-            }
+            newOption = new OpalPluginMediaOption<OpalMediaOptionEnum>(*option);
+            ((OpalMediaOptionEnum*)newOption)->SetEnumerations(PString(option->m_minimum).Tokenise(':'));
             break;
           case PluginCodec_OctetsOption :
-            newOption = new OpalMediaOptionOctets(option->m_name, option->m_readOnly != 0, option->m_minimum != NULL); // Use minimum to indicate Base64
-            newOption->FromString(option->m_value);
+            newOption = new OpalPluginMediaOption<OpalMediaOptionOctets>(*option);
+            ((OpalMediaOptionOctets*)newOption)->SetBase64(option->m_minimum != NULL); // Use minimum to indicate Base64
             break;
           default : // Huh?
             continue;
         }
+
+        newOption->SetMerge((OpalMediaOption::MergeType)option->m_merge);
+        newOption->FromString(option->m_value);
 
 #if OPAL_SIP
         newOption->SetFMTPName(option->m_FMTPName);
@@ -2056,12 +2087,12 @@ PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
   int qcifMPI = mediaFormat.GetOptionInteger(qcifMPI_tag, 0);
   if (IsValidMPI(qcifMPI)) {
     h261.IncludeOptionalField(H245_H261VideoCapability::e_qcifMPI);
-    h261.m_qcifMPI = qcifMPI;
+    h261.m_qcifMPI = qcifMPI > 4 ? 4 : qcifMPI;
   }
   int cifMPI = mediaFormat.GetOptionInteger(cifMPI_tag);
   if (IsValidMPI(cifMPI)) {
     h261.IncludeOptionalField(H245_H261VideoCapability::e_cifMPI);
-    h261.m_cifMPI = cifMPI;
+    h261.m_cifMPI = cifMPI > 4 ? 4 : cifMPI;
   }
 
   h261.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, PFalse);
