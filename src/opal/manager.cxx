@@ -171,6 +171,9 @@ OpalManager::OpalManager()
   tcpPorts.current = tcpPorts.base = tcpPorts.max = 0;
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
+  SetMediaAutoStart("audio", false, true);
+  SetMediaAutoStart("audio", true,  true);
+
 #ifndef NO_OPAL_VIDEO
   PStringList devices;
   
@@ -1369,4 +1372,29 @@ PBoolean OpalRecordManager::WriteAudio(const PString & _callToken, const std::st
     return PFalse;
 
   return mixer.Write(strm, rtp);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+bool OpalAutoStartMediaMap::IsMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx) const
+{
+  PWaitAndSignal m(mutex);
+  const_iterator r = find(mediaType);
+  return (r != end()) && (rx ? r->second.autoStartReceive : r->second.autoStartTransmit);
+}
+
+void OpalAutoStartMediaMap::SetMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx, PBoolean v)
+{
+  PWaitAndSignal m(mutex);
+  OpalAutoStartMediaMap::iterator r = find(mediaType);
+  OpalMediaAutoStartInfo info;
+  if (r != end())
+    info = r->second;
+
+  if (rx)
+    info.autoStartReceive = v;
+  else
+    info.autoStartTransmit = v;
+
+  insert(value_type(mediaType, info));
 }

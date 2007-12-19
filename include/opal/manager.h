@@ -55,6 +55,23 @@ class OpalMediaPatch;
 class OpalH224Handler;
 class OpalH281Handler;
 
+/** Class for storing media autostart information
+  */
+struct OpalMediaAutoStartInfo {
+  OpalMediaAutoStartInfo()  { autoStartReceive = autoStartTransmit = false; } 
+  bool autoStartReceive;
+  bool autoStartTransmit;
+};
+
+class OpalAutoStartMediaMap : public std::map<OpalMediaType, OpalMediaAutoStartInfo> 
+{
+  public:
+    bool IsMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx) const;
+    void SetMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx, PBoolean v);
+
+  protected:
+    PMutex mutex;
+};
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an

@@ -80,24 +80,6 @@ class OpalProductInfo
     WORD    manufacturerCode;
 };
 
-/** Class for storing media autostart information
-  */
-struct OpalMediaAutoStartInfo {
-  OpalMediaAutoStartInfo()  { autoStartReceive = autoStartTransmit = false; } 
-  bool autoStartReceive;
-  bool autoStartTransmit;
-};
-
-class OpalAutoStartMediaMap : public std::map<OpalMediaType, OpalMediaAutoStartInfo> 
-{
-  public:
-    bool IsMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx) const;
-    void SetMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx, PBoolean v);
-
-  protected:
-    PMutex mutex;
-};
-
 /**This is the base class for connections to an endpoint.
    A particular protocol will have a descendant class from this to implement
    the specific semantics of that protocols connection.
@@ -1157,16 +1139,7 @@ class OpalConnection : public PSafeObject
     virtual void EnableRecording();
     virtual void DisableRecording();
 
-    virtual bool IsMediaAutoStart(const OpalMediaType & t, PBoolean rx) const        { return autoStartMediaMap.IsMediaAutoStart(t, rx); }
-    virtual void SetMediaAutoStart(const OpalMediaType & t, PBoolean rx, PBoolean v) { autoStartMediaMap.SetMediaAutoStart(t, rx, v); }
-
-    /**See if should auto-start receive video channels on connection.
-     */
-    virtual BOOL CanAutoStartReceiveVideo() const { return IsMediaAutoStart("video", PTrue); }
-
-    /**See if should auto-start transmit video channels on connection.
-     */
-    virtual BOOL CanAutoStartTransmitVideo() const { return IsMediaAutoStart("video", PFalse); }
+    bool OpenSourceMediaStreams(const OpalMediaFormatList & formats);
 
   protected:
     PDECLARE_NOTIFIER(OpalRFC2833Info, OpalConnection, OnUserInputInlineRFC2833);
@@ -1257,7 +1230,41 @@ class OpalConnection : public PSafeObject
 
     virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource);
 
-    OpalAutoStartMediaMap autoStartMediaMap; 
+  public:
+    /** Class for storing media channel information
+      */
+    struct ChannelInfo {
+      public:
+        ChannelInfo(const OpalMediaType & _mediaType);
+
+        bool autoStartReceive;
+        bool autoStartTransmit;
+        bool assigned;
+
+        unsigned protocolSpecificSessionId;
+        unsigned channelId;
+
+        OpalMediaType mediaType;
+        PString channelName;
+    };
+
+    class ChannelInfoMap : public std::map<unsigned, ChannelInfo> 
+    {
+      public:
+        ChannelInfoMap();
+        void Initialise(OpalConnection & conn);
+        unsigned AddChannel(ChannelInfo & info);
+
+        ChannelInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+
+        mutable PMutex mutex;
+
+      protected:
+        mutable bool initialised;
+    };
+
+  protected:
+    ChannelInfoMap channelInfoMap; 
 };
 
 class RTP_UDP;

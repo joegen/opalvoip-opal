@@ -2090,15 +2090,7 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport)
   mime.SetDate() ;                             // now
   mime.SetProductInfo(connection.GetEndPoint().GetUserAgent(), connection.GetProductInfo());
 
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("audio", 1));
-#if OPAL_VIDEO
-  if (connection.GetEndPoint().GetManager().CanAutoStartTransmitVideo()
-      || connection.GetEndPoint().GetManager().CanAutoStartReceiveVideo())
-    connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("video", 2));
-#endif
-#if OPAL_T38FAX
-  connection.BuildSDP(sdp, rtpSessions, OpalMediaSessionId("image", 3));
-#endif
+  connection.CreateInitialSDP(sdp);
   connection.OnCreatingINVITE(*this);
 }
 

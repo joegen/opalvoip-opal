@@ -317,6 +317,11 @@ void H323Connection::OnReleased()
   OnCleared();
 }
 
+PBoolean H323Connection::IsMediaBypassPossible(const OpalMediaSessionId & sessionID) const
+{
+  OpalMediaTypeDefinition * mediaDef = OpalMediaTypeFactory::CreateInstance(sessionID.mediaType);
+  return (mediaDef != NULL) && mediaDef->IsMediaBypassPossible();
+}
 
 void H323Connection::CleanUpOnCallEnd()
 {
@@ -3469,8 +3474,8 @@ PBoolean H323Connection::OpenSourceMediaStream(const OpalMediaFormatList & /*med
                                                 const OpalMediaSessionId & sessionID)
 {
   // don't auto start unless allowed
-  if (!IsMediaAutoStart(sessionID.mediaType, true))
-    return PFalse;
+//  if (!IsMediaAutoStart(sessionID.mediaType, true))
+//    return PFalse;
 
   // Check if we have already got a transmitter running, select one if not
   if ((fastStartState == FastStartDisabled ||
@@ -3556,22 +3561,22 @@ void H323Connection::StartFastStartChannel(const OpalMediaSessionId & sessionID,
 
 void H323Connection::SelectDefaultLogicalChannelByType(const OpalMediaType & type)
 {
-  if (IsMediaAutoStart(type, false))
-    SelectDefaultLogicalChannel(OpalMediaSessionId(type));
+//  if (IsMediaAutoStart(type, false))
+//    SelectDefaultLogicalChannel(OpalMediaSessionId(type));
 }
 
 void H323Connection::SelectFastStartChannelsByType(const OpalMediaType & type)
 {
   SelectFastStartChannels(OpalMediaSessionId(type),
-                          IsMediaAutoStart(type, false),
-                          IsMediaAutoStart(type, true));
+                          true,  //IsMediaAutoStart(type, false),
+                          true); //IsMediaAutoStart(type, true));
 }
 
 void H323Connection::StartFastStartChannelByType(const OpalMediaType & type)
 {
-  if (IsMediaAutoStart(type, false))
+  //if (IsMediaAutoStart(type, false))
     StartFastStartChannel(OpalMediaSessionId(type), H323Channel::IsTransmitter);
-  if (IsMediaAutoStart(type, true))
+  //if (IsMediaAutoStart(type, true))
     StartFastStartChannel(OpalMediaSessionId(type), H323Channel::IsReceiver);
 }
 

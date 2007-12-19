@@ -462,11 +462,11 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
-                                      const OpalMediaFormat & mediaFormat,
-                                       PBoolean isSource,
-                                       RTP_Session & rtp,
-                                       unsigned minJitter,
-                                       unsigned maxJitter)
+                                const OpalMediaFormat & mediaFormat,
+                                               PBoolean isSource,
+                                          RTP_Session & rtp,
+                                               unsigned minJitter,
+                                               unsigned maxJitter)
   : OpalMediaStream(conn, mediaFormat, rtp.GetSessionID(), isSource),
     rtpSession(rtp),
     minAudioJitterDelay(minJitter),
