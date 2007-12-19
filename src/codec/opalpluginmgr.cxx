@@ -154,10 +154,10 @@ class OpalPluginMediaOption : public base
         return base::Merge(option);
 
       char * result = NULL;
-      bool ok = m_mergeFunction(&result, AsString(), option.AsString());
+      bool ok = m_mergeFunction(&result, base::AsString(), option.AsString());
 
-      if (ok && result != NULL && FromString(result)) {
-        PTRACE(4, "OpalPlugin\tChanged media option \"" << m_name << "\" from \"" << m_value << "\" to \"" << result << '"');
+      if (ok && result != NULL && base::FromString(result)) {
+        PTRACE(4, "OpalPlugin\tChanged media option \"" << base::GetName() << "\" from " << *this << " to \"" << result << '"');
       }
 
       if (result != NULL && m_freeFunction != NULL)
