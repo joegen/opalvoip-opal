@@ -906,7 +906,7 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
   if (outputDataSize <= 0)
-    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : GetOptimalDataFrameSize(PFalse);
+    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : (sizeof(PluginCodec_Video_FrameHeader) + GetOptimalDataFrameSize(PFalse));
 
   unsigned flags;
 
