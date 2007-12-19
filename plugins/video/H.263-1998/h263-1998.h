@@ -225,20 +225,20 @@ static PluginCodec_ControlDefn DecoderControls[] = {
   { NULL }
 };
 
+static struct PluginCodec_Option const sqcifMPI =
+  { PluginCodec_IntegerOption, PLUGINCODEC_SQCIF_MPI, false, PluginCodec_MaxMerge, "1", "SQCIF", "0", 0, "1", "32" };
+
 static struct PluginCodec_Option const qcifMPI =
-  { PluginCodec_IntegerOption, "QCIF MPI", false, PluginCodec_MaxMerge, "1", "QCIF", "0", 0, "1", "32" };
+  { PluginCodec_IntegerOption, PLUGINCODEC_QCIF_MPI, false, PluginCodec_MaxMerge, "1", "QCIF", "0", 0, "1", "32" };
 
 static struct PluginCodec_Option const cifMPI =
-  { PluginCodec_IntegerOption, "CIF MPI",  false, PluginCodec_MaxMerge, "1", "CIF",  "0", 0, "1", "32" };
-
-static struct PluginCodec_Option const sqcifMPI =
-  { PluginCodec_IntegerOption, "SQCIF MPI", false, PluginCodec_MaxMerge, "1", "SQCIF", "0", 0, "1", "32" };
+  { PluginCodec_IntegerOption, PLUGINCODEC_CIF_MPI,  false, PluginCodec_MaxMerge, "1", "CIF",  "0", 0, "1", "32" };
 
 static struct PluginCodec_Option const cif4MPI =
-  { PluginCodec_IntegerOption, "CIF4 MPI",  false, PluginCodec_MaxMerge, "0", "CIF4", "0", 0, "1", "32" };
+  { PluginCodec_IntegerOption, PLUGINCODEC_CIF4_MPI,  false, PluginCodec_MaxMerge, "0", "CIF4", "0", 0, "1", "32" };
 
 static struct PluginCodec_Option const cif16MPI =
-  { PluginCodec_IntegerOption, "CIF16 MPI", false, PluginCodec_MaxMerge, "0", "CIF16", "0", 0, "1", "32" };
+  { PluginCodec_IntegerOption, PLUGINCODEC_CIF16_MPI, false, PluginCodec_MaxMerge, "0", "CIF16", "0", 0, "1", "32" };
 
 static struct PluginCodec_Option const sifMPI =
   { PluginCodec_StringOption, "SIF MPI", false, PluginCodec_EqualMerge, "320,240,1", "CUSTOM"};
