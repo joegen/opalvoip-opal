@@ -1533,6 +1533,11 @@ void OpalPluginCodecManager::RegisterPluginPair(
           return;
       }
 
+      if (mediaFormatInternal == NULL) {
+        PTRACE(3, "OpalPlugin\tno media format created for codec " << encoderCodec->descr);
+        return;
+      }
+
       OpalMediaFormat * mediaFormat = new OpalPluginMediaFormat(mediaFormatInternal);
 
       // Remember format so we can deallocate it on shut down
