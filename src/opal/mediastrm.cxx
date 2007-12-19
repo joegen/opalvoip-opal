@@ -72,10 +72,12 @@ OpalMediaStream::OpalMediaStream(OpalConnection & conn, const OpalMediaFormat & 
   , marker(true)
   , mismatchedPayloadTypes(0)
   , mediaPatch(NULL)
+  , totalLength(0)
 {
-
-  targetBitRateKbit = (unsigned) (mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 0) / 1000);
-  totalLength = 0;
+  if (mediaFormat.FindOption(OpalMediaFormat::TargetBitRateOption()) != NULL)
+    targetBitRateKbit = (unsigned) (mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), 0) / 1000);
+  else
+    targetBitRateKbit = 0;
 }
 
 
@@ -118,7 +120,10 @@ PBoolean OpalMediaStream::UpdateMediaFormat(const OpalMediaFormat & newMediaForm
 
   mediaFormat = newMediaFormat;
 
-  targetBitRateKbit = (unsigned) (mediaFormat.GetOptionInteger(OpalVideoFormat::TargetBitRateOption(), 0) / 1000);
+  if (mediaFormat.FindOption(OpalMediaFormat::TargetBitRateOption()) != NULL)
+    targetBitRateKbit = (unsigned) (mediaFormat.GetOptionInteger(OpalMediaFormat::TargetBitRateOption(), 0) / 1000);
+  else
+    targetBitRateKbit = 0;
 
   PTRACE(4, "Media\tMedia format updated on " << *this);
 

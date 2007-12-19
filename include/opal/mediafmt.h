@@ -747,6 +747,7 @@ class OpalMediaFormat : public PContainer
       */
     unsigned GetBandwidth() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxBitRateOption(), 0); }
     static const PString & MaxBitRateOption();
+    static const PString & TargetBitRateOption();
 
     /**Get the maximum frame size in bytes. If this returns zero then the
        media format has no intrinsic maximum frame size, eg G.711 would 
@@ -1103,7 +1104,6 @@ class OpalVideoFormat : public OpalMediaFormat
     static const PString & MinRxFrameHeightOption();
     static const PString & MaxRxFrameWidthOption();
     static const PString & MaxRxFrameHeightOption();
-    static const PString & TargetBitRateOption();
     static const PString & TemporalSpatialTradeOffOption();
     static const PString & TxKeyFramePeriodOption();
 };

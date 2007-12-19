@@ -532,6 +532,7 @@ const PString & OpalMediaFormat::MaxFrameSizeOption() { static PString s = PLUGI
 const PString & OpalMediaFormat::FrameTimeOption()    { static PString s = PLUGINCODEC_OPTION_FRAME_TIME;     return s; }
 const PString & OpalMediaFormat::ClockRateOption()    { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;     return s; }
 const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;   return s; }
+const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
 
 
 OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
@@ -1223,7 +1224,6 @@ const PString & OpalVideoFormat::MinRxFrameWidthOption()        { static PString
 const PString & OpalVideoFormat::MinRxFrameHeightOption()       { static PString s = PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT;       return s; }
 const PString & OpalVideoFormat::MaxRxFrameWidthOption()        { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH;        return s; }
 const PString & OpalVideoFormat::MaxRxFrameHeightOption()       { static PString s = PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT;       return s; }
-const PString & OpalVideoFormat::TargetBitRateOption()          { static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE;           return s; }
 const PString & OpalVideoFormat::TemporalSpatialTradeOffOption(){ static PString s = PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF;return s; }
 const PString & OpalVideoFormat::TxKeyFramePeriodOption()       { static PString s = PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD;       return s; }
 

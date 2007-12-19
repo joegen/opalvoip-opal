@@ -44,6 +44,7 @@
 #include <opal/manager.h>
 #include <opal/call.h>
 #include <opal/patch.h>
+#include <opal/transcoders.h>
 #include <ptclib/random.h>              // for local dialog tag
 #include <ptclib/pdns.h>
 
