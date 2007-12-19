@@ -173,13 +173,22 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
                                                    const BYTE * instance,
                                                        unsigned instanceLen)
 {
+  // Merge the master options for the codecs. Allows user to set
+  // encoder options.
+  OpalMediaFormat masterFormat((const char *)destFormat); // Don't use copy ctor!
+  OpalMediaFormat dstAdjusted = destFormat;
+  if (!dstAdjusted.Merge(masterFormat))
+    return NULL;
+
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder != NULL) {
-    transcoder->UpdateMediaFormats(srcFormat, destFormat);
+    transcoder->UpdateMediaFormats(srcFormat, dstAdjusted);
     transcoder->SetInstanceID(instance, instanceLen);
   }
+
   return transcoder;
 }
+
 
 PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
                                    const OpalMediaFormatList & srcFormats,
