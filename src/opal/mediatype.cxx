@@ -116,16 +116,16 @@ PBoolean OpalCommonMediaType::IsMediaBypassPossible() const
 { return TRUE; }
 
 RTP_UDP * OpalCommonMediaType::CreateNonSecureSession(OpalConnection &, PHandleAggregator * aggregator, const OpalMediaSessionId & sessionID, PBoolean remoteIsNAT)
-{  return new RTP_UDP(aggregator, sessionID, remoteIsNAT); }
+{  return new RTP_UDP(aggregator, sessionID.sessionId, remoteIsNAT); }
 
 OpalMediaStream * OpalCommonMediaType::CreateMediaStream(OpalConnection & connection, const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
 {  
-  if (connection.GetCall().IsMediaBypassPossible(connection, sessionID)) {
+  if (connection.GetCall().IsMediaBypassPossible(connection, sessionID.sessionId)) {
     PTRACE(3, "SIP\tBypassing media for session " << sessionID.sessionId);
-    return new OpalNullMediaStream(connection, mediaFormat, sessionID, isSource);
+    return new OpalNullMediaStream(connection, mediaFormat, sessionID.sessionId, isSource);
   }
 
-  RTP_Session * session = connection.GetSession(sessionID);
+  RTP_Session * session = connection.GetSession(sessionID.sessionId);
   if (session == NULL) {
     PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID.mediaType);
     return NULL;
@@ -178,14 +178,14 @@ OpalMediaStream * OpalVideoMediaType::CreateMediaStream(OpalConnection & conn,
       PVideoOutputDevice * previewDevice;
       if (!conn.CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDelete))
         previewDevice = NULL;
-      return new OpalVideoMediaStream(conn, mediaFormat, sessionID, videoDevice, previewDevice, autoDelete);
+      return new OpalVideoMediaStream(conn, mediaFormat, sessionID.sessionId, videoDevice, previewDevice, autoDelete);
     }
   }
   else {
     PVideoOutputDevice * videoDevice;
     PBoolean autoDelete;
     if (conn.CreateVideoOutputDevice(mediaFormat, PFalse, videoDevice, autoDelete))
-      return new OpalVideoMediaStream(conn, mediaFormat, sessionID, NULL, videoDevice, autoDelete);
+      return new OpalVideoMediaStream(conn, mediaFormat, sessionID.sessionId, NULL, videoDevice, autoDelete);
   }
 
   return NULL;
