@@ -458,8 +458,6 @@ RTP_Session::RTP_Session(PHandleAggregator * _aggregator,
   reportTimer(reportTimeInterval),
   aggregator(_aggregator)
 {
-  PAssert(id.sessionId > 0 && id.sessionId < 256, PInvalidParameter);
-
   referenceCount = 1;
   userData = data;
   autoDeleteUserData = autoDelete;
@@ -1389,8 +1387,9 @@ void RTP_SessionManager::AddSession(RTP_Session * session)
   PWaitAndSignal m(mutex);
   
   if (session != NULL) {
-    PTRACE(3, "RTP\tAdding session " << session->GetSessionID().sessionId);
-    sessions.SetAt(session->GetSessionID().sessionId, session);
+    unsigned id = session->GetSessionID().sessionId;
+    PTRACE(3, "RTP\tAdding session " << id);
+    sessions.SetAt(id, session);
   }
 }
 

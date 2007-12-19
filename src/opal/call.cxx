@@ -221,15 +221,17 @@ PBoolean OpalCall::OnConnected(OpalConnection & connection)
         ok = PTrue;
     }
 
-    OpalMediaFormatList formats = GetMediaFormats(*conn, PTrue);
+    OpalMediaFormatList formats = GetMediaFormats(*conn, TRUE);
+#if 0
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultAudioSessionID))
+      createdOne = TRUE;
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultVideoSessionID))
+      createdOne = TRUE;
+    if (OpenSourceMediaStreams(*conn, formats, OpalMediaFormat::DefaultDataSessionID))
+      createdOne = TRUE;
+#endif
 
-    // extract list of media types
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaSessionId("audio")))
-      createdOne = PTrue;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaSessionId("video")))
-      createdOne = PTrue;
-    if (OpenSourceMediaStreams(*conn, formats, OpalMediaSessionId("image")))
-      createdOne = PTrue;
+    createdOne = createdOne || conn->OpenSourceMediaStreams(GetMediaFormats(*conn, PTrue));
   }
 
   UnlockReadOnly();

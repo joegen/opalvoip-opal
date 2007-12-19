@@ -246,8 +246,6 @@ OpalConnection::OpalConnection(OpalCall & call,
     if (!id.IsEmpty())
       callIdentifier = PGloballyUniqueID(id);
   }
-
-  autoStartMediaMap = ep.GetAutoStartMediaMap();
 }
 
 OpalConnection::~OpalConnection()
@@ -289,13 +287,11 @@ PBoolean OpalConnection::OnSetUpConnection()
 
 void OpalConnection::HoldConnection()
 {
-  
 }
 
 
 void OpalConnection::RetrieveConnection()
 {
-  
 }
 
 
@@ -473,15 +469,15 @@ PBoolean OpalConnection::OpenSourceMediaStream(const OpalMediaFormatList & media
     return PTrue;
   }
 
-    // see if sink stream already opened, so we can ensure symmetric codecs
-    OpalMediaFormatList toFormats = mediaFormats;
-    {
-      OpalMediaStream * sink = GetMediaStream(sessionID, PFalse);
-      if (sink != NULL) {
-        PTRACE(3, "OpalCon\tOpenSourceMediaStream reordering codec for sink stream format " << sink->GetMediaFormat());
-        toFormats.Reorder(sink->GetMediaFormat().GetName());
-      }
+  // see if sink stream already opened, so we can ensure symmetric codecs
+  OpalMediaFormatList toFormats = mediaFormats;
+  {
+    OpalMediaStream * sink = GetMediaStream(sessionID, PFalse);
+    if (sink != NULL) {
+      PTRACE(3, "OpalCon\tOpenSourceMediaStream reordering codec for sink stream format " << sink->GetMediaFormat());
+      toFormats.Reorder(sink->GetMediaFormat().GetName());
     }
+  }
 
   OpalMediaFormat sourceFormat, destinationFormat;
   if (!OpalTranscoder::SelectFormats(sessionID.mediaType,
@@ -805,10 +801,10 @@ PBoolean OpalConnection::RemoveMediaStream(OpalMediaStream * strm)
 }
 
 
-PBoolean OpalConnection::IsMediaBypassPossible(const OpalMediaSessionId & sessionID) const
+PBoolean OpalConnection::IsMediaBypassPossible(const OpalMediaSessionId &) const
 {
-  OpalMediaTypeDefinition * mediaDef = OpalMediaTypeFactory::CreateInstance(sessionID.mediaType);
-  return (mediaDef != NULL) && mediaDef->IsMediaBypassPossible();
+  PTRACE(4, "OpalCon\tIsMediaBypassPossible: default returns FALSE");
+  return FALSE;
 }
 
 PBoolean OpalConnection::GetMediaInformation(const OpalMediaSessionId & sessionID,
@@ -1261,30 +1257,94 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
   return ownerCall.GetMediaFormats(*this, FALSE);
 }
 
+bool OpalConnection::OpenSourceMediaStreams(const OpalMediaFormatList & formats)
+{
+  bool createdOne = false;
+
+  RTP_Session * rtp = rtpSessions.First();
+  while (rtp != NULL) {
+    createdOne = createdOne || GetCall().OpenSourceMediaStreams(*this, formats, rtp->GetSessionID());
+    rtp = rtpSessions.Next();
+  }
+  rtpSessions.Exit();
+
+  return createdOne;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
-bool OpalAutoStartMediaMap::IsMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx) const
+OpalConnection::ChannelInfo::ChannelInfo(const OpalMediaType & _mediaType)
+  : mediaType(_mediaType)
 {
-  PWaitAndSignal m(mutex);
-  const_iterator r = find(mediaType);
-  return (r != end()) && (rx ? r->second.autoStartReceive : r->second.autoStartTransmit);
+  autoStartReceive = autoStartTransmit = false;
+  assigned                     = false;
+  protocolSpecificSessionId    = 0;
+  channelId                    = 0;
 }
 
-void OpalAutoStartMediaMap::SetMediaAutoStart(const OpalMediaType & mediaType, PBoolean rx, PBoolean v)
+/////////////////////////////////////////////////////////////////////////////
+
+OpalConnection::ChannelInfoMap::ChannelInfoMap()
 {
-  PWaitAndSignal m(mutex);
-  OpalAutoStartMediaMap::iterator r = find(mediaType);
-  OpalMediaAutoStartInfo info;
-  if (r != end())
-    info = r->second;
-
-  if (rx)
-    info.autoStartReceive = v;
-  else
-    info.autoStartTransmit = v;
-
-  insert(value_type(mediaType, info));
+  initialised = false;
 }
 
+unsigned OpalConnection::ChannelInfoMap::AddChannel(OpalConnection::ChannelInfo & info)
+{
+  PWaitAndSignal m(mutex);
+  initialised = true;
+
+  if ((info.channelId == 0) || (find(info.channelId) != end())) {
+    unsigned i = 10;
+    while (find(info.channelId) != end())
+      ++i;
+    info.channelId = i;
+  }
+
+  insert(value_type(info.channelId, info));
+
+  return info.channelId;
+}
+
+
+OpalConnection::ChannelInfo * OpalConnection::ChannelInfoMap::AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned)
+{
+  mutex.Wait();
+
+  iterator r;
+  for (r = begin(); r != end(); ++r) {
+    if ((r->second.assigned == assigned) && (r->second.mediaType == mediaType)) 
+      return &r->second;
+  }
+
+  mutex.Signal();
+  return NULL;
+}
+
+
+
+void OpalConnection::ChannelInfoMap::Initialise(OpalConnection & conn)
+{
+  PWaitAndSignal m(mutex);
+  if (initialised)
+    return;
+
+  // check all media types and enable as appropriate
+  OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
+  OpalMediaTypeFactory::KeyList_T::iterator r;
+  for (r = keys.begin(); r != keys.end(); ++r) {
+    OpalMediaTypeDefinition * def = OpalMediaTypeFactory::CreateInstance(*r);
+    PAssertNULL(def);
+    BOOL rx = conn.GetEndPoint().IsMediaAutoStart(*r, true);
+    BOOL tx = conn.GetEndPoint().IsMediaAutoStart(*r, false);
+    if (rx || tx) {
+      ChannelInfo info(*r);
+      info.channelId         = def->GetPreferredSessionId();
+      info.autoStartReceive  = rx;
+      info.autoStartTransmit = tx;
+      AddChannel(info);
+    }
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////

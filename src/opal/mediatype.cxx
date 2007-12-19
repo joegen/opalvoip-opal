@@ -120,8 +120,10 @@ RTP_UDP * OpalCommonMediaType::CreateNonSecureSession(OpalConnection &, PHandleA
 
 OpalMediaStream * OpalCommonMediaType::CreateMediaStream(OpalConnection & connection, const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
 {  
-  if (connection.GetCall().IsMediaBypassPossible(connection, sessionID))
+  if (connection.GetCall().IsMediaBypassPossible(connection, sessionID)) {
+    PTRACE(3, "SIP\tBypassing media for session " << sessionID.sessionId);
     return new OpalNullMediaStream(connection, mediaFormat, sessionID, isSource);
+  }
 
   RTP_Session * session = connection.GetSession(sessionID);
   if (session == NULL) {

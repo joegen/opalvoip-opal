@@ -420,6 +420,9 @@ class SIPConnection : public OpalConnection
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
 
+    PBoolean IsMediaBypassPossible(const OpalMediaSessionId &) const;
+    void CreateInitialSDP(SDPSessionDescription * & sdp);
+
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckTimeout);
@@ -432,13 +435,12 @@ class SIPConnection : public OpalConnection
     virtual void OnReceivedSDP(SIP_PDU & pdu);
     virtual PBoolean OnReceivedSDPMediaDescription(
       SDPSessionDescription & sdp,
-      const OpalMediaSessionId & mediaType
+      const OpalMediaSessionId & mediaType,
+      unsigned sessionPort
     );
     virtual PBoolean OnSendSDPMediaDescription(
-      const SDPSessionDescription & sdpIn,
-      const OpalMediaSessionId & sessionId,
-      SDPSessionDescription & sdpOut
-    );
+      const SDPMediaDescription & mediaDesc,
+      SDPSessionDescription & sdpOut);
     virtual PBoolean OnOpenSourceMediaStreams(
       const OpalMediaFormatList & remoteFormatList,
       const OpalMediaSessionId & sessionId,

@@ -199,6 +199,11 @@ SIPConnection::SIPConnection(OpalCall & call,
   PTRACE(4, "SIP\tCreated connection.");
 }
 
+PBoolean SIPConnection::IsMediaBypassPossible(const OpalMediaSessionId & sessionID) const
+{
+  OpalMediaTypeDefinition * mediaDef = OpalMediaTypeFactory::CreateInstance(sessionID.mediaType);
+  return (mediaDef != NULL) && mediaDef->IsMediaBypassPossible();
+}
 
 void SIPConnection::UpdateRemotePartyNameAndNumber()
 {
@@ -309,22 +314,18 @@ void SIPConnection::TransferConnection(const PString & remoteParty, const PStrin
 
 PBoolean SIPConnection::ConstructSDP(SDPSessionDescription & sdpOut)
 {
-  PBoolean sdpOK;
+  // initialise the channel auto start information
+  //channelInfo.Initialise();
 
   // get the remote media formats, if any
+  PBoolean sdpOK = true;
   if (originalInvite->HasSDP()) {
-    remoteSDP = originalInvite->GetSDP();
-
-    // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  = OnSendSDPMediaDescription(remoteSDP, OpalMediaSessionId("audio"), sdpOut);
-#if OPAL_VIDEO
-    sdpOK |= OnSendSDPMediaDescription(remoteSDP, OpalMediaSessionId("video"), sdpOut);
-#endif
-#if OPAL_T38FAX
-    sdpOK |= OnSendSDPMediaDescription(remoteSDP, OpalMediaSessionId("image"), sdpOut);
-#endif
+    PINDEX i;
+    const SDPMediaDescriptionList & descs = remoteSDP.GetMediaDescriptions();
+    for (i = 0; i < descs.GetSize(); ++i) 
+      sdpOK = sdpOK || OnSendSDPMediaDescription(descs[i], sdpOut);
   }
-  
+
   else {
 
     // construct offer as per RFC 3261, para 14.2
@@ -477,36 +478,43 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const OpalMediaSessionId & sessionId, co
   return rtpSession;
 }
 
-
-PBoolean SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & sdpIn,
-                                                     const OpalMediaSessionId & sessionId,
-                                                        SDPSessionDescription & sdpOut)
+//
+//  this function is used to open media channels in response to a request from a remote endpoint
+//
+PBoolean SIPConnection::OnSendSDPMediaDescription(const SDPMediaDescription & mediaDesc,
+                                                      SDPSessionDescription & sdpOut)
 {
+  OpalMediaType mediaType = mediaDesc.GetMediaType();
+
   // make sure the media type is known
-  OpalMediaTypeDefinition * mediaDefn = OpalMediaTypeFactory::CreateInstance(sessionId.mediaType);
+  OpalMediaTypeDefinition * mediaDefn = OpalMediaTypeFactory::CreateInstance(mediaType);
   if (mediaDefn == NULL) {
-    PTRACE(2, "SIP\tUnknown media type " << sessionId.mediaType);
+    PTRACE(2, "SIP\tUnknown media type " << mediaType);
     return PFalse;
   }
 
-  RTP_UDP * rtpSession = NULL;
-
-  // if no matching media type, return PFalse
-  SDPMediaDescription * incomingMedia = sdpIn.GetMediaDescription(sessionId.mediaType);
-  if (incomingMedia == NULL) {
-    PTRACE(2, "SIP\tCould not find matching media type for session " << sessionId.mediaType);
+  // make sure the input format is in the format list for the connection
+  if (mediaDesc.GetMediaFormats(mediaType).GetSize() == 0) {
+    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << mediaType);
     return PFalse;
   }
 
-  if (incomingMedia->GetMediaFormats(sessionId.mediaType).GetSize() == 0) {
-    PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << sessionId.mediaType);
-    return PFalse;
+  // find a session number
+  ChannelInfo * channelInfo = channelInfoMap.AssignAndLockChannel(mediaType, false);
+  if (channelInfo == NULL) {
+    PTRACE(2, "SIP\tCould not find matching channel for media type " << mediaType);
+    return false;
   }
+
+  // create the local session ID
+  OpalMediaSessionId sessionId(mediaType, channelInfo->channelId);
+  channelInfoMap.mutex.Signal();
+
   
   // Create the list of Opal format names for the remote end.
   // We will answer with the media format that will be opened.
   // When sending an answer SDP, remove media formats that we do not support.
-  remoteFormatList += incomingMedia->GetMediaFormats(sessionId.mediaType);
+  remoteFormatList += mediaDesc.GetMediaFormats(mediaType);
   remoteFormatList.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (remoteFormatList.GetSize() == 0) {
     Release(EndedByCapabilityExchange);
@@ -514,10 +522,10 @@ PBoolean SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & 
   }
 
   SDPMediaDescription * localMedia = NULL;
-  OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
+  OpalTransportAddress mediaAddress = mediaDesc.GetTransportAddress();
 
   // find the payload type used for telephone-event, if present
-  const SDPMediaFormatList & sdpMediaList = incomingMedia->GetSDPMediaFormats();
+  const SDPMediaFormatList & sdpMediaList = mediaDesc.GetSDPMediaFormats();
   PBoolean hasTelephoneEvent = PFalse;
 #if OPAL_T38FAX
   PBoolean hasNSE = PFalse;
@@ -540,9 +548,9 @@ PBoolean SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & 
 
   // Create or re-use the RTP session
   OpalTransportAddress localAddress;
-  rtpSession = OnUseRTPSession(sessionId, mediaAddress, localAddress);
+  RTP_UDP * rtpSession = OnUseRTPSession(sessionId, mediaAddress, localAddress);
   if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, sessionId)) {
-    if (sessionId.mediaType == "audio") 
+    if (mediaType == "audio") 
       Release(EndedByTransportFail);
     return PFalse;
   }
@@ -552,16 +560,16 @@ PBoolean SIPConnection::OnSendSDPMediaDescription(const SDPSessionDescription & 
   WORD port;
   if (!mediaAddress.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, PTrue))) {
     PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-    if (sessionId.mediaType == "audio") 
+    if (mediaType == "audio") 
       Release(EndedByTransportFail);
     return PFalse;
   }
 
   // construct a new media session list 
-  localMedia = mediaDefn->CreateSDPMediaDescription(sessionId.mediaType, localAddress);
+  localMedia = mediaDefn->CreateSDPMediaDescription(mediaType, localAddress);
 
   // create map for RTP payloads
-  incomingMedia->CreateRTPMap(sessionId, rtpPayloadMap);
+  mediaDesc.CreateRTPMap(sessionId, rtpPayloadMap);
 
   // Open the streams and the reverse media streams
   PBoolean reverseStreamsFailed = PTrue;
@@ -867,12 +875,6 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
                                       RTP_SessionManager & rtpSessions,
                                 const OpalMediaSessionId & sessionID)
 {
-  OpalTransportAddress localAddress;
-  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
-#if OPAL_T38FAX
-  RTP_DataFrame::PayloadTypes nsePayloadCode = RTP_DataFrame::IllegalPayloadType;
-#endif
-
 #if OPAL_VIDEO
   if (sessionID.mediaType == "video" &&
            !endpoint.GetManager().CanAutoStartReceiveVideo() &&
@@ -880,9 +882,8 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     return PFalse;
 #endif
 
+  // if there are no media formats of this type in the connection, do not output the media description
   OpalMediaFormatList formats = GetLocalMediaFormats();
-
-  // See if any media formats of this session id, so don't create unused RTP session
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat & fmt = formats[i];
@@ -894,6 +895,12 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     PTRACE(3, "SIP\tNo media formats for session type " << sessionID.mediaType << ", not adding SDP");
     return PFalse;
   }
+
+  OpalTransportAddress localAddress;
+  RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
+#if OPAL_T38FAX
+  RTP_DataFrame::PayloadTypes nsePayloadCode = RTP_DataFrame::IllegalPayloadType;
+#endif
 
   if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
@@ -945,6 +952,14 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
   }
   else {
 
+    WORD localPort;
+    {
+      PIPSocket::Address dummy;
+      localAddress.GetIpAndPort(dummy, localPort);
+    }
+
+    OpalMediaSessionId localSessionId(sessionID.mediaType, localPort);
+
     // look up the media type
     OpalMediaTypeDefinition * opalMediaTypeDefn = OpalMediaTypeFactory::CreateInstance(sessionID.mediaType);
     SDPMediaDescription * localMedia = opalMediaTypeDefn->CreateSDPMediaDescription(sessionID.mediaType, localAddress);
@@ -953,7 +968,7 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
     }
     else {
       // add media formats first, as Mediatrix gateways barf if RFC2833 is first
-      localMedia->AddMediaFormats(formats, sessionID, rtpPayloadMap);
+      localMedia->AddMediaFormats(formats, localSessionId, rtpPayloadMap);
 
       // Set format if we have an RTP payload type for RFC2833 and/or NSE
       if (sessionID.mediaType == "audio") {
@@ -967,7 +982,7 @@ PBoolean SIPConnection::BuildSDP(SDPSessionDescription * & sdp,
 #endif
       }
   
-      localMedia->SetDirection(GetDirection(sessionID));
+      localMedia->SetDirection(GetDirection(localSessionId));
       sdp->AddMediaDescription(localMedia);
     }
   }
@@ -1428,20 +1443,17 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
 #endif
   }
 
-  PBoolean sdpOK;
+  PBoolean sdpOK = true;
 
   if (originalInvite->HasSDP()) {
 
     // Try to send SDP media description for audio and video
     // Use |= to avoid McCarthy boolean || from not calling video/fax
     SDPSessionDescription & sdpIn = originalInvite->GetSDP();
-    sdpOK  = OnSendSDPMediaDescription(sdpIn, OpalMediaSessionId("audio"), sdpOut);
-#if OPAL_VIDEO
-    sdpOK |= OnSendSDPMediaDescription(sdpIn, OpalMediaSessionId("video"), sdpOut);
-#endif
-#if OPAL_T38FAX
-    sdpOK |= OnSendSDPMediaDescription(sdpIn, OpalMediaSessionId("image"),  sdpOut);
-#endif
+    PINDEX i;
+    const SDPMediaDescriptionList & descs = sdpIn.GetMediaDescriptions();
+    for (i = 0; i < descs.GetSize(); ++i) 
+      sdpOK = sdpOK || OnSendSDPMediaDescription(descs[i], sdpOut);
   }
 
   else {
@@ -1886,17 +1898,25 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
   PINDEX i;
   for (i = 0; i < mediaDescs.GetSize(); ++i) {
     SDPMediaDescription & mediaDescription = *(SDPMediaDescription *)mediaDescs.GetAt(i);
-    OnReceivedSDPMediaDescription(remoteSDP, OpalMediaSessionId(mediaDescription.GetMediaType(), mediaDescription.GetPort()));
+
+    // find the channel that matches this media description
+    ChannelInfo * channel = channelInfoMap.AssignAndLockChannel(mediaDescription.GetMediaType(), true);
+    if (channel != NULL) {
+      channel->protocolSpecificSessionId = mediaDescription.GetPort();
+      OnReceivedSDPMediaDescription(remoteSDP, mediaDescription.GetMediaType(), channel->protocolSpecificSessionId);
+      channelInfoMap.mutex.Signal();
+    }
   }
 
   remoteFormatList += OpalRFC2833;
 }
 
 
-PBoolean SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, const OpalMediaSessionId & sessionId)
+PBoolean SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp, const OpalMediaSessionId & sessionId, unsigned sessionPort)
 {
   RTP_UDP *rtpSession = NULL;
-  SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(sessionId.sessionId);
+
+  SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(sessionPort);
   
   if (mediaDescription == NULL) {
     PTRACE(sessionId.mediaType == "audio" ? 2 : 3, "SIP\tCould not find SDP media description for session " << sessionId.mediaType);
@@ -2340,6 +2360,23 @@ PString SIPConnection::GetExplicitFrom() const
   if (!explicitFrom.IsEmpty())
     return explicitFrom;
   return GetLocalPartyAddress();
+}
+
+
+void SIPConnection::CreateInitialSDP(SDPSessionDescription * & sdp)
+{
+  channelInfoMap.Initialise(*this);
+
+  PWaitAndSignal m(channelInfoMap.mutex);
+  ChannelInfoMap::iterator r;
+  for (r = channelInfoMap.begin(); r != channelInfoMap.end(); ++r) {
+    if (!r->second.assigned && r->second.autoStartTransmit) {
+      if (BuildSDP(sdp, rtpSessions, OpalMediaSessionId(r->second.mediaType, r->second.channelId))) {
+        r->second.assigned = true;
+        break;
+      }
+    }
+  }
 }
 
 /////////////////////////////////////////////////////////////////////////////

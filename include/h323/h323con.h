@@ -1801,7 +1801,7 @@ class H323Connection : public OpalConnection
 	
     virtual PBoolean OnSendFeatureSet(unsigned, H225_FeatureSet &) const;
 	
-	virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
+    virtual void OnReceiveFeatureSet(unsigned, const H225_FeatureSet &) const;
 
 #if H323_H460
     /** Get the connection FeatureSet
@@ -1819,6 +1819,8 @@ class H323Connection : public OpalConnection
 #endif
 
     virtual PBoolean OnOpenIncomingMediaChannels();
+
+    PBoolean IsMediaBypassPossible(const OpalMediaSessionId &) const;
 
   protected:
     /**Internal function to check if call established.
@@ -1945,11 +1947,6 @@ class H323Connection : public OpalConnection
 #endif
 
     virtual OpalMediaStream * InternalCreateMediaStream(const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource);
-
-    typedef std::map<OpalMediaType, unsigned> SessionIDMap;
-    SessionIDMap sessionIDMap;
-    PMutex sessionIDMutex;
-    unsigned nextSessionID;
 
   private:
     PChannel * SwapHoldMediaChannels(PChannel * newChannel);
