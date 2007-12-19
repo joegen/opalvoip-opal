@@ -435,6 +435,7 @@ class SIPConnection : public OpalConnection
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
+    PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckRetry);
     PDECLARE_NOTIFIER(PThread, SIPConnection, OnAckTimeout);
 
     virtual RTP_UDP *OnUseRTPSession(
@@ -494,6 +495,8 @@ class SIPConnection : public OpalConnection
     PThread     * pduHandler;
 
     PTimer                    ackTimer;
+    PTimer                    ackRetry;
+    SIP_PDU                   ackPacket;
     PSafePtr<SIPTransaction>  referTransaction;
     PSafeList<SIPTransaction> forkedInvitations; // Not for re-INVITE
     PAtomicInteger            lastSentCSeq;
