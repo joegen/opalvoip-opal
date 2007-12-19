@@ -725,11 +725,11 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   unsigned cif4_mpi = h263MPIList.getSupportedMPI(CIF4_WIDTH, CIF4_HEIGHT);
   unsigned cif16_mpi = h263MPIList.getSupportedMPI(CIF16_WIDTH, CIF16_HEIGHT);
 
-  if ((qcif_mpi == 5) 
-   && (cif_mpi == 5)
-   && (sqcif_mpi == 5)
-   && (cif4_mpi == 5)
-   && (cif16_mpi == 5)) {
+  if ((qcif_mpi == PLUGINCODEC_MPI_DISABLED) 
+   && (cif_mpi == PLUGINCODEC_MPI_DISABLED)
+   && (sqcif_mpi == PLUGINCODEC_MPI_DISABLED)
+   && (cif4_mpi == PLUGINCODEC_MPI_DISABLED)
+   && (cif16_mpi == PLUGINCODEC_MPI_DISABLED)) {
     TRACE(1, "H.263+\tNeg\tNo MPI was about to be set - illegal");
     return 0; // illegal
   }
