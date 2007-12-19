@@ -142,38 +142,37 @@ void SIPEndPoint::NATBindingRefresh(PTimer &, INT)
 {
   PTRACE(5, "SIP\tNAT Binding refresh started.");
 
-  if (natMethod == None)
-    return;
+  if (natMethod != None) {
+    for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
 
-  for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
+      OpalTransport & transport = handler->GetTransport();
+      PBoolean stunTransport = PFalse;
 
-    OpalTransport & transport = handler->GetTransport();
-    PBoolean stunTransport = PFalse;
-
-    if (!transport)
-      return;
-
-    stunTransport = (!transport.IsReliable() && GetManager().GetSTUN(transport.GetRemoteAddress().GetHostName()));
-
-    if (!stunTransport)
-      return;
-
-    switch (natMethod) {
-
-      case Options: 
-        {
-          PStringList emptyRouteSet;
-          SIPOptions options(*this, transport, SIPURL(transport.GetRemoteAddress()).GetHostName());
-          options.Write(transport, options.GetSendAddress(emptyRouteSet));
-        }
+      if (!transport)
         break;
-      case EmptyRequest:
-        {
-          transport.Write("\r\n", 2);
-        }
+
+      stunTransport = (!transport.IsReliable() && GetManager().GetSTUN(transport.GetRemoteAddress().GetHostName()));
+
+      if (!stunTransport)
         break;
-      default:
-        break;
+
+      switch (natMethod) {
+
+        case Options: 
+          {
+            PStringList emptyRouteSet;
+            SIPOptions options(*this, transport, SIPURL(transport.GetRemoteAddress()).GetHostName());
+            options.Write(transport, options.GetSendAddress(emptyRouteSet));
+          }
+          break;
+        case EmptyRequest:
+          {
+            transport.Write("\r\n", 2);
+          }
+          break;
+        default:
+          break;
+      }
     }
   }
 
