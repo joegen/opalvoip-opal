@@ -1319,6 +1319,11 @@ bool H263DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   }
 
   int frameBytes = (frameWidth * frameHeight * 12) / 8;
+
+  // if the frame decodes to more than we can handle, ignore the frame
+  if ((sizeof(PluginCodec_Video_FrameHeader) + frameBytes) > dstRTP.GetPayloadSize())
+    return 1;
+
   PluginCodec_Video_FrameHeader * header = (PluginCodec_Video_FrameHeader *)dstRTP.GetPayloadPtr();
   header->x = header->y = 0;
   header->width = frameWidth;
