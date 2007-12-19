@@ -716,10 +716,6 @@ static const char h261Desc[]      = { "H.261" };
 
 static const char sdpH261[]   = { "h261" };
 
-static const char QCIF_MPI[]  = "QCIF MPI";
-static const char  CIF_MPI[]  =  "CIF MPI";
-
-
 static void * create_decoder(const struct PluginCodec_Definition *)
 {
   return new H261DecoderContext;
@@ -821,9 +817,9 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   int frameWidth = 352;
   int frameHeight = 288;
   for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], QCIF_MPI) == 0)
+    if (STRCMPI(option[0], PLUGINCODEC_QCIF_MPI) == 0)
       qcif_mpi = atoi(option[1]);
-    else if (STRCMPI(option[0], CIF_MPI) == 0)
+    else if (STRCMPI(option[0], PLUGINCODEC_CIF_MPI) == 0)
       cif_mpi = atoi(option[1]);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
       frameWidth = ClampSize(atoi(option[1]), 352);
@@ -941,9 +937,9 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   options[ 9] = num2str(maxWidth);
   options[10] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
   options[11] = num2str(maxHeight);
-  options[12] = strdup(QCIF_MPI);
+  options[12] = strdup(PLUGINCODEC_QCIF_MPI);
   options[13] = num2str(qcif_mpi);
-  options[14] = strdup(CIF_MPI);
+  options[14] = strdup(PLUGINCODEC_CIF_MPI);
   options[15] = num2str(cif_mpi);
 
   return 1;
@@ -1044,10 +1040,10 @@ static struct PluginCodec_Option const maxRxFrameHeightCIF =
   { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "288", "288"  };
 
 static struct PluginCodec_Option const qcifMPI =
-  { PluginCodec_IntegerOption, QCIF_MPI, false, PluginCodec_MaxMerge, "1", "QCIF", "5", 0, "1", "5" }; // 5 is disabled
+  { PluginCodec_IntegerOption, PLUGINCODEC_QCIF_MPI, false, PluginCodec_MaxMerge, "1", "QCIF", "5", 0, "1", "5" }; // 5 is disabled
 
 static struct PluginCodec_Option const cifMPI =
-  { PluginCodec_IntegerOption,  CIF_MPI, false, PluginCodec_MaxMerge, "1", "CIF",  "5", 0, "1", "5" }; // 5 is disabled
+  { PluginCodec_IntegerOption,  PLUGINCODEC_CIF_MPI, false, PluginCodec_MaxMerge, "1", "CIF",  "5", 0, "1", "5" }; // 5 is disabled
 
 /* The annex below is turned off and set to read/only because this
    implementation does not support them. It's presence here is so that if
