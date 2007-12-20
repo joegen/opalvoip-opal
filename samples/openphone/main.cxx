@@ -346,12 +346,8 @@ MyManager::MyManager()
   , m_speedDials(NULL)
   , pcssEP(NULL)
   , potsEP(NULL)
-#if OPAL_H323
   , h323EP(NULL)
-#endif
-#if OPAL_SIP
   , sipEP(NULL)
-#endif
 #if P_EXPAT
   , ivrEP(NULL)
 #endif
@@ -496,13 +492,9 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Creating the endpoints
-#if OPAL_H323
   h323EP = new MyH323EndPoint(*this);
-#endif
 
-#if OPAL_SIP
   sipEP = new MySIPEndPoint(*this);
-#endif
 
 #if P_EXPAT
   ivrEP = new OpalIVREndPoint(*this);
@@ -776,7 +768,6 @@ bool MyManager::Initialise()
       return false;
   }
 
-#if OPAL_SIP
   ////////////////////////////////////////
   // SIP fields
   config->SetPath(SIPGroup);
@@ -817,30 +808,21 @@ bool MyManager::Initialise()
   }
 
   StartRegistrars();
-#endif
 
 
   ////////////////////////////////////////
   // Routing fields
   {
-#if OPAL_SIP
     if (sipEP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
       AddRouteEntry("pots:.*           = sip:<da>");
       AddRouteEntry("pc:.*             = sip:<da>");
     }
-#if OPAL_H323
-    else
-#endif
-#endif
-
-#if OPAL_H323
-    if (h323EP != NULL) {
+    else if (h323EP != NULL) {
       AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
     }
-#endif
 
 #if P_EXPAT
     if (ivrEP != NULL)
@@ -848,20 +830,12 @@ bool MyManager::Initialise()
 #endif
 
     if (potsEP != NULL && potsEP->GetLine("*") != NULL) {
-#if OPAL_H323
       AddRouteEntry("h323:.* = pots:<da>");
-#endif
-#if OPAL_SIP
       AddRouteEntry("sip:.*  = pots:<da>");
-#endif
     }
     else if (pcssEP != NULL) {
-#if OPAL_H323
       AddRouteEntry("h323:.* = pc:<da>");
-#endif
-#if OPAL_SIP
       AddRouteEntry("sip:.*  = pc:<da>");
-#endif
     }
   }
 
@@ -902,31 +876,38 @@ void MyManager::SetNATHandling()
 }
 
 
+static void StartListenerForEP(OpalEndPoint * ep, const PStringArray & allInterfaces)
+{
+  if (ep == NULL)
+    return;
+
+  PStringArray interfacesForEP;
+  PString prefixAndColon = ep->GetPrefixName() + ':';
+
+  for (PINDEX i = 0; i < allInterfaces.GetSize(); i++) {
+    PCaselessString iface = allInterfaces[i];
+    if (iface.NumCompare("all:", 4) == PObject::EqualTo)
+      interfacesForEP += iface.Mid(4);
+    else if (iface.NumCompare(prefixAndColon) == PObject::EqualTo)
+      interfacesForEP.AppendString(iface.Mid(prefixAndColon.GetLength()));
+  }
+
+  ep->RemoveListener(NULL);
+  if (ep->StartListeners(interfacesForEP))
+    LogWindow << ep->GetPrefixName().ToUpper() << " listening on " << setfill(',') << ep->GetListeners() << setfill(' ') << endl;
+  else {
+    LogWindow << ep->GetPrefixName().ToUpper() << " listen failed";
+    if (!interfacesForEP.IsEmpty())
+      LogWindow << " with interfaces" << setfill(',') << interfacesForEP << setfill(' ');
+    LogWindow << endl;
+  }
+}
+
+
 void MyManager::StartAllListeners()
 {
-#if OPAL_H323
-  h323EP->RemoveListener(NULL);
-  if (h323EP->StartListeners(m_LocalInterfaces))
-    LogWindow << "H.323 listening on " << setfill(',') << h323EP->GetListeners() << setfill(' ') << endl;
-  else {
-    LogWindow << "H.323 listen failed";
-    if (!m_LocalInterfaces.IsEmpty())
-      LogWindow << " with interfaces" << setfill(',') << m_LocalInterfaces << setfill(' ');
-    LogWindow << endl;
-  }
-#endif
-
-#if OPAL_SIP
-  sipEP->RemoveListener(NULL);
-  if (sipEP->StartListeners(m_LocalInterfaces))
-    LogWindow << "SIP listening on " << setfill(',') << sipEP->GetListeners() << setfill(' ') << endl;
-  else {
-    LogWindow << "SIP listen failed";
-    if (!m_LocalInterfaces.IsEmpty())
-      LogWindow << " with interfaces" << setfill(',') << m_LocalInterfaces << setfill(' ');
-    LogWindow << endl;
-  }
-#endif
+  StartListenerForEP(h323EP, m_LocalInterfaces);
+  StartListenerForEP(sipEP, m_LocalInterfaces);
 }
 
 
@@ -2008,7 +1989,9 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   EVT_RADIOBUTTON(XRCID("UseNATRouter"), OptionsDialog::NATHandling)
   EVT_RADIOBUTTON(XRCID("UseSTUNServer"), OptionsDialog::NATHandling)
   EVT_LISTBOX(XRCID("LocalInterfaces"), OptionsDialog::SelectedLocalInterface)
-  EVT_TEXT(XRCID("InterfaceToAdd"), OptionsDialog::ChangedInterfaceToAdd)
+  EVT_RADIOBOX(XRCID("InterfaceProtocol"), OptionsDialog::ChangedInterfaceInfo)
+  EVT_TEXT(XRCID("InterfaceAddress"), OptionsDialog::ChangedInterfaceInfo)
+  EVT_TEXT(XRCID("InterfacePort"), OptionsDialog::ChangedInterfaceInfo)
   EVT_BUTTON(XRCID("AddInterface"), OptionsDialog::AddInterface)
   EVT_BUTTON(XRCID("RemoveInterface"), OptionsDialog::RemoveInterface)
 
@@ -2151,7 +2134,21 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_AddInterface->Disable();
   m_RemoveInterface = FindWindowByNameAs<wxButton>(this, "RemoveInterface");
   m_RemoveInterface->Disable();
-  m_InterfaceToAdd = FindWindowByNameAs<wxTextCtrl>(this, "InterfaceToAdd");
+  m_InterfaceProtocol = FindWindowByNameAs<wxRadioBox>(this, "InterfaceProtocol");
+  m_InterfacePort = FindWindowByNameAs<wxTextCtrl>(this, "InterfacePort");
+  m_InterfaceAddress = FindWindowByNameAs<wxComboBox>(this, "InterfaceAddress");
+  m_InterfaceAddress->Append("*");
+  PIPSocket::InterfaceTable ifaces;
+  if (PIPSocket::GetInterfaceTable(ifaces)) {
+    for (i = 0; i < ifaces.GetSize(); i++) {
+      PwxString addr = ifaces[i].GetAddress().AsString();
+      PwxString name = "%";
+      name += ifaces[i].GetName();
+      m_InterfaceAddress->Append(addr);
+      m_InterfaceAddress->Append(name);
+      m_InterfaceAddress->Append(addr + name);
+    }
+  }
   m_LocalInterfaces = FindWindowByNameAs<wxListBox>(this, "LocalInterfaces");
   for (i = 0; i < m_manager.m_LocalInterfaces.GetSize(); i++)
     m_LocalInterfaces->Append((const char *)m_manager.m_LocalInterfaces[i]);
@@ -2249,10 +2246,10 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   m_VideoMaxFrameSize = m_manager.m_VideoMaxFrameSize;
   FindWindowByName(VideoMaxFrameSizeKey)->SetValidator(wxFrameSizeValidator(&m_VideoMaxFrameSize));
 
-  choice = FindWindowByNameAs<wxChoice>(this, "VideoGrabber");
+  combo = FindWindowByNameAs<wxComboBox>(this, "VideoGrabber");
   devices = PVideoInputDevice::GetDriversDeviceNames("*");
   for (i = 0; i < devices.GetSize(); i++)
-    choice->Append((const char *)devices[i]);
+    combo->Append((const char *)devices[i]);
 
   ////////////////////////////////////////
   // Codec fields
@@ -2764,21 +2761,63 @@ void OptionsDialog::SelectedLocalInterface(wxCommandEvent & /*event*/)
 }
 
 
-void OptionsDialog::ChangedInterfaceToAdd(wxCommandEvent & /*event*/)
+void OptionsDialog::ChangedInterfaceInfo(wxCommandEvent & /*event*/)
 {
-  m_AddInterface->Enable(!m_InterfaceToAdd->GetValue().IsEmpty());
+  bool enab = true;
+  PwxString iface = m_InterfaceAddress->GetValue();
+  if (iface.IsEmpty())
+    enab = false;
+  else if (iface != "*") {
+    PIPSocket::Address test(iface);
+    if (!test.IsValid())
+      enab = false;
+  }
+
+  if (m_InterfaceProtocol->GetSelection() == 0)
+    m_InterfacePort->Disable();
+  else {
+    m_InterfacePort->Enable();
+    if (m_InterfacePort->GetValue().IsEmpty())
+      enab = false;
+  }
+
+  m_AddInterface->Enable(enab);
 }
 
 
+static const char * const InterfacePrefixes[] = {
+  "all:", "h323:tcp$", "sip:udp$", "sip:tcp$"
+};
+
 void OptionsDialog::AddInterface(wxCommandEvent & /*event*/)
 {
-  m_LocalInterfaces->Append(m_InterfaceToAdd->GetValue());
+  int proto = m_InterfaceProtocol->GetSelection();
+  wxString iface = InterfacePrefixes[proto];
+  iface += m_InterfaceAddress->GetValue();
+  if (proto > 0)
+    iface += ':' + m_InterfacePort->GetValue();
+  m_LocalInterfaces->Append(iface);
 }
 
 
 void OptionsDialog::RemoveInterface(wxCommandEvent & /*event*/)
 {
-  m_InterfaceToAdd->SetValue(m_LocalInterfaces->GetStringSelection());
+  wxString iface = m_LocalInterfaces->GetStringSelection();
+
+  for (int i = 0; i < PARRAYSIZE(InterfacePrefixes); i++) {
+    if (iface.StartsWith(InterfacePrefixes[i])) {
+      m_InterfaceProtocol->SetSelection(i);
+      iface.Remove(0, strlen(InterfacePrefixes[i]));
+    }
+  }
+
+  size_t colon = iface.find(':');
+  if (colon != string::npos) {
+    m_InterfacePort->SetValue(iface.Mid(colon+1));
+    iface.Remove(colon);
+  }
+
+  m_InterfaceAddress->SetValue(iface);
   m_LocalInterfaces->Delete(m_LocalInterfaces->GetSelection());
   m_RemoveInterface->Disable();
 }
@@ -3540,7 +3579,6 @@ PBoolean MyPCSSEndPoint::OnShowOutgoing(const OpalPCSSConnection & connection)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-#if OPAL_H323
 
 MyH323EndPoint::MyH323EndPoint(MyManager & manager)
   : H323EndPoint(manager),
@@ -3554,11 +3592,8 @@ void MyH323EndPoint::OnRegistrationConfirm()
   LogWindow << "H.323 registration successful." << endl;
 }
 
-#endif
-
 
 ///////////////////////////////////////////////////////////////////////////////
-#if OPAL_SIP
 
 MySIPEndPoint::MySIPEndPoint(MyManager & manager)
   : SIPEndPoint(manager),
@@ -3590,8 +3625,6 @@ void MySIPEndPoint::OnRegistrationStatus(const PString & aor,
   }
   LogWindow << '.' << endl;
 }
-
-#endif
 
 
 // End of File ///////////////////////////////////////////////////////////////
