@@ -1538,7 +1538,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
       maxHeight = ClampSize(atoi(option[1]), false);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-      frameTimeMPI = atoi(option[1])/3003;
+      frameTimeMPI = (atoi(option[1])+3002)/3003;
   }
 
   int i;
