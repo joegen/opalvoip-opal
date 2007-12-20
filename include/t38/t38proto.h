@@ -41,6 +41,7 @@
 #include <opal/mediafmt.h>
 #include <opal/mediastrm.h>
 #include <opal/endpoint.h>
+#include <opal/mediatype.h>
 
 class OpalTransport;
 class T38_IFPPacket;
@@ -49,6 +50,35 @@ class PASN_OctetString;
 namespace PWLibStupidLinkerHacks {
   extern int t38Loader;
 };
+
+///////////////////////////////////////////////////////////////////////////////
+//
+//  declare a media type for T.38
+//
+
+class OpalFaxMediaType : public OpalMediaTypeDefinition 
+{
+  public:
+#if OPAL_SIP
+    SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress);
+#endif
+#if 0
+    BYTE GetPreferredSessionId() const;
+    RTP_UDP * CreateNonSecureSession(OpalConnection & conn, PHandleAggregator * aggregator, const OpalMediaSessionId & id, PBoolean remoteIsNAT);
+    OpalMediaStream * CreateMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat,const OpalMediaSessionId & sessionID, PBoolean isSource);
+
+#if OPAL_H323
+    virtual H323Channel * CreateH323Channel(H323Connection & conn, 
+                                      const H323Capability & capability, 
+                                                    unsigned direction, 
+                                               RTP_Session & session,
+                                  const OpalMediaSessionId & sessionId,
+                  const H245_H2250LogicalChannelParameters * param);
+#endif
+
+#endif
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 

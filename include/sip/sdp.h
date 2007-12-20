@@ -39,6 +39,7 @@
 
 #include <opal/transports.h>
 #include <opal/mediafmt.h>
+#include <opal/mediatype.h>
 #include <rtp/rtp.h>
 
 
@@ -147,62 +148,54 @@ class SDPMediaDescription : public PObject
       SendRecv
     };
     
-    enum MediaType {
-      Audio,
-      Video,
-      Application,
-      Image,
-      Unknown,
-      NumMediaTypes
-    };
-#if PTRACING
-    friend ostream & operator<<(ostream & out, MediaType type);
-#endif
-
     SDPMediaDescription(
       const OpalTransportAddress & address,
-      MediaType mediaType = Unknown
+      const OpalMediaType & mediaType
     );
 
-    void PrintOn(ostream & strm) const;
-    void PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const;
+    virtual void PrintOn(ostream & strm) const;
+    virtual void PrintOn(const OpalTransportAddress & commonAddr, ostream & str) const;
 
-    PBoolean Decode(const PString & str);
+    virtual PBoolean Decode(const PStringArray & tokens);
 
-    MediaType GetMediaType() const { return mediaType; }
+    virtual OpalMediaType GetMediaType() const { return mediaType; }
 
-    const SDPMediaFormatList & GetSDPMediaFormats() const
+    virtual const SDPMediaFormatList & GetSDPMediaFormats() const
       { return formats; }
 
-    OpalMediaFormatList GetMediaFormats(unsigned) const;
-    void CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const;
+    virtual OpalMediaFormatList GetMediaFormats(unsigned) const;
+    virtual void CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const;
 
-    void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
+    virtual void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
+    virtual SDPMediaFormat * CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType);
 
-    void AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map);
-    void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map);
+    virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map);
+    virtual void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map);
 
-    void SetAttribute(const PString & attr, const PString & value);
+    virtual void SetAttribute(const PString & attr, const PString & value);
 
-    void SetDirection(const Direction & d) { direction = d; }
-    Direction GetDirection() const { return direction; }
+    virtual void SetDirection(const Direction & d) { direction = d; }
+    virtual Direction GetDirection() const { return direction; }
 
-    const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
-    PBoolean SetTransportAddress(const OpalTransportAddress &t);
+    virtual const OpalTransportAddress & GetTransportAddress() const { return transportAddress; }
+    virtual PBoolean SetTransportAddress(const OpalTransportAddress &t);
 
-    PString GetTransport() const         { return transport; }
-    void SetTransport(const PString & v) { transport = v; }
+    virtual PString GetTransport() const         { return transport; }
+    virtual void SetTransport(const PString & v) { transport = v; }
 
-    WORD GetPort() const { return port; }
+    virtual WORD GetPort() const { return port; }
 
   protected:
-    void PrintOn(ostream & strm, const PString & str) const;
-    SDPMediaFormat * FindFormat(PString & str) const;
-    void SetPacketTime(const PString & optionName, const PString & value);
+    virtual void CreateSDPMediaFormats(const PStringArray & tokens, PINDEX start);
+    virtual void PrintFormats(ostream & strm, WORD port) const;
 
-    MediaType mediaType;
+    virtual void PrintOn(ostream & strm, const PString & str) const;
+    virtual SDPMediaFormat * FindFormat(PString & str) const;
+    virtual void SetPacketTime(const PString & optionName, const PString & value);
+
+    OpalMediaType mediaType;
+    OpalMediaTypeDefinition * defn;
     WORD portCount;
-    PCaselessString media;
     PCaselessString transport;
     OpalTransportAddress transportAddress;
     WORD port;
@@ -210,10 +203,6 @@ class SDPMediaDescription : public PObject
     Direction direction;
 
     SDPMediaFormatList formats;
-
-#if OPAL_T38FAX
-    PStringToString t38Attributes;
-#endif // OPAL_T38FAX
 };
 
 PLIST(SDPMediaDescriptionList, SDPMediaDescription);
@@ -242,7 +231,7 @@ class SDPSessionDescription : public PObject
     const SDPMediaDescriptionList & GetMediaDescriptions() const { return mediaDescriptions; }
 
     SDPMediaDescription * GetMediaDescription(
-      SDPMediaDescription::MediaType rtpMediaType
+      const OpalMediaType & rtpMediaType
     ) const;
     void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
     

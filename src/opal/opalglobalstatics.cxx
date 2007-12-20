@@ -52,6 +52,7 @@ class PluginLoader : public PProcessStartup
     void OnStartup()
     { 
       OpalPluginCodecManager::Bootstrap(); 
+      PWLibStupidLinkerHacks::mediaTypeLoader = 1;
       PWLibStupidLinkerHacks::opalwavfileLoader =1;
 #if HAS_LIBSRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;

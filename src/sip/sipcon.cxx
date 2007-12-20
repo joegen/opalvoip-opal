@@ -450,13 +450,14 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
 
   // get the remote media formats, if any
   if (isAnswerSDP && originalInvite != NULL && originalInvite->HasSDP()) {
+
     // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  = AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+    sdpOK  = AnswerSDPMediaDescription(originalInvite->GetSDP(), OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID, sdpOut);
 #if OPAL_VIDEO
-    sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
+    sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID, sdpOut);
 #endif
 #if OPAL_T38FAX
-    sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID,  sdpOut);
+    sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID,  sdpOut);
 #endif
   }
   
@@ -585,12 +586,12 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   SDPMediaDescription * localMedia;
   switch (rtpSessionId) {
     case OpalMediaFormat::DefaultAudioSessionID:
-      localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Audio);
+      localMedia = new SDPMediaDescription(localAddress, OpalMediaType::Audio());
       break;
 
 #if OPAL_VIDEO
     case OpalMediaFormat::DefaultVideoSessionID:
-      localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Video);
+      localMedia = new SDPMediaDescription(localAddress, OpalMediaType::Video());
       break;
 #endif
 
@@ -601,7 +602,7 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
         PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
         return false;
       }
-      localMedia = new SDPMediaDescription(localAddress, SDPMediaDescription::Image);
+      localMedia = new SDPMediaDescription(localAddress, OpalMediaType::Fax());
       break;
 
     default:
@@ -655,7 +656,7 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
 
 
 PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & sdpIn,
-                                              SDPMediaDescription::MediaType rtpMediaType,
+                                              const OpalMediaType & rtpMediaType,
                                               unsigned rtpSessionId,
                                               SDPSessionDescription & sdpOut)
 {
@@ -1483,16 +1484,16 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
 
     SDPSessionDescription & sdp = originalInvite->GetSDP();
     static struct PreviewType {
-      SDPMediaDescription::MediaType mediaType;
+      const char * mediaType;
       unsigned sessionID;
     } previewTypes[] = 
     { 
-      { SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID },
+      { "audio", OpalMediaFormat::DefaultAudioSessionID },
 #if OPAL_VIDEO
-      { SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID },
+      { "video", OpalMediaFormat::DefaultVideoSessionID },
 #endif
 #if OPAL_T38FAX
-      { SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID },
+      { "fax", OpalMediaFormat::DefaultDataSessionID },
 #endif
     };
     PINDEX i;
@@ -1881,16 +1882,16 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 
   needReINVITE = false;
 
-  bool ok = OnReceivedSDPMediaDescription(pdu.GetSDP(), SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID);
+  bool ok = OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Audio(), OpalMediaFormat::DefaultAudioSessionID);
 
   remoteFormatList += OpalRFC2833;
 
 #if OPAL_VIDEO
-  ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID);
+  ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Video(), OpalMediaFormat::DefaultVideoSessionID);
 #endif
 
 #if OPAL_T38FAX
-  ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID);
+  ok |= OnReceivedSDPMediaDescription(pdu.GetSDP(), OpalMediaType::Fax(), OpalMediaFormat::DefaultDataSessionID);
 #endif
 
   needReINVITE = true;
@@ -1903,14 +1904,14 @@ void SIPConnection::OnReceivedSDP(SIP_PDU & pdu)
 
 
 bool SIPConnection::OnReceivedSDPMediaDescription(SDPSessionDescription & sdp,
-                                                  SDPMediaDescription::MediaType mediaType,
+                                                  const OpalMediaType & mediaType,
                                                   unsigned rtpSessionId)
 {
   RTP_UDP *rtpSession = NULL;
   SDPMediaDescription * mediaDescription = sdp.GetMediaDescription(mediaType);
   
   if (mediaDescription == NULL) {
-    PTRACE(mediaType <= SDPMediaDescription::Video ? 2 : 3, "SIP\tCould not find SDP media description for " << mediaType);
+    PTRACE(mediaType != OpalMediaType::Audio() ? 2 : 3, "SIP\tCould not find SDP media description for " << mediaType);
     return false;
   }
 

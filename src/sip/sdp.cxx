@@ -392,67 +392,26 @@ PBoolean SDPMediaDescription::SetTransportAddress(const OpalTransportAddress &t)
 
 //////////////////////////////////////////////////////////////////////////////
 
-#if PTRACING
-ostream & operator<<(ostream & out, SDPMediaDescription::MediaType type)
-{
-  static const char * const MediaTypeNames[SDPMediaDescription::NumMediaTypes] = {
-    "Audio", "Video", "Application", "Image", "Unknown"
-  };
-
-  if (type < PARRAYSIZE(MediaTypeNames) && MediaTypeNames[type] != NULL)
-    out << MediaTypeNames[type];
-  else
-    out << "MediaTypes<" << (int)type << '>';
-
-  return out;
-}
-#endif
-
-SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, MediaType _mediaType)
+SDPMediaDescription::SDPMediaDescription(const OpalTransportAddress & address, const OpalMediaType & _mediaType)
   : mediaType(_mediaType),
     transportAddress(address)
 {
-  switch (mediaType) {
-    case Audio:
-      media = "audio";
-      break;
-    case Video:
-      media = "video";
-      break;
-    case Image:
-      media = "image";
-      break;
-    default:
-      break;
-  }
+  defn = mediaType.GetDefinition();
+  if (defn != NULL) 
+    transport = defn->GetTransport();
+  if (transport.IsEmpty())
+    transport = SDP_MEDIA_TRANSPORT;
 
-  transport = (mediaType == Image) ? SDP_MEDIA_TRANSPORT_UDPTL : SDP_MEDIA_TRANSPORT;
   direction = Undefined;
   port      = 0;
 }
 
-
-PBoolean SDPMediaDescription::Decode(const PString & str)
+PBoolean SDPMediaDescription::Decode(const PStringArray & tokens)
 {
-  PStringArray tokens = str.Tokenise(" ");
+  PAssert(tokens.GetSize() >= 4, "SDP\tMedia session has too few elements");
 
-  if (tokens.GetSize() < 4) {
-    PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
-    return PFalse;
-  }
-
-  media = tokens[0];
-  if (media == "video")
-    mediaType = Video;
-  else if (media == "audio")
-    mediaType = Audio;
-  else if (media == "image")
-    mediaType = Image;
-  else {
-    PTRACE(1, "SDP\tUnknown media type " << media);
-    mediaType = Unknown;
-  }
-
+  mediaType        = tokens[0].ToLower();
+  defn             = mediaType.GetDefinition();
   PString portStr  = tokens[1];
   transport        = tokens[2];
 
@@ -467,8 +426,8 @@ PBoolean SDPMediaDescription::Decode(const PString & str)
   }
   port = (WORD)portStr.AsUnsigned();
 
-  if (port == 0) {
-    PTRACE(4, "SDP\tIgnoring media session " << mediaType << " with port=0");
+  if (port == 0 || defn == NULL) {
+    PTRACE(4, "SDP\tIgnoring media session " << mediaType << " with port=0 or unknown media type");
     direction = Inactive;
   }
   else {
@@ -484,18 +443,18 @@ PBoolean SDPMediaDescription::Decode(const PString & str)
     transportAddress = OpalTransportAddress(ip, (WORD)port);
 
     // create the format list
-    PINDEX i;
-    for (i = 3; i < tokens.GetSize(); i++) {
-      if (mediaType == Image)
-        formats.Append(new SDPMediaFormat(RTP_DataFrame::DynamicBase, tokens[i]));
-      else
-        formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
-    }
+    CreateSDPMediaFormats(tokens, 3);
   }
 
   return PTrue;
 }
 
+void SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens, PINDEX start)
+{
+  PINDEX i;
+  for (i = start; i < tokens.GetSize(); i++) 
+    formats.Append(new SDPMediaFormat((RTP_DataFrame::PayloadTypes)tokens[i].AsUnsigned()));
+}
 
 void SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
 {
@@ -519,13 +478,6 @@ void SDPMediaDescription::SetAttribute(const PString & attr, const PString & val
     direction = Inactive;
     return;
   }
-
-#if OPAL_T38FAX
-  if (attr.Left(3) *= "t38") {
-    t38Attributes.SetAt(attr, value);
-    return;
-  }
-#endif
 
   // handle rtpmap attribute
   if (attr *= "rtpmap") {
@@ -630,7 +582,7 @@ void SDPMediaDescription::PrintOn(ostream & str) const
   PrintOn(str, GetConnectAddressString(transportAddress));
 }
 
-void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) const
+void SDPMediaDescription::PrintOn(ostream & strm, const PString & connectString) const
 {
   //
   // if no media formats, then do not output the media header
@@ -645,98 +597,80 @@ void SDPMediaDescription::PrintOn(ostream & str, const PString & connectString) 
   transportAddress.GetIpAndPort(ip, port);
 
   // output media header
-  str << "m=" 
-      << media << " "
+  strm << "m=" 
+       << mediaType << " "
       << port << " "
-      << transport;
+       << transport;
 
-  if (transport == SDP_MEDIA_TRANSPORT) {
-
-    // output RTP payload types
-    PINDEX i;
-    for (i = 0; i < formats.GetSize(); i++)
-      str << ' ' << (int)formats[i].GetPayloadType();
-    str << "\r\n";
-
-    // If we have a port of zero, then shutting down SDP stream. No need for anything more
-    if (port == 0)
-      return;
-
-    // output attributes for each payload type
-    for (i = 0; i < formats.GetSize(); i++)
-      str << formats[i];
-
-#if OPAL_AUDIO && defined(HAVE_PTIME)
-    // Fill in the ptime  as maximum tx packets of all media formats
-    // and maxptime as minimum rx packets of all media formats
-    unsigned ptime = 0;
-    unsigned maxptime = UINT_MAX;
-
-    // output attributes for each payload type
-    for (i = 0; i < formats.GetSize(); i++) {
-      const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
-      if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
-        unsigned ptime1 = txFrames*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
-        if (ptime < ptime1)
-          ptime = ptime1;
-      }
-      if (mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
-        unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
-        if (maxptime > maxptime1)
-          maxptime = maxptime1;
-      }
-    }
-
-    // don't output ptime parameters, as some Cisco endpoints barf on it
-    // and it's not very well-defined anyway
-    //if (ptime > 0)
-    //  str << "a=ptime:" << ptime << "\r\n";
-
-    if (maxptime < UINT_MAX)
-      str << "a=maxptime:" << maxptime << "\r\n";
-#endif // OPAL_AUDIO
-
-    // media format direction
-    switch (direction) {
-      case SDPMediaDescription::RecvOnly:
-        str << "a=recvonly" << "\r\n";
-        break;
-      case SDPMediaDescription::SendOnly:
-        str << "a=sendonly" << "\r\n";
-        break;
-      case SDPMediaDescription::SendRecv:
-        str << "a=sendrecv" << "\r\n";
-        break;
-      case SDPMediaDescription::Inactive:
-        str << "a=inactive" << "\r\n";
-        break;
-      default:
-        break;
-    }
-  }
-
-#if OPAL_T38FAX
-  else if (transport == SDP_MEDIA_TRANSPORT_UDPTL) {
-    PINDEX i;
-    for (i = 0; i < formats.GetSize(); i++)
-      str << ' ' << formats[i].GetEncodingName();
-    str << "\r\n";
-
-    // output options
-    for (i = 0; i < t38Attributes.GetSize(); i++) 
-      str << "a=" << t38Attributes.GetKeyAt(i) << ":" << t38Attributes.GetDataAt(i) << "\r\n";
-  }
-#endif
-
-  else {
-    PINDEX i;
-    for (i = 0; i < formats.GetSize(); i++)
-      str << ' ' << formats[i].GetEncodingName();
-    str << "\r\n";
-  }
+  PrintFormats(strm, port);
 
   if (!connectString.IsEmpty())
-    str << "c=" << connectString << "\r\n";
+    strm << "c=" << connectString << "\r\n";
+
+  // media format direction
+  switch (direction) {
+    case SDPMediaDescription::RecvOnly:
+      strm << "a=recvonly" << "\r\n";
+      break;
+    case SDPMediaDescription::SendOnly:
+      strm << "a=sendonly" << "\r\n";
+      break;
+    case SDPMediaDescription::SendRecv:
+      strm << "a=sendrecv" << "\r\n";
+      break;
+    case SDPMediaDescription::Inactive:
+      strm << "a=inactive" << "\r\n";
+      break;
+    default:
+      break;
+  }
+}
+
+void SDPMediaDescription::PrintFormats(ostream & strm, WORD port) const
+{
+  // output RTP payload types
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++)
+    strm << ' ' << (int)formats[i].GetPayloadType();
+  strm << "\r\n";
+
+  // If we have a port of zero, then shutting down SDP stream. No need for anything more
+  if (port == 0)
+    return;
+
+  // output attributes for each payload type
+  for (i = 0; i < formats.GetSize(); i++)
+    strm << formats[i];
+
+#if OPAL_AUDIO && defined(HAVE_PTIME)
+  // Fill in the ptime  as maximum tx packets of all media formats
+  // and maxptime as minimum rx packets of all media formats
+  unsigned ptime = 0;
+  unsigned maxptime = UINT_MAX;
+
+  // output attributes for each payload type
+  for (i = 0; i < formats.GetSize(); i++) {
+    const OpalMediaFormat & mediaFormat = formats[i].GetMediaFormat();
+    if (mediaFormat.HasOption(OpalAudioFormat::TxFramesPerPacketOption())) {
+      unsigned ptime1 = txFrames*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+      if (ptime < ptime1)
+        ptime = ptime1;
+    }
+    if (mediaFormat.HasOption(OpalAudioFormat::RxFramesPerPacketOption())) {
+      unsigned maxptime1 = mediaFormat.GetOptionInteger(OpalAudioFormat::RxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits();
+      if (maxptime > maxptime1)
+        maxptime = maxptime1;
+    }
+  }
+
+  // don't output ptime parameters, as some Cisco endpoints barf on it
+  // and it's not very well-defined anyway
+  //if (ptime > 0)
+  //  str << "a=ptime:" << ptime << "\r\n";
+
+  if (maxptime < UINT_MAX)
+    str << "a=maxptime:" << maxptime << "\r\n";
+#endif // OPAL_AUDIO
 }
 
 
@@ -803,19 +737,12 @@ void SDPMediaDescription::AddMediaFormat(const OpalMediaFormat & mediaFormat, co
       return;
   }
 
-  SDPMediaFormat * sdpFormat = new SDPMediaFormat(mediaFormat, payloadType);
+  AddSDPMediaFormat(CreateMediaFormatByName(mediaFormat, payloadType));
+}
 
-#if OPAL_T38FAX
-  if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) {
-    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
-      const OpalMediaOption & option = mediaFormat.GetOption(i);
-      if (option.GetName().Left(3) *= "t38") 
-        t38Attributes.SetAt(option.GetName(), option.AsString());
-    }
-  }
-#endif  
-
-  AddSDPMediaFormat(sdpFormat);
+SDPMediaFormat * SDPMediaDescription::CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType)
+{
+  return new SDPMediaFormat(mediaFormat, payloadType);
 }
 
 
@@ -953,15 +880,31 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
 
         // media name and transport address (mandatory)
         if (key[0] == 'm') {
-          currentMedia = new SDPMediaDescription(defaultConnectAddress);
-          if (currentMedia->Decode(value) && (currentMedia->GetPort() != 0)) {
-            mediaDescriptions.Append(currentMedia);
-            PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
-            defaultConnectPort = currentMedia->GetPort();
-          }
-          else {
-            delete currentMedia;
-            currentMedia = NULL;
+          PStringArray tokens = value.Tokenise(" ");
+          if (tokens.GetSize() < 4) {
+            PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
+          } else {
+            OpalMediaType mediaType = tokens[0].ToLower();
+            OpalMediaTypeDefinition * defn = mediaType.GetDefinition();
+            if (defn == NULL)
+              PTRACE(1, "SDP\tUnknown media type " << mediaType);
+            else {
+              currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress);
+              if (currentMedia == NULL) {
+                PTRACE(1, "SDP\tMedia type " << mediaType << " not implemented for SIP");
+              }
+              else {
+                if (currentMedia->Decode(tokens) && (currentMedia->GetPort() != 0)) {
+                  mediaDescriptions.Append(currentMedia);
+                  PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
+                  defaultConnectPort = currentMedia->GetPort();
+                }
+                else {
+                  delete currentMedia;
+                  currentMedia = NULL;
+                }
+              }
+            }
           }
         }
   
@@ -1080,8 +1023,7 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 }
 
 
-SDPMediaDescription * SDPSessionDescription::GetMediaDescription(
-                                    SDPMediaDescription::MediaType rtpMediaType) const
+SDPMediaDescription * SDPSessionDescription::GetMediaDescription(const OpalMediaType & rtpMediaType) const
 {
   // look for matching media type
   PINDEX i;
@@ -1098,7 +1040,8 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
 {
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if ((mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Video && sessionID == OpalMediaFormat::DefaultVideoSessionID) || (mediaDescriptions[i].GetMediaType() == SDPMediaDescription::Audio && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
+    if ((mediaDescriptions[i].GetMediaType() == OpalMediaType::Video() && sessionID == OpalMediaFormat::DefaultVideoSessionID) ||
+        (mediaDescriptions[i].GetMediaType() == OpalMediaType::Audio() && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
       if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
         return mediaDescriptions[i].GetDirection();
       else
@@ -1117,6 +1060,28 @@ void SDPSessionDescription::SetDefaultConnectAddress(const OpalTransportAddress 
      ownerAddress = address;
 }
 
+
+////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_AUDIO
+
+SDPMediaDescription * OpalAudioMediaType::CreateSDPMediaDescription(OpalTransportAddress & localAddress)
+{
+  return new SDPMediaDescription(localAddress, OpalMediaType::Audio());
+}
+
+#endif
+
+////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_VIDEO
+
+SDPMediaDescription * OpalVideoMediaType::CreateSDPMediaDescription(OpalTransportAddress & localAddress)
+{
+  return new SDPMediaDescription(localAddress, OpalMediaType::Video());
+}
+
+#endif
 
 #endif // OPAL_SIP
 

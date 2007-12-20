@@ -1190,5 +1190,82 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
   return ownerCall.GetMediaFormats(*this, FALSE);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+OpalConnection::ChannelInfo::ChannelInfo(const OpalMediaType & _mediaType)
+  : mediaType(_mediaType)
+{
+  autoStartReceive = autoStartTransmit = false;
+  assigned                     = false;
+  protocolSpecificSessionId    = 0;
+  channelId                    = 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+OpalConnection::ChannelInfoMap::ChannelInfoMap()
+{
+  initialised = false;
+}
+
+unsigned OpalConnection::ChannelInfoMap::AddChannel(OpalConnection::ChannelInfo & info)
+{
+  PWaitAndSignal m(mutex);
+  initialised = true;
+
+  if ((info.channelId == 0) || (find(info.channelId) != end())) {
+    unsigned i = 10;
+    while (find(info.channelId) != end())
+      ++i;
+    info.channelId = i;
+  }
+
+  insert(value_type(info.channelId, info));
+
+  return info.channelId;
+}
+
+
+OpalConnection::ChannelInfo * OpalConnection::ChannelInfoMap::AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned)
+{
+  mutex.Wait();
+
+  iterator r;
+  for (r = begin(); r != end(); ++r) {
+    if ((r->second.assigned == assigned) && (r->second.mediaType == mediaType)) 
+      return &r->second;
+  }
+
+  mutex.Signal();
+  return NULL;
+}
+
+
+
+void OpalConnection::ChannelInfoMap::Initialise(OpalConnection & /*conn*/)
+{
+  PWaitAndSignal m(mutex);
+  if (initialised)
+    return;
+
+  // check all media types and enable as appropriate
+  OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
+  OpalMediaTypeFactory::KeyList_T::iterator r;
+  for (r = keys.begin(); r != keys.end(); ++r) {
+    OpalMediaTypeDefinition * def = OpalMediaTypeFactory::CreateInstance(*r);
+    PAssertNULL(def);
+#if 0
+    BOOL rx = conn.GetEndPoint().IsMediaAutoStart(*r, true);
+    BOOL tx = conn.GetEndPoint().IsMediaAutoStart(*r, false);
+    if (rx || tx) {
+      ChannelInfo info(*r);
+      info.channelId         = def->GetPreferredSessionId();
+      info.autoStartReceive  = rx;
+      info.autoStartTransmit = tx;
+      AddChannel(info);
+    }
+#endif
+  }
+}
 
 /////////////////////////////////////////////////////////////////////////////
