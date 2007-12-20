@@ -1114,12 +1114,22 @@ SIPURL SIPEndPoint::GetRegisteredPartyName(const SIPURL & url)
 
 SIPURL SIPEndPoint::GetDefaultRegisteredPartyName()
 {
-  OpalTransportAddress addr(PIPSocket::GetHostName(), GetDefaultSignalPort(), "udp");
-  SIPURL rpn(GetDefaultLocalPartyName(), addr, GetDefaultSignalPort());
+  SIPURL rpn;
+
+  {
+    PString hostName = PIPSocket::GetHostName();
+    PIPSocket::Address dummy;
+    if (!PIPSocket::GetHostAddress(hostName, dummy)) 
+      rpn = SIPURL(PString("sip:") + GetDefaultLocalPartyName() + "@" + hostName + PString(PString::Unsigned, GetDefaultSignalPort()) + ";transport=udp");
+    else {
+      OpalTransportAddress addr(hostName, GetDefaultSignalPort(), "udp");
+      rpn = SIPURL(GetDefaultLocalPartyName(), addr, GetDefaultSignalPort());
+    }
+  }
+
   rpn.SetDisplayName(GetDefaultDisplayName());
   return rpn;
 }
-
 
 SIPURL SIPEndPoint::GetContactURL(const OpalTransport &transport, const PString & userName, const PString & host)
 {
