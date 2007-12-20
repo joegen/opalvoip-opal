@@ -36,7 +36,7 @@
 
 HANDLE stream;
 unsigned msg;
-int val;
+unsigned val;
 
 unsigned srcLen;
 unsigned dstLen;
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
         break;
       case SET_TARGET_BITRATE:
           readStream(stream, (LPVOID)&val, sizeof(val));
-          x264->SetTargetBitRate (val);
+          x264->SetTargetBitrate (val);
           writeStream(stream,(LPCVOID)&msg, sizeof(msg)); 
           flushStream(stream);
         break;

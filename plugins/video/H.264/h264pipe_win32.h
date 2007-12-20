@@ -44,7 +44,7 @@ class H264EncCtx
      bool Load();
      bool isLoaded() { return loaded; };
      void call(unsigned msg);
-     void call(unsigned msg, int);
+     void call(unsigned msg, unsigned value);
      void call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret);
 
   protected:
@@ -56,15 +56,15 @@ class H264EncCtx
      bool findGplProcess();
      bool checkGplProcessExists (const char * dir);
      bool execGplProcess();
-	 const char* ErrorMessage();
+     const char* ErrorMessage();
 
      char pipeName [512];
      char gplProcess [512];
-     
-	 HANDLE stream;
-     int width;
-     int height;
-     int size;
+
+     HANDLE stream;
+     unsigned width;
+     unsigned height;
+     unsigned size;
      bool startNewFrame;
      bool loaded;
 };

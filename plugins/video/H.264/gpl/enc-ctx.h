@@ -80,22 +80,23 @@ extern "C" {
   #define X264_ENCODER_CLOSE X264Lib.Xx264_encoder_close
 #endif
 
-static void logCallbackX264   (void *priv, int level, const char *fmt, va_list arg);
-
 class X264EncoderContext 
 {
   public:
     X264EncoderContext ();
     ~X264EncoderContext ();
 
-    void SetMaxRTPFrameSize (int size);
-    void SetTargetBitRate (int rate);
-    void SetFrameRate (int rate);
-    void SetFrameWidth (int width);
-    void SetFrameHeight (int height);
+    int EncodeFrames (const unsigned char * src, unsigned & srcLen, unsigned char * dst, unsigned & dstLen, unsigned int & flags);
+
+    void SetMaxRTPFrameSize (unsigned size);
+    void SetMaxKeyFramePeriod (unsigned period);
+    void SetTargetBitrate (unsigned rate);
+    void SetFrameWidth (unsigned width);
+    void SetFrameHeight (unsigned height);
+    void SetFrameRate (unsigned rate);
+    void SetTSTO (unsigned tsto);
     void ApplyOptions ();
 
-    int EncodeFrames (const unsigned char * src, unsigned & srcLen, unsigned char * dst, unsigned & dstLen, unsigned int & flags);
 
   protected:
 
