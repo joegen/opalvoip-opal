@@ -456,7 +456,7 @@ class SIPConnection : public OpalConnection
     );
     virtual bool AnswerSDPMediaDescription(
       const SDPSessionDescription & sdpIn,
-      SDPMediaDescription::MediaType mediaType,
+      const OpalMediaType & mediaType,
       unsigned sessionId,
       SDPSessionDescription & sdpOut
     );
@@ -466,7 +466,7 @@ class SIPConnection : public OpalConnection
     );
     virtual bool OnReceivedSDPMediaDescription(
       SDPSessionDescription & sdp,
-      SDPMediaDescription::MediaType mediaType,
+      const OpalMediaType & mediaType,
       unsigned sessionId
     );
     friend class SIPInvite;

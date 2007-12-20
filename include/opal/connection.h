@@ -45,9 +45,11 @@
 #include <opal/mediastrm.h>
 #include <opal/guid.h>
 #include <opal/transports.h>
+#include <opal/mediatype.h>
 #include <ptclib/dtmf.h>
 #include <ptlib/safecoll.h>
 #include <rtp/rtp.h>
+
 
 class OpalEndPoint;
 class OpalCall;
@@ -1302,6 +1304,42 @@ class OpalConnection : public PSafeObject
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
+
+  public:
+    /** Class for storing media channel information
+      */
+    struct ChannelInfo {
+      public:
+        ChannelInfo(const OpalMediaType & _mediaType);
+
+        bool autoStartReceive;
+        bool autoStartTransmit;
+        bool assigned;
+
+        unsigned protocolSpecificSessionId;
+        unsigned channelId;
+
+        OpalMediaType mediaType;
+        PString channelName;
+    };
+
+    class ChannelInfoMap : public std::map<unsigned, ChannelInfo> 
+    {
+      public:
+        ChannelInfoMap();
+        void Initialise(OpalConnection & conn);
+        unsigned AddChannel(ChannelInfo & info);
+
+        ChannelInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+
+        mutable PMutex mutex;
+
+      protected:
+        mutable bool initialised;
+    };
+
+  protected:
+    ChannelInfoMap channelInfoMap; 
 };
 
 class RTP_UDP;
