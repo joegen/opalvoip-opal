@@ -85,14 +85,16 @@ class H264EncoderContext
     H264EncoderContext ();
     ~H264EncoderContext ();
 
-    void SetTargetBitRate (int rate);
-    void SetFrameRate (int rate);
-    void SetFrameWidth (int width);
-    void SetFrameHeight (int height);
-    void SetMaxRTPFrameSize (int size);
-    void ApplyOptions ();
-
     int EncodeFrames (const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags);
+
+    void SetMaxRTPFrameSize (unsigned size);
+    void SetMaxKeyFramePeriod (unsigned period);
+    void SetTargetBitrate (unsigned rate);
+    void SetFrameWidth (unsigned width);
+    void SetFrameHeight (unsigned height);
+    void SetFrameRate (unsigned rate);
+    void SetTSTO (unsigned tsto);
+    void ApplyOptions ();
 
   protected:
     CriticalSection _mutex;
@@ -118,24 +120,36 @@ class H264DecoderContext
     int _skippedFrameCounter;
 };
 
-static void * create_encoder     ( const struct PluginCodec_Definition * /*codec*/);
-static int encoder_set_options   ( const struct PluginCodec_Definition *, void * _context, const char *, 
+static int valid_for_protocol    ( const struct PluginCodec_Definition *, void *, const char *,
                                    void * parm, unsigned * parmLen);
-static void destroy_encoder      ( const struct PluginCodec_Definition * /*codec*/, void * _context);
-static int codec_encoder         ( const struct PluginCodec_Definition * , void * _context,
+static int get_codec_options     ( const struct PluginCodec_Definition * codec, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int free_codec_options    ( const struct PluginCodec_Definition *, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+
+static void * create_encoder     ( const struct PluginCodec_Definition *);
+static void destroy_encoder      ( const struct PluginCodec_Definition *, void * _context);
+static int codec_encoder         ( const struct PluginCodec_Definition *, void * _context,
                                    const void * from, unsigned * fromLen,
                                    void * to, unsigned * toLen,
                                    unsigned int * flag);
+static int to_normalised_options ( const struct PluginCodec_Definition *, void *, const char *,
+                                   void * parm, unsigned * parmLen);
+static int to_customised_options ( const struct PluginCodec_Definition *, void *, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int encoder_set_options   ( const struct PluginCodec_Definition *, void * _context, const char *, 
+                                   void * parm, unsigned * parmLen);
+static int encoder_get_output_data_size ( const PluginCodec_Definition *, void *, const char *,
+                                   void *, unsigned *);
 
 static void * create_decoder     ( const struct PluginCodec_Definition *);
-static int get_codec_options     ( const struct PluginCodec_Definition * codec, void *, const char *, 
-                                   void * parm,unsigned * parmLen);
-static void destroy_decoder      ( const struct PluginCodec_Definition * /*codec*/, void * _context);
+static void destroy_decoder      ( const struct PluginCodec_Definition *, void * _context);
 static int codec_decoder         ( const struct PluginCodec_Definition *, void * _context, 
                                    const void * from, unsigned * fromLen,
                                    void * to, unsigned * toLen,
                                    unsigned int * flag);
-static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *);
+static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, void *, const char *,
+                                   void *, unsigned *);
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -167,14 +181,19 @@ static struct PluginCodec_information licenseInfo = {
 static const char YUV420PDesc[]  = { "YUV420P" };
 
 static PluginCodec_ControlDefn EncoderControls[] = {
-  { "get_codec_options", get_codec_options },
-  { "set_codec_options", encoder_set_options },
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
   { NULL }
 };
 
 static PluginCodec_ControlDefn DecoderControls[] = {
-  { "get_codec_options",    get_codec_options },
-  { "get_output_data_size", decoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
