@@ -94,16 +94,16 @@ unsigned MPIList::getSupportedMPI( unsigned width, unsigned height){
 
   // No Resolution supported at all
   if (MPIs.size() == 0) {
-    return 5;
+    return PLUGINCODEC_MPI_DISABLED;
   }
 
   // Resolution higher than maximum
   if ((width > maxWidth) || (height > maxHeight))
-    return 5;
+    return PLUGINCODEC_MPI_DISABLED;
 
   // Resolution lower than minimum
   if ((width < minWidth) || (height < minHeight))
-    return 5;
+    return PLUGINCODEC_MPI_DISABLED;
 
   // look for the respective MPI
   for (i=0; i < MPIs.size(); i++) {
@@ -111,7 +111,7 @@ unsigned MPIList::getSupportedMPI( unsigned width, unsigned height){
        return MPIs[i].fps;
     }
   }
-  return 5;
+  return PLUGINCODEC_MPI_DISABLED;
 }
 
 bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* fps) 
