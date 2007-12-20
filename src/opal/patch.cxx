@@ -69,7 +69,7 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 
   // Have timed mutex so avoid deadlocks in PTRACE(), it is nice to
   // get all the sinks in the PrintOn, we don't HAVE to have it.
-  if (inUse.Wait(20)) {
+  if (inUse.Try()) {
 
     if (sinks.GetSize() > 0) {
       strm << " -> ";
