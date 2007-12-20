@@ -1424,7 +1424,7 @@ static int ClampSize(int pixels, bool byWidth)
 {
   for (int i = 0; i < 5; i++) {
     int step = byWidth ? StandardVideoSizes[i].width : StandardVideoSizes[i].height;
-    if (pixels < step)
+    if (pixels <= step)
       return step;
   }
   return byWidth ? CIF16_WIDTH : CIF16_HEIGHT;
@@ -1955,8 +1955,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   H263_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
+  CIF16_WIDTH,                        // frame width
+  CIF16_HEIGHT,                       // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
@@ -1989,8 +1989,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   H263_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
+  CIF16_WIDTH,                        // frame width
+  CIF16_HEIGHT,                       // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
