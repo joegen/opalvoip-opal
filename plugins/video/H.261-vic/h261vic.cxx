@@ -716,8 +716,8 @@ static const char h261Desc[]      = { "H.261" };
 
 static const char sdpH261[]   = { "h261" };
 
-static const char QCIF_MPI[]  = "QCIF MPI";
-static const char  CIF_MPI[]  =  "CIF MPI";
+static const char QCIF_MPI[]  = PLUGINCODEC_QCIF_MPI;
+static const char  CIF_MPI[]  =  PLUGINCODEC_CIF_MPI;
 
 
 static void * create_decoder(const struct PluginCodec_Definition *)
@@ -816,14 +816,14 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  int qcif_mpi = 5;
-  int cif_mpi = 5;
+  int qcif_mpi = PLUGINCODEC_MPI_DISABLED;
+  int cif_mpi = PLUGINCODEC_MPI_DISABLED;
   int frameWidth = 352;
   int frameHeight = 288;
   for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
-    if (STRCMPI(option[0], QCIF_MPI) == 0)
+    if (STRCMPI(option[0], PLUGINCODEC_QCIF_MPI) == 0)
       qcif_mpi = atoi(option[1]);
-    else if (STRCMPI(option[0], CIF_MPI) == 0)
+    else if (STRCMPI(option[0], PLUGINCODEC_CIF_MPI) == 0)
       cif_mpi = atoi(option[1]);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
       frameWidth = ClampSize(atoi(option[1]), 352);
@@ -836,14 +836,14 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   int maxWidth = 352;
   int maxHeight = 288;
   int frameTime = 3003;
-  if (qcif_mpi != 5 && cif_mpi != 5)
+  if (qcif_mpi != PLUGINCODEC_MPI_DISABLED && cif_mpi != PLUGINCODEC_MPI_DISABLED)
     frameTime = 3003*(qcif_mpi > cif_mpi ? qcif_mpi : cif_mpi);
-  else if (qcif_mpi != 5) {
+  else if (qcif_mpi != PLUGINCODEC_MPI_DISABLED) {
     maxWidth = 176;
     maxHeight = 144;
     frameTime = 3003*qcif_mpi;
   }
-  else if (cif_mpi != 5) {
+  else if (cif_mpi != PLUGINCODEC_MPI_DISABLED) {
     minWidth = 352;
     minHeight = 288;
     frameTime = 3003*cif_mpi;
@@ -911,17 +911,17 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   int qcif_mpi = 1;
   int cif_mpi = 1;
   if (minWidth > 176 || minHeight > 144)
-    qcif_mpi = 5;
+    qcif_mpi = PLUGINCODEC_MPI_DISABLED;
   if (maxWidth < 352 || maxHeight < 288)
-    cif_mpi = 5;
+    cif_mpi = PLUGINCODEC_MPI_DISABLED;
 
   if (mpi < 1)
     mpi = 1;
   else if (mpi > 4)
     mpi = 4;
-  if (qcif_mpi < 5 && mpi > qcif_mpi)
+  if (qcif_mpi < PLUGINCODEC_MPI_DISABLED && mpi > qcif_mpi)
     qcif_mpi = mpi;
-  if (cif_mpi < 5 && mpi > cif_mpi)
+  if (cif_mpi < PLUGINCODEC_MPI_DISABLED && mpi > cif_mpi)
     cif_mpi = mpi;
 
   char ** options = (char **)calloc(17, sizeof(char *));
@@ -941,9 +941,9 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   options[ 9] = num2str(maxWidth);
   options[10] = strdup(PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT);
   options[11] = num2str(maxHeight);
-  options[12] = strdup(QCIF_MPI);
+  options[12] = strdup(PLUGINCODEC_QCIF_MPI);
   options[13] = num2str(qcif_mpi);
-  options[14] = strdup(CIF_MPI);
+  options[14] = strdup(PLUGINCODEC_CIF_MPI);
   options[15] = num2str(cif_mpi);
 
   return 1;
@@ -1044,10 +1044,32 @@ static struct PluginCodec_Option const maxRxFrameHeightCIF =
   { PluginCodec_IntegerOption, PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT, true, PluginCodec_NoMerge, "288", NULL, NULL, 0, "288", "288"  };
 
 static struct PluginCodec_Option const qcifMPI =
-  { PluginCodec_IntegerOption, QCIF_MPI, false, PluginCodec_MaxMerge, "1", "QCIF", "5", 0, "1", "5" }; // 5 is disabled
+{
+  PluginCodec_IntegerOption,            // Option type
+  QCIF_MPI,                             // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "QCIF",                               // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
 
 static struct PluginCodec_Option const cifMPI =
-  { PluginCodec_IntegerOption,  CIF_MPI, false, PluginCodec_MaxMerge, "1", "CIF",  "5", 0, "1", "5" }; // 5 is disabled
+{
+  PluginCodec_IntegerOption,            // Option type
+  CIF_MPI,                              // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "CIF",                                // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
 
 /* The annex below is turned off and set to read/only because this
    implementation does not support them. It's presence here is so that if
@@ -1056,7 +1078,15 @@ static struct PluginCodec_Option const cifMPI =
    can just make it read/write and/or turned on.
  */
 static struct PluginCodec_Option const annexD =
-  { PluginCodec_BoolOption,    "Annex D",  true,  PluginCodec_AndMerge, "0", "D", "0" };
+{
+  PluginCodec_BoolOption,               // Option type
+  "Annex D",                            // User visible name
+  true,                                 // User Read/Only flag
+  PluginCodec_AndMerge,                 // Merge mode
+  "0",                                  // Initial value
+  "D",                                  // FMTP option name
+  "0"                                   // FMTP default value
+};
 
 static struct PluginCodec_Option const * const qcifOptionTable[] = {
   &qcifMPI,

@@ -707,15 +707,15 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
         h263MPIList.setMaxWidth(atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
         h263MPIList.setMaxHeight(atoi(option[1]));
-      if (STRCMPI(option[0], "QCIF MPI") == 0)
-        h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
-      if (STRCMPI(option[0], "CIF MPI") == 0)
-        h263MPIList.addMPI(CIF_WIDTH, CIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
-      if (STRCMPI(option[0], "SQCIF MPI") == 0)
+      if (STRCMPI(option[0], PLUGINCODEC_SQCIF_MPI) == 0)
         h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
-      if (STRCMPI(option[0], "CIF4 MPI") == 0)
+      if (STRCMPI(option[0], PLUGINCODEC_QCIF_MPI) == 0)
+        h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+      if (STRCMPI(option[0], PLUGINCODEC_CIF_MPI) == 0)
+        h263MPIList.addMPI(CIF_WIDTH, CIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+      if (STRCMPI(option[0], PLUGINCODEC_CIF4_MPI) == 0)
         h263MPIList.addMPI(CIF4_WIDTH, CIF4_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
-      if (STRCMPI(option[0], "CIF16 MPI") == 0)
+      if (STRCMPI(option[0], PLUGINCODEC_CIF16_MPI) == 0)
         h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
   }
 
@@ -725,11 +725,11 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   unsigned cif4_mpi = h263MPIList.getSupportedMPI(CIF4_WIDTH, CIF4_HEIGHT);
   unsigned cif16_mpi = h263MPIList.getSupportedMPI(CIF16_WIDTH, CIF16_HEIGHT);
 
-  if ((qcif_mpi == 5) 
-   && (cif_mpi == 5)
-   && (sqcif_mpi == 5)
-   && (cif4_mpi == 5)
-   && (cif16_mpi == 5)) {
+  if ((qcif_mpi == PLUGINCODEC_MPI_DISABLED) 
+   && (cif_mpi == PLUGINCODEC_MPI_DISABLED)
+   && (sqcif_mpi == PLUGINCODEC_MPI_DISABLED)
+   && (cif4_mpi == PLUGINCODEC_MPI_DISABLED)
+   && (cif16_mpi == PLUGINCODEC_MPI_DISABLED)) {
     TRACE(1, "H.263+\tNeg\tNo MPI was about to be set - illegal");
     return 0; // illegal
   }
@@ -739,15 +739,15 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
   if (options == NULL)
     return 0;
 
-  options[0] = strdup("QCIF MPI");
+  options[0] = strdup(PLUGINCODEC_QCIF_MPI);
   options[1] = num2str(qcif_mpi);
-  options[2] = strdup("CIF MPI");
+  options[2] = strdup(PLUGINCODEC_CIF_MPI);
   options[3] = num2str(cif_mpi);
-  options[4] = strdup("SQCIF MPI");
+  options[4] = strdup(PLUGINCODEC_SQCIF_MPI);
   options[5] = num2str(sqcif_mpi);
-  options[6] = strdup("CIF4 MPI");
+  options[6] = strdup(PLUGINCODEC_CIF4_MPI);
   options[7] = num2str(cif4_mpi);
-  options[8] = strdup("CIF16 MPI");
+  options[8] = strdup(PLUGINCODEC_CIF16_MPI);
   options[9] = num2str(cif16_mpi);
 
   return 1;

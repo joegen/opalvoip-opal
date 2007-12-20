@@ -203,10 +203,14 @@ static struct PluginCodec_information licenseInfo = {
 };
 
 static const char YUV420PDesc[]  = { "YUV420P" };
+static const char h263PDesc[]    = { "H.263P" };
+static const char sdpH263[]      = { "h263-1998" };
 
-static const char h263PDesc[]      = { "H.263P" };
-
-static const char sdpH263[]   = { "h263-1998" };
+static const char SQCIF_MPI[]  = PLUGINCODEC_SQCIF_MPI;
+static const char QCIF_MPI[]   = PLUGINCODEC_QCIF_MPI;
+static const char CIF_MPI[]    = PLUGINCODEC_CIF_MPI;
+static const char CIF4_MPI[]   = PLUGINCODEC_CIF4_MPI;
+static const char CIF16_MPI[]  = PLUGINCODEC_CIF16_MPI;
 
 static PluginCodec_ControlDefn EncoderControls[] = {
   { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
@@ -225,20 +229,75 @@ static PluginCodec_ControlDefn DecoderControls[] = {
   { NULL }
 };
 
+static struct PluginCodec_Option const sqcifMPI =
+{
+  PluginCodec_IntegerOption,            // Option type
+  SQCIF_MPI,                            // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "SQCIF",                              // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
+
 static struct PluginCodec_Option const qcifMPI =
-  { PluginCodec_IntegerOption, "QCIF MPI", false, PluginCodec_MaxMerge, "1", "QCIF", "0", 0, "1", "32" };
+{
+  PluginCodec_IntegerOption,            // Option type
+  QCIF_MPI,                             // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "QCIF",                               // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
 
 static struct PluginCodec_Option const cifMPI =
-  { PluginCodec_IntegerOption, "CIF MPI",  false, PluginCodec_MaxMerge, "1", "CIF",  "0", 0, "1", "32" };
-
-static struct PluginCodec_Option const sqcifMPI =
-  { PluginCodec_IntegerOption, "SQCIF MPI", false, PluginCodec_MaxMerge, "1", "SQCIF", "0", 0, "1", "32" };
+{
+  PluginCodec_IntegerOption,            // Option type
+  CIF_MPI,                              // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "CIF",                                // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
 
 static struct PluginCodec_Option const cif4MPI =
-  { PluginCodec_IntegerOption, "CIF4 MPI",  false, PluginCodec_MaxMerge, "0", "CIF4", "0", 0, "1", "32" };
+{
+  PluginCodec_IntegerOption,            // Option type
+  CIF4_MPI,                             // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "CIF4",                               // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
 
 static struct PluginCodec_Option const cif16MPI =
-  { PluginCodec_IntegerOption, "CIF16 MPI", false, PluginCodec_MaxMerge, "0", "CIF16", "0", 0, "1", "32" };
+{
+  PluginCodec_IntegerOption,            // Option type
+  CIF16_MPI,                            // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MaxMerge,                 // Merge mode
+  "1",                                  // Initial value
+  "CIF16",                              // FMTP option name
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  0,                                    // H.245 generic capability code and bit mask
+  "1",                                  // Minimum value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
+};
 
 static struct PluginCodec_Option const sifMPI =
   { PluginCodec_StringOption, "SIF MPI", false, PluginCodec_EqualMerge, "320,240,1", "CUSTOM"};

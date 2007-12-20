@@ -195,6 +195,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   forkedInvitations.DisallowDeleteObjects();
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
+  ackRetry.SetNotifier(PCREATE_NOTIFIER(OnAckRetry));
 
   PTRACE(4, "SIP\tCreated connection.");
 }
@@ -1578,6 +1579,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   PTRACE(3, "SIP\tACK received: " << phase);
 
   ackTimer.Stop();
+  ackRetry.Stop();
   
   OnReceivedSDP(response);
 
@@ -2036,13 +2038,6 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 }
 
 
-void SIPConnection::OnAckTimeout(PThread &, INT)
-{
-  releaseMethod = ReleaseWithBYE;
-  Release(EndedByTemporaryFailure);
-}
-
-
 PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 {
   if (fwdParty.IsEmpty ())
@@ -2090,18 +2085,38 @@ PBoolean SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
 
 PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
 {
-  if (NULL == originalInvite)
-    return PFalse;
+  if (PAssertNULL(originalInvite) == NULL)
+    return false;
 
   SIP_PDU response(*originalInvite, code, contact, extra);
   if (NULL != sdp)
     response.SetSDP(*sdp);
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
-  if (response.GetStatusCode()/100 != 1)
+  if (response.GetStatusCode()/100 != 1) {
+    ackPacket = response;
+    ackRetry = endpoint.GetRetryTimeoutMin();
     ackTimer = endpoint.GetAckTimeout();
+  }
 
   return SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
+}
+
+
+void SIPConnection::OnAckRetry(PThread &, INT)
+{
+  PTRACE(3, "SIP\tACK not received yet, retry sending response.");
+  if (PAssertNULL(originalInvite) != NULL)
+    SendPDU(ackPacket, originalInvite->GetViaAddress(endpoint)); 
+}
+
+
+void SIPConnection::OnAckTimeout(PThread &, INT)
+{
+  PTRACE(1, "SIP\tFailed to receive ACK!");
+  ackRetry.Stop();
+  releaseMethod = ReleaseWithBYE;
+  Release(EndedByTemporaryFailure);
 }
 
 

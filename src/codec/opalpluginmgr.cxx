@@ -154,10 +154,10 @@ class OpalPluginMediaOption : public base
         return base::Merge(option);
 
       char * result = NULL;
-      bool ok = m_mergeFunction(&result, AsString(), option.AsString());
+      bool ok = m_mergeFunction(&result, base::AsString(), option.AsString());
 
-      if (ok && result != NULL && FromString(result)) {
-        PTRACE(4, "OpalPlugin\tChanged media option \"" << m_name << "\" from \"" << m_value << "\" to \"" << result << '"');
+      if (ok && result != NULL && base::FromString(result)) {
+        PTRACE(4, "OpalPlugin\tChanged media option \"" << base::GetName() << "\" from " << *this << " to \"" << result << '"');
       }
 
       if (result != NULL && m_freeFunction != NULL)
@@ -1531,6 +1531,11 @@ void OpalPluginCodecManager::RegisterPluginPair(
         default:
           PTRACE(3, "OpalPlugin\tOnknown Media Type " << (encoderCodec->flags & PluginCodec_MediaTypeMask));
           return;
+      }
+
+      if (mediaFormatInternal == NULL) {
+        PTRACE(3, "OpalPlugin\tno media format created for codec " << encoderCodec->descr);
+        return;
       }
 
       OpalMediaFormat * mediaFormat = new OpalPluginMediaFormat(mediaFormatInternal);
