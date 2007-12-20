@@ -114,11 +114,11 @@ void H264EncCtx::call(unsigned msg)
   readStream((LPVOID)&msg, sizeof(msg));
 }
 
-void H264EncCtx::call(unsigned msg, int value)
+void H264EncCtx::call(unsigned msg, unsigned value)
 {
   switch (msg) {
-    case SET_FRAME_WIDTH:  width  = value; size = (int) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
-    case SET_FRAME_HEIGHT: height = value; size = (int) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
+    case SET_FRAME_WIDTH:  width  = value; size = (unsigned) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
+    case SET_FRAME_HEIGHT: height = value; size = (unsigned) (width * height * 1.5) + sizeof(frameHeader) + 40; break;
    }
   
   writeStream((LPCVOID) &msg, sizeof(msg));

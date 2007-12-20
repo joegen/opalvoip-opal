@@ -40,7 +40,7 @@ class H264EncCtx
      bool Load();
      bool isLoaded() { return loaded; };
      void call(unsigned msg);
-     void call(unsigned msg, int);
+     void call(unsigned msg, unsigned value);
      void call(unsigned msg , const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned & headerLen, unsigned int & flags, int & ret);
 
   protected:
@@ -59,9 +59,9 @@ class H264EncCtx
      char gplProcess [512];
      std::ofstream dlStream;
      std::ifstream ulStream;
-     int width;
-     int height;
-     int size;
+     unsigned width;
+     unsigned height;
+     unsigned size;
      bool startNewFrame;
      bool loaded;
      bool pipesCreated;
