@@ -55,10 +55,6 @@
 #include <opal/patch.h>
 #include <codec/rfc2833.h>
 
-#if OPAL_H224
-#include <h224/h323h224.h>
-#endif
-
 #ifdef OPAL_H460
 #include <h323/h460.h>
 #include <h323/h4601.h>
@@ -148,7 +144,7 @@ H323Connection::H323Connection(OpalCall & call,
                                const H323TransportAddress & address,
                                unsigned options,
                                OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, token, options, stringOptions),
+  : OpalRTPConnection(call, ep, token, options, stringOptions),
     endpoint(ep),
     gkAccessTokenOID(ep.GetGkAccessTokenOID())
 #ifdef H323_H460
@@ -233,9 +229,6 @@ H323Connection::H323Connection(OpalCall & call,
   earlyStart = PFalse;
 #if OPAL_T120
   startT120 = PTrue;
-#endif
-#if OPAL_H224
-  startH224 = ep.IsH224Enabled();
 #endif
   lastPDUWasH245inSETUP = PFalse;
   endSessionNeeded = PFalse;
@@ -3322,13 +3315,6 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
   
-#ifdef OPAL_H224
-  // If H.224 is enabled, add the corresponding capabilities
-  if(GetEndPoint().IsH224Enabled()) {
-    localCapabilities.SetCapability(0, P_MAX_INDEX, new H323_H224Capability());
-  }
-#endif
-
   H323_UserInputCapability::AddAllCapabilities(localCapabilities, 0, P_MAX_INDEX);
 
   // Special test for the RFC2833 capability to get the correct dynamic payload type
@@ -3336,8 +3322,9 @@ void H323Connection::OnSetLocalCapabilities()
   if (capability != NULL) {
     MediaInformation info;
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL &&
-        otherParty->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
+    OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
+    if (otherRtpConn != NULL &&
+        otherRtpConn->GetMediaInformation(OpalMediaFormat::DefaultAudioSessionID, info))
       capability->SetPayloadType(info.rfc2833);
     else
       localCapabilities.Remove(capability);
@@ -3433,24 +3420,6 @@ void H323Connection::InternalEstablishedConnectionCheck()
     default :
       break;
   }
-
-#if OPAL_H224
-  if (h245_available && startH224) {
-    if(remoteCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME) != NULL) {
-      H323Capability * capability = localCapabilities.FindCapability(OPAL_H224_CAPABILITY_NAME);
-      if (capability != NULL) {
-        if (logicalChannels->Open(*capability, OpalMediaFormat::DefaultH224SessionID)) {
-          H323Channel * channel = capability->CreateChannel(*this, H323Channel::IsTransmitter, OpalMediaFormat::DefaultH224SessionID, NULL);
-          if  (channel != NULL) {
-            channel->SetNumber(logicalChannels->GetNextChannelNumber());
-            fastStartChannels.Append(channel);
-          }
-        }
-      }
-    }
-    startH224 = PFalse;
-  }
-#endif
 }
 
 
@@ -3553,56 +3522,10 @@ bool H323Connection::CloseMediaStream(OpalMediaStream & stream)
 }
 
 
-OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                    unsigned sessionID,
-                                                    PBoolean isSource)
-{
-  // Use a NULL stream if media is bypassing us, 
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-    PTRACE(3, "H.323\tBypassing media for session " << sessionID);
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-  }
-
-  // if no RTP sessions matching this session ID, then nothing to do
-  RTP_Session * session = GetSession(sessionID);
-  if (session == NULL) {
-    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID);
-    return NULL;
-  }
-
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
-}
-
-
-void H323Connection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-    AttachRFC2833HandlerToPatch(isSource, patch);
-#if P_DTMF
-    if (detectInBandDTMF && isSource) {
-      patch.AddFilter(PCREATE_NOTIFIER(OnUserInputInBandDTMF), OPAL_PCM16);
-    }
-#endif
-  }
-}
-
-
-PBoolean H323Connection::IsMediaBypassPossible(unsigned sessionID) const
-{
-  //PTRACE(3, "H323\tIsMediaBypassPossible: session " << sessionID);
-
-  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
-         sessionID == OpalMediaFormat::DefaultVideoSessionID;
-}
-
-
 PBoolean H323Connection::GetMediaInformation(unsigned sessionID,
                                          MediaInformation & info) const
 {
-  if (!OpalConnection::GetMediaInformation(sessionID, info))
+  if (!OpalRTPConnection::GetMediaInformation(sessionID, info))
     return PFalse;
 
   H323Capability * capability = remoteCapabilities.FindCapability(OpalRFC2833);
@@ -3967,7 +3890,8 @@ H323Channel * H323Connection::CreateRealTimeLogicalChannel(const H323Capability 
 
     if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
       MediaInformation info;
-      if (!otherParty->GetMediaInformation(sessionID, info))
+      OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
+      if (otherRtpConn == NULL || !otherRtpConn->GetMediaInformation(sessionID, info))
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID);
       else
         return new H323_ExternalRTPChannel(*this, capability, dir, sessionID, info.data, info.control);
@@ -4338,7 +4262,7 @@ RTP_Session * H323Connection::UseSession(const OpalTransport & transport,
                                          unsigned sessionID,
                                          RTP_QOS * rtpqos)
 {
-  RTP_UDP * udp_session = (RTP_UDP *)OpalConnection::UseSession(transport, sessionID, rtpqos);
+  RTP_UDP * udp_session = (RTP_UDP *)OpalRTPConnection::UseSession(transport, sessionID, rtpqos);
   if (udp_session == NULL)
     return NULL;
 

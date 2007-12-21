@@ -741,21 +741,6 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 
 #endif
 
-#ifdef OPAL_H224
-
-OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection,
-														 unsigned sessionID) const
-{
-  return new OpalH224Handler(connection, sessionID);
-}
-
-OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
-{
-  return new OpalH281Handler(h224Handler);
-}
-
-#endif
-
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
     destination(dest),

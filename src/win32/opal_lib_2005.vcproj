@@ -1907,6 +1907,10 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\opal\rtpconn.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\transcoders.cxx"
 					>
 					<FileConfiguration
@@ -6327,6 +6331,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\pcss.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\rtpconn.h"
 					>
 				</File>
 				<File

@@ -489,21 +489,6 @@ OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & 
 
 #endif
 
-#if OPAL_H224
-
-OpalH224Handler * OpalEndPoint::CreateH224ProtocolHandler(OpalConnection & connection, 
-														  unsigned sessionID) const
-{
-  return manager.CreateH224ProtocolHandler(connection, sessionID);
-}
-
-OpalH281Handler * OpalEndPoint::CreateH281ProtocolHandler(OpalH224Handler & h224Handler) const
-{
-  return manager.CreateH281ProtocolHandler(h224Handler);
-}
-
-#endif
-
 void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
 {
   call.GetManager().OnNewConnection(conn);

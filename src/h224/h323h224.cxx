@@ -168,8 +168,8 @@ PBoolean H323_H224Channel::Start()
     return PFalse;
   }
 	
-  if(h224Handler == NULL) {
-  	h224Handler = connection.CreateH224ProtocolHandler(sessionID);
+  if (h224Handler == NULL) {
+  	h224Handler = new OpalH224Handler(connection, sessionID);
   }
 	
   if(direction == H323Channel::IsReceiver) {

@@ -571,36 +571,6 @@ class OpalEndPoint : public PObject
 	
 #endif
 
-#if OPAL_H224
-
-	/** Create an instance of the H.224 protocol handler.
-        This is called when the subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer to a
-        heap variable (using new) as it will be automatically deleted when the Connection
-        is deleted.
-		
-        The default behaviour calls the OpalManager function of the same name.
-      */
-    virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, 
-      unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer to a
-        heap variable (using new) as it will be automatically deleted when the Connection
-        is deleted.
-		
-        The default behaviour calls the OpalManager function of the same name
-      */
-    virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
-    ) const;
-#endif
-
     /** Execute garbage collection for endpoint.
         Returns PTrue if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.

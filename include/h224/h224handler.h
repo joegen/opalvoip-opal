@@ -34,7 +34,7 @@
 #include <ptlib.h>
 #endif
 
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <opal/transports.h>
 #include <rtp/rtp.h>
 #include <h224/h281handler.h>
@@ -75,7 +75,7 @@ class OpalH224Handler : public PObject
 	
 public:
 	
-  OpalH224Handler(OpalConnection & connection, unsigned sessionID);
+  OpalH224Handler(OpalRTPConnection & connection, unsigned sessionID);
   ~OpalH224Handler();
 	
   virtual void StartTransmit();
