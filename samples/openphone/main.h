@@ -188,7 +188,7 @@ class InCallPanel : public wxPanel
     InCallPanel(MyManager & manager, wxWindow * parent);
     virtual bool Show(bool show = true);
 
-    void UpdateButtons();
+    void UpdateButtons(OpalPOTSEndPoint * potsEP);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -216,6 +216,7 @@ class InCallPanel : public wxPanel
 
     MyManager & m_manager;
     wxButton  * m_StartStopVideo;
+    wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;
     wxCheckBox* m_MicrophoneMute;
     wxSlider  * m_SpeakerVolume;
