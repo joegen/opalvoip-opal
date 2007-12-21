@@ -39,7 +39,7 @@
 #include <opal/buildopts.h>
 
 #include <opal/call.h>
-#include <opal/connection.h> //OpalConnection::AnswerCallResponse
+#include <opal/rtpconn.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
 #include <opal/audiorecord.h>
 #include <codec/silencedetect.h>
@@ -652,34 +652,6 @@ class OpalManager : public PObject
       const OpalConnection & connection  ///<  Connection for which T.38 handler created
     ) const;
 	
-#endif
-
-#if OPAL_H224
-    /** Create an instance of the H.224 protocol handler.
-        This is called when the call subsystem requires that a H.224 channel be established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH224Handler instance
-      */
-	virtual OpalH224Handler * CreateH224ProtocolHandler(
-      OpalConnection & connection, unsigned sessionID
-    ) const;
-	
-    /** Create an instance of the H.281 protocol handler.
-        This is called when a H.224 channel is established.
-		
-        Note that if the application overrides this it should return a pointer
-        to a heap variable (using new) as it will be automatically deleted when
-        the OpalConnection is deleted.
-		
-        The default behaviour creates a standard OpalH281Handler instance
-      */
-	virtual OpalH281Handler * CreateH281ProtocolHandler(
-      OpalH224Handler & h224Handler
-    ) const;
 #endif
 
     class RouteEntry : public PObject

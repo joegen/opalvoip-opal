@@ -789,8 +789,9 @@ PBoolean H323_ExternalRTPChannel::Start()
   if (otherParty == NULL)
     return PFalse;
 
-  OpalConnection::MediaInformation info;
-  if (!otherParty->GetMediaInformation(sessionID, info))
+  OpalRTPConnection::MediaInformation info;
+  OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
+  if (otherRtpConn == NULL || !otherRtpConn->GetMediaInformation(sessionID, info))
     return PFalse;
 
   externalMediaAddress = info.data;

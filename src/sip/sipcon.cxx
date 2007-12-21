@@ -161,7 +161,7 @@ SIPConnection::SIPConnection(OpalCall & call,
                              OpalTransport * newTransport,
                              unsigned int options,
                              OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, token, options, stringOptions)
+  : OpalRTPConnection(call, ep, token, options, stringOptions)
   , endpoint(ep)
   , transport(newTransport)
   , local_hold(false)
@@ -412,10 +412,10 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
   // if doing media bypass, we need to set the local address
   // otherwise create an RTP session
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
-    OpalConnection * otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
+    OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
+    if (otherRtpConn != NULL) {
       MediaInformation info;
-      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
+      if (otherRtpConn->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
         ntePayloadCode = info.rfc2833;
       }
@@ -538,9 +538,10 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
 
   if (ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
     PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    if (otherParty != NULL) {
+    OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
+    if (otherRtpConn != NULL) {
       MediaInformation info;
-      if (otherParty->GetMediaInformation(rtpSessionId, info)) {
+      if (otherRtpConn->GetMediaInformation(rtpSessionId, info)) {
         localAddress = info.data;
         ntePayloadCode = info.rfc2833;
 #if OPAL_T38FAX
@@ -916,45 +917,6 @@ bool SIPConnection::CloseMediaStream(OpalMediaStream & stream)
   }
 
   return ok;
-}
-
-
-OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat,
-                                                   unsigned sessionID,
-                                                   PBoolean isSource)
-{
-  // Use a NULL stream if media is bypassing us, 
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
-    PTRACE(3, "SIP\tBypassing media for session " << sessionID);
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-  }
-
-  // if no RTP sessions matching this session ID, then nothing to do
-  RTP_Session * session = GetSession(sessionID);
-  if (session == NULL) {
-    PTRACE(1, "SIP\tCreateMediaStream could not find session " << sessionID);
-    return NULL;
-  }
-
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
-                                GetMinAudioJitterDelay(),
-                                GetMaxAudioJitterDelay());
-}
-
-
-void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
-{
-  OpalConnection::OnPatchMediaStream(isSource, patch);
-  if(patch.GetSource().GetSessionID() == OpalMediaFormat::DefaultAudioSessionID) {
-    AttachRFC2833HandlerToPatch(isSource, patch);
-  }
-}
-
-
-PBoolean SIPConnection::IsMediaBypassPossible(unsigned sessionID) const
-{
-  return sessionID == OpalMediaFormat::DefaultAudioSessionID ||
-         sessionID == OpalMediaFormat::DefaultVideoSessionID;
 }
 
 
