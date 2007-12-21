@@ -553,22 +553,6 @@ class OpalEndPoint : public PObject
 
   /**@name Other services */
   //@{
-#if OPAL_T120DATA
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       Note that if the application overrides this it should return a pointer to a
-       heap variable (using new) as it will be automatically deleted when the
-       H323Connection is deleted.
-
-       The default behavour calls the OpalManager function of the same name.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.120 handler created
-    ) const;
-#endif
-
 #if OPAL_T38FAX
 
     /**Create an instance of the T.38 protocol handler.

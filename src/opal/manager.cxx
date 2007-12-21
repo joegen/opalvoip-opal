@@ -732,15 +732,6 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
   return input.IsEmpty() ? digit : input;
 }
 
-#if OPAL_T120DATA
-
-OpalT120Protocol * OpalManager::CreateT120ProtocolHandler(const OpalConnection & ) const
-{
-  return NULL;
-}
-
-#endif
-
 #if OPAL_T38FAX
 
 OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const

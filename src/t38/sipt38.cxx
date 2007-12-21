@@ -34,9 +34,7 @@
 #include <t38/sipt38.h>
 #include <t38/t38proto.h>
 
-#if OPAL_VIDEO
-OPAL_DECLARE_MEDIA_TYPE(image, OpalFaxMediaType);
-#endif
+#define  SDP_MEDIA_TRANSPORT_UDPTL "udptl"
 
 class OpalT38SDPMediaDescription : public SDPMediaDescription
 {
@@ -63,6 +61,12 @@ SDPMediaDescription * OpalFaxMediaType::CreateSDPMediaDescription(OpalTransportA
   return NULL;
 }
 
+PCaselessString OpalFaxMediaType::GetTransport() const
+{
+  return SDP_MEDIA_TRANSPORT_UDPTL;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
 
 OpalT38SDPMediaDescription::OpalT38SDPMediaDescription(const OpalTransportAddress & address)
   : SDPMediaDescription(address, OpalMediaType::Fax())

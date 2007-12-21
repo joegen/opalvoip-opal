@@ -45,7 +45,6 @@
 
 #define SIP_DEFAULT_SESSION_NAME  "Opal SIP Session"
 #define  SDP_MEDIA_TRANSPORT       "RTP/AVP"
-#define  SDP_MEDIA_TRANSPORT_UDPTL "udptl"
 
 #define new PNEW
 
@@ -432,11 +431,6 @@ PBoolean SDPMediaDescription::Decode(const PStringArray & tokens)
   }
   else {
     PTRACE(4, "SDP\tMedia session port=" << port);
-
-    if ((transport != SDP_MEDIA_TRANSPORT) && (transport != SDP_MEDIA_TRANSPORT_UDPTL)) {
-      PTRACE(2, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
-      return PFalse;
-    }
 
     PIPSocket::Address ip;
     transportAddress.GetIpAddress(ip);
@@ -884,24 +878,30 @@ PBoolean SDPSessionDescription::Decode(const PString & str)
           if (tokens.GetSize() < 4) {
             PTRACE(1, "SDP\tMedia session has only " << tokens.GetSize() << " elements");
           } else {
-            OpalMediaType mediaType = tokens[0].ToLower();
-            OpalMediaTypeDefinition * defn = mediaType.GetDefinition();
-            if (defn == NULL)
-              PTRACE(1, "SDP\tUnknown media type " << mediaType);
+            OpalMediaType mediaType = OpalMediaType::GetMediaTypeFromSDP(tokens[0].ToLower());
+            if (mediaType.empty()) {
+              PTRACE(1, "SDP\tUnknown SDP media type " << tokens[0]);
+            }
             else {
-              currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress);
-              if (currentMedia == NULL) {
-                PTRACE(1, "SDP\tMedia type " << mediaType << " not implemented for SIP");
+              OpalMediaTypeDefinition * defn = mediaType.GetDefinition();
+              if (defn == NULL) {
+                PTRACE(1, "SDP\tUnknown media type " << mediaType);
               }
               else {
-                if (currentMedia->Decode(tokens) && (currentMedia->GetPort() != 0)) {
-                  mediaDescriptions.Append(currentMedia);
-                  PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
-                  defaultConnectPort = currentMedia->GetPort();
+                currentMedia = defn->CreateSDPMediaDescription(defaultConnectAddress);
+                if (currentMedia == NULL) {
+                  PTRACE(1, "SDP\tMedia type " << mediaType << " not implemented for SIP");
                 }
                 else {
-                  delete currentMedia;
-                  currentMedia = NULL;
+                  if (currentMedia->Decode(tokens) && (currentMedia->GetPort() != 0)) {
+                    mediaDescriptions.Append(currentMedia);
+                    PTRACE(3, "SDP\tAdding media session with " << currentMedia->GetSDPMediaFormats().GetSize() << " formats");
+                    defaultConnectPort = currentMedia->GetPort();
+                  }
+                  else {
+                    delete currentMedia;
+                    currentMedia = NULL;
+                  }
                 }
               }
             }
@@ -1060,6 +1060,45 @@ void SDPSessionDescription::SetDefaultConnectAddress(const OpalTransportAddress 
      ownerAddress = address;
 }
 
+
+////////////////////////////////////////////////////////////////////////////
+
+OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp)
+{
+  SDPToMediaTypeMap_T & map = GetSDPToMediaTypeMap();
+  SDPToMediaTypeMap_T::iterator r = map.find(sdp);
+  if (r != map.end())
+    return r->second;
+
+  return OpalMediaType();
+}
+
+OpalMediaTypeDefinition * OpalMediaType::GetDefinitionFromSDP(const std::string & sdp)
+{
+  OpalMediaType type = GetMediaTypeFromSDP(sdp);
+  if (type.empty())
+    return NULL;
+
+  return GetDefinition(type);
+}
+
+OpalMediaType::SDPToMediaTypeMap_T & OpalMediaType::GetSDPToMediaTypeMap()
+{
+  static SDPToMediaTypeMap_T sdpToMediaType;
+  return sdpToMediaType;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+PCaselessString OpalCommonMediaType::GetTransport() const
+{ return SDP_MEDIA_TRANSPORT; }
+
+////////////////////////////////////////////////////////////////////////////
+
+#if 0
+PCaselessString OpalNULLMediaType::GetTransport() const
+{ return SDP_MEDIA_TRANSPORT; }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
