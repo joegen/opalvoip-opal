@@ -222,6 +222,8 @@ class OpalRTPConnection : public OpalConnection
       */
     virtual void OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch);
 
+    virtual bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
+
   protected:
     OpalRFC2833Proto    * rfc2833Handler;
 #if OPAL_T38FAX
@@ -237,6 +239,7 @@ class OpalRTPConnection : public OpalConnection
       public:
         ChannelStartInfo(const OpalMediaType & _mediaType);
 
+        OpalMediaType mediaType;
         bool autoStartReceive;
         bool autoStartTransmit;
         bool assigned;
@@ -244,7 +247,6 @@ class OpalRTPConnection : public OpalConnection
         unsigned protocolSpecificSessionId;
         unsigned channelId;
 
-        OpalMediaType mediaType;
         PString channelName;
     };
 
@@ -252,14 +254,18 @@ class OpalRTPConnection : public OpalConnection
     {
       public:
         ChannelStartInfoMap();
-        void Initialise(OpalConnection & conn);
+        void Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions);
         unsigned AddChannel(ChannelStartInfo & info);
 
         ChannelStartInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+        bool ChannelStartInfoMap::CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
+
+        void Unlock() { mutex.Signal(); }
 
         mutable PMutex mutex;
 
       protected:
+        void SetOldOptions(unsigned channelID, const OpalMediaType & mediaType, bool rx, bool tx);
         mutable bool initialised;
     };
 

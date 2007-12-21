@@ -60,7 +60,6 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 {
   public:
     OpalFaxMediaType();
-    BYTE GetPreferredSessionId() const;
     bool IsMediaAutoStart(bool) const;
 
 #if OPAL_SIP
@@ -632,10 +631,8 @@ class OpalT38Connection : public OpalFaxConnection
 #define OPAL_PCM16_FAX      "PCM-16-Fax"
 
 extern const OpalFaxAudioFormat & GetOpalPCM16Fax();
-extern const OpalMediaFormat    & GetOpalT38();
 
 #define OpalPCM16Fax          GetOpalPCM16Fax()
-#define OpalT38               GetOpalT38()
 
 
 #endif // __OPAL_T38PROTO_H

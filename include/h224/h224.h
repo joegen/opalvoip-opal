@@ -36,9 +36,18 @@
 
 #include <h224/q922.h>
 
-#define H224_HEADER_SIZE 6
+namespace PWLibStupidLinkerHacks {
+extern int h224Loader;
+};
 
-#define H224_BROADCAST 0x0000
+#include <opal/mediafmt.h>
+
+#define OPAL_H224            "H.224"
+
+extern const OpalMediaFormat OpalH224;
+
+#define H224_HEADER_SIZE  6
+#define H224_BROADCAST    0x0000
 
 class H224_Frame : public Q922_Frame
 {

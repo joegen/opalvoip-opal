@@ -46,11 +46,7 @@
 #include <codec/vidcodec.h>
 #endif
 
-#include <h224/h224handler.h>
-#include <h224/h281handler.h>
-
 #include "../../version.h"
-
 
 #ifndef IPTOS_PREC_CRITIC_ECP
 #define IPTOS_PREC_CRITIC_ECP (5 << 5)

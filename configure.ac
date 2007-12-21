@@ -450,15 +450,15 @@ dnl
 dnl H.224
 
 dnl MSWIN_DISPLAY h224,H.224 support
-dnl MSWIN_DEFINE  h224,OPAL_H224
+dnl MSWIN_DEFINE  h224,OPAL_H224APP
 
 AC_ARG_ENABLE(h224,
 		[  --disable-h224          disable H.224 protocol support],
 		h224=$enableval)
 AC_MSG_CHECKING(H224 protocol)
 if test "$h224" = "yes" ; then
-  AC_SUBST(OPAL_H224, 1)
-  AC_DEFINE(OPAL_H224)
+  AC_SUBST(OPAL_H224APP, 1)
+  AC_DEFINE(OPAL_H224APP)
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)

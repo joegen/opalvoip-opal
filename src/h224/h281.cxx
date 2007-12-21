@@ -32,7 +32,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224APP
 
 #include <h224/h281.h>
 #include <h224/h281handler.h>
@@ -781,5 +781,5 @@ void OpalH281Handler::StopActionLocally(PTimer &, INT)
   OnStopAction();
 }
 
-#endif // OPAL_H224
+#endif // OPAL_H224APP
 

@@ -441,6 +441,13 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
 }
 
 
+bool SIPConnection::OfferSDPMediaDescription_fn(const OpalMediaType & mediaType, bool & sdpOK, RTP_SessionManager & rtpSessions, SDPSessionDescription & sdpOut)
+{
+  sdpOK |= OfferSDPMediaDescription(mediaType, rtpSessions, sdpOut);
+  return true;
+}
+
+
 PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSessions, SDPSessionDescription & sdpOut)
 {
   bool sdpOK;
@@ -465,13 +472,10 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
 
     // construct offer as per RFC 3261, para 14.2
     // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  = OfferSDPMediaDescription(OpalMediaFormat::DefaultAudioSessionID, rtpSessions, sdpOut);
-#if OPAL_VIDEO
-    sdpOK |= OfferSDPMediaDescription(OpalMediaFormat::DefaultVideoSessionID, rtpSessions, sdpOut);
-#endif
-#if OPAL_T38FAX
-    sdpOK |= OfferSDPMediaDescription(OpalMediaFormat::DefaultDataSessionID, rtpSessions, sdpOut);
-#endif
+    // check channel start information to see what needs to be started
+    sdpOK = true;
+    OpalMediaTypeIteratorObj3Arg<SIPConnection, bool &, RTP_SessionManager &, SDPSessionDescription &> fn(*this, sdpOK, rtpSessions, sdpOut, &SIPConnection::OfferSDPMediaDescription_fn);
+    OpalMediaTypeIterate(fn);
   }
 
   needReINVITE = true;
@@ -511,10 +515,17 @@ static void SetNXEPayloadCode(SDPMediaDescription * localMedia,
 }
 
 
-bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
+bool SIPConnection::OfferSDPMediaDescription(const OpalMediaType & mediaType,
                                              RTP_SessionManager & rtpSessions,
                                              SDPSessionDescription & sdp)
 {
+  // find unassigned autostart definition for this media type
+  ChannelStartInfo * info = channelStartInfoMap.AssignAndLockChannel(mediaType, false);
+  if (info == NULL)
+    return true;
+
+  unsigned rtpSessionId = info->channelId;
+
   OpalTransportAddress localAddress;
   RTP_DataFrame::PayloadTypes ntePayloadCode = RTP_DataFrame::IllegalPayloadType;
 #if OPAL_T38FAX
@@ -531,8 +542,11 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
             (rtpSessionId == OpalMediaFormat::DefaultDataSessionID || fmt.IsTransportable()))
       break;
   }
+
+  channelStartInfoMap.Unlock();
+
   if (i >= formats.GetSize()) {
-    PTRACE(3, "SIP\tNo media formats for session id " << rtpSessionId << ", not adding SDP");
+    PTRACE(3, "SIP\tNo media formats for session id " << rtpSessionId << " of type " << mediaType << ", not adding SDP");
     return PFalse;
   }
 
@@ -590,35 +604,6 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   }
 
   SDPMediaDescription * localMedia;
-  OpalMediaType mediaType;
-
-  switch (rtpSessionId) {
-    case OpalMediaFormat::DefaultAudioSessionID:
-      mediaType = OpalMediaType::Audio();
-      break;
-
-#if OPAL_VIDEO
-    case OpalMediaFormat::DefaultVideoSessionID:
-      mediaType = OpalMediaType::Video();
-      break;
-#endif
-
-#if OPAL_T38FAX
-    case OpalMediaFormat::DefaultDataSessionID:
-      mediaType = OpalMediaType::Fax();
-      break;
-#endif
-
-    default:
-      PTRACE(2, "SIP\tUnknown session ID " << rtpSessionId);
-      return false;
-  }
-
-  if (mediaType.empty()) {
-    PTRACE(2, "SIP\tNo media type for session ID " << rtpSessionId);
-    return false;
-  }
-
   OpalMediaTypeDefinition * def = mediaType.GetDefinition();
   if (def == NULL) {
     PTRACE(2, "SIP\tUnknown media type " << mediaType);

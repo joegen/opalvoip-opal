@@ -54,6 +54,14 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 #if OPAL_T38FAX
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
 #endif
+
+  // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
+  // so, get the autoStart info from the other connection
+  PSafePtr<OpalConnection> conn  = call.GetConnection(0);
+  if (conn != NULL) 
+    channelStartInfoMap.Initialise(*this, conn->GetStringOptions());
+  else
+    channelStartInfoMap.Initialise(*this, stringOptions);
 }
 
 OpalRTPConnection::~OpalRTPConnection()
@@ -109,6 +117,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
 #if OPAL_T38FAX
       && sessionID != OpalMediaFormat::DefaultDataSessionID
 #endif
+      && sessionID != 5
       )
     return NULL;
 
@@ -281,6 +290,12 @@ void OpalRTPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & p
   }
 }
 
+bool OpalRTPConnection::CanAutoStartMedia(const OpalMediaType & mediaType, bool rx)
+{
+  return channelStartInfoMap.CanAutoStartMedia(mediaType, rx);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 
 OpalRTPConnection::ChannelStartInfo::ChannelStartInfo(const OpalMediaType & _mediaType)
@@ -316,6 +331,22 @@ unsigned OpalRTPConnection::ChannelStartInfoMap::AddChannel(OpalRTPConnection::C
   return info.channelId;
 }
 
+bool OpalRTPConnection::ChannelStartInfoMap::CanAutoStartMedia(const OpalMediaType & mediaType, bool rx)
+{
+  PWaitAndSignal m(mutex);
+
+  iterator r;
+  for (r = begin(); r != end(); ++r) {
+    if (r->second.mediaType == mediaType) {
+      if (rx)
+        return r->second.autoStartReceive;
+      else
+        return r->second.autoStartTransmit;
+    }
+  }
+
+  return false;
+}
 
 OpalRTPConnection::ChannelStartInfo * OpalRTPConnection::ChannelStartInfoMap::AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned)
 {
@@ -323,7 +354,8 @@ OpalRTPConnection::ChannelStartInfo * OpalRTPConnection::ChannelStartInfoMap::As
 
   iterator r;
   for (r = begin(); r != end(); ++r) {
-    if ((r->second.assigned == assigned) && (r->second.mediaType == mediaType)) 
+    ChannelStartInfo & info = r->second;
+    if ((info.assigned == assigned) && (info.mediaType == mediaType)) 
       return &r->second;
   }
 
@@ -332,31 +364,74 @@ OpalRTPConnection::ChannelStartInfo * OpalRTPConnection::ChannelStartInfoMap::As
 }
 
 
-
-void OpalRTPConnection::ChannelStartInfoMap::Initialise(OpalConnection & /*conn*/)
+void OpalRTPConnection::ChannelStartInfoMap::Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions)
 {
   PWaitAndSignal m(mutex);
+
+  // make function idempotent
   if (initialised)
     return;
+  initialised = true;
 
-  // check all media types and enable as appropriate
-  OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
-  OpalMediaTypeFactory::KeyList_T::iterator r;
-  for (r = keys.begin(); r != keys.end(); ++r) {
-    OpalMediaTypeDefinition * def = OpalMediaTypeFactory::CreateInstance(*r);
-    PAssertNULL(def);
-#if 0
-    BOOL rx = conn.GetEndPoint().IsMediaAutoStart(*r, true);
-    BOOL tx = conn.GetEndPoint().IsMediaAutoStart(*r, false);
-    if (rx || tx) {
-      ChannelStartInfo info(*r);
-      info.channelId         = def->GetPreferredSessionId();
-      info.autoStartReceive  = rx;
-      info.autoStartTransmit = tx;
-      AddChannel(info);
+  // see if stringoptions contains AutoStart option
+  if (stringOptions != NULL && stringOptions->Contains("autostart")) {
+
+    // get autostart option as lines
+    PStringArray lines = (*stringOptions)("autostart").Lines();
+    PINDEX i;
+    for (i = 0; i < lines.GetSize(); ++i) {
+      PString line = lines[i];
+      PINDEX colon = line.Find(':');
+      OpalMediaType mediaType = line.Left(colon);
+
+      // see if media type is known, and if it is, enable it
+      OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+      if (def != NULL) {
+        ChannelStartInfo info(mediaType);
+        info.autoStartReceive  = true;
+        info.autoStartTransmit = true;
+        info.channelId         = def->GetPreferredSessionId();
+        if (colon != P_MAX_INDEX) {
+          PStringArray tokens = line.Mid(colon+1).Tokenise(";", FALSE);
+          PINDEX j;
+          for (j = 0; j < tokens.GetSize(); ++j) {
+            if (tokens[i] *= "no") {
+              info.autoStartReceive  = false;
+              info.autoStartTransmit = false;
+            }
+          }
+        }
+        AddChannel(info);
+      }
     }
+  }
+
+  // set old video and audio auto start if not already set
+  OpalManager & mgr = conn.GetCall().GetManager();
+#if OPAL_VIDEO
+  SetOldOptions(1, OpalMediaType::Audio(), true,                                true);
 #endif
+#if OPAL_VIDEO
+  SetOldOptions(2, OpalMediaType::Video(), mgr.CanAutoStartReceiveVideo(), mgr.CanAutoStartTransmitVideo());
+#endif
+}
+
+
+void OpalRTPConnection::ChannelStartInfoMap::SetOldOptions(unsigned channelId, const OpalMediaType & mediaType, bool rx, bool tx)
+{
+  iterator r;
+  for (r = begin(); r != end(); ++r) {
+    if ((r->second.mediaType == mediaType) && (r->second.channelId == channelId)) 
+      break;
+  }
+  if (r == end()) {
+    ChannelStartInfo info(mediaType);
+    info.channelId         = channelId;
+    info.autoStartReceive  = rx;
+    info.autoStartTransmit = tx;
+    AddChannel(info);
   }
 }
+
 
 /////////////////////////////////////////////////////////////////////////////

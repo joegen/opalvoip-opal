@@ -127,11 +127,17 @@ class OpalMediaTypeDefinition  {
     virtual ~OpalMediaTypeDefinition() { }
 
     virtual bool IsMediaAutoStart(bool) const = 0;
-    virtual BYTE GetPreferredSessionId() const = 0;
+    virtual unsigned GetPreferredSessionId() const { return defaultSessionId; }
 
 #if OPAL_SIP
+    virtual std::string GetSDPType() const { return sdpType; }
     virtual PCaselessString GetTransport() const = 0;
     virtual SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress) = 0;
+#endif
+  protected:
+    std::string sdpType;
+#if OPAL_SIP
+    unsigned defaultSessionId;
 #endif
 };
 
@@ -146,24 +152,26 @@ typedef PFactory<OpalMediaTypeDefinition> OpalMediaTypeFactory;
 //  define a useful template for iterating over all OpalMediaTypeDefintions
 //
 template<class Function>
-void OpalMediaTypeIterate(Function & func)
+bool OpalMediaTypeIterate(Function & func)
 {
   OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
   OpalMediaTypeFactory::KeyList_T::iterator r;
   for (r = keys.begin(); r != keys.end(); ++r) {
-    func(*r);
+    if (!func(*r))
+      break;
   }
+  return r == keys.end();
 }
 
 template<class ObjType>
 struct OpalMediaTypeIteratorObj
 {
-  typedef void (ObjType::*ObjTypeFn)(const OpalMediaType &); 
+  typedef bool (ObjType::*ObjTypeFn)(const OpalMediaType &); 
   OpalMediaTypeIteratorObj(ObjType & _obj, ObjTypeFn _fn)
     : obj(_obj), fn(_fn) { }
 
-  void operator ()(const OpalMediaType & key)
-  { (obj.*fn)(key); }
+  bool operator ()(const OpalMediaType & key)
+  { return (obj.*fn)(key); }
 
   ObjType & obj;
   ObjTypeFn fn;
@@ -173,15 +181,48 @@ struct OpalMediaTypeIteratorObj
 template<class ObjType, class Arg1Type>
 struct OpalMediaTypeIteratorObj1Arg
 {
-  typedef void (ObjType::*ObjTypeFn)(const OpalMediaType &, Arg1Type &); 
-  OpalMediaTypeIteratorObj1Arg(ObjType & _obj, Arg1Type & _arg1, ObjTypeFn _fn)
+  typedef bool (ObjType::*ObjTypeFn)(const OpalMediaType &, Arg1Type); 
+  OpalMediaTypeIteratorObj1Arg(ObjType & _obj, Arg1Type _arg1, ObjTypeFn _fn)
     : obj(_obj), arg1(_arg1), fn(_fn) { }
 
-  void operator ()(const OpalMediaType & key)
-  { (obj.*fn)(key, arg1); }
+  bool operator ()(const OpalMediaType & key)
+  { return (obj.*fn)(key, arg1); }
 
   ObjType & obj;
-  Arg1Type & arg1;
+  Arg1Type arg1;
+  ObjTypeFn fn;
+};
+
+template<class ObjType, class Arg1Type, class Arg2Type>
+struct OpalMediaTypeIteratorObj2Arg
+{
+  typedef bool (ObjType::*ObjTypeFn)(const OpalMediaType &, Arg1Type, Arg2Type); 
+  OpalMediaTypeIteratorObj2Arg(ObjType & _obj, Arg1Type _arg1, Arg2Type _arg2, ObjTypeFn _fn)
+    : obj(_obj), arg1(_arg1), arg2(_arg2), fn(_fn) { }
+
+  bool operator ()(const OpalMediaType & key)
+  { return (obj.*fn)(key, arg1, arg2); }
+
+  ObjType & obj;
+  Arg1Type arg1;
+  Arg2Type arg2;
+  ObjTypeFn fn;
+};
+
+template<class ObjType, class Arg1Type, class Arg2Type, class Arg3Type>
+struct OpalMediaTypeIteratorObj3Arg
+{
+  typedef bool (ObjType::*ObjTypeFn)(const OpalMediaType &, Arg1Type, Arg2Type, Arg3Type); 
+  OpalMediaTypeIteratorObj3Arg(ObjType & _obj, Arg1Type _arg1, Arg2Type _arg2, Arg3Type _arg3, ObjTypeFn _fn)
+    : obj(_obj), arg1(_arg1), arg2(_arg2), arg3(_arg3), fn(_fn) { }
+
+  bool operator ()(const OpalMediaType & key)
+  { return (obj.*fn)(key, arg1, arg2, arg3); }
+
+  ObjType & obj;
+  Arg1Type arg1;
+  Arg2Type arg2;
+  Arg3Type arg3;
   ObjTypeFn fn;
 };
 
@@ -203,7 +244,6 @@ class OpalNULLMediaType : public OpalMediaTypeDefinition {
   public:
     OpalNULLMediaType();
 
-    BYTE GetPreferredSessionId() const;
     bool IsMediaAutoStart(bool) const;
 
 #if OPAL_SIP
@@ -232,7 +272,6 @@ class OpalCommonMediaType : public OpalMediaTypeDefinition {
 class OpalAudioMediaType : public OpalCommonMediaType {
   public:
     OpalAudioMediaType();
-    BYTE GetPreferredSessionId() const;
     virtual bool IsMediaAutoStart(bool) const;
 
 #if OPAL_SIP
@@ -247,7 +286,6 @@ class OpalAudioMediaType : public OpalCommonMediaType {
 class OpalVideoMediaType : public OpalCommonMediaType {
   public:
     OpalVideoMediaType();
-    BYTE GetPreferredSessionId() const;
     bool IsMediaAutoStart(bool) const;
 
 #if OPAL_SIP

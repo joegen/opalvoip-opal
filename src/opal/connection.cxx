@@ -266,7 +266,6 @@ bool OpalConnection::GarbageCollection()
   return mediaStreams.DeleteObjectsToBeRemoved();
 }
 
-
 PBoolean OpalConnection::OnSetUpConnection()
 {
   PTRACE(3, "OpalCon\tOnSetUpConnection" << *this);
