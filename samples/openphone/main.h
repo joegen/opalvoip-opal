@@ -42,14 +42,18 @@
 #include <opal/manager.h>
 #include <opal/pcss.h>
 
-#if OPAL_H323
-#include <h323/h323.h>
-#include <h323/gkclient.h>
+#ifndef OPAL_H323
+#error Must compile with H.323 enabled!
 #endif
 
-#if OPAL_SIP
-#include <sip/sip.h>
+#include <h323/h323.h>
+#include <h323/gkclient.h>
+
+#ifndef OPAL_SIP
+#error Must compile with SIP enabled!
 #endif
+
+#include <sip/sip.h>
 
 
 #include <list>
@@ -102,7 +106,6 @@ class MyPCSSEndPoint : public OpalPCSSEndPoint
 };
 
 
-#if OPAL_H323
 class MyH323EndPoint : public H323EndPoint
 {
   public:
@@ -113,10 +116,8 @@ class MyH323EndPoint : public H323EndPoint
 
     MyManager & m_manager;
 };
-#endif
 
 
-#if OPAL_SIP
 class MySIPEndPoint : public SIPEndPoint
 {
   public:
@@ -132,7 +133,6 @@ class MySIPEndPoint : public SIPEndPoint
 
     MyManager & m_manager;
 };
-#endif
 
 
 class CallDialog : public wxDialog
@@ -255,8 +255,6 @@ class SpeedDialDialog : public wxDialog
 };
 
 
-#if OPAL_SIP
-
 class RegistrarInfo
 {
   public:
@@ -285,8 +283,6 @@ class RegistrarInfo
 };
 
 typedef list<RegistrarInfo> RegistrarList;
-
-#endif
 
 
 class OptionsDialog : public wxDialog
@@ -331,13 +327,15 @@ class OptionsDialog : public wxDialog
     PwxString       m_STUNServer;
     wxTextCtrl    * m_STUNServerWnd;
     wxListBox     * m_LocalInterfaces;
-    wxTextCtrl    * m_InterfaceToAdd;
+    wxRadioBox    * m_InterfaceProtocol;
+    wxComboBox    * m_InterfaceAddress;
+    wxTextCtrl    * m_InterfacePort;
     wxButton      * m_AddInterface;
     wxButton      * m_RemoveInterface;
     void BandwidthClass(wxCommandEvent & event);
     void NATHandling(wxCommandEvent & event);
     void SelectedLocalInterface(wxCommandEvent & event);
-    void ChangedInterfaceToAdd(wxCommandEvent & event);
+    void ChangedInterfaceInfo(wxCommandEvent & event);
     void AddInterface(wxCommandEvent & event);
     void RemoveInterface(wxCommandEvent & event);
 
@@ -422,7 +420,6 @@ class OptionsDialog : public wxDialog
 
     ////////////////////////////////////////
     // SIP fields
-#if OPAL_SIP
     bool      m_SIPProxyUsed;
     PwxString m_SIPProxy;
     PwxString m_SIPProxyUsername;
@@ -447,7 +444,6 @@ class OptionsDialog : public wxDialog
     void SelectedRegistrar(wxListEvent & event);
     void DeselectedRegistrar(wxListEvent & event);
     void ChangedRegistrarInfo(wxCommandEvent & event);
-#endif
 
     ////////////////////////////////////////
     // Routing fields
@@ -645,21 +641,17 @@ class MyManager : public wxFrame, public OpalManager
     PStringArray m_LocalInterfaces;
     void StartAllListeners();
 
-#if OPAL_H323
     MyH323EndPoint * h323EP;
     int              m_gatekeeperMode;
     PwxString        m_gatekeeperAddress;
     PwxString        m_gatekeeperIdentifier;
     bool StartGatekeeper();
-#endif
 
-#if OPAL_SIP
     MySIPEndPoint * sipEP;
     bool            m_SIPProxyUsed;
     RegistrarList   m_registrars;
     void StartRegistrars();
     void StopRegistrars();
-#endif
 
 #if P_EXPAT
     OpalIVREndPoint  * ivrEP;

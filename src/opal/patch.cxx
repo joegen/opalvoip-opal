@@ -69,7 +69,7 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
 
   // Have timed mutex so avoid deadlocks in PTRACE(), it is nice to
   // get all the sinks in the PrintOn, we don't HAVE to have it.
-  if (inUse.Wait(20)) {
+  if (inUse.Try()) {
 
     if (sinks.GetSize() > 0) {
       strm << " -> ";
@@ -112,9 +112,13 @@ void OpalMediaPatch::Close()
 
   while (sinks.GetSize() > 0) {
     OpalMediaStreamPtr stream = sinks[0].stream;
-    sinks.RemoveAt(0);
     inUse.Signal();
-    stream->Close();
+    if (!stream->Close()) {
+      // The only way we can get here is if the sink is in the proccess of being closed
+      // but is blocked on the inUse mutex waiting to remove the sink from this patch.
+      // Se we unlock it, and wait for it to do it in the other thread.
+      PThread::Sleep(10);
+    }
     inUse.Wait();
   }
 

@@ -33,7 +33,7 @@ std::ifstream dlStream;
 std::ofstream ulStream;
 
 unsigned msg;
-int val;
+unsigned val;
 
 unsigned srcLen;
 unsigned dstLen;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
       break;
     case SET_TARGET_BITRATE:
         readStream(dlStream, (char*)&val, sizeof(val));
-        x264->SetTargetBitRate (val);
+        x264->SetTargetBitrate (val);
         writeStream(ulStream,(char*)&msg, sizeof(msg)); 
         flushStream(ulStream);
       break;
