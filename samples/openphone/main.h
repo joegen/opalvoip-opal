@@ -565,6 +565,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnLogMessage(wxCommandEvent & event);
     void OnAdjustMenus(wxMenuEvent& event);
     void OnStateChange(wxCommandEvent & event);
+    void UpdateStreams(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
@@ -687,6 +688,7 @@ class MyManager : public wxFrame, public OpalManager
       AnsweringState,
       InCallState
     } m_callState;
+    friend ostream & operator<<(ostream & strm, CallState state);
     void SetState(CallState newState);
 
     PString m_ringingConnectionToken;
