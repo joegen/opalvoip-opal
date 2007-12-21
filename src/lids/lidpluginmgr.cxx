@@ -156,6 +156,38 @@ bool OpalPluginLID::BadFunction(void * fnPtr, const char * fnName) const
   return true;
 }
 
+
+static ostream & operator<<(ostream & stream, PluginLID_Errors error)
+{
+  static const char * const names[] = {
+    "NoError",
+    "UnimplementedFunction",
+    "BadContext",
+    "InvalidParameter",
+    "NoSuchDevice",
+    "DeviceOpenFailed",
+    "UsesSoundChannel",
+    "DeviceNotOpen",
+    "NoSuchLine",
+    "OperationNotAllowed",
+    "NoMoreNames",
+    "BufferTooSmall",
+    "UnsupportedMediaFormat",
+    "NoDialTone",
+    "LineBusy",
+    "NoAnswer",
+    "Aborted",
+    "InternalError"
+  };
+
+  if (error < PARRAYSIZE(names) && names[error] != NULL)
+    stream << names[error];
+  else
+    stream << "Code " << (int)error;
+
+  return stream;
+}
+
 PluginLID_Errors OpalPluginLID::CheckError(PluginLID_Errors error, const char * fnName) const
 {
   if (error != PluginLID_NoError && error != PluginLID_UnimplementedFunction && error != PluginLID_NoMoreNames)
