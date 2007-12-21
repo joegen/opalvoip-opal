@@ -49,6 +49,7 @@
 #include <rtp/rtp.h>
 #include <opal/transports.h>
 #include <opal/connection.h>
+#include <opal/endpoint.h>
 #include <opal/call.h>
 
 #define MAX_PAYLOAD_TYPE_MISMATCHES 10
@@ -216,7 +217,7 @@ PBoolean OpalMediaStream::Close()
 
     if (IsSource()) {
       patch->Close();
-      delete patch;
+      connection.GetEndPoint().GetManager().DestroyMediaPatch(patch);
     }
   }
 
