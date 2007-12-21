@@ -341,8 +341,11 @@ static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, c
 {
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
     return 0;
-
+#ifdef H323_H264_TEST
+  return 1;
+#else
   return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+#endif
 }
 
 /////////////////////////////////////////////////////////////////////////////
