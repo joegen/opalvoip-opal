@@ -53,6 +53,9 @@ class OpalMediaTypeDefinition;
 class OpalMediaType : public std::string     // do not make this PCaselessString as that type does not work as index for std::map etc
 {
   public:
+    OpalMediaType()
+    { }
+
     OpalMediaType(const std::string & _str)
       : std::string(_str) { }
 
@@ -66,10 +69,24 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static const char * Video();
     static const char * Fax();
 
+    void PrintOn(ostream & strm) const { strm << (std::string &)*this; }
+
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
 
-    void PrintOn(ostream & strm) const { strm << (std::string &)*this; }
+#if OPAL_SIP
+  public:
+    static OpalMediaType GetMediaTypeFromSDP(const std::string & key);
+    static OpalMediaTypeDefinition * GetDefinitionFromSDP(const std::string & key);
+    typedef std::map<std::string, OpalMediaType> SDPToMediaTypeMap_T;
+    static SDPToMediaTypeMap_T & GetSDPToMediaTypeMap();
+#endif  // OPAL_SIP
+
+  public:
+    // these functions/types will disappear once OpalMediaFormat uses OpalMediaType
+    static OpalMediaTypeDefinition * GetDefinitionFromSessionID(unsigned sessionID);
+    typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
+    static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 };
 
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
@@ -96,30 +113,6 @@ class OpalMediaSessionId
 //  this class defines the functions needed to work with the media type, i.e. 
 //
 
-#if 0
-
-#if OPAL_RTP_AGGREGATE
-#include <ptclib/sockagg.h>
-#else
-typedef void * PHandleAggregator;
-typedef void * RTP_AggregatedHandle;
-#endif
-
-class RTP_UDP;
-class OpalConnection;
-class OpalMediaStream;
-class OpalMediaFormat;
-
-#if OPAL_H323
-class H323Capability;
-class H323Connection;
-class RTP_Session;
-class H323Channel;
-class H245_H2250LogicalChannelParameters;
-#endif
-
-#endif
-
 #if OPAL_SIP
 class SDPMediaDescription;
 class OpalTransportAddress;
@@ -127,38 +120,15 @@ class OpalTransportAddress;
 
 class OpalMediaTypeDefinition  {
   public:
-    OpalMediaTypeDefinition();
+    OpalMediaTypeDefinition(const char * mediaType, const char * sdpType, unsigned defaultSessionId);
 
-    virtual PCaselessString GetTransport() const;
+    virtual bool IsMediaAutoStart(bool) const = 0;
+    virtual BYTE GetPreferredSessionId() const = 0;
+
 #if OPAL_SIP
+    virtual PCaselessString GetTransport() const = 0;
     virtual SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress) = 0;
 #endif
-
-#if 0
-    virtual PBoolean IsMediaBypassPossible() const;
-    virtual BYTE GetPreferredSessionId() const;
-    virtual bool IsMediaAutoStart(bool) const { return false; }
-
-    virtual RTP_UDP * CreateNonSecureSession(OpalConnection & conn, 
-                                          PHandleAggregator * aggregator, 
-                                   const OpalMediaSessionId & id, 
-                                                     PBoolean remoteIsNAT) = 0;
-
-    virtual OpalMediaStream * CreateMediaStream(OpalConnection & conn, 
-                                         const OpalMediaFormat & mediaFormat,
-                                      const OpalMediaSessionId & sessionID,
-                                                        PBoolean isSource) = 0;
-
-#if OPAL_H323
-    virtual H323Channel * CreateH323Channel(H323Connection & conn, 
-                                      const H323Capability & capability, 
-                                                    unsigned direction, 
-                                               RTP_Session & session,
-                                  const OpalMediaSessionId & sessionId,
-                  const H245_H2250LogicalChannelParameters * param) = 0;
-#endif
-#endif
-
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -224,29 +194,20 @@ struct OpalMediaTypeIteratorObj1Arg
 //
 //  empty media type
 //
-
+#if 0
 class OpalNULLMediaType : public OpalMediaTypeDefinition {
   public:
+    OpalNULLMediaType();
+
+    BYTE GetPreferredSessionId() const;
+    bool IsMediaAutoStart(bool) const;
+
 #if OPAL_SIP
+    virtual PCaselessString GetTransport() const;
     SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress &) { return NULL; }
 #endif
-#if 0
-    PBoolean IsMediaBypassPossible() const  { return false; }
-    BYTE GetPreferredSessionId() const;
-
-    RTP_UDP * CreateNonSecureSession(OpalConnection & conn, PHandleAggregator * aggregator, const OpalMediaSessionId & id, PBoolean remoteIsNAT);
-    OpalMediaStream * CreateMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat,const OpalMediaSessionId & sessionID, PBoolean isSource);
-
-#if OPAL_H323
-    virtual H323Channel * CreateH323Channel(H323Connection & conn, 
-                                      const H323Capability & capability, 
-                                                    unsigned direction, 
-                                               RTP_Session & session,
-                                  const OpalMediaSessionId & sessionId,
-                  const H245_H2250LogicalChannelParameters * param);
-#endif
-#endif
 };
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -255,19 +216,10 @@ class OpalNULLMediaType : public OpalMediaTypeDefinition {
 
 class OpalCommonMediaType : public OpalMediaTypeDefinition {
   public:
-#if 0
-    PBoolean IsMediaBypassPossible() const;
-    virtual bool IsMediaAutoStart(bool) const { return true; }
-    RTP_UDP * CreateNonSecureSession(OpalConnection & conn, PHandleAggregator * aggregator, const OpalMediaSessionId & id, PBoolean remoteIsNAT);
-    OpalMediaStream * CreateMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat,const OpalMediaSessionId & sessionID, PBoolean isSource);
-#if OPAL_H323
-    virtual H323Channel * CreateH323Channel(H323Connection & conn, 
-                                      const H323Capability & capability, 
-                                                    unsigned direction, 
-                                               RTP_Session & session,
-                                  const OpalMediaSessionId & sessionId,
-                  const H245_H2250LogicalChannelParameters * param);
-#endif
+    OpalCommonMediaType(const char * mediaType, const char * sdpType, unsigned sessionID);
+
+#if OPAL_SIP
+    virtual PCaselessString GetTransport() const;
 #endif
 };
 
@@ -275,11 +227,12 @@ class OpalCommonMediaType : public OpalMediaTypeDefinition {
 
 class OpalAudioMediaType : public OpalCommonMediaType {
   public:
+    OpalAudioMediaType();
+    BYTE GetPreferredSessionId() const;
+    virtual bool IsMediaAutoStart(bool) const;
+
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress);
-#endif
-#if 0 
-    BYTE GetPreferredSessionId() const;
 #endif
 };
 
@@ -289,13 +242,12 @@ class OpalAudioMediaType : public OpalCommonMediaType {
 
 class OpalVideoMediaType : public OpalCommonMediaType {
   public:
+    OpalVideoMediaType();
+    BYTE GetPreferredSessionId() const;
+    bool IsMediaAutoStart(bool) const;
+
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress);
-#endif
-#if 0
-  public:
-    BYTE GetPreferredSessionId() const;
-    OpalMediaStream * CreateMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat,const OpalMediaSessionId & sessionID, PBoolean isSource);
 #endif
 };
 

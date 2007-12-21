@@ -480,15 +480,6 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
 }
 
 
-#if OPAL_T120DATA
-
-OpalT120Protocol * OpalEndPoint::CreateT120ProtocolHandler(const OpalConnection & connection) const
-{
-  return manager.CreateT120ProtocolHandler(connection);
-}
-
-#endif
-
 #if OPAL_T38FAX
 
 OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const

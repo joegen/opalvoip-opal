@@ -583,30 +583,51 @@ bool SIPConnection::OfferSDPMediaDescription(unsigned rtpSessionId,
   if (sdp.GetDefaultConnectAddress().IsEmpty())
     sdp.SetDefaultConnectAddress(localAddress);
 
+  if (localAddress.IsEmpty()) {
+    PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
+    return false;
+  }
+
   SDPMediaDescription * localMedia;
+  OpalMediaType mediaType;
+
   switch (rtpSessionId) {
     case OpalMediaFormat::DefaultAudioSessionID:
-      localMedia = new SDPMediaDescription(localAddress, OpalMediaType::Audio());
+      mediaType = OpalMediaType::Audio();
       break;
 
 #if OPAL_VIDEO
     case OpalMediaFormat::DefaultVideoSessionID:
-      localMedia = new SDPMediaDescription(localAddress, OpalMediaType::Video());
+      mediaType = OpalMediaType::Video();
       break;
 #endif
 
 #if OPAL_T38FAX
     case OpalMediaFormat::DefaultDataSessionID:
-#endif
-      if (localAddress.IsEmpty()) {
-        PTRACE(2, "SIP\tRefusing to add SDP media description for session id " << rtpSessionId << " with no transport address");
-        return false;
-      }
-      localMedia = new SDPMediaDescription(localAddress, OpalMediaType::Fax());
+      mediaType = OpalMediaType::Fax();
       break;
+#endif
 
     default:
+      PTRACE(2, "SIP\tUnknown session ID " << rtpSessionId);
       return false;
+  }
+
+  if (mediaType.empty()) {
+    PTRACE(2, "SIP\tNo media type for session ID " << rtpSessionId);
+    return false;
+  }
+
+  OpalMediaTypeDefinition * def = mediaType.GetDefinition();
+  if (def == NULL) {
+    PTRACE(2, "SIP\tUnknown media type " << mediaType);
+    return false;
+  }
+
+  localMedia = def->CreateSDPMediaDescription(localAddress);
+  if (localMedia == NULL) {
+    PTRACE(2, "SIP\tMedia type " << mediaType << " not implemented for SIP");
+    return false;
   }
 
   if (needReINVITE) {
@@ -674,10 +695,19 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   sdpFormats.Remove(endpoint.GetManager().GetMediaFormatMask());
   if (sdpFormats.GetSize() == 0) {
     PTRACE(1, "SIP\tCould not find media formats in SDP media description for session " << rtpSessionId);
+
     // Send back a m= line with port value zero and the first entry of the offer payload types as per RFC3264
-    localMedia = new SDPMediaDescription(OpalTransportAddress(), rtpMediaType);
-    localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats()[0]));
-    sdpOut.AddMediaDescription(localMedia);
+    OpalMediaTypeDefinition * defn = OpalMediaType::GetDefinition(rtpMediaType);
+    if (defn == NULL) {
+      PTRACE(1, "SIP\tUnknown media type " << rtpMediaType);
+      return false;
+    }
+    OpalTransportAddress addr;
+    localMedia = defn->CreateSDPMediaDescription(addr);
+    if (localMedia != NULL) {
+      localMedia->AddSDPMediaFormat(new SDPMediaFormat(incomingMedia->GetSDPMediaFormats()[0]));
+      sdpOut.AddMediaDescription(localMedia);
+    }
     return PFalse;
   }
   
@@ -730,8 +760,19 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
     }
   }
 
-  // construct a new media session list 
-  localMedia = new SDPMediaDescription(localAddress, rtpMediaType);
+  // construct a new media description
+  {
+    OpalMediaTypeDefinition * defn = OpalMediaType::GetDefinition(rtpMediaType);
+    if (defn == NULL) {
+      PTRACE(1, "SIP\tUnknown media type " << rtpMediaType);
+      return false;
+    }
+    localMedia = defn->CreateSDPMediaDescription(localAddress);
+    if (localMedia != NULL) {
+      PTRACE(2, "SIP\tMedia type " << rtpMediaType << " not implemented for SIP");
+      return false;
+    }
+  }
 
   // create map for RTP payloads
   incomingMedia->CreateRTPMap(rtpSessionId, rtpPayloadMap);
@@ -889,13 +930,17 @@ OpalMediaStream * SIPConnection::CreateMediaStream(const OpalMediaFormat & media
   }
 
   // if no RTP sessions matching this session ID, then nothing to do
-  if (rtpSessions.GetSession(sessionID) == NULL)
+  RTP_Session * session = GetSession(sessionID);
+  if (session == NULL) {
+    PTRACE(1, "SIP\tCreateMediaStream could not find session " << sessionID);
     return NULL;
+  }
 
-  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *rtpSessions.GetSession(sessionID),
+  return new OpalRTPMediaStream(*this, mediaFormat, isSource, *session,
                                 GetMinAudioJitterDelay(),
                                 GetMaxAudioJitterDelay());
 }
+
 
 void SIPConnection::OnPatchMediaStream(PBoolean isSource, OpalMediaPatch & patch)
 {

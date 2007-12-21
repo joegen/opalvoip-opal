@@ -3557,9 +3557,13 @@ OpalMediaStream * H323Connection::CreateMediaStream(const OpalMediaFormat & medi
                                                     unsigned sessionID,
                                                     PBoolean isSource)
 {
-  if (ownerCall.IsMediaBypassPossible(*this, sessionID))
+  // Use a NULL stream if media is bypassing us, 
+  if (ownerCall.IsMediaBypassPossible(*this, sessionID)) {
+    PTRACE(3, "H.323\tBypassing media for session " << sessionID);
     return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
+  }
 
+  // if no RTP sessions matching this session ID, then nothing to do
   RTP_Session * session = GetSession(sessionID);
   if (session == NULL) {
     PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID);

@@ -44,9 +44,15 @@
 
 #include <opal/mediastrm.h>
 #include <opal/patch.h>
+#include <opal/mediatype.h>
 
 #include <h323/transaddr.h>
 #include <asn/t38.h>
+
+#if OPAL_VIDEO
+OPAL_DECLARE_MEDIA_TYPE(image, OpalFaxMediaType);
+#endif
+
 
 //#define USE_SEQ
 
@@ -1501,8 +1507,18 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
   return formats;
 }
 
-
 /////////////////////////////////////////////////////////////////////////////
+
+OpalFaxMediaType::OpalFaxMediaType()
+  : OpalMediaTypeDefinition("fax", "image", 3)
+{ }
+
+BYTE OpalFaxMediaType::GetPreferredSessionId() const
+{ return 3; }
+
+bool OpalFaxMediaType::IsMediaAutoStart(bool) const 
+{ return false; }
+
 
 #endif // OPAL_T38FAX
 

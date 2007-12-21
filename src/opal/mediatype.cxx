@@ -48,7 +48,7 @@ namespace PWLibStupidLinkerHacks {
 }; // namespace PWLibStupidLinkerHacks
 
 
-OPAL_DECLARE_MEDIA_TYPE(null, OpalNULLMediaType);
+//OPAL_DECLARE_MEDIA_TYPE(null, OpalNULLMediaType);
 
 #if OPAL_AUDIO
 OPAL_DECLARE_MEDIA_TYPE(audio, OpalAudioMediaType);
@@ -58,6 +58,9 @@ OPAL_DECLARE_MEDIA_TYPE(audio, OpalAudioMediaType);
 OPAL_DECLARE_MEDIA_TYPE(video, OpalVideoMediaType);
 #endif
 
+
+typedef std::map<std::string, std::string> MediaTypeToSDPMap_T;
+
 ///////////////////////////////////////////////////////////////////////////////
 
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType)
@@ -65,7 +68,7 @@ ostream & operator << (ostream & strm, const OpalMediaType & mediaType)
 
 const char * OpalMediaType::Audio()  { static const char * str = "audio"; return str; }
 const char * OpalMediaType::Video()  { static const char * str = "video"; return str; }
-const char * OpalMediaType::Fax()    { static const char * str = "image"; return str; };
+const char * OpalMediaType::Fax()    { static const char * str = "fax";   return str; };
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -79,139 +82,88 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
   return OpalMediaTypeFactory::CreateInstance(key);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaTypeDefinition::OpalMediaTypeDefinition()
-{ }
-
-PCaselessString OpalMediaTypeDefinition::GetTransport() const
+OpalMediaType::SessionIDToMediaTypeMap_T & OpalMediaType::GetSessionIDToMediaTypeMap()
 {
-  return PString::Empty();
+  static SessionIDToMediaTypeMap_T sessionIDToMediaTypeMap;
+  return sessionIDToMediaTypeMap;
 }
 
-#if 0
+OpalMediaTypeDefinition * OpalMediaType::GetDefinitionFromSessionID(unsigned sessionID)
+{
+  SessionIDToMediaTypeMap_T & map = GetSessionIDToMediaTypeMap();
+  SessionIDToMediaTypeMap_T::iterator r = map.find(sessionID);
+  if (r == map.end())
+    return NULL;
+  return GetDefinition(r->second);
+}
 
-BYTE OpalMediaTypeDefinition::GetPreferredSessionId() const
-{ return 0; }
+///////////////////////////////////////////////////////////////////////////////
 
-
-PBoolean OpalMediaTypeDefinition::IsMediaBypassPossible() const
-{ return FALSE; }
-
+OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType, const char * sdpType, unsigned defaultSessionId)
+{ 
+#if OPAL_SIP
+  OpalMediaType::GetSDPToMediaTypeMap().insert(OpalMediaType::SDPToMediaTypeMap_T::value_type(sdpType, mediaType));
 #endif
+  OpalMediaType::GetSessionIDToMediaTypeMap().insert(OpalMediaType::SessionIDToMediaTypeMap_T::value_type(defaultSessionId, mediaType));
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 
 #if 0
+
+OpalNULLMediaType::OpalNULLMediaType()
+  : OpalMediaTypeDefinition("null", "")
+{
+}
 
 BYTE OpalNULLMediaType::GetPreferredSessionId() const
 { return 0; }
 
-OpalMediaStream * OpalNULLMediaType::CreateMediaStream(OpalConnection &, const OpalMediaFormat &, const OpalMediaSessionId &, PBoolean)
-{ return NULL; }
+bool OpalNULLMediaType::IsMediaAutoStart(bool) const 
+{ return false; }
 
-RTP_UDP * OpalNULLMediaType::CreateNonSecureSession(OpalConnection &, PHandleAggregator *, const OpalMediaSessionId &, PBoolean)
-{ return NULL; }
+#endif
 
-H323Channel * OpalNULLMediaType::CreateH323Channel(H323Connection &, const H323Capability &, unsigned, RTP_Session &, const OpalMediaSessionId &, const H245_H2250LogicalChannelParameters *)
+///////////////////////////////////////////////////////////////////////////////
+
+OpalCommonMediaType::OpalCommonMediaType(const char * mediaType, const char * sdpType, unsigned sessionID)
+  : OpalMediaTypeDefinition(mediaType, sdpType, sessionID)
 {
-  return NULL;
 }
 
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
-
-#if 0
-
-PBoolean OpalCommonMediaType::IsMediaBypassPossible() const
-{ return TRUE; }
-
-RTP_UDP * OpalCommonMediaType::CreateNonSecureSession(OpalConnection &, PHandleAggregator * aggregator, const OpalMediaSessionId & sessionID, PBoolean remoteIsNAT)
-{  return new RTP_UDP(aggregator, sessionID.sessionId, remoteIsNAT); }
-
-OpalMediaStream * OpalCommonMediaType::CreateMediaStream(OpalConnection & connection, const OpalMediaFormat & mediaFormat, const OpalMediaSessionId & sessionID, PBoolean isSource)
-{  
-  if (connection.GetCall().IsMediaBypassPossible(connection, sessionID.sessionId)) {
-    PTRACE(3, "SIP\tBypassing media for session " << sessionID.sessionId);
-    return new OpalNullMediaStream(connection, mediaFormat, sessionID.sessionId, isSource);
-  }
-
-  RTP_Session * session = connection.GetSession(sessionID.sessionId);
-  if (session == NULL) {
-    PTRACE(1, "H323\tCreateMediaStream could not find session " << sessionID.mediaType);
-    return NULL;
-  }
-
-  return new OpalRTPMediaStream(connection, mediaFormat, isSource, *session,
-                                connection.GetMinAudioJitterDelay(),
-                                connection.GetMaxAudioJitterDelay());
-}
-
-#if OPAL_H323
-
-H323Channel * OpalCommonMediaType::CreateH323Channel(H323Connection & conn, 
-                                               const H323Capability & capability, 
-                                                             unsigned direction, 
-                                                        RTP_Session & session,
-                                           const OpalMediaSessionId & /*sessionId*/,
-                           const H245_H2250LogicalChannelParameters * /*param*/)
-{  return new H323_RTPChannel(conn, capability, (H323Channel::Directions)direction, session); }
-
-#endif // OPAL_H323
-
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
-#if 0
 
 #if OPAL_AUDIO
+
+OpalAudioMediaType::OpalAudioMediaType()
+  : OpalCommonMediaType("audio", "audio", 1)
+{
+}
 
 BYTE OpalAudioMediaType::GetPreferredSessionId() const
 { return 1; }
 
-#endif // OPAL_AUDIO
+bool OpalAudioMediaType::IsMediaAutoStart(bool) const 
+{ return true; }
 
-#endif
+#endif // OPAL_AUDIO
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if 0
-
 #if OPAL_VIDEO
+
+OpalVideoMediaType::OpalVideoMediaType()
+  : OpalCommonMediaType("video", "video", 2)
+{ }
 
 BYTE OpalVideoMediaType::GetPreferredSessionId() const
 { return 2; }
 
-OpalMediaStream * OpalVideoMediaType::CreateMediaStream(OpalConnection & conn, 
-                                                        const OpalMediaFormat & mediaFormat,
-                                                        const OpalMediaSessionId & sessionID,
-                                                        PBoolean isSource)
-{
-  if (isSource) {
-    PVideoInputDevice * videoDevice;
-    PBoolean autoDelete;
-    if (conn.CreateVideoInputDevice(mediaFormat, videoDevice, autoDelete)) {
-      PVideoOutputDevice * previewDevice;
-      if (!conn.CreateVideoOutputDevice(mediaFormat, PTrue, previewDevice, autoDelete))
-        previewDevice = NULL;
-      return new OpalVideoMediaStream(conn, mediaFormat, sessionID.sessionId, videoDevice, previewDevice, autoDelete);
-    }
-  }
-  else {
-    PVideoOutputDevice * videoDevice;
-    PBoolean autoDelete;
-    if (conn.CreateVideoOutputDevice(mediaFormat, PFalse, videoDevice, autoDelete))
-      return new OpalVideoMediaStream(conn, mediaFormat, sessionID.sessionId, NULL, videoDevice, autoDelete);
-  }
-
-  return NULL;
-}
+bool OpalVideoMediaType::IsMediaAutoStart(bool) const 
+{ return true; }
 
 #endif // OPAL_VIDEO
-
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

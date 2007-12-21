@@ -181,9 +181,6 @@ OpalConnection::OpalConnection(OpalCall & call,
     q931Cause(0x100),
     silenceDetector(NULL),
     echoCanceler(NULL),
-#if OPAL_T120DATA
-    t120handler(NULL),
-#endif
 #if OPAL_T38FAX
     t38handler(NULL),
 #endif
@@ -255,9 +252,6 @@ OpalConnection::~OpalConnection()
   delete silenceDetector;
   delete echoCanceler;
   delete rfc2833Handler;
-#if OPAL_T120DATA
-  delete t120handler;
-#endif
 #if OPAL_T38FAX
   delete ciscoNSEHandler;
   delete t38handler;
@@ -1067,17 +1061,6 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
 }
 #endif
 
-#if OPAL_T120DATA
-
-OpalT120Protocol * OpalConnection::CreateT120ProtocolHandler()
-{
-  if (t120handler == NULL)
-    t120handler = endpoint.CreateT120ProtocolHandler(*this);
-  return t120handler;
-}
-
-#endif
-
 #if OPAL_T38FAX
 
 OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
@@ -1192,7 +1175,7 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalConnection::ChannelInfo::ChannelInfo(const OpalMediaType & _mediaType)
+OpalConnection::ChannelStartInfo::ChannelStartInfo(const OpalMediaType & _mediaType)
   : mediaType(_mediaType)
 {
   autoStartReceive = autoStartTransmit = false;
@@ -1203,12 +1186,12 @@ OpalConnection::ChannelInfo::ChannelInfo(const OpalMediaType & _mediaType)
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalConnection::ChannelInfoMap::ChannelInfoMap()
+OpalConnection::ChannelStartInfoMap::ChannelStartInfoMap()
 {
   initialised = false;
 }
 
-unsigned OpalConnection::ChannelInfoMap::AddChannel(OpalConnection::ChannelInfo & info)
+unsigned OpalConnection::ChannelStartInfoMap::AddChannel(OpalConnection::ChannelStartInfo & info)
 {
   PWaitAndSignal m(mutex);
   initialised = true;
@@ -1226,7 +1209,7 @@ unsigned OpalConnection::ChannelInfoMap::AddChannel(OpalConnection::ChannelInfo 
 }
 
 
-OpalConnection::ChannelInfo * OpalConnection::ChannelInfoMap::AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned)
+OpalConnection::ChannelStartInfo * OpalConnection::ChannelStartInfoMap::AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned)
 {
   mutex.Wait();
 
@@ -1242,7 +1225,7 @@ OpalConnection::ChannelInfo * OpalConnection::ChannelInfoMap::AssignAndLockChann
 
 
 
-void OpalConnection::ChannelInfoMap::Initialise(OpalConnection & /*conn*/)
+void OpalConnection::ChannelStartInfoMap::Initialise(OpalConnection & /*conn*/)
 {
   PWaitAndSignal m(mutex);
   if (initialised)
@@ -1258,7 +1241,7 @@ void OpalConnection::ChannelInfoMap::Initialise(OpalConnection & /*conn*/)
     BOOL rx = conn.GetEndPoint().IsMediaAutoStart(*r, true);
     BOOL tx = conn.GetEndPoint().IsMediaAutoStart(*r, false);
     if (rx || tx) {
-      ChannelInfo info(*r);
+      ChannelStartInfo info(*r);
       info.channelId         = def->GetPreferredSessionId();
       info.autoStartReceive  = rx;
       info.autoStartTransmit = tx;

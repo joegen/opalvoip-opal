@@ -950,22 +950,6 @@ class OpalConnection : public PSafeObject
 
   /**@name Other services */
   //@{
-#if OPAL_T120DATA
-    /**Create an instance of the T.120 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.120 channel be established.
-
-       Note that if the application overrides this and returns a pointer to a
-       heap variable (using new) then it is the responsibility of the creator
-       to subsequently delete the object. The user of this function (the 
-       H323_T120Channel class) will not do so.
-
-       The default behavour returns H323Endpoint::CreateT120ProtocolHandler()
-       while keeping track of that variable for autmatic deletion.
-      */
-    virtual OpalT120Protocol * CreateT120ProtocolHandler();
-#endif
-
 #if OPAL_T38FAX
     /**Create an instance of the T.38 protocol handler.
        This is called when the OpenLogicalChannel subsystem requires that
@@ -1262,9 +1246,6 @@ class OpalConnection : public PSafeObject
     OpalSilenceDetector * silenceDetector;
     OpalEchoCanceler    * echoCanceler;
     OpalRFC2833Proto    * rfc2833Handler;
-#if OPAL_T120DATA
-    OpalT120Protocol    * t120handler;
-#endif
 #if OPAL_T38FAX
     OpalT38Protocol     * t38handler;
     OpalRFC2833Proto    * ciscoNSEHandler;
@@ -1306,11 +1287,11 @@ class OpalConnection : public PSafeObject
     PString recordAudioFilename;
 
   public:
-    /** Class for storing media channel information
+    /** Class for storing media channel start information
       */
-    struct ChannelInfo {
+    struct ChannelStartInfo {
       public:
-        ChannelInfo(const OpalMediaType & _mediaType);
+        ChannelStartInfo(const OpalMediaType & _mediaType);
 
         bool autoStartReceive;
         bool autoStartTransmit;
@@ -1323,14 +1304,14 @@ class OpalConnection : public PSafeObject
         PString channelName;
     };
 
-    class ChannelInfoMap : public std::map<unsigned, ChannelInfo> 
+    class ChannelStartInfoMap : public std::map<unsigned, ChannelStartInfo> 
     {
       public:
-        ChannelInfoMap();
+        ChannelStartInfoMap();
         void Initialise(OpalConnection & conn);
-        unsigned AddChannel(ChannelInfo & info);
+        unsigned AddChannel(ChannelStartInfo & info);
 
-        ChannelInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+        ChannelStartInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
 
         mutable PMutex mutex;
 
@@ -1339,7 +1320,7 @@ class OpalConnection : public PSafeObject
     };
 
   protected:
-    ChannelInfoMap channelInfoMap; 
+    ChannelStartInfoMap channelStartInfoMap; 
 };
 
 class RTP_UDP;
