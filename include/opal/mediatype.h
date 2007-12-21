@@ -56,6 +56,9 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     OpalMediaType()
     { }
 
+    virtual ~OpalMediaType()
+    { }
+
     OpalMediaType(const std::string & _str)
       : std::string(_str) { }
 
@@ -121,6 +124,7 @@ class OpalTransportAddress;
 class OpalMediaTypeDefinition  {
   public:
     OpalMediaTypeDefinition(const char * mediaType, const char * sdpType, unsigned defaultSessionId);
+    virtual ~OpalMediaTypeDefinition() { }
 
     virtual bool IsMediaAutoStart(bool) const = 0;
     virtual BYTE GetPreferredSessionId() const = 0;
