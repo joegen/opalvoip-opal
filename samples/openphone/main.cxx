@@ -595,16 +595,20 @@ bool MyManager::Initialise()
     silenceParams.m_silenceDeadband = value1*8;
   SetSilenceDetectParams(silenceParams);
 
-  if (config->Read(LineInterfaceDeviceKey, &str) && potsEP->AddDeviceName(str)) {
-    OpalLine * line = potsEP->GetLine("*");
-    if (PAssertNULL(line) != NULL) {
-      if (config->Read(AECKey, &value1) && value1 >= 0 && value1 < OpalLineInterfaceDevice::AECError)
-        line->SetAEC((OpalLineInterfaceDevice::AECLevels)value1);
-      if (config->Read(CountryKey, &str)) {
-        if (!line->GetDevice().SetCountryCodeName(str))
-          LogWindow << "Could not configure Line Interface Device to country \"" << str << '"' << endl;
+  if (config->Read(LineInterfaceDeviceKey, &str) && !str.IsEmpty()) {
+    if (potsEP->AddDeviceName(str)) {
+      OpalLine * line = potsEP->GetLine("*");
+      if (PAssertNULL(line) != NULL) {
+        if (config->Read(AECKey, &value1) && value1 >= 0 && value1 < OpalLineInterfaceDevice::AECError)
+          line->SetAEC((OpalLineInterfaceDevice::AECLevels)value1);
+        if (config->Read(CountryKey, &str) && !str.IsEmpty()) {
+          if (!line->GetDevice().SetCountryCodeName(str))
+            LogWindow << "Could not configure Line Interface Device to country \"" << str << '"' << endl;
+        }
       }
     }
+    else
+      LogWindow << "Line Interface Device \"" << str << "\" has been unplugged!" << endl;
   }
 
 
@@ -1813,7 +1817,7 @@ void MyManager::OnStateChange(wxCommandEvent & event)
 
 void MyManager::UpdateStreams(wxCommandEvent &)
 {
-  m_inCallPanel->UpdateButtons();
+  m_inCallPanel->UpdateButtons(potsEP);
 }
 
 
@@ -3371,6 +3375,7 @@ InCallPanel::InCallPanel(MyManager & manager, wxWindow * parent)
   wxXmlResource::Get()->LoadPanel(this, parent, "InCallPanel");
 
   m_StartStopVideo = FindWindowByNameAs<wxButton>(this, "StartStopVideo");
+  m_SpeakerHandset = FindWindowByNameAs<wxButton>(this, "SpeakerHandset");
   m_SpeakerMute = FindWindowByNameAs<wxCheckBox>(this, "SpeakerMute");
   m_MicrophoneMute = FindWindowByNameAs<wxCheckBox>(this, "MicrophoneMute");
   m_SpeakerVolume = FindWindowByNameAs<wxSlider>(this, "SpeakerVolume");
@@ -3411,7 +3416,7 @@ bool InCallPanel::Show(bool show)
 }
 
 
-void InCallPanel::UpdateButtons()
+void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
 {
   PSafePtr<OpalCall> call = m_manager.GetCall();
   if (call != NULL) {
@@ -3432,6 +3437,8 @@ void InCallPanel::UpdateButtons()
   }
 
   m_StartStopVideo->Disable();
+
+  m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
 }
 
 
