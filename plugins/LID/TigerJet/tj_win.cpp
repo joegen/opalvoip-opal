@@ -305,7 +305,7 @@ class Context
 
       for (UINT id = 0; id < waveInGetNumDevs(); id++) {
         WAVEINCAPS caps;
-        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && _strnicmp(caps.szPname, searchName, strlen(searchName)) == 0) {
+        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 && strstr(caps.szPname, searchName) != NULL) {
           if (bufsize <= strlen(caps.szPname))
             return PluginLID_BufferTooSmall;
 
