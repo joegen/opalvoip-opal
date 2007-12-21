@@ -398,6 +398,7 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PBoolean OnMediaControlXML(SIP_PDU & pdu);
 #endif
+    bool OfferSDPMediaDescription_fn(const OpalMediaType & mediaType, bool & sdpOK, RTP_SessionManager & rtpSessions, SDPSessionDescription & sdpOut);
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
@@ -416,7 +417,7 @@ class SIPConnection : public OpalRTPConnection
       SDPSessionDescription & sdpOut
     );
     virtual bool OfferSDPMediaDescription(
-      unsigned rtpSessionId,
+      const OpalMediaType & mediaType,
       RTP_SessionManager & rtpSessions,
       SDPSessionDescription & sdpOut
     );

@@ -129,7 +129,8 @@ class OpalPCSSEndPoint : public OpalEndPoint
       OpalCall & call,    ///<  Owner of connection
       const PString & playDevice, ///<  Sound channel play device
       const PString & recordDevice, ///<  Sound channel record device
-      void * userData     ///<  Arbitrary data to pass to connection
+      void * userData,     ///<  Arbitrary data to pass to connection
+      OpalConnection::StringOptions * stringOptions
     );
 
     /**Create an PSoundChannel based media stream.
@@ -265,7 +266,8 @@ class OpalPCSSConnection : public OpalConnection
       OpalCall & call,              ///<  Owner calll for connection
       OpalPCSSEndPoint & endpoint,  ///<  Owner endpoint for connection
       const PString & playDevice,   ///<  Sound channel play device
-      const PString & recordDevice  ///<  Sound channel record device
+      const PString & recordDevice, ///<  Sound channel record device
+      StringOptions * stringOptions
     );
 
     /**Destroy endpoint.

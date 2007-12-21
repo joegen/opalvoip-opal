@@ -204,7 +204,7 @@ class OpalConnection : public PSafeObject
       OpalEndPoint & endpoint,                 ///<  Owner endpoint for connection
       const PString & token,                   ///<  Token to identify the connection
       unsigned options = 0,                    ///<  Connection options
-      OpalConnection::StringOptions * stringOptions = NULL     ///< more complex options
+      StringOptions * stringOptions = NULL     ///< more complex options
     );  
 
     /**Destroy connection.

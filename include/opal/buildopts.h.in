@@ -54,7 +54,7 @@
 #undef	OPAL_H323
 #undef  OPAL_LID
 #undef  OPAL_IVR
-#undef  OPAL_H224
+#undef  OPAL_H224APP
 #undef  OPAL_T120DATA
 #undef  OPAL_H450
 #undef  OPAL_H460

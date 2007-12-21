@@ -592,8 +592,8 @@ void SDPMediaDescription::PrintOn(ostream & strm, const PString & connectString)
 
   // output media header
   strm << "m=" 
-       << mediaType << " "
-      << port << " "
+       << defn->GetSDPType() << " "
+       << port << " "
        << transport;
 
   PrintFormats(strm, port);

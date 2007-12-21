@@ -3566,49 +3566,54 @@ void H323Connection::OnSelectLogicalChannels()
   switch (fastStartState) {
     default : //FastStartDisabled :
 #if OPAL_AUDIO
-      SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
+      if (CanAutoStartMedia(OpalMediaType::Audio(), false))
+        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
 #endif
 #if OPAL_VIDEO
-      if (endpoint.CanAutoStartTransmitVideo())
+      if (CanAutoStartMedia(OpalMediaType::Video(), false))
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
 #endif
 #if OPAL_T38FAX
-      if (endpoint.CanAutoStartTransmitFax())
+      if (CanAutoStartMedia(OpalMediaType::Fax(), false))
         SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
 #endif
       break;
 
     case FastStartInitiate :
 #if OPAL_AUDIO
-      SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, PTrue, PTrue);
+      SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, 
+                              CanAutoStartMedia(OpalMediaType::Audio(), false),
+                              CanAutoStartMedia(OpalMediaType::Audio(), true));
 #endif
 #if OPAL_VIDEO
       SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
-                              endpoint.CanAutoStartTransmitVideo(),
-                              endpoint.CanAutoStartReceiveVideo());
+                              CanAutoStartMedia(OpalMediaType::Video(), false),
+                              CanAutoStartMedia(OpalMediaType::Video(), true));
 #endif
 #if OPAL_T38FAX
       SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
-                              endpoint.CanAutoStartTransmitFax(),
-                              endpoint.CanAutoStartReceiveFax());
+                              CanAutoStartMedia(OpalMediaType::Fax(), false),
+                              CanAutoStartMedia(OpalMediaType::Fax(), true));
 #endif
       break;
 
     case FastStartResponse :
 #if OPAL_AUDIO
-      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
-      StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
+      if (CanAutoStartMedia(OpalMediaType::Audio(), false))
+        StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
+      if (CanAutoStartMedia(OpalMediaType::Audio(), true))
+        StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
 #endif
 #if OPAL_VIDEO
-      if (endpoint.CanAutoStartTransmitVideo())
+      if (CanAutoStartMedia(OpalMediaType::Video(), false))
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
-      if (endpoint.CanAutoStartReceiveVideo())
+      if (CanAutoStartMedia(OpalMediaType::Video(), true))
         StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
 #endif
 #if OPAL_T38FAX
-      if (endpoint.CanAutoStartTransmitFax())
+      if (CanAutoStartMedia(OpalMediaType::Fax(), false))
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
-      if (endpoint.CanAutoStartReceiveFax())
+      if (CanAutoStartMedia(OpalMediaType::Fax(), true))
         StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsReceiver);
 #endif
       break;

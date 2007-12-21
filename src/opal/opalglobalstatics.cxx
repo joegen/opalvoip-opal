@@ -44,6 +44,10 @@
 #include <codec/rfc4175.h>
 #endif
 
+#if OPAL_H224APP
+#include <h224/h224.h>
+#endif
+
 #if defined(P_HAS_PLUGINS)
 class PluginLoader : public PProcessStartup
 {
@@ -54,6 +58,9 @@ class PluginLoader : public PProcessStartup
       OpalPluginCodecManager::Bootstrap(); 
       PWLibStupidLinkerHacks::mediaTypeLoader = 1;
       PWLibStupidLinkerHacks::opalwavfileLoader =1;
+#if OPAL_H224APP
+      PWLibStupidLinkerHacks::h224Loader = 1;
+#endif
 #if HAS_LIBSRTP
       PWLibStupidLinkerHacks::libSRTPLoader = 1;
 #endif

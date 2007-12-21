@@ -66,20 +66,17 @@ namespace PWLibStupidLinkerHacks {
 
 static PAtomicInteger faxCallIndex;
 
-const OpalMediaFormat & GetOpalT38()
-{
-  static const OpalMediaFormat opalT38(
+const OpalMediaFormat OpalT38 (
     OPAL_T38,
     OpalMediaFormat::DefaultDataSessionID,
-    RTP_DataFrame::IllegalPayloadType,
+    RTP_DataFrame::DynamicBase,
     "t38",
     PFalse, // No jitter for data
     1440, // 100's bits/sec
     0,
     0,
-    0);
-  return opalT38;
-}
+    0
+);
 
 #if OPAL_AUDIO
 
@@ -1512,9 +1509,6 @@ OpalMediaFormatList OpalT38Connection::GetMediaFormats() const
 OpalFaxMediaType::OpalFaxMediaType()
   : OpalMediaTypeDefinition("fax", "image", 3)
 { }
-
-BYTE OpalFaxMediaType::GetPreferredSessionId() const
-{ return 3; }
 
 bool OpalFaxMediaType::IsMediaAutoStart(bool) const 
 { return false; }

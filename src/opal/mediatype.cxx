@@ -100,8 +100,12 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinitionFromSessionID(unsigned ses
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType, const char * sdpType, unsigned defaultSessionId)
-{ 
+OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType, const char * _sdpType, unsigned _defaultSessionId)
+  : defaultSessionId(_defaultSessionId)
+#if OPAL_SIP
+  , sdpType(_sdpType)
+#endif
+{
 #if OPAL_SIP
   OpalMediaType::GetSDPToMediaTypeMap().insert(OpalMediaType::SDPToMediaTypeMap_T::value_type(sdpType, mediaType));
 #endif
@@ -116,9 +120,6 @@ OpalNULLMediaType::OpalNULLMediaType()
   : OpalMediaTypeDefinition("null", "")
 {
 }
-
-BYTE OpalNULLMediaType::GetPreferredSessionId() const
-{ return 0; }
 
 bool OpalNULLMediaType::IsMediaAutoStart(bool) const 
 { return false; }
@@ -141,9 +142,6 @@ OpalAudioMediaType::OpalAudioMediaType()
 {
 }
 
-BYTE OpalAudioMediaType::GetPreferredSessionId() const
-{ return 1; }
-
 bool OpalAudioMediaType::IsMediaAutoStart(bool) const 
 { return true; }
 
@@ -156,9 +154,6 @@ bool OpalAudioMediaType::IsMediaAutoStart(bool) const
 OpalVideoMediaType::OpalVideoMediaType()
   : OpalCommonMediaType("video", "video", 2)
 { }
-
-BYTE OpalVideoMediaType::GetPreferredSessionId() const
-{ return 2; }
 
 bool OpalVideoMediaType::IsMediaAutoStart(bool) const 
 { return true; }

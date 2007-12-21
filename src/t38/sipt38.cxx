@@ -108,7 +108,7 @@ void OpalT38SDPMediaDescription::PrintFormats(ostream & strm, WORD port) const
 
 SDPMediaFormat * OpalT38SDPMediaDescription::CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType)
 {
-  SDPMediaFormat * sdpFormat = CreateMediaFormatByName(mediaFormat, payloadType);
+  SDPMediaFormat * sdpFormat = SDPMediaDescription::CreateMediaFormatByName(mediaFormat, payloadType);
 
   for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); ++i) {
     const OpalMediaOption & option = mediaFormat.GetOption(i);

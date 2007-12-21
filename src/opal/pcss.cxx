@@ -49,6 +49,8 @@
 #include <opal/patch.h>
 #include <opal/manager.h>
 
+#include <h224/h224.h>
+
 
 #define new PNEW
 
@@ -118,7 +120,7 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
                                       const PString & remoteParty,
                                       void * userData,
                                unsigned int /*options*/,
-                               OpalConnection::StringOptions *)
+                               OpalConnection::StringOptions * stringOptions)
 {
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
@@ -147,7 +149,7 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     return PFalse;
   }
 
-  connection = CreateConnection(call, playDevice, recordDevice, userData);
+  connection = CreateConnection(call, playDevice, recordDevice, userData, stringOptions);
   if (connection == NULL)
     return PFalse;
 
@@ -155,7 +157,6 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
 
   return PTrue;
 }
-
 
 OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
 {
@@ -168,6 +169,8 @@ OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
   AddVideoMediaFormats(formats);
 #endif
 
+  formats += OpalH224;
+
   return formats;
 }
 
@@ -175,9 +178,10 @@ OpalMediaFormatList OpalPCSSEndPoint::GetMediaFormats() const
 OpalPCSSConnection * OpalPCSSEndPoint::CreateConnection(OpalCall & call,
                                                         const PString & playDevice,
                                                         const PString & recordDevice,
-                                                        void * /*userData*/)
+                                                        void * /*userData*/,
+                                                        OpalConnection::StringOptions * stringOptions)
 {
-  return new OpalPCSSConnection(call, *this, playDevice, recordDevice);
+  return new OpalPCSSConnection(call, *this, playDevice, recordDevice, stringOptions);
 }
 
 
@@ -264,8 +268,9 @@ void OpalPCSSEndPoint::SetSoundChannelBufferDepth(unsigned depth)
 OpalPCSSConnection::OpalPCSSConnection(OpalCall & call,
                                        OpalPCSSEndPoint & ep,
                                        const PString & playDevice,
-                                       const PString & recordDevice)
-  : OpalConnection(call, ep, MakeToken(playDevice, recordDevice)),
+                                       const PString & recordDevice,
+                                       StringOptions * stringOptions)
+  : OpalConnection(call, ep, MakeToken(playDevice, recordDevice), 0, stringOptions),
     endpoint(ep),
     soundChannelPlayDevice(playDevice),
     soundChannelRecordDevice(recordDevice),

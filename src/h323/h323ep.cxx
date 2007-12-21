@@ -91,8 +91,6 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
 
   autoStartReceiveFax = autoStartTransmitFax = PFalse;
   
-  isH224Enabled = PFalse;
-
   m_bH245Disabled = PFalse;
   autoCallForward = PTrue;
   disableFastStart = PFalse;

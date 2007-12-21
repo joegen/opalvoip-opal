@@ -32,7 +32,7 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224APP
 
 #include <h224/h323h224.h>
 
@@ -460,5 +460,5 @@ PBoolean H323_H224Channel::ExtractTransport(const H245_TransportAddress & pdu,
   return PFalse;
 }
 
-#endif // OPAL_H224
+#endif // OPAL_H224APP
 

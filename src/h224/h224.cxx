@@ -23,6 +23,10 @@
  * $Date$
  */
 
+/*
+  This file implements H.224 as part of H.323, as well as RFC 4573 for H.224 over SIP 
+ */
+
 #include <ptlib.h>
 
 #ifdef __GNUC__
@@ -32,11 +36,48 @@
 
 #include <opal/buildopts.h>
 
-#if OPAL_H224
+#if OPAL_H224APP
+
+namespace PWLibStupidLinkerHacks {
+  int h224Loader;
+};
+
+#include <opal/mediatype.h>
 
 #include <h224/h224.h>
 #include <h224/h224handler.h>
 #include <h323/h323con.h>
+
+#if OPAL_SIP
+#include <sip/sdp.h>
+#endif
+
+const OpalMediaFormat OpalH224(
+  OPAL_H224,
+  5,
+  RTP_DataFrame::DynamicBase,
+  "h224",
+  PFalse, // No jitter for data
+  48, // 100's bits/sec
+  0,
+  0,
+  0
+);
+
+class OpalH224MediaType : public OpalMediaTypeDefinition {
+  public:
+    OpalH224MediaType();
+    virtual bool IsMediaAutoStart(bool) const;
+
+#if OPAL_SIP
+    virtual PCaselessString GetTransport() const;
+    SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress);
+#endif
+};
+
+OPAL_DECLARE_MEDIA_TYPE(h224, OpalH224MediaType);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 H224_Frame::H224_Frame(PINDEX size)
@@ -673,4 +714,98 @@ void OpalH224ReceiverThread::Close()
   PAssert(WaitForTermination(10000), "H224 receiver thread not terminated");
 }
 
-#endif // OPAL_H224
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+OpalH224MediaType::OpalH224MediaType()
+  : OpalMediaTypeDefinition("h224", "application", 5)
+{
+}
+
+bool OpalH224MediaType::IsMediaAutoStart(bool) const
+{
+  return true;
+}
+
+#if OPAL_SIP
+
+PCaselessString OpalH224MediaType::GetTransport() const
+{
+  return "h224";
+}
+
+#endif
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if OPAL_SIP
+
+class OpalH224SDPMediaDescription : public SDPMediaDescription
+{
+  public:
+    OpalH224SDPMediaDescription(const OpalTransportAddress & address);
+    void SetAttribute(const PString & attr, const PString & value);
+    bool PrintFormat(ostream & str) const;
+    void AddSDPMediaFormat(const OpalMediaFormat & mediaFormat, RTP_DataFrame::PayloadTypes pt, const char * nteString);
+    SDPMediaFormat * CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType);
+
+  protected:      
+    void CreateSDPMediaFormats(const PStringArray & tokens, PINDEX start);
+    void PrintFormats(ostream & strm, WORD port) const;
+
+    PStringToString t38Attributes;
+};
+
+////////////////////////////////////////////////////////////////////////////////////
+
+OpalH224SDPMediaDescription::OpalH224SDPMediaDescription(const OpalTransportAddress & address)
+  : SDPMediaDescription(address, "h224")
+{
+}
+
+void OpalH224SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens, PINDEX start)
+{
+  PINDEX i;
+  for (i = start; i < tokens.GetSize(); i++) 
+    formats.Append(new SDPMediaFormat(RTP_DataFrame::DynamicBase, tokens[i]));
+}
+
+void OpalH224SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
+{
+  SDPMediaDescription::SetAttribute(attr, value);
+}
+
+void OpalH224SDPMediaDescription::PrintFormats(ostream & strm, WORD port) const
+{
+  PINDEX i;
+  for (i = 0; i < formats.GetSize(); i++)
+    strm << ' ' << formats[i].GetEncodingName();
+  strm << "\r\n";
+
+  // If we have a port of zero, then shutting down SDP stream. No need for anything more
+  if (port == 0)
+    return;
+}
+
+SDPMediaFormat * OpalH224SDPMediaDescription::CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType)
+{
+  SDPMediaFormat * sdpFormat = SDPMediaDescription::CreateMediaFormatByName(mediaFormat, payloadType);
+
+  return sdpFormat;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(OpalTransportAddress & localAddress)
+{
+  if (!localAddress.IsEmpty()) 
+    return new OpalH224SDPMediaDescription(localAddress);
+
+  PTRACE(2, "SIP\tRefusing to add H.224 SDP media description with no transport address");
+  return NULL;
+}
+
+#endif // OPAL_SIP
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif // OPAL_H224APP
