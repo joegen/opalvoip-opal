@@ -213,8 +213,20 @@ static const char SIPonly[] = " (SIP only)";
 static const char H323only[] = " (H.323 only)";
 
 
-#define ID_LOG_MESSAGE  1001
-#define ID_STATE_CHANGE 1002
+enum {
+  ID_LOG_MESSAGE = 1001,
+  ID_STATE_CHANGE,
+  ID_UPDATE_STREAMS
+};
+
+DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
+DEFINE_EVENT_TYPE(wxEvtLogMessage)
+
+DECLARE_EVENT_TYPE(wxEvtUpdateStreams, -1)
+DEFINE_EVENT_TYPE(wxEvtUpdateStreams)
+
+DECLARE_EVENT_TYPE(wxEvtStateChange, -1)
+DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -230,9 +242,6 @@ template <class cls> cls * FindWindowByNameAs(wxWindow * window, const char * na
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-DECLARE_EVENT_TYPE(wxEvtLogMessage, -1)
-DEFINE_EVENT_TYPE(wxEvtLogMessage)
 
 class TextCtrlChannel : public PChannel
 {
@@ -274,9 +283,6 @@ class TextCtrlChannel : public PChannel
 
 
 ///////////////////////////////////////////////////////////////////////////////
-
-DECLARE_EVENT_TYPE(wxEvtStateChange, -1)
-DEFINE_EVENT_TYPE(wxEvtStateChange)
 
 IMPLEMENT_APP(OpenPhoneApp)
 
@@ -339,6 +345,7 @@ BEGIN_EVENT_TABLE(MyManager, wxFrame)
 
   EVT_COMMAND(ID_LOG_MESSAGE, wxEvtLogMessage, MyManager::OnLogMessage)
   EVT_COMMAND(ID_STATE_CHANGE, wxEvtStateChange, MyManager::OnStateChange)
+  EVT_COMMAND(ID_UPDATE_STREAMS, wxEvtUpdateStreams, MyManager::UpdateStreams)
 END_EVENT_TABLE()
 
 MyManager::MyManager()
@@ -1578,7 +1585,9 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
   if (prefix != pcssEP->GetPrefixName())
     LogMediaStream("Started", stream, prefix);
 
-  SetState(m_callState);
+  wxCommandEvent theEvent(wxEvtUpdateStreams, ID_UPDATE_STREAMS);
+  theEvent.SetEventObject(this);
+  GetEventHandler()->AddPendingEvent(theEvent);
 
   return true;
 }
@@ -1592,7 +1601,9 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
   if (prefix != pcssEP->GetPrefixName())
     LogMediaStream("Stopped", stream, prefix);
 
-  SetState(m_callState);
+  wxCommandEvent theEvent(wxEvtUpdateStreams, ID_UPDATE_STREAMS);
+  theEvent.SetEventObject(this);
+  GetEventHandler()->AddPendingEvent(theEvent);
 
   if (PIsDescendant(&stream, OpalVideoMediaStream)) {
     PVideoOutputDevice * device = ((const OpalVideoMediaStream &)stream).GetVideoOutputDevice();
@@ -1736,6 +1747,15 @@ PBoolean MyManager::CreateVideoOutputDevice(const OpalConnection & connection,
 }
 
 
+ostream & operator<<(ostream & strm, MyManager::CallState state)
+{
+  static const char * const names[] = {
+    "Idle", "Calling", "Ringing", "Answering", "In Call"
+  };
+  return strm << names[state];
+}
+
+
 void MyManager::SetState(CallState newState)
 {
   wxCommandEvent theEvent(wxEvtStateChange, ID_STATE_CHANGE);
@@ -1744,47 +1764,56 @@ void MyManager::SetState(CallState newState)
   GetEventHandler()->AddPendingEvent(theEvent);
 }
 
+
 void MyManager::OnStateChange(wxCommandEvent & event)
 {
-  if (m_callState == event.GetInt()) {
-    if (m_callState == InCallState)
-      m_inCallPanel->UpdateButtons();
-    return;
-  }
+  CallState newState = (CallState)event.GetInt();
 
-  m_callState = (CallState)event.GetInt();
+  if (m_callState == newState)
+    return;
+
+  PTRACE(3, "OpenPhone\tGUI state changed from " << m_callState << " to " << newState);
+  m_callState = newState;
 
   wxWindow * newWindow;
   switch (m_callState) {
     case RingingState :
-      if (m_autoAnswer) {
-        m_callState = AnsweringState;
-        pcssEP->AcceptIncomingConnection(m_ringingConnectionToken);
+      if (!m_autoAnswer) {
+        newWindow = m_answerPanel;
+        break;
       }
+
+      m_callState = AnsweringState;
+      pcssEP->AcceptIncomingConnection(m_ringingConnectionToken);
       // Do next state
 
     case AnsweringState :
-      newWindow = m_answerPanel;
+    case CallingState :
+      newWindow = m_callingPanel;
       break;
 
     case InCallState :
       newWindow = m_inCallPanel;
       break;
 
-    case CallingState :
-      newWindow = m_callingPanel;
-      break;
 
     default :
       newWindow = m_speedDials;
   }
 
-  m_speedDials->Show(m_callState == IdleState);
-  m_answerPanel->Show(m_callState == RingingState);
-  m_callingPanel->Show(m_callState == CallingState);
-  m_inCallPanel->Show(m_callState == InCallState);
+  m_speedDials->Hide();
+  m_answerPanel->Hide();
+  m_callingPanel->Hide();
+  m_inCallPanel->Hide();
+  newWindow->Show();
 
   m_splitter->ReplaceWindow(m_splitter->GetWindow1(), newWindow);
+}
+
+
+void MyManager::UpdateStreams(wxCommandEvent &)
+{
+  m_inCallPanel->UpdateButtons();
 }
 
 
@@ -3372,8 +3401,6 @@ bool InCallPanel::Show(bool show)
     config->Read(MicrophoneVolumeKey, &value);
     m_MicrophoneVolume->SetValue(value);
     SetVolume(true, value, false);
-
-    UpdateButtons();
   }
   else {
     config->Write(SpeakerVolumeKey, m_SpeakerVolume->GetValue());
