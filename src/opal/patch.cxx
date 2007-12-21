@@ -222,12 +222,7 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
   for (PINDEX i = 0; i < sinks.GetSize(); i++) {
     if (sinks[i].stream == stream) {
       sinks.RemoveAt(i);
-      if (!sinks.IsEmpty())
-        break;
-
-      inUse.Signal();
-      source.Close();
-      return;
+      break;
     }
   }
 
