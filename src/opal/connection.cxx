@@ -263,8 +263,7 @@ void OpalConnection::PrintOn(ostream & strm) const
 
 bool OpalConnection::GarbageCollection()
 {
-  mediaStreams.DeleteObjectsToBeRemoved();
-  return true;
+  return mediaStreams.DeleteObjectsToBeRemoved();
 }
 
 

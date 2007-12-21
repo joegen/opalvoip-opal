@@ -127,18 +127,32 @@ X264EncoderContext::~X264EncoderContext()
   if (_txH264Frame) delete _txH264Frame;
 }
 
-void X264EncoderContext::SetMaxRTPFrameSize(int size)
+void X264EncoderContext::SetMaxRTPFrameSize(unsigned size)
 {
   _txH264Frame->SetMaxPayloadSize(size);
 }
 
-void X264EncoderContext::SetTargetBitRate(int rate)
+void X264EncoderContext::SetMaxKeyFramePeriod (unsigned period)
+{
+}
+
+void X264EncoderContext::SetTargetBitrate(unsigned rate)
 {
   _context.rc.i_vbv_max_bitrate = rate;
   _context.rc.i_bitrate = rate;
 }
 
-void X264EncoderContext::SetFrameRate(int rate)
+void X264EncoderContext::SetFrameWidth(unsigned width)
+{
+  _context.i_width = width;
+}
+
+void X264EncoderContext::SetFrameHeight(unsigned height)
+{
+  _context.i_height = height;
+}
+
+void X264EncoderContext::SetFrameRate(unsigned rate)
 {
   _IFrameInterval = _context.i_keyint_max = (int)(rate * H264_KEY_FRAME_INTERVAL);
   _PFramesSinceLastIFrame = _IFrameInterval + 1; // force a keyframe on the first frame
@@ -146,14 +160,8 @@ void X264EncoderContext::SetFrameRate(int rate)
   _context.i_fps_den = 1000;
 }
 
-void X264EncoderContext::SetFrameWidth(int width)
+void X264EncoderContext::SetTSTO (unsigned tsto)
 {
-  _context.i_width = width;
-}
-
-void X264EncoderContext::SetFrameHeight(int height)
-{
-  _context.i_height = height;
 }
 
 void X264EncoderContext::ApplyOptions()
@@ -208,7 +216,7 @@ int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLe
 
   // do a validation of size
   // if the incoming data has changed size, tell the encoder
-  if (_context.i_width != header->width || _context.i_height != header->height)
+  if ((unsigned)_context.i_width != header->width || (unsigned)_context.i_height != header->height)
   {
     X264_ENCODER_CLOSE(_codec);
     _context.i_width = header->width;

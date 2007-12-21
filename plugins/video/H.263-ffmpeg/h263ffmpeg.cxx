@@ -1424,7 +1424,7 @@ static int ClampSize(int pixels, bool byWidth)
 {
   for (int i = 0; i < 5; i++) {
     int step = byWidth ? StandardVideoSizes[i].width : StandardVideoSizes[i].height;
-    if (pixels < step)
+    if (pixels <= step)
       return step;
   }
   return byWidth ? CIF16_WIDTH : CIF16_HEIGHT;
@@ -1538,7 +1538,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
       maxHeight = ClampSize(atoi(option[1]), false);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-      frameTimeMPI = atoi(option[1])/3003;
+      frameTimeMPI = (atoi(option[1])+3002)/3003;
   }
 
   int i;
@@ -1638,40 +1638,40 @@ static const char h263Desc[]      = { "H.263" };
 static const char sdpH263[]   = { "h263" };
 
 static PluginCodec_ControlDefn h323EncoderControls[] = {
-  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { NULL }
 };
 
 static PluginCodec_ControlDefn h323DecoderControls[] = {
-  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_get_output_data_size },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
 static PluginCodec_ControlDefn EncoderControls[] = {
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
   { NULL }
 };
 
 static PluginCodec_ControlDefn DecoderControls[] = {
-  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_get_output_data_size },
   { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
   { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
   { PLUGINCODEC_CONTROL_TO_CUSTOMISED_OPTIONS, to_customised_options },
   { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
@@ -1955,8 +1955,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   H263_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
+  CIF16_WIDTH,                        // frame width
+  CIF16_HEIGHT,                       // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2190_PAYLOAD,                // IANA RTP payload code
@@ -1989,8 +1989,8 @@ static struct PluginCodec_Definition h263CodecDefn[6] = {
   H263_BITRATE,                       // raw bits per second
   20000,                              // nanoseconds per frame
 
-  CIF_WIDTH,                          // frame width
-  CIF_HEIGHT,                         // frame height
+  CIF16_WIDTH,                        // frame width
+  CIF16_HEIGHT,                       // frame height
   10,                                 // recommended frame rate
   60,                                 // maximum frame rate
   RTP_RFC2190_PAYLOAD,                // IANA RTP payload code

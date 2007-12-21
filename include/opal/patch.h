@@ -240,7 +240,7 @@ class OpalMediaPatch : public PObject
 
     Thread * patchThread;
     PMutex patchThreadMutex;
-    mutable PTimedMutex inUse;
+    mutable PMutex inUse;
 };
 
 /**Passive Media Patch

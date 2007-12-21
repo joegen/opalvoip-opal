@@ -811,6 +811,8 @@ PObject * OpalMediaFormatInternal::Clone() const
 
 bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
+  PTRACE(4, "MediaFormat\tMerging " << mediaFormat << " into " << *this);
+
   PWaitAndSignal m1(media_format_mutex);
   PWaitAndSignal m2(mediaFormat.media_format_mutex);
 

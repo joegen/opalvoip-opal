@@ -445,7 +445,12 @@ bool OpalPluginMediaFormatInternal::AdjustOptions(OpalMediaFormatInternal & fmt,
   if (!control.Exists())
     return true;
 
-  PTRACE(4, "OpalPlugin\t" << control.GetName() << ":\n" << setw(-1) << fmt);
+#if PTRACING
+  if (PTrace::CanTrace(5))
+    PTRACE(5, "OpalPlugin\t" << control.GetName() << ":\n" << setw(-1) << fmt);
+  else
+    PTRACE(4, "OpalPlugin\t" << control.GetName() << ": " << fmt);
+#endif
 
   char ** input = fmt.GetOptions().ToCharArray(false);
   char ** output = input;
@@ -453,8 +458,14 @@ bool OpalPluginMediaFormatInternal::AdjustOptions(OpalMediaFormatInternal & fmt,
   bool ok = control.Call(&output, sizeof(output)) != 0;
 
   if (output != NULL && output != input) {
-    for (char ** option = output; *option != NULL; option += 2)
-      fmt.SetOptionValue(option[0], option[1]);
+    for (char ** option = output; *option != NULL; option += 2) {
+      PString oldValue;
+      if (fmt.GetOptionValue(option[0], oldValue) && oldValue != option[1]) {
+        PTRACE(3, "OpalPlugin\t" << control.GetName() << " changed option "
+               "\"" << option[0] << "\" from \"" << oldValue << "\" to \"" << option[1] << '"');
+        fmt.SetOptionValue(option[0], option[1]);
+      }
+    }
     freeOptionsControl.Call(output, sizeof(output));
   }
 
@@ -2001,7 +2012,7 @@ PBoolean H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFor
 {
   if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption()) < frameWidth)
     if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(),   frameWidth))
-      return PFalse;
+      return false;
 
   if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption()) > frameWidth)
     if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(),   frameWidth))
@@ -2009,16 +2020,22 @@ PBoolean H323VideoPluginCapability::SetOptionsFromMPI(OpalMediaFormat & mediaFor
 
   if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption()) < frameWidth)
     if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(),   frameHeight))
-      return PFalse;
+      return false;
 
   if (   mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption()) > frameWidth)
     if (!mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption(),   frameHeight))
-      return PFalse;
+      return false;
+
+  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption())))
+    return false;
+
+  if (!mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), mediaFormat.GetOptionInteger(OpalVideoFormat::MinRxFrameHeightOption())))
+    return false;
 
   if (!mediaFormat.SetOptionInteger(OpalMediaFormat::FrameTimeOption(), OpalMediaFormat::VideoClockRate * 100 * frameRate / 2997))
-    return PFalse;
+    return false;
 
-  return PTrue;
+  return true;
 }
 
 
@@ -2115,7 +2132,7 @@ PBoolean H323H261PluginCapability::OnSendingPDU(H245_VideoMode & pdu) const
 
   const OpalMediaFormat & mediaFormat = GetMediaFormat();
 
-  int qcifMPI = mediaFormat.GetOptionInteger(qcifMPI_tag);
+  int qcifMPI = mediaFormat.GetOptionInteger(qcifMPI_tag, PLUGINCODEC_MPI_DISABLED);
 
   mode.m_resolution.SetTag(IsValidMPI(qcifMPI) ? H245_H261VideoMode_resolution::e_qcif
                                                : H245_H261VideoMode_resolution::e_cif);
@@ -2142,6 +2159,10 @@ PBoolean H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
     if (!SetOptionsFromMPI(mediaFormat, PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight, h261.m_qcifMPI))
       return PFalse;
   }
+  else {
+    if (!mediaFormat.SetOptionInteger(qcifMPI_tag, PLUGINCODEC_MPI_DISABLED))
+      return false;
+  }
 
   if (h261.HasOptionalField(H245_H261VideoCapability::e_cifMPI)) {
 
@@ -2150,6 +2171,10 @@ PBoolean H323H261PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
 
     if (!SetOptionsFromMPI(mediaFormat, PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight, h261.m_cifMPI))
       return PFalse;
+  }
+  else {
+    if (!mediaFormat.SetOptionInteger(cifMPI_tag, PLUGINCODEC_MPI_DISABLED))
+      return false;
   }
 
   mediaFormat.SetOptionInteger(OpalMediaFormat::MaxBitRateOption(),        h261.m_maxBitRate*100);
@@ -2222,18 +2247,12 @@ static void SetTransmittedCap(const OpalMediaFormat & mediaFormat,
                               H245_H263VideoCapability & h263,
                               const char * mpiTag,
                               int mpiEnum,
-                              PASN_Integer & mpi,
-                              int slowMpiEnum,
-                              PASN_Integer & slowMpi)
+                              PASN_Integer & mpi)
 {
   int mpiVal = mediaFormat.GetOptionInteger(mpiTag);
   if (IsValidMPI(mpiVal)) {
     h263.IncludeOptionalField(mpiEnum);
     mpi = mpiVal;
-  }
-  else if (mpiVal < 0) {
-    h263.IncludeOptionalField(slowMpiEnum);
-    slowMpi = -mpiVal;
   }
 }
 
@@ -2248,11 +2267,11 @@ PBoolean H323H263PluginCapability::OnSendingPDU(H245_VideoCapability & cap) cons
   //PStringStream str; mediaFormat.PrintOptions(str);
   //PTRACE(5, "OpalPlugin\tCreating capability for " << mediaFormat << ", options=\n" << str);
 
-  SetTransmittedCap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, H245_H263VideoCapability::e_slowSqcifMPI, h263.m_slowSqcifMPI);
-  SetTransmittedCap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  H245_H263VideoCapability::e_slowQcifMPI,  h263.m_slowQcifMPI);
-  SetTransmittedCap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI,   H245_H263VideoCapability::e_slowCifMPI,   h263.m_slowCifMPI);
-  SetTransmittedCap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  H245_H263VideoCapability::e_slowCif4MPI,  h263.m_slowCif4MPI);
-  SetTransmittedCap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI);
+  SetTransmittedCap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI);
+  SetTransmittedCap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI);
+  SetTransmittedCap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI);
+  SetTransmittedCap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI);
+  SetTransmittedCap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI);
 
   h263.m_maxBitRate                        = (mediaFormat.GetOptionInteger(OpalMediaFormat::MaxBitRateOption(), 327600) + 50) / 100;
   h263.m_temporalSpatialTradeOffCapability = mediaFormat.GetOptionBoolean(h323_temporalSpatialTradeOffCapability_tag, PFalse);
@@ -2315,8 +2334,6 @@ static PBoolean SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
                                const char * mpiTag,
                                int mpiEnum,
                                const PASN_Integer & mpi,
-                               int slowMpiEnum,
-                               const PASN_Integer & slowMpi,
                                int frameWidth, int frameHeight,
                                PBoolean & formatDefined)
 {
@@ -2329,17 +2346,8 @@ static PBoolean SetReceivedH263Cap(OpalMediaFormat & mediaFormat,
       formatDefined = PTrue;
     }
   }
-  else if (h263.HasOptionalField(slowMpiEnum)) {
-    if (!mediaFormat.SetOptionInteger(mpiTag, -(signed)slowMpi))
-      return PFalse;
-    if (slowMpi != 0) {
-      if (!H323VideoPluginCapability::SetOptionsFromMPI(mediaFormat, frameWidth, frameHeight, -(signed)slowMpi))
-        return PFalse;
-      formatDefined = PTrue;
-    }
-  } 
   else
-    mediaFormat.SetOptionInteger(mpiTag, 0);
+    mediaFormat.SetOptionInteger(mpiTag, PLUGINCODEC_MPI_DISABLED);
 
   return PTrue;
 }
@@ -2392,19 +2400,19 @@ PBoolean H323H263PluginCapability::OnReceivedPDU(const H245_VideoCapability & ca
 
   const H245_H263VideoCapability & h263 = cap;
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, H245_H263VideoCapability::e_slowSqcifMPI, h263.m_slowSqcifMPI, PVideoFrameInfo::SQCIFWidth, PVideoFrameInfo::SQCIFHeight, formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, sqcifMPI_tag, H245_H263VideoCapability::e_sqcifMPI, h263.m_sqcifMPI, PVideoFrameInfo::SQCIFWidth, PVideoFrameInfo::SQCIFHeight, formatDefined))
     return PFalse;
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  H245_H263VideoCapability::e_slowQcifMPI,  h263.m_slowQcifMPI,  PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight,  formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, qcifMPI_tag,  H245_H263VideoCapability::e_qcifMPI,  h263.m_qcifMPI,  PVideoFrameInfo::QCIFWidth, PVideoFrameInfo::QCIFHeight,  formatDefined))
     return PFalse;
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI,   H245_H263VideoCapability::e_slowCifMPI,   h263.m_slowCifMPI,   PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight,   formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, cifMPI_tag,   H245_H263VideoCapability::e_cifMPI,   h263.m_cifMPI,   PVideoFrameInfo::CIFWidth, PVideoFrameInfo::CIFHeight,   formatDefined))
     return PFalse;
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  H245_H263VideoCapability::e_slowCif4MPI,  h263.m_slowCif4MPI,  PVideoFrameInfo::CIF4Width, PVideoFrameInfo::CIF4Height,  formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, cif4MPI_tag,  H245_H263VideoCapability::e_cif4MPI,  h263.m_cif4MPI,  PVideoFrameInfo::CIF4Width, PVideoFrameInfo::CIF4Height,  formatDefined))
     return PFalse;
 
-  if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, H245_H263VideoCapability::e_slowCif16MPI, h263.m_slowCif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, formatDefined))
+  if (!SetReceivedH263Cap(mediaFormat, cap, cif16MPI_tag, H245_H263VideoCapability::e_cif16MPI, h263.m_cif16MPI, PVideoFrameInfo::CIF16Width, PVideoFrameInfo::CIF16Height, formatDefined))
     return PFalse;
 
   if (!formatDefined)

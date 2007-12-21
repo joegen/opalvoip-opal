@@ -99,29 +99,39 @@ void H264EncoderContext::ApplyOptions()
   H264EncCtxInstance.call(APPLY_OPTIONS);
 }
 
-void H264EncoderContext::SetMaxRTPFrameSize(int size)
+void H264EncoderContext::SetMaxRTPFrameSize(unsigned size)
 {
   H264EncCtxInstance.call(SET_MAX_FRAME_SIZE, size);
 }
 
-void H264EncoderContext::SetTargetBitRate(int rate)
+void H264EncoderContext::SetMaxKeyFramePeriod (unsigned period)
+{
+//FIXME
+}
+
+void H264EncoderContext::SetTargetBitrate(unsigned rate)
 {
   H264EncCtxInstance.call(SET_TARGET_BITRATE, rate);
 }
 
-void H264EncoderContext::SetFrameRate(int rate)
-{
-  H264EncCtxInstance.call(SET_FRAME_RATE, rate);
-}
-
-void H264EncoderContext::SetFrameWidth(int width)
+void H264EncoderContext::SetFrameWidth(unsigned width)
 {
   H264EncCtxInstance.call(SET_FRAME_WIDTH, width);
 }
 
-void H264EncoderContext::SetFrameHeight(int height)
+void H264EncoderContext::SetFrameHeight(unsigned height)
 {
   H264EncCtxInstance.call(SET_FRAME_HEIGHT, height);
+}
+
+void H264EncoderContext::SetFrameRate(unsigned rate)
+{
+  H264EncCtxInstance.call(SET_FRAME_RATE, rate);
+}
+
+void H264EncoderContext::SetTSTO (unsigned tsto)
+{
+//FIXME
 }
 
 int H264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -301,42 +311,45 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
 
 /////////////////////////////////////////////////////////////////////////////
 
+static int get_codec_options(const struct PluginCodec_Definition * codec,
+                                                  void *,
+                                                  const char *,
+                                                  void * parm,
+                                                  unsigned * parmLen)
+{
+    if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+        return 0;
+
+    *(const void **)parm = codec->userData;
+    *parmLen = 0; //FIXME
+    return 1;
+}
+
+static int free_codec_options ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  char ** strings = (char **) parm;
+  for (char ** string = strings; *string != NULL; string++)
+    free(*string);
+  free(strings);
+  return 1;
+}
+
+static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
 {
   return new H264EncoderContext;
-}
-
-static int encoder_set_options(
-      const struct PluginCodec_Definition *, 
-      void * _context, 
-      const char *, 
-      void * parm, 
-      unsigned * parmLen)
-{
-  H264EncoderContext * context = (H264EncoderContext *)_context;
-
-  if (parmLen == NULL || *parmLen != sizeof(const char **)) return 0;
-
-  if (parm != NULL) {
-    const char ** options = (const char **)parm;
-    int i;
-    for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "Target Bit Rate") == 0)
-         context->SetTargetBitRate((int) (atoi(options[i+1]) / 1024) );
-      if (STRCMPI(options[i], "Frame Time") == 0)
-         context->SetFrameRate((int)(H264_CLOCKRATE / atoi(options[i+1])));
-      if (STRCMPI(options[i], "Frame Height") == 0)
-         context->SetFrameHeight(atoi(options[i+1]));
-      if (STRCMPI(options[i], "Frame Width") == 0)
-         context->SetFrameWidth(atoi(options[i+1]));
-      if (STRCMPI(options[i], "Max Frame Size") == 0)
-         context->SetMaxRTPFrameSize(atoi(options[i+1]));
-      TRACE (4, "H264\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
-    }
-    context->ApplyOptions();
-
-  }
-  return 1;
 }
 
 static void destroy_encoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
@@ -357,25 +370,105 @@ static int codec_encoder(const struct PluginCodec_Definition * ,
   return context->EncodeFrames((const u_char *)from, *fromLen, (u_char *)to, *toLen, *flag);
 }
 
-/////////////////////////////////////////////////////////////////////////////
+static int to_normalised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
 
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+/*      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+        h263MPIList.setDesiredWidth(atoi(option[1]));
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+        h263MPIList.setDesiredHeight(atoi(option[1]));
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+        h263MPIList.setDesiredFPS( (int) (90000 / atoi(option[1])) );*/
+  }
+
+  char ** options = (char **)calloc(3, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+//   options[0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
+//   options[1] = num2str(width);
+
+  return 1;
+}
+
+static int to_customised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+/*      if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_WIDTH) == 0)
+        h263MPIList.setMinWidth(atoi(option[1]));
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
+        h263MPIList.setMinHeight(atoi(option[1]));
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_WIDTH) == 0)
+        h263MPIList.setMaxWidth(atoi(option[1]));
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
+        h263MPIList.setMaxHeight(atoi(option[1]));*/
+  }
+
+
+  char ** options = (char **)calloc(3, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+//   options[0] = strdup(PLUGINCODEC_QCIF_MPI);
+//   options[1] = num2str(qcif_mpi);
+
+  return 1;
+}
+
+static int encoder_set_options(
+      const struct PluginCodec_Definition *, 
+      void * _context, 
+      const char *, 
+      void * parm, 
+      unsigned * parmLen)
+{
+  H264EncoderContext * context = (H264EncoderContext *)_context;
+
+  if (parmLen == NULL || *parmLen != sizeof(const char **)) return 0;
+
+  if (parm != NULL) {
+    const char ** options = (const char **)parm;
+    int i;
+    for (i = 0; options[i] != NULL; i += 2) {
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+         context->SetTargetBitrate((int) (atoi(options[i+1]) / 1024) );
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+         context->SetFrameRate((int)(H264_CLOCKRATE / atoi(options[i+1])));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+         context->SetFrameHeight(atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+         context->SetFrameWidth(atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_MAX_FRAME_SIZE) == 0)
+         context->SetMaxRTPFrameSize(atoi(options[i+1]));
+      if (STRCMPI(options[0], PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
+        context->SetMaxKeyFramePeriod (atoi(options[1]));
+      if (STRCMPI(options[0], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
+        context->SetTSTO (atoi(options[1]));
+
+    }
+    context->ApplyOptions();
+
+  }
+  return 1;
+}
+
+static int encoder_get_output_data_size(const PluginCodec_Definition *, void *, const char *, void *, unsigned *)
+{
+  return 2000; //FIXME
+}
+/////////////////////////////////////////////////////////////////////////////
 
 static void * create_decoder(const struct PluginCodec_Definition *)
 {
   return new H264DecoderContext;
-}
-
-static int get_codec_options(const struct PluginCodec_Definition * codec,
-                                                  void *,
-                                                  const char *,
-                                                  void * parm,
-                                                  unsigned * parmLen)
-{
-    if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
-        return 0;
-
-    *(const void **)parm = codec->userData;
-    return 1;
 }
 
 static void destroy_decoder(const struct PluginCodec_Definition * /*codec*/, void * _context)
