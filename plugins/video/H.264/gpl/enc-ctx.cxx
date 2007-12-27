@@ -76,10 +76,10 @@ X264EncoderContext::X264EncoderContext()
   // baseline profile begin
   _context.b_cabac = 0;
   _context.i_bframe = 0;
-  _context.rc.i_vbv_max_bitrate = (int)(H264_BITRATE/1024);
+  _context.rc.i_vbv_max_bitrate = (int)(H264_BITRATE / 1000);
   _context.rc.i_vbv_buffer_size = 2000;
   _context.i_level_idc = 13;
-  _context.rc.i_bitrate = (int)(H264_BITRATE/1024);
+  _context.rc.i_bitrate = (int)(H264_BITRATE / 1000);
   // baseline profile end
 
   _context.i_width = CIF_WIDTH;
@@ -162,6 +162,16 @@ void X264EncoderContext::SetFrameRate(unsigned rate)
 
 void X264EncoderContext::SetTSTO (unsigned tsto)
 {
+}
+
+void X264EncoderContext::SetProfileLevel (unsigned profileLevel)
+{
+  unsigned profile = (profileLevel & 0xff0000) >> 16;
+  bool constraint0 = (profileLevel & 0x008000) ? true : false;
+  bool constraint1 = (profileLevel & 0x004000) ? true : false;
+  bool constraint2 = (profileLevel & 0x002000) ? true : false;
+  bool constraint3 = (profileLevel & 0x001000) ? true : false;
+  unsigned level   = (profileLevel & 0x0000ff);
 }
 
 void X264EncoderContext::ApplyOptions()

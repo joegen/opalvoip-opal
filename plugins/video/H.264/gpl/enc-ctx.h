@@ -95,6 +95,7 @@ class X264EncoderContext
     void SetFrameHeight (unsigned height);
     void SetFrameRate (unsigned rate);
     void SetTSTO (unsigned tsto);
+    void SetProfileLevel (unsigned profileLevel);
     void ApplyOptions ();
 
 

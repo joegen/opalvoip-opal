@@ -64,17 +64,17 @@ const static struct h264_level {
     unsigned mbps;        /* max macroblock processing rate (macroblocks/sec) */
     unsigned frame_size;  /* max frame size (macroblocks) */
     unsigned dpb;         /* max decoded picture buffer (bytes) */
-    long unsigned bitrate;     /* max bitrate (kbit/sec) */
-    int cpb;         /* max vbv buffer (kbit) */
-    int mv_range;    /* max vertical mv component range (pixels) */
-    int mvs_per_2mb; /* max mvs per 2 consecutive mbs. */
-    int slice_rate;
-    int bipred8x8;   /* limit bipred to >=8x8 */
-    int direct8x8;   /* limit b_direct to >=8x8 */
-    int frame_only;  /* forbid interlacing */
+    long unsigned bitrate;/* max bitrate (kbit/sec) */
+    unsigned cpb;         /* max vbv buffer (kbit) */
+    unsigned mv_range;    /* max vertical mv component range (pixels) */
+    unsigned mvs_per_2mb; /* max mvs per 2 consecutive mbs. */
+    unsigned slice_rate;
+    unsigned bipred8x8;   /* limit bipred to >=8x8 */
+    unsigned direct8x8;   /* limit b_direct to >=8x8 */
+    unsigned frame_only;  /* forbid interlacing */
 } h264_levels[] = {
     { 10,   1485,    99,   152064,     64000,    175,  64, 64,  0, 0, 0, 1 },
-//  {"1b",  1485,    99,   152064,    128000,    350,  64, 64,  0, 0, 0, 1 },
+    {  9,   1485,    99,   152064,    128000,    350,  64, 64,  0, 0, 0, 1 },
     { 11,   3000,   396,   345600,    192000,    500, 128, 64,  0, 0, 0, 1 },
     { 12,   6000,   396,   912384,    384000,   1000, 128, 64,  0, 0, 0, 1 },
     { 13,  11880,   396,   912384,    768000,   2000, 128, 64,  0, 0, 0, 1 },
