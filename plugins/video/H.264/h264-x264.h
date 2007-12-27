@@ -94,6 +94,7 @@ class H264EncoderContext
     void SetFrameHeight (unsigned height);
     void SetFrameRate (unsigned rate);
     void SetTSTO (unsigned tsto);
+    void SetProfileLevel (unsigned profile, unsigned constraints, unsigned level);
     void ApplyOptions ();
 
   protected:
@@ -219,14 +220,33 @@ static const char sdpH264[]       = { "h264" };
 /////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Option const packetizationMode =
-  { PluginCodec_IntegerOption, "CAP Packetization Mode", false, PluginCodec_NoMerge, "1", "packetization-mode", "0", 0, "1", "2" };
+{
+  PluginCodec_IntegerOption,            // Option type
+  "CAP Packetization Mode",             // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_EqualMerge,               // Merge mode
+  "1",                                  // Initial value
+  "packetization-mode",                 // FMTP option name 
+  "0",                                  // FMTP default value ?
+  0,
+  "1",
+  "2"
+};
 
-static struct PluginCodec_Option const profileLevel =
-  { PluginCodec_OctetsOption, "CAP Profile Level", false, PluginCodec_NoMerge, "42E015", "profile-level-id", "42E015", 0};
+static struct PluginCodec_Option const RFC3984profileLevel =
+{
+  PluginCodec_StringOption,             // Option type
+  "CAP RFC3894 Profile Level",          // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_NoMerge,                  // Merge mode
+  "42E01E",                             // Initial value (Baseline, Level 3)
+  "profile-level-id",                   // FMTP option name 
+  "420010",                             // FMTP default value (Baseline, Level 1)
+};
 
 static struct PluginCodec_Option const * const optionTable[] = {
   &packetizationMode,
-  &profileLevel,
+  &RFC3984profileLevel,
   NULL
 };
 
