@@ -120,6 +120,70 @@ extern "C" {
 
 #define MAX_MPEG4_PACKET_SIZE     2048
 
+const static struct mpeg4_profile_level {
+    unsigned profileLevel;
+    const char* profileName;
+    unsigned level;
+    unsigned maxQuantTables;       /* Max. unique quant. tables */
+    unsigned maxVMVBufferSize;     /* max. VMV buffer size(MB units) */
+    unsigned frame_size;           /* max. VCV buffer size (MB) */
+    unsigned mbps;                 /* VCV decoder rate (MB/s) 4 */
+    unsigned boundaryMbps;         /* VCV boundary MB decoder rate (MB/s)9 */
+    unsigned maxBufferSize;        /* max. total VBV buffer size (units of 16384 bits) */
+    unsigned maxVOLBufferSize;     /* max. VOL VBV buffer size (units of 16384 bits) */
+    unsigned maxVideoPacketLength; /* max. video packet length (bits) */
+    long unsigned bitrate;
+} mpeg4_profile_levels[] = {
+    {   1, "Simple",                     1, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
+    {   2, "Simple",                     2, 1,   792,   396,   5940,      0,  40,  40,  4096,   128000 },
+    {   3, "Simple",                     3, 1,   792,   396,  11880,      0,  40,  40,  8192,   384000 },
+    {  17, "Simple Scalable",            1, 1,  1782,   495,   7425,      0,  40,  40,  2048,   128000 },
+    {  18, "Simple Scalable",            2, 1,  3168,   792,  23760,      0,  40,  40,  4096,   256000 },
+    {  33, "Core",                       1, 4,   594,   198,   5940,   2970,  16,  16,  4096,   384000 },
+    {  34, "Core",                       2, 4,  2376,   792,  23760,  11880,  80,  80,  8192,  2000000 },
+    {  50, "Main",                       2, 4,  3960,  1188,  23760,  11880,  80,  80,  8192,  2000000 },
+    {  51, "Main",                       3, 4, 11304,  3240,  97200,  48600, 320, 320, 16384, 15000000 },
+    {  52, "Main",                       4, 4, 65344, 16320, 489600, 244800, 760, 760, 16384, 38400000 },
+    {  66, "N-Bit",                      2, 4,  2376,   792,  23760,  11880,  80,  80,  8192,  2000000 },
+    { 145, "Advanced Real Time Simple",  1, 1,   198,    99,   1485,      0,  10,  10,  8192,    64000 },
+    { 146, "Advanced Real Time Simple",  2, 1,   792,   396,   5940,      0,  40,  40, 16384,   128000 },
+    { 147, "Advanced Real Time Simple",  3, 1,   792,   396,  11880,      0,  40,  40, 16384,   384000 },
+    { 148, "Advanced Real Time Simple",  4, 1,   792,   396,  11880,      0,  80,  80, 16384,  2000000 },
+    { 161, "Core Scalable",              1, 4,  2376,   792,  14850,   7425,  64,  64,  4096,   768000 },
+    { 162, "Core Scalable",              2, 4,  2970,   990,  29700,  14850,  80,  80,  4096,  1500000 },
+    { 163, "Core Scalable",              3, 4, 12906,  4032, 120960,  60480,  80,  80, 16384,  4000000 },
+    { 177, "Advanced Coding Efficiency", 1, 4,  1188,   792,  11880,   5940,  40,  40,  8192,   384000 },
+    { 178, "Advanced Coding Efficiency", 2, 4,  2376,  1188,  23760,  11880,  80,  80,  8192,  2000000 },
+    { 179, "Advanced Coding Efficiency", 3, 4,  9720,  3240,  97200,  48600, 320, 320, 16384, 15000000 },
+    { 180, "Advanced Coding Efficiency", 4, 4, 48960, 16320, 489600, 244800, 760, 760, 16384, 38400000 },
+    { 193, "Advanced Core",              1, 4,   594,   198,   5940,   2970,  16,   8,  4096,   384000 },
+    { 194, "Advanced Core",              2, 4,  2376,   792,  23760,  11880,  80,  40,  8192,  2000000 },
+    { 0 }
+};
+
+// This table is used in order to select a different resolution if the desired one
+// consists of more macroblocks than the level limit
+const static struct mpeg4_resolution {
+    unsigned width;
+    unsigned height;
+    unsigned macroblocks;
+} mpeg4_resolutions[] = {
+    { 1920, 1088, 8160 },
+    { 1600, 1200, 7500 },
+    { 1408, 1152, 6336 },
+    { 1280, 1024, 5120 },
+    { 1280,  720, 3600 },
+    { 1024,  768, 3072 },
+    {  800,  600, 1900 },
+    {  704,  576, 1584 },
+    {  640,  480, 1200 },
+    {  352,  288,  396 },
+    {  320,  240,  300 },
+    {  176,  144,   99 },
+    {  128,   96,   48 },
+    { 0 }
+};
+
 FFMPEGLibrary FFMPEGLibraryInstance(CODEC_ID_MPEG4);
 
 static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg) {
@@ -315,14 +379,14 @@ class MPEG4EncoderContext
 //
 
 MPEG4EncoderContext::MPEG4EncoderContext() 
-:   _encFrameBuffer(NULL),
+:   _forceKeyframeUpdate(false),
+    _doThrottle(false),
+    _dynamicVideo(false),
+    _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
     _avcontext(NULL),
     _avpicture(NULL),
-    _doThrottle(false),
-    _forceKeyframeUpdate(false),
-    _dynamicVideo(false),
     _throttle(new Throttle(1))
 { 
 
@@ -538,7 +602,7 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     // Reduce the difference in quantization between frames.
     _avcontext->qblur = 0.3;
     // default is tex^qComp; 1 is constant bitrate
-    _avcontext->rc_eq = "1";
+    _avcontext->rc_eq = (char*) "1";
     //avcontext->rc_eq = "tex^qComp";
     // These ones technically could be dynamic, I think
     _avcontext->rc_min_rate = 0;
@@ -630,7 +694,7 @@ void MPEG4EncoderContext::SetDynamicEncodingParams(bool restartOnResize) {
     }
 
     // If framesize has changed or is not yet initialized, fix it up
-    if(_avcontext->width != _frameWidth || _avcontext->height != _frameHeight) {
+    if((unsigned)_avcontext->width != _frameWidth || (unsigned)_avcontext->height != _frameHeight) {
         ResizeEncodingFrame(restartOnResize);
     }
 }
@@ -1022,10 +1086,10 @@ class MPEG4DecoderContext
 
 MPEG4DecoderContext::MPEG4DecoderContext() 
 :   _encFrameBuffer(NULL),
-    _doError(true),
-    _disableResize(false), 
-    _keyRefreshThresh(1),
     _frameNum(0),
+    _doError(true),
+    _keyRefreshThresh(1),
+    _disableResize(false),
     _lastPktOffset(0),
     _frameWidth(0),
     _frameHeight(0)
@@ -1159,7 +1223,7 @@ bool MPEG4DecoderContext::DecoderError(int threshold) {
 //
 
 void MPEG4DecoderContext::SetDynamicDecodingParams(bool restartOnResize) {
-    if (_frameWidth != _avcontext->width || _frameHeight != _avcontext->height)
+    if (_frameWidth != (unsigned)_avcontext->width || _frameHeight != (unsigned)_avcontext->height)
     {
         ResizeDecodingFrame(restartOnResize);
     }
@@ -1327,7 +1391,6 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
             header->x = header->y = 0;
             header->width = _frameWidth;
             header->height = _frameHeight;
-            int size = _frameWidth * _frameHeight;
             unsigned char *dst = OPAL_VIDEO_FRAME_DATA_PTR(header);
             for (int i=0; i<3; i ++) {
                 unsigned char *src = _avpicture->data[i];
