@@ -1051,7 +1051,7 @@ static struct PluginCodec_Option const qcifMPI =
   PluginCodec_MaxMerge,                 // Merge mode
   "1",                                  // Initial value
   "QCIF",                               // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  "1",                                  // FMTP default value
   0,                                    // H.245 generic capability code and bit mask
   "1",                                  // Minimum value
   STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
