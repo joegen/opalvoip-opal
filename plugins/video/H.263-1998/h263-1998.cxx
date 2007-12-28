@@ -662,17 +662,17 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         h263MPIList.setDesiredHeight(atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-        h263MPIList.setDesiredFPS( (int) (90000 / atoi(option[1])) );
+        h263MPIList.setFrameTime( atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_SQCIF_MPI) == 0)
-        h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, atoi(option[1]) );
       if (STRCMPI(option[0], PLUGINCODEC_QCIF_MPI) == 0)
-        h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, atoi(option[1]) );
       if (STRCMPI(option[0], PLUGINCODEC_CIF_MPI) == 0)
-        h263MPIList.addMPI(CIF_WIDTH, CIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(CIF_WIDTH, CIF_HEIGHT, atoi(option[1]) );
       if (STRCMPI(option[0], PLUGINCODEC_CIF4_MPI) == 0)
-        h263MPIList.addMPI(CIF4_WIDTH, CIF4_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(CIF4_WIDTH, CIF4_HEIGHT, atoi(option[1]) );
       if (STRCMPI(option[0], PLUGINCODEC_CIF16_MPI) == 0)
-        h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, atoi(option[1]) );
   }
 
   char ** options = (char **)calloc(7, sizeof(char *));
@@ -708,15 +708,17 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_MAX_RX_FRAME_HEIGHT) == 0)
         h263MPIList.setMaxHeight(atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_SQCIF_MPI) == 0)
-        h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, atoi(option[1]) );
       if (STRCMPI(option[0], PLUGINCODEC_QCIF_MPI) == 0)
-        h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, atoi(option[1]) );
       if (STRCMPI(option[0], PLUGINCODEC_CIF_MPI) == 0)
-        h263MPIList.addMPI(CIF_WIDTH, CIF_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(CIF_WIDTH, CIF_HEIGHT, atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_CIF4_MPI) == 0)
-        h263MPIList.addMPI(CIF4_WIDTH, CIF4_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(CIF4_WIDTH, CIF4_HEIGHT, atoi(option[1]));
       if (STRCMPI(option[0], PLUGINCODEC_CIF16_MPI) == 0)
-        h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, (unsigned) (30 / (1.001 * atoi(option[1]))) );
+        h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, atoi(option[1]));
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+        h263MPIList.setFrameTime( atoi(option[1]) );
   }
 
   unsigned qcif_mpi = h263MPIList.getSupportedMPI(QCIF_WIDTH, QCIF_HEIGHT);
