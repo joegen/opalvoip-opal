@@ -34,39 +34,34 @@
 #include <iostream>
 MPIList::MPIList()
 {
-  desiredMPI.width = 176;
-  desiredMPI.height = 144;
-  desiredMPI.fps = 30;
+  desiredWidth = 176;
+  desiredHeight = 144;
   minWidth = 176;
   minHeight = 144;
   maxWidth = 704;
   maxHeight = 576;
+  frameTime = 3003;
 }
 
-void MPIList::addMPI (unsigned width, unsigned height, unsigned fps)
+void MPIList::addMPI (unsigned width, unsigned height, unsigned interval)
 {
   MPI newMPI;
 
   newMPI.width = width;
   newMPI.height = height;
-  newMPI.fps = fps;
+  newMPI.interval = interval;
 
   MPIs.push_back (newMPI);
 }
 
 void MPIList::setDesiredWidth (unsigned width)
 {
-  desiredMPI.width = width;
+  desiredWidth = width;
 }
 
 void MPIList::setDesiredHeight (unsigned height)
 {
-  desiredMPI.height = height;
-}
-
-void MPIList::setDesiredFPS (unsigned fps)
-{
-  desiredMPI.fps = fps;
+  desiredHeight = height;
 }
 
 void MPIList::setMinWidth (unsigned width)
@@ -89,6 +84,11 @@ void MPIList::setMaxHeight (unsigned height)
   maxHeight = height;
 }
 
+void MPIList::setFrameTime (unsigned _frameTime)
+{
+  frameTime = _frameTime;
+}
+
 unsigned MPIList::getSupportedMPI( unsigned width, unsigned height){
   unsigned i = 0;
 
@@ -108,13 +108,13 @@ unsigned MPIList::getSupportedMPI( unsigned width, unsigned height){
   // look for the respective MPI
   for (i=0; i < MPIs.size(); i++) {
     if ( (MPIs[i].width == width) && (MPIs[i].height == height) ) {
-       return MPIs[i].fps;
+       return (((MPIs[i].interval * 3003) > frameTime) ? MPIs[i].interval : frameTime / 3003);
     }
   }
   return PLUGINCODEC_MPI_DISABLED;
 }
 
-bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* fps) 
+bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* _frameTime) 
 {
   unsigned i = 0;
   unsigned minDistance = -1;
@@ -128,8 +128,8 @@ bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* fps
   // to the desired one or matches it
   for (i=0; i < MPIs.size(); i++) {
     // we square the value in order to get absolute distances
-    distance = ( abs(MPIs[i].width  - desiredMPI.width ) *
-                 abs(MPIs[i].height - desiredMPI.height) );
+    distance = ( abs(MPIs[i].width  - desiredWidth ) *
+                 abs(MPIs[i].height - desiredHeight) );
     std::cout << "Distance " << i << " - " << distance << "\n";
 
     if (distance < minDistance) {
@@ -144,9 +144,9 @@ bool MPIList::getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* fps
   // possibly the supported frame rate is lower than the desired one
   // however we prefer to stay at the desired resolution with a lower framerate
   // instead of selecting a different resolution where the framerate is supported
-  if (MPIs[minIndex].fps < desiredMPI.fps) 
-    *fps  = MPIs[minIndex].fps;
+  if ((MPIs[minIndex].interval * 3003) < frameTime) 
+    *_frameTime  = MPIs[minIndex].interval * 3003;
    else
-    *fps  = desiredMPI.fps;
+    *_frameTime  = frameTime;
   return true;
 }
