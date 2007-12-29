@@ -1292,7 +1292,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
   // For video the max bit rate and frame rate is adjustable by user
   FindOption(OpalVideoFormat::MaxBitRateOption())->SetReadOnly(false);
   FindOption(OpalVideoFormat::FrameTimeOption())->SetReadOnly(false);
-  FindOption(OpalVideoFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MinMerge);
+  FindOption(OpalVideoFormat::FrameTimeOption())->SetMerge(OpalMediaOption::MaxMerge);
 }
 
 
