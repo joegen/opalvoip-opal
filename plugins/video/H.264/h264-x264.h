@@ -215,7 +215,7 @@ static const char sdpH264[]       = { "h264" };
 #define H264_BITRATE         768000
 #define H264_PAYLOAD_SIZE      1400
 #define H264_FRAME_RATE          25
-#define H264_KEY_FRAME_INTERVAL 2.0
+#define H264_KEY_FRAME_INTERVAL  75
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -239,9 +239,9 @@ static struct PluginCodec_Option const RFC3984profileLevel =
   "CAP RFC3894 Profile Level",          // User visible name
   false,                                // User Read/Only flag
   PluginCodec_NoMerge,                  // Merge mode
-  "42E01E",                             // Initial value (Baseline, Level 3)
+  "42C01E",                             // Initial value (Baseline, Level 3)
   "profile-level-id",                   // FMTP option name 
-  "420010",                             // FMTP default value (Baseline, Level 1)
+  "42C010",                             // FMTP default value (Baseline, Level 1)
 };
 
 static struct PluginCodec_Option const * const optionTable[] = {
