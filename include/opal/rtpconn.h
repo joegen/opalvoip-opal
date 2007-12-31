@@ -258,7 +258,7 @@ class OpalRTPConnection : public OpalConnection
         unsigned AddChannel(ChannelStartInfo & info);
 
         ChannelStartInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
-        bool ChannelStartInfoMap::CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
+        bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
 
         void Unlock() { mutex.Signal(); }
 

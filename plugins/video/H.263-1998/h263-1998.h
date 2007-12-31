@@ -251,7 +251,7 @@ static struct PluginCodec_Option const qcifMPI =
   PluginCodec_MaxMerge,                 // Merge mode
   "1",                                  // Initial value
   "QCIF",                               // FMTP option name
-  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
+  "2",                                  // FMTP default value
   0,                                    // H.245 generic capability code and bit mask
   "1",                                  // Minimum value
   STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
@@ -306,13 +306,13 @@ static struct PluginCodec_Option const sif4MPI =
   { PluginCodec_StringOption, "SIF4 MPI", false, PluginCodec_EqualMerge, "640,480,1", "CUSTOM"};
 
 static struct PluginCodec_Option const annexF =
-  { PluginCodec_BoolOption,    "Annex F",   false,  PluginCodec_MinMerge, "T", "F", "F" };
+  { PluginCodec_BoolOption,    "Annex F",   false,  PluginCodec_MinMerge, "1", "F", "0" };
 
 static struct PluginCodec_Option const annexI =
-  { PluginCodec_BoolOption,    "Annex I",   false,  PluginCodec_MinMerge, "T", "I", "F" };
+  { PluginCodec_BoolOption,    "Annex I",   false,  PluginCodec_MinMerge, "1", "I", "0" };
 
 static struct PluginCodec_Option const annexJ =
-  { PluginCodec_BoolOption,    "Annex J",   true,  PluginCodec_MinMerge, "T", "J", "F" };
+  { PluginCodec_BoolOption,    "Annex J",   true,  PluginCodec_MinMerge, "1", "J", "0" };
 
 static struct PluginCodec_Option const annexK =
   { PluginCodec_IntegerOption, "Annex K",   true,  PluginCodec_EqualMerge, "0", "K", "0", 0, "0", "4" };
@@ -327,7 +327,7 @@ static struct PluginCodec_Option const annexT =
   { PluginCodec_BoolOption,    "Annex T",   true,  PluginCodec_AndMerge, "0", "T", "0" };
 
 static struct PluginCodec_Option const annexD =
-  { PluginCodec_BoolOption,    "Annex D",   true,  PluginCodec_MinMerge, "T", "D", "F" };
+  { PluginCodec_BoolOption,    "Annex D",   true,  PluginCodec_MinMerge, "1", "D", "0" };
 
 static struct PluginCodec_Option const * const optionTable[] = {
   &qcifMPI,

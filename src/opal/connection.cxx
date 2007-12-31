@@ -497,7 +497,21 @@ bool OpalConnection::CloseMediaStream(unsigned sessionId, bool source)
 
 bool OpalConnection::CloseMediaStream(OpalMediaStream & stream)
 {
-  return stream.Close();
+  if (!stream.Close())
+    return false;
+
+  if (stream.IsSource())
+    return true;
+
+  PSafePtr<OpalConnection> otherConnection = GetCall().GetOtherPartyConnection(*this);
+  if (otherConnection == NULL)
+    return true;
+
+  OpalMediaStreamPtr otherStream = otherConnection->GetMediaStream(stream.GetSessionID(), true);
+  if (otherStream == NULL)
+    return true;
+
+  return otherStream->Close();
 }
 
 

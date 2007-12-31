@@ -159,6 +159,24 @@ int main(int argc, char *argv[])
         writeStream(ulStream,(char*)&msg, sizeof(msg)); 
         flushStream(ulStream);
       break;
+    case SET_MAX_KEY_FRAME_PERIOD:
+        readStream(dlStream, (char*)&val, sizeof(val));
+        x264->SetMaxKeyFramePeriod (val);
+        writeStream(ulStream,(char*)&msg, sizeof(msg)); 
+        flushStream(ulStream);
+      break;
+    case SET_TSTO:
+        readStream(dlStream, (char*)&val, sizeof(val));
+        x264->SetTSTO (val);
+        writeStream(ulStream,(char*)&msg, sizeof(msg)); 
+        flushStream(ulStream);
+      break;
+    case SET_PROFILE_LEVEL:
+        readStream(dlStream, (char*)&val, sizeof(val));
+        x264->SetProfileLevel (val);
+        writeStream(ulStream,(char*)&msg, sizeof(msg)); 
+        flushStream(ulStream);
+      break;
     case ENCODE_FRAMES:
         readStream(dlStream, (char*)&srcLen, sizeof(srcLen));
         readStream(dlStream, (char*)&src, srcLen);
