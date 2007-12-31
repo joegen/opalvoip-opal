@@ -3297,21 +3297,28 @@ void H323Connection::OnSetLocalCapabilities()
     }
   }
 
-  // Add those things that are in the other parties media format list
-  static unsigned sessionOrder[] = {
-    OpalMediaFormat::DefaultAudioSessionID,
-    OpalMediaFormat::DefaultVideoSessionID,
-    OpalMediaFormat::DefaultDataSessionID,
-    0
-  };
-  PINDEX simultaneous;
-
-  for (PINDEX s = 0; s < PARRAYSIZE(sessionOrder); s++) {
-    simultaneous = P_MAX_INDEX;
-    for (PINDEX i = 0; i < formats.GetSize(); i++) {
-      OpalMediaFormat format = formats[i];
-      if (format.GetDefaultSessionID() == sessionOrder[s] && format.IsTransportable())
-        simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, format);
+  // Add those things that are in the other parties media format list, starting with session ID 1
+  {
+    size_t mediaTypesAdded = 0;
+    unsigned sessionID = 1;
+    PINDEX simultaneous;
+    OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
+    while (mediaTypesAdded < keys.size()) {
+      OpalMediaTypeFactory::KeyList_T::iterator r;
+      for (r = keys.begin(); r != keys.end(); ++r) {
+        OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(*r);
+        if (defn->GetPreferredSessionId() == sessionID) {
+          simultaneous = P_MAX_INDEX;
+          for (PINDEX i = 0; i < formats.GetSize(); i++) {
+            OpalMediaFormat format = formats[i];
+            if (format.GetDefaultSessionID() == sessionID && format.IsTransportable())
+              simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, format);
+          }
+          ++mediaTypesAdded;
+          break;
+        }
+      }
+      ++sessionID;
     }
   }
   
@@ -3558,6 +3565,47 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
 }
 
 
+bool H323Connection::FastStartDisabled_fn(const OpalMediaType & mediaType)
+{
+  ChannelStartInfo * info = channelStartInfoMap.AssignAndLockChannel(mediaType, false);
+  if (info == NULL)
+    return true;
+
+  if (CanAutoStartMedia(mediaType, false))
+    SelectDefaultLogicalChannel(info->channelId);
+
+  return true;
+}
+
+
+bool H323Connection::FastStartInitiate_fn(const OpalMediaType & mediaType)
+{
+  ChannelStartInfo * info = channelStartInfoMap.AssignAndLockChannel(mediaType, false);
+  if (info == NULL)
+    return true;
+
+  SelectFastStartChannels(info->channelId,
+                          CanAutoStartMedia(mediaType, false),
+                          CanAutoStartMedia(mediaType, true));
+  return true;
+}
+
+
+bool H323Connection::FastStartResponse_fn(const OpalMediaType & mediaType)
+{
+  ChannelStartInfo * info = channelStartInfoMap.AssignAndLockChannel(mediaType, false);
+  if (info == NULL)
+    return true;
+
+  if (CanAutoStartMedia(mediaType, false))
+    StartFastStartChannel(info->channelId, H323Channel::IsTransmitter);
+  if (CanAutoStartMedia(mediaType, true))
+    StartFastStartChannel(info->channelId, H323Channel::IsReceiver);
+
+  return true;
+}
+
+
 void H323Connection::OnSelectLogicalChannels()
 {
   PTRACE(3, "H245\tDefault OnSelectLogicalChannels, " << fastStartState);
@@ -3565,57 +3613,24 @@ void H323Connection::OnSelectLogicalChannels()
   // Select the first codec that uses the "standard" audio session.
   switch (fastStartState) {
     default : //FastStartDisabled :
-#if OPAL_AUDIO
-      if (CanAutoStartMedia(OpalMediaType::Audio(), false))
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultAudioSessionID);
-#endif
-#if OPAL_VIDEO
-      if (CanAutoStartMedia(OpalMediaType::Video(), false))
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultVideoSessionID);
-#endif
-#if OPAL_T38FAX
-      if (CanAutoStartMedia(OpalMediaType::Fax(), false))
-        SelectDefaultLogicalChannel(OpalMediaFormat::DefaultDataSessionID);
-#endif
+      {
+        OpalMediaTypeIteratorObj<H323Connection> fn(*this, &H323Connection::FastStartDisabled_fn);
+        OpalMediaTypeIterate(fn);
+      }
       break;
 
     case FastStartInitiate :
-#if OPAL_AUDIO
-      SelectFastStartChannels(OpalMediaFormat::DefaultAudioSessionID, 
-                              CanAutoStartMedia(OpalMediaType::Audio(), false),
-                              CanAutoStartMedia(OpalMediaType::Audio(), true));
-#endif
-#if OPAL_VIDEO
-      SelectFastStartChannels(OpalMediaFormat::DefaultVideoSessionID,
-                              CanAutoStartMedia(OpalMediaType::Video(), false),
-                              CanAutoStartMedia(OpalMediaType::Video(), true));
-#endif
-#if OPAL_T38FAX
-      SelectFastStartChannels(OpalMediaFormat::DefaultDataSessionID,
-                              CanAutoStartMedia(OpalMediaType::Fax(), false),
-                              CanAutoStartMedia(OpalMediaType::Fax(), true));
-#endif
+      {
+        OpalMediaTypeIteratorObj<H323Connection> fn(*this, &H323Connection::FastStartInitiate_fn);
+        OpalMediaTypeIterate(fn);
+      }
       break;
 
     case FastStartResponse :
-#if OPAL_AUDIO
-      if (CanAutoStartMedia(OpalMediaType::Audio(), false))
-        StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsTransmitter);
-      if (CanAutoStartMedia(OpalMediaType::Audio(), true))
-        StartFastStartChannel(OpalMediaFormat::DefaultAudioSessionID, H323Channel::IsReceiver);
-#endif
-#if OPAL_VIDEO
-      if (CanAutoStartMedia(OpalMediaType::Video(), false))
-        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsTransmitter);
-      if (CanAutoStartMedia(OpalMediaType::Video(), true))
-        StartFastStartChannel(OpalMediaFormat::DefaultVideoSessionID, H323Channel::IsReceiver);
-#endif
-#if OPAL_T38FAX
-      if (CanAutoStartMedia(OpalMediaType::Fax(), false))
-        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsTransmitter);
-      if (CanAutoStartMedia(OpalMediaType::Fax(), true))
-        StartFastStartChannel(OpalMediaFormat::DefaultDataSessionID, H323Channel::IsReceiver);
-#endif
+      {
+        OpalMediaTypeIteratorObj<H323Connection> fn(*this, &H323Connection::FastStartResponse_fn);
+        OpalMediaTypeIterate(fn);
+      }
       break;
   }
 }

@@ -1090,7 +1090,7 @@ OpalMediaType::SDPToMediaTypeMap_T & OpalMediaType::GetSDPToMediaTypeMap()
 
 ////////////////////////////////////////////////////////////////////////////
 
-PCaselessString OpalCommonMediaType::GetTransport() const
+PCaselessString OpalRTPAVPMediaType::GetTransport() const
 { return SDP_MEDIA_TRANSPORT; }
 
 ////////////////////////////////////////////////////////////////////////////

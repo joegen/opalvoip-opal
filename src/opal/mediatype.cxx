@@ -128,7 +128,7 @@ bool OpalNULLMediaType::IsMediaAutoStart(bool) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalCommonMediaType::OpalCommonMediaType(const char * mediaType, const char * sdpType, unsigned sessionID)
+OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID)
   : OpalMediaTypeDefinition(mediaType, sdpType, sessionID)
 {
 }
@@ -138,7 +138,7 @@ OpalCommonMediaType::OpalCommonMediaType(const char * mediaType, const char * sd
 #if OPAL_AUDIO
 
 OpalAudioMediaType::OpalAudioMediaType()
-  : OpalCommonMediaType("audio", "audio", 1)
+  : OpalRTPAVPMediaType("audio", "audio", 1)
 {
 }
 
@@ -152,7 +152,7 @@ bool OpalAudioMediaType::IsMediaAutoStart(bool) const
 #if OPAL_VIDEO
 
 OpalVideoMediaType::OpalVideoMediaType()
-  : OpalCommonMediaType("video", "video", 2)
+  : OpalRTPAVPMediaType("video", "video", 2)
 { }
 
 bool OpalVideoMediaType::IsMediaAutoStart(bool) const 

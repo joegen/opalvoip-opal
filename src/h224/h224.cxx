@@ -52,25 +52,28 @@ namespace PWLibStupidLinkerHacks {
 #include <sip/sdp.h>
 #endif
 
+#if OPAL_H323
+#include <h224/h323h224.h>
+H323_REGISTER_CAPABILITY(H323_H224Capability, OPAL_H224_CAPABILITY_NAME)
+#endif
+
 const OpalMediaFormat OpalH224(
   OPAL_H224,
   5,
   RTP_DataFrame::DynamicBase,
   "h224",
   PFalse, // No jitter for data
-  48, // 100's bits/sec
+  64,     // 100's bits/sec
   0,
   0,
-  0
+  4800    // clock rate
 );
 
-class OpalH224MediaType : public OpalMediaTypeDefinition {
+class OpalH224MediaType : public OpalRTPAVPMediaType {
   public:
     OpalH224MediaType();
     virtual bool IsMediaAutoStart(bool) const;
-
 #if OPAL_SIP
-    virtual PCaselessString GetTransport() const;
     SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress);
 #endif
 };
@@ -717,7 +720,7 @@ void OpalH224ReceiverThread::Close()
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 OpalH224MediaType::OpalH224MediaType()
-  : OpalMediaTypeDefinition("h224", "application", 5)
+  : OpalRTPAVPMediaType("h224", "application", 5)
 {
 }
 
@@ -728,83 +731,12 @@ bool OpalH224MediaType::IsMediaAutoStart(bool) const
 
 #if OPAL_SIP
 
-PCaselessString OpalH224MediaType::GetTransport() const
+SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(OpalTransportAddress & localAddress)
 {
-  return "h224";
+  return new SDPMediaDescription(localAddress, "h224");
 }
 
 #endif
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#if OPAL_SIP
-
-class OpalH224SDPMediaDescription : public SDPMediaDescription
-{
-  public:
-    OpalH224SDPMediaDescription(const OpalTransportAddress & address);
-    void SetAttribute(const PString & attr, const PString & value);
-    bool PrintFormat(ostream & str) const;
-    void AddSDPMediaFormat(const OpalMediaFormat & mediaFormat, RTP_DataFrame::PayloadTypes pt, const char * nteString);
-    SDPMediaFormat * CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType);
-
-  protected:      
-    void CreateSDPMediaFormats(const PStringArray & tokens, PINDEX start);
-    void PrintFormats(ostream & strm, WORD port) const;
-
-    PStringToString t38Attributes;
-};
-
-////////////////////////////////////////////////////////////////////////////////////
-
-OpalH224SDPMediaDescription::OpalH224SDPMediaDescription(const OpalTransportAddress & address)
-  : SDPMediaDescription(address, "h224")
-{
-}
-
-void OpalH224SDPMediaDescription::CreateSDPMediaFormats(const PStringArray & tokens, PINDEX start)
-{
-  PINDEX i;
-  for (i = start; i < tokens.GetSize(); i++) 
-    formats.Append(new SDPMediaFormat(RTP_DataFrame::DynamicBase, tokens[i]));
-}
-
-void OpalH224SDPMediaDescription::SetAttribute(const PString & attr, const PString & value)
-{
-  SDPMediaDescription::SetAttribute(attr, value);
-}
-
-void OpalH224SDPMediaDescription::PrintFormats(ostream & strm, WORD port) const
-{
-  PINDEX i;
-  for (i = 0; i < formats.GetSize(); i++)
-    strm << ' ' << formats[i].GetEncodingName();
-  strm << "\r\n";
-
-  // If we have a port of zero, then shutting down SDP stream. No need for anything more
-  if (port == 0)
-    return;
-}
-
-SDPMediaFormat * OpalH224SDPMediaDescription::CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType)
-{
-  SDPMediaFormat * sdpFormat = SDPMediaDescription::CreateMediaFormatByName(mediaFormat, payloadType);
-
-  return sdpFormat;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-SDPMediaDescription * OpalH224MediaType::CreateSDPMediaDescription(OpalTransportAddress & localAddress)
-{
-  if (!localAddress.IsEmpty()) 
-    return new OpalH224SDPMediaDescription(localAddress);
-
-  PTRACE(2, "SIP\tRefusing to add H.224 SDP media description with no transport address");
-  return NULL;
-}
-
-#endif // OPAL_SIP
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

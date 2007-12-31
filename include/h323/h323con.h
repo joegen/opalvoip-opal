@@ -1822,6 +1822,10 @@ class H323Connection : public OpalRTPConnection
 
     virtual PBoolean OnOpenIncomingMediaChannels();
 
+    bool FastStartDisabled_fn(const OpalMediaType & mediaType);
+    bool FastStartInitiate_fn(const OpalMediaType & mediaType);
+    bool FastStartResponse_fn(const OpalMediaType & mediaType);
+
   protected:
     /**Internal function to check if call established.
        This checks all the criteria for establishing a call an initiating the

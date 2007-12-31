@@ -1080,7 +1080,7 @@ class OpalConnection : public PSafeObject
     PString              calledDestinationNumber;
     PString              calledDestinationName;
     PString              calledDestinationURL;
-    PBoolean                 remoteIsNAT;
+    PBoolean             remoteIsNAT;
 
     SendUserInputModes    sendUserInputMode;
     PString               userInputString;
