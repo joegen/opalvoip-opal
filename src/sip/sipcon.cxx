@@ -1477,7 +1477,7 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
 
   // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
   // before it knows what what formats can support. 
-  if (originalInvite != NULL) {
+  if (originalInvite != NULL && originalInvite->HasSDP()) {
 
     OpalMediaFormatList previewFormats;
 
