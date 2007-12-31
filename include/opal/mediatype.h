@@ -258,9 +258,9 @@ class OpalNULLMediaType : public OpalMediaTypeDefinition {
 //  common ancestor for audio and video OpalMediaTypeDefinitions
 //
 
-class OpalCommonMediaType : public OpalMediaTypeDefinition {
+class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
   public:
-    OpalCommonMediaType(const char * mediaType, const char * sdpType, unsigned sessionID);
+    OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID);
 
 #if OPAL_SIP
     virtual PCaselessString GetTransport() const;
@@ -269,7 +269,7 @@ class OpalCommonMediaType : public OpalMediaTypeDefinition {
 
 #if OPAL_AUDIO
 
-class OpalAudioMediaType : public OpalCommonMediaType {
+class OpalAudioMediaType : public OpalRTPAVPMediaType {
   public:
     OpalAudioMediaType();
     virtual bool IsMediaAutoStart(bool) const;
@@ -283,7 +283,7 @@ class OpalAudioMediaType : public OpalCommonMediaType {
 
 #if OPAL_VIDEO
 
-class OpalVideoMediaType : public OpalCommonMediaType {
+class OpalVideoMediaType : public OpalRTPAVPMediaType {
   public:
     OpalVideoMediaType();
     bool IsMediaAutoStart(bool) const;

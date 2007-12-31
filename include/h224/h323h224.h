@@ -60,7 +60,8 @@ public:
   virtual unsigned GetSubType() const;
 	
   virtual PString GetFormatName() const;
-	
+	unsigned GetDefaultSessionID() const;
+
   virtual H323Channel * CreateChannel(H323Connection & connection,
 									  H323Channel::Directions dir,
 									  unsigned sesionID,

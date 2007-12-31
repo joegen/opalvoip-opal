@@ -46,11 +46,16 @@
 H323_H224Capability::H323_H224Capability()
 : H323DataCapability(640)
 {
-  SetPayloadType((RTP_DataFrame::PayloadTypes)100);
+//  SetPayloadType((RTP_DataFrame::PayloadTypes)100);
 }
 
 H323_H224Capability::~H323_H224Capability()
 {
+}
+
+unsigned H323_H224Capability::GetDefaultSessionID() const
+{
+  return 5;
 }
 
 PObject::Comparison H323_H224Capability::Compare(const PObject & obj) const
