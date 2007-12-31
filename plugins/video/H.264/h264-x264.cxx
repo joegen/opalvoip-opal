@@ -84,6 +84,13 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
   }
 }
 
+static char * num2str(int num)
+{
+  char buf[20];
+  sprintf(buf, "%i", num);
+  return strdup(buf);
+}
+
 H264EncoderContext::H264EncoderContext()
 {
   H264EncCtxInstance.call(H264ENCODERCONTEXT_CREATE);
@@ -106,7 +113,7 @@ void H264EncoderContext::SetMaxRTPFrameSize(unsigned size)
 
 void H264EncoderContext::SetMaxKeyFramePeriod (unsigned period)
 {
-//FIXME
+  H264EncCtxInstance.call(SET_MAX_KEY_FRAME_PERIOD, period);
 }
 
 void H264EncoderContext::SetTargetBitrate(unsigned rate)
@@ -131,7 +138,13 @@ void H264EncoderContext::SetFrameRate(unsigned rate)
 
 void H264EncoderContext::SetTSTO (unsigned tsto)
 {
-//FIXME
+  H264EncCtxInstance.call(SET_TSTO, tsto);
+}
+
+void H264EncoderContext::SetProfileLevel (unsigned profile, unsigned constraints, unsigned level)
+{
+  unsigned profileLevel = (profile << 16) + (constraints << 8) + level;
+  H264EncCtxInstance.call(SET_PROFILE_LEVEL, profileLevel);
 }
 
 int H264EncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_char * dst, unsigned & dstLen, unsigned int & flags)
@@ -341,8 +354,86 @@ static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, c
 {
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
     return 0;
-
+#ifdef H323_H264_TEST
+  return 1;
+#else
   return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+#endif
+}
+
+static int adjust_bitrate_to_level (unsigned & targetBitrate, unsigned level, int idx = -1)
+{
+  int i = 0;
+  if (idx == -1) { 
+    while (h264_levels[i].level_idc) {
+      if (h264_levels[i].level_idc == level)
+        break;
+    i++; 
+    }
+  
+    if (!h264_levels[i].level_idc) {
+      TRACE(1, "H264\tCap\tIllegal Level negotiated");
+      return 0;
+    }
+  }
+  else
+    i = idx;
+
+// Correct Target Bitrate
+  TRACE(4, "H264\tCap\tBitrate: " << targetBitrate << "(" << h264_levels[i].bitrate << ")");
+  if (targetBitrate > h264_levels[i].bitrate)
+    targetBitrate = h264_levels[i].bitrate;
+
+  return 1;
+}
+
+static int adjust_to_level (unsigned & width, unsigned & height, unsigned & frameTime, unsigned & targetBitrate, unsigned level)
+{
+  int i = 0;
+  while (h264_levels[i].level_idc) {
+    if (h264_levels[i].level_idc == level)
+      break;
+   i++; 
+  }
+
+  if (!h264_levels[i].level_idc) {
+    TRACE(1, "H264\tCap\tIllegal Level negotiated");
+    return 0;
+  }
+
+// Correct max. number of macroblocks per frame
+  uint32_t nbMBsPerFrame = width * height / 256;
+  unsigned j = 0;
+  TRACE(4, "H264\tCap\tFrame Size: " << nbMBsPerFrame << "(" << h264_levels[i].frame_size << ")");
+  if    ( (nbMBsPerFrame          > h264_levels[i].frame_size)
+       || (width  * width  / 2048 > h264_levels[i].frame_size)
+       || (height * height / 2048 > h264_levels[i].frame_size) ) {
+
+    while (h264_resolutions[j].width) {
+      if  ( (h264_resolutions[j].macroblocks                                <= h264_levels[i].frame_size) 
+         && (h264_resolutions[j].width  * h264_resolutions[j].width  / 2048 <= h264_levels[i].frame_size) 
+         && (h264_resolutions[j].height * h264_resolutions[j].height / 2048 <= h264_levels[i].frame_size) )
+          break;
+      j++; 
+    }
+    if (!h264_resolutions[j].width) {
+      TRACE(1, "H264\tCap\tNo Resolution found that has number of macroblocks <=" << h264_levels[i].frame_size);
+      return 0;
+    }
+    else {
+      width  = h264_resolutions[j].width;
+      height = h264_resolutions[j].height;
+    }
+  }
+
+// Correct macroblocks per second
+  uint32_t nbMBsPerSecond = width * height / 256 * (90000 / frameTime);
+  TRACE(4, "H264\tCap\tMBPSe: " << nbMBsPerSecond << "(" << h264_levels[i].mbps << ")");
+  if (nbMBsPerSecond > h264_levels[i].mbps)
+    frameTime =  (unsigned) (90000 / 256 * width  * height / h264_levels[i].mbps );
+
+  adjust_bitrate_to_level (targetBitrate, level, i);
+  return 1;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -375,22 +466,54 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
+  char* pEnd = NULL;
+  unsigned profile = 66;
+  unsigned constraints = 0;
+  unsigned level = 51;
+  unsigned width = 352;
+  unsigned height = 288;
+  unsigned frameTime = 3000;
+  unsigned targetBitrate = 64000;
+
   for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
-/*      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
-        h263MPIList.setDesiredWidth(atoi(option[1]));
+      if (STRCMPI(option[0], "CAP RFC3894 Profile Level") == 0) {
+        profile     = (strtol(option[1]+1, &pEnd, 16) & 0xFF0000) >> 16;
+        constraints = (strtol(option[1]+1, &pEnd, 16) & 0x00FF00) >> 8;
+        level       = (strtol(option[1]+1, &pEnd, 16) & 0x0000FF);
+      }
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+        width = atoi(option[1]);
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
-        h263MPIList.setDesiredHeight(atoi(option[1]));
+        height = atoi(option[1]);
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
-        h263MPIList.setDesiredFPS( (int) (90000 / atoi(option[1])) );*/
+        frameTime = atoi(option[1]);
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+        targetBitrate = atoi(option[1]);
   }
 
-  char ** options = (char **)calloc(3, sizeof(char *));
+  TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
+
+  // Though this is not a strict requirement we enforce 
+  //it here in order to obtain optimal compression results
+  width -= width % 16;
+  height -= height % 16;
+
+  if (!adjust_to_level (width, height, frameTime, targetBitrate,level))
+    return 0;
+
+  char ** options = (char **)calloc(9, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
     return 0;
 
-//   options[0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
-//   options[1] = num2str(width);
+  options[0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
+  options[1] = num2str(width);
+  options[2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
+  options[3] = num2str(height);
+  options[4] = strdup(PLUGINCODEC_OPTION_FRAME_TIME);
+  options[5] = num2str(frameTime);
+  options[6] = strdup(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  options[7] = num2str(targetBitrate);
 
   return 1;
 }
@@ -432,14 +555,25 @@ static int encoder_set_options(
 {
   H264EncoderContext * context = (H264EncoderContext *)_context;
 
-  if (parmLen == NULL || *parmLen != sizeof(const char **)) return 0;
+  if (parmLen == NULL || *parmLen != sizeof(const char **)) 
+    return 0;
 
+  char* pEnd = NULL;
+  unsigned profile = 66;
+  unsigned constraints = 0;
+  unsigned level = 51;
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     int i;
+    unsigned targetBitrate = 64000;
     for (i = 0; options[i] != NULL; i += 2) {
+      if (STRCMPI(options[i], "CAP RFC3894 Profile Level") == 0) {
+        profile     = (strtol(options[i+1]+1, &pEnd, 16) & 0xFF0000) >> 16;
+        constraints = (strtol(options[i+1]+1, &pEnd, 16) & 0x00FF00) >> 8;
+        level       = (strtol(options[i+1]+1, &pEnd, 16) & 0x0000FF);
+      }
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
-         context->SetTargetBitrate((int) (atoi(options[i+1]) / 1024) );
+         targetBitrate = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
          context->SetFrameRate((int)(H264_CLOCKRATE / atoi(options[i+1])));
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
@@ -448,12 +582,19 @@ static int encoder_set_options(
          context->SetFrameWidth(atoi(options[i+1]));
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_MAX_FRAME_SIZE) == 0)
          context->SetMaxRTPFrameSize(atoi(options[i+1]));
-      if (STRCMPI(options[0], PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
-        context->SetMaxKeyFramePeriod (atoi(options[1]));
-      if (STRCMPI(options[0], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
-        context->SetTSTO (atoi(options[1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
+        context->SetMaxKeyFramePeriod (atoi(options[i+1]));
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
+        context->SetTSTO (atoi(options[i+1]));
 
     }
+    TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
+
+    if (!adjust_bitrate_to_level (targetBitrate, level))
+      return 0;
+
+    context->SetTargetBitrate((unsigned) (targetBitrate / 1000) );
+    context->SetProfileLevel(profile, constraints, level);
     context->ApplyOptions();
 
   }

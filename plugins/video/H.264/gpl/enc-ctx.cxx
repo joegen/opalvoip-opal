@@ -24,6 +24,7 @@
 #include "rtpframe.h"
 
 #include <stdlib.h>
+#include <math.h>
 #ifdef _WIN32
   #include <malloc.h>
   #define STRCMPI  _strcmpi
@@ -57,8 +58,6 @@ X264EncoderContext::X264EncoderContext()
 {
   _frameCounter=0;
   _PFramesSinceLastIFrame = 0;
-  _IFrameInterval = _context.i_keyint_max = (int)(H264_FRAME_RATE * H264_KEY_FRAME_INTERVAL);
-  _PFramesSinceLastIFrame = _IFrameInterval + 1; // force a keyframe on the first frame
 
   _txH264Frame = new H264Frame();
   _txH264Frame->SetMaxPayloadSize(H264_PAYLOAD_SIZE);
@@ -69,42 +68,35 @@ X264EncoderContext::X264EncoderContext()
  
    X264_PARAM_DEFAULT(&_context);
 
-  // We make use of the baseline profile, that means:
-  // no B-Frames (too much latency in interactive video)
-  // CBR (we want to get the max. quality making use of all the bitrate that is available)
-  // We allow one exeption: configuring a bitrate of > 786 kbit/s
-  // baseline profile begin
-  _context.b_cabac = 0;
-  _context.i_bframe = 0;
-  _context.rc.i_vbv_max_bitrate = (int)(H264_BITRATE/1024);
-  _context.rc.i_vbv_buffer_size = 2000;
-  _context.i_level_idc = 13;
-  _context.rc.i_bitrate = (int)(H264_BITRATE/1024);
-  // baseline profile end
-
-  _context.i_width = CIF_WIDTH;
-  _context.i_height = CIF_HEIGHT;
-  _context.vui.i_sar_width = 0;
-  _context.vui.i_sar_height = 0;
-  _context.i_fps_num = (int)((H264_FRAME_RATE + .5) * 1000);
-  _context.i_fps_den = 1000;
-  //_context.i_maxframes = 0;
-
+  // Default
   // ABR with bit rate tolerance = 1 is CBR...
   _context.rc.i_rc_method = X264_RC_ABR;
   _context.rc.f_rate_tolerance = 1;
 
-  //_context.rc.b_stat_write = 0;
-  //_context.analyse.inter = 0;
-  _context.analyse.b_psnr = 0;
+  // No aspect ratio correction
+  _context.vui.i_sar_width = 0;
+  _context.vui.i_sar_height = 0;
 
-  // enable logging
+  // Enable logging
   _context.pf_log = logCallbackX264;
   _context.i_log_level = X264_LOG_DEBUG;
   _context.p_log_private = NULL;
 
-  // auto detect number of CPUs
+  // Auto detect number of CPUs
   _context.i_threads = 0;  
+
+  SetFrameWidth       (CIF_WIDTH);
+  SetFrameHeight      (CIF_HEIGHT);
+  SetFrameRate        (H264_FRAME_RATE);
+  SetTargetBitrate    ((unsigned)(H264_BITRATE / 1000));
+  SetProfileLevel     (H264_PROFILE_LEVEL);
+  SetTSTO             (H264_TSTO);
+  SetMaxKeyFramePeriod(H264_KEY_FRAME_INTERVAL);
+
+  //_context.i_maxframes = 0;
+  //_context.rc.b_stat_write = 0;
+  //_context.analyse.inter = 0;
+  _context.analyse.b_psnr = 0;
 
   _codec = X264_ENCODER_OPEN(&_context);
   
@@ -134,6 +126,8 @@ void X264EncoderContext::SetMaxRTPFrameSize(unsigned size)
 
 void X264EncoderContext::SetMaxKeyFramePeriod (unsigned period)
 {
+  _IFrameInterval = _context.i_keyint_max = period;
+  _PFramesSinceLastIFrame = _IFrameInterval + 1; // force a keyframe on the first frame
 }
 
 void X264EncoderContext::SetTargetBitrate(unsigned rate)
@@ -154,14 +148,51 @@ void X264EncoderContext::SetFrameHeight(unsigned height)
 
 void X264EncoderContext::SetFrameRate(unsigned rate)
 {
-  _IFrameInterval = _context.i_keyint_max = (int)(rate * H264_KEY_FRAME_INTERVAL);
-  _PFramesSinceLastIFrame = _IFrameInterval + 1; // force a keyframe on the first frame
   _context.i_fps_num = (int)((rate + .5) * 1000);
   _context.i_fps_den = 1000;
 }
 
 void X264EncoderContext::SetTSTO (unsigned tsto)
 {
+    _context.rc.i_qp_min = 10;
+    _context.rc.i_qp_max = round ((double)tsto * 1.32 + 10);
+    _context.rc.i_qp_step = 4;	    
+}
+
+void X264EncoderContext::SetProfileLevel (unsigned profileLevel)
+{
+  unsigned profile = (profileLevel & 0xff0000) >> 16;
+  bool constraint0 = (profileLevel & 0x008000) ? true : false;
+  bool constraint1 = (profileLevel & 0x004000) ? true : false;
+  bool constraint2 = (profileLevel & 0x002000) ? true : false;
+  bool constraint3 = (profileLevel & 0x001000) ? true : false;
+  unsigned level   = (profileLevel & 0x0000ff);
+
+  int i = 0;
+  while (h264_levels[i].level_idc) {
+    if (h264_levels[i].level_idc == level)
+      break;
+   i++; 
+  }
+
+  if (!h264_levels[i].level_idc) {
+    TRACE(1, "H264\tCap\tIllegal Level negotiated");
+    return;
+  }
+
+  // We make use of the baseline profile, that means:
+  // no B-Frames (too much latency in interactive video)
+  // CBR (we want to get the max. quality making use of all the bitrate that is available)
+  // baseline profile begin
+  _context.b_cabac = 0;  // Only >= MAIN LEVEL
+  _context.i_bframe = 0; // Only >= MAIN LEVEL
+
+  // Level:
+  _context.i_level_idc = level;
+  
+  // DPB from Level by default
+  _context.rc.i_vbv_buffer_size = h264_levels[i].cpb;
+  // MV Range from Level by default  
 }
 
 void X264EncoderContext::ApplyOptions()

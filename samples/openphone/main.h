@@ -188,7 +188,7 @@ class InCallPanel : public wxPanel
     InCallPanel(MyManager & manager, wxWindow * parent);
     virtual bool Show(bool show = true);
 
-    void UpdateButtons();
+    void UpdateButtons(OpalPOTSEndPoint * potsEP);
 
   private:
     void OnHangUp(wxCommandEvent & event);
@@ -216,6 +216,7 @@ class InCallPanel : public wxPanel
 
     MyManager & m_manager;
     wxButton  * m_StartStopVideo;
+    wxButton  * m_SpeakerHandset;
     wxCheckBox* m_SpeakerMute;
     wxCheckBox* m_MicrophoneMute;
     wxSlider  * m_SpeakerVolume;
@@ -565,6 +566,7 @@ class MyManager : public wxFrame, public OpalManager
     void OnLogMessage(wxCommandEvent & event);
     void OnAdjustMenus(wxMenuEvent& event);
     void OnStateChange(wxCommandEvent & event);
+    void UpdateStreams(wxCommandEvent &);
 
     void OnMenuQuit(wxCommandEvent& event);
     void OnMenuAbout(wxCommandEvent& event);
@@ -687,6 +689,7 @@ class MyManager : public wxFrame, public OpalManager
       AnsweringState,
       InCallState
     } m_callState;
+    friend ostream & operator<<(ostream & strm, CallState state);
     void SetState(CallState newState);
 
     PString m_ringingConnectionToken;

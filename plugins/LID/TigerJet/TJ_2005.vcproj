@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="TigerJet LID"
 	ProjectGUID="{9A4E2793-1D97-4B0C-BCFD-130136990E35}"
+	RootNamespace="TigerJet LID"
 	>
 	<Platforms>
 		<Platform
@@ -50,7 +51,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(IntDir)/$(TargetName).pdb"
+				ProgramDataBaseFileName="$(OutDir)/$(TargetName).pdb"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="3"
@@ -74,7 +75,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(IntDir)/$(TargetName).pdb"
+				ProgramDatabaseFile="$(OutDir)/$(TargetName).pdb"
 				ImportLibrary="$(IntDir)\$(TargetName).lib"
 				TargetMachine="1"
 			/>
@@ -101,6 +102,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				Description="Copying LID and debug information to plug in directory"
+				CommandLine="if not exist c:\ptlib_plugins exit&#x0D;&#x0A;copy $(TargetPath) c:\ptlib_plugins&#x0D;&#x0A;copy $(TargetDir)\$(TargetName).pdb c:\ptlib_plugins&#x0D;&#x0A;copy .\TjIpSys.dll c:\ptlib_plugins&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration

@@ -38,7 +38,7 @@
 typedef struct MPI {
   unsigned width;
   unsigned height;
-  unsigned fps;
+  unsigned interval;
 } MPI;
 
 class MPIList
@@ -49,19 +49,24 @@ class MPIList
     void setMinHeight (unsigned height);
     void setMaxWidth (unsigned width);
     void setMaxHeight (unsigned height);
-    void addMPI (unsigned width, unsigned height, unsigned fps);
+    unsigned getSupportedMPI( unsigned width, unsigned height);
+
+    void setFrameTime (unsigned _frameTime);
+    void addMPI (unsigned width, unsigned height, unsigned interval);
+
     void setDesiredWidth (unsigned width);
     void setDesiredHeight (unsigned height);
-    void setDesiredFPS (unsigned fps);
-    bool getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* fps);
-    unsigned getSupportedMPI( unsigned width, unsigned height);
+    bool getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* _frameTime);
   protected:
     std::vector <MPI> MPIs;
-    MPI desiredMPI;
+
     unsigned minWidth;
     unsigned minHeight;
     unsigned maxWidth;
     unsigned maxHeight;
+    unsigned frameTime;
+    unsigned desiredWidth;
+    unsigned desiredHeight;
 };
 
 #endif /* __MPI_H__ */
