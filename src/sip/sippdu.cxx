@@ -1046,7 +1046,8 @@ PString SIPMIMEInfo::GetVia() const
 
 void SIPMIMEInfo::SetVia(const PString & v)
 {
-  SetAt(compactForm ? "v" : "Via",  v);
+  if (!v.IsEmpty())
+    SetAt(compactForm ? "v" : "Via",  v);
 }
 
 
@@ -1974,6 +1975,9 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
 {
   // Update the VIA field following RFC3261, 18.2.1 and RFC3581
   PStringList viaList = mime.GetViaList();
+  if (viaList.GetSize() == 0)
+    return;
+
   PString via = viaList[0];
   PString port, ip;
   PINDEX j = 0;
@@ -2015,41 +2019,58 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
 OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
 {
   PStringList viaList = mime.GetViaList();
-  PString viaAddress = viaList[0];
-  PString proto = viaList[0];
-  PString viaPort = ep.GetDefaultSignalPort();
 
-  PINDEX j = 0;
-  // get the address specified in the Via
-  if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
-    viaAddress = viaAddress.Mid(j+1);
-  if ((j = viaAddress.Find (';')) != P_MAX_INDEX)
-    viaAddress = viaAddress.Left(j);
-  if ((j = viaAddress.Find (':')) != P_MAX_INDEX) {
-    viaPort = viaAddress.Mid(j+1);
-    viaAddress = viaAddress.Left(j);
+  if (viaList.GetSize() > 0) {
+
+    PString viaAddress = viaList[0];
+    PString proto = viaList[0];
+    PString viaPort = ep.GetDefaultSignalPort();
+
+    PINDEX j = 0;
+    // get the address specified in the Via
+    if ((j = viaAddress.FindLast (' ')) != P_MAX_INDEX)
+      viaAddress = viaAddress.Mid(j+1);
+    if ((j = viaAddress.Find (';')) != P_MAX_INDEX)
+      viaAddress = viaAddress.Left(j);
+    if ((j = viaAddress.Find (':')) != P_MAX_INDEX) {
+      viaPort = viaAddress.Mid(j+1);
+      viaAddress = viaAddress.Left(j);
+    }
+
+    // get the protocol type from Via header
+    if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
+      proto = proto.Left(j);
+    if ((j = proto.FindLast('/')) != P_MAX_INDEX)
+      proto = proto.Mid(j+1);
+
+    // maddr is present, no support for multicast yet
+    if (mime.HasFieldParameter("maddr", viaList[0])) 
+      viaAddress = mime.GetFieldParameter("maddr", viaList[0]);
+    // received and rport are present
+    else if (mime.HasFieldParameter("received", viaList[0]) && mime.HasFieldParameter("rport", viaList[0])) {
+      viaAddress = mime.GetFieldParameter("received", viaList[0]);
+      viaPort = mime.GetFieldParameter("rport", viaList[0]);
+    }
+    // received is present
+    else if (mime.HasFieldParameter("received", viaList[0]))
+      viaAddress = mime.GetFieldParameter("received", viaList[0]);
+
+    OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
+    return address;
   }
 
-  // get the protocol type from Via header
-  if ((j = proto.FindLast (' ')) != P_MAX_INDEX)
-    proto = proto.Left(j);
-  if ((j = proto.FindLast('/')) != P_MAX_INDEX)
-    proto = proto.Mid(j+1);
+  // get Via from From field
+  PString from = mime.GetFrom();
+  PINDEX j = from.Find (';');
+  if (j != P_MAX_INDEX)
+    from = from.Left(j); // Remove all parameters
+  j = from.Find ('<');
+  if (j != P_MAX_INDEX && from.Find ('>') == P_MAX_INDEX)
+    from += '>';
 
-  // maddr is present, no support for multicast yet
-  if (mime.HasFieldParameter("maddr", viaList[0])) 
-    viaAddress = mime.GetFieldParameter("maddr", viaList[0]);
-  // received and rport are present
-  else if (mime.HasFieldParameter("received", viaList[0]) && mime.HasFieldParameter("rport", viaList[0])) {
-    viaAddress = mime.GetFieldParameter("received", viaList[0]);
-    viaPort = mime.GetFieldParameter("rport", viaList[0]);
-  }
-  // received is present
-  else if (mime.HasFieldParameter("received", viaList[0]))
-    viaAddress = mime.GetFieldParameter("received", viaList[0]);
+  SIPURL url(from);
 
-  OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
-
+  OpalTransportAddress address(url.GetHostName()+ ":" + PString(PString::Unsigned, url.GetPort()), ep.GetDefaultSignalPort(), "udp$");
   return address;
 }
 
@@ -2186,19 +2207,25 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
     transport.rdbuf()->seekoff(0, ios::cur, ios::in);
 #endif 
 
-    //store in pp ALL the PDU (from beginning)
-    transport.read((char*)pp.GetPointer(transport.GetLastReadCount()),transport.GetLastReadCount());
-    PINDEX pos = 3;
-    while(++pos < pp.GetSize() && !(pp[pos]=='\n' && pp[pos-1]=='\r' && pp[pos-2]=='\n' && pp[pos-3]=='\r'))
-      ; //end of header is marked by "\r\n\r\n"
-
-    if (pos<pp.GetSize())
-      pos++;
-    contentLength = PMAX(0,pp.GetSize() - pos);
-    if(contentLength > 0)
-      memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
-    else
+    PINDEX lrc = transport.GetLastReadCount();
+    if (lrc == 0) 
       contentLength = 0;
+    else {
+
+      //store in pp ALL the PDU (from beginning)
+      transport.read((char*)pp.GetPointer(lrc), lrc);
+      PINDEX pos = 3;
+      while (++pos < pp.GetSize() && !(pp[pos]=='\n' && pp[pos-1]=='\r' && pp[pos-2]=='\n' && pp[pos-3]=='\r'))
+        ; //end of header is marked by "\r\n\r\n"
+
+      if (pos<pp.GetSize())
+        pos++;
+      contentLength = PMAX(0,pp.GetSize() - pos);
+      if (contentLength > 0)
+        memcpy(entityBody.GetPointer(contentLength+1),pp.GetPointer()+pos,  contentLength);
+      else
+        contentLength = 0;
+    }
   }
 
   ////////////////
@@ -2929,7 +2956,8 @@ SIPAck::SIPAck(SIPEndPoint & ep,
   // Use the topmost via header from the INVITE we ACK as per 17.1.1.3
   // as well as the initial Route
   PStringList viaList = invite.GetMIME().GetViaList();
-  mime.SetVia(viaList[0]);
+  if (viaList.GetSize() > 0)
+    mime.SetVia(viaList[0]);
 
   if (transaction.GetMIME().GetRoute().GetSize() > 0)
     mime.SetRoute(transaction.GetMIME().GetRoute());
