@@ -1172,6 +1172,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
   : OpalTransportIP(ep, PIPSocket::GetDefaultIpAny(), 0)
   , manager(ep.GetManager())
   , preReadPacket(packet)
+  , readsPerPdu(-1)
 {
   remoteAddress = remAddr;
   remotePort = remPort;
@@ -1337,12 +1338,22 @@ OpalTransportAddress OpalTransportUDP::GetLastReceivedAddress() const
 
 PBoolean OpalTransportUDP::Read(void * buffer, PINDEX length)
 {
+  if (readsPerPdu == 0)
+    return PFalse;
+
   if (preReadPacket.GetSize() > 0) {
     lastReadCount = PMIN(length, preReadPacket.GetSize());
     memcpy(buffer, preReadPacket, lastReadCount);
     preReadPacket.SetSize(0);
+
+    if (readsPerPdu > 0)
+      --readsPerPdu;
+
     return PTrue;
   }
+
+  if (readsPerPdu > 0)
+    --readsPerPdu;
 
   return OpalTransportIP::Read(buffer, length);
 }
