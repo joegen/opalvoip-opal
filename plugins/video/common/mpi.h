@@ -57,6 +57,8 @@ class MPIList
     void setDesiredWidth (unsigned width);
     void setDesiredHeight (unsigned height);
     bool getNegotiatedMPI( unsigned* width, unsigned* height, unsigned* _frameTime);
+
+    unsigned size () { return MPIs.size(); }
   protected:
     std::vector <MPI> MPIs;
 
