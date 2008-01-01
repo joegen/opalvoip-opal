@@ -49,6 +49,7 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 #include "h263-1998.h"
+#include <math.h>
 #include "trace.h"
 #include "dyna.h"
 #include "mpi.h"
@@ -98,7 +99,7 @@ H263PEncoderContext::H263PEncoderContext()
   SetFrameWidth(CIF_WIDTH);
   SetFrameHeight(CIF_HEIGHT);
   SetTargetBitrate(256000);
-  SetTSTO(0);
+  SetTSTO(31);
   DisableAnnex(D);
   DisableAnnex(F);
   DisableAnnex(I);
@@ -197,13 +198,23 @@ void H263PEncoderContext::SetFrameHeight (unsigned height)
 void H263PEncoderContext::SetTSTO (unsigned tsto)
 {
   _inputFrame->quality = 10;
-  _context->mb_qmin = _context->qmin = 4;
-  _context->mb_qmax = _context->qmax = 24;
+
   _context->max_qdiff = 3; // max q difference between frames
   _context->qcompress = 0.5; // qscale factor between easy & hard scenes (0.0-1.0)
   _context->i_quant_factor = (float)-0.6; // qscale factor between p and i frames
   _context->i_quant_offset = (float)0.0; // qscale offset between p and i frames
   _context->me_subpel_quality = 8;
+
+  _context->qmin = H263P_MIN_QUANT;
+  _context->qmax = round ( (double)(31 - H263P_MIN_QUANT) / 31 * tsto + H263P_MIN_QUANT);
+  _context->qmax = std::min( _context->qmax, 31);
+  
+  _context->mb_qmin = _context->qmin;
+  _context->mb_qmax = _context->qmax;
+
+  // Lagrange multipliers - this is how the context defaults do it:
+  _context->lmin = _context->qmin * FF_QP2LAMBDA;
+  _context->lmax = _context->qmax * FF_QP2LAMBDA; 
 }
 
 void H263PEncoderContext::EnableAnnex (Annex annex)
@@ -329,7 +340,6 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   // create RTP frame from destination buffer
   RTPFrame dstRTP(dst, dstLen);
   dstLen = 0;
-  flags = 0;
 
   // if there are RTP packets to return, return them
   if  (_txH263PFrame->HasRTPFrames())
@@ -376,7 +386,8 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
   _inputFrame->data[0] = _inputFrameBuffer + FF_INPUT_BUFFER_PADDING_SIZE;
   _inputFrame->data[1] = _inputFrame->data[0] + size;
   _inputFrame->data[2] = _inputFrame->data[1] + (size / 4);
-
+  _inputFrame->pict_type = (flags && forceIFrame) ? FF_I_TYPE : 0;
+ 
   _txH263PFrame->BeginNewFrame();
   _txH263PFrame->SetTimestamp(srcRTP.GetTimestamp());
   _txH263PFrame->SetFrameSize (FFMPEGLibraryInstance.AvcodecEncodeVideo(_context, _txH263PFrame->GetFramePtr(), frameSize, _inputFrame));  
@@ -482,9 +493,13 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   // create RTP frame from destination buffer
   RTPFrame dstRTP(dst, dstLen, 0);
   dstLen = 0;
-  flags = 0;
 
-  _rxH263PFrame->SetFromRTPFrame(srcRTP, flags);
+  if (!_rxH263PFrame->SetFromRTPFrame(srcRTP, flags)) {
+    _rxH263PFrame->BeginNewFrame();
+    flags |= PluginCodec_ReturnCoderRequestIFrame;
+    return 0;
+  }
+  
   if (srcRTP.GetMarker()==0)
   {
      return 1;
@@ -507,10 +522,11 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   // look and see if we have read an I frame.
   if (!_gotIFrame)
   {
-    if (!_rxH263PFrame->isIFrame())
+    if (!_rxH263PFrame->IsIFrame())
     {
-      TRACE(1, "H263+\tDecoder\tWating for an I-Frame");
+      TRACE(1, "H263+\tDecoder\tWaiting for an I-Frame");
       _rxH263PFrame->BeginNewFrame();
+      flags |= PluginCodec_ReturnCoderRequestIFrame;
       return 0;
     }
     _gotIFrame = true;
@@ -525,8 +541,9 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   if (!gotPicture) 
   {
-    TRACE(1, "H263+\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
+    TRACE(1, "H263+\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture, requesting I frame"); 
     _skippedFrameCounter++;
+    flags |= PluginCodec_ReturnCoderRequestIFrame;
     return 0;
   }
 
@@ -535,14 +552,14 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
   // if error occurred, tell the other end to send another I-frame and hopefully we can resync
   if (bytesDecoded < 0) {
     TRACE(1, "H263+\tDecoder\tDecoded 0 bytes, requesting I frame");
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags |= PluginCodec_ReturnCoderRequestIFrame;
     return 1;
   }
 
   // if decoded frame size is not legal, request an I-Frame
   if (_context->width == 0 || _context->height == 0) {
     TRACE(1, "H263+\tDecoder\tReceived frame with invalid size, requesting I frame");
-    flags = PluginCodec_ReturnCoderRequestIFrame;
+    flags |= PluginCodec_ReturnCoderRequestIFrame;
     return 1;
   }
 
@@ -582,7 +599,7 @@ bool H263PDecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen, BYTE
 
   dstLen = dstRTP.GetFrameLen();
 
-  flags = PluginCodec_ReturnCoderLastFrame ;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT IFRAME DETECTION
+  flags |= PluginCodec_ReturnCoderLastFrame ;   // TODO: THIS NEEDS TO BE CHANGED TO DO CORRECT IFRAME DETECTION
 
   _frameCount++;
 
@@ -675,6 +692,10 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
         h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, atoi(option[1]) );
   }
 
+  // Defaul value
+  if (h263MPIList.size() == 0)
+    h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, 2 );
+  
   char ** options = (char **)calloc(7, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)

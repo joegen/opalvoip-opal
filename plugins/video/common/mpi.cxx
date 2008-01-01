@@ -47,6 +47,9 @@ void MPIList::addMPI (unsigned width, unsigned height, unsigned interval)
 {
   MPI newMPI;
 
+  if (interval == PLUGINCODEC_MPI_DISABLED)
+    return;
+
   newMPI.width = width;
   newMPI.height = height;
   newMPI.interval = interval;

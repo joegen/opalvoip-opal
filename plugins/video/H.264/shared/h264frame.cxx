@@ -139,7 +139,6 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
 
 bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
-  flags = 0;
   flags |= (IsSync()) ? isIFrame : 0;
   if (_currentNAL < _numberOfNALsInFrame) 
   { 
