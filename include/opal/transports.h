@@ -894,6 +894,8 @@ class OpalTransport : public PIndirectChannel
 
     OpalEndPoint & GetEndPoint() const { return endpoint; }
 
+    virtual void SetReadsPerPDU(int) {}
+
   protected:
     OpalEndPoint & endpoint;
     PThread      * thread;      ///<  Thread handling the transport
@@ -1186,15 +1188,16 @@ class OpalTransportUDP : public OpalTransportIP
     );
   //@}
 
+    virtual void SetReadsPerPDU(int v) { readsPerPdu = v; }
 
   protected:
     /**Get the prefix for this transports protocol type.
       */
     virtual const char * GetProtoPrefix() const;
 
-
     OpalManager & manager;
     PBYTEArray    preReadPacket;
+    int readsPerPdu;
 };
 
 
