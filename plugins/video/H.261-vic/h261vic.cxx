@@ -517,10 +517,12 @@ static int encoder_set_options(const PluginCodec_Definition *,
     const char ** options = (const char **)parm;
     int i;
     for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], PLUGINCODEC_OPTION_MIN_RX_FRAME_HEIGHT) == 0)
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         height = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         width = atoi(options[i+1]);
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+        bitrate = atoi(options[i+1]);
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
         tsto = atoi(options[i+1]);
       printf ("%s = %s \n", options[i], options[i+1]);
@@ -848,8 +850,11 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     minHeight = 288;
     frameTime = 3003*cif_mpi;
   }
-  else
-    return 0; // Illegal!
+  else { // Default handling according to RFC 4587 (QCIF=1)
+    maxWidth = 176;
+    maxHeight = 144;
+    frameTime = 3003*1;
+  }
 
   char ** options = (char **)calloc(15, sizeof(char *));
   *(char ***)parm = options;
@@ -1051,7 +1056,7 @@ static struct PluginCodec_Option const qcifMPI =
   PluginCodec_MaxMerge,                 // Merge mode
   "1",                                  // Initial value
   "QCIF",                               // FMTP option name
-  "1",                                  // FMTP default value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
   0,                                    // H.245 generic capability code and bit mask
   "1",                                  // Minimum value
   STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value
