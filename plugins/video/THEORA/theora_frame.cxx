@@ -53,6 +53,7 @@ theoraFrame::theoraFrame ()
   _maxPayloadSize = 1400;
   _configSent = false;
   _headerReturned = false;
+  _isIFrame = false;
 
   BeginNewFrame();
 }
@@ -160,8 +161,7 @@ void theoraFrame::assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool se
 
 void theoraFrame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
-  flags = 0;
-  flags |= isIFrame;
+  flags |= IsIFrame() ?  isIFrame : 0;
 
   TRACE(4, "THEORA\tEncap\tConfig Data in queue for RTP frame:  " << _packedConfigData.len << ", position: "<< _packedConfigData.pos);
   TRACE(4, "THEORA\tEncap\tFrame Data in queue for RTP frame:  " << _encodedData.len << ", position: "<< _encodedData.pos);
@@ -317,9 +317,10 @@ bool theoraFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags) {
       }
     case LEGACY_THEORA_COMMENT_PAYLOAD:
       TRACE(1, "THEORA\tDeencap\tIgnored packet with legacy theora comment payload"); 
-      return false;
+      return true;
     case RESERVED:
       TRACE(1, "THEORA\tDeencap\tIgnored packet with reserved payload"); 
+      return true;
   }
   return false;
 }
