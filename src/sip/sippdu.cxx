@@ -2103,6 +2103,9 @@ void SIP_PDU::PrintOn(ostream & strm) const
 
 BOOL SIP_PDU::Read(OpalTransport & transport)
 {
+  if (!transport.IsReliable())
+    transport.SetReadsPerPDU(1);
+
   // Do this to force a Read() by the PChannelBuffer outside of the
   // ios::lock() mutex which would prevent simultaneous reads and writes.
   transport.SetReadTimeout(PMaxTimeInterval);
@@ -2122,7 +2125,8 @@ BOOL SIP_PDU::Read(OpalTransport & transport)
   transport.clear();
   PString cmd(512);
   if (!transport.bad() && !transport.eof()) {
-    transport.SetReadTimeout(3000);
+    if (transport.IsReliable())
+      transport.SetReadTimeout(3000);
     transport >> cmd >> mime;
   }
 
