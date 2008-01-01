@@ -59,6 +59,7 @@ typedef unsigned char BYTE;
 #define H263P_PAYLOAD_SIZE      1400
 #define H263P_FRAME_RATE          25
 #define H263P_KEY_FRAME_INTERVAL 125
+#define H263P_MIN_QUANT            2
 
 #define CIF_WIDTH       352
 #define CIF_HEIGHT      288
@@ -251,7 +252,7 @@ static struct PluginCodec_Option const qcifMPI =
   PluginCodec_MaxMerge,                 // Merge mode
   "1",                                  // Initial value
   "QCIF",                               // FMTP option name
-  "2",                                  // FMTP default value
+  STRINGIZE(PLUGINCODEC_MPI_DISABLED),  // FMTP default value
   0,                                    // H.245 generic capability code and bit mask
   "1",                                  // Minimum value
   STRINGIZE(PLUGINCODEC_MPI_DISABLED)   // Maximum value

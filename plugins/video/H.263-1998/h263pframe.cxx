@@ -209,6 +209,7 @@ void H263PFrame::GetRTPFrame (RTPFrame & frame, unsigned int & flags)
      frame.SetMarker(0);
 
   flags |= frame.GetMarker() ? isLastFrame : 0;
+  flags |= IsIFrame() ? isIFrame : 0;
 }
 
 bool H263PFrame::SetFromRTPFrame(RTPFrame & frame, unsigned int & flags)
@@ -288,7 +289,7 @@ bool H263PFrame::hasPicHeader () {
   return false;
 }
 
-bool H263PFrame::isIFrame () {
+bool H263PFrame::IsIFrame () {
   Bitstream headerBits;
   if (hasPicHeader())
     headerBits.SetBytes (_encodedFrame.ptr, _encodedFrame.len, 0, 0);

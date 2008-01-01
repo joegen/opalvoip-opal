@@ -156,7 +156,7 @@ public:
   }
   
   bool hasPicHeader ();
-  bool isIFrame ();
+  bool IsIFrame ();
 private:
   uint32_t parseHeader(uint8_t* headerPtr, uint32_t headerMaxLen);
 
