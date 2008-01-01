@@ -230,12 +230,16 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   // create RTP frame from destination buffer
   RTPFrame dstRTP(dst, dstLen, 0);
   dstLen = 0;
-  flags = 0;
 
-  _rxH264Frame->SetFromRTPFrame(srcRTP, flags);
+  if (!_rxH264Frame->SetFromRTPFrame(srcRTP, flags)) {
+    _rxH264Frame->BeginNewFrame();
+    flags |= requestIFrame;
+    return 0;
+  }
+
   if (srcRTP.GetMarker()==0)
   {
-     return 1;
+    return 1;
   } 
 
   if (_rxH264Frame->GetFrameSize()==0)
@@ -243,6 +247,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     _rxH264Frame->BeginNewFrame();
     TRACE(4, "H264\tDecoder\tGot an empty frame - skipping");
     _skippedFrameCounter++;
+    flags |= requestIFrame;
     return 0;
   }
 
@@ -255,6 +260,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
     {
       TRACE(1, "H264\tDecoder\tWaiting for an I-Frame");
       _rxH264Frame->BeginNewFrame();
+      flags |= requestIFrame;
       return 0;
     }
     _gotIFrame = 1;
@@ -269,6 +275,7 @@ int H264DecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_ch
   {
     TRACE(1, "H264\tDecoder\tDecoded "<< bytesDecoded << " bytes without getting a Picture..."); 
     _skippedFrameCounter++;
+    flags |= requestIFrame;
     return 0;
   }
 
@@ -350,15 +357,20 @@ static int free_codec_options ( const struct PluginCodec_Definition *, void *, c
   return 1;
 }
 
-static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+static int valid_for_protocol (const struct PluginCodec_Definition * codec,
+                                                  void *,
+                                                  const char *,
+                                                  void * parm,
+                                                  unsigned * parmLen)
 {
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
     return 0;
-#ifdef H323_H264_TEST
-  return 1;
-#else
-  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
-#endif
+
+  if (codec->h323CapabilityType != PluginCodec_H323Codec_NoH323)
+    return (STRCMPI((const char *)parm, "h.323") == 0 ||
+            STRCMPI((const char *)parm, "h323") == 0) ? 1 : 0;	        
+   else 
+    return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
 }
 
 static int adjust_bitrate_to_level (unsigned & targetBitrate, unsigned level, int idx = -1)
@@ -428,7 +440,7 @@ static int adjust_to_level (unsigned & width, unsigned & height, unsigned & fram
 
 // Correct macroblocks per second
   uint32_t nbMBsPerSecond = width * height / 256 * (90000 / frameTime);
-  TRACE(4, "H264\tCap\tMBPSe: " << nbMBsPerSecond << "(" << h264_levels[i].mbps << ")");
+  TRACE(4, "H264\tCap\tMB/s: " << nbMBsPerSecond << "(" << h264_levels[i].mbps << ")");
   if (nbMBsPerSecond > h264_levels[i].mbps)
     frameTime =  (unsigned) (90000 / 256 * width  * height / h264_levels[i].mbps );
 

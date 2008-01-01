@@ -53,9 +53,10 @@ extern "C" {
 #define H264_BITRATE         768000
 #define H264_PAYLOAD_SIZE      1400
 #define H264_FRAME_RATE          25
-#define H264_KEY_FRAME_INTERVAL  75
+#define H264_KEY_FRAME_INTERVAL 125
 #define H264_PROFILE_LEVEL       ((66 << 16) + (0xC0 << 8) +  30)
 #define H264_TSTO                31
+#define H264_MIN_QUANT           10
 
 
 #if LIBX264_LINKED
