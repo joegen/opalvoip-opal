@@ -154,8 +154,8 @@ void X264EncoderContext::SetFrameRate(unsigned rate)
 
 void X264EncoderContext::SetTSTO (unsigned tsto)
 {
-    _context.rc.i_qp_min = 10;
-    _context.rc.i_qp_max = round ((double)tsto * 1.32 + 10);
+    _context.rc.i_qp_min = H264_MIN_QUANT;
+    _context.rc.i_qp_max = round ( (double)(51 - H264_MIN_QUANT) / 31 * tsto + H264_MIN_QUANT);
     _context.rc.i_qp_step = 4;	    
 }
 
@@ -276,7 +276,7 @@ int X264EncoderContext::EncodeFrames(const unsigned char * src, unsigned & srcLe
   _inputFrame.img.i_stride[1] = 
   _inputFrame.img.i_stride[2] = (int) ( header->width / 2 );
   _inputFrame.img.plane[2] = (uint8_t *)(_inputFrame.img.plane[1] + (int)(_inputFrame.img.i_stride[1] *header->height/2));
-  _inputFrame.i_type = wantIFrame ? X264_TYPE_IDR : X264_TYPE_AUTO;
+  _inputFrame.i_type = (wantIFrame || (flags && forceIFrame)) ? X264_TYPE_IDR : X264_TYPE_AUTO;
 
   while (numberOfNALs==0) { // workaround for first 2 packets being 0
     if (X264_ENCODER_ENCODE(_codec, &NALs, &numberOfNALs, &_inputFrame, &dummyOutput) < 0) {
