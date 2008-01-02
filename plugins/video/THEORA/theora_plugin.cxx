@@ -573,7 +573,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 
   if ((capWidth == 15) || ( capHeight == 15)) {
     capWidth = 640;
-    capHeight = 320;
+    capHeight = 480;
   }
 
   frameWidth = min (capWidth, frameWidth);
