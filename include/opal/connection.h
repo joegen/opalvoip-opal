@@ -1026,12 +1026,6 @@ class OpalConnection : public PSafeObject
 
   //@}
 
-    virtual void SetSecurityMode(const PString & v)
-    { securityMode = v; }
-
-    virtual PString GetSecurityMode() const 
-    { return securityMode; }
-
     StringOptions * GetStringOptions() const
     { return stringOptions; }
 
@@ -1106,8 +1100,6 @@ class OpalConnection : public PSafeObject
 #if P_DTMF
     PDTMFDecoder        dtmfDecoder;
 #endif
-
-    PString securityMode;
 
     /**Set the phase of the connection.
        @param phaseToSet the phase to set

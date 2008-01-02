@@ -42,7 +42,7 @@
 #endif
 
 #include <opal/connection.h>
-
+class OpalRTPEndPoint;
 
 /**This is the base class for OpalConnections that use RTP sessions, 
    such as H.323 and SIPconnections to an endpoint.
@@ -57,7 +57,7 @@ class OpalRTPConnection : public OpalConnection
      */
     OpalRTPConnection(
       OpalCall & call,                         ///<  Owner calll for connection
-      OpalEndPoint & endpoint,                 ///<  Owner endpoint for connection
+      OpalRTPEndPoint & endpoint,              ///<  Owner endpoint for connection
       const PString & token,                   ///<  Token to identify the connection
       unsigned options = 0,                    ///<  Connection options
       OpalConnection::StringOptions * stringOptions = NULL     ///< more complex options
@@ -224,7 +224,15 @@ class OpalRTPConnection : public OpalConnection
 
     virtual bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
 
+    virtual void SetSecurityMode(const PString & v)
+    { securityMode = v; }
+
+    virtual PString GetSecurityMode() const 
+    { return securityMode; }
+
   protected:
+    PString securityMode;
+
     OpalRFC2833Proto    * rfc2833Handler;
 #if OPAL_T38FAX
     OpalRFC2833Proto    * ciscoNSEHandler;

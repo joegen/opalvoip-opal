@@ -62,11 +62,6 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     productInfo(mgr.GetProductInfo()),
     defaultLocalPartyName(manager.GetDefaultUserName()),
     defaultDisplayName(manager.GetDefaultDisplayName())
-#if OPAL_RTP_AGGREGATE
-    ,useRTPAggregation(manager.UseRTPAggregation()),
-    rtpAggregationSize(10),
-    rtpAggregator(NULL)
-#endif
 {
   manager.AttachEndPoint(this);
 
@@ -79,24 +74,11 @@ OpalEndPoint::OpalEndPoint(OpalManager & mgr,
     defaultLocalPartyName = PProcess::Current().GetName() & "User";
 
   PTRACE(4, "OpalEP\tCreated endpoint: " << prefixName);
-
-  defaultSecurityMode = mgr.GetDefaultSecurityMode();
 }
 
 
 OpalEndPoint::~OpalEndPoint()
 {
-#if OPAL_RTP_AGGREGATE
-  // delete aggregators
-  {
-    PWaitAndSignal m(rtpAggregationMutex);
-    if (rtpAggregator != NULL) {
-      delete rtpAggregator;
-      rtpAggregator = NULL;
-    }
-  }
-#endif
-
   PTRACE(4, "OpalEP\t" << prefixName << " endpoint destroyed.");
 }
 
@@ -500,67 +482,5 @@ PString OpalEndPoint::GetSSLCertificate() const
   return "server.pem";
 }
 #endif
-
-PHandleAggregator * OpalEndPoint::GetRTPAggregator()
-{
-#if OPAL_RTP_AGGREGATE
-  PWaitAndSignal m(rtpAggregationMutex);
-  if (rtpAggregationSize == 0)
-    return NULL;
-
-  if (rtpAggregator == NULL)
-    rtpAggregator = new PHandleAggregator(rtpAggregationSize);
-
-  return rtpAggregator;
-#else
-  return NULL;
-#endif
-}
-
-PBoolean OpalEndPoint::UseRTPAggregation() const
-{ 
-#if OPAL_RTP_AGGREGATE
-  return useRTPAggregation; 
-#else
-  return PFalse;
-#endif
-}
-
-void OpalEndPoint::SetRTPAggregationSize(PINDEX 
-#if OPAL_RTP_AGGREGATE
-                             size
-#endif
-                             )
-{ 
-#if OPAL_RTP_AGGREGATE
-  rtpAggregationSize = size; 
-#endif
-}
-
-PINDEX OpalEndPoint::GetRTPAggregationSize() const
-{ 
-#if OPAL_RTP_AGGREGATE
-  return rtpAggregationSize; 
-#else
-  return 0;
-#endif
-}
-
-PBoolean OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
-                                        PIPSocket::InterfaceTable & /*interfaceTable*/)
-{
-  return PTrue;
-}
-
-
-PBoolean OpalEndPoint::IsRTPNATEnabled(OpalConnection & conn, 
-                         const PIPSocket::Address & localAddr, 
-                         const PIPSocket::Address & peerAddr,
-                         const PIPSocket::Address & sigAddr,
-                                               PBoolean incoming)
-{
-  return GetManager().IsRTPNATEnabled(conn, localAddr, peerAddr, sigAddr, incoming);
-}
-
 
 /////////////////////////////////////////////////////////////////////////////

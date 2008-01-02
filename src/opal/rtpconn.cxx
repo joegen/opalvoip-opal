@@ -37,14 +37,14 @@
 #include <opal/buildopts.h>
 
 #include <opal/rtpconn.h>
-#include <opal/endpoint.h>
+#include <opal/rtpep.h>
 #include <codec/rfc2833.h>
 #include <t38/t38proto.h>
 #include <opal/patch.h>
 
 
 OpalRTPConnection::OpalRTPConnection(OpalCall & call,
-                                OpalEndPoint  & ep,
+                             OpalRTPEndPoint  & ep,
                                 const PString & token,
                                    unsigned int options,
                OpalConnection::StringOptions * _stringOptions)
@@ -54,6 +54,19 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 #if OPAL_T38FAX
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
 #endif
+
+  securityMode = ep.GetDefaultSecurityMode();
+
+  switch (options & RTPAggregationMask) {
+    case RTPAggregationDisable:
+      useRTPAggregation = PFalse;
+      break;
+    case RTPAggregationEnable:
+      useRTPAggregation = PTrue;
+      break;
+    default:
+      useRTPAggregation = ep.UseRTPAggregation();
+  }
 
   // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
   // so, get the autoStart info from the other connection
@@ -107,6 +120,8 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
                                             unsigned sessionID,
                                             RTP_QOS * rtpqos)
 {
+  OpalRTPEndPoint & ep = static_cast<OpalRTPEndPoint &>(endpoint);
+
   // We only support RTP over UDP at this point in time ...
   if (!transport.IsCompatibleTransport("ip$127.0.0.1"))
     return NULL;
@@ -147,7 +162,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
       return NULL;
     }
     rtpSession = parms->CreateRTPSession(
-                  useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                  useRTPAggregation ? ep.GetRTPAggregator() : NULL, 
                   sessionID, remoteIsNAT);
     if (rtpSession == NULL) {
       PTRACE(1, "RTPCon\tCannot create RTP session for security mode " << securityMode);
@@ -158,7 +173,7 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   else
   {
     rtpSession = new RTP_UDP(
-                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+                   useRTPAggregation ? ep.GetRTPAggregator() : NULL, 
                    sessionID, remoteIsNAT);
   }
 
@@ -243,7 +258,8 @@ PBoolean OpalRTPConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr
                                             const PIPSocket::Address & sigAddr,
                                                               PBoolean incoming)
 {
-  return endpoint.IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
+  OpalRTPEndPoint & ep = static_cast<OpalRTPEndPoint &>(endpoint);
+  return ep.IsRTPNATEnabled(*this, localAddr, peerAddr, sigAddr, incoming);
 }
 
 PBoolean OpalRTPConnection::IsMediaBypassPossible(unsigned sessionID) const

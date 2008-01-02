@@ -651,60 +651,6 @@ class OpalEndPoint : public PObject
     PString GetSSLCertificate() const;
 #endif
 
-    virtual void SetDefaultSecurityMode(const PString & v)
-    { defaultSecurityMode = v; }
-
-    virtual PString GetDefaultSecurityMode() const 
-    { return defaultSecurityMode; }
-
-    virtual PBoolean UseRTPAggregation() const;
-
-    /**Set the RTP aggregation size
-      */
-    void SetRTPAggregationSize(
-      PINDEX size            ///< max connections per aggregation thread. Value of 1 or zero disables aggregation
-    );
-
-    /**Get the RTP aggregation size
-      */
-    PINDEX GetRTPAggregationSize() const;
-
-    /** Get the aggregator used for RTP channels
-      */
-    PHandleAggregator * GetRTPAggregator();
-	
-    /**Callback to allow interface adjustments before connecting to the remote party
-       The default implementation does nothing and returns PTrue
-      */
-    virtual PBoolean AdjustInterfaceTable(PIPSocket::Address & remoteAddress,
-                                      PIPSocket::InterfaceTable & interfaceTable);
-
-    /**Determine if the RTP session needs to accommodate a NAT router.
-       For endpoints that do not use STUN or something similar to set up all the
-       correct protocol embeddded addresses correctly when a NAT router is between
-       the endpoints, it is possible to still accommodate the call, with some
-       restrictions. This function determines if the RTP can proceed with special
-       NAT allowances.
-
-       The special allowance is that the RTP code will ignore whatever the remote
-       indicates in the protocol for the address to send RTP data and wait for
-       the first packet to arrive from the remote and will then proceed to send
-       all RTP data back to that address AND port.
-
-       The default behaviour checks the values of the physical link
-       (localAddr/peerAddr) against the signaling address the remote indicated in
-       the protocol, eg H.323 SETUP sourceCallSignalAddress or SIP "To" or
-       "Contact" fields, and makes a guess that the remote is behind a NAT router.
-     */
-    virtual PBoolean IsRTPNATEnabled(
-      OpalConnection & connection,            ///< Connection being checked
-      const PIPSocket::Address & localAddr,   ///< Local physical address of connection
-      const PIPSocket::Address & peerAddr,    ///< Remote physical address of connection
-      const PIPSocket::Address & signalAddr,  ///< Remotes signaling address as indicated by protocol of connection
-      PBoolean incoming                       ///< Incoming/outgoing connection
-    );
-
-
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;
@@ -726,15 +672,6 @@ class OpalEndPoint : public PObject
     PBoolean AddConnection(OpalConnection * connection);
 
     PMutex inUseFlag;
-
-    PString defaultSecurityMode; 
-
-#if OPAL_RTP_AGGREGATE
-    PMutex rtpAggregationMutex;
-    PBoolean useRTPAggregation; 
-    PINDEX rtpAggregationSize;
-    PHandleAggregator * rtpAggregator;
-#endif
 
     friend void OpalManager::GarbageCollection();
     friend void OpalConnection::Release(CallEndReason reason);

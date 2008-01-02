@@ -1911,6 +1911,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\opal\rtpep.cxx"
+					>
+				</File>
+				<File
 					RelativePath="..\opal\transcoders.cxx"
 					>
 					<FileConfiguration
@@ -6335,6 +6339,10 @@
 				</File>
 				<File
 					RelativePath="..\..\include\opal\rtpconn.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\include\opal\rtpep.h"
 					>
 				</File>
 				<File

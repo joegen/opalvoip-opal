@@ -40,7 +40,7 @@
 #include <ptlib.h>
 #endif
 
-#include <opal/endpoint.h>
+#include <opal/rtpep.h>
 #include <sip/sipcon.h>
 #include <sip/sippdu.h>
 #include <sip/handlers.h> 
@@ -72,9 +72,9 @@ class SIPAuthInfo : public PObject
 
 /**Session Initiation Protocol endpoint.
  */
-class SIPEndPoint : public OpalEndPoint
+class SIPEndPoint : public OpalRTPEndPoint
 {
-  PCLASSINFO(SIPEndPoint, OpalEndPoint);
+  PCLASSINFO(SIPEndPoint, OpalRTPEndPoint);
 
   public:
   /**@name Construction */
@@ -141,17 +141,6 @@ class SIPEndPoint : public OpalEndPoint
       unsigned int options,                    ///<  options to pass to conneciton
       OpalConnection::StringOptions * stringOptions  ///<  complex string options
     );
-
-    /**Get the data formats this endpoint is capable of operating.
-       This provides a list of media data format names that may be used by an
-       OpalMediaStream may be created by a connection from this endpoint.
-
-       Note that a specific connection may not actually support all of the
-       media formats returned here, but should return no more.
-
-       The default behaviour is pure.
-      */
-    virtual OpalMediaFormatList GetMediaFormats() const;
 
     /** Execute garbage collection for endpoint.
         Returns PTrue if all garbage has been collected.
