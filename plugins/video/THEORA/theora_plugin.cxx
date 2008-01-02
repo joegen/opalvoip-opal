@@ -555,8 +555,8 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  int capWidth = 352;
-  int capHeight = 288;
+  int capWidth = 15;
+  int capHeight = 15;
   int frameWidth = 352;
   int frameHeight = 288;
 
@@ -569,6 +569,11 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
       frameWidth = atoi(option[1]);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
       frameHeight = atoi(option[1]);
+  }
+
+  if ((capWidth == 15) || ( capHeight == 15)) {
+    capWidth = 640;
+    capHeight = 320;
   }
 
   frameWidth = min (capWidth, frameWidth);
@@ -617,7 +622,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
 
   capWidth -= capWidth % 16;
   capHeight -= capHeight % 16;
-
+  
   char ** options = (char **)calloc(5, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
