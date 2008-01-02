@@ -53,7 +53,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, "sip", CanTerminateCall),
+  : OpalRTPEndPoint(mgr, "sip", CanTerminateCall),
     retryTimeoutMin(500),     // 0.5 seconds
     retryTimeoutMax(0, 4),    // 4 seconds
     nonInviteTimeout(0, 16),  // 16 seconds
@@ -275,11 +275,6 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
   return PTrue;
 }
 
-
-OpalMediaFormatList SIPEndPoint::GetMediaFormats() const
-{
-  return OpalMediaFormat::GetAllRegisteredMediaFormats();
-}
 
 
 PBoolean SIPEndPoint::GarbageCollection()

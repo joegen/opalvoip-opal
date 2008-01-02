@@ -217,19 +217,6 @@ OpalConnection::OpalConnection(OpalCall & call,
       break;
   }
   
-  securityMode = ep.GetDefaultSecurityMode();
-
-  switch (options & RTPAggregationMask) {
-    case RTPAggregationDisable:
-      useRTPAggregation = PFalse;
-      break;
-    case RTPAggregationEnable:
-      useRTPAggregation = PTrue;
-      break;
-    default:
-      useRTPAggregation = endpoint.UseRTPAggregation();
-  }
-
   if (stringOptions != NULL) {
     PString id((*stringOptions)("Call-Identifier"));
     if (!id.IsEmpty())
