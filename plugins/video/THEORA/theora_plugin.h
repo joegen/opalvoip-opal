@@ -197,10 +197,10 @@ static struct PluginCodec_Option const samplingOption =
   { PluginCodec_StringOption, "CAP Sampling",  false, PluginCodec_EqualMerge, "YCbCr-4:2:0", "sampling", "YCbCr-4:2:0"};
 
 static struct PluginCodec_Option const widthOption =
-  { PluginCodec_IntegerOption, "CAP Width", false, PluginCodec_MinMerge, "704", "width", "352", 0, "16", "1280" };
+  { PluginCodec_IntegerOption, "CAP Width", false, PluginCodec_MinMerge, "704", "width", "15", 0, "15", "1280" };
 
 static struct PluginCodec_Option const heightOption =
-  { PluginCodec_IntegerOption, "CAP Height",  false, PluginCodec_MinMerge, "576", "height",  "288", 0, "16", "720" };
+  { PluginCodec_IntegerOption, "CAP Height",  false, PluginCodec_MinMerge, "576", "height",  "15", 0, "15", "720" };
 
 static struct PluginCodec_Option const deliveryOption =
   { PluginCodec_StringOption, "CAP Delivery",  false, PluginCodec_EqualMerge, "in_band", "delivery-method",  "in_band"};
