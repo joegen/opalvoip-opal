@@ -169,14 +169,6 @@ void SDPMediaFormat::SetFMTP(const PString & str)
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return;
 
-  // Fill in the default values for (possibly) missing FMTP options
-  PINDEX i;
-  for (i = 0; i < mediaFormat.GetOptionCount(); i++) {
-    OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
-    if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
-      option.FromString(option.GetFMTPDefault());
-  }
-
   // See if standard format OPT=VAL;OPT=VAL
   if (str.FindOneOf(";=") == P_MAX_INDEX) {
     // Nope, just save the whole string as is
@@ -203,7 +195,7 @@ void SDPMediaFormat::SetFMTP(const PString & str)
 
     OpalMediaOption * option = mediaFormat.FindOption(key);
     if (option == NULL || key != option->GetFMTPName()) {
-      for (i = 0; i < mediaFormat.GetOptionCount(); i++) {
+      for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
         if (key == mediaFormat.GetOption(i).GetFMTPName()) {
           option = const_cast<OpalMediaOption *>(&mediaFormat.GetOption(i));
           break;
@@ -362,6 +354,13 @@ const OpalMediaFormat & SDPMediaFormat::GetMediaFormat() const
 {
   if (mediaFormat.IsEmpty()) {
     mediaFormat = OpalMediaFormat(payloadType, clockRate, encodingName, "sip");
+
+    // Fill in the default values for (possibly) missing FMTP options
+    for (PINDEX i = 0; i < mediaFormat.GetOptionCount(); i++) {
+      OpalMediaOption & option = const_cast<OpalMediaOption &>(mediaFormat.GetOption(i));
+      if (!option.GetFMTPName().IsEmpty() && !option.GetFMTPDefault().IsEmpty())
+        option.FromString(option.GetFMTPDefault());
+    }
   }
   return mediaFormat;
 }
