@@ -139,8 +139,7 @@ void H264Frame::SetFromFrame (x264_nal_t *NALs, int numberOfNALs) {
 
 bool H264Frame::GetRTPFrame(RTPFrame & frame, unsigned int & flags)
 {
-  flags = 0;
-  flags |= isIFrame;
+  flags |= (IsSync()) ? isIFrame : 0;
   if (_currentNAL < _numberOfNALsInFrame) 
   { 
     uint32_t curNALLen = _NALs[_currentNAL].length;

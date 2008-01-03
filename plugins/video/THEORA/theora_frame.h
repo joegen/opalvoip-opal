@@ -102,6 +102,8 @@ public:
   bool SetFromRTPFrame (RTPFrame & frame, unsigned int & flags);
   bool HasOggPackets ();
   void GetOggPacket(ogg_packet* oggPacket);
+  void SetIsIFrame (bool isAnIFrame) { _isIFrame = isAnIFrame; }
+  bool IsIFrame () {return (_isIFrame); }
 
 private:
   void assembleRTPFrame(RTPFrame & frame, data_t & frameData, bool sendPackedConfig);
@@ -117,6 +119,7 @@ private:
 
   bool _configSent;
   uint32_t _frameCount;
+  bool _isIFrame;
 
   // for deencapsulation
   bool _headerReturned;

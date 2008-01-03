@@ -220,6 +220,7 @@ int theoraEncoderContext::EncodeFrames(const u_char * src, unsigned & srcLen, u_
   }
 
   _txTheoraFrame->SetFromFrame(&framePacket);
+  _txTheoraFrame->SetIsIFrame(theora_packet_iskeyframe(&framePacket));
   _txTheoraFrame->SetTimestamp(srcRTP.GetTimestamp());
   _frameCounter++; 
 
@@ -271,8 +272,12 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
   // create RTP frame from destination buffer
   RTPFrame dstRTP(dst, dstLen, 0);
   dstLen = 0;
-  flags = 0;
-  _rxTheoraFrame->SetFromRTPFrame(srcRTP, flags);
+
+  if (!_rxTheoraFrame->SetFromRTPFrame(srcRTP, flags)) {
+    _rxTheoraFrame->BeginNewFrame();
+    flags |= requestIFrame;
+    return 0;    
+  };
 
 // linphone does not send markers so for now we ignore them (should be fixed)
 //if (srcRTP.GetMarker()==0)
@@ -310,6 +315,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
       ret = theora_decode_header( &_theoraInfo, &theoraComment, &oggPacket );
       if (ret != 0) {
         TRACE(1, "THEORA\tDecoder\tDecoding failed (header packet): " << theoraErrorMessage(ret));
+        flags |= requestIFrame;
         return 0;
       }
 
@@ -332,6 +338,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           ret = theora_decode_packetin( &_theoraState, &oggPacket );
           if (ret != 0) {
             TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
+            flags |= requestIFrame;
             return 0;
           }
           theora_decode_YUVout( &_theoraState, &yuv);
@@ -346,6 +353,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
             ret = theora_decode_packetin( &_theoraState, &oggPacket );
             if (ret != 0) {
               TRACE(1, "THEORA\tDecoder\tDecoding failed (packet): " << theoraErrorMessage(ret));
+              flags |= requestIFrame;
               return 0;
             }
             theora_decode_YUVout( &_theoraState, &yuv);
@@ -354,6 +362,7 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
           else {
 
             TRACE(1, "THEORA\tDecoder\tGot OGG non-keyframe data Packet but still waiting for keyframe");
+            flags |= requestIFrame;
             return 0;
           }
         }
@@ -414,13 +423,14 @@ int theoraDecoderContext::DecodeFrames(const u_char * src, unsigned & srcLen, u_
     dstRTP.SetTimestamp(srcRTP.GetTimestamp());
     dstRTP.SetMarker(1);
     dstLen = dstRTP.GetFrameLen();
-    flags = PluginCodec_ReturnCoderLastFrame;
+    flags |= PluginCodec_ReturnCoderLastFrame;
     _frameCounter++;
     return 1;
   } 
   else { /*gotFrame */
 
     TRACE(4, "THEORA\tDecoder\tDid not get a decoded frame");
+    flags |= requestIFrame;
     return 0;
   }
 }
@@ -545,8 +555,8 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  int capWidth = 352;
-  int capHeight = 288;
+  int capWidth = 15;
+  int capHeight = 15;
   int frameWidth = 352;
   int frameHeight = 288;
 
@@ -559,6 +569,11 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
       frameWidth = atoi(option[1]);
     else if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
       frameHeight = atoi(option[1]);
+  }
+
+  if ((capWidth == 15) || ( capHeight == 15)) {
+    capWidth = 640;
+    capHeight = 480;
   }
 
   frameWidth = min (capWidth, frameWidth);
@@ -607,7 +622,7 @@ static int to_customised_options(const struct PluginCodec_Definition *, void *, 
 
   capWidth -= capWidth % 16;
   capHeight -= capHeight % 16;
-
+  
   char ** options = (char **)calloc(5, sizeof(char *));
   *(char ***)parm = options;
   if (options == NULL)
