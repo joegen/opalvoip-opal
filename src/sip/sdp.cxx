@@ -667,7 +667,7 @@ void SDPMediaDescription::PrintFormats(ostream & strm, WORD port) const
 }
 
 
-OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) const
+OpalMediaFormatList SDPMediaDescription::GetMediaFormats(const OpalMediaType & mediaType) const
 {
   OpalMediaFormatList list;
 
@@ -675,9 +675,9 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
     if (opalFormat.IsEmpty())
-      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to audio codec");
+      PTRACE(2, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " not matched to any codec");
     else {
-      if (opalFormat.GetDefaultSessionID() == sessionID && 
+      if (opalFormat.GetMediaType() == mediaType && 
           opalFormat.IsValidForProtocol("sip") &&
           opalFormat.GetEncodingName() != NULL) {
         PTRACE(3, "SIP\tRTP payload type " << formats[i].GetPayloadType() << " matched to codec " << opalFormat);
@@ -689,13 +689,13 @@ OpalMediaFormatList SDPMediaDescription::GetMediaFormats(unsigned sessionID) con
   return list;
 }
 
-void SDPMediaDescription::CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const
+void SDPMediaDescription::CreateRTPMap(const OpalMediaType & mediaType, RTP_DataFrame::PayloadMapType & map) const
 {
   PINDEX i;
   for (i = 0; i < formats.GetSize(); i++) {
     OpalMediaFormat opalFormat = formats[i].GetMediaFormat();
     if (!opalFormat.IsEmpty() && 
-         opalFormat.GetDefaultSessionID() == sessionID &&
+         opalFormat.GetMediaType() == mediaType &&
          opalFormat.GetPayloadType() != formats[i].GetPayloadType()) {
       map.insert(RTP_DataFrame::PayloadMapType::value_type(opalFormat.GetPayloadType(), formats[i].GetPayloadType()));
       PTRACE(3, "SDP\tAdding RTP translation from " << opalFormat.GetPayloadType() << " to " << formats[i].GetPayloadType());
@@ -739,12 +739,11 @@ SDPMediaFormat * SDPMediaDescription::CreateMediaFormatByName(const OpalMediaFor
 }
 
 
-void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map)
+void SDPMediaDescription::AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType, const RTP_DataFrame::PayloadMapType & map)
 {
   for (PINDEX i = 0; i < mediaFormats.GetSize(); i++) {
     OpalMediaFormat & mediaFormat = mediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == session &&
-            (session == OpalMediaFormat::DefaultDataSessionID || mediaFormat.IsTransportable()))
+    if (mediaFormat.GetMediaType() == mediaType && mediaFormat.IsTransportable())
       AddMediaFormat(mediaFormat, map);
   }
 }
@@ -1039,8 +1038,7 @@ SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sess
 {
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if ((mediaDescriptions[i].GetMediaType() == OpalMediaType::Video() && sessionID == OpalMediaFormat::DefaultVideoSessionID) ||
-        (mediaDescriptions[i].GetMediaType() == OpalMediaType::Audio() && sessionID == OpalMediaFormat::DefaultAudioSessionID)) {
+    if (mediaDescriptions[i].GetPort() == sessionID) {
       if (mediaDescriptions[i].GetDirection() != SDPMediaDescription::Undefined)
         return mediaDescriptions[i].GetDirection();
       else

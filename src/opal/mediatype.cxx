@@ -36,7 +36,7 @@
 
 #include <opal/buildopts.h>
 #include <opal/mediatype.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <opal/call.h>
 
 #if OPAL_H323
@@ -48,7 +48,7 @@ namespace PWLibStupidLinkerHacks {
 }; // namespace PWLibStupidLinkerHacks
 
 
-//OPAL_DECLARE_MEDIA_TYPE(null, OpalNULLMediaType);
+OPAL_DEFINE_MEDIA_TYPE_NO_SDP(userinput); 
 
 #if OPAL_AUDIO
 OPAL_DECLARE_MEDIA_TYPE(audio, OpalAudioMediaType);
@@ -58,7 +58,6 @@ OPAL_DECLARE_MEDIA_TYPE(audio, OpalAudioMediaType);
 OPAL_DECLARE_MEDIA_TYPE(video, OpalVideoMediaType);
 #endif
 
-
 typedef std::map<std::string, std::string> MediaTypeToSDPMap_T;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -66,9 +65,10 @@ typedef std::map<std::string, std::string> MediaTypeToSDPMap_T;
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType)
 { mediaType.PrintOn(strm); return strm; }
 
-const char * OpalMediaType::Audio()  { static const char * str = "audio"; return str; }
-const char * OpalMediaType::Video()  { static const char * str = "video"; return str; }
-const char * OpalMediaType::Fax()    { static const char * str = "fax";   return str; };
+const char * OpalMediaType::Audio()     { static const char * str = "audio";     return str; }
+const char * OpalMediaType::Video()     { static const char * str = "video";     return str; }
+const char * OpalMediaType::Fax()       { static const char * str = "fax";       return str; };
+const char * OpalMediaType::UserInput() { static const char * str = "userinput"; return str; };
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -89,27 +89,27 @@ OpalMediaType::SessionIDToMediaTypeMap_T & OpalMediaType::GetSessionIDToMediaTyp
   return sessionIDToMediaTypeMap;
 }
 
-OpalMediaTypeDefinition * OpalMediaType::GetDefinitionFromSessionID(unsigned sessionID)
-{
-  SessionIDToMediaTypeMap_T & map = GetSessionIDToMediaTypeMap();
-  SessionIDToMediaTypeMap_T::iterator r = map.find(sessionID);
-  if (r == map.end())
-    return NULL;
-  return GetDefinition(r->second);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType, const char * _sdpType, unsigned _defaultSessionId)
   : defaultSessionId(_defaultSessionId)
 #if OPAL_SIP
-  , sdpType(_sdpType)
+  , sdpType(_sdpType != NULL ? _sdpType : "")
 #endif
 {
+  // always deconflict the default session ID
+  if (OpalMediaType::GetSessionIDToMediaTypeMap().find(defaultSessionId) != OpalMediaType::GetSessionIDToMediaTypeMap().end())
+    defaultSessionId = 0;
+  if (defaultSessionId == 0) {
+    defaultSessionId = 100;
+    while (OpalMediaType::GetSessionIDToMediaTypeMap().find(defaultSessionId) != OpalMediaType::GetSessionIDToMediaTypeMap().end())
+      ++defaultSessionId;
+  }
+  OpalMediaType::GetSessionIDToMediaTypeMap().insert(OpalMediaType::SessionIDToMediaTypeMap_T::value_type(defaultSessionId, mediaType));
+
 #if OPAL_SIP
   OpalMediaType::GetSDPToMediaTypeMap().insert(OpalMediaType::SDPToMediaTypeMap_T::value_type(sdpType, mediaType));
 #endif
-  OpalMediaType::GetSessionIDToMediaTypeMap().insert(OpalMediaType::SessionIDToMediaTypeMap_T::value_type(defaultSessionId, mediaType));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -131,6 +131,38 @@ bool OpalNULLMediaType::IsMediaAutoStart(bool) const
 OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID)
   : OpalMediaTypeDefinition(mediaType, sdpType, sessionID)
 {
+}
+
+RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT)
+{
+  RTP_UDP * rtpSession = NULL;
+
+  PString securityMode = conn.GetSecurityMode();
+
+  if (!securityMode.IsEmpty()) {
+    OpalSecurityMode * parms = PFactory<OpalSecurityMode>::CreateInstance(securityMode);
+    if (parms == NULL) {
+      PTRACE(1, "RTPCon\tSecurity mode " << securityMode << " unknown");
+      return NULL;
+    }
+    rtpSession = parms->CreateRTPSession(conn, agg, sessionID, remoteIsNAT);
+    if (rtpSession == NULL) {
+      PTRACE(1, "RTPCon\tCannot create RTP session for security mode " << securityMode);
+      delete parms;
+      return NULL;
+    }
+  }
+  else
+  {
+    rtpSession = new RTP_UDP(agg, sessionID, remoteIsNAT);
+  }
+
+  return rtpSession;
+}
+
+bool OpalRTPAVPMediaType::UseDirectMediaPatch() const
+{
+  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

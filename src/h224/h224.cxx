@@ -59,20 +59,22 @@ H323_REGISTER_CAPABILITY(H323_H224Capability, OPAL_H224_CAPABILITY_NAME)
 
 const OpalMediaFormat OpalH224(
   OPAL_H224,
-  5,
-  RTP_DataFrame::DynamicBase,
-  "h224",
-  PFalse, // No jitter for data
-  64,     // 100's bits/sec
+  "h224",                       // media type
+  RTP_DataFrame::DynamicBase,   // RTP payload code
+  "h224",                       // IANA type
+  PFalse,                       // No jitter for data
+  64,                           // 100's bits/sec
   0,
   0,
-  4800    // clock rate
+  4800                          // clock rate
 );
 
 class OpalH224MediaType : public OpalRTPAVPMediaType {
   public:
     OpalH224MediaType();
     virtual bool IsMediaAutoStart(bool) const;
+    bool UseDirectMediaPatch() const;
+
 #if OPAL_SIP
     SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress);
 #endif
@@ -725,6 +727,11 @@ OpalH224MediaType::OpalH224MediaType()
 }
 
 bool OpalH224MediaType::IsMediaAutoStart(bool) const
+{
+  return true;
+}
+
+bool OpalH224MediaType::UseDirectMediaPatch() const
 {
   return true;
 }

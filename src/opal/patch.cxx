@@ -158,7 +158,15 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_Da
             "Source format:\n" << setw(-1) << sourceFormat << "\n"
             "Destination format:\n" << setw(-1) << destinationFormat);
 
-  if ((sourceFormat == destinationFormat) && ((sourceFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultDataSessionID) || (source.GetDataSize() <= stream->GetDataSize()))) {
+  bool useDirectPatch = false;
+  {
+    OpalMediaTypeDefinition * def = sourceFormat.GetMediaType().GetDefinition();
+    if (def != NULL)
+      useDirectPatch = def->UseDirectMediaPatch();
+  }
+
+  if ((sourceFormat == destinationFormat) && 
+      (useDirectPatch || (source.GetDataSize() <= stream->GetDataSize()))) {
     PTRACE(3, "Patch\tAdded direct media stream sink " << *stream);
     return PTrue;
   }

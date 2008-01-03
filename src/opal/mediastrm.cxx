@@ -632,14 +632,13 @@ void OpalRTPMediaStream::EnableJitterBuffer() const
 				   mediaFormat.GetTimeUnits());
 }
 
-#if OPAL_VIDEO
 void OpalRTPMediaStream::OnPatchStart()
 {
     OpalMediaStream::OnPatchStart();
     // We add the command notifer here so that the OpalPluginVideoTranscoder 
     // patch gets its command notifier updated as well.  This lets us catch 
     // OpalVideoUpdatePicture commands from the decoder
-    if(sessionID == OpalMediaFormat::DefaultVideoSessionID && isSource)
+    if (isSource)
       SetCommandNotifier(PCREATE_NOTIFIER(OnMediaCommand));
 }
 
@@ -648,8 +647,6 @@ void OpalRTPMediaStream::OnMediaCommand(OpalMediaCommand &command, INT /*extra*/
   if (PIsDescendant(&command, OpalVideoUpdatePicture))
     rtpSession.SendIntraFrameRequest();
 }
-#endif
-
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -46,16 +46,15 @@
 H323_H224Capability::H323_H224Capability()
 : H323DataCapability(640)
 {
-//  SetPayloadType((RTP_DataFrame::PayloadTypes)100);
 }
 
 H323_H224Capability::~H323_H224Capability()
 {
 }
 
-unsigned H323_H224Capability::GetDefaultSessionID() const
+OpalMediaType H323_H224Capability::GetMediaType() const
 {
-  return 5;
+  return "h224";
 }
 
 PObject::Comparison H323_H224Capability::Compare(const PObject & obj) const
@@ -144,6 +143,11 @@ H323_H224Channel::H323_H224Channel(H323Connection & connection,
 H323_H224Channel::~H323_H224Channel()
 {
   // h224Handler is deleted by OpalConnection
+}
+
+OpalMediaType H323_H224Channel::GetMediaType() const
+{ 
+  return "h224"; 
 }
 
 H323Channel::Directions H323_H224Channel::GetDirection() const

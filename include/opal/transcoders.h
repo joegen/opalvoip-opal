@@ -226,11 +226,11 @@ class OpalTranscoder : public OpalMediaFormatPair
        between the two named formats.
       */
     static PBoolean SelectFormats(
-      unsigned sessionID,               ///<  Session ID for media formats
+      const OpalMediaType & mediaType,        ///<  Only use formats of this type
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
-      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
-      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
+      OpalMediaFormat & srcFormat,            ///<  Selected source format to be used
+      OpalMediaFormat & dstFormat             ///<  Selected destination format to be used
     );
 
     /**Find media intermediate format for transcoders.

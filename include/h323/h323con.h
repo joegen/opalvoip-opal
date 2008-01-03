@@ -1153,16 +1153,18 @@ class H323Connection : public OpalRTPConnection
     /**Select default logical channel for normal start.
       */
     virtual void SelectDefaultLogicalChannel(
-      unsigned sessionID    ///<  Session ID to find default logical channel.
+      unsigned sessionID,               ///<  Session ID to find default logical channel.
+      const OpalMediaType & mediaType   ///<  media type of channel
     );
 
     /**Select default logical channel for fast start.
        Internal function, not for normal use.
       */
     virtual void SelectFastStartChannels(
-      unsigned sessionID,   ///<  Session ID to find default logical channel.
-      PBoolean transmitter,     ///<  Whether to open transmitters
-      PBoolean receiver         ///<  Whether to open receivers
+      unsigned sessionID,               ///<  Session ID to find default logical channel.
+      const OpalMediaType & mediaType,  ///<  media type of channel
+      PBoolean transmitter,             ///<  Whether to open transmitters
+      PBoolean receiver                 ///<  Whether to open receivers
     );
 
     /**Start a logical channel for fast start.

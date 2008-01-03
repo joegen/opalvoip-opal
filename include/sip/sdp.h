@@ -163,14 +163,14 @@ class SDPMediaDescription : public PObject
     virtual const SDPMediaFormatList & GetSDPMediaFormats() const
       { return formats; }
 
-    virtual OpalMediaFormatList GetMediaFormats(unsigned) const;
-    virtual void CreateRTPMap(unsigned sessionID, RTP_DataFrame::PayloadMapType & map) const;
+    virtual OpalMediaFormatList GetMediaFormats(const OpalMediaType & mediaType) const;
+    virtual void CreateRTPMap(const OpalMediaType & mediaType, RTP_DataFrame::PayloadMapType & map) const;
 
     virtual void AddSDPMediaFormat(SDPMediaFormat * sdpMediaFormat);
     virtual SDPMediaFormat * CreateMediaFormatByName(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadTypes & payloadType);
 
     virtual void AddMediaFormat(const OpalMediaFormat & mediaFormat, const RTP_DataFrame::PayloadMapType & map);
-    virtual void AddMediaFormats(const OpalMediaFormatList & mediaFormats, unsigned session, const RTP_DataFrame::PayloadMapType & map);
+    virtual void AddMediaFormats(const OpalMediaFormatList & mediaFormats, const OpalMediaType & mediaType, const RTP_DataFrame::PayloadMapType & map);
 
     virtual void SetAttribute(const PString & attr, const PString & value);
 

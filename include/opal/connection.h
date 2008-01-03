@@ -614,6 +614,11 @@ class OpalConnection : public PSafeObject
       unsigned sessionId,  ///<  Session ID to search for.
       bool source          ///<  Indicates the direction of stream.
     ) const;
+    OpalMediaStreamPtr GetMediaStreamOfType(
+      const OpalMediaType & mediaType,  ///<  Session ID to search for.
+      bool source                       ///<  Indicates the direction of stream.
+    ) const;
+
 
     /**Call back when opening a media stream.
        This function is called when a connection has created a new media
@@ -655,6 +660,8 @@ class OpalConnection : public PSafeObject
     virtual PBoolean IsMediaBypassPossible(
       unsigned sessionID                  ///<  Session ID for media channel
     ) const;
+
+    virtual PINDEX GetMediaStreamCount() const { return mediaStreams.GetSize(); }
 
 #if OPAL_VIDEO
 
@@ -1114,6 +1121,7 @@ class OpalConnection : public PSafeObject
 
     StringOptions * stringOptions;
     PString recordAudioFilename;
+    unsigned recordingSessionId;
 
     // these should really be in OpalRTPConnection, but they are used by 
     // OpalCall::OpenSourceMediaStreams
@@ -1131,9 +1139,10 @@ class OpalSecurityMode : public PObject
   PCLASSINFO(OpalSecurityMode, PObject);
   public:
     virtual RTP_UDP * CreateRTPSession(
+      OpalRTPConnection & conn,          ///< connection 
       PHandleAggregator * _aggregator,   ///< handle aggregator
-      unsigned id,          ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
+      unsigned id,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
     ) = 0;
     virtual PBoolean Open() = 0;
 };

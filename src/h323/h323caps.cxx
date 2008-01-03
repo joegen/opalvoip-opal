@@ -133,12 +133,6 @@ H323Capability * H323Capability::Create(const PString & name)
 }
 
 
-unsigned H323Capability::GetDefaultSessionID() const
-{
-  return 0;
-}
-
-
 void H323Capability::SetTxFramesInPacket(unsigned /*frames*/)
 {
 }
@@ -698,9 +692,9 @@ H323Capability::MainTypes H323AudioCapability::GetMainType() const
 }
 
 
-unsigned H323AudioCapability::GetDefaultSessionID() const
+OpalMediaType H323AudioCapability::GetMediaType() const
 {
-  return OpalMediaFormat::DefaultAudioSessionID;
+  return OpalMediaType::Audio();
 }
 
 
@@ -1086,9 +1080,9 @@ PBoolean H323VideoCapability::OnReceivedPDU(const H245_VideoCapability & pdu, Co
 }
 
 
-unsigned H323VideoCapability::GetDefaultSessionID() const
+OpalMediaType H323VideoCapability::GetMediaType() const
 {
-  return OpalMediaFormat::DefaultVideoSessionID;
+  return OpalMediaType::Video();
 }
 
 
@@ -1235,12 +1229,6 @@ H323DataCapability::H323DataCapability(unsigned rate)
 H323Capability::MainTypes H323DataCapability::GetMainType() const
 {
   return e_Data;
-}
-
-
-unsigned H323DataCapability::GetDefaultSessionID() const
-{
-  return 3;
 }
 
 
@@ -1638,7 +1626,7 @@ class H323_UserInputCapability_##type : public H323_UserInputCapability \
   DECLARE_USER_INPUT_CLASS(type) \
   const OpalMediaFormat UserInput_##type( \
     UIISubTypeNames[H323_UserInputCapability::type], \
-    0, RTP_DataFrame::IllegalPayloadType, NULL, PFalse, 1, 0, 0, 0 \
+    OpalMediaType::UserInput(), RTP_DataFrame::IllegalPayloadType, NULL, PFalse, 1, 0, 0, 0 \
   ); \
   H323_REGISTER_CAPABILITY(H323_UserInputCapability_##type, UIISubTypeNames[H323_UserInputCapability::type]) \
 
@@ -1648,6 +1636,8 @@ DEFINE_USER_INPUT(GeneralString);
 DEFINE_USER_INPUT(SignalToneH245);
 DEFINE_USER_INPUT(HookFlashH245);
 
+OPAL_DEFINE_MEDIA_TYPE(rfc2833, rfc2833); 
+
 DECLARE_USER_INPUT_CLASS(SignalToneRFC2833)
 H323_REGISTER_CAPABILITY(H323_UserInputCapability_SignalToneRFC2833, UIISubTypeNames[H323_UserInputCapability::SignalToneRFC2833])
 
@@ -1655,6 +1645,11 @@ H323_UserInputCapability::H323_UserInputCapability(SubTypes _subType)
 {
   subType = _subType;
   rtpPayloadType = OpalRFC2833.GetPayloadType();
+}
+
+OpalMediaType H323_UserInputCapability::GetMediaType() const
+{
+  return OpalMediaType::UserInput();
 }
 
 

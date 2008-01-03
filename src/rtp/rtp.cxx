@@ -2014,7 +2014,7 @@ void RTP_Session::SendIntraFrameRequest(){
 
 /////////////////////////////////////////////////////////////////////////////
 
-SecureRTP_UDP::SecureRTP_UDP(PHandleAggregator * _aggregator, unsigned id, PBoolean remoteIsNAT)
+SecureRTP_UDP::SecureRTP_UDP(OpalRTPConnection &, PHandleAggregator * _aggregator, unsigned id, PBoolean remoteIsNAT)
   : RTP_UDP(_aggregator, id, remoteIsNAT)
 
 {

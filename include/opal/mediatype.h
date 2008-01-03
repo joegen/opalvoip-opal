@@ -71,11 +71,16 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     static const char * Audio();
     static const char * Video();
     static const char * Fax();
+    static const char * UserInput();
 
     void PrintOn(ostream & strm) const { strm << (std::string &)*this; }
 
     OpalMediaTypeDefinition * GetDefinition() const;
     static OpalMediaTypeDefinition * GetDefinition(const OpalMediaType & key);
+
+    // used to deconflict default session IDs
+    typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
+    static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 
 #if OPAL_SIP
   public:
@@ -84,12 +89,6 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
     typedef std::map<std::string, OpalMediaType> SDPToMediaTypeMap_T;
     static SDPToMediaTypeMap_T & GetSDPToMediaTypeMap();
 #endif  // OPAL_SIP
-
-  public:
-    // these functions/types will disappear once OpalMediaFormat uses OpalMediaType
-    static OpalMediaTypeDefinition * GetDefinitionFromSessionID(unsigned sessionID);
-    typedef std::map<unsigned, OpalMediaType> SessionIDToMediaTypeMap_T;
-    static SessionIDToMediaTypeMap_T & GetSessionIDToMediaTypeMap();
 };
 
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
@@ -98,23 +97,33 @@ ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
 //
 //  define a class for holding a session ID and media type
 //
-#if 0
 
 class OpalMediaSessionId 
 {
   public:
-    OpalMediaSessionId(const OpalMediaType & _mediaType, unsigned id = 0);
+    OpalMediaSessionId(const OpalMediaType & _mediaType, unsigned id = 0)
+      : mediaType(_mediaType), sessionId(id) 
+    { }
+
+    bool IsValid() const { return sessionId > 0; }
 
     OpalMediaType mediaType;
     unsigned int sessionId;
 };
 
-#endif
 
 ////////////////////////////////////////////////////////////////////////////
 //
 //  this class defines the functions needed to work with the media type, i.e. 
 //
+class OpalRTPConnection;
+class RTP_UDP;
+
+#if OPAL_RTP_AGGREGATE
+class PHandleAggregator;
+#else
+typedef void * PHandleAggregator;
+#endif
 
 #if OPAL_SIP
 class SDPMediaDescription;
@@ -123,21 +132,26 @@ class OpalTransportAddress;
 
 class OpalMediaTypeDefinition  {
   public:
-    OpalMediaTypeDefinition(const char * mediaType, const char * sdpType, unsigned defaultSessionId);
+    OpalMediaTypeDefinition(const char * mediaType, const char * sdpType, unsigned defaultSessionId = 0);
     virtual ~OpalMediaTypeDefinition() { }
 
     virtual bool IsMediaAutoStart(bool) const = 0;
     virtual unsigned GetPreferredSessionId() const { return defaultSessionId; }
 
+    virtual bool UseDirectMediaPatch() const = 0;
+
+    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT) = 0;
+
+    virtual std::string GetSDPType() const    { return sdpType; }
+
+  protected:  
+    std::string sdpType;
+    unsigned defaultSessionId;
+
 #if OPAL_SIP
-    virtual std::string GetSDPType() const { return sdpType; }
+  public:
     virtual PCaselessString GetTransport() const = 0;
     virtual SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & localAddress) = 0;
-#endif
-  protected:
-    std::string sdpType;
-#if OPAL_SIP
-    unsigned defaultSessionId;
 #endif
 };
 
@@ -232,26 +246,45 @@ struct OpalMediaTypeIteratorObj3Arg
 //
 
 #define OPAL_DECLARE_MEDIA_TYPE(type, cls) \
-  static PFactory<OpalMediaTypeDefinition>::Worker<cls> static_##type##_##cls(#type, true);
+namespace OpalMediaTypeSpace { \
+  static PFactory<OpalMediaTypeDefinition>::Worker<cls> static_##type##_##cls(#type, true); \
+} \
 
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  empty media type
-//
-#if 0
-class OpalNULLMediaType : public OpalMediaTypeDefinition {
+template <const char * Type, const char * sdp>
+class SimpleMediaType : public OpalMediaTypeDefinition
+{
   public:
-    OpalNULLMediaType();
+    SimpleMediaType()
+      : OpalMediaTypeDefinition(Type, sdp)
+    { }
 
-    bool IsMediaAutoStart(bool) const;
+    virtual ~SimpleMediaType()                     { }
+    virtual bool IsMediaAutoStart(bool) const      { return true; }
+    virtual unsigned GetPreferredSessionId() const { return defaultSessionId; }
+    virtual bool UseDirectMediaPatch() const       { return false; }
+    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & , PHandleAggregator * , unsigned , bool ) { return NULL; }
 
 #if OPAL_SIP
-    virtual PCaselessString GetTransport() const;
-    SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress &) { return NULL; }
+  public:
+    virtual PCaselessString GetTransport() const                                     { return ""; }
+    virtual SDPMediaDescription * CreateSDPMediaDescription(OpalTransportAddress & ) { return NULL; }
 #endif
 };
-#endif
+
+#define OPAL_DEFINE_MEDIA_TYPE_NO_SDP(type) \
+namespace OpalMediaTypeSpace { \
+  char type##_type_string[] = #type; \
+  typedef SimpleMediaType<type##_type_string, NULL> OpalMediaType_##type; \
+  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type##(#type, true); \
+}; \
+
+#define OPAL_DEFINE_MEDIA_TYPE(type, sdp) \
+namespace OpalMediaTypeSpace { \
+  char type##_type_string[] = #type; \
+  char type##_sdp_string[]  = #sdp; \
+  typedef SimpleMediaType<type##_type_string, type##_sdp_string> OpalMediaType_##type; \
+  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type##(#type, true); \
+}; \
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -261,6 +294,8 @@ class OpalNULLMediaType : public OpalMediaTypeDefinition {
 class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
   public:
     OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID);
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT);
+    bool UseDirectMediaPatch() const;
 
 #if OPAL_SIP
     virtual PCaselessString GetTransport() const;

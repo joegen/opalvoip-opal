@@ -190,11 +190,11 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 }
 
 
-PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
-                                   const OpalMediaFormatList & srcFormats,
-                                   const OpalMediaFormatList & dstFormats,
-                                   OpalMediaFormat & srcFormat,
-                                   OpalMediaFormat & dstFormat)
+PBoolean OpalTranscoder::SelectFormats(const OpalMediaType & mediaType,
+                                 const OpalMediaFormatList & srcFormats,
+                                 const OpalMediaFormatList & dstFormats,
+                                           OpalMediaFormat & srcFormat,
+                                           OpalMediaFormat & dstFormat)
 {
   PINDEX s, d;
 
@@ -202,7 +202,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
   // directly from the given format to a possible one with no transcoders.
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
+    if (dstFormat.GetMediaType() == mediaType) {
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
         if (srcFormat == dstFormat && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
@@ -214,10 +214,10 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
   // Search for a single transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
+    if (dstFormat.GetMediaType() == mediaType) {
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
-        if (srcFormat.GetDefaultSessionID() == sessionID) {
+        if (srcFormat.GetMediaType() == mediaType) {
           OpalTranscoderKey search(srcFormat, dstFormat);
           OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
           for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
@@ -232,10 +232,10 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
   // Last gasp search for a double transcoder to get from a to b
   for (d = 0; d < dstFormats.GetSize(); d++) {
     dstFormat = dstFormats[d];
-    if (dstFormat.GetDefaultSessionID() == sessionID) {
+    if (dstFormat.GetMediaType() == mediaType) {
       for (s = 0; s < srcFormats.GetSize(); s++) {
         srcFormat = srcFormats[s];
-        if (srcFormat.GetDefaultSessionID() == sessionID) {
+        if (srcFormat.GetMediaType() == mediaType) {
           OpalMediaFormat intermediateFormat;
           if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
             return true;

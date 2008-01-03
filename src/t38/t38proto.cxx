@@ -66,21 +66,24 @@ namespace PWLibStupidLinkerHacks {
 
 static PAtomicInteger faxCallIndex;
 
-const OpalMediaFormat OpalT38 (
+const OpalMediaFormat & GetOpalT38() 
+{
+  static const OpalMediaFormat fmt(
     OPAL_T38,
-    OpalMediaFormat::DefaultDataSessionID,
+    "fax",
     RTP_DataFrame::DynamicBase,
     "t38",
     PFalse, // No jitter for data
     1440, // 100's bits/sec
     0,
     0,
-    0
-);
+    0);
+  return fmt;
+}
 
 #if OPAL_AUDIO
 
-const OpalFaxAudioFormat & GetOpalPCM16Fax() 
+const OpalMediaFormat & GetOpalPCM16Fax() 
 {
   static const OpalFaxAudioFormat opalPCM16Fax(OPAL_PCM16_FAX, RTP_DataFrame::MaxPayloadType, "", 16, 8,  240, 30, 256,  8000);
   return opalPCM16Fax;
@@ -98,7 +101,7 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
 				                         unsigned clockRate,
                                    time_t timeStamp)
   : OpalMediaFormat(fullName,
-                    OpalMediaFormat::DefaultDataSessionID,
+                    "audio",
                     rtpPayloadType,
                     encodingName,
                     PTrue,
@@ -1287,7 +1290,7 @@ OpalFaxConnection::~OpalFaxConnection()
 OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) {
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (forceFaxAudio && (mediaFormat == OpalPCM16))
       return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
     else
@@ -1295,7 +1298,7 @@ OpalMediaStream * OpalFaxConnection::CreateMediaStream(const OpalMediaFormat & m
   }
 
   // if creating a data stream, see what type it is
-  else if (!forceFaxAudio && (sessionID == OpalMediaFormat::DefaultDataSessionID)) {
+  else if (!forceFaxAudio && (mediaFormat.GetMediaType() == "audio")) {
     if (mediaFormat == OpalPCM16Fax)
       return new OpalFaxMediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
   }
@@ -1478,11 +1481,11 @@ OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, cons
 OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (sessionID == OpalMediaFormat::DefaultAudioSessionID) 
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) 
     return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
 
   // if creating a data stream, see what type it is
-  else if ((sessionID == OpalMediaFormat::DefaultDataSessionID) && (mediaFormat == OpalT38))
+  else if ((mediaFormat.GetMediaType() == OpalMediaType::Fax()) && (mediaFormat == OpalT38))
     return new OpalT38MediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
 
   return NULL;
@@ -1513,6 +1516,10 @@ OpalFaxMediaType::OpalFaxMediaType()
 bool OpalFaxMediaType::IsMediaAutoStart(bool) const 
 { return false; }
 
+RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT)
+{
+  return new T38PseudoRTP(agg, sessionID, remoteIsNAT);
+}
 
 #endif // OPAL_T38FAX
 

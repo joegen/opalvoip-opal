@@ -146,6 +146,10 @@ class H323Channel : public PObject
      */
     virtual unsigned GetSessionID() const;
 
+    /**Indicate the media type of the channel.
+     */
+    virtual OpalMediaType GetMediaType() const;
+
     /**Get the media transport address for the connection.
        This is primarily used to determine if media bypass is possible for the
        call between two connections.
@@ -318,14 +322,14 @@ class H323Channel : public PObject
   //@}
 
   protected:
-    H323EndPoint         & endpoint;
-    H323Connection       & connection;
-    H323Capability       * capability;
-    H323ChannelNumber      number;
-    H323ChannelNumber      reverseChannel;
-    PBoolean                   opened;
-    PBoolean                   paused;
-    PBoolean                   terminating;
+    H323EndPoint       & endpoint;
+    H323Connection     & connection;
+    H323Capability     * capability;
+    H323ChannelNumber    number;
+    H323ChannelNumber    reverseChannel;
+    PBoolean             opened;
+    PBoolean             paused;
+    PBoolean             terminating;
 
   private:
     unsigned bandwidthUsed;
@@ -884,12 +888,12 @@ class H323DataChannel : public H323UnidirectionalChannel
   //@}
 
   protected:
-    unsigned        sessionID;
-    H323Listener  * listener;
-    PBoolean            autoDeleteListener;
-    H323Transport * transport;
-    PBoolean            autoDeleteTransport;
-    PBoolean            separateReverseChannel;
+    unsigned           sessionID;
+    H323Listener  *    listener;
+    PBoolean           autoDeleteListener;
+    H323Transport *    transport;
+    PBoolean           autoDeleteTransport;
+    PBoolean           separateReverseChannel;
 };
 
 

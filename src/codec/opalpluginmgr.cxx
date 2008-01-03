@@ -654,15 +654,13 @@ static H323Capability * CreateH263Cap(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if OPAL_T38FAX
-
 OpalPluginFaxFormatInternal::OpalPluginFaxFormatInternal(const PluginCodec_Definition * _encoderCodec,
                                                                    const char * rtpEncodingName,
                                                                    unsigned frameTime,
                                                                    unsigned /*timeUnits*/,
                                                                    time_t timeStamp)
   : OpalMediaFormatInternal(CreateCodecName(_encoderCodec),
-                            OpalMediaFormat::DefaultDataSessionID,
+                            OpalMediaType::Fax(),
                             (RTP_DataFrame::PayloadTypes)(((_encoderCodec->flags & PluginCodec_RTPTypeMask) == PluginCodec_RTPTypeDynamic) ? RTP_DataFrame::DynamicBase : _encoderCodec->rtpPayload),
                             rtpEncodingName,
                             false,                                // need jitter
@@ -685,9 +683,6 @@ bool OpalPluginFaxFormatInternal::IsValidForProtocol(const PString & protocol) c
 {
   return OpalPluginMediaFormatInternal::IsValidForProtocol(protocol);
 }
-
-#endif // OPAL_T38FAX
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1480,28 +1475,28 @@ void OpalPluginCodecManager::RegisterPluginPair(
   if (timeStamp > mediaNow)
     timeStamp = mediaNow;
 
-  unsigned defaultSessionID = 0;
+  bool found = false;
   unsigned frameTime = 0;
   unsigned clockRate = 0;
   switch (encoderCodec->flags & PluginCodec_MediaTypeMask) {
 #if OPAL_VIDEO
     case PluginCodec_MediaTypeVideo:
-      defaultSessionID = OpalMediaFormat::DefaultVideoSessionID;
+      found = true;
       break;
 #endif
 #if OPAL_AUDIO
     case PluginCodec_MediaTypeAudio:
     case PluginCodec_MediaTypeAudioStreamed:
-      defaultSessionID = OpalMediaFormat::DefaultAudioSessionID;
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
+      found = true;
       break;
 #endif
 #if OPAL_T38FAX
     case PluginCodec_MediaTypeFax:
-      defaultSessionID = OpalMediaFormat::DefaultDataSessionID;
       frameTime = (8 * encoderCodec->usPerFrame) / 1000;
       clockRate = encoderCodec->sampleRate;
+      found = true;
       break;
 #endif
     default:
@@ -1509,7 +1504,7 @@ void OpalPluginCodecManager::RegisterPluginPair(
   }
 
   // add the media format
-  if (defaultSessionID == 0) {
+  if (!found) {
     PTRACE(1, "OpalPlugin\tCodec DLL provides unknown media format " << (int)(encoderCodec->flags & PluginCodec_MediaTypeMask));
   } else {
     PString fmtName = CreateCodecName(encoderCodec);

@@ -60,7 +60,7 @@ public:
   virtual unsigned GetSubType() const;
 	
   virtual PString GetFormatName() const;
-	unsigned GetDefaultSessionID() const;
+	OpalMediaType GetMediaType() const;
 
   virtual H323Channel * CreateChannel(H323Connection & connection,
 									  H323Channel::Directions dir,
@@ -86,6 +86,8 @@ public:
 				   RTP_UDP & session,
 				   unsigned sessionID);
   ~H323_H224Channel();
+
+  virtual OpalMediaType GetMediaType() const;
 	
   virtual H323Channel::Directions GetDirection() const;
   virtual PBoolean SetInitialBandwidth();
