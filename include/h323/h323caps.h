@@ -42,7 +42,6 @@
 #include <opal/mediafmt.h>
 #include <h323/channels.h>
 
-
 /* The following classes have forward references to avoid including the VERY
    large header files for H225 and H245. If an application requires access
    to the protocol classes they can include them, but for simple usage their
@@ -148,15 +147,9 @@ class H323Capability : public PObject
       const PString & name     ///<  Name of capability
     );
 
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
+    /**Get media type for this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const = 0;
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -555,15 +548,9 @@ class H323AudioCapability : public H323RealTimeCapability
 
   /**@name Operations */
   //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
+    /**Get the media type for this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const;
 
     /**Set the maximum size (in frames) of data that will be transmitted in a
        single PDU.
@@ -944,15 +931,9 @@ class H323VideoCapability : public H323RealTimeCapability
 
   /**@name Operations */
   //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns zero, indicating it is not an RTP
-       based capability.
+    /**Get the media type for this capability
       */
-    virtual unsigned GetDefaultSessionID() const;
+    virtual OpalMediaType GetMediaType() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -1297,18 +1278,6 @@ class H323DataCapability : public H323Capability
        Always returns e_Data.
      */
     virtual MainTypes GetMainType() const;
-  //@}
-
-  /**@name Operations */
-  //@{
-    /**Get the default RTP session.
-       This function gets the default RTP session ID for the capability
-       type. For example audio capabilities return the value
-       RTP_Session::DefaultAudioSessionID etc.
-
-       The default behaviour returns 3, indicating a data session.
-      */
-    virtual unsigned GetDefaultSessionID() const;
   //@}
 
   /**@name Protocol manipulation */
@@ -1887,6 +1856,10 @@ class H323_UserInputCapability : public H323Capability
     /**Get the name of the media data format this class represents.
      */
     virtual PString GetFormatName() const;
+
+    /** Get media type of this capability
+      */
+    OpalMediaType GetMediaType() const;
   //@}
 
   /**@name Operations */

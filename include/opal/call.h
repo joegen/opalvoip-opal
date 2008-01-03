@@ -263,7 +263,8 @@ class OpalCall : public PSafeObject
       */
     virtual bool OpenSourceMediaStreams(
       OpalConnection & connection,              ///<  Connection requesting open
-      unsigned sessionID                        ///<  Session to start streams on
+      const OpalMediaType & mediaType,          ///<  type of media to open
+      unsigned sessionID                        ///<  Session ID
     );
 
     /**Select media format pair from the source/destination list.
@@ -271,7 +272,7 @@ class OpalCall : public PSafeObject
        Default behavour calls OpalTranscoder::SelectFormats().
       */
     virtual bool SelectMediaFormats(
-      unsigned sessionID,                     ///<  Session for selection
+      const OpalMediaType & mediaType,        ///<  only use this media type
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
       OpalMediaFormat & srcFormat,            ///<  Selected source format to be used

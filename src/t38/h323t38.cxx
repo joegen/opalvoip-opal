@@ -86,6 +86,10 @@ PObject * H323_T38Capability::Clone() const
   return new H323_T38Capability(*this);
 }
 
+OpalMediaType H323_T38Capability::GetMediaType() const
+{
+  return OpalMediaType::Fax();
+}
 
 unsigned H323_T38Capability::GetSubType() const
 {
@@ -103,8 +107,8 @@ PString H323_T38Capability::GetFormatName() const
 
 
 H323Channel * H323_T38Capability::CreateChannel(H323Connection & connection,
-                                                H323Channel::Directions direction,
-                                                unsigned int sessionID,
+                                         H323Channel::Directions direction,
+                                                        unsigned sessionID,
                              const H245_H2250LogicalChannelParameters * /*params*/) const
 {
   PTRACE(1, "H323T38\tCreateChannel, sessionID=" << sessionID << " direction=" << direction);
@@ -201,6 +205,11 @@ H323_T38NonStandardCapability::H323_T38NonStandardCapability(BYTE country,
 PObject * H323_T38NonStandardCapability::Clone() const
 {
   return new H323_T38NonStandardCapability(*this);
+}
+
+OpalMediaType H323_T38NonStandardCapability::GetMediaType() const
+{
+  return "fax";
 }
 
 

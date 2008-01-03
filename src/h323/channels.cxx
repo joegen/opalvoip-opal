@@ -170,6 +170,12 @@ unsigned H323Channel::GetSessionID() const
   return 0;
 }
 
+OpalMediaType H323Channel::GetMediaType() const
+{ 
+  if (capability == NULL)
+    return OpalMediaType();
+  return capability->GetMediaType();
+}
 
 PBoolean H323Channel::GetMediaTransportAddress(OpalTransportAddress & /*data*/,
                                            OpalTransportAddress & /*control*/) const
@@ -350,12 +356,12 @@ PBoolean H323UnidirectionalChannel::Open()
 
   PSafePtr<OpalConnection> otherConnection;
   if (GetDirection() == IsReceiver) {
-    if (call.OpenSourceMediaStreams(connection, GetSessionID()))
+    if (call.OpenSourceMediaStreams(connection, capability->GetMediaType(), GetSessionID()))
       return true;
   }
   else {
     otherConnection = call.GetOtherPartyConnection(connection);
-    if (otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, GetSessionID()))
+    if (otherConnection != NULL && call.OpenSourceMediaStreams(*otherConnection, capability->GetMediaType(), GetSessionID()))
       return true;
   }
 
@@ -964,11 +970,11 @@ H323DataChannel::H323DataChannel(H323Connection & conn,
                                  unsigned id)
   : H323UnidirectionalChannel(conn, cap, dir)
 {
-  sessionID = id;
-  listener = NULL;
-  autoDeleteListener = PTrue;
-  transport = NULL;
-  autoDeleteTransport = PTrue;
+  sessionID              = id;
+  listener               = NULL;
+  autoDeleteListener     = PTrue;
+  transport              = NULL;
+  autoDeleteTransport    = PTrue;
   separateReverseChannel = PFalse;
 }
 

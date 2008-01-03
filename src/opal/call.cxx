@@ -172,7 +172,7 @@ PBoolean OpalCall::OnAlerting(OpalConnection & connection)
   UnlockReadWrite();
 
 
-  PBoolean hasMedia = connection.GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue) != NULL;
+  PBoolean hasMedia = connection.GetMediaStreamCount() != 0;
 
   PBoolean ok = PFalse;
 
@@ -300,7 +300,7 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
   return commonFormats;
 }
 
-PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned sessionID)
+PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, const OpalMediaType & mediaType, unsigned sessionID)
 {
   PSafeLockReadOnly lock(*this);
   if (isClearing || !lock.IsLocked())
@@ -336,7 +336,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 
       if (source == NULL) {
         // Use the first other connection we find to get source format
-        if (!SelectMediaFormats(sessionID, connection.GetMediaFormats(), sinkMediaFormats, sourceFormat, sinkFormat))
+        if (!SelectMediaFormats(mediaType, connection.GetMediaFormats(), sinkMediaFormats, sourceFormat, sinkFormat))
           return false;
 
         source = connection.OpenMediaStream(sourceFormat, sessionID, true);
@@ -345,7 +345,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
       }
       else if (!sinkMediaFormats.HasFormat(sinkFormat)) {
         // Use the first other connection we find to get source format
-        if (!SelectMediaFormats(sessionID, sourceFormat, sinkMediaFormats, sourceFormat, sinkFormat))
+        if (!SelectMediaFormats(mediaType, sourceFormat, sinkMediaFormats, sourceFormat, sinkFormat))
           return false;
       }
 
@@ -379,18 +379,18 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 }
 
 
-bool OpalCall::SelectMediaFormats(unsigned sessionID,
-                                  const OpalMediaFormatList & srcFormats,
-                                  const OpalMediaFormatList & dstFormats,
-                                  OpalMediaFormat & srcFormat,
-                                  OpalMediaFormat & dstFormat) const
+bool OpalCall::SelectMediaFormats(const OpalMediaType & mediaType,
+                            const OpalMediaFormatList & srcFormats,
+                            const OpalMediaFormatList & dstFormats,
+                                      OpalMediaFormat & srcFormat,
+                                      OpalMediaFormat & dstFormat) const
 {
-  if (OpalTranscoder::SelectFormats(sessionID, srcFormats, dstFormats, srcFormat, dstFormat)) {
+  if (OpalTranscoder::SelectFormats(mediaType, srcFormats, dstFormats, srcFormat, dstFormat)) {
     PTRACE(3, "Call\tSelected media formats " << srcFormat << " -> " << dstFormat);
     return true;
   }
 
-  PTRACE(2, "Call\tSelectMediaFormats session " << sessionID
+  PTRACE(2, "Call\tSelectMediaFormats session " << mediaType
         << ", could not find compatible media format:\n"
             "  source formats=" << setfill(',') << srcFormats << "\n"
             "   sink  formats=" << dstFormats << setfill(' '));

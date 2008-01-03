@@ -184,7 +184,8 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_T38FAX
     t38handler(NULL),
 #endif
-    stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions))
+    stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions)),
+    recordingSessionId(0)
 {
   PTRACE(3, "OpalCon\tCreated connection " << *this);
 
@@ -562,7 +563,7 @@ OpalMediaStream * OpalConnection::CreateMediaStream(
   )
 {
 #if OPAL_VIDEO
-  if (sessionID == OpalMediaFormat::DefaultVideoSessionID) {
+  if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
     if (isSource) {
       PVideoInputDevice * videoDevice;
       PBoolean autoDelete;
@@ -625,8 +626,9 @@ void OpalConnection::EnableRecording()
   if (!LockReadWrite())
     return;
 
-  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue);
+  OpalMediaStreamPtr stream = GetMediaStreamOfType(OpalMediaType::Audio(), PTrue);
   if (stream != NULL) {
+    recordingSessionId = stream->GetSessionID();
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
       patch->AddFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
@@ -637,15 +639,17 @@ void OpalConnection::EnableRecording()
 
 void OpalConnection::DisableRecording()
 {
-  if (!LockReadWrite())
+  if (recordingSessionId == 0 || !LockReadWrite())
     return;
 
-  OpalMediaStreamPtr stream = GetMediaStream(OpalMediaFormat::DefaultAudioSessionID, PTrue);
+  OpalMediaStreamPtr stream = GetMediaStream(recordingSessionId, PTrue);
   if (stream != NULL) {
     OpalMediaPatch * patch = stream->GetPatch();
     if (patch != NULL)
       patch->RemoveFilter(PCREATE_NOTIFIER(OnRecordAudio), OPAL_PCM16);
   }
+
+  recordingSessionId = 0;
   
   UnlockReadWrite();
 }
@@ -664,6 +668,17 @@ OpalMediaStreamPtr OpalConnection::GetMediaStream(unsigned sessionId, bool sourc
 
   return NULL;
 }
+
+OpalMediaStreamPtr OpalConnection::GetMediaStreamOfType(const OpalMediaType & mediaType, bool source) const
+{
+  for (PSafePtr<OpalMediaStream> mediaStream(mediaStreams, PSafeReference); mediaStream != NULL; ++mediaStream) {
+    if (mediaStream->GetMediaFormat().GetMediaType() == mediaType && mediaStream->IsSource() == source)
+      return mediaStream;
+  }
+
+  return NULL;
+}
+
 
 
 

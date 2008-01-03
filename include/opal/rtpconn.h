@@ -243,9 +243,9 @@ class OpalRTPConnection : public OpalConnection
   public:
     /** Class for storing media channel start information
       */
-    struct ChannelStartInfo {
+    struct ChannelInfo {
       public:
-        ChannelStartInfo(const OpalMediaType & _mediaType);
+        ChannelInfo(const OpalMediaType & _mediaType);
 
         OpalMediaType mediaType;
         bool autoStartReceive;
@@ -258,15 +258,19 @@ class OpalRTPConnection : public OpalConnection
         PString channelName;
     };
 
-    class ChannelStartInfoMap : public std::map<unsigned, ChannelStartInfo> 
+    class ChannelInfoMap : public std::map<unsigned, ChannelInfo> 
     {
       public:
-        ChannelStartInfoMap();
+        ChannelInfoMap();
         void Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions);
-        unsigned AddChannel(ChannelStartInfo & info);
+        unsigned AddChannel(ChannelInfo & info);
 
-        ChannelStartInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+        ChannelInfo * AssignAndLockChannel(const OpalMediaSessionId & id, bool assigned);
+        ChannelInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
         bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
+
+        OpalMediaSessionId GetSessionOfType(const OpalMediaType & type) const;
+        OpalMediaType ChannelInfoMap::GetTypeOfSession(unsigned sessionId) const;
 
         void Unlock() { mutex.Signal(); }
 
@@ -277,8 +281,10 @@ class OpalRTPConnection : public OpalConnection
         mutable bool initialised;
     };
 
+    const ChannelInfoMap & GetChannelInfoMap() const { return channelInfoMap; }
+
   protected:
-    ChannelStartInfoMap channelStartInfoMap; 
+    ChannelInfoMap channelInfoMap; 
 };
 
 #endif // __OPAL_RTPCONN_H

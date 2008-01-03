@@ -61,6 +61,9 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
   public:
     OpalFaxMediaType();
     bool IsMediaAutoStart(bool) const;
+    bool UseDirectMediaPatch() const { return false; }
+
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT);
 
 #if OPAL_SIP
     PCaselessString GetTransport() const;
@@ -630,9 +633,11 @@ class OpalT38Connection : public OpalFaxConnection
 #define OPAL_T38            "T.38"
 #define OPAL_PCM16_FAX      "PCM-16-Fax"
 
-extern const OpalFaxAudioFormat & GetOpalPCM16Fax();
+extern const OpalMediaFormat & GetOpalPCM16Fax();
+extern const OpalMediaFormat & GetOpalT38();
 
 #define OpalPCM16Fax          GetOpalPCM16Fax()
+#define OpalT38               GetOpalT38()
 
 
 #endif // __OPAL_T38PROTO_H

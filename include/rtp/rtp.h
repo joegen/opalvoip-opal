@@ -45,6 +45,7 @@
 class RTP_JitterBuffer;
 class PSTUNClient;
 class OpalSecurityMode;
+class OpalRTPConnection;
 
 #if OPAL_RTP_AGGREGATE
 #include <ptclib/sockagg.h>
@@ -1096,9 +1097,10 @@ class SecureRTP_UDP : public RTP_UDP
     /**Create a new RTP channel.
      */
     SecureRTP_UDP(
+      OpalRTPConnection &,            ///< connection
       PHandleAggregator * aggregator, ///< RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      PBoolean remoteIsNAT            ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP

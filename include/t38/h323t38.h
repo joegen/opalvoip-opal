@@ -67,6 +67,14 @@ class H323_T38Capability : public H323DataCapability
     );
   //@}
 
+
+  /**@name Operations */
+  //@{
+    /**Get the media type for this capability
+      */
+    virtual OpalMediaType GetMediaType() const;
+  //@}
+
   /**@name Overrides from class PObject */
   //@{
     /**Compare two capability instances. This compares the main and sub-types
@@ -187,6 +195,13 @@ class H323_T38NonStandardCapability : public H323NonStandardDataCapability
     virtual PObject * Clone() const;
   //@}
 
+  /**@name Operations */
+  //@{
+    /**Get the media type for this capability
+      */
+    virtual OpalMediaType GetMediaType() const;
+
+  //@}
   /**@name Identification functions */
   //@{
     /**Get the name of the media data format this class represents.
@@ -220,10 +235,10 @@ class H323_T38Channel : public H323DataChannel
     /**Create a new channel.
      */
     H323_T38Channel(
-      H323Connection & connection,       ///<  Connection to endpoint for channel
-      const H323Capability & capability, ///<  Capability channel is using
-      Directions direction,              ///<  Direction of channel
-      unsigned sessionID,                ///<  Session ID for channel
+      H323Connection & connection,          ///<  Connection to endpoint for channel
+      const H323Capability & capability,    ///<  Capability channel is using
+      Directions direction,                 ///<  Direction of channel
+      unsigned sessionID,                   ///<  Session ID for channel
       H323_T38Capability::TransportMode mode
     );
     ~H323_T38Channel();
