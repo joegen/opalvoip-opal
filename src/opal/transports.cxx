@@ -1716,6 +1716,7 @@ OpalTransportUDP::OpalTransportUDP(OpalEndPoint & ep,
                                    BOOL reuseAddr)
   : OpalTransportIP(ep, binding, localPort)
   , manager(ep.GetManager())
+  , readsPerPdu(-1)
 {
   PMonitoredSockets * sockets = PMonitoredSockets::Create(binding.AsString(), reuseAddr);
   if (sockets->Open(localPort)) {
