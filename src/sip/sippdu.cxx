@@ -591,7 +591,8 @@ PStringList SIPMIMEInfo::GetRoute() const
 
 void SIPMIMEInfo::SetRoute(const PStringList & v)
 {
-  SetRouteList("Route",  v);
+  if (!v.IsEmpty())
+    SetRouteList("Route",  v);
 }
 
 
@@ -2353,7 +2354,7 @@ SIPMessage::SIPMessage(SIPEndPoint & ep,
   PString partyName = endpoint.GetRegisteredPartyName(address).AsString(); 
 
   SIPURL myAddress("\"" + displayName + "\" <" + partyName + ">"); 
-  
+
   SIP_PDU::Construct(Method_MESSAGE,
                      "sip:"+address.GetUserName()+"@"+address.GetHostName(),
                      address.AsQuotedString(),
