@@ -198,8 +198,9 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_DEBUG: severity = 4; break;
     }
     AVClass * avc = *(AVClass**) v;
-    snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t[%s @ %p] %s", avc->item_name(v), v, fmt);
+    snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
+    buffer[strlen(buffer)-1] = 0;
     TRACE (severity, buffer);
   }
 }
@@ -229,10 +230,10 @@ class MPEG4EncoderContext
     void SetFrameHeight(int height);
     void SetFrameWidth(int width);
     void SetQMin(int qmin);
-    void SetQMax(int qmax);
+    void SetTSTO(unsigned tsto);
     void SetQuality(int qual);
     void SetDynamicVideo(bool enable);
-
+    void SetProfileLevel (unsigned profileLevel);
     int GetFrameBytes();
 
   protected:
@@ -285,7 +286,8 @@ class MPEG4EncoderContext
     AVFrame        *_avpicture;
 
     // encoding and frame settings
-    int _videoQMax, _videoQMin; // dynamic video quality min/max limits, 1..31
+    unsigned _videoTSTO;
+    int _videoQMin; // dynamic video quality min/max limits, 1..31
     int _videoQuality; // current video encode quality setting, 1..31
 
     int _frameNum;
@@ -381,7 +383,7 @@ class MPEG4EncoderContext
 MPEG4EncoderContext::MPEG4EncoderContext() 
 :   _forceKeyframeUpdate(false),
     _doThrottle(false),
-    _dynamicVideo(false),
+    _dynamicVideo(true),
     _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
@@ -393,21 +395,19 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   // Some sane default video settings
   _targetFPS = 24;
   _videoQMin = 2;
-  _videoQMax = 20;
+  _videoTSTO = 10;
   _videoQuality = 12;
   _iQuantFactor = -0.8f;
 
-  _keyframeUpdatePeriod = 3; // 3 seconds between forced keyframes, if enabled
+  _keyframeUpdatePeriod = 125; // 125 frames between forced keyframes, if enabled
 
   _frameNum = 0;
   _lastPktOffset = 0;
   _lastKeyframe = time(NULL);
   
-
   if (!FFMPEGLibraryInstance.IsLoaded()){
     return;
   }
-
 
   // Default frame size.  These may change after encoder_set_options
   _frameWidth  = CIF_WIDTH;
@@ -538,8 +538,8 @@ void MPEG4EncoderContext::SetQMin(int qmin) {
 // Setter function for _videoQMax. This is called from encoder_set_options
 // when the "Maximum Quality" integer option is passed 
 
-void MPEG4EncoderContext::SetQMax(int qmax) {
-    _videoQMax = qmax;
+void MPEG4EncoderContext::SetTSTO(unsigned tsto) {
+    _videoTSTO = tsto;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -558,6 +558,10 @@ void MPEG4EncoderContext::SetQuality(int qual) {
 
 void MPEG4EncoderContext::SetDynamicVideo(bool enable) {
     _dynamicVideo = enable;
+}
+
+void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
+//FIXME
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -682,11 +686,12 @@ void MPEG4EncoderContext::SetDynamicEncodingParams(bool restartOnResize) {
     // Note: mb_qmin, mb_max don't seem to be used in the libavcodec code.
 
     _avcontext->qmin = _videoQMin;
-    _avcontext->qmax = _videoQMax;
+    _avcontext->qmax = round ( (double)(31 - _videoQMin) / 31 * _videoTSTO + _videoQMin);
+    _avcontext->qmax = std::min( _avcontext->qmax, 31);
 
     // Lagrange multipliers - this is how the context defaults do it:
-    _avcontext->lmin = _videoQMin * FF_QP2LAMBDA;
-    _avcontext->lmax = _videoQMax * FF_QP2LAMBDA;
+    _avcontext->lmin = _avcontext->qmin * FF_QP2LAMBDA;
+    _avcontext->lmax = _avcontext->qmax * FF_QP2LAMBDA;
 
     if(!_dynamicVideo){
         // Force the quantizer to be _videoQuality
@@ -763,10 +768,12 @@ bool MPEG4EncoderContext::OpenCodec()
   }
 
   // debugging flags
-  //_avcontext->debug |= FF_DEBUG_RC;
-  //_avcontext->debug |=  FF_DEBUG_PICT_INFO;
-  //_avcontext->debug |=  FF_DEBUG_MV;
-
+  if (Trace::CanTrace(4)) {
+    _avcontext->debug |= FF_DEBUG_RC;
+    _avcontext->debug |= FF_DEBUG_PICT_INFO;
+    _avcontext->debug |= FF_DEBUG_MV;
+  }
+  
   SetStaticEncodingParams();
   SetDynamicEncodingParams(false);    // don't force a restart, it's not open
   if (FFMPEGLibraryInstance.AvcodecOpen(_avcontext, _avcodec) < 0)
@@ -866,7 +873,7 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         time_t now = time(NULL);
         // Should the next frame be an I-Frame?
         if ((_forceKeyframeUpdate
-             && (now - _lastKeyframe > _keyframeUpdatePeriod))
+             && (now - _lastKeyframe > (_keyframeUpdatePeriod / _targetFPS) ))
             || (flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
         {
             _lastKeyframe = now;
@@ -927,12 +934,180 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// OPAL plugin functions
+//
+static char * num2str(int num)
+{
+  char buf[20];
+  sprintf(buf, "%i", num);
+  return strdup(buf);
+}
+
+static int get_codec_options(const struct PluginCodec_Definition * codec,
+                                                  void *,
+                                                  const char *,
+                                                  void * parm,
+                                                  unsigned * parmLen)
+{
+    if (parmLen == NULL || parm == NULL || *parmLen != sizeof(struct PluginCodec_Option **))
+        return 0;
+
+    *(const void **)parm = codec->userData;
+    *parmLen = 0; //FIXME
+    return 1;
+}
+
+static int free_codec_options ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  char ** strings = (char **) parm;
+  for (char ** string = strings; *string != NULL; string++)
+    free(*string);
+  free(strings);
+  return 1;
+}
+
+static int valid_for_protocol ( const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char *))
+    return 0;
+
+  return (STRCMPI((const char *)parm, "sip") == 0) ? 1 : 0;
+}
+
+static int adjust_bitrate_to_profile_level (unsigned & targetBitrate, unsigned profileLevel, int idx = -1)
+{
+  int i = 0;
+  if (idx == -1) { 
+    while (mpeg4_profile_levels[i].profileLevel) {
+      if (mpeg4_profile_levels[i].profileLevel == profileLevel)
+        break;
+    i++; 
+    }
+  
+    if (!mpeg4_profile_levels[i].profileLevel) {
+      TRACE(1, "MPEG4\tCap\tIllegal Profle-Level negotiated");
+      return 0;
+    }
+  }
+  else
+    i = idx;
+
+// Correct Target Bitrate
+  TRACE(4, "MPEG4\tCap\tAdjusting to " << mpeg4_profile_levels[i].profileName << " Profile, Level " <<  mpeg4_profile_levels[i].level);
+  TRACE(4, "MPEG4\tCap\tBitrate: " << targetBitrate << "(" << mpeg4_profile_levels[i].bitrate << ")");
+  if (targetBitrate > mpeg4_profile_levels[i].bitrate)
+    targetBitrate = mpeg4_profile_levels[i].bitrate;
+
+  return 1;
+}
+
+static int adjust_to_profile_level (unsigned & width, unsigned & height, unsigned & frameTime, unsigned & targetBitrate, unsigned profileLevel)
+{
+  int i = 0;
+  while (mpeg4_profile_levels[i].profileLevel) {
+    if (mpeg4_profile_levels[i].profileLevel == profileLevel)
+      break;
+   i++; 
+  }
+
+  if (!mpeg4_profile_levels[i].profileLevel) {
+    TRACE(1, "MPEG4\tCap\tIllegal Level negotiated");
+    return 0;
+  }
+
+// Correct max. number of macroblocks per frame
+  uint32_t nbMBsPerFrame = width * height / 256;
+  unsigned j = 0;
+  TRACE(4, "MPEG4\tCap\tFrame Size: " << nbMBsPerFrame << "(" << mpeg4_profile_levels[i].frame_size << ")");
+  if    ( (nbMBsPerFrame          > mpeg4_profile_levels[i].frame_size) ) {
+
+    while (mpeg4_resolutions[j].width) {
+      if  ( (mpeg4_resolutions[j].macroblocks <= mpeg4_profile_levels[i].frame_size) )
+          break;
+      j++; 
+    }
+    if (!mpeg4_resolutions[j].width) {
+      TRACE(1, "MPEG4\tCap\tNo Resolution found that has number of macroblocks <=" << mpeg4_profile_levels[i].frame_size);
+      return 0;
+    }
+    else {
+      width  = mpeg4_resolutions[j].width;
+      height = mpeg4_resolutions[j].height;
+    }
+  }
+
+// Correct macroblocks per second
+  uint32_t nbMBsPerSecond = width * height / 256 * (90000 / frameTime);
+  TRACE(4, "MPEG4\tCap\tMBs/s: " << nbMBsPerSecond << "(" << mpeg4_profile_levels[i].mbps << ")");
+  if (nbMBsPerSecond > mpeg4_profile_levels[i].mbps)
+    frameTime =  (unsigned) (90000 / 256 * width  * height / mpeg4_profile_levels[i].mbps );
+
+  adjust_bitrate_to_profile_level (targetBitrate, profileLevel, i);
+  return 1;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // OPAL plugin encoder functions
 //
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
 {
   return new MPEG4EncoderContext;
+}
+
+static int to_normalised_options(const struct PluginCodec_Definition *, void *, const char *, void * parm, unsigned * parmLen)
+{
+  if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
+    return 0;
+
+  unsigned profileLevel = 148;
+  unsigned width = 352;
+  unsigned height = 288;
+  unsigned frameTime = 3000;
+  unsigned targetBitrate = 64000;
+
+  for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
+      if (STRCMPI(option[0], "CAP RFC3016 Profile Level") == 0)
+        profileLevel = atoi(option[1]);
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
+        width = atoi(option[1]);
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
+        height = atoi(option[1]);
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+        frameTime = atoi(option[1]);
+      if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+        targetBitrate = atoi(option[1]);
+  }
+
+  TRACE(4, "MPEG4\tCap\tProfile and Level: " << profileLevel);
+
+  // Though this is not a strict requirement we enforce 
+  //it here in order to obtain optimal compression results
+  width -= width % 16;
+  height -= height % 16;
+
+  if (!adjust_to_profile_level (width, height, frameTime, targetBitrate, profileLevel))
+    return 0;
+
+  char ** options = (char **)calloc(9, sizeof(char *));
+  *(char ***)parm = options;
+  if (options == NULL)
+    return 0;
+
+  options[0] = strdup(PLUGINCODEC_OPTION_FRAME_WIDTH);
+  options[1] = num2str(width);
+  options[2] = strdup(PLUGINCODEC_OPTION_FRAME_HEIGHT);
+  options[3] = num2str(height);
+  options[4] = strdup(PLUGINCODEC_OPTION_FRAME_TIME);
+  options[5] = num2str(frameTime);
+  options[6] = strdup(PLUGINCODEC_OPTION_TARGET_BIT_RATE);
+  options[7] = num2str(targetBitrate);
+
+  return 1;
 }
 
 // This is assuming the second param is the context...
@@ -951,29 +1126,37 @@ static int encoder_set_options(
   // 1) "Frame Width" sets the encoding frame width
   // 2) "Frame Height" sets the encoding frame height
   // 3) "Target Bit Rate" sets the bitrate upper limit
-  // 4) "Minimum Quality" sets the minimum encoding quality
-  // 5) "Maximum Quality" sets the maximum encoding quality
-  // 6) "Encoding Quality" sets the default encoding quality
-  // 7) "Dynamic Encoding Quality" enables dynamic adjustment of encoding quality
-  // 8) "Bandwidth Throttling" will turn on bandwidth throttling for the encoder
-  // 9) "IQuantFactor" will update the quantization factor to a float value
-  // 10) "Force Keyframe Update": force the encoder to make an IFrame every 3s
-  // 11) "Keyframe Update Period" interval in seconds before an IFrame is sent
-  // 12) "Frame Time" lets the encoder and throttler know target frames per second 
+  // 4) "Frame Time" lets the encoder and throttler know target frames per second 
+  // 5) "Tx Keyframe Period" interval in frames before an IFrame is sent
+  // 6) "Minimum Quality" sets the minimum encoding quality
+  // 7) "Maximum Quality" sets the maximum encoding quality
+  // 8) "Encoding Quality" sets the default encoding quality
+  // 9) "Dynamic Encoding Quality" enables dynamic adjustment of encoding quality
+  // 10) "Bandwidth Throttling" will turn on bandwidth throttling for the encoder
+  // 11) "IQuantFactor" will update the quantization factor to a float value
+  // 12) "Force Keyframe Update": force the encoder to make an IFrame every 3s
 
   if (parm != NULL) {
     const char ** options = (const char **)parm;
+    unsigned targetBitrate = 64000;
+    unsigned profileLevel = 148; //FIXME
     for (int i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "Frame Width") == 0)
+      if (STRCMPI(options[i], "CAP RFC3016 Profile Level") == 0)
+         profileLevel = atoi(options[i+1]);
+      else if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         context->SetFrameWidth(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Frame Height") == 0)
+      else if(STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         context->SetFrameHeight(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Target Bit Rate") == 0)
-        context->SetMaxBitrate(atoi(options[i+1]));
+      else if(STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
+         targetBitrate = atoi(options[i+1]);
+      else if(STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_TIME) == 0)
+        context->SetFPS(atoi(options[i+1]));
+      else if(STRCMPI(options[i], PLUGINCODEC_OPTION_TX_KEY_FRAME_PERIOD) == 0)
+        context->SetKeyframeUpdatePeriod(atoi(options[i+1]));
+      else if(STRCMPI(options[i], PLUGINCODEC_OPTION_TEMPORAL_SPATIAL_TRADE_OFF) == 0)
+        context->SetTSTO(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Minimum Quality") == 0)
         context->SetQMin(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Maximum Quality") == 0)
-        context->SetQMax(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Encoding Quality") == 0)
         context->SetQuality(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Dynamic Video Quality") == 0)
@@ -984,12 +1167,13 @@ static int encoder_set_options(
         context->SetIQuantFactor(atof(options[i+1]));
       else if(STRCMPI(options[i], "Force Keyframe Update") == 0)
         context->SetForceKeyframeUpdate(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Keyframe Update Period") == 0)
-        context->SetKeyframeUpdatePeriod(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Frame Time") == 0)
-        context->SetFPS(atoi(options[i+1]));
       TRACE (4, "MPEG4\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
+    if (!adjust_bitrate_to_profile_level (targetBitrate, profileLevel))
+      return 0;
+
+    context->SetMaxBitrate(targetBitrate);
+    context->SetProfileLevel(profileLevel);
   }
   return 1;
 }
@@ -1021,8 +1205,12 @@ static int encoder_get_output_data_size(const PluginCodec_Definition * codec, vo
 }
 
 static PluginCodec_ControlDefn sipEncoderControls[] = {
-  { "set_codec_options",    encoder_set_options },
-  { "get_output_data_size", encoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_VALID_FOR_PROTOCOL,    valid_for_protocol },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_FREE_CODEC_OPTIONS,    free_codec_options },
+  { PLUGINCODEC_CONTROL_TO_NORMALISED_OPTIONS, to_normalised_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     encoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  encoder_get_output_data_size },
   { NULL }
 };
 
@@ -1465,9 +1653,9 @@ static int decoder_set_options(
     const char ** options = (const char **)parm;
     int i;
     for (i = 0; options[i] != NULL; i += 2) {
-      if (STRCMPI(options[i], "Frame Width") == 0)
+      if (STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         context->SetFrameWidth(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Frame Height") == 0)
+      else if(STRCMPI(options[i], PLUGINCODEC_OPTION_FRAME_HEIGHT) == 0)
         context->SetFrameHeight(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Error Recovery") == 0)
         context->SetErrorRecovery(atoi(options[i+1]));
@@ -1508,8 +1696,9 @@ static int decoder_get_output_data_size(const PluginCodec_Definition * codec, vo
 // Plugin Codec Definitions
 
 static PluginCodec_ControlDefn sipDecoderControls[] = {
-  { "set_codec_options",    decoder_set_options },
-  { "get_output_data_size", decoder_get_output_data_size },
+  { PLUGINCODEC_CONTROL_GET_CODEC_OPTIONS,     get_codec_options },
+  { PLUGINCODEC_CONTROL_SET_CODEC_OPTIONS,     decoder_set_options },
+  { PLUGINCODEC_CONTROL_GET_OUTPUT_DATA_SIZE,  decoder_get_output_data_size },
   { NULL }
 };
 
@@ -1550,11 +1739,22 @@ static const char sdpMPEG4[]   = { "MP4V-ES" };
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Option const profileLevel =
-  { PluginCodec_IntegerOption, "CAP Profile Level", false, PluginCodec_NoMerge, "145", "packetization-mode", "145", 0, "1", "255" };
+static struct PluginCodec_Option const RFC3016profileLevel =
+{
+  PluginCodec_IntegerOption,            // Option type
+  "CAP RFC3016 Profile Level",          // User visible name
+  false,                                // User Read/Only flag
+  PluginCodec_MinMerge,                 // Merge mode
+  "148",                                // Initial value (Advance Real Time Simple Profile/Level 4)
+  "profile-level-id",                   // FMTP option name 
+  "1",                                  // FMTP default value (Simple Profile/Level 1)
+  0,
+  "1",
+  "255"
+};
 
 static struct PluginCodec_Option const * const optionTable[] = {
-  &profileLevel,
+  &RFC3016profileLevel,
   NULL
 };
 
