@@ -69,7 +69,6 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
   // Look for a "proxy" parameter to override default proxy
   const PStringToString& params = targetAddress.GetParamVars();
-  SIPURL proxy;
   if (params.Contains("proxy")) {
     proxy.Parse(params("proxy"));
     targetAddress.SetParamVar("proxy", PString::Empty());
@@ -146,6 +145,16 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
 
   SetState(expire != 0 ? s : Unsubscribing); 
 
+  if (!transport->IsOpen ()) {
+
+    transport->CloseWait();
+    delete transport;
+
+    if (!proxy.IsEmpty())
+      transport = endpoint.CreateTransport(proxy.GetHostAddress());
+    else
+      transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
+  }
   return transport->WriteConnect(WriteSIPHandler, this);
 }
 
