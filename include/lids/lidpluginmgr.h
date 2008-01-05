@@ -623,6 +623,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
     PSoundChannel                m_player;
     PThread                    * m_tonePlayer;
     PSyncPoint                   m_stopTone;
+    bool                         m_lockOutTones;
 };
 
 
