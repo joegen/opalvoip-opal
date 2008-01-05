@@ -3420,6 +3420,9 @@ bool InCallPanel::Show(bool show)
 
 void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
 {
+  // Must do this before getting lock on OpalCall to avoid deadlock
+  m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
+
   PSafePtr<OpalCall> call = m_manager.GetCall();
   if (call != NULL) {
     PSafePtr<OpalConnection> connection;
@@ -3439,8 +3442,6 @@ void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
   }
 
   m_StartStopVideo->Disable();
-
-  m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
 }
 
 
