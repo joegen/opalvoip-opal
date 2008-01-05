@@ -138,8 +138,8 @@ const static struct mpeg4_profile_level {
     {   1, "Simple",                     1, 1, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
     {   2, "Simple",                     1, 2, 1,   792,   396,   5940,      0,  40,  40,  4096,   128000 },
     {   3, "Simple",                     1, 3, 1,   792,   396,  11880,      0,  40,  40,  8192,   384000 },
-    {   4, "Simple",                     1, 4, 1,  3240,  1620,  40500,      0, 112, 112, 16384,  8000000 },
-    {   5, "Simple",                     1, 5, 1,  2400,  1200,  36000,      0,  80,  80, 16384,  4000000 },
+    {   4, "Simple",                     1, 4, 1,  2400,  1200,  36000,      0,  80,  80, 16384,  4000000 }, // is really 4a
+    {   5, "Simple",                     1, 5, 1,  3240,  1620,  40500,      0, 112, 112, 16384,  8000000 },
     {  17, "Simple Scalable",            2, 1, 1,  1782,   495,   7425,      0,  40,  40,  2048,   128000 },
     {  18, "Simple Scalable",            2, 2, 1,  3168,   792,  23760,      0,  40,  40,  4096,   256000 },
     {  33, "Core",                       3, 1, 4,   594,   198,   5940,   2970,  16,  16,  4096,   384000 },
@@ -1073,7 +1073,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  unsigned profileLevel = 148;
+  unsigned profileLevel = 1;
   unsigned width = 352;
   unsigned height = 288;
   unsigned frameTime = 3000;
@@ -1091,8 +1091,6 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
         targetBitrate = atoi(option[1]);
   }
-
-  TRACE(4, "MPEG4\tCap\tProfile and Level: " << profileLevel);
 
   // Though this is not a strict requirement we enforce 
   //it here in order to obtain optimal compression results
@@ -1148,7 +1146,7 @@ static int encoder_set_options(
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     unsigned targetBitrate = 64000;
-    unsigned profileLevel = 148; //FIXME
+    unsigned profileLevel = 1;
     for (int i = 0; options[i] != NULL; i += 2) {
       if (STRCMPI(options[i], "CAP RFC3016 Profile Level") == 0)
          profileLevel = atoi(options[i+1]);
@@ -1672,7 +1670,6 @@ static int decoder_set_options(
         context->SetErrorThresh(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Disable Resize") == 0)
         context->SetDisableResize(atoi(options[i+1]));
-      TRACE (4, "MPEG4\tDecoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
   }
   return 1;
@@ -1754,7 +1751,7 @@ static struct PluginCodec_Option const RFC3016profileLevel =
   "CAP RFC3016 Profile Level",          // User visible name
   false,                                // User Read/Only flag
   PluginCodec_MinMerge,                 // Merge mode
-  "148",                                // Initial value (Advance Real Time Simple Profile/Level 4)
+  "5",                                  // Initial value (Simple Profile/Level 5)
   "profile-level-id",                   // FMTP option name 
   "1",                                  // FMTP default value (Simple Profile/Level 1)
   0,
