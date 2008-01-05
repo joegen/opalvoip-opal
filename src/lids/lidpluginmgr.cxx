@@ -116,6 +116,7 @@ OpalLineInterfaceDevice * OpalPluginLIDRegistration::Create(void *) const
 OpalPluginLID::OpalPluginLID(const PluginLID_Definition & definition)
   : m_definition(definition)
   , m_tonePlayer(NULL)
+  , m_lockOutTones(false)
 {
   if (m_definition.Create != NULL) {
     m_context = definition.Create(&m_definition);
@@ -303,25 +304,25 @@ unsigned OpalPluginLID::GetLineCount()
 
 PBoolean OpalPluginLID::IsLineTerminal(unsigned line)
 {
-  PluginLID_Boolean isTerminal = PFalse;
+  PluginLID_Boolean isTerminal = FALSE;
   CHECK_FN(IsLineTerminal, (m_context, line, &isTerminal));
-  return isTerminal == TRUE;
+  return isTerminal != FALSE;
 }
 
 
 PBoolean OpalPluginLID::IsLinePresent(unsigned line, PBoolean force)
 {
-  PluginLID_Boolean isPresent = PFalse;
+  PluginLID_Boolean isPresent = FALSE;
   CHECK_FN(IsLinePresent, (m_context, line, force, &isPresent));
-  return isPresent == TRUE;
+  return isPresent != FALSE;
 }
 
 
 PBoolean OpalPluginLID::IsLineOffHook(unsigned line)
 {
-  PluginLID_Boolean offHook = PFalse;
+  PluginLID_Boolean offHook = FALSE;
   CHECK_FN(IsLineOffHook, (m_context, line, &offHook));
-  return offHook == TRUE;
+  return offHook != FALSE;
 }
 
 
@@ -348,9 +349,9 @@ PBoolean OpalPluginLID::HookFlash(unsigned line, unsigned flashTime)
 
 PBoolean OpalPluginLID::HasHookFlash(unsigned line)
 {
-  PluginLID_Boolean flashed = PFalse;
+  PluginLID_Boolean flashed = FALSE;
   CHECK_FN(HasHookFlash, (m_context, line, &flashed));
-  return flashed == TRUE;
+  return flashed != FALSE;
 }
 
 
@@ -394,13 +395,13 @@ PBoolean OpalPluginLID::RingLine(unsigned line, PINDEX nCadence, const unsigned 
 
 PBoolean OpalPluginLID::IsLineDisconnected(unsigned line, PBoolean checkForWink)
 {
-  PluginLID_Boolean disconnected = PFalse;
+  PluginLID_Boolean disconnected = FALSE;
   switch (CHECK_FN(IsLineConnected, (m_context, line, checkForWink, &disconnected))) {
     case PluginLID_UnimplementedFunction :
       return OpalLineInterfaceDevice::IsLineDisconnected(line, checkForWink);
 
     case PluginLID_NoError :
-      return disconnected == TRUE;
+      return disconnected != FALSE;
 
     default : ;
   }
@@ -416,9 +417,9 @@ PBoolean OpalPluginLID::SetLineToLineDirect(unsigned line1, unsigned line2, PBoo
 
 PBoolean OpalPluginLID::IsLineToLineDirect(unsigned line1, unsigned line2)
 {
-  PluginLID_Boolean connected = PFalse;
+  PluginLID_Boolean connected = FALSE;
   CHECK_FN(IsLineToLineDirect, (m_context, line1, line2, &connected));
-  return connected == TRUE;
+  return connected != FALSE;
 }
 
 
@@ -537,6 +538,8 @@ PBoolean OpalPluginLID::StopWriting(unsigned line)
 {
   OpalLineInterfaceDevice::StopWriting(line);
 
+  m_lockOutTones = false;
+
   switch (CHECK_FN(StopWriting, (m_context, line))) {
     case PluginLID_UnimplementedFunction :
       return m_player.Abort();
@@ -569,6 +572,7 @@ PBoolean OpalPluginLID::SetWriteFrameSize(unsigned line, PINDEX frameSize)
 {
   switch (CHECK_FN(SetWriteFrameSize, (m_context, line, frameSize))) {
     case PluginLID_UnimplementedFunction :
+      m_lockOutTones = true;
       StopTone(line);
       return m_player.SetBuffers(frameSize, 1000/frameSize+2); // Want about 125ms of buffering
 
@@ -638,6 +642,9 @@ PBoolean OpalPluginLID::ReadFrame(unsigned line, void * buffer, PINDEX & count)
 
 PBoolean OpalPluginLID::WriteFrame(unsigned line, const void * buffer, PINDEX count, PINDEX & written)
 {
+  StopTone(line);
+  m_lockOutTones = true;
+
   unsigned uiCount = 0;
   switch (CHECK_FN(WriteFrame, (m_context, line, buffer, count, &uiCount))) {
     case PluginLID_UnimplementedFunction :
@@ -681,10 +688,10 @@ PBoolean OpalPluginLID::EnableAudio(unsigned line, PBoolean enable)
 
 PBoolean OpalPluginLID::IsAudioEnabled(unsigned line)
 {
-  PluginLID_Boolean enabled = PFalse;
+  PluginLID_Boolean enabled = FALSE;
   if (CHECK_FN(IsAudioEnabled, (m_context, line, &enabled)) == PluginLID_UnimplementedFunction)
     return OpalLineInterfaceDevice::IsAudioEnabled(line);
-  return enabled == TRUE;
+  return enabled != FALSE;
 }
 
 
@@ -765,9 +772,9 @@ PBoolean OpalPluginLID::SetAEC(unsigned line, AECLevels level)
 
 PBoolean OpalPluginLID::GetVAD(unsigned line)
 {
-  PluginLID_Boolean vad = PFalse;
+  PluginLID_Boolean vad = FALSE;
   CHECK_FN(GetVAD, (m_context, line, &vad));
-  return vad == TRUE;
+  return vad != FALSE;
 }
 
 
@@ -823,9 +830,9 @@ char OpalPluginLID::ReadDTMF(unsigned line)
 
 PBoolean OpalPluginLID::GetRemoveDTMF(unsigned line)
 {
-  PluginLID_Boolean remove = PFalse;
+  PluginLID_Boolean remove = FALSE;
   CHECK_FN(GetRemoveDTMF, (m_context, line, &remove));
-  return remove == TRUE;
+  return remove != FALSE;
 }
 
 
@@ -903,6 +910,9 @@ void OpalPluginLID::TonePlayer(PThread &, INT tone)
 
 PBoolean OpalPluginLID::PlayTone(unsigned line, CallProgressTones tone)
 {
+  if (m_lockOutTones)
+    return StopTone(line);
+
   switch (CHECK_FN(PlayTone, (m_context, line, tone))) {
     case PluginLID_UnimplementedFunction :
       // Stop previous tone, if running
@@ -933,31 +943,32 @@ PBoolean OpalPluginLID::PlayTone(unsigned line, CallProgressTones tone)
 
 PBoolean OpalPluginLID::IsTonePlaying(unsigned line)
 {
-  PluginLID_Boolean playing = PFalse;
+  PluginLID_Boolean playing = FALSE;
   if (m_tonePlayer == NULL || m_tonePlayer->IsTerminated())
     CHECK_FN(IsTonePlaying, (m_context, line, &playing));
-  return playing == TRUE;
+  return playing != FALSE;
 }
 
 
 PBoolean OpalPluginLID::StopTone(unsigned line)
 {
-  if (m_tonePlayer == NULL || m_tonePlayer->IsTerminated()) {
-    switch (CHECK_FN(StopTone, (m_context, line))) {
-      case PluginLID_UnimplementedFunction :
-      case PluginLID_NoError :
-        return PTrue;
-      default:
-        break;
-    }
-    return false;
+  if (m_tonePlayer != NULL) {
+    m_stopTone.Signal();
+    m_tonePlayer->WaitForTermination(1000);
+    delete m_tonePlayer;
+    m_tonePlayer = NULL;
+    return true;
   }
 
-  m_stopTone.Signal();
-  m_tonePlayer->WaitForTermination(1000);
-  delete m_tonePlayer;
-  m_tonePlayer = NULL;
-  return true;
+  switch (CHECK_FN(StopTone, (m_context, line))) {
+    case PluginLID_UnimplementedFunction :
+    case PluginLID_NoError :
+      return PTrue;
+    default:
+      break;
+  }
+
+  return false;
 }
 
 
