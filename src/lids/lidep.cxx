@@ -462,8 +462,7 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
   handlerThread = NULL;
 
   m_uiDialDelay = 0;
-  PTRACE(3, "LID Con\tConnection " << callToken << " created to " << number << 
-            " remotePartyNumber = " << remotePartyNumber);
+  PTRACE(3, "LID Con\tConnection " << callToken << " created to " << (number.IsEmpty() ? "local" : number));
   
 }
 
@@ -481,10 +480,12 @@ void OpalLineConnection::OnReleased()
     handlerThread = NULL;
   }
 
-  PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
-  line.PlayTone(OpalLineInterfaceDevice::ClearTone);
+  if (line.IsOffHook()) {
+    PTRACE(3, "LID Con\tPlaying clear tone until handset onhook");
+    line.PlayTone(OpalLineInterfaceDevice::ClearTone);
+    line.SetOnHook();
+  }
   line.Ring(0, NULL);
-  line.SetOnHook();
 
   phase = ReleasedPhase;
 
@@ -611,7 +612,7 @@ PBoolean OpalLineConnection::SendUserInputTone(char tone, int duration)
 
 PBoolean OpalLineConnection::PromptUserInput(PBoolean play)
 {
-  PTRACE(3, "LID Con\tConnection " << callToken << " dial tone " << (play ? "on" : "off"));
+  PTRACE(3, "LID Con\tConnection " << callToken << " dial tone " << (play ? "started" : "stopped"));
 
   if (play)
     return line.PlayTone(OpalLineInterfaceDevice::DialTone);
@@ -799,7 +800,7 @@ PBoolean OpalLineMediaStream::Open()
     useDeblocking = !line.SetWriteFrameSize(GetDataSize()) || line.GetWriteFrameSize() != GetDataSize();
   }
 
-  PTRACE(3, "Media\tStream set to " << mediaFormat << ", frame size: rd="
+  PTRACE(3, "LineMedia\tStream opened for " << mediaFormat << ", frame size: rd="
          << line.GetReadFrameSize() << " wr="
          << line.GetWriteFrameSize() << ", "
          << (useDeblocking ? "needs" : "no") << " reblocking.");
@@ -824,7 +825,7 @@ PBoolean OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
   length = 0;
 
   if (IsSink()) {
-    PTRACE(1, "Media\tTried to read from sink media stream");
+    PTRACE(1, "LineMedia\tTried to read from sink media stream");
     return PFalse;
   }
 
@@ -860,7 +861,7 @@ PBoolean OpalLineMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & leng
   }
 
   PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
-            "Media\tDevice read frame error: " << line.GetDevice().GetErrorText());
+            "LineMedia\tDevice read frame error: " << line.GetDevice().GetErrorText());
 
   return PFalse;
 }
@@ -871,7 +872,7 @@ PBoolean OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
   written = 0;
 
   if (IsSource()) {
-    PTRACE(1, "Media\tTried to write to source media stream");
+    PTRACE(1, "LineMedia\tTried to write to source media stream");
     return PFalse;
   }
 
@@ -930,7 +931,7 @@ PBoolean OpalLineMediaStream::WriteData(const BYTE * buffer, PINDEX length, PIND
   }
 
   PTRACE_IF(1, line.GetDevice().GetErrorNumber() != 0,
-            "Media\tLID write frame error: " << line.GetDevice().GetErrorText());
+            "LineMedia\tLID write frame error: " << line.GetDevice().GetErrorText());
 
   return PFalse;
 }
@@ -942,6 +943,12 @@ PBoolean OpalLineMediaStream::SetDataSize(PINDEX dataSize)
     useDeblocking = !line.SetReadFrameSize(dataSize) || line.GetReadFrameSize() != dataSize;
   else
     useDeblocking = !line.SetWriteFrameSize(dataSize) || line.GetWriteFrameSize() != dataSize;
+
+  PTRACE(3, "LineMedia\tStream frame size: rd="
+         << line.GetReadFrameSize() << " wr="
+         << line.GetWriteFrameSize() << ", "
+         << (useDeblocking ? "needs" : "no") << " reblocking.");
+
   return OpalMediaStream::SetDataSize(dataSize);
 }
 
