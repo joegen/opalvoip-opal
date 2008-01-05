@@ -678,7 +678,7 @@ PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(u
     }
   }
 
-  if (version < PLUGIN_CODEC_VERSION_VIDEO) {
+  if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
     TRACE(1, "H264\tCodec\tDisabled");
     return NULL;
