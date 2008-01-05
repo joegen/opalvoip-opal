@@ -166,7 +166,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_Da
   PString id = stream->GetID();
   sink->primaryCodec = OpalTranscoder::Create(sourceFormat, destinationFormat, (const BYTE *)id, id.GetLength());
   if (sink->primaryCodec != NULL) {
-    PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "/" << destinationFormat << " with ID " << id);
+    PTRACE(4, "Patch\tCreated primary codec " << sourceFormat << "->" << destinationFormat << " with ID " << id);
     sink->primaryCodec->SetRTPPayloadMap(rtpMap);
     sink->primaryCodec->SetMaxOutputSize(stream->GetDataSize());
 
