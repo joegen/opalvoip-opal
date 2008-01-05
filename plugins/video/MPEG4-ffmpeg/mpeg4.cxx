@@ -1763,7 +1763,7 @@ static struct PluginCodec_Option const * const optionTable[] = {
 static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
 { 
   // SIP encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
@@ -1797,7 +1797,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
 },
 { 
   // SIP decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
@@ -1853,7 +1853,7 @@ PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
   }
 
   // check version numbers etc
-  if (version < PLUGIN_CODEC_VERSION_VIDEO) {
+  if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
     TRACE(1, "MPEG4\tCodec\tDisabled");
     return NULL;
