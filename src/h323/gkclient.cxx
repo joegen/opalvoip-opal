@@ -237,7 +237,7 @@ PBoolean H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddr
       break;
   }
 
-  transport->EndConnect(transport->GetInterface());
+  transport->EndConnect(transport->GetLastReceivedInterface());
 
   if (discoveryComplete) {
     PTRACE(3, "RAS\tGatekeeper discovered at: "
@@ -281,7 +281,7 @@ bool H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
       break;
   }
   
-  transport->EndConnect(transport->GetInterface());
+  transport->EndConnect(transport->GetLastReceivedInterface());
   
   if (discoveryComplete) {
     PTRACE(3, "RAS\tGatekeeper discovered at: "

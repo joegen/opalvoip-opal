@@ -157,6 +157,7 @@ protected:
   PTimeInterval               retryTimeoutMin; 
   PTimeInterval               retryTimeoutMax; 
   PString remotePartyAddress;
+  SIPURL proxy;
 
 private:
   static PBoolean WriteSIPHandler(
