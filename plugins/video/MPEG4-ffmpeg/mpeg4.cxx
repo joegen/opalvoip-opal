@@ -240,8 +240,6 @@ class MPEG4EncoderContext
     void SetFrameWidth(int width);
     void SetQMin(int qmin);
     void SetTSTO(unsigned tsto);
-    void SetQuality(int qual);
-    void SetDynamicVideo(bool enable);
     void SetProfileLevel (unsigned profileLevel);
     int GetFrameBytes();
 
@@ -275,9 +273,6 @@ class MPEG4EncoderContext
 
     // Frames per second.  Defaults to 24.
     int _targetFPS;
-
-    // Let mpeg4 decide video quality?
-    bool _dynamicVideo;
     
     // packet sizes generating in RtpCallback
     deque<unsigned> _packetSizes;
@@ -297,7 +292,6 @@ class MPEG4EncoderContext
     // encoding and frame settings
     unsigned _videoTSTO;
     int _videoQMin; // dynamic video quality min/max limits, 1..31
-    int _videoQuality; // current video encode quality setting, 1..31
 
     int _frameNum;
     unsigned int _frameWidth;
@@ -392,7 +386,6 @@ class MPEG4EncoderContext
 MPEG4EncoderContext::MPEG4EncoderContext() 
 :   _forceKeyframeUpdate(false),
     _doThrottle(false),
-    _dynamicVideo(true),
     _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
@@ -405,7 +398,6 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   _targetFPS = 24;
   _videoQMin = 2;
   _videoTSTO = 10;
-  _videoQuality = 12;
   _iQuantFactor = -0.8f;
 
   _keyframeUpdatePeriod = 125; // 125 frames between forced keyframes, if enabled
@@ -556,21 +548,9 @@ void MPEG4EncoderContext::SetTSTO(unsigned tsto) {
 // Setter function for _frameHeight. This is called from encoder_set_options
 // when the "Encoding Quality" integer option is passed 
 
-void MPEG4EncoderContext::SetQuality(int qual) {
-    _videoQuality = qual;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Setter function for _dynamicQuality. This is called from encoder_set_options
-// when the "Dynamic Video Quality" boolean option is passed 
-
-void MPEG4EncoderContext::SetDynamicVideo(bool enable) {
-    _dynamicVideo = enable;
-}
-
 void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
 //FIXME
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -651,16 +631,9 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     // Number of frames for a group of pictures
     _avcontext->gop_size = _avcontext->time_base.den * 8;
     _throttle->reset(_avcontext->time_base.den / 2);
-    if (_dynamicVideo) {
-        // Set the initial frame quality to something sane
-        _avpicture->quality = _videoQuality;  
-    }
-    else {
-        // Adjust bitrate to get quantizer
-        // Frame quality will be set to _videoQuality on every
-        // 'SetDynamicEncodingParams()'
-        _avcontext->flags |= CODEC_FLAG_QSCALE;
-    }
+
+    // Set the initial frame quality to something sane
+    _avpicture->quality = _videoQMin;
 
     _avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
     _avcontext->flags |= CODEC_FLAG_4MV;    // 4 motion vectors
@@ -701,11 +674,6 @@ void MPEG4EncoderContext::SetDynamicEncodingParams(bool restartOnResize) {
     // Lagrange multipliers - this is how the context defaults do it:
     _avcontext->lmin = _avcontext->qmin * FF_QP2LAMBDA;
     _avcontext->lmax = _avcontext->qmax * FF_QP2LAMBDA;
-
-    if(!_dynamicVideo){
-        // Force the quantizer to be _videoQuality
-        _avpicture->quality = _videoQuality;
-    }
 
     // If framesize has changed or is not yet initialized, fix it up
     if((unsigned)_avcontext->width != _frameWidth || (unsigned)_avcontext->height != _frameHeight) {
@@ -1164,18 +1132,14 @@ static int encoder_set_options(
         context->SetTSTO(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Minimum Quality") == 0)
         context->SetQMin(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Encoding Quality") == 0)
-        context->SetQuality(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Dynamic Video Quality") == 0)
-        context->SetDynamicVideo(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Bandwidth Throttling") == 0)
         context->SetThrottle(atoi(options[i+1]));
       else if(STRCMPI(options[i], "IQuantFactor") == 0)
         context->SetIQuantFactor(atof(options[i+1]));
       else if(STRCMPI(options[i], "Force Keyframe Update") == 0)
         context->SetForceKeyframeUpdate(atoi(options[i+1]));
-      TRACE (4, "MPEG4\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
+
     if (!adjust_bitrate_to_profile_level (targetBitrate, profileLevel))
       return 0;
 
