@@ -523,6 +523,16 @@ class RTP_Session : public PObject
       */
     unsigned GetSessionID() const { return sessionID; }
 
+    /**Get flag for is audio RTP.
+      */
+    bool IsAudio() const { return isAudio; }
+
+    /**Set flag for RTP session is audio.
+     */
+    void SetAudio(
+      bool aud    /// New audio indication flag
+    ) { isAudio = aud; }
+
     /**Get the canonical name for the RTP session.
       */
     PString GetCanonicalName() const;
@@ -721,18 +731,21 @@ class RTP_Session : public PObject
 
     virtual void SendBYE();
     virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
+
 #if OPAL_VIDEO
     /** Tell the rtp session to send out an intra frame request control packet.
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
     virtual void SendIntraFrameRequest();
-#endif    
+#endif
+
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
 
     unsigned           sessionID;
+    bool               isAudio;
     PString            canonicalName;
     PString            toolName;
     unsigned           referenceCount;
