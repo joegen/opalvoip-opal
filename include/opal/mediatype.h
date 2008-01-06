@@ -145,8 +145,8 @@ class OpalMediaTypeDefinition  {
     virtual std::string GetSDPType() const    { return sdpType; }
 
   protected:  
-    std::string sdpType;
     unsigned defaultSessionId;
+    std::string sdpType;
 
 #if OPAL_SIP
   public:
@@ -274,8 +274,9 @@ class SimpleMediaType : public OpalMediaTypeDefinition
 #define OPAL_DEFINE_MEDIA_TYPE_NO_SDP(type) \
 namespace OpalMediaTypeSpace { \
   char type##_type_string[] = #type; \
-  typedef SimpleMediaType<type##_type_string, NULL> OpalMediaType_##type; \
-  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type##(#type, true); \
+  char type##_sdp_string[] = ""; \
+  typedef SimpleMediaType<type##_type_string, type##_sdp_string> OpalMediaType_##type; \
+  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type(#type, true); \
 }; \
 
 #define OPAL_DEFINE_MEDIA_TYPE(type, sdp) \
@@ -283,7 +284,7 @@ namespace OpalMediaTypeSpace { \
   char type##_type_string[] = #type; \
   char type##_sdp_string[]  = #sdp; \
   typedef SimpleMediaType<type##_type_string, type##_sdp_string> OpalMediaType_##type; \
-  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type##(#type, true); \
+  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type(#type, true); \
 }; \
 
 ////////////////////////////////////////////////////////////////////////////

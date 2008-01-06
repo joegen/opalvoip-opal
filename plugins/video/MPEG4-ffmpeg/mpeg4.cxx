@@ -123,6 +123,7 @@ extern "C" {
 const static struct mpeg4_profile_level {
     unsigned profileLevel;
     const char* profileName;
+    unsigned profileNumber;
     unsigned level;
     unsigned maxQuantTables;       /* Max. unique quant. tables */
     unsigned maxVMVBufferSize;     /* max. VMV buffer size(MB units) */
@@ -134,30 +135,38 @@ const static struct mpeg4_profile_level {
     unsigned maxVideoPacketLength; /* max. video packet length (bits) */
     long unsigned bitrate;
 } mpeg4_profile_levels[] = {
-    {   1, "Simple",                     1, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
-    {   2, "Simple",                     2, 1,   792,   396,   5940,      0,  40,  40,  4096,   128000 },
-    {   3, "Simple",                     3, 1,   792,   396,  11880,      0,  40,  40,  8192,   384000 },
-    {  17, "Simple Scalable",            1, 1,  1782,   495,   7425,      0,  40,  40,  2048,   128000 },
-    {  18, "Simple Scalable",            2, 1,  3168,   792,  23760,      0,  40,  40,  4096,   256000 },
-    {  33, "Core",                       1, 4,   594,   198,   5940,   2970,  16,  16,  4096,   384000 },
-    {  34, "Core",                       2, 4,  2376,   792,  23760,  11880,  80,  80,  8192,  2000000 },
-    {  50, "Main",                       2, 4,  3960,  1188,  23760,  11880,  80,  80,  8192,  2000000 },
-    {  51, "Main",                       3, 4, 11304,  3240,  97200,  48600, 320, 320, 16384, 15000000 },
-    {  52, "Main",                       4, 4, 65344, 16320, 489600, 244800, 760, 760, 16384, 38400000 },
-    {  66, "N-Bit",                      2, 4,  2376,   792,  23760,  11880,  80,  80,  8192,  2000000 },
-    { 145, "Advanced Real Time Simple",  1, 1,   198,    99,   1485,      0,  10,  10,  8192,    64000 },
-    { 146, "Advanced Real Time Simple",  2, 1,   792,   396,   5940,      0,  40,  40, 16384,   128000 },
-    { 147, "Advanced Real Time Simple",  3, 1,   792,   396,  11880,      0,  40,  40, 16384,   384000 },
-    { 148, "Advanced Real Time Simple",  4, 1,   792,   396,  11880,      0,  80,  80, 16384,  2000000 },
-    { 161, "Core Scalable",              1, 4,  2376,   792,  14850,   7425,  64,  64,  4096,   768000 },
-    { 162, "Core Scalable",              2, 4,  2970,   990,  29700,  14850,  80,  80,  4096,  1500000 },
-    { 163, "Core Scalable",              3, 4, 12906,  4032, 120960,  60480,  80,  80, 16384,  4000000 },
-    { 177, "Advanced Coding Efficiency", 1, 4,  1188,   792,  11880,   5940,  40,  40,  8192,   384000 },
-    { 178, "Advanced Coding Efficiency", 2, 4,  2376,  1188,  23760,  11880,  80,  80,  8192,  2000000 },
-    { 179, "Advanced Coding Efficiency", 3, 4,  9720,  3240,  97200,  48600, 320, 320, 16384, 15000000 },
-    { 180, "Advanced Coding Efficiency", 4, 4, 48960, 16320, 489600, 244800, 760, 760, 16384, 38400000 },
-    { 193, "Advanced Core",              1, 4,   594,   198,   5940,   2970,  16,   8,  4096,   384000 },
-    { 194, "Advanced Core",              2, 4,  2376,   792,  23760,  11880,  80,  40,  8192,  2000000 },
+    {   1, "Simple",                     1, 1, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
+    {   2, "Simple",                     1, 2, 1,   792,   396,   5940,      0,  40,  40,  4096,   128000 },
+    {   3, "Simple",                     1, 3, 1,   792,   396,  11880,      0,  40,  40,  8192,   384000 },
+    {   4, "Simple",                     1, 4, 1,  2400,  1200,  36000,      0,  80,  80, 16384,  4000000 }, // is really 4a
+    {   5, "Simple",                     1, 5, 1,  3240,  1620,  40500,      0, 112, 112, 16384,  8000000 },
+    {  17, "Simple Scalable",            2, 1, 1,  1782,   495,   7425,      0,  40,  40,  2048,   128000 },
+    {  18, "Simple Scalable",            2, 2, 1,  3168,   792,  23760,      0,  40,  40,  4096,   256000 },
+    {  33, "Core",                       3, 1, 4,   594,   198,   5940,   2970,  16,  16,  4096,   384000 },
+    {  34, "Core",                       3, 2, 4,  2376,   792,  23760,  11880,  80,  80,  8192,  2000000 },
+    {  50, "Main",                       4, 2, 4,  3960,  1188,  23760,  11880,  80,  80,  8192,  2000000 },
+    {  51, "Main",                       4, 3, 4, 11304,  3240,  97200,  48600, 320, 320, 16384, 15000000 },
+    {  52, "Main",                       4, 4, 4, 65344, 16320, 489600, 244800, 760, 760, 16384, 38400000 },
+    {  66, "N-Bit",                      5, 2, 4,  2376,   792,  23760,  11880,  80,  80,  8192,  2000000 },
+    { 145, "Advanced Real Time Simple",  6, 1, 1,   198,    99,   1485,      0,  10,  10,  8192,    64000 },
+    { 146, "Advanced Real Time Simple",  6, 2, 1,   792,   396,   5940,      0,  40,  40, 16384,   128000 },
+    { 147, "Advanced Real Time Simple",  6, 3, 1,   792,   396,  11880,      0,  40,  40, 16384,   384000 },
+    { 148, "Advanced Real Time Simple",  6, 4, 1,   792,   396,  11880,      0,  80,  80, 16384,  2000000 },
+    { 161, "Core Scalable",              7, 1, 4,  2376,   792,  14850,   7425,  64,  64,  4096,   768000 },
+    { 162, "Core Scalable",              7, 2, 4,  2970,   990,  29700,  14850,  80,  80,  4096,  1500000 },
+    { 163, "Core Scalable",              7, 3, 4, 12906,  4032, 120960,  60480,  80,  80, 16384,  4000000 },
+    { 177, "Advanced Coding Efficiency", 8, 1, 4,  1188,   792,  11880,   5940,  40,  40,  8192,   384000 },
+    { 178, "Advanced Coding Efficiency", 8, 2, 4,  2376,  1188,  23760,  11880,  80,  80,  8192,  2000000 },
+    { 179, "Advanced Coding Efficiency", 8, 3, 4,  9720,  3240,  97200,  48600, 320, 320, 16384, 15000000 },
+    { 180, "Advanced Coding Efficiency", 8, 4, 4, 48960, 16320, 489600, 244800, 760, 760, 16384, 38400000 },
+    { 193, "Advanced Core",              9, 1, 4,   594,   198,   5940,   2970,  16,   8,  4096,   384000 },
+    { 194, "Advanced Core",              9, 2, 4,  2376,   792,  23760,  11880,  80,  40,  8192,  2000000 },
+    { 240, "Advanced Simple",           10, 0, 1,   297,    99,   2970,    100,  10,  10,  2048,   128000 },
+    { 241, "Advanced Simple",           10, 1, 1,   297,    99,   2970,    100,  10,  10,  2048,   128000 },
+    { 242, "Advanced Simple",           10, 2, 1,  1188,   396,   5940,    100,  40,  40,  4096,   384000 },
+    { 243, "Advanced Simple",           10, 3, 1,  1188,   396,  11880,    100,  40,  40,  4096,   768000 },
+    { 244, "Advanced Simple",           10, 4, 1,  2376,   792,  23760,     50,  80,  80,  8192,  3000000 },
+    { 245, "Advanced Simple",           10, 5, 1,  4860,  1620,  48600,     25, 112, 112, 16384,  8000000 },
     { 0 }
 };
 
@@ -231,8 +240,6 @@ class MPEG4EncoderContext
     void SetFrameWidth(int width);
     void SetQMin(int qmin);
     void SetTSTO(unsigned tsto);
-    void SetQuality(int qual);
-    void SetDynamicVideo(bool enable);
     void SetProfileLevel (unsigned profileLevel);
     int GetFrameBytes();
 
@@ -266,9 +273,6 @@ class MPEG4EncoderContext
 
     // Frames per second.  Defaults to 24.
     int _targetFPS;
-
-    // Let mpeg4 decide video quality?
-    bool _dynamicVideo;
     
     // packet sizes generating in RtpCallback
     deque<unsigned> _packetSizes;
@@ -288,7 +292,6 @@ class MPEG4EncoderContext
     // encoding and frame settings
     unsigned _videoTSTO;
     int _videoQMin; // dynamic video quality min/max limits, 1..31
-    int _videoQuality; // current video encode quality setting, 1..31
 
     int _frameNum;
     unsigned int _frameWidth;
@@ -383,7 +386,6 @@ class MPEG4EncoderContext
 MPEG4EncoderContext::MPEG4EncoderContext() 
 :   _forceKeyframeUpdate(false),
     _doThrottle(false),
-    _dynamicVideo(true),
     _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
@@ -396,7 +398,6 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   _targetFPS = 24;
   _videoQMin = 2;
   _videoTSTO = 10;
-  _videoQuality = 12;
   _iQuantFactor = -0.8f;
 
   _keyframeUpdatePeriod = 125; // 125 frames between forced keyframes, if enabled
@@ -547,21 +548,9 @@ void MPEG4EncoderContext::SetTSTO(unsigned tsto) {
 // Setter function for _frameHeight. This is called from encoder_set_options
 // when the "Encoding Quality" integer option is passed 
 
-void MPEG4EncoderContext::SetQuality(int qual) {
-    _videoQuality = qual;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Setter function for _dynamicQuality. This is called from encoder_set_options
-// when the "Dynamic Video Quality" boolean option is passed 
-
-void MPEG4EncoderContext::SetDynamicVideo(bool enable) {
-    _dynamicVideo = enable;
-}
-
 void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
 //FIXME
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -642,16 +631,9 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     // Number of frames for a group of pictures
     _avcontext->gop_size = _avcontext->time_base.den * 8;
     _throttle->reset(_avcontext->time_base.den / 2);
-    if (_dynamicVideo) {
-        // Set the initial frame quality to something sane
-        _avpicture->quality = _videoQuality;  
-    }
-    else {
-        // Adjust bitrate to get quantizer
-        // Frame quality will be set to _videoQuality on every
-        // 'SetDynamicEncodingParams()'
-        _avcontext->flags |= CODEC_FLAG_QSCALE;
-    }
+
+    // Set the initial frame quality to something sane
+    _avpicture->quality = _videoQMin;
 
     _avcontext->flags |= CODEC_FLAG_PART;   // data partitioning
     _avcontext->flags |= CODEC_FLAG_4MV;    // 4 motion vectors
@@ -692,11 +674,6 @@ void MPEG4EncoderContext::SetDynamicEncodingParams(bool restartOnResize) {
     // Lagrange multipliers - this is how the context defaults do it:
     _avcontext->lmin = _avcontext->qmin * FF_QP2LAMBDA;
     _avcontext->lmax = _avcontext->qmax * FF_QP2LAMBDA;
-
-    if(!_dynamicVideo){
-        // Force the quantizer to be _videoQuality
-        _avpicture->quality = _videoQuality;
-    }
 
     // If framesize has changed or is not yet initialized, fix it up
     if((unsigned)_avcontext->width != _frameWidth || (unsigned)_avcontext->height != _frameHeight) {
@@ -1064,7 +1041,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  unsigned profileLevel = 148;
+  unsigned profileLevel = 1;
   unsigned width = 352;
   unsigned height = 288;
   unsigned frameTime = 3000;
@@ -1082,8 +1059,6 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
         targetBitrate = atoi(option[1]);
   }
-
-  TRACE(4, "MPEG4\tCap\tProfile and Level: " << profileLevel);
 
   // Though this is not a strict requirement we enforce 
   //it here in order to obtain optimal compression results
@@ -1139,7 +1114,7 @@ static int encoder_set_options(
   if (parm != NULL) {
     const char ** options = (const char **)parm;
     unsigned targetBitrate = 64000;
-    unsigned profileLevel = 148; //FIXME
+    unsigned profileLevel = 1;
     for (int i = 0; options[i] != NULL; i += 2) {
       if (STRCMPI(options[i], "CAP RFC3016 Profile Level") == 0)
          profileLevel = atoi(options[i+1]);
@@ -1157,18 +1132,14 @@ static int encoder_set_options(
         context->SetTSTO(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Minimum Quality") == 0)
         context->SetQMin(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Encoding Quality") == 0)
-        context->SetQuality(atoi(options[i+1]));
-      else if(STRCMPI(options[i], "Dynamic Video Quality") == 0)
-        context->SetDynamicVideo(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Bandwidth Throttling") == 0)
         context->SetThrottle(atoi(options[i+1]));
       else if(STRCMPI(options[i], "IQuantFactor") == 0)
         context->SetIQuantFactor(atof(options[i+1]));
       else if(STRCMPI(options[i], "Force Keyframe Update") == 0)
         context->SetForceKeyframeUpdate(atoi(options[i+1]));
-      TRACE (4, "MPEG4\tEncoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
+
     if (!adjust_bitrate_to_profile_level (targetBitrate, profileLevel))
       return 0;
 
@@ -1663,7 +1634,6 @@ static int decoder_set_options(
         context->SetErrorThresh(atoi(options[i+1]));
       else if(STRCMPI(options[i], "Disable Resize") == 0)
         context->SetDisableResize(atoi(options[i+1]));
-      TRACE (4, "MPEG4\tDecoder\tOption " << options[i] << " = " << atoi(options[i+1]));
     }
   }
   return 1;
@@ -1745,7 +1715,7 @@ static struct PluginCodec_Option const RFC3016profileLevel =
   "CAP RFC3016 Profile Level",          // User visible name
   false,                                // User Read/Only flag
   PluginCodec_MinMerge,                 // Merge mode
-  "148",                                // Initial value (Advance Real Time Simple Profile/Level 4)
+  "5",                                  // Initial value (Simple Profile/Level 5)
   "profile-level-id",                   // FMTP option name 
   "1",                                  // FMTP default value (Simple Profile/Level 1)
   0,
@@ -1763,7 +1733,7 @@ static struct PluginCodec_Option const * const optionTable[] = {
 static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
 { 
   // SIP encoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
@@ -1797,7 +1767,7 @@ static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
 },
 { 
   // SIP decoder
-  PLUGIN_CODEC_VERSION_VIDEO,         // codec API version
+  PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
   PluginCodec_MediaTypeVideo |        // video codec
@@ -1853,7 +1823,7 @@ PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned version)
   }
 
   // check version numbers etc
-  if (version < PLUGIN_CODEC_VERSION_VIDEO) {
+  if (version < PLUGIN_CODEC_VERSION_OPTIONS) {
     *count = 0;
     TRACE(1, "MPEG4\tCodec\tDisabled");
     return NULL;

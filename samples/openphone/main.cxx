@@ -536,7 +536,8 @@ bool MyManager::Initialise()
   // Networking fields
   PIPSocket::InterfaceTable interfaceTable;
   if (PIPSocket::GetInterfaceTable(interfaceTable))
-    LogWindow << interfaceTable.GetSize() << " network interfaces:\n" << setfill('\n') << interfaceTable << setfill(' ') << flush;
+    LogWindow << "Detected " << interfaceTable.GetSize() << " network interfaces:\n"
+              << setfill('\n') << interfaceTable << setfill(' ') << flush;
 
   config->SetPath(NetworkingGroup);
   if (config->Read(BandwidthKey, &value1))
@@ -602,7 +603,9 @@ bool MyManager::Initialise()
         if (config->Read(AECKey, &value1) && value1 >= 0 && value1 < OpalLineInterfaceDevice::AECError)
           line->SetAEC((OpalLineInterfaceDevice::AECLevels)value1);
         if (config->Read(CountryKey, &str) && !str.IsEmpty()) {
-          if (!line->GetDevice().SetCountryCodeName(str))
+          if (line->GetDevice().SetCountryCodeName(str))
+            LogWindow << "Using Line Interface Device \"" << line->GetDevice().GetDescription() << '"' << endl;
+          else
             LogWindow << "Could not configure Line Interface Device to country \"" << str << '"' << endl;
         }
       }
@@ -1568,6 +1571,9 @@ void MyManager::OnClearedCall(OpalCall & call)
 
 static void LogMediaStream(const char * stopStart, const OpalMediaStream & stream, const PString & epPrefix)
 {
+  if (epPrefix == "pc" || epPrefix == "pots")
+    return;
+
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ") << mediaFormat;
 
@@ -1585,9 +1591,7 @@ PBoolean MyManager::OnOpenMediaStream(OpalConnection & connection, OpalMediaStre
   if (!OpalManager::OnOpenMediaStream(connection, stream))
     return false;
 
-  PString prefix = connection.GetEndPoint().GetPrefixName();
-  if (prefix != pcssEP->GetPrefixName())
-    LogMediaStream("Started", stream, prefix);
+  LogMediaStream("Started", stream, connection.GetEndPoint().GetPrefixName());
 
   wxCommandEvent theEvent(wxEvtUpdateStreams, ID_UPDATE_STREAMS);
   theEvent.SetEventObject(this);
@@ -1601,9 +1605,7 @@ void MyManager::OnClosedMediaStream(const OpalMediaStream & stream)
 {
   OpalManager::OnClosedMediaStream(stream);
 
-  PString prefix = stream.GetConnection().GetEndPoint().GetPrefixName();
-  if (prefix != pcssEP->GetPrefixName())
-    LogMediaStream("Stopped", stream, prefix);
+  LogMediaStream("Stopped", stream, stream.GetConnection().GetEndPoint().GetPrefixName());
 
   wxCommandEvent theEvent(wxEvtUpdateStreams, ID_UPDATE_STREAMS);
   theEvent.SetEventObject(this);
@@ -3418,6 +3420,9 @@ bool InCallPanel::Show(bool show)
 
 void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
 {
+  // Must do this before getting lock on OpalCall to avoid deadlock
+  m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
+
   PSafePtr<OpalCall> call = m_manager.GetCall();
   if (call != NULL) {
     PSafePtr<OpalConnection> connection;
@@ -3437,8 +3442,6 @@ void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
   }
 
   m_StartStopVideo->Disable();
-
-  m_SpeakerHandset->Enable(potsEP->GetLine("*") != NULL);
 }
 
 

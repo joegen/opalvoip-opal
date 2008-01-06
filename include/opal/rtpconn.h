@@ -270,7 +270,7 @@ class OpalRTPConnection : public OpalConnection
         bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
 
         OpalMediaSessionId GetSessionOfType(const OpalMediaType & type) const;
-        OpalMediaType ChannelInfoMap::GetTypeOfSession(unsigned sessionId) const;
+        OpalMediaType GetTypeOfSession(unsigned sessionId) const;
 
         void Unlock() { mutex.Signal(); }
 
