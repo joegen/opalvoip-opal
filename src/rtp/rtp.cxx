@@ -457,6 +457,7 @@ RTP_Session::RTP_Session(
 {
   PAssert(id > 0 && id < 256, PInvalidParameter);
   sessionID = (BYTE)id;
+  isAudio = sessionID == 1;  // MAJOR ASSUMPTION!!!
 
   referenceCount = 1;
   userData = data;
@@ -754,7 +755,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
     frame.SetTimestamp(frame.GetTimestamp() + timeStampOffs);
 
     // Only do statistics on subsequent packets
-    if (!frame.GetMarker()) {
+    if ( ! (isAudio && frame.GetMarker()) ) {
       DWORD diff = (tick - lastSentPacketTime).GetInterval();
 
       averageSendTimeAccum += diff;
@@ -771,7 +772,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   octetsSent += frame.GetPayloadSize();
   packetsSent++;
 
-  if(frame.GetMarker())
+  if (frame.GetMarker())
     markerSendCount++;
 
   // Call the statistics call-back on the first PDU with total count == 1
@@ -879,7 +880,7 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
       expectedSequenceNumber++;
       consecutiveOutOfOrderPackets = 0;
       // Only do statistics on packets after first received in talk burst
-      if (!frame.GetMarker()) {
+      if ( ! (isAudio && frame.GetMarker()) ) {
         DWORD diff = (tick - lastReceivedPacketTime).GetInterval();
 
         averageReceiveTimeAccum += diff;
@@ -900,9 +901,9 @@ RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
         if (jitterLevel > maximumJitterLevel)
           maximumJitterLevel = jitterLevel;
       }
-      else {
+
+      if (frame.GetMarker())
         markerRecvCount++;
-      }
     }
     else if (allowSequenceChange) {
       expectedSequenceNumber = (WORD) (sequenceNumber + 1);
