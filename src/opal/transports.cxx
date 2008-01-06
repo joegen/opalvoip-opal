@@ -876,6 +876,12 @@ OpalTransportAddress OpalTransport::GetLastReceivedAddress() const
 }
 
 
+PString OpalTransport::GetLastReceivedInterface() const
+{
+  return GetLocalAddress();
+}
+
+
 PBoolean OpalTransport::WriteConnect(WriteConnectCallback function, void * userData)
 {
   return function(*this, userData);
@@ -1274,6 +1280,7 @@ OpalTransportAddress OpalTransportUDP::GetLocalAddress() const
     OpalTransportUDP * thisWritable = const_cast<OpalTransportUDP *>(this);
     socket->GetLocal(thisWritable->localAddress, thisWritable->localPort, !manager.IsLocalAddress(remoteAddress));
   }
+
   return OpalTransportIP::GetLocalAddress();
 }
 
@@ -1324,16 +1331,25 @@ void OpalTransportUDP::SetPromiscuous(PromisciousModes promiscuous)
 OpalTransportAddress OpalTransportUDP::GetLastReceivedAddress() const
 {
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
-  if (socket == NULL)
-    return OpalTransport::GetLastReceivedAddress();
+  if (socket != NULL) {
+    PIPSocket::Address addr;
+    WORD port;
+    socket->GetLastReceived(addr, port);
+    if (!addr.IsAny() && port != 0)
+      return OpalTransportAddress(addr, port, UdpPrefix);
+  }
 
-  PIPSocket::Address addr;
-  WORD port;
-  socket->GetLastReceived(addr, port);
-  if (addr.IsAny() || port == 0)
-    return OpalTransport::GetLastReceivedAddress();
+  return OpalTransport::GetLastReceivedAddress();
+}
 
-  return OpalTransportAddress(addr, port, UdpPrefix);
+
+PString OpalTransportUDP::GetLastReceivedInterface() const
+{
+  PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
+  if (socket != NULL)
+    return socket->GetLastReceivedInterface();
+
+  return OpalTransport::GetLastReceivedAddress();
 }
 
 

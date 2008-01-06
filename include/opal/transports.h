@@ -721,6 +721,12 @@ class OpalTransport : public PIndirectChannel
       */
     virtual OpalTransportAddress GetLastReceivedAddress() const;
 
+    /**Get the interface of the last received PDU arrived on.
+
+       Default behaviour returns GetLocalAddress().
+      */
+    virtual PString GetLastReceivedInterface() const;
+
     /**Read a protocol data unit from the transport.
        This will read using the transports mechanism for PDU boundaries, for
        example UDP is a single Read() call, while for TCP there is a TPKT
@@ -1030,6 +1036,12 @@ class OpalTransportUDP : public OpalTransportIP
        Default behaviour returns the lastReceivedAddress member variable.
       */
     virtual OpalTransportAddress GetLastReceivedAddress() const;
+
+    /**Get the interface of the last received PDU arrived on.
+
+       Default behaviour returns GetLocalAddress().
+      */
+    virtual PString GetLastReceivedInterface() const;
 
     /**Read a protocol data unit from the transport.
        This will read using the transports mechanism for PDU boundaries, for
