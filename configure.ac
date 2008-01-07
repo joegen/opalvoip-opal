@@ -13,6 +13,7 @@ iax=yes
 audio=yes
 video=yes
 rfc4175=yes
+plugins=yes
 
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
@@ -373,6 +374,8 @@ fi
 AC_SUBST(HAS_LIBDL)
 
 
+dnl ########################################################################
+
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
 
@@ -391,6 +394,8 @@ else
 fi
 
 
+dnl ########################################################################
+
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
 
@@ -406,6 +411,8 @@ else
   AC_MSG_RESULT(disabled)
 fi
 
+
+dnl ########################################################################
 
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
@@ -425,6 +432,7 @@ else
   h460=no
 fi
 AC_SUBST(OPAL_H323, $OPAL_H323)
+
 
 dnl ########################################################################
 dnl
@@ -558,6 +566,7 @@ if test "$lid" = "yes" ; then
 fi
 AC_SUBST(OPAL_LID)
 
+
 dnl ########################################################################
 dnl
 dnl IVR
@@ -603,6 +612,7 @@ if test "$rfc4175" = "yes" ; then
   fi
 fi
 AC_SUBST(OPAL_RFC4175)
+
 
 dnl ########################################################################
 dnl
@@ -662,6 +672,29 @@ else
 fi
 AC_SUBST(OPAL_SRTP)
 AC_SUBST(HAS_LIBSRTP)
+
+
+dnl ########################################################################
+
+AC_ARG_ENABLE(plugins,
+         [  --disable-plugins           disable Plug In support],
+         plugins=$enableval)
+AC_MSG_CHECKING(Plug In support)
+if test "$plugins" = "yes" ; then
+  OPAL_PLUGINS=1
+  AC_DEFINE(OPAL_PLUGINS, 1)
+  AC_MSG_RESULT(enabled)
+
+  dnl Do sub configures
+  AC_CONFIG_SUBDIRS(plugins)
+else
+  OPAL_PLUGINS=0
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(OPAL_PLUGINS)
+
+
+
 dnl ########################################################################
 dnl output make directives
 
@@ -670,10 +703,6 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(ENDLDLIBS)
 AC_PROG_INSTALL
 
-dnl ########################################################################
-dnl Output configured files
-
-AC_CONFIG_SUBDIRS(plugins)
 
 dnl ########################################################################
 dnl output header file
