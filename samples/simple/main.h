@@ -105,7 +105,7 @@ class MyManager : public OpalManager
 #if OPAL_IAX2
     IAX2EndPoint      * iax2EP;
 #endif
-#if P_EXPAT
+#if OPAL_IVR
     OpalIVREndPoint  * ivrEP;
 #endif
 #if OPAL_T38FAX
@@ -117,9 +117,11 @@ class MyManager : public OpalManager
     PString srcEP;
 
     void HangupCurrentCall();
-    void ListSpeedDials();
     void StartCall(const PString & ostr);
+#if P_CONFIG_FILE
     void NewSpeedDial(const PString & ostr);
+    void ListSpeedDials();
+#endif // P_CONFIG_FILE
     void SendMessageToRemoteNode(const PString & ostr);
     void SendTone(const char tone);
 };
