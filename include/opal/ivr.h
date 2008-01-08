@@ -36,6 +36,7 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
 #if OPAL_IVR
 
