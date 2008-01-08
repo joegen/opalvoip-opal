@@ -693,6 +693,20 @@ else
 fi
 AC_SUBST(OPAL_PLUGINS)
 
+dnl ########################################################################
+
+AC_ARG_ENABLE(samples,
+         [  --disable-samples           disable Samples build],
+         samples=$enableval)
+AC_MSG_CHECKING(Samples build)
+if test "$samples" = "yes" ; then
+  OPAL_SAMPLES=1
+  AC_MSG_RESULT(enabled)
+else
+  OPAL_SAMPLES=0
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(OPAL_SAMPLES)
 
 
 dnl ########################################################################
