@@ -77,7 +77,9 @@ if test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
   PTLIBDIR=$PWLIBDIR
 fi
 if test "${PTLIBDIR:-unset}" = "unset" -o ! -r "${PTLIBDIR}/version.h"; then
-  if test -r "${OPALDIR}/../ptlib/version.h"; then
+  if test -r "${PTLIBDIR}/include/ptlib.h"; then
+    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${PTLIBDIR}/bin)
+  elif test -r "${OPALDIR}/../ptlib/version.h"; then
     PTLIBDIR="${OPALDIR}/../ptlib"
   elif test -r "${HOME}/ptlib/include/ptlib.h"; then
     PTLIBDIR="${HOME}/ptlib"
@@ -99,14 +101,8 @@ if test "${PTLIBDIR:-unset}" = "unset" ; then
   PTLIBDIR=`$PTLIB_CONFIG --prefix`
 fi
 
-if test "x$PTLIBDIR" = "x/usr" -o "x$PTLIBDIR" = "x/usr/"; then
-  PTLIBDIR="/usr/share/ptlib/"
-fi
-if test "x$PTLIBDIR" = "x/usr/local" -o "x$PTLIBDIR" = "x/usr/"; then
-  PTLIBDIR="/usr/local/share/ptlib/"
-fi
-if test "x$PTLIBDIR" = "x${prefix}"; then
-  PTLIBDIR="${prefix}/share/ptlib/"
+if test -d "${PTLIBDIR}/share/ptlib/"; then
+  PTLIBDIR="${PTLIBDIR}/share/ptlib/"
 fi
 AC_SUBST(PTLIBDIR)
 
