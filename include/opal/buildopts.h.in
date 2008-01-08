@@ -53,7 +53,9 @@
 #undef	OPAL_SIP
 #undef	OPAL_H323
 #undef  OPAL_LID
+#if P_EXPAT
 #undef  OPAL_IVR
+#endif
 #undef  OPAL_H224
 #undef  OPAL_T120DATA
 #undef  OPAL_H450
