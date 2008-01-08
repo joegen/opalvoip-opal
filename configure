@@ -694,6 +694,7 @@ OPAL_SRTP
 HAS_LIBSRTP
 subdirs
 OPAL_PLUGINS
+OPAL_SAMPLES
 STDCCFLAGS
 ENDLDLIBS
 INSTALL_PROGRAM
@@ -1297,6 +1298,7 @@ Optional Features:
   --disable-ivr           disable IVR support
   --disable-rfc4175       disable RFC4175 support
   --disable-plugins           disable Plug In support
+  --disable-samples           disable Samples build
 
 Some influential environment variables:
   CC          C compiler command
@@ -6924,6 +6926,24 @@ fi
 
 
 
+# Check whether --enable-samples was given.
+if test "${enable_samples+set}" = set; then
+  enableval=$enable_samples; samples=$enableval
+fi
+
+{ echo "$as_me:$LINENO: checking Samples build" >&5
+echo $ECHO_N "checking Samples build... $ECHO_C" >&6; }
+if test "$samples" = "yes" ; then
+  OPAL_SAMPLES=1
+  { echo "$as_me:$LINENO: result: enabled" >&5
+echo "${ECHO_T}enabled" >&6; }
+else
+  OPAL_SAMPLES=0
+  { echo "$as_me:$LINENO: result: disabled" >&5
+echo "${ECHO_T}disabled" >&6; }
+fi
+
+
 
 
 
@@ -7729,6 +7749,7 @@ OPAL_SRTP!$OPAL_SRTP$ac_delim
 HAS_LIBSRTP!$HAS_LIBSRTP$ac_delim
 subdirs!$subdirs$ac_delim
 OPAL_PLUGINS!$OPAL_PLUGINS$ac_delim
+OPAL_SAMPLES!$OPAL_SAMPLES$ac_delim
 STDCCFLAGS!$STDCCFLAGS$ac_delim
 ENDLDLIBS!$ENDLDLIBS$ac_delim
 INSTALL_PROGRAM!$INSTALL_PROGRAM$ac_delim
@@ -7738,7 +7759,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 89; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
