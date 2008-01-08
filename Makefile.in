@@ -50,7 +50,10 @@ ifeq ($(HAS_PLUGINS),1)
 SUBDIRS += plugins 
 endif
 
+HAS_SAMPLES=@OPAL_SAMPLES@
+ifeq ($(HAS_SAMPLES),1)
 SUBDIRS += samples/simple 
+endif
 
 LIBRARY_MAKEFILE:=1
 
