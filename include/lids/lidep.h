@@ -249,6 +249,10 @@ class OpalLIDEndPoint : public OpalEndPoint
       OpalLineInterfaceDevice * device  ///<  Device to remove
     );
 
+    /**Remove all devices from the endpoint.
+      */
+    void RemoveDevices() { RemoveAllLines(); }
+
     /**Get the line by name.
        The lineName parameter may be "*" to matche the first line.
 
