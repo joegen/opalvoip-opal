@@ -51,7 +51,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IxJ LID", "LID\IxJ\IxJ_2003
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "USB HID LID", "LID\USB\USB_2003.vcproj", "{B28C1159-B360-4CAD-809E-187E267E59EC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CM HID USB LID", "LID\cm_hid\cm_hid_2003.vcproj", "{B28C1159-B360-4CAD-809E-187E267E59EC}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
