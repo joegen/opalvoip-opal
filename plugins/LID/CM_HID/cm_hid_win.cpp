@@ -21,26 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: usb_win.cpp,v $
- * Revision 1.6  2006/11/05 05:04:46  rjongbloed
- * Improved the terminal LID line ringing, epecially for country emulation.
- *
- * Revision 1.5  2006/10/28 00:45:35  rjongbloed
- * Major change so that sound card based LIDs, eg USB handsets. are handled in
- *   common code so not requiring lots of duplication.
- *
- * Revision 1.4  2006/10/25 22:26:15  rjongbloed
- * Changed LID tone handling to use new tone generation for accurate country based tones.
- *
- * Revision 1.3  2006/10/16 09:46:49  rjongbloed
- * Fixed various MSVC 8 warnings
- *
- * Revision 1.2  2006/10/04 22:30:23  rjongbloed
- * Fixed background thread start up and shut down
- *
- * Revision 1.1  2006/10/02 13:30:53  rjongbloed
- * Added LID plug ins
- *
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #define _CRT_SECURE_NO_DEPRECATE
@@ -53,6 +36,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <process.h>
+#include <queue>
 
 #include "CM_HID.h"
 
@@ -68,54 +52,6 @@
 #define WM_HID_RECORD_MUTE    WM_USER+0x1007
 #define WM_HID_SHUTDOWN       WM_USER+0x1008
 
-// Key Input Mask
-static enum Input {
-  None		= 0x0000,
-  KeyPadMask    = 0x0010,
-  Key0		= 0x0010,
-  Key1		= 0x0011,
-  Key2		= 0x0012,
-  Key3		= 0x0013,
-  Key4		= 0x0014,
-  Key5		= 0x0015,
-  Key6		= 0x0016,
-  Key7		= 0x0017,
-  Key8		= 0x0018,
-  Key9		= 0x0019,
-  KeyStar	= 0x001a,   // '*' character
-  KeyHash	= 0x001b,   // '#' character
-  KeyA		= 0x001c,   // (USB) Dial Button 
-  KeyB		= 0x001d,   // (USB) End Call Button 
-  KeyC		= 0x001e,   // (USB) Left Menu Navigator key 
-  KeyD		= 0x001f,   // (USB) Right Menu Navigator key 
-
-  HookMask	= 0x0020,
-  OffHook	= 0x0021,   // Hook State (OffHook) N/A for Cell Type
-  OnHook	= 0x0022,   // Hook State (OnHook) N/A for Cell Type
-
-  RingMask	= 0x0030,
-  StartRing	= 0x0031,   // Start Ringing the device
-  StopRing	= 0x0032,   // Stop Ringing the device
-
-  VolumeMask	= 0x0040,
-  VolumeUp	= 0x0040,   // Volume Up Key pressed
-  VolumeDown	= 0x0041,   // Volume Down key presses
-  SetRecVol	= 0x0042,	// Set the Record Volume 
-  GetRecVol	= 0x0043,	// Get Record Volume 
-  SetPlayVol    = 0x0044,   // Set Play Volume
-  GetPlayVol	= 0x0045,   // Get Play Volume
-
-  StateMask	= 0x0050,
-  PluggedIn	= 0x0050,   // Device is pluggedIn
-  Unplugged	= 0x0051,   // Device is unplugged
-
-  FunctionMask  = 0x0060,   // Special Function Mark
-  ClearDisplay  = 0x0061,	// Clear the digit buffer
-  Redial	= 0x0062,	// Redial Button
-  UpButton	= 0x0063,	// General Up button
-  DownButton	= 0x0064,	// General Down button
-
-};
 
 static HINSTANCE g_hInstance;
 
@@ -130,12 +66,10 @@ class Context
     HANDLE m_hStartedEvent;
     HWND   m_hWnd;
 
-    enum { MaxQueueLen = 20 };
-    Input  m_queue[MaxQueueLen];
-    int    m_queuePos;
-    int    m_queueLen;
+    std::queue<char> m_queue;
     CRITICAL_SECTION m_mutex;
 
+    bool   m_pluggedIn;
     bool   m_isOffHook;
 
     int    m_readFrameSize;
@@ -149,9 +83,9 @@ class Context
       m_hStartedEvent = NULL;
       m_hWnd = NULL;
 
-      m_queuePos = m_queueLen = 0;
       InitializeCriticalSection(&m_mutex);
 
+      m_pluggedIn = false;
       m_isOffHook = false;
       m_readFrameSize = 1;
       m_writeFrameSize = 1;
@@ -172,12 +106,18 @@ class Context
       if (index >= 1)
         return PluginLID_NoMoreNames;
 
-      UINT numDevs = mixerGetNumDevs();
+      UINT numDevs = waveOutGetNumDevs();
       for(UINT i = 0; i < numDevs; i++){
-        MIXERCAPS caps;
-	mixerGetDevCaps(i, &caps, sizeof(caps));
+        WAVEOUTCAPS caps;
+	waveOutGetDevCaps(i, &caps, sizeof(caps));
         if (strstr(caps.szPname, "USB Audio") != NULL) {
-          strcpy(buffer, "HID");
+          if (bufsize <= strlen(caps.szPname))
+            return PluginLID_BufferTooSmall;
+
+          int pos = strlen(caps.szPname)-1;
+          while (caps.szPname[pos] == ' ')
+            caps.szPname[pos--] = '\0';
+          strcpy(buffer, caps.szPname);
           return PluginLID_NoError;
         }
       }
@@ -199,7 +139,7 @@ class Context
         return PluginLID_DeviceOpenFailed;
 
       if (WaitForSingleObject(m_hStartedEvent, 5000) == WAIT_OBJECT_0)
-        return PluginLID_NoError;
+        return PluginLID_UsesSoundChannel;
 
       Close();
       return PluginLID_DeviceOpenFailed;
@@ -245,7 +185,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      *isTerminal = false;
+      *isTerminal = true;
       return PluginLID_NoError;
     }
 
@@ -261,7 +201,7 @@ class Context
       if (line >= 1)
         return PluginLID_NoSuchLine;
 
-      *present = true;
+      *present = m_pluggedIn;
       return PluginLID_NoError;
     }
 
@@ -271,7 +211,7 @@ class Context
       if (offHook == NULL)
         return PluginLID_InvalidParameter;
 
-      if (m_hWnd == 0)
+      if (m_hWnd == NULL)
         return PluginLID_DeviceNotOpen;
 
       if (line >= 1)
@@ -286,7 +226,21 @@ class Context
     //PLUGIN_FUNCTION_ARG2(HookFlash, unsigned,line, unsigned,flashTime)
     //PLUGIN_FUNCTION_ARG2(HasHookFlash, unsigned,line, PluginLID_Boolean *,flashed)
     //PLUGIN_FUNCTION_ARG2(IsLineRinging, unsigned,line, unsigned long *,cadence)
-    //PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
+
+    PLUGIN_FUNCTION_ARG4(RingLine, unsigned,line, unsigned,nCadence, const unsigned *,pattern, unsigned,frequency)
+    {
+      if (m_hWnd == NULL)
+        return PluginLID_DeviceNotOpen;
+
+      if (line >= 1)
+        return PluginLID_NoSuchLine;
+
+      if (nCadence > 0)
+        StartBuzzer();
+      else
+        StopBuzzer();
+    }
+
     //PLUGIN_FUNCTION_ARG3(IsLineConnected, unsigned,line, PluginLID_Boolean,checkForWink, PluginLID_Boolean *,connected)
     //PLUGIN_FUNCTION_ARG3(SetLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean,connect)
     //PLUGIN_FUNCTION_ARG3(IsLineToLineDirect, unsigned,line1, unsigned,line2, PluginLID_Boolean *,connected)
@@ -323,6 +277,26 @@ class Context
 
     PLUGIN_FUNCTION_ARG2(ReadDTMF, unsigned,line, char *,digit)
     {
+      if (digit == NULL)
+        return PluginLID_InvalidParameter;
+
+      if (m_hWnd == NULL)
+        return PluginLID_DeviceNotOpen;
+
+      if (line >= 1)
+        return PluginLID_NoSuchLine;
+
+      EnterCriticalSection(&m_mutex);
+
+      if (m_queue.size() == 0)
+        *digit = '\0';
+      else {
+        *digit = m_queue.front();
+        m_queue.pop();
+      }
+
+      LeaveCriticalSection(&m_mutex);
+
       return PluginLID_NoError;
     }
 
@@ -395,7 +369,8 @@ class Context
       }
 
       SetWindowLong(m_hWnd, 0, (LONG)this);
-      m_queuePos = m_queueLen = 0;
+      while (!m_queue.empty())
+        m_queue.pop();
 
       int result = StartDeviceDetection(m_hWnd,
                                         WM_HID_DEV_ADDED,
@@ -422,64 +397,63 @@ class Context
       }
     }
 
-    void Enqueue(Input flags)
+    void Enqueue(char digit)
     {
       EnterCriticalSection(&m_mutex);
-      m_queue[(m_queuePos+m_queueLen)%MaxQueueLen] = flags;
-      m_queueLen++;
+      m_queue.push(digit);
       LeaveCriticalSection(&m_mutex);
     }
 
     void HandleMsg(UINT message, WPARAM wParam, LPARAM lParam)
     {
       switch (message) {
-        case WM_HID_DEV_ADDED: 
-          Enqueue(PluggedIn);
+        case WM_HID_DEV_ADDED :
+          m_pluggedIn = true;
           StartKeyScan();
           break;
 
-        case WM_HID_DEV_REMOVED: 
-          Enqueue(Unplugged);
+        case WM_HID_DEV_REMOVED :
+          m_pluggedIn = false;
           StopKeyScan();
           break;
 
         case WM_HID_KEY_DOWN: 
           switch (wParam) {
             case 1:
-              Enqueue(Key1);
+              Enqueue('1');
               break;
             case 2:
-              Enqueue(Key4);
+              Enqueue('4');
               break;
             case 3:
-              Enqueue(Key7);
+              Enqueue('7');
               break;
             case 4:
-              Enqueue(KeyStar);  // Star key
+              Enqueue('*');
               break;
             case 5:
-              Enqueue(Key2);
+              Enqueue('2');
               break;
             case 6:
-              Enqueue(Key5);
+              Enqueue('5');
               break;
             case 7:
-              Enqueue(Key8);
+              Enqueue('8');
               break;
             case 8:
-              Enqueue(Key0);
+              Enqueue('0');
               break;
             case 9:
-              Enqueue(Key3);
+              Enqueue('3');
               break;
             case 10:
-              Enqueue(Key6);
+              Enqueue('6');
               break;
             case 11:
-              Enqueue(Key9);
+              Enqueue('9');
               break;
             case 12:
-              Enqueue(KeyHash);  // Hash Key
+              Enqueue('#');
               break;
             case 13:
               m_isOffHook = true;  // Dial key
@@ -488,10 +462,10 @@ class Context
               m_isOffHook = false;;  // Stop Dial key
               break;
             case 15:
-              Enqueue(KeyC);  // left Navigator Keys
+              Enqueue('l');  // left
               break;
             case 16:
-              Enqueue(KeyD);  // Right Navigator Keys
+              Enqueue('r');  // right
           }
           break;
 
@@ -501,9 +475,9 @@ class Context
 
         case WM_HID_VOLUME_DOWN: 
           if ((int)wParam == 1)
-	    Enqueue(VolumeUp);
+	    Enqueue('u');
           else
-	    Enqueue(VolumeDown);
+	    Enqueue('d');
           break;
 
         case WM_HID_VOLUME_UP: 
@@ -511,11 +485,10 @@ class Context
           break;
 
         case WM_HID_PLAYBACK_MUTE: 
-          // Not Implemented
           break;
 
         case WM_HID_RECORD_MUTE: 
-          // Not Implemented
+	  Enqueue('m');
           break;
 
         case WM_DEVICECHANGE: 
@@ -546,18 +519,18 @@ static struct PluginLID_Definition definition[1] =
 
     1083666706,                       // timestamp = Tue 04 May 2004 10:31:46 AM UTC = 
 
-    "USB-HID",                        // LID name text
-    "Generic USB HID",                // LID description text
-    "Anyone",                         // LID manufacturer name
-    "USB-HID",                        // LID model name
+    "CM-HID",                         // LID name text
+    "USB handset for CM phones",      // LID description text
+    "CM",                             // LID manufacturer name
+    "CM-HID",                         // LID model name
     "1.0",                            // LID hardware revision number
     "",                               // LID email contact information
     "",                               // LID web site
 
-    "Robert Jongbloed, Post Increment",                          // source code author
-    "robertj@postincrement.com",                                 // source code email
-    "http://www.postincrement.com",                              // source code URL
-    "Copyright (C) 2006 by Post Increment, All Rights Reserved", // source code copyright
+    "Robert Jongbloed, Vox Lucida",                              // source code author
+    "robertj@voxlucida.com.au",                                  // source code email
+    "http://www.voxgratia.org",                                  // source code URL
+    "Copyright (C) 2006-2008 by Vox Lucida, All Rights Reserved",// source code copyright
     "MPL 1.0",                                                   // source code license
     "1.0",                                                       // source code version
 
