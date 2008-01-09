@@ -46,7 +46,7 @@ class OpalConnection;
 //////////////////////////////////////////////////////////////////
 
 
-#if P_EXPAT and P_VXML
+#if defined(P_EXPAT) && defined(P_VXML)
 
 class PTextToSpeech;
 
