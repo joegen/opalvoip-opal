@@ -504,7 +504,7 @@ PString OpalManager::OnRouteConnection(OpalConnection & connection)
   if (routeTable.IsEmpty())
     return addr;
 
-  return ApplyRouteTable(connection.GetEndPoint().GetPrefixName(), addr);
+  return ApplyRouteTable(connection.GetLocalPartyAddress(), addr);
 }
 
 
@@ -752,8 +752,7 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 
 #ifdef OPAL_H224
 
-OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection,
-														 unsigned sessionID) const
+OpalH224Handler * OpalManager::CreateH224ProtocolHandler(OpalConnection & connection, unsigned sessionID) const
 {
   return new OpalH224Handler(connection, sessionID);
 }
@@ -768,7 +767,7 @@ OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224H
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
     destination(dest),
-    regex('^'+pat+'$')
+    regex('^' + pat + (pat.Find('@') != P_MAX_INDEX ? "$" : "@.*$"))
 {
 }
 
@@ -849,13 +848,17 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
-PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr)
+PString OpalManager::ApplyRouteTable(const PString & source, const PString & addr)
 {
   PWaitAndSignal mutex(routeTableMutex);
 
-  PString destination;
-  PString search = proto + ':' + addr;
+  PINDEX colon = source.Find(':');
+  PString local = source.Mid(colon+1);
+  local.Replace("@", "%40"); // URL style
+  PString search = source.Left(colon+1) + addr + '@' + local;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
+
+  PString destination;
   for (PINDEX i = 0; i < routeTable.GetSize(); i++) {
     RouteEntry & entry = routeTable[i];
     PINDEX pos;
@@ -873,6 +876,9 @@ PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr
   PINDEX pos;
   if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
     destination.Splice(addr.Left(addr.FindSpan("0123456789*#")), pos, 4);
+
+  if ((pos = destination.FindRegEx("<dn[0-9]>")) != P_MAX_INDEX)
+    destination.Splice(addr(destination[pos+3]-'0', addr.FindSpan("0123456789*#")), pos, 5);
 
   if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
     destination.Splice(addr.Mid(addr.FindSpan("0123456789*#")), pos, 5);

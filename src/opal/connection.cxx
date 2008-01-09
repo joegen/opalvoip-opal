@@ -1125,6 +1125,12 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 }
 
 
+PString OpalConnection::GetLocalPartyAddress() const
+{
+  return endpoint.GetPrefixName() + ':' + GetLocalPartyName();
+}
+
+
 void OpalConnection::SetAudioJitterDelay(unsigned minDelay, unsigned maxDelay)
 {
   maxDelay = PMAX(10, PMIN(maxDelay, 999));
