@@ -714,27 +714,51 @@ class OpalManager : public PObject
        Add a route entry to the route table.
 
        The specification string is of the form pattern=destination where
-       pattern is a regular expression matching the incoming calls
-       destination address and will translate it to the outgoing destination
-       address for making an outgoing call. For example, picking up a PhoneJACK
-       handset and dialing 2, 6 would result in an address of "pots:26"
-       which would then be matched against, say, a specification of
-       pots:26=h323:10.0.1.1, resulting in a call from the pots handset to
-       10.0.1.1 using H.323.
+       pattern is a regular expression matching a "source" string and the
+       destination is what is then used to make the second connection in
+       the call.
 
-       As the pattern field is a regular expression, you could have used in
+       The "source" is a string built from the A party connection type, the
+       destination address provided by the remote on the connection and the
+       connections local address. The last is endpoint dependent.
+
+       For example, picking up a PhoneJACK handset and dialing 2, 6 and #
+       would result in a source address of "pots:26@Quicknet:01AB3F4:0".
+       An incoming SIP call could result in "sip:boris@fred%40nurk.com", note
+       the @ in the local user address has been translated to %40 as per URL
+       rules.
+
+       A specification of pots:26=h323:10.0.1.1, would result in a call from
+       the pots handset to 10.0.1.1 using H.323.
+
+       As the pattern field is a regular expression, it is possible to use in
        the above .*:26=h323:10.0.1.1 to achieve the same result with the
        addition that an incoming call from a SIP client would also be routed
        to the H.323 client.
 
-       Note that the pattern has an implicit ^ and $ at the beginning and end
-       of the regular expression. So it must match the entire address.
+       Note that the pattern has an implicit "^" at the beginning of the
+       regular expression and "@.*$" at the end if no "@" is present, or
+       simply a "$" if an "@" is present. The result is that it generally
+       must match the entire address.
+
+       There are some macros available in the destiantion string to transfer
+       information from the source address to the destination URL. This is
+       primarily for DNs (Destination Numbers) that have come from the pots
+       devices. They are:
+         <dn>    Copy all valid consecutive E.164 digits from the source so
+                 pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
+         <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
+                 pots:00612198765 becomes sip:61298765@carrier.com
+         <dn2ip> Translate digits separated by '*' characters to an IP
+                 address. e.g. 10*0*1*1 becomes 10.0.1.1, also
+                 1234*10*0*1*1 becomes 1234@10.0.1.1 and
+                 1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.
 
        If the specification is of the form @filename, then the file is read
        with each line consisting of a pattern=destination route specification.
        Lines without an equal sign or beginning with '#' are ignored.
 
-       Returns PTrue if an entry was added.
+       Returns true if an entry was added.
       */
     virtual PBoolean AddRouteEntry(
       const PString & spec  ///<  Specification string to add
@@ -763,10 +787,15 @@ class OpalManager : public PObject
     const RouteTable & GetRouteTable() const { return routeTable; }
 
     /**Route the source address to a destination using the route table.
+       The source parameter may be something like pots:1@vpb:1:2 or
+       sip:fred@nurk.com.
+
+       The destination parameter is a partial URL, it does not include the
+       protocol, but may be of the form user@host, or simply digits.
       */
     virtual PString ApplyRouteTable(
-      const PString & proto,
-      const PString & addr
+      const PString & source,     /// Source address, including endpoint protocol
+      const PString & destination /// Destination address read from source protocol
     );
   //@}
 
