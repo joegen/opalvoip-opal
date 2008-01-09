@@ -122,12 +122,26 @@ OpalLineInterfaceDevice * OpenLID(const PString & type, const PString & name)
     return NULL;
   }
 
-  if (device->Open(name))
+  if (device->Open(name) && device->IsLinePresent(0))
     return device;
 
   cerr << "Could not open a \"" << type << "\" LID using name \"" << name << '"' << endl;
   delete device;
   return NULL;
+}
+
+
+void TestRing(OpalLineInterfaceDevice * device)
+{
+  if (device == NULL)
+    return;
+
+  device->RingLine(0, 1);
+  Sleep(2000);
+  device->RingLine(0, 0);
+  Sleep(2000);
+
+  delete device;
 }
 
 
@@ -137,10 +151,17 @@ void TestButtons(OpalLineInterfaceDevice * device)
     return;
 
   cout << "Press '#' to exit." << endl;
+  bool oldHook = false;
 
   char digit;
   do {
     Sleep(100);
+
+    bool newHook = device->IsLineOffHook(0);
+    if (oldHook != newHook) {
+      cout << "Line " << (newHook ? "OFF" : "ON") << " hook." << endl;
+      oldHook = newHook;
+    }
 
     digit = device->ReadDTMF(0);
     if (digit == '\0')
@@ -175,6 +196,7 @@ void LidTest::Main()
              "l-list."
              "T-type:"
              "N-name:"
+             "r-ring."
              "b-buttons."
 #if PTRACING
              "t-trace."
@@ -217,6 +239,11 @@ void LidTest::Main()
     needHelp = false;
   }
 
+  if (args.HasOption('r')) {
+    TestRing(OpenLID(args.GetOptionString('T'), args.GetOptionString('N')));
+    needHelp = false;
+  }
+
   if (args.HasOption('b')) {
     TestButtons(OpenLID(args.GetOptionString('T'), args.GetOptionString('N')));
     needHelp = false;
@@ -229,6 +256,7 @@ void LidTest::Main()
         << "  -l --list           List all LID types and device names\n"
         << "  -T --type type      Set LID device type\n"
         << "  -N --name dev       Set LID device name\n"
+        << "  -r --ring           Test ring on LID\n"
         << "  -b --buttons        Test buttons on LID\n"
         << "  -t --trace          Increment trace level\n"
         << "  -o --output         Trace output file\n"
