@@ -151,6 +151,15 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "OPALPlugIns", "Installer_20
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LID Test", "..\samples\lidtest\lidtest_2005.vcproj", "{FCD21BA6-6438-47B8-BA30-D71722E66024}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{3FCBA070-C605-4EE5-B078-E2461F792B36} = {3FCBA070-C605-4EE5-B078-E2461F792B36}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -406,6 +415,15 @@ Global
 		{3DBFDD67-5BA3-4069-94E9-60114C80CBEA}.Release|Win32.ActiveCfg = Release
 		{3DBFDD67-5BA3-4069-94E9-60114C80CBEA}.Release|Win32.Build.0 = Release
 		{3DBFDD67-5BA3-4069-94E9-60114C80CBEA}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.Debug|Win32.Build.0 = Debug|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.No Trace|Win32.ActiveCfg = Debug|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.No Trace|Win32.Build.0 = Debug|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.Release|Win32.ActiveCfg = Release|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.Release|Win32.Build.0 = Release|Win32
+		{FCD21BA6-6438-47B8-BA30-D71722E66024}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
