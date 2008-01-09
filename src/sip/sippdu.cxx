@@ -1148,9 +1148,11 @@ PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Process(password);
   digestor.Complete(a1);
 
-  digestor.Start();
-  digestor.Process(pdu.GetEntityBody());
-  digestor.Complete(entityBodyCode);
+  if (qopAuthInt) {
+    digestor.Start();
+    digestor.Process(pdu.GetEntityBody());
+    digestor.Complete(entityBodyCode);
+  }
 
   digestor.Start();
   digestor.Process(MethodNames[pdu.GetMethod()]);
