@@ -200,7 +200,7 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="usb_win.cpp"
+				RelativePath="cm_hid_win.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
