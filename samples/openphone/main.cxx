@@ -1855,7 +1855,11 @@ void MyManager::StartRegistrars()
 
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
-      bool ok = sipEP->Register(iter->m_Domain, iter->m_User, iter->m_User, iter->m_Password);
+      SIPRegister::Params param;
+      param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
+      param.m_authID = (PString)iter->m_User;
+      param.m_password = (PString)iter->m_Password;
+      bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
     }
   }
@@ -1864,17 +1868,8 @@ void MyManager::StartRegistrars()
 
 void MyManager::StopRegistrars()
 {
-  if (sipEP == NULL)
-    return;
-
-  for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
-    PStringStream aor;
-    aor << iter->m_User << '@' << iter->m_Domain;
-    if (sipEP->IsRegistered(aor)) {
-      LogWindow << "SIP registration ended for " << aor << endl;
-      sipEP->Unregister(aor);
-    }
-  }
+  if (sipEP != NULL)
+    sipEP->UnregisterAll();
 }
 
 
