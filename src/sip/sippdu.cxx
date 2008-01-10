@@ -1197,8 +1197,8 @@ PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
     auth << ", "
          << "response=\"" << AsHex(response) << "\", "
          << "cnonce=\"" << cnonce << "\", "
-         << "nc=\"" << nc << "\", "
-         << "qop=\"" << qop << "\"";
+         << "nc=" << nc << ", "
+         << "qop=" << qop;
   }
   else {
     digestor.Process(AsHex(a2));
