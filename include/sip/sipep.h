@@ -45,6 +45,10 @@
 #include <sip/sippdu.h>
 #include <sip/handlers.h> 
 
+
+class SIPRegisterHandler;
+
+
 //
 //  provide flag so applications know if presence is available
 //
@@ -319,29 +323,26 @@ class SIPEndPoint : public OpalEndPoint
     virtual void OnMessageReceived (const SIPURL & from,
                     const PString & body);
 
-                
+
     /**Register to a registrar. This function is asynchronous to permit
-     * several registrations to occur at the same time. It can be
-     * called several times for different hosts and users.
-     * 
-     * The username can be of the form user@domain. In that case,
-     * the From field will be set to that value.
-     * 
-     * The realm can be specified when registering, this will
-     * allow to find the correct authentication information when being
-     * requested. If no realm is specified, authentication will
-     * occur with the "best guess" of authentication parameters.
+       several registrations to occur at the same time. It can be
+       called several times for different hosts and users.
+       
+       The username can be of the form user@domain. In that case,
+       the address-of-record field will be set to that value. If not then
+       the address-of-record is constructed from the user and host fields.
+       
+       The realm can be specified when registering, this will
+       allow to find the correct authentication information when being
+       requested. If no realm is specified, authentication will
+       occur with the "best guess" of authentication parameters.
      */
-    PBoolean Register(
-      unsigned expire,
-      const PString & aor = PString::Empty(),                 ///< user@host
-      const PString & authName = PString::Empty(),            ///< authentication user name
-      const PString & password = PString::Empty(),            ///< authentication password
-      const PString & authRealm = PString::Empty(),           ///< authentication realm
-      const PTimeInterval & minRetryTime = PMaxTimeInterval, 
-      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+    bool Register(
+      const SIPRegister::Params & params /// Registration paarameters
     );
-    PBoolean Register(
+
+    /// Registration function for backward compatibility.
+    bool Register(
       const PString & host,
       const PString & user = PString::Empty(),
       const PString & autName = PString::Empty(),
@@ -351,12 +352,16 @@ class SIPEndPoint : public OpalEndPoint
       const PTimeInterval & minRetryTime = PMaxTimeInterval, 
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
-    
 
-    /**Unregister from a registrar. 
+    /**Unregister from a registrar.
+       This will unregister the specified address-of-record. If an empty
+       string is provided then ALL registrations are removed.
      */
-    PBoolean Unregister(const PString & aor);
+    bool Unregister(const PString & aor);
 
+    /**Unregister all current registrations.
+      */
+    bool UnregisterAll();
     
     /**Subscribe to a notifier. This function is asynchronous to permit
      * several subscriptions to occur at the same time.
@@ -631,13 +636,7 @@ class SIPEndPoint : public OpalEndPoint
      */
     void SetNATBindingRefreshMethod(const NATBindingRefreshMethod m) { natMethod = m; }
 
-    virtual SIPRegisterHandler * CreateRegisterHandler(const PString & to,
-                                                       const PString & authName, 
-                                                       const PString & password, 
-                                                       const PString & realm,
-                                                                   int expire,
-                                                 const PTimeInterval & minRetryTime, 
-                                                 const PTimeInterval & maxRetryTime);
+    virtual SIPRegisterHandler * CreateRegisterHandler(const SIPRegister::Params & params);
 
   protected:
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
@@ -653,7 +652,7 @@ class SIPEndPoint : public OpalEndPoint
     SIPURL        proxy;
     PString       userAgentString;
 
-    PBoolean          mimeForm;
+    bool          mimeForm;
     unsigned      maxRetries;
     PTimeInterval retryTimeoutMin;   // T1
     PTimeInterval retryTimeoutMax;   // T2
