@@ -222,14 +222,21 @@ PBoolean OpalPluginLID::Open(const PString & device)
       break;
 
     case PluginLID_UsesSoundChannel :
-      if (!m_player.Open(device, PSoundChannel::Player)) {
-        PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open player for \"" << device << '"');
-        return PFalse;
-      }
+      {
+        PINDEX backslash = device.Find('\\');
+        if (backslash != P_MAX_INDEX)
+          backslash++;
+        else
+          backslash = 0;
+        if (!m_player.Open(device.Mid(backslash), PSoundChannel::Player)) {
+          PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open player for \"" << device << '"');
+          return PFalse;
+        }
 
-      if (!m_recorder.Open(device, PSoundChannel::Recorder)) {
-        PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
-        return PFalse;
+        if (!m_recorder.Open(device.Mid(backslash), PSoundChannel::Recorder)) {
+          PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
+          return PFalse;
+        }
       }
       break;
 
