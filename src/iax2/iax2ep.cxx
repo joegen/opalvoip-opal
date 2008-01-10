@@ -92,12 +92,14 @@ IAX2EndPoint::~IAX2EndPoint()
   packetsReadFromEthernet.AllowDeleteObjects();  
   PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the incoming frame handler");
   
-  transmitter->Terminate();
-  receiver->Terminate();
-  transmitter->WaitForTermination();
-  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 transmitter");
-  receiver->WaitForTermination();
-  PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 receiver");
+  if (receiver != NULL && transmitter != NULL) {
+    transmitter->Terminate();
+    receiver->Terminate();
+    transmitter->WaitForTermination();
+    PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 transmitter");
+    receiver->WaitForTermination();
+    PTRACE(6, "Iax2Endpoint\tDestructor - cleaned up the iax2 receiver");
+  }
 
   if (specialPacketHandler != NULL) {
     specialPacketHandler->Terminate();
