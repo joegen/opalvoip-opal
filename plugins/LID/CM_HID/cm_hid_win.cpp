@@ -66,14 +66,11 @@ class Context
     HANDLE m_hStartedEvent;
     HWND   m_hWnd;
 
-    std::queue<char> m_queue;
-    CRITICAL_SECTION m_mutex;
-
     bool   m_pluggedIn;
     bool   m_isOffHook;
 
-    int    m_readFrameSize;
-    int    m_writeFrameSize;
+    std::queue<char> m_queue;
+    CRITICAL_SECTION m_mutex;
 
   public:
     PLUGIN_LID_CTOR()
@@ -83,12 +80,10 @@ class Context
       m_hStartedEvent = NULL;
       m_hWnd = NULL;
 
-      InitializeCriticalSection(&m_mutex);
-
       m_pluggedIn = false;
       m_isOffHook = false;
-      m_readFrameSize = 1;
-      m_writeFrameSize = 1;
+
+      InitializeCriticalSection(&m_mutex);
     }
 
     PLUGIN_LID_DTOR()

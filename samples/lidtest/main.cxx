@@ -122,7 +122,14 @@ OpalLineInterfaceDevice * OpenLID(const PString & type, const PString & name)
     return NULL;
   }
 
-  if (device->Open(name) && device->IsLinePresent(0))
+  PString adjustedName = name;
+  if (name.IsEmpty()) {
+    PStringArray names = device->GetAllNames();
+    if (names.IsEmpty())
+      return NULL;
+    adjustedName = names[0];
+  }
+  if (device->Open(adjustedName) && device->IsLinePresent(0))
     return device;
 
   cerr << "Could not open a \"" << type << "\" LID using name \"" << name << '"' << endl;
