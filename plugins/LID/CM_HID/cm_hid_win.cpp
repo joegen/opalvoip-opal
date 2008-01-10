@@ -106,8 +106,13 @@ class Context
       if (index >= 1)
         return PluginLID_NoMoreNames;
 
+      if (StartDeviceDetection(NULL, 0, 0, 0, 0, 0, 0, 0, 0) == 0)
+        return PluginLID_NoMoreNames;
+
+      CloseDevice();
+
       UINT numDevs = waveOutGetNumDevs();
-      for(UINT i = 0; i < numDevs; i++){
+      for (UINT i = 0; i < numDevs; i++) {
         WAVEOUTCAPS caps;
 	waveOutGetDevCaps(i, &caps, sizeof(caps));
         if (strstr(caps.szPname, "USB Audio") != NULL) {
