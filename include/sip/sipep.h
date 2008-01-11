@@ -642,13 +642,6 @@ class SIPEndPoint : public OpalEndPoint
     PDECLARE_NOTIFIER(PThread, SIPEndPoint, TransportThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPEndPoint, NATBindingRefresh);
 
-
-    void ParsePartyName(
-      const PString & remoteParty,     ///<  Party name string.
-      PString & party                  ///<  Parsed party name, after e164 lookup
-    );
-
-
     SIPURL        proxy;
     PString       userAgentString;
 
