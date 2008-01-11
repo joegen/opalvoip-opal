@@ -43,7 +43,20 @@ static HINSTANCE g_hInstance;
 
 char g_IniFile[MAX_PATH];
 
-static const char Keys[] = "SE1234567890*#cmudlr";
+/*
+The values 0-9, * and # are the usual DTMF numbers. The other values are:
+  S = Start - go off hook
+  E = End - go on hook
+  c = clear entry
+  h = hold
+  m = mute microphnoe
+  + = volume up
+  - = volume down
+  u,d,l,r = navigation keys
+  p = phonebook
+  a = add
+*/
+static const char Keys[] = "SE1234567890*#chm+-udlrpa";
 #define NumKeys (sizeof(Keys)-1)
 
 
@@ -111,7 +124,8 @@ class Context
             UINT size = info.cbSize = sizeof(info);
             if ((int)GetRawInputDeviceInfo(rawDevices[i].hDevice, RIDI_DEVICEINFO, &info, &size) < 0)
               break;
-            if (info.hid.usUsagePage == 11) {  // Telephony device
+            if (info.hid.usUsagePage == 11 ||  // Telephony device
+                info.hid.usUsagePage == 12) {  // Some brain dead handsets say "Consumer Device"
 
               char name[100];
               _snprintf(name, sizeof(name), "%04x/%04x", info.hid.dwVendorId&0xffff, info.hid.dwProductId&0xffff);
@@ -480,7 +494,7 @@ class Context
           BYTE * data = raw->data.hid.bRawData;
           for (DWORD i = 0; i < raw->data.hid.dwCount; i++) {
             EnterCriticalSection(&m_mutex);
-#if 0
+#if 1
             char buffer[100];
             buffer[0] = '\0';
             for (DWORD b =0; b < raw->data.hid.dwSizeHid; b++)
