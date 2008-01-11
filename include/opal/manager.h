@@ -714,37 +714,42 @@ class OpalManager : public PObject
        Add a route entry to the route table.
 
        The specification string is of the form pattern=destination where
-       pattern is a regular expression matching a "source" string and the
-       destination is what is then used to make the second connection in
+       "pattern" is a regular expression matching a "source" string and
+       "destination" is what is then used to make the second connection in
        the call.
 
-       The "source" is a string built from the A party connection type, the
-       destination address provided by the remote on the connection and the
-       connections local address. The last is endpoint dependent.
+       The "source" is a string built from the A party address and the
+       destination address provided by the remote on that connection. The A
+       party is the local connection name, e.g. "pots:vpb:1/2" or
+       "h323:myname@myhost.com". The destination maye be simple digits or a
+       full URI e.g. "26" or "sip:theirname@theirhost.com". The two addresses
+       are separated by a '\t' (TAB) character.
 
        For example, picking up a PhoneJACK handset and dialing 2, 6 and #
-       would result in a source address of "pots:26@Quicknet:01AB3F4:0".
-       An incoming SIP call could result in "sip:boris@fred%40nurk.com", note
-       the @ in the local user address has been translated to %40 as per URL
-       rules.
+       would result in a source string of "pots:Quicknet:01AB3F4:0 26". An
+       incoming H.323 call could result in "h323:myname@myhost.com\tboris" or
+       "h323:myname@myhost.com\tsip:othername@otherhost.com".
 
-       A specification of pots:26=h323:10.0.1.1, would result in a call from
-       the pots handset to 10.0.1.1 using H.323.
+       The pattern field is a regular expression, though for convenience and
+       backward compatibility there are certain modifications that are applied
+       before it is used. First there is an implicit '^' at the beginning and
+       a '$' at the end, so the regular expression must match the entire
+       source string. Second, if there is a ':' present, but no '\t' in the
+       expression then the sub-expression ".*\t" is inserted immediately after
+       the ':' character.
 
-       As the pattern field is a regular expression, it is possible to use in
-       the above .*:26=h323:10.0.1.1 to achieve the same result with the
-       addition that an incoming call from a SIP client would also be routed
-       to the H.323 client.
+       Thus, using the PhoneJack example above, "pots:26=h323:10.0.1.1", would
+       result in a call from the pots handset to 10.0.1.1 using H.323. While
+       the expression "pots:.*:0\t26=h323:10.0.1.1" would only route the call
+       if the source was the handset on line zero.
 
-       Note that the pattern has an implicit "^" at the beginning of the
-       regular expression and "@.*$" at the end if no "@" is present, or
-       simply a "$" if an "@" is present. The result is that it generally
-       must match the entire address.
-
-       There are some macros available in the destiantion string to transfer
-       information from the source address to the destination URL. This is
-       primarily for DNs (Destination Numbers) that have come from the pots
-       devices. They are:
+       There are some macros available in the destination string to transfer
+       information from the source protocols destination address string to the
+       final destination address. This is primarily for Destination Numbers
+       (DNs) that have come from pots devices. They are:
+         <da>    Copy the destination address in it's entirety. For example
+                 "tel:.* = sip:<da>" maps the RFC2806 telephone URL to
+                 use the SIP protocol.
          <dn>    Copy all valid consecutive E.164 digits from the source so
                  pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
          <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
@@ -754,9 +759,16 @@ class OpalManager : public PObject
                  1234*10*0*1*1 becomes 1234@10.0.1.1 and
                  1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.
 
-       If the specification is of the form @filename, then the file is read
-       with each line consisting of a pattern=destination route specification.
-       Lines without an equal sign or beginning with '#' are ignored.
+       To allow for complex tables a final destination address that starts
+       with "label:" will cause the pattern matcher to restart from the
+       beginning of the table using the new string as the "source". Thus
+       "pots:26=label:speeddial" and "label:speeddial=h323:10.0.1.1" in the
+       table has the same result as "pots:26=h323:10.0.1.1".
+
+       If the specification parameter is of the form @filename, then the file
+       is read with each line consisting of a pattern=destination route
+       specification. Lines without an equal sign or beginning with '#' are
+       ignored.
 
        Returns true if an entry was added.
       */
@@ -787,15 +799,16 @@ class OpalManager : public PObject
     const RouteTable & GetRouteTable() const { return routeTable; }
 
     /**Route the source address to a destination using the route table.
-       The source parameter may be something like pots:1@vpb:1:2 or
+       The source parameter may be something like pots:vpb:1/2 or
        sip:fred@nurk.com.
 
        The destination parameter is a partial URL, it does not include the
        protocol, but may be of the form user@host, or simply digits.
       */
     virtual PString ApplyRouteTable(
-      const PString & source,     /// Source address, including endpoint protocol
-      const PString & destination /// Destination address read from source protocol
+      const PString & source,      /// Source address, including endpoint protocol
+      const PString & destination, /// Destination address read from source protocol
+      PINDEX & entry
     );
   //@}
 

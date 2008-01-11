@@ -184,7 +184,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
                                              const OpalTransportAddress & localAddress)
 {
   OpalTransport * transport = NULL;
-	
+  
   for (PINDEX i = 0; i < listeners.GetSize(); i++) {
     if ((transport = listeners[i].CreateTransport(localAddress, remoteAddress)) != NULL)
       break;
@@ -246,22 +246,50 @@ void SIPEndPoint::HandlePDU(OpalTransport & transport)
 }
 
 
+static PString TranslateENUM(const PString & remoteParty)
+{
+#if P_DNS
+  // if there is no '@', and then attempt to use ENUM
+  if (remoteParty.Find('@') == P_MAX_INDEX) {
+
+    // make sure the number has only digits
+    PString e164 = remoteParty;
+    PINDEX pos = e164.Find(':');
+    if (pos != P_MAX_INDEX)
+      e164.Delete(0, pos+1);
+    pos = e164.FindSpan("0123456789*#", e164[0] != '+' ? 0 : 1);
+    e164.Delete(pos, P_MAX_INDEX);
+
+    if (!e164.IsEmpty()) {
+      PString str;
+      if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
+        PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
+        return str;
+      }
+    }
+  }
+#endif
+
+  return remoteParty;
+}
+
+
 PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
                                  const PString & remoteParty,
                                  void * userData,
                                  unsigned int options,
                                  OpalConnection::StringOptions * stringOptions)
 {
-  if (remoteParty.Find("sip:") != 0)
+  if (remoteParty.NumCompare(GetPrefixName()+':') != EqualTo)
     return false;
 
-  PString adjustedRemoteParty;
-  ParsePartyName(remoteParty, adjustedRemoteParty);
+  if (listeners.IsEmpty())
+    return false;
 
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, adjustedRemoteParty, NULL, NULL, options, stringOptions);
+  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions);
   if (!AddConnection(connection))
     return PFalse;
 
@@ -321,9 +349,9 @@ SIPConnection * SIPEndPoint::CreateConnection(OpalCall & call,
 
 
 PBoolean SIPEndPoint::SetupTransfer(const PString & token,  
-				const PString & /*callIdentity*/, 
-				const PString & remoteParty,  
-				void * userData)
+        const PString & /*callIdentity*/, 
+        const PString & remoteParty,  
+        void * userData)
 {
   // Make a new connection
   PSafePtr<OpalConnection> otherConnection = GetConnectionWithLock(token, PSafeReference);
@@ -334,13 +362,10 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
   
   call.CloseMediaStreams();
   
-  PString parsedParty;
-  ParsePartyName(remoteParty, parsedParty);
-
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, parsedParty, NULL, NULL);
+  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL);
   if (!AddConnection(connection))
     return false;
 
@@ -354,7 +379,7 @@ PBoolean SIPEndPoint::SetupTransfer(const PString & token,
 
 
 PBoolean SIPEndPoint::ForwardConnection(SIPConnection & connection,  
-				    const PString & forwardParty)
+            const PString & forwardParty)
 {
   OpalCall & call = connection.GetCall();
   
@@ -488,8 +513,8 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
         default :
           // Failure for a SUBSCRIBE/REGISTER/PUBLISH/MESSAGE 
-	  if (handler != NULL)
-	    handler->OnFailed(response.GetStatusCode());
+    if (handler != NULL)
+      handler->OnFailed(response.GetStatusCode());
           break;
       }
   }
@@ -640,7 +665,7 @@ PBoolean SIPEndPoint::OnReceivedNOTIFY (OpalTransport & transport, SIP_PDU & pdu
 
 
 void SIPEndPoint::OnReceivedMESSAGE(OpalTransport & /*transport*/, 
-				    SIP_PDU & pdu)
+            SIP_PDU & pdu)
 {
   PString from = pdu.GetMIME().GetFrom();
   PINDEX j = from.Find (';');
@@ -667,14 +692,14 @@ void SIPEndPoint::OnRegistrationStatus(const PString & aor,
 
 
 void SIPEndPoint::OnRegistrationFailed(const PString & /*aor*/, 
-				       SIP_PDU::StatusCodes /*reason*/, 
-				       PBoolean /*wasRegistering*/)
+               SIP_PDU::StatusCodes /*reason*/, 
+               PBoolean /*wasRegistering*/)
 {
 }
     
 
 void SIPEndPoint::OnRegistered(const PString & /*aor*/, 
-			       PBoolean /*wasRegistering*/)
+             PBoolean /*wasRegistering*/)
 {
 }
 
@@ -917,14 +942,14 @@ PBoolean SIPEndPoint::Ping(const PString & to)
 
 
 void SIPEndPoint::OnMessageReceived (const SIPURL & /*from*/,
-				     const PString & /*body*/)
+             const PString & /*body*/)
 {
 }
 
 
 void SIPEndPoint::OnMWIReceived (const PString & /*to*/,
-				 SIPSubscribe::MWIType /*type*/,
-				 const PString & /*msgs*/)
+         SIPSubscribe::MWIType /*type*/,
+         const PString & /*msgs*/)
 {
 }
 
@@ -937,36 +962,8 @@ void SIPEndPoint::OnPresenceInfoReceived (const PString & /*user*/,
 
 
 void SIPEndPoint::OnMessageFailed(const SIPURL & /* messageUrl */,
-				  SIP_PDU::StatusCodes /* reason */)
+          SIP_PDU::StatusCodes /* reason */)
 {
-}
-
-
-void SIPEndPoint::ParsePartyName(const PString & remoteParty, PString & party)
-{
-  party = remoteParty;
-  
-#if P_DNS
-  // if there is no '@', and then attempt to use ENUM
-  if (remoteParty.Find('@') == P_MAX_INDEX) {
-
-    // make sure the number has only digits
-    PString e164 = remoteParty;
-    if (e164.Left(4) *= "sip:")
-      e164 = e164.Mid(4);
-    PINDEX i;
-    for (i = 0; i < e164.GetLength(); ++i)
-      if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
-	      break;
-    if (i >= e164.GetLength()) {
-      PString str;
-      if (PDNS::ENUMLookup(e164, "E2U+SIP", str)) {
-	      PTRACE(4, "SIP\tENUM converted remote party " << remoteParty << " to " << str);
-	      party = str;
-      }
-    }
-  }
-#endif
 }
 
 
@@ -1074,7 +1071,7 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
   if (contactAddress.GetIpAndPort(localIP, localPort)) {
     PIPSocket::Address remoteIP;
     if (transport.GetRemoteAddress().GetIpAddress(remoteIP)) {
-      GetManager().TranslateIPAddress(localIP, remoteIP); 	 
+      GetManager().TranslateIPAddress(localIP, remoteIP);    
       contactPort = localPort;
       contactAddress = OpalTransportAddress(localIP, contactPort, "udp");
     }

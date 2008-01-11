@@ -479,7 +479,22 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     return PTrue;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  return MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions);
+  PINDEX tableEntry = 0;
+  for (;;) {
+    PString destination = OnRouteConnection(connection);
+    if (destination.IsEmpty())
+      break;
+
+    destination = ApplyRouteTable(connection.GetLocalPartyAddress(), destination, tableEntry);
+    if (destination.IsEmpty())
+      break;
+
+    if (MakeConnection(call, destination, NULL, options, stringOptions))
+      return true;
+  }
+
+  PTRACE(3, "OpalMan\tCould not route connection " << connection);
+  return false;
 }
 
 
@@ -487,24 +502,9 @@ PString OpalManager::OnRouteConnection(OpalConnection & connection)
 {
   // See if have pre-allocated B party address, otherwise use routing algorithm
   PString addr = connection.GetCall().GetPartyB();
-  if (addr.IsEmpty()) {
+  if (addr.IsEmpty())
     addr = connection.GetDestinationAddress();
-
-    // No address, fail call
-    if (addr.IsEmpty())
-      return addr;
-  }
-
-  // Have explicit protocol defined, so no translation to be done
-  PINDEX colon = addr.Find(':');
-  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(colon)) != NULL)
-    return addr;
-
-  // No routes specified, just return what we've got so far, maybe it will work
-  if (routeTable.IsEmpty())
-    return addr;
-
-  return ApplyRouteTable(connection.GetLocalPartyAddress(), addr);
+  return addr;
 }
 
 
@@ -766,9 +766,22 @@ OpalH281Handler * OpalManager::CreateH281ProtocolHandler(OpalH224Handler & h224H
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
-    destination(dest),
-    regex('^' + pat + (pat.Find('@') != P_MAX_INDEX ? "$" : "@.*$"))
+    destination(dest)
 {
+  PString adjustedPattern = '^';
+
+  PINDEX colon = pattern.Find(':');
+  if (colon != P_MAX_INDEX && (pattern.Find('\t', colon) == P_MAX_INDEX ||
+                               pattern.Find("\\t", colon) == P_MAX_INDEX))
+    adjustedPattern += pattern.Left(colon+1) + ".*\t" + pattern.Mid(colon+1);
+  else
+    adjustedPattern += pattern;
+
+  adjustedPattern += '$';
+
+  if (!regex.Compile(adjustedPattern)) {
+    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << pattern << '"');
+  }
 }
 
 
@@ -848,28 +861,33 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
-PString OpalManager::ApplyRouteTable(const PString & source, const PString & addr)
+PString OpalManager::ApplyRouteTable(const PString & source, const PString & addr, PINDEX & routeIndex)
 {
   PWaitAndSignal mutex(routeTableMutex);
 
-  PINDEX colon = source.Find(':');
-  PString local = source.Mid(colon+1);
-  local.Replace("@", "%40"); // URL style
-  PString search = source.Left(colon+1) + addr + '@' + local;
+  if (routeTable.IsEmpty())
+    return addr;
+
+  PString search = source + '\t' + addr;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
 
   PString destination;
-  for (PINDEX i = 0; i < routeTable.GetSize(); i++) {
-    RouteEntry & entry = routeTable[i];
+  while (routeIndex < routeTable.GetSize()) {
+    RouteEntry & entry = routeTable[routeIndex];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
-      destination = routeTable[i].destination;
-      break;
-    }
-  }
+      destination = routeTable[routeIndex++].destination;
+      if (destination.NumCompare("label:") != EqualTo)
+        break;
 
-  if (destination.IsEmpty())
-    return PString::Empty();
+      // restart search in table using label.
+      search = destination;
+      destination.MakeEmpty();
+      routeIndex = 0;
+    }
+    else
+      routeIndex++;
+  }
 
   destination.Replace("<da>", addr);
 
