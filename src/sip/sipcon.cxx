@@ -977,6 +977,12 @@ PBoolean SIPConnection::SetUpConnection()
 }
 
 
+PString SIPConnection::GetDestinationAddress()
+{
+  return calledDestinationURL;
+}
+
+
 void SIPConnection::HoldConnection()
 {
   if (local_hold || transport == NULL)
