@@ -43,7 +43,7 @@ static HINSTANCE g_hInstance;
 
 char g_IniFile[MAX_PATH];
 
-static const char Keys[] = "1234567890*#udlrcSE";
+static const char Keys[] = "SE1234567890*#cmudlr";
 #define NumKeys (sizeof(Keys)-1)
 
 
@@ -66,6 +66,7 @@ class Context
     bool   m_isOffHook;
 
     std::vector<BYTE> m_keymap[NumKeys];
+    std::vector<BYTE> m_keymask[NumKeys];
 
   public:
     PLUGIN_LID_CTOR()
@@ -170,12 +171,20 @@ class Context
         char hexData[100];
         int len = GetPrivateProfileString(name, item, NULL, hexData, sizeof(hexData), g_IniFile)/2;
         m_keymap[i].resize(len);
+        m_keymask[i].resize(len);
         for (int j = 0; j < len; j++) {
           char hexByte[3];
           hexByte[0] = hexData[j*2];
           hexByte[1] = hexData[j*2+1];
           hexByte[2] = '\0';
-          m_keymap[i][j] = (BYTE)strtoul(hexByte, NULL, 16);
+          if (strcmp(hexByte, "xx") == 0) {
+            m_keymap[i][j] = 0;
+            m_keymask[i][j] = 0;
+          }
+          else {
+            m_keymap[i][j] = (BYTE)strtoul(hexByte, NULL, 16);
+            m_keymask[i][j] = 0xff;
+          }
         }
       }
 
@@ -480,20 +489,27 @@ class Context
             OutputDebugString(buffer);
 #endif
             for (int c = 0; c < NumKeys; c++) {
-              if (m_keymap[c].size() > 0 &&
-                  m_keymap[c].size() <= raw->data.hid.dwSizeHid &&
-                  memcmp(data, &m_keymap[c][0], m_keymap[c].size()) == 0) {
-                switch (Keys[c]) {
-                  case 'S' : // Start
-                    m_isOffHook = true;
+              if (m_keymap[c].size() > 0 && m_keymap[c].size() <= raw->data.hid.dwSizeHid) {
+                bool matched = true;
+                for (size_t j = 0; j < m_keymap[c].size(); j++) {
+                  if ((data[j] & m_keymask[c][j]) != m_keymap[c][j]) {
+                    matched = false;
                     break;
-                  case 'E' : // End
-                    m_isOffHook = false;
-                    break;
-                  default :
-                    m_queue.push(Keys[c]);
+                  }
                 }
-                break;
+                if (matched) {
+                  switch (Keys[c]) {
+                    case 'S' : // Start
+                      m_isOffHook = true;
+                      break;
+                    case 'E' : // End
+                      m_isOffHook = false;
+                      break;
+                    default :
+                      m_queue.push(Keys[c]);
+                  }
+                  break;
+                }
               }
             }
             LeaveCriticalSection(&m_mutex);
