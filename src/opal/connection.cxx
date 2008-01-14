@@ -1125,7 +1125,7 @@ void OpalConnection::SetLocalPartyName(const PString & name)
 }
 
 
-PString OpalConnection::GetLocalPartyAddress() const
+PString OpalConnection::GetLocalPartyURL() const
 {
   return endpoint.GetPrefixName() + ':' + GetLocalPartyName();
 }
