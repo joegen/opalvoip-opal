@@ -485,7 +485,7 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     if (destination.IsEmpty())
       break;
 
-    destination = ApplyRouteTable(connection.GetLocalPartyAddress(), destination, tableEntry);
+    destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
     if (destination.IsEmpty())
       break;
 
@@ -872,7 +872,7 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
 
   PString destination;
-  while (routeIndex < routeTable.GetSize()) {
+  for (;;) {
     RouteEntry & entry = routeTable[routeIndex];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
@@ -882,29 +882,44 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
 
       // restart search in table using label.
       search = destination;
-      destination.MakeEmpty();
       routeIndex = 0;
     }
-    else
+    else {
       routeIndex++;
+      if (routeIndex >= routeTable.GetSize())
+        return addr;
+    }
   }
 
-  destination.Replace("<da>", addr);
+  PINDEX colon = addr.Find(':');
+  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(colon)) != NULL)
+    destination.Replace("<da>", addr.Mid(++colon));
+  else {
+    destination.Replace("<da>", addr);
+    colon = 0;
+  }
+
+  PString digits;
+  PINDEX nonDigitPos = addr.FindSpan("0123456789*#", colon);
+  if (nonDigitPos != P_MAX_INDEX)
+    digits = addr(colon, nonDigitPos-1);
+  else
+    nonDigitPos = 0;
 
   PINDEX pos;
   if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Left(addr.FindSpan("0123456789*#")), pos, 4);
+    destination.Splice(digits, pos, 4);
 
   if ((pos = destination.FindRegEx("<dn[0-9]>")) != P_MAX_INDEX)
-    destination.Splice(addr(destination[pos+3]-'0', addr.FindSpan("0123456789*#")), pos, 5);
+    destination.Splice(digits.Mid(destination[pos+3]-'0'), pos, 5);
 
   if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Mid(addr.FindSpan("0123456789*#")), pos, 5);
+    destination.Splice(addr.Mid(nonDigitPos), pos, 5);
 
   // Do meta character substitutions
   if ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
     PStringStream route;
-    PStringArray stars = addr.Tokenise('*');
+    PStringArray stars = digits.Tokenise('*');
     switch (stars.GetSize()) {
       case 0 :
       case 1 :
