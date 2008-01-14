@@ -1073,7 +1073,7 @@ class OpalConnection : public PSafeObject
 
     /**Get the local name/alias.
       */
-    virtual PString GetLocalPartyAddress() const;
+    virtual PString GetLocalPartyURL() const;
 
     /**Get the local display name.
       */
