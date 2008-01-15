@@ -848,6 +848,8 @@ class H263EncoderContext
     int frameNum;
     unsigned frameWidth, frameHeight;
     unsigned long lastTimeStamp;
+    unsigned bitRate;
+    unsigned frameRate;
 
     enum StdSize { 
       SQCIF, 
@@ -893,6 +895,9 @@ H263EncoderContext::H263EncoderContext()
     //PTRACE(1, "H263\tCodec not found for encoder");
     return;
   }
+
+  bitRate = 256000;
+  frameRate = 15;
 
   frameWidth  = CIF_WIDTH;
   frameHeight = CIF_HEIGHT;
@@ -955,7 +960,6 @@ BOOL H263EncoderContext::OpenCodec()
   avpicture->linesize[2] = frameWidth / 2;
   avpicture->quality = (float)videoQuality;
 
-  int bitRate = 256000;
   avcontext->bit_rate = (bitRate * 3) >> 2; // average bit rate
   avcontext->bit_rate_tolerance = bitRate << 3;
   avcontext->rc_min_rate = 0; // minimum bitrate
@@ -978,7 +982,7 @@ BOOL H263EncoderContext::OpenCodec()
   avcontext->me_subpel_quality = 8;
 
   avcontext->frame_rate_base = 1;
-  avcontext->frame_rate = 15;
+  avcontext->frame_rate = frameRate;
 
   avcontext->gop_size = 64;
 
@@ -1159,6 +1163,10 @@ static int encoder_set_options(const PluginCodec_Definition *,
       context->frameWidth = atoi(option[1]);
     if (STRCMPI(option[0], "Frame Height") == 0)
       context->frameHeight = atoi(option[1]);
+    if (STRCMPI(option[0], "Target Bit Rate") == 0)
+      context->bitRate = atoi(option[1]);
+    if (STRCMPI(option[0], "Frame Time") == 0)
+      context->frameRate = 90000/atoi(option[1]);
   }
 
   return 1;
