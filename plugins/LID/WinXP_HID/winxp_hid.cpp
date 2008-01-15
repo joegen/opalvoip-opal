@@ -45,6 +45,7 @@
 static HINSTANCE g_hInstance;
 
 char g_IniFile[MAX_PATH];
+char DescriptionText[100] = "Generic USB HID using winXP Raw Input API";
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -116,8 +117,7 @@ class Context
               char name[100];
               _snprintf(name, sizeof(name), SectionFmt, info.hid.dwVendorId&0xffff, info.hid.dwProductId&0xffff);
 
-              char descr[50];
-              if (GetPrivateProfileString(name, Description, NULL, descr, sizeof(descr), g_IniFile) > 0) {
+              if (GetPrivateProfileString(name, Description, NULL, DescriptionText, sizeof(DescriptionText), g_IniFile) > 0) {
                 char audio[30];
                 GetPrivateProfileString(name, AudioDevice, "USB", audio, sizeof(audio), g_IniFile);
 
@@ -165,6 +165,9 @@ class Context
 
       char name[20];
       _snprintf(name, sizeof(name), SectionFmt, m_manufacturerId, m_productId);
+
+      if (GetPrivateProfileString(name, Description, NULL, DescriptionText, sizeof(DescriptionText), g_IniFile) <= 0)
+        return PluginLID_NoSuchDevice;
 
       for (int i = 0; i < NumKeys; i++) {
         char item[2];
@@ -558,7 +561,7 @@ static struct PluginLID_Definition definition[1] =
     1083666706,                       // timestamp = Tue 04 May 2004 10:31:46 AM UTC = 
 
     "WinXP-HID",                      // LID name text
-    "Generic USB HID using winXP Raw Input API", // LID description text
+    DescriptionText,                  // LID description text
     "Anyone",                         // LID manufacturer name
     "WinXP-HID",                      // LID model name
     "1.0",                            // LID hardware revision number
