@@ -14,7 +14,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\USB"
+			IntermediateDirectory="..\..\Debug\WinXP_HID"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -76,7 +76,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\USB"
+			IntermediateDirectory="..\..\Release\WinXP_HID"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"

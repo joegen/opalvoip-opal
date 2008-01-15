@@ -39,25 +39,12 @@
 #include <queue>
 #include <vector>
 
+#include "winxp_hid.h"
+
+
 static HINSTANCE g_hInstance;
 
 char g_IniFile[MAX_PATH];
-
-/*
-The values 0-9, * and # are the usual DTMF numbers. The other values are:
-  S = Start - go off hook
-  E = End - go on hook
-  c = clear entry
-  h = hold
-  m = mute microphnoe
-  + = volume up
-  - = volume down
-  u,d,l,r = navigation keys
-  p = phonebook
-  a = add
-*/
-static const char Keys[] = "SE1234567890*#chm+-udlrpa";
-#define NumKeys (sizeof(Keys)-1)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -122,25 +109,26 @@ class Context
           if (rawDevices[i].dwType == RIM_TYPEHID) {
             RID_DEVICE_INFO info;
             UINT size = info.cbSize = sizeof(info);
-            if ((int)GetRawInputDeviceInfo(rawDevices[i].hDevice, RIDI_DEVICEINFO, &info, &size) < 0)
-              break;
-            if (info.hid.usUsagePage == 11 ||  // Telephony device
-                info.hid.usUsagePage == 12) {  // Some brain dead handsets say "Consumer Device"
-
+            if ((int)GetRawInputDeviceInfo(rawDevices[i].hDevice, RIDI_DEVICEINFO, &info, &size) > 0 &&
+                        (info.hid.usUsagePage == 11 ||  // Telephony device
+                         info.hid.usUsagePage == 12))  // Some brain dead handsets say "Consumer Device"
+            {
               char name[100];
-              _snprintf(name, sizeof(name), "%04x/%04x", info.hid.dwVendorId&0xffff, info.hid.dwProductId&0xffff);
+              _snprintf(name, sizeof(name), SectionFmt, info.hid.dwVendorId&0xffff, info.hid.dwProductId&0xffff);
 
-              char description[20];
-              if (GetPrivateProfileString(name, "description", NULL, description, sizeof(description), g_IniFile) > 0) {
+              char descr[50];
+              if (GetPrivateProfileString(name, Description, NULL, descr, sizeof(descr), g_IniFile) > 0) {
+                char audio[30];
+                GetPrivateProfileString(name, AudioDevice, "USB", audio, sizeof(audio), g_IniFile);
 
                 UINT numDevs = waveOutGetNumDevs();
                 for (UINT i = 0; i < numDevs; i++) {
                   WAVEOUTCAPS caps;
 	          waveOutGetDevCaps(i, &caps, sizeof(caps));
-                  if (strstr(caps.szPname, "USB") != NULL) {
+                  if (strstr(caps.szPname, audio) != NULL) {
                     free(rawDevices);
 
-                    strcat(name, "\\");
+                    strcat(name, DevSeperatorStr);
                     strcat(name, caps.szPname);
 
                     if (bufsize <= strlen(name))
@@ -167,20 +155,20 @@ class Context
 
       char * slash;
       m_manufacturerId = (WORD)strtoul(device, &slash, 16);
-      if (*slash != '/')
+      if (*slash != IdSeperatorChar)
         return PluginLID_NoSuchDevice;
 
       char * backslash;
       m_productId = (WORD)strtoul(slash+1, &backslash, 16);
-      if (*backslash != '\\')
+      if (*backslash != DevSeperatorChar)
         return PluginLID_NoSuchDevice;
 
       char name[20];
-      _snprintf(name, sizeof(name), "%04x/%04x", m_manufacturerId, m_productId);
+      _snprintf(name, sizeof(name), SectionFmt, m_manufacturerId, m_productId);
 
       for (int i = 0; i < NumKeys; i++) {
         char item[2];
-        item[0] = Keys[i];
+        item[0] = Keys[i].code;
         item[1] = '\0';
         char hexData[100];
         int len = GetPrivateProfileString(name, item, NULL, hexData, sizeof(hexData), g_IniFile)/2;
@@ -402,7 +390,7 @@ class Context
     {
       m_threadId = GetCurrentThreadId();
 
-      static const char WndClassName[] = "USB HID LID";	 
+      static const char WndClassName[] = "WinXP-HID-LID";	 
       static bool registered = false;
       if (!registered) {
         // Register the main window class. 
@@ -467,7 +455,7 @@ class Context
         return true;
 
       char str[200];
-      _snprintf(str, sizeof(str), "HID-LID: RegisterRawInputDevices error %u\r\n", GetLastError());
+      _snprintf(str, sizeof(str), "WinXP-HID-LID: RegisterRawInputDevices error %u\r\n", GetLastError());
       OutputDebugString(str);
       return false;
     }
@@ -482,21 +470,21 @@ class Context
         return;
 
       if (GetRawInputData(hRaw, RID_INPUT, raw, &size, sizeof(RAWINPUTHEADER)) != size)
-        OutputDebugString("GetRawInputData doesn't return correct size!\n");
+        OutputDebugString("WinXP-HID-LID: GetRawInputData doesn't return correct size!\n");
       else if (raw->header.dwType != RIM_TYPEHID)
-        OutputDebugString("Raw input from unexpected device type!\n");
+        OutputDebugString("WinXP-HID-LID: Raw input from unexpected device type!\n");
       else {
         RID_DEVICE_INFO info;
         UINT size = info.cbSize = sizeof(info);
         if ((int)GetRawInputDeviceInfo(raw->header.hDevice, RIDI_DEVICEINFO, &info, &size) < 0)
-          OutputDebugString("Could not get info on HID device!\n");
+          OutputDebugString("WinXP-HID-LID: Could not get info on HID device!\n");
         else if (m_manufacturerId == info.hid.dwVendorId && m_productId == info.hid.dwProductId) {
           BYTE * data = raw->data.hid.bRawData;
           for (DWORD i = 0; i < raw->data.hid.dwCount; i++) {
             EnterCriticalSection(&m_mutex);
-#if 1
+#if 0
             char buffer[100];
-            buffer[0] = '\0';
+            strcpy(buffer, "WinXP-HID-LID: ";
             for (DWORD b =0; b < raw->data.hid.dwSizeHid; b++)
               sprintf(&buffer[strlen(buffer)], "%02X ", data[b]);
             strcat(buffer, "\n");
@@ -512,7 +500,7 @@ class Context
                   }
                 }
                 if (matched) {
-                  switch (Keys[c]) {
+                  switch (Keys[c].code) {
                     case 'S' : // Start
                       m_isOffHook = true;
                       break;
@@ -520,7 +508,7 @@ class Context
                       m_isOffHook = false;
                       break;
                     default :
-                      m_queue.push(Keys[c]);
+                      m_queue.push(Keys[c].code);
                   }
                   break;
                 }
