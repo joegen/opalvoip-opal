@@ -897,21 +897,25 @@ PBoolean OpalPluginLID::SetToneFilterParameters(unsigned line,
 
 void OpalPluginLID::TonePlayer(PThread &, INT tone)
 {
-  if (tone >= NumTones)
+  if (!PAssert(tone < NumTones, PInvalidParameter))
     return;
+
+  PTRACE(4, "LID Plugin\tStarting manual tone generation for \"" << m_callProgressTones[tone] << '"');
 
   PTones toneData;
-  if (!toneData.Generate(m_callProgressTones[tone])) {
-    PTRACE(2, "LID Plugin\tTone generation generation for \"" << m_callProgressTones[tone] << "\"failed.");
-    return;
-  }
-
-  while (!m_stopTone.Wait(0)) {
-    if (!m_player.Write(toneData, toneData.GetSize()*2)) {
-      PTRACE(2, "LID Plugin\tTone generation write failed.");
-      break;
+  if (toneData.Generate(m_callProgressTones[tone])) {
+    while (!m_stopTone.Wait(0)) {
+      if (!m_player.Write(toneData, toneData.GetSize()*2)) {
+        PTRACE(2, "LID Plugin\tTone generation write failed.");
+        break;
+      }
     }
   }
+  else {
+    PTRACE(2, "LID Plugin\tTone generation for \"" << m_callProgressTones[tone] << "\"failed.");
+  }
+
+  PTRACE(4, "LID Plugin\tEnded manual tone generation for \"" << m_callProgressTones[tone] << '"');
 }
 
 
