@@ -32,14 +32,23 @@
 #
 
 PROG	= opalgw
-SOURCES	:= main.cxx custom.cxx
+SOURCES	:= main.cxx custom.cxx gkserv.cxx
 
 ifndef OPALDIR
-ifneq (,$(wildcard ../opal))
-OPALDIR=../opal
-else
+ifneq (,$(wildcard $(HOME)/opal))
 OPALDIR=$(HOME)/opal
-endif
-endif
+else
+ifneq (,$(wildcard /usr/local/opal))
+OPALDIR=/usr/local/opal
+else
 
+default_target :
+	@echo Cannot find OPAL in standard locations, you must set the OPALDIR
+	@echo environment variable to build this application.
+endif
+endif
+endif
+ 
+ifdef OPALDIR
 include $(OPALDIR)/opal_inc.mak
+endif
