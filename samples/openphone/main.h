@@ -634,6 +634,7 @@ class MyManager : public wxFrame, public OpalManager
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
+    void StartLID();
 
     int       m_NATHandling;
     PwxString m_NATRouter;

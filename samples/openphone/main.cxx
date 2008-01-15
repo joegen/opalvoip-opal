@@ -596,23 +596,7 @@ bool MyManager::Initialise()
     silenceParams.m_silenceDeadband = value1*8;
   SetSilenceDetectParams(silenceParams);
 
-  if (config->Read(LineInterfaceDeviceKey, &str) && !str.IsEmpty()) {
-    if (potsEP->AddDeviceName(str)) {
-      OpalLine * line = potsEP->GetLine("*");
-      if (PAssertNULL(line) != NULL) {
-        if (config->Read(AECKey, &value1) && value1 >= 0 && value1 < OpalLineInterfaceDevice::AECError)
-          line->SetAEC((OpalLineInterfaceDevice::AECLevels)value1);
-        if (config->Read(CountryKey, &str) && !str.IsEmpty()) {
-          if (line->GetDevice().SetCountryCodeName(str))
-            LogWindow << "Using Line Interface Device \"" << line->GetDevice().GetDescription() << '"' << endl;
-          else
-            LogWindow << "Could not configure Line Interface Device to country \"" << str << '"' << endl;
-        }
-      }
-    }
-    else
-      LogWindow << "Line Interface Device \"" << str << "\" has been unplugged!" << endl;
-  }
+  StartLID();
 
 
   ////////////////////////////////////////
@@ -854,6 +838,37 @@ bool MyManager::Initialise()
   }
 
   return true;
+}
+
+
+void MyManager::StartLID()
+{
+  wxConfigBase * config = wxConfig::Get();
+
+  PwxString device;
+  if (!config->Read(LineInterfaceDeviceKey, &device) || device.IsEmpty())
+    return;
+
+  if (!potsEP->AddDeviceName(device)) {
+    LogWindow << "Line Interface Device \"" << device << "\" has been unplugged!" << endl;
+    return;
+  }
+
+  OpalLine * line = potsEP->GetLine("*");
+  if (PAssertNULL(line) == NULL)
+    return;
+
+  int aec;
+  if (config->Read(AECKey, &aec) && aec >= 0 && aec < OpalLineInterfaceDevice::AECError)
+    line->SetAEC((OpalLineInterfaceDevice::AECLevels)aec);
+
+  PwxString country;
+  if (config->Read(CountryKey, &country) && !country.IsEmpty()) {
+    if (line->GetDevice().SetCountryCodeName(country))
+      LogWindow << "Using Line Interface Device \"" << line->GetDevice().GetDescription() << '"' << endl;
+    else
+      LogWindow << "Could not configure Line Interface Device to country \"" << country << '"' << endl;
+  }
 }
 
 
@@ -2533,16 +2548,9 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.SetSilenceDetectParams(silenceParams);
 
   config->Write(LineInterfaceDeviceKey, m_LineInterfaceDevice);
-  if (m_manager.potsEP->AddDeviceName(m_LineInterfaceDevice)) {
-    OpalLine * line = m_manager.potsEP->GetLine("*");
-    if (PAssertNULL(line) != NULL) {
-      line->SetAEC((OpalLineInterfaceDevice::AECLevels)m_AEC);
-      config->Write(AECKey, m_AEC);
-      if (!line->GetDevice().SetCountryCodeName(m_Country))
-        LogWindow << "Could not configure Line Interface Device to country \"" << m_Country << '"' << endl;
-      config->Write(CountryKey, m_Country);
-    }
-  }
+  config->Write(AECKey, m_AEC);
+  config->Write(CountryKey, m_Country);
+  m_manager.StartLID();
 
   ////////////////////////////////////////
   // Video fields
