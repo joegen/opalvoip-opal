@@ -79,7 +79,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IxJ LID", "LID\IxJ\IxJ_2005
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CM HID USB LID", "LID\cm_hid\cm_hid_2005.vcproj", "{3FCBA070-C605-4EE5-B078-E2461F792B36}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CM HID USB LID", "LID\CM_HID\cm_hid_2005.vcproj", "{3FCBA070-C605-4EE5-B078-E2461F792B36}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -163,6 +163,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LID Test", "..\samples\lidt
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinXP USB HID LID", "LID\WinXP_HID\winxp_hid_2005.vcproj", "{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinXP USB HID Trainer", "LID\WinXP_HID\winxp_train_2005.vcproj", "{0AAD09A3-A2DF-4549-A685-04905F610992}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -441,6 +447,15 @@ Global
 		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|Win32.ActiveCfg = Release|Win32
 		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|Win32.Build.0 = Release|Win32
 		{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.Debug|Win32.Build.0 = Debug|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.No Trace|Win32.ActiveCfg = Release|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.No Trace|Win32.Build.0 = Release|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.Release|Win32.ActiveCfg = Release|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.Release|Win32.Build.0 = Release|Win32
+		{0AAD09A3-A2DF-4549-A685-04905F610992}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
