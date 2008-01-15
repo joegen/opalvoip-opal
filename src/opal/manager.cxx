@@ -485,9 +485,12 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     if (destination.IsEmpty())
       break;
 
-    destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
-    if (destination.IsEmpty())
-      break;
+    PINDEX colon = destination.Find(':');
+    if (colon == P_MAX_INDEX || FindEndPoint(destination.Left(colon)) == NULL) {
+      destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
+      if (destination.IsEmpty())
+        break;
+    }
 
     if (MakeConnection(call, destination, NULL, options, stringOptions))
       return true;
@@ -891,18 +894,12 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
     }
   }
 
-  PINDEX colon = addr.Find(':');
-  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(colon)) != NULL)
-    destination.Replace("<da>", addr.Mid(++colon));
-  else {
-    destination.Replace("<da>", addr);
-    colon = 0;
-  }
+  destination.Replace("<da>", addr);
 
   PString digits;
-  PINDEX nonDigitPos = addr.FindSpan("0123456789*#", colon);
+  PINDEX nonDigitPos = addr.FindSpan("0123456789*#");
   if (nonDigitPos != P_MAX_INDEX)
-    digits = addr(colon, nonDigitPos-1);
+    digits = addr.Left(nonDigitPos);
   else
     nonDigitPos = 0;
 
