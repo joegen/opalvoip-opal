@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="WinXP USB HID LID"
 	ProjectGUID="{8A03DDCA-6AA4-4271-86D7-D4F4AC010EE8}"
+	RootNamespace="WinXP USB HID LID"
 	>
 	<Platforms>
 		<Platform
@@ -16,7 +17,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\USB"
+			IntermediateDirectory="..\..\Debug\WinXP_HID"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -108,7 +109,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\USB"
+			IntermediateDirectory="..\..\Release\WinXP_HID"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
