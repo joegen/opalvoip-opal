@@ -748,12 +748,20 @@ class OpalManager : public PObject
        final destination address. This is primarily for Destination Numbers
        (DNs) that have come from pots devices. They are:
          <da>    Copy the destination address in it's entirety. For example
-                 "tel:.* = sip:<da>" maps the RFC2806 telephone URL to
-                 use the SIP protocol.
+                 "pc:.*\t.* = sip:<da>" directs calls to the SIP protocol. In
+                 this case there is a special condition where if the original
+                 destination had a valid protocol, eg h323:fred.com, then
+                 the entire string is replaced not just the <da> part.
+         <du>    Copy the "user" part of the destination address. This is
+                 essentially the component after the : and before the '@', or
+                 the whole string if these are not present.
+         <!du>   The rest of the address after the <du> section. The protocol
+                 is still left out. This is usually the '@' and onward.
          <dn>    Copy all valid consecutive E.164 digits from the source so
                  pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
          <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
                  pots:00612198765 becomes sip:61298765@carrier.com
+         <!dn>   The rest of the address after the <dn> or <dnX> sections.
          <dn2ip> Translate digits separated by '*' characters to an IP
                  address. e.g. 10*0*1*1 becomes 10.0.1.1, also
                  1234*10*0*1*1 becomes 1234@10.0.1.1 and

@@ -485,12 +485,9 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     if (destination.IsEmpty())
       break;
 
-    PINDEX colon = destination.Find(':');
-    if (colon == P_MAX_INDEX || FindEndPoint(destination.Left(colon)) == NULL) {
-      destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
-      if (destination.IsEmpty())
-        break;
-    }
+    destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
+    if (destination.IsEmpty())
+      break;
 
     if (MakeConnection(call, destination, NULL, options, stringOptions))
       return true;
@@ -783,7 +780,7 @@ OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   adjustedPattern += '$';
 
   if (!regex.Compile(adjustedPattern)) {
-    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << pattern << '"');
+    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << adjustedPattern << '"');
   }
 }
 
@@ -874,47 +871,74 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
   PString search = source + '\t' + addr;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
 
+  /* Examples:
+        Call from UI       pc:USB Audio Device\USB Audio Device      sip:fred@boggs.com
+                           pc:USB Audio Device\USB Audio Device      h323:fred@boggs.com
+                           pc:USB Audio Device\USB Audio Device      fred
+        Call from handset  pots:TigerJet:USB Audio Device            123
+        Call from SIP      sip:me@here.net                           sip:you@there.com
+                           sip:me@here.net:5061                      sip:you@there.com
+        Call from H.323    h323:me@here.net                          h323:there.com
+                           h323:me@here.net:1721                     h323:fred
+
+     Table:
+        .*:#  = ivr:
+        pots:.*\\*.*\\*.* = sip:<dn2ip>
+        pots:.*           = sip:<da>
+        pc:.*             = sip:<da>
+        h323:.*           = pots:<dn>
+        sip:.*            = pots:<dn>
+        h323:.*           = pc:
+        sip:.*            = pc:
+   */
+
   PString destination;
-  for (;;) {
-    RouteEntry & entry = routeTable[routeIndex];
+  while (routeIndex < routeTable.GetSize()) {
+    RouteEntry & entry = routeTable[routeIndex++];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
-      destination = routeTable[routeIndex++].destination;
-      if (destination.NumCompare("label:") != EqualTo)
+      if (entry.destination.NumCompare("label:") != EqualTo) {
+        destination = entry.destination;
         break;
+      }
 
       // restart search in table using label.
-      search = destination;
+      search = entry.destination;
       routeIndex = 0;
-    }
-    else {
-      routeIndex++;
-      if (routeIndex >= routeTable.GetSize())
-        return addr;
     }
   }
 
-  destination.Replace("<da>", addr);
+  // No route found
+  if (destination.IsEmpty())
+    return PString::Empty();
 
-  PString digits;
-  PINDEX nonDigitPos = addr.FindSpan("0123456789*#");
-  if (nonDigitPos != P_MAX_INDEX)
-    digits = addr.Left(nonDigitPos);
-  else
-    nonDigitPos = 0;
+  // We are backward compatibility mode and the supplied address can be called
+  PINDEX colon = addr.Find(':');
+  if (colon == P_MAX_INDEX || FindEndPoint(addr.Left(colon)) == NULL)
+    colon = 0;
+  else {
+    if (destination.Find("<da>") != P_MAX_INDEX)
+      return addr;
+    colon++;
+  }
+
+  PINDEX nonDigitPos = addr.FindSpan("0123456789*#", colon);
+  PString digits = addr(colon, nonDigitPos-1);
+
+  PINDEX at = addr.Find('@', colon);
+
+  destination.Replace("<da>", addr, true);
+  destination.Replace("<du>", addr(colon, at-1), true);
+  destination.Replace("<!du>", addr.Mid(at), true);
+  destination.Replace("<dn>", digits, true);
+  destination.Replace("<!dn>", addr.Mid(nonDigitPos), true);
 
   PINDEX pos;
-  if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
-    destination.Splice(digits, pos, 4);
-
-  if ((pos = destination.FindRegEx("<dn[0-9]>")) != P_MAX_INDEX)
+  while ((pos = destination.FindRegEx("<dn[1-9]>")) != P_MAX_INDEX)
     destination.Splice(digits.Mid(destination[pos+3]-'0'), pos, 5);
 
-  if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Mid(nonDigitPos), pos, 5);
-
   // Do meta character substitutions
-  if ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
+  while ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
     PStringStream route;
     PStringArray stars = digits.Tokenise('*');
     switch (stars.GetSize()) {
@@ -922,7 +946,7 @@ PString OpalManager::ApplyRouteTable(const PString & source, const PString & add
       case 1 :
       case 2 :
       case 3 :
-        route << addr;
+        route << digits;
         break;
 
       case 4 :
