@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 19007 $
- * $Author: rjongbloed $
- * $Date: 2007-11-29 20:17:08 +1100 (Thu, 29 Nov 2007) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #include <ptlib.h>
