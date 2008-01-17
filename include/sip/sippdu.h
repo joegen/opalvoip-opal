@@ -782,15 +782,25 @@ class SIPRegister : public SIPTransaction
 {
     PCLASSINFO(SIPRegister, SIPTransaction);
   public:
+    struct Params {
+      Params();
+
+      PString       m_addressOfRecord;
+      PString       m_contactAddress;
+      PString       m_authID;
+      PString       m_password;
+      PString       m_realm;
+      unsigned      m_expire;
+      PTimeInterval m_minRetryTime;
+      PTimeInterval m_maxRetryTime;
+    };
+
     SIPRegister(
       SIPEndPoint   & endpoint,
       OpalTransport & transport,
       const PStringList & routeSet,
-      const SIPURL & address,
       const PString & id,
-      unsigned expires,
-      const PTimeInterval & minRetryTime = PMaxTimeInterval,
-      const PTimeInterval & maxRetryTime = PMaxTimeInterval
+      const Params & params
     );
 };
 

@@ -815,7 +815,9 @@ class H263EncoderContext
     int frameNum;
     unsigned frameWidth, frameHeight;
     unsigned long lastTimeStamp;
-	int bitRate;
+    unsigned bitRate;
+    unsigned frameRate;
+
 
     static int GetStdSize(int width, int height)
     {
@@ -825,8 +827,6 @@ class H263EncoderContext
           return sizeIndex;
       return StdSizes::UnknownStdSize;
     }
-
-    protected:
 };
 
 H263EncoderContext::H263EncoderContext() 
@@ -863,6 +863,7 @@ H263EncoderContext::H263EncoderContext()
   videoQMax = 24;
   frameNum = 0;
   bitRate = 256000;
+  frameRate = 15;
 
   //PTRACE(3, "Codec\tH263 encoder created");
 }
@@ -922,7 +923,7 @@ bool H263EncoderContext::OpenCodec()
   avcontext->me_subpel_quality = 8;
 
   avcontext->frame_rate_base = 1;
-  avcontext->frame_rate = 15;
+  avcontext->frame_rate = frameRate;
 
   avcontext->gop_size = 64;
 
@@ -1106,8 +1107,10 @@ static int encoder_set_options(const PluginCodec_Definition *,
       context->frameHeight = atoi(option[1]);
     if (STRCMPI(option[0], "Encoding Quality") == 0) 
       context->videoQuality = MIN(context->videoQMax, MAX(atoi(option[1]), context->videoQMin));
-    if (STRCMPI(option[0], "Max Bit Rate") == 0) 
+    if (STRCMPI(option[0], "Target Bit Rate") == 0)
       context->bitRate = atoi(option[1]);
+	  if (STRCMPI(option[0], "Frame Time") == 0)
+		  context->frameRate = 90000/atoi(option[1]);
     if (STRCMPI(option[0], "set_min_quality") == 0) 
       context->videoQMin = atoi(option[1]);
     if (STRCMPI(option[0], "set_max_quality") == 0)

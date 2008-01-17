@@ -36,8 +36,9 @@
 #pragma interface
 #endif
 
+#include <opal/buildopts.h>
 
-#if P_EXPAT
+#if OPAL_IVR
 
 #include <opal/opalvxml.h>
 #include <opal/endpoint.h>
@@ -350,7 +351,7 @@ class OpalIVRMediaStream : public OpalRawMediaStream
 };
 
 
-#endif // P_EXPAT
+#endif // OPAL_IVR
 
 #endif // __OPAL_IVR_H
 

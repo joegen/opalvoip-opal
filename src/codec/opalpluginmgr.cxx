@@ -44,6 +44,7 @@
 #include <asn/h245.h>
 
 #if OPAL_VIDEO
+#include <ptlib/videoio.h>
 #include <codec/vidcodec.h>
 #endif
 

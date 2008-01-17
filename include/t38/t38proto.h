@@ -35,6 +35,7 @@
 #pragma interface
 #endif
 
+#if OPAL_T38FAX
 
 #include <ptlib/pipechan.h>
 
@@ -640,6 +641,6 @@ extern const OpalMediaFormat & GetOpalT38();
 #define OpalT38               GetOpalT38()
 
 
+#endif // OPAL_T38FAX
+
 #endif // __OPAL_T38PROTO_H
-
-

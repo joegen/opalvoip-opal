@@ -1000,11 +1000,11 @@ PStringList OpalLineInterfaceDevice::GetAllDevices()
 OpalLine::OpalLine(OpalLineInterfaceDevice & dev, unsigned num, const char * descript)
   : device(dev),
     lineNumber(num),
-    token(device.GetDeviceType() + ":" + device.GetDeviceName()),
+    token(device.GetDeviceType() + ':' + device.GetDeviceName()),
     ringStoppedTime(0, 10),     // 10 seconds
     ringInterCadenceTime(0, 4)  // 4 seconds
 {
-  token.sprintf("/%u", lineNumber);
+  token.sprintf(":%u", lineNumber);
   if (descript == NULL)
     description = token;
   else

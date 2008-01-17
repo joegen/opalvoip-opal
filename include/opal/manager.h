@@ -670,27 +670,71 @@ class OpalManager : public PObject
        Add a route entry to the route table.
 
        The specification string is of the form pattern=destination where
-       pattern is a regular expression matching the incoming calls
-       destination address and will translate it to the outgoing destination
-       address for making an outgoing call. For example, picking up a PhoneJACK
-       handset and dialing 2, 6 would result in an address of "pots:26"
-       which would then be matched against, say, a specification of
-       pots:26=h323:10.0.1.1, resulting in a call from the pots handset to
-       10.0.1.1 using H.323.
+       "pattern" is a regular expression matching a "source" string and
+       "destination" is what is then used to make the second connection in
+       the call.
 
-       As the pattern field is a regular expression, you could have used in
-       the above .*:26=h323:10.0.1.1 to achieve the same result with the
-       addition that an incoming call from a SIP client would also be routed
-       to the H.323 client.
+       The "source" is a string built from the A party address and the
+       destination address provided by the remote on that connection. The A
+       party is the local connection name, e.g. "pots:vpb:1/2" or
+       "h323:myname@myhost.com". The destination maye be simple digits or a
+       full URI e.g. "26" or "sip:theirname@theirhost.com". The two addresses
+       are separated by a '\t' (TAB) character.
 
-       Note that the pattern has an implicit ^ and $ at the beginning and end
-       of the regular expression. So it must match the entire address.
+       For example, picking up a PhoneJACK handset and dialing 2, 6 and #
+       would result in a source string of "pots:Quicknet:01AB3F4:0 26". An
+       incoming H.323 call could result in "h323:myname@myhost.com\tboris" or
+       "h323:myname@myhost.com\tsip:othername@otherhost.com".
 
-       If the specification is of the form @filename, then the file is read
-       with each line consisting of a pattern=destination route specification.
-       Lines without an equal sign or beginning with '#' are ignored.
+       The pattern field is a regular expression, though for convenience and
+       backward compatibility there are certain modifications that are applied
+       before it is used. First there is an implicit '^' at the beginning and
+       a '$' at the end, so the regular expression must match the entire
+       source string. Second, if there is a ':' present, but no '\t' in the
+       expression then the sub-expression ".*\t" is inserted immediately after
+       the ':' character.
 
-       Returns PTrue if an entry was added.
+       Thus, using the PhoneJack example above, "pots:26=h323:10.0.1.1", would
+       result in a call from the pots handset to 10.0.1.1 using H.323. While
+       the expression "pots:.*:0\t26=h323:10.0.1.1" would only route the call
+       if the source was the handset on line zero.
+
+       There are some macros available in the destination string to transfer
+       information from the source protocols destination address string to the
+       final destination address. This is primarily for Destination Numbers
+       (DNs) that have come from pots devices. They are:
+         <da>    Copy the destination address in it's entirety. For example
+                 "pc:.*\t.* = sip:<da>" directs calls to the SIP protocol. In
+                 this case there is a special condition where if the original
+                 destination had a valid protocol, eg h323:fred.com, then
+                 the entire string is replaced not just the <da> part.
+         <du>    Copy the "user" part of the destination address. This is
+                 essentially the component after the : and before the '@', or
+                 the whole string if these are not present.
+         <!du>   The rest of the address after the <du> section. The protocol
+                 is still left out. This is usually the '@' and onward.
+         <dn>    Copy all valid consecutive E.164 digits from the source so
+                 pots:0061298765@vpb:1/2 becomes sip:0061298765@carrier.com
+         <dnX>   As above but skip X digits, eg <dn2> skips 2 digits, so
+                 pots:00612198765 becomes sip:61298765@carrier.com
+         <!dn>   The rest of the address after the <dn> or <dnX> sections.
+         <dn2ip> Translate digits separated by '*' characters to an IP
+                 address. e.g. 10*0*1*1 becomes 10.0.1.1, also
+                 1234*10*0*1*1 becomes 1234@10.0.1.1 and
+                 1234*10*0*1*1*1722 becomes 1234@10.0.1.1:1722.
+
+       To allow for complex tables a final destination address that starts
+       with "label:" will cause the pattern matcher to restart from the
+       beginning of the table using the new string as the "source". Thus
+       "pots:26=label:speeddial" and "label:speeddial=h323:10.0.1.1" in the
+       table has the same result as "pots:26=h323:10.0.1.1".
+
+       If the specification parameter is of the form @filename, then the file
+       is read with each line consisting of a pattern=destination route
+       specification. Lines without an equal sign or beginning with '#' are
+       ignored.
+
+       Returns true if an entry was added.
       */
     virtual PBoolean AddRouteEntry(
       const PString & spec  ///<  Specification string to add
@@ -719,10 +763,16 @@ class OpalManager : public PObject
     const RouteTable & GetRouteTable() const { return routeTable; }
 
     /**Route the source address to a destination using the route table.
+       The source parameter may be something like pots:vpb:1/2 or
+       sip:fred@nurk.com.
+
+       The destination parameter is a partial URL, it does not include the
+       protocol, but may be of the form user@host, or simply digits.
       */
     virtual PString ApplyRouteTable(
-      const PString & proto,
-      const PString & addr
+      const PString & source,      /// Source address, including endpoint protocol
+      const PString & destination, /// Destination address read from source protocol
+      PINDEX & entry
     );
   //@}
 

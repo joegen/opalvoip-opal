@@ -1148,9 +1148,11 @@ PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
   digestor.Process(password);
   digestor.Complete(a1);
 
-  digestor.Start();
-  digestor.Process(pdu.GetEntityBody());
-  digestor.Complete(entityBodyCode);
+  if (qopAuthInt) {
+    digestor.Start();
+    digestor.Process(pdu.GetEntityBody());
+    digestor.Complete(entityBodyCode);
+  }
 
   digestor.Start();
   digestor.Process(MethodNames[pdu.GetMethod()]);
@@ -1195,8 +1197,8 @@ PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
     auth << ", "
          << "response=\"" << AsHex(response) << "\", "
          << "cnonce=\"" << cnonce << "\", "
-         << "nc=\"" << nc << "\", "
-         << "qop=\"" << qop << "\"";
+         << "nc=" << nc << ", "
+         << "qop=" << qop;
   }
   else {
     digestor.Process(AsHex(a2));
@@ -2177,20 +2179,26 @@ PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 }
 
 
+SIPRegister::Params::Params()
+  : m_expire(0)
+  , m_minRetryTime(PMaxTimeInterval)
+  , m_maxRetryTime(PMaxTimeInterval)
+{
+}
+
+
 SIPRegister::SIPRegister(SIPEndPoint & ep,
                          OpalTransport & trans,
                          const PStringList & routeSet,
-                         const SIPURL & address,
                          const PString & id,
-                         unsigned expires,
-                         const PTimeInterval & minRetryTime, 
-                         const PTimeInterval & maxRetryTime)
-  : SIPTransaction(ep, trans, minRetryTime, maxRetryTime)
+                         const Params & params)
+  : SIPTransaction(ep, trans, params.m_minRetryTime, params.m_maxRetryTime)
 {
-  PString addrStr = address.AsQuotedString();
+  SIPURL aor = params.m_addressOfRecord;
+  PString addrStr = aor.AsQuotedString();
   OpalTransportAddress viaAddress = ep.GetLocalURL(transport).GetHostAddress();
   SIP_PDU::Construct(Method_REGISTER,
-                     "sip:"+address.GetHostName(),
+                     "sip:"+aor.GetHostName(),
                      addrStr,
                      addrStr+";tag="+OpalGloballyUniqueID().AsString(),
                      id,
@@ -2198,9 +2206,12 @@ SIPRegister::SIPRegister(SIPEndPoint & ep,
                      viaAddress);
 
   mime.SetProductInfo(ep.GetUserAgent(), ep.GetProductInfo());
-  SIPURL contact = endpoint.GetLocalURL(trans, address.GetUserName());
+  SIPURL contact = params.m_contactAddress;
+  if (contact.IsEmpty())
+    contact = endpoint.GetLocalURL(trans, aor.GetUserName());
   mime.SetContact(contact);
-  mime.SetExpires(expires);
+
+  mime.SetExpires(params.m_expire);
 
   SetRoute(routeSet);
 }

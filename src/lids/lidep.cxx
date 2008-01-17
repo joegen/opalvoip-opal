@@ -86,21 +86,19 @@ PBoolean OpalLIDEndPoint::MakeConnection(OpalCall & call,
                                      unsigned int /*options*/,
                                      OpalConnection::StringOptions *)
 {
-  PTRACE(3, "LID EP\tMakeConnection remoteParty " << remoteParty << ", prefix "<< GetPrefixName());  
-  // First strip of the prefix if present
-  PINDEX prefixLength = 0;
-  PINDEX colonIndex = remoteParty.Find(":");
-  if ((remoteParty.Find(GetPrefixName()) == 0) && (colonIndex != P_MAX_INDEX)){
-    /* the remote party contains the prefix and ':' */
-    prefixLength = colonIndex;
-  }
+  PINDEX prefixLength = GetPrefixName().GetLength();
 
-  // Then see if there is a specific line mentioned in the prefix, e.g vpb@1/2:123456
+  if (remoteParty.Find(':') != prefixLength || remoteParty.NumCompare(GetPrefixName()) != EqualTo)
+    return false; // Not for us!
+
+  PTRACE(3, "LID EP\tMakeConnection to " << remoteParty);  
+
+  // Then see if there is a specific line mentioned in the prefix, e.g 123456@vpb:1/2
   PString number, lineName;
-  PINDEX at = remoteParty.Left(prefixLength).Find('@');
+  PINDEX at = remoteParty.Find('@');
   if (at != P_MAX_INDEX) {
-    number = remoteParty.Right(remoteParty.GetLength() - prefixLength - 1);
-    lineName = remoteParty(GetPrefixName().GetLength() + 1, prefixLength - 1);
+    number = remoteParty(prefixLength+1, at-1);
+    lineName = remoteParty.Mid(at + 1);
   }
   else {
     if (HasAttribute(CanTerminateCall))
@@ -111,7 +109,6 @@ PBoolean OpalLIDEndPoint::MakeConnection(OpalCall & call,
 
   if (lineName.IsEmpty())
     lineName = '*';
-
   
   PTRACE(3,"LID EP\tMakeConnection line = \"" << lineName << "\", number = \"" << number << '"');
   
@@ -454,6 +451,7 @@ OpalLineConnection::OpalLineConnection(OpalCall & call,
     line(ln)
 {
   m_audioSessionId[0] = m_audioSessionId[1] = 0;
+  localPartyName = ln.GetToken();
   remotePartyNumber = number.Right(number.Find(':'));
   silenceDetector = new OpalLineSilenceDetector(line);
 

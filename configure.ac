@@ -13,6 +13,7 @@ iax=yes
 audio=yes
 video=yes
 rfc4175=yes
+plugins=yes
 
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
@@ -76,7 +77,9 @@ if test "${PTLIBDIR:-unset}" = "unset" -a "${PWLIBDIR:-unset}" != "unset" ; then
   PTLIBDIR=$PWLIBDIR
 fi
 if test "${PTLIBDIR:-unset}" = "unset" -o ! -r "${PTLIBDIR}/version.h"; then
-  if test -r "${OPALDIR}/../ptlib/version.h"; then
+  if test -r "${PTLIBDIR}/include/ptlib.h"; then
+    AC_PATH_PROG(PTLIB_CONFIG, ptlib-config, , ${PTLIBDIR}/bin)
+  elif test -r "${OPALDIR}/../ptlib/version.h"; then
     PTLIBDIR="${OPALDIR}/../ptlib"
   elif test -r "${HOME}/ptlib/include/ptlib.h"; then
     PTLIBDIR="${HOME}/ptlib"
@@ -98,14 +101,8 @@ if test "${PTLIBDIR:-unset}" = "unset" ; then
   PTLIBDIR=`$PTLIB_CONFIG --prefix`
 fi
 
-if test "x$PTLIBDIR" = "x/usr" -o "x$PTLIBDIR" = "x/usr/"; then
-  PTLIBDIR="/usr/share/ptlib/"
-fi
-if test "x$PTLIBDIR" = "x/usr/local" -o "x$PTLIBDIR" = "x/usr/"; then
-  PTLIBDIR="/usr/local/share/ptlib/"
-fi
-if test "x$PTLIBDIR" = "x${prefix}"; then
-  PTLIBDIR="${prefix}/share/ptlib/"
+if test -d "${PTLIBDIR}/share/ptlib/"; then
+  PTLIBDIR="${PTLIBDIR}/share/ptlib/"
 fi
 AC_SUBST(PTLIBDIR)
 
@@ -373,6 +370,8 @@ fi
 AC_SUBST(HAS_LIBDL)
 
 
+dnl ########################################################################
+
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
 
@@ -391,6 +390,8 @@ else
 fi
 
 
+dnl ########################################################################
+
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
 
@@ -406,6 +407,8 @@ else
   AC_MSG_RESULT(disabled)
 fi
 
+
+dnl ########################################################################
 
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
@@ -425,6 +428,7 @@ else
   h460=no
 fi
 AC_SUBST(OPAL_H323, $OPAL_H323)
+
 
 dnl ########################################################################
 dnl
@@ -558,6 +562,7 @@ if test "$lid" = "yes" ; then
 fi
 AC_SUBST(OPAL_LID)
 
+
 dnl ########################################################################
 dnl
 dnl IVR
@@ -603,6 +608,7 @@ if test "$rfc4175" = "yes" ; then
   fi
 fi
 AC_SUBST(OPAL_RFC4175)
+
 
 dnl ########################################################################
 dnl
@@ -662,6 +668,43 @@ else
 fi
 AC_SUBST(OPAL_SRTP)
 AC_SUBST(HAS_LIBSRTP)
+
+
+dnl ########################################################################
+
+AC_ARG_ENABLE(plugins,
+         [  --disable-plugins           disable Plug In support],
+         plugins=$enableval)
+AC_MSG_CHECKING(Plug In support)
+if test "$plugins" = "yes" ; then
+  OPAL_PLUGINS=1
+  AC_DEFINE(OPAL_PLUGINS, 1)
+  AC_MSG_RESULT(enabled)
+
+  dnl Do sub configures
+  AC_CONFIG_SUBDIRS(plugins)
+else
+  OPAL_PLUGINS=0
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(OPAL_PLUGINS)
+
+dnl ########################################################################
+
+AC_ARG_ENABLE(samples,
+         [  --disable-samples           disable Samples build],
+         samples=$enableval)
+AC_MSG_CHECKING(Samples build)
+if test "$samples" = "yes" ; then
+  OPAL_SAMPLES=1
+  AC_MSG_RESULT(enabled)
+else
+  OPAL_SAMPLES=0
+  AC_MSG_RESULT(disabled)
+fi
+AC_SUBST(OPAL_SAMPLES)
+
+
 dnl ########################################################################
 dnl output make directives
 
@@ -670,10 +713,6 @@ AC_SUBST(LDFLAGS)
 AC_SUBST(ENDLDLIBS)
 AC_PROG_INSTALL
 
-dnl ########################################################################
-dnl Output configured files
-
-AC_CONFIG_SUBDIRS(plugins)
 
 dnl ########################################################################
 dnl output header file

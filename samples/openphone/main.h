@@ -83,11 +83,16 @@ class PwxString : public wxString
     PwxString & operator=(const PString & str) { wxString::operator=((const char *)str); return *this; }
     PwxString & operator=(const char * str) { wxString::operator=(str); return *this; }
 
+    bool operator==(const char * other)            const { return IsSameAs(other); }
+    bool operator==(const wxString & other)        const { return IsSameAs(other); }
+    bool operator==(const PString & other)         const { return IsSameAs((const char *)other); }
+    bool operator==(const PwxString & other)       const { return IsSameAs((const char *)other); }
+    bool operator==(const OpalMediaFormat & other) const { return IsSameAs((const char *)other); }
+
     operator PString() const { return c_str(); }
     operator PIPSocket::Address() const { return PIPSocket::Address(PString(c_str())); }
     friend ostream & operator<<(ostream & stream, const PwxString & string) { return stream << string.c_str(); }
 
-    bool operator==(const OpalMediaFormat & other) const { return IsSameAs((const char *)other); }
 };
 
 
@@ -451,13 +456,18 @@ class OptionsDialog : public wxDialog
     wxListCtrl * m_Routes;
     int          m_SelectedRoute;
     wxComboBox * m_RouteSource;
+    wxTextCtrl * m_RouteDevice;
     wxTextCtrl * m_RoutePattern;
     wxTextCtrl * m_RouteDestination;
     wxButton   * m_AddRoute;
     wxButton   * m_RemoveRoute;
+    wxButton   * m_MoveUpRoute;
+    wxButton   * m_MoveDownRoute;
 
     void AddRoute(wxCommandEvent & event);
     void RemoveRoute(wxCommandEvent & event);
+    void MoveUpRoute(wxCommandEvent & event);
+    void MoveDownRoute(wxCommandEvent & event);
     void SelectedRoute(wxListEvent & event);
     void DeselectedRoute(wxListEvent & event);
     void ChangedRouteInfo(wxCommandEvent & event);
@@ -634,6 +644,7 @@ class MyManager : public wxFrame, public OpalManager
 
     MyPCSSEndPoint   * pcssEP;
     OpalPOTSEndPoint * potsEP;
+    void StartLID();
 
     int       m_NATHandling;
     PwxString m_NATRouter;
