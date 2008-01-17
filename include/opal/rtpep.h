@@ -21,9 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Revision: 19146 $
- * $Author: csoutheren $
- * $Date: 2007-12-21 11:57:11 +1100 (Fri, 21 Dec 2007) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_RTPEP_H
