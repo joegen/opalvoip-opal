@@ -771,8 +771,9 @@ OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   PString adjustedPattern = '^';
 
   PINDEX colon = pattern.Find(':');
-  if (colon != P_MAX_INDEX && (pattern.Find('\t', colon) == P_MAX_INDEX ||
-                               pattern.Find("\\t", colon) == P_MAX_INDEX))
+  if (colon != P_MAX_INDEX &&
+      pattern.Find('\t', colon) == P_MAX_INDEX &&
+      pattern.Find("\\t", colon) == P_MAX_INDEX)
     adjustedPattern += pattern.Left(colon+1) + ".*\t" + pattern.Mid(colon+1);
   else
     adjustedPattern += pattern;

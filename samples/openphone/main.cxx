@@ -2415,11 +2415,8 @@ OptionsDialog::OptionsDialog(MyManager * manager)
     PString expression = routeTable[i].pattern;
 
     PINDEX tab = expression.Find('\t');
-    if (tab == P_MAX_INDEX) {
+    if (tab == P_MAX_INDEX)
       tab = expression.Find("\\t");
-      if (tab != P_MAX_INDEX)
-        tab++;
-    }
 
     PINDEX colon = expression.Find(':');
 
@@ -2439,7 +2436,7 @@ OptionsDialog::OptionsDialog(MyManager * manager)
         device = expression(colon+1, tab-1);
         if (device == ".*")
           device = "";
-        pattern = expression.Mid(tab+1);
+        pattern = expression.Mid(tab + (expression[tab] == '\t' ? 1 : 2));
       }
     }
 
