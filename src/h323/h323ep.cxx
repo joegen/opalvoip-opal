@@ -458,6 +458,12 @@ PBoolean H323EndPoint::MakeConnection(OpalCall & call,
                             unsigned int options,
                             OpalConnection::StringOptions * stringOptions)
 {
+  if (remoteParty.NumCompare(GetPrefixName()+':') != EqualTo)
+    return false;
+
+  if (listeners.IsEmpty())
+    return false;
+
   PTRACE(3, "H323\tMaking call to: " << remoteParty);
   return InternalMakeCall(call,
                           PString::Empty(),

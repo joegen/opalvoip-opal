@@ -222,14 +222,21 @@ PBoolean OpalPluginLID::Open(const PString & device)
       break;
 
     case PluginLID_UsesSoundChannel :
-      if (!m_player.Open(device, PSoundChannel::Player)) {
-        PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open player for \"" << device << '"');
-        return PFalse;
-      }
+      {
+        PINDEX backslash = device.Find('\\');
+        if (backslash != P_MAX_INDEX)
+          backslash++;
+        else
+          backslash = 0;
+        if (!m_player.Open(device.Mid(backslash), PSoundChannel::Player)) {
+          PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open player for \"" << device << '"');
+          return PFalse;
+        }
 
-      if (!m_recorder.Open(device, PSoundChannel::Recorder)) {
-        PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
-        return PFalse;
+        if (!m_recorder.Open(device.Mid(backslash), PSoundChannel::Recorder)) {
+          PTRACE(1, "LID Plugin\t" << m_definition.name << " requires sound system, but cannot open recorder for \"" << device << '"');
+          return PFalse;
+        }
       }
       break;
 
@@ -890,21 +897,25 @@ PBoolean OpalPluginLID::SetToneFilterParameters(unsigned line,
 
 void OpalPluginLID::TonePlayer(PThread &, INT tone)
 {
-  if (tone >= NumTones)
+  if (!PAssert(tone < NumTones, PInvalidParameter))
     return;
+
+  PTRACE(4, "LID Plugin\tStarting manual tone generation for \"" << m_callProgressTones[tone] << '"');
 
   PTones toneData;
-  if (!toneData.Generate(m_callProgressTones[tone])) {
-    PTRACE(2, "LID Plugin\tTone generation generation for \"" << m_callProgressTones[tone] << "\"failed.");
-    return;
-  }
-
-  while (!m_stopTone.Wait(0)) {
-    if (!m_player.Write(toneData, toneData.GetSize()*2)) {
-      PTRACE(2, "LID Plugin\tTone generation write failed.");
-      break;
+  if (toneData.Generate(m_callProgressTones[tone])) {
+    while (!m_stopTone.Wait(0)) {
+      if (!m_player.Write(toneData, toneData.GetSize()*2)) {
+        PTRACE(2, "LID Plugin\tTone generation write failed.");
+        break;
+      }
     }
   }
+  else {
+    PTRACE(2, "LID Plugin\tTone generation for \"" << m_callProgressTones[tone] << "\"failed.");
+  }
+
+  PTRACE(4, "LID Plugin\tEnded manual tone generation for \"" << m_callProgressTones[tone] << '"');
 }
 
 

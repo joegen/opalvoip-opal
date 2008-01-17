@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="USB HID LID"
+	Name="WinXP USB HID LID"
 	ProjectGUID="{B28C1159-B360-4CAD-809E-187E267E59EC}"
 	SccProjectName=""
 	SccLocalPath="">
@@ -14,7 +14,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\..\Debug"
-			IntermediateDirectory="..\..\Debug\USB"
+			IntermediateDirectory="..\..\Debug\WinXP_HID"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -76,7 +76,7 @@
 		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\..\Release"
-			IntermediateDirectory="..\..\Release\USB"
+			IntermediateDirectory="..\..\Release\WinXP_HID"
 			ConfigurationType="2"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
@@ -140,7 +140,7 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="usb_win.cpp">
+			RelativePath="winxp_hid.cpp">
 			<FileConfiguration
 				Name="Debug|Win32">
 				<Tool

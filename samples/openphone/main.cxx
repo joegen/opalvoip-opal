@@ -596,24 +596,7 @@ bool MyManager::Initialise()
     silenceParams.m_silenceDeadband = value1*8;
   SetSilenceDetectParams(silenceParams);
 
-  if (config->Read(LineInterfaceDeviceKey, &str) && !str.IsEmpty()) {
-    if (potsEP->AddDeviceName(str)) {
-      OpalLine * line = potsEP->GetLine("*");
-      if (PAssertNULL(line) != NULL) {
-        if (config->Read(AECKey, &value1) && value1 >= 0 && value1 < OpalLineInterfaceDevice::AECError)
-          line->SetAEC((OpalLineInterfaceDevice::AECLevels)value1);
-        if (config->Read(CountryKey, &str) && !str.IsEmpty()) {
-          if (line->GetDevice().SetCountryCodeName(str))
-            LogWindow << "Using Line Interface Device \"" << line->GetDevice().GetDescription() << '"' << endl;
-          else
-            LogWindow << "Could not configure Line Interface Device to country \"" << str << '"' << endl;
-        }
-      }
-    }
-    else
-      LogWindow << "Line Interface Device \"" << str << "\" has been unplugged!" << endl;
-  }
-
+  StartLID();
 
   ////////////////////////////////////////
   // Video fields
@@ -826,34 +809,59 @@ bool MyManager::Initialise()
 
   ////////////////////////////////////////
   // Routing fields
-  {
-    if (sipEP != NULL) {
-      AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
-      AddRouteEntry("pots:.*           = sip:<da>");
-      AddRouteEntry("pc:.*             = sip:<da>");
-    }
-    else if (h323EP != NULL) {
-      AddRouteEntry("pots:.*\\*.*\\*.* = h323:<dn2ip>");
-      AddRouteEntry("pots:.*           = h323:<da>");
-      AddRouteEntry("pc:.*             = h323:<da>");
-    }
-
+  config->SetPath(RoutingGroup);
+  if (config->GetFirstEntry(entryName, entryIndex)) {
+    do {
+      wxString routeSpec;
+      if (config->Read(entryName, &routeSpec))
+        AddRouteEntry(routeSpec.c_str());
+    } while (config->GetNextEntry(entryName, entryIndex));
+  }
+  else {
 #if P_EXPAT
-    if (ivrEP != NULL)
-      AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
+    AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
 #endif
-
-    if (potsEP != NULL && potsEP->GetLine("*") != NULL) {
-      AddRouteEntry("h323:.* = pots:<da>");
-      AddRouteEntry("sip:.*  = pots:<da>");
-    }
-    else if (pcssEP != NULL) {
-      AddRouteEntry("h323:.* = pc:<da>");
-      AddRouteEntry("sip:.*  = pc:<da>");
-    }
+    AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
+    AddRouteEntry("pots:.*           = sip:<da>");
+    AddRouteEntry("pc:.*             = sip:<da>");
+    AddRouteEntry("h323:.*           = pots:<dn>");
+    AddRouteEntry("sip:.*            = pots:<dn>");
+    AddRouteEntry("h323:.*           = pc:<da>");
+    AddRouteEntry("sip:.*            = pc:<da>");
   }
 
   return true;
+}
+
+
+void MyManager::StartLID()
+{
+  wxConfigBase * config = wxConfig::Get();
+
+  PwxString device;
+  if (!config->Read(LineInterfaceDeviceKey, &device) || device.IsEmpty())
+    return;
+
+  if (!potsEP->AddDeviceName(device)) {
+    LogWindow << "Line Interface Device \"" << device << "\" has been unplugged!" << endl;
+    return;
+  }
+
+  OpalLine * line = potsEP->GetLine("*");
+  if (PAssertNULL(line) == NULL)
+    return;
+
+  int aec;
+  if (config->Read(AECKey, &aec) && aec >= 0 && aec < OpalLineInterfaceDevice::AECError)
+    line->SetAEC((OpalLineInterfaceDevice::AECLevels)aec);
+
+  PwxString country;
+  if (config->Read(CountryKey, &country) && !country.IsEmpty()) {
+    if (line->GetDevice().SetCountryCodeName(country))
+      LogWindow << "Using Line Interface Device \"" << line->GetDevice().GetDescription() << '"' << endl;
+    else
+      LogWindow << "Could not configure Line Interface Device to country \"" << country << '"' << endl;
+  }
 }
 
 
@@ -1855,7 +1863,11 @@ void MyManager::StartRegistrars()
 
   for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
     if (iter->m_Active) {
-      bool ok = sipEP->Register(iter->m_Domain, iter->m_User, iter->m_User, iter->m_Password);
+      SIPRegister::Params param;
+      param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
+      param.m_authID = (PString)iter->m_User;
+      param.m_password = (PString)iter->m_Password;
+      bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
     }
   }
@@ -1864,17 +1876,8 @@ void MyManager::StartRegistrars()
 
 void MyManager::StopRegistrars()
 {
-  if (sipEP == NULL)
-    return;
-
-  for (RegistrarList::iterator iter = m_registrars.begin(); iter != m_registrars.end(); ++iter) {
-    PStringStream aor;
-    aor << iter->m_User << '@' << iter->m_Domain;
-    if (sipEP->IsRegistered(aor)) {
-      LogWindow << "SIP registration ended for " << aor << endl;
-      sipEP->Unregister(aor);
-    }
-  }
+  if (sipEP != NULL)
+    sipEP->UnregisterAll();
 }
 
 
@@ -2063,8 +2066,11 @@ BEGIN_EVENT_TABLE(OptionsDialog, wxDialog)
   // Routing fields
   EVT_BUTTON(XRCID("AddRoute"), OptionsDialog::AddRoute)
   EVT_BUTTON(XRCID("RemoveRoute"), OptionsDialog::RemoveRoute)
+  EVT_BUTTON(XRCID("MoveUpRoute"), OptionsDialog::MoveUpRoute)
+  EVT_BUTTON(XRCID("MoveDownRoute"), OptionsDialog::MoveDownRoute)
   EVT_LIST_ITEM_SELECTED(XRCID("Routes"), OptionsDialog::SelectedRoute)
   EVT_LIST_ITEM_DESELECTED(XRCID("Routes"), OptionsDialog::DeselectedRoute)
+  EVT_TEXT(XRCID("RouteDevice"), OptionsDialog::ChangedRouteInfo)
   EVT_TEXT(XRCID("RoutePattern"), OptionsDialog::ChangedRouteInfo)
   EVT_TEXT(XRCID("RouteDestination"), OptionsDialog::ChangedRouteInfo)
 
@@ -2383,40 +2389,67 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Routing fields
   m_SelectedRoute = INT_MAX;
 
+  m_RouteDevice = FindWindowByNameAs<wxTextCtrl>(this, "RouteDevice");
   m_RoutePattern = FindWindowByNameAs<wxTextCtrl>(this, "RoutePattern");
   m_RouteDestination = FindWindowByNameAs<wxTextCtrl>(this, "RouteDestination");
 
   m_AddRoute = FindWindowByNameAs<wxButton>(this, "AddRoute");
   m_AddRoute->Disable();
-
   m_RemoveRoute = FindWindowByNameAs<wxButton>(this, "RemoveRoute");
   m_RemoveRoute->Disable();
+  m_MoveUpRoute = FindWindowByNameAs<wxButton>(this, "MoveUpRoute");
+  m_MoveUpRoute->Disable();
+  m_MoveDownRoute = FindWindowByNameAs<wxButton>(this, "MoveDownRoute");
+  m_MoveDownRoute->Disable();
 
   // Fill list box with active routes
   static char const AllSources[] = "<ALL>";
   m_Routes = FindWindowByNameAs<wxListCtrl>(this, "Routes");
   m_Routes->InsertColumn(0, _T("Source"));
-  m_Routes->InsertColumn(1, _T("Pattern"));
-  m_Routes->InsertColumn(2, _T("Destination"));
+  m_Routes->InsertColumn(1, _T("Dev/If"));
+  m_Routes->InsertColumn(2, _T("Pattern"));
+  m_Routes->InsertColumn(3, _T("Destination"));
   const OpalManager::RouteTable & routeTable = m_manager.GetRouteTable();
   for (i = 0; i < routeTable.GetSize(); i++) {
-    PString pattern = routeTable[i].pattern;
-    PINDEX colon = pattern.Find(':');
-    wxString source;
-    if (colon == P_MAX_INDEX) {
+    PString expression = routeTable[i].pattern;
+
+    PINDEX tab = expression.Find('\t');
+    if (tab == P_MAX_INDEX) {
+      tab = expression.Find("\\t");
+      if (tab != P_MAX_INDEX)
+        tab++;
+    }
+
+    PINDEX colon = expression.Find(':');
+
+    PwxString source, device, pattern;
+    if (colon >= tab) {
       source = AllSources;
-      colon = 0;
+      device = (const char *)expression(colon+1, tab-1);
+      pattern = expression.Mid(tab+1);
     }
     else {
-      source = (const char *)pattern.Left(colon);
+      source = expression.Left(colon);
       if (source == ".*")
         source = AllSources;
-      ++colon;
+      if (tab == P_MAX_INDEX)
+        pattern = expression.Mid(colon+1);
+      else {
+        device = expression(colon+1, tab-1);
+        if (device == ".*")
+          device = "";
+        pattern = expression.Mid(tab+1);
+      }
     }
+
     int pos = m_Routes->InsertItem(INT_MAX, source);
-    m_Routes->SetItem(pos, 1, (const char *)pattern.Mid(colon));
-    m_Routes->SetItem(pos, 2, (const char *)routeTable[i].destination);
+    m_Routes->SetItem(pos, 1, device);
+    m_Routes->SetItem(pos, 2, pattern);
+    m_Routes->SetItem(pos, 3, (const char *)routeTable[i].destination);
   }
+
+  for (i = 0; i < m_Routes->GetColumnCount(); i++)
+    m_Routes->SetColumnWidth(i, wxLIST_AUTOSIZE_USEHEADER);
 
   // Fill combo box with possible protocols
   m_RouteSource = FindWindowByNameAs<wxComboBox>(this, "RouteSource");
@@ -2538,16 +2571,9 @@ bool OptionsDialog::TransferDataFromWindow()
   m_manager.SetSilenceDetectParams(silenceParams);
 
   config->Write(LineInterfaceDeviceKey, m_LineInterfaceDevice);
-  if (m_manager.potsEP->AddDeviceName(m_LineInterfaceDevice)) {
-    OpalLine * line = m_manager.potsEP->GetLine("*");
-    if (PAssertNULL(line) != NULL) {
-      line->SetAEC((OpalLineInterfaceDevice::AECLevels)m_AEC);
-      config->Write(AECKey, m_AEC);
-      if (!line->GetDevice().SetCountryCodeName(m_Country))
-        LogWindow << "Could not configure Line Interface Device to country \"" << m_Country << '"' << endl;
-      config->Write(CountryKey, m_Country);
-    }
-  }
+  config->Write(AECKey, m_AEC);
+  config->Write(CountryKey, m_Country);
+  m_manager.StartLID();
 
   ////////////////////////////////////////
   // Video fields
@@ -2686,6 +2712,36 @@ bool OptionsDialog::TransferDataFromWindow()
 
   ////////////////////////////////////////
   // Routing fields
+
+  config->DeleteGroup(RoutingGroup);
+  config->SetPath(RoutingGroup);
+  PStringArray routeSpecs;
+  for (int i = 0; i < m_Routes->GetItemCount(); i++) {
+    PwxString spec;
+    wxListItem item;
+    item.m_itemId = i;
+    item.m_mask = wxLIST_MASK_TEXT;
+    m_Routes->GetItem(item);
+    spec += item.m_text;
+    spec += ':';
+    item.m_col++;
+    m_Routes->GetItem(item);
+    spec += item.m_text.empty() ? ".*" : item.m_text;
+    spec += "\\t";
+    item.m_col++;
+    m_Routes->GetItem(item);
+    spec += item.m_text;
+    spec += '=';
+    item.m_col++;
+    m_Routes->GetItem(item);
+    spec += item.m_text;
+    routeSpecs.AppendString(spec);
+
+    wxString key;
+    key.sprintf("%04u", i+1);
+    config->Write(key, spec);
+  }
+  m_manager.SetRouteTable(routeSpecs);
 
 
 #if PTRACING
@@ -3183,14 +3239,72 @@ void OptionsDialog::ChangedRegistrarInfo(wxCommandEvent & /*event*/)
 void OptionsDialog::AddRoute(wxCommandEvent & /*event*/)
 {
   int pos = m_Routes->InsertItem(m_SelectedRoute, m_RouteSource->GetValue());
-  m_Routes->SetItem(pos, 1, m_RoutePattern->GetValue());
-  m_Routes->SetItem(pos, 2, m_RouteDestination->GetValue());
+  m_Routes->SetItem(pos, 1, m_RouteDevice->GetValue());
+  m_Routes->SetItem(pos, 2, m_RoutePattern->GetValue());
+  m_Routes->SetItem(pos, 3, m_RouteDestination->GetValue());
 }
 
 
 void OptionsDialog::RemoveRoute(wxCommandEvent & /*event*/)
 {
+  wxListItem item;
+  item.m_itemId = m_SelectedRoute;
+  item.m_mask = wxLIST_MASK_TEXT;
+  m_Routes->GetItem(item);
+  m_RouteSource->SetValue(item.m_text);
+  item.m_col++;
+  m_Routes->GetItem(item);
+  m_RouteDevice->SetValue(item.m_text);
+  item.m_col++;
+  m_Routes->GetItem(item);
+  m_RoutePattern->SetValue(item.m_text);
+  item.m_col++;
+  m_Routes->GetItem(item);
+  m_RouteDestination->SetValue(item.m_text);
+
   m_Routes->DeleteItem(m_SelectedRoute);
+}
+
+
+static int MoveRoute(wxListCtrl * routes, int selection, int delta)
+{
+  wxStringList cols;
+  wxListItem item;
+  item.m_itemId = selection;
+  item.m_mask = wxLIST_MASK_TEXT;
+  for (item.m_col = 0; item.m_col < routes->GetColumnCount(); item.m_col++) {
+    routes->GetItem(item);
+    cols.Add(item.m_text);
+  }
+
+  routes->DeleteItem(selection);
+  selection += delta;
+  routes->InsertItem(selection, cols.front());
+
+  item.m_itemId = selection;
+  for (item.m_col = 1; item.m_col < routes->GetColumnCount(); item.m_col++) {
+    item.m_text = cols[item.m_col];
+    routes->SetItem(item);
+  }
+
+  routes->SetItemState(selection, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+  return selection;
+}
+
+
+void OptionsDialog::MoveUpRoute(wxCommandEvent & /*event*/)
+{
+  m_SelectedRoute = MoveRoute(m_Routes, m_SelectedRoute, -1);
+  m_MoveUpRoute->Enable(m_SelectedRoute > 0);
+  m_MoveDownRoute->Enable(true);
+}
+
+
+void OptionsDialog::MoveDownRoute(wxCommandEvent & /*event*/)
+{
+  m_SelectedRoute = MoveRoute(m_Routes, m_SelectedRoute, 1);
+  m_MoveUpRoute->Enable(true);
+  m_MoveDownRoute->Enable(m_SelectedRoute < (int)m_Routes->GetItemCount()-1);
 }
 
 
@@ -3198,6 +3312,8 @@ void OptionsDialog::SelectedRoute(wxListEvent & event)
 {
   m_SelectedRoute = event.GetIndex();
   m_RemoveRoute->Enable(true);
+  m_MoveUpRoute->Enable(m_SelectedRoute > 0);
+  m_MoveDownRoute->Enable(m_SelectedRoute < (int)m_Routes->GetItemCount()-1);
 }
 
 
@@ -3205,6 +3321,8 @@ void OptionsDialog::DeselectedRoute(wxListEvent & /*event*/)
 {
   m_SelectedRoute = INT_MAX;
   m_RemoveRoute->Enable(false);
+  m_MoveUpRoute->Enable(false);
+  m_MoveDownRoute->Enable(false);
 }
 
 

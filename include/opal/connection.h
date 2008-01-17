@@ -941,6 +941,10 @@ class OpalConnection : public PSafeObject
       */
     virtual void SetLocalPartyName(const PString & name);
 
+    /**Get the local name/alias.
+      */
+    virtual PString GetLocalPartyURL() const;
+
     /**Get the local display name.
       */
     const PString & GetDisplayName() const { return displayName; }

@@ -475,7 +475,22 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
     return PTrue;
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
-  return MakeConnection(call, OnRouteConnection(connection), NULL, options, stringOptions);
+  PINDEX tableEntry = 0;
+  for (;;) {
+    PString destination = OnRouteConnection(connection);
+    if (destination.IsEmpty())
+      break;
+
+    destination = ApplyRouteTable(connection.GetLocalPartyURL(), destination, tableEntry);
+    if (destination.IsEmpty())
+      break;
+
+    if (MakeConnection(call, destination, NULL, options, stringOptions))
+      return true;
+  }
+
+  PTRACE(3, "OpalMan\tCould not route connection " << connection);
+  return false;
 }
 
 
@@ -483,24 +498,9 @@ PString OpalManager::OnRouteConnection(OpalConnection & connection)
 {
   // See if have pre-allocated B party address, otherwise use routing algorithm
   PString addr = connection.GetCall().GetPartyB();
-  if (addr.IsEmpty()) {
+  if (addr.IsEmpty())
     addr = connection.GetDestinationAddress();
-
-    // No address, fail call
-    if (addr.IsEmpty())
-      return addr;
-  }
-
-  // Have explicit protocol defined, so no translation to be done
-  PINDEX colon = addr.Find(':');
-  if (colon != P_MAX_INDEX && FindEndPoint(addr.Left(colon)) != NULL)
-    return addr;
-
-  // No routes specified, just return what we've got so far, maybe it will work
-  if (routeTable.IsEmpty())
-    return addr;
-
-  return ApplyRouteTable(connection.GetEndPoint().GetPrefixName(), addr);
+  return addr;
 }
 
 
@@ -739,9 +739,22 @@ OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & )
 
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
-    destination(dest),
-    regex('^'+pat+'$')
+    destination(dest)
 {
+  PString adjustedPattern = '^';
+
+  PINDEX colon = pattern.Find(':');
+  if (colon != P_MAX_INDEX && (pattern.Find('\t', colon) == P_MAX_INDEX ||
+                               pattern.Find("\\t", colon) == P_MAX_INDEX))
+    adjustedPattern += pattern.Left(colon+1) + ".*\t" + pattern.Mid(colon+1);
+  else
+    adjustedPattern += pattern;
+
+  adjustedPattern += '$';
+
+  if (!regex.Compile(adjustedPattern)) {
+    PTRACE(1, "OpalMan\tCould not compile route regular expression \"" << adjustedPattern << '"');
+  }
 }
 
 
@@ -821,44 +834,92 @@ void OpalManager::SetRouteTable(const RouteTable & table)
 }
 
 
-PString OpalManager::ApplyRouteTable(const PString & proto, const PString & addr)
+PString OpalManager::ApplyRouteTable(const PString & source, const PString & addr, PINDEX & routeIndex)
 {
   PWaitAndSignal mutex(routeTableMutex);
 
-  PString destination;
-  PString search = proto + ':' + addr;
+  if (routeTable.IsEmpty())
+    return addr;
+
+  PString search = source + '\t' + addr;
   PTRACE(4, "OpalMan\tSearching for route \"" << search << '"');
-  for (PINDEX i = 0; i < routeTable.GetSize(); i++) {
-    RouteEntry & entry = routeTable[i];
+
+  /* Examples:
+        Call from UI       pc:USB Audio Device\USB Audio Device      sip:fred@boggs.com
+                           pc:USB Audio Device\USB Audio Device      h323:fred@boggs.com
+                           pc:USB Audio Device\USB Audio Device      fred
+        Call from handset  pots:TigerJet:USB Audio Device            123
+        Call from SIP      sip:me@here.net                           sip:you@there.com
+                           sip:me@here.net:5061                      sip:you@there.com
+        Call from H.323    h323:me@here.net                          h323:there.com
+                           h323:me@here.net:1721                     h323:fred
+
+     Table:
+        .*:#  = ivr:
+        pots:.*\\*.*\\*.* = sip:<dn2ip>
+        pots:.*           = sip:<da>
+        pc:.*             = sip:<da>
+        h323:.*           = pots:<dn>
+        sip:.*            = pots:<dn>
+        h323:.*           = pc:
+        sip:.*            = pc:
+   */
+
+  PString destination;
+  while (routeIndex < routeTable.GetSize()) {
+    RouteEntry & entry = routeTable[routeIndex++];
     PINDEX pos;
     if (entry.regex.Execute(search, pos)) {
-      destination = routeTable[i].destination;
-      break;
+      if (entry.destination.NumCompare("label:") != EqualTo) {
+        destination = entry.destination;
+        break;
+      }
+
+      // restart search in table using label.
+      search = entry.destination;
+      routeIndex = 0;
     }
   }
 
+  // No route found
   if (destination.IsEmpty())
     return PString::Empty();
 
-  destination.Replace("<da>", addr);
+  // We are backward compatibility mode and the supplied address can be called
+  PINDEX colon = addr.Find(':');
+  if (colon == P_MAX_INDEX || FindEndPoint(addr.Left(colon)) == NULL)
+    colon = 0;
+  else {
+    if (destination.Find("<da>") != P_MAX_INDEX)
+      return addr;
+    colon++;
+  }
+
+  PINDEX nonDigitPos = addr.FindSpan("0123456789*#", colon);
+  PString digits = addr(colon, nonDigitPos-1);
+
+  PINDEX at = addr.Find('@', colon);
+
+  destination.Replace("<da>", addr, true);
+  destination.Replace("<du>", addr(colon, at-1), true);
+  destination.Replace("<!du>", addr.Mid(at), true);
+  destination.Replace("<dn>", digits, true);
+  destination.Replace("<!dn>", addr.Mid(nonDigitPos), true);
 
   PINDEX pos;
-  if ((pos = destination.Find("<dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Left(addr.FindSpan("0123456789*#")), pos, 4);
-
-  if ((pos = destination.Find("<!dn>")) != P_MAX_INDEX)
-    destination.Splice(addr.Mid(addr.FindSpan("0123456789*#")), pos, 5);
+  while ((pos = destination.FindRegEx("<dn[1-9]>")) != P_MAX_INDEX)
+    destination.Splice(digits.Mid(destination[pos+3]-'0'), pos, 5);
 
   // Do meta character substitutions
-  if ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
+  while ((pos = destination.Find("<dn2ip>")) != P_MAX_INDEX) {
     PStringStream route;
-    PStringArray stars = addr.Tokenise('*');
+    PStringArray stars = digits.Tokenise('*');
     switch (stars.GetSize()) {
       case 0 :
       case 1 :
       case 2 :
       case 3 :
-        route << addr;
+        route << digits;
         break;
 
       case 4 :

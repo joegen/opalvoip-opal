@@ -62,6 +62,8 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
     retryTimeoutMin(retryMin), 
     retryTimeoutMax(retryMax)
 {
+  transactions.DisallowDeleteObjects();
+
   targetAddress.Parse(to);
   remotePartyAddress = targetAddress.AsQuotedString();
 
@@ -129,8 +131,10 @@ PBoolean SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
   SIPTransaction * transaction = handler->CreateTransaction(transport);
   if (transaction != NULL) {
     handler->callID = transaction->GetMIME().GetCallID();
-    if (transaction->Start())
+    if (transaction->Start()) {
+      handler->transactions.Append(transaction);
       return PTrue;
+    }
   }
 
     PTRACE(2, "SIP\tDid not start transaction on " << transport);
@@ -165,7 +169,72 @@ PBoolean SIPHandler::OnReceivedNOTIFY(SIP_PDU & /*response*/)
 }
 
 
-void SIPHandler::OnReceivedOK(SIP_PDU & /*response*/)
+void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response)
+{
+  bool isProxy = response.GetStatusCode() == SIP_PDU::Failure_ProxyAuthenticationRequired;
+#if PTRACING
+  const char * proxyTrace = isProxy ? "Proxy " : "";
+#endif
+  PTRACE(3, "SIP\tReceived " << proxyTrace << "Authentication Required response");
+
+  PString lastNonce;
+  PString lastUsername;
+  if (authentication.IsValid()) {
+    lastUsername = authentication.GetUsername();
+    lastNonce = authentication.GetNonce();
+  }
+
+  // Received authentication required response, parse it
+  if (!authentication.Parse(response.GetMIME()(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate"), isProxy)) {
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
+
+  // Already sent handler for that callID. Check if params are different
+  // from the ones found for the given realm
+  if (authentication.IsValid() &&
+      authentication.GetUsername() == lastUsername &&
+      authentication.GetNonce() == lastNonce &&
+      GetState() == SIPHandler::Subscribing) {
+    PTRACE(2, "SIP\tAlready done REGISTER/SUBSCRIBE for " << proxyTrace << "Authentication Required");
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
+  
+  // Abort after some unsuccesful authentication attempts. This is required since
+  // some implementations return "401 Unauthorized" with a different nonce at every
+  // time.
+  if(authenticationAttempts >= 10) {
+    PTRACE(1, "SIP\tAborting after " << authenticationAttempts << " attempts to REGISTER/SUBSCRIBE");
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    return;
+  }
+
+  ++authenticationAttempts;
+
+  // And end connect mode on the transport
+  GetTransport().EndConnect(transaction.GetTransport().GetLastReceivedInterface());
+
+  // Restart the transaction with new authentication handler
+  SIPTransaction * newTransaction = CreateTransaction(GetTransport());
+  if (!authentication.Authorise(*newTransaction)) {
+    // don't send again if no authentication handler available
+    OnFailed(SIP_PDU::Failure_UnAuthorised);
+    delete newTransaction; // Not started yet, we need to delete
+    return;
+  }
+
+  // Section 8.1.3.5 of RFC3261 tells that the authenticated
+  // request SHOULD have the same value of the Call-ID, To and From.
+  newTransaction->GetMIME().SetFrom(transaction.GetMIME().GetFrom());
+  newTransaction->GetMIME().SetCallID(GetCallID());
+  if (!newTransaction->Start()) {
+    PTRACE(1, "SIP\tCould not restart REGISTER/SUBSCRIBE for Authentication Required");
+  }
+}
+
+
+void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response*/)
 {
   switch (GetState()) {
     case Unsubscribing :
@@ -181,11 +250,27 @@ void SIPHandler::OnReceivedOK(SIP_PDU & /*response*/)
     default :
       PTRACE(2, "SIP\tUnexpected OK in handler with state " << GetState ());
   }
+
+  // reset the number of unsuccesful authentication attempts
+  authenticationAttempts = 0;
+
+  // Take this transaction out and kill all the rest
+  transactions.Remove(&transaction);
+  while (transactions.GetSize() > 0) {
+    PSafePtr<SIPTransaction> transToGo = transactions.GetAt(0);
+    transToGo->Abort();
+    transactions.Remove(transToGo);
+  }
+
+  // And end connect mode on the transport
+  transport->EndConnect(transaction.GetTransport().GetLastReceivedInterface());
 }
 
 
-void SIPHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPHandler::OnTransactionTimeout(SIPTransaction & transaction)
 {
+  transactions.Remove(&transaction);
+  OnFailed(SIP_PDU::Failure_RequestTimeout);
 }
 
 
@@ -215,25 +300,17 @@ PBoolean SIPHandler::CanBeDeleted()
 }
 
 
-SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint,
-                                       const PString & to,   /* The to field  */
-                                       const PString & authName, 
-                                       const PString & pass, 
-                                       const PString & realm,
-                                       int exp,
-                                       const PTimeInterval & minRetryTime, 
-                                       const PTimeInterval & maxRetryTime)
-  : SIPHandler(endpoint, to, minRetryTime, maxRetryTime)
+///////////////////////////////////////////////////////////////////////////////
+
+SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister::Params & params)
+  : SIPHandler(endpoint, params.m_addressOfRecord, params.m_minRetryTime, params.m_maxRetryTime)
+  , m_parameters(params)
 {
-  expire = exp;
-  if (expire <= 0)
-    expire = endpoint.GetRegistrarTimeToLive().GetSeconds();
+  authentication.SetUsername(params.m_authID);
+  authentication.SetPassword(params.m_password);
+  authentication.SetAuthRealm(params.m_realm);
 
-  password = pass;
-  authUser = authName;
-  authRealm = realm;
-
-  originalExpire = exp;
+  expire = originalExpire = params.m_expire;
 
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
@@ -245,28 +322,13 @@ SIPRegisterHandler::~SIPRegisterHandler()
 }
 
 
-SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport &t)
+SIPTransaction * SIPRegisterHandler::CreateTransaction(OpalTransport & trans)
 {
-  authentication.SetUsername(authUser);
-  authentication.SetPassword(password);
-  if (!authRealm.IsEmpty())
-    authentication.SetAuthRealm(authRealm);   
-
-  if (expire != 0)
-    expire = originalExpire;
-
-  return new SIPRegister(endpoint, 
-                             t, 
-                             GetRouteSet(),
-                             targetAddress, 
-                             callID, 
-                             expire, 
-                             retryTimeoutMin, 
-                             retryTimeoutMax);
+  return new SIPRegister(endpoint, trans, GetRouteSet(), callID, m_parameters);
 }
 
 
-void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
+void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
   PString contact = response.GetMIME().GetContact();
 
@@ -283,20 +345,15 @@ void SIPRegisterHandler::OnReceivedOK(SIP_PDU & response)
 
   SetExpire(expire);
 
-  if (authRealm.IsEmpty()) {
-    SetAuthRealm(targetAddress.GetHostName());
-    PTRACE(2, "SIP\tUpdated realm to " << authentication.GetAuthRealm());
-  }
-
   SendStatus(SIP_PDU::Successful_OK);
-  SIPHandler::OnReceivedOK(response);
+  SIPHandler::OnReceivedOK(transaction, response);
 }
 
 
-void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & transaction)
 {
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
-  expireTimer = PTimeInterval (0, 30);
+  expireTimer = PTimeInterval(0, 30);
+  SIPHandler::OnTransactionTimeout(transaction);
 }
 
 
@@ -335,6 +392,18 @@ void SIPRegisterHandler::SendStatus(SIP_PDU::StatusCodes code)
     default :
       break;
   }
+}
+
+
+void SIPRegisterHandler::UpdateParameters(const SIPRegister::Params & params)
+{
+  if (!params.m_authID.IsEmpty())
+    authentication.SetUsername(params.m_authID); // Adjust the authUser if required 
+  if (!params.m_realm.IsEmpty())
+    authentication.SetAuthRealm(params.m_realm);   // Adjust the realm if required 
+  if (!params.m_password.IsEmpty())
+    authentication.SetPassword(params.m_password); // Adjust the password if required 
+  SetExpire(params.m_expire);
 }
 
 
@@ -398,7 +467,7 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 }
 
 
-void SIPSubscribeHandler::OnReceivedOK(SIP_PDU & response)
+void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
   /* An "expire" parameter in the Contact header has no semantics
    * for SUBSCRIBE. RFC3265, 3.1.1.
@@ -424,13 +493,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIP_PDU & response)
   /* Update the To */
   remotePartyAddress = response.GetMIME().GetTo();
 
-  SIPHandler::OnReceivedOK(response);
-}
-
-
-void SIPSubscribeHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
-{
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
+  SIPHandler::OnReceivedOK(transaction, response);
 }
 
 
@@ -608,12 +671,6 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU &)
 #endif
 
 
-void SIPSubscribeHandler::OnFailed(SIP_PDU::StatusCodes reason)
-{ 
-  SIPHandler::OnFailed(reason);
-}
-
-
 void SIPSubscribeHandler::OnExpireTimeout(PTimer &, INT)
 {
   PTRACE(2, "SIP\tStarting SUBSCRIBE for binding refresh");
@@ -669,7 +726,7 @@ SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 }
 
 
-void SIPPublishHandler::OnReceivedOK(SIP_PDU & response)
+void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
   int sec = 3600;
   sec = response.GetMIME().GetExpires(3600);
@@ -682,20 +739,14 @@ void SIPPublishHandler::OnReceivedOK(SIP_PDU & response)
 
   SetExpire(expire);
 
-  SIPHandler::OnReceivedOK(response);
+  SIPHandler::OnReceivedOK(transaction, response);
 }
 
 
-void SIPPublishHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPPublishHandler::OnTransactionTimeout(SIPTransaction & transaction)
 {
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
   expireTimer = PTimeInterval (0, 30);
-}
-
-
-void SIPPublishHandler::OnFailed (SIP_PDU::StatusCodes r)
-{ 
-  SIPHandler::OnFailed(r);
+  SIPHandler::OnTransactionTimeout(transaction);
 }
 
 
@@ -801,15 +852,10 @@ SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
 }
 
 
-void SIPMessageHandler::OnReceivedOK(SIP_PDU & /*response*/)
-{
-}
-
-
-void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
+void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & transaction)
 {
   if (timeoutRetry > 2)
-    OnFailed(SIP_PDU::Failure_RequestTimeout);
+    SIPHandler::OnTransactionTimeout(transaction);
   else {
     SendRequest();
     timeoutRetry++;
@@ -820,6 +866,7 @@ void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
 void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 { 
   endpoint.OnMessageFailed(targetAddress, reason);
+  SIPHandler::OnFailed(reason);
 }
 
 
@@ -846,21 +893,6 @@ SIPPingHandler::SIPPingHandler (SIPEndPoint & endpoint,
 SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 {
   return new SIPPing(endpoint, t, targetAddress, body);
-}
-
-
-void SIPPingHandler::OnReceivedOK(SIP_PDU & /*response*/)
-{
-}
-
-
-void SIPPingHandler::OnTransactionTimeout(SIPTransaction & /*transaction*/)
-{
-}
-
-
-void SIPPingHandler::OnFailed(SIP_PDU::StatusCodes /*reason*/)
-{
 }
 
 

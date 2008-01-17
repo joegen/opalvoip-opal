@@ -86,6 +86,15 @@ class SIPConnection : public OpalRTPConnection
       */
     virtual PBoolean SetUpConnection();
 
+    /**Get the destination address of an incoming connection.
+       This will, for example, collect a phone number from a POTS line, or
+       get the fields from the H.225 SETUP pdu in a H.323 connection.
+
+       The default behaviour returns "*", which by convention means any
+       address the endpoint/connection can get to.
+      */
+    virtual PString GetDestinationAddress();
+
     /**Initiate the transfer of an existing call (connection) to a new remote 
        party.
      */

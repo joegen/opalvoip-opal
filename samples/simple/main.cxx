@@ -156,7 +156,7 @@ void SimpleOpalProcess::Main()
              "-video-size:"
              "-video-rate:"
 #endif
-#if P_EXPAT
+#if OPAL_IVR
              "V-no-ivr."
              "x-vxml:"
 #endif
@@ -260,7 +260,7 @@ void SimpleOpalProcess::Main()
             "     --sound-in device    : Select sound input device.\n"
             "     --sound-out device   : Select sound output device.\n"
             "\n"
-#if P_EXPAT
+#if OPAL_IVR
             "IVR options:\n"
             "  -V --no-ivr             : Disable IVR.\n"
             "  -x --vxml file          : Set vxml file to use for IVR.\n"
@@ -332,7 +332,7 @@ void SimpleOpalProcess::Main()
 "      h323:.* = pc:<da>\n"
 "      sip:. * = pc:<da>\n"
 "\n"
-#if P_EXPAT
+#if OPAL_IVR
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
 "      .*:#  = ivr:\n"
 "\n"
@@ -384,7 +384,7 @@ MyManager::MyManager()
 #if OPAL_IAX2
   iax2EP = NULL;
 #endif
-#if P_EXPAT
+#if OPAL_IVR
   ivrEP  = NULL;
 #endif
 #if OPAL_T38FAX
@@ -681,7 +681,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 #endif
 
 
-#if P_EXPAT
+#if OPAL_IVR
   ///////////////////////////////////////
   // Create IVR protocol handler
 
@@ -721,7 +721,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   }
 
   if (!args.HasOption("no-std-dial-peer")) {
-#if P_EXPAT
+#if OPAL_IVR
     // Need to make sure wildcard on source ep type is first or it won't be
     // selected in preference to the specific entries below
     if (ivrEP != NULL)
@@ -791,7 +791,7 @@ PBoolean MyManager::Initialise(PArgList & args)
                                       #if OPAL_LID
                                         : potsEP != NULL ? "pots:*"
                                       #endif
-                                      #if P_EXPAT
+                                      #if OPAL_IVR
                                         : ivrEP != NULL ? "ivr:#"
                                       #endif
                                       #if OPAL_SIP
@@ -981,6 +981,7 @@ PBoolean MyManager::InitialiseH323EP(PArgList & args, PBoolean secure, H323EndPo
 #endif  //OPAL_H323
 
 
+#if P_CONFIG_FILE
 void MyManager::NewSpeedDial(const PString & ostr)
 {
   PString str = ostr;
@@ -998,6 +999,7 @@ void MyManager::NewSpeedDial(const PString & ostr)
  
   cout << "Speedial " << key << " set to " << data << endl;
 }
+#endif // P_CONFIG_FILE
  
 
 void MyManager::Main(PArgList & args)
@@ -1111,6 +1113,7 @@ void MyManager::Main(PArgList & args)
         console.ignore(INT_MAX, '\n');
         break;
 
+#if P_CONFIG_FILE
       case 'l' :
         ListSpeedDials();
         break;
@@ -1122,6 +1125,7 @@ void MyManager::Main(PArgList & args)
 	        NewSpeedDial(str.Trim());
         }
         break;
+#endif // P_CONFIG_FILE
         
       case 'h' :
         HangupCurrentCall();
@@ -1231,6 +1235,7 @@ void MyManager::StartCall(const PString & ostr)
     return ;
   }
 
+#if P_CONFIG_FILE
   // check for speed dials, and match wild cards as we go
   PString key, prefix;
   if ((str.GetLength() > 1) && (str[str.GetLength()-1] == '#')) {
@@ -1262,6 +1267,7 @@ void MyManager::StartCall(const PString & ostr)
       cout << endl;
     }
   }
+#endif // P_CONFIG_FILE
 
   if (!str.IsEmpty())
     SetUpCall(srcEP, str, currentCallToken);
@@ -1269,6 +1275,7 @@ void MyManager::StartCall(const PString & ostr)
   return;
 }
 
+#if P_CONFIG_FILE
 void MyManager::ListSpeedDials()
 {
   PConfig config("Speeddial");
@@ -1282,6 +1289,7 @@ void MyManager::ListSpeedDials()
   for (i = 0; i < keys.GetSize(); i++)
     cout << keys[i] << ":   " << config.GetString(keys[i]) << endl;
 }
+#endif // P_CONFIG_FILE
 
 void MyManager::OnEstablishedCall(OpalCall & call)
 {
