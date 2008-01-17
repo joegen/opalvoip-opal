@@ -43,6 +43,10 @@
 #include <h323/gkclient.h>
 #endif
 
+#if OPAL_T38FAX
+#include <t38/t38proto.h>
+#endif
+
 #include <t38/t38proto.h>
 
 #include <opal/transcoders.h>
@@ -707,6 +711,9 @@ PBoolean MyManager::Initialise(PArgList & args)
     OpalMediaFormat fmt(OpalT38); // Force instantiation of T.38 media format
     faxEP = new OpalFaxEndPoint(*this);
     t38EP = new OpalT38EndPoint(*this);
+
+    allMediaFormats += t38EP->GetMediaFormats();
+    allMediaFormats += faxEP->GetMediaFormats();
   }
 #endif
 
@@ -806,6 +813,8 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (FindEndPoint(srcEP.Left(srcEP.Find(':'))) == NULL)
     srcEP = defaultSrcEP;
 
+  allMediaFormats += "H.224";
+
   allMediaFormats = OpalTranscoder::GetPossibleFormats(allMediaFormats); // Add transcoders
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     if (!allMediaFormats[i].IsTransportable())
@@ -823,7 +832,7 @@ PBoolean MyManager::Initialise(PArgList & args)
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
       if (args.HasOption("video-size")) {
         PString sizeStr = args.GetOptionString("video-size");
         unsigned width, height;
@@ -1004,7 +1013,8 @@ void MyManager::NewSpeedDial(const PString & ostr)
 
 void MyManager::Main(PArgList & args)
 {
-  OpalConnection::StringOptions stringOptions;
+  OpalConnection::StringOptions * stringOptions = new OpalConnection::StringOptions;
+  stringOptions->SetAt("autostart", "h224");
 
   // See if making a call or just listening.
   switch (args.GetCount()) {
@@ -1020,7 +1030,7 @@ void MyManager::Main(PArgList & args)
       }
 
       cout << "Initiating call to \"" << args[0] << "\"\n";
-      SetUpCall(srcEP, args[0], currentCallToken, 0, 0, &stringOptions);
+      SetUpCall(srcEP, args[0], currentCallToken, 0, 0, stringOptions);
       break;
 
     default :
