@@ -271,21 +271,15 @@ class SimpleMediaType : public OpalMediaTypeDefinition
 #endif
 };
 
-#define OPAL_DEFINE_MEDIA_TYPE_NO_SDP(type) \
+#define OPAL_DEFINE_MEDIA_TYPE(type, sdp) \
 namespace OpalMediaTypeSpace { \
   char type##_type_string[] = #type; \
-  char type##_sdp_string[] = ""; \
+  char type##_sdp_string[] = #sdp; \
   typedef SimpleMediaType<type##_type_string, type##_sdp_string> OpalMediaType_##type; \
   static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type(#type, true); \
 }; \
 
-#define OPAL_DEFINE_MEDIA_TYPE(type, sdp) \
-namespace OpalMediaTypeSpace { \
-  char type##_type_string[] = #type; \
-  char type##_sdp_string[]  = #sdp; \
-  typedef SimpleMediaType<type##_type_string, type##_sdp_string> OpalMediaType_##type; \
-  static PFactory<OpalMediaTypeDefinition>::Worker<OpalMediaType_##type> static_##type(#type, true); \
-}; \
+#define OPAL_DEFINE_MEDIA_TYPE_NO_SDP(type) OPAL_DEFINE_MEDIA_TYPE(type, "") 
 
 ////////////////////////////////////////////////////////////////////////////
 //
