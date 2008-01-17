@@ -1423,10 +1423,13 @@ void MyManager::MakeCall(const PwxString & address)
   config->SetPath(GeneralGroup);
   config->Write(LastDialedKey, m_LastDialed);
 
+  OpalConnection::StringOptions * options = new OpalConnection::StringOptions;
+  options->SetAt("autostart", "h224");
+
   if (potsEP != NULL && potsEP->GetLine("*") != NULL)
-    SetUpCall("pots:*", address, m_currentCallToken);
+    SetUpCall("pots:*", address, m_currentCallToken, NULL, 0, options);
   else
-    SetUpCall("pc:*", address, m_currentCallToken);
+    SetUpCall("pc:*", address, m_currentCallToken, NULL, 0, options);
 }
 
 
@@ -1585,7 +1588,7 @@ static void LogMediaStream(const char * stopStart, const OpalMediaStream & strea
   OpalMediaFormat mediaFormat = stream.GetMediaFormat();
   LogWindow << stopStart << (stream.IsSource() ? " receiving " : " sending ") << mediaFormat;
 
-  if (!stream.IsSource() && mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+  if (!stream.IsSource() && mediaFormat.GetMediaType() == OpalMediaType::Audio())
     LogWindow << " (" << mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption())*mediaFormat.GetFrameTime()/mediaFormat.GetTimeUnits() << "ms)";
 
   LogWindow << (stream.IsSource() ? " from " : " to ")
@@ -1905,7 +1908,7 @@ bool MyManager::AdjustFrameSize()
   OpalMediaFormat::GetAllRegisteredMediaFormats(allMediaFormats);
   for (PINDEX i = 0; i < allMediaFormats.GetSize(); i++) {
     OpalMediaFormat mediaFormat = allMediaFormats[i];
-    if (mediaFormat.GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+    if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameWidthOption(), width);
       mediaFormat.SetOptionInteger(OpalVideoFormat::FrameHeightOption(), height);
       mediaFormat.SetOptionInteger(OpalVideoFormat::MinRxFrameWidthOption(), minWidth);
@@ -3548,9 +3551,9 @@ void InCallPanel::UpdateButtons(OpalPOTSEndPoint * potsEP)
       if (!PIsDescendant(&(*connection), OpalPCSSConnection) && !PIsDescendant(&(*connection), OpalLineConnection)) {
         OpalMediaFormatList availableFormats = connection->GetMediaFormats();
         for (PINDEX idx = 0; idx < availableFormats.GetSize(); idx++) {
-          if (availableFormats[idx].GetDefaultSessionID() == OpalMediaFormat::DefaultVideoSessionID) {
+          if (availableFormats[idx].GetMediaType() == OpalMediaType::Video()) {
             m_StartStopVideo->Enable();
-            OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, false);
+            OpalMediaStreamPtr stream = connection->GetMediaStreamOfType(OpalMediaType::Video(), false);
             m_StartStopVideo->SetLabel(stream != NULL && stream->IsOpen() ? "Stop Video" : "Start Video");
             return;
           }
@@ -3574,11 +3577,11 @@ void InCallPanel::OnStartStopVideo(wxCommandEvent & /*event*/)
   PSafePtr<OpalConnection> connection = m_manager.GetUserConnection();
   if (connection != NULL) {
     m_StartStopVideo->Disable();
-    OpalMediaStreamPtr stream = connection->GetMediaStream(OpalMediaFormat::DefaultVideoSessionID, true);
+    OpalMediaStreamPtr stream = connection->GetMediaStreamOfType(OpalMediaType::Video(), true);
     if (stream != NULL)
       connection->CloseMediaStream(*stream);
     else {
-      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaFormat::DefaultVideoSessionID))
+      if (!connection->GetCall().OpenSourceMediaStreams(*connection, OpalMediaType::Video(), 10))
         LogWindow << "Could not open video to remote!" << endl;
     }
   }
