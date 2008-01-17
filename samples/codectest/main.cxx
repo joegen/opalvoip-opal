@@ -511,9 +511,9 @@ void VideoThread::Main()
 
 void TranscoderThread::Main()
 {
-  unsigned byteCount = 0;
-  unsigned frameCount = 0;
-  unsigned packetCount = 0;
+  PUInt64 byteCount = 0;
+  PUInt64 frameCount = 0;
+  PUInt64 packetCount = 0;
   bool oldSrcState = true;
   bool oldOutState = true;
   bool oldEncState = true;
@@ -575,22 +575,22 @@ void TranscoderThread::Main()
   PTimeInterval duration = PTimer::Tick() - startTick;
 
   cout << fixed << setprecision(1);
-  if (byteCount < 10000)
+  if (byteCount < 10000ULL)
     cout << byteCount << ' ';
-  else if (byteCount < 10000000)
+  else if (byteCount < 10000000ULL)
     cout << byteCount/1000.0 << " k";
-  else if (byteCount < 10000000000)
+  else if (byteCount < 10000000000ULL)
     cout << byteCount/1000000.0 << " M";
   cout << "bytes, "
        << frameCount << " frames over " << duration << " seconds at "
        << (frameCount*1000.0/duration.GetMilliSeconds()) << " f/s and ";
 
-  double bitRate = byteCount*8.0/duration.GetSeconds();
-  if (bitRate < 10000)
+  PUInt64 bitRate = byteCount*8/duration.GetSeconds();
+  if (bitRate < 10000ULL)
     cout << bitRate << ' ';
-  else if (bitRate < 10000000)
+  else if (bitRate < 10000000ULL)
     cout << bitRate/1000.0 << " k";
-  else if (bitRate < 10000000000)
+  else if (bitRate < 10000000000ULL)
     cout << bitRate/1000000.0 << " M";
   cout << "bits/s." << endl;
 }
