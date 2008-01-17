@@ -23,9 +23,9 @@
  *
  * Contributor(s): 
  *
- * $Revision: 19081 $
- * $Author: rjongbloed $
- * $Date: 2007-12-13 15:21:19 +1100 (Thu, 13 Dec 2007) $
+ * $Revision$
+ * $Author$
+ * $Date$
  */
 
 #ifndef __OPAL_SIPT38_H
