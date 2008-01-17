@@ -1,3 +1,11 @@
+dnl ########################################################################
+dnl OPAL configuration
+dnl
+dnl $Revision$
+dnl $Author$
+dnl $Date$
+dnl
+
 AC_INIT(include/opal/manager.h)
 
 AC_PROG_CC
