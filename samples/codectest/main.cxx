@@ -190,7 +190,7 @@ int TranscoderThread::InitialiseCodec(PArgList & args, const OpalMediaFormat & r
       return false;
     }
 
-    if (mediaFormat.GetDefaultSessionID() == rawFormat.GetDefaultSessionID()) {
+    if (mediaFormat.GetMediaType() == rawFormat.GetMediaType()) {
       if (rawFormat == mediaFormat) {
         decoder = NULL;
         encoder = NULL;

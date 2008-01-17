@@ -356,19 +356,15 @@ void PlayRTP::Play(const PFilePath & filename)
 
       OpalMediaFormat srcFmt = m_payloadType2mediaFormat[rtpStreamPayloadType];
       OpalMediaFormat dstFmt;
-      switch (srcFmt.GetDefaultSessionID()) {
-        case OpalMediaFormat::DefaultAudioSessionID :
-          dstFmt = OpalPCM16;
-          break;
-
-        case OpalMediaFormat::DefaultVideoSessionID :
-          dstFmt = OpalYUV420P;
-          m_display->Start();
-          break;
-
-        default :
-          cout << "Unsupported Media Type " << srcFmt.GetDefaultSessionID() << " in file \"" << filename << '"' << endl;
-          return;
+      if (srcFmt.GetMediaType() == OpalMediaType::Audio())
+        dstFmt = OpalPCM16;
+      else if (srcFmt.GetMediaType() == OpalMediaType::Video()) {
+        dstFmt = OpalYUV420P;
+        m_display->Start();
+      }
+      else {
+        cout << "Unsupported Media Type " << srcFmt.GetMediaType() << " in file \"" << filename << '"' << endl;
+        return;
       }
 
       m_transcoder = OpalTranscoder::Create(srcFmt, dstFmt);
@@ -397,7 +393,7 @@ void PlayRTP::Play(const PFilePath & filename)
 
     for (PINDEX i = 0; i < output.GetSize(); i++) {
       const RTP_DataFrame & data = output[i];
-      if (inputFmt.GetDefaultSessionID() == OpalMediaFormat::DefaultAudioSessionID)
+      if (inputFmt.GetMediaType() == OpalMediaType::Audio())
         m_player->Write(data.GetPayloadPtr(), data.GetPayloadSize());
       else {
         const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data.GetPayloadPtr();
