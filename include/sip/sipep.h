@@ -286,9 +286,9 @@ class SIPEndPoint : public OpalEndPoint
       SIP_PDU & response
     );
     
-    /**Handle a timeout
+    /**Handle a SIP packet transaction failure
       */
-    virtual void OnTransactionTimeout(
+    virtual void OnTransactionFailed(
       SIPTransaction & transaction
     );
     
