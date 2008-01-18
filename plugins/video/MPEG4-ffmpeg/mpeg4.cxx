@@ -135,6 +135,7 @@ const static struct mpeg4_profile_level {
     unsigned maxVideoPacketLength; /* max. video packet length (bits) */
     long unsigned bitrate;
 } mpeg4_profile_levels[] = {
+    {   0, "Simple",                     1, 0, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 }, // Streaming Video Profile Amendment
     {   1, "Simple",                     1, 1, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
     {   2, "Simple",                     1, 2, 1,   792,   396,   5940,      0,  40,  40,  4096,   128000 },
     {   3, "Simple",                     1, 3, 1,   792,   396,  11880,      0,  40,  40,  8192,   384000 },
@@ -1709,30 +1710,116 @@ static const char sdpMPEG4[]   = { "MP4V-ES" };
 
 /////////////////////////////////////////////////////////////////////////////
 
-static struct PluginCodec_Option const RFC3016profileLevel =
+enum
 {
-  PluginCodec_IntegerOption,            // Option type
-  "CAP RFC3016 Profile Level",          // User visible name
-  false,                                // User Read/Only flag
-  PluginCodec_MinMerge,                 // Merge mode
-  "5",                                  // Initial value (Simple Profile/Level 5)
-  "profile-level-id",                   // FMTP option name 
-  "1",                                  // FMTP default value (Simple Profile/Level 1)
-  0,
-  "1",
-  "255"
+    H245_ANNEX_E_PROFILE_LEVEL = 0 | PluginCodec_H245_NonCollapsing | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_ANNEX_E_OBJECT        = 1 | PluginCodec_H245_NonCollapsing |                        PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
+    H245_ANNEX_E_DCI           = 2 | PluginCodec_H245_NonCollapsing |                        PluginCodec_H245_OLC,
+    H245_ANNEX_E_DRAWING_ORDER = 3 | PluginCodec_H245_NonCollapsing |                        PluginCodec_H245_OLC,
+    H245_ANNEX_E_VBCH          = 4 | PluginCodec_H245_Collapsing    | PluginCodec_H245_TCS | PluginCodec_H245_OLC | PluginCodec_H245_ReqMode,
 };
 
+static int MergeProfileAndLevelMPEG4(char ** result, const char * dest, const char * src)
+{
+  // Due to the "special case" where the value 8 is simple profile level zero,
+  // we cannot actually use a simple min merge!
+  unsigned dstPL = strtoul(dest, NULL, 10);
+  unsigned srcPL = strtoul(src, NULL, 10);
+
+  unsigned dstProfile = (dstPL>>4)&7;
+  unsigned dstLevel = dstPL&7;
+  unsigned srcProfile = (srcPL>>4)&7;
+  unsigned srcLevel = srcPL&7;
+
+  if (dstProfile > srcProfile)
+    dstProfile = srcProfile;
+  if (dstLevel > srcLevel)
+    dstLevel = srcLevel;
+
+  char buffer[10];
+  sprintf(buffer, "%u", (dstProfile<<4)|(dstLevel > 0 ? dstLevel : 8));
+  *result = strdup(buffer);
+
+  return true;
+}
+
+static void FreeString(char * str)
+{
+  free(str);
+}
+
+static struct PluginCodec_Option const H245ProfileLevelMPEG4 =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "H.245 Profile & Level",            // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_CustomMerge,            // Merge mode
+  "5",                                // Initial value (Simple Profile/Level 5)
+  "profile-level-id",                 // FMTP option name
+  "1",                                // FMTP default value (Simple Profile/Level 1)
+  H245_ANNEX_E_PROFILE_LEVEL,         // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "245",                              // Maximum value
+  MergeProfileAndLevelMPEG4,          // Function to do merge
+  FreeString                          // Function to free memory in string
+};
+
+static struct PluginCodec_Option const H245ObjectMPEG4 =
+{
+  PluginCodec_IntegerOption,          // Option type
+  "H.245 Object Id",                  // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  "0",                                // Initial value
+  NULL,                               // FMTP option name
+  NULL,                               // FMTP default value
+  H245_ANNEX_E_OBJECT,                // H.245 generic capability code and bit mask
+  "0",                                // Minimum value
+  "15"                                // Maximum value
+};
+
+static struct PluginCodec_Option const DecoderConfigInfoMPEG4 =
+{
+  PluginCodec_OctetsOption,           // Option type
+  "DCI",                              // User visible name
+  false,                              // User Read/Only flag
+  PluginCodec_NoMerge,                // Merge mode
+  "",                                 // Initial value
+  "config",                           // FMTP option name
+  NULL,                               // FMTP default value
+  H245_ANNEX_E_DCI                    // H.245 generic capability code and bit mask
+};
+
+static struct PluginCodec_Option const MediaPacketizationMPEG4 =
+{
+  PluginCodec_StringOption,           // Option type
+  PLUGINCODEC_MEDIA_PACKETIZATION,    // User visible name
+  true,                               // User Read/Only flag
+  PluginCodec_EqualMerge,             // Merge mode
+  OpalPluginCodec_Identifer_MPEG4     // Initial value
+};
+
+
 static struct PluginCodec_Option const * const optionTable[] = {
-  &RFC3016profileLevel,
+  &H245ProfileLevelMPEG4,
+  &H245ObjectMPEG4,
+  &DecoderConfigInfoMPEG4,
+  &ProfileMPEG4,
+  &LevelMPEG4,
+  &MediaPacketizationMPEG4,
   NULL
 };
+
+static struct PluginCodec_H323GenericCodecData H323GenericMPEG4 = {
+  OpalPluginCodec_Identifer_MPEG4
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
 { 
-  // SIP encoder
+  // Encoder
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
@@ -1762,11 +1849,11 @@ static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
   codec_encoder,                      // encode/decode
   sipEncoderControls,                 // codec controls
 
-  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-  NULL                                // h323CapabilityData
+  PluginCodec_H323Codec_generic,      // h323CapabilityType
+  &H323GenericMPEG4                   // h323CapabilityData
 },
 { 
-  // SIP decoder
+  // Decoder
   PLUGIN_CODEC_VERSION_OPTIONS,       // codec API version
   &licenseInfo,                       // license information
 
@@ -1796,8 +1883,8 @@ static struct PluginCodec_Definition mpeg4CodecDefn[2] = {
   codec_decoder,                      // encode/decode
   sipDecoderControls,                 // codec controls
 
-  PluginCodec_H323Codec_NoH323,       // h323CapabilityType 
-  NULL                                // h323CapabilityData
+  PluginCodec_H323Codec_generic,      // h323CapabilityType
+  &H323GenericMPEG4                   // h323CapabilityData
 },
 
 };
