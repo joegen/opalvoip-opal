@@ -840,7 +840,8 @@ void MyManager::StartLID()
   wxConfigBase * config = wxConfig::Get();
 
   PwxString device;
-  if (!config->Read(LineInterfaceDeviceKey, &device) || device.IsEmpty())
+  if (!config->Read(LineInterfaceDeviceKey, &device) ||
+      device.IsEmpty() || (device.StartsWith("<<") && device.EndsWith(">>")))
     return;
 
   if (!potsEP->AddDeviceName(device)) {
@@ -2568,6 +2569,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   m_manager.SetSilenceDetectParams(silenceParams);
 
+  if (m_LineInterfaceDevice.StartsWith("<<") && m_LineInterfaceDevice.EndsWith(">>"))
+    m_LineInterfaceDevice.Empty();
   config->Write(LineInterfaceDeviceKey, m_LineInterfaceDevice);
   config->Write(AECKey, m_AEC);
   config->Write(CountryKey, m_Country);
