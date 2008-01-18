@@ -649,6 +649,11 @@ class SIP_PDU : public PSafeObject
 PQUEUE(SIP_PDU_Queue, SIP_PDU);
 
 
+#if PTRACING
+ostream & operator<<(ostream & strm, SIP_PDU::Methods method);
+#endif
+
+
 /////////////////////////////////////////////////////////////////////////
 // SIPTransaction
 
@@ -686,8 +691,9 @@ class SIPTransaction : public SIP_PDU
     PBoolean IsInProgress() const { return state == Trying || state == Proceeding; }
     PBoolean IsFailed() const { return state > Terminated_Success; }
     PBoolean IsCompleted() const { return state >= Completed; }
-    PBoolean IsCanceled() const { return state == Terminated_Cancelled; }
+    PBoolean IsCanceled() const { return state == Cancelling || state == Terminated_Cancelled || state == Terminated_Aborted; }
     PBoolean IsTerminated() const { return state >= Terminated_Success; }
+
     void WaitForCompletion();
     PBoolean Cancel();
     void Abort();

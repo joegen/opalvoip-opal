@@ -1869,6 +1869,7 @@ void MyManager::StartRegistrars()
       param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
       param.m_authID = (PString)iter->m_User;
       param.m_password = (PString)iter->m_Password;
+      param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
     }

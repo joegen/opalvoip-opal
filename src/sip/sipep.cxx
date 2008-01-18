@@ -498,7 +498,7 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
     case SIP_PDU::Failure_RequestTimeout :
       if (handler != NULL)
-        handler->OnTransactionTimeout(transaction);
+        handler->OnTransactionFailed(transaction);
       break;
 
     default :
@@ -604,13 +604,13 @@ void SIPEndPoint::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 }
     
 
-void SIPEndPoint::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPEndPoint::OnTransactionFailed(SIPTransaction & transaction)
 {
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByCallID(transaction.GetMIME().GetCallID(), PSafeReadOnly);
   if (handler == NULL) 
     return;
   
-  handler->OnTransactionTimeout(transaction);
+  handler->OnTransactionFailed(transaction);
 }
 
 
@@ -747,7 +747,7 @@ bool SIPEndPoint::Register(const PString & host,
   params.m_authID = authName;
   params.m_password = password;
   params.m_realm = realm;
-  params.m_expire = expire != 0 ? expire : GetRegistrarTimeToLive().GetSeconds();
+  params.m_expire = expire;
   params.m_minRetryTime = minRetryTime;
   params.m_maxRetryTime = maxRetryTime;
 

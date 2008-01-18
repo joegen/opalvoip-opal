@@ -55,6 +55,7 @@ protected:
   SIPHandler(
     SIPEndPoint & ep, 
     const PString & to,
+    int expireTime,
     const PTimeInterval & retryMin = PMaxTimeInterval,
     const PTimeInterval & retryMax = PMaxTimeInterval
   );
@@ -94,8 +95,6 @@ public:
 
   virtual PBoolean OnReceivedNOTIFY(SIP_PDU & response);
 
-  // An expire time of -1 corresponds to an invalid SIPHandler that 
-  // should be deleted.
   virtual void SetExpire(int e);
 
   virtual int GetExpire()
@@ -117,8 +116,9 @@ public:
 
   virtual void OnReceivedAuthenticationRequired(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
+  virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
+  PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
 
   virtual PBoolean SendRequest(SIPHandler::State s = Subscribing);
 
@@ -131,8 +131,8 @@ protected:
   OpalTransport             * transport;
   SIPURL                      targetAddress;
   PString                     callID;
-  int                         originalExpire;
   int	                      expire;
+  int                         originalExpire;
   PStringList                 routeSet;
   PString		      body;
   unsigned                    authenticationAttempts;
@@ -144,10 +144,8 @@ protected:
   SIPURL proxy;
 
 private:
-  static PBoolean WriteSIPHandler(
-    OpalTransport & transport, 
-    void * info
-  );
+  static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
+  bool WriteSIPHandler(OpalTransport & transport);
 };
 
 
@@ -165,7 +163,6 @@ public:
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_REGISTER; }
 
@@ -175,7 +172,6 @@ public:
 
 private:
   void SendStatus(SIP_PDU::StatusCodes code);
-  PDECLARE_NOTIFIER(PTimer, SIPRegisterHandler, OnExpireTimeout);
 
   SIPRegister::Params m_parameters;
 };
@@ -202,8 +198,6 @@ public:
   unsigned GetNextCSeq() { return ++lastSentCSeq; }
 
 private:
-  PDECLARE_NOTIFIER(PTimer, SIPSubscribeHandler, OnExpireTimeout);
-
   PBoolean OnReceivedMWINOTIFY(SIP_PDU & response);
   PBoolean OnReceivedPresenceNOTIFY(SIP_PDU & response);
 
@@ -213,6 +207,7 @@ private:
   unsigned lastSentCSeq;
   unsigned lastReceivedCSeq;
 };
+
 
 class SIPPublishHandler : public SIPHandler
 {
@@ -227,7 +222,6 @@ public:
 
   virtual SIPTransaction * CreateTransaction(OpalTransport &);
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod()
     { return SIP_PDU::Method_PUBLISH; }
   virtual void SetBody(const PString & body);
@@ -236,12 +230,12 @@ public:
                            const PString & note);
 
 private:
-  PDECLARE_NOTIFIER(PTimer, SIPPublishHandler, OnExpireTimeout);
   PDECLARE_NOTIFIER(PTimer, SIPPublishHandler, OnPublishTimeout);
   PTimer publishTimer;
   PString sipETag;
   PBoolean stateChanged;
 };
+
 
 class SIPMessageHandler : public SIPHandler
 {
@@ -253,15 +247,14 @@ public:
   ~SIPMessageHandler();
 
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
-  virtual void OnTransactionTimeout(SIPTransaction & transaction);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
   virtual void OnFailed (SIP_PDU::StatusCodes);
 
 private:
-  PDECLARE_NOTIFIER(PTimer, SIPMessageHandler, OnExpireTimeout);
-  unsigned timeoutRetry;
+  virtual void OnExpireTimeout(PTimer &, INT);
 };
+
 
 class SIPPingHandler : public SIPHandler
 {
@@ -272,9 +265,6 @@ public:
   virtual SIPTransaction * CreateTransaction (OpalTransport &);
   virtual SIP_PDU::Methods GetMethod ()
     { return SIP_PDU::Method_MESSAGE; }
-
-private:
-  PDECLARE_NOTIFIER(PTimer, SIPPingHandler, OnExpireTimeout);
 };
 
 
