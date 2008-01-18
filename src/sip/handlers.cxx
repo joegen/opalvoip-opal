@@ -55,12 +55,14 @@
 
 SIPHandler::SIPHandler(SIPEndPoint & ep,
                        const PString & to,
+                       int expireTime,
                        const PTimeInterval & retryMin,
                        const PTimeInterval & retryMax)
-  : endpoint(ep), 
-    expire(0),
-    retryTimeoutMin(retryMin), 
-    retryTimeoutMax(retryMax)
+  : endpoint(ep)
+  , expire(expireTime)
+  , originalExpire(expire)
+  , retryTimeoutMin(retryMin)
+  , retryTimeoutMax(retryMax)
 {
   transactions.DisallowDeleteObjects();
 
@@ -91,6 +93,8 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 
   SetState (Unsubscribed);
+
+  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
 
 
@@ -112,33 +116,37 @@ const PString SIPHandler::GetRemotePartyAddress ()
 }
 
 
-void SIPHandler::SetExpire (int e)
+void SIPHandler::SetExpire(int e)
 {
-  expire = e;
+  expire = e > 0 && e < originalExpire ? e : originalExpire;
+  PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
 
-  if (expire > 0) 
-    expireTimer = PTimeInterval (0, (unsigned) (9*expire/10));
+  if (expire > 0)
+    expireTimer.SetInterval(0, (unsigned) (9*expire/10));
 }
 
 
 PBoolean SIPHandler::WriteSIPHandler(OpalTransport & transport, void * param)
 {
-  if (param == NULL)
-    return PFalse;
+  return param != NULL && ((SIPHandler *)param)->WriteSIPHandler(transport);
+}
 
-  SIPHandler * handler = (SIPHandler *)param;
 
-  SIPTransaction * transaction = handler->CreateTransaction(transport);
+bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
+{
+  SIPTransaction * transaction = CreateTransaction(transport);
+
   if (transaction != NULL) {
-    handler->callID = transaction->GetMIME().GetCallID();
+    callID = transaction->GetMIME().GetCallID();
+    authentication.Authorise(*transaction); // If already have info from last time, use it!
     if (transaction->Start()) {
-      handler->transactions.Append(transaction);
-      return PTrue;
+      transactions.Append(transaction);
+      return true;
     }
   }
 
-    PTRACE(2, "SIP\tDid not start transaction on " << transport);
-    return PFalse;
+  PTRACE(2, "SIP\tDid not start transaction on " << transport);
+  return false;
 }
 
 
@@ -147,7 +155,7 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
   if (transport == NULL)
     return PFalse;
 
-  SetState(expire != 0 ? s : Unsubscribing); 
+  SetState(s);
 
   if (!transport->IsOpen ()) {
 
@@ -159,7 +167,13 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
     else
       transport = endpoint.CreateTransport(targetAddress.GetHostAddress());
   }
-  return transport->WriteConnect(WriteSIPHandler, this);
+
+  // First time, try every interface
+  if (transport->GetInterface().IsEmpty())
+    return transport->WriteConnect(WriteSIPHandler, this);
+
+  // We contacted the server on an interface last time, assume it still works!
+  return WriteSIPHandler(*transport);
 }
 
 
@@ -239,7 +253,6 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response
   switch (GetState()) {
     case Unsubscribing :
       SetState(Unsubscribed);
-      expire = -1;
       break;
 
     case Subscribing :
@@ -267,10 +280,16 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response
 }
 
 
-void SIPHandler::OnTransactionTimeout(SIPTransaction & transaction)
+void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
-  transactions.Remove(&transaction);
-  OnFailed(SIP_PDU::Failure_RequestTimeout);
+  if (transactions.Remove(&transaction)) {
+    OnFailed(SIP_PDU::Failure_RequestTimeout);
+
+    if (expire > 0 && !transaction.IsCanceled()) {
+      PTRACE(4, "SIP\tRetrying " << GetMethod() << " in 30 seconds.");
+      expireTimer.SetInterval(0, 30); // Keep trying to get it back
+    }
+  }
 }
 
 
@@ -280,39 +299,49 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes r)
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       return;
+
     case SIP_PDU::Failure_RequestTimeout :
-      if (GetState() != Subscribed)
-        break;
+      break;
+
     default :
-      expire = -1;
+      PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response.");
+      expire = 0; // OK, stop trying
+      expireTimer.Stop();
   }
 
   SetState(GetState() == Unsubscribing ? Subscribed : Unsubscribed);
 }
 
 
+void SIPHandler::OnExpireTimeout(PTimer &, INT)
+{
+  PTRACE(2, "SIP\tStarting " << GetMethod() << " for binding refresh");
+
+  if (!SendRequest(Refreshing))
+    SetState(Unsubscribed);
+}
+
+
 PBoolean SIPHandler::CanBeDeleted()
 {
-  if (GetState() == Unsubscribed && GetExpire() == -1)
-    return PTrue;
-
-  return PFalse;
+  return GetState() == Unsubscribed;
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 
 SIPRegisterHandler::SIPRegisterHandler(SIPEndPoint & endpoint, const SIPRegister::Params & params)
-  : SIPHandler(endpoint, params.m_addressOfRecord, params.m_minRetryTime, params.m_maxRetryTime)
+  : SIPHandler(endpoint,
+               params.m_addressOfRecord,
+               params.m_expire > 0 ? params.m_expire : endpoint.GetRegistrarTimeToLive().GetSeconds(),
+               params.m_minRetryTime, params.m_maxRetryTime)
   , m_parameters(params)
 {
+  m_parameters.m_expire = expire; // Put possibly adjusted value back
+
   authentication.SetUsername(params.m_authID);
   authentication.SetPassword(params.m_password);
   authentication.SetAuthRealm(params.m_realm);
-
-  expire = originalExpire = params.m_expire;
-
-  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
 
 
@@ -340,20 +369,10 @@ void SIPRegisterHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & re
       newExpiryTime = response.GetMIME().GetExpires(endpoint.GetRegistrarTimeToLive().GetSeconds());
   }
 
-  if (newExpiryTime > 0 && newExpiryTime < expire)
-    expire = newExpiryTime;
-
-  SetExpire(expire);
+  SetExpire(newExpiryTime);
 
   SendStatus(SIP_PDU::Successful_OK);
   SIPHandler::OnReceivedOK(transaction, response);
-}
-
-
-void SIPRegisterHandler::OnTransactionTimeout(SIPTransaction & transaction)
-{
-  expireTimer = PTimeInterval(0, 30);
-  SIPHandler::OnTransactionTimeout(transaction);
 }
 
 
@@ -361,15 +380,6 @@ void SIPRegisterHandler::OnFailed (SIP_PDU::StatusCodes r)
 { 
   SendStatus(r);
   SIPHandler::OnFailed(r);
-}
-
-
-void SIPRegisterHandler::OnExpireTimeout(PTimer &, INT)
-{
-  PTRACE(2, "SIP\tStarting REGISTER for binding refresh");
-
-  if (!SendRequest(Refreshing))
-    SetState(Unsubscribed);
 }
 
 
@@ -413,20 +423,12 @@ SIPSubscribeHandler::SIPSubscribeHandler (SIPEndPoint & endpoint,
                                           SIPSubscribe::SubscribeType t,
                                           const PString & to,
                                           int exp)
-  : SIPHandler(endpoint, to)
+  : SIPHandler(endpoint, to, exp > 0 ? exp : endpoint.GetNotifierTimeToLive().GetSeconds())
 {
   lastSentCSeq = 0;
   lastReceivedCSeq = 0;
-
-  expire = exp;
-  originalExpire = exp;
-
-  if (expire == 0)
-    expire = endpoint.GetNotifierTimeToLive().GetSeconds();
   type = t;
   dialogCreated = PFalse;
-
-  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
 
 
@@ -440,30 +442,27 @@ SIPTransaction * SIPSubscribeHandler::CreateTransaction(OpalTransport &trans)
 { 
   PString partyName;
 
-  if (expire != 0)
-    expire = originalExpire;
-
   if (localPartyAddress.IsEmpty()) {
 
     if (type == SIPSubscribe::Presence)
       localPartyAddress = endpoint.GetRegisteredPartyName(targetAddress).AsQuotedString();
-
     else
       localPartyAddress = targetAddress.AsQuotedString();
 
     localPartyAddress += ";tag=" + OpalGloballyUniqueID().AsString();
   }
 
+  SetExpire(originalExpire);
   return new SIPSubscribe(endpoint,
-                              trans, 
-                              type,
-                              GetRouteSet(),
-                              targetAddress, 
-                              remotePartyAddress,
-                              localPartyAddress,
-                              callID, 
-                              GetNextCSeq(),
-                              expire); 
+                          trans, 
+                          type,
+                          GetRouteSet(),
+                          targetAddress, 
+                          remotePartyAddress,
+                          localPartyAddress,
+                          callID, 
+                          GetNextCSeq(),
+                          expire); 
 }
 
 
@@ -473,11 +472,7 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
    * for SUBSCRIBE. RFC3265, 3.1.1.
    * An answer can only shorten the expires time.
    */
-  int responseExpires = response.GetMIME().GetExpires(3600);
-  if (responseExpires < expire && responseExpires > 0)
-    expire = responseExpires;
-
-  SetExpire(expire);
+  SetExpire(response.GetMIME().GetExpires(3600));
 
   /* Update the routeSet according 12.1.2. */
   if (!dialogCreated) {
@@ -521,34 +516,26 @@ PBoolean SIPSubscribeHandler::OnReceivedNOTIFY(SIP_PDU & request)
   lastReceivedCSeq = requestCSeq;
 
   PTRACE(3, "SIP\tFound a SUBSCRIBE corresponding to the NOTIFY");
+
   // We received a NOTIFY corresponding to an active SUBSCRIBE
   // for which we have just unSUBSCRIBEd. That is the final NOTIFY.
   // We can remove the SUBSCRIBE from the list.
-  if (GetState() != SIPHandler::Subscribed && GetExpire () == 0) {
-
+  if (GetState() != SIPHandler::Subscribed && expire == 0) {
     PTRACE(3, "SIP\tFinal NOTIFY received");
-    expire = -1;
   }
 
   PString state = request.GetMIME().GetSubscriptionState();
 
   // Check the susbscription state
   if (state.Find("terminated") != P_MAX_INDEX) {
-
     PTRACE(3, "SIP\tSubscription is terminated");
-    expire = -1;
+    SetState(Unsubscribed);
   }
-  else if (state.Find("active") != P_MAX_INDEX
-           || state.Find("pending") != P_MAX_INDEX) {
+  else if (state.Find("active") != P_MAX_INDEX || state.Find("pending") != P_MAX_INDEX) {
 
     PTRACE(3, "SIP\tSubscription is " << state);
-    if (request.GetMIME().HasFieldParameter("expire", state)) {
-
-      unsigned sec = 3600;
-      sec = request.GetMIME().GetFieldParameter("expire", state).AsUnsigned();
-      if (sec < (unsigned) expire)
-        SetExpire (sec);
-    }
+    if (request.GetMIME().HasFieldParameter("expire", state))
+      SetExpire(request.GetMIME().GetFieldParameter("expire", state).AsUnsigned());
   }
 
   switch (event) 
@@ -671,31 +658,14 @@ PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU &)
 #endif
 
 
-void SIPSubscribeHandler::OnExpireTimeout(PTimer &, INT)
-{
-  PTRACE(2, "SIP\tStarting SUBSCRIBE for binding refresh");
-
-  if (!SendRequest(Refreshing))
-    SetState(Unsubscribed);
-}
-
-
-
 /////////////////////////////////////////////////////////////////////////
 
 SIPPublishHandler::SIPPublishHandler(SIPEndPoint & endpoint,
                                      const PString & to,   /* The to field  */
                                      const PString & b,
                                      int exp)
-  : SIPHandler(endpoint, to)
+  : SIPHandler(endpoint, to, exp > 0 ? exp : endpoint.GetNotifierTimeToLive().GetSeconds())
 {
-  expire = exp;
-  originalExpire = exp;
-  if (expire == 0)
-    expire = endpoint.GetNotifierTimeToLive().GetSeconds();
-
-  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
-
   publishTimer.SetNotifier(PCREATE_NOTIFIER(OnPublishTimeout));
   publishTimer.RunContinuous (PTimeInterval (0, 5));
 
@@ -713,49 +683,25 @@ SIPPublishHandler::~SIPPublishHandler()
 
 SIPTransaction * SIPPublishHandler::CreateTransaction(OpalTransport & t)
 {
-  if (expire != 0)
-    expire = originalExpire;
-
+  SetExpire(originalExpire);
   return new SIPPublish(endpoint,
-                           t, 
-                           GetRouteSet(), 
-                           targetAddress, 
-                           sipETag, 
-                           (GetState() == Refreshing)?PString::Empty():body, 
-                           expire);
+                        t, 
+                        GetRouteSet(), 
+                        targetAddress, 
+                        sipETag, 
+                        (GetState() == Refreshing)?PString::Empty():body, 
+                        expire);
 }
 
 
 void SIPPublishHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response)
 {
-  int sec = 3600;
-  sec = response.GetMIME().GetExpires(3600);
-
   if (!response.GetMIME().GetSIPETag().IsEmpty())
     sipETag = response.GetMIME().GetSIPETag();
 
-  if (sec < expire && sec > 0)
-    expire = sec;
-
-  SetExpire(expire);
+  SetExpire(response.GetMIME().GetExpires(3600));
 
   SIPHandler::OnReceivedOK(transaction, response);
-}
-
-
-void SIPPublishHandler::OnTransactionTimeout(SIPTransaction & transaction)
-{
-  expireTimer = PTimeInterval (0, 30);
-  SIPHandler::OnTransactionTimeout(transaction);
-}
-
-
-void SIPPublishHandler::OnExpireTimeout(PTimer &, INT)
-{
-  PTRACE(2, "SIP\tStarting PUBLISH for binding refresh");
-
-  if (!SendRequest(Refreshing))
-    SetState(Unsubscribed);
 }
 
 
@@ -825,17 +771,11 @@ PString SIPPublishHandler::BuildBody(const PString & to,
 SIPMessageHandler::SIPMessageHandler (SIPEndPoint & endpoint, 
                                       const PString & to,
                                       const PString & b)
-  : SIPHandler(endpoint, to)
+  : SIPHandler(endpoint, to, 300)
 {
-  originalExpire = expire;
   body = b;
 
   SetState(Subscribed);
-
-  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
-  SetExpire(300);
-
-  timeoutRetry = 0;
 }
 
 
@@ -847,19 +787,8 @@ SIPMessageHandler::~SIPMessageHandler ()
 
 SIPTransaction * SIPMessageHandler::CreateTransaction(OpalTransport &t)
 { 
-  SetExpire(expire);
+  SetExpire(originalExpire);
   return new SIPMessage(endpoint, t, targetAddress, routeSet, body);
-}
-
-
-void SIPMessageHandler::OnTransactionTimeout(SIPTransaction & transaction)
-{
-  if (timeoutRetry > 2)
-    SIPHandler::OnTransactionTimeout(transaction);
-  else {
-    SendRequest();
-    timeoutRetry++;
-  }
 }
 
 
@@ -873,7 +802,6 @@ void SIPMessageHandler::OnFailed(SIP_PDU::StatusCodes reason)
 void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 {
   SetState(Unsubscribed);
-  expire = -1;
 }
 
 
@@ -881,23 +809,14 @@ void SIPMessageHandler::OnExpireTimeout(PTimer &, INT)
 
 SIPPingHandler::SIPPingHandler (SIPEndPoint & endpoint, 
                                 const PString & to)
-  : SIPHandler(endpoint, to)
+  : SIPHandler(endpoint, to, 500)
 {
-  expire = 500; 
-  originalExpire = expire;
-
-  expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
 
 
 SIPTransaction * SIPPingHandler::CreateTransaction(OpalTransport &t)
 {
   return new SIPPing(endpoint, t, targetAddress, body);
-}
-
-
-void SIPPingHandler::OnExpireTimeout(PTimer &, INT)
-{
 }
 
 
