@@ -839,7 +839,8 @@ void MyManager::StartLID()
   wxConfigBase * config = wxConfig::Get();
 
   PwxString device;
-  if (!config->Read(LineInterfaceDeviceKey, &device) || device.IsEmpty())
+  if (!config->Read(LineInterfaceDeviceKey, &device) ||
+      device.IsEmpty() || (device.StartsWith("<<") && device.EndsWith(">>")))
     return;
 
   if (!potsEP->AddDeviceName(device)) {
@@ -1870,6 +1871,7 @@ void MyManager::StartRegistrars()
       param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
       param.m_authID = (PString)iter->m_User;
       param.m_password = (PString)iter->m_Password;
+      param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
     }
@@ -2570,6 +2572,8 @@ bool OptionsDialog::TransferDataFromWindow()
   SAVE_FIELD(SilenceDeadband, silenceParams.m_silenceDeadband=8*);
   m_manager.SetSilenceDetectParams(silenceParams);
 
+  if (m_LineInterfaceDevice.StartsWith("<<") && m_LineInterfaceDevice.EndsWith(">>"))
+    m_LineInterfaceDevice.Empty();
   config->Write(LineInterfaceDeviceKey, m_LineInterfaceDevice);
   config->Write(AECKey, m_AEC);
   config->Write(CountryKey, m_Country);

@@ -75,6 +75,18 @@ static const char * const MethodNames[SIP_PDU::NumMethods] = {
   "PUBLISH"
 };
 
+#if PTRACING
+ostream & operator<<(ostream & strm, SIP_PDU::Methods method)
+{
+  if (method < SIP_PDU::NumMethods)
+    strm << MethodNames[method];
+  else
+    strm << "SIP_PDU_Method<" << (unsigned)method << '>';
+  return strm;
+}
+#endif
+
+
 const char * SIP_PDU::GetStatusCodeDescription (int code)
 {
   static struct {
@@ -1126,7 +1138,7 @@ static PString AsHex(PMessageDigest5::Code & digest)
 PBoolean SIPAuthentication::Authorise(SIP_PDU & pdu) const
 {
   if (!IsValid()) {
-    PTRACE(2, "SIP\tNo authentication information present");
+    PTRACE(3, "SIP\tNo authentication information present");
     return PFalse;
   }
 
@@ -2108,7 +2120,7 @@ void SIPTransaction::SetTerminated(States newState)
 
   // Transaction failed, tell the endpoint
   if (state != Terminated_Success) 
-    endpoint.OnTransactionTimeout(*this);
+    endpoint.OnTransactionFailed(*this);
 
   if (oldState != Completed)
     completed.Signal();

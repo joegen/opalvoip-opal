@@ -146,6 +146,7 @@ OpalManager::OpalManager()
 #else
   , rtpIpTypeofService(IPTOS_LOWDELAY) // Don't use IPTOS_PREC_CRITIC_ECP on Unix platforms as then need to be root
 #endif
+  , rtpPayloadSizeMax(576-20-16-12) // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
   , minAudioJitterDelay(50)  // milliseconds
   , maxAudioJitterDelay(250) // milliseconds
   , mediaFormatOrder(PARRAYSIZE(DefaultMediaFormatOrder), DefaultMediaFormatOrder)
