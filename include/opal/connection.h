@@ -787,6 +787,16 @@ class OpalConnection : public PSafeObject
       unsigned sessionID,
       RTP_QOS * rtpqos
     );
+
+    /**Get the maximum RTP payload size. This function allows a user to
+       override the value returned on a connection by connection basis, for
+       example knowing the connection is on a LAN with ethernet MTU the
+       payload size could be increased.
+
+       Defaults to the value returned by the OpalManager function of the same
+       name.
+      */
+    virtual PINDEX GetMaxRtpPayloadSize() const;
   //@}
 
   /**@name Bandwidth Management */
