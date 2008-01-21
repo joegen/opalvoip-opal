@@ -1265,6 +1265,8 @@ PString OpalTransportUDP::GetInterface() const
 
 void OpalTransportUDP::EndConnect(const PString & iface)
 {
+  PTRACE(3, "OpalUDP\tEnded connect, using " << iface);
+
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL)
     socket->SetInterface(iface);
