@@ -81,8 +81,8 @@ class RTP_DataFrame : public PBYTEArray
     enum {
       ProtocolVersion = 2,
       MinHeaderSize = 12,
-      // Max Ethernet packet (1518 bytes) minus 802.3/CRC, 802.3, IP, UDP an RTP headers
-      MaxEthernetPayloadSize = (1518-14-4-8-20-16-12)
+      // Max safe MTU size (576 bytes as per RFC879) minus IP, UDP an RTP headers
+      MaxMtuPayloadSize = (576-20-16-12)
     };
 
     enum PayloadTypes {

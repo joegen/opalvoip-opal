@@ -101,6 +101,16 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
 }
 
 
+static void SetFrameBytes(const OpalMediaFormat & fmt, const PString & widthOption, const PString & heightOption, PINDEX & size)
+{
+  int width  = fmt.GetOptionInteger(widthOption, PVideoFrameInfo::CIFWidth);
+  int height = fmt.GetOptionInteger(heightOption, PVideoFrameInfo::CIFHeight);
+  int newSize = PVideoDevice::CalculateFrameBytes(width, height, fmt);
+  if (newSize > 0)
+    size = newSize;
+}
+
+
 bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
 {
   PWaitAndSignal mutex(updateMutex);
@@ -108,19 +118,8 @@ bool OpalVideoTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, cons
   if (!OpalTranscoder::UpdateMediaFormats(input, output))
     return PFalse;
 
-  int maxRxW = inputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameWidthOption(), PVideoFrameInfo::CIFWidth);
-  int maxRxH = inputMediaFormat.GetOptionInteger(OpalVideoFormat::MaxRxFrameHeightOption(), PVideoFrameInfo::CIFHeight);
-
-  int fw = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameWidthOption(), PVideoFrameInfo::CIFWidth);
-  int fh = outputMediaFormat.GetOptionInteger(OpalVideoFormat::FrameHeightOption(), PVideoFrameInfo::CIFHeight);
-
-  inDataSize  = PVideoDevice::CalculateFrameBytes(maxRxW, maxRxH, inputMediaFormat);
-  if (inDataSize == 0)
-    inDataSize  = 576;
-
-  outDataSize = PVideoDevice::CalculateFrameBytes(fw,     fh,     outputMediaFormat);
-  if (outDataSize == 0)
-    outDataSize  = 576;
+  SetFrameBytes(inputMediaFormat,  OpalVideoFormat::MaxRxFrameWidthOption(), OpalVideoFormat::MaxRxFrameHeightOption(), inDataSize);
+  SetFrameBytes(outputMediaFormat, OpalVideoFormat::FrameWidthOption(),      OpalVideoFormat::FrameHeightOption(),      outDataSize);
 
   return PTrue;
 }

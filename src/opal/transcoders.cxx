@@ -74,7 +74,7 @@ OpalTranscoder::OpalTranscoder(const OpalMediaFormat & inputMediaFormat,
                                const OpalMediaFormat & outputMediaFormat)
   : OpalMediaFormatPair(inputMediaFormat, outputMediaFormat)
 {
-  maxOutputSize = RTP_DataFrame::MaxEthernetPayloadSize;
+  maxOutputSize = P_MAX_INDEX; // Just something, usually changed by OpalMediaPatch
   outputIsRTP = inputIsRTP = PFalse;
 }
 
