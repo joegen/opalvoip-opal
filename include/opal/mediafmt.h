@@ -520,27 +520,27 @@ class OpalMediaFormatInternal : public PObject
     virtual PObject * Clone() const;
     virtual void PrintOn(ostream & strm) const;
 
-    PBoolean IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
-    PBoolean IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
+    virtual PBoolean IsValid() const { return rtpPayloadType < RTP_DataFrame::IllegalPayloadType && !formatName.IsEmpty(); }
+    virtual PBoolean IsTransportable() const { return rtpPayloadType < RTP_DataFrame::MaxPayloadType && !rtpEncodingName.IsEmpty(); }
 
-    PStringToString GetOptions() const;
-    bool GetOptionValue(const PString & name, PString & value) const;
-    bool SetOptionValue(const PString & name, const PString & value);
-    bool GetOptionBoolean(const PString & name, bool dflt) const;
-    bool SetOptionBoolean(const PString & name, bool value);
-    int GetOptionInteger(const PString & name, int dflt) const;
-    bool SetOptionInteger(const PString & name, int value);
-    double GetOptionReal(const PString & name, double dflt) const;
-    bool SetOptionReal(const PString & name, double value);
-    PINDEX GetOptionEnum(const PString & name, PINDEX dflt) const;
-    bool SetOptionEnum(const PString & name, PINDEX value);
-    PString GetOptionString(const PString & name, const PString & dflt) const;
-    bool SetOptionString(const PString & name, const PString & value);
-    bool GetOptionOctets(const PString & name, PBYTEArray & octets) const;
-    bool SetOptionOctets(const PString & name, const PBYTEArray & octets);
-    bool SetOptionOctets(const PString & name, const BYTE * data, PINDEX length);
-    bool AddOption(OpalMediaOption * option, PBoolean overwrite = PFalse);
-    OpalMediaOption * FindOption(const PString & name) const;
+    virtual PStringToString GetOptions() const;
+    virtual bool GetOptionValue(const PString & name, PString & value) const;
+    virtual bool SetOptionValue(const PString & name, const PString & value);
+    virtual bool GetOptionBoolean(const PString & name, bool dflt) const;
+    virtual bool SetOptionBoolean(const PString & name, bool value);
+    virtual int GetOptionInteger(const PString & name, int dflt) const;
+    virtual bool SetOptionInteger(const PString & name, int value);
+    virtual double GetOptionReal(const PString & name, double dflt) const;
+    virtual bool SetOptionReal(const PString & name, double value);
+    virtual PINDEX GetOptionEnum(const PString & name, PINDEX dflt) const;
+    virtual bool SetOptionEnum(const PString & name, PINDEX value);
+    virtual PString GetOptionString(const PString & name, const PString & dflt) const;
+    virtual bool SetOptionString(const PString & name, const PString & value);
+    virtual bool GetOptionOctets(const PString & name, PBYTEArray & octets) const;
+    virtual bool SetOptionOctets(const PString & name, const PBYTEArray & octets);
+    virtual bool SetOptionOctets(const PString & name, const BYTE * data, PINDEX length);
+    virtual bool AddOption(OpalMediaOption * option, PBoolean overwrite = PFalse);
+    virtual OpalMediaOption * FindOption(const PString & name) const;
 
     virtual bool ToNormalisedOptions();
     virtual bool ToCustomisedOptions();

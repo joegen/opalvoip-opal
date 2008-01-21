@@ -728,6 +728,12 @@ unsigned OpalConnection::GetAudioSignalLevel(PBoolean /*source*/)
 }
 
 
+PINDEX OpalConnection::GetMaxRtpPayloadSize() const
+{
+  return endpoint.GetManager().GetMaxRtpPayloadSize();
+}
+
+
 PBoolean OpalConnection::SetBandwidthAvailable(unsigned newBandwidth, PBoolean force)
 {
   PTRACE(3, "OpalCon\tSetting bandwidth to " << newBandwidth << "00b/s on connection " << *this);
