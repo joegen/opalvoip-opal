@@ -51,6 +51,21 @@
 #define new PNEW
 
 
+#if PTRACING
+ostream & operator<<(ostream & strm, SIPHandler::State state)
+{
+  static const char * const StateNames[] = {
+    "Subscribed", "Subscribing", "Refreshing", "Unsubscribing", "Unsubscribed"
+  };
+  if (state < PARRAYSIZE(StateNames))
+    strm << StateNames[state];
+  else
+    strm << (unsigned)state;
+  return strm;
+}
+#endif
+
+
 ////////////////////////////////////////////////////////////////////////////
 
 SIPHandler::SIPHandler(SIPEndPoint & ep,
@@ -61,6 +76,7 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
   : endpoint(ep)
   , expire(expireTime)
   , originalExpire(expire)
+  , state(Unsubscribed)
   , retryTimeoutMin(retryMin)
   , retryTimeoutMax(retryMax)
 {
@@ -92,8 +108,6 @@ SIPHandler::SIPHandler(SIPEndPoint & ep,
 
   callID = OpalGloballyUniqueID().AsString() + "@" + PIPSocket::GetHostName();
 
-  SetState (Unsubscribed);
-
   expireTimer.SetNotifier(PCREATE_NOTIFIER(OnExpireTimeout));
 }
 
@@ -104,6 +118,13 @@ SIPHandler::~SIPHandler()
     transport->CloseWait();
     delete transport;
   }
+}
+
+
+void SIPHandler::SetState(SIPHandler::State s) 
+{
+  PTRACE(4, "SIP\tChanging handler from " << state << " to " << s);
+  state = s;
 }
 
 
@@ -121,7 +142,7 @@ void SIPHandler::SetExpire(int e)
   expire = e > 0 && e < originalExpire ? e : originalExpire;
   PTRACE(3, "SIP\tExpiry time for " << GetMethod() << " set to " << expire << " seconds.");
 
-  if (expire > 0)
+  if (expire > 0 && state < Unsubscribing)
     expireTimer.SetInterval(0, (unsigned) (9*expire/10));
 }
 
@@ -137,6 +158,8 @@ bool SIPHandler::WriteSIPHandler(OpalTransport & transport)
   SIPTransaction * transaction = CreateTransaction(transport);
 
   if (transaction != NULL) {
+    if (state == Unsubscribing)
+      transaction->GetMIME().SetExpires(0);
     callID = transaction->GetMIME().GetCallID();
     authentication.Authorise(*transaction); // If already have info from last time, use it!
     if (transaction->Start()) {
@@ -154,6 +177,9 @@ PBoolean SIPHandler::SendRequest(SIPHandler::State s)
 {
   if (transport == NULL)
     return PFalse;
+
+  if (s == Unsubscribing && state != Subscribed)
+    return false;
 
   SetState(s);
 
@@ -227,7 +253,7 @@ void SIPHandler::OnReceivedAuthenticationRequired(SIPTransaction & transaction, 
   ++authenticationAttempts;
 
   // And end connect mode on the transport
-  GetTransport().EndConnect(transaction.GetTransport().GetLastReceivedInterface());
+  CollapseFork(transaction);
 
   // Restart the transaction with new authentication handler
   SIPTransaction * newTransaction = CreateTransaction(GetTransport());
@@ -261,29 +287,35 @@ void SIPHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & /*response
       break;
 
     default :
-      PTRACE(2, "SIP\tUnexpected OK in handler with state " << GetState ());
+      PTRACE(2, "SIP\tUnexpected 200 OK in handler with state " << state);
   }
 
   // reset the number of unsuccesful authentication attempts
   authenticationAttempts = 0;
 
+  CollapseFork(transaction);
+}
+
+
+void SIPHandler::CollapseFork(SIPTransaction & transaction)
+{
   // Take this transaction out and kill all the rest
   transactions.Remove(&transaction);
   while (transactions.GetSize() > 0) {
     PSafePtr<SIPTransaction> transToGo = transactions.GetAt(0);
-    transToGo->Abort();
     transactions.Remove(transToGo);
+    transToGo->Abort();
   }
 
   // And end connect mode on the transport
-  transport->EndConnect(transaction.GetTransport().GetLastReceivedInterface());
+  transport->SetInterface(transaction.GetTransport().GetLastReceivedInterface());
 }
 
 
 void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 {
   if (transactions.Remove(&transaction)) {
-    OnFailed(SIP_PDU::Failure_RequestTimeout);
+    OnFailed(transaction.GetStatusCode());
 
     if (expire > 0 && !transaction.IsCanceled()) {
       PTRACE(4, "SIP\tRetrying " << GetMethod() << " in 30 seconds.");
@@ -709,7 +741,7 @@ void SIPPublishHandler::OnPublishTimeout(PTimer &, INT)
 {
   if (GetState() == Subscribed) {
     if (stateChanged) {
-      if (!SendRequest())
+      if (!SendRequest(Subscribing))
         SetState(Unsubscribed);
       stateChanged = PFalse;
     }

@@ -184,6 +184,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 #if OPAL_T38FAX
     t38handler(NULL),
 #endif
+    securityData(NULL),
     stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions)),
     recordingSessionId(0)
 {
@@ -998,6 +999,19 @@ OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
   return ownerCall.GetMediaFormats(*this, FALSE);
 }
+
+
+void * OpalConnection::GetSecurityData()
+{
+  return securityData;
+}
+
+ 
+void OpalConnection::SetSecurityData(void *data)
+{
+  securityData = data;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 

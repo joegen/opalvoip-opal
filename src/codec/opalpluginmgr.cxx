@@ -1343,7 +1343,7 @@ void OpalPluginCodecManager::OnLoadPlugin(PDynaLink & dll, INT code)
   OpalPluginCodecHandler * handler = NULL;
   for (r = keys.begin(); r != keys.end(); ++r) {
     if (name.Right(r->length()) *= *r) {
-      PTRACE(3, "OpalPlugin\tUsing custome handler for codec " << name);
+      PTRACE(3, "OpalPlugin\tUsing custom handler for codec " << name);
       handler = PFactory<OpalPluginCodecHandler>::CreateInstance(*r);
       break;
     }

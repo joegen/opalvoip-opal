@@ -626,8 +626,22 @@ class OpalTransport : public PIndirectChannel
     virtual PBoolean IsReliable() const = 0;
 
     /** Get the interface this transport is bound to.
+        This is generally only relevant for datagram based transports such as
+        UDP and TCP is always bound to a local interface once open.
+
+        The default behaviour returns the local address via GetLocalAddress()
       */
     virtual PString GetInterface() const;
+
+    /**Bind this transport to an interface.
+        This is generally only relevant for datagram based transports such as
+        UDP and TCP is always bound to a local interface once open.
+
+       The default behaviour does nothing.
+      */
+    virtual bool SetInterface(
+      const PString & iface  ///< Interface to use
+    );
 
     /**Get the transport dependent name of the local endpoint.
       */
@@ -663,16 +677,6 @@ class OpalTransport : public PIndirectChannel
     PBoolean ConnectTo(
       const OpalTransportAddress & address
     ) { return SetRemoteAddress(address) && Connect(); }
-
-    /**End a connection to the remote address.
-       This is requried in some circumstances where the connection to the
-       remote is not atomic.
-
-       The default behaviour does nothing.
-      */
-    virtual void EndConnect(
-      const PString & iface  ///< Interface to finally use
-    );
 
     /**Close the channel.
       */
@@ -976,24 +980,23 @@ class OpalTransportUDP : public OpalTransportIP
        use of WriteConnect() will send out on every interface. ReadPDU() will
        return the first interface that has data, then the user can select
        which interface it wants by further calls to ReadPDU(). Once it has
-       selected one it calls EndConnect() to finalise the selection process.
+       selected one it calls SetInterface() to finalise the selection process.
       */
     virtual PBoolean Connect();
-
-    /**End a connection to the remote address.
-       This is requried in some circumstances where the connection to the
-       remote is not atomic.
-
-       The default behaviour uses the socket defined by the localAddress
-       parameter.
-      */
-    virtual void EndConnect(
-      const PString & iface  ///< Interface to finally use
-    );
 
     /** Get the interface this transport is bound to.
       */
     virtual PString GetInterface() const;
+
+    /**Bind this transport to an interface.
+        This is generally only relevant for datagram based transports such as
+        UDP and TCP is always bound to a local interface once open.
+
+       The default behaviour does nothing.
+      */
+    virtual bool SetInterface(
+      const PString & iface  ///< Interface to use
+    );
 
     /**Get the transport dependent name of the local endpoint.
       */
