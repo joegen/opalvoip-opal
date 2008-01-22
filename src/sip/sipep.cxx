@@ -770,7 +770,7 @@ bool SIPEndPoint::Register(const SIPRegister::Params & params)
     activeSIPHandlers.Append(handler);
   }
 
-  if (handler->SendRequest())
+  if (handler->SendRequest(SIPHandler::Subscribing))
     return true;
 
   activeSIPHandlers.Remove(handler);
@@ -792,14 +792,7 @@ PBoolean SIPEndPoint::Unregister(const PString & addressOfRecord)
     return false;
   }
 
-  if (handler->GetState() != SIPHandler::Subscribed) {
-    handler->SetExpire(-1);
-    return false;
-  }
-
-  handler->SetExpire(0); // Unregistration is expire time of zero
-
-  return handler->SendRequest();
+  return handler->SendRequest(SIPHandler::Unsubscribing);
 }
 
 
@@ -809,8 +802,7 @@ bool SIPEndPoint::UnregisterAll()
 
   for (PSafePtr<SIPHandler> handler(activeSIPHandlers, PSafeReadOnly); handler != NULL; ++handler) {
     if (handler->GetMethod() == SIP_PDU::Method_REGISTER) {
-      handler->SetExpire(0); // Unregistration is expire time of zero
-      if (!handler->SendRequest())
+      if (!handler->SendRequest(SIPHandler::Unsubscribing))
         ok = false;
     }
   }
@@ -840,12 +832,7 @@ PBoolean SIPEndPoint::Subscribe(SIPSubscribe::SubscribeType & type,
     activeSIPHandlers.Append(handler);
   }
 
-  if (!handler->SendRequest()) {
-    handler->SetExpire(-1);
-    return PFalse;
-  }
-
-  return PTrue;
+  return handler->SendRequest(SIPHandler::Subscribing);
 }
 
 
@@ -859,12 +846,7 @@ PBoolean SIPEndPoint::Unsubscribe(SIPSubscribe::SubscribeType & type,
     return PFalse;
   }
 
-  if (!handler->GetState() == SIPHandler::Subscribed) {
-    handler->SetExpire(-1);
-    return PFalse;
-  }
-      
-  return Subscribe(type, 0, to);
+  return handler->SendRequest(SIPHandler::Unsubscribing);
 }
 
 
@@ -885,12 +867,7 @@ PBoolean SIPEndPoint::Message (const PString & to,
     activeSIPHandlers.Append(handler);
   }
 
-  if (!handler->SendRequest()) {
-    handler->SetExpire(-1);
-    return PFalse;
-  }
-
-  return PTrue;
+  return handler->SendRequest(SIPHandler::Subscribing);
 }
 
 
@@ -902,22 +879,18 @@ PBoolean SIPEndPoint::Publish(const PString & to,
   PSafePtr<SIPHandler> handler = activeSIPHandlers.FindSIPHandlerByUrl(to, SIP_PDU::Method_PUBLISH, PSafeReadOnly);
 
   // Otherwise create a new request with this method type
-  if (handler != NULL)
+  if (handler != NULL) {
     handler->SetBody(body);
-  else {
-    handler = new SIPPublishHandler(*this,
-                                    to,
-                                    body,
-                                    expire);
-    activeSIPHandlers.Append(handler);
-
-    if (!handler->SendRequest()) {
-      handler->SetExpire(-1);
-      return PFalse;
-    }
+    return true; // Let background timer send message
   }
 
-  return PTrue;
+  handler = new SIPPublishHandler(*this,
+                                  to,
+                                  body,
+                                  expire);
+  activeSIPHandlers.Append(handler);
+
+  return handler->SendRequest(SIPHandler::Subscribing);
 }
 
 
@@ -932,12 +905,7 @@ PBoolean SIPEndPoint::Ping(const PString & to)
                                  to);
   }
 
-  if (!handler->SendRequest()) {
-    handler->SetExpire(-1);
-    return PFalse;
-  }
-
-  return PTrue;
+  return handler->SendRequest(SIPHandler::Subscribing);
 }
 
 
