@@ -704,14 +704,13 @@ class SIPTransaction : public SIP_PDU
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
 
-    const OpalTransportAddress & GetLocalAddress() const { return localAddress; }
-
   protected:
     void Construct(
       const PTimeInterval & minRetryTime = PMaxTimeInterval,
       const PTimeInterval & maxRetryTime = PMaxTimeInterval
     );
-    PBoolean ResendCANCEL();
+    bool SendPDU(SIP_PDU & pdu);
+    bool ResendCANCEL();
 
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnRetry);
     PDECLARE_NOTIFIER(PTimer, SIPTransaction, OnTimeout);
@@ -733,21 +732,18 @@ class SIPTransaction : public SIP_PDU
     };
     virtual void SetTerminated(States newState);
 
-    SIPEndPoint   & endpoint;
-    OpalTransport & transport;
+    SIPEndPoint           & endpoint;
+    OpalTransport         & transport;
     PSafePtr<SIPConnection> connection;
+    PTimeInterval           retryTimeoutMin; 
+    PTimeInterval           retryTimeoutMax; 
 
-    States   state;
-    unsigned retry;
-    PTimer   retryTimer;
-    PTimer   completionTimer;
-
+    States     state;
+    unsigned   retry;
+    PTimer     retryTimer;
+    PTimer     completionTimer;
     PSyncPoint completed;
-
-    PTimeInterval retryTimeoutMin; 
-    PTimeInterval retryTimeoutMax; 
-
-    OpalTransportAddress localAddress;
+    PString    localInterface;
 };
 
 

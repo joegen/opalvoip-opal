@@ -1884,7 +1884,7 @@ PBoolean SIPTransaction::Start()
   state = Trying;
   retry = 0;
   retryTimer = retryTimeoutMin;
-  localAddress = transport.GetLocalAddress();
+  localInterface = transport.GetInterface();
 
   if (method == Method_INVITE)
     completionTimer = endpoint.GetInviteTimeout();
@@ -1942,7 +1942,20 @@ void SIPTransaction::Abort()
 }
 
 
-PBoolean SIPTransaction::ResendCANCEL()
+bool SIPTransaction::SendPDU(SIP_PDU & pdu)
+{
+  PString oldInterface = transport.GetInterface();
+  if (transport.SetInterface(localInterface) &&
+      pdu.Write(transport) &&
+      transport.SetInterface(oldInterface))
+    return true;
+
+  SetTerminated(Terminated_TransportError);
+  return false;
+}
+
+
+bool SIPTransaction::ResendCANCEL()
 {
   SIP_PDU cancel(Method_CANCEL,
                  uri,
@@ -1950,15 +1963,13 @@ PBoolean SIPTransaction::ResendCANCEL()
                  mime.GetFrom(),
                  mime.GetCallID(),
                  mime.GetCSeqIndex(),
-                 localAddress);
+                 localInterface);
   // Use the topmost via header from the INVITE we cancel as per 9.1. 
   PStringList viaList = mime.GetViaList();
   cancel.GetMIME().SetVia(viaList[0]);
 
-  if (!transport.SetLocalAddress(localAddress) || !cancel.Write(transport)) {
-    SetTerminated(Terminated_TransportError);
-    return PFalse;
-  }
+  if (!SendPDU(cancel))
+    return false;
 
   if (state < Cancelling) {
     state = Cancelling;
@@ -1966,7 +1977,7 @@ PBoolean SIPTransaction::ResendCANCEL()
     retryTimer = retryTimeoutMin;
   }
 
-  return PTrue;
+  return true;
 }
 
 
@@ -2019,6 +2030,7 @@ PBoolean SIPTransaction::OnReceivedResponse(SIP_PDU & response)
     if (notCompletedFlag) {
       PTRACE(3, "SIP\tTransaction " << cseq << " completed.");
       state = Completed;
+      statusCode = response.GetStatusCode();
     }
 
     completed.Signal();
@@ -2065,9 +2077,9 @@ void SIPTransaction::OnRetry(PTimer &, INT)
     if (!ResendCANCEL())
       return;
   }
-  else if (!transport.SetLocalAddress(localAddress) || !Write(transport)) {
-    SetTerminated(Terminated_TransportError);
-    return;
+  else {
+    if (!SendPDU(*this))
+      return;
   }
 
   PTimeInterval timeout = retryTimeoutMin*(1<<retry);
@@ -2118,15 +2130,24 @@ void SIPTransaction::SetTerminated(States newState)
   state = newState;
   PTRACE(3, "SIP\tSet state " << StateNames[newState] << " for transaction " << mime.GetCSeq());
 
-  // Transaction failed, tell the endpoint
-  if (state != Terminated_Success) 
-    endpoint.OnTransactionFailed(*this);
-
   if (oldState != Completed)
     completed.Signal();
 
-  if (state != Terminated_Success && connection != NULL)
-    connection->OnTransactionFailed(*this);
+  // Transaction failed, tell the endpoint
+  switch (state) {
+    case Terminated_Success :
+      break;
+
+    case Terminated_Timeout :
+    case Terminated_RetriesExceeded:
+      statusCode = SIP_PDU::Failure_RequestTimeout;
+      // Do default case
+
+    default :
+      endpoint.OnTransactionFailed(*this);
+      if (connection != NULL)
+        connection->OnTransactionFailed(*this);
+  }
 }
 
 

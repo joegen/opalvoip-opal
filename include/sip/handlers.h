@@ -72,10 +72,7 @@ public:
     Unsubscribed      // The registrating is inactive
   };
 
-  inline void SetState (SIPHandler::State s) 
-    {
-      state = s;
-    }
+  void SetState (SIPHandler::State s);
 
   inline SIPHandler::State GetState () 
     {
@@ -118,13 +115,17 @@ public:
   virtual void OnReceivedOK(SIPTransaction & transaction, SIP_PDU & response);
   virtual void OnTransactionFailed(SIPTransaction & transaction);
   virtual void OnFailed(SIP_PDU::StatusCodes);
-  PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
 
-  virtual PBoolean SendRequest(SIPHandler::State s = Subscribing);
+  virtual PBoolean SendRequest(SIPHandler::State state);
 
   const PStringList & GetRouteSet() const { return routeSet; }
 
 protected:
+  void CollapseFork(SIPTransaction & transaction);
+  PDECLARE_NOTIFIER(PTimer, SIPHandler, OnExpireTimeout);
+  static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
+  bool WriteSIPHandler(OpalTransport & transport);
+
   SIPEndPoint               & endpoint;
   SIPAuthentication           authentication;
   PSafeList<SIPTransaction>   transactions;
@@ -142,11 +143,11 @@ protected:
   PTimeInterval               retryTimeoutMax; 
   PString remotePartyAddress;
   SIPURL proxy;
-
-private:
-  static PBoolean WriteSIPHandler(OpalTransport & transport, void * info);
-  bool WriteSIPHandler(OpalTransport & transport);
 };
+
+#if PTRACING
+ostream & operator<<(ostream & strm, SIPHandler::State state);
+#endif
 
 
 class SIPRegisterHandler : public SIPHandler

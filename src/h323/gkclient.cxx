@@ -237,7 +237,7 @@ PBoolean H323Gatekeeper::StartDiscovery(const H323TransportAddress & initialAddr
       break;
   }
 
-  transport->EndConnect(transport->GetLastReceivedInterface());
+  transport->SetInterface(transport->GetLastReceivedInterface());
 
   if (discoveryComplete) {
     PTRACE(3, "RAS\tGatekeeper discovered at: "
@@ -281,7 +281,7 @@ bool H323Gatekeeper::DiscoverGatekeeper(const H323TransportAddress & address)
       break;
   }
   
-  transport->EndConnect(transport->GetLastReceivedInterface());
+  transport->SetInterface(transport->GetLastReceivedInterface());
   
   if (discoveryComplete) {
     PTRACE(3, "RAS\tGatekeeper discovered at: "
@@ -1896,7 +1896,7 @@ void H323Gatekeeper::OnRemoveInterface(const PIPSocket::InterfaceEntry & entry, 
   if (PInterfaceMonitor::IsMatchingInterface(iface, entry)) {
     // currently used interface went down. make transport listen
     // on all available interfaces.
-    transport->EndConnect(PString::Empty());
+    transport->SetInterface(PString::Empty());
     PTRACE(1, "Kicked out interface binding");
   }
 }
