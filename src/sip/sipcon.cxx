@@ -1189,7 +1189,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         }
 
         // And end connect mode on the transport
-        transport->EndConnect(transaction.GetTransport().GetLastReceivedInterface());
+        transport->SetInterface(transaction.GetTransport().GetLastReceivedInterface());
       }
 
       // Save the sessions etc we are actually using

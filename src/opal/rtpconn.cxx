@@ -177,6 +177,13 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
   return rtpSession;
 }
 
+
+PINDEX OpalRTPConnection::GetMaxRtpPayloadSize() const
+{
+  return endpoint.GetManager().GetMaxRtpPayloadSize();
+}
+
+
 void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMediaPatch & patch)
 {
   if (rfc2833Handler != NULL) {

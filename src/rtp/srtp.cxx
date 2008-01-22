@@ -100,7 +100,7 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
   public:
     RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
                                PHandleAggregator * _aggregator,   ///< handle aggregator
-                                         unsigned id,          ///<  Session ID for RTP channel
+                                            unsigned id,                ///<  Session ID for RTP channel
                                          PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
     );
 
@@ -155,7 +155,7 @@ void LibSRTPSecurityMode_Base::Init()
 RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(
                                  OpalRTPConnection & conn,
                                 PHandleAggregator * _aggregator,   ///< handle aggregator
-                                           unsigned id, 
+                                           unsigned id,
                                            PBoolean remoteIsNAT)
 {
   LibSRTP_UDP * session = new LibSRTP_UDP(conn, _aggregator, id, remoteIsNAT);

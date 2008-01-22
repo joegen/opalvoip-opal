@@ -117,6 +117,16 @@ class OpalRTPConnection : public OpalConnection
       unsigned sessionID,
       RTP_QOS * rtpqos
     );
+
+    /**Get the maximum RTP payload size. This function allows a user to
+       override the value returned on a connection by connection basis, for
+       example knowing the connection is on a LAN with ethernet MTU the
+       payload size could be increased.
+
+       Defaults to the value returned by the OpalManager function of the same
+       name.
+      */
+    virtual PINDEX GetMaxRtpPayloadSize() const;
   //@}
 
   //@{
@@ -286,5 +296,20 @@ class OpalRTPConnection : public OpalConnection
   protected:
     ChannelInfoMap channelInfoMap; 
 };
+
+
+class OpalSecurityMode : public PObject
+{
+  PCLASSINFO(OpalSecurityMode, PObject);
+  public:
+    virtual RTP_UDP * CreateRTPSession(
+      OpalRTPConnection & conn,          ///< connection 
+      PHandleAggregator * _aggregator,   ///< handle aggregator
+      unsigned id,                       ///< Session ID for RTP channel
+      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
+    ) = 0;
+    virtual PBoolean Open() = 0;
+};
+
 
 #endif // __OPAL_RTPCONN_H

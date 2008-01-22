@@ -1048,6 +1048,9 @@ class OpalConnection : public PSafeObject
 
   //@}
 
+    virtual void * GetSecurityData();         
+    virtual void SetSecurityData(void *data); 
+
     StringOptions * GetStringOptions() const
     { return stringOptions; }
 
@@ -1080,7 +1083,7 @@ class OpalConnection : public PSafeObject
 
     PString              callToken;
     OpalGloballyUniqueID callIdentifier;
-    PBoolean                 originating;
+    PBoolean             originating;
     PTime                setupTime;
     PTime                alertingTime;
     PTime                connectedTime;
@@ -1123,6 +1126,9 @@ class OpalConnection : public PSafeObject
     PDTMFDecoder        dtmfDecoder;
 #endif
 
+    PString securityMode;
+    void * securityData;
+
     /**Set the phase of the connection.
        @param phaseToSet the phase to set
       */
@@ -1145,21 +1151,6 @@ class OpalConnection : public PSafeObject
     { return rtpPayloadMap; }
   protected:
     RTP_DataFrame::PayloadMapType rtpPayloadMap;
-};
-
-class RTP_UDP;
-
-class OpalSecurityMode : public PObject
-{
-  PCLASSINFO(OpalSecurityMode, PObject);
-  public:
-    virtual RTP_UDP * CreateRTPSession(
-      OpalRTPConnection & conn,          ///< connection 
-      PHandleAggregator * _aggregator,   ///< handle aggregator
-      unsigned id,                       ///< Session ID for RTP channel
-      PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
-    ) = 0;
-    virtual PBoolean Open() = 0;
 };
 
 
