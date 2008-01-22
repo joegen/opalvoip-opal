@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="9.00"
 	Name="OPAL_dll"
 	ProjectGUID="{C7546C76-E010-4105-AEAE-48FCD6C09527}"
 	RootNamespace="OPAL_dll"
@@ -35,9 +35,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x10000000 -x . &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
-				Outputs="$(OutDir)\$(TargetName).dbg"
+				Description=""
+				CommandLine=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -227,9 +227,9 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Extracting debug symbols"
-				CommandLine="rebase -b 0x30000000 -x . &quot;$(TargetPath)&quot;&#x0D;&#x0A;"
-				Outputs="$(OutDir)\$(TargetName).dbg"
+				Description=""
+				CommandLine=""
+				Outputs=""
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -914,9 +914,11 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+			RelativePathToProject=".\src\win32\opal_lib_2008.vcproj"
 		/>
 		<ProjectReference
 			ReferencedProjectIdentifier="{85F4F26A-1A5D-4685-A48A-448102C5C5BC}"
+			RelativePathToProject="..\ptlib\src\ptlib\msos\PTLib_2008.vcproj"
 		/>
 	</References>
 	<Files>
