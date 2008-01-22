@@ -1804,8 +1804,8 @@ static struct PluginCodec_Option const * const optionTable[] = {
   &H245ProfileLevelMPEG4,
   &H245ObjectMPEG4,
   &DecoderConfigInfoMPEG4,
-  &ProfileMPEG4,
-  &LevelMPEG4,
+//  &ProfileMPEG4,
+//  &LevelMPEG4,
   &MediaPacketizationMPEG4,
   NULL
 };
