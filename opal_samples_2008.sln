@@ -29,8 +29,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "opalcodecinfo", "samples\op
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "jester", "samples\jester\jester_2008.vcproj", "{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfc", "samples\mfc\mfc_2008.vcproj", "{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecTest", "samples\codectest\codectest_2008.vcproj", "{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CallGen", "samples\callgen\callgen_2008.vcproj", "{23696513-8FEA-4B89-B8BF-ED0E9DEBE2EA}"
@@ -103,11 +101,6 @@ Global
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.No Trace|Win32.Deploy.0 = No Trace|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.Release|Win32.ActiveCfg = Release|Win32
 		{B0FC0A67-6227-46CB-B92D-A5FF83EAE7B7}.Release|Win32.Build.0 = Release|Win32
-		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Debug|Win32.Build.0 = Debug|Win32
-		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.No Trace|Win32.ActiveCfg = Release|Win32
-		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Release|Win32.ActiveCfg = Release|Win32
-		{F238251D-3CAE-4378-AD4C-F2A1236C3F6B}.Release|Win32.Build.0 = Release|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.ActiveCfg = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.Debug|Win32.Build.0 = Debug|Win32
 		{7BCC8831-22E0-4D87-8E8B-F6DA0AEFBED0}.No Trace|Win32.ActiveCfg = Debug|Win32
