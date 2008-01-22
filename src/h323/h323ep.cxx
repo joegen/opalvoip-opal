@@ -846,31 +846,58 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
 {
   PString remoteParty = _remoteParty;
 
-#if P_DNS
-  // if there is no gatekeeper, and there is no '@', and there is no URL scheme, then attempt to use ENUM
-  if ((remoteParty.Find('@') == P_MAX_INDEX) && (gatekeeper == NULL)) {
+  PURL url(remoteParty, GetPrefixName());
 
-    // make sure the number has only digits
-    PString e164 = remoteParty;
-    if (e164.Left(4) *= "h323:")
-      e164 = e164.Mid(4);
-    PINDEX i;
-    for (i = 0; i < e164.GetLength(); ++i)
-      if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
-      	break;
-    if (i >= e164.GetLength()) {
-      PString str;
-      if (PDNS::ENUMLookup(e164, "E2U+h323", str)) {
-        PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
-        remoteParty = str;
+#if P_DNS
+  // if there is no gatekeeper, try altarnate address lookup methods
+
+  if (gatekeeper == NULL) {
+
+    bool found = false;
+
+    // if there is no gatekeeper, and there is no '@', and there is no URL scheme, then attempt to use ENUM
+    if ((remoteParty.Find('@') == P_MAX_INDEX)) {
+
+      // make sure the number has only digits
+      PString e164 = remoteParty;
+      if (e164.Left(4) *= "h323:")
+        e164 = e164.Mid(4);
+      PINDEX i;
+      for (i = 0; i < e164.GetLength(); ++i)
+        if (!isdigit(e164[i]) && (i != 0 || e164[0] != '+'))
+      	  break;
+      if (i >= e164.GetLength()) {
+        PString str;
+        if (PDNS::ENUMLookup(e164, "E2U+h323", str)) {
+          PTRACE(4, "H323\tENUM converted remote party " << _remoteParty << " to " << str);
+          remoteParty = str;
+          found = TRUE;
+          url = PURL(remoteParty, GetPrefixName());
+        }
+        else
+          return FALSE
       }
-      else
-        return FALSE;
+    }
+
+    // try SRV records
+    if (!found) {
+
+      // if it is a valid IP address, do not lookup
+      PIPSocket::Address ip = url.GetHostName();
+      if (!ip.IsValid()) {
+
+        // Do the SRV lookup - only use first entry
+        PIPSocketAddressAndPortVector addrs;
+        if (PDNS::LookupSRV(url.GetHostName(), "_h323._tcp", url.GetPort(), addrs) && (addrs.size() > 0)) {
+          url.SetHostName(addrs[0].address.AsString());
+          url.SetPort(addrs[0].port);
+          found = TRUE;
+        }
+      }
     }
   }
-#endif
 
-  PURL url(remoteParty, GetPrefixName());
+#endif
 
   // Special adjustment if 
   if (remoteParty.Find('@') == P_MAX_INDEX &&
