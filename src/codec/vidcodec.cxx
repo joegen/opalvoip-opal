@@ -94,8 +94,8 @@ const OpalVideoFormat & GetOpalYUV420P()
 OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaFormat,
                                          const OpalMediaFormat & outputMediaFormat)
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
-  , inDataSize(0)
-  , outDataSize(0)
+  , inDataSize(2048)
+  , outDataSize(2048)
   , forceIFrame(false)
 {
 }
