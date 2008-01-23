@@ -2219,27 +2219,41 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  States originalState = state;
+  unsigned statusClass = response.GetStatusCode()/100;
+
+  {
+    PSafeLockReadWrite lock(*this);
+    if (!lock.IsLocked())
+      return false;
+
+    // ACK Constructed following 17.1.1.3
+    if (statusClass == 2) {
+      SIPAck ack(*this);
+      if (!SendPDU(ack))
+        return false;
+    }
+    else if (statusClass > 2) {
+      SIPAck ack(endpoint, *this, response);
+      if (!SendPDU(ack))
+        return false;
+    }
+  }
 
   if (!SIPTransaction::OnReceivedResponse(response))
-    return PFalse;
+    return false;
 
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
-    return PFalse;
+    return false;
 
-  if (response.GetStatusCode()/100 == 1)
+  if (statusClass == 1)
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  else if (originalState >= Completed) {
-    // If the state was already 'Completed', ensure that still an ACK is sent
-    connection->SendACK(*this, response);
-  }
 
   /* Handle response to outgoing call cancellation */
   if (response.GetStatusCode() == Failure_RequestTerminated)
     SetTerminated(Terminated_Success);
 
-  return PTrue;
+  return true;
 }
 
 
