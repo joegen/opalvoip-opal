@@ -1189,7 +1189,7 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         }
 
         // And end connect mode on the transport
-        transport->SetInterface(transaction.GetTransport().GetLastReceivedInterface());
+        transport->SetInterface(transaction.GetInterface());
       }
 
       // Save the sessions etc we are actually using
@@ -1223,10 +1223,6 @@ void SIPConnection::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & r
         PTRACE(4, "SIP\tSet targetAddress to " << targetAddress);
       }
     }
-
-    // Send the ack if not pending
-    if (response.GetStatusCode()/100 != 1)
-      SendACK(transaction, response);
 
     if (phase < ConnectedPhase) {
       // Final check to see if we have forked INVITEs still running, don't
@@ -1856,6 +1852,7 @@ PBoolean SIPConnection::OnReceivedAuthenticationRequired(SIPTransaction & transa
   needReINVITE = false; // Is not actually a re-INVITE though it looks a little bit like one.
   RTP_SessionManager & origRtpSessions = ((SIPInvite &)transaction).GetSessionManager();
   SIPTransaction * invite = new SIPInvite(*this, *transport, origRtpSessions);
+  transport->SetInterface(transaction.GetInterface());
   if (invite->Start())
   {
     forkedInvitations.Append(invite);
@@ -2078,28 +2075,6 @@ PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
   return SendInviteResponse(SIP_PDU::Successful_OK, (const char *) contact.AsQuotedString(), NULL, &sdp);
 }
 
-PBoolean SIPConnection::SendACK(SIPTransaction & invite, SIP_PDU & response)
-{
-  if (invite.GetMethod() != SIP_PDU::Method_INVITE) { // Sanity check
-    return PFalse;
-  }
-
-  SIP_PDU ack;
-  // ACK Constructed following 17.1.1.3
-  if (response.GetStatusCode()/100 != 2) {
-    ack = SIPAck(endpoint, invite, response); 
-  } else { 
-    ack = SIPAck(invite);
-  }
-
-  // Send the PDU using the connection transport
-  if (!SendPDU(ack, ack.GetSendAddress(ack.GetMIME().GetRoute()))) {
-    Release(EndedByTransportFail);
-    return PFalse;
-  }
-
-  return PTrue;
-}
 
 PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
 {

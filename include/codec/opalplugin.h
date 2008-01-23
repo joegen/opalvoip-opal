@@ -528,14 +528,14 @@ enum {
 #define PluginCodec_RTP_MinHeaderSize  (12)
 #define PluginCodec_RTP_MaxPayloadSize (PluginCodec_RTP_MaxPacketSize - PluginCodec_RTP_MinHeaderSize)
 
-#define PluginCodec_RTP_GetHeaderLength(ptr)      ((((BYTE*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
-#define PluginCodec_RTP_GetPayloadPtr(ptr)          ((BYTE*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
-#define PluginCodec_RTP_GetPayloadType(ptr)        (((BYTE*)(ptr))[1] & 0x7f)
-#define PluginCodec_RTP_SetPayloadType(ptr, type)  (((BYTE*)(ptr))[1] = (((BYTE*)(ptr))[1] & 0x80) | (type & 0x7f))
-#define PluginCodec_RTP_GetMarker(ptr)            ((((BYTE*)(ptr))[1] & 0x80) != 0)
-#define PluginCodec_RTP_SetMarker(ptr, mark)       (((BYTE*)(ptr))[1] = (((BYTE*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0))
-#define PluginCodec_RTP_GetTimestamp(ptr)         ((((BYTE*)(ptr))[4] << 24) | (((BYTE*)(ptr))[5] << 16) | (((BYTE*)(ptr))[6] << 8) | ((BYTE*)(ptr))[7])
-#define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((BYTE*)(ptr))[4] = ((ts) >> 24)),(((BYTE*)(ptr))[5] = ((ts) >> 16)),(((BYTE*)(ptr))[6] = ((ts) >> 8)),(((BYTE*)(ptr))[7] = (ts)))
+#define PluginCodec_RTP_GetHeaderLength(ptr)      ((((unsigned char*)(ptr))[0] & 0x0f)*4 + PluginCodec_RTP_MinHeaderSize)
+#define PluginCodec_RTP_GetPayloadPtr(ptr)          ((unsigned char*)(ptr) + PluginCodec_RTP_GetHeaderLength(ptr))
+#define PluginCodec_RTP_GetPayloadType(ptr)        (((unsigned char*)(ptr))[1] & 0x7f)
+#define PluginCodec_RTP_SetPayloadType(ptr, type)  (((unsigned char*)(ptr))[1] = (((unsigned char*)(ptr))[1] & 0x80) | (type & 0x7f))
+#define PluginCodec_RTP_GetMarker(ptr)            ((((unsigned char*)(ptr))[1] & 0x80) != 0)
+#define PluginCodec_RTP_SetMarker(ptr, mark)       (((unsigned char*)(ptr))[1] = (((unsigned char*)(ptr))[1] & 0x7f) | (mark != 0 ? 0x80 : 0))
+#define PluginCodec_RTP_GetTimestamp(ptr)         ((((unsigned char*)(ptr))[4] << 24) | (((unsigned char*)(ptr))[5] << 16) | (((unsigned char*)(ptr))[6] << 8) | ((unsigned char*)(ptr))[7])
+#define PluginCodec_RTP_SetTimestamp(ptr, ts)     ((((unsigned char*)(ptr))[4] = ((ts) >> 24)),(((unsigned char*)(ptr))[5] = ((ts) >> 16)),(((unsigned char*)(ptr))[6] = ((ts) >> 8)),(((unsigned char*)(ptr))[7] = (ts)))
 
 
 /////////////////
