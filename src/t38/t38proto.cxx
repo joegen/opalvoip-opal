@@ -824,7 +824,7 @@ OpalFaxMediaStream::OpalFaxMediaStream(OpalConnection & conn, const OpalMediaFor
   : OpalMediaStream(conn, mediaFormat, sessionID, isSource), sessionToken(_token), filename(_filename), receive(_receive)
 {
   faxCallInfo = NULL;
-  SetDataSize(300);
+  SetDataSize(RTP_DataFrame::MaxMtuPayloadSize);
 }
 
 PBoolean OpalFaxMediaStream::Open()
@@ -1108,8 +1108,12 @@ PString OpalT38MediaStream::GetSpanDSPCommandLine(OpalFaxCallInfo & info)
   cmdline << "spandsp_util -V 0 -m ";
   if (receive)
     cmdline << "t38_to_tiff";
-  else
+  else {
     cmdline << "tiff_to_t38";
+    PString stationId("HELLOWORLD");
+    if (!stationId.IsEmpty())
+      cmdline << " -s " << stationId;
+  }
   cmdline << " -n '" << filename << "' -t 127.0.0.1:" << port;
 
   return cmdline;
@@ -1237,6 +1241,7 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
   }
 
   if (!receive && !PFile::Exists(filename)) {
+    PTRACE(2, "Fax\tCannot find filename '" << filename << "'");
     return PFalse;
   }
 
@@ -1489,7 +1494,7 @@ OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & m
     return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
 
   // if creating a data stream, see what type it is
-  else if ((mediaFormat.GetMediaType() == OpalMediaType::Fax()) && (mediaFormat == OpalT38))
+  else if ((mediaFormat.GetMediaType() == OpalMediaType::Fax()) && (mediaFormat == OpalT38)) 
     return new OpalT38MediaStream(*this, mediaFormat, sessionID, isSource, GetToken(), filename, receive);
 
   return NULL;

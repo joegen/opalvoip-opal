@@ -52,10 +52,6 @@
 #include <t38/t38proto.h>
 #include <h224/h224handler.h>
 
-#if OPAL_T38FAX
-#include <t38/t38proto.h>
-#endif
-
 #define new PNEW
 
 

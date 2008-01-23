@@ -38,10 +38,7 @@
 #include <rtp/rtp.h>
 
 extern const char * OpalDefaultNTEString;
-
-#if OPAL_T38FAX
 extern const char * OpalDefaultNSEString;
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 

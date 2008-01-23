@@ -191,7 +191,7 @@ PBoolean OpalMediaPatch::AddSink(const OpalMediaStreamPtr & stream, const RTP_Da
     OpalMediaFormat intermediateFormat;
     if (!OpalTranscoder::FindIntermediateFormat(sourceFormat, destinationFormat,
                                                 intermediateFormat)) {
-      PTRACE(1, "Patch\tCould find compatible media format for " << *stream);
+      PTRACE(1, "Patch\tCould not find compatible media format for " << *stream);
       return PFalse;
     }
 

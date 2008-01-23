@@ -105,11 +105,9 @@ class SDPMediaFormat : public PObject
     void AddNTEToken(const PString & ostr);
     PString GetNTEString() const;
 
-#if OPAL_T38FAX
     void AddNSEString(const PString & str);
     void AddNSEToken(const PString & ostr);
     PString GetNSEString() const;
-#endif
 
     void AddNXEString(POrdinalSet & nxeSet, const PString & str);
     void AddNXEToken(POrdinalSet & nxeSet, const PString & ostr);
@@ -124,9 +122,7 @@ class SDPMediaFormat : public PObject
     PString fmtp;
 
     mutable POrdinalSet nteSet;     // used for NTE formats only
-#if OPAL_T38FAX
     mutable POrdinalSet nseSet;     // used for NSE formats only
-#endif
 };
 
 PLIST(SDPMediaFormatList, SDPMediaFormat);

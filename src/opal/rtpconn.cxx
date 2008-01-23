@@ -51,9 +51,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
   : OpalConnection(call, ep, token, options, _stringOptions)
 {
   rfc2833Handler  = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineRFC2833));
-#if OPAL_T38FAX
   ciscoNSEHandler = new OpalRFC2833Proto(*this, PCREATE_NOTIFIER(OnUserInputInlineCiscoNSE));
-#endif
 
   securityMode = ep.GetDefaultSecurityMode();
 
@@ -80,9 +78,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 OpalRTPConnection::~OpalRTPConnection()
 {
   delete rfc2833Handler;
-#if OPAL_T38FAX
   delete ciscoNSEHandler;
-#endif
 }
 
 RTP_Session * OpalRTPConnection::GetSession(unsigned sessionID) const
@@ -194,7 +190,6 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
     } 
   }
 
-#if OPAL_T38FAX
   if (ciscoNSEHandler != NULL) {
     if(isSource) {
       PTRACE(3, "RTPCon\tAdding Cisco NSE receive handler");
@@ -202,7 +197,6 @@ void OpalRTPConnection::AttachRFC2833HandlerToPatch(PBoolean isSource, OpalMedia
       patch.AddFilter(ciscoNSEHandler->GetReceiveHandler(), mediaStream.GetMediaFormat());
     } 
   }
-#endif
 }
 
 
@@ -350,14 +344,14 @@ bool OpalRTPConnection::ChannelInfoMap::CanAutoStartMedia(const OpalMediaType & 
   return false;
 }
 
-OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::AssignAndLockChannel(const OpalMediaSessionId & id, bool assigned)
+OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(unsigned channelId, bool assigned)
 {
   mutex.Wait();
 
   iterator r;
   for (r = begin(); r != end(); ++r) {
     ChannelInfo & info = r->second;
-    if ((info.assigned == assigned) && (info.channelId == id.sessionId)) 
+    if ((info.assigned == assigned) && (info.channelId == channelId)) 
       return &r->second;
   }
 
@@ -365,7 +359,7 @@ OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::AssignAndLoc
   return NULL;
 }
 
-OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned)
+OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(const OpalMediaType & mediaType, bool assigned)
 {
   mutex.Wait();
 
@@ -380,7 +374,7 @@ OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::AssignAndLoc
   return NULL;
 }
 
-OpalMediaSessionId OpalRTPConnection::ChannelInfoMap::GetSessionOfType(const OpalMediaType & mediaType) const
+unsigned OpalRTPConnection::ChannelInfoMap::GetSessionOfType(const OpalMediaType & mediaType) const
 {
   PWaitAndSignal m(mutex);
 
@@ -398,14 +392,14 @@ OpalMediaSessionId OpalRTPConnection::ChannelInfoMap::GetSessionOfType(const Opa
             nextId = thisId; 
           found = true;
         } else {
-          return OpalMediaSessionId(mediaType, thisId);;
+          return thisId;
         }
       }
     }
     id = nextId;
   } while (found);
 
-  return OpalMediaSessionId("");
+  return 0;
 }
 
 

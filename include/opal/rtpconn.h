@@ -176,17 +176,13 @@ class OpalRTPConnection : public OpalConnection
     struct MediaInformation {
       MediaInformation() { 
         rfc2833  = RTP_DataFrame::IllegalPayloadType; 
-#if OPAL_T38FAX
         ciscoNSE = RTP_DataFrame::IllegalPayloadType; 
-#endif
       }
 
       OpalTransportAddress data;           ///<  Data channel address
       OpalTransportAddress control;        ///<  Control channel address
       RTP_DataFrame::PayloadTypes rfc2833; ///<  Payload type for RFC2833
-#if OPAL_T38FAX
       RTP_DataFrame::PayloadTypes ciscoNSE; ///<  Payload type for RFC2833
-#endif
     };
 
     /**Get information on the media channel for the connection.
@@ -244,9 +240,7 @@ class OpalRTPConnection : public OpalConnection
     PString securityMode;
 
     OpalRFC2833Proto    * rfc2833Handler;
-#if OPAL_T38FAX
     OpalRFC2833Proto    * ciscoNSEHandler;
-#endif
 
     RTP_SessionManager            rtpSessions;
 
@@ -275,11 +269,12 @@ class OpalRTPConnection : public OpalConnection
         void Initialise(OpalRTPConnection & conn, OpalConnection::StringOptions * stringOptions);
         unsigned AddChannel(ChannelInfo & info);
 
-        ChannelInfo * AssignAndLockChannel(const OpalMediaSessionId & id, bool assigned);
-        ChannelInfo * AssignAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+        //ChannelInfo * AssignAndLockChannel(const OpalMediaSessionId & id, bool assigned);
+        ChannelInfo * FindAndLockChannel(unsigned channelId,              bool assigned);
+        ChannelInfo * FindAndLockChannel(const OpalMediaType & mediaType, bool assigned);
         bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
 
-        OpalMediaSessionId GetSessionOfType(const OpalMediaType & type) const;
+        unsigned GetSessionOfType(const OpalMediaType & type) const;
         OpalMediaType GetTypeOfSession(unsigned sessionId) const;
 
         void Unlock() { mutex.Signal(); }
