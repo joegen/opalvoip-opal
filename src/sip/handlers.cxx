@@ -121,10 +121,11 @@ SIPHandler::~SIPHandler()
 }
 
 
-void SIPHandler::SetState(SIPHandler::State s) 
+void SIPHandler::SetState(SIPHandler::State newState) 
 {
-  PTRACE(4, "SIP\tChanging handler from " << state << " to " << s);
-  state = s;
+  PTRACE(4, "SIP\tChanging " << GetMethod() << " handler from " << state << " to " << newState
+         << ", target=" << GetTargetAddress() << ", id=" << callID);
+  state = newState;
 }
 
 
@@ -325,9 +326,9 @@ void SIPHandler::OnTransactionFailed(SIPTransaction & transaction)
 }
 
 
-void SIPHandler::OnFailed(SIP_PDU::StatusCodes r)
+void SIPHandler::OnFailed(SIP_PDU::StatusCodes code)
 {
-  switch (r) {
+  switch (code) {
     case SIP_PDU::Failure_UnAuthorised :
     case SIP_PDU::Failure_ProxyAuthenticationRequired :
       return;
@@ -336,7 +337,7 @@ void SIPHandler::OnFailed(SIP_PDU::StatusCodes r)
       break;
 
     default :
-      PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response.");
+      PTRACE(4, "SIP\tNot retrying " << GetMethod() << " due to error response " << code);
       expire = 0; // OK, stop trying
       expireTimer.Stop();
   }
