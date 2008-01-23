@@ -864,24 +864,6 @@ class OpalConnection : public PSafeObject
     );
   //@}
 
-  /**@name Other services */
-  //@{
-#if OPAL_T38FAX
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       Note that if the application overrides this and returns a pointer to a
-       heap variable (using new) then it is the responsibility of the creator
-       to subsequently delete the object. The user of this function (the 
-       H323_T38Channel class) will not do so.
-
-       The default behavour returns H323Endpoint::CreateT38ProtocolHandler()
-       while keeping track of that variable for autmatic deletion.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler();
-#endif
-
     /** Execute garbage collection for endpoint.
         Returns PTrue if all garbage has been collected.
         Default behaviour deletes the objects in the connectionsActive list.
@@ -1109,9 +1091,6 @@ class OpalConnection : public PSafeObject
 
     OpalSilenceDetector * silenceDetector;
     OpalEchoCanceler    * echoCanceler;
-#if OPAL_T38FAX
-    OpalT38Protocol     * t38handler;
-#endif
 
     MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;

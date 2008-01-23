@@ -637,23 +637,6 @@ class OpalManager : public PObject
 
   /**@name Other services */
   //@{
-#if OPAL_T38FAX
-    /**Create an instance of the T.38 protocol handler.
-       This is called when the OpenLogicalChannel subsystem requires that
-       a T.38 fax channel be established.
-
-       Note that if the application overrides this it should return a pointer
-       to a heap variable (using new) as it will be automatically deleted when
-       the H323Connection is deleted.
-
-       The default behavour returns NULL.
-      */
-    virtual OpalT38Protocol * CreateT38ProtocolHandler(
-      const OpalConnection & connection  ///<  Connection for which T.38 handler created
-    ) const;
-	
-#endif
-
     class RouteEntry : public PObject
     {
         PCLASSINFO(RouteEntry, PObject);

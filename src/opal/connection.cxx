@@ -181,9 +181,6 @@ OpalConnection::OpalConnection(OpalCall & call,
     q931Cause(0x100),
     silenceDetector(NULL),
     echoCanceler(NULL),
-#if OPAL_T38FAX
-    t38handler(NULL),
-#endif
     securityData(NULL),
     stringOptions((_stringOptions == NULL) ? NULL : new OpalConnection::StringOptions(*_stringOptions)),
     recordingSessionId(0)
@@ -232,9 +229,6 @@ OpalConnection::~OpalConnection()
 
   delete silenceDetector;
   delete echoCanceler;
-#if OPAL_T38FAX
-  delete t38handler;
-#endif
   delete stringOptions;
 
   ownerCall.connectionsActive.Remove(this);
@@ -906,17 +900,6 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
     }
   }
 }
-#endif
-
-#if OPAL_T38FAX
-
-OpalT38Protocol * OpalConnection::CreateT38ProtocolHandler()
-{
-  if (t38handler == NULL)
-    t38handler = endpoint.CreateT38ProtocolHandler(*this);
-  return t38handler;
-}
-
 #endif
 
 void OpalConnection::SetLocalPartyName(const PString & name)

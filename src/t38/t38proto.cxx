@@ -119,6 +119,8 @@ OpalFaxAudioFormat::OpalFaxAudioFormat(const char * fullName,
 
 /////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 OpalT38Protocol::OpalT38Protocol()
 {
   transport = NULL;
@@ -542,6 +544,8 @@ PBoolean OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
   /* don't handle lost packets yet */
   return PTrue;
 }
+
+#endif // #if 0
 
 /////////////////////////////////////////////////////////////////////////////
 

@@ -40,7 +40,7 @@
 
 
 class H245_T38FaxProfile;
-class OpalT38Protocol;
+//class OpalT38Protocol;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -302,11 +302,11 @@ class H323_T38Channel : public H323DataChannel
     virtual PBoolean CreateTransport();
   //@}
 
-    OpalT38Protocol * GetHandler() const { return t38handler; }
+    //OpalT38Protocol * GetHandler() const { return t38handler; }
 
   protected:
     PBoolean              usesTCP;
-    OpalT38Protocol * t38handler;
+    //OpalT38Protocol * t38handler;
 };
 
 
