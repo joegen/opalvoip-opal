@@ -768,7 +768,7 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       return false;
     }
     localMedia = defn->CreateSDPMediaDescription(localAddress);
-    if (localMedia != NULL) {
+    if (localMedia == NULL) {
       PTRACE(2, "SIP\tMedia type " << rtpMediaType << " not implemented for SIP");
       return false;
     }
