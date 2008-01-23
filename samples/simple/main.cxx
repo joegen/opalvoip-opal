@@ -318,18 +318,18 @@ void SimpleOpalProcess::Main()
 "  The standard dial peers that will be included are:\n"
 "    If SIP is enabled but H.323 & IAX2 are disabled:\n"
 "      pots:.*\\*.*\\*.* = sip:<dn2ip>\n"
-"      pots:.*         = sip:<da>\n"
-"      pc:.*           = sip:<da>\n"
+"      pots:.*         = sip:<du>\n"
+"      pc:.*           = sip:<du>\n"
 "\n"
 "    If SIP & IAX2 are not enabled and H.323 is enabled:\n"
 "      pots:.*\\*.*\\*.* = h323:<dn2ip>\n"
-"      pots:.*         = h323:<da>\n"
-"      pc:.*           = h323:<da>\n"
+"      pots:.*         = h323:<du>\n"
+"      pc:.*           = h323:<du>\n"
 "\n"
 "    If POTS is enabled:\n"
-"      h323:.* = pots:<da>\n"
-"      sip:.*  = pots:<da>\n"
-"      iax2:.* = pots:<da>\n"
+"      h323:.* = pots:<dn>\n"
+"      sip:.*  = pots:<dn>\n"
+"      iax2:.* = pots:<dn>\n"
 "\n"
 "    If POTS is not enabled and the PC sound system is enabled:\n"
 "      iax2:.* = pc:<da>\n"
@@ -740,6 +740,9 @@ PBoolean MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
       AddRouteEntry("pots:.*           = sip:<da>");
       AddRouteEntry("pc:.*             = sip:<da>");
+#if OPAL_T38FAX
+      AddRouteEntry("t38:.*            = sip:<da>");
+#endif
     }
 #endif
 
@@ -761,14 +764,14 @@ PBoolean MyManager::Initialise(PArgList & args)
 #if OPAL_LID
     if (potsEP != NULL) {
 #if OPAL_H323
-      AddRouteEntry("h323:.* = pots:<da>");
+      AddRouteEntry("h323:.* = pots:<dn>");
 #if P_SSL
       if (h323sEP != NULL) 
-        AddRouteEntry("h323s:.* = pots:<da>");
+        AddRouteEntry("h323s:.* = pots:<dn>");
 #endif
 #endif
 #if OPAL_SIP
-      AddRouteEntry("sip:.*  = pots:<da>");
+      AddRouteEntry("sip:.*  = pots:<dn>");
 #endif
     }
     else
@@ -791,6 +794,12 @@ PBoolean MyManager::Initialise(PArgList & args)
   if (pcssEP != NULL) {
     AddRouteEntry("iax2:.*  = pc:<da>");
     AddRouteEntry("pc:.*   = iax2:<da>");
+  }
+#endif
+
+#if OPAL_T38FAX
+  if (t38EP != NULL) {
+      AddRouteEntry("sip:.*  = t38:<da>");
   }
 #endif
 
@@ -1014,7 +1023,7 @@ void MyManager::NewSpeedDial(const PString & ostr)
 void MyManager::Main(PArgList & args)
 {
   OpalConnection::StringOptions * stringOptions = new OpalConnection::StringOptions;
-  stringOptions->SetAt("autostart", "h224");
+  stringOptions->SetAt("autostart", "h224\nfax");
 
   // See if making a call or just listening.
   switch (args.GetCount()) {
@@ -1040,7 +1049,7 @@ void MyManager::Main(PArgList & args)
         cout << "done" << endl;
       }
       cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
-      SetUpCall(args[0], args[1], currentCallToken);
+      SetUpCall(args[0], args[1], currentCallToken, 0, 0, stringOptions);
       break;
   }
 
