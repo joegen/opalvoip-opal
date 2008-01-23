@@ -388,8 +388,6 @@ class SIPConnection : public OpalConnection
      */
     virtual PBoolean SendInviteOK(const SDPSessionDescription & sdp);
 	
-	virtual PBoolean SendACK(SIPTransaction & invite, SIP_PDU & response);
-
     /**Send a response for the received INVITE message.
      */
     virtual PBoolean SendInviteResponse(
