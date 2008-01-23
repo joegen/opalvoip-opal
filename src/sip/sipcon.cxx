@@ -468,31 +468,45 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
     // check channel start information to see what needs to be started
     sdpOK = false;
 
+    // this weird looking loop does the following:
+    //   a) start at session ID 1
+    //   b) find media type with a matching default session ID (if any)
+    //   c) find channel autostart information for first unused channel with that media type and
+    //      offer the SDP for that type
+    //   d) increment the session ID and go back to b)
+    //   
     OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
     size_t mediaTypesToAdd = keys.size();
     unsigned id = 1;
+
+    // must process this many media types
     while (mediaTypesToAdd > 0) {
+
+      // find a matching session ID
       OpalMediaTypeFactory::KeyList_T::iterator r;
       for (r = keys.begin(); r != keys.end(); ++r) {
-        OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(*r);
-        if (id == defn->GetPreferredSessionId()) {
-          --mediaTypesToAdd;
-          PWaitAndSignal m(channelInfoMap.mutex);
-          ChannelInfoMap::iterator s;
-          for (s = channelInfoMap.begin(); s != channelInfoMap.end(); ++s) {
-            ChannelInfo & info = s->second;
-            if (info.mediaType == *r) {
-              if (!info.assigned && (info.autoStartTransmit || info.autoStartReceive)) {
-                if (OfferSDPMediaDescription(OpalMediaSessionId(*r, s->second.channelId), rtpSessions, sdpOut)) {
-                  sdpOK = true;
-                }
+        OpalMediaType mt = *r;
+        OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(mt);
+        if (id != defn->GetPreferredSessionId()) 
+          continue;
+        --mediaTypesToAdd;
+
+        PWaitAndSignal m(channelInfoMap.mutex);
+        ChannelInfoMap::iterator s;
+        for (s = channelInfoMap.begin(); s != channelInfoMap.end(); ++s) {
+          ChannelInfo & info = s->second;
+          if (info.mediaType == mt) {
+            if (!info.assigned && (info.autoStartTransmit || info.autoStartReceive)) {
+              if (OfferSDPMediaDescription(OpalMediaSessionId(*r, s->second.channelId), rtpSessions, sdpOut)) {
+                sdpOK = true;
               }
-              break;
             }
+            break;
           }
-          break;
         }
+        break;
       }
+
       ++id;
     }
   }

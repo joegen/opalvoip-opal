@@ -408,7 +408,14 @@ PBoolean SDPMediaDescription::Decode(const PStringArray & tokens)
 {
   PAssert(tokens.GetSize() >= 4, "SDP\tMedia session has too few elements");
 
-  mediaType        = tokens[0].ToLower();
+  {
+    OpalMediaType::SDPToMediaTypeMap_T & map = OpalMediaType::GetSDPToMediaTypeMap();
+    OpalMediaType::SDPToMediaTypeMap_T::iterator r = map.find(tokens[0].ToLower());
+    if (r != map.end())
+      mediaType = r->second;
+  }
+
+  //mediaType        = OpalMediaType::GetSDPToMediaTypeMap().tokens[0].ToLower();
   defn             = mediaType.GetDefinition();
   PString portStr  = tokens[1];
   transport        = tokens[2];
