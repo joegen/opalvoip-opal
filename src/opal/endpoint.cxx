@@ -462,15 +462,6 @@ PString OpalEndPoint::ReadUserInput(OpalConnection & connection,
 }
 
 
-#if OPAL_T38FAX
-
-OpalT38Protocol * OpalEndPoint::CreateT38ProtocolHandler(const OpalConnection & connection) const
-{
-  return manager.CreateT38ProtocolHandler(connection);
-}
-
-#endif
-
 void OpalEndPoint::OnNewConnection(OpalCall & call, OpalConnection & conn)
 {
   call.GetManager().OnNewConnection(conn);

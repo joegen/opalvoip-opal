@@ -75,6 +75,8 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 /**This class handles the processing of the T.38 protocol.
   */
 class OpalT38Protocol : public PObject
@@ -216,6 +218,7 @@ class OpalT38Protocol : public PObject
     PList<PBYTEArray> redundantIFPs;
 };
 
+#endif // #if 0
 
 ///////////////////////////////////////////////////////////////////////////////
 

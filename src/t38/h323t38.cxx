@@ -247,18 +247,19 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
   separateReverseChannel = mode != H323_T38Capability::e_SingleTCP;
   usesTCP = mode != H323_T38Capability::e_UDP;
 
-  t38handler = NULL;
+  //t38handler = NULL;
 
   H323Channel * chan = connection.FindChannel(sessionID, dir == H323Channel::IsTransmitter);
   if (chan != NULL) {
     if (PIsDescendant(chan, H323_T38Channel)) {
       PTRACE(3, "H323T38\tConnected to existing T.38 handler");
-      t38handler = ((H323_T38Channel *)chan)->GetHandler();
+      //t38handler = ((H323_T38Channel *)chan)->GetHandler();
     }
     else
       PTRACE(1, "H323T38\tCreateChannel, channel " << *chan << " is not H323_T38Channel");
   }
 
+#if 0
   if (t38handler == NULL) {
     PTRACE(3, "H323T38\tCreating new T.38 handler");
     t38handler = connection.CreateT38ProtocolHandler();
@@ -270,6 +271,7 @@ H323_T38Channel::H323_T38Channel(H323Connection & connection,
     if (transport == NULL && !usesTCP && CreateTransport())
       t38handler->SetTransport(transport, PTrue);
   }
+#endif
 }
 
 
@@ -283,9 +285,11 @@ void H323_T38Channel::Close()
     return;
 
   PTRACE(3, "H323T38\tCleanUpOnTermination");
-    
+  
+#if 0
   if (t38handler != NULL) 
     t38handler->Close();
+#endif
 
   H323DataChannel::Close();
 }
@@ -293,8 +297,8 @@ void H323_T38Channel::Close()
 
 PBoolean H323_T38Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 {
-  if (t38handler != NULL)
-    return H323DataChannel::OnSendingPDU(open);
+//  if (t38handler != NULL)
+//    return H323DataChannel::OnSendingPDU(open);
 
   PTRACE(1, "H323T38\tNo protocol handler, aborting OpenLogicalChannel.");
   return PFalse;
@@ -304,8 +308,8 @@ PBoolean H323_T38Channel::OnSendingPDU(H245_OpenLogicalChannel & open) const
 PBoolean H323_T38Channel::OnReceivedPDU(const H245_OpenLogicalChannel & open,
                                     unsigned & errorCode)
 {
-  if (t38handler != NULL)
-    return H323DataChannel::OnReceivedPDU(open, errorCode);
+//  if (t38handler != NULL)
+//    return H323DataChannel::OnReceivedPDU(open, errorCode);
 
   errorCode = H245_OpenLogicalChannelReject_cause::e_unspecified;
   PTRACE(1, "H323T38\tNo protocol handler, refusing OpenLogicalChannel.");
@@ -317,6 +321,7 @@ void H323_T38Channel::Receive()
 {
   PTRACE(2, "H323T38\tReceive thread started.");
 
+#if 0
   if (t38handler != NULL) {
     if (listener != NULL) {
       transport = listener->Accept(30000);  // 30 second wait for connect back
@@ -332,6 +337,7 @@ void H323_T38Channel::Receive()
   else {
     PTRACE(1, "H323T38\tNo protocol handler, aborting thread.");
   }
+#endif
 
   if (!terminating)
     connection.CloseLogicalChannelNumber(number);
@@ -347,11 +353,11 @@ void H323_T38Channel::Transmit()
 
   PTRACE(2, "H323T38\tTransmit thread starting");
 
-  if (t38handler != NULL)
-    t38handler->Originate();
-  else {
-    PTRACE(1, "H323T38\tTransmit no proto handler");
-  }
+//  if (t38handler != NULL)
+//    t38handler->Originate();
+//  else {
+//    PTRACE(1, "H323T38\tTransmit no proto handler");
+//  }
 
   if (!terminating)
     connection.CloseLogicalChannelNumber(number);

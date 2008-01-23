@@ -729,15 +729,6 @@ PString OpalManager::ReadUserInput(OpalConnection & connection,
   return input.IsEmpty() ? digit : input;
 }
 
-#if OPAL_T38FAX
-
-OpalT38Protocol * OpalManager::CreateT38ProtocolHandler(const OpalConnection & ) const
-{
-  return NULL;
-}
-
-#endif
-
 OpalManager::RouteEntry::RouteEntry(const PString & pat, const PString & dest)
   : pattern(pat),
     destination(dest)
