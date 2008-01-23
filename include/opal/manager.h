@@ -39,7 +39,6 @@
 #include <opal/buildopts.h>
 
 #include <opal/call.h>
-#include <opal/rtpconn.h> //OpalConnection::AnswerCallResponse
 #include <opal/guid.h>
 #include <opal/audiorecord.h>
 #include <codec/silencedetect.h>

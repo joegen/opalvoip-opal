@@ -48,7 +48,7 @@
 #include <lids/lid.h>
 #include <rtp/rtp.h>
 #include <opal/transports.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 #include <opal/endpoint.h>
 #include <opal/call.h>
 
@@ -521,7 +521,7 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-OpalRTPMediaStream::OpalRTPMediaStream(OpalConnection & conn,
+OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
                                       const OpalMediaFormat & mediaFormat,
                                        PBoolean isSource,
                                        RTP_Session & rtp,
@@ -612,7 +612,7 @@ PBoolean OpalRTPMediaStream::SetDataSize(PINDEX dataSize)
      practical UDP packet size. This means we have a buffer that can accept
      whatever the RTP sender throws at us. For sink, we just clamp it to the
      maximum size based on MTU (or other criteria). */
-  PINDEX maxSize = IsSource() ? 2048 : connection.GetMaxRtpPayloadSize();
+  PINDEX maxSize = IsSource() ? 2048 : dynamic_cast<OpalRTPConnection &>(connection).GetMaxRtpPayloadSize();
   if (defaultDataSize < maxSize)
     defaultDataSize = maxSize;
 

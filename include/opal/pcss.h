@@ -417,7 +417,6 @@ class OpalPCSSConnection : public OpalConnection
 
   protected:
     OpalPCSSEndPoint & endpoint;
-    unsigned           m_audioSessionId[2];
     PString            soundChannelPlayDevice;
     PString            soundChannelRecordDevice;
     unsigned           soundChannelBuffers;
