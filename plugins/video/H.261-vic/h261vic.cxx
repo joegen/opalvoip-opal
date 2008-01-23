@@ -55,9 +55,22 @@
 #include <codec/opalplugin.h>
 
 #include <stdlib.h>
-#ifdef _WIN32
+#if defined (_WIN32) || defined (_WIN32_WCE)
   #include <malloc.h>
+#ifndef _WIN32_WCE
   #define STRCMPI  _strcmpi
+#else
+  #include <stdlibx.h>
+  #define STRCMPI  _stricmp
+
+  char* strdup( const char* s ) 
+  { 
+	char* s1 = (char*) malloc(strlen(s) +1); 
+	if( s1 )
+		strcpy( s1, s ); 
+	return s1; 
+  }
+#endif
 #else
   #include <unistd.h>
   #include <semaphore.h>
