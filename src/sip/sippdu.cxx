@@ -1721,11 +1721,27 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   entityBody[contentLength] = '\0';
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
-    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
-           << cmd << '\n' << mime << entityBody);
-  else
-    PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+
+    trace << "SIP\tPDU ";
+
+    if (!PTrace::CanTrace(4)) {
+      if (method != NumMethods)
+        trace << MethodNames[method] << ' ' << uri;
+      else
+        trace << (unsigned)statusCode << ' ' << info;
+    }
+
+    trace << " received: rem=" << transport.GetLastReceivedAddress()
+          << ",local=" << transport.GetLocalAddress()
+          << ",if=" << transport.GetLastReceivedInterface();
+
+    if (PTrace::CanTrace(4))
+      trace << '\n' << cmd << '\n' << mime << entityBody;
+
+    trace << PTrace::End;
+  }
 #endif
 
   PBoolean removeSDP = PTrue;
@@ -1766,18 +1782,33 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
   }
 
 
-  PString str = Build();
+  PString strPDU = Build();
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
-    PTRACE(4, "SIP\tSending PDU on " << transport << '\n' << str);
-  else if (method != NumMethods)
-    PTRACE(3, "SIP\tSending PDU " << MethodNames[method] << ' ' << uri << " on " << transport);
-  else
-    PTRACE(3, "SIP\tSending PDU " << (unsigned)statusCode << ' ' << info << " on " << transport);
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+
+    trace << "SIP\tSending PDU ";
+
+    if (!PTrace::CanTrace(4)) {
+      if (method != NumMethods)
+        trace << MethodNames[method] << ' ' << uri;
+      else
+        trace << (unsigned)statusCode << ' ' << info;
+    }
+
+    trace << " to: rem=" << transport.GetRemoteAddress()
+          << ",local=" << transport.GetLocalAddress()
+          << ",if=" << transport.GetInterface();
+
+    if (PTrace::CanTrace(4))
+      trace << '\n' << strPDU;
+
+    trace << PTrace::End;
+  }
 #endif
 
-  if (transport.WriteString(str))
+  if (transport.WriteString(strPDU))
     return PTrue;
 
   PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
