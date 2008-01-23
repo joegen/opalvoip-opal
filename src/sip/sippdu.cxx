@@ -1721,11 +1721,27 @@ PBoolean SIP_PDU::Read(OpalTransport & transport)
   entityBody[contentLength] = '\0';
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
-    PTRACE(4, "SIP\tPDU Received on " << transport << "\n"
-           << cmd << '\n' << mime << entityBody);
-  else
-    PTRACE(3, "SIP\tPDU Received " << cmd << " on " << transport);
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+
+    trace << "SIP\tPDU ";
+
+    if (!PTrace::CanTrace(4)) {
+      if (method != NumMethods)
+        trace << MethodNames[method] << ' ' << uri;
+      else
+        trace << (unsigned)statusCode << ' ' << info;
+    }
+
+    trace << " received: rem=" << transport.GetLastReceivedAddress()
+          << ",local=" << transport.GetLocalAddress()
+          << ",if=" << transport.GetLastReceivedInterface();
+
+    if (PTrace::CanTrace(4))
+      trace << '\n' << cmd << '\n' << mime << entityBody;
+
+    trace << PTrace::End;
+  }
 #endif
 
   PBoolean removeSDP = PTrue;
@@ -1766,18 +1782,33 @@ PBoolean SIP_PDU::Write(OpalTransport & transport, const OpalTransportAddress & 
   }
 
 
-  PString str = Build();
+  PString strPDU = Build();
 
 #if PTRACING
-  if (PTrace::CanTrace(4))
-    PTRACE(4, "SIP\tSending PDU on " << transport << '\n' << str);
-  else if (method != NumMethods)
-    PTRACE(3, "SIP\tSending PDU " << MethodNames[method] << ' ' << uri << " on " << transport);
-  else
-    PTRACE(3, "SIP\tSending PDU " << (unsigned)statusCode << ' ' << info << " on " << transport);
+  if (PTrace::CanTrace(3)) {
+    ostream & trace = PTrace::Begin(3, __FILE__, __LINE__);
+
+    trace << "SIP\tSending PDU ";
+
+    if (!PTrace::CanTrace(4)) {
+      if (method != NumMethods)
+        trace << MethodNames[method] << ' ' << uri;
+      else
+        trace << (unsigned)statusCode << ' ' << info;
+    }
+
+    trace << " to: rem=" << transport.GetRemoteAddress()
+          << ",local=" << transport.GetLocalAddress()
+          << ",if=" << transport.GetInterface();
+
+    if (PTrace::CanTrace(4))
+      trace << '\n' << strPDU;
+
+    trace << PTrace::End;
+  }
 #endif
 
-  if (transport.WriteString(str))
+  if (transport.WriteString(strPDU))
     return PTrue;
 
   PTRACE(1, "SIP\tPDU Write failed: " << transport.GetErrorText(PChannel::LastWriteError));
@@ -2188,27 +2219,41 @@ SIPInvite::SIPInvite(SIPConnection & connection, OpalTransport & transport, RTP_
 
 PBoolean SIPInvite::OnReceivedResponse(SIP_PDU & response)
 {
-  States originalState = state;
+  unsigned statusClass = response.GetStatusCode()/100;
+
+  {
+    PSafeLockReadWrite lock(*this);
+    if (!lock.IsLocked())
+      return false;
+
+    // ACK Constructed following 17.1.1.3
+    if (statusClass == 2) {
+      SIPAck ack(*this);
+      if (!SendPDU(ack))
+        return false;
+    }
+    else if (statusClass > 2) {
+      SIPAck ack(endpoint, *this, response);
+      if (!SendPDU(ack))
+        return false;
+    }
+  }
 
   if (!SIPTransaction::OnReceivedResponse(response))
-    return PFalse;
+    return false;
 
   PSafeLockReadWrite lock(*this);
   if (!lock.IsLocked())
-    return PFalse;
+    return false;
 
-  if (response.GetStatusCode()/100 == 1)
+  if (statusClass == 1)
     completionTimer = PTimeInterval(0, mime.GetExpires(180));
-  else if (originalState >= Completed) {
-    // If the state was already 'Completed', ensure that still an ACK is sent
-    connection->SendACK(*this, response);
-  }
 
   /* Handle response to outgoing call cancellation */
   if (response.GetStatusCode() == Failure_RequestTerminated)
     SetTerminated(Terminated_Success);
 
-  return PTrue;
+  return true;
 }
 
 

@@ -703,6 +703,7 @@ class SIPTransaction : public SIP_PDU
 
     OpalTransport & GetTransport() const  { return transport; }
     SIPConnection * GetConnection() const { return connection; }
+    PString         GetInterface() const { return localInterface; }
 
   protected:
     void Construct(

@@ -826,8 +826,8 @@ bool MyManager::Initialise()
     AddRouteEntry("pc:.*             = sip:<da>");
     AddRouteEntry("h323:.*           = pots:<dn>");
     AddRouteEntry("sip:.*            = pots:<dn>");
-    AddRouteEntry("h323:.*           = pc:<da>");
-    AddRouteEntry("sip:.*            = pc:<da>");
+    AddRouteEntry("h323:.*           = pc:<du>");
+    AddRouteEntry("sip:.*            = pc:<du>");
   }
 
   return true;
