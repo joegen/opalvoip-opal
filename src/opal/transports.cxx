@@ -1349,11 +1349,16 @@ OpalTransportAddress OpalTransportUDP::GetLastReceivedAddress() const
 
 PString OpalTransportUDP::GetLastReceivedInterface() const
 {
+  PString iface;
+
   PMonitoredSocketChannel * socket = (PMonitoredSocketChannel *)readChannel;
   if (socket != NULL)
-    return socket->GetLastReceivedInterface();
+    iface = socket->GetLastReceivedInterface();
 
-  return OpalTransport::GetLastReceivedAddress();
+  if (iface.IsEmpty())
+    iface = OpalTransport::GetLastReceivedInterface();
+
+  return iface;
 }
 
 
