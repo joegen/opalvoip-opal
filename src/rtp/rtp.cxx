@@ -42,7 +42,7 @@
 #include <rtp/jitter.h>
 #include <ptclib/random.h>
 #include <ptclib/pstun.h>
-#include <opal/connection.h>
+#include <opal/rtpconn.h>
 
 #define new PNEW
 
@@ -2017,7 +2017,6 @@ void RTP_Session::SendIntraFrameRequest(){
 
 SecureRTP_UDP::SecureRTP_UDP(OpalRTPConnection &, PHandleAggregator * _aggregator, unsigned id, PBoolean remoteIsNAT)
   : RTP_UDP(_aggregator, id, remoteIsNAT)
-
 {
   securityParms = NULL;
 }
