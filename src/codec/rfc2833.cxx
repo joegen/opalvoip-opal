@@ -39,10 +39,7 @@
 
 static const char RFC2833Table1Events[] = "0123456789*#ABCD!";
 const char * OpalDefaultNTEString = "0-15,32-49";
-
-#if OPAL_T38FAX
 const char * OpalDefaultNSEString = "192,193";
-#endif
 
 #define new PNEW
 

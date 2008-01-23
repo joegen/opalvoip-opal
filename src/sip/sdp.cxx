@@ -107,16 +107,12 @@ SDPMediaFormat::SDPMediaFormat(RTP_DataFrame::PayloadTypes pt, const char * _nam
   , clockRate(0)
   , encodingName(_name)
   , nteSet(PTrue)
-#if OPAL_T38FAX
   , nseSet(PTrue)
-#endif
 {
   if (encodingName == OpalRFC2833.GetEncodingName())
     AddNTEString("0-15,32-49");
-#if OPAL_T38FAX
   else if (encodingName == OpalCiscoNSE.GetEncodingName())
     AddNSEString("192,193");
-#endif
 
   GetMediaFormat(); // Initialise, if possible
 }
@@ -130,16 +126,12 @@ SDPMediaFormat::SDPMediaFormat(const OpalMediaFormat & fmt,
   , clockRate(fmt.GetClockRate())
   , encodingName(fmt.GetEncodingName())
   , nteSet(PTrue)
-#if OPAL_T38FAX
   , nseSet(PTrue)
-#endif
 {
   if (nxeString != NULL) {
-#if OPAL_T38FAX
     if (encodingName *= "nse")
       AddNSEString(nxeString);
     else
-#endif
       AddNTEString(nxeString);
   }
 }
@@ -155,14 +147,11 @@ void SDPMediaFormat::SetFMTP(const PString & str)
     AddNTEString(str);
     return;
   }
-
-#if OPAL_T38FAX
   else if (encodingName == OpalCiscoNSE.GetEncodingName()) {
     nseSet.RemoveAll();
     AddNSEString(str);
     return;
   }
-#endif
 
   fmtp = str;
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
@@ -220,10 +209,8 @@ PString SDPMediaFormat::GetFMTP() const
   if (encodingName == OpalRFC2833.GetEncodingName())
     return GetNTEString();
 
-#if OPAL_T38FAX
   if (encodingName == OpalCiscoNSE.GetEncodingName())
     return GetNSEString();
-#endif
 
   if (GetMediaFormat().IsEmpty()) // Use GetMediaFormat() to force creation of member
     return fmtp;
@@ -264,8 +251,6 @@ void SDPMediaFormat::AddNTEToken(const PString & ostr)
   AddNXEToken(nteSet, ostr);
 }
 
-#if OPAL_T38FAX
-
 PString SDPMediaFormat::GetNSEString() const
 {
   return GetNXEString(nseSet);
@@ -280,8 +265,6 @@ void SDPMediaFormat::AddNSEToken(const PString & ostr)
 {
   AddNXEToken(nseSet, ostr);
 }
-
-#endif
 
 PString SDPMediaFormat::GetNXEString(POrdinalSet & nxeSet) const
 {

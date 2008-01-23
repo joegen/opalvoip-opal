@@ -423,7 +423,8 @@ class SIPConnection : public OpalRTPConnection
       SDPSessionDescription & sdpOut
     );
     virtual bool OfferSDPMediaDescription(
-        const OpalMediaSessionId & mediaType,
+             const OpalMediaType & mediaType,
+                          unsigned channelId,
               RTP_SessionManager & rtpSessions,
            SDPSessionDescription & sdpOut
     );

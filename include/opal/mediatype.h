@@ -93,6 +93,8 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
 
+#if 0
+
 ////////////////////////////////////////////////////////////////////////////
 //
 //  define a class for holding a session ID and media type
@@ -110,6 +112,8 @@ class OpalMediaSessionId
     OpalMediaType mediaType;
     unsigned int sessionId;
 };
+
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////

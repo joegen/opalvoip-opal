@@ -1460,9 +1460,9 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
   info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_originator);
   info.m_originator = !connection.HadAnsweredCall();
 
-  OpalMediaSessionId sessionId = connection.GetChannelInfoMap().GetSessionOfType(OpalMediaType::Audio());
-  if (sessionId.IsValid()) {
-    H323_RTP_Session * session = connection.GetSessionCallbacks(sessionId.sessionId);
+  unsigned rtpSessionId = connection.GetChannelInfoMap().GetSessionOfType(OpalMediaType::Audio());
+  if (rtpSessionId > 0) {
+    H323_RTP_Session * session = connection.GetSessionCallbacks(rtpSessionId);
     if (session != NULL) {
       info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_audio);
       info.m_audio.SetSize(1);
@@ -1470,9 +1470,9 @@ static void AddInfoRequestResponseCall(H225_InfoRequestResponse & irr,
     }
   }
 
-  sessionId = connection.GetChannelInfoMap().GetSessionOfType(OpalMediaType::Video());
-  if (sessionId.IsValid()) {
-    H323_RTP_Session * session = connection.GetSessionCallbacks(sessionId.sessionId);
+  rtpSessionId = connection.GetChannelInfoMap().GetSessionOfType(OpalMediaType::Video());
+  if (rtpSessionId > 0) {
+    H323_RTP_Session * session = connection.GetSessionCallbacks(rtpSessionId);
     if (session != NULL) {
       info.IncludeOptionalField(H225_InfoRequestResponse_perCallInfo_subtype::e_video);
       info.m_video.SetSize(1);

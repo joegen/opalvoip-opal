@@ -3334,8 +3334,8 @@ void H323Connection::OnSetLocalCapabilities()
     OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
     bool set = false;
     if (otherRtpConn != NULL) {
-      OpalMediaSessionId sessionId = otherRtpConn->GetChannelInfoMap().GetSessionOfType(OpalMediaType::Audio());
-      if (sessionId.IsValid() && otherRtpConn->GetMediaInformation(sessionId.sessionId, info)) {
+      unsigned rtpSessionId = otherRtpConn->GetChannelInfoMap().GetSessionOfType(OpalMediaType::Audio());
+      if (rtpSessionId > 0 && otherRtpConn->GetMediaInformation(rtpSessionId, info)) {
         capability->SetPayloadType(info.rfc2833);
         set = true;
       }
@@ -3574,7 +3574,7 @@ void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Dire
 
 bool H323Connection::FastStartDisabled_fn(const OpalMediaType & mediaType)
 {
-  ChannelInfo * info = channelInfoMap.AssignAndLockChannel(mediaType, false);
+  ChannelInfo * info = channelInfoMap.FindAndLockChannel(mediaType, false);
   if (info == NULL)
     return true;
 
@@ -3587,7 +3587,7 @@ bool H323Connection::FastStartDisabled_fn(const OpalMediaType & mediaType)
 
 bool H323Connection::FastStartInitiate_fn(const OpalMediaType & mediaType)
 {
-  ChannelInfo * info = channelInfoMap.AssignAndLockChannel(mediaType, false);
+  ChannelInfo * info = channelInfoMap.FindAndLockChannel(mediaType, false);
   if (info == NULL)
     return true;
 
@@ -3601,7 +3601,7 @@ bool H323Connection::FastStartInitiate_fn(const OpalMediaType & mediaType)
 
 bool H323Connection::FastStartResponse_fn(const OpalMediaType & mediaType)
 {
-  ChannelInfo * info = channelInfoMap.AssignAndLockChannel(mediaType, false);
+  ChannelInfo * info = channelInfoMap.FindAndLockChannel(mediaType, false);
   if (info == NULL)
     return true;
 
