@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\spandsp\src\Debug\libspandsp.lib"
+				AdditionalDependencies="libspandsp.lib libtiff.lib"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\spandsp\src\Release\libspandsp.lib libtiff.lib"
+				AdditionalDependencies="libspandsp.lib libtiff.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="1"
