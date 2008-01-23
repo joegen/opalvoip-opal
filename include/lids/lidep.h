@@ -535,7 +535,6 @@ class OpalLineConnection : public OpalConnection
     PBoolean              requireTonesForDial;
     /* time in msec to wait between the dial tone detection and dialing the dtmf */
     unsigned          m_uiDialDelay; 
-    unsigned          m_audioSessionId[2];
 
     PDECLARE_NOTIFIER(PThread, OpalLineConnection, HandleIncoming);
     PThread         * handlerThread;

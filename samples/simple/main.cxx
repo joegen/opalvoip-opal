@@ -318,13 +318,13 @@ void SimpleOpalProcess::Main()
 "  The standard dial peers that will be included are:\n"
 "    If SIP is enabled but H.323 & IAX2 are disabled:\n"
 "      pots:.*\\*.*\\*.* = sip:<dn2ip>\n"
-"      pots:.*         = sip:<du>\n"
-"      pc:.*           = sip:<du>\n"
+"      pots:.*         = sip:<da>\n"
+"      pc:.*           = sip:<da>\n"
 "\n"
 "    If SIP & IAX2 are not enabled and H.323 is enabled:\n"
 "      pots:.*\\*.*\\*.* = h323:<dn2ip>\n"
-"      pots:.*         = h323:<du>\n"
-"      pc:.*           = h323:<du>\n"
+"      pots:.*         = h323:<da>\n"
+"      pc:.*           = h323:<da>\n"
 "\n"
 "    If POTS is enabled:\n"
 "      h323:.* = pots:<dn>\n"
@@ -332,9 +332,9 @@ void SimpleOpalProcess::Main()
 "      iax2:.* = pots:<dn>\n"
 "\n"
 "    If POTS is not enabled and the PC sound system is enabled:\n"
-"      iax2:.* = pc:<da>\n"
-"      h323:.* = pc:<da>\n"
-"      sip:. * = pc:<da>\n"
+"      iax2:.* = pc:<du>\n"
+"      h323:.* = pc:<du>\n"
+"      sip:. * = pc:<du>\n"
 "\n"
 #if OPAL_IVR
 "    If IVR is enabled then a # from any protocol will route it it, ie:\n"
@@ -764,35 +764,35 @@ PBoolean MyManager::Initialise(PArgList & args)
 #if OPAL_LID
     if (potsEP != NULL) {
 #if OPAL_H323
-      AddRouteEntry("h323:.* = pots:<dn>");
+      AddRouteEntry("h323:.* = pots:<du>");
 #if P_SSL
       if (h323sEP != NULL) 
-        AddRouteEntry("h323s:.* = pots:<dn>");
+        AddRouteEntry("h323s:.* = pots:<du>");
 #endif
 #endif
 #if OPAL_SIP
-      AddRouteEntry("sip:.*  = pots:<dn>");
+      AddRouteEntry("sip:.*  = pots:<du>");
 #endif
     }
     else
 #endif // OPAL_LID
     if (pcssEP != NULL) {
 #if OPAL_H323
-      AddRouteEntry("h323:.* = pc:<da>");
+      AddRouteEntry("h323:.* = pc:<du>");
 #if P_SSL
       if (h323sEP != NULL) 
-        AddRouteEntry("h323s:.* = pc:<da>");
+        AddRouteEntry("h323s:.* = pc:<du>");
 #endif
 #endif
 #if OPAL_SIP
-      AddRouteEntry("sip:.*  = pc:<da>");
+      AddRouteEntry("sip:.*  = pc:<du>");
 #endif
     }
   }
                                                                                                                                             
 #if OPAL_IAX2
   if (pcssEP != NULL) {
-    AddRouteEntry("iax2:.*  = pc:<da>");
+    AddRouteEntry("iax2:.*  = pc:<du>");
     AddRouteEntry("pc:.*   = iax2:<da>");
   }
 #endif
@@ -1022,8 +1022,8 @@ void MyManager::NewSpeedDial(const PString & ostr)
 
 void MyManager::Main(PArgList & args)
 {
-  OpalConnection::StringOptions * stringOptions = new OpalConnection::StringOptions;
-  stringOptions->SetAt("autostart", "h224\nfax");
+  OpalConnection::StringOptions stringOptions;
+  stringOptions.SetAt("autostart", "h224\nfax");
 
   // See if making a call or just listening.
   switch (args.GetCount()) {
@@ -1039,7 +1039,7 @@ void MyManager::Main(PArgList & args)
       }
 
       cout << "Initiating call to \"" << args[0] << "\"\n";
-      SetUpCall(srcEP, args[0], currentCallToken, 0, 0, stringOptions);
+      SetUpCall(srcEP, args[0], currentCallToken, 0, 0, &stringOptions);
       break;
 
     default :
@@ -1049,7 +1049,7 @@ void MyManager::Main(PArgList & args)
         cout << "done" << endl;
       }
       cout << "Initiating call from \"" << args[0] << "\"to \"" << args[1] << "\"\n";
-      SetUpCall(args[0], args[1], currentCallToken, 0, 0, stringOptions);
+      SetUpCall(args[0], args[1], currentCallToken, 0, 0, &stringOptions);
       break;
   }
 

@@ -1424,13 +1424,13 @@ void MyManager::MakeCall(const PwxString & address)
   config->SetPath(GeneralGroup);
   config->Write(LastDialedKey, m_LastDialed);
 
-  OpalConnection::StringOptions * options = new OpalConnection::StringOptions;
-  options->SetAt("autostart", "h224");
+  OpalConnection::StringOptions options;
+  options.SetAt("autostart", "h224");
 
   if (potsEP != NULL && potsEP->GetLine("*") != NULL)
-    SetUpCall("pots:*", address, m_currentCallToken, NULL, 0, options);
+    SetUpCall("pots:*", address, m_currentCallToken, NULL, 0, &options);
   else
-    SetUpCall("pc:*", address, m_currentCallToken, NULL, 0, options);
+    SetUpCall("pc:*", address, m_currentCallToken, NULL, 0, &options);
 }
 
 
