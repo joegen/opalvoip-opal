@@ -50,7 +50,7 @@
 #include <asn/t38.h>
 
 #if OPAL_VIDEO
-OPAL_DECLARE_MEDIA_TYPE(image, OpalFaxMediaType);
+OPAL_DECLARE_MEDIA_TYPE(fax, OpalFaxMediaType);
 #endif
 
 
@@ -684,6 +684,7 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendControl(RTP_ControlFrame & /*
 
 RTP_Session::SendReceiveStatus T38PseudoRTP::ReadDataPDU(RTP_DataFrame & frame)
 {
+  frame.SetPayloadSize(500);
   SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
   if (status != e_ProcessPacket)
     return status;
@@ -881,7 +882,7 @@ PBoolean OpalFaxMediaStream::Start()
     }
   }
 
-  return PTrue;
+  return OpalMediaStream::Start();
 }
 
 PBoolean OpalFaxMediaStream::ReadPacket(RTP_DataFrame & packet)
@@ -1273,8 +1274,8 @@ void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*
 
 /////////////////////////////////////////////////////////////////////////////
 
-OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * stringOptions)
-  : OpalConnection(call, ep, _token), endpoint(ep), filename(_filename), receive(_receive)
+OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, const PString & _filename, PBoolean _receive, const PString & _token, OpalConnection::StringOptions * _stringOptions)
+  : OpalConnection(call, ep, _token, 0, _stringOptions), endpoint(ep), filename(_filename), receive(_receive)
 {
   PTRACE(3, "FAX\tCreated FAX connection with token '" << callToken << "'");
   phase = SetUpPhase;
