@@ -309,7 +309,7 @@ void SIPHandler::CollapseFork(SIPTransaction & transaction)
   }
 
   // And end connect mode on the transport
-  transport->SetInterface(transaction.GetTransport().GetLastReceivedInterface());
+  transport->SetInterface(transaction.GetInterface());
 }
 
 
