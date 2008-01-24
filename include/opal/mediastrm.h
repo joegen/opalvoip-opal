@@ -234,11 +234,6 @@ class OpalMediaStream : public PSafeObject
       */
     virtual PBoolean IsSynchronous() const = 0;
 	
-    /**Indicate if the media stream requires a OpalMediaPatch instance.
-       The default behaviour returns true.
-      */
-    virtual PBoolean RequiresPatch() const;
-
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
        The default behaviour returns true.
       */
@@ -395,11 +390,6 @@ class OpalNullMediaStream : public OpalMediaStream
       PINDEX & written     ///<  Length of data actually written
     );
 	
-    /**Indicate if the media stream requires a OpalMediaPatch instance
-       The default behaviour returns false.
-    */
-    virtual PBoolean RequiresPatch() const;
-
     /**Indicate if the media stream requires a OpalMediaPatch thread (active patch).
        The default behaviour returns false.
       */
