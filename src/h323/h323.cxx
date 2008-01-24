@@ -2262,7 +2262,6 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
                                                : open.m_forwardLogicalChannelParameters.m_dataType;
       H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
       if (replyCapability != NULL) {
-        PINDEX capIndex = 0;
         for (PINDEX ch = 0; ch < fastStartChannels.GetSize(); ch++) {
           H323Channel & channelToStart = fastStartChannels[ch];
           H323Channel::Directions dir = channelToStart.GetDirection();
@@ -2278,7 +2277,7 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
                 channelCapability = remoteCapabilities.FindCapability(channelToStart.GetCapability());
                 if (channelCapability == NULL) {
                   channelCapability = remoteCapabilities.Copy(channelToStart.GetCapability());
-                  remoteCapabilities.SetCapability(0, capIndex, channelCapability);
+                  remoteCapabilities.SetCapability(0, channelCapability);
                 }
               }
               // Must use the actual capability instance from the
@@ -2305,7 +2304,6 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
             else
               PTRACE(2, "H225\tFast start capability error: " << error);
           }
-          ++capIndex;
         }
       }
     }
@@ -3330,12 +3328,11 @@ void H323Connection::OnSetLocalCapabilities()
   H323Capability * capability = localCapabilities.FindCapability(OpalRFC2833);
   if (capability != NULL) {
     MediaInformation info;
-    PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
-    OpalRTPConnection * otherRtpConn = dynamic_cast<OpalRTPConnection *>(&*otherParty);
+    PSafePtr<OpalRTPConnection> otherParty = PSafePtrCast<OpalConnection, OpalRTPConnection>(GetCall().GetOtherPartyConnection(*this));
     bool set = false;
-    if (otherRtpConn != NULL) {
-      unsigned rtpSessionId = otherRtpConn->GetChannelInfoMap().GetSessionOfType(OpalMediaType::Audio());
-      if (rtpSessionId > 0 && otherRtpConn->GetMediaInformation(rtpSessionId, info)) {
+    if (otherParty != NULL) {
+      unsigned rtpSessionId = otherParty->GetChannelInfoMap().GetSessionOfType(OpalMediaType::Audio());
+      if (rtpSessionId > 0 && otherParty->GetMediaInformation(rtpSessionId, info)) {
         capability->SetPayloadType(info.rfc2833);
         set = true;
       }
@@ -3400,7 +3397,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
 
     // If we are early starting, start channels as soon as possible instead of
     // waiting for connect PDU
-    if (earlyStart && IsH245Master() && logicalChannels->GetSize() > 0) // FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+    if (earlyStart && IsH245Master() && GetMediaStreamOfType(OpalMediaType::Audio(), false) == NULL)
       OnSelectLogicalChannels();
   }
 
@@ -3418,7 +3415,7 @@ void H323Connection::InternalEstablishedConnectionCheck()
   switch (phase) {
     case ConnectedPhase :
       // Check if we have already got a transmitter running, select one if not
-      if (logicalChannels->GetSize() > 0) //FindChannel(OpalMediaFormat::DefaultAudioSessionID, PFalse) == NULL)
+      if (GetMediaStreamOfType(OpalMediaType::Audio(), false) == NULL)
         OnSelectLogicalChannels();
 
       connectionState = EstablishedConnection;
@@ -3849,7 +3846,7 @@ H323Channel * H323Connection::CreateLogicalChannel(const H245_OpenLogicalChannel
       }
       
       capability = remoteCapabilities.Copy(*capability);
-      remoteCapabilities.SetCapability(0, 0, capability);
+      remoteCapabilities.SetCapability(0, capability);
     }
   }
   else {
@@ -4386,8 +4383,9 @@ void H323Connection::OnModeChanged(const H245_ModeDescription & newMode)
   for (PINDEX i = 0; i < newMode.GetSize(); i++) {
     H323Capability * capability = localCapabilities.FindCapability(newMode[i]);
     if (PAssertNULL(capability) != NULL) { // Should not occur as OnRequestModeChange checks them
+      OpalMediaTypeDefinition * def = capability->GetMediaType().GetDefinition();
       if (!OpenLogicalChannel(*capability,
-                              i, // capability->GetDefaultSessionID(),
+                              PAssertNULL(def)->GetPreferredSessionId(),
                               H323Channel::IsTransmitter)) {
         PTRACE(2, "H245\tCould not open channel after mode change: " << *capability);
       }
@@ -4423,11 +4421,14 @@ void H323Connection::OnAcceptModeChange(const H245_RequestModeAck & pdu)
 
   for (PINDEX i = first; i < last; i++) {
     H323Capability * capability = localCapabilities.FindCapability(modes[i]);
-    if (capability != NULL && OpenLogicalChannel(*capability,
-                                                 i, // capability->GetDefaultSessionID(),
-                                                 H323Channel::IsTransmitter)) {
-      PTRACE(3, "H245\tOpened " << *capability << " after T.38 mode change");
-      break;
+    if (capability != NULL) {
+      OpalMediaTypeDefinition * def = capability->GetMediaType().GetDefinition();
+      if (OpenLogicalChannel(*capability,
+                             PAssertNULL(def)->GetPreferredSessionId(),
+                             H323Channel::IsTransmitter)) {
+        PTRACE(3, "H245\tOpened " << *capability << " after T.38 mode change");
+        break;
+      }
     }
 
     PTRACE(2, "H245\tCould not open channel after T.38 mode change");

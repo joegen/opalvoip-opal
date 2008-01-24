@@ -2070,6 +2070,10 @@ class H323Capabilities : public PObject
       PINDEX simultaneous,  ///<  The member of the SimultaneousCapabilitySet to add
       H323Capability * cap  ///<  New capability specification
     );
+    PINDEX SetCapability(
+      PINDEX descriptorNum, ///<  The member of the capabilityDescriptor to add
+      H323Capability * cap  ///<  New capability specification
+    );
 
     /**Add matching capability to media format.
       */
