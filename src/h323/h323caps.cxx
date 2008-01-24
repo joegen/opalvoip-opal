@@ -1953,6 +1953,30 @@ PINDEX H323Capabilities::SetCapability(PINDEX descriptorNum,
 }
 
 
+PINDEX H323Capabilities::SetCapability(PINDEX descriptorNum,
+                                       H323Capability * capability)
+{
+  // Make sure capability has been added to table.
+  Add(capability);
+
+  // Search through existing set for simultaneous entries of same media type
+  if (descriptorNum < set.GetSize()) {
+    for (PINDEX middle = 0; middle < set[descriptorNum].GetSize(); middle++) {
+      for (PINDEX inner = 0; inner < set[descriptorNum][middle].GetSize(); inner++) {
+        H323Capability * cap = FindCapability(set[descriptorNum][middle][inner]);
+        if (cap != NULL) {
+          if (cap->GetMediaType() == capability->GetMediaType())
+            return SetCapability(descriptorNum, middle, capability);
+          break;
+        }
+      }
+    }
+  }
+
+  return SetCapability(descriptorNum, P_MAX_INDEX, capability);
+}
+
+
 static PBoolean MatchWildcard(const PCaselessString & str, const PStringArray & wildcard)
 {
   PINDEX last = 0;
