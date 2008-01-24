@@ -338,6 +338,7 @@ class RTP_UserData : public PObject
 #endif
 };
 
+class RTP_FormatHandler;
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
@@ -351,6 +352,7 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
+      const PString &  rtpFormat,     ///<  RTP format
       PHandleAggregator * aggregator, ///<  RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
       RTP_UserData * userData = NULL, ///<  Optional data for session.
@@ -464,8 +466,14 @@ class RTP_Session : public PObject
       e_AbortTransport
     };
     virtual SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_OnSendData(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual SendReceiveStatus Internal_OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+
     virtual SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_OnReceiveData(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus OnReceiveControl(RTP_ControlFrame & frame);
 
     class ReceiverReport : public PObject  {
@@ -733,32 +741,39 @@ class RTP_Session : public PObject
     virtual void SendBYE();
     virtual void SetCloseOnBYE(PBoolean v)  { closeOnBye = v; }
 
-#if OPAL_VIDEO
     /** Tell the rtp session to send out an intra frame request control packet.
         This is called when the media stream receives an OpalVideoUpdatePicture
         media command.
       */
     virtual void SendIntraFrameRequest();
-#endif
+
+    virtual PString GetFormat() const                 { return rtpFormat; }
+    virtual void SetFormat(const PString & newFormat);
+
+    DWORD GetSyncSourceIn() const { return syncSourceIn; }
 
   protected:
     void AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver);
     PBoolean InsertReportPacket(RTP_ControlFrame & report);
 
-    unsigned           sessionID;
-    bool               isAudio;
-    PString            canonicalName;
-    PString            toolName;
-    unsigned           referenceCount;
-    RTP_UserData     * userData;
-    PBoolean               autoDeleteUserData;
-    RTP_JitterBuffer * jitter;
+    PString             rtpFormat;
+    PMutex              handlerMutex;
+    RTP_FormatHandler * rtpHandler;
+
+    unsigned            sessionID;
+    bool                isAudio;
+    PString             canonicalName;
+    PString             toolName;
+    unsigned            referenceCount;
+    RTP_UserData     *  userData;
+    PBoolean            autoDeleteUserData;
+    RTP_JitterBuffer *  jitter;
 
     PBoolean          ignoreOtherSources;
     PBoolean          ignoreOutOfOrderPackets;
-    DWORD         syncSourceOut;
-    DWORD         syncSourceIn;
-    DWORD         lastSentTimestamp;
+    DWORD             syncSourceOut;
+    DWORD             syncSourceIn;
+    DWORD             lastSentTimestamp;
     PBoolean	        allowSyncSourceInChange;
     PBoolean	        allowRemoteTransmitAddressChange;
     PBoolean	        allowSequenceChange;
@@ -822,6 +837,30 @@ class RTP_Session : public PObject
     PBoolean byeSent;
 };
 
+/** This class specialises the RTP stack. It is needed to allow changing
+    the behviour of an RTP instance mid-call, as when changing between audio 
+    and  T.38
+    */
+
+class RTP_UDP;
+
+class RTP_FormatHandler 
+{
+  public:
+    virtual void OnStart(RTP_Session & _rtpSession);
+    virtual void OnFinish();
+    virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    virtual PBoolean WriteData(RTP_DataFrame & frame);
+    virtual RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & frame, PINDEX & len);
+    virtual RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
+    virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
+
+  protected:
+    RTP_Session * rtpSession;
+    RTP_UDP * rtpUDP;
+};
 
 /**This class is for encpsulating the IETF Real Time Protocol interface.
  */
@@ -941,14 +980,17 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
+      const PString & rtpFormat,      ///< RTP format
       PHandleAggregator * aggregator, ///< RTP aggregator
       unsigned id,                    ///<  Session ID for RTP channel
-      PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
+      PBoolean remoteIsNAT            ///<  PTrue is remote is behind NAT
     );
 
     /// Destroy the RTP
     ~RTP_UDP();
   //@}
+
+    virtual PString GetRTPEncoding() const;
 
   /**@name Overrides from class RTP_Session */
   //@{
@@ -958,10 +1000,12 @@ class RTP_UDP : public RTP_Session
        available or an error occurs.
       */
     virtual PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
+    virtual PBoolean Internal_ReadData(RTP_DataFrame & frame, PBoolean loop);
 
     /** Write a data frame to the RTP channel.
       */
     virtual PBoolean WriteData(RTP_DataFrame & frame);
+    virtual PBoolean Internal_WriteData(RTP_DataFrame & frame);
 
     /** Write data frame to the RTP channel outside the normal stream of media
       * Used for RFC2833 packets
@@ -1067,9 +1111,14 @@ class RTP_UDP : public RTP_Session
     virtual int GetControlSocketHandle() const
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
-  protected:
+    friend RTP_FormatHandler;
+
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
+    virtual int Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
+
     virtual SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    virtual SendReceiveStatus Internal_ReadDataPDU(RTP_DataFrame & frame);
+
     virtual SendReceiveStatus ReadControlPDU();
     virtual SendReceiveStatus ReadDataOrControlPDU(
       PUDPSocket & socket,
@@ -1077,6 +1126,10 @@ class RTP_UDP : public RTP_Session
       PBoolean fromDataChannel
     );
 
+    PBoolean shutdownRead;
+    PBoolean shutdownWrite;
+
+  protected:
     PIPSocket::Address localAddress;
     WORD               localDataPort;
     WORD               localControlPort;
@@ -1086,9 +1139,6 @@ class RTP_UDP : public RTP_Session
     WORD               remoteControlPort;
 
     PIPSocket::Address remoteTransmitAddress;
-
-    PBoolean shutdownRead;
-    PBoolean shutdownWrite;
 
     PUDPSocket * dataSocket;
     PUDPSocket * controlSocket;

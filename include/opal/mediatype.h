@@ -85,36 +85,15 @@ class OpalMediaType : public std::string     // do not make this PCaselessString
 #if OPAL_SIP
   public:
     static OpalMediaType GetMediaTypeFromSDP(const std::string & key);
+    static PString       GetSDPFromFromMediaType(const OpalMediaType & type);
     static OpalMediaTypeDefinition * GetDefinitionFromSDP(const std::string & key);
+
     typedef std::map<std::string, OpalMediaType> SDPToMediaTypeMap_T;
     static SDPToMediaTypeMap_T & GetSDPToMediaTypeMap();
 #endif  // OPAL_SIP
 };
 
 ostream & operator << (ostream & strm, const OpalMediaType & mediaType);
-
-#if 0
-
-////////////////////////////////////////////////////////////////////////////
-//
-//  define a class for holding a session ID and media type
-//
-
-class OpalMediaSessionId 
-{
-  public:
-    OpalMediaSessionId(const OpalMediaType & _mediaType, unsigned id = 0)
-      : mediaType(_mediaType), sessionId(id) 
-    { }
-
-    bool IsValid() const { return sessionId > 0; }
-
-    OpalMediaType mediaType;
-    unsigned int sessionId;
-};
-
-#endif
-
 
 ////////////////////////////////////////////////////////////////////////////
 //
@@ -145,6 +124,7 @@ class OpalMediaTypeDefinition  {
     virtual bool UseDirectMediaPatch() const = 0;
 
     virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT) = 0;
+    virtual PString GetRTPEncoding() const = 0;
 
     virtual std::string GetSDPType() const    { return sdpType; }
 
@@ -266,6 +246,7 @@ class SimpleMediaType : public OpalMediaTypeDefinition
     virtual bool IsMediaAutoStart(bool) const      { return true; }
     virtual unsigned GetPreferredSessionId() const { return defaultSessionId; }
     virtual bool UseDirectMediaPatch() const       { return false; }
+    PString GetRTPEncoding() const                 { return PString(); }
     virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & , PHandleAggregator * , unsigned , bool ) { return NULL; }
 
 #if OPAL_SIP
@@ -295,6 +276,7 @@ class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
     OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID);
     RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT);
     bool UseDirectMediaPatch() const;
+    PString GetRTPEncoding() const;
 
 #if OPAL_SIP
     virtual PCaselessString GetTransport() const;

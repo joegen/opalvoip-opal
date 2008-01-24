@@ -1023,7 +1023,7 @@ void MyManager::NewSpeedDial(const PString & ostr)
 void MyManager::Main(PArgList & args)
 {
   OpalConnection::StringOptions stringOptions;
-  stringOptions.SetAt("autostart", "h224\nfax");
+  stringOptions.SetAt("autostart", "h224");
 
   // See if making a call or just listening.
   switch (args.GetCount()) {

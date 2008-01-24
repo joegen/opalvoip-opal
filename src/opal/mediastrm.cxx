@@ -532,6 +532,7 @@ OpalRTPMediaStream::OpalRTPMediaStream(OpalRTPConnection & conn,
     minAudioJitterDelay(minJitter),
     maxAudioJitterDelay(maxJitter)
 {
+  rtp.SetFormat(mediaFormat.GetMediaType().GetDefinition()->GetRTPEncoding());
   defaultDataSize = conn.GetMaxRtpPayloadSize();
 }
 
@@ -550,7 +551,7 @@ PBoolean OpalRTPMediaStream::Open()
 PBoolean OpalRTPMediaStream::Close()
 {
   if (!isOpen)
-    return false;
+    return true;
     
   PTRACE(3, "Media\tClosing RTP for " << *this);
 

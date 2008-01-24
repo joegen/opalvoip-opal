@@ -391,14 +391,7 @@ PBoolean SDPMediaDescription::Decode(const PStringArray & tokens)
 {
   PAssert(tokens.GetSize() >= 4, "SDP\tMedia session has too few elements");
 
-  {
-    OpalMediaType::SDPToMediaTypeMap_T & map = OpalMediaType::GetSDPToMediaTypeMap();
-    OpalMediaType::SDPToMediaTypeMap_T::iterator r = map.find(tokens[0].ToLower());
-    if (r != map.end())
-      mediaType = r->second;
-  }
-
-  //mediaType        = OpalMediaType::GetSDPToMediaTypeMap().tokens[0].ToLower();
+  mediaType        = OpalMediaType::GetMediaTypeFromSDP(tokens[0].ToLower());
   defn             = mediaType.GetDefinition();
   PString portStr  = tokens[1];
   transport        = tokens[2];
@@ -1011,18 +1004,17 @@ void SDPSessionDescription::ParseOwner(const PString & str)
 }
 
 
-SDPMediaDescription * SDPSessionDescription::GetMediaDescription(const OpalMediaType & rtpMediaType) const
+SDPMediaDescription * SDPSessionDescription::GetMediaDescription(const OpalMediaType & mediaType) const
 {
   // look for matching media type
   PINDEX i;
   for (i = 0; i < mediaDescriptions.GetSize(); i++) {
-    if (mediaDescriptions[i].GetMediaType() == rtpMediaType)
+    if (mediaDescriptions[i].GetMediaType() == mediaType)
       return &mediaDescriptions[i];
   }
 
   return NULL;
 }
-
 
 SDPMediaDescription::Direction SDPSessionDescription::GetDirection(unsigned sessionID) const
 {
@@ -1058,6 +1050,14 @@ OpalMediaType OpalMediaType::GetMediaTypeFromSDP(const std::string & sdp)
     return r->second;
 
   return OpalMediaType();
+}
+
+PString OpalMediaType::GetSDPFromFromMediaType(const OpalMediaType & type)
+{
+  OpalMediaTypeDefinition * defn = type.GetDefinition();
+  if (defn == NULL)
+    return PString();
+  return defn->GetSDPType();
 }
 
 OpalMediaTypeDefinition * OpalMediaType::GetDefinitionFromSDP(const std::string & sdp)

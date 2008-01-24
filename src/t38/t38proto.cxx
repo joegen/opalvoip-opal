@@ -549,34 +549,40 @@ PBoolean OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
 
 /////////////////////////////////////////////////////////////////////////////
 
-T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, unsigned _id, PBoolean _remoteIsNAT)
-  : RTP_UDP(_aggregator, _id, _remoteIsNAT)
+class T38PseudoRTP_Handler : public RTP_FormatHandler
 {
-  PTRACE(4, "RTP_T38\tPseudoRTP session created with NAT flag set to " << remoteIsNAT);
+  public:
+    void OnStart(RTP_Session & _rtpUDP)
+    {  
+      RTP_FormatHandler::OnStart(_rtpUDP);
+      corrigendumASN        = PTrue;
+      consecutiveBadPackets = 0;
 
-  corrigendumASN = PTrue;
-  consecutiveBadPackets = 0;
+      lastIFP.SetSize(0);
+      rtpSession->SetReportTimeInterval(20);
+    }
 
-  reportTimer = 20;
+    PBoolean WriteData(RTP_DataFrame & frame);
+    PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
 
-  lastIFP.SetSize(0);
-}
+    RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
+    RTP_Session::SendReceiveStatus OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/);
+    RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
+    RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
+    int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &);
 
-T38PseudoRTP::~T38PseudoRTP()
-{
-  PTRACE(4, "RTP_T38\tPseudoRTP session destroyed");
-}
+  protected:
+    PBoolean corrigendumASN;
+    int consecutiveBadPackets;
+    PBYTEArray lastIFP;
+};
 
-PBoolean T38PseudoRTP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort)
-{
-  return RTP_UDP::SetRemoteSocketInfo(address, port, isDataPort);
-}
+static PFactory<RTP_FormatHandler>::Worker<T38PseudoRTP_Handler> t38PseudoRTPHandler("udptl");
 
-
-RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendData(RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendData(RTP_DataFrame & frame)
 {
   if (frame.GetPayloadSize() == 0)
-    return e_IgnorePacket;
+    return RTP_UDP::e_IgnorePacket;
 
   PINDEX plLen = frame.GetPayloadSize();
 
@@ -635,44 +641,46 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendData(RTP_DataFrame & frame)
 
 PTRACE(1, "T38_RTP\tWriting RTP T.38 seq " << udptl.m_seq_number << " of size " << plLen << " as T.38 UDPTL size " << frame.GetSize());
 
-  return e_ProcessPacket;
+  return RTP_Session::e_ProcessPacket;
 }
 
-PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
+PBoolean T38PseudoRTP_Handler::WriteData(RTP_DataFrame & frame)
 {
-  if (shutdownWrite) {
-    PTRACE(3, "RTP_T38\tSession " << sessionID << ", Write shutdown.");
-    shutdownWrite = PFalse;
+  if (rtpUDP->shutdownWrite) {
+    PTRACE(3, "RTP_T38\tSession " << rtpSession->GetSessionID() << ", Write shutdown.");
+    rtpUDP->shutdownWrite = PFalse;
     return PFalse;
   }
 
   // Trying to send a PDU before we are set up!
-  if (!remoteAddress.IsValid() || remoteDataPort == 0)
+  if (!rtpUDP->GetRemoteAddress().IsValid() || rtpUDP->GetRemoteDataPort() == 0)
     return PTrue;
 
   switch (OnSendData(frame)) {
-    case e_ProcessPacket :
+    case RTP_Session::e_ProcessPacket :
       break;
-    case e_IgnorePacket :
+    case RTP_Session::e_IgnorePacket :
       return PTrue;
-    case e_AbortTransport :
+    case RTP_Session::e_AbortTransport :
       return PFalse;
   }
 
-  while (!dataSocket->WriteTo(frame.GetPointer(),
-                             frame.GetSize(),
-                             remoteAddress, remoteDataPort)) {
-    switch (dataSocket->GetErrorNumber()) {
+  PUDPSocket & dataSocket = rtpUDP->GetDataSocket();
+
+  while (!dataSocket.WriteTo(frame.GetPointer(),
+                                  frame.GetSize(),
+                                  rtpUDP->GetRemoteAddress(), rtpUDP->GetRemoteDataPort())) {
+    switch (dataSocket.GetErrorNumber()) {
       case ECONNRESET :
       case ECONNREFUSED :
-        PTRACE(2, "RTP_T38\tSession " << sessionID << ", data port on remote not ready.");
+        PTRACE(2, "RTP_T38\tSession " << rtpSession->GetSessionID() << ", data port on remote not ready.");
         break;
 
       default:
-        PTRACE(1, "RTP_T38\tSession " << sessionID
+        PTRACE(1, "RTP_T38\tSession " << rtpSession->GetSessionID()
                << ", Write error on data port ("
-               << dataSocket->GetErrorNumber(PChannel::LastWriteError) << "): "
-               << dataSocket->GetErrorText(PChannel::LastWriteError));
+               << dataSocket.GetErrorNumber(PChannel::LastWriteError) << "): "
+               << dataSocket.GetErrorText(PChannel::LastWriteError));
         return PFalse;
     }
   }
@@ -681,26 +689,26 @@ PBoolean T38PseudoRTP::WriteData(RTP_DataFrame & frame)
 }
 
 
-RTP_Session::SendReceiveStatus T38PseudoRTP::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnSendControl(RTP_ControlFrame & /*frame*/, PINDEX & /*len*/)
 {
-  return e_IgnorePacket; // Non fatal error, just ignore
+  return RTP_Session::e_IgnorePacket; // Non fatal error, just ignore
 }
 
-RTP_Session::SendReceiveStatus T38PseudoRTP::ReadDataPDU(RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::ReadDataPDU(RTP_DataFrame & frame)
 {
   frame.SetPayloadSize(500);
-  SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
-  if (status != e_ProcessPacket)
+  RTP_Session::SendReceiveStatus status = rtpUDP->ReadDataOrControlPDU(rtpUDP->GetDataSocket(), frame, PTrue);
+  if (status != RTP_Session::e_ProcessPacket)
     return status;
 
   // Check received PDU is big enough
-  PINDEX pduSize = dataSocket->GetLastReadCount();
+  PINDEX pduSize = rtpUDP->GetDataSocket().GetLastReadCount();
   frame.SetSize(pduSize);
 
   return OnReceiveData(frame);
 }
 
-RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame)
+RTP_Session::SendReceiveStatus T38PseudoRTP_Handler::OnReceiveData(RTP_DataFrame & frame)
 {
   PTRACE(4, "T38_RTP\tReading raw T.38 of size " << frame.GetSize());
 
@@ -721,9 +729,9 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
              << setprecision(2) << udptl);
       if (consecutiveBadPackets > 100) {
         PTRACE(1, "RTP_T38\tRaw data decode failed multiple times, aborting!");
-        return e_AbortTransport;
+        return RTP_Session::e_AbortTransport;
       }
-      return e_IgnorePacket;
+      return RTP_Session::e_IgnorePacket;
     }
 
     PASN_OctetString & ifp = udptl.m_primary_ifp_packet;
@@ -736,43 +744,46 @@ RTP_Session::SendReceiveStatus T38PseudoRTP::OnReceiveData(RTP_DataFrame & frame
 
   frame[0] = 0x80;
   frame.SetPayloadType((RTP_DataFrame::PayloadTypes)96);
-  frame.SetSyncSource(syncSourceIn);
+  frame.SetSyncSource(rtpUDP->GetSyncSourceIn());
 
   PTRACE(3, "T38_RTP\tReading RTP payload size " << frame.GetPayloadSize());
 
-  return RTP_UDP::OnReceiveData(frame);
+  return RTP_FormatHandler::OnReceiveData(frame);
 }
 
-PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
+PBoolean T38PseudoRTP_Handler::ReadData(RTP_DataFrame & frame, PBoolean loop)
 {
-  do {
-    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
+  PUDPSocket * dataSocket    = &rtpUDP->GetDataSocket();
+  PUDPSocket * controlSocket = &rtpUDP->GetControlSocket();
 
-    if (shutdownRead) {
-      PTRACE(3, "T38_RTP\tSession " << sessionID << ", Read shutdown.");
-      shutdownRead = PFalse;
+  do {
+    int selectStatus = WaitForPDU(*dataSocket, *controlSocket, rtpUDP->GetReportTimer());
+
+    if (rtpUDP->shutdownRead) {
+      PTRACE(3, "T38_RTP\tSession " << rtpSession->GetSessionID() << ", Read shutdown.");
+      rtpUDP->shutdownRead = PFalse;
       return PFalse;
     }
 
     switch (selectStatus) {
       case -2 :
-        if (ReadControlPDU() == e_AbortTransport)
+        if (rtpUDP->ReadControlPDU() == RTP_Session::e_AbortTransport)
           return PFalse;
         break;
 
       case -3 :
-        if (ReadControlPDU() == e_AbortTransport)
+        if (rtpUDP->ReadControlPDU() == RTP_Session::e_AbortTransport)
           return PFalse;
         // Then do -1 case
 
       case -1 :
-        switch (ReadDataPDU(frame)) {
-          case e_ProcessPacket :
-            if (!shutdownRead)
+        switch (rtpUDP->ReadDataPDU(frame)) {
+          case RTP_Session::e_ProcessPacket :
+            if (!rtpUDP->shutdownRead)
               return PTrue;
-          case e_IgnorePacket :
+          case RTP_Session::e_IgnorePacket :
             break;
-          case e_AbortTransport :
+          case RTP_Session::e_AbortTransport :
             return PFalse;
         }
         break;
@@ -784,11 +795,11 @@ PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
         return PTrue;
 
       case PSocket::Interrupted:
-        PTRACE(3, "T38_RTP\tSession " << sessionID << ", Interrupted.");
+        PTRACE(3, "T38_RTP\tSession " << rtpSession->GetSessionID() << ", Interrupted.");
         return PFalse;
 
       default :
-        PTRACE(1, "T38_RTP\tSession " << sessionID << ", Select error: "
+        PTRACE(1, "T38_RTP\tSession " << rtpSession->GetSessionID() << ", Select error: "
                 << PChannel::GetErrorText((PChannel::Errors)selectStatus));
         return PFalse;
     }
@@ -798,7 +809,7 @@ PBoolean T38PseudoRTP::ReadData(RTP_DataFrame & frame, PBoolean loop)
   return PTrue;
 }
 
-int T38PseudoRTP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
+int T38PseudoRTP_Handler::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval &)
 {
   // wait for no longer than 20ms so audio gets correctly processed
   return PSocket::Select(dataSocket, controlSocket, 20);
@@ -1049,12 +1060,12 @@ PBoolean OpalFaxMediaStream::Close()
   faxCallInfoMap.erase(sessionToken);
 
   // delete the object
+  OpalFaxCallInfo * oldFaxCallInfo = faxCallInfo;
   {
     PWaitAndSignal m(infoMutex);
     faxCallInfo = NULL;
   }
-
-  delete faxCallInfo;
+  delete oldFaxCallInfo;
 
   return stat;
 }
@@ -1525,9 +1536,13 @@ OpalFaxMediaType::OpalFaxMediaType()
 bool OpalFaxMediaType::IsMediaAutoStart(bool) const 
 { return false; }
 
+PString OpalFaxMediaType::GetRTPEncoding() const
+{ return "udptl"; }
+
+
 RTP_UDP * OpalFaxMediaType::CreateRTPSession(OpalRTPConnection &, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT)
 {
-  return new T38PseudoRTP(agg, sessionID, remoteIsNAT);
+  return new RTP_UDP(GetRTPEncoding(), agg, sessionID, remoteIsNAT);
 }
 
 #endif // OPAL_T38FAX

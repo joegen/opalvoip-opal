@@ -66,6 +66,8 @@ static class InstantiateMe
 
 }; // namespace PWLibStupidLinkerHacks
 
+static PFactory<RTP_FormatHandler>::Worker<RTP_FormatHandler> t38PseudoRTPHandler("rtp/avp");
+
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_DataFrame::RTP_DataFrame(PINDEX sz)
@@ -447,6 +449,7 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_Session::RTP_Session(
+                         const PString & _rtpFormat,
                          PHandleAggregator * _aggregator, 
                          unsigned id, RTP_UserData * data, PBoolean autoDelete)
 : canonicalName(PProcess::Current().GetUserName()),
@@ -519,6 +522,9 @@ RTP_Session::RTP_Session(
 
   closeOnBye = PFalse;
   byeSent    = PFalse;
+
+  rtpHandler = NULL;
+  SetFormat(_rtpFormat);
 }
 
 RTP_Session::~RTP_Session()
@@ -544,6 +550,9 @@ RTP_Session::~RTP_Session()
   delete jitter;
   if (autoDeleteUserData)
     delete userData;
+
+  rtpHandler->OnFinish();
+  delete rtpHandler;
 }
 
 void RTP_Session::SendBYE()
@@ -725,6 +734,13 @@ void RTP_Session::AddReceiverReport(RTP_ControlFrame::ReceiverReport & receiver)
 
 RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
 {
+  PWaitAndSignal m(handlerMutex);
+  return PAssertNULL(rtpHandler)->OnSendData(frame);
+}
+
+
+RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendData(RTP_DataFrame & frame)
+{
   PWaitAndSignal m(sendDataMutex);
 
   PTimeInterval tick = PTimer::Tick();  // Timestamp set now
@@ -809,7 +825,15 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendData(RTP_DataFrame & frame)
   return e_ProcessPacket;
 }
 
-RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & frame, PINDEX & /*len*/)
+
+
+RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & frame, PINDEX & len)
+{
+  PWaitAndSignal m(handlerMutex);
+  return rtpHandler->OnSendControl(frame, len);
+}
+
+RTP_Session::SendReceiveStatus RTP_Session::Internal_OnSendControl(RTP_ControlFrame & frame, PINDEX & /*len*/)
 {
   rtcpPacketsSent++;
 #if OPAL_VIDEO
@@ -820,6 +844,12 @@ RTP_Session::SendReceiveStatus RTP_Session::OnSendControl(RTP_ControlFrame & fra
 }
 
 RTP_Session::SendReceiveStatus RTP_Session::OnReceiveData(RTP_DataFrame & frame)
+{
+  PWaitAndSignal m(handlerMutex);
+  return rtpHandler->OnReceiveData(frame);
+}
+
+RTP_Session::SendReceiveStatus RTP_Session::Internal_OnReceiveData(RTP_DataFrame & frame)
 {
   // Check that the PDU is the right version
   if (frame.GetVersion() != RTP_DataFrame::ProtocolVersion)
@@ -1344,6 +1374,51 @@ PBoolean RTP_Session::WriteOOBData(RTP_DataFrame &)
   return PTrue;
 }
 
+void RTP_Session::SendIntraFrameRequest()
+{
+  // Create packet
+  RTP_ControlFrame request;
+  request.StartNewPacket();
+  request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
+  request.SetPayloadSize(4);
+
+  // Insert SSRC
+  request.SetCount(1);
+  BYTE * payload = request.GetPayloadPtr();
+  *(PUInt32b *)payload = syncSourceOut;
+
+  // Send it
+  request.EndPacket();
+  WriteControl(request);
+}
+
+void RTP_Session::SetFormat(const PString & newFormat)
+{
+  PWaitAndSignal m(handlerMutex);
+
+  if (newFormat == rtpFormat)
+    return;
+
+  RTP_FormatHandler * newHandler = PFactory<RTP_FormatHandler>::CreateInstance(newFormat);
+  if (newHandler == NULL) {
+    PTRACE(2, "RTP\tUnable to identify new RTP format '" << newFormat << "' - retaining old format '" << rtpFormat << "'");
+    return;
+  }
+
+  if (rtpHandler != NULL) {
+    rtpHandler->OnFinish();
+    delete rtpHandler;
+  }
+
+  PTRACE_IF(!rtpFormat.IsEmpty(), 2, "RTP\tChanged RTP session format from '" << rtpFormat << "' to '" << newFormat << "'");
+
+  rtpFormat  = newFormat;
+  rtpHandler = newHandler;
+
+
+  rtpHandler->OnStart(*this);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 RTP_SessionManager::RTP_SessionManager()
@@ -1470,8 +1545,8 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
 }
 
 
-RTP_UDP::RTP_UDP(PHandleAggregator * _aggregator, unsigned id, PBoolean _remoteIsNAT)
-  : RTP_Session(_aggregator, id),
+RTP_UDP::RTP_UDP(const PString & _rtpFormat, PHandleAggregator * _aggregator, unsigned id, PBoolean _remoteIsNAT)
+  : RTP_Session(_rtpFormat, _aggregator, id),
     remoteAddress(0),
     remoteTransmitAddress(0),
     remoteIsNAT(_remoteIsNAT)
@@ -1500,6 +1575,11 @@ RTP_UDP::~RTP_UDP()
   
   delete dataSocket;
   delete controlSocket;
+}
+
+PString RTP_UDP::GetRTPEncoding() const
+{
+  return "rtp/avp";
 }
 
 
@@ -1706,6 +1786,12 @@ PBoolean RTP_UDP::SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBo
 
 PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame, PBoolean loop)
 {
+  PWaitAndSignal m(handlerMutex);
+  return rtpHandler->ReadData(frame, loop);
+}
+
+PBoolean RTP_UDP::Internal_ReadData(RTP_DataFrame & frame, PBoolean loop)
+{
   do {
     int selectStatus = WaitForPDU(*dataSocket, *controlSocket, reportTimer);
 
@@ -1759,6 +1845,12 @@ PBoolean RTP_UDP::ReadData(RTP_DataFrame & frame, PBoolean loop)
 }
 
 int RTP_UDP::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
+{
+  PWaitAndSignal m(handlerMutex);
+  return rtpHandler->WaitForPDU(dataSocket, controlSocket, timeout);
+}
+
+int RTP_UDP::Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout)
 {
   if (first && (sessionID == 1)) {
     BYTE buffer[1500];
@@ -1859,8 +1951,13 @@ RTP_Session::SendReceiveStatus RTP_UDP::ReadDataOrControlPDU(PUDPSocket & socket
   }
 }
 
-
 RTP_Session::SendReceiveStatus RTP_UDP::ReadDataPDU(RTP_DataFrame & frame)
+{
+  PWaitAndSignal m(handlerMutex);
+  return rtpHandler->ReadDataPDU(frame);
+}
+
+RTP_Session::SendReceiveStatus RTP_UDP::Internal_ReadDataPDU(RTP_DataFrame & frame)
 {
   SendReceiveStatus status = ReadDataOrControlPDU(*dataSocket, frame, PTrue);
   if (status != e_ProcessPacket)
@@ -1918,6 +2015,13 @@ PBoolean RTP_UDP::WriteOOBData(RTP_DataFrame & frame)
 }
 
 PBoolean RTP_UDP::WriteData(RTP_DataFrame & frame)
+{
+  PWaitAndSignal m(handlerMutex);
+  return rtpHandler->WriteData(frame);
+}
+
+
+PBoolean RTP_UDP::Internal_WriteData(RTP_DataFrame & frame)
 {
   if (shutdownWrite) {
     PTRACE(3, "RTP_UDP\tSession " << sessionID << ", write shutdown.");
@@ -1996,27 +2100,57 @@ PBoolean RTP_UDP::WriteControl(RTP_ControlFrame & frame)
   return PTrue;
 }
 
-#if OPAL_VIDEO
-void RTP_Session::SendIntraFrameRequest(){
-    // Create packet
-    RTP_ControlFrame request;
-    request.StartNewPacket();
-    request.SetPayloadType(RTP_ControlFrame::e_IntraFrameRequest);
-    request.SetPayloadSize(4);
-    // Insert SSRC
-    request.SetCount(1);
-    BYTE * payload = request.GetPayloadPtr();
-    *(PUInt32b *)payload = syncSourceOut;
-    // Send it
-    request.EndPacket();
-    WriteControl(request);
+/////////////////////////////////////////////////////////////////////////////
+
+void RTP_FormatHandler::OnStart(RTP_Session & _rtpSession)
+{
+  rtpSession = &_rtpSession;
+  rtpUDP     = (RTP_UDP *)&_rtpSession;
 }
-#endif
+
+void RTP_FormatHandler::OnFinish()
+{
+}
+
+RTP_Session::SendReceiveStatus RTP_FormatHandler::OnSendData(RTP_DataFrame & frame)
+{
+  return rtpUDP->Internal_OnSendData(frame);
+}
+
+PBoolean RTP_FormatHandler::WriteData(RTP_DataFrame & frame)
+{
+  return rtpUDP->Internal_WriteData(frame);
+}
+
+RTP_Session::SendReceiveStatus RTP_FormatHandler::OnSendControl(RTP_ControlFrame & frame, PINDEX & len)
+{
+  return rtpUDP->Internal_OnSendControl(frame, len);
+}
+
+RTP_Session::SendReceiveStatus RTP_FormatHandler::ReadDataPDU(RTP_DataFrame & frame)
+{
+  return rtpUDP->Internal_ReadDataPDU(frame);
+}
+
+RTP_Session::SendReceiveStatus RTP_FormatHandler::OnReceiveData(RTP_DataFrame & frame)
+{
+  return rtpUDP->Internal_OnReceiveData(frame);
+}
+
+PBoolean RTP_FormatHandler::ReadData(RTP_DataFrame & frame, PBoolean loop)
+{
+  return rtpUDP->Internal_ReadData(frame, loop);
+}
+
+int RTP_FormatHandler::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & t)
+{
+  return rtpUDP->Internal_WaitForPDU(dataSocket, controlSocket, t);
+}
 
 /////////////////////////////////////////////////////////////////////////////
 
 SecureRTP_UDP::SecureRTP_UDP(OpalRTPConnection &, PHandleAggregator * _aggregator, unsigned id, PBoolean remoteIsNAT)
-  : RTP_UDP(_aggregator, id, remoteIsNAT)
+  : RTP_UDP("rtp/avp", _aggregator, id, remoteIsNAT)
 {
   securityParms = NULL;
 }
