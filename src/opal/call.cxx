@@ -352,14 +352,12 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
       OpalMediaStreamPtr sink = conn->OpenMediaStream(sinkFormat, sessionID, false);
       if (sink != NULL) {
         startedOne = true;
-        if (source->RequiresPatch()) {
-          if (patch == NULL) {
-            patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
-            if (patch == NULL)
-              return false;
-          }
-          patch->AddSink(sink, map);
+        if (patch == NULL) {
+          patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
+          if (patch == NULL)
+            return false;
         }
+        patch->AddSink(sink, map);
       }
     }
   }

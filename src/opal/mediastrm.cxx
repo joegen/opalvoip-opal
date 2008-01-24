@@ -392,12 +392,6 @@ PBoolean OpalMediaStream::SetDataSize(PINDEX dataSize)
 }
 
 
-PBoolean OpalMediaStream::RequiresPatch() const
-{
-  return true;
-}
-
-
 PBoolean OpalMediaStream::RequiresPatchThread() const
 {
   return true;
@@ -498,12 +492,6 @@ PBoolean OpalNullMediaStream::ReadData(BYTE * /*buffer*/, PINDEX /*size*/, PINDE
 PBoolean OpalNullMediaStream::WriteData(const BYTE * /*buffer*/, PINDEX /*length*/, PINDEX & /*written*/)
 {
   return false;
-}
-
-
-PBoolean OpalNullMediaStream::RequiresPatch() const
-{
-	return false;
 }
 
 
