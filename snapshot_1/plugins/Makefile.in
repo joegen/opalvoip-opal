@@ -1,0 +1,74 @@
+SUBDIRS = audio/GSM0610 \
+          audio/Speex \
+          audio/iLBC \
+	  audio/LPC_10 \
+	  audio/G726 \
+	  audio/IMA_ADPCM \
+	  audio/gsm-amr \
+	  video/H.261-vic
+
+HAS_H263=@HAS_H263@
+ifeq ($(HAS_FFMPEG_H263),1)
+SUBDIRS += video/H.263-ffmpeg
+endif
+
+HAS_MPEG4=@HAS_MPEG4@
+ifeq ($(HAS_MPEG4),1)
+SUBDIRS += video/MPEG4-ffmpeg
+endif
+
+HAS_LIBDL=@HAS_LIBDL@
+HAS_X264=@HAS_X264@
+HAS_FFMPEG=@HAS_FFMPEG@
+ifeq ($(HAS_LIBDL),1)
+ifeq ($(HAS_X264),1)
+ifeq ($(HAS_FFMPEG),1)
+SUBDIRS += video/H.264 \
+	   video/H.264/gpl
+endif
+endif
+endif
+
+ifeq ($(HAS_FFMPEG),1)
+SUBDIRS += video/H.263-1998
+endif
+
+HAS_THEORA=@HAS_THEORA@
+ifeq ($(HAS_THEORA),1)
+SUBDIRS += video/THEORA
+endif
+
+HAS_IXJ=@HAS_IXJ@
+ifeq ($(HAS_IXJ),1)
+SUBDIRS += LID/IxJ
+endif
+
+HAS_VPB=@HAS_VPB@
+ifeq ($(HAS_VPB),1)
+SUBDIRS += LID/VPB
+endif
+
+HAS_CAPI=@HAS_CAPI@
+ifeq ($(HAS_CAPI),1)
+SUBDIRS += LID/CAPI
+endif
+
+ifneq (,$(wildcard fax/fax_spandsp))
+ifneq (,$(wildcard fax/fax_spandsp/spandsp_util))
+SUBDIRS += fax/fax_spandsp
+endif
+endif
+
+all debug opt both \
+optshared debugshared bothshared \
+optnoshared debugnoshared bothnoshared:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir); fi ; )
+
+clean optclean debugclean:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) clean; fi ; )
+
+install uninstall:
+	@set -e; $(foreach dir,$(SUBDIRS),if test -d ${dir} ; then $(MAKE) -C $(dir) $@; fi ; )
+
+optdepend debugdepend bothdepend release tagbuild:
+	@echo

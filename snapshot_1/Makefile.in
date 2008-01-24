@@ -1,0 +1,582 @@
+#
+# Makefile
+#
+# Make file for Open Phone Abstraction library
+#
+# Copyright (c) 2001 Equivalence Pty. Ltd.
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.0 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.mozilla.org/MPL/
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is Open Phone Abstraction Library.
+#
+# The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+#
+# Contributor(s): ______________________________________.
+#
+# $Revision$
+# $Author$
+# $Date$
+#
+
+export OPALDIR=@OPALDIR@
+
+INSTALL=@INSTALL@
+OS_NAME=$(shell uname -s)
+ifeq ($(OS_NAME),SunOS)
+  override SHELL=/usr/bin/bash
+endif
+
+default :: optshared
+
+all :: bothdepend both
+
+update:
+	svn update
+	$(MAKE) all
+
+
+SUBDIRS := 
+
+HAS_PLUGINS=@OPAL_PLUGINS@
+ifeq ($(HAS_PLUGINS),1)
+SUBDIRS += plugins 
+endif
+
+HAS_SAMPLES=@OPAL_SAMPLES@
+ifeq ($(HAS_SAMPLES),1)
+SUBDIRS += samples/simple 
+endif
+
+LIBRARY_MAKEFILE:=1
+
+include $(OPALDIR)/opal_inc.mak
+
+PREFIX=@INSTALLPREFIX@/
+exec_prefix = ${PREFIX}
+
+ifndef PREFIX
+PREFIX=/usr/local
+endif
+
+ifeq ($(USE_GCC),yes)
+ANSI_FLAG = -ansi
+endif
+
+OPAL_OBJDIR = $(OPAL_LIBDIR)/$(PT_OBJBASE)
+
+OBJDIR	=	$(OPAL_OBJDIR)
+LIBDIR  =	$(OPAL_LIBDIR)
+TARGET	=	$(OPAL_LIBDIR)/$(OPAL_FILE)
+
+STDCCFLAGS += @STDCCFLAGS@
+
+ifdef NOTRACE
+STDCCFLAGS += -DPASN_NOPRINTON
+else
+STDCCFLAGS += -DPTRACING
+endif
+
+VPATH_CXX := $(OPAL_SRCDIR)/opal \
+	     $(OPAL_SRCDIR)/rtp \
+	     $(OPAL_SRCDIR)/lids \
+	     $(OPAL_SRCDIR)/codec 
+
+ifneq (,$(wildcard src/iax2))
+IAX2_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/iax2 
+endif
+
+ifneq (,$(wildcard src/sip))
+SIP_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/sip
+endif
+
+ifneq (,$(wildcard src/h323))
+H323_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/h323 \
+	     $(OPAL_SRCDIR)/t120 \
+	     $(OPAL_SRCDIR)/t38 \
+	     $(OPAL_SRCDIR)/asn 
+endif
+
+ifneq (,$(wildcard src/h224))
+H224_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/h224
+
+endif
+
+VPATH_C := $(OPAL_SRCDIR)/codec
+
+########################################
+# Source files for library
+
+SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
+           $(OPAL_SRCDIR)/opal/endpoint.cxx \
+           $(OPAL_SRCDIR)/opal/connection.cxx \
+           $(OPAL_SRCDIR)/opal/call.cxx \
+           $(OPAL_SRCDIR)/opal/mediafmt.cxx \
+           $(OPAL_SRCDIR)/opal/mediastrm.cxx \
+           $(OPAL_SRCDIR)/opal/patch.cxx \
+           $(OPAL_SRCDIR)/opal/transcoders.cxx \
+           $(OPAL_SRCDIR)/opal/transports.cxx \
+           $(OPAL_SRCDIR)/opal/guid.cxx \
+           $(OPAL_SRCDIR)/opal/opalmixer.cxx \
+	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
+           $(OPAL_SRCDIR)/rtp/rtp.cxx \
+           $(OPAL_SRCDIR)/rtp/jitter.cxx \
+
+ifeq ($(HAS_AUDIO),1)
+SOURCES += $(OPAL_SRCDIR)/opal/pcss.cxx 
+endif
+
+ifeq ($(OPAL_IVR), 1)
+SOURCES += $(OPAL_SRCDIR)/opal/ivr.cxx \
+           $(OPAL_SRCDIR)/opal/opalvxml.cxx 
+endif
+
+########################################
+
+# H.323 files
+
+ifeq ($(OPAL_H323),1)
+ifdef H323_AVAIL
+
+ASN_SRCDIR := $(OPAL_SRCDIR)/asn
+ASN_INCDIR := $(OPAL_INCDIR)/asn
+
+H450_ASN_FILES := h4501 h4502 h4503 h4504 h4505 h4506 h4507 h4508 h4509 h45010 h45011
+SIMPLE_ASN_FILES := x880 $(H450_ASN_FILES) mcs gcc t38 
+
+ASN_H_FILES   := $(addprefix $(ASN_INCDIR)/,$(addsuffix .h,  $(SIMPLE_ASN_FILES)))
+ASN_CXX_FILES := $(addprefix $(ASN_SRCDIR)/,$(addsuffix .cxx,$(SIMPLE_ASN_FILES)))
+
+ASN_H_FILES   += $(ASN_INCDIR)/h225.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/h225_1.cxx $(ASN_SRCDIR)/h225_2.cxx
+
+ASN_H_FILES   += $(ASN_INCDIR)/h235.h $(ASN_SRCDIR)/h235_t.cxx
+ASN_CXX_FILES += $(ASN_SRCDIR)/h235.cxx
+
+ASN_H_FILES   += $(ASN_INCDIR)/h245.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/h245_1.cxx $(ASN_SRCDIR)/h245_2.cxx $(ASN_SRCDIR)/h245_3.cxx
+
+ASN_H_FILES   += $(ASN_INCDIR)/h248.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/h248.cxx
+
+ASN_H_FILES   += $(ASN_INCDIR)/h501.h
+ASN_CXX_FILES += $(ASN_SRCDIR)/h501.cxx
+
+.PRECIOUS: $(ASN_CXX_FILES) $(ASN_H_FILES)
+
+
+SOURCES += $(ASN_CXX_FILES) \
+           $(OPAL_SRCDIR)/h323/h323ep.cxx \
+           $(OPAL_SRCDIR)/h323/h323.cxx \
+           $(OPAL_SRCDIR)/h323/h323caps.cxx \
+           $(OPAL_SRCDIR)/h323/h323neg.cxx \
+           $(OPAL_SRCDIR)/h323/h323pdu.cxx \
+           $(OPAL_SRCDIR)/h323/h323rtp.cxx \
+           $(OPAL_SRCDIR)/h323/channels.cxx \
+           $(OPAL_SRCDIR)/h323/svcctrl.cxx \
+           $(OPAL_SRCDIR)/h323/h450pdu.cxx \
+           $(OPAL_SRCDIR)/h323/q931.cxx \
+           $(OPAL_SRCDIR)/h323/transaddr.cxx \
+           $(OPAL_SRCDIR)/h323/gkclient.cxx \
+           $(OPAL_SRCDIR)/h323/gkserver.cxx \
+           $(OPAL_SRCDIR)/h323/h225ras.cxx \
+           $(OPAL_SRCDIR)/h323/h323trans.cxx \
+           $(OPAL_SRCDIR)/h323/h235auth.cxx \
+           $(OPAL_SRCDIR)/h323/h501pdu.cxx \
+           $(OPAL_SRCDIR)/h323/h323annexg.cxx \
+           $(OPAL_SRCDIR)/h323/peclient.cxx \
+           
+ifdef H323_H460
+SOURCES += $(OPAL_SRCDIR)/h323/h4601.cxx
+endif
+
+ifdef HAS_OPENSSL
+SOURCES += $(OPAL_SRCDIR)/h235auth1.cxx
+endif
+
+SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
+           $(OPAL_SRCDIR)/t120/h323t120.cxx \
+           $(OPAL_SRCDIR)/t120/x224.cxx \
+           $(OPAL_SRCDIR)/t38/t38proto.cxx \
+           $(OPAL_SRCDIR)/t38/h323t38.cxx
+
+ifeq ($(OPAL_H224), 1)
+ifdef H224_AVAIL
+SOURCES += $(OPAL_SRCDIR)/h224/h323h224.cxx
+endif
+endif
+
+endif
+endif
+
+##################
+# IAX2 files
+
+ifeq ($(OPAL_IAX2),1)
+ifdef IAX2_AVAIL
+
+SOURCES += \
+           $(OPAL_SRCDIR)/iax2/callprocessor.cxx \
+           $(OPAL_SRCDIR)/iax2/frame.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2con.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2ep.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2jitter.cxx \
+           $(OPAL_SRCDIR)/iax2/iax2medstrm.cxx \
+           $(OPAL_SRCDIR)/iax2/iedata.cxx \
+           $(OPAL_SRCDIR)/iax2/ies.cxx \
+           $(OPAL_SRCDIR)/iax2/processor.cxx \
+           $(OPAL_SRCDIR)/iax2/receiver.cxx \
+           $(OPAL_SRCDIR)/iax2/regprocessor.cxx\
+           $(OPAL_SRCDIR)/iax2/remote.cxx \
+           $(OPAL_SRCDIR)/iax2/safestrings.cxx \
+           $(OPAL_SRCDIR)/iax2/sound.cxx \
+           $(OPAL_SRCDIR)/iax2/specialprocessor.cxx \
+           $(OPAL_SRCDIR)/iax2/transmit.cxx 
+endif
+endif
+
+################################################################################
+# SIP files
+
+ifeq ($(OPAL_SIP),1)
+ifdef SIP_AVAIL
+
+SOURCES += $(OPAL_SRCDIR)/sip/sipep.cxx \
+           $(OPAL_SRCDIR)/sip/sipcon.cxx \
+           $(OPAL_SRCDIR)/sip/sippdu.cxx \
+           $(OPAL_SRCDIR)/sip/sdp.cxx \
+           $(OPAL_SRCDIR)/sip/handlers.cxx 
+
+endif
+endif
+
+##################
+# H.224 files
+
+ifeq ($(OPAL_H224), 1)
+ifdef H224_AVAIL
+
+SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
+		   $(OPAL_SRCDIR)/h224/h224.cxx \
+		   $(OPAL_SRCDIR)/h224/h281.cxx
+endif
+endif
+
+##################
+# LIDS
+
+ifeq ($(OPAL_LID), 1)
+
+SOURCES += $(OPAL_SRCDIR)/lids/lid.cxx \
+           $(OPAL_SRCDIR)/lids/lidep.cxx \
+           $(OPAL_SRCDIR)/lids/lidpluginmgr.cxx \
+
+endif
+
+##################
+# SRTP
+
+ifeq ($(OPAL_SRTP), 1)
+SOURCES += $(OPAL_SRCDIR)/rtp/srtp.cxx \
+
+endif
+
+
+
+##################
+# Software codecs
+
+SOURCES += $(OPAL_SRCDIR)/codec/g711codec.cxx \
+           $(OPAL_SRCDIR)/codec/g711.c \
+           $(OPAL_SRCDIR)/codec/rfc2833.cxx \
+           $(OPAL_SRCDIR)/codec/opalwavfile.cxx \
+	   $(OPAL_SRCDIR)/codec/silencedetect.cxx \
+	   $(OPAL_SRCDIR)/codec/echocancel.cxx \
+	   $(OPAL_SRCDIR)/codec/opalpluginmgr.cxx
+
+ifeq ($(HAS_VIDEO), 1)
+SOURCES += $(OPAL_SRCDIR)/codec/vidcodec.cxx 
+endif
+
+ifeq ($(OPAL_RFC4175), 1)
+SOURCES += $(OPAL_SRCDIR)/codec/rfc4175.cxx
+endif
+
+SPEEX_DIR       = $(OPAL_SRCDIR)/codec/speex
+
+#HEADER_FILES    += $(OPAL_INCDIR)/speexcodec.h
+
+#SOURCES        += $(OPAL_SRCDIR)/codec/speexcodec.cxx
+
+ifndef OPAL_SYSTEM_SPEEX
+
+SPEEX_INCDIR    = $(SPEEX_DIR)/libspeex
+SPEEX_SRCDIR    = $(SPEEX_DIR)/libspeex
+
+VPATH_C         += $(SPEEX_SRCDIR)
+VPATH_CXX       += $(SPEEX_SRCDIR)
+
+HEADER_FILES    += $(SPEEX_INCDIR)/speex.h \
+		   $(SPEEX_INCDIR)/speex_bits.h \
+		   $(SPEEX_INCDIR)/speex_header.h \
+		   $(SPEEX_INCDIR)/speex_callbacks.h \
+		   $(SPEEX_INCDIR)/speex_config_types.h \
+		   $(SPEEX_INCDIR)/speex_preprocess.h \
+		   $(SPEEX_INCDIR)/speex_stereo.h \
+		   $(SPEEX_INCDIR)/speex_types.h \
+		   $(SPEEX_INCDIR)/speex_jitter.h \
+		   $(SPEEX_INCDIR)/speex_echo.h
+
+SOURCES         += $(SPEEX_SRCDIR)/speex_preprocess.c \
+		   $(SPEEX_SRCDIR)/smallft.c \
+                   $(SPEEX_SRCDIR)/misc.c \
+                   $(SPEEX_SRCDIR)/mdf.c \
+                   $(SPEEX_SRCDIR)/math_approx.c \
+                   $(SPEEX_SRCDIR)/kiss_fftr.c \
+                   $(SPEEX_SRCDIR)/kiss_fft.c \
+                   $(SPEEX_SRCDIR)/fftwrap.c \
+
+endif # OPAL_SYSTEM_SPEEX
+
+#
+# Files to be cleaned during make clean
+#
+
+CLEAN_FILES = $(OPAL_LIB) 
+
+
+####################################################
+
+include @PTLIBDIR@/make/common.mak
+
+PROG=opal
+####################################################
+# replace lib.mak
+
+ifneq ($(OSTYPE),Darwin)
+  LIBNAME_MAJ	= $(OPAL_FILE).$(MAJOR_VERSION)
+  LIBNAME_MIN	= $(LIBNAME_MAJ).$(MINOR_VERSION)
+  ifeq ($(BUILD_TYPE),.)
+    LIBNAME_PAT	= $(LIBNAME_MIN).$(BUILD_NUMBER)
+  else
+    LIBNAME_PAT	= $(LIBNAME_MIN)-$(BUILD_TYPE)$(BUILD_NUMBER)
+  endif
+else
+  LIBNAME_MAJ	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(LIB_SUFFIX),$(OPAL_FILE))
+  LIBNAME_MIN	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION).$(LIB_SUFFIX),$(OPAL_FILE))
+  ifeq ($(BUILD_TYPE),.)
+    LIBNAME_PAT	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER).$(LIB_SUFFIX),$(OPAL_FILE))
+  else
+    LIBNAME_PAT	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION)-$(BUILD_TYPE)$(BUILD_NUMBER).$(LIB_SUFFIX),$(OPAL_FILE))
+  endif
+endif
+
+LIB_SONAME	= $(LIBNAME_MIN)
+
+CLEAN_FILES += $(LIBDIR)/$(LIBNAME_PAT) $(LIBDIR)/$(OPAL_FILE) $(LIBDIR)/$(LIBNAME_MAJ) $(LIBDIR)/$(LIBNAME_MIN)
+
+ifneq ($(P_SHAREDLIB),1)
+  STATIC_LIB_FILE = $(LIBDIR)/$(OPAL_FILE)
+else
+  STATIC_LIB_FILE = $(LIBDIR)/$(subst .$(LIB_SUFFIX),_s.$(STATICLIBEXT),$(OPAL_FILE))
+endif
+
+$(LIBDIR)/$(OPAL_FILE) : $(TARGETLIB)
+
+ifeq ($(P_SHAREDLIB),1)
+
+  SYSLIBS += -L$(PT_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
+  ifeq ($(OSTYPE),beos)
+    # BeOS requires different options when building shared libraries
+    LDSOOPTS = -nostdlib -nostart
+    EXTLIBS = -lstdc++.r4
+  else
+    ifeq ($(OSTYPE),Darwin)
+      LDSOOPTS = -dynamiclib
+    else
+      LDSOOPTS = -shared
+    endif
+  endif
+  
+  ENDLDLIBS := $(SYSLIBS) $(ENDLDLIBS)
+
+  ifeq ($(OSTYPE),rtems)
+    EXTLIBS = -lstdc++
+  endif
+
+  ifneq ($(OSTYPE), QNX)
+    ifneq (,$(findstring $(OSTYPE),FreeBSD OpenBSDs))
+      ifdef P_PTHREADS
+        EXTLIBS += -pthread
+      endif
+    else
+      ifdef P_PTHREADS
+        EXTLIBS += -lpthread
+      endif
+    endif
+  endif
+
+  # Solaris loader doesn't grok -soname  (sees it as -s -oname)
+  # We could use -Wl,-h,$(LIB_BASENAME).1 but then we find that the arglist
+  # to gcc is 2900+ bytes long and it will barf.  I fix this by invoking ld
+  # directly and passing it the equivalent arguments...jpd@louisiana.edu
+  ifeq ($(OSTYPE),solaris)
+     LDSOOPTS = -Bdynamic -G -h $(LIB_SONAME)
+     LD = $(CPLUS)
+  else
+    ifeq ($(OSTYPE),mingw)
+      LDSOOPTS += -Wl,--kill-at
+    else
+    ifneq ($(OSTYPE),Darwin)
+      LDSOOPTS += -Wl,-soname,$(LIB_SONAME)
+    endif
+    endif
+    LD = $(CPLUS)
+  endif
+
+  $(LIBDIR)/$(OPAL_FILE): $(LIBDIR)/$(LIBNAME_PAT)
+	cd $(LIBDIR) ; rm -f $(OPAL_FILE) ; ln -sf $(LIBNAME_PAT) $(OPAL_FILE)
+	cd $(LIBDIR) ; rm -f $(LIBNAME_MAJ) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MAJ)
+	cd $(LIBDIR) ; rm -f $(LIBNAME_MIN) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MIN)
+
+	cd $(LIBDIR) ; rm -f libopal.$(LIB_SUFFIX) ;  ln -sf $(LIBNAME_PAT) libopal.$(LIB_SUFFIX)
+	
+  $(LIBDIR)/$(LIBNAME_PAT): $(STATIC_LIB_FILE)
+	@echo EXTLIBS = $(EXTLIBS)
+	@echo SYSLIBS = $(SYSLIBS)
+	@if [ ! -d $(LIBDIR) ] ; then mkdir $(LIBDIR) ; fi
+	$(LD) $(LDSOOPTS) -o $(LIBDIR)/$(LIBNAME_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(ENDLDLIBS)
+
+endif # P_SHAREDLIB
+
+$(STATIC_LIB_FILE): $(OBJS)
+	@if [ ! -d $(LIBDIR) ] ; then mkdir $(LIBDIR) ; fi
+	$(ARCHIVE) $(STATIC_LIB_FILE) $(OBJS)
+ifeq ($(P_USE_RANLIB),1)
+	$(RANLIB) $(STATIC_LIB_FILE)
+endif
+
+####################################################
+
+notrace::
+	$(MAKE) NOTRACE=1 opt
+
+# Build rules for the Speex codec
+
+$(OPAL_OBJDIR)/%.o : $(SPEEX_SRCDIR)/%.c
+	@if [ ! -d $(OPAL_OBJDIR) ] ; then mkdir -p $(OPAL_OBJDIR) ; fi
+	$(CC) $(STDCCFLAGS) -I$(SPEEX_INCDIR) $(OPTCCFLAGS) $(CFLAGS) -c $< -o $@
+
+$(DEPDIR)/%.dep : $(SPEEX_SRCDIR)/%.c
+	@if [ ! -d $(DEPDIR) ] ; then mkdir -p $(DEPDIR) ; fi
+	@printf %s $(OPAL_OBJDIR)/ > $@
+	$(CC) -I$(SPEEX_INCDIR) $(CFLAGS) -M $< >> $@
+
+###############################################################################
+#### Subdirectories
+$(subst tagbuild,,$(STANDARD_TARGETS)) ::
+	@set -e; $(foreach dir,$(SUBDIRS),if test -e $(dir) ; then $(MAKE) -C $(dir) $@; fi ;)
+
+
+$(STANDARD_TARGETS) :: Makefile
+
+Makefile: Makefile.in configure
+	@echo
+	@echo "*******************************************************"
+	@echo Makefile is not up to date, is a ./configure necessary?
+	@echo "*******************************************************"
+	@false
+
+test:
+	@echo $(ASN_CXX_FILES)
+
+#### Install targets
+install:
+	mkdir -p $(DESTDIR)@LIBDIR@
+	( for dir in $(DESTDIR)@LIBDIR@ \
+		     $(DESTDIR)$(PREFIX)/include/opal/asn \
+		     $(DESTDIR)$(PREFIX)/include/opal/codec \
+		     $(DESTDIR)$(PREFIX)/include/opal/h323 \
+		     $(DESTDIR)$(PREFIX)/include/opal/iax2 \
+		     $(DESTDIR)$(PREFIX)/include/opal/lids \
+		     $(DESTDIR)$(PREFIX)/include/opal/opal \
+		     $(DESTDIR)$(PREFIX)/include/opal/rtp \
+		     $(DESTDIR)$(PREFIX)/include/opal/sip \
+		     $(DESTDIR)$(PREFIX)/include/opal/t120 \
+		     $(DESTDIR)$(PREFIX)/include/opal/t38 \
+		     $(DESTDIR)$(PREFIX)/lib/pkgconfig \
+		     $(DESTDIR)$(PREFIX)/share/opal ;\
+		do mkdir -p $$dir ; chmod 755 $$dir ; \
+	done)
+	$(INSTALL) -m 755 lib/$(LIBNAME_PAT) $(DESTDIR)@LIBDIR@
+	$(INSTALL) -m 444 opal.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig
+	ln -snf $(LIBNAME_PAT) \
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION)
+	ln -snf $(LIBNAME_PAT) \
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION)
+	ln -snf $(LIBNAME_PAT) \
+		$(DESTDIR)@LIBDIR@/$(OPAL_FILE)
+	ln -snf $(LIBNAME_PAT) \
+		$(DESTDIR)@LIBDIR@/libopal.so
+	( for fn in include/asn/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/asn ; \
+	done)
+	( for fn in include/codec/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/codec ; \
+	done)
+	( for fn in include/h323/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/h323 ; \
+	done)
+	( for fn in include/iax2/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/iax2 ; \
+	done)
+	( for fn in include/lids/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/lids ; \
+	done)
+	( for fn in include/opal/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/opal ; \
+	done)
+	( for fn in include/rtp/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/rtp ; \
+	done)
+	( for fn in include/sip/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/sip ; \
+	done)
+	( for fn in include/t120/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/t120 ; \
+	done)
+	( for fn in include/t38/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/t38 ; \
+	done)
+	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
+	$(MAKE) -C plugins install
+
+uninstall:
+	rm -rf $(DESTDIR)$(PREFIX)/include/opal \
+	       $(DESTDIR)$(PREFIX)/share/opal
+	rm -f $(DESTDIR)@LIBDIR@/$(OPAL_FILE) \
+	      $(DESTDIR)@LIBDIR@/libopal.so \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION).$(MINOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(OPAL_FILE).$(MAJOR_VERSION) \
+	      $(DESTDIR)@LIBDIR@/$(LIBNAME_PAT) \
+	      $(DESTDIR)$(PREFIX)/lib/pkgconfig/opal.pc 
+	$(MAKE) -C plugins uninstall
+ 
+docs: FORCE
+	doxygen opal_cfg.dxy
+
+FORCE:
+ 
+
+# End of file #################################################################
