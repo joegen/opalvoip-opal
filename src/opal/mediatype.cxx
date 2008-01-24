@@ -82,7 +82,6 @@ OpalMediaTypeDefinition * OpalMediaType::GetDefinition(const OpalMediaType & key
   return OpalMediaTypeFactory::CreateInstance(key);
 }
 
-
 OpalMediaType::SessionIDToMediaTypeMap_T & OpalMediaType::GetSessionIDToMediaTypeMap()
 {
   static SessionIDToMediaTypeMap_T sessionIDToMediaTypeMap;
@@ -114,24 +113,16 @@ OpalMediaTypeDefinition::OpalMediaTypeDefinition(const char * mediaType, const c
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#if 0
-
-OpalNULLMediaType::OpalNULLMediaType()
-  : OpalMediaTypeDefinition("null", "")
-{
-}
-
-bool OpalNULLMediaType::IsMediaAutoStart(bool) const 
-{ return false; }
-
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-
 OpalRTPAVPMediaType::OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID)
   : OpalMediaTypeDefinition(mediaType, sdpType, sessionID)
 {
 }
+
+PString OpalRTPAVPMediaType::GetRTPEncoding() const
+{
+  return "rtp/avp";
+}
+
 
 RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT)
 {
@@ -154,7 +145,7 @@ RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn, PHandl
   }
   else
   {
-    rtpSession = new RTP_UDP(agg, sessionID, remoteIsNAT);
+    rtpSession = new RTP_UDP(GetRTPEncoding(), agg, sessionID, remoteIsNAT);
   }
 
   return rtpSession;

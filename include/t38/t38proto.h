@@ -64,6 +64,7 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
     bool IsMediaAutoStart(bool) const;
     bool UseDirectMediaPatch() const { return false; }
 
+    PString GetRTPEncoding(void) const;
     RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT);
 
 #if OPAL_SIP
@@ -252,6 +253,8 @@ class OpalFaxAudioFormat : public OpalMediaFormat
 
 ///////////////////////////////////////////////////////////////////////////////
 
+#if 0
+
 /**
   *  This defines a pseudo RTP session used for T.38 channels
   */
@@ -275,6 +278,8 @@ class T38PseudoRTP : public RTP_UDP
     /// Destroy the RTP
     ~T38PseudoRTP();
 
+    virtual PString GetRTPEncoding() const;
+
     PBoolean ReadData(RTP_DataFrame & frame, PBoolean loop);
     PBoolean WriteData(RTP_DataFrame & frame);
     RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
@@ -282,8 +287,6 @@ class T38PseudoRTP : public RTP_UDP
 
     RTP_Session::SendReceiveStatus ReadDataPDU(RTP_DataFrame & frame);
     RTP_Session::SendReceiveStatus OnReceiveData(RTP_DataFrame & frame);
-
-    PBoolean SetRemoteSocketInfo(PIPSocket::Address address, WORD port, PBoolean isDataPort);
 
   protected:
     int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timeout);
@@ -299,6 +302,8 @@ class T38PseudoRTP : public RTP_UDP
 
   //@}
 };
+
+#endif // 
 
 ///////////////////////////////////////////////////////////////////////////////
 

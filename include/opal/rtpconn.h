@@ -270,13 +270,18 @@ class OpalRTPConnection : public OpalConnection
         unsigned AddChannel(ChannelInfo & info);
 
         //ChannelInfo * AssignAndLockChannel(const OpalMediaSessionId & id, bool assigned);
+        ChannelInfo * FindAndLockChannel(unsigned channelId);
+        ChannelInfo * FindAndLockChannelByProtocolId(unsigned protocolSpecificSessionId);
+
         ChannelInfo * FindAndLockChannel(unsigned channelId,              bool assigned);
         ChannelInfo * FindAndLockChannel(const OpalMediaType & mediaType, bool assigned);
+
         bool CanAutoStartMedia(const OpalMediaType & mediaType, bool rx);
 
         unsigned GetSessionOfType(const OpalMediaType & type) const;
         OpalMediaType GetTypeOfSession(unsigned sessionId) const;
 
+        void Lock()   { mutex.Wait(); }
         void Unlock() { mutex.Signal(); }
 
         mutable PMutex mutex;

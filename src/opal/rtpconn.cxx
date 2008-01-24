@@ -346,12 +346,39 @@ bool OpalRTPConnection::ChannelInfoMap::CanAutoStartMedia(const OpalMediaType & 
 
 OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(unsigned channelId, bool assigned)
 {
+  OpalRTPConnection::ChannelInfo * info = FindAndLockChannel(channelId);
+  if (info == NULL)
+    return NULL;
+  if (info->assigned != assigned) {
+    Unlock();
+    return NULL;
+  }
+  return info;
+}
+
+OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannel(unsigned channelId)
+{
   mutex.Wait();
 
   iterator r;
   for (r = begin(); r != end(); ++r) {
     ChannelInfo & info = r->second;
-    if ((info.assigned == assigned) && (info.channelId == channelId)) 
+    if (info.channelId == channelId)
+      return &r->second;
+  }
+
+  mutex.Signal();
+  return NULL;
+}
+
+OpalRTPConnection::ChannelInfo * OpalRTPConnection::ChannelInfoMap::FindAndLockChannelByProtocolId(unsigned protocolSpecificSessionId)
+{
+  mutex.Wait();
+
+  iterator r;
+  for (r = begin(); r != end(); ++r) {
+    ChannelInfo & info = r->second;
+    if (info.protocolSpecificSessionId == protocolSpecificSessionId)
       return &r->second;
   }
 

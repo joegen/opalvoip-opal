@@ -433,11 +433,15 @@ OpalMediaStreamPtr OpalConnection::OpenMediaStream(const OpalMediaFormat & media
   if (!safeLock.IsLocked())
     return NULL;
 
-  // See if already opened
+  // See if already opened, already
   OpalMediaStreamPtr stream = GetMediaStream(sessionID, isSource);
-  if (stream != NULL && stream->IsOpen()) {
-    PTRACE(3, "OpalCon\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
-    return stream;
+  if (stream != NULL) {
+    if (stream->IsOpen() && mediaFormat == stream->GetMediaFormat()) {
+      PTRACE(3, "OpalCon\tOpenMediaStream (already opened) for session " << sessionID << " on " << *this);
+      return stream;
+    }
+    mediaStreams.Remove(stream);
+    stream = OpalMediaStreamPtr();
   }
 
   if (stream == NULL) {

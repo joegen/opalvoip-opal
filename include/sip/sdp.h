@@ -226,10 +226,9 @@ class SDPSessionDescription : public PObject
 
     const SDPMediaDescriptionList & GetMediaDescriptions() const { return mediaDescriptions; }
 
-    SDPMediaDescription * GetMediaDescription(
-      const OpalMediaType & rtpMediaType
-    ) const;
-    void AddMediaDescription(SDPMediaDescription * md) { mediaDescriptions.Append(md); }
+    SDPMediaDescription * GetMediaDescription(const OpalMediaType & rtpMediaType) const;
+
+    PINDEX AddMediaDescription(SDPMediaDescription * md) { return mediaDescriptions.Append(md); }
     
     void SetDirection(const SDPMediaDescription::Direction & d) { direction = d; }
     SDPMediaDescription::Direction GetDirection(unsigned) const;

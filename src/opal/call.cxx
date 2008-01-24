@@ -307,9 +307,12 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, const Opa
     return false;
 
   // Check if already done
-  if (connection.GetMediaStream(sessionID, true) != NULL) {
-    PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
-    return true;
+  {
+    OpalMediaStreamPtr strm = connection.GetMediaStream(sessionID, true);
+    if (strm != NULL && strm->IsOpen()) {
+      PTRACE(3, "Call\tOpenSourceMediaStreams (already opened) for session " << sessionID << " on " << connection);
+      return true;
+    }
   }
 
   PTRACE(3, "Call\tOpenSourceMediaStreams for session " << sessionID << " on " << connection);
@@ -352,7 +355,7 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, const Opa
       OpalMediaStreamPtr sink = conn->OpenMediaStream(sinkFormat, sessionID, false);
       if (sink != NULL) {
         startedOne = true;
-        if (source->RequiresPatch()) {
+        /* if (source->RequiresPatch()) */ {
           if (patch == NULL) {
             patch = manager.CreateMediaPatch(*source, source->RequiresPatchThread());
             if (patch == NULL)
