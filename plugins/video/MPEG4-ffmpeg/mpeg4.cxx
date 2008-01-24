@@ -207,7 +207,6 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_INFO:  severity = 4; break;
       case AV_LOG_DEBUG: severity = 4; break;
     }
-    AVClass * avc = *(AVClass**) v;
     snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
     buffer[strlen(buffer)-1] = 0;
@@ -233,7 +232,6 @@ class MPEG4EncoderContext
     
     void SetIQuantFactor(float newFactor);
     void SetThrottle(bool enable);
-    void SetForceKeyframeUpdate(bool enable);
     void SetKeyframeUpdatePeriod(int interval);
     void SetMaxBitrate(int max);
     void SetFPS(int frameTime);
@@ -258,9 +256,6 @@ class MPEG4EncoderContext
 
     // Modifiable quantization factor.  Defaults to -0.8
     float _iQuantFactor;
-
-    // Automatic IFrame updates.  Defaults to false
-    bool _forceKeyframeUpdate;
 
     // Interval in seconds between forced IFrame updates if enabled
     int _keyframeUpdatePeriod;
@@ -299,7 +294,6 @@ class MPEG4EncoderContext
     unsigned int _frameHeight;
 
     unsigned long _lastTimeStamp;
-    time_t _lastKeyframe;
 
     enum StdSize { 
       SQCIF, 
@@ -385,8 +379,7 @@ class MPEG4EncoderContext
 //
 
 MPEG4EncoderContext::MPEG4EncoderContext() 
-:   _forceKeyframeUpdate(false),
-    _doThrottle(false),
+:   _doThrottle(false),
     _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
@@ -401,11 +394,10 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   _videoTSTO = 10;
   _iQuantFactor = -0.8f;
 
-  _keyframeUpdatePeriod = 125; // 125 frames between forced keyframes, if enabled
+  _keyframeUpdatePeriod = 0; 
 
   _frameNum = 0;
   _lastPktOffset = 0;
-  _lastKeyframe = time(NULL);
   
   if (!FFMPEGLibraryInstance.IsLoaded()){
     return;
@@ -469,15 +461,6 @@ void MPEG4EncoderContext::SetIQuantFactor(float newFactor) {
 
 void MPEG4EncoderContext::SetThrottle(bool throttle) {
     _doThrottle = throttle;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Setter function for _forceKeyframeUpdate.  This is called from 
-// encoder_set_options if the "Force Keyframe Update" boolean option is passed
-
-void MPEG4EncoderContext::SetForceKeyframeUpdate(bool enable) {
-    _forceKeyframeUpdate = enable;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -630,7 +613,11 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->time_base.den = _targetFPS;
 
     // Number of frames for a group of pictures
-    _avcontext->gop_size = _avcontext->time_base.den * 8;
+    if (_keyframeUpdatePeriod == 0)
+      _avcontext->gop_size = _targetFPS * 8;
+    else
+      _avcontext->gop_size = _keyframeUpdatePeriod;
+    
     _throttle->reset(_avcontext->time_base.den / 2);
 
     // Set the initial frame quality to something sane
@@ -848,15 +835,10 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         memcpy(_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header),
               _rawFrameLen);
 
-        time_t now = time(NULL);
         // Should the next frame be an I-Frame?
-        if ((_forceKeyframeUpdate
-             && (now - _lastKeyframe > (_keyframeUpdatePeriod / _targetFPS) ))
-            || (flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
+        if ((flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
         {
-            _lastKeyframe = now;
             _avpicture->pict_type = FF_I_TYPE;
-            flags = PluginCodec_ReturnCoderIFrame;
         }
         else // No IFrame requested, let avcodec decide what to do
         {
@@ -875,6 +857,9 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
             _throttle->record(total); // record frames for throttler
         }
     }
+
+    // flags = PluginCodec_ReturnCoderIFrame; FIXME
+
 
     // _packetSizes should not be empty unless we've been throttled
     if(_packetSizes.empty() == false)
@@ -1110,7 +1095,6 @@ static int encoder_set_options(
   // 9) "Dynamic Encoding Quality" enables dynamic adjustment of encoding quality
   // 10) "Bandwidth Throttling" will turn on bandwidth throttling for the encoder
   // 11) "IQuantFactor" will update the quantization factor to a float value
-  // 12) "Force Keyframe Update": force the encoder to make an IFrame every 3s
 
   if (parm != NULL) {
     const char ** options = (const char **)parm;
@@ -1137,8 +1121,6 @@ static int encoder_set_options(
         context->SetThrottle(atoi(options[i+1]));
       else if(STRCMPI(options[i], "IQuantFactor") == 0)
         context->SetIQuantFactor(atof(options[i+1]));
-      else if(STRCMPI(options[i], "Force Keyframe Update") == 0)
-        context->SetForceKeyframeUpdate(atoi(options[i+1]));
     }
 
     if (!adjust_bitrate_to_profile_level (targetBitrate, profileLevel))
