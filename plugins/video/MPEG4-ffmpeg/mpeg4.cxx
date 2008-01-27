@@ -1798,6 +1798,7 @@ static int MergeProfileAndLevelMPEG4(char ** result, const char * dest, const ch
   }
 
   switch (srcPL) {
+    case 0:
       srcProfile = 0;
       srcLevel = -10;
       break;
