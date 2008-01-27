@@ -67,13 +67,17 @@ SRCS	+= mpeg4.cxx \
 	   $(COMMONDIR)/dyna.cxx \
 	   $(COMMONDIR)/trace.cxx
 
+PLUGIN_CFLAGS   =@PLUGIN_CFLAGS@
 FFMPEG_CFLAGS   =@FFMPEG_CFLAGS@
-FFMPEG_STACKALIGN_HACK := @FFMPEG_STACKALIGN_HACK@
 FFMPEG_SOURCE := @FFMPEG_SOURCE@
 
 # Add FFMPEG_SOURCE to the include path so we can #include <libavcodec/...h>
 # Also add libavutil, so ffmpeg headers can #include "log.h".
-EXTRACCFLAGS    +=$(FFMPEG_CFLAGS) -I$(FFMPEG_SOURCE) -I$(FFMPEG_SOURCE)/libavutil -I$(COMMONDIR) $(FFMPEG_STACKALIGN_HACK)
+EXTRACCFLAGS    +=$(PLUGIN_CFLAGS) $(FFMPEG_CFLAGS) -I$(COMMONDIR)
+
+ifneq (,$(FFMPEG_SOURCE))
+EXTRACCFLAGS    += -I$(FFMPEG_SOURCE) -I$(FFMPEG_SOURCE)/libavutil
+endif
 
 OBJDIR = ./obj
 
