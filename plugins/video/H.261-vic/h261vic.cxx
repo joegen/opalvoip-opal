@@ -54,6 +54,7 @@
 
 #include <codec/opalplugin.h>
 
+
 #include <stdlib.h>
 #if defined (_WIN32) || defined (_WIN32_WCE)
   #include <malloc.h>
@@ -80,6 +81,9 @@
 
 #include <stdio.h>
 #include <math.h>
+
+#include "critsect.h"
+#include "rtpframe.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4800)
@@ -147,164 +151,7 @@ static void debug_write_data(int & fd, const char * title, const char * filename
 
 #endif
 
-/////////////////////////////////////////////////////////////////
-//
-// define a class to implement a critical section mutex
-// based on PCriticalSection from PWLib
-
-class CriticalSection
-{
-  public:
-    CriticalSection()
-    { 
-#ifdef _WIN32
-      ::InitializeCriticalSection(&criticalSection); 
-#else
-      ::sem_init(&sem, 0, 1);
-#endif
-    }
-
-    ~CriticalSection()
-    { 
-#ifdef _WIN32
-      ::DeleteCriticalSection(&criticalSection); 
-#else
-      ::sem_destroy(&sem);
-#endif
-    }
-
-    void Wait()
-    { 
-#ifdef _WIN32
-      ::EnterCriticalSection(&criticalSection); 
-#else
-      ::sem_wait(&sem);
-#endif
-    }
-
-    void Signal()
-    { 
-#ifdef _WIN32
-      ::LeaveCriticalSection(&criticalSection); 
-#else
-      ::sem_post(&sem); 
-#endif
-    }
-
-  private:
-    CriticalSection & operator=(const CriticalSection &) { return *this; }
-#ifdef _WIN32
-    mutable CRITICAL_SECTION criticalSection; 
-#else
-    mutable sem_t sem;
-#endif
-};
-    
-class WaitAndSignal {
-  public:
-    inline WaitAndSignal(const CriticalSection & cs)
-      : sync((CriticalSection &)cs)
-    { sync.Wait(); }
-
-    ~WaitAndSignal()
-    { sync.Signal(); }
-
-    WaitAndSignal & operator=(const WaitAndSignal &) 
-    { return *this; }
-
-  protected:
-    CriticalSection & sync;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// define some simple RTP packet routines
-//
-
 #define RTP_MIN_HEADER_SIZE 12
-
-class RTPFrame
-{
-  public:
-    RTPFrame(const unsigned char * _packet, int _packetLen)
-      : packet((unsigned char *)_packet), packetLen(_packetLen)
-    {
-    }
-
-    RTPFrame(unsigned char * _packet, int _packetLen, unsigned char payloadType)
-      : packet(_packet), packetLen(_packetLen)
-    { 
-      if (packetLen > 0)
-        packet[0] = 0x80;    // set version, no extensions, zero contrib count
-      SetPayloadType(payloadType);
-    }
-
-    inline unsigned long GetLong(int offs) const
-    {
-      if (offs + 4 > packetLen)
-        return 0;
-      return (packet[offs + 0] << 24) + (packet[offs+1] << 16) + (packet[offs+2] << 8) + packet[offs+3]; 
-    }
-
-    inline void SetLong(int offs, unsigned long n)
-    {
-      if (offs + 4 <= packetLen) {
-        packet[offs + 0] = (u_char)((n >> 24) & 0xff);
-        packet[offs + 1] = (u_char)((n >> 16) & 0xff);
-        packet[offs + 2] = (u_char)((n >> 8) & 0xff);
-        packet[offs + 3] = (u_char)(n & 0xff);
-      }
-    }
-
-    inline unsigned short GetShort(int offs) const
-    { 
-      if (offs + 2 > packetLen)
-        return 0;
-      return (packet[offs + 0] << 8) + packet[offs + 1]; 
-    }
-
-    inline void SetShort(int offs, unsigned short n) 
-    { 
-      if (offs + 2 <= packetLen) {
-        packet[offs + 0] = (u_char)((n >> 8) & 0xff);
-        packet[offs + 1] = (u_char)(n & 0xff);
-      }
-    }
-
-    inline int GetPacketLen() const                    { return packetLen; }
-    inline unsigned GetVersion() const                 { return (packetLen < 1) ? 0 : (packet[0]>>6)&3; }
-    inline bool GetExtension() const                   { return (packetLen < 1) ? 0 : (packet[0]&0x10) != 0; }
-    inline bool GetMarker()  const                     { return (packetLen < 2) ? 0 : ((packet[1]&0x80) != 0); }
-    inline unsigned char GetPayloadType() const        { return (packetLen < 2) ? 0 : (packet[1] & 0x7f);  }
-    inline unsigned short GetSequenceNumber() const    { return GetShort(2); }
-    inline unsigned long GetTimestamp() const          { return GetLong(4); }
-    inline unsigned long GetSyncSource() const         { return GetLong(8); }
-    inline int GetContribSrcCount() const              { return (packetLen < 1) ? 0  : (packet[0]&0xf); }
-    inline int GetExtensionSize() const                { return !GetExtension() ? 0  : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount() + 2); }
-    inline int GetExtensionType() const                { return !GetExtension() ? -1 : GetShort(RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount()); }
-    inline int GetPayloadSize() const                  { return packetLen - GetHeaderSize(); }
-    inline unsigned char * GetPayloadPtr() const       { return packet + GetHeaderSize(); }
-    inline unsigned char * GetPacketPtr() const        { return packet; }
-
-    inline unsigned int GetHeaderSize() const    
-    { 
-      unsigned int sz = RTP_MIN_HEADER_SIZE + 4*GetContribSrcCount();
-      if (GetExtension())
-        sz += 4 + GetExtensionSize();
-      return sz;
-    }
-
-    inline void SetMarker(bool m)                    { if (packetLen >= 2) packet[1] = (packet[1] & 0x7f) | (m ? 0x80 : 0x00); }
-    inline void SetPayloadType(unsigned char t)      { if (packetLen >= 2) packet[1] = (packet[1] & 0x80) | (t & 0x7f); }
-    inline void SetSequenceNumber(unsigned short v)  { SetShort(2, v); }
-    inline void SetTimestamp(unsigned long n)        { SetLong(4, n); }
-    inline void SetSyncSource(unsigned long n)       { SetLong(8, n); }
-    inline void SetPayloadSize(int payloadSize)      { packetLen = GetHeaderSize() + payloadSize; }
-
-  protected:
-    unsigned char * packet;
-    int packetLen;
-};
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -503,7 +350,7 @@ unsigned H261EncoderContext::SetEncodedPacket(RTPFrame & dstRTP, bool isLast, un
   flags |= isLast ? PluginCodec_ReturnCoderLastFrame : 0;  // marker bit on last frame of video
   flags |= PluginCodec_ReturnCoderIFrame;                       // sadly, this encoder *always* returns I-frames :(
 
-  return dstRTP.GetPacketLen();
+  return dstRTP.GetFrameLen();
 }
 
 static void * create_encoder(const struct PluginCodec_Definition * /*codec*/)
@@ -634,7 +481,7 @@ class H261DecoderContext
 
 #if DEBUG_OUTPUT
 static int decoderInput = -1;
-debug_write_data(decoderInput, "decoder input", "decoder.input", srcRTP.GetPacketPtr(), srcRTP.GetPacketLen());
+debug_write_data(decoderInput, "decoder input", "decoder.input", srcRTP.GetPacketPtr(), srcRTP.GetFrameLen());
 #endif
 
       videoDecoder->mark(now);
@@ -687,7 +534,7 @@ debug_write_data(decoderInput, "decoder input", "decoder.input", srcRTP.GetPacke
 
       videoDecoder->resetndblk();
 
-      dstLen = dstRTP.GetPacketLen();
+      dstLen = dstRTP.GetFrameLen();
 
 #if DEBUG_OUTPUT
 static int decoderOutput = -1;
@@ -863,10 +710,17 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     minHeight = 288;
     frameTime = 3003*cif_mpi;
   }
-  else { // Default handling according to RFC 4587 (QCIF=1)
+  else {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+    // Default handling according to RFC 4587 (QCIF=1)
     maxWidth = 176;
     maxHeight = 144;
     frameTime = 3003*1;
+#else
+    maxWidth = 352;
+    maxHeight = 288;
+    frameTime = 3003*1;
+#endif
   }
 
   char ** options = (char **)calloc(15, sizeof(char *));
