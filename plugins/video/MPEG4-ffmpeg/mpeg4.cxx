@@ -286,6 +286,9 @@ class MPEG4EncoderContext
     // Modifiable quantization factor.  Defaults to -0.8
     float _iQuantFactor;
 
+    // Max VBV buffer size in bits.
+    unsigned _maxBufferSize;
+
     // Interval in seconds between forced IFrame updates if enabled
     int _keyframeUpdatePeriod;
 
@@ -422,12 +425,13 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   _videoQMin = 2;
   _videoTSTO = 10;
   _iQuantFactor = -0.8f;
+  _maxBufferSize = 112 * 16384;
 
   _keyframeUpdatePeriod = 0; 
 
   _frameNum = 0;
   _lastPktOffset = 0;
-  
+
   if (!FFMPEGLibraryInstance.IsLoaded()){
     return;
   }
@@ -562,7 +566,19 @@ void MPEG4EncoderContext::SetTSTO(unsigned tsto) {
 // when the "Encoding Quality" integer option is passed 
 
 void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
-//FIXME
+  int i = 0;
+  while (mpeg4_profile_levels[i].profileLevel) {
+    if (mpeg4_profile_levels[i].profileLevel == profileLevel)
+      break;
+    i++; 
+  }
+  
+  if (!mpeg4_profile_levels[i].profileLevel) {
+    TRACE(1, "MPEG4\tCap\tIllegal Profle-Level negotiated");
+    return;
+  }
+  _maxBufferSize = mpeg4_profile_levels[i].maxBufferSize * 16384;
+
 
 }
 
@@ -624,8 +640,8 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->rc_buffer_aggressivity = 1.0f;
 
     // Ratecontrol buffer size, in bits. Usually 0.5-1 second worth.
-    // 224 kbyte is what VLC uses, and it seems to fix the quantization pulse.
-    _avcontext->rc_buffer_size = 224*1024*8;
+    // 224 kbyte is what VLC uses, and it seems to fix the quantization pulse (at Level 5)
+    _avcontext->rc_buffer_size = _maxBufferSize;
 
     // In MEncoder this defaults to 1/4 buffer size, but in ffmpeg.c it
     // defaults to 3/4. I think the buffer is supposed to stabilize at
