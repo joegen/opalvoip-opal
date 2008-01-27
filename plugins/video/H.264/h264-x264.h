@@ -241,7 +241,7 @@ static struct PluginCodec_Option const RFC3984profileLevel =
   PluginCodec_NoMerge,                  // Merge mode
   "42C01E",                             // Initial value (Baseline, Level 3)
   "profile-level-id",                   // FMTP option name 
-  "42C00A",                             // FMTP default value (Baseline, Level 1)
+  "000000",                             // FMTP default value
 };
 
 static struct PluginCodec_Option const * const optionTable[] = {
