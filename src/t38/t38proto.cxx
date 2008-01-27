@@ -1142,7 +1142,7 @@ PBoolean OpalT38MediaStream::ReadPacket(RTP_DataFrame & packet)
 
   packet.SetSize(2048);
 
-  BOOL stat;
+  bool stat;
 
   if (faxCallInfo->spanDSPPort > 0) 
     stat = faxCallInfo->socket.Read(packet.GetPointer(), packet.GetSize());

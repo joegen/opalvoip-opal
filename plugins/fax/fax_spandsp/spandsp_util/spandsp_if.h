@@ -23,7 +23,7 @@
  * $Id: spandsp_if.h,v 1.1 2007/03/29 04:46:38 csoutheren Exp $
  */
 
-#define SPANDSP_VER3  1
+//#define SPANDSP_VER3  1
 
 #include <string>
 #include <vector>
