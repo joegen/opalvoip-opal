@@ -384,7 +384,7 @@ int FFMPEGLibrary::AvcodecEncodeVideo(AVCodecContext *ctx, BYTE *buf, int buf_si
   WITH_ALIGNED_STACK({
     int res = Favcodec_encode_video(ctx, buf, buf_size, pict);
 
-    TRACE(4, _codecString << "\tDYNA\tEncoded video into " << res << " bytes");
+    TRACE(4, _codecString << "\tDYNA\tEncoded " << buf_size << " bytes of YUV420P data into " << res << " bytes");
     return res;
   });
 }

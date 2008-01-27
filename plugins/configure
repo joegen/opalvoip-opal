@@ -691,11 +691,10 @@ HAS_IXJ
 HAS_VPB
 HAS_CAPI
 HAS_LIBDL
-HAS_MPEG4
-FFMPEG_SOURCE
-FFMPEG_STACKALIGN_HACK
-FFMPEG_CFLAGS
+PLUGIN_CFLAGS
 HAS_FFMPEG
+FFMPEG_SOURCE
+FFMPEG_CFLAGS
 x264_CFLAGS
 x264_LIBS
 HAS_X264
@@ -1299,6 +1298,8 @@ Optional Features:
   --enable-localspeex       use local version of Speex library rather than system version
   --enable-vpb            enable voicetronix vpb
   --enable-capi            enable CAPI
+  --disable-rfc-compliant-defaults
+                          Enable FFMPEG stack align hack for MPEG 4
   --enable-ffmpeg-stackalign-hack
                           Enable FFMPEG stack align hack for MPEG 4
   --disable-ffmpeg        Disable ffmpeg
@@ -6635,10 +6636,32 @@ fi
 fi
 
 
+PLUGIN_CFLAGS=
+
+# Check whether --enable-rfc-compliant-defaults was given.
+if test "${enable_rfc_compliant_defaults+set}" = set; then
+  enableval=$enable_rfc_compliant_defaults; rfc_compliant_defaults=$enableval
+fi
+
+if test "x${rfc_compliant_defaults}" != "xno" ; then
+    rfc_compliant_defaults=yes
+    PLUGIN_CFLAGS="${PLUGIN_CFLAGS} -DWITH_RFC_COMPLIANT_DEFAULTS"
+fi
 
 
-HAS_MPEG4=0
+# Check whether --enable-ffmpeg-stackalign-hack was given.
+if test "${enable_ffmpeg_stackalign_hack+set}" = set; then
+  enableval=$enable_ffmpeg_stackalign_hack; ffmpeg_stackalign_hack=$enableval
+fi
+
+
+
+
+
+
 FFMPEG_SOURCE=
+FFMPEG_CFLAGS=
+
 { echo "$as_me:$LINENO: checking MPEG4 plugin" >&5
 echo $ECHO_N "checking MPEG4 plugin... $ECHO_C" >&6; }
 
@@ -6660,8 +6683,8 @@ elif test "$with_ffmpeg_src_dir" != "" ; then
   then
     { echo "$as_me:$LINENO: result: enabled" >&5
 echo "${ECHO_T}enabled" >&6; }
-    HAS_MPEG4=1
     FFMPEG_SOURCE=$with_ffmpeg_src_dir
+    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_FFMPEG_SRC"
   else
     { { echo "$as_me:$LINENO: error: $with_ffmpeg_src_dir doesn't contain an ffmpeg source tree" >&5
 echo "$as_me: error: $with_ffmpeg_src_dir doesn't contain an ffmpeg source tree" >&2;}
@@ -6671,23 +6694,6 @@ else
   { echo "$as_me:$LINENO: result: disabled" >&5
 echo "${ECHO_T}disabled" >&6; }
 fi
-
-# Check whether --enable-ffmpeg-stackalign-hack was given.
-if test "${enable_ffmpeg_stackalign_hack+set}" = set; then
-  enableval=$enable_ffmpeg_stackalign_hack; ffmpeg_stackalign_hack=$enableval
-fi
-
-if test "${ffmpeg_stackalign_hack}" = "yes" ; then
-  { echo "$as_me:$LINENO: FFMPEG stack align hack enabled" >&5
-echo "$as_me: FFMPEG stack align hack enabled" >&6;}
-  FFMPEG_STACKALIGN_HACK="-DWITH_STACKALIGN_HACK"
-else
-  { echo "$as_me:$LINENO: FFMPEG stack align hack disabled" >&5
-echo "$as_me: FFMPEG stack align hack disabled" >&6;}
-  FFMPEG_STACKALIGN_HACK=""
-fi
-
-
 
 
 
@@ -6958,7 +6964,7 @@ echo "${ECHO_T}cannot determine - using defaults" >&6; }
                     rm -f t t.c
                     { echo "$as_me:$LINENO: result: $ffmpeg_lib_name" >&5
 echo "${ECHO_T}$ffmpeg_lib_name" >&6; }
-                    FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
+                    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
                 fi
              else
               { echo "$as_me:$LINENO: result: no" >&5
@@ -6967,6 +6973,22 @@ echo "${ECHO_T}no" >&6; }
         fi
     fi
 fi
+
+# Check whether --enable-ffmpeg-stackalign-hack was given.
+if test "${enable_ffmpeg_stackalign_hack+set}" = set; then
+  enableval=$enable_ffmpeg_stackalign_hack; ffmpeg_stackalign_hack=$enableval
+fi
+
+if test "${ffmpeg_stackalign_hack}" = "yes" ; then
+  { echo "$as_me:$LINENO: FFMPEG stack align hack enabled" >&5
+echo "$as_me: FFMPEG stack align hack enabled" >&6;}
+  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_STACKALIGN_HACK"
+else
+  { echo "$as_me:$LINENO: FFMPEG stack align hack disabled" >&5
+echo "$as_me: FFMPEG stack align hack disabled" >&6;}
+fi
+
+
 
 
 
@@ -8667,11 +8689,10 @@ HAS_IXJ!$HAS_IXJ$ac_delim
 HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
 HAS_LIBDL!$HAS_LIBDL$ac_delim
-HAS_MPEG4!$HAS_MPEG4$ac_delim
-FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
-FFMPEG_STACKALIGN_HACK!$FFMPEG_STACKALIGN_HACK$ac_delim
-FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
+PLUGIN_CFLAGS!$PLUGIN_CFLAGS$ac_delim
 HAS_FFMPEG!$HAS_FFMPEG$ac_delim
+FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
+FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
 x264_CFLAGS!$x264_CFLAGS$ac_delim
 x264_LIBS!$x264_LIBS$ac_delim
 HAS_X264!$HAS_X264$ac_delim
@@ -8684,7 +8705,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 92; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -9736,11 +9757,10 @@ HAS_IXJ!$HAS_IXJ$ac_delim
 HAS_VPB!$HAS_VPB$ac_delim
 HAS_CAPI!$HAS_CAPI$ac_delim
 HAS_LIBDL!$HAS_LIBDL$ac_delim
-HAS_MPEG4!$HAS_MPEG4$ac_delim
-FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
-FFMPEG_STACKALIGN_HACK!$FFMPEG_STACKALIGN_HACK$ac_delim
-FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
+PLUGIN_CFLAGS!$PLUGIN_CFLAGS$ac_delim
 HAS_FFMPEG!$HAS_FFMPEG$ac_delim
+FFMPEG_SOURCE!$FFMPEG_SOURCE$ac_delim
+FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
 x264_CFLAGS!$x264_CFLAGS$ac_delim
 x264_LIBS!$x264_LIBS$ac_delim
 HAS_X264!$HAS_X264$ac_delim
@@ -9753,7 +9773,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 93; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 92; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -10114,10 +10134,15 @@ echo "                          THEORA  :  enabled"
 else
 echo "                          THEORA  :  disabled"
 fi
-if test "x${HAS_MPEG4}" = "x1" ; then
-echo "                    MPEG4 Part 2  :  enabled"
+if test "x${HAS_FFMPEG}" = "x1" ; then
+
+if test "x${FFMPEG_SOURCE}" = "x" ; then
+echo "                    MPEG4 Part 2  :  enabled (no rate control correction)"
 else
-echo "                    MPEG4 Part 2  :  disabled (needs ffmpeg sources)"
+echo "                    MPEG4 Part 2  :  enabled"
+fi
+else
+echo "                    MPEG4 Part 2  :  disabled (needs libavcodec)"
 fi
 echo ""
 echo "                         OS Type  :  $target_os"
