@@ -510,6 +510,20 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   width -= width % 16;
   height -= height % 16;
 
+  if ((profile==0) && (constraints == 0) && (level == 0)) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+    // Baseline, Level 1
+    profile = 0x42;
+    constraints = 0xC0;
+    level = 0x0A;
+#else
+    // Baseline, Level 3
+    profile = 0x42;
+    constraints = 0xC0;
+    level = 0x1E;
+#endif  
+  }
+
   if (!adjust_to_level (width, height, frameTime, targetBitrate,level))
     return 0;
 
@@ -602,6 +616,19 @@ static int encoder_set_options(
     }
     TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
 
+    if ((profile==0) && (constraints == 0) && (level == 0)) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+      // Baseline, Level 1
+      profile = 0x42;
+      constraints = 0xC0;
+      level = 0x0A;
+#else
+      // Baseline, Level 3
+      profile = 0x42;
+      constraints = 0xC0;
+      level = 0x1E;
+#endif  
+  }
     if (!adjust_bitrate_to_level (targetBitrate, level))
       return 0;
 
