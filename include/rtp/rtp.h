@@ -847,6 +847,7 @@ class RTP_UDP;
 class RTP_FormatHandler 
 {
   public:
+    virtual ~RTP_FormatHandler() {}
     virtual void OnStart(RTP_Session & _rtpSession);
     virtual void OnFinish();
     virtual RTP_Session::SendReceiveStatus OnSendData(RTP_DataFrame & frame);
@@ -1111,7 +1112,7 @@ class RTP_UDP : public RTP_Session
     virtual int GetControlSocketHandle() const
     { return controlSocket != NULL ? controlSocket->GetHandle() : -1; }
 
-    friend RTP_FormatHandler;
+    friend class RTP_FormatHandler;
 
     virtual int WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);
     virtual int Internal_WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlSocket, const PTimeInterval & timer);

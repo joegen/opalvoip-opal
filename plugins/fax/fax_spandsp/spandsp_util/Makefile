@@ -1,7 +1,7 @@
 # CXXFLAGS += -DSPANDSP_VER3
 
 LDFLAGS	=-L /usr/local/lib -lspandsp
-CXXFLAGS  += -g
+CXXFLAGS  += -g -D SPANDSP_VER3
 LD	= g++
 
 spandsp_util:	spandsp_util.o spandsp_if.o
