@@ -153,7 +153,9 @@ static int decoder_get_output_data_size ( const PluginCodec_Definition * codec, 
                                    void *, unsigned *);
 
 ///////////////////////////////////////////////////////////////////////////////
-
+static int merge_profile_level_h264(char ** result, const char * dest, const char * src);
+static void free_string(char * str);
+///////////////////////////////////////////////////////////////////////////////
 
 static struct PluginCodec_information licenseInfo = {
   1143692893,                                                   // timestamp = Thu 30 Mar 2006 04:28:13 AM UTC
@@ -227,7 +229,7 @@ static struct PluginCodec_Option const packetizationMode =
   PluginCodec_EqualMerge,               // Merge mode
   "1",                                  // Initial value
   "packetization-mode",                 // FMTP option name 
-  "0",                                  // FMTP default value ?
+  "0",                                  // FMTP default value
   0,
   "1",
   "2"
@@ -238,10 +240,15 @@ static struct PluginCodec_Option const RFC3984profileLevel =
   PluginCodec_StringOption,             // Option type
   "CAP RFC3894 Profile Level",          // User visible name
   false,                                // User Read/Only flag
-  PluginCodec_NoMerge,                  // Merge mode
+  PluginCodec_CustomMerge,              // Merge mode
   "42C01E",                             // Initial value (Baseline, Level 3)
   "profile-level-id",                   // FMTP option name 
   "000000",                             // FMTP default value
+  0,
+  "000000",
+  "58F033",
+  merge_profile_level_h264,             // Function to do merge
+  free_string                           // Function to free memory in string
 };
 
 static struct PluginCodec_Option const * const optionTable[] = {
