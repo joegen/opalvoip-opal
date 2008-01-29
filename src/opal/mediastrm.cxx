@@ -1000,7 +1000,8 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   frame->height = height;
 
   PINDEX bytesReturned = size - sizeof(OpalVideoTranscoder::FrameHeader);
-  if (!inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned))
+  unsigned flags = 0;
+  if (!inputDevice->GetFrameData((BYTE *)OPAL_VIDEO_FRAME_DATA_PTR(frame), &bytesReturned, flags))
     return false;
 
   PTimeInterval currentGrabTime = PTimer::Tick();
@@ -1013,7 +1014,7 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (outputDevice == NULL)
     return true;
 
-  return outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true);
+  return outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, flags);
 }
 
 
