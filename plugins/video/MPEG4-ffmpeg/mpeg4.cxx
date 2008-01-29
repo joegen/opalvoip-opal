@@ -326,6 +326,7 @@ class MPEG4EncoderContext
     unsigned int _frameHeight;
 
     unsigned long _lastTimeStamp;
+    bool _isIFrame;
 
     enum StdSize { 
       SQCIF, 
@@ -431,6 +432,8 @@ MPEG4EncoderContext::MPEG4EncoderContext()
 
   _frameNum = 0;
   _lastPktOffset = 0;
+  
+  _isIFrame = false;
 
   if (!FFMPEGLibraryInstance.IsLoaded()){
     return;
@@ -902,11 +905,12 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
             ResetBitCounter(8); // Fix ffmpeg rate control
 #endif
             _throttle->record(total); // record frames for throttler
+	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, _encFrameLen );
         }
 
     }
 
-    if (mpeg4IsIframe (_encFrameBuffer, _encFrameLen ))
+    if (_isIFrame)
       flags |= PluginCodec_ReturnCoderIFrame;
 
     // _packetSizes should not be empty unless we've been throttled
