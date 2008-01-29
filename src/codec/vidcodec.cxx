@@ -96,7 +96,7 @@ OpalVideoTranscoder::OpalVideoTranscoder(const OpalMediaFormat & inputMediaForma
   : OpalTranscoder(inputMediaFormat, outputMediaFormat)
   , inDataSize(2048)
   , outDataSize(2048)
-  , forceIFrame(false)
+  , forceIFrame(true)
 {
 }
 
