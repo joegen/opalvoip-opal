@@ -875,7 +875,7 @@ BOOL H323EndPoint::ParsePartyName(const PString & _remoteParty,
           url = PURL(remoteParty, GetPrefixName());
         }
         else
-          return FALSE
+          return FALSE;
       }
     }
 
