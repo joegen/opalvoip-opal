@@ -1011,6 +1011,10 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   marker = true;
   length = bytesReturned + sizeof(PluginCodec_Video_FrameHeader);
 
+  if ((flags & PluginCodec_CoderForceIFrame) != 0) {
+    ExecuteCommand(OpalVideoUpdatePicture());
+  }
+
   if (outputDevice == NULL)
     return true;
 
