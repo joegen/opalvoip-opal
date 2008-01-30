@@ -216,6 +216,10 @@ OpalConnection::OpalConnection(OpalCall & call,
     PString id((*stringOptions)("Call-Identifier"));
     if (!id.IsEmpty())
       callIdentifier = PGloballyUniqueID(id);
+
+    id = (*stringOptions)("enableinbanddtmf");
+    if (!id.IsEmpty())
+      detectInBandDTMF = id *= "true";
   }
 }
 
@@ -872,9 +876,7 @@ void OpalConnection::OnUserInputInlineRFC2833(OpalRFC2833Info & info, INT)
 
 void OpalConnection::OnUserInputInlineCiscoNSE(OpalRFC2833Info & /*info*/, INT)
 {
-  cout << "Received NSE event" << endl;
-  //if (!info.IsToneStart())
-  //  OnUserInputTone(info.GetTone(), info.GetDuration()/8);
+  PTRACE(3, "OPAL\tNSE event received");
 }
 
 #if P_DTMF
@@ -988,7 +990,6 @@ void OpalConnection::SetSecurityData(void *data)
 {
   securityData = data;
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 

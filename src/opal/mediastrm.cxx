@@ -518,6 +518,37 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
   return false;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+
+OpalSinkMediaStream::OpalSinkMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
+: OpalNullMediaStream(conn, mediaFormat, sessionID, isSource)
+{
+}
+
+PBoolean OpalSinkMediaStream::ReadData(
+      BYTE * /*data*/,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+)
+{
+  length = size;
+  return true;
+}
+
+PBoolean OpalSinkMediaStream::WriteData(
+      const BYTE * /*data*/,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+)
+{
+  written = length;
+  return true;
+}
+
+PBoolean OpalSinkMediaStream::RequiresPatch() const
+{
+  return true;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

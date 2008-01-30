@@ -463,17 +463,23 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
 {
   PTRACE(3, "OpalMan\tOn incoming connection " << connection);
 
-  if (!OnIncomingConnection(connection))
+  if (!OnIncomingConnection(connection)) {
+    delete stringOptions;
     return PFalse;
+  }
 
-  if (!OnIncomingConnection(connection, options))
+  if (!OnIncomingConnection(connection, options)) {
+    delete stringOptions;
     return PFalse;
+  }
 
   OpalCall & call = connection.GetCall();
 
   // See if we already have a B-Party in the call. If not, make one.
-  if (call.GetOtherPartyConnection(connection) != NULL)
+  if (call.GetOtherPartyConnection(connection) != NULL) {
+    delete stringOptions;
     return PTrue;
+  }
 
   // Use a routing algorithm to figure out who the B-Party is, then make a connection
   PINDEX tableEntry = 0;
@@ -491,6 +497,7 @@ PBoolean OpalManager::OnIncomingConnection(OpalConnection & connection, unsigned
   }
 
   PTRACE(3, "OpalMan\tCould not route connection " << connection);
+  delete stringOptions;
   return false;
 }
 
