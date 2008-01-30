@@ -178,10 +178,12 @@ class OpalPluginMediaOption : public base
 OpalPluginControl::OpalPluginControl(const PluginCodec_Definition * def, const char * name)
   : codecDef(def)
   , fnName(name)
-  , controlDef(def->codecControls)
+  , controlDef(NULL)
 {
-  if (controlDef == NULL)
+  if (codecDef == NULL || codecDef->codecControls == NULL || name == NULL)
     return;
+
+  controlDef = codecDef->codecControls;
 
   while (controlDef->name != NULL) {
     if (strcasecmp(controlDef->name, name) == 0 && controlDef->control != NULL)
@@ -191,7 +193,6 @@ OpalPluginControl::OpalPluginControl(const PluginCodec_Definition * def, const c
 
   controlDef = NULL;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -946,16 +947,20 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
 {
   dstList.RemoveAll();
 
+//#define OUT_SIZE	(576-20-16-12)
+#define OUT_SIZE	1000
+
   // get the size of the output buffer
   int outputDataSize = getOutputDataSizeControl.Call((void *)NULL, (unsigned *)NULL, context);
   if (outputDataSize <= 0)
-    outputDataSize = isEncoder ? PluginCodec_RTP_MaxPacketSize : (sizeof(PluginCodec_Video_FrameHeader) + GetOptimalDataFrameSize(PFalse));
+    outputDataSize = isEncoder ? (PluginCodec_RTP_MinHeaderSize + OUT_SIZE) : (sizeof(PluginCodec_Video_FrameHeader) + GetOptimalDataFrameSize(PFalse));
 
   unsigned flags;
 
   if (isEncoder) {
     bool firstPacketForFrame = true;
     do {
+
 
       // create the output buffer, outputDataSize is supposed to include the
       // RTP header size, so take that off as ctor adds it back.
@@ -965,23 +970,30 @@ PBoolean OpalPluginVideoTranscoder::ConvertFrames(const RTP_DataFrame & src, RTP
       // call the codec function
       unsigned int fromLen = src.GetSize();
       unsigned int toLen = dst->GetSize();
-      flags = forceIFrame ? PluginCodec_CoderForceIFrame : 0;
+      flags = (firstPacketForFrame && forceIFrame) ? PluginCodec_CoderForceIFrame : 0;
 
       if (!Transcode((const BYTE *)src, &fromLen, dst->GetPointer(), &toLen, &flags)) {
         delete dst;
         return PFalse;
       }
 
+if (firstPacketForFrame)
+PTRACE(1, "RTP\tFirst video encoder buffer of size " << outputDataSize << " filled with " << toLen);
+else if ((flags & PluginCodec_ReturnCoderLastFrame) != 0)
+PTRACE(1, "RTP\tLast video encoder buffer of size " << outputDataSize << " filled with " << toLen);
+else
+PTRACE(1, "RTP\tVideo encoder buffer of size " << outputDataSize << " filled with " << toLen);
+
       if (firstPacketForFrame) {
         if ((flags & PluginCodec_ReturnCoderIFrame) != 0) {
 #if PTRACING
           if (forceIFrame)
-            PTRACE(3, "OpalPlugin\tSending I-Frame in response to videoFastUpdate");
+            PTRACE(3, "OpalPlugin\tSent I-Frame in response to videoFastUpdate");
           else if (consecutiveIntraFrames < 10) {
             if (++consecutiveIntraFrames >= 10)
-              PTRACE(3, "OpalPlugin\tSending many consecutive I-Frames, assuming codec cannot do P-Frames");
+              PTRACE(3, "OpalPlugin\tSent many consecutive I-Frames, assuming codec cannot do P-Frames");
             else
-              PTRACE(4, "OpalPlugin\tSending I-Frame");
+              PTRACE(4, "OpalPlugin\tSent unsolicited I-Frame");
           }
 #endif
           forceIFrame = false;
