@@ -362,7 +362,7 @@ fi
 dnl ########################################################################
 dnl check for dynamic library code (dlopen and friends)
 
-HAS_LIBDL=0
+HAS_LIBDL=
 AC_CHECK_HEADERS([dlfcn.h], [HAS_DLFCN=yes], [HAS_DLFCN=no])
 if test "$HAS_DLFCN" = yes ; then
   AC_MSG_CHECKING(if dlopen is available)
@@ -383,19 +383,20 @@ dnl ########################################################################
 dnl MSWIN_DISPLAY video,Video
 dnl MSWIN_DEFINE  video,OPAL_VIDEO
 
-
+OPAL_VIDEO=
 AC_ARG_ENABLE(video,
        [  --disable-video         disable video codec support],
        video=$enableval)
 AC_MSG_CHECKING(video device support)
 if test "$video" = "yes" ; then
-  AC_SUBST(OPAL_VIDEO, 1)
+  OPAL_VIDEO=1
   AC_DEFINE(OPAL_VIDEO)
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
   rfc4175=no
 fi
+AC_SUBST(OPAL_VIDEO)
 
 
 dnl ########################################################################
@@ -403,17 +404,19 @@ dnl ########################################################################
 dnl MSWIN_DISPLAY sip,SIP support
 dnl MSWIN_DEFINE  sip,OPAL_SIP
 
+OPAL_SIP=
 AC_ARG_ENABLE(sip,
        [  --disable-sip           disable SIP protocol support],
        sip=$enableval)
 AC_MSG_CHECKING(SIP protocol)
 if test "$sip" = "yes" ; then
-  AC_SUBST(OPAL_SIP, 1)
-  AC_DEFINE(OPAL_SIP)
+  OPAL_SIP=1
+  AC_DEFINE(OPAL_SIP, 1)
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
 fi
+AC_SUBST(OPAL_SIP)
 
 
 dnl ########################################################################
@@ -421,21 +424,22 @@ dnl ########################################################################
 dnl MSWIN_DISPLAY h323,H.323 support
 dnl MSWIN_DEFINE  h323,OPAL_H323
 
+OPAL_H323=
 AC_ARG_ENABLE(h323,
        [  --disable-h323          disable H.323 protocol support],
        h323=$enableval)
 AC_MSG_CHECKING(H.323 protocol)
 if test "$h323" = "yes" ; then
-  AC_SUBST(OPAL_H323, 1)
+  OPAL_H323=1
   AC_DEFINE(OPAL_H323)
   AC_MSG_RESULT(enabled)
 else
-  AC_SUBST(OPAL_H323, 0)
+  OPAL_H323=0
   AC_MSG_RESULT(disabled (T.38, H.224, H.460 also disabled))
   h224=no
   h460=no
 fi
-AC_SUBST(OPAL_H323, $OPAL_H323)
+AC_SUBST(OPAL_H323)
 
 
 dnl ########################################################################
@@ -445,17 +449,19 @@ dnl IAX
 dnl MSWIN_DISPLAY iax2,IAX2 support
 dnl MSWIN_DEFINE  iax2,OPAL_IAX2
 
+OPAL_IAX2=
 AC_ARG_ENABLE(iax,
        [  --disable-iax           disable IAX2 protocol support],
        iax=$enableval)
 AC_MSG_CHECKING(IAX2 protocol)
 if test "$iax" = "yes" ; then
-  AC_SUBST(OPAL_IAX2, 1)
-  AC_DEFINE(OPAL_IAX2)
+  OPAL_IAX2=1
+  AC_DEFINE(OPAL_IAX2, 1)
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
 fi
+AC_SUBST(OPAL_IAX2)
 
 dnl ########################################################################
 dnl
@@ -464,17 +470,19 @@ dnl H.224
 dnl MSWIN_DISPLAY h224,H.224 support
 dnl MSWIN_DEFINE  h224,OPAL_H224APP
 
+OPAL_H224APP=
 AC_ARG_ENABLE(h224,
 		[  --disable-h224          disable H.224 protocol support],
 		h224=$enableval)
 AC_MSG_CHECKING(H224 protocol)
 if test "$h224" = "yes" ; then
-  AC_SUBST(OPAL_H224APP, 1)
   AC_DEFINE(OPAL_H224APP)
+  OPAL_H224APP=1
   AC_MSG_RESULT(enabled)
 else
   AC_MSG_RESULT(disabled)
 fi
+AC_SUBST(OPAL_H224APP)
 
 dnl ########################################################################
 dnl
@@ -483,19 +491,21 @@ dnl T.38
 dnl MSWIN_DISPLAY    t38,T.38
 dnl MSWIN_DEFINE     t38,OPAL_T38FAX
 
+OPAL_T38FAX=
 if test "$t38" = "yes" ; then
   AC_ARG_ENABLE(t38,
          [  --disable-t38           disable T.38 protocol support],
          t38=$enableval)
   AC_MSG_CHECKING(T.38 protocol)
   if test "$t38" = "yes" ; then
-    AC_SUBST(OPAL_T38FAX, 1)
+    OPAL_T38FAX=1
     AC_DEFINE(OPAL_T38FAX)
     AC_MSG_RESULT(enabled)
   else
     AC_MSG_RESULT(disabled)
   fi
 fi
+AC_SUBST(OPAL_T38FAX)
 
 
 dnl ########################################################################
@@ -513,13 +523,14 @@ if test "$h450" = "yes" ; then
          h450=$enableval)
   AC_MSG_CHECKING(H.450 support)
   if test "$h450" = "yes" ; then
-    AC_SUBST(OPAL_H450, 1)
+    OPAL_H450=1
     AC_DEFINE(OPAL_H450)
     AC_MSG_RESULT(enabled)
   else
     AC_MSG_RESULT(disabled)
   fi
 fi
+AC_SUBST(OPAL_H450)
 
 
 dnl ########################################################################
@@ -537,13 +548,14 @@ if test "$h460" = "yes" ; then
          h460=$enableval)
   AC_MSG_CHECKING(H.460 support)
   if test "$h460" = "yes" ; then
-    AC_SUBST(OPAL_H460, 1)
+    OPAL_H460=1
     AC_DEFINE(OPAL_H460)
     AC_MSG_RESULT(enabled)
   else
     AC_MSG_RESULT(disabled)
   fi
 fi
+AC_SUBST(OPAL_H460)
 
 
 dnl ########################################################################
