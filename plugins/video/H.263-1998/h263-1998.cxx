@@ -698,7 +698,7 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
     h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, 1);
     h263MPIList.addMPI(QCIF_WIDTH,  QCIF_HEIGHT,  1);
     h263MPIList.addMPI(CIF_WIDTH,   CIF_HEIGHT,   1);
-    h263MPIList.addMPI(CIF4_WIDTH,  QCIF4_HEIGHT, 1);
+    h263MPIList.addMPI(CIF4_WIDTH,  CIF4_HEIGHT, 1);
     h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, 1);
 #endif 
   }
