@@ -115,8 +115,46 @@ PBoolean OpalRFC2833Proto::SendToneAsync(char tone, unsigned duration)
 void OpalRFC2833Proto::SendAsyncFrame()
 {
   PWaitAndSignal m(mutex);
+
+  if (transmitState == TransmitIdle) {
+    asyncDurationTimer.Stop();
+    return;
+  }
+
+  if (!asyncDurationTimer.IsRunning()) {
+    transmitState = TransmitEnding;
+    asyncTransmitTimer.Stop();
+  }
+
   RTP_DataFrame frame;
-  TransmitPacket(frame);
+  frame.SetPayloadType(payloadType);
+  frame.SetPayloadSize(4);
+
+  {
+    BYTE * payload = frame.GetPayloadPtr();
+    payload[0] = transmitCode;
+
+    payload[1] = 7;  // Volume
+    if (transmitState == TransmitEnding) {
+      payload[1] |= 0x80;
+      transmitState = TransmitIdle;
+    }
+
+    unsigned duration;
+    if (asyncStart != PTimeInterval(0)) 
+      duration = (PTimer::Tick() - asyncStart).GetInterval();
+    else {
+      duration = 0;
+	    frame.SetMarker(PTrue);
+      asyncStart = PTimer::Tick();
+    }
+
+    payload[2] = (BYTE)(duration>>8);
+    payload[3] = (BYTE) duration    ;
+
+    PTRACE(4, "RFC2833\tSending packet with duration " << duration << " for code " << (int)transmitCode << " type " << ((transmitState == TransmitIdle) ? "end" : "cont"));
+  }
+
   if (rtpSession != NULL) {
     if (transmitTimestampSet)
       frame.SetTimestamp(transmitTimestamp);
@@ -150,30 +188,8 @@ PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
 
 void OpalRFC2833Proto::AsyncTimeout(PTimer &, INT)
 {
-  PWaitAndSignal m(mutex);
-  if (asyncDurationTimer.IsRunning()) 
-    SendAsyncFrame();
-  else {
-    EndTransmit();
-    SendAsyncFrame();
-    transmitTimestampSet = PFalse;
-    asyncTransmitTimer.Stop();
-  }
+  SendAsyncFrame();
 }
-
-PBoolean OpalRFC2833Proto::EndTransmit()
-{
-  PWaitAndSignal m(mutex);
-
-  if (transmitState != TransmitActive) {
-    PTRACE(1, "RFC2833\tAttempt to stop send tone while not sending.");
-    return PFalse;
-  }
-
-  transmitState = TransmitEnding;
-  return PTrue;
-}
-
 
 void OpalRFC2833Proto::OnStartReceive(char tone)
 {
@@ -197,13 +213,13 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   PWaitAndSignal m(mutex);
 
   if (frame.GetPayloadSize() < 4) {
-    PTRACE(2, "RFC2833\tIgnoring packet, too small.");
+    PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small.");
     return;
   }
 
   const BYTE * payload = frame.GetPayloadPtr();
   if (payload[0] >= sizeof(RFC2833Table1Events)-1) {
-    PTRACE(2, "RFC2833\tIgnoring packet, unsupported event.");
+    PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
     return;
   }
 
@@ -240,7 +256,6 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   OnEndReceive(receivedTone, receivedDuration, receiveTimestamp);
 }
 
-
 void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
 {
   PWaitAndSignal m(mutex);
@@ -251,41 +266,6 @@ void OpalRFC2833Proto::ReceiveTimeout(PTimer &, INT)
   receiveComplete = PTrue;
   PTRACE(3, "RFC2833\tTimeout tone=" << receivedTone << " duration=" << receivedDuration);
   OnEndReceive(receivedTone, receivedDuration, receiveTimestamp);
-}
-
-
-void OpalRFC2833Proto::TransmitPacket(RTP_DataFrame & frame)
-{
-  if (transmitState == TransmitIdle)
-    return;
-
-  PWaitAndSignal m(mutex);
-
-  frame.SetPayloadType(payloadType);
-  frame.SetPayloadSize(4);
-
-  BYTE * payload = frame.GetPayloadPtr();
-  payload[0] = transmitCode;
-
-  payload[1] = 7;  // Volume
-  if (transmitState == TransmitEnding) {
-    payload[1] |= 0x80;
-    transmitState = TransmitIdle;
-  }
-
-  unsigned duration;
-  if (asyncStart != PTimeInterval(0)) 
-    duration = (PTimer::Tick() - asyncStart).GetInterval();
-  else {
-    duration = 0;
-	  frame.SetMarker(PTrue);
-    asyncStart = PTimer::Tick();
-  }
-
-  payload[2] = (BYTE)(duration>>8);
-  payload[3] = (BYTE) duration    ;
-
-  PTRACE(4, "RFC2833\tSending packet with duration " << duration << " for code " << (int)transmitCode);
 }
 
 /////////////////////////////////////////////////////////////////////////////
