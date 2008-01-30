@@ -84,7 +84,6 @@ class OpalRFC2833Proto : public PObject {
     virtual PBoolean BeginTransmit(
       char tone  ///<  DTMF tone code
     );
-    virtual PBoolean EndTransmit();
 
     virtual void OnStartReceive(
       char tone
@@ -105,7 +104,6 @@ class OpalRFC2833Proto : public PObject {
 
   protected:
     void SendAsyncFrame();
-    void TransmitPacket(RTP_DataFrame & frame);
 
     OpalConnection & conn;
 
