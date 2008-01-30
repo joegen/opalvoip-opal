@@ -121,8 +121,10 @@ void OpalRFC2833Proto::SendAsyncFrame()
     if (transmitTimestampSet)
       frame.SetTimestamp(transmitTimestamp);
     rtpSession->WriteOOBData(frame);
-    if (!transmitTimestampSet)
-      transmitTimestamp = frame.GetTimestamp();
+    if (!transmitTimestampSet) {
+      transmitTimestamp    = frame.GetTimestamp();
+      transmitTimestampSet = PTrue;
+    } 
   }
 }
 
@@ -197,13 +199,13 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   PWaitAndSignal m(mutex);
 
   if (frame.GetPayloadSize() < 4) {
-    PTRACE(2, "RFC2833\tIgnoring packet, too small.");
+    PTRACE(2, "RFC2833\tIgnoring packet size " << frame.GetPayloadSize() << " - too small.");
     return;
   }
 
   const BYTE * payload = frame.GetPayloadPtr();
   if (payload[0] >= sizeof(RFC2833Table1Events)-1) {
-    PTRACE(2, "RFC2833\tIgnoring packet, unsupported event.");
+    PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
     return;
   }
 
