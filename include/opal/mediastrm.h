@@ -413,6 +413,52 @@ class OpalNullMediaStream : public OpalMediaStream
 
 };
 
+/**This class describes a media stream that creates no data and will silently accept anything provided
+  */
+class OpalSinkMediaStream : public OpalNullMediaStream
+{
+    PCLASSINFO(OpalNullMediaStream, OpalNullMediaStream);
+  public:
+  /**@name Construction */
+  //@{
+    /**Construct a new media stream for RTP sessions.
+      */
+    OpalSinkMediaStream(
+      OpalConnection & conn,
+      const OpalMediaFormat & mediaFormat, ///<  Media format for stream
+      unsigned sessionID,                  ///<  Session number for stream
+      bool isSource                        ///<  Is a source stream
+    );
+  //@}
+
+  /**@name Overrides of OpalMediaStream class */
+  //@{
+    /**Read raw media data from the source media stream.
+       The default behaviour does nothing and returns false.
+      */
+    virtual PBoolean ReadData(
+      BYTE * data,      ///<  Data buffer to read to
+      PINDEX size,      ///<  Size of buffer
+      PINDEX & length   ///<  Length of data actually read
+    );
+
+    /**Write raw media data to the sink media stream.
+       The default behaviour does nothing and returns false.
+      */
+    virtual PBoolean WriteData(
+      const BYTE * data,   ///<  Data to write
+      PINDEX length,       ///<  Length of data to read.
+      PINDEX & written     ///<  Length of data actually written
+    );
+	
+    /**Indicate if the media stream requires a OpalMediaPatch instance
+       The default behaviour returns false.
+    */
+    virtual PBoolean RequiresPatch() const;
+
+  //@}
+};
+
 
 /**This class describes a media stream that transfers data to/from a RTP
    session.

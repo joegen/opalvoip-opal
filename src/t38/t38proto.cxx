@@ -1256,24 +1256,6 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
     return PFalse;
   }
 
-/*
-  PString playDevice;
-  PString recordDevice;
-  PINDEX separator = remoteParty.FindOneOf("\n\t\\", prefixLength);
-  if (separator == P_MAX_INDEX)
-    playDevice = recordDevice = remoteParty.Mid(prefixLength);
-  else {
-    playDevice = remoteParty(prefixLength+1, separator-1);
-    recordDevice = remoteParty.Mid(separator+1);
-  }
-
-  if (!SetDeviceName(playDevice, PSoundChannel::Player, playDevice))
-    playDevice = soundChannelPlayDevice;
-  if (!SetDeviceName(recordDevice, PSoundChannel::Recorder, recordDevice))
-    recordDevice = soundChannelRecordDevice;
-
-*/
-
   PSafePtr<OpalFaxConnection> connection = PSafePtrCast<OpalConnection, OpalFaxConnection>(GetConnectionWithLock(MakeToken()));
   if (connection != NULL)
     return PFalse;
@@ -1300,6 +1282,7 @@ OpalFaxConnection::OpalFaxConnection(OpalCall & call, OpalFaxEndPoint & ep, cons
   phase = SetUpPhase;
 
   forceFaxAudio = (stringOptions == NULL) || stringOptions->Contains("Force-Fax-Audio");
+  detectInBandDTMF = true;
 }
 
 OpalFaxConnection::~OpalFaxConnection()
@@ -1332,9 +1315,14 @@ PBoolean OpalFaxConnection::SetUpConnection()
   // Check if we are A-Party in thsi call, so need to do things differently
   if (ownerCall.GetConnection(0) == this) {
     phase = SetUpPhase;
-    if (!OnIncomingConnection(0, NULL)) {
-      Release(EndedByCallerAbort);
-      return PFalse;
+
+    {
+      StringOptions * otherStringOptions = new StringOptions;
+      otherStringOptions->SetAt("enableinbanddtmf", "true");
+      if (!OnIncomingConnection(0, otherStringOptions)) {
+        Release(EndedByCallerAbort);
+        return PFalse;
+      }
     }
 
     PTRACE(2, "FAX\tOutgoing call routed to " << ownerCall.GetPartyB() << " for " << *this);
@@ -1501,8 +1489,12 @@ OpalT38Connection::OpalT38Connection(OpalCall & call, OpalT38EndPoint & ep, cons
 OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & mediaFormat, unsigned sessionID, PBoolean isSource)
 {
   // if creating an audio session, use a NULL stream
-  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) 
-    return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
+  if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
+    if (isSource)
+      return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
+    else
+      return new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
+  }
 
   // if creating a data stream, see what type it is
   else if ((mediaFormat.GetMediaType() == OpalMediaType::Fax()) && (mediaFormat == OpalT38)) 

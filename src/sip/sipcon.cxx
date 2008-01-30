@@ -439,12 +439,12 @@ RTP_UDP *SIPConnection::OnUseRTPSession(const unsigned rtpSessionId, const OpalT
 
 PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSessions, SDPSessionDescription & sdpOut)
 {
+  bool sdpOK = false;
+
   if (isAnswerSDP) {
     needReINVITE = false;
     isAnswerSDP = originalInvite != NULL && originalInvite->HasSDP();
   }
-
-  bool sdpOK = false;
 
   if (isAnswerSDP) {
     const SDPMediaDescriptionList & sdpIn = originalInvite->GetSDP().GetMediaDescriptions();
@@ -456,41 +456,40 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
   }
   else
   {
+    // construct original session offer as per RFC 3261, para 14.2
+    // check channel start information to see what needs to be started
 
-  // construct original session offer as per RFC 3261, para 14.2
-  // check channel start information to see what needs to be started
-
-  // this weird looking loop does the following:
-  //   a) start at session ID 1
-  //   b) find media type with a matching default session ID (if any)
-  //   c) find channel autostart information for first unused channel with that media type and
-  //      offer the SDP for that type
-  //   d) increment the session ID and go back to b)
-  //   
-  unsigned sessionId = 1;
-  OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
-  size_t mediaTypesToAdd = keys.size();
-  while (mediaTypesToAdd > 0) {
-    for (OpalMediaTypeFactory::KeyList_T::iterator mediaType = keys.begin(); mediaType != keys.end(); ++mediaType) {
-      OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(*mediaType);
-      if (defn != NULL && sessionId == defn->GetPreferredSessionId()) {
-        PWaitAndSignal m(channelInfoMap.mutex);
-        for (ChannelInfoMap::iterator channelInfo = channelInfoMap.begin(); channelInfo != channelInfoMap.end(); ++channelInfo) {
-          const ChannelInfo & info = channelInfo->second;
-          if (info.channelId == sessionId) {
-            if (OfferSDPMediaDescription(*mediaType, info.channelId, rtpSessions, sdpOut)) {
-              sdpOK = true;
+    // this weird looking loop does the following:
+    //   a) start at session ID 1
+    //   b) find media type with a matching default session ID (if any)
+    //   c) find channel autostart information for first unused channel with that media type and
+    //      offer the SDP for that type
+    //   d) increment the session ID and go back to b)
+    //   
+    unsigned sessionId = 1;
+    OpalMediaTypeFactory::KeyList_T keys = OpalMediaTypeFactory::GetKeyList();
+    size_t mediaTypesToAdd = keys.size();
+    while (mediaTypesToAdd > 0) {
+      for (OpalMediaTypeFactory::KeyList_T::iterator mediaType = keys.begin(); mediaType != keys.end(); ++mediaType) {
+        OpalMediaTypeDefinition * defn = OpalMediaTypeFactory::CreateInstance(*mediaType);
+        if (defn != NULL && sessionId == defn->GetPreferredSessionId()) {
+          PWaitAndSignal m(channelInfoMap.mutex);
+          for (ChannelInfoMap::iterator channelInfo = channelInfoMap.begin(); channelInfo != channelInfoMap.end(); ++channelInfo) {
+            const ChannelInfo & info = channelInfo->second;
+            if (info.channelId == sessionId) {
+              if (OfferSDPMediaDescription(*mediaType, info.channelId, rtpSessions, sdpOut)) {
+                sdpOK = true;
+              }
+              break;
             }
-            break;
           }
+          --mediaTypesToAdd;
+          break;
         }
-        --mediaTypesToAdd;
-        break;
       }
-    }
 
-    ++sessionId;
-  }
+      ++sessionId;
+    }
   }
 
   needReINVITE = true;

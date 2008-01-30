@@ -1410,7 +1410,7 @@ void RTP_Session::SetFormat(const PString & newFormat)
     delete rtpHandler;
   }
 
-  PTRACE_IF(!rtpFormat.IsEmpty(), 2, "RTP\tChanged RTP session format from '" << rtpFormat << "' to '" << newFormat << "'");
+  PTRACE_IF(2, !rtpFormat.IsEmpty(), "RTP\tChanged RTP session format from '" << rtpFormat << "' to '" << newFormat << "'");
 
   rtpFormat  = newFormat;
   rtpHandler = newHandler;
