@@ -110,7 +110,6 @@ endif
 ifneq (,$(wildcard src/h224))
 H224_AVAIL = 1
 VPATH_CXX += $(OPAL_SRCDIR)/h224
-
 endif
 
 VPATH_C := $(OPAL_SRCDIR)/codec
@@ -131,6 +130,7 @@ SOURCES := $(OPAL_SRCDIR)/opal/manager.cxx \
            $(OPAL_SRCDIR)/opal/opalmixer.cxx \
            $(OPAL_SRCDIR)/opal/mediatype.cxx \
            $(OPAL_SRCDIR)/opal/rtpconn.cxx \
+           $(OPAL_SRCDIR)/opal/rtpep.cxx \
 	   $(OPAL_SRCDIR)/opal/opalglobalstatics.cxx \
            $(OPAL_SRCDIR)/rtp/rtp.cxx \
            $(OPAL_SRCDIR)/rtp/jitter.cxx \
@@ -211,16 +211,20 @@ SOURCES += $(OPAL_SRCDIR)/t120/t120proto.cxx \
            $(OPAL_SRCDIR)/t120/h323t120.cxx \
            $(OPAL_SRCDIR)/t120/x224.cxx \
            $(OPAL_SRCDIR)/t38/t38proto.cxx \
+           $(OPAL_SRCDIR)/t38/sipt38.cxx \
            $(OPAL_SRCDIR)/t38/h323t38.cxx
 
-ifeq ($(OPAL_H224), 1)
+ifeq ($(OPAL_H224APP), 1)
 ifdef H224_AVAIL
-SOURCES += $(OPAL_SRCDIR)/h224/h323h224.cxx
+SOURCES += $(OPAL_SRCDIR)/h224/h323h224.cxx \
+
 endif
 endif
 
 endif
+# OPAL_H323
 endif
+# H323_AVAIL
 
 ##################
 # IAX2 files
@@ -266,7 +270,7 @@ endif
 ##################
 # H.224 files
 
-ifeq ($(OPAL_H224), 1)
+ifeq ($(OPAL_H224APP), 1)
 ifdef H224_AVAIL
 
 SOURCES += $(OPAL_SRCDIR)/h224/q922.cxx \
