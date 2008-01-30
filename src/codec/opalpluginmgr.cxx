@@ -178,10 +178,12 @@ class OpalPluginMediaOption : public base
 OpalPluginControl::OpalPluginControl(const PluginCodec_Definition * def, const char * name)
   : codecDef(def)
   , fnName(name)
-  , controlDef(def->codecControls)
+  , controlDef(NULL)
 {
-  if (controlDef == NULL)
+  if (codecDef == NULL || codecDef->codecControls == NULL || name == NULL)
     return;
+
+  controlDef = codecDef->codecControls;
 
   while (controlDef->name != NULL) {
     if (strcasecmp(controlDef->name, name) == 0 && controlDef->control != NULL)
