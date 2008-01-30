@@ -86,6 +86,14 @@ public:
     return (_frame[1] & 0x80);
   }
 
+  unsigned GetSequenceNumber () {
+    if (_frameLen < 4)
+      return 0;
+    return (_frame[2] << 8) + _frame[3];
+  }
+				  
+
+
   void SetMarker (bool set) {
     if (_frameLen < 2) 
       return;

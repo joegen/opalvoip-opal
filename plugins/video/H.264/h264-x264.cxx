@@ -478,7 +478,6 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  char* pEnd = NULL;
   unsigned profile = 66;
   unsigned constraints = 0;
   unsigned level = 51;
@@ -489,9 +488,9 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
 
   for (const char * const * option = *(const char * const * *)parm; *option != NULL; option += 2) {
       if (STRCMPI(option[0], "CAP RFC3894 Profile Level") == 0) {
-        profile     = (strtol(option[1]+1, &pEnd, 16) & 0xFF0000) >> 16;
-        constraints = (strtol(option[1]+1, &pEnd, 16) & 0x00FF00) >> 8;
-        level       = (strtol(option[1]+1, &pEnd, 16) & 0x0000FF);
+        profile     = (strtoul(option[1]+1, NULL, 16) & 0xFF0000) >> 16;
+        constraints = (strtoul(option[1]+1, NULL, 16) & 0x00FF00) >> 8;
+        level       = (strtoul(option[1]+1, NULL, 16) & 0x0000FF);
       }
       if (STRCMPI(option[0], PLUGINCODEC_OPTION_FRAME_WIDTH) == 0)
         width = atoi(option[1]);
@@ -509,6 +508,20 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   //it here in order to obtain optimal compression results
   width -= width % 16;
   height -= height % 16;
+
+  if ((profile==0) && (constraints == 0) && (level == 0)) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+    // Baseline, Level 1
+    profile = 0x42;
+    constraints = 0xC0;
+    level = 0x0A;
+#else
+    // Baseline, Level 3
+    profile = 0x42;
+    constraints = 0xC0;
+    level = 0x1E;
+#endif  
+  }
 
   if (!adjust_to_level (width, height, frameTime, targetBitrate,level))
     return 0;
@@ -570,7 +583,6 @@ static int encoder_set_options(
   if (parmLen == NULL || *parmLen != sizeof(const char **)) 
     return 0;
 
-  char* pEnd = NULL;
   unsigned profile = 66;
   unsigned constraints = 0;
   unsigned level = 51;
@@ -580,9 +592,9 @@ static int encoder_set_options(
     unsigned targetBitrate = 64000;
     for (i = 0; options[i] != NULL; i += 2) {
       if (STRCMPI(options[i], "CAP RFC3894 Profile Level") == 0) {
-        profile     = (strtol(options[i+1]+1, &pEnd, 16) & 0xFF0000) >> 16;
-        constraints = (strtol(options[i+1]+1, &pEnd, 16) & 0x00FF00) >> 8;
-        level       = (strtol(options[i+1]+1, &pEnd, 16) & 0x0000FF);
+        profile     = (strtoul(options[i+1]+1, NULL, 16) & 0xFF0000) >> 16;
+        constraints = (strtoul(options[i+1]+1, NULL, 16) & 0x00FF00) >> 8;
+        level       = (strtoul(options[i+1]+1, NULL, 16) & 0x0000FF);
       }
       if (STRCMPI(options[i], PLUGINCODEC_OPTION_TARGET_BIT_RATE) == 0)
          targetBitrate = atoi(options[i+1]);
@@ -602,6 +614,19 @@ static int encoder_set_options(
     }
     TRACE(4, "H264\tCap\tProfile and Level: " << profile << ";" << constraints << ";" << level);
 
+    if ((profile==0) && (constraints == 0) && (level == 0)) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+      // Baseline, Level 1
+      profile = 0x42;
+      constraints = 0xC0;
+      level = 0x0A;
+#else
+      // Baseline, Level 3
+      profile = 0x42;
+      constraints = 0xC0;
+      level = 0x1E;
+#endif  
+  }
     if (!adjust_bitrate_to_level (targetBitrate, level))
       return 0;
 
@@ -645,6 +670,68 @@ static int codec_decoder(const struct PluginCodec_Definition *,
 static int decoder_get_output_data_size(const PluginCodec_Definition * codec, void *, const char *, void *, unsigned *)
 {
   return sizeof(PluginCodec_Video_FrameHeader) + ((codec->parm.video.maxFrameWidth * codec->parm.video.maxFrameHeight * 3) / 2);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+static int merge_profile_level_h264(char ** result, const char * dest, const char * src)
+{
+  // c0: obbeys A.2.1 Baseline
+  // c1: obbeys A.2.2 Main
+  // c2: obbeys A.2.3, Extended
+  // c3: if profile_idc profile = 66, 77, 88, and level =11 and c3: obbeys annexA for level 1b
+
+  unsigned srcProfile     = (strtoul(src, NULL, 16) & 0xFF0000) >> 16;
+  unsigned srcConstraints = (strtoul(src, NULL, 16) & 0x00FF00) >> 8;
+  unsigned srcLevel       = (strtoul(src, NULL, 16) & 0x0000FF);
+
+  unsigned dstProfile     = (strtoul(dest, NULL, 16) & 0xFF0000) >> 16;
+  unsigned dstConstraints = (strtoul(dest, NULL, 16) & 0x00FF00) >> 8;
+  unsigned dstLevel       = (strtoul(dest, NULL, 16) & 0x0000FF);
+  
+  switch (srcLevel) {
+    case 10:
+      srcLevel = 8;
+      break;
+    default:
+      break;
+  }
+
+  switch (dstLevel) {
+    case 10:
+      dstLevel = 8;
+      break;
+    default:
+      break;
+  }
+
+  if (dstProfile > srcProfile) {
+    dstProfile = srcProfile;
+    dstConstraints = srcConstraints;
+  }
+
+  if (dstLevel > srcLevel)
+    dstLevel = srcLevel;
+
+  switch (dstLevel) {
+    case 8:
+      dstLevel = 10;
+      break;
+    default:
+      break;
+  }
+
+
+  char buffer[10];
+  sprintf(buffer, "%x", (dstProfile<<16)|(dstConstraints<<8)|(dstLevel));
+  
+  *result = strdup(buffer);
+
+  return true;
+}
+
+static void free_string(char * str)
+{
+  free(str);
 }
 
 /////////////////////////////////////////////////////////////////////////////
