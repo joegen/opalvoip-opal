@@ -43,12 +43,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TigerJet LID", "..\..\plugi
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "USB HID LID", "..\..\plugins\LID\USB\USB_2005.vcproj", "{3FCBA070-C605-4EE5-B078-E2461F792B36}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ffmpeg H.263 Video Codec", "..\..\plugins\video\H.263-ffmpeg\h263ffmpeg_2005.vcproj", "{3716C952-D6E0-40C2-B132-4F6D1636D31B}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
@@ -234,18 +228,6 @@ Global
 		{9A4E2793-1D97-4B0C-BCFD-130136990E35}.Release|Win32.Build.0 = Release|Win32
 		{9A4E2793-1D97-4B0C-BCFD-130136990E35}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
 		{9A4E2793-1D97-4B0C-BCFD-130136990E35}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Debug|Win32.ActiveCfg = Debug|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Debug|Win32.Build.0 = Debug|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Debug|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Debug|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.No Trace|Win32.ActiveCfg = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.No Trace|Win32.Build.0 = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.No Trace|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.No Trace|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Release|Win32.ActiveCfg = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Release|Win32.Build.0 = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Release|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Release|Win32
-		{3FCBA070-C605-4EE5-B078-E2461F792B36}.Release|Windows Mobile 6 Professional SDK (ARMV4I).ActiveCfg = Release|Win32
 		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Debug|Win32.ActiveCfg = Debug|Win32
 		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Debug|Win32.Build.0 = Debug|Win32
 		{3716C952-D6E0-40C2-B132-4F6D1636D31B}.Debug|Windows Mobile 5.0 Pocket PC SDK (ARMV4I).ActiveCfg = Debug|Win32

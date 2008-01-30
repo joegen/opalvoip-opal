@@ -87,6 +87,7 @@ extern "C" {
 // We'll pull them in from their locations in the ffmpeg source tree,
 // but it would be possible to get them all from /usr/include/ffmpeg
 // with #include <ffmpeg/...h>.
+#ifdef WITH_FFMPEG_SRC
 #include <libavutil/common.h>
 #include <libavcodec/avcodec.h>
 #include <libavutil/avutil.h>
@@ -96,6 +97,10 @@ extern "C" {
 #include <libavutil/intreadwrite.h>
 #include <libavutil/bswap.h>
 #include <libavcodec/mpegvideo.h>
+
+#else /* WITH_FFMPEG_SRC */
+#include <ffmpeg/avcodec.h>
+#endif /* WITH_FFMPEG_SRC */
 }
 
 #define RTP_DYNAMIC_PAYLOAD  96
@@ -135,12 +140,13 @@ const static struct mpeg4_profile_level {
     unsigned maxVideoPacketLength; /* max. video packet length (bits) */
     long unsigned bitrate;
 } mpeg4_profile_levels[] = {
-    {   0, "Simple",                     1, 0, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 }, // Streaming Video Profile Amendment
     {   1, "Simple",                     1, 1, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
     {   2, "Simple",                     1, 2, 1,   792,   396,   5940,      0,  40,  40,  4096,   128000 },
     {   3, "Simple",                     1, 3, 1,   792,   396,  11880,      0,  40,  40,  8192,   384000 },
     {   4, "Simple",                     1, 4, 1,  2400,  1200,  36000,      0,  80,  80, 16384,  4000000 }, // is really 4a
     {   5, "Simple",                     1, 5, 1,  3240,  1620,  40500,      0, 112, 112, 16384,  8000000 },
+    {   8, "Simple",                     1, 0, 1,   198,    99,   1485,      0,  10,  10,  2048,    64000 },
+    {   9, "Simple",                     1, 0, 1,   198,    99,   1485,      0,  20,  20,  2048,   128000 }, // 0b
     {  17, "Simple Scalable",            2, 1, 1,  1782,   495,   7425,      0,  40,  40,  2048,   128000 },
     {  18, "Simple Scalable",            2, 2, 1,  3168,   792,  23760,      0,  40,  40,  4096,   256000 },
     {  33, "Core",                       3, 1, 4,   594,   198,   5940,   2970,  16,  16,  4096,   384000 },
@@ -207,13 +213,35 @@ static void logCallbackFFMPEG (void* v, int level, const char* fmt , va_list arg
       case AV_LOG_INFO:  severity = 4; break;
       case AV_LOG_DEBUG: severity = 4; break;
     }
-    AVClass * avc = *(AVClass**) v;
     snprintf(buffer, sizeof(buffer), "MPEG4\tFFMPEG\t");
     vsprintf(buffer + strlen(buffer), fmt, arg);
     buffer[strlen(buffer)-1] = 0;
     TRACE (severity, buffer);
   }
 }
+    
+
+
+static bool mpeg4IsIframe (BYTE * frameBuffer, unsigned int frameLen )
+{
+  bool isIFrame = false;
+  unsigned i = 0;
+  while ((i+4)<= frameLen) {
+    if ((frameBuffer[i] == 0) && (frameBuffer[i+1] == 0) && (frameBuffer[i+2] == 1)) {
+      if (frameBuffer[i+3] == 0xb0)
+        TRACE(4, "Found visual_object_sequence_start_code, Profile/Level is " << (unsigned) frameBuffer[i+4]);
+      if (frameBuffer[i+3] == 0xb6) {
+        unsigned vop_coding_type = (unsigned) ((frameBuffer[i+4] & 0xC0) >> 6);
+        TRACE(4, "Found vop_start_code, is vop_coding_type is " << vop_coding_type );
+        if (vop_coding_type == 0)
+          isIFrame = true;
+      }
+    }
+    i++;	
+  }
+  return isIFrame;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // define the encoding context
@@ -233,7 +261,6 @@ class MPEG4EncoderContext
     
     void SetIQuantFactor(float newFactor);
     void SetThrottle(bool enable);
-    void SetForceKeyframeUpdate(bool enable);
     void SetKeyframeUpdatePeriod(int interval);
     void SetMaxBitrate(int max);
     void SetFPS(int frameTime);
@@ -259,8 +286,8 @@ class MPEG4EncoderContext
     // Modifiable quantization factor.  Defaults to -0.8
     float _iQuantFactor;
 
-    // Automatic IFrame updates.  Defaults to false
-    bool _forceKeyframeUpdate;
+    // Max VBV buffer size in bits.
+    unsigned _maxBufferSize;
 
     // Interval in seconds between forced IFrame updates if enabled
     int _keyframeUpdatePeriod;
@@ -299,7 +326,7 @@ class MPEG4EncoderContext
     unsigned int _frameHeight;
 
     unsigned long _lastTimeStamp;
-    time_t _lastKeyframe;
+    bool _isIFrame;
 
     enum StdSize { 
       SQCIF, 
@@ -385,8 +412,7 @@ class MPEG4EncoderContext
 //
 
 MPEG4EncoderContext::MPEG4EncoderContext() 
-:   _forceKeyframeUpdate(false),
-    _doThrottle(false),
+:   _doThrottle(false),
     _encFrameBuffer(NULL),
     _rawFrameBuffer(NULL), 
     _avcodec(NULL),
@@ -400,13 +426,15 @@ MPEG4EncoderContext::MPEG4EncoderContext()
   _videoQMin = 2;
   _videoTSTO = 10;
   _iQuantFactor = -0.8f;
+  _maxBufferSize = 112 * 16384;
 
-  _keyframeUpdatePeriod = 125; // 125 frames between forced keyframes, if enabled
+  _keyframeUpdatePeriod = 0; 
 
   _frameNum = 0;
   _lastPktOffset = 0;
-  _lastKeyframe = time(NULL);
   
+  _isIFrame = false;
+
   if (!FFMPEGLibraryInstance.IsLoaded()){
     return;
   }
@@ -469,15 +497,6 @@ void MPEG4EncoderContext::SetIQuantFactor(float newFactor) {
 
 void MPEG4EncoderContext::SetThrottle(bool throttle) {
     _doThrottle = throttle;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// Setter function for _forceKeyframeUpdate.  This is called from 
-// encoder_set_options if the "Force Keyframe Update" boolean option is passed
-
-void MPEG4EncoderContext::SetForceKeyframeUpdate(bool enable) {
-    _forceKeyframeUpdate = enable;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -550,7 +569,19 @@ void MPEG4EncoderContext::SetTSTO(unsigned tsto) {
 // when the "Encoding Quality" integer option is passed 
 
 void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
-//FIXME
+  int i = 0;
+  while (mpeg4_profile_levels[i].profileLevel) {
+    if (mpeg4_profile_levels[i].profileLevel == profileLevel)
+      break;
+    i++; 
+  }
+  
+  if (!mpeg4_profile_levels[i].profileLevel) {
+    TRACE(1, "MPEG4\tCap\tIllegal Profle-Level negotiated");
+    return;
+  }
+  _maxBufferSize = mpeg4_profile_levels[i].maxBufferSize * 16384;
+
 
 }
 
@@ -567,6 +598,7 @@ void MPEG4EncoderContext::SetProfileLevel (unsigned profileLevel) {
 //  affect quantization - rc_buffer_size/2.
 //
 
+#ifdef WITH_FFMPEG_SRC
 void MPEG4EncoderContext::ResetBitCounter(int spread) {
     MpegEncContext *s = (MpegEncContext *) _avcontext->priv_data;
     int64_t wanted_bits
@@ -578,7 +610,7 @@ void MPEG4EncoderContext::ResetBitCounter(int spread) {
     s->rc_context.buffer_index
         += (want_buffer - s->rc_context.buffer_index) / double(spread);
 }
-
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -611,8 +643,8 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->rc_buffer_aggressivity = 1.0f;
 
     // Ratecontrol buffer size, in bits. Usually 0.5-1 second worth.
-    // 224 kbyte is what VLC uses, and it seems to fix the quantization pulse.
-    _avcontext->rc_buffer_size = 224*1024*8;
+    // 224 kbyte is what VLC uses, and it seems to fix the quantization pulse (at Level 5)
+    _avcontext->rc_buffer_size = _maxBufferSize;
 
     // In MEncoder this defaults to 1/4 buffer size, but in ffmpeg.c it
     // defaults to 3/4. I think the buffer is supposed to stabilize at
@@ -630,7 +662,11 @@ void MPEG4EncoderContext::SetStaticEncodingParams(){
     _avcontext->time_base.den = _targetFPS;
 
     // Number of frames for a group of pictures
-    _avcontext->gop_size = _avcontext->time_base.den * 8;
+    if (_keyframeUpdatePeriod == 0)
+      _avcontext->gop_size = _targetFPS * 8;
+    else
+      _avcontext->gop_size = _keyframeUpdatePeriod;
+    
     _throttle->reset(_avcontext->time_base.den / 2);
 
     // Set the initial frame quality to something sane
@@ -800,7 +836,7 @@ void MPEG4EncoderContext::RtpCallback(AVCodecContext *priv_data, void *data,
         size -= max_rtp;
     }
 }
-
+		    
 /////////////////////////////////////////////////////////////////////////////
 //
 // The main encoding loop.  If there are no packets ready to be sent, generate
@@ -848,15 +884,10 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         memcpy(_rawFrameBuffer, OPAL_VIDEO_FRAME_DATA_PTR(header),
               _rawFrameLen);
 
-        time_t now = time(NULL);
         // Should the next frame be an I-Frame?
-        if ((_forceKeyframeUpdate
-             && (now - _lastKeyframe > (_keyframeUpdatePeriod / _targetFPS) ))
-            || (flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
+        if ((flags & PluginCodec_CoderForceIFrame) || (_frameNum == 0))
         {
-            _lastKeyframe = now;
             _avpicture->pict_type = FF_I_TYPE;
-            flags = PluginCodec_ReturnCoderIFrame;
         }
         else // No IFrame requested, let avcodec decide what to do
         {
@@ -867,14 +898,20 @@ int MPEG4EncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen,
         int total = FFMPEGLibraryInstance.AvcodecEncodeVideo
                             (_avcontext, _encFrameBuffer, _encFrameLen,
                              _avpicture);
-        TRACE(4, "MPEG4\tEncoded " << _encFrameLen << " bytes of YUV420P raw data into " << total << " bytes");
 
         if (total > 0) {
             _frameNum++; // increment the number of frames encoded
+#ifdef WITH_FFMPEG_SRC
             ResetBitCounter(8); // Fix ffmpeg rate control
+#endif
             _throttle->record(total); // record frames for throttler
+	    _isIFrame = mpeg4IsIframe(_encFrameBuffer, _encFrameLen );
         }
+
     }
+
+    if (_isIFrame)
+      flags |= PluginCodec_ReturnCoderIFrame;
 
     // _packetSizes should not be empty unless we've been throttled
     if(_packetSizes.empty() == false)
@@ -1066,6 +1103,14 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
   width -= width % 16;
   height -= height % 16;
 
+  if (profileLevel == 0) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+    profileLevel = 1;
+#else
+    profileLevel = 5;
+#endif
+  }
+
   if (!adjust_to_profile_level (width, height, frameTime, targetBitrate, profileLevel))
     return 0;
 
@@ -1110,7 +1155,6 @@ static int encoder_set_options(
   // 9) "Dynamic Encoding Quality" enables dynamic adjustment of encoding quality
   // 10) "Bandwidth Throttling" will turn on bandwidth throttling for the encoder
   // 11) "IQuantFactor" will update the quantization factor to a float value
-  // 12) "Force Keyframe Update": force the encoder to make an IFrame every 3s
 
   if (parm != NULL) {
     const char ** options = (const char **)parm;
@@ -1137,10 +1181,15 @@ static int encoder_set_options(
         context->SetThrottle(atoi(options[i+1]));
       else if(STRCMPI(options[i], "IQuantFactor") == 0)
         context->SetIQuantFactor(atof(options[i+1]));
-      else if(STRCMPI(options[i], "Force Keyframe Update") == 0)
-        context->SetForceKeyframeUpdate(atoi(options[i+1]));
     }
 
+    if (profileLevel == 0) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
+      profileLevel = 1;
+#else
+      profileLevel = 5;
+#endif
+    }
     if (!adjust_bitrate_to_profile_level (targetBitrate, profileLevel))
       return 0;
 
@@ -1358,7 +1407,7 @@ void MPEG4DecoderContext::SetStaticDecodingParams() {
 //
 // Check for errors on I-Frames.  If we found one, ask for another.
 //
-
+#ifdef WITH_FFMPEG_SRC
 bool MPEG4DecoderContext::DecoderError(int threshold) {
     if (_doError) {
         int errors = 0;
@@ -1374,7 +1423,7 @@ bool MPEG4DecoderContext::DecoderError(int threshold) {
     }
     return false;
 }
-
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1526,10 +1575,12 @@ bool MPEG4DecoderContext::DecodeFrames(const BYTE * src, unsigned & srcLen,
                          _encFrameBuffer, _lastPktOffset);
 
         if (len >= 0 && got_picture) {
+#ifdef WITH_FFMPEG_SRC
             if (DecoderError(_keyRefreshThresh)) {
                 // ask for an IFrame update, but still show what we've got
                 flags |= PluginCodec_ReturnCoderRequestIFrame;
             }
+#endif
             TRACE(4, "MPEG4\tDecoder\tDecoded " << len << " bytes" << ", Resolution: " << _avcontext->width << "x" << _avcontext->height);
             // If the decoding size changes on us, we can catch it and resize
             if (!_disableResize
@@ -1721,15 +1772,54 @@ enum
 
 static int MergeProfileAndLevelMPEG4(char ** result, const char * dest, const char * src)
 {
-  // Due to the "special case" where the value 8 is simple profile level zero,
+  // Due to the "special case" where the value 8 and 9 is simple profile level zero and zero b,
   // we cannot actually use a simple min merge!
   unsigned dstPL = strtoul(dest, NULL, 10);
   unsigned srcPL = strtoul(src, NULL, 10);
 
-  unsigned dstProfile = (dstPL>>4)&7;
-  unsigned dstLevel = dstPL&7;
-  unsigned srcProfile = (srcPL>>4)&7;
-  unsigned srcLevel = srcPL&7;
+  unsigned dstProfile;
+  int dstLevel;
+  unsigned srcProfile;
+  int srcLevel;
+
+  switch (dstPL) {
+    case 0:
+      dstProfile = 0;
+      dstLevel = -10;
+      break;
+    case 8:
+      dstProfile = 0;
+      dstLevel = -2;
+      break;
+    case 9:
+      dstProfile = 0;
+      dstLevel = -1;
+      break;
+    default:
+      dstProfile = (dstPL>>4)&7;
+      dstLevel = dstPL&7;
+      break;
+  }
+
+  switch (srcPL) {
+    case 0:
+      srcProfile = 0;
+      srcLevel = -10;
+      break;
+    case 8:
+      srcProfile = 0;
+      srcLevel = -2;
+      break;
+    case 9:
+      srcProfile = 0;
+      srcLevel = -1;
+      break;
+    default:
+      srcProfile = (srcPL>>4)&7;
+      srcLevel = srcPL&7;
+      break;
+  }
+
 
   if (dstProfile > srcProfile)
     dstProfile = srcProfile;
@@ -1737,7 +1827,22 @@ static int MergeProfileAndLevelMPEG4(char ** result, const char * dest, const ch
     dstLevel = srcLevel;
 
   char buffer[10];
-  sprintf(buffer, "%u", (dstProfile<<4)|(dstLevel > 0 ? dstLevel : 8));
+  
+  switch (dstLevel) {
+    case -10:
+      sprintf(buffer, "%u", (0));
+      break;
+    case -2:
+      sprintf(buffer, "%u", (8));
+      break;
+    case -1:
+      sprintf(buffer, "%u", (9));
+      break;
+    default:
+      sprintf(buffer, "%u", (dstProfile<<4)|(dstLevel));
+      break;
+  }
+  
   *result = strdup(buffer);
 
   return true;
@@ -1756,7 +1861,7 @@ static struct PluginCodec_Option const H245ProfileLevelMPEG4 =
   PluginCodec_CustomMerge,            // Merge mode
   "5",                                // Initial value (Simple Profile/Level 5)
   "profile-level-id",                 // FMTP option name
-  "1",                                // FMTP default value (Simple Profile/Level 1)
+  "0",                                // FMTP default value (Simple Profile/Level 1)
   H245_ANNEX_E_PROFILE_LEVEL,         // H.245 generic capability code and bit mask
   "0",                                // Minimum value
   "245",                              // Maximum value

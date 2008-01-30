@@ -308,14 +308,30 @@ if test "$HAS_DLFCN" = yes ; then
 fi
 AC_SUBST(HAS_LIBDL)
 
+PLUGIN_CFLAGS=
+
+AC_ARG_ENABLE(rfc-compliant-defaults,
+            AC_HELP_STRING([--disable-rfc-compliant-defaults],[Enable FFMPEG stack align hack for MPEG 4]), rfc_compliant_defaults=$enableval)
+if test "x${rfc_compliant_defaults}" != "xno" ; then
+    rfc_compliant_defaults=yes
+    PLUGIN_CFLAGS="${PLUGIN_CFLAGS} -DWITH_RFC_COMPLIANT_DEFAULTS"
+fi
+
+
+AC_ARG_ENABLE(ffmpeg-stackalign-hack,
+            AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
+
+
+AC_SUBST(PLUGIN_CFLAGS)
 
 dnl ########################################################################
 dnl
 dnl MPEG4 plugin - needs ffmpeg source tree
 dnl 
 
-HAS_MPEG4=0
 FFMPEG_SOURCE=
+FFMPEG_CFLAGS=
+
 AC_MSG_CHECKING(MPEG4 plugin)
 AC_ARG_WITH(ffmpeg-src-dir,
             AC_HELP_STRING([--with-ffmpeg-src-dir],[Directory with ffmpeg source code, needed for MPEG 4 plugin]))
@@ -328,8 +344,8 @@ elif test "$with_ffmpeg_src_dir" != "" ; then
   if test -f "$with_ffmpeg_src_dir/libavcodec/avcodec.h"
   then
     AC_MSG_RESULT(enabled)
-    HAS_MPEG4=1
     FFMPEG_SOURCE=$with_ffmpeg_src_dir
+    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_FFMPEG_SRC"
   else
     AC_MSG_ERROR([$with_ffmpeg_src_dir doesn't contain an ffmpeg source tree])
   fi
@@ -337,19 +353,7 @@ else
   AC_MSG_RESULT(disabled)
 fi
 
-AC_ARG_ENABLE(ffmpeg-stackalign-hack,
-            AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
-if test "${ffmpeg_stackalign_hack}" = "yes" ; then
-  AC_MSG_NOTICE(FFMPEG stack align hack enabled)
-  FFMPEG_STACKALIGN_HACK="-DWITH_STACKALIGN_HACK"
-else
-  AC_MSG_NOTICE(FFMPEG stack align hack disabled)
-  FFMPEG_STACKALIGN_HACK=""
-fi
 
-AC_SUBST(HAS_MPEG4)
-AC_SUBST(FFMPEG_SOURCE)
-AC_SUBST(FFMPEG_STACKALIGN_HACK)
 
 dnl ###########################################################################
 dnl Checks for ffmpeg
@@ -392,7 +396,7 @@ C_FILE
                     ffmpeg_lib_name=`ldd ./t  | grep libavcodec | awk '{ print $1; }'`
                     rm -f t t.c
                     AC_MSG_RESULT($ffmpeg_lib_name)
-                    FFMPEG_CFLAGS="-DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
+                    FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DLIBAVCODEC_LIB_NAME='\"$ffmpeg_lib_name\"'"
                 fi
              else
               AC_MSG_RESULT([no])
@@ -400,8 +404,19 @@ C_FILE
         fi
     fi
 fi
-AC_SUBST(FFMPEG_CFLAGS)
+
+AC_ARG_ENABLE(ffmpeg-stackalign-hack,
+            AC_HELP_STRING([--enable-ffmpeg-stackalign-hack],[Enable FFMPEG stack align hack for MPEG 4]), ffmpeg_stackalign_hack=$enableval)
+if test "${ffmpeg_stackalign_hack}" = "yes" ; then
+  AC_MSG_NOTICE(FFMPEG stack align hack enabled)
+  FFMPEG_CFLAGS="${FFMPEG_CFLAGS} -DWITH_STACKALIGN_HACK"
+else
+  AC_MSG_NOTICE(FFMPEG stack align hack disabled)
+fi
+
 AC_SUBST(HAS_FFMPEG)
+AC_SUBST(FFMPEG_SOURCE)
+AC_SUBST(FFMPEG_CFLAGS)
 
 dnl ###########################################################################
 dnl Checks for x264
@@ -652,10 +667,15 @@ echo "                          THEORA  :  enabled"
 else
 echo "                          THEORA  :  disabled"
 fi
-if test "x${HAS_MPEG4}" = "x1" ; then
-echo "                    MPEG4 Part 2  :  enabled"
+if test "x${HAS_FFMPEG}" = "x1" ; then
+
+if test "x${FFMPEG_SOURCE}" = "x" ; then
+echo "                    MPEG4 Part 2  :  enabled (no rate control correction)"
 else
-echo "                    MPEG4 Part 2  :  disabled (needs ffmpeg sources)"
+echo "                    MPEG4 Part 2  :  enabled"
+fi
+else
+echo "                    MPEG4 Part 2  :  disabled (needs libavcodec)"
 fi
 echo ""
 echo "                         OS Type  :  $target_os"

@@ -118,3 +118,4 @@ SDPMediaFormat * OpalT38SDPMediaDescription::CreateMediaFormatByName(const OpalM
 
   return sdpFormat;
 }
+

@@ -73,6 +73,9 @@ typedef unsigned char BYTE;
 #define QCIF_WIDTH     (CIF_WIDTH/2)
 #define QCIF_HEIGHT    (CIF_HEIGHT/2)
 
+#define QCIF4_WIDTH     (CIF4_WIDTH/2)
+#define QCIF4_HEIGHT    (CIF4_HEIGHT/2)
+
 #define SQCIF_WIDTH     128
 #define SQCIF_HEIGHT    96
 

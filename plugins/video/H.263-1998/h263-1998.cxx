@@ -398,8 +398,6 @@ int H263PEncoderContext::EncodeFrames(const BYTE * src, unsigned & srcLen, BYTE 
     return 1;
   }
 
-  TRACE(4, "H263+\tEncoded " << frameSize << " bytes of YUV420P raw data into " << _txH263PFrame->GetFrameSize() << " bytes");
-
   if (_txH263PFrame->HasRTPFrames())
   {
     _txH263PFrame->GetRTPFrame(dstRTP, flags);
@@ -692,9 +690,18 @@ static int to_normalised_options(const struct PluginCodec_Definition *, void *, 
         h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, atoi(option[1]) );
   }
 
-  // Defaul value
-  if (h263MPIList.size() == 0)
+  // Defaul value(s)
+  if (h263MPIList.size() == 0) {
+#ifdef WITH_RFC_COMPLIANT_DEFAULTS
     h263MPIList.addMPI(QCIF_WIDTH, QCIF_HEIGHT, 2 );
+#else
+    h263MPIList.addMPI(SQCIF_WIDTH, SQCIF_HEIGHT, 1);
+    h263MPIList.addMPI(QCIF_WIDTH,  QCIF_HEIGHT,  1);
+    h263MPIList.addMPI(CIF_WIDTH,   CIF_HEIGHT,   1);
+    h263MPIList.addMPI(CIF4_WIDTH,  QCIF4_HEIGHT, 1);
+    h263MPIList.addMPI(CIF16_WIDTH, CIF16_HEIGHT, 1);
+#endif 
+  }
   
   char ** options = (char **)calloc(7, sizeof(char *));
   *(char ***)parm = options;
