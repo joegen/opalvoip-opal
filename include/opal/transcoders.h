@@ -312,6 +312,8 @@ class OpalTranscoder : public OpalMediaFormatPair
     RTP_DataFrame::PayloadTypes GetPayloadType(
       PBoolean input      ///<  Flag for input or output data size
     ) const;
+
+    virtual bool AcceptComfortNoise() const { return false; }
   //@}
 
   protected:
