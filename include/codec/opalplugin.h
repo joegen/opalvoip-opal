@@ -150,6 +150,9 @@ enum PluginCodec_Flags {
   PluginCodec_MediaExtensionMask     = 0x0400,
   PluginCodec_MediaTypeExtVideo      = 0x0400,
 
+  PluginCodec_ComfortNoiseMask       = 0x0800,
+  PluginCodec_ComfortNoise           = 0x0800,
+
   PluginCodec_BitsPerSamplePos       = 12,
   PluginCodec_BitsPerSampleMask      = 0xf000,
 };
