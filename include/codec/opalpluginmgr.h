@@ -278,6 +278,9 @@ class OpalPluginFramedAudioTranscoder : public OpalFramedTranscoder, public Opal
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
     PBoolean ConvertFrame(const BYTE * input, PINDEX & consumed, BYTE * output, PINDEX & created);
     virtual PBoolean ConvertSilentFrame(BYTE * buffer);
+    virtual bool AcceptComfortNoise() const { return comfortNoise; }
+  protected:
+    bool comfortNoise;
 };
 
 
@@ -287,6 +290,9 @@ class OpalPluginStreamedAudioTranscoder : public OpalStreamedTranscoder, public 
   public:
     OpalPluginStreamedAudioTranscoder(PluginCodec_Definition * _codec, PBoolean _isEncoder, unsigned inputBits, unsigned outputBits, PINDEX optimalBits);
     bool UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output);
+    virtual bool AcceptComfortNoise() const { return comfortNoise; }
+  protected:
+    bool comfortNoise;
 };
 
 
