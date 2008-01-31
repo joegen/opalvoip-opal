@@ -245,7 +245,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
   if (defn.h323CapabilityType < (sizeof(capabilityNames) / sizeof(capabilityNames[0])))
     cout << capabilityNames[defn.h323CapabilityType];
   else
-    cout << "Unknown capability code " << defn.h323CapabilityType;
+    cout << "Unknown capability code " << (int)defn.h323CapabilityType;
 
   switch (defn.h323CapabilityType) {
     case PluginCodec_H323Codec_undefined:
