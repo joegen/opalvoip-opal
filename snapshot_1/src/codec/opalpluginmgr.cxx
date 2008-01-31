@@ -800,6 +800,7 @@ OpalPluginFramedAudioTranscoder::OpalPluginFramedAudioTranscoder(PluginCodec_Def
 { 
   inputIsRTP  = (codecDef->flags & PluginCodec_InputTypeMask)  == PluginCodec_InputTypeRTP;
   outputIsRTP = (codecDef->flags & PluginCodec_OutputTypeMask) == PluginCodec_OutputTypeRTP;
+  comfortNoise = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
 }
 
 PBoolean OpalPluginFramedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
@@ -871,6 +872,7 @@ OpalPluginStreamedAudioTranscoder::OpalPluginStreamedAudioTranscoder(PluginCodec
                            inputBits, outputBits, optimalBits)
   , OpalPluginTranscoder(_codec, _isEncoder)
 { 
+  comfortNoise = (codecDef->flags & PluginCodec_ComfortNoiseMask) == PluginCodec_ComfortNoise;
 }
 
 PBoolean OpalPluginStreamedAudioTranscoder::UpdateMediaFormats(const OpalMediaFormat & input, const OpalMediaFormat & output)
@@ -1017,7 +1019,6 @@ PTRACE(1, "RTP\tVideo encoder buffer of size " << outputDataSize << " filled wit
     // We use the data size indicated by plug in as a payload size, we do not adjust the size
     // downward as many plug ins forget to add the RTP header size in its output data size and
     // it doesn't hurt to make thisbuffer an extra 12 bytes long.
-
     if (bufferRTP == NULL)
       bufferRTP = new RTP_DataFrame(outputDataSize);
     else

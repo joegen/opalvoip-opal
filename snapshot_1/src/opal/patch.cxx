@@ -397,7 +397,7 @@ void OpalMediaPatch::Main()
 
   RTP_DataFrame sourceFrame(source.GetDataSize());
 	
-  while (source.IsOpen()) {
+  while (source.IsOpen()) { 
     sourceFrame.SetPayloadSize(0); 
     if (!source.ReadPacket(sourceFrame))
       break;
@@ -476,6 +476,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return writeSuccessful = stream->WritePacket(sourceFrame);
   }
 
+  if (!primaryCodec->AcceptComfortNoise()) {
+    RTP_DataFrame::PayloadTypes pt = sourceFrame.GetPayloadType();
+    if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
+      return true;
+  }
+
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
     return false;
@@ -493,6 +499,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       sourceFrame.SetTimestamp(intermediateFrame.GetTimestamp());
     }
     else {
+      if (!secondaryCodec->AcceptComfortNoise()) {
+        RTP_DataFrame::PayloadTypes pt = sourceFrame.GetPayloadType();
+        if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
+          return true;
+      }
       if (!secondaryCodec->ConvertFrames(intermediateFrame, finalFrames)) {
         PTRACE(1, "Patch\tMedia conversion (secondary) failed");
         return false;
