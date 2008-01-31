@@ -407,6 +407,7 @@ void OpalMediaPatch::Main()
 	
   while (source.IsOpen()) {
     sourceFrame.SetPayloadSize(0); 
+    sourceFrame[1] = RTP_DataFrame::IllegalPayloadType; // make sure "idle" packets don't get confused for real zero-payload packets
     if (!source.ReadPacket(sourceFrame))
       break;
  
@@ -414,8 +415,8 @@ void OpalMediaPatch::Main()
     DispatchFrame(sourceFrame);
     inUse.Signal();
 
-    // Don't starve the CPU if we have empty frames
-    if (!isSynchronous || sourceFrame.GetPayloadSize() == 0)
+    // Don't starve the CPU if we have idle frames
+    if (!isSynchronous || sourceFrame.GetPayloadType() == RTP_DataFrame::IllegalPayloadType)
       PThread::Sleep(5);
   }
 
@@ -484,6 +485,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return writeSuccessful = stream->WritePacket(sourceFrame);
   }
 
+  if (!primaryCodec->AcceptComfortNoise()) {
+    RTP_DataFrame::PayloadTypes pt = sourceFrame.GetPayloadType();
+    if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
+      return true;
+  }
+
   if (!primaryCodec->ConvertFrames(sourceFrame, intermediateFrames)) {
     PTRACE(1, "Patch\tMedia conversion (primary) failed");
     return false;
@@ -501,6 +508,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
       sourceFrame.SetTimestamp(intermediateFrame.GetTimestamp());
     }
     else {
+      if (!secondaryCodec->AcceptComfortNoise()) {
+        RTP_DataFrame::PayloadTypes pt = sourceFrame.GetPayloadType();
+        if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
+          return true;
+      }
       if (!secondaryCodec->ConvertFrames(intermediateFrame, finalFrames)) {
         PTRACE(1, "Patch\tMedia conversion (secondary) failed");
         return false;
