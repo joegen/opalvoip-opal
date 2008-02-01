@@ -1076,6 +1076,8 @@ class OpalConnection : public PSafeObject
     PString               userInputString;
     PSyncPoint            userInputAvailable;
     PBoolean              detectInBandDTMF;
+    unsigned              dtmfScaleMultiplier;
+    unsigned              dtmfScaleDivisor;
     unsigned              q931Cause;
 
     OpalSilenceDetector * silenceDetector;

@@ -509,27 +509,47 @@ PBoolean OpalNullMediaStream::IsSynchronous() const
 ///////////////////////////////////////////////////////////////////////////////
 
 OpalSinkMediaStream::OpalSinkMediaStream(OpalConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
-: OpalNullMediaStream(conn, mediaFormat, sessionID, isSource)
+: OpalRawMediaStream(conn, mediaFormat, sessionID, isSource, NULL, false)
 {
 }
 
 PBoolean OpalSinkMediaStream::ReadData(
-      BYTE * /*data*/,      ///<  Data buffer to read to
-      PINDEX size,      ///<  Size of buffer
-      PINDEX & length   ///<  Length of data actually read
+      BYTE * buffer,      ///<  Data buffer to read to
+      PINDEX size,        ///<  Size of buffer
+      PINDEX & length     ///<  Length of data actually read
 )
 {
+  memset(buffer, 0, size);
   length = size;
+
+  if (isAudio) {
+    CollectAverage(buffer, length);
+    delay.Delay(size/16);
+  }
+
   return true;
 }
 
 PBoolean OpalSinkMediaStream::WriteData(
-      const BYTE * /*data*/,   ///<  Data to write
-      PINDEX length,       ///<  Length of data to read.
-      PINDEX & written     ///<  Length of data actually written
+      const BYTE * buffer,   ///<  Data to write
+      PINDEX length,         ///<  Length of data to read.
+      PINDEX & written       ///<  Length of data actually written
 )
 {
-  written = length;
+  if (isAudio) {
+    if (buffer != NULL && length != 0) {
+      written = length;
+      CollectAverage(buffer, written);
+    }
+    else {
+      PBYTEArray silence(defaultDataSize);
+      memset(silence.GetPointer(), 0, defaultDataSize);
+      CollectAverage(silence, written);
+      written = defaultDataSize;
+      delay.Delay(written / 16);
+    }
+  }
+
   return true;
 }
 
@@ -682,6 +702,7 @@ OpalRawMediaStream::OpalRawMediaStream(OpalConnection & conn,
   autoDelete = autoDel;
   averageSignalSum = 0;
   averageSignalSamples = 0;
+  isAudio = mediaFormat.GetMediaType() == OpalMediaType::Audio();
 }
 
 
@@ -711,7 +732,10 @@ PBoolean OpalRawMediaStream::ReadData(BYTE * buffer, PINDEX size, PINDEX & lengt
     return false;
 
   length = channel->GetLastReadCount();
-  CollectAverage(buffer, length);
+
+  if (isAudio)
+    CollectAverage(buffer, length);
+
   return true;
 }
 
@@ -732,14 +756,16 @@ PBoolean OpalRawMediaStream::WriteData(const BYTE * buffer, PINDEX length, PINDE
     if (!channel->Write(buffer, length))
       return false;
     written = channel->GetLastWriteCount();
-    CollectAverage(buffer, written);
+    if (isAudio) 
+      CollectAverage(buffer, written);
   }
   else {
     PBYTEArray silence(defaultDataSize);
     if (!channel->Write(silence, defaultDataSize))
       return false;
     written = channel->GetLastWriteCount();
-    CollectAverage(silence, written);
+    if (isAudio) 
+      CollectAverage(silence, written);
   }
 
   return true;
@@ -771,20 +797,18 @@ unsigned OpalRawMediaStream::GetAverageSignalLevel()
   return average;
 }
 
-
 void OpalRawMediaStream::CollectAverage(const BYTE * buffer, PINDEX size)
 {
   PWaitAndSignal m(averagingMutex);
 
   size = size/2;
   averageSignalSamples += size;
-  const short * pcm = (const short *)buffer;
+  const short * pcm = (short *)buffer;
   while (size-- > 0) {
     averageSignalSum += PABS(*pcm);
     pcm++;
   }
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -823,7 +847,7 @@ PBoolean OpalFileMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & length
     return false;
 
   // only delay if audio
-  if (sessionID == 1)
+  if (isAudio)
     fileDelay.Delay(length/16);
 
   return true;
@@ -838,7 +862,7 @@ PBoolean OpalFileMediaStream::WriteData(const BYTE * data, PINDEX length, PINDEX
     return false;
 
   // only delay if audio
-  if (sessionID == 1)
+  if (isAudio)
     fileDelay.Delay(written/16);
 
   return true;
