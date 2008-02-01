@@ -196,6 +196,8 @@ OpalConnection::OpalConnection(OpalCall & call,
   maxAudioJitterDelay = endpoint.GetManager().GetMaxAudioJitterDelay();
   bandwidthAvailable = endpoint.GetInitialBandwidth();
 
+  dtmfScaleMultiplier = dtmfScaleDivisor = 1;
+
   switch (options & SendDTMFMask) {
     case SendDTMFAsString:
       sendUserInputMode = SendUserInputAsString;
@@ -213,13 +215,21 @@ OpalConnection::OpalConnection(OpalCall & call,
   }
   
   if (stringOptions != NULL) {
-    PString id((*stringOptions)("Call-Identifier"));
-    if (!id.IsEmpty())
-      callIdentifier = PGloballyUniqueID(id);
+    PString str((*stringOptions)("Call-Identifier"));
+    if (!str.IsEmpty())
+      callIdentifier = PGloballyUniqueID(str);
 
-    id = (*stringOptions)("enableinbanddtmf");
-    if (!id.IsEmpty())
-      detectInBandDTMF = id *= "true";
+    str = (*stringOptions)("enableinbanddtmf");
+    if (!str.IsEmpty())
+      detectInBandDTMF = str *= "true";
+    str = (*stringOptions)("dtmfmult");
+    if (!str.IsEmpty()) {
+      dtmfScaleMultiplier = str.AsInteger();
+      dtmfScaleDivisor    = 1;
+    }
+    str = (*stringOptions)("dtmfdiv");
+    if (!str.IsEmpty())
+      dtmfScaleDivisor = str.AsInteger();
   }
 }
 
@@ -887,7 +897,7 @@ void OpalConnection::OnUserInputInBandDTMF(RTP_DataFrame & frame, INT)
   // before the audio is passed on to the sound card (or other output device)
 
   // Pass the 16 bit PCM audio through the DTMF decoder   
-  PString tones = dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/sizeof(short));
+  PString tones = dtmfDecoder.Decode((const short *)frame.GetPayloadPtr(), frame.GetPayloadSize()/sizeof(short), dtmfScaleMultiplier, dtmfScaleDivisor);
   if (!tones.IsEmpty()) {
     PTRACE(3, "OPAL\tDTMF detected. " << tones);
     PINDEX i;

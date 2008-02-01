@@ -1319,6 +1319,7 @@ PBoolean OpalFaxConnection::SetUpConnection()
     {
       StringOptions * otherStringOptions = new StringOptions;
       otherStringOptions->SetAt("enableinbanddtmf", "true");
+      otherStringOptions->SetAt("dtmfmult",         "4");
       if (!OnIncomingConnection(0, otherStringOptions)) {
         Release(EndedByCallerAbort);
         return PFalse;
@@ -1492,8 +1493,10 @@ OpalMediaStream * OpalT38Connection::CreateMediaStream(const OpalMediaFormat & m
   if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
     if (isSource)
       return new OpalNullMediaStream(*this, mediaFormat, sessionID, isSource);
-    else
-      return new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
+    else {
+      OpalSinkMediaStream * strm = new OpalSinkMediaStream(*this, mediaFormat, sessionID, isSource);
+      return strm;
+    }
   }
 
   // if creating a data stream, see what type it is
