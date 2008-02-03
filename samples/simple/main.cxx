@@ -1100,6 +1100,7 @@ void MyManager::Main(PArgList & args)
         break;
 
       case 'z':
+      case 'Z':
         if (currentCallToken.IsEmpty())
          cout << "Cannot stop or start record whilst no call in progress\n";
         else if (ch == 'z') {
