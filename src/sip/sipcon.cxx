@@ -210,7 +210,12 @@ void SIPConnection::UpdateRemotePartyNameAndNumber()
 
 SIPConnection::~SIPConnection()
 {
-  delete originalInvite;
+  {
+    PWaitAndSignal m(originalInviteMutex);
+    delete originalInvite;
+    originalInvite = NULL;
+  }
+
   delete transport;
 
   if (pduHandler) 
@@ -378,10 +383,13 @@ PBoolean SIPConnection::SetConnected()
   // requests in a dialog do not modify the route set according to 12.2
   if (phase < ConnectedPhase) {
     routeSet.RemoveAll();
-    routeSet = originalInvite->GetMIME().GetRecordRoute();
-    PString originalContact = originalInvite->GetMIME().GetContact();
-    if (!originalContact.IsEmpty()) {
-      targetAddress = originalContact;
+
+    PWaitAndSignal m(originalInviteMutex);
+    if (originalInvite != NULL) {
+      routeSet = originalInvite->GetMIME().GetRecordRoute();
+      PString originalContact = originalInvite->GetMIME().GetContact();
+      if (!originalContact.IsEmpty()) 
+        targetAddress = originalContact;
     }
   }
 
@@ -448,32 +456,36 @@ PBoolean SIPConnection::OnSendSDP(bool isAnswerSDP, RTP_SessionManager & rtpSess
   if (isAnswerSDP)
     needReINVITE = false;
 
-  // get the remote media formats, if any
-  if (isAnswerSDP && originalInvite != NULL && originalInvite->HasSDP()) {
-    // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  = AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
+  {
+    PWaitAndSignal m(originalInviteMutex);
+
+    // get the remote media formats, if any
+    if (isAnswerSDP && originalInvite != NULL && originalInvite->HasSDP()) {
+      // Use |= to avoid McCarthy boolean || from not calling video/fax
+      sdpOK  = AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Audio, OpalMediaFormat::DefaultAudioSessionID, sdpOut);
 #if OPAL_VIDEO
-    sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
+      sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Video, OpalMediaFormat::DefaultVideoSessionID, sdpOut);
 #endif
 #if OPAL_T38FAX
-    sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID,  sdpOut);
+      sdpOK |= AnswerSDPMediaDescription(originalInvite->GetSDP(), SDPMediaDescription::Image, OpalMediaFormat::DefaultDataSessionID,  sdpOut);
 #endif
-  }
-  
-  else {
+    }
+    
+    else {
 
-    // construct offer as per RFC 3261, para 14.2
-    // Use |= to avoid McCarthy boolean || from not calling video/fax
-    sdpOK  = OfferSDPMediaDescription(OpalMediaFormat::DefaultAudioSessionID, rtpSessions, sdpOut);
+      // construct offer as per RFC 3261, para 14.2
+      // Use |= to avoid McCarthy boolean || from not calling video/fax
+      sdpOK  = OfferSDPMediaDescription(OpalMediaFormat::DefaultAudioSessionID, rtpSessions, sdpOut);
 #if OPAL_VIDEO
-    sdpOK |= OfferSDPMediaDescription(OpalMediaFormat::DefaultVideoSessionID, rtpSessions, sdpOut);
+      sdpOK |= OfferSDPMediaDescription(OpalMediaFormat::DefaultVideoSessionID, rtpSessions, sdpOut);
 #endif
 #if OPAL_T38FAX
-    sdpOK |= OfferSDPMediaDescription(OpalMediaFormat::DefaultDataSessionID, rtpSessions, sdpOut);
+      sdpOK |= OfferSDPMediaDescription(OpalMediaFormat::DefaultDataSessionID, rtpSessions, sdpOut);
 #endif
-  }
+    }
 
-  needReINVITE = true;
+    needReINVITE = true;
+  }
 
   return sdpOK;
 }
@@ -1318,37 +1330,45 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
     // We originated the call, so any INVITE must be a re-INVITE, 
     isReinvite = PTrue;
   }
-  else if (originalInvite == NULL) {
-    isReinvite = PFalse; // First time incoming call
-    PTRACE(4, "SIP\tInitial INVITE from " << request.GetURI());
-  }
   else {
-    // Have received multiple INVITEs, three possibilities
-    const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
-
-    if (originalMIME.GetCSeq() == requestMIME.GetCSeq()) {
-      // Same sequence number means it is a retransmission
-      PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
-      return;
+    originalInviteMutex.Wait();
+    if (originalInvite == NULL) {
+      originalInviteMutex.Signal();
+      isReinvite = PFalse; // First time incoming call
+      PTRACE(4, "SIP\tInitial INVITE from " << request.GetURI());
     }
+    else {
+      // Have received multiple INVITEs, three possibilities
+      const SIPMIMEInfo & originalMIME = originalInvite->GetMIME();
 
-    // Different "dialog" determined by the tags in the to and from fields indicate forking
-    PString fromTag = request.GetMIME().GetFieldParameter("tag", requestFrom);
-    PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetFrom());
-    PString toTag = request.GetMIME().GetFieldParameter("tag", requestTo);
-    PString origToTag = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetTo());
-    if (fromTag != origFromTag || toTag != origToTag) {
-      PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
-      SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
-      response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
-      SendPDU(response, request.GetViaAddress(endpoint));
-      return;
+      // #1 - Same sequence number means it is a retransmission
+      if (originalMIME.GetCSeq() == requestMIME.GetCSeq()) {
+        originalInviteMutex.Signal();
+        PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
+        return;
+      }
+
+      // #2 - Different "dialog" determined by the tags in the to and from fields indicate forking
+      PString origToTag   = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetTo());
+      PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalMIME.GetFrom());
+      PString fromTag = request.GetMIME().GetFieldParameter("tag", requestFrom);
+      PString toTag   = request.GetMIME().GetFieldParameter("tag", requestTo);
+      if (fromTag != origFromTag || toTag != origToTag) {
+        originalInviteMutex.Signal();
+        PTRACE(3, "SIP\tIgnoring forked INVITE from " << request.GetURI());
+        SIP_PDU response(request, SIP_PDU::Failure_LoopDetected);
+        response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
+        SendPDU(response, request.GetViaAddress(endpoint));
+        return;
+      }
+
+      // #3 - A new INVITE in the same "dialog" but different cseq must be a re-INVITE
+      isReinvite = PTrue;
     }
-
-    // A new INVITE in the same "dialog" but different cseq must be a re-INVITE
-    isReinvite = PTrue;
   }
-   
+
+  if (!isReinvite)
+    originalInviteMutex.Wait();
 
   // originalInvite should contain the first received INVITE for
   // this connection
@@ -1357,6 +1377,7 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
+    originalInviteMutex.Signal();
     OnReceivedReINVITE(request);
     return;
   }
@@ -1375,6 +1396,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   calledDestinationName   = originalInvite->GetURI().GetDisplayName(PFalse);   
   calledDestinationNumber = originalInvite->GetURI().GetUserName();
   calledDestinationURL    = originalInvite->GetURI().AsString();
+
+  originalInviteMutex.Signal();
 
   // update the target address
   PString contact = mime.GetContact();
@@ -1430,7 +1453,9 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
   remoteFormatList.RemoveAll();
   SDPSessionDescription sdpOut(GetLocalAddress());
 
+
   // get the remote media formats, if any
+  originalInviteMutex.Wait();
   if (originalInvite->HasSDP()) {
 
     SDPSessionDescription & sdpIn = originalInvite->GetSDP();
@@ -1439,12 +1464,14 @@ void SIPConnection::OnReceivedReINVITE(SIP_PDU & request)
     if ((sdpIn.GetDirection(OpalMediaFormat::DefaultAudioSessionID)&SDPMediaDescription::RecvOnly) == 0 &&
         (sdpIn.GetDirection(OpalMediaFormat::DefaultVideoSessionID)&SDPMediaDescription::RecvOnly) == 0) {
 
+      originalInviteMutex.Wait();
       PTRACE(3, "SIP\tRemote hold detected");
       remote_hold = PTrue;
       PauseMediaStreams(PTrue);
       endpoint.OnHold(*this);
     }
     else {
+      originalInviteMutex.Wait();
 
       // If we receive a consecutive reinvite without the SendOnly
       // parameter, then we are not on hold anymore
@@ -1479,6 +1506,8 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
 
   // in some circumstances, the peer OpalConnection needs to see the newly arrived media formats
   // before it knows what what formats can support. 
+  originalInviteMutex.Wait();
+
   if (originalInvite != NULL && originalInvite->HasSDP()) {
 
     OpalMediaFormatList previewFormats;
@@ -1510,6 +1539,8 @@ PBoolean SIPConnection::OnOpenIncomingMediaChannels()
     if (previewFormats.GetSize() != 0) 
       ownerCall.GetOtherPartyConnection(*this)->PreviewPeerMediaFormats(previewFormats);
   }
+
+  originalInviteMutex.Signal();
 
   ownerCall.OnSetUp(*this);
 
@@ -1563,19 +1594,22 @@ void SIPConnection::AnsweringCall(AnswerCallResponse response)
 
 void SIPConnection::OnReceivedACK(SIP_PDU & response)
 {
-  if (originalInvite == NULL) {
-    PTRACE(2, "SIP\tACK from " << response.GetURI() << " received before INVITE!");
-    return;
-  }
+  {
+    PWaitAndSignal m(originalInviteMutex);
+    if (originalInvite == NULL) {
+      PTRACE(2, "SIP\tACK from " << response.GetURI() << " received before INVITE!");
+      return;
+    }
 
-  // Forked request
-  PString fromTag = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetFrom());
-  PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetFrom());
-  PString toTag = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetTo());
-  PString origToTag = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetTo());
-  if (fromTag != origFromTag || toTag != origToTag) {
-    PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
-    return;
+    // Forked request
+    PString origFromTag = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetFrom());
+    PString origToTag   = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetTo());
+    PString fromTag     = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetFrom());
+    PString toTag       = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetTo());
+    if (fromTag != origFromTag || toTag != origToTag) {
+      PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
+      return;
+    }
   }
 
   PTRACE(3, "SIP\tACK received: " << phase);
@@ -1701,14 +1735,17 @@ void SIPConnection::OnReceivedCANCEL(SIP_PDU & request)
   // Currently only handle CANCEL requests for the original INVITE that
   // created this connection, all else ignored
   // Ignore the tag added by OPAL
+  originalInviteMutex.Wait();
   if (originalInvite != NULL) {
     origTo = originalInvite->GetMIME().GetTo();
+    originalInviteMutex.Signal();
     origTo.Delete(origTo.Find(";tag="), P_MAX_INDEX);
   }
   if (originalInvite == NULL || 
       request.GetMIME().GetTo() != origTo || 
       request.GetMIME().GetFrom() != originalInvite->GetMIME().GetFrom() || 
       request.GetMIME().GetCSeqIndex() != originalInvite->GetMIME().GetCSeqIndex()) {
+    originalInviteMutex.Signal();
     PTRACE(2, "SIP\tUnattached " << request << " received for " << *this);
     SIP_PDU response(request, SIP_PDU::Failure_TransactionDoesNotExist);
     SendPDU(response, request.GetViaAddress(endpoint));
@@ -2027,12 +2064,12 @@ void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
 
     SIP_PDU * pdu = pduQueue.Dequeue();
 
-    UnlockReadWrite();
-
     if (pdu != NULL) {
       OnReceivedPDU(*pdu);
       delete pdu;
     }
+
+    UnlockReadWrite();
   }
 
   SafeDereference();
@@ -2066,8 +2103,13 @@ PBoolean SIPConnection::SendInviteOK(const SDPSessionDescription & sdp)
 
 PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char * contact, const char * extra, const SDPSessionDescription * sdp)
 {
-  if (PAssertNULL(originalInvite) == NULL)
-    return false;
+  OpalTransportAddress viaAddress;
+  {
+    PWaitAndSignal m(originalInviteMutex);
+    if (originalInvite == NULL)
+      return true;
+    viaAddress = originalInvite->GetViaAddress(endpoint);
+  }
 
   SIP_PDU response(*originalInvite, code, contact, extra);
   if (NULL != sdp)
@@ -2075,25 +2117,38 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
   if (response.GetStatusCode()/100 != 1) {
+    if (response.GetStatusCode() > 2) {
+      PTRACE(3, "SIP\tACK sent for error");
+    }
     ackPacket = response;
     ackRetry = endpoint.GetRetryTimeoutMin();
     ackTimer = endpoint.GetAckTimeout();
   }
 
-  return SendPDU(response, originalInvite->GetViaAddress(endpoint)); 
+  return SendPDU(response, viaAddress); 
 }
 
 
 void SIPConnection::OnAckRetry(PThread &, INT)
 {
+  PSafeLockReadWrite safeLock(*this);
   PTRACE(3, "SIP\tACK not received yet, retry sending response.");
-  if (PAssertNULL(originalInvite) != NULL)
-    SendPDU(ackPacket, originalInvite->GetViaAddress(endpoint)); 
+  OpalTransportAddress viaAddress;
+  {
+    PWaitAndSignal m(originalInviteMutex);
+    if (originalInvite == NULL) {
+      return;
+    }
+    viaAddress = originalInvite->GetViaAddress(endpoint);
+  }
+
+  SendPDU(ackPacket, viaAddress); 
 }
 
 
 void SIPConnection::OnAckTimeout(PThread &, INT)
 {
+  PSafeLockReadWrite safeLock(*this);
   PTRACE(1, "SIP\tFailed to receive ACK!");
   ackRetry.Stop();
   releaseMethod = ReleaseWithBYE;
