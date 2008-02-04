@@ -491,7 +491,10 @@ class SIPConnection : public OpalConnection
     bool                  remote_hold;
     PString               localPartyAddress;
     PString               forwardParty;
-    SIP_PDU             * originalInvite;
+
+    PMutex                originalInviteMutex;
+    SIP_PDU               * originalInvite;
+
     bool                  needReINVITE;
     PStringList           routeSet;
     SIPURL                targetAddress;

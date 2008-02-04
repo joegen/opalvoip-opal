@@ -424,7 +424,7 @@ class SIPAuthentication : public PObject
 
 class SIP_PDU : public PSafeObject
 {
-  PCLASSINFO(SIP_PDU, PObject);
+  PCLASSINFO(SIP_PDU, PSafeObject);
   public:
     enum Methods {
       Method_INVITE,
