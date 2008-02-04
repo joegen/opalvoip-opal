@@ -313,7 +313,7 @@ void CallGen::Main()
     h323->DisableH245Tunneling(TRUE);
   
   if (args.HasOption('l')) {
-    manager.AddRouteEntry(".* = ivr:"); // Everything goes to IVR
+    manager.AddRouteEntry(".*\t.* = ivr:"); // Everything goes to IVR
     cout << "Endpoint is listening for incoming calls, press ENTER to exit.\n";
     console.ReadChar();
     h323->ClearAllCalls();
