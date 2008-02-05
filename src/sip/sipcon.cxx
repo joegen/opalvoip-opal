@@ -171,6 +171,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   , targetAddress(destination)
   , pduSemaphore(0, P_MAX_INDEX)
   , pduHandler(NULL)
+  , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
   // Look for a "proxy" parameter to override default proxy
@@ -195,7 +196,7 @@ SIPConnection::SIPConnection(OpalCall & call,
   forkedInvitations.DisallowDeleteObjects();
 
   ackTimer.SetNotifier(PCREATE_NOTIFIER(OnAckTimeout));
-  ackRetry.SetNotifier(PCREATE_NOTIFIER(OnAckRetry));
+  ackRetry.SetNotifier(PCREATE_NOTIFIER(OnInviteResponseRetry));
 
   PTRACE(4, "SIP\tCreated connection.");
 }
@@ -1585,8 +1586,9 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
 
   PTRACE(3, "SIP\tACK received: " << phase);
 
-  ackTimer.Stop();
-  ackRetry.Stop();
+  ackReceived = true;
+  ackTimer.Stop(false); // Asynchornous stop to avoid deadlock
+  ackRetry.Stop(false);
   
   OnReceivedSDP(response);
 
@@ -2090,16 +2092,17 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
     ackPacket = response;
     ackRetry = endpoint.GetRetryTimeoutMin();
     ackTimer = endpoint.GetAckTimeout();
+    ackReceived = false;
   }
 
   return SendPDU(response, viaAddress); 
 }
 
 
-void SIPConnection::OnAckRetry(PThread &, INT)
+void SIPConnection::OnInviteResponseRetry(PTimer &, INT)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked()) {
+  if (safeLock.IsLocked() && !ackReceived) {
     PTRACE(3, "SIP\tACK not received yet, retry sending response.");
     if (originalInvite != NULL) {
       OpalTransportAddress viaAddress = originalInvite->GetViaAddress(endpoint);
@@ -2109,10 +2112,10 @@ void SIPConnection::OnAckRetry(PThread &, INT)
 }
 
 
-void SIPConnection::OnAckTimeout(PThread &, INT)
+void SIPConnection::OnAckTimeout(PTimer &, INT)
 {
   PSafeLockReadWrite safeLock(*this);
-  if (safeLock.IsLocked()) {
+  if (safeLock.IsLocked() && !ackReceived) {
     PTRACE(1, "SIP\tFailed to receive ACK!");
     ackRetry.Stop();
     releaseMethod = ReleaseWithBYE;
@@ -2127,10 +2130,12 @@ PBoolean SIPConnection::SendPDU(SIP_PDU & pdu, const OpalTransportAddress & addr
   return transport != NULL && pdu.Write(*transport, address);
 }
 
+
 void SIPConnection::OnRTPStatistics(const RTP_Session & session) const
 {
   endpoint.OnRTPStatistics(*this, session);
 }
+
 
 void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
 {
@@ -2202,6 +2207,7 @@ OpalConnection::SendUserInputModes SIPConnection::GetRealSendUserInputMode() con
   return SendUserInputAsInlineRFC2833;
 }
 
+
 PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 {
   SendUserInputModes mode = GetRealSendUserInputMode();
@@ -2236,6 +2242,7 @@ PBoolean SIPConnection::SendUserInputTone(char tone, unsigned duration)
 
   return OpalConnection::SendUserInputTone(tone, duration);
 }
+
 
 #if OPAL_VIDEO
 class QDXML 
