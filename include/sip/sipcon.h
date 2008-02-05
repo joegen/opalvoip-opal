@@ -492,7 +492,6 @@ class SIPConnection : public OpalConnection
     PString               localPartyAddress;
     PString               forwardParty;
 
-    PMutex                originalInviteMutex;
     SIP_PDU               * originalInvite;
 
     bool                  needReINVITE;
