@@ -58,7 +58,11 @@ OpalMediaPatch::~OpalMediaPatch()
 {
   PWaitAndSignal m(patchThreadMutex);
   inUse.Wait();
-  delete patchThread;
+  if (patchThread != NULL) {
+    PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
+    delete patchThread;
+    patchThread = NULL;
+  }
   PTRACE(4, "Patch\tMedia patch thread " << *this << " destroyed.");
 }
 
@@ -123,10 +127,13 @@ void OpalMediaPatch::Close()
   }
 
   PTRACE(4, "Patch\tWaiting for media patch thread to stop " << *this);
-  if (patchThread != NULL && !patchThread->IsSuspended()) {
-    inUse.Signal();
-    PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
-    return;
+  {
+    PWaitAndSignal m(patchThreadMutex);
+    if (patchThread != NULL && !patchThread->IsSuspended()) {
+      inUse.Signal();
+      PAssert(patchThread->WaitForTermination(10000), "Media patch thread not terminated.");
+      return;
+    }
   }
   
   inUse.Signal();
