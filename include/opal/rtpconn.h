@@ -304,7 +304,9 @@ class OpalSecurityMode : public PObject
   public:
     virtual RTP_UDP * CreateRTPSession(
       OpalRTPConnection & conn,          ///< connection 
+#if OPAL_RTP_AGGREGATE
       PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
       unsigned id,                       ///< Session ID for RTP channel
       PBoolean remoteIsNAT               ///< PTrue is remote is behind NAT
     ) = 0;

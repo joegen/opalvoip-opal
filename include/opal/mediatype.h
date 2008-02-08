@@ -123,7 +123,11 @@ class OpalMediaTypeDefinition  {
 
     virtual bool UseDirectMediaPatch() const = 0;
 
-    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT) = 0;
+    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
+                                       PHandleAggregator * agg,
+#endif
+                                       unsigned sessionID, bool remoteIsNAT) = 0;
     virtual PString GetRTPEncoding() const = 0;
 
     virtual std::string GetSDPType() const    { return sdpType; }
@@ -247,7 +251,11 @@ class SimpleMediaType : public OpalMediaTypeDefinition
     virtual unsigned GetPreferredSessionId() const { return defaultSessionId; }
     virtual bool UseDirectMediaPatch() const       { return false; }
     PString GetRTPEncoding() const                 { return PString(); }
-    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & , PHandleAggregator * , unsigned , bool ) { return NULL; }
+    virtual RTP_UDP * CreateRTPSession(OpalRTPConnection & ,
+#if OPAL_RTP_AGGREGATE
+                                       PHandleAggregator * ,
+#endif
+                                       unsigned , bool ) { return NULL; }
 
 #if OPAL_SIP
   public:
@@ -274,7 +282,11 @@ namespace OpalMediaTypeSpace { \
 class OpalRTPAVPMediaType : public OpalMediaTypeDefinition {
   public:
     OpalRTPAVPMediaType(const char * mediaType, const char * sdpType, unsigned sessionID);
-    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT);
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
+                               PHandleAggregator * agg,
+#endif
+                               unsigned sessionID, bool remoteIsNAT);
     bool UseDirectMediaPatch() const;
     PString GetRTPEncoding() const;
 

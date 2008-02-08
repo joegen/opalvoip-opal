@@ -65,7 +65,11 @@ class OpalFaxMediaType : public OpalMediaTypeDefinition
     bool UseDirectMediaPatch() const { return false; }
 
     PString GetRTPEncoding(void) const;
-    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT);
+    RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
+                               PHandleAggregator * agg,
+#endif
+                               unsigned sessionID, bool remoteIsNAT);
 
 #if OPAL_SIP
     PCaselessString GetTransport() const;

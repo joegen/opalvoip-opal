@@ -55,10 +55,16 @@
 //
 
 OpalSRTP_UDP::OpalSRTP_UDP(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
                           PHandleAggregator * _aggregator,   ///<  RTP aggregator
+#endif
                                      unsigned id,            ///<  Session ID for RTP channel
                                      PBoolean remoteIsNAT)   ///<  PTrue is remote is behind NAT
-  : SecureRTP_UDP(conn, _aggregator, id, remoteIsNAT)
+  : SecureRTP_UDP(conn,
+#if OPAL_RTP_AGGREGATE
+                  _aggregator,
+#endif
+                  id, remoteIsNAT)
 {
 }
 
@@ -99,7 +105,9 @@ class LibSRTPSecurityMode_Base : public OpalSRTPSecurityMode
   PCLASSINFO(LibSRTPSecurityMode_Base, OpalSRTPSecurityMode);
   public:
     RTP_UDP * CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
                                PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
                                             unsigned id,                ///<  Session ID for RTP channel
                                          PBoolean remoteIsNAT      ///<  PTrue is remote is behind NAT
     );
@@ -154,11 +162,17 @@ void LibSRTPSecurityMode_Base::Init()
 
 RTP_UDP * LibSRTPSecurityMode_Base::CreateRTPSession(
                                  OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
                                 PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
                                            unsigned id,
                                            PBoolean remoteIsNAT)
 {
-  LibSRTP_UDP * session = new LibSRTP_UDP(conn, _aggregator, id, remoteIsNAT);
+  LibSRTP_UDP * session = new LibSRTP_UDP(conn,
+#if OPAL_RTP_AGGREGATE
+                                           _aggregator,
+#endif
+                                           id, remoteIsNAT);
   session->SetSecurityMode(this);
   return session;
 }
@@ -236,10 +250,16 @@ DECLARE_LIBSRTP_CRYPTO_ALG(STRONGHOLD,               crypto_policy_set_aes_cm_12
 ///////////////////////////////////////////////////////
 
 LibSRTP_UDP::LibSRTP_UDP(OpalRTPConnection & rtpConn,
+#if OPAL_RTP_AGGREGATE
                          PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
                                     unsigned _sessionId, 
                                     PBoolean _remoteIsNAT)
-  : OpalSRTP_UDP(rtpConn, _aggregator, _sessionId, _remoteIsNAT)
+  : OpalSRTP_UDP(rtpConn,
+#if OPAL_RTP_AGGREGATE
+                 _aggregator,
+#endif
+                 _sessionId, _remoteIsNAT)
 {
 }
 

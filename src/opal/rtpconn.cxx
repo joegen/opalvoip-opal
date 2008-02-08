@@ -55,6 +55,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
 
   securityMode = ep.GetDefaultSecurityMode();
 
+#if OPAL_RTP_AGGREGATE
   switch (options & RTPAggregationMask) {
     case RTPAggregationDisable:
       useRTPAggregation = PFalse;
@@ -65,6 +66,7 @@ OpalRTPConnection::OpalRTPConnection(OpalCall & call,
     default:
       useRTPAggregation = ep.UseRTPAggregation();
   }
+#endif
 
   // if this is the second connection in this call, then we are making an outgoing H.323/SIP call
   // so, get the autoStart info from the other connection
@@ -150,7 +152,9 @@ RTP_Session * OpalRTPConnection::CreateSession(const OpalTransport & transport,
 
   // create the appropriate RTP session type
   RTP_UDP * rtpSession = def->CreateRTPSession(*this,
+#if OPAL_RTP_AGGREGATE
                                                useRTPAggregation ? ep.GetRTPAggregator() : NULL,
+#endif
                                                sessionID, remoteIsNAT);
   WORD firstPort = manager.GetRtpIpPortPair();
   WORD nextPort = firstPort;

@@ -231,6 +231,20 @@ OpalConnection::OpalConnection(OpalCall & call,
     if (!str.IsEmpty())
       dtmfScaleDivisor = str.AsInteger();
   }
+
+  securityMode = ep.GetDefaultSecurityMode();
+
+#if OPAL_RTP_AGGREGATE
+  switch (options & RTPAggregationMask) {
+    case RTPAggregationDisable:
+      useRTPAggregation = PFalse;
+      break;
+    case RTPAggregationEnable:
+      useRTPAggregation = PTrue;
+      break;
+    default:
+      useRTPAggregation = endpoint.UseRTPAggregation();
+#endif
 }
 
 OpalConnection::~OpalConnection()

@@ -79,9 +79,10 @@ PBoolean OpalRTPEndPoint::IsRTPNATEnabled(OpalConnection & conn,
   return GetManager().IsRTPNATEnabled(conn, localAddr, peerAddr, sigAddr, incoming);
 }
 
+#if OPAL_RTP_AGGREGATE
+
 PHandleAggregator * OpalRTPEndPoint::GetRTPAggregator()
 {
-#if OPAL_RTP_AGGREGATE
   PWaitAndSignal m(rtpAggregationMutex);
   if (rtpAggregationSize == 0)
     return NULL;
@@ -90,42 +91,28 @@ PHandleAggregator * OpalRTPEndPoint::GetRTPAggregator()
     rtpAggregator = new PHandleAggregator(rtpAggregationSize);
 
   return rtpAggregator;
-#else
-  return NULL;
-#endif
 }
 
 PBoolean OpalRTPEndPoint::UseRTPAggregation() const
 { 
-#if OPAL_RTP_AGGREGATE
   return useRTPAggregation; 
-#else
-  return PFalse;
-#endif
 }
 
-void OpalRTPEndPoint::SetRTPAggregationSize(PINDEX 
-#if OPAL_RTP_AGGREGATE
-                             size
-#endif
-                             )
+void OpalRTPEndPoint::SetRTPAggregationSize(PINDEX size)
 { 
-#if OPAL_RTP_AGGREGATE
   rtpAggregationSize = size; 
-#endif
 }
 
 PINDEX OpalRTPEndPoint::GetRTPAggregationSize() const
 { 
-#if OPAL_RTP_AGGREGATE
   return rtpAggregationSize; 
-#else
-  return 0;
-#endif
 }
 
 OpalMediaFormatList OpalRTPEndPoint::GetMediaFormats() const
 {
   return OpalMediaFormat::GetAllRegisteredMediaFormats();
 }
+
+#endif // OPAL_RTP_AGGREGATE
+
 

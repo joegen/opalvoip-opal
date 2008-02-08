@@ -633,6 +633,12 @@ class OpalEndPoint : public PObject
     PString GetSSLCertificate() const;
 #endif
 
+    virtual void SetDefaultSecurityMode(const PString & v)
+    { defaultSecurityMode = v; }
+
+    virtual PString GetDefaultSecurityMode() const 
+    { return defaultSecurityMode; }
+
   protected:
     OpalManager   & manager;
     PCaselessString prefixName;
@@ -654,6 +660,8 @@ class OpalEndPoint : public PObject
     PBoolean AddConnection(OpalConnection * connection);
 
     PMutex inUseFlag;
+
+    PString defaultSecurityMode;
 
     friend void OpalManager::GarbageCollection();
     friend void OpalConnection::Release(CallEndReason reason);
