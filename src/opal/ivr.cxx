@@ -210,6 +210,11 @@ PBoolean OpalIVRConnection::SetUpConnection()
   phase = ConnectedPhase;
   OnConnected();
 
+  ownerCall.OpenSourceMediaStreams(*this, OpalMediaType::Audio(), 1);
+  PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
+  if (otherParty != NULL)
+    ownerCall.OpenSourceMediaStreams(*otherParty, OpalMediaType::Audio(), 1);
+
   return PTrue;
 }
 
@@ -434,18 +439,13 @@ PBoolean OpalIVRMediaStream::Open()
 
 PBoolean OpalIVRMediaStream::ReadPacket(RTP_DataFrame & packet)
 {
-  PBoolean stat = OpalRawMediaStream::ReadPacket(packet);
-
-  if (!stat)
-    conn.Release();
-
-  return stat;
+  return OpalRawMediaStream::ReadPacket(packet);
 }
 
 
 PBoolean OpalIVRMediaStream::IsSynchronous() const
 {
-  return PFalse;
+  return true;
 }
 
 

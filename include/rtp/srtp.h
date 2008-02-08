@@ -99,7 +99,9 @@ class OpalSRTP_UDP : public SecureRTP_UDP
   public:
     OpalSRTP_UDP(
       OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
       PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
       unsigned id,                       ///<  Session ID for RTP channel
       PBoolean remoteIsNAT                  ///<  PTrue is remote is behind NAT
     );
@@ -123,7 +125,9 @@ class LibSRTP_UDP : public OpalSRTP_UDP
   PCLASSINFO(LibSRTP_UDP, OpalSRTP_UDP);
   public:
     LibSRTP_UDP(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
                PHandleAggregator * _aggregator,   ///< handle aggregator
+#endif
                       unsigned int id,            ///<  Session ID for RTP channel
                           PBoolean remoteIsNAT    ///<  PTrue is remote is behind NAT
     );

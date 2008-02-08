@@ -450,13 +450,17 @@ void RTP_UserData::OnTxIntraFrameRequest(const RTP_Session & /*session*/) const
 
 RTP_Session::RTP_Session(
                          const PString & _rtpFormat,
+#if OPAL_RTP_AGGREGATE
                          PHandleAggregator * _aggregator, 
+#endif
                          unsigned id, RTP_UserData * data, PBoolean autoDelete)
 : canonicalName(PProcess::Current().GetUserName()),
   toolName(PProcess::Current().GetName()),
   reportTimeInterval(0, 12),  // Seconds
-  reportTimer(reportTimeInterval),
-  aggregator(_aggregator)
+  reportTimer(reportTimeInterval)
+#if OPAL_RTP_AGGREGATE
+  , aggregator(_aggregator)
+#endif
 {
   PAssert(id > 0 && id < 256, PInvalidParameter);
   sessionID = (BYTE)id;
@@ -657,7 +661,11 @@ void RTP_Session::SetJitterBufferSize(unsigned minJitterDelay,
   else {
     SetIgnoreOutOfOrderPackets(PFalse);
     jitter = new RTP_JitterBuffer(*this, minJitterDelay, maxJitterDelay, timeUnits, stackSize);
-    jitter->Resume(aggregator);
+    jitter->Resume(
+#if OPAL_RTP_AGGREGATE
+      aggregator
+#endif
+      );
   }
 }
 
@@ -1545,8 +1553,17 @@ static void SetMinBufferSize(PUDPSocket & sock, int buftype)
 }
 
 
-RTP_UDP::RTP_UDP(const PString & _rtpFormat, PHandleAggregator * _aggregator, unsigned id, PBoolean _remoteIsNAT)
-  : RTP_Session(_rtpFormat, _aggregator, id),
+RTP_UDP::RTP_UDP(const PString & _rtpFormat, 
+#if OPAL_RTP_AGGREGATE
+                 PHandleAggregator * _aggregator, 
+#endif
+                 unsigned id, PBoolean _remoteIsNAT)
+  : RTP_Session(
+   _rtpFormat,
+#if OPAL_RTP_AGGREGATE
+  _aggregator, 
+#endif
+  id),
     remoteAddress(0),
     remoteTransmitAddress(0),
     remoteIsNAT(_remoteIsNAT)
@@ -2149,8 +2166,16 @@ int RTP_FormatHandler::WaitForPDU(PUDPSocket & dataSocket, PUDPSocket & controlS
 
 /////////////////////////////////////////////////////////////////////////////
 
-SecureRTP_UDP::SecureRTP_UDP(OpalRTPConnection &, PHandleAggregator * _aggregator, unsigned id, PBoolean remoteIsNAT)
-  : RTP_UDP("rtp/avp", _aggregator, id, remoteIsNAT)
+SecureRTP_UDP::SecureRTP_UDP(OpalRTPConnection &,
+#if OPAL_RTP_AGGREGATE
+                             PHandleAggregator * _aggregator,
+#endif
+                             unsigned id, PBoolean remoteIsNAT)
+  : RTP_UDP("rtp/avp",
+#if OPAL_RTP_AGGREGATE
+            _aggregator,
+#endif
+            id, remoteIsNAT)
 {
   securityParms = NULL;
 }

@@ -124,7 +124,11 @@ PString OpalRTPAVPMediaType::GetRTPEncoding() const
 }
 
 
-RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn, PHandleAggregator * agg, unsigned sessionID, bool remoteIsNAT)
+RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn,
+#if OPAL_RTP_AGGREGATE
+                                                PHandleAggregator * agg,
+#endif
+                                                unsigned sessionID, bool remoteIsNAT)
 {
   RTP_UDP * rtpSession = NULL;
 
@@ -136,7 +140,11 @@ RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn, PHandl
       PTRACE(1, "RTPCon\tSecurity mode " << securityMode << " unknown");
       return NULL;
     }
-    rtpSession = parms->CreateRTPSession(conn, agg, sessionID, remoteIsNAT);
+    rtpSession = parms->CreateRTPSession(conn,
+#if OPAL_RTP_AGGREGATE
+                                              agg,
+#endif
+                                         sessionID, remoteIsNAT);
     if (rtpSession == NULL) {
       PTRACE(1, "RTPCon\tCannot create RTP session for security mode " << securityMode);
       delete parms;
@@ -145,7 +153,11 @@ RTP_UDP * OpalRTPAVPMediaType::CreateRTPSession(OpalRTPConnection & conn, PHandl
   }
   else
   {
-    rtpSession = new RTP_UDP(GetRTPEncoding(), agg, sessionID, remoteIsNAT);
+    rtpSession = new RTP_UDP(GetRTPEncoding(),
+#if OPAL_RTP_AGGREGATE
+        agg,
+#endif
+        sessionID, remoteIsNAT);
   }
 
   return rtpSession;

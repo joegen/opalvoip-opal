@@ -563,6 +563,7 @@ class OpalMediaFormatInternal : public PObject
 
   friend class OpalMediaFormat;
   friend class OpalMediaFormatList;
+  friend class OpalAudioFormatInternal;
 };
 
 
@@ -703,12 +704,12 @@ class OpalMediaFormat : public PContainer
        "normalised" options, e.g. For H.261 "QCIF MPI"="1", "CIF MPI"="5"
         would be translated to "Frame Width"="176", "Frame Height"="144".
       */
-    bool ToNormalisedOptions() { MakeUnique(); return m_info != NULL && m_info->ToNormalisedOptions(); }
+    bool ToNormalisedOptions() { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->ToNormalisedOptions(); }
 
     /**This will do the reverse of ToNormalisedOptions, translating the OPAL
        "normalised" options to codec specific "custom" options.
       */
-    bool ToCustomisedOptions() { MakeUnique(); return m_info != NULL && m_info->ToCustomisedOptions(); }
+    bool ToCustomisedOptions() { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->ToCustomisedOptions(); }
 
     /**Merge with another media format. This will alter and validate
        the options for this media format according to the merge rule for
@@ -722,48 +723,48 @@ class OpalMediaFormat : public PContainer
       */
     bool Merge(
       const OpalMediaFormat & mediaFormat
-    ) { MakeUnique(); return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
 
     /**Get the name of the format
       */
-    PString GetName() const { return m_info == NULL ? "" : m_info->formatName; }
+    PString GetName() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->formatName; }
 
     /**Return PTrue if media format info is valid. This may be used if the
        single string constructor is used to check that it matched something
        in the registered media formats database.
       */
-    PBoolean IsValid() const { return m_info != NULL && m_info->IsValid(); }
+    PBoolean IsValid() const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->IsValid(); }
 
     /**Return PTrue if media format info may be sent via RTP. Some formats are internal
        use only and are never transported "over the wire".
       */
-    PBoolean IsTransportable() const { return m_info != NULL && m_info->IsTransportable(); }
+    PBoolean IsTransportable() const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->IsTransportable(); }
 
     /**Get the RTP payload type that is to be used for this media format.
        This will either be an intrinsic one for the media format eg GSM or it
        will be automatically calculated as a dynamic media format that will be
        uniqueue amongst the registered media formats.
       */
-    RTP_DataFrame::PayloadTypes GetPayloadType() const { return m_info == NULL ? RTP_DataFrame::IllegalPayloadType : m_info->rtpPayloadType; }
-    void SetPayloadType(RTP_DataFrame::PayloadTypes type) { if (m_info != NULL && MakeUnique()) m_info->rtpPayloadType = type; }
+    RTP_DataFrame::PayloadTypes GetPayloadType() const { PWaitAndSignal m(_mutex); return m_info == NULL ? RTP_DataFrame::IllegalPayloadType : m_info->rtpPayloadType; }
+    void SetPayloadType(RTP_DataFrame::PayloadTypes type) { PWaitAndSignal m(_mutex); if (m_info != NULL && MakeUnique()) m_info->rtpPayloadType = type; }
 
     /**Get the RTP encoding name that is to be used for this media format.
       */
-    const char * GetEncodingName() const { return m_info == NULL ? "" : m_info->rtpEncodingName; }
+    const char * GetEncodingName() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->rtpEncodingName; }
 
     /**Get the media type for media format.
       */
-    OpalMediaType GetMediaType() const { return m_info == NULL ? OpalMediaType() : m_info->mediaType; }
+    OpalMediaType GetMediaType() const { PWaitAndSignal m(_mutex); return m_info == NULL ? OpalMediaType() : m_info->mediaType; }
 
     /**Determine if the media format requires a jitter buffer. As a rule an
        audio codec needs a jitter buffer and all others do not.
       */
-    bool NeedsJitterBuffer() const { return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), PFalse); }
+    bool NeedsJitterBuffer() const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->GetOptionBoolean(NeedsJitterOption(), PFalse); }
     static const PString & NeedsJitterOption();
 
     /**Get the average bandwidth used in bits/second.
       */
-    unsigned GetBandwidth() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxBitRateOption(), 0); }
+    unsigned GetBandwidth() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxBitRateOption(), 0); }
     static const PString & MaxBitRateOption();
     static const PString & TargetBitRateOption();
 
@@ -771,13 +772,13 @@ class OpalMediaFormat : public PContainer
        media format has no intrinsic maximum frame size, eg G.711 would 
        return zero but G.723.1 whoud return 24.
       */
-    PINDEX GetFrameSize() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxFrameSizeOption(), 0); }
+    PINDEX GetFrameSize() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(MaxFrameSizeOption(), 0); }
     static const PString & MaxFrameSizeOption();
 
     /**Get the frame time in RTP timestamp units. If this returns zero then
        the media format is not real time and has no intrinsic timing eg T.120
       */
-    unsigned GetFrameTime() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(FrameTimeOption(), 0); }
+    unsigned GetFrameTime() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(FrameTimeOption(), 0); }
     static const PString & FrameTimeOption();
 
     /**Get the number of RTP timestamp units per millisecond.
@@ -791,24 +792,24 @@ class OpalMediaFormat : public PContainer
 
     /**Get the clock rate in Hz for this format.
       */
-    unsigned GetClockRate() const { return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
+    unsigned GetClockRate() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->GetOptionInteger(ClockRateOption(), 1000); }
     static const PString & ClockRateOption();
 
     /**Get all of the option values of the format as a dictionary.
        Each entry is a name value pair.
       */
-    PStringToString GetOptions() const { return m_info == NULL ? PStringToString() : m_info->GetOptions(); }
+    PStringToString GetOptions() const { PWaitAndSignal m(_mutex); return m_info == NULL ? PStringToString() : m_info->GetOptions(); }
 
     /**Get the number of options this media format has.
       */
-    PINDEX GetOptionCount() const { return m_info == NULL ? 0 : m_info->options.GetSize(); }
+    PINDEX GetOptionCount() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->options.GetSize(); }
 
     /**Get the option instance at the specified index. This contains the
        description and value for the option.
       */
     const OpalMediaOption & GetOption(
       PINDEX index   ///<  Index of option in list to get
-    ) const { return m_info->options[index]; }
+    ) const { PWaitAndSignal m(_mutex); return m_info->options[index]; }
 
     /**Get the option value of the specified name as a string.
 
@@ -817,7 +818,7 @@ class OpalMediaFormat : public PContainer
     bool GetOptionValue(
       const PString & name,   ///<  Option name
       PString & value         ///<  String to receive option value
-    ) const { return m_info != NULL && m_info->GetOptionValue(name, value); }
+    ) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->GetOptionValue(name, value); }
 
     /**Set the option value of the specified name as a string.
        Note the option will not be added if it does not exist, the option
@@ -828,7 +829,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionValue(
       const PString & name,   ///<  Option name
       const PString & value   ///<  New option value as string
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionValue(name, value); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionValue(name, value); }
 
     /**Get the option value of the specified name as a boolean. The default
        value is returned if the option is not present.
@@ -836,7 +837,7 @@ class OpalMediaFormat : public PContainer
     bool GetOptionBoolean(
       const PString & name,   ///<  Option name
       bool dflt = PFalse       ///<  Default value if option not present
-    ) const { return m_info != NULL && m_info->GetOptionBoolean(name, dflt); }
+    ) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->GetOptionBoolean(name, dflt); }
 
     /**Set the option value of the specified name as a boolean.
        Note the option will not be added if it does not exist, the option
@@ -847,7 +848,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionBoolean(
       const PString & name,   ///<  Option name
       bool value              ///<  New value for option
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionBoolean(name, value); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionBoolean(name, value); }
 
     /**Get the option value of the specified name as an integer. The default
        value is returned if the option is not present.
@@ -855,7 +856,7 @@ class OpalMediaFormat : public PContainer
     int GetOptionInteger(
       const PString & name,   ///<  Option name
       int dflt = 0            ///<  Default value if option not present
-    ) const { return m_info == NULL ? dflt : m_info->GetOptionInteger(name, dflt); }
+    ) const { PWaitAndSignal m(_mutex); return m_info == NULL ? dflt : m_info->GetOptionInteger(name, dflt); }
 
     /**Set the option value of the specified name as an integer.
        Note the option will not be added if it does not exist, the option
@@ -867,7 +868,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionInteger(
       const PString & name,   ///<  Option name
       int value               ///<  New value for option
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionInteger(name, value); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionInteger(name, value); }
 
     /**Get the option value of the specified name as a real. The default
        value is returned if the option is not present.
@@ -875,7 +876,7 @@ class OpalMediaFormat : public PContainer
     double GetOptionReal(
       const PString & name,   ///<  Option name
       double dflt = 0         ///<  Default value if option not present
-    ) const { return m_info == NULL ? dflt : m_info->GetOptionReal(name, dflt); }
+    ) const { PWaitAndSignal m(_mutex); return m_info == NULL ? dflt : m_info->GetOptionReal(name, dflt); }
 
     /**Set the option value of the specified name as a real.
        Note the option will not be added if it does not exist, the option
@@ -886,7 +887,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionReal(
       const PString & name,   ///<  Option name
       double value            ///<  New value for option
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionReal(name, value); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionReal(name, value); }
 
     /**Get the option value of the specified name as an index into an
        enumeration list. The default value is returned if the option is not
@@ -895,7 +896,7 @@ class OpalMediaFormat : public PContainer
     PINDEX GetOptionEnum(
       const PString & name,   ///<  Option name
       PINDEX dflt = 0         ///<  Default value if option not present
-    ) const { return m_info == NULL ? dflt : m_info->GetOptionEnum(name, dflt); }
+    ) const { PWaitAndSignal m(_mutex); return m_info == NULL ? dflt : m_info->GetOptionEnum(name, dflt); }
 
     /**Set the option value of the specified name as an index into an enumeration.
        Note the option will not be added if it does not exist, the option
@@ -906,7 +907,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionEnum(
       const PString & name,   ///<  Option name
       PINDEX value            ///<  New value for option
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionEnum(name, value); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionEnum(name, value); }
 
     /**Get the option value of the specified name as a string. The default
        value is returned if the option is not present.
@@ -914,7 +915,7 @@ class OpalMediaFormat : public PContainer
     PString GetOptionString(
       const PString & name,                   ///<  Option name
       const PString & dflt = PString::Empty() ///<  Default value if option not present
-    ) const { return m_info == NULL ? dflt : m_info->GetOptionString(name, dflt); }
+    ) const { PWaitAndSignal m(_mutex); return m_info == NULL ? dflt : m_info->GetOptionString(name, dflt); }
 
     /**Set the option value of the specified name as a string.
        Note the option will not be added if it does not exist, the option
@@ -925,7 +926,7 @@ class OpalMediaFormat : public PContainer
     bool SetOptionString(
       const PString & name,   ///<  Option name
       const PString & value   ///<  New value for option
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionString(name, value); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionString(name, value); }
 
     /**Get the option value of the specified name as an octet array.
        Returns PFalse if not present.
@@ -933,7 +934,7 @@ class OpalMediaFormat : public PContainer
     bool GetOptionOctets(
       const PString & name, ///<  Option name
       PBYTEArray & octets   ///<  Octets in option
-    ) const { return m_info != NULL && m_info->GetOptionOctets(name, octets); }
+    ) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->GetOptionOctets(name, octets); }
 
     /**Set the option value of the specified name as an octet array.
        Note the option will not be added if it does not exist, the option
@@ -944,12 +945,12 @@ class OpalMediaFormat : public PContainer
     bool SetOptionOctets(
       const PString & name,       ///<  Option name
       const PBYTEArray & octets   ///<  Octets in option
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, octets); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, octets); }
     bool SetOptionOctets(
       const PString & name,       ///<  Option name
       const BYTE * data,          ///<  Octets in option
       PINDEX length               ///<  Number of octets
-    ) { MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, data, length); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->SetOptionOctets(name, data, length); }
 
     /**Get a copy of the list of media formats that have been registered.
       */
@@ -971,12 +972,12 @@ class OpalMediaFormat : public PContainer
     bool AddOption(
       OpalMediaOption * option,
       PBoolean overwrite = PFalse
-    ) { MakeUnique(); return m_info != NULL && m_info->AddOption(option, overwrite); }
+    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->AddOption(option, overwrite); }
 
     /**
       * Determine if media format has the specified option.
       */
-    bool HasOption(const PString & name) const { return m_info != NULL && m_info->FindOption(name) != NULL; }
+    bool HasOption(const PString & name) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->FindOption(name) != NULL; }
 
     /**
       * Get a pointer to the specified media format option.
@@ -984,34 +985,35 @@ class OpalMediaFormat : public PContainer
       */
     OpalMediaOption * FindOption(
       const PString & name
-    ) const { return m_info == NULL ? NULL : m_info->FindOption(name); }
+    ) const { PWaitAndSignal m(_mutex); return m_info == NULL ? NULL : m_info->FindOption(name); }
 
     /** Returns PTrue if the media format is valid for the protocol specified
         This allow plugin codecs to customise which protocols they are valid for
         The default implementation returns true unless the protocol is H.323
         and the rtpEncodingName is NULL
       */
-    bool IsValidForProtocol(const PString & protocol) const { return m_info != NULL && m_info->IsValidForProtocol(protocol); }
+    bool IsValidForProtocol(const PString & protocol) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->IsValidForProtocol(protocol); }
 
-    time_t GetCodecVersionTime() const { return m_info == NULL ? 0 : m_info->codecVersionTime; }
+    time_t GetCodecVersionTime() const { PWaitAndSignal m(_mutex); return m_info == NULL ? 0 : m_info->codecVersionTime; }
 
     ostream & PrintOptions(ostream & strm) const
     {
+      PWaitAndSignal m(_mutex);
       if (m_info != NULL)
         strm << setw(-1) << *m_info;
       return strm;
     }
 
     // Backward compatibility
-    virtual PBoolean IsEmpty() const { return m_info == NULL || !m_info->IsValid(); }
-    operator PString() const { return m_info == NULL ? "" : m_info->formatName; }
-    operator const char *() const { return m_info == NULL ? "" : m_info->formatName; }
-    bool operator==(const char * other) const { return m_info != NULL && m_info->formatName == other; }
-    bool operator!=(const char * other) const { return m_info == NULL || m_info->formatName == other; }
-    bool operator==(const PString & other) const { return m_info != NULL && m_info->formatName == other; }
-    bool operator!=(const PString & other) const { return m_info == NULL || m_info->formatName == other; }
-    bool operator==(const OpalMediaFormat & other) const { return Compare(other) == EqualTo; }
-    bool operator!=(const OpalMediaFormat & other) const { return Compare(other) != EqualTo; }
+    virtual PBoolean IsEmpty() const { PWaitAndSignal m(_mutex); return m_info == NULL || !m_info->IsValid(); }
+    operator PString() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->formatName; }
+    operator const char *() const { PWaitAndSignal m(_mutex); return m_info == NULL ? "" : m_info->formatName; }
+    bool operator==(const char * other) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->formatName == other; }
+    bool operator!=(const char * other) const { PWaitAndSignal m(_mutex); return m_info == NULL || m_info->formatName == other; }
+    bool operator==(const PString & other) const { PWaitAndSignal m(_mutex); return m_info != NULL && m_info->formatName == other; }
+    bool operator!=(const PString & other) const { PWaitAndSignal m(_mutex); return m_info == NULL || m_info->formatName == other; }
+    bool operator==(const OpalMediaFormat & other) const { PWaitAndSignal m(_mutex); return Compare(other) == EqualTo; }
+    bool operator!=(const OpalMediaFormat & other) const { PWaitAndSignal m(_mutex); return Compare(other) != EqualTo; }
     friend bool operator==(const char * other, const OpalMediaFormat & fmt) { return fmt.m_info != NULL && fmt.m_info->formatName == other; }
     friend bool operator!=(const char * other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName == other; }
     friend bool operator==(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info != NULL && fmt.m_info->formatName == other; }
@@ -1021,6 +1023,7 @@ class OpalMediaFormat : public PContainer
     PBoolean SetSize(PINDEX) { return PTrue; }
 
   protected:
+    PMutex _mutex;
     void Construct(OpalMediaFormatInternal * info);
     OpalMediaFormatInternal * m_info;
 

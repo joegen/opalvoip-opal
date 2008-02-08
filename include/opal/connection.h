@@ -1119,6 +1119,7 @@ class OpalConnection : public PSafeObject
   public:
     const RTP_DataFrame::PayloadMapType & GetRTPPayloadMap() const
     { return rtpPayloadMap; }
+
   protected:
     RTP_DataFrame::PayloadMapType rtpPayloadMap;
 };

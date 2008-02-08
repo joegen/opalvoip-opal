@@ -49,7 +49,7 @@
 
 #define new PNEW
 
- 
+
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
@@ -403,13 +403,23 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
   if (pdu->GetMethod() != SIP_PDU::NumMethods)
     pdu->AdjustVia(transport);
 
-  // Find a corresponding connection
-  PSafePtr<SIPConnection> connection = GetSIPConnectionWithLock(pdu->GetMIME().GetCallID(), PSafeReadWrite);
-  if (connection != NULL) {
-    connection->QueuePDU(pdu);
-    return PTrue;
+  // pass message off to thread pool
+  PString callID = pdu->GetMIME().GetCallID();
+  if (HasConnection(callID)) {
+    SIP_PDU_Work * work = new SIP_PDU_Work;
+    work->callID    = callID;
+    work->ep        = this;
+    work->pdu       = pdu;
+    threadPool.AddWork(work);
+    return true;
   }
-  
+
+  return OnReceivedConnectionlessPDU(transport, pdu);
+}
+
+
+bool SIPEndPoint::OnReceivedConnectionlessPDU(OpalTransport & transport, SIP_PDU * pdu)
+{
   switch (pdu->GetMethod()) {
     case SIP_PDU::NumMethods :
       {
@@ -448,9 +458,8 @@ PBoolean SIPEndPoint::OnReceivedPDU(OpalTransport & transport, SIP_PDU * pdu)
       SendResponse(SIP_PDU::Failure_TransactionDoesNotExist, transport, *pdu);
   }
 
-  return PFalse;
+  return false;
 }
-
 
 PBoolean SIPEndPoint::OnReceivedREGISTER(OpalTransport & transport, SIP_PDU & pdu)
 {
@@ -518,6 +527,10 @@ void SIPEndPoint::OnReceivedResponse(SIPTransaction & transaction, SIP_PDU & res
 
 PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * request)
 {
+  // send provisional response here because creating the connection can take a long time
+  // on some systems
+  SendResponse(SIP_PDU::Information_Trying, transport, *request);
+
   SIPMIMEInfo & mime = request->GetMIME();
 
   // parse the incoming To field, and check if we accept incoming calls for this address
@@ -535,10 +548,6 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
     return false;
   }
 
-  // send provisional response here because creating the connection can take a long time
-  // on some systems
-  SendResponse(SIP_PDU::Information_Trying, transport, *request);
-
   // ask the endpoint for a connection
   SIPConnection *connection = CreateConnection(*call,
                                                mime.GetCallID(),
@@ -553,7 +562,15 @@ PBoolean SIPEndPoint::OnReceivedINVITE(OpalTransport & transport, SIP_PDU * requ
   }
 
   // Get the connection to handle the rest of the INVITE
-  connection->QueuePDU(request);
+  //connection->QueuePDU(request);
+
+  // pass message off to thread pool
+  SIP_PDU_Work * work = new SIP_PDU_Work;
+  work->ep        = this;
+  work->pdu       = request;
+  work->callID    = mime.GetCallID();
+  threadPool.AddWork(work);
+
   return PTrue;
 }
 
@@ -1061,6 +1078,57 @@ void SIPEndPoint::OnRTPStatistics(const SIPConnection & connection,
   manager.OnRTPStatistics(connection, session);
 }
 
+SIPEndPoint::SIP_PDU_Thread::SIP_PDU_Thread(PThreadPoolBase & _pool)
+  : PThreadPoolWorkerBase(_pool) { }
+
+unsigned SIPEndPoint::SIP_PDU_Thread::GetWorkSize() const { return pduQueue.size(); }
+
+void SIPEndPoint::SIP_PDU_Thread::OnAddWork(SIP_PDU_Work * work)
+{
+  PWaitAndSignal m(mutex);
+  pduQueue.push(work);
+  if (pduQueue.size() == 1)
+    sync.Signal();
+}
+
+void SIPEndPoint::SIP_PDU_Thread::OnRemoveWork(SIP_PDU_Work *) 
+{ }
+
+void SIPEndPoint::SIP_PDU_Thread::Shutdown()
+{
+  shutdown = true;
+  sync.Signal();
+}
+
+
+void SIPEndPoint::SIP_PDU_Thread::Main()
+{
+  while (!shutdown) {
+    mutex.Wait();
+    if (pduQueue.size() == 0) {
+      mutex.Signal();
+      sync.Wait();
+      continue;
+    }
+
+    SIP_PDU_Work * work = pduQueue.front();
+    pduQueue.pop();
+    mutex.Signal();
+
+    if (!work->callID.IsEmpty()) {
+      PSafePtr<SIPConnection> connection = work->ep->GetSIPConnectionWithLock(work->callID, PSafeReadWrite);
+      if (connection != NULL) {
+        if (connection->LockReadWrite()) {
+          connection->OnReceivedPDU(*work->pdu);
+        }
+        connection->UnlockReadWrite();
+      }
+    }
+
+    delete work->pdu;
+    delete work;
+  }
+}
 
 #endif // OPAL_SIP
 

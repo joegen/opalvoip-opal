@@ -304,6 +304,7 @@ H323Connection::~H323Connection()
   delete connectPDU;
   delete progressPDU;
   delete holdMediaChannel;
+  delete controlListener;
 
   PTRACE(4, "H323\tConnection " << callToken << " deleted.");
 }

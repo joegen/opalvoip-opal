@@ -352,8 +352,10 @@ class RTP_Session : public PObject
     /**Create a new RTP session.
      */
     RTP_Session(
-      const PString &  rtpFormat,     ///<  RTP format
+#if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///<  RTP aggregator
+#endif
+      const PString &  rtpFormat,     ///<  RTP format
       unsigned id,                    ///<  Session ID for RTP channel
       RTP_UserData * userData = NULL, ///<  Optional data for session.
       PBoolean autoDeleteUserData = PTrue  ///<  Delete optional data with session.
@@ -831,7 +833,9 @@ class RTP_Session : public PObject
     PMutex reportMutex;
     PTimer reportTimer;
 
+#if OPAL_RTP_AGGREGATE
     PHandleAggregator * aggregator;
+#endif
 
     PBoolean closeOnBye;
     PBoolean byeSent;
@@ -981,8 +985,10 @@ class RTP_UDP : public RTP_Session
     /**Create a new RTP channel.
      */
     RTP_UDP(
-      const PString & rtpFormat,      ///< RTP format
+#if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
+#endif
+      const PString & rtpFormat,      ///< RTP format
       unsigned id,                    ///<  Session ID for RTP channel
       PBoolean remoteIsNAT            ///<  PTrue is remote is behind NAT
     );
@@ -1162,7 +1168,9 @@ class SecureRTP_UDP : public RTP_UDP
      */
     SecureRTP_UDP(
       OpalRTPConnection &,            ///< connection
+#if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
+#endif
       unsigned id,                    ///<  Session ID for RTP channel
       PBoolean remoteIsNAT            ///<  PTrue is remote is behind NAT
     );

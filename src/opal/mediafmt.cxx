@@ -607,6 +607,8 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
 
 OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 {
+  PWaitAndSignal m(_mutex);
+
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
@@ -622,12 +624,14 @@ OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
 
 OpalMediaFormat & OpalMediaFormat::operator=(const char * wildcard)
 {
+  PWaitAndSignal m(_mutex);
   return operator=(PString(wildcard));
 }
 
 
 OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 {
+  PWaitAndSignal m(_mutex);
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
@@ -643,6 +647,8 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
 
 void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
 {
+  PWaitAndSignal m(_mutex);
+
   m_info = (OpalMediaFormatInternal *)c->m_info->Clone();
   m_info->options.MakeUnique();
 }
@@ -650,24 +656,28 @@ void OpalMediaFormat::CloneContents(const OpalMediaFormat * c)
 
 void OpalMediaFormat::CopyContents(const OpalMediaFormat & c)
 {
+  PWaitAndSignal m(_mutex);
   m_info = c.m_info;
 }
 
 
 void OpalMediaFormat::DestroyContents()
 {
+  PWaitAndSignal m(_mutex);
   delete m_info;
 }
 
 
 PObject * OpalMediaFormat::Clone() const
 {
+  PWaitAndSignal m(_mutex);
   return new OpalMediaFormat(*this);
 }
 
 
 PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 {
+  PWaitAndSignal m(_mutex);
   PAssert(PIsDescendant(&obj, OpalMediaFormat), PInvalidCast);
   const OpalMediaFormat & other = (const OpalMediaFormat &)obj;
 
@@ -689,6 +699,7 @@ PObject::Comparison OpalMediaFormat::Compare(const PObject & obj) const
 
 void OpalMediaFormat::PrintOn(ostream & strm) const
 {
+  PWaitAndSignal m(_mutex);
   if (m_info != NULL)
     strm << *m_info;
 }
@@ -696,6 +707,7 @@ void OpalMediaFormat::PrintOn(ostream & strm) const
 
 void OpalMediaFormat::ReadFrom(istream & strm)
 {
+  PWaitAndSignal m(_mutex);
   char fmt[100];
   strm >> fmt;
   operator=(fmt);
@@ -806,6 +818,7 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
 PObject * OpalMediaFormatInternal::Clone() const
 {
+  PWaitAndSignal m1(media_format_mutex);
   return new OpalMediaFormatInternal(*this);
 }
 
@@ -820,11 +833,14 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
   ToNormalisedOptions();
 
   for (PINDEX i = 0; i < options.GetSize(); i++) {
-    OpalMediaOption * option = mediaFormat.FindOption(options[i].GetName());
+    OpalMediaOption & opt = options[i];
+    PString name = opt.GetName();
+    OpalMediaOption * option = mediaFormat.FindOption(opt.GetName());
+    PAssert(option->GetName() == opt.GetName(), "find returned bad name");
     if (option == NULL) {
-      PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << options[i].GetName());
+      PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << opt.GetName());
     }
-    else if (!options[i].Merge(*option))
+    else if (!opt.Merge(*option))
       return false;
   }
 
@@ -836,6 +852,7 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 
 PStringToString OpalMediaFormatInternal::GetOptions() const
 {
+  PWaitAndSignal m1(media_format_mutex);
   PStringToString dict;
   for (PINDEX i = 0; i < options.GetSize(); i++)
     dict.SetAt(options[i].GetName(), options[i].AsString());
@@ -1095,12 +1112,16 @@ OpalMediaOption * OpalMediaFormatInternal::FindOption(const PString & name) cons
   if (index == P_MAX_INDEX)
     return NULL;
 
+  PAssert(name == options[index].GetName(), "name mismatch");
+
   return &options[index];
 }
 
 
 bool OpalMediaFormatInternal::IsValidForProtocol(const PString & protocol) const
 {
+  PWaitAndSignal m(media_format_mutex);
+
   // the protocol is only valid for SIP if the RTP name is not NULL
   if (protocol *= "sip")
     return rtpEncodingName != NULL;
@@ -1211,13 +1232,15 @@ OpalAudioFormatInternal::OpalAudioFormatInternal(const char * fullName,
 
 PObject * OpalAudioFormatInternal::Clone() const
 {
+  PWaitAndSignal m(media_format_mutex);
   return new OpalAudioFormatInternal(*this);
 }
 
 
 bool OpalAudioFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
 {
-  PWaitAndSignal m(media_format_mutex);
+  PWaitAndSignal m1(media_format_mutex);
+  PWaitAndSignal m2(mediaFormat.media_format_mutex);
 
   if (!OpalMediaFormatInternal::Merge(mediaFormat))
     return false;
@@ -1298,6 +1321,7 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
 
 PObject * OpalVideoFormatInternal::Clone() const
 {
+  PWaitAndSignal m(media_format_mutex);
   return new OpalVideoFormatInternal(*this);
 }
 
