@@ -40,6 +40,7 @@
 #include <ptlib.h>
 #endif
 
+#include <ptclib/sockagg.h>
 #include <opal/endpoint.h>
 #include <sip/sipcon.h>
 #include <sip/sippdu.h>
