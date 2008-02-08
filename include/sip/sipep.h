@@ -53,7 +53,6 @@ class SIPRegisterHandler;
 //  provide flag so applications know if presence is available
 //
 #define OPAL_HAS_SIP_PRESENCE   1
-    
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -219,6 +218,13 @@ class SIPEndPoint : public OpalEndPoint
       */
     virtual PBoolean OnReceivedPDU(
       OpalTransport & transport,
+      SIP_PDU * pdu
+    );
+
+    /**Handle an incoming SIP PDU not assigned to any connection
+      */
+    virtual bool OnReceivedConnectionlessPDU(
+      OpalTransport & transport, 
       SIP_PDU * pdu
     );
 
@@ -665,6 +671,37 @@ class SIPEndPoint : public OpalEndPoint
     NATBindingRefreshMethod natMethod;
     
     PAtomicInteger          lastSentCSeq;    
+
+    struct SIP_PDU_Work
+    {
+      SIP_PDU_Work()
+      { ep = NULL; pdu = NULL; }
+
+      SIPEndPoint * ep;
+      SIP_PDU * pdu;
+      PString callID;
+    };
+
+    typedef std::queue<SIP_PDU_Work *> SIP_PDUWorkQueue;
+
+    class SIP_PDU_Thread : public PThreadPoolWorkerBase
+    {
+      public:
+        SIP_PDU_Thread(PThreadPoolBase & _pool);
+        unsigned GetWorkSize() const;
+        void OnAddWork(SIP_PDU_Work * work);
+        void OnRemoveWork(SIP_PDU_Work *);
+        void Shutdown();
+        void Main();
+
+      protected:
+        PMutex mutex;
+        PSyncPoint sync;
+        SIP_PDUWorkQueue pduQueue;
+    };
+
+    typedef PThreadPool<SIP_PDU_Work, SIP_PDU_Thread> SIPMainThreadPool;
+    SIPMainThreadPool threadPool;
 };
 
 #endif // __OPAL_SIPEP_H

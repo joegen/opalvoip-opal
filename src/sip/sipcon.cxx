@@ -169,8 +169,6 @@ SIPConnection::SIPConnection(OpalCall & call,
   , originalInvite(NULL)
   , needReINVITE(false)
   , targetAddress(destination)
-  , pduSemaphore(0, P_MAX_INDEX)
-  , pduHandler(NULL)
   , ackReceived(false)
   , releaseMethod(ReleaseWithNothing)
 {
@@ -215,9 +213,6 @@ SIPConnection::~SIPConnection()
   originalInvite = NULL;
 
   delete transport;
-
-  if (pduHandler) 
-    delete pduHandler;
 
   PTRACE(4, "SIP\tDeleted connection.");
 }
@@ -289,11 +284,6 @@ void SIPConnection::OnReleased()
 
   SetPhase(ReleasedPhase);
 
-  if (pduHandler != NULL) {
-    pduSemaphore.Signal();
-    pduHandler->WaitForTermination();
-  }
-  
   OpalConnection::OnReleased();
 
   if (transport != NULL)
@@ -1334,7 +1324,9 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
 
       // #1 - Same sequence number means it is a retransmission
       if (originalMIME.GetCSeq() == requestMIME.GetCSeq()) {
-        PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI());
+        PTimeInterval timeSinceInvite = PTime() - originalInviteTime;
+        PInt64 msecs = timeSinceInvite.GetMilliSeconds();
+        PTRACE(3, "SIP\tIgnoring duplicate INVITE from " << request.GetURI() << " after " << msecs);
         return;
       }
 
@@ -1359,7 +1351,8 @@ void SIPConnection::OnReceivedINVITE(SIP_PDU & request)
   // originalInvite should contain the first received INVITE for
   // this connection
   delete originalInvite;
-  originalInvite = new SIP_PDU(request);
+  originalInvite     = new SIP_PDU(request);
+  originalInviteTime = PTime();
 
   // We received a Re-INVITE for a current connection
   if (isReinvite) { 
@@ -1986,67 +1979,6 @@ void SIPConnection::OnCreatingINVITE(SIP_PDU & /*request*/)
 {
   PTRACE(3, "SIP\tCreating INVITE request");
 }
-
-
-void SIPConnection::QueuePDU(SIP_PDU * pdu)
-{
-  if (PAssertNULL(pdu) == NULL)
-    return;
-
-  if (phase >= ReleasedPhase) {
-    if(pdu->GetMethod() != SIP_PDU::NumMethods)
-    {
-      PTRACE(4, "SIP\tIgnoring PDU: " << *pdu);
-    }
-    else
-    {
-      PTRACE(4, "SIP\tProcessing PDU: " << *pdu);
-      OnReceivedPDU(*pdu);
-    }
-    delete pdu;
-  }
-  else {
-    PTRACE(4, "SIP\tQueueing PDU: " << *pdu);
-    pduQueue.Enqueue(pdu);
-    pduSemaphore.Signal();
-
-    if (pduHandler == NULL) {
-      SafeReference();
-      pduHandler = PThread::Create(PCREATE_NOTIFIER(HandlePDUsThreadMain), 0,
-                                   PThread::NoAutoDeleteThread,
-                                   PThread::NormalPriority,
-                                   "SIP Handler:%x");
-    }
-  }
-}
-
-
-void SIPConnection::HandlePDUsThreadMain(PThread &, INT)
-{
-  PTRACE(4, "SIP\tPDU handler thread started.");
-
-  while (phase != ReleasedPhase) {
-    PTRACE(4, "SIP\tAwaiting next PDU.");
-    pduSemaphore.Wait();
-
-    if (!LockReadWrite())
-      break;
-
-    SIP_PDU * pdu = pduQueue.Dequeue();
-
-    if (pdu != NULL) {
-      OnReceivedPDU(*pdu);
-      delete pdu;
-    }
-
-    UnlockReadWrite();
-  }
-
-  SafeDereference();
-
-  PTRACE(4, "SIP\tPDU handler thread finished.");
-}
-
 
 PBoolean SIPConnection::ForwardCall (const PString & fwdParty)
 {
