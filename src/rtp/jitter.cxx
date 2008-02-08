@@ -81,65 +81,6 @@ class RTP_JitterBufferAnalyser : public PObject
 
 #endif
 
-#if OPAL_RTP_AGGREGATE
-class RTP_AggregatedHandle : public PAggregatedHandle
-{
-  public:
-    RTP_AggregatedHandle(PHandleAggregator * _owner, RTP_JitterBuffer & _jitterBuffer)
-      : jitterBuffer(_jitterBuffer), 
-        dataFd(jitterBuffer.session.GetDataSocketHandle()), 
-        controlFd(jitterBuffer.session.GetControlSocketHandle()),
-        owner(_owner)
-    { }
-
-    ~RTP_AggregatedHandle()
-    {
-    }
-
-    PAggregatorFDList_t GetFDs()
-    { 
-      PAggregatorFDList_t list; 
-      list.push_back(&controlFd); 
-      list.push_back(&dataFd); 
-      return list; 
-    }
-
-    PBoolean Init()
-    {
-      return jitterBuffer.Init(currentReadFrame, markerWarning);
-    }
-
-    PBoolean PreRead()
-    {
-      return jitterBuffer.PreRead(currentReadFrame, markerWarning);
-    }
-
-    PBoolean OnRead()
-    {
-      return jitterBuffer.OnRead(currentReadFrame, markerWarning, PFalse);
-    }
-
-    void DeInit()
-    {
-      return jitterBuffer.DeInit(currentReadFrame, markerWarning);
-    }
-
-    PTimeInterval GetTimeout()
-    { return jitterBuffer.session.GetReportTimer(); }
-
-    PBoolean Remove()
-    { return owner->RemoveHandle(this); }
-
-    RTP_JitterBuffer & jitterBuffer;
-    RTP_JitterBuffer::Entry * currentReadFrame;
-    PBoolean markerWarning;
-
-  protected:
-    PAggregatorFD dataFd, controlFd;
-    PHandleAggregator * owner;
-};
-#endif
-
 #define new PNEW
 
 
@@ -802,6 +743,7 @@ PBoolean OpalJitterBuffer::ReadData(DWORD timestamp, RTP_DataFrame & frame)
   return PTrue;
 }
 
+/////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -810,48 +752,28 @@ RTP_JitterBuffer::RTP_JitterBuffer(RTP_Session & sess,
                                    unsigned maxJitterDelay,
                                    unsigned time,
                                    PINDEX stackSize)
-    : OpalJitterBuffer(minJitterDelay, maxJitterDelay, time, stackSize),
-      session(sess)
-#if OPAL_RTP_AGGREGATE
-      , aggregatedHandle(NULL)
-#endif
+  : OpalJitterBuffer(minJitterDelay, maxJitterDelay, time, stackSize),
+    session(sess)
 {
     PTRACE(6, "RTP_JitterBuffer\tConstructor" << *this);
 }
 
 RTP_JitterBuffer::~RTP_JitterBuffer() 
 {
-#if OPAL_RTP_AGGREGATE
-  if (aggregatedHandle != NULL) {
-    aggregatedHandle->Remove();
-    delete aggregatedHandle;  
-    aggregatedHandle = NULL;
-  }
-#endif
 }
 
 PBoolean RTP_JitterBuffer::OnReadPacket(RTP_DataFrame & frame,
 				    PBoolean loop)
 {
-    PBoolean success = session.ReadData(frame, loop);
-    PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
-    return success;
+  PBoolean success = session.ReadData(frame, loop);
+  PTRACE(8, "RTP\tOnReadPacket: Frame from network, timestamp " << frame.GetTimestamp());
+  return success;
 }
 
 void RTP_JitterBuffer::Resume(PHandleAggregator * aggregator)
 {
-#if OPAL_RTP_AGGREGATE
-  // if we are aggregating RTP threads, add the socket to the RTP aggregator
-  if (aggregator != NULL) {
-    aggregatedHandle = new RTP_AggregatedHandle(aggregator, *this);
-    aggregator->AddHandle(aggregatedHandle);
-    return;
-  }
-#endif
-
   OpalJitterBuffer::Resume(aggregator);
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////

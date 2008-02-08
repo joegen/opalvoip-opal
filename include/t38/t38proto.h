@@ -242,7 +242,9 @@ class T38PseudoRTP : public RTP_UDP
     /**Create a new RTP channel.
      */
     T38PseudoRTP(
+#if OPAL_RTP_AGGREGATE
       PHandleAggregator * aggregator, ///< RTP aggregator
+#endif
       unsigned id,                    ///<  Session ID for RTP channel
       PBoolean remoteIsNAT                ///<  PTrue is remote is behind NAT
     );
