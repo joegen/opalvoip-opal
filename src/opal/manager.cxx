@@ -161,7 +161,7 @@ OpalManager::OpalManager()
   , activeCalls(*this)
   , clearingAllCalls(PFalse)
 #if OPAL_RTP_AGGREGATE
-  , useRTPAggregation(PTrue)
+  , useRTPAggregation(false)
 #endif
 {
   rtpIpPorts.current = rtpIpPorts.base = 5000;

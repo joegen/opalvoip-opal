@@ -539,8 +539,16 @@ PBoolean OpalT38Protocol::HandlePacketLost(unsigned PTRACE_nLost)
 
 /////////////////////////////////////////////////////////////////////////////
 
-T38PseudoRTP::T38PseudoRTP(PHandleAggregator * _aggregator, unsigned _id, PBoolean _remoteIsNAT)
-  : RTP_UDP(_aggregator, _id, _remoteIsNAT)
+T38PseudoRTP::T38PseudoRTP(
+#if OPAL_RTP_AGGREGATE
+                           PHandleAggregator * _aggregator, 
+#endif
+                           unsigned _id, PBoolean _remoteIsNAT)
+  : RTP_UDP(
+#if OPAL_RTP_AGGREGATE
+  _aggregator, 
+#endif
+  _id, _remoteIsNAT)
 {
   PTRACE(4, "RTP_T38\tPseudoRTP session created with NAT flag set to " << remoteIsNAT);
 

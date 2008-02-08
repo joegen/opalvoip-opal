@@ -703,6 +703,7 @@ class OpalEndPoint : public PObject
     virtual PString GetDefaultSecurityMode() const 
     { return defaultSecurityMode; }
 
+#if OPAL_RTP_AGGREGATE
     virtual PBoolean UseRTPAggregation() const;
 
     /**Set the RTP aggregation size
@@ -718,7 +719,8 @@ class OpalEndPoint : public PObject
     /** Get the aggregator used for RTP channels
       */
     PHandleAggregator * GetRTPAggregator();
-	
+#endif
+
     /**Callback to allow interface adjustments before connecting to the remote party
        The default implementation does nothing and returns PTrue
       */

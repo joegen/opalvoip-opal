@@ -210,7 +210,7 @@ PBoolean OpalIVRConnection::SetUpConnection()
   phase = ConnectedPhase;
   OnConnected();
 
-//  ownerCall.OpenSourceMediaStreams(*this, 1);
+  ownerCall.OpenSourceMediaStreams(*this, 1);
   PSafePtr<OpalConnection> otherParty = GetCall().GetOtherPartyConnection(*this);
   if (otherParty != NULL)
     ownerCall.OpenSourceMediaStreams(*otherParty, 1);
@@ -445,7 +445,7 @@ PBoolean OpalIVRMediaStream::ReadPacket(RTP_DataFrame & packet)
 
 PBoolean OpalIVRMediaStream::IsSynchronous() const
 {
-  return PFalse;
+  return true;
 }
 
 

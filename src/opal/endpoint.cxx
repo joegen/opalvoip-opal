@@ -525,9 +525,10 @@ PString OpalEndPoint::GetSSLCertificate() const
 }
 #endif
 
+#if OPAL_RTP_AGGREGATE
+
 PHandleAggregator * OpalEndPoint::GetRTPAggregator()
 {
-#if OPAL_RTP_AGGREGATE
   PWaitAndSignal m(rtpAggregationMutex);
   if (rtpAggregationSize == 0)
     return NULL;
@@ -536,39 +537,24 @@ PHandleAggregator * OpalEndPoint::GetRTPAggregator()
     rtpAggregator = new PHandleAggregator(rtpAggregationSize);
 
   return rtpAggregator;
-#else
-  return NULL;
-#endif
 }
 
 PBoolean OpalEndPoint::UseRTPAggregation() const
 { 
-#if OPAL_RTP_AGGREGATE
   return useRTPAggregation; 
-#else
-  return PFalse;
-#endif
 }
 
-void OpalEndPoint::SetRTPAggregationSize(PINDEX 
-#if OPAL_RTP_AGGREGATE
-                             size
-#endif
-                             )
+void OpalEndPoint::SetRTPAggregationSize(PINDEX size)
 { 
-#if OPAL_RTP_AGGREGATE
   rtpAggregationSize = size; 
-#endif
 }
 
 PINDEX OpalEndPoint::GetRTPAggregationSize() const
 { 
-#if OPAL_RTP_AGGREGATE
   return rtpAggregationSize; 
-#else
-  return 0;
-#endif
 }
+
+#endif
 
 PBoolean OpalEndPoint::AdjustInterfaceTable(PIPSocket::Address & /*remoteAddress*/, 
                                         PIPSocket::InterfaceTable & /*interfaceTable*/)
