@@ -231,6 +231,7 @@ OpalConnection::OpalConnection(OpalCall & call,
 
   securityMode = ep.GetDefaultSecurityMode();
 
+#if OPAL_RTP_AGGREGATE
   switch (options & RTPAggregationMask) {
     case RTPAggregationDisable:
       useRTPAggregation = PFalse;
@@ -241,6 +242,7 @@ OpalConnection::OpalConnection(OpalCall & call,
     default:
       useRTPAggregation = endpoint.UseRTPAggregation();
   }
+#endif
 
   if (stringOptions != NULL) {
     PString id((*stringOptions)("Call-Identifier"));
@@ -856,7 +858,11 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
 
 #if OPAL_T38FAX
   if (sessionID == OpalMediaFormat::DefaultDataSessionID) {
-    rtpSession = new T38PseudoRTP(NULL, sessionID, remoteIsNAT);
+    rtpSession = new T38PseudoRTP(
+#if OPAL_RTP_AGGREGATE
+      NULL, 
+#endif
+      sessionID, remoteIsNAT);
   }
   else
 #endif
@@ -868,7 +874,9 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
       return NULL;
     }
     rtpSession = parms->CreateRTPSession(
+#if OPAL_RTP_AGGREGATE
                   useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+#endif
                   sessionID, remoteIsNAT, *this);
     if (rtpSession == NULL) {
       PTRACE(1, "OpalCon\tCannot create RTP session for security mode " << securityMode);
@@ -879,7 +887,9 @@ RTP_Session * OpalConnection::CreateSession(const OpalTransport & transport,
   else
   {
     rtpSession = new RTP_UDP(
+#if OPAL_RTP_AGGREGATE
                    useRTPAggregation ? endpoint.GetRTPAggregator() : NULL, 
+#endif
                    sessionID, remoteIsNAT);
   }
 

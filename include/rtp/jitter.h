@@ -40,6 +40,9 @@
 
 #include <rtp/rtp.h>
 
+#include <opal/buildopts.h>
+
+
 class RTP_JitterBuffer;
 class RTP_JitterBufferAnalyser;
 
@@ -191,10 +194,7 @@ class RTP_JitterBuffer : public OpalJitterBuffer
     PCLASSINFO(RTP_JitterBuffer, OpalJitterBuffer);
 
  public:
-#if OPAL_RTP_AGGREGATE
-    friend class RTP_AggregatedHandle;
-#endif
-        RTP_JitterBuffer(
+    RTP_JitterBuffer(
 	    RTP_Session & session,   ///<  Associated RTP session tor ead data from
 	    unsigned minJitterDelay, ///<  Minimum delay in RTP timestamp units
 	    unsigned maxJitterDelay, ///<  Maximum delay in RTP timestamp units
@@ -219,10 +219,7 @@ class RTP_JitterBuffer : public OpalJitterBuffer
  protected:
 	/**This class extracts data from the outside world by reading from this session variable */
    RTP_Session & session;
-   RTP_AggregatedHandle * aggregatedHandle;
 };
-
-
 
 #endif // __OPAL_JITTER_H
 
