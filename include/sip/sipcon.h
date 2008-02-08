@@ -322,17 +322,6 @@ class SIPConnection : public OpalConnection
       */
     virtual void OnCreatingINVITE(SIP_PDU & pdu);
 
-    /**Queue a PDU for the PDU handler thread to handle.
-       Any listener threads on the endpoint upon receiving a PDU and
-       determining the SIPConnection to use from the Call-ID field queues up
-       the PDU so that it can get back to getting PDU's as quickly as
-       possible. All time consuming operations on the PDU are done in the
-       separate thread.
-      */
-    void QueuePDU(
-      SIP_PDU * pdu
-    );
-
     /**Callback from the RTP session for statistics monitoring.
        This is called every so many packets on the transmitter and receiver
        threads of the RTP session indicating that the statistics have been
@@ -441,7 +430,6 @@ class SIPConnection : public OpalConnection
 #endif
 
   protected:
-    PDECLARE_NOTIFIER(PThread, SIPConnection, HandlePDUsThreadMain);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnInviteResponseRetry);
     PDECLARE_NOTIFIER(PTimer, SIPConnection, OnAckTimeout);
 
@@ -493,15 +481,12 @@ class SIPConnection : public OpalConnection
     PString               forwardParty;
 
     SIP_PDU               * originalInvite;
+    PTime                 originalInviteTime;
 
     bool                  needReINVITE;
     PStringList           routeSet;
     SIPURL                targetAddress;
     SIPAuthentication     authentication;
-
-    SIP_PDU_Queue pduQueue;
-    PSemaphore    pduSemaphore;
-    PThread     * pduHandler;
 
     PTimer                    ackTimer;
     PTimer                    ackRetry;
