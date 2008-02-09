@@ -221,7 +221,7 @@ void IAX2CallProcessor::ConnectToRemoteNode(PString & newRemoteNode)
 {      // Parse a string like guest@node.name.com/23234
   
   PTRACE(2, "Connect to remote node " << newRemoteNode);
-  PStringList res = IAX2EndPoint::DissectRemoteParty(newRemoteNode);
+  PStringArray res = IAX2EndPoint::DissectRemoteParty(newRemoteNode);
 
   if (res[IAX2EndPoint::addressIndex].IsEmpty()) {
     PTRACE(3, "Opal\tremote node to call is not specified correctly iax2:" << newRemoteNode);

@@ -288,7 +288,7 @@ PBoolean OpalLineInterfaceDevice::EnableAudio(unsigned line, PBoolean enabled)
 }
 
 
-PBoolean OpalLineInterfaceDevice::IsAudioEnabled(unsigned line)
+PBoolean OpalLineInterfaceDevice::IsAudioEnabled(unsigned line) const
 {
   return line < GetLineCount() && m_LineAudioEnabled[line];
 }

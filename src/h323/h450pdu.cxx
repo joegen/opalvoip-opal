@@ -2076,9 +2076,9 @@ PBoolean H45011Handler::OnReceivedCallIntrusionForcedRelease(int /*linkedId*/,
   PStringList tokens = endpoint.GetAllConnections();
 
   if(tokens.GetSize() >1) {
-    for (PINDEX i = 0; i < tokens.GetSize(); i++) {
-      if(endpoint.HasConnection(tokens[i])){
-        PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(tokens[i], PSafeReadOnly);
+    for (PStringList::iterator token = tokens.begin(); token != tokens.end(); ++token) {
+      if(endpoint.HasConnection(*token)){
+        PSafePtr<H323Connection> conn = endpoint.FindConnectionWithLock(*token, PSafeReadOnly);
         if (conn != NULL){
           if (conn->IsEstablished()){
             if((conn->GetLocalCallIntrusionProtectionLevel() < ciArg.m_ciCapabilityLevel)){

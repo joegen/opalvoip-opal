@@ -352,33 +352,32 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
 
 void DisplayMediaFormats(const OpalMediaFormatList & mediaList)
 {
-  PINDEX i;
   PINDEX max_len = 0;
-  for (i = 0; i < mediaList.GetSize(); i++) {
-    PINDEX len = mediaList[i].GetName().GetLength();
+  OpalMediaFormatList::const_iterator fmt;
+  for (fmt = mediaList.begin(); fmt != mediaList.end(); ++fmt) {
+    PINDEX len = fmt->GetName().GetLength();
     if (len > max_len)
       max_len = len;
   }
 
-  for (i = 0; i < mediaList.GetSize(); i++) {
-    OpalMediaFormat & fmt = mediaList[i];
+  for (fmt = mediaList.begin(); fmt != mediaList.end(); ++fmt) {
     PString str = ", h323=";
-    str += fmt.IsValidForProtocol("h.323") ? "yes" : "no";
+    str += fmt->IsValidForProtocol("h.323") ? "yes" : "no";
     str += ", sip=";
-    str += fmt.IsValidForProtocol("sip") ? "yes" : "no";
-    cout << setw(max_len+2) << fmt << "  ";
-    switch (fmt.GetDefaultSessionID()) {
+    str += fmt->IsValidForProtocol("sip") ? "yes" : "no";
+    cout << setw(max_len+2) << *fmt << "  ";
+    switch (fmt->GetDefaultSessionID()) {
       case OpalMediaFormat::DefaultAudioSessionID:
-        cout << "audio, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << str << endl;
+        cout << "audio, bandwidth=" << fmt->GetBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
         break;
       case OpalMediaFormat::DefaultVideoSessionID:
-        cout << "video, bandwidth=" << fmt.GetBandwidth() << ", RTP=" << fmt.GetPayloadType() << str << endl;
+        cout << "video, bandwidth=" << fmt->GetBandwidth() << ", RTP=" << fmt->GetPayloadType() << str << endl;
         break;
       case OpalMediaFormat::DefaultDataSessionID:
         cout << "data" << endl;;
         break;
       default:
-        cout << "unknown type " << hex << mediaList[i].GetDefaultSessionID() << dec << endl;
+        cout << "unknown type " << hex << fmt->GetDefaultSessionID() << dec << endl;
     }
   }
 
@@ -555,15 +554,16 @@ void VideoTest(const PString & fmtName)
 
     cout << encoded.GetSize() << " packets." << endl;
 
-    for (PINDEX i = 0; i < encoded.GetSize(); i++) {
-      cout << "Packet " << (i+1) << ": " << encoded[i] << endl;
+    PINDEX num = 1;
+    for (RTP_DataFrameList::iterator encFrame = encoded.begin(); encFrame != encoded.end(); ++encFrame,++num) {
+      cout << "Packet " << num << ": " << *encFrame << endl;
 
-      if (!decoder->ConvertFrames(encoded[i], output)) {
+      if (!decoder->ConvertFrames(*encFrame, output)) {
         cout << "error: Decoder conversion failed!" << endl;
         return;
       }
       if (output.GetSize() > 0) {
-        frame = (OpalVideoTranscoder::FrameHeader *)output[0].GetPayloadPtr();
+        frame = (OpalVideoTranscoder::FrameHeader *)output.front().GetPayloadPtr();
         cout << "Decoded frame: " << frame->width << 'x' << frame->height << endl;
       }
     }
@@ -655,10 +655,8 @@ void OpalCodecInfo::Main()
       H323Capabilities caps;
       caps.AddAllCapabilities(0, 0, specs[s]);
       cout << "Capability set using \"" << specs[s] << "\" :\n" << caps << endl;
-      for (PINDEX i = 0; i < stdCodecList.GetSize(); i++) {
-        PString fmt = stdCodecList[i];
-        caps.FindCapability(fmt);
-      }
+      for (OpalMediaFormatList::iterator fmt = stdCodecList.begin(); fmt != stdCodecList.end(); ++fmt)
+        caps.FindCapability(*fmt);
     }
     needHelp = false;
   }

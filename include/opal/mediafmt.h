@@ -119,7 +119,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
 
        Returns P_MAX_INDEX if not in list.
       */
-    PINDEX FindFormat(
+    const_iterator FindFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType, ///<  RTP payload type code
       const unsigned clockRate,                   ///<  clock rate
       const char * rtpEncodingName = NULL,        ///<  RTP payload type name
@@ -133,16 +133,16 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
 
        Returns P_MAX_INDEX if not in list.
       */
-    PINDEX FindFormat(
+    const_iterator FindFormat(
       const PString & wildcard,    ///<  Wildcard string name.
-      PINDEX pos = 0
+      const_iterator start = const_iterator()
     ) const;
 
     /**Determine if a format matching the payload type is in the list.
       */
     PBoolean HasFormat(
       RTP_DataFrame::PayloadTypes rtpPayloadType ///<  RTP payload type code
-    ) const { return FindFormat(rtpPayloadType) != P_MAX_INDEX; }
+    ) const { return FindFormat(rtpPayloadType) != end(); }
 
     /**Determine if a format matching the wildcard is in the list.
        The wildcard string is a simple substring match using the '*'
@@ -151,7 +151,7 @@ class OpalMediaFormatList : public OpalMediaFormatBaseList
       */
     PBoolean HasFormat(
       const PString & wildcard    ///<  Wildcard string name.
-    ) const { return FindFormat(wildcard) != P_MAX_INDEX; }
+    ) const { return FindFormat(wildcard) != end(); }
 
     /**Remove all the formats specified.
       */

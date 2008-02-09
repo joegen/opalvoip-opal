@@ -866,7 +866,7 @@ class H323EndPoint : public OpalEndPoint
        defaults to the logged in user as obtained from the
        PProcess::GetUserName() function.
      */
-    virtual const PString & GetLocalUserName() const { return localAliasNames[0]; }
+    virtual const PString & GetLocalUserName() const { return localAliasNames.front(); }
 
     /**Add an alias name to be used for the local end of any connections. If
        the alias name already exists in the list then is is not added again.

@@ -185,8 +185,8 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
 {
   OpalTransport * transport = NULL;
   
-  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    if ((transport = listeners[i].CreateTransport(localAddress, remoteAddress)) != NULL)
+  for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    if ((transport = listener->CreateTransport(localAddress, remoteAddress)) != NULL)
       break;
   }
 
@@ -1041,8 +1041,8 @@ SIPURL SIPEndPoint::GetLocalURL(const OpalTransport &transport, const PString & 
   if (transport.IsOpen())
     transport.GetLocalAddress().GetIpAndPort(ip, contactPort);
   else {
-    for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-      OpalTransportAddress binding = listeners[i].GetLocalAddress();
+    for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+      OpalTransportAddress binding = listener->GetLocalAddress();
       if (transport.IsCompatibleTransport(binding)) {
         binding.GetIpAndPort(ip, contactPort);
         break;

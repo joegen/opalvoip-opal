@@ -544,12 +544,11 @@ PStringList SIPMIMEInfo::GetViaList() const
 
 void SIPMIMEInfo::SetViaList(const PStringList & v)
 {
-  PString fieldValue;
-  if (v.GetSize() > 0)
-  {
-    fieldValue = v[0];
-    for (PINDEX i = 1; i < v.GetSize(); i++)
-      fieldValue += '\n' + v[i];
+  PStringStream fieldValue;
+  for (PStringList::const_iterator via = v.begin(); via != v.end(); ++via) {
+    if (!fieldValue.IsEmpty())
+      fieldValue << '\n';
+    fieldValue << *via;
   }
   SetAt(compactForm ? "v" : "Via", fieldValue);
 }
@@ -641,10 +640,10 @@ void SIPMIMEInfo::SetRouteList(const char * name, const PStringList & v)
 {
   PStringStream s;
 
-  for (PINDEX i = 0; i < v.GetSize(); i++) {
-    if (i > 0)
+  for (PStringList::const_iterator via = v.begin(); via != v.end(); ++via) {
+    if (!s.IsEmpty())
       s << ',';
-    s << '<' << v[i] << '>';
+    s << '<' << *via << '>';
   }
 
   SetAt(name,  s);
@@ -1424,7 +1423,7 @@ PBoolean SIP_PDU::SetRoute(const PStringList & set)
   if (routeSet.IsEmpty())
     return PFalse;
 
-  SIPURL firstRoute = routeSet[0];
+  SIPURL firstRoute = routeSet.front();
   if (!firstRoute.GetParamVars().Contains("lr")) {
     // this procedure is specified in RFC3261:12.2.1.1 for backwards compatibility with RFC2543
     routeSet.MakeUnique();
@@ -1463,7 +1462,7 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   if (viaList.GetSize() == 0)
     return;
 
-  PString via = viaList[0];
+  PString via = viaList.front();
   PString port, ip;
   PINDEX j = 0;
   
@@ -1484,17 +1483,17 @@ void SIP_PDU::AdjustVia(OpalTransport & transport)
   WORD remotePort;
   if (transport.GetLastReceivedAddress().GetIpAndPort(remoteIp, remotePort)) {
 
-    if (mime.HasFieldParameter("rport", viaList[0]) && mime.GetFieldParameter("rport", viaList[0]).IsEmpty()) {
+    if (mime.HasFieldParameter("rport", viaList.front()) && mime.GetFieldParameter("rport", viaList.front()).IsEmpty()) {
       // fill in empty rport and received for RFC 3581
-      mime.SetFieldParameter("rport", viaList[0], remotePort);
-      mime.SetFieldParameter("received", viaList[0], remoteIp);
+      mime.SetFieldParameter("rport", viaList.front(), remotePort);
+      mime.SetFieldParameter("received", viaList.front(), remoteIp);
     }
     else if (remoteIp != a ) // set received when remote transport address different from Via address
-      mime.SetFieldParameter("received", viaList[0], remoteIp);
+      mime.SetFieldParameter("received", viaList.front(), remoteIp);
   }
   else if (!a.IsValid()) {
     // Via address given has domain name
-    mime.SetFieldParameter("received", viaList[0], via);
+    mime.SetFieldParameter("received", viaList.front(), via);
   }
 
   mime.SetViaList(viaList);
@@ -1507,8 +1506,8 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
 
   if (viaList.GetSize() > 0) {
 
-    PString viaAddress = viaList[0];
-    PString proto = viaList[0];
+    PString viaAddress = viaList.front();
+    PString proto = viaList.front();
     PString viaPort = ep.GetDefaultSignalPort();
 
     PINDEX j = 0;
@@ -1529,16 +1528,16 @@ OpalTransportAddress SIP_PDU::GetViaAddress(OpalEndPoint &ep)
       proto = proto.Mid(j+1);
 
     // maddr is present, no support for multicast yet
-    if (mime.HasFieldParameter("maddr", viaList[0])) 
-      viaAddress = mime.GetFieldParameter("maddr", viaList[0]);
+    if (mime.HasFieldParameter("maddr", viaList.front())) 
+      viaAddress = mime.GetFieldParameter("maddr", viaList.front());
     // received and rport are present
-    else if (mime.HasFieldParameter("received", viaList[0]) && mime.HasFieldParameter("rport", viaList[0])) {
-      viaAddress = mime.GetFieldParameter("received", viaList[0]);
-      viaPort = mime.GetFieldParameter("rport", viaList[0]);
+    else if (mime.HasFieldParameter("received", viaList.front()) && mime.HasFieldParameter("rport", viaList.front())) {
+      viaAddress = mime.GetFieldParameter("received", viaList.front());
+      viaPort = mime.GetFieldParameter("rport", viaList.front());
     }
     // received is present
-    else if (mime.HasFieldParameter("received", viaList[0]))
-      viaAddress = mime.GetFieldParameter("received", viaList[0]);
+    else if (mime.HasFieldParameter("received", viaList.front()))
+      viaAddress = mime.GetFieldParameter("received", viaList.front());
 
     OpalTransportAddress address(viaAddress+":"+viaPort, ep.GetDefaultSignalPort(), (proto *= "TCP") ? "$tcp" : "udp$");
     return address;
@@ -1564,7 +1563,7 @@ OpalTransportAddress SIP_PDU::GetSendAddress(const PStringList & routeSet)
 {
   if (!routeSet.IsEmpty()) {
 
-    SIPURL firstRoute = routeSet[0];
+    SIPURL firstRoute = routeSet.front();
     if (firstRoute.GetParamVars().Contains("lr")) {
       return OpalTransportAddress(firstRoute.GetHostAddress());
     }
@@ -1997,7 +1996,7 @@ bool SIPTransaction::ResendCANCEL()
                  localInterface);
   // Use the topmost via header from the INVITE we cancel as per 9.1. 
   PStringList viaList = mime.GetViaList();
-  cancel.GetMIME().SetVia(viaList[0]);
+  cancel.GetMIME().SetVia(viaList.front());
 
   if (!SendPDU(cancel))
     return false;
@@ -2507,7 +2506,7 @@ SIPAck::SIPAck(SIPEndPoint & ep,
   // as well as the initial Route
   PStringList viaList = invite.GetMIME().GetViaList();
   if (viaList.GetSize() > 0)
-    mime.SetVia(viaList[0]);
+    mime.SetVia(viaList.front());
 
   if (transaction.GetMIME().GetRoute().GetSize() > 0)
     mime.SetRoute(transaction.GetMIME().GetRoute());

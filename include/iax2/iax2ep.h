@@ -377,7 +377,7 @@ class IAX2EndPoint : public OpalEndPoint
 
      pull the string apart and get the components. The compoents are stored
      in a PStringList, indexed by the enum RemoteAddressFields */
-  static PStringList DissectRemoteParty(const PString & other);
+  static PStringArray DissectRemoteParty(const PString & other);
 
   /**Pull frames off the incoming list, and pass on to the relevant
      connection. If no matching connection found, delete the frame.

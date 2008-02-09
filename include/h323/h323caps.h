@@ -1993,7 +1993,7 @@ class H323_UserInputCapability : public H323Capability
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PLIST(H323CapabilitiesList, H323Capability);
+PARRAY(H323CapabilitiesList, H323Capability);
 
 PARRAY(H323CapabilitiesListArray, H323CapabilitiesList);
 

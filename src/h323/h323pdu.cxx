@@ -135,8 +135,9 @@ void H323SetAliasAddresses(const PStringList & names,
                            int tag)
 {
   aliases.SetSize(names.GetSize());
-  for (PINDEX i = 0; i < names.GetSize(); i++)
-    H323SetAliasAddress(names[i], aliases[i], tag);
+  PINDEX i = 0;
+  for (PStringList::const_iterator name = names.begin(); name != names.end(); ++name,++i)
+    H323SetAliasAddress(*name, aliases[i], tag);
 }
 
 
@@ -1136,7 +1137,6 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
                                   int presentation,
                                   int screening)
 {
-  PINDEX i;
   const PStringList & aliases = connection.GetLocalAliasNames();
 
   PString localName;
@@ -1169,9 +1169,9 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
   if (IsE164(localName)) {
     number = localName;
     if (displayName.IsEmpty()) {
-      for (i = 0; i < aliases.GetSize(); i++) {
-        if (!IsE164(aliases[i])) {
-          displayName = aliases[i];
+      for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
+        if (!IsE164(*alias)) {
+          displayName = *alias;
           break;
         }
       }
@@ -1180,9 +1180,9 @@ void H323SignalPDU::SetQ931Fields(const H323Connection & connection,
   else {
     if (!localName && displayName.IsEmpty())
       displayName = localName;
-    for (i = 0; i < aliases.GetSize(); i++) {
-      if (IsE164(aliases[i])) {
-        number = aliases[i];
+    for (PStringList::const_iterator alias = aliases.begin(); alias != aliases.end(); ++alias) {
+      if (IsE164(*alias)) {
+        number = *alias;
         break;
       }
     }

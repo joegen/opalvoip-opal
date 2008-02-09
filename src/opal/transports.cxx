@@ -461,9 +461,8 @@ OpalTransportAddressArray OpalGetInterfaceAddresses(const OpalListenerList & lis
 {
   OpalTransportAddressArray interfaceAddresses;
 
-  PINDEX i;
-  for (i = 0; i < listeners.GetSize(); i++) {
-    OpalTransportAddressArray newAddrs = OpalGetInterfaceAddresses(listeners[i].GetTransportAddress(), excludeLocalHost, associatedTransport);
+  for (OpalListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    OpalTransportAddressArray newAddrs = OpalGetInterfaceAddresses(listener->GetTransportAddress(), excludeLocalHost, associatedTransport);
     PINDEX size  = interfaceAddresses.GetSize();
     PINDEX nsize = newAddrs.GetSize();
     interfaceAddresses.SetSize(size + nsize);
