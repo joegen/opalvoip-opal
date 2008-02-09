@@ -67,6 +67,7 @@ class H323TransactionPDU {
     virtual void DeletePDU() = 0;
 
     const H235Authenticators & GetAuthenticators() const { return authenticators; }
+    H235Authenticators & GetAuthenticators() { return authenticators; }
     void SetAuthenticators(
       const H235Authenticators & auth
     ) { authenticators = auth; }
@@ -86,8 +87,8 @@ class H323TransactionPDU {
     ) { authenticators.PreparePDU(*this, clearTokens, clearOptionalField, cryptoTokens, cryptoOptionalField); }
 
   protected:
-    H235Authenticators authenticators;
-    PPER_Stream        rawPDU;
+    mutable H235Authenticators authenticators;
+    PPER_Stream rawPDU;
 };
 
 

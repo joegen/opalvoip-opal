@@ -75,7 +75,7 @@ iax2Processor(*new IAX2CallProcessor(ep))
   else
     remotePartyName = inRemotePartyName;
     
-  PStringList res = IAX2EndPoint::DissectRemoteParty(inRemoteParty);
+  PStringArray res = IAX2EndPoint::DissectRemoteParty(inRemoteParty);
   remotePartyNumber = res[IAX2EndPoint::extensionIndex];
   
 
@@ -85,9 +85,7 @@ iax2Processor(*new IAX2CallProcessor(ep))
 
   ep.CopyLocalMediaFormats(localMediaFormats);
   AdjustMediaFormats(localMediaFormats);
-  for (PINDEX i = 0; i < localMediaFormats.GetSize(); i++) {
-    PTRACE(5, "Local ordered codecs are " << localMediaFormats[i]);
-  }
+  PTRACE(5, "Local ordered codecs are " << localMediaFormats);
   
   local_hold = PFalse;
   remote_hold = PFalse;
@@ -378,8 +376,6 @@ void IAX2Connection::EndCallNow(CallEndReason reason)
 
 unsigned int IAX2Connection::ChooseCodec()
 {
-  int res;
-
   PTRACE(4, "Local codecs are  " << localMediaFormats);
   PTRACE(4, "remote codecs are " << remoteMediaFormats);
   
@@ -394,34 +390,29 @@ unsigned int IAX2Connection::ChooseCodec()
   }
 
   {
-    PINDEX local;
-    for (local = 0; local < localMediaFormats.GetSize(); local++) {
-      if (localMediaFormats[local].GetPayloadType() == remoteMediaFormats[0].GetPayloadType()) {
-	res = local;
-	goto selectCodec;
+    OpalMediaFormatList::iterator local;
+    for (local = localMediaFormats.begin(); local != localMediaFormats.end(); ++local) {
+      if (local->GetPayloadType() == remoteMediaFormats.front().GetPayloadType()) {
+	opalPayloadType = local->GetPayloadType();
+        PTRACE(4, "Connection\t have selected the codec " << *local);
+        return IAX2FullFrameVoice::OpalNameToIax2Value(*local);
       }
     }
 
-    for (local = 0; local < localMediaFormats.GetSize(); local++) 
-      for (PINDEX remote = 0; local < remoteMediaFormats.GetSize(); remote++) {
-	if (localMediaFormats[local].GetPayloadType() == remoteMediaFormats[remote].GetPayloadType()) {
-	  res = local;
-	  goto selectCodec;
+    for (local = localMediaFormats.begin(); local != localMediaFormats.end(); ++local) {
+      for (OpalMediaFormatList::iterator remote = remoteMediaFormats.begin(); remote != remoteMediaFormats.end(); ++remote) {
+	if (local->GetPayloadType() == remote->GetPayloadType()) {
+	  opalPayloadType = local->GetPayloadType();
+          PTRACE(4, "Connection\t have selected the codec " << *local);
+          return IAX2FullFrameVoice::OpalNameToIax2Value(*local);
 	}
       }
+    }
   }
+
   PTRACE(0, "Connection. Failed to select a codec " );
   cerr << "Failed to select a codec" << endl;
   return 0;
-
- selectCodec:
-  opalPayloadType = localMediaFormats[res].GetPayloadType();
-
-  PStringStream strm;
-  strm << localMediaFormats[res];
-  PTRACE(4, "Connection\t have selected the codec " << strm);
-
-  return IAX2FullFrameVoice::OpalNameToIax2Value(strm);
 }
 
 PBoolean IAX2Connection::IsConnectionOnHold()
@@ -478,7 +469,7 @@ void IAX2Connection::TransferConnection(
   //The call identity is not used because we do not handle supervised transfers yet.  
   PTRACE(3, "Transfer call to " + remoteParty);
   
-  PStringList rpList = IAX2EndPoint::DissectRemoteParty(remoteParty);
+  PStringArray rpList = IAX2EndPoint::DissectRemoteParty(remoteParty);
   PString remoteAddress = GetRemoteInfo().RemoteAddress();
   
   if (rpList[IAX2EndPoint::addressIndex] == remoteAddress || 

@@ -78,12 +78,13 @@ void OpalMediaPatch::PrintOn(ostream & strm) const
     if (sinks.GetSize() > 0) {
       strm << " -> ";
       if (sinks.GetSize() == 1)
-        strm << *sinks[0].stream;
+        strm << *sinks.front().stream;
       else {
-        for (PINDEX i = 0; i < sinks.GetSize(); i++) {
+        PINDEX i = 0;
+        for (PList<Sink>::const_iterator s = sinks.begin(); s != sinks.end(); ++s,++i) {
           if (i > 0)
             strm << ", ";
-          strm << "sink[" << i << "]=" << *sinks[i].stream;
+          strm << "sink[" << i << "]=" << *s->stream;
         }
       }
     }
@@ -115,7 +116,7 @@ void OpalMediaPatch::Close()
   source.Close();
 
   while (sinks.GetSize() > 0) {
-    OpalMediaStreamPtr stream = sinks[0].stream;
+    OpalMediaStreamPtr stream = sinks.front().stream;
     inUse.Signal();
     if (!stream->Close()) {
       // The only way we can get here is if the sink is in the proccess of being closed
@@ -226,9 +227,9 @@ void OpalMediaPatch::RemoveSink(const OpalMediaStreamPtr & stream)
 
   inUse.Wait();
 
-  for (PINDEX i = 0; i < sinks.GetSize(); i++) {
-    if (sinks[i].stream == stream) {
-      sinks.RemoveAt(i);
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+    if (s->stream == stream) {
+      sinks.erase(s);
       break;
     }
   }
@@ -304,10 +305,9 @@ void OpalMediaPatch::AddFilter(const PNotifier & filter, const OpalMediaFormat &
   PWaitAndSignal mutex(inUse);
   
   // ensures that a filter is added only once
-  for (PINDEX i = 0; i < filters.GetSize(); i++) {
-    if (filters[i].notifier == filter && filters[i].stage == stage) {
-	  return;
-    }
+  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
+    if (f->notifier == filter && f->stage == stage)
+      return;
   }
   filters.Append(new Filter(filter, stage));
 }
@@ -317,9 +317,9 @@ PBoolean OpalMediaPatch::RemoveFilter(const PNotifier & filter, const OpalMediaF
 {
   PWaitAndSignal mutex(inUse);
 
-  for (PINDEX i = 0; i < filters.GetSize(); i++) {
-    if (filters[i].notifier == filter && filters[i].stage == stage) {
-      filters.RemoveAt(i);
+  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
+    if (f->notifier == filter && f->stage == stage) {
+      filters.erase(f);
       return PTrue;
     }
   }
@@ -332,10 +332,9 @@ void OpalMediaPatch::FilterFrame(RTP_DataFrame & frame,
                                  const OpalMediaFormat & mediaFormat)
 {
   PWaitAndSignal mutex(inUse);
-  for (PINDEX f = 0; f < filters.GetSize(); f++) {
-    Filter & filter = filters[f];
-    if (filter.stage.IsEmpty() || filter.stage == mediaFormat)
-      filter.notifier(frame, (INT)this);
+  for (PList<Filter>::iterator f = filters.begin(); f != filters.end(); ++f) {
+    if (f->stage.IsEmpty() || f->stage == mediaFormat)
+      f->notifier(frame, (INT)this);
   }
 }
 
@@ -348,8 +347,8 @@ PBoolean OpalMediaPatch::UpdateMediaFormat(const OpalMediaFormat & mediaFormat, 
     return source.UpdateMediaFormat(mediaFormat);
 
   PBoolean atLeastOne = PFalse;
-  for (PINDEX i = 0; i < sinks.GetSize(); i++)
-    atLeastOne = sinks[i].UpdateMediaFormat(mediaFormat) || atLeastOne;
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
+    atLeastOne = s->UpdateMediaFormat(mediaFormat) || atLeastOne;
 
   return atLeastOne;
 }
@@ -363,8 +362,8 @@ PBoolean OpalMediaPatch::ExecuteCommand(const OpalMediaCommand & command, PBoole
     return source.ExecuteCommand(command);
 
   PBoolean atLeastOne = PFalse;
-  for (PINDEX i = 0; i < sinks.GetSize(); i++)
-    atLeastOne = sinks[i].ExecuteCommand(command) || atLeastOne;
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
+    atLeastOne = s->ExecuteCommand(command) || atLeastOne;
 
   return atLeastOne;
 }
@@ -377,22 +376,21 @@ void OpalMediaPatch::SetCommandNotifier(const PNotifier & notifier, PBoolean fro
   if (fromSink)
     source.SetCommandNotifier(notifier);
   else {
-    for (PINDEX i = 0; i < sinks.GetSize(); i++)
-      sinks[i].SetCommandNotifier(notifier);
+    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
+      s->SetCommandNotifier(notifier);
   }
 }
 
 void OpalMediaPatch::Main()
 {
   PTRACE(4, "Patch\tThread started for " << *this);
-  PINDEX i;
 	
   inUse.Wait();
   source.OnPatchStart();
   PBoolean isSynchronous = source.IsSynchronous();
   if (!source.IsSynchronous()) {
-    for (i = 0; i < sinks.GetSize(); i++) {
-      if (sinks[i].stream->IsSynchronous()) {
+    for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s) {
+      if (s->stream->IsSynchronous()) {
         source.EnableJitterBuffer();
         isSynchronous = PTrue;
         break;
@@ -427,9 +425,8 @@ void OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 {
   FilterFrame(frame, source.GetMediaFormat());    
 	
-  PINDEX len = sinks.GetSize();
-  for (PINDEX i = 0; i < len; i++)
-    sinks[i].WriteFrame(frame);
+  for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
+    s->WriteFrame(frame);
 }
 
 
@@ -498,13 +495,12 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
   if (sourceFrame.GetPayloadSize() == 0)
     return writeSuccessful = stream->WritePacket(sourceFrame);
 
-  for (PINDEX i = 0; i < intermediateFrames.GetSize(); i++) {
-    RTP_DataFrame & intermediateFrame = intermediateFrames[i];
-    patch.FilterFrame(intermediateFrame, primaryCodec->GetOutputFormat());
+  for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
+    patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
     if (secondaryCodec == NULL) {
-      if (!stream->WritePacket(intermediateFrame))
+      if (!stream->WritePacket(*interFrame))
         return writeSuccessful = false;
-      sourceFrame.SetTimestamp(intermediateFrame.GetTimestamp());
+      sourceFrame.SetTimestamp(interFrame->GetTimestamp());
     }
     else {
       if (!secondaryCodec->AcceptComfortNoise()) {
@@ -512,17 +508,16 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
         if (pt == RTP_DataFrame::CN || pt == RTP_DataFrame::Cisco_CN)
           return true;
       }
-      if (!secondaryCodec->ConvertFrames(intermediateFrame, finalFrames)) {
+      if (!secondaryCodec->ConvertFrames(*interFrame, finalFrames)) {
         PTRACE(1, "Patch\tMedia conversion (secondary) failed");
         return false;
       }
 
-      for (PINDEX f = 0; f < finalFrames.GetSize(); f++) {
-        RTP_DataFrame & finalFrame = finalFrames[f];
-        patch.FilterFrame(finalFrame, secondaryCodec->GetOutputFormat());
-        if (!stream->WritePacket(finalFrame))
+      for (RTP_DataFrameList::iterator finalFrame = finalFrames.begin(); finalFrame != finalFrames.end(); ++finalFrame) {
+        patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
+        if (!stream->WritePacket(*finalFrame))
           return writeSuccessful = false;
-        sourceFrame.SetTimestamp(finalFrame.GetTimestamp());
+        sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
       }
     }
   }

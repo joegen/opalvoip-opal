@@ -172,9 +172,7 @@ OpalManager::OpalManager()
   udpPorts.current = udpPorts.base = udpPorts.max = 0;
 
 #ifndef NO_OPAL_VIDEO
-  PStringList devices;
-  
-  devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
+  PStringArray devices = PVideoInputDevice::GetDriversDeviceNames("*"); // Get all devices on all drivers
   PINDEX i;
   for (i = 0; i < devices.GetSize(); ++i) {
     if ((devices[i] *= "*.yuv") || (devices[i] *= "fake")) 
@@ -271,9 +269,9 @@ OpalEndPoint * OpalManager::FindEndPoint(const PString & prefix)
 {
   PReadWaitAndSignal mutex(endpointsMutex);
 
-  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    if (endpoints[i].GetPrefixName() *= prefix)
-      return &endpoints[i];
+  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
+    if (ep->GetPrefixName() *= prefix)
+      return &*ep;
   }
 
   return NULL;
@@ -440,11 +438,11 @@ PBoolean OpalManager::MakeConnection(OpalCall & call, const PString & remotePart
   PReadWaitAndSignal mutex(endpointsMutex);
 
   if (epname.IsEmpty())
-    epname = endpoints[0].GetPrefixName();
+    epname = endpoints.front().GetPrefixName();
 
-  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    if (epname == endpoints[i].GetPrefixName()) {
-      if (endpoints[i].MakeConnection(call, remoteParty, userData, options, stringOptions))
+  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
+    if (epname == ep->GetPrefixName()) {
+      if (ep->MakeConnection(call, remoteParty, userData, options, stringOptions))
         return PTrue;
     }
   }
@@ -568,8 +566,8 @@ void OpalManager::AdjustMediaFormats(const OpalConnection & /*connection*/,
 {
   mediaFormats.Remove(mediaFormatMask);
   mediaFormats.Reorder(mediaFormatOrder);
-  for (PINDEX i = 0; i < mediaFormats.GetSize(); i++)
-    mediaFormats[i].ToCustomisedOptions();
+  for (OpalMediaFormatList::iterator format = mediaFormats.begin(); format != mediaFormats.end(); ++format)
+    format->ToCustomisedOptions();
 }
 
 
@@ -1252,7 +1250,7 @@ static PBoolean SetVideoDevice(const PVideoDevice::OpenArgs & args, PVideoDevice
     return PFalse;
 
   // Selected device by ordinal
-  PStringList devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
+  PStringArray devices = PVideoXxxDevice::GetDriversDeviceNames(args.driverName, args.pluginMgr);
   if (devices.IsEmpty())
     return PFalse;
 
@@ -1301,8 +1299,8 @@ void OpalManager::GarbageCollection()
 
   endpointsMutex.StartRead();
 
-  for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
-    if (!endpoints[i].GarbageCollection())
+  for (PList<OpalEndPoint>::iterator ep = endpoints.begin(); ep != endpoints.end(); ++ep) {
+    if (!ep->GarbageCollection())
       allCleared = PFalse;
   }
 

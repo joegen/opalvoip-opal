@@ -1014,31 +1014,30 @@ PBoolean H460_FeatureSet::CreateFeatureSet(const H225_FeatureSet & fs)
 
 PBoolean H460_FeatureSet::LoadFeatureSet(int inst, H323Connection * con)
 {
-
   PStringList features = H460_Feature::GetFeatureNames();
 
-      for (PINDEX i = 0; i < features.GetSize(); i++) {
+  for (PStringList::iterator it = features.begin(); it != features.end(); ++it) {
 
-        H460_FeatureID id;
-        H460_Feature * feat = NULL;
-        if (baseSet && baseSet->HasFeature(features[i])) {
-            H460_Feature * tempfeat = baseSet->GetFeature(features[i]);
-		      if ((tempfeat->GetPurpose() >= inst) && (tempfeat->GetPurpose() < inst*2)) 
-				  feat = tempfeat;
-		} else {
-	        feat = H460_Feature::CreateFeature(features[i],inst);
-	        if ((feat) && (ep))
-		        feat->AttachEndPoint(ep);
-		}
-		
-		if (feat) {
-		    if (con)
-		        feat->AttachConnection(con);
+    H460_FeatureID id;
+    H460_Feature * feat = NULL;
+    if (baseSet && baseSet->HasFeature(*it)) {
+      H460_Feature * tempfeat = baseSet->GetFeature(*it);
+      if ((tempfeat->GetPurpose() >= inst) && (tempfeat->GetPurpose() < inst*2)) 
+        feat = tempfeat;
+    } else {
+      feat = H460_Feature::CreateFeature(*it,inst);
+      if ((feat) && (ep))
+        feat->AttachEndPoint(ep);
+    }
 
-	       AddFeature(feat);
-		   PTRACE(4,"H460\tLoaded Feature " << features[i]);
-		}
-	  }
+    if (feat) {
+      if (con)
+        feat->AttachConnection(con);
+
+      AddFeature(feat);
+      PTRACE(4,"H460\tLoaded Feature " << *it);
+    }
+  }
 
   return PTrue;
 }

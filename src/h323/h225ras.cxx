@@ -613,11 +613,10 @@ PBoolean H225_RAS::OnReceiveRegistrationConfirm(const H323RasPDU & pdu, const H2
 
   if (lastRequest != NULL) {
     PString endpointIdentifier = rcf.m_endpointIdentifier;
-    const H235Authenticators & authenticators = lastRequest->requestPDU.GetAuthenticators();
-    for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-      H235Authenticator & authenticator = authenticators[i];
-      if (authenticator.UseGkAndEpIdentifiers())
-        authenticator.SetLocalId(endpointIdentifier);
+    H235Authenticators & authenticators = lastRequest->requestPDU.GetAuthenticators();
+    for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+      if (iterAuth->UseGkAndEpIdentifiers())
+        iterAuth->SetLocalId(endpointIdentifier);
     }
   }
 

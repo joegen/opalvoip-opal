@@ -1837,12 +1837,11 @@ PBoolean H323RegisteredEndPoint::SetPassword(const PString & password,
     return PFalse;
 
   PTRACE(3, "RAS\tSetting password and enabling H.235 security for " << *this);
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-    H235Authenticator & authenticator = authenticators[i];
-    authenticator.SetPassword(password);
-    if (!username && !authenticator.UseGkAndEpIdentifiers())
-      authenticator.SetRemoteId(username);
-    authenticator.Enable();
+  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+    iterAuth->SetPassword(password);
+    if (!username && !iterAuth->UseGkAndEpIdentifiers())
+      iterAuth->SetRemoteId(username);
+    iterAuth->Enable();
   }
 
   return PTrue;
@@ -2176,11 +2175,10 @@ H323GatekeeperRequest::Response H323GatekeeperListener::OnRegistration(H323Gatek
   if (!info.rrq.m_keepAlive) {
     PSafePtr<H323RegisteredEndPoint> lock(info.endpoint, PSafeReadWrite);
     H235Authenticators authenticators = info.endpoint->GetAuthenticators();
-    for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-      H235Authenticator & authenticator = authenticators[i];
-      if (authenticator.UseGkAndEpIdentifiers()) {
-        authenticator.SetRemoteId(info.endpoint->GetIdentifier());
-        authenticator.SetLocalId(gatekeeperIdentifier);
+    for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+      if (iterAuth->UseGkAndEpIdentifiers()) {
+        iterAuth->SetRemoteId(info.endpoint->GetIdentifier());
+        iterAuth->SetLocalId(gatekeeperIdentifier);
       }
     }
   }
@@ -2280,7 +2278,7 @@ H323GatekeeperRequest::Response H323GatekeeperListener::OnAdmission(H323Gatekeep
     }
 
     if (info.alternateSecurityID.IsEmpty() && !adjustedAuthenticators.IsEmpty())
-      info.alternateSecurityID = adjustedAuthenticators[0].GetRemoteId();
+      info.alternateSecurityID = adjustedAuthenticators.front().GetRemoteId();
   }
 
   H323GatekeeperRequest::Response response = gatekeeper.OnAdmission(info);
@@ -2678,13 +2676,12 @@ H323GatekeeperRequest::Response H323GatekeeperServer::OnDiscovery(H323Gatekeeper
   PTRACE_BLOCK("H323GatekeeperServer::OnDiscovery");
 
   H235Authenticators authenticators = ownerEndPoint.CreateAuthenticators();
-  for (PINDEX auth = 0; auth < authenticators.GetSize(); auth++) {
+  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
     for (PINDEX cap = 0; cap < info.grq.m_authenticationCapability.GetSize(); cap++) {
       for (PINDEX alg = 0; alg < info.grq.m_algorithmOIDs.GetSize(); alg++) {
-        if (authenticators[auth].IsCapability(info.grq.m_authenticationCapability[cap],
-                                              info.grq.m_algorithmOIDs[alg])) {
+        if (iterAuth->IsCapability(info.grq.m_authenticationCapability[cap], info.grq.m_algorithmOIDs[alg])) {
           PTRACE(3, "RAS\tGRQ accepted on " << H323TransportAddress(info.gcf.m_rasAddress, "udp")
-                 << " using authenticator " << authenticators[auth]);
+                 << " using authenticator " << *iterAuth);
           info.gcf.IncludeOptionalField(H225_GatekeeperConfirm::e_authenticationMode);
           info.gcf.m_authenticationMode = info.grq.m_authenticationCapability[cap];
           info.gcf.IncludeOptionalField(H225_GatekeeperConfirm::e_algorithmOID);
@@ -3416,7 +3413,7 @@ PBoolean H323GatekeeperServer::TranslateAliasAddressToSignalAddress(const H225_A
 
   if (isGatekeeperRouted) {
     const H323ListenerList & listeners = ownerEndPoint.GetListeners();
-    address = listeners[0].GetTransportAddress();
+    address = listeners.front().GetTransportAddress();
     PTRACE(3, "RAS\tTranslating alias " << aliasString << " to " << address << ", gatekeeper routed");
     return PTrue;
   }
@@ -3497,8 +3494,8 @@ void H323GatekeeperServer::SetGatekeeperIdentifier(const PString & id,
   gatekeeperIdentifier = id;
 
   if (adjustListeners) {
-    for (PINDEX i = 0; i < listeners.GetSize(); i++)
-      listeners[i].SetIdentifier(id);
+    for (ListenerList::iterator iterListener = listeners.begin(); iterListener != listeners.end(); ++iterListener)
+      iterListener->SetIdentifier(id);
   }
 
   mutex.Signal();

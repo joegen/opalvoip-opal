@@ -80,7 +80,7 @@ void H235Authenticator::PrintOn(ostream & strm) const
 
 
 PBoolean H235Authenticator::PrepareTokens(PASN_Array & clearTokens,
-                                      PASN_Array & cryptoTokens)
+                                          PASN_Array & cryptoTokens)
 {
   PWaitAndSignal m(mutex);
 
@@ -234,7 +234,7 @@ void H235Authenticators::PreparePDU(H323TransactionPDU & pdu,
                                     PASN_Array & clearTokens,
                                     unsigned clearOptionalField,
                                     PASN_Array & cryptoTokens,
-                                    unsigned cryptoOptionalField) const
+                                    unsigned cryptoOptionalField)
 {
   // Clean out any crypto tokens in case this is a retry message
   // and we are regenerating the tokens due to possible timestamp
@@ -242,11 +242,10 @@ void H235Authenticators::PreparePDU(H323TransactionPDU & pdu,
   // other endpoints and should be passed through unchanged.
   cryptoTokens.RemoveAll();
 
-  for (PINDEX i = 0; i < GetSize(); i++) {
-    H235Authenticator & authenticator = (*this)[i];
-    if (authenticator.IsSecuredPDU(pdu.GetChoice().GetTag(), PFalse) &&
-        authenticator.PrepareTokens(clearTokens, cryptoTokens)) {
-      PTRACE(4, "H235RAS\tPrepared PDU with authenticator " << authenticator);
+  for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
+    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), PFalse) &&
+        iterAuth->PrepareTokens(clearTokens, cryptoTokens)) {
+      PTRACE(4, "H235RAS\tPrepared PDU with authenticator " << *iterAuth);
     }
   }
 
@@ -265,13 +264,11 @@ H235Authenticator::ValidationResult
                                        unsigned clearOptionalField,
                                        const PASN_Array & cryptoTokens,
                                        unsigned cryptoOptionalField,
-                                       const PBYTEArray & rawPDU) const
+                                       const PBYTEArray & rawPDU)
 {
   PBoolean noneActive = PTrue;
-  PINDEX i;
-  for (i = 0; i < GetSize(); i++) {
-    H235Authenticator & authenticator = (*this)[i];
-    if (authenticator.IsActive() && authenticator.IsSecuredPDU(pdu.GetChoice().GetTag(), PTrue)) {
+  for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
+    if (iterAuth->IsActive() && iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), PTrue)) {
       noneActive = PFalse;
       break;
     }
@@ -289,26 +286,25 @@ H235Authenticator::ValidationResult
     return H235Authenticator::e_Absent;
   }
 
-  for (i = 0; i < GetSize(); i++) {
-    H235Authenticator & authenticator = (*this)[i];
-    if (authenticator.IsSecuredPDU(pdu.GetChoice().GetTag(), PTrue)) {
-      H235Authenticator::ValidationResult result = authenticator.ValidateTokens(clearTokens, cryptoTokens, rawPDU);
+  for (iterator iterAuth = begin(); iterAuth != end(); ++iterAuth) {
+    if (iterAuth->IsSecuredPDU(pdu.GetChoice().GetTag(), PTrue)) {
+      H235Authenticator::ValidationResult result = iterAuth->ValidateTokens(clearTokens, cryptoTokens, rawPDU);
       switch (result) {
         case H235Authenticator::e_OK :
-          PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " succeeded");
+          PTRACE(4, "H235RAS\tAuthenticator " << *iterAuth << " succeeded");
           return H235Authenticator::e_OK;
 
         case H235Authenticator::e_Absent :
-          PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " absent from PDU");
-          authenticator.Disable();
+          PTRACE(4, "H235RAS\tAuthenticator " << *iterAuth << " absent from PDU");
+          iterAuth->Disable();
           break;
 
         case H235Authenticator::e_Disabled :
-          PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " disabled");
+          PTRACE(4, "H235RAS\tAuthenticator " << *iterAuth << " disabled");
           break;
 
         default : // Various other failure modes
-          PTRACE(4, "H235RAS\tAuthenticator " << authenticator << " failed: " << (int)result);
+          PTRACE(4, "H235RAS\tAuthenticator " << *iterAuth << " failed: " << (int)result);
           return result;
       }
     }

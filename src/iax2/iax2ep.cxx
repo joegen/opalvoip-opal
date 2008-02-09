@@ -244,7 +244,7 @@ PBoolean IAX2EndPoint::ConnectionForFrameIsAlive(IAX2Frame *f)
 
 void IAX2EndPoint::ReportStoredConnections()
 {
-  PStringList cons = GetAllConnections();
+  PStringArray cons = GetAllConnections();
   PTRACE(5, " There are " << cons.GetSize() << " stored connections in connectionsActive");
   PINDEX i;
   for(i = 0; i < cons.GetSize(); i++) {
@@ -258,11 +258,9 @@ void IAX2EndPoint::ReportStoredConnections()
   }
 }
 
-PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
+PStringArray IAX2EndPoint::DissectRemoteParty(const PString & other)
 {
-  PStringList res;
-  for(int i = 0; i < maximumIndex; i++)
-    res.AppendString(PString());
+  PStringArray res(maximumIndex);
 
   res[protoIndex] = PString("iax2");
   res[transportIndex] = PString("UDP");
@@ -273,7 +271,7 @@ PStringList IAX2EndPoint::DissectRemoteParty(const PString & other)
   else 
     working = other;
 
-  PStringList halfs = working.Tokenise("@");
+  PStringArray halfs = working.Tokenise("@");
   if (halfs.GetSize() == 2) {
     res[userIndex] = halfs[0];
     working = halfs[1];
@@ -364,7 +362,7 @@ PBoolean IAX2EndPoint::MakeConnection(
   PTRACE(4, "IaxEp\tParty A=\"" << call.GetPartyA() << "\"  and party B=\"" <<  call.GetPartyB() << "\"");
 
   
-  PStringList remoteInfo = DissectRemoteParty(rParty);
+  PStringArray remoteInfo = DissectRemoteParty(rParty);
   if(remoteInfo[protoIndex] != PString("iax2"))
     return PFalse;
 
@@ -436,12 +434,12 @@ PBoolean IAX2EndPoint::Initialise()
   receiver    = NULL;
   
   localMediaFormats = OpalMediaFormat::GetAllRegisteredMediaFormats();
-  for (PINDEX i = localMediaFormats.GetSize(); i > 0; i--) {
-    PStringStream strm;
-    strm << localMediaFormats[i - 1];
-    const PString formatName = strm;
-    if (IAX2FullFrameVoice::OpalNameToIax2Value(formatName) == 0)
-      localMediaFormats.RemoveAt(i - 1);
+  OpalMediaFormatList::iterator iterFormat = localMediaFormats.begin();
+  while (iterFormat != localMediaFormats.end()) {
+    if (IAX2FullFrameVoice::OpalNameToIax2Value(*iterFormat) != 0)
+      ++iterFormat;
+    else
+      localMediaFormats.erase(iterFormat++);
   }
 
   incomingFrameHandler.Assign(this);
@@ -613,21 +611,17 @@ PINDEX IAX2EndPoint::GetPreferredCodec(OpalMediaFormatList & list)
 {
   PTRACE(3, "preferred codecs are " << list);
 
-  unsigned short val = 0;
-  PINDEX index = 0;
-  
-  while ((index < list.GetSize()) && (val == 0)) {
-    val = IAX2FullFrameVoice::OpalNameToIax2Value(list[index]);
-    index++;
+  for (OpalMediaFormatList::iterator iterFormat = list.begin(); iterFormat != list.end(); ++iterFormat) {
+    unsigned short val = IAX2FullFrameVoice::OpalNameToIax2Value(*iterFormat);
+    if (val != 0) {
+      PTRACE(3, "EndPoint\tPreferred codec is  " << *iterFormat);
+      return val;
+    }
+
   }
   
-  if (val == 0) {
-    PTRACE(3, "Preferred codec is empty");
-  } else {
-    PTRACE(3, "EndPoint\tPreferred codec is  " << list[index - 1]);
-  }
-  
-  return val;
+  PTRACE(3, "Preferred codec is empty");
+  return 0;
 }
 
 void IAX2EndPoint::GetCodecLengths(PINDEX codec, PINDEX &compressedBytes, PINDEX &duration)
@@ -669,35 +663,18 @@ PINDEX IAX2EndPoint::GetSupportedCodecs(OpalMediaFormatList & list)
 {
   PTRACE(3, "Supported codecs are " << list);
 
-  PINDEX i;
-  PStringArray codecNames;
-  for (i = 0; i < list.GetSize(); i++) {
-    PString format = list[i];
-    codecNames += format;
-  }
-
-  for(i = 0; i < codecNames.GetSize(); i++) {
-    PTRACE(5, "Supported codec in opal is " << codecNames[i]);
-  }
-    
   PINDEX returnValue = 0;
-  for (i = 0; i < codecNames.GetSize(); i++) 
-    returnValue += IAX2FullFrameVoice::OpalNameToIax2Value(codecNames[i]);
+  for (OpalMediaFormatList::iterator iterFormat = list.begin(); iterFormat != list.end(); ++iterFormat)
+    returnValue += IAX2FullFrameVoice::OpalNameToIax2Value(*iterFormat);
 
-  PTRACE(5, "Bitmask of codecs we support is 0x" 
-	 << ::hex << returnValue << ::dec);
+  PTRACE(5, "Bitmask of codecs we support is 0x" << ::hex << returnValue << ::dec);
   
   return  returnValue;
 }
 
 void IAX2EndPoint::CopyLocalMediaFormats(OpalMediaFormatList & list)
 {
-  for(PINDEX i = 0; i < localMediaFormats.GetSize(); i++) {
-    PStringStream strm;
-    strm << localMediaFormats[i];
-    PTRACE(5, "copy local format " << strm);
-    list += OpalMediaFormat(strm);
-  }
+  list = localMediaFormats;
 }
 
 void IAX2EndPoint::SetPassword(PString newValue)

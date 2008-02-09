@@ -173,7 +173,7 @@ class H450xHandler : public PObject
     unsigned          currentInvokeId;
 };
 
-PLIST(H450xHandlerList, H450xHandler);
+PARRAY(H450xHandlerArray, H450xHandler);
 PDICTIONARY(H450xHandlerDict, POrdinalKey, H450xHandler);
 
 
@@ -259,7 +259,7 @@ class H450xDispatcher : public PObject
 
   protected:
     H323Connection & connection;
-    H450xHandlerList  handlers;
+    H450xHandlerArray handlers;
     H450xHandlerDict  opcodeHandler;
     mutable unsigned  nextInvokeId;             // Next available invoke ID for H450 operations
 };

@@ -94,7 +94,7 @@ class OpalLineInterfaceDevice : public PObject
 
     /**Get the total number of lines supported by this device.
       */
-    virtual unsigned GetLineCount() = 0;
+    virtual unsigned GetLineCount() const = 0;
 
     /**Get the type of the line.
        A "terminal" line is one where a call may terminate. For example a POTS
@@ -356,7 +356,7 @@ class OpalLineInterfaceDevice : public PObject
       */
     virtual PBoolean IsAudioEnabled(
       unsigned line      ///<  Number of line
-    );
+    ) const;
 
 
     enum {
@@ -1060,7 +1060,7 @@ class OpalLine : public PObject
 
     /**Determine if audio is ebabled for the line.
       */
-    virtual PBoolean IsAudioEnabled() { return device.IsAudioEnabled(lineNumber); }
+    virtual PBoolean IsAudioEnabled() const { return device.IsAudioEnabled(lineNumber); }
 
 
     /**Set volume level for recording.

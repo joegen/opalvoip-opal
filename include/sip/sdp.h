@@ -216,7 +216,7 @@ class SDPMediaDescription : public PObject
 #endif // OPAL_T38FAX
 };
 
-PLIST(SDPMediaDescriptionList, SDPMediaDescription);
+PARRAY(SDPMediaDescriptionArray, SDPMediaDescription);
 
 
 /////////////////////////////////////////////////////////
@@ -239,7 +239,7 @@ class SDPSessionDescription : public PObject
     void SetUserName(const PString & v)    { ownerUsername = v; }
     PString GetUserName() const            { return ownerUsername; }
 
-    const SDPMediaDescriptionList & GetMediaDescriptions() const { return mediaDescriptions; }
+    const SDPMediaDescriptionArray & GetMediaDescriptions() const { return mediaDescriptions; }
 
     SDPMediaDescription * GetMediaDescription(
       SDPMediaDescription::MediaType rtpMediaType
@@ -266,7 +266,7 @@ class SDPSessionDescription : public PObject
   protected:
     void ParseOwner(const PString & str);
 
-    SDPMediaDescriptionList mediaDescriptions;
+    SDPMediaDescriptionArray mediaDescriptions;
     SDPMediaDescription::Direction direction;
 
     PINDEX protocolVersion;
