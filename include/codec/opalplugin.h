@@ -249,7 +249,7 @@ struct PluginCodec_Option {
 #define PLUGINCODEC_OPTION_MAX_FRAME_SIZE             "Max Frame Size"
 #define PLUGINCODEC_OPTION_MAX_BIT_RATE               "Max Bit Rate"
 #define PLUGINCODEC_OPTION_TARGET_BIT_RATE            "Target Bit Rate"
-#define PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET       "Rx Frames per Packet"
+#define PLUGINCODEC_OPTION_RX_FRAMES_PER_PACKET       "Rx Frames Per Packet"
 #define PLUGINCODEC_OPTION_TX_FRAMES_PER_PACKET       "Tx Frames Per Packet"
 #define PLUGINCODEC_OPTION_FRAME_WIDTH                "Frame Width"
 #define PLUGINCODEC_OPTION_FRAME_HEIGHT               "Frame Height"
