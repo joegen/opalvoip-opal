@@ -368,9 +368,8 @@ void H323Connection::CleanUpOnCallEnd()
   digitsWaitFlag.Signal();
 
   // Clean up any fast start "pending" channels we may have running.
-  PINDEX i;
-  for (i = 0; i < fastStartChannels.GetSize(); i++)
-    fastStartChannels[i].Close();
+  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+    channel->Close();
   fastStartChannels.RemoveAll();
 
   // Dispose of all the logical channels
@@ -1318,8 +1317,8 @@ PBoolean H323Connection::OnReceivedSignalConnect(const H323SignalPDU & pdu)
   }
   else if (mediaWaitForConnect) {
     // Otherwise start fast started channels if we were waiting for CONNECT
-    for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++)
-      fastStartChannels[i].Start();
+    for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+      channel->Start();
   }
 
   connectedTime = PTime();
@@ -1876,8 +1875,8 @@ OpalConnection::CallEndReason H323Connection::SendSignalSetup(const PString & al
   // If application called OpenLogicalChannel, put in the fastStart field
   if (!fastStartChannels.IsEmpty()) {
     PTRACE(3, "H225\tFast start begun by local endpoint");
-    for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++)
-      BuildFastStartList(fastStartChannels[i], setup.m_fastStart, H323Channel::IsReceiver);
+    for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+      BuildFastStartList(*channel, setup.m_fastStart, H323Channel::IsReceiver);
     if (setup.m_fastStart.GetSize() > 0)
       setup.IncludeOptionalField(H225_Setup_UUIE::e_fastStart);
   }
@@ -2203,8 +2202,6 @@ PBoolean H323Connection::OnOutgoingCall(const H323SignalPDU & connectPDU)
 
 PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString & array)
 {
-  PINDEX i;
-
   // See if we have already added the fast start OLC's
   if (array.GetSize() > 0)
     return PTrue;
@@ -2215,11 +2212,11 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   // Remove any channels that were not started by OnSelectLogicalChannels(),
   // those that were started are put into the logical channel dictionary
-  for (i = 0; i < fastStartChannels.GetSize(); i++) {
-    if (fastStartChannels[i].IsOpen())
-      logicalChannels->Add(fastStartChannels[i]);
+  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ) {
+    if (channel->IsOpen())
+      logicalChannels->Add(*channel++);
     else
-      fastStartChannels.RemoveAt(i--);
+      fastStartChannels.erase(channel++); // Do ++ in both legs so iterator works with erase
   }
 
   // None left, so didn't open any channels fast
@@ -2234,8 +2231,8 @@ PBoolean H323Connection::SendFastStartAcknowledge(H225_ArrayOf_PASN_OctetString 
 
   PTRACE(3, "H225\tAccepting fastStart for " << fastStartChannels.GetSize() << " channels");
 
-  for (i = 0; i < fastStartChannels.GetSize(); i++)
-    BuildFastStartList(fastStartChannels[i], array, H323Channel::IsTransmitter);
+  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel)
+    BuildFastStartList(*channel, array, H323Channel::IsTransmitter);
 
   // Have moved open channels to logicalChannels structure, remove all others.
   fastStartChannels.RemoveAll();
@@ -2270,8 +2267,8 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
                                                : open.m_forwardLogicalChannelParameters.m_dataType;
       H323Capability * replyCapability = localCapabilities.FindCapability(dataType);
       if (replyCapability != NULL) {
-        for (PINDEX ch = 0; ch < fastStartChannels.GetSize(); ch++) {
-          H323Channel & channelToStart = fastStartChannels[ch];
+        for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
+          H323Channel & channelToStart = *channel;
           H323Channel::Directions dir = channelToStart.GetDirection();
           if ((dir == H323Channel::IsReceiver) == reverse &&
                channelToStart.GetCapability() == *replyCapability) {
@@ -2322,11 +2319,11 @@ PBoolean H323Connection::HandleFastStartAcknowledge(const H225_ArrayOf_PASN_Octe
 
   // Remove any channels that were not started by above, those that were
   // started are put into the logical channel dictionary
-  for (i = 0; i < fastStartChannels.GetSize(); i++) {
-    if (fastStartChannels[i].IsOpen())
-      logicalChannels->Add(fastStartChannels[i]);
+  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ) {
+    if (channel->IsOpen())
+      logicalChannels->Add(*channel++);
     else
-      fastStartChannels.RemoveAt(i--);
+      fastStartChannels.erase(channel++);
   }
 
   // The channels we just transferred to the logical channels dictionary
@@ -3299,7 +3296,7 @@ void H323Connection::OnSetLocalCapabilities()
   // Remove those things not in the other parties media format list
   for (PINDEX c = 0; c < localCapabilities.GetSize(); c++) {
     H323Capability & capability = localCapabilities[c];
-    if (formats.FindFormat(capability.GetMediaFormat()) == P_MAX_INDEX) {
+    if (!formats.HasFormat(capability.GetMediaFormat())) {
       localCapabilities.Remove(&capability);
       c--;
     }
@@ -3316,10 +3313,9 @@ void H323Connection::OnSetLocalCapabilities()
 
   for (PINDEX s = 0; s < PARRAYSIZE(sessionOrder); s++) {
     simultaneous = P_MAX_INDEX;
-    for (PINDEX i = 0; i < formats.GetSize(); i++) {
-      OpalMediaFormat format = formats[i];
-      if (format.GetDefaultSessionID() == sessionOrder[s] && format.IsTransportable())
-        simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, format);
+    for (OpalMediaFormatList::iterator format = formats.begin(); format != formats.end(); ++format) {
+      if (format->GetDefaultSessionID() == sessionOrder[s] && format->IsTransportable())
+        simultaneous = localCapabilities.AddMediaFormat(0, simultaneous, *format);
     }
   }
   
@@ -3614,17 +3610,16 @@ PBoolean H323Connection::GetMediaInformation(unsigned sessionID,
 
 void H323Connection::StartFastStartChannel(unsigned sessionID, H323Channel::Directions direction)
 {
-  for (PINDEX i = 0; i < fastStartChannels.GetSize(); i++) {
-    H323Channel & channel = fastStartChannels[i];
-    if (channel.GetSessionID() == sessionID && channel.GetDirection() == direction) {
-      fastStartMediaStream = channel.GetMediaStream();
+  for (H323LogicalChannelList::iterator channel = fastStartChannels.begin(); channel != fastStartChannels.end(); ++channel) {
+    if (channel->GetSessionID() == sessionID && channel->GetDirection() == direction) {
+      fastStartMediaStream = channel->GetMediaStream();
       PTRACE(3, "H225\tOpening fast start channel using stream " << *fastStartMediaStream);
-      if (channel.Open()) {
-        if (channel.GetDirection() == H323Channel::IsTransmitter && mediaWaitForConnect)
+      if (channel->Open()) {
+        if (channel->GetDirection() == H323Channel::IsTransmitter && mediaWaitForConnect)
           break;
-        if (channel.Start())
+        if (channel->Start())
           break;
-        channel.Close();
+        channel->Close();
       }
       fastStartMediaStream.SetNULL();
     }

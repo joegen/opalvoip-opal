@@ -79,9 +79,11 @@ void OpalPluginLIDManager::OnLoadPlugin(PDynaLink & dll, INT code)
           break;
 
         case 1 : // plugin unloaded
-          for (PINDEX i = 0; i < m_registrations.GetSize(); i++) {
-            if (m_registrations[i] == lid->name)
-              m_registrations.RemoveAt(i--);
+          for (PList<OpalPluginLIDRegistration>::iterator iterLID = m_registrations.begin(); iterLID != m_registrations.end();) {
+            if (*iterLID == lid->name)
+              m_registrations.erase(iterLID++);
+             else
+               ++iterLID;
           }
       }
     }
@@ -301,7 +303,7 @@ PString OpalPluginLID::GetDescription() const
 }
 
 
-unsigned OpalPluginLID::GetLineCount()
+unsigned OpalPluginLID::GetLineCount() const
 {
   unsigned count = 0;
   CHECK_FN(GetLineCount, (m_context, &count));
@@ -693,7 +695,7 @@ PBoolean OpalPluginLID::EnableAudio(unsigned line, PBoolean enable)
 }
 
 
-PBoolean OpalPluginLID::IsAudioEnabled(unsigned line)
+PBoolean OpalPluginLID::IsAudioEnabled(unsigned line) const
 {
   PluginLID_Boolean enabled = FALSE;
   if (CHECK_FN(IsAudioEnabled, (m_context, line, &enabled)) == PluginLID_UnimplementedFunction)

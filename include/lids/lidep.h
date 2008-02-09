@@ -263,7 +263,7 @@ class OpalLIDEndPoint : public OpalEndPoint
     OpalLine * GetLine(
       const PString & lineName,  ///<  Name of line to get.
       PBoolean enableAudio = PFalse   ///<  Flag to enable audio on the line.
-    ) const;
+    );
 
     /**Set the default line to be used on call.
        If the lineName is "*" then the first available line is used.

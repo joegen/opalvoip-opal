@@ -331,8 +331,8 @@ void H323Gatekeeper::OnSendGatekeeperRequest(H225_GatekeeperRequest & grq)
 {
   H225_RAS::OnSendGatekeeperRequest(grq);
 
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-    if (authenticators[i].SetCapability(grq.m_authenticationCapability, grq.m_algorithmOIDs)) {
+  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+    if (iterAuth->SetCapability(grq.m_authenticationCapability, grq.m_algorithmOIDs)) {
       grq.IncludeOptionalField(H225_GatekeeperRequest::e_authenticationCapability);
       grq.IncludeOptionalField(H225_GatekeeperRequest::e_algorithmOIDs);
     }
@@ -345,21 +345,15 @@ PBoolean H323Gatekeeper::OnReceiveGatekeeperConfirm(const H225_GatekeeperConfirm
   if (!H225_RAS::OnReceiveGatekeeperConfirm(gcf))
     return PFalse;
 
-  PINDEX i;
-
-  for (i = 0; i < authenticators.GetSize(); i++) {
-    H235Authenticator & authenticator = authenticators[i];
-    if (authenticator.UseGkAndEpIdentifiers())
-      authenticator.SetRemoteId(gatekeeperIdentifier);
+  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+    if (iterAuth->UseGkAndEpIdentifiers())
+      iterAuth->SetRemoteId(gatekeeperIdentifier);
   }
 
   if (gcf.HasOptionalField(H225_GatekeeperConfirm::e_authenticationMode) &&
       gcf.HasOptionalField(H225_GatekeeperConfirm::e_algorithmOID)) {
-    for (i = 0; i < authenticators.GetSize(); i++) {
-      H235Authenticator & authenticator = authenticators[i];
-      authenticator.Enable(authenticator.IsCapability(gcf.m_authenticationMode,
-                                                      gcf.m_algorithmOID));
-    }
+    for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth)
+      iterAuth->Enable(iterAuth->IsCapability(gcf.m_authenticationMode, gcf.m_algorithmOID));
   }
 
   H323TransportAddress locatedAddress(gcf.m_rasAddress, "udp");
@@ -441,7 +435,7 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
   }
 
   for (PINDEX i = 0; i < listeners.GetSize(); i++)
-	  listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
+    listeners[i].SetPDU(rrq.m_callSignalAddress, *transport);
 
   endpoint.SetEndpointTypeInfo(rrq.m_terminalType);
   endpoint.SetVendorIdentifierInfo(rrq.m_endpointVendor);
@@ -596,32 +590,33 @@ PBoolean H323Gatekeeper::OnReceiveRegistrationConfirm(const H225_RegistrationCon
     for (i = 0; i < rcf.m_terminalAlias.GetSize(); i++) {
       PString alias = H323GetAliasAddressString(rcf.m_terminalAlias[i]);
       if (!alias) {
-        for (j = 0; j < currentAliases.GetSize(); j++) {
-          if (alias *= currentAliases[j])
+        PStringList::const_iterator currentAlias;
+        for (currentAlias = currentAliases.begin(); currentAlias != currentAliases.end(); ++currentAlias) {
+          if (alias *= *currentAlias)
             break;
         }
-        if (j >= currentAliases.GetSize())
+        if (currentAlias == currentAliases.end())
           aliasesToChange.AppendString(alias);
       }
     }
-    for (i = 0; i < aliasesToChange.GetSize(); i++) {
-      PTRACE(3, "RAS\tGatekeeper add of alias \"" << aliasesToChange[i] << '"');
-      endpoint.AddAliasName(aliasesToChange[i]);
+    for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
+      PTRACE(3, "RAS\tGatekeeper add of alias \"" << *alias << '"');
+      endpoint.AddAliasName(*alias);
     }
 
     aliasesToChange.RemoveAll();
 
-    for (i = 0; i < currentAliases.GetSize(); i++) {
+    for (PStringList::const_iterator alias = currentAliases.begin(); alias != currentAliases.end(); ++alias) {
       for (j = 0; j < rcf.m_terminalAlias.GetSize(); j++) {
-        if (currentAliases[i] *= H323GetAliasAddressString(rcf.m_terminalAlias[j]))
+        if (*alias *= H323GetAliasAddressString(rcf.m_terminalAlias[j]))
           break;
       }
       if (j >= rcf.m_terminalAlias.GetSize())
-        aliasesToChange.AppendString(currentAliases[i]);
+        aliasesToChange.AppendString(*alias);
     }
-    for (i = 0; i < aliasesToChange.GetSize(); i++) {
-      PTRACE(3, "RAS\tGatekeeper removal of alias \"" << aliasesToChange[i] << '"');
-      endpoint.RemoveAliasName(aliasesToChange[i]);
+    for (PStringList::iterator alias = aliasesToChange.begin(); alias != aliasesToChange.end(); ++alias) {
+      PTRACE(3, "RAS\tGatekeeper removal of alias \"" << *alias << '"');
+      endpoint.RemoveAliasName(*alias);
     }
   }
 
@@ -693,8 +688,8 @@ PBoolean H323Gatekeeper::UnregistrationRequest(int reason)
   H323TransportAddress rasAddress = transport->GetLocalAddress();
 
   const H323ListenerList & listeners = endpoint.GetListeners();
-  for (i = 0; i < listeners.GetSize(); i++) {
-    H323TransportAddress signalAddress = listeners[i].GetLocalAddress(rasAddress);
+  for (H323ListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    H323TransportAddress signalAddress = listener->GetLocalAddress(rasAddress);
     signalAddress.SetPDU(urq.m_callSignalAddress, *transport);
   }
 
@@ -1004,10 +999,9 @@ PBoolean H323Gatekeeper::AdmissionRequest(H323Connection & connection,
       PTRACE(3, "RAS\tAuthenticators credentials replaced with \""
              << setfill(',') << adjustedAuthenticators << setfill(' ') << "\" during ARQ");
 
-      for (PINDEX i = 0; i < adjustedAuthenticators.GetSize(); i++) {
-        H235Authenticator & authenticator = adjustedAuthenticators[i];
-        if (authenticator.UseGkAndEpIdentifiers())
-          authenticator.SetRemoteId(gatekeeperIdentifier);
+      for (H235Authenticators::iterator iterAuth = adjustedAuthenticators.begin(); iterAuth != adjustedAuthenticators.end(); ++iterAuth) {
+        if (iterAuth->UseGkAndEpIdentifiers())
+          iterAuth->SetRemoteId(gatekeeperIdentifier);
       }
 
       adjustedAuthenticators.PreparePDU(pdu,
@@ -1414,8 +1408,8 @@ H225_InfoRequestResponse & H323Gatekeeper::BuildInfoRequestResponse(H323RasPDU &
   address.SetPDU(irr.m_rasAddress);
 
   const H323ListenerList & listeners = endpoint.GetListeners();
-  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    address = listeners[i].GetLocalAddress();
+  for (H323ListenerList::const_iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    address = listener->GetLocalAddress();
     address.SetPDU(irr.m_callSignalAddress, *transport);
   }
 
@@ -1495,8 +1489,8 @@ static PBoolean AddAllInfoRequestResponseCall(H225_InfoRequestResponse & irr,
 {
   PBoolean addedOne = PFalse;
 
-  for (PINDEX i = 0; i < tokens.GetSize(); i++) {
-    PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(tokens[i]);
+  for (PStringList::const_iterator token = tokens.begin(); token != tokens.end(); ++token) {
+    PSafePtr<H323Connection> connection = endpoint.FindConnectionWithLock(*token);
     if (connection != NULL) {
       AddInfoRequestResponseCall(irr, *connection);
       addedOne = PTrue;
@@ -1669,9 +1663,9 @@ void H323Gatekeeper::SetPassword(const PString & password,
   if (localId.IsEmpty())
     localId = endpoint.GetLocalUserName();
 
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++) {
-    authenticators[i].SetLocalId(localId);
-    authenticators[i].SetPassword(password);
+  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth) {
+    iterAuth->SetLocalId(localId);
+    iterAuth->SetPassword(password);
   }
 }
 

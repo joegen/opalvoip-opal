@@ -708,7 +708,7 @@ class OpalManager : public PObject
         PString            destination;
         PRegularExpression regex;
     };
-    PLIST(RouteTable, RouteEntry);
+    PARRAY(RouteTable, RouteEntry);
 
     /**Parse a route table specification list for the manager.
        Add a route entry to the route table.

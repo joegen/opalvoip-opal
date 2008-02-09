@@ -112,7 +112,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
 
     /**Get the total number of lines supported by this device.
       */
-    virtual unsigned GetLineCount();
+    virtual unsigned GetLineCount() const;
 
     /**Get the type of the line.
        A "terminal" line is one where a call may terminate. For example a POTS
@@ -341,7 +341,7 @@ class OpalPluginLID : public OpalLineInterfaceDevice
       */
     virtual PBoolean IsAudioEnabled(
       unsigned line      ///<  Number of line
-    );
+    ) const;
 
 
     /**Set volume level for recording.

@@ -102,8 +102,8 @@ PBoolean H323TransactionPDU::Write(H323Transport & transport)
   strm.CompleteEncoding();
 
   // Finalise the security if present
-  for (PINDEX i = 0; i < authenticators.GetSize(); i++)
-    authenticators[i].Finalise(strm);
+  for (H235Authenticators::iterator iterAuth = authenticators.begin(); iterAuth != authenticators.end(); ++iterAuth)
+    iterAuth->Finalise(strm);
 
   H323TraceDumpPDU("Trans", PTrue, strm, GetPDU(), GetChoice(), GetSequenceNumber());
 
@@ -821,18 +821,21 @@ PBoolean H323TransactionServer::AddListeners(const H323TransportAddressArray & i
   PINDEX i;
 
   mutex.Wait();
-  for (i = 0; i < listeners.GetSize(); i++) {
+  ListenerList::iterator iterListener = listeners.begin();
+  while (iterListener != listeners.end()) {
     PBoolean remove = PTrue;
     for (PINDEX j = 0; j < ifaces.GetSize(); j++) {
-      if (listeners[i].GetTransport().GetLocalAddress().IsEquivalent(ifaces[j])) {
+      if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(ifaces[j])) {
         remove = PFalse;
        break;
       }
     }
     if (remove) {
-      PTRACE(3, "Trans\tRemoving listener " << listeners[i]);
-      listeners.RemoveAt(i--);
+      PTRACE(3, "Trans\tRemoving listener " << *iterListener);
+      listeners.erase(iterListener++);
     }
+    else
+      ++iterListener;
   }
   mutex.Signal();
 
@@ -850,8 +853,8 @@ PBoolean H323TransactionServer::AddListener(const H323TransportAddress & interfa
   PWaitAndSignal wait(mutex);
 
   PINDEX i;
-  for (i = 0; i < listeners.GetSize(); i++) {
-    if (listeners[i].GetTransport().GetLocalAddress().IsEquivalent(interfaceName)) {
+  for (ListenerList::iterator iterListener = listeners.begin(); iterListener != listeners.end(); ++iterListener) {
+    if (iterListener->GetTransport().GetLocalAddress().IsEquivalent(interfaceName)) {
       PTRACE(2, "H323\tAlready have listener for " << interfaceName);
       return PTrue;
     }

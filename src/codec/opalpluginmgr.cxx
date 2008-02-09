@@ -1564,8 +1564,8 @@ void OpalPluginCodecManager::RegisterPluginPair(
       // consuming dozens of dynamic RTP types
       if ((encoderCodec->flags & PluginCodec_RTPTypeShared) != 0 && (encoderCodec->sdpFormat != NULL)) {
         OpalMediaFormatList list = OpalMediaFormat::GetAllRegisteredMediaFormats();
-        for (PINDEX i = 0; i < list.GetSize(); i++) {
-          OpalPluginMediaFormat * opalFmt = dynamic_cast<OpalPluginMediaFormat *>(&list[i]);
+        for (OpalMediaFormatList::iterator iterFmt = list.begin(); iterFmt != list.end(); ++iterFmt) {
+          OpalPluginMediaFormat * opalFmt = dynamic_cast<OpalPluginMediaFormat *>(&*iterFmt);
           if (opalFmt != NULL) {
             OpalPluginMediaFormatInternal * fmt = opalFmt->GetInfo();
             if (fmt != NULL &&

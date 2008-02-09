@@ -232,8 +232,8 @@ PBoolean OpalMediaStream::Close()
 
 PBoolean OpalMediaStream::WritePackets(RTP_DataFrameList & packets)
 {
-  for (PINDEX i = 0; i < packets.GetSize(); i++) {
-    if (!WritePacket(packets[i]))
+  for (RTP_DataFrameList::iterator packet = packets.begin(); packet != packets.end(); ++packet) {
+    if (!WritePacket(*packet))
       return false;
   }
 

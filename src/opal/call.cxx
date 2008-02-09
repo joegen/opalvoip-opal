@@ -284,9 +284,11 @@ OpalMediaFormatList OpalCall::GetMediaFormats(const OpalConnection & connection,
       }
       else {
         // Want intersection of the possible formats for all connections.
-        for (PINDEX i = 0; i < commonFormats.GetSize(); i++) {
-          if (possibleFormats.GetValuesIndex(commonFormats[i]) == P_MAX_INDEX)
-            commonFormats.RemoveAt(i--);
+        for (OpalMediaFormatList::iterator format = commonFormats.begin(); format != commonFormats.end(); ) {
+          if (possibleFormats.HasFormat(*format))
+            ++format;
+          else
+            commonFormats.erase(format++);
         }
       }
     }

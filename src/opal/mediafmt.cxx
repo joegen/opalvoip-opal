@@ -560,9 +560,9 @@ OpalMediaFormat::OpalMediaFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockR
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  PINDEX idx = registeredFormats.FindFormat(pt, clockRate, name, protocol);
-  if (idx != P_MAX_INDEX)
-    *this = registeredFormats[idx];
+  OpalMediaFormatList::const_iterator fmt = registeredFormats.FindFormat(pt, clockRate, name, protocol);
+  if (fmt != registeredFormats.end())
+    *this = *fmt;
 }
 
 
@@ -603,9 +603,11 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  PINDEX idx = registeredFormats.FindFormat(info->formatName);
-  if (idx != P_MAX_INDEX)
-    *this = registeredFormats[idx];
+  OpalMediaFormatList::const_iterator fmt = registeredFormats.FindFormat(info->formatName);
+  if (fmt != registeredFormats.end()) {
+    *this = *fmt;
+    delete info;
+  }
   else {
     m_info = info;
     registeredFormats.OpalMediaFormatBaseList::Append(this);
@@ -620,11 +622,11 @@ OpalMediaFormat & OpalMediaFormat::operator=(RTP_DataFrame::PayloadTypes pt)
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  PINDEX idx = registeredFormats.FindFormat(pt);
-  if (idx == P_MAX_INDEX)
+  OpalMediaFormatList::const_iterator fmt = registeredFormats.FindFormat(pt);
+  if (fmt == registeredFormats.end())
     *this = OpalMediaFormat();
-  else if (this != &registeredFormats[idx])
-    *this = registeredFormats[idx];
+  else if (this != &*fmt)
+    *this = *fmt;
 
   return *this;
 }
@@ -643,11 +645,11 @@ OpalMediaFormat & OpalMediaFormat::operator=(const PString & wildcard)
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  PINDEX idx = registeredFormats.FindFormat(wildcard);
-  if (idx == P_MAX_INDEX)
+  OpalMediaFormatList::const_iterator fmt = registeredFormats.FindFormat(wildcard);
+  if (fmt == registeredFormats.end())
     *this = OpalMediaFormat();
   else
-    *this = registeredFormats[idx];
+    *this = *fmt;
 
   return *this;
 }
@@ -726,23 +728,23 @@ void OpalMediaFormat::GetAllRegisteredMediaFormats(OpalMediaFormatList & copy)
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
   const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++)
-    copy += registeredFormats[i];
+  for (OpalMediaFormatList::const_iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format)
+    copy += *format;
 }
 
 
 bool OpalMediaFormat::SetRegisteredMediaFormat(const OpalMediaFormat & mediaFormat)
 {
   PWaitAndSignal mutex(GetMediaFormatsListMutex());
-  const OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
+  OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
-  for (PINDEX i = 0; i < registeredFormats.GetSize(); i++) {
-    if (registeredFormats[i] == mediaFormat) {
+  for (OpalMediaFormatList::iterator format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
+    if (*format == mediaFormat) {
       /* Yes, this looks a little odd as we just did equality above and seem to
          be assigning the left hand side with exactly the same value. But what
          is really happening is the above only compares the name, and below
          copies all of the attributes (OpalMediaFormatOtions) across. */
-      registeredFormats[i] = mediaFormat;
+      *format = mediaFormat;
       return true;
     }
   }
@@ -793,20 +795,20 @@ OpalMediaFormatInternal::OpalMediaFormatInternal(const char * fullName,
 
   // find the next unused dynamic number, and find anything with the new 
   // rtp payload type if it is explicitly required
-  PINDEX i;
+  OpalMediaFormatList::iterator format;
   OpalMediaFormat * match = NULL;
   RTP_DataFrame::PayloadTypes nextUnused = RTP_DataFrame::DynamicBase;
   do {
-    for (i = 0; i < registeredFormats.GetSize(); i++) {
-      if (registeredFormats[i].GetPayloadType() == nextUnused) {
+    for (format = registeredFormats.begin(); format != registeredFormats.end(); ++format) {
+      if (format->GetPayloadType() == nextUnused) {
         nextUnused = (RTP_DataFrame::PayloadTypes)(nextUnused + 1);
         break;
       }
       if ((rtpPayloadType >= RTP_DataFrame::DynamicBase) && 
-          (registeredFormats[i].GetPayloadType() == rtpPayloadType))
-        match = &registeredFormats[i];
+          (format->GetPayloadType() == rtpPayloadType))
+        match = &*format;
     }
-  } while (i < registeredFormats.GetSize());
+  } while (format != registeredFormats.end());
 
   // if new format requires a specific payload type in the dynamic range, 
   // then move the old format to the next unused format
@@ -1111,7 +1113,7 @@ OpalMediaOption * OpalMediaFormatInternal::FindOption(const PString & name) cons
   if (index == P_MAX_INDEX)
     return NULL;
 
-  PAssert(name == options[index].GetName(), "name mismatch");
+  PAssert(options[index].GetName() == name, "OpalMediaOption name mismatch");
 
   return &options[index];
 }
@@ -1365,17 +1367,17 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormat & fo
 
 OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormatList & formats)
 {
-  for (PINDEX i = 0; i < formats.GetSize(); i++)
-    *this += formats[i];
+  for (OpalMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
+    *this += *format;
   return *this;
 }
 
 
 OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & format)
 {
-  PINDEX idx = FindFormat(format);
-  if (idx != P_MAX_INDEX)
-    RemoveAt(idx);
+  OpalMediaFormatList::const_iterator fmt = FindFormat(format);
+  if (fmt != end())
+    erase(fmt);
 
   return *this;
 }
@@ -1383,8 +1385,8 @@ OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & fo
 
 OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormatList & formats)
 {
-  for (PINDEX i = 0; i < formats.GetSize(); i++)
-    *this -= formats[i];
+  for (OpalMediaFormatList::const_iterator format = formats.begin(); format != formats.end(); ++format)
+    *this -= *format;
   return *this;
 }
 
@@ -1393,44 +1395,42 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
 {
   PINDEX i;
   for (i = 0; i < mask.GetSize(); i++) {
-    PINDEX idx;
-    while ((idx = FindFormat(mask[i])) != P_MAX_INDEX)
-      RemoveAt(idx);
+    OpalMediaFormatList::const_iterator fmt;
+    while ((fmt = FindFormat(mask[i])) != end())
+      erase(fmt);
   }
 }
 
-PINDEX OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol) const
+OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(RTP_DataFrame::PayloadTypes pt, unsigned clockRate, const char * name, const char * protocol) const
 {
-  for (PINDEX idx = 0; idx < GetSize(); idx++) {
-    OpalMediaFormat & mediaFormat = (*this)[idx];
-
+  for (OpalMediaFormatList::const_iterator format = begin(); format != end(); ++format) {
     // clock rates must always match
-    if (clockRate != 0 && clockRate != mediaFormat.GetClockRate())
+    if (clockRate != 0 && clockRate != format->GetClockRate())
       continue;
 
     // if protocol is specified, must be valid for the protocol
-    if ((protocol != NULL) && !mediaFormat.IsValidForProtocol(protocol))
+    if ((protocol != NULL) && !format->IsValidForProtocol(protocol))
       continue;
 
     // if an encoding name is specified, and it matches exactly, then use it
     // regardless of payload code. This allows the payload code mapping in SIP to work
     // if it doesn't match, then don't bother comparing payload codes
     if (name != NULL && *name != '\0') {
-      const char * otherName = mediaFormat.GetEncodingName();
+      const char * otherName = format->GetEncodingName();
       if (otherName != NULL && strcasecmp(otherName, name) == 0)
-        return idx;
+        return format;
       continue;
     }
 
     // if the payload type is not dynamic, and matches, then this is a match
-    if (pt < RTP_DataFrame::DynamicBase && mediaFormat.GetPayloadType() == pt)
-      return idx;
+    if (pt < RTP_DataFrame::DynamicBase && format->GetPayloadType() == pt)
+      return format;
 
     //if (RTP_DataFrame::IllegalPayloadType == pt)
     //  return idx;
   }
 
-  return P_MAX_INDEX;
+  return end();
 }
 
 
@@ -1468,16 +1468,18 @@ static bool WildcardMatch(const PCaselessString & str, const PStringArray & wild
 }
 
 
-PINDEX OpalMediaFormatList::FindFormat(const PString & search, PINDEX pos) const
+OpalMediaFormatList::const_iterator OpalMediaFormatList::FindFormat(const PString & search, const_iterator iter) const
 {
   PStringArray wildcards = search.Tokenise('*', true);
-  PINDEX idx;
-  for (idx = pos; idx < GetSize(); idx++) {
-    if (WildcardMatch((*this)[idx].m_info->formatName, wildcards))
-      return idx;
+  if (iter == const_iterator())
+    iter = begin();
+  while (iter != end()) {
+    if (WildcardMatch(iter->m_info->formatName, wildcards))
+      return iter;
+    ++iter;
   }
 
-  return P_MAX_INDEX;
+  return end();
 }
 
 

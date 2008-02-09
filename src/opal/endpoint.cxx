@@ -216,9 +216,9 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
 
 OpalListener * OpalEndPoint::FindListener(const OpalTransportAddress & iface)
 {
-  for (PINDEX i = 0; i < listeners.GetSize(); i++) {
-    if (listeners[i].GetTransportAddress().IsEquivalent(iface))
-      return &listeners[i];
+  for (OpalListenerList::iterator listener = listeners.begin(); listener != listeners.end(); ++listener) {
+    if (listener->GetTransportAddress().IsEquivalent(iface))
+      return &*listener;
   }
   return NULL;
 }

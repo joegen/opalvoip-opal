@@ -511,8 +511,8 @@ void SIPSubscribeHandler::OnReceivedOK(SIPTransaction & transaction, SIP_PDU & r
   if (!dialogCreated) {
     PStringList recordRoute = response.GetMIME().GetRecordRoute();
     routeSet.RemoveAll();
-    for (int i = recordRoute.GetSize() - 1 ; i >= 0 ; i--)
-      routeSet += recordRoute [i];
+    for (PStringList::iterator route = recordRoute.rbegin(); route != recordRoute.rend(); --route)
+      routeSet += *route;
     if (!response.GetMIME().GetContact().IsEmpty()) 
       targetAddress = response.GetMIME().GetContact();
     dialogCreated = PTrue;

@@ -167,7 +167,7 @@ PDECLARE_LIST(H235Authenticators, H235Authenticator)
       unsigned clearOptionalField,
       PASN_Array & cryptoTokens,
       unsigned cryptoOptionalField
-    ) const;
+    );
 
     H235Authenticator::ValidationResult ValidatePDU(
       const H323TransactionPDU & pdu,
@@ -176,7 +176,7 @@ PDECLARE_LIST(H235Authenticators, H235Authenticator)
       const PASN_Array & cryptoTokens,
       unsigned cryptoOptionalField,
       const PBYTEArray & rawPDU
-    ) const;
+    );
 };
 
 
