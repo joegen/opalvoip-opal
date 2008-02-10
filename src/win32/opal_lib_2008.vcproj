@@ -6165,7 +6165,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.ac;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6176,7 +6176,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6187,7 +6187,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6198,7 +6198,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.ac;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6209,7 +6209,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.ac;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6220,7 +6220,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6231,7 +6231,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6242,7 +6242,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
@@ -6253,7 +6253,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="Configuring Build Options"
-						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PWLIB_CONFIGURE_EXCLUDE_DIRS %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
+						CommandLine="cd ..\..&#x0D;&#x0A;configure --exclude-env=VSNET2008_PTLIB_CONFIGURE_EXCLUDE_DIRS %PTLIB_CONFIGURE_OPTIONS% %PWLIB_CONFIGURE_OPTIONS%&#x0D;&#x0A;"
 						AdditionalDependencies="..\..\configure.in;..\..\configure.exe;"
 						Outputs="$(InputDir)buildopts.h"
 					/>
