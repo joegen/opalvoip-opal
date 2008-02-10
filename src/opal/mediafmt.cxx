@@ -604,7 +604,7 @@ void OpalMediaFormat::Construct(OpalMediaFormatInternal * info)
   OpalMediaFormatList & registeredFormats = GetMediaFormatsList();
 
   OpalMediaFormatList::const_iterator fmt = registeredFormats.FindFormat(info->formatName);
-  if (fmt != (OpalMediaFormatList::const_iterator&) registeredFormats.end()) {
+  if (fmt != registeredFormats.end()) {
     *this = *fmt;
     delete info;
   }
@@ -1376,7 +1376,7 @@ OpalMediaFormatList & OpalMediaFormatList::operator+=(const OpalMediaFormatList 
 OpalMediaFormatList & OpalMediaFormatList::operator-=(const OpalMediaFormat & format)
 {
   OpalMediaFormatList::const_iterator fmt = FindFormat(format);
-  if (fmt != (OpalMediaFormatList::const_iterator&) end())
+  if (fmt != end())
     erase(fmt);
 
   return *this;
@@ -1396,7 +1396,7 @@ void OpalMediaFormatList::Remove(const PStringArray & mask)
   PINDEX i;
   for (i = 0; i < mask.GetSize(); i++) {
     OpalMediaFormatList::const_iterator fmt;
-    while ((fmt = FindFormat(mask[i])) != (OpalMediaFormatList::const_iterator&) end())
+    while ((fmt = FindFormat(mask[i])) != end())
       erase(fmt);
   }
 }
