@@ -1,5 +1,5 @@
 /* XPM */
-static char *H323Phone_xpm[] = {
+static const char * const H323Phone_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "32 32 14 1",
 "  c opaque",

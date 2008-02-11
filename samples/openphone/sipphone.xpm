@@ -1,5 +1,5 @@
 /* XPM */
-static char *SIPPhone_xpm[] = {
+static const char * const SIPPhone_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "32 32 14 1",
 "  c opaque",
