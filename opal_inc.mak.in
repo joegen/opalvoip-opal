@@ -21,69 +21,9 @@
 #
 # Contributor(s): ______________________________________.
 #
-# $Log: opal_inc.mak.in,v $
-# Revision 1.15  2007/06/14 13:07:47  csoutheren
-# Fix problem with linking system Speex statically
-#
-# Revision 1.14  2007/06/02 13:38:37  dsandras
-# Fixed build on linux which was broken due to partial commit of the RFC4175
-# code.
-#
-# Revision 1.13  2006/10/10 07:18:18  csoutheren
-# Allow compilation with and without various options
-#
-# Revision 1.12  2006/10/04 06:19:08  csoutheren
-# Fixed SRTP configuration for Linux
-#
-# Revision 1.11  2006/06/27 13:50:23  csoutheren
-# Patch 1375137 - Voicetronix patches and lid enhancements
-# Thanks to Frederich Heem
-#
-# Revision 1.10  2006/05/30 12:04:09  hfriederich
-# Enabling to build H.460
-#
-# Revision 1.9  2006/04/20 16:56:41  hfriederich
-# Changes to allow compilation of H.224/H.281 code as well as to disable H.224 entirely
-#
-# Revision 1.8  2006/04/17 00:06:27  csoutheren
-# Allow ILBC codec to be disabled and detect if not present
-#
-# Revision 1.7  2006/01/30 02:23:16  csoutheren
-# First cut at fixing problem with speex libraries
-#
-# Revision 1.6  2005/12/06 06:34:10  csoutheren
-# Added configure support for Sangoma and empty LID source and header files
-#
-# Revision 1.5  2005/07/30 07:39:26  csoutheren
-# Added support for compiling new IAX2 code
-#
-# Revision 1.4  2005/01/15 09:19:39  csoutheren
-# Fixed compile problems and IXJ link problems
-#
-# Revision 1.3  2004/12/05 18:14:20  dsandras
-# Cleanups.
-#
-# Revision 1.2  2004/04/25 08:33:42  rjongbloed
-# Removed detection of various LIDs as now in configure
-#
-# Revision 1.1  2004/03/16 04:27:18  csoutheren
-# Initial version
-#
-# Revision 2.4  2002/09/11 05:55:40  robertj
-# Fixed double inclusion of common.mak
-# Added more directories to search to find pwlib
-#
-# Revision 2.3  2002/04/19 01:24:30  robertj
-# Changed /usr/include to SYSINCDIR helps with X-compiling, thanks Bob Lindell
-#
-# Revision 2.2  2002/03/15 10:51:53  robertj
-# Fixed problem with recursive inclusion on make files.
-#
-# Revision 2.1  2002/02/06 09:39:37  rogerh
-# Look for telephony.h in the place where the FreeBSD port puts it
-#
-# Revision 2.0  2001/07/27 15:48:24  robertj
-# Conversion of OpenH323 to Open Phone Abstraction Library (OPAL)
+# $Revision$
+# $Author$
+# $Date$
 #
 
 OPALDIR=@OPALDIR@
