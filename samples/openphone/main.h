@@ -66,6 +66,7 @@ class OpalIVREndPoint;
 
 class wxSplitterWindow;
 class wxSplitterEvent;
+class wxSpinCtrl;
 class wxListCtrl;
 class wxListEvent;
 class wxGrid;

@@ -1,5 +1,5 @@
 /* XPM */
-static char *AppIcon_xpm[] = {
+static const char * const AppIcon_xpm[] = {
 /* columns rows colors chars-per-pixel */
 "64 64 17 1",
 "  c opaque",
