@@ -33,10 +33,14 @@
 #ifndef __CRITSECT_H__
 #define __CRITSECT_H__ 1
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
   #include <windows.h>
   #include <malloc.h>
+#ifndef _WIN32_WCE
   #define STRCMPI  _strcmpi
+#else
+  #define STRCMPI  _stricmp
+#endif
 #else
   #include <semaphore.h>
   #define STRCMPI  strcasecmp
