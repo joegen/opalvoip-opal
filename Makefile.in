@@ -360,112 +360,11 @@ CLEAN_FILES = $(OPAL_LIB)
 
 include @PTLIBDIR@/make/common.mak
 
-PROG=opal
-####################################################
-# replace lib.mak
+LIB_FILENAME=$(OPAL_FILE)
+SYSLIBS += -L$(PT_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
 
-ifneq ($(OSTYPE),Darwin)
-  LIBNAME_MAJ	= $(OPAL_FILE).$(MAJOR_VERSION)
-  LIBNAME_MIN	= $(LIBNAME_MAJ).$(MINOR_VERSION)
-  ifeq ($(BUILD_TYPE),.)
-    LIBNAME_PAT	= $(LIBNAME_MIN).$(BUILD_NUMBER)
-  else
-    LIBNAME_PAT	= $(LIBNAME_MIN)-$(BUILD_TYPE)$(BUILD_NUMBER)
-  endif
-else
-  LIBNAME_MAJ	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(LIB_SUFFIX),$(OPAL_FILE))
-  LIBNAME_MIN	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION).$(LIB_SUFFIX),$(OPAL_FILE))
-  ifeq ($(BUILD_TYPE),.)
-    LIBNAME_PAT	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION).$(BUILD_NUMBER).$(LIB_SUFFIX),$(OPAL_FILE))
-  else
-    LIBNAME_PAT	= $(subst .$(LIB_SUFFIX),.$(MAJOR_VERSION).$(MINOR_VERSION)-$(BUILD_TYPE)$(BUILD_NUMBER).$(LIB_SUFFIX),$(OPAL_FILE))
-  endif
-endif
+include @PTLIBDIR@/make/lib.mak
 
-LIB_SONAME	= $(LIBNAME_MIN)
-
-CLEAN_FILES += $(LIBDIR)/$(LIBNAME_PAT) $(LIBDIR)/$(OPAL_FILE) $(LIBDIR)/$(LIBNAME_MAJ) $(LIBDIR)/$(LIBNAME_MIN)
-
-ifneq ($(P_SHAREDLIB),1)
-  STATIC_LIB_FILE = $(LIBDIR)/$(OPAL_FILE)
-else
-  STATIC_LIB_FILE = $(LIBDIR)/$(subst .$(LIB_SUFFIX),_s.$(STATICLIBEXT),$(OPAL_FILE))
-endif
-
-$(LIBDIR)/$(OPAL_FILE) : $(TARGETLIB)
-
-ifeq ($(P_SHAREDLIB),1)
-
-  SYSLIBS += -L$(PT_LIBDIR) -l$(PTLIB_BASE)$(LIB_TYPE)
-  ifeq ($(OSTYPE),beos)
-    # BeOS requires different options when building shared libraries
-    LDSOOPTS = -nostdlib -nostart
-    EXTLIBS = -lstdc++.r4
-  else
-    ifeq ($(OSTYPE),Darwin)
-      LDSOOPTS = -dynamiclib
-    else
-      LDSOOPTS = -shared
-    endif
-  endif
-  
-  ENDLDLIBS := $(SYSLIBS) $(ENDLDLIBS)
-
-  ifeq ($(OSTYPE),rtems)
-    EXTLIBS = -lstdc++
-  endif
-
-  ifneq ($(OSTYPE), QNX)
-    ifneq (,$(findstring $(OSTYPE),FreeBSD OpenBSDs))
-      ifdef P_PTHREADS
-        EXTLIBS += -pthread
-      endif
-    else
-      ifdef P_PTHREADS
-        EXTLIBS += -lpthread
-      endif
-    endif
-  endif
-
-  # Solaris loader doesn't grok -soname  (sees it as -s -oname)
-  # We could use -Wl,-h,$(LIB_BASENAME).1 but then we find that the arglist
-  # to gcc is 2900+ bytes long and it will barf.  I fix this by invoking ld
-  # directly and passing it the equivalent arguments...jpd@louisiana.edu
-  ifeq ($(OSTYPE),solaris)
-     LDSOOPTS = -Bdynamic -G -h $(LIB_SONAME)
-     LD = $(CXX)
-  else
-    ifeq ($(OSTYPE),mingw)
-      LDSOOPTS += -Wl,--kill-at
-    else
-    ifneq ($(OSTYPE),Darwin)
-      LDSOOPTS += -Wl,-soname,$(LIB_SONAME)
-    endif
-    endif
-    LD = $(CXX)
-  endif
-
-  $(LIBDIR)/$(OPAL_FILE): $(LIBDIR)/$(LIBNAME_PAT)
-	cd $(LIBDIR) ; rm -f $(OPAL_FILE) ; ln -sf $(LIBNAME_PAT) $(OPAL_FILE)
-	cd $(LIBDIR) ; rm -f $(LIBNAME_MAJ) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MAJ)
-	cd $(LIBDIR) ; rm -f $(LIBNAME_MIN) ;  ln -sf $(LIBNAME_PAT) $(LIBNAME_MIN)
-
-	cd $(LIBDIR) ; rm -f libopal.$(LIB_SUFFIX) ;  ln -sf $(LIBNAME_PAT) libopal.$(LIB_SUFFIX)
-	
-  $(LIBDIR)/$(LIBNAME_PAT): $(STATIC_LIB_FILE)
-	@echo EXTLIBS = $(EXTLIBS)
-	@echo SYSLIBS = $(SYSLIBS)
-	@if [ ! -d $(LIBDIR) ] ; then mkdir $(LIBDIR) ; fi
-	$(LD) $(LDSOOPTS) -o $(LIBDIR)/$(LIBNAME_PAT) $(LDFLAGS) $(EXTLIBS) $(OBJS) $(ENDLDLIBS)
-
-endif # P_SHAREDLIB
-
-$(STATIC_LIB_FILE): $(OBJS)
-	@if [ ! -d $(LIBDIR) ] ; then mkdir $(LIBDIR) ; fi
-	$(ARCHIVE) $(STATIC_LIB_FILE) $(OBJS)
-ifeq ($(P_USE_RANLIB),1)
-	$(RANLIB) $(STATIC_LIB_FILE)
-endif
 
 ####################################################
 
@@ -502,7 +401,7 @@ test:
 	@echo $(ASN_CXX_FILES)
 
 #### Install targets
-install:
+install ::
 	mkdir -p $(DESTDIR)@LIBDIR@
 	( for dir in $(DESTDIR)@LIBDIR@ \
 		     $(DESTDIR)$(PREFIX)/include/opal/asn \
