@@ -52,10 +52,6 @@
 #include <t38/t38proto.h>
 #endif
 
-// G.711 is *always* available
-#include <codec/g711codec.h>
-OPAL_REGISTER_G711();
-
 
 #if OPAL_VIDEO
 
