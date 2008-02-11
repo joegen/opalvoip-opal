@@ -43,8 +43,16 @@ SOURCES		:= main.cxx openphone.cxx
 
 VERSION_FILE	= $(OPALDIR)/version.h
 
-STDCCFLAGS	+= `wx-config --cxxflags`
-LDFLAGS		+= `wx-config --libs`
+WX_CONFIG	+= wx-config --unicode=no
+ifdef DEBUG
+WX_CONFIG+=--debug=yes
+else
+WX_CONFIG+=--debug=no
+endif
+
+CPPFLAGS	+= `$(WX_CONFIG) --cxxflags`
+OPTCCFLAGS	+= `$(WX_CONFIG) --cxxflags` -Wno-strict-aliasing
+LDFLAGS		+= `$(WX_CONFIG) --libs`
 
 ifndef OPALDIR
 ifneq (,$(wildcard ../../version.h))

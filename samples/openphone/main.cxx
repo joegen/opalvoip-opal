@@ -44,6 +44,7 @@
 #include <wx/filesys.h>
 #include <wx/gdicmn.h>     //Required for icons on linux. 
 #include <wx/image.h>
+#include <wx/imaglist.h>
 #include <wx/listctrl.h>
 #include <wx/spinctrl.h>
 #include <wx/splitter.h>
@@ -1868,8 +1869,8 @@ void MyManager::StartRegistrars()
     if (iter->m_Active) {
       SIPRegister::Params param;
       param.m_addressOfRecord = iter->m_User + '@' + iter->m_Domain;
-      param.m_authID = (PString)iter->m_User;
-      param.m_password = (PString)iter->m_Password;
+      param.m_authID = (const char *)iter->m_User;
+      param.m_password = (const char *)iter->m_Password;
       param.m_expire = iter->m_TimeToLive;
       bool ok = sipEP->Register(param);
       LogWindow << "SIP registration " << (ok ? "start" : "fail") << "ed for " << iter->m_User << '@' << iter->m_Domain << endl;
@@ -1960,8 +1961,8 @@ void MyManager::ApplyMediaInfo()
 
 MyMedia::MyMedia()
   : sourceProtocol(NULL)
-  , preferenceOrder(-1) // -1 indicates disabled
   , validProtocols(NULL)
+  , preferenceOrder(-1) // -1 indicates disabled
   , dirty(false)
 {
 }
@@ -2858,7 +2859,7 @@ void OptionsDialog::SelectedLocalInterface(wxCommandEvent & /*event*/)
 void OptionsDialog::ChangedInterfaceInfo(wxCommandEvent & /*event*/)
 {
   bool enab = true;
-  PwxString iface = m_InterfaceAddress->GetValue();
+  PString iface = m_InterfaceAddress->GetValue().c_str();
   if (iface.IsEmpty())
     enab = false;
   else if (iface != "*") {
