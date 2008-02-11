@@ -61,16 +61,8 @@
 #ifndef _WIN32_WCE
   #define STRCMPI  _strcmpi
 #else
-  #include <stdlibx.h>
   #define STRCMPI  _stricmp
-
-  char* strdup( const char* s ) 
-  { 
-	char* s1 = (char*) malloc(strlen(s) +1); 
-	if( s1 )
-		strcpy( s1, s ); 
-	return s1; 
-  }
+  #define strdup _strdup
 #endif
 #else
   #include <unistd.h>
@@ -1202,7 +1194,11 @@ extern "C" {
 
   PLUGIN_CODEC_DLL_API struct PluginCodec_Definition * PLUGIN_CODEC_GET_CODEC_FN(unsigned * count, unsigned /*version*/)
   {
-    char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+#ifndef _WIN32_WCE
+	char * debug_level = getenv ("PWLIB_TRACE_CODECS");
+#else
+	char * debug_level = "0"; // Set in any level you want
+#endif
     if (debug_level!=NULL) {
       Trace::SetLevel(atoi(debug_level));
     }
