@@ -314,6 +314,16 @@ PBoolean OpalIVRConnection::StartVXML()
       PTRACE(3, "IVR\tSpeaking text '" << val << "'");
       vxmlSession.PlayText(val, PTextToSpeech::Default, repeat, delay);
     }
+
+    else if (key *= "silence") {
+      unsigned msecs;
+      if (val.IsEmpty() && (val[0] == '$'))
+        msecs = vars(val.Mid(1)).AsUnsigned();
+      else
+        msecs = val.AsUnsigned();
+      PTRACE(3, "IVR\tSpeaking silence for " << msecs << " msecs");
+      vxmlSession.PlaySilence(msecs);
+    }
   }
 
   vxmlSession.PlayStop();
