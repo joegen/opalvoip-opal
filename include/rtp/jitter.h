@@ -133,7 +133,12 @@ class OpalJitterBuffer : public PObject
     PDECLARE_NOTIFIER(PThread, OpalJitterBuffer, JitterThreadMain);
 
     PBoolean WaitForTermination(const PTimeInterval & t)
-    { return (jitterThread == NULL) ? PTrue : jitterThread->WaitForTermination(t); }
+    { 
+      if (jitterThread == NULL) 
+        return PTrue;
+      shuttingDown = true;
+      return jitterThread->WaitForTermination(t); 
+    }
 
   protected:
     class Entry : public RTP_DataFrame

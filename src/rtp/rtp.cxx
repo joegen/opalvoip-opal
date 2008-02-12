@@ -1512,7 +1512,7 @@ RTP_UDP::~RTP_UDP()
   // deleted before select decides there is no more data coming
   // over them and exits the reading thread.
   if (jitter)
-    PAssert(jitter->WaitForTermination(10000), "Jitter buffer thread did not terminate");
+    PAssert(jitter->WaitForTermination(20000), "Jitter buffer thread did not terminate");
   
   delete dataSocket;
   delete controlSocket;
