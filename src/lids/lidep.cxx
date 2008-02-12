@@ -289,8 +289,8 @@ PBoolean OpalLIDEndPoint::AddDeviceName(const PString & descriptor)
 
   // Make sure not already there.
   linesMutex.Wait();
-  for (OpalLIDList::iterator device = devices.begin(); device != devices.end(); ++device) {
-    if (device->GetDeviceType() == deviceType && device->GetDeviceName() == deviceName) {
+  for (OpalLIDList::iterator iterDev = devices.begin(); iterDev != devices.end(); ++iterDev) {
+    if (iterDev->GetDeviceType() == deviceType && iterDev->GetDeviceName() == deviceName) {
       linesMutex.Signal();
       return PTrue;
     }
