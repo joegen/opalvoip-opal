@@ -114,8 +114,18 @@ typedef PFactory<OpalTranscoder, OpalTranscoderKey>                      OpalTra
 typedef PFactory<OpalTranscoder, OpalTranscoderKey>::KeyList_T           OpalTranscoderList;
 typedef PFactory<OpalTranscoder, OpalTranscoderKey>::KeyList_T::iterator OpalTranscoderIterator;
 
+__inline OpalTranscoderKey MakeOpalTranscoderKey(const OpalMediaFormat & from, const OpalMediaFormat & to)
+{
+  return OpalTranscoderKey(from.GetName(), to.GetName());
+}
+
+__inline OpalTranscoderKey MakeOpalTranscoderKey(const char * from, const char * to)
+{
+  return OpalTranscoderKey(from, to);
+}
+
 #define OPAL_REGISTER_TRANSCODER(cls, input, output) \
-  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(OpalTranscoderKey(input, output))
+  OpalTranscoderFactory::Worker<cls> OpalTranscoder_##cls(MakeOpalTranscoderKey(input, output))
 
 
 /**This class embodies the implementation of a specific transcoder instance
