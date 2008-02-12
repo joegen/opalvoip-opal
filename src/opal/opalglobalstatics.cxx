@@ -44,6 +44,14 @@
 #include <codec/rfc4175.h>
 #endif
 
+//
+// G.711 is *always* available
+// Yes, it would make more sense for this to be in g711codec.cxx, but on 
+// Linux it would not get loaded due to static initialisation optimisation
+//
+#include <codec/g711codec.h>
+OPAL_REGISTER_G711();
+
 #if defined(P_HAS_PLUGINS)
 class PluginLoader : public PProcessStartup
 {

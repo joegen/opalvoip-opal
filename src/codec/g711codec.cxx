@@ -35,12 +35,7 @@
 
 #include <codec/g711codec.h>
 
-// G.711 is *always* available
-OPAL_REGISTER_G711();
-
-
 #define new PNEW
-
 
 extern "C" {
   int ulaw2linear(int u_val);
