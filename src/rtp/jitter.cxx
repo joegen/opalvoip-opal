@@ -273,7 +273,7 @@ void OpalJitterBuffer::JitterThreadMain(PThread &, INT)
 
   if (Init(currentReadFrame, markerWarning)) {
 
-    for (;;) {
+    while (!shuttingDown) {
       if (!PreRead(currentReadFrame, markerWarning))
         break;
 

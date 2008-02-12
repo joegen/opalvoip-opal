@@ -196,7 +196,7 @@ class OpalMediaPatch : public PObject
 		
     /**Called from the associated patch thread */
     virtual void Main();
-    void DispatchFrame(RTP_DataFrame & frame);
+    bool DispatchFrame(RTP_DataFrame & frame);
 	
     OpalMediaStream & source;
 

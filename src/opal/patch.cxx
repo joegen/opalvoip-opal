@@ -409,8 +409,11 @@ void OpalMediaPatch::Main()
       break;
  
     inUse.Wait();
-    DispatchFrame(sourceFrame);
+    bool written = DispatchFrame(sourceFrame);
     inUse.Signal();
+
+    if (!written)
+      break;
 
     // Don't starve the CPU if we have idle frames
     if (!isSynchronous || sourceFrame.GetPayloadType() == RTP_DataFrame::IllegalPayloadType)
@@ -421,12 +424,15 @@ void OpalMediaPatch::Main()
 }
 
 
-void OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
+bool OpalMediaPatch::DispatchFrame(RTP_DataFrame & frame)
 {
   FilterFrame(frame, source.GetMediaFormat());    
-	
+
+  bool written = false;
   for (PList<Sink>::iterator s = sinks.begin(); s != sinks.end(); ++s)
-    s->WriteFrame(frame);
+    written = written || s->WriteFrame(frame);
+
+  return written;
 }
 
 
@@ -478,7 +484,11 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     RTP_DataFrame::PayloadMapType::iterator r = payloadTypeMap.find(sourceFrame.GetPayloadType());
     if (r != payloadTypeMap.end())
       sourceFrame.SetPayloadType(r->second);
-    return writeSuccessful = stream->WritePacket(sourceFrame);
+    writeSuccessful = stream->WritePacket(sourceFrame);
+    if (!writeSuccessful) {
+      PTRACE(2, "Patch\tWritePacket failed");
+    }
+    return writeSuccessful;
   }
 
   if (!primaryCodec->AcceptComfortNoise()) {
@@ -492,14 +502,24 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
     return false;
   }
 
-  if (sourceFrame.GetPayloadSize() == 0)
-    return writeSuccessful = stream->WritePacket(sourceFrame);
+  if (sourceFrame.GetPayloadSize() == 0) {
+    writeSuccessful = stream->WritePacket(sourceFrame);
+    if (!writeSuccessful) {
+      PTRACE(2, "Patch\tWritePacket failed");
+    }
+    return writeSuccessful;
+  }
 
   for (RTP_DataFrameList::iterator interFrame = intermediateFrames.begin(); interFrame != intermediateFrames.end(); ++interFrame) {
     patch.FilterFrame(*interFrame, primaryCodec->GetOutputFormat());
     if (secondaryCodec == NULL) {
-      if (!stream->WritePacket(*interFrame))
-        return writeSuccessful = false;
+      if (!stream->WritePacket(*interFrame)) {
+        writeSuccessful = false;
+        if (!writeSuccessful) {
+          PTRACE(2, "Patch\tWritePacket failed");
+        }
+        return writeSuccessful;
+      }
       sourceFrame.SetTimestamp(interFrame->GetTimestamp());
     }
     else {
@@ -515,8 +535,13 @@ bool OpalMediaPatch::Sink::WriteFrame(RTP_DataFrame & sourceFrame)
 
       for (RTP_DataFrameList::iterator finalFrame = finalFrames.begin(); finalFrame != finalFrames.end(); ++finalFrame) {
         patch.FilterFrame(*finalFrame, secondaryCodec->GetOutputFormat());
-        if (!stream->WritePacket(*finalFrame))
-          return writeSuccessful = false;
+        if (!stream->WritePacket(*finalFrame)) {
+          writeSuccessful = false;
+          if (!writeSuccessful) {
+            PTRACE(2, "Patch\tWritePacket failed");
+          }
+          return writeSuccessful;
+        }
         sourceFrame.SetTimestamp(finalFrame->GetTimestamp());
       }
     }
