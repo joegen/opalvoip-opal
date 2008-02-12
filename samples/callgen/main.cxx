@@ -454,7 +454,12 @@ static unsigned RandomRange(PRandom & rand,
   CallGen::Current().coutMutex.Signal(); \
 }
 
-#define OUTPUT(index, token, info) START_OUTPUT(index, token) << info; END_OUTPUT()
+static bool generateOutput = false;
+
+#define OUTPUT(index, token, info) \
+  if (generateOutput) { \
+  START_OUTPUT(index, token) << info; END_OUTPUT() \
+  } \
 
 
 void CallThread::Main()
