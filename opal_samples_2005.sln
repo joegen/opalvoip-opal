@@ -8,6 +8,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL_dll", "src\win32\opal_
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OPAL Static", "src\win32\opal_lib_2005.vcproj", "{ED9CC7DA-08A6-4CB9-9783-F1C3799398D8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D} = {D11E1C9D-406C-4D7C-8F37-913C0BFD9E0D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Simple OPAL Static", "samples\simple\simple_2005.vcproj", "{F5F40674-6CBD-459A-A2AA-EB3C084EE879}"
 	ProjectSection(ProjectDependencies) = postProject
