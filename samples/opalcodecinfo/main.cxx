@@ -206,7 +206,7 @@ void DisplayCodecDefn(PluginCodec_Definition & defn)
     }
   }
 
-  static char * capabilityNames[] = {
+  static const char * const capabilityNames[] = {
     "not defined",
     "programmed",
     "nonStandard",

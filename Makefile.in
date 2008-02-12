@@ -52,7 +52,7 @@ endif
 
 HAS_SAMPLES=@OPAL_SAMPLES@
 ifeq ($(HAS_SAMPLES),1)
-SUBDIRS += samples/simple 
+SUBDIRS += samples/simple samples/opalcodecinfo samples/callgen
 endif
 
 LIBRARY_MAKEFILE:=1
