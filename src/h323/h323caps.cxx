@@ -2289,15 +2289,15 @@ H323Capability * H323Capabilities::FindCapability(const H245_DataType & dataType
     bool checkExact;
     switch (dataType.GetTag()) {
       case H245_DataType::e_audioData :
-        checkExact = capability.IsMatch((const H245_AudioCapability &)dataType);
+        checkExact = capability.GetMainType() == H323Capability::e_Audio && capability.IsMatch((const H245_AudioCapability &)dataType);
         break;
 
       case H245_DataType::e_videoData :
-        checkExact = capability.IsMatch((const H245_VideoCapability &)dataType);
+        checkExact = capability.GetMainType() == H323Capability::e_Video && capability.IsMatch((const H245_VideoCapability &)dataType);
         break;
 
       case H245_DataType::e_data :
-        checkExact = capability.IsMatch(((const H245_DataApplicationCapability &)dataType).m_application);
+        checkExact = capability.GetMainType() == H323Capability::e_Data && capability.IsMatch(((const H245_DataApplicationCapability &)dataType).m_application);
         break;
 
       default :
