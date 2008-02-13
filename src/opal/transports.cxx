@@ -134,8 +134,16 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   PCaselessString myPrefix = Left(Find('$'));
   PCaselessString theirPrefix = address.Left(address.Find('$'));
   return myPrefix == theirPrefix ||
-        (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix || theirPrefix == TcpsPrefix)) ||
-        (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix || myPrefix    == TcpsPrefix));
+        (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix 
+#if P_SSL
+                                     || theirPrefix == TcpsPrefix
+#endif
+                                    )) ||
+        (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix 
+#if P_SSL
+                                     || myPrefix    == TcpsPrefix
+#endif
+                                    ));
 }
 
 
@@ -1510,8 +1518,12 @@ OpalTransportTCPS::~OpalTransportTCPS()
 PBoolean OpalTransportTCPS::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
   return (address.NumCompare(TcpPrefix)  == EqualTo) ||
-         (address.NumCompare(IpPrefix)   == EqualTo) ||
-         (address.NumCompare(TcpsPrefix) == EqualTo);
+         (address.NumCompare(IpPrefix)   == EqualTo) 
+#if P_SSL
+         ||
+         (address.NumCompare(TcpsPrefix) == EqualTo)
+#endif
+         ;
 }
 
 
