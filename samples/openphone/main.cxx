@@ -824,13 +824,26 @@ bool MyManager::Initialise()
     AddRouteEntry(".*:#  = ivr:"); // A hash from anywhere goes to IVR
 #endif
     AddRouteEntry("pots:.*\\*.*\\*.* = sip:<dn2ip>");
+    AddRouteEntry("pots:.*\\*.*\\*.* = sips:<dn2ip>");
     AddRouteEntry("pots:.*           = sip:<da>");
+    AddRouteEntry("pots:.*           = sips:<da>");
+
     AddRouteEntry("pc:.*             = sip:<da>");
+    AddRouteEntry("pc:.*             = sips:<da>");
     AddRouteEntry("pc:.*             = h323:<da>");
+    AddRouteEntry("pc:.*             = h323s:<da>");
+
     AddRouteEntry("h323:.*           = pots:<dn>");
-    AddRouteEntry("sip:.*            = pots:<dn>");
     AddRouteEntry("h323:.*           = pc:<du>");
+
+    AddRouteEntry("h323s:.*          = pots:<dn>");
+    AddRouteEntry("h323s:.*          = pc:<du>");
+
+    AddRouteEntry("sip:.*            = pots:<dn>");
     AddRouteEntry("sip:.*            = pc:<du>");
+
+    AddRouteEntry("sips:.*           = pots:<dn>");
+    AddRouteEntry("sips:.*           = pc:<du>");
   }
 
   return true;
@@ -2456,9 +2469,9 @@ OptionsDialog::OptionsDialog(MyManager * manager)
   // Fill combo box with possible protocols
   m_RouteSource = FindWindowByNameAs<wxComboBox>(this, "RouteSource");
   m_RouteSource->Append(AllSources);
-  const PList<OpalEndPoint> & endponts = m_manager.GetEndPoints();
-  for (i = 0; i < endponts.GetSize(); i++)
-    m_RouteSource->Append((const char *)endponts[i].GetPrefixName());
+  PList<OpalEndPoint> endpoints = m_manager.GetEndPoints();
+  for (i = 0; i < endpoints.GetSize(); i++)
+    m_RouteSource->Append((const char *)endpoints[i].GetPrefixName());
   m_RouteSource->SetSelection(0);
 
 
