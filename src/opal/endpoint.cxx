@@ -205,9 +205,16 @@ PStringArray OpalEndPoint::GetDefaultListeners() const
   PStringArray listenerAddresses;
   PStringArray transports = GetDefaultTransport().Tokenise(',');
   for (PINDEX i = 0; i < transports.GetSize(); i++) {
-    PString listenerAddress = transports[i] + '*';
+    PString t = transports[i];
+    WORD port = defaultSignalPort;
+    PINDEX pos = t.Find(':');
+    if (pos != P_MAX_INDEX) {
+      port = t.Mid(pos+1).AsUnsigned();
+      t = t.Left(pos);
+    }
+    PString listenerAddress = t + '*';
     if (defaultSignalPort != 0)
-      listenerAddress.sprintf(":%u", defaultSignalPort);
+      listenerAddress.sprintf(":%u", port);
     listenerAddresses += listenerAddress;
   }
   return listenerAddresses;
