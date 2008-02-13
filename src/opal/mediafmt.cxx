@@ -837,12 +837,15 @@ bool OpalMediaFormatInternal::Merge(const OpalMediaFormatInternal & mediaFormat)
     OpalMediaOption & opt = options[i];
     PString name = opt.GetName();
     OpalMediaOption * option = mediaFormat.FindOption(opt.GetName());
-    PAssert(option->GetName() == opt.GetName(), "find returned bad name");
     if (option == NULL) {
       PTRACE_IF(2, formatName == mediaFormat.formatName, "MediaFormat\tCannot merge unmatched option " << opt.GetName());
     }
-    else if (!opt.Merge(*option))
-      return false;
+    else 
+    {
+      PAssert(option->GetName() == opt.GetName(), "find returned bad name");
+      if (!opt.Merge(*option))
+        return false;
+    }
   }
 
   ToNormalisedOptions();
