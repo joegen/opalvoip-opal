@@ -55,6 +55,7 @@ class OpalMediaPatch;
 class OpalH224Handler;
 class OpalH281Handler;
 
+typedef PFactory<OpalEndPoint> OpalEndpointFactory;
 
 /**This class is the central manager for OPAL.
    The OpalManager embodies the root of the tree of objects that constitute an
@@ -99,12 +100,19 @@ class OpalManager : public PObject
        used to do this.
       */
     void AttachEndPoint(
+      const PString & prefix,
+      OpalEndPoint * endpoint
+    );
+    void AttachEndPoint(
       OpalEndPoint * endpoint
     );
 
     /**Remove an endpoint from the manager.
        This will delete the endpoint object.
       */
+    void DetachEndPoint(
+      const PString & prefix
+    );
     void DetachEndPoint(
       OpalEndPoint * endpoint
     );
@@ -117,7 +125,9 @@ class OpalManager : public PObject
 
     /**Get the endpoints attached to this manager.
       */
-    const PList<OpalEndPoint> & GetEndPoints() const { return endpoints; }
+    PList<OpalEndPoint> GetEndPoints(
+      bool unique = false             // if true, only one instance of each endpoint will be returned
+    ) const;
 
     /**Shut down all of the endpoints, clearing all calls.
        This is synchonous and will wait till everything is shut down.
@@ -1259,7 +1269,6 @@ class OpalManager : public PObject
     PMutex     routeTableMutex;
 
     // Dynamic variables
-    PList<OpalEndPoint> endpoints;
     PReadWriteMutex     endpointsMutex;
 
     PAtomicInteger lastCallTokenID;

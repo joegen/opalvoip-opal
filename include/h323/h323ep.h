@@ -92,9 +92,7 @@ class H323EndPoint : public OpalEndPoint
     /**Create a new endpoint.
      */
     H323EndPoint(
-      OpalManager & manager,
-      const char * prefix = "h323",
-      WORD defaultSignalPort = DefaultTcpSignalPort
+      OpalManager & manager
     );
 
     /**Destroy endpoint.
@@ -1299,6 +1297,7 @@ class H323EndPoint : public OpalEndPoint
     unsigned GetNextH450CallIdentityValue() const { return ++nextH450CallIdentity; }
 #endif
 
+    PString GetDefaultTransport() const;
   //@}
 
   protected:
@@ -1393,29 +1392,6 @@ class H323EndPoint : public OpalEndPoint
 #endif
 
 };
-
-
-#if P_SSL
-
-class H323SecureEndPoint : public H323EndPoint
-{
-  PCLASSINFO(H323SecureEndPoint, H323EndPoint);
-  public:
-    enum {
-      DefaultTcpSignalPort = 1300
-    };
-
-    H323SecureEndPoint(OpalManager & _manager)
-      : H323EndPoint(_manager, "h323s", DefaultTcpSignalPort)
-    {
-    }
-
-    PString GetDefaultTransport() const
-    {  return "tcps$"; }
-  //@}
-};
-
-#endif // P_SSL
 
 #endif // __OPAL_H323EP_H
 

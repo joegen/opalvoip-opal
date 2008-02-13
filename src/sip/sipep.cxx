@@ -53,16 +53,16 @@
 ////////////////////////////////////////////////////////////////////////////
 
 SIPEndPoint::SIPEndPoint(OpalManager & mgr)
-  : OpalEndPoint(mgr, "sip", CanTerminateCall),
-    retryTimeoutMin(500),     // 0.5 seconds
-    retryTimeoutMax(0, 4),    // 4 seconds
-    nonInviteTimeout(0, 16),  // 16 seconds
-    pduCleanUpTimeout(0, 5),  // 5 seconds
-    inviteTimeout(0, 32),     // 32 seconds
-    ackTimeout(0, 32),        // 32 seconds
+: OpalEndPoint(mgr, "sip", CanTerminateCall),
+    retryTimeoutMin(500),            // 0.5 seconds
+    retryTimeoutMax(0, 4),           // 4 seconds
+    nonInviteTimeout(0, 16),         // 16 seconds
+    pduCleanUpTimeout(0, 5),         // 5 seconds
+    inviteTimeout(0, 32),            // 32 seconds
+    ackTimeout(0, 32),               // 32 seconds
     registrarTimeToLive(0, 0, 0, 1), // 1 hour
-    notifierTimeToLive(0, 0, 0, 1), // 1 hour
-    natBindingTimeout(0, 0, 1) // 1 minute
+    notifierTimeToLive(0, 0, 0, 1),  // 1 hour
+    natBindingTimeout(0, 0, 1)       // 1 minute
 {
   defaultSignalPort = 5060;
   mimeForm = PFalse;
@@ -78,6 +78,10 @@ SIPEndPoint::SIPEndPoint(OpalManager & mgr)
   GetOpalRFC2833();
   GetOpalCiscoNSE();
 
+#ifdef P_SSL
+  manager.AttachEndPoint("sips", this);
+#endif
+
   PTRACE(4, "SIP\tCreated endpoint.");
 }
 
@@ -87,7 +91,7 @@ SIPEndPoint::~SIPEndPoint()
   while (activeSIPHandlers.GetSize() > 0) {
     PSafePtr<SIPHandler> handler = activeSIPHandlers;
     PString aor = handler->GetRemotePartyAddress();
-    if (handler->GetMethod() == SIP_PDU::Method_REGISTER && handler->GetState()  == SIPHandler::Subscribed) {
+    if (handler->GetMethod() == SIP_PDU::Method_REGISTER && handler->GetState() == SIPHandler::Subscribed) {
         Unregister(aor);
       PThread::Sleep(500);
       }
@@ -108,6 +112,14 @@ SIPEndPoint::~SIPEndPoint()
   PTRACE(4, "SIP\tDeleted endpoint.");
 }
 
+PString SIPEndPoint::GetDefaultTransport() const 
+{  
+  return "udp$,tcp$"
+#ifdef P_SSL
+         ",tcps$:5061"
+#endif
+    ; 
+}
 
 PBoolean SIPEndPoint::NewIncomingConnection(OpalTransport * transport)
 {
@@ -193,7 +205,7 @@ OpalTransport * SIPEndPoint::CreateTransport(const OpalTransportAddress & remote
   if (transport == NULL) {
     // No compatible listeners, can't use their binding
     transport = remoteAddress.CreateTransport(*this, OpalTransportAddress::NoBinding);
-    if(transport == NULL) {
+    if (transport == NULL) {
       PTRACE(1, "SIP\tCould not create transport for " << remoteAddress);
       return NULL;
     }
@@ -280,7 +292,7 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
                                  unsigned int options,
                                  OpalConnection::StringOptions * stringOptions)
 {
-  if (remoteParty.NumCompare(GetPrefixName()+':') != EqualTo)
+  if ((remoteParty.NumCompare("sip:") != EqualTo) && (remoteParty.NumCompare("sips:") != EqualTo))
     return false;
 
   if (listeners.IsEmpty())

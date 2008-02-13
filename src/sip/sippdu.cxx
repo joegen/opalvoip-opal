@@ -192,7 +192,7 @@ SIPURL::SIPURL(const PString & name,
                const OpalTransportAddress & address,
                WORD listenerPort)
 {
-  if (strncmp(name, "sip:", 4) == 0)
+  if (strncmp(name, "sip:", 4) == 0 || strncmp(name, "sips:", 5) == 0)
     Parse(name);
   else {
     PIPSocket::Address ip;
@@ -220,9 +220,14 @@ SIPURL::SIPURL(const PString & name,
 }
 
 
-PBoolean SIPURL::InternalParse(const char * cstr, const char * defaultScheme)
+PBoolean SIPURL::InternalParse(const char * cstr, const char * _defaultScheme)
 {
-  if (defaultScheme == NULL)
+  PString defaultScheme;
+  if (_defaultScheme != NULL) 
+    defaultScheme = _defaultScheme;
+  else if (strncmp(cstr, "sips:", 5) == 0)
+    defaultScheme = "sips";
+  else 
     defaultScheme = "sip";
 
   displayName = PString::Empty();
@@ -327,7 +332,11 @@ PString SIPURL::GetDisplayName (PBoolean useDefault) const
 
 OpalTransportAddress SIPURL::GetHostAddress() const
 {
-  PString addr = paramVars("transport", "udp") + '$';
+  PString addr;
+  if (scheme *= "sips")
+    addr = "tcps$";
+  else
+    addr  = paramVars("transport", "udp") + '$';
 
   if (paramVars.Contains("maddr"))
     addr += paramVars["maddr"];
