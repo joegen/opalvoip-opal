@@ -115,12 +115,12 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   struct iLBC_Dec_Inst_t_ * decoder = (struct iLBC_Dec_Inst_t_ *)context;
   short * sampleBuffer = (short *)to;
 
-  // check for codec mode switches
-  if (*fromLen != decoder->no_of_bytes) {
-    if ((decoder->no_of_bytes == 50 && *fromLen == 38) || (decoder->no_of_bytes == 38 && *fromLen == 50))
-      initDecode(context, *fromLen == 50 ? 30 : 20, 0); 
-    else
-      return 0;
+  // If packet not have integral number of frames for this mode
+  if ((*fromLen % decoder->no_of_bytes) != 0) {
+    // Then switch to the other mode
+    initDecode(context, decoder->mode == 20 ? 30 : 20, 0); 
+    if ((*fromLen % decoder->no_of_bytes) != 0)
+      return 0; // Still wrong, what are they sending us?
   }
 
   /* do actual decoding of block */ 
@@ -193,7 +193,7 @@ static struct PluginCodec_Option const PreferredMode =
   PluginCodec_MaxMerge,       // Merge mode
   "20",                       // Initial value
   "mode",                     // SIP/SDP FMTP name
-  NULL,                       // SIP/SDP FMTP default value (option not included in FMTP if have this value)
+  "0",                        // SIP/SDP FMTP default value (option not included in FMTP if have this value)
   H245_iLBC_MODE,             // H.245 Generic Capability number and scope bits
   "20",                       // Minimum value
   "30"                        // Maximum value
@@ -221,6 +221,13 @@ static int get_codec_options(const struct PluginCodec_Definition * defn,
 }
 
 
+static int get_mode(const char * str)
+{
+  int mode = atoi(str);
+  return mode == 0 || mode > 25 ? 30 : 20;
+}
+
+
 static int set_codec_options(const struct PluginCodec_Definition * defn,
                                                             void * context,
                                                       const char * name, 
@@ -234,7 +241,7 @@ static int set_codec_options(const struct PluginCodec_Definition * defn,
 
   for (option = (const char * const *)parm; *option != NULL; option += 2) {
     if (STRCMPI(option[0], PreferredModeStr) == 0) {
-      unsigned mode = atoi(option[1]) > 25 ? 30 : 20;
+      unsigned mode = get_mode(option[1]);
       if (defn->destFormat[0] == 'L')
         initDecode(context, mode, 0);
       else
@@ -252,24 +259,25 @@ static int to_normalised_options(const struct PluginCodec_Definition * defn,
                                                                 void * parm, 
                                                             unsigned * parmLen)
 {
-  char frameTime[20], frameSize[20];
+  char frameTime[20], frameSize[20], newMode[20];
   const char * const * option;
 
   if (parmLen == NULL || parm == NULL || *parmLen != sizeof(char ***))
     return 0;
 
-  frameTime[0] = frameSize[0] = '\0';
+  frameTime[0] = frameSize[0] = newMode[0] = '\0';
 
   for (option = *(const char * const * *)parm; *option != NULL; option += 2) {
     if (STRCMPI(option[0], PreferredModeStr) == 0) {
-      int thirty = atoi(option[1]) > 25;
-      sprintf(frameTime, "%i", thirty ? BLOCKL_30MS      : BLOCKL_20MS);
-      sprintf(frameSize, "%i", thirty ? NO_OF_BYTES_30MS : NO_OF_BYTES_20MS);
+      int mode = get_mode(option[1]);
+      sprintf(frameTime, "%i", mode == 30 ? BLOCKL_30MS      : BLOCKL_20MS);
+      sprintf(frameSize, "%i", mode == 30 ? NO_OF_BYTES_30MS : NO_OF_BYTES_20MS);
+      sprintf(newMode,   "%i", mode);
     }
   }
 
   if (frameTime[0] != '\0') {
-    char ** options = (char **)calloc(5, sizeof(char *));
+    char ** options = (char **)calloc(7, sizeof(char *));
     *(char ***)parm = options;
     if (options == NULL)
       return 0;
@@ -278,6 +286,8 @@ static int to_normalised_options(const struct PluginCodec_Definition * defn,
     options[1] = strdup(frameTime);
     options[2] = strdup(PLUGINCODEC_OPTION_MAX_FRAME_SIZE);
     options[3] = strdup(frameSize);
+    options[4] = strdup(PreferredModeStr);
+    options[5] = strdup(newMode);
   }
 
   return 1;
