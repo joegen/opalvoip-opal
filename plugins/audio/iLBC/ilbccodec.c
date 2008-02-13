@@ -115,8 +115,13 @@ static int codec_decoder(const struct PluginCodec_Definition * codec,
   struct iLBC_Dec_Inst_t_ * decoder = (struct iLBC_Dec_Inst_t_ *)context;
   short * sampleBuffer = (short *)to;
 
-  if (*fromLen < (unsigned)decoder->no_of_bytes)
-    return 0;
+  // check for codec mode switches
+  if (*fromLen != decoder->no_of_bytes) {
+    if ((decoder->no_of_bytes == 50 && *fromLen == 38) || (decoder->no_of_bytes == 38 && *fromLen == 50))
+      initDecode(context, *fromLen == 50 ? 30 : 20, 0); 
+    else
+      return 0;
+  }
 
   /* do actual decoding of block */ 
   iLBC_decode(block, (unsigned char *)from, decoder, 1);
