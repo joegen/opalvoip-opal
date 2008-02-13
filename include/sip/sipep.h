@@ -99,7 +99,7 @@ class SIPEndPoint : public OpalEndPoint
     /**Get the default transports for the endpoint type.
        Overrides the default behaviour to return udp and tcp.
       */
-    virtual PString GetDefaultTransport() const {  return "udp$,tcp$"; }
+    virtual PString GetDefaultTransport() const;
 
     /**Handle new incoming connection from listener.
 

@@ -134,8 +134,8 @@ PBoolean OpalTransportAddress::IsCompatible(const OpalTransportAddress & address
   PCaselessString myPrefix = Left(Find('$'));
   PCaselessString theirPrefix = address.Left(address.Find('$'));
   return myPrefix == theirPrefix ||
-        (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix)) ||
-        (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix));
+        (myPrefix    == IpPrefix && (theirPrefix == TcpPrefix || theirPrefix == UdpPrefix || theirPrefix == TcpsPrefix)) ||
+        (theirPrefix == IpPrefix && (myPrefix    == TcpPrefix || myPrefix    == UdpPrefix || myPrefix    == TcpsPrefix));
 }
 
 
@@ -681,8 +681,15 @@ OpalTransport * OpalListenerTCP::CreateTransport(const OpalTransportAddress & lo
                                                  const OpalTransportAddress & remoteAddress) const
 {
   OpalTransportAddress myLocalAddress = GetLocalAddress();
-  if (myLocalAddress.IsCompatible(remoteAddress) && myLocalAddress.IsCompatible(remoteAddress))
-    return localAddress.IsEmpty() ? new OpalTransportTCP(endpoint) : localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
+  if (myLocalAddress.IsCompatible(remoteAddress) && myLocalAddress.IsCompatible(remoteAddress)) {
+    if (!localAddress.IsEmpty())
+      return localAddress.CreateTransport(endpoint, OpalTransportAddress::NoBinding);
+#ifdef P_SSL
+    if (remoteAddress.NumCompare("tcps:"))
+      return new OpalTransportTCPS(endpoint);
+#endif
+    return new OpalTransportTCP(endpoint);
+  }
   return NULL;
 }
 
@@ -1476,14 +1483,14 @@ OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep,
                                      PBoolean reuseAddr)
   : OpalTransportTCP(ep, binding, port, reuseAddr)
 {
-  sslContext = new PSSLContext;
+  sslContext = new PSSLContext(PSSLContext::TLSv1);
 }
 
 
 OpalTransportTCPS::OpalTransportTCPS(OpalEndPoint & ep, PTCPSocket * socket)
   : OpalTransportTCP(ep, PIPSocket::GetDefaultIpAny(), 0)
 {
-  sslContext = new PSSLContext;
+  sslContext = new PSSLContext(PSSLContext::TLSv1);
   PSSLChannel * sslChannel = new PSSLChannel(sslContext);
   if (!sslChannel->Open(socket))
     delete sslChannel;

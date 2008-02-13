@@ -56,8 +56,8 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _defaultSignalPort)
-  : OpalEndPoint(manager, _prefix, CanTerminateCall),
+H323EndPoint::H323EndPoint(OpalManager & manager)
+  : OpalEndPoint(manager, "h323", CanTerminateCall),
     m_bH245Disabled(PFalse),
     signallingChannelCallTimeout(0, 0, 1),  // Minutes
     controlChannelStartTimeout(0, 0, 2),    // Minutes
@@ -85,7 +85,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
 #endif
 {
   // Set port in OpalEndPoint class
-  defaultSignalPort = _defaultSignalPort;
+  defaultSignalPort = 1720;
 
   localAliasNames.AppendString(defaultLocalPartyName);
 
@@ -122,6 +122,8 @@ H323EndPoint::H323EndPoint(OpalManager & manager, const char * _prefix, WORD _de
   features.LoadFeatureSet(H460_Feature::FeatureBase);
 #endif
 
+  manager.AttachEndPoint("h323s", this);
+
   PTRACE(4, "H323\tCreated endpoint.");
 }
 
@@ -137,6 +139,14 @@ H323EndPoint::~H323EndPoint()
   PTRACE(4, "H323\tDeleted endpoint.");
 }
 
+PString H323EndPoint::GetDefaultTransport() const
+{
+  return "tcp$"
+#ifdef P_SSL
+         ",tcps$:1300"
+#endif
+    ;
+}
 
 void H323EndPoint::SetEndpointTypeInfo(H225_EndpointType & info) const
 {
@@ -460,7 +470,7 @@ PBoolean H323EndPoint::MakeConnection(OpalCall & call,
                             unsigned int options,
                             OpalConnection::StringOptions * stringOptions)
 {
-  if (remoteParty.NumCompare(GetPrefixName()+':') != EqualTo)
+  if ((remoteParty.NumCompare("h323:") != EqualTo) && (remoteParty.NumCompare("h323s") != EqualTo))
     return false;
 
   if (listeners.IsEmpty())
