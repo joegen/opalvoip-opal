@@ -117,7 +117,7 @@ Compatibility with other FFMPEG-based plugins (H.264, H.263, H.263+)
 -----------------------------------
 
 The H.263 (without + or 1998) video plugin loads a patched version of ffmpeg 0.4.7, using the
-PWLIBPLUGINDIR environment variable (default /usr/local/lib/pwlib) to find
+PTLIBPLUGINDIR environment variable (default /usr/local/lib/pwlib) to find
 libavcodec.so. Put the patched libavcodec.so for H.263 in
 /usr/local/lib/pwlib, put the new libavutil and libavcodec in
 /usr/local/opal-mpeg4, set LD_LIBRARY_PATH appropriately, and there should
