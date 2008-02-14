@@ -4,8 +4,11 @@
 #pragma implementation "rtp/zrtpudp.h"
 #endif
 
-#include <zrtp.h>
 #include <opal/buildopts.h>
+
+#ifdef OPAL_ZRTP
+
+#include <zrtp.h>
 #include "rtp/zrtpudp.h"
 
 #define SRTP_MAX_TAG_LEN 12 
@@ -213,7 +216,4 @@ DWORD OpalZrtp_UDP::GetOutgoingSSRC() {
 	return syncSourceOut;
 }
 
-
-
-
-
+#endif
