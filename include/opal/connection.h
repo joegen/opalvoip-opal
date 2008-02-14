@@ -1288,6 +1288,7 @@ class OpalConnection : public PSafeObject
     OpalH224Handler		  * h224Handler;
 #endif
 
+    OpalMediaFormatList        localMediaFormats;
     MediaAddressesDict         mediaTransportAddresses;
     PSafeList<OpalMediaStream> mediaStreams;
     RTP_SessionManager         rtpSessions;
