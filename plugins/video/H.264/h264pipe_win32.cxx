@@ -259,6 +259,8 @@ void H264EncCtx::flushStream ()
 bool H264EncCtx::findGplProcess()
 {
   char * env = ::getenv("PWLIBPLUGINDIR");
+  if (env == NULL)
+    env = ::getenv("PTLIBPLUGINDIR");
   if (env != NULL) {
     const char * token = strtok(env, DIR_TOKENISER);
     while (token != NULL) {
