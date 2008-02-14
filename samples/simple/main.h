@@ -95,9 +95,6 @@ class MyManager : public OpalManager
     MyPCSSEndPoint   * pcssEP;
 #if OPAL_H323
     H323EndPoint     * h323EP;
-#if P_SSL
-    H323SecureEndPoint    * h323sEP;
-#endif
 #endif
 #if OPAL_SIP
     SIPEndPoint      * sipEP;
