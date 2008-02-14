@@ -374,9 +374,6 @@ MyManager::MyManager()
 
 #if OPAL_H323
   h323EP = NULL;
-#if P_SSL
-  h323sEP = NULL;
-#endif
 #endif
 #if OPAL_SIP
   sipEP  = NULL;
@@ -596,13 +593,6 @@ PBoolean MyManager::Initialise(PArgList & args)
     h323EP = new H323EndPoint(*this);
     if (!InitialiseH323EP(args, false, h323EP))
       return PFalse;
-#if P_SSL
-    if (!args.HasOption("no-h323s")) {
-      h323sEP = new H323SecureEndPoint(*this);
-      if (!InitialiseH323EP(args, true, h323sEP))
-        return PFalse;
-    }
-#endif
   }
 
 #endif
@@ -742,7 +732,7 @@ PBoolean MyManager::Initialise(PArgList & args)
       AddRouteEntry("pots:.*           = h323:<da>");
       AddRouteEntry("pc:.*             = h323:<da>");
 #if P_SSL
-      if (h323sEP != NULL) {
+      {
         AddRouteEntry("pots:.*\\*.*\\*.* = h323s:<dn2ip>");
         AddRouteEntry("pots:.*           = h323s:<da>");
         AddRouteEntry("pc:.*             = h323s:<da>");
@@ -756,7 +746,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 #if OPAL_H323
       AddRouteEntry("h323:.* = pots:<du>");
 #if P_SSL
-      if (h323sEP != NULL) 
+      //if (h323sEP != NULL) 
         AddRouteEntry("h323s:.* = pots:<du>");
 #endif
 #endif
@@ -770,7 +760,7 @@ PBoolean MyManager::Initialise(PArgList & args)
 #if OPAL_H323
       AddRouteEntry("h323:.* = pc:<du>");
 #if P_SSL
-      if (h323sEP != NULL) 
+      //if (h323sEP != NULL) 
         AddRouteEntry("h323s:.* = pc:<du>");
 #endif
 #endif
@@ -1193,6 +1183,7 @@ void MyManager::SendMessageToRemoteNode(const PString & ostr)
     return ;
   }
 
+  PList<OpalEndPoint> endpoints = GetEndPoints();
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     PStringList res = endpoints[i].GetAllConnections();
     if (res.GetSize() == 0)
@@ -1211,6 +1202,7 @@ void MyManager::SendMessageToRemoteNode(const PString & ostr)
 
 void MyManager::SendTone(const char tone)
 {
+  PList<OpalEndPoint> endpoints = GetEndPoints();
   for (PINDEX i = 0; i < endpoints.GetSize(); i++) {
     PStringList res = endpoints[i].GetAllConnections();
     if (res.GetSize() == 0)
