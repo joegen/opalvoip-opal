@@ -235,12 +235,13 @@ class OpalTranscoder : public OpalMediaFormatPair
        Returns PFalse if there is no registered media transcoder that can be used
        between the two named formats.
       */
-    static PBoolean SelectFormats(
-      unsigned sessionID,               ///<  Session ID for media formats
+    static bool SelectFormats(
+      unsigned sessionID,                     ///<  Session ID for media formats
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
-      OpalMediaFormat & srcFormat,      ///<  Selected source format to be used
-      OpalMediaFormat & dstFormat       ///<  Selected destination format to be used
+      const OpalMediaFormatList & allFormats, ///<  Master list of formats for merging options
+      OpalMediaFormat & srcFormat,            ///<  Selected source format to be used
+      OpalMediaFormat & dstFormat             ///<  Selected destination format to be used
     );
 
     /**Find media intermediate format for transcoders.

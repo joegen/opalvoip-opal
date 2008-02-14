@@ -334,27 +334,34 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
   OpalMediaStreamPtr source;
   OpalMediaFormat sourceFormat, sinkFormat;
 
+  // Reorder destinations so we give preference to symmetric codecs
+  OpalMediaStreamPtr otherDirection = connection.GetMediaStream(sessionID, false);
+  if (otherDirection != NULL)
+    sinkFormat = otherDirection->GetMediaFormat();
+
   for (PSafePtr<OpalConnection> conn(connectionsActive, PSafeReadOnly); conn != NULL; ++conn) {
     if (conn != &connection) {
       OpalMediaFormatList sinkMediaFormats = conn->GetMediaFormats();
+      sinkMediaFormats.Reorder(sinkFormat.GetName()); // Preferential treatment to format already in use
 
-      // Reorder destinations so we give preference to symmetric codecs
-      OpalMediaStreamPtr otherDirection = connection.GetMediaStream(sessionID, false);
-      if (otherDirection != NULL)
-        sinkMediaFormats.Reorder(otherDirection->GetMediaFormat().GetName());
+      OpalMediaFormatList sourceMediaFormats;
+      if (sourceFormat.IsValid())
+        sourceMediaFormats = sourceFormat; // Use the source format already established
+      else
+        sourceMediaFormats = connection.GetMediaFormats();
 
+      if (!SelectMediaFormats(sessionID,
+                              sourceMediaFormats,
+                              sinkMediaFormats,
+                              conn->GetLocalMediaFormats(),
+                              sourceFormat,
+                              sinkFormat))
+        return false;
+
+      // Finally have the negotiated formats, open the streams
       if (source == NULL) {
-        // Use the first other connection we find to get source format
-        if (!SelectMediaFormats(sessionID, connection.GetMediaFormats(), sinkMediaFormats, sourceFormat, sinkFormat))
-          return false;
-
         source = connection.OpenMediaStream(sourceFormat, sessionID, true);
         if (source == NULL)
-          return false;
-      }
-      else if (!sinkMediaFormats.HasFormat(sinkFormat)) {
-        // Use the first other connection we find to get source format
-        if (!SelectMediaFormats(sessionID, sourceFormat, sinkMediaFormats, sourceFormat, sinkFormat))
           return false;
       }
 
@@ -389,10 +396,11 @@ PBoolean OpalCall::OpenSourceMediaStreams(OpalConnection & connection, unsigned 
 bool OpalCall::SelectMediaFormats(unsigned sessionID,
                                   const OpalMediaFormatList & srcFormats,
                                   const OpalMediaFormatList & dstFormats,
+                                  const OpalMediaFormatList & allFormats,
                                   OpalMediaFormat & srcFormat,
                                   OpalMediaFormat & dstFormat) const
 {
-  if (OpalTranscoder::SelectFormats(sessionID, srcFormats, dstFormats, srcFormat, dstFormat)) {
+  if (OpalTranscoder::SelectFormats(sessionID, srcFormats, dstFormats, allFormats, srcFormat, dstFormat)) {
     PTRACE(3, "Call\tSelected media formats " << srcFormat << " -> " << dstFormat);
     return true;
   }

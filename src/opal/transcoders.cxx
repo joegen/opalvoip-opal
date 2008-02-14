@@ -173,16 +173,9 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
                                                    const BYTE * instance,
                                                        unsigned instanceLen)
 {
-  // Merge the master options for the codecs. Allows user to set
-  // encoder options.
-  OpalMediaFormat masterFormat((const char *)destFormat); // Don't use copy ctor!
-  OpalMediaFormat dstAdjusted = destFormat;
-  if (!dstAdjusted.Merge(masterFormat))
-    return NULL;
-
   OpalTranscoder * transcoder = OpalTranscoderFactory::CreateInstance(OpalTranscoderKey(srcFormat, destFormat));
   if (transcoder != NULL) {
-    transcoder->UpdateMediaFormats(srcFormat, dstAdjusted);
+    transcoder->UpdateMediaFormats(srcFormat, destFormat);
     transcoder->SetInstanceID(instance, instanceLen);
   }
 
@@ -190,9 +183,50 @@ OpalTranscoder * OpalTranscoder::Create(const OpalMediaFormat & srcFormat,
 }
 
 
-PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
+static bool MergeFormats(const OpalMediaFormatList & allFormats,
+                         OpalMediaFormat & srcFormat,
+                         OpalMediaFormat & dstFormat)
+{
+  /* The following is to make sure any media we send is subject to the users
+     local "desired" options. For example:
+       sourceMediaFormats = YUV420P[QCIF]                    (from PCSSEndPoint)
+       sinkMediaFormats   = H.261[QCIF,CIF],H.263[QCIF,CIF]  (from remotes capabilities)
+       localMediaFormats  = H.263[QCIF]                      (from local capabilities)
+
+     SelectMediaFormats above will have merged sourceFormat and sinkFormat to:
+       sourceMediaFormat = YUV420P[CIF]
+       sinkMediaFormat   = H.263[CIF]
+     then we get the merge of localMediaFormats to:
+       sourceMediaFormat = YUV420P[QCIF]
+       sinkMediaFormat   = H.263[QCIF]           
+   */
+
+  OpalMediaFormatList::const_iterator localFormat = allFormats.FindFormat(srcFormat);
+  if (localFormat != allFormats.end()) {
+    if (!srcFormat.Merge(*localFormat))
+      return false;
+  }
+
+  localFormat = allFormats.FindFormat(dstFormat);
+  if (localFormat != allFormats.end()) {
+    if (!dstFormat.Merge(*localFormat))
+      return false;
+  }
+
+  if (!dstFormat.Merge(srcFormat))
+    return false;
+
+  if (!srcFormat.Merge(dstFormat))
+    return false;
+
+  return true;
+}
+
+
+bool OpalTranscoder::SelectFormats(unsigned sessionID,
                                    const OpalMediaFormatList & srcFormats,
                                    const OpalMediaFormatList & dstFormats,
+                                   const OpalMediaFormatList & allFormats,
                                    OpalMediaFormat & srcFormat,
                                    OpalMediaFormat & dstFormat)
 {
@@ -205,7 +239,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
     if (dstFormat.GetDefaultSessionID() == sessionID) {
       for (s = srcFormats.begin(); s != srcFormats.end(); ++s) {
         srcFormat = *s;
-        if (srcFormat == dstFormat && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
+        if (srcFormat == dstFormat && MergeFormats(allFormats, srcFormat, dstFormat))
           return true;
       }
     }
@@ -221,7 +255,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
           OpalTranscoderKey search(srcFormat, dstFormat);
           OpalTranscoderList availableTranscoders = OpalTranscoderFactory::GetKeyList();
           for (OpalTranscoderIterator i = availableTranscoders.begin(); i != availableTranscoders.end(); ++i) {
-            if (search == *i && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
+            if (search == *i && MergeFormats(allFormats, srcFormat, dstFormat))
               return true;
           }
         }
@@ -237,7 +271,7 @@ PBoolean OpalTranscoder::SelectFormats(unsigned sessionID,
         srcFormat = *s;
         if (srcFormat.GetDefaultSessionID() == sessionID) {
           OpalMediaFormat intermediateFormat;
-          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && dstFormat.Merge(srcFormat) && srcFormat.Merge(dstFormat))
+          if (FindIntermediateFormat(srcFormat, dstFormat, intermediateFormat) && MergeFormats(allFormats, srcFormat, dstFormat))
             return true;
         }
       }

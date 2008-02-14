@@ -151,10 +151,14 @@ static void Clamp(OpalMediaFormatInternal & fmt1, const OpalMediaFormatInternal 
 
   unsigned minValue = fmt2.GetOptionInteger(minOption, 0);
   unsigned maxValue = fmt2.GetOptionInteger(maxOption, UINT_MAX);
-  if (value < minValue)
+  if (value < minValue) {
+    PTRACE(4, "MediaFormat\tClamped media option \"" << variableOption << "\" from " << value << " to min " << minValue);
     fmt1.SetOptionInteger(variableOption, minValue);
-  else if (value > maxValue)
+  }
+  else if (value > maxValue) {
+    PTRACE(4, "MediaFormat\tClamped media option \"" << variableOption << "\" from " << value << " to max " << maxValue);
     fmt1.SetOptionInteger(variableOption, maxValue);
+  }
 }
 
 
@@ -712,6 +716,30 @@ void OpalMediaFormat::ReadFrom(istream & strm)
   char fmt[100];
   strm >> fmt;
   operator=(fmt);
+}
+
+
+bool OpalMediaFormat::ToNormalisedOptions()
+{
+  PWaitAndSignal m(_mutex);
+  MakeUnique();
+  return m_info != NULL && m_info->ToNormalisedOptions();
+}
+
+
+bool OpalMediaFormat::ToCustomisedOptions()
+{
+  PWaitAndSignal m(_mutex);
+  MakeUnique();
+  return m_info != NULL && m_info->ToCustomisedOptions();
+}
+
+
+bool OpalMediaFormat::Merge(const OpalMediaFormat & mediaFormat)
+{
+  PWaitAndSignal m(_mutex);
+  MakeUnique();
+  return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info);
 }
 
 
@@ -1311,8 +1339,8 @@ OpalVideoFormatInternal::OpalVideoFormatInternal(const char * fullName,
 {
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameWidthOption(),         false, OpalMediaOption::AlwaysMerge, frameWidth,  16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::FrameHeightOption(),        false, OpalMediaOption::AlwaysMerge, frameHeight, 16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::SQCIFWidth, 16, 32767));
-  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),   false, OpalMediaOption::MinMerge, PVideoFrameInfo::SQCIFHeight,16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameWidthOption(),    false, OpalMediaOption::MaxMerge, PVideoFrameInfo::SQCIFWidth, 16, 32767));
+  AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MinRxFrameHeightOption(),   false, OpalMediaOption::MaxMerge, PVideoFrameInfo::SQCIFHeight,16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameWidthOption(),    false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Width, 16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::MaxRxFrameHeightOption(),   false, OpalMediaOption::MinMerge, PVideoFrameInfo::CIF16Height,16, 32767));
   AddOption(new OpalMediaOptionUnsigned(OpalVideoFormat::TargetBitRateOption(),      false, OpalMediaOption::MinMerge, 10000000, 100));
