@@ -37,6 +37,11 @@
 #pragma implementation "sipcon.h"
 #endif
 
+#ifdef HAS_LIBZRTP
+#include <zrtp/opalzrtp.h>
+#include <rtp/zrtpudp.h>
+#endif
+
 #include <sip/sipcon.h>
 
 #include <sip/sipep.h>
@@ -50,11 +55,6 @@
 
 #if OPAL_T38FAX
 #include <t38/t38proto.h>
-#endif
-
-#ifdef HAS_LIBZRTP
-#include <zrtp/opalzrtp.h>
-#include <rtp/zrtpudp.h>
 #endif
 
 #define new PNEW
