@@ -950,10 +950,6 @@ PBoolean OpalVideoMediaStream::Open()
       PTRACE(1, "Media\tCould not set frame size in video display to " << width << 'x' << height << " in " << mediaFormat);
       return false;
     }
-    if (!outputDevice->Start()) {
-      PTRACE(1, "Media\tCould not start video display device");
-      return false;
-    }
   }
 
   SetDataSize(0); // Gets set to minimum of device buffer requirements
@@ -1020,7 +1016,13 @@ PBoolean OpalVideoMediaStream::ReadData(BYTE * data, PINDEX size, PINDEX & lengt
   if (outputDevice == NULL)
     return true;
 
-  return outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, flags);
+  if (outputDevice->Start())
+    return outputDevice->SetFrameData(0, 0, width, height, OPAL_VIDEO_FRAME_DATA_PTR(frame), true, flags);
+
+  PTRACE(1, "Media\tCould not start video display device");
+  delete outputDevice;
+  outputDevice = NULL;
+  return true;
 }
 
 
@@ -1044,7 +1046,17 @@ PBoolean OpalVideoMediaStream::WriteData(const BYTE * data, PINDEX length, PINDE
     return true;
 
   const OpalVideoTranscoder::FrameHeader * frame = (const OpalVideoTranscoder::FrameHeader *)data;
-  outputDevice->SetFrameSize(frame->width, frame->height);
+
+  if (!outputDevice->SetFrameSize(frame->width, frame->height)) {
+    PTRACE(1, "Media\tCould not resize video display device to " << frame->width << 'x' << frame->height);
+    return false;
+  }
+
+  if (!outputDevice->Start()) {
+    PTRACE(1, "Media\tCould not start video display device");
+    return false;
+  }
+
   return outputDevice->SetFrameData(frame->x, frame->y,
                                     frame->width, frame->height,
                                     OPAL_VIDEO_FRAME_DATA_PTR(frame), marker);
