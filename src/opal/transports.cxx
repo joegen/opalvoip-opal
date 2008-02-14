@@ -1456,8 +1456,6 @@ const char * OpalTransportUDP::GetProtoPrefix() const
 
 #if P_SSL
 
-#include <ptclib/pssl.h>
-
 static PBoolean SetSSLCertificate(PSSLContext & sslContext,
                              const PFilePath & certificateFile,
                                         PBoolean create,
@@ -1517,13 +1515,7 @@ OpalTransportTCPS::~OpalTransportTCPS()
 
 PBoolean OpalTransportTCPS::IsCompatibleTransport(const OpalTransportAddress & address) const
 {
-  return (address.NumCompare(TcpPrefix)  == EqualTo) ||
-         (address.NumCompare(IpPrefix)   == EqualTo) 
-#if P_SSL
-         ||
-         (address.NumCompare(TcpsPrefix) == EqualTo)
-#endif
-         ;
+  return OpalTransportTCP::IsCompatibleTransport(address) || address.NumCompare(TcpsPrefix) == EqualTo;
 }
 
 
@@ -1712,3 +1704,5 @@ const char * OpalListenerTCPS::GetProtoPrefix() const
 
 
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
