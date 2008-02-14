@@ -94,6 +94,11 @@ IAX2_AVAIL = 1
 VPATH_CXX += $(OPAL_SRCDIR)/iax2 
 endif
 
+ifneq (,$(wildcard src/zrtp))
+ZRTP_AVAIL = 1
+VPATH_CXX += $(OPAL_SRCDIR)/zrtp
+endif
+
 ifneq (,$(wildcard src/sip))
 SIP_AVAIL = 1
 VPATH_CXX += $(OPAL_SRCDIR)/sip
@@ -245,6 +250,19 @@ SOURCES += \
            $(OPAL_SRCDIR)/iax2/transmit.cxx 
 endif
 endif
+
+################################################################################
+# ZRTP files
+
+ifeq ($(OPAL_ZRTP),1)
+ifdef ZRTP_AVAIL
+
+SOURCES += $(OPAL_SRCDIR)/zrtp/opalzrtp.cxx \
+           $(OPAL_SRCDIR)/rtp/zrtpudp.cxx
+
+endif
+endif
+
 
 ################################################################################
 # SIP files
@@ -414,6 +432,7 @@ install ::
 		     $(DESTDIR)$(PREFIX)/include/opal/sip \
 		     $(DESTDIR)$(PREFIX)/include/opal/t120 \
 		     $(DESTDIR)$(PREFIX)/include/opal/t38 \
+		     $(DESTDIR)$(PREFIX)/include/opal/zrtp \
 		     $(DESTDIR)$(PREFIX)/lib/pkgconfig \
 		     $(DESTDIR)$(PREFIX)/share/opal ;\
 		do mkdir -p $$dir ; chmod 755 $$dir ; \
@@ -457,6 +476,9 @@ install ::
 	done)
 	( for fn in include/t38/*.h ; do \
 		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/t38 ; \
+	done)
+	( for fn in include/zrtp/*.h ; do \
+		$(INSTALL) -m 644 $$fn $(DESTDIR)$(PREFIX)/include/opal/zrtp ; \
 	done)
 	$(INSTALL) -m 644 opal_inc.mak $(DESTDIR)$(PREFIX)/share/opal
 	$(MAKE) -C plugins install

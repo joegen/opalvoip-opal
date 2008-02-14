@@ -22,6 +22,7 @@ audio=yes
 video=yes
 rfc4175=yes
 plugins=yes
+#zrtp=yes
 
 dnl this must be updated for every minor revision, and for
 dnl builds when and as necessary
@@ -619,34 +620,68 @@ AC_SUBST(OPAL_RFC4175)
 
 
 dnl ########################################################################
-dnl
+
 dnl ZRTP from Phil Zimmermann
 dnl 
 
-dnl MSWIN_DISPLAY     libzrtp,ZRTP/SRTP support
-dnl MSWIN_CHECK_FILE  libzrtp,include\zrtp_types.h,HAS_LIBZRTP=1
-dnl MSWIN_DIR_SYMBOL  libzrtp,LIBZRTP_DIR
-dnl MSWIN_CHECK_DIR   libsrtp,.\srtp_win32k
-dnl MSWIN_CHECK_DIR   libzrtp,.\zrtp
-dnl MSWIN_CHECK_DIR   libzrtp,..\external\zrtp
-dnl MSWIN_CHECK_DIR   libzrtp,c:\libs
+dnl check ZRTP enable flag
+AC_ARG_ENABLE(	zrtp, [ --enable-zrtp	enable ZRTP protocol support],
+				zrtp=$enableval)
+AC_MSG_CHECKING(ZRTP protocol support)
+if test "x$zrtp" = "xyes" ; then
+	AC_SUBST(OPAL_ZRTP, 1)
+	AC_DEFINE(OPAL_ZRTP)
+	AC_MSG_RESULT(enabled)
+else
+	AC_MSG_RESULT(disabled)
+fi
 
-HAS_LIBZRTP=
-dnl AC_MSG_CHECKING(for libZRTP)
-dnl AC_TRY_COMPILE([#include "srtp/srtp.h"],
-dnl  [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
-dnl  HAS_LIBSRTP=1)
-dnl if test "${HAS_LIBSRTP}" = "1" ; then
-dnl   AC_MSG_RESULT(yes)
-dnl   AC_DEFINE(HAS_LIBSRTP, 1)
-dnl   HAS_LIBSRTP=1
-dnl   OPAL_SRTP=1
-dnl else
-dnl   AC_MSG_RESULT(no)
-dnl fi
-AC_SUBST(OPAL_ZRTP)
-AC_SUBST(HAS_LIBZRTP)
+dnl check ZRTP library installed
+if test "x$OPAL_ZRTP" = "x1" ; then
+	if test "x$OPAL_SIP" != "x1" ; then
+		echo;
+	    echo "  ERROR: SIP protocol is disabled";
+	    echo "         Enable SIP support and try again.";
+	    echo;
+	    exit 1; 
+	fi
+	
+	AC_ARG_WITH([zrtp_includedir],
+	AS_HELP_STRING([--with-zrtp-includedir=DIR],[ZRTP includes dir (default /usr/local/include/zrtp)])
+	,[AC_SUBST(ZRTP_INCDIR, $withval)]
+	,[AC_SUBST(ZRTP_INCDIR, "/usr/local/include/zrtp")]
+    )
+	
+	dnl Check for the includes presence
+	AC_MSG_CHECKING(for zrtp library includes in ${ZRTP_INCDIR})
+	if ! test -f ${ZRTP_INCDIR}/zrtp.h; then
+		AC_MSG_RESULT(no)
+		echo;
+	    echo "  ERROR: ZRTP library headers not found";
+	    echo "         Install libzrtp and try again.";
+	    echo;
+	    exit 1; 
+	fi
+	AC_MSG_RESULT(yes)
+	AC_SUBST(HAS_LIBZRTP, 1)
 
+    AC_ARG_WITH([zrtp_libdir],
+        AS_HELP_STRING([--with-zrtp-libdir=DIR],[ZRTP3 library dir (deafult /usr/local/lib)])
+        ,[AC_SUBST(ZRTP_LIBDIR, $withval)]
+        ,[AC_SUBST(ZRTP_LIBDIR, "/usr/local/lib")]
+    )
+    AC_ARG_WITH([bn_includedir],
+	AS_HELP_STRING([--with-bn-includedir=DIR],[bn includes dir (deafult /usr/local/include/zrtp)])
+        ,[AC_SUBST(BN_INCDIR, $withval)]
+        ,[AC_SUBST(BN_INCDIR, "/usr/local/include/zrtp")]
+    )
+    AC_ARG_WITH([bn_libdir],
+	AS_HELP_STRING([--with-bn-libdir=DIR],[bn library dir (deafult /usr/local/lib)])
+        ,[AC_SUBST(BN_LIBDIR, $withval)]
+        ,[AC_SUBST(BN_LIBDIR, "/usr/local/lib")]
+    )
+
+fi
 
 dnl ########################################################################
 dnl
@@ -663,16 +698,20 @@ dnl MSWIN_CHECK_DIR   libsrtp,c:\libs
 
 HAS_LIBSRTP=
 AC_MSG_CHECKING(for libSRTP)
-AC_TRY_COMPILE([#include "srtp/srtp.h"],
- [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
- HAS_LIBSRTP=1)
-if test "${HAS_LIBSRTP}" = "1" ; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(HAS_LIBSRTP, 1)
-  HAS_LIBSRTP=1
-  OPAL_SRTP=1
+if test "x$OPAL_ZRTP" = "x1" ; then
+  AC_MSG_RESULT(disabled due to presence of ZRTP)
 else
-  AC_MSG_RESULT(no)
+  AC_TRY_COMPILE([#include "srtp/srtp.h"],
+   [int main(int argc, char *argv[]) { crypto_policy_t p; p.cipher_key_len = SRTP_MASTER_KEY_LEN; return 0; }],
+   HAS_LIBSRTP=1)
+  if test "${HAS_LIBSRTP}" = "1" ; then
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAS_LIBSRTP, 1)
+    HAS_LIBSRTP=1
+    OPAL_SRTP=1
+  else
+    AC_MSG_RESULT(no)
+  fi
 fi
 AC_SUBST(OPAL_SRTP)
 AC_SUBST(HAS_LIBSRTP)
