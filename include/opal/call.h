@@ -274,6 +274,7 @@ class OpalCall : public PSafeObject
       unsigned sessionID,                     ///<  Session for selection
       const OpalMediaFormatList & srcFormats, ///<  Names of possible source formats
       const OpalMediaFormatList & dstFormats, ///<  Names of possible destination formats
+      const OpalMediaFormatList & allFormats, ///<  Master list of formats for merging options
       OpalMediaFormat & srcFormat,            ///<  Selected source format to be used
       OpalMediaFormat & dstFormat             ///<  Selected destination format to be used
     ) const;

@@ -703,12 +703,12 @@ class OpalMediaFormat : public PContainer
        "normalised" options, e.g. For H.261 "QCIF MPI"="1", "CIF MPI"="5"
         would be translated to "Frame Width"="176", "Frame Height"="144".
       */
-    bool ToNormalisedOptions() { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->ToNormalisedOptions(); }
+    bool ToNormalisedOptions();
 
     /**This will do the reverse of ToNormalisedOptions, translating the OPAL
        "normalised" options to codec specific "custom" options.
       */
-    bool ToCustomisedOptions() { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && m_info->ToCustomisedOptions(); }
+    bool ToCustomisedOptions();
 
     /**Merge with another media format. This will alter and validate
        the options for this media format according to the merge rule for
@@ -722,7 +722,7 @@ class OpalMediaFormat : public PContainer
       */
     bool Merge(
       const OpalMediaFormat & mediaFormat
-    ) { PWaitAndSignal m(_mutex); MakeUnique(); return m_info != NULL && mediaFormat.m_info != NULL && m_info->Merge(*mediaFormat.m_info); }
+    );
 
     /**Get the name of the format
       */
