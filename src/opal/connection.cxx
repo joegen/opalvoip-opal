@@ -1223,7 +1223,9 @@ PBoolean OpalConnection::IsRTPNATEnabled(const PIPSocket::Address & localAddr,
 
 OpalMediaFormatList OpalConnection::GetLocalMediaFormats()
 {
-  return ownerCall.GetMediaFormats(*this, FALSE);
+  if (localMediaFormats.IsEmpty())
+    localMediaFormats = ownerCall.GetMediaFormats(*this, FALSE);
+  return localMediaFormats;
 }
 
 void * OpalConnection::GetSecurityData()
