@@ -972,11 +972,14 @@ PSafePtr<H323Connection> H323EndPoint::FindConnectionWithLock(const PString & to
   if (connnection != NULL)
     return connnection;
 
-  for (connnection = PSafePtrCast<OpalConnection, H323Connection>(connectionsActive.GetAt(0)); connnection != NULL; ++connnection) {
-    if (connnection->GetCallIdentifier().AsString() == token)
-      return connnection;
-    if (connnection->GetConferenceIdentifier().AsString() == token)
-      return connnection;
+  for (PSafePtr<OpalConnection> conn(connectionsActive, mode); conn != NULL; ++conn) {
+    connnection = PSafePtrCast<OpalConnection, H323Connection>(conn);
+    if(connnection != NULL) {      //cast success
+      if (connnection->GetCallIdentifier().AsString() == token)
+        return connnection;
+      if (connnection->GetConferenceIdentifier().AsString() == token)
+        return connnection;
+    }
   }
 
   return NULL;
@@ -1247,6 +1250,18 @@ PBoolean H323EndPoint::RemoveAliasName(const PString & name)
 
   localAliasNames.RemoveAt(pos);
   return PTrue;
+}
+
+
+bool H323EndPoint::AddAliasNamePattern(const PString & pattern)
+{
+  PAssert(!pattern, "Must have non-empty string in AddressPattern !");
+
+  if (localAliasPatterns.GetValuesIndex(pattern) != P_MAX_INDEX)
+    return false;
+
+  localAliasPatterns.AppendString(pattern);
+  return true;
 }
 
 

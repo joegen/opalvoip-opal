@@ -549,6 +549,10 @@ const PString & OpalMediaFormat::FrameTimeOption()    { static PString s = PLUGI
 const PString & OpalMediaFormat::ClockRateOption()    { static PString s = PLUGINCODEC_OPTION_CLOCK_RATE;     return s; }
 const PString & OpalMediaFormat::MaxBitRateOption()   { static PString s = PLUGINCODEC_OPTION_MAX_BIT_RATE;   return s; }
 const PString & OpalMediaFormat::TargetBitRateOption(){ static PString s = PLUGINCODEC_OPTION_TARGET_BIT_RATE; return s; }
+#if OPAL_H323
+const PString & OpalMediaFormat::MediaPacketizationOption(){ static PString s = PLUGINCODEC_MEDIA_PACKETIZATION; return s; }
+    static const PString & MediaPacketizationOption();
+#endif
 
 
 OpalMediaFormat::OpalMediaFormat(OpalMediaFormatInternal * info)
@@ -1201,6 +1205,27 @@ void OpalMediaFormatInternal::PrintOn(ostream & strm) const
         strm << " RM";
     }
 #endif // OPAL_H323
+
+    // Show the type of the option: Boolean, Unsigned, String, etc.
+    if (PIsDescendant(&option, OpalMediaOptionBoolean))
+      strm << " Boolean";
+    else if (PIsDescendant(&option, OpalMediaOptionUnsigned))
+      switch (genericInfo.integerType) {
+        default :
+        case OpalMediaOption::H245GenericInfo::UnsignedInt :
+          strm << " UnsignedInt";
+          break;
+        case OpalMediaOption::H245GenericInfo::Unsigned32 :
+          strm << " Unsigned32";
+          break;
+        case OpalMediaOption::H245GenericInfo::BooleanArray :
+          strm << " BooleanArray";
+          break;
+      }
+    else if (PIsDescendant(&option, OpalMediaOptionOctets))
+      strm << " OctetString";
+    else
+      strm << " String";
     strm << '\n';
   }
   strm << endl;

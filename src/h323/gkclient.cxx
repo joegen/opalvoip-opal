@@ -128,6 +128,7 @@ H323Gatekeeper::~H323Gatekeeper()
     monitorTickle.Signal();
     monitor->WaitForTermination();
     delete monitor;
+    monitor = NULL;
   }
 
   StopChannel();
@@ -442,6 +443,38 @@ PBoolean H323Gatekeeper::RegistrationRequest(PBoolean autoReg)
 
   rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAlias);
   H323SetAliasAddresses(endpoint.GetAliasNames(), rrq.m_terminalAlias);
+
+  PStringArray aliasNamePatterns = endpoint.GetAliasNamePatterns();
+  if(aliasNamePatterns.GetSize() > 0) { //set patterns,
+    rrq.IncludeOptionalField(H225_RegistrationRequest::e_terminalAliasPattern);
+    rrq.m_terminalAliasPattern.Append(new H225_AddressPattern);
+    H225_AddressPattern &addressPattern = rrq.m_terminalAliasPattern[0];
+    
+    for( int i = 0; i < aliasNamePatterns.GetSize(); i++){
+      PStringArray nameRange = aliasNamePatterns[i].Tokenise('-', FALSE);
+      if (nameRange.GetSize() == 2 &&
+          nameRange[0].FindSpan("1234567890*#") == P_MAX_INDEX &&
+          nameRange[1].FindSpan("1234567890*#") == P_MAX_INDEX) {
+        addressPattern.SetTag(H225_AddressPattern::e_range);
+        H225_AddressPattern_range &addressPattern_range = addressPattern;
+
+        addressPattern_range.m_startOfRange.SetTag(H225_PartyNumber::e_e164Number);
+        H225_PublicPartyNumber &start= addressPattern_range.m_startOfRange;
+        start.m_publicNumberDigits = nameRange[0];
+        start.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
+
+        addressPattern_range.m_endOfRange.SetTag(H225_PartyNumber::e_e164Number);
+        H225_PublicPartyNumber &end= addressPattern_range.m_endOfRange;
+        end.m_publicNumberDigits = nameRange[1];
+        end.m_publicTypeOfNumber.SetTag(H225_PublicTypeOfNumber::e_unknown ); 
+      }
+      else { //a wildcard
+        addressPattern.SetTag(H225_AddressPattern::e_wildcard);
+        H225_AliasAddress &aliasAddress = addressPattern;
+        H323SetAliasAddress(aliasNamePatterns[i], aliasAddress, H225_AliasAddress::e_dialedDigits);
+      }
+    }
+  }
 
   rrq.m_willSupplyUUIEs = PTrue;
   rrq.IncludeOptionalField(H225_RegistrationRequest::e_usageReportingCapability);
@@ -1376,7 +1409,7 @@ void H323Gatekeeper::SetInfoRequestRate(const PTimeInterval & rate)
 void H323Gatekeeper::ClearInfoRequestRate()
 {
   // Only reset rate to zero (disabled) if no calls present
-  if (endpoint.GetAllConnections().IsEmpty())
+  if (endpoint.GetConnectionCount())
     infoRequestRate = 0;
 }
 

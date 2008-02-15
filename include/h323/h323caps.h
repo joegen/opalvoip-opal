@@ -314,6 +314,12 @@ class H323Capability : public PObject
       */
     OpalMediaFormat GetMediaFormat() const;
 
+    /** Set media format option for the media data this class represents.
+      */
+    bool SetMediaFormatOptions(
+      const OpalMediaFormat & format
+    );
+
     /// Get the payload type for the capaibility
     RTP_DataFrame::PayloadTypes GetPayloadType() const { return rtpPayloadType; }
 
@@ -2318,11 +2324,14 @@ class H323Capabilities : public PObject
     /**Get the list of capabilities as a list of media formats.
       */
     OpalMediaFormatList GetMediaFormats() const;
+
+    const PStringSet & GetMediaPacketizations() const { return mediaPacketizations; }
   //@}
 
   protected:
     H323CapabilitiesList table;
     H323CapabilitiesSet  set;
+    PStringSet           mediaPacketizations;
 };
 
 

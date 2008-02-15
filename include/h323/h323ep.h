@@ -889,6 +889,17 @@ class H323EndPoint : public OpalEndPoint
      */
     const PStringList & GetAliasNames() const { return localAliasNames; }
 
+    /**Get the alias patterns, might be used in terminalAliasPattern.
+     */
+    const PStringList & GetAliasNamePatterns() const { return localAliasPatterns; }
+
+    /**Add an alias name pattern to localAliasPatterns. If
+       the pattern already exists in the list then is is not added again.
+     */
+    PBoolean AddAliasNamePattern(
+      const PString & pattern  
+    );
+
     /**Get the default ILS server to use for user lookup.
       */
     const PString & GetDefaultILSServer() const { return manager.GetDefaultILSServer(); }
@@ -1315,7 +1326,8 @@ class H323EndPoint : public OpalEndPoint
     );
 
     // Configuration variables, commonly changed
-    PStringList localAliasNames;
+    PStringList     localAliasNames;
+    PStringList     localAliasPatterns;
     PBoolean        autoStartReceiveFax;
     PBoolean        autoStartTransmitFax;
     PBoolean        isH224Enabled;

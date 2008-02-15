@@ -210,6 +210,26 @@ OpalMediaFormat H323Capability::GetMediaFormat() const
 }
 
 
+bool H323Capability::SetMediaFormatOptions(const OpalMediaFormat &format)
+{
+  if (mediaFormat != format)
+    return false;
+
+  for (PINDEX i = 0; i < format.GetOptionCount(); i++) {
+    PString name = format.GetOption(i).GetName();
+    //  Find the src format's option in the dst format's option list
+    OpalMediaOption *option = mediaFormat.FindOption(name);
+    if (option != NULL) {   //  Option not found in destination format
+      PString value;
+      format.GetOptionValue(name, value);
+      mediaFormat.SetOptionValue(name, value);
+    }
+  }
+
+  return true;
+}
+
+
 OpalMediaFormat & H323Capability::GetWritableMediaFormat()
 {
   if (!mediaFormat.IsValid())
@@ -1844,6 +1864,35 @@ H323Capabilities::H323Capabilities(const H323Connection & connection,
   allCapabilities.AddAllCapabilities(connection.GetEndPoint(), 0, 0, "*");
   H323_UserInputCapability::AddAllCapabilities(allCapabilities, P_MAX_INDEX, P_MAX_INDEX);
 
+  /** If mediaPacketization information is available, use this with the FindCapability() logic.
+   *  Certain codecs, such as H.263, need additional information in order to match the specific
+   *  version of the codec against possibly multiple codec with the same 'subtype' such as
+   *  e_h263VideoCapability.
+   */
+  PTRACE(4, "H323\tH323Capabilities(ctor) build list of mediaPacketization if available.");
+
+  const H245_MultiplexCapability * muxCap = NULL;
+  if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_multiplexCapability)) {
+    muxCap = &pdu.m_multiplexCapability;
+
+    if (muxCap != NULL && muxCap->GetTag() == H245_MultiplexCapability::e_h2250Capability) {
+      // H2250Capability ::=SEQUENCE
+      const H245_H2250Capability & h225_0 = *muxCap;
+
+      //  MediaPacketizationCapability ::=SEQUENCE
+      const H245_MediaPacketizationCapability & mediaPacket = h225_0.m_mediaPacketizationCapability;
+      if (mediaPacket.HasOptionalField(H245_MediaPacketizationCapability::e_rtpPayloadType)) {
+        for (PINDEX i = 0; i < mediaPacket.m_rtpPayloadType.GetSize(); i++) {
+          PString mediaPacketization = H323GetRTPPacketization(mediaPacket.m_rtpPayloadType[i]);
+          if (!mediaPacketization.IsEmpty()) {
+              mediaPacketizations += mediaPacketization;
+              PTRACE(4, "H323\tH323Capabilities(ctor) Appended mediaPacketization=" << mediaPacketization << ", mediaPacketization count=" << mediaPacketizations.GetSize());
+          }
+        } // for ... m_rtpPayloadType.GetSize()
+      } // e_rtpPayloadType
+    } // e_h2250Capability
+  } // e_multiplexCapability
+
   // Decode out of the PDU, the list of known codecs.
   if (pdu.HasOptionalField(H245_TerminalCapabilitySet::e_capabilityTable)) {
     for (PINDEX i = 0; i < pdu.m_capabilityTable.GetSize(); i++) {
@@ -1987,6 +2036,9 @@ PINDEX H323Capabilities::AddMediaFormat(PINDEX descriptorNum,
     if (capability != NULL) {
       capability->GetWritableMediaFormat() = mediaFormat;
       reply = SetCapability(descriptorNum, simultaneous, capability);
+      PString packetization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+      if (!packetization.IsEmpty())
+        mediaPacketizations += packetization;
     }
   }
 
@@ -2197,6 +2249,25 @@ H323Capability * H323Capabilities::FindCapability(const H245_Capability & cap) c
 {
   for (PINDEX i = 0; i < table.GetSize(); i++) {
     H323Capability & capability = table[i];
+
+    /** If mediaPacketization information is available, use this with the FindCapability() logic.
+     *  Certain codecs, such as H.263, need additional information in order to match the specific
+     *  version of the codec against possibly multiple codec with the same 'subtype' such as
+     *  e_h263VideoCapability.
+     */
+    if (!mediaPacketizations.IsEmpty()) {
+      PString capabilitiesPacketization = capability.GetMediaFormat().GetOptionString(OpalMediaFormat::MediaPacketizationOption());
+      if (!capabilitiesPacketization.IsEmpty()) {
+        PINDEX j;
+        for (j = 0; j < mediaPacketizations.GetSize(); j++) {
+          if (mediaPacketizations.GetKeyAt(j) == capabilitiesPacketization)
+            break;
+        }
+        if (j >= mediaPacketizations.GetSize())
+          return false;
+      }
+    }
+
     switch (cap.GetTag()) {
       case H245_Capability::e_receiveAudioCapability :
       case H245_Capability::e_transmitAudioCapability :
