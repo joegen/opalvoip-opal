@@ -1809,6 +1809,9 @@ void MyManager::OnStateChange(wxCommandEvent & event)
   wxWindow * newWindow;
   switch (m_callState) {
     case RingingState :
+      Raise();
+      RequestUserAttention();
+
       if (!m_autoAnswer) {
         newWindow = m_answerPanel;
         break;
