@@ -348,12 +348,17 @@ void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-PBoolean H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
+bool H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
                              const OpalMediaFormat & mediaFormat,
                              RTP_DataFrame::PayloadTypes payloadType)
 {
-  PString mediaPacketization = mediaFormat.GetOptionString("Media Packetization");
+  PString mediaPacketization = mediaFormat.GetOptionString(OpalMediaFormat::MediaPacketizationOption());
   if (mediaPacketization.IsEmpty())
+    return PFalse;
+
+  // Special case handling by Product Id
+  PString h323ProductId = mediaFormat.GetOptionString("h323ProductId");
+  if (h323ProductId == "NetMeeting")
     return PFalse;
 
   if (mediaPacketization.NumCompare("RFC") == PObject::EqualTo) {
@@ -385,7 +390,7 @@ PBoolean H323SetRTPPacketization(H245_RTPPayloadType & rtpPacketization,
 }
 
 
-PBoolean H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloadType & rtpPacketization)
+PString H323GetRTPPacketization(const H245_RTPPayloadType & rtpPacketization)
 {
   PString mediaPacketization;
 
@@ -398,24 +403,31 @@ PBoolean H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPa
       mediaPacketization = ((const PASN_ObjectId &)rtpPacketization.m_payloadDescriptor).AsString();
       if (mediaPacketization.IsEmpty()) {
         PTRACE(1, "RTP_UDP\tInvalid OID in packetization type.");
-        return PFalse;
       }
       break;
     case H245_RTPPayloadType_payloadDescriptor::e_nonStandardIdentifier :
       mediaPacketization = ((const H245_NonStandardParameter &)rtpPacketization.m_payloadDescriptor).m_data.AsString();
       if (mediaPacketization.IsEmpty()) {
         PTRACE(1, "RTP_UDP\tInvalid non-standard identifier in packetization type.");
-        return PFalse;
       }
       break;
 
     default :
       PTRACE(1, "RTP_UDP\tUnknown packetization type.");
-      return PFalse;
   }
+
+  return mediaPacketization;
+}
+
+
+bool H323GetRTPPacketization(OpalMediaFormat & mediaFormat, const H245_RTPPayloadType & rtpPacketization)
+{
+  PString mediaPacketization = H323GetRTPPacketization(rtpPacketization);
+  if (mediaPacketization.IsEmpty())
+    return false;
   
-  mediaFormat.SetOptionString("Media Packetization", mediaPacketization);
-  return PTrue;
+  mediaFormat.SetOptionString(OpalMediaFormat::MediaPacketizationOption(), mediaPacketization);
+  return true;
 }
 
 
@@ -1537,6 +1549,30 @@ H245_MiscellaneousCommand & H323ControlPDU::BuildMiscellaneousCommand(unsigned c
   miscCommand.m_logicalChannelNumber = channelNumber;
   miscCommand.m_type.SetTag(type);
   return miscCommand;
+}
+
+
+H245_FlowControlCommand & H323ControlPDU::BuildFlowControlCommand(unsigned channelNumber, unsigned maxBitRate)
+{
+  H245_FlowControlCommand & flowControlCommand = Build(H245_CommandMessage::e_flowControlCommand);
+  flowControlCommand.m_scope.SetTag(H245_FlowControlCommand_scope::e_logicalChannelNumber);
+  PASN_Integer & logChanNumPDU = flowControlCommand.m_scope;
+  logChanNumPDU = channelNumber;
+
+  flowControlCommand.m_restriction.SetTag(H245_FlowControlCommand_restriction::e_maximumBitRate);
+  PASN_Integer & maxBitRatePDU = flowControlCommand.m_restriction;
+  maxBitRatePDU = maxBitRate;
+ 
+  return flowControlCommand;
+}
+
+
+H245_MiscellaneousIndication & H323ControlPDU::BuildMiscellaneousIndication(unsigned channelNumber, unsigned type)
+{
+  H245_MiscellaneousIndication & miscIndication = Build(H245_IndicationMessage::e_miscellaneousIndication);
+  miscIndication.m_logicalChannelNumber = channelNumber;
+  miscIndication.m_type.SetTag(type);
+  return miscIndication;
 }
 
 

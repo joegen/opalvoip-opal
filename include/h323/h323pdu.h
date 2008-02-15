@@ -358,6 +358,16 @@ class H323ControlPDU : public H245_MultimediaSystemControlMessage
       unsigned channelNumber,
       unsigned type
     );
+    
+    H245_FlowControlCommand & BuildFlowControlCommand(
+      unsigned channelNumber, 
+      unsigned maxBitRate
+    );
+
+    H245_MiscellaneousIndication & BuildMiscellaneousIndication(
+      unsigned channelNumber,
+      unsigned type
+    );
 
     H245_FunctionNotUnderstood & BuildFunctionNotUnderstood(
       const H323ControlPDU & pdu
@@ -455,12 +465,15 @@ Q931::CauseValues H323TranslateFromCallEndReason(
 
 void H323GetApplicationInfo(OpalProductInfo & info, const H225_VendorIdentifier & vendor);
 
-PBoolean H323SetRTPPacketization(
+bool H323SetRTPPacketization(
   H245_RTPPayloadType & rtpPacketization,
   const OpalMediaFormat & mediaFormat,
   RTP_DataFrame::PayloadTypes payloadType
 );
-PBoolean H323GetRTPPacketization(
+PString H323GetRTPPacketization(
+  const H245_RTPPayloadType & rtpPacketization
+);
+bool H323GetRTPPacketization(
   OpalMediaFormat & mediaFormat,
   const H245_RTPPayloadType & rtpPacketization
 );

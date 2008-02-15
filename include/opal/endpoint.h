@@ -422,6 +422,10 @@ class OpalEndPoint : public PObject
     /**Get all calls current on the endpoint.
       */
     PStringList GetAllConnections();
+    
+    /** Get calls count on the endpoint
+      */
+    PINDEX GetConnectionCount() const { return connectionsActive.GetSize(); }
 
     /**Determine if a connection is active.
       */
