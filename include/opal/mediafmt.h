@@ -1025,6 +1025,10 @@ class OpalMediaFormat : public PContainer
     friend bool operator==(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info != NULL && fmt.m_info->formatName == other; }
     friend bool operator!=(const PString & other, const OpalMediaFormat & fmt) { return fmt.m_info == NULL || fmt.m_info->formatName == other; }
 
+#if OPAL_H323
+    static const PString & MediaPacketizationOption();
+#endif
+
   private:
     PBoolean SetSize(PINDEX) { return PTrue; }
 

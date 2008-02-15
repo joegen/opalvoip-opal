@@ -132,6 +132,7 @@ class H245NegTerminalCapabilitySet : public H245Negotiator
     void HandleTimeout(PTimer &, INT);
 
     PBoolean HasSentCapabilities() const { return state == e_Sent; }
+    PBoolean IsSendingCapabilities() const { return state == e_InProgress; }       // TODO - SGW
     PBoolean HasReceivedCapabilities() const { return receivedCapabilites; }
 
   protected:
@@ -186,6 +187,8 @@ class H245NegLogicalChannel : public H245Negotiator
 
     H323Channel * GetChannel();
 
+    bool IsAwaitingEstablishment() const { return state == e_AwaitingEstablishment; }
+    bool IsEstablished() const { return state == e_Established; }
 
   protected:
     virtual PBoolean OpenWhileLocked(

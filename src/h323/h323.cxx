@@ -3275,11 +3275,17 @@ PBoolean H323Connection::OnReceivedCapabilitySet(const H323Capabilities & remote
   return PTrue;
 }
 
-
-void H323Connection::SendCapabilitySet(PBoolean empty)
+bool H323Connection::SendCapabilitySet(PBoolean empty)
 {
-  capabilityExchangeProcedure->Start(PTrue, empty);
+  return capabilityExchangeProcedure->Start(PTrue, empty);
 }
+
+
+bool H323Connection::IsSendingCapabilitySet()
+{
+    return capabilityExchangeProcedure->IsSendingCapabilities();
+}
+
 
 void H323Connection::OnSetLocalCapabilities()
 {
@@ -3728,6 +3734,13 @@ void H323Connection::SelectFastStartChannels(unsigned sessionID,
   }
 }
 
+void H323Connection::SendFlowControlCommand(unsigned channelNumber, unsigned newBitRate)
+{
+  H323ControlPDU pdu;
+  pdu.BuildFlowControlCommand(channelNumber,newBitRate);
+  WriteControlPDU(pdu);
+}
+
 
 PBoolean H323Connection::OpenLogicalChannel(const H323Capability & capability,
                                         unsigned sessionID,
@@ -3817,8 +3830,7 @@ PBoolean H323Connection::OnConflictingLogicalChannel(H323Channel & conflictingCh
 
   if (!fromRemote) {
     // close the source media stream so it will be re-established
-    OpalMediaStream* stream = NULL;
-    stream = conflictingChannel.GetMediaStream();
+    OpalMediaStreamPtr stream = conflictingChannel.GetMediaStream();
     if (stream != NULL) {
       OpalMediaPatch * patch = stream->GetPatch();
       if (patch != NULL) 

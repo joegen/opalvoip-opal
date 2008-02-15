@@ -1115,9 +1115,13 @@ class H323Connection : public OpalConnection
 
     /**Send a new capability set.
       */
-    virtual void SendCapabilitySet(
+    virtual bool SendCapabilitySet(
       PBoolean empty  ///<  Send an empty set.
     );
+
+    /**check if TCS procedure in progress states.
+      */
+    virtual bool IsSendingCapabilitySet();
 
     /**Call back to set the local capabilities.
        This is called just before the capabilties are required when a call
@@ -1225,7 +1229,12 @@ class H323Connection : public OpalConnection
       unsigned sessionID,                 ///<  Session for the channel
       H323Channel::Directions dir         ///<  Direction of channel
     );
-
+    
+    virtual void SendFlowControlCommand(
+      unsigned channelNumber,
+      unsigned newBitRate
+    );
+    
     /**This function is called when the remote endpoint want's to open
        a new channel.
 

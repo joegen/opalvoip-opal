@@ -831,6 +831,18 @@ PBoolean H323_ExternalRTPChannel::OnSendingPDU(H245_H2250LogicalChannelParameter
     externalMediaAddress.SetPDU(param.m_mediaChannel);
   }
 
+  // Set dynamic payload type, if is one
+  RTP_DataFrame::PayloadTypes rtpPayloadType = GetDynamicRTPPayloadType();
+  if (rtpPayloadType >= RTP_DataFrame::DynamicBase && rtpPayloadType < RTP_DataFrame::IllegalPayloadType) {
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_dynamicRTPPayloadType);
+    param.m_dynamicRTPPayloadType = (int)rtpPayloadType;
+  }
+
+  // Set the media packetization field if have an option to describe it.
+  param.m_mediaPacketization.SetTag(H245_H2250LogicalChannelParameters_mediaPacketization::e_rtpPayloadType);
+  if (H323SetRTPPacketization(param.m_mediaPacketization, GetCapability().GetMediaFormat(), GetDynamicRTPPayloadType()))
+    param.IncludeOptionalField(H245_H2250LogicalChannelParameters::e_mediaPacketization);
+
   return PTrue;
 }
 
