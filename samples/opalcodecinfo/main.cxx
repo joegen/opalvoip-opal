@@ -622,7 +622,7 @@ void OpalCodecInfo::Main()
     needHelp = false;
   }
 
-  OpalPluginCodecManager & codecMgr = *(OpalPluginCodecManager *)PFactory<PPluginModuleManager>::CreateInstance("OpalPluginCodecManager");
+  OpalPluginCodecManager & codecMgr = *PFactory<PPluginModuleManager>::CreateInstanceAs<OpalPluginCodecManager>("OpalPluginCodecManager");
   PPluginModuleManager::PluginListType pluginList = codecMgr.GetPluginList();
 
   if (args.HasOption('p')) {
