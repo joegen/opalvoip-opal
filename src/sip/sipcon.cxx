@@ -861,6 +861,16 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
   OpalTransportAddress localAddress;
   OpalTransportAddress mediaAddress = incomingMedia->GetTransportAddress();
   if (!mediaAddress.IsEmpty()) {
+
+    PIPSocket::Address ip;
+    WORD port = 0;
+    if (!mediaAddress.GetIpAndPort(ip, port)) {
+      PTRACE(1, "SIP\tCannot get remote ports for RTP session " << rtpSessionId);
+      if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
+        Release(EndedByTransportFail);
+      return PFalse;
+    }
+
     // Create the RTPSession if required
     rtpSession = OnUseRTPSession(rtpSessionId, mediaAddress, localAddress);
     if (rtpSession == NULL && !ownerCall.IsMediaBypassPossible(*this, rtpSessionId)) {
@@ -869,14 +879,15 @@ PBoolean SIPConnection::AnswerSDPMediaDescription(const SDPSessionDescription & 
       return PFalse;
     }
 
-    // set the remote address
-    PIPSocket::Address ip;
-    WORD port = 0;
-    if (!mediaAddress.GetIpAndPort(ip, port) || (rtpSession && !rtpSession->SetRemoteSocketInfo(ip, port, PTrue))) {
-      PTRACE(1, "SIP\tCannot set remote ports on RTP session");
-      if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
-        Release(EndedByTransportFail);
-      return PFalse;
+    // set the remote address, but note that endpoints send IP address 
+    // of 0.0.0.0 when pausing media
+    if (ip != 0) {
+      if ((rtpSession != NULL)&& !rtpSession->SetRemoteSocketInfo(ip, port, PTrue)) {
+        PTRACE(1, "SIP\tCannot set remote ports on RTP session");
+        if (rtpSessionId == OpalMediaFormat::DefaultAudioSessionID) 
+          Release(EndedByTransportFail);
+        return PFalse;
+      }
     }
   }
 
@@ -1726,7 +1737,7 @@ void SIPConnection::OnReceivedACK(SIP_PDU & response)
   PString origToTag   = originalInvite->GetMIME().GetFieldParameter("tag", originalInvite->GetMIME().GetTo());
   PString fromTag     = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetFrom());
   PString toTag       = response.GetMIME().GetFieldParameter("tag", response.GetMIME().GetTo());
-  if (fromTag != origFromTag || toTag != origToTag) {
+  if (fromTag != origFromTag || (!toTag.IsEmpty() && (toTag != origToTag))) {
     PTRACE(3, "SIP\tACK received for forked INVITE from " << response.GetURI());
     return;
   }
@@ -2172,7 +2183,7 @@ PBoolean SIPConnection::SendInviteResponse(SIP_PDU::StatusCodes code, const char
   response.GetMIME().SetProductInfo(endpoint.GetUserAgent(), GetProductInfo());
 
   if (response.GetStatusCode()/100 != 1) {
-    if (response.GetStatusCode() > 2) {
+    if (response.GetStatusCode() > 200) {
       PTRACE(3, "SIP\tACK sent for error");
     }
     ackPacket = response;
@@ -2241,7 +2252,7 @@ void SIPConnection::OnReceivedINFO(SIP_PDU & pdu)
         val = tokens[1].Trim();
       if (tokens.GetSize() > 0) {
         if (tokens[0] *= "signal")
-          tone = val[0];
+          tone = OpalRFC2833Proto::ASCIIToRFC2833(val[0]);
         else if (tokens[0] *= "duration")
           duration = val.AsInteger();
       }
