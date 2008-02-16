@@ -95,16 +95,14 @@ class OpalManager : public PObject
     /**Attach a new endpoint to the manager.
        This is an internal function called by the OpalEndPoint constructor.
 
-       Note that any endpoint is automatically "owned" by the manager. They
-       should not be deleted directly. The RemoveEndPoint() command should be
-       used to do this.
+       Note that usually the endpoint is automatically "owned" by the manager.
+       They should not be deleted directly. The DetachEndPoint() command
+       should be used to do this.
       */
     void AttachEndPoint(
-      const PString & prefix,
-      OpalEndPoint * endpoint
-    );
-    void AttachEndPoint(
-      OpalEndPoint * endpoint
+      OpalEndPoint * endpoint,    ///< EndPoint to add to the manager
+      const PString & prefix = PString::Empty(),  ///< Prefix to use, if empty uses endpoint->GetProfixName()
+      bool autoDelete = true      ///< Indication the endpoint is to be deleted when detached
     );
 
     /**Remove an endpoint from the manager.
