@@ -166,22 +166,40 @@ void OpalRFC2833Proto::SendAsyncFrame()
   }
 }
 
-PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
+char OpalRFC2833Proto::ASCIIToRFC2833(char tone)
 {
-  PWaitAndSignal m(mutex);
-
   const char * theChar = strchr(RFC2833Table1Events, tone);
   if (theChar == NULL) {
     PTRACE(1, "RFC2833\tInvalid tone character.");
-    return PFalse;
+    return -1;
   }
+
+  return (BYTE)(theChar-RFC2833Table1Events);
+}
+
+char OpalRFC2833Proto::RFC2833ToASCII(char rfc2833)
+{
+  if (rfc2833 < 0 || rfc2833 > sizeof(RFC2833Table1Events)-1)
+    return -1;
+  return RFC2833Table1Events[rfc2833];
+}
+
+
+PBoolean OpalRFC2833Proto::BeginTransmit(char tone)
+{
+  PWaitAndSignal m(mutex);
 
   if (transmitState != TransmitIdle) {
     PTRACE(1, "RFC2833\tAttempt to send tone while currently sending.");
     return PFalse;
   }
 
-  transmitCode  = (BYTE)(theChar-RFC2833Table1Events);
+  char transmitCode = ASCIIToRFC2833(tone);
+  if (transmitCode < 0) {
+    PTRACE(1, "RFC2833\tInvalid tone character.");
+    return PFalse;
+  }
+
   transmitState = TransmitActive;
   transmitTimestampSet = PFalse;
   asyncStart    = 0;
@@ -220,12 +238,12 @@ void OpalRFC2833Proto::ReceivedPacket(RTP_DataFrame & frame, INT)
   }
 
   const BYTE * payload = frame.GetPayloadPtr();
-  if (payload[0] >= sizeof(RFC2833Table1Events)-1) {
+
+  receivedTone = RFC2833ToASCII(payload[0]);
+  if (receivedTone < 0) {
     PTRACE(2, "RFC2833\tIgnoring packet " << payload[0] << " - unsupported event.");
     return;
   }
-
-  receivedTone = RFC2833Table1Events[payload[0]];
   receivedDuration = (payload[2]<<8) + payload[3];
 
   unsigned timestamp = frame.GetTimestamp();
