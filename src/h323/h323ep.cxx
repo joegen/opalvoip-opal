@@ -122,7 +122,7 @@ H323EndPoint::H323EndPoint(OpalManager & manager)
   features.LoadFeatureSet(H460_Feature::FeatureBase);
 #endif
 
-  manager.AttachEndPoint("h323s", this);
+  manager.AttachEndPoint(this, "h323s", false);
 
   PTRACE(4, "H323\tCreated endpoint.");
 }
