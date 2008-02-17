@@ -1462,7 +1462,7 @@
 					RelativePath="..\rtp\srtp.cxx">
 				</File>
 				<File
-					RelativePath="..\rtp\zrtp.cxx">
+					RelativePath="..\rtp\zrtpudp.cxx">
 				</File>
 			</Filter>
 			<Filter
@@ -1995,7 +1995,7 @@
 					RelativePath="..\..\include\rtp\srtp.h">
 				</File>
 				<File
-					RelativePath="..\..\include\rtp\zrtp.h">
+					RelativePath="..\..\include\rtp\zrtpudp.h">
 				</File>
 			</Filter>
 			<Filter
