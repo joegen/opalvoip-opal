@@ -140,6 +140,17 @@ class OpalManager_C : public OpalManager
 };
 
 
+struct OpalHandleStruct
+{
+  class Process : public PProcess
+  {
+    virtual void Main()
+    {
+    }
+  } process;
+  OpalManager_C manager;
+};
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -774,9 +785,9 @@ extern "C" {
 
   OpalHandle OPAL_EXPORT OpalInitialise(const char * prefixes)
   {
-    OpalManager_C * opal = new OpalManager_C();
-    if (opal->Initialise(prefixes))
-      return (OpalHandle)opal;
+    OpalHandle opal = new OpalHandleStruct();
+    if (opal->manager.Initialise(prefixes))
+      return opal;
 
     delete opal;
     return NULL;
