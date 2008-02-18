@@ -43,7 +43,7 @@
 #include <ptclib/enum.h>
 #include <sip/sipep.h>
 
-#if P_EXPAT
+#ifdef P_EXPAT
 #include <ptclib/pxml.h>
 #endif
 
@@ -634,7 +634,7 @@ PBoolean SIPSubscribeHandler::OnReceivedMWINOTIFY(SIP_PDU & request)
 }
 
 
-#if P_EXPAT
+#ifdef P_EXPAT
 PBoolean SIPSubscribeHandler::OnReceivedPresenceNOTIFY(SIP_PDU & request)
 {
   PString body = request.GetEntityBody();
