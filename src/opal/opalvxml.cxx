@@ -42,7 +42,7 @@
 
 ///////////////////////////////////////////////////////////////
 
-#if P_EXPAT
+#ifdef P_EXPAT
 
 OpalVXMLSession::OpalVXMLSession(OpalConnection * _conn, PTextToSpeech * tts, PBoolean autoDelete)
   : PVXMLSession(tts, autoDelete),
