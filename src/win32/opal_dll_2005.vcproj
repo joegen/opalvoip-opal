@@ -719,7 +719,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -816,7 +816,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -914,7 +914,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
@@ -1011,7 +1011,7 @@
 			/>
 			<DeploymentTool
 				ForceDirty="-1"
-				RemoteDirectory=""
+				RemoteDirectory="%CSIDL_PROGRAM_FILES%\OPAL"
 				RegisterOutput="0"
 				AdditionalFiles=""
 			/>
