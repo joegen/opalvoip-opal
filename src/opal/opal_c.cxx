@@ -772,30 +772,30 @@ void OpalManager_C::OnClearedCall(OpalCall & call)
 
 extern "C" {
 
-  OpalHandle * OPAL_EXPORT OpalInitialise(const char * prefixes)
+  OpalHandle OPAL_EXPORT OpalInitialise(const char * prefixes)
   {
     OpalManager_C * opal = new OpalManager_C();
     if (opal->Initialise(prefixes))
-      return (OpalHandle *)opal;
+      return (OpalHandle)opal;
 
     delete opal;
     return NULL;
   }
 
 
-  void OPAL_EXPORT OpalShutDown(OpalHandle * handle)
+  void OPAL_EXPORT OpalShutDown(OpalHandle handle)
   {
     delete (OpalManager_C *)handle;
   }
 
 
-  OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle * handle, unsigned timeout)
+  OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle handle, unsigned timeout)
   {
     return handle == NULL ? NULL : ((OpalManager_C *)handle)->GetMessage(timeout);
   }
 
 
-  OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle * handle, const OpalMessage * message)
+  OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle handle, const OpalMessage * message)
   {
     return handle == NULL ? NULL : ((OpalManager_C *)handle)->SendMessage(message);
   }
