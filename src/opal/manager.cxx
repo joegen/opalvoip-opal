@@ -272,13 +272,13 @@ void OpalManager::AttachEndPoint(OpalEndPoint * endpoint, const PString & prefix
   if (stdstrPrefix.empty())
     stdstrPrefix = (const char *)endpoint->GetPrefixName();
 
-  if (OpalEndpointFactory::CreateInstance(prefix) != NULL) {
-    PTRACE(1, "OpalMan\tCannot re-register endpoint prefix " << prefix);
+  if (OpalEndpointFactory::CreateInstance(stdstrPrefix) != NULL) {
+    PTRACE(1, "OpalMan\tCannot re-register endpoint prefix " << stdstrPrefix);
     return;
   }
 
-  PTRACE(1, "OpalMan\tRegistering endpoint with prefix " << prefix);
-  OpalEndpointFactory::Register(prefix, endpoint, autoDelete);
+  PTRACE(1, "OpalMan\tRegistering endpoint with prefix " << stdstrPrefix);
+  OpalEndpointFactory::Register(stdstrPrefix, endpoint, autoDelete);
 }
 
 
