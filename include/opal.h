@@ -50,7 +50,9 @@ extern "C" {
   #define OPAL_EXPORT
 #endif
 
-struct OpalHandle;
+struct OpalHandleStruct;
+typedef OpalHandleStruct * OpalHandle;
+
 struct OpalMessage;
 
 
@@ -69,17 +71,17 @@ struct OpalMessage;
     really occur if the user specifies prefixes which are not supported by
     the library.
   */
-OpalHandle * OPAL_EXPORT OpalIntialise(const char * prefixes);
+OpalHandle OPAL_EXPORT OpalInitialise(const char * prefixes);
 
 /** String representation of the OpalIntialise() which may be used for late
     binding to the library.
  */
-#define OPAL_INITIALISE_FUNCTION   "OpalIntialise"
+#define OPAL_INITIALISE_FUNCTION   "OpalInitialise"
 
 /** Typedef representation of the pointer to the OpalIntialise() function which
     may be used for late binding to the library.
  */
-typedef OpalHandle * (OPAL_EXPORT *OpalInitialiseFunction)(const char * prefixes);
+typedef OpalHandle (OPAL_EXPORT *OpalInitialiseFunction)(const char * prefixes);
 
 
 ///////////////////////////////////////
@@ -87,7 +89,7 @@ typedef OpalHandle * (OPAL_EXPORT *OpalInitialiseFunction)(const char * prefixes
 /** Shut down and clean up all resource used by the OPAL system. The parameter
     must be the handle returned by OpalInitialise().
   */
-void OPAL_EXPORT OpalShutDown(OpalHandle * opal);
+void OPAL_EXPORT OpalShutDown(OpalHandle opal);
 
 /** String representation of the OpalShutDown() which may be used for late
     binding to the library.
@@ -97,7 +99,7 @@ void OPAL_EXPORT OpalShutDown(OpalHandle * opal);
 /** Typedef representation of the pointer to the OpalShutDown() function which
     may be used for late binding to the library.
  */
-typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle * opal);
+typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle opal);
 
 
 ///////////////////////////////////////
@@ -112,7 +114,7 @@ typedef void (OPAL_EXPORT *OpalShutDownFunction)(OpalHandle * opal);
     Note if OpalShutDown() is called from a different thread then this function
     will break from its block and return NULL.
   */
-OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle * opal, unsigned timeout);
+OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle opal, unsigned timeout);
 
 /** String representation of the OpalGetMessage() which may be used for late
     binding to the library.
@@ -122,7 +124,7 @@ OpalMessage * OPAL_EXPORT OpalGetMessage(OpalHandle * opal, unsigned timeout);
 /** Typedef representation of the pointer to the OpalGetMessage() function which
     may be used for late binding to the library.
  */
-typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle * opal, unsigned timeout);
+typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle opal, unsigned timeout);
 
 
 ///////////////////////////////////////
@@ -145,14 +147,16 @@ typedef OpalMessage * (OPAL_EXPORT *OpalGetMessageFunction)(OpalHandle * opal, u
     command the OpalParamGeneral::m_stunServer would contain the STUN server name
     prior to the command.
 
+    A NULL is only returned if the either OpalHandle or OpalMessage parameters is NULL.
+
     The returned message must be disposed of by a call to OpalFreeMessage().
   */
-OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle * opal, const OpalMessage * message);
+OpalMessage * OPAL_EXPORT OpalSendMessage(OpalHandle opal, const OpalMessage * message);
 
 /** String representation of the OpalSendMessage() which may be used for late
     binding to the library.
  */
-typedef OpalMessage * (OPAL_EXPORT *OpalSendMessageFunction)(OpalHandle * opal, const OpalMessage * message);
+typedef OpalMessage * (OPAL_EXPORT *OpalSendMessageFunction)(OpalHandle opal, const OpalMessage * message);
 
 /** Typedef representation of the pointer to the OpalSendMessage() function which
     may be used for late binding to the library.
