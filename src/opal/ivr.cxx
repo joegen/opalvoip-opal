@@ -73,17 +73,21 @@ OpalIVREndPoint::~OpalIVREndPoint()
 
 
 PBoolean OpalIVREndPoint::MakeConnection(OpalCall & call,
-                                     const PString & remoteParty,
+                                     const PString & /*remoteParty */,
                                      void * userData,
                                unsigned int /*options*/,
                                OpalConnection::StringOptions * stringOptions)
 {
+  PString ivrString = call.GetPartyB();
+  if (ivrString.IsEmpty())
+    ivrString = call.GetPartyA();
+
   // First strip of the prefix if present
   PINDEX prefixLength = 0;
-  if (remoteParty.Find(GetPrefixName()+":") == 0)
+  if (ivrString.Find(GetPrefixName()+":") == 0)
     prefixLength = GetPrefixName().GetLength()+1;
 
-  PString vxml = remoteParty.Mid(prefixLength);
+  PString vxml = ivrString.Mid(prefixLength);
   if (vxml.Left(2) == "//")
     vxml = vxml.Mid(2);
   if (vxml.IsEmpty() || vxml == "*")
