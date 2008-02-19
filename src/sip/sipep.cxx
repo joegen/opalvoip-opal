@@ -301,17 +301,7 @@ PBoolean SIPEndPoint::MakeConnection(OpalCall & call,
   PStringStream callID;
   OpalGloballyUniqueID id;
   callID << id << '@' << PIPSocket::GetHostName();
-  SIPConnection * connection = CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions);
-  if (!AddConnection(connection))
-    return PFalse;
-
-  // If we are the A-party then need to initiate a call now in this thread. If
-  // we are the B-Party then SetUpConnection() gets called in the context of
-  // the A-party thread.
-  if (call.GetConnection(0) == (OpalConnection*)connection)
-    connection->SetUpConnection();
-
-  return true;
+  return AddConnection(CreateConnection(call, callID, userData, TranslateENUM(remoteParty), NULL, NULL, options, stringOptions));
 }
 
 
