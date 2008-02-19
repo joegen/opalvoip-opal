@@ -596,8 +596,6 @@ class OpalConnection : public PSafeObject
        Note that media streams may be created internally to the underlying
        protocol. This function is not the only way a stream can come into
        existance.
-
-       The default behaviour is pure.
      */
     virtual OpalMediaStream * CreateMediaStream(
       const OpalMediaFormat & mediaFormat, ///<  Media format for stream
@@ -1223,6 +1221,17 @@ class OpalConnection : public PSafeObject
 
     void SetStringOptions(StringOptions * options);
 
+    /**Open the media channels associated with an incoming call
+ 
+       This function is provided to allow an OpalConnection descendant to delay the opening of the
+       media channels associated with an incoming call. By default, this function is called as soon
+       as possible after an incoming connection request has been received (i.e. an INVITE or SETUP) and
+       and do all of the work associated with handling SDP or fastStart eyc
+
+       By overriding this function, the media channel open is deferred, which gives the other connections
+       in the call a chance to do something before the media channels are started. This allows for features
+       beyond those provided by the OnAnswer interface
+      */
     virtual PBoolean OnOpenIncomingMediaChannels();
 
     virtual void ApplyStringOptions();

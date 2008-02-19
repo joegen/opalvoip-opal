@@ -147,13 +147,7 @@ PBoolean OpalPCSSEndPoint::MakeConnection(OpalCall & call,
     return PFalse;
   }
 
-  connection = CreateConnection(call, playDevice, recordDevice, userData);
-  if (connection == NULL)
-    return PFalse;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
-
-  return PTrue;
+  return AddConnection(CreateConnection(call, playDevice, recordDevice, userData));
 }
 
 

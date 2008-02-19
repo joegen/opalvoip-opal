@@ -401,14 +401,6 @@ PBoolean IAX2EndPoint::MakeConnection(
       }
     }
   }
-  
-  // If we are the A-party then need to initiate a call now in this thread. If
-  // we are the B-Party then SetUpConnection() gets called in the context of
-  // the A-party thread.
-  if (call.GetConnection(0) == (OpalConnection*)connection) {
-    PTRACE(3, "IAX2Ep\tInitiate a call to the other party");
-    connection->SetUpConnection();
-  }
 
   return PTrue;
 }

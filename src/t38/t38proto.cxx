@@ -1256,17 +1256,7 @@ PBoolean OpalFaxEndPoint::MakeConnection(OpalCall & call,
 
 */
 
-  PSafePtr<OpalFaxConnection> connection = PSafePtrCast<OpalConnection, OpalFaxConnection>(GetConnectionWithLock(MakeToken()));
-  if (connection != NULL)
-    return PFalse;
-
-  connection = CreateConnection(call, filename, receive, userData, stringOptions);
-  if (connection == NULL)
-    return PFalse;
-
-  connectionsActive.SetAt(connection->GetToken(), connection);
-
-  return PTrue;
+  return AddConnection(CreateConnection(call, filename, receive, userData, stringOptions));
 }
 
 void OpalFaxEndPoint::OnPatchMediaStream(const OpalFaxConnection & /*connection*/, PBoolean /*isSource*/, OpalMediaPatch & /*patch*/)
